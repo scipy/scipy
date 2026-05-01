@@ -1,7 +1,8 @@
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_almost_equal, assert_array_almost_equal,
-    make_xp_test_case
+    make_xp_test_case, is_cupy, _xp_copy_to_numpy
 )
+from scipy._external import array_api_extra as xpx
 from pytest import raises as assert_raises
 import pytest
 
@@ -842,7 +843,8 @@ class TestLagrange:
         p = poly1d([5,2,1,4,3])
         xs = np.arange(len(p.coeffs))
         ys = p(xs)
-        pl = lagrange(xs,ys)
+        with pytest.warns(DeprecationWarning, match="`lagrange`"):
+            pl = lagrange(xs,ys)
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 
@@ -1061,10 +1063,10 @@ class TestPPolyCommon:
         assert_raises(ValueError, PPoly, c, x)
         assert_raises(ValueError, BPoly, c, x)
 
-    def test_ctor_c(self):
+    def test_ctor_c(self, xp):
         # wrong shape: `c` must be at least 2D
         with assert_raises(ValueError):
-            PPoly([1, 2], [0, 1])
+            PPoly(xp.asarray([1, 2]), xp.asarray([0, 1]))
 
     def test_extend(self, xp):
         # Test adding new points to the piecewise polynomial
@@ -1138,16 +1140,20 @@ class TestPPolyCommon:
             xp_assert_equal(p2.c, p.c)
             xp_assert_equal(p2.x, p.x)
 
-    def test_shape(self):
+    def test_shape(self, xp):
+        np.random.seed(1234)
+        c = xp.asarray(np.random.rand(8, 12, 5, 6, 7))
+        x = xp.asarray(np.sort(np.random.rand(13)))
+        x_p = xp.asarray(np.random.rand(3, 4))
+        for cls in (PPoly, BPoly):
+            p = cls(c, x)
+            assert p(x_p).shape == (3, 4, 5, 6, 7)
+
+    def test_shape_scalars(self):
         np.random.seed(1234)
         c = np.random.rand(8, 12, 5, 6, 7)
         x = np.sort(np.random.rand(13))
-        xp = np.random.rand(3, 4)
-        for cls in (PPoly, BPoly):
-            p = cls(c, x)
-            assert p(xp).shape == (3, 4, 5, 6, 7)
 
-        # 'scalars'
         for cls in (PPoly, BPoly):
             p = cls(c[..., 0, 0, 0], x)
 
@@ -1172,17 +1178,17 @@ class TestPPolyCommon:
 
             _run_concurrent_barrier(10, worker_fn, interp, xpp)
 
-    def test_complex_coef(self):
+    def test_complex_coef(self, xp):
         np.random.seed(12345)
-        x = np.sort(np.random.random(13))
-        c = np.random.random((8, 12)) * (1. + 0.3j)
-        c_re, c_im = c.real, c.imag
-        xp = np.random.random(5)
+        x = xp.asarray(np.sort(np.random.random(13)))
+        c = xp.asarray(np.random.random((8, 12)) * (1. + 0.3j))
+        c_re, c_im = xp.real(c), xp.imag(c)
+        x_p = xp.asarray(np.random.random(5))
         for cls in (PPoly, BPoly):
             p, p_re, p_im = cls(c, x), cls(c_re, x), cls(c_im, x)
             for nu in [0, 1, 2]:
-                xp_assert_close(p(xp, nu).real, p_re(xp, nu))
-                xp_assert_close(p(xp, nu).imag, p_im(xp, nu))
+                xp_assert_close(xp.real(p(x_p, nu)), p_re(x_p, nu))
+                xp_assert_close(xp.imag(p(x_p, nu)), p_im(x_p, nu))
 
     def test_axis(self, xp):
         np.random.seed(12345)
@@ -1302,7 +1308,8 @@ class TestPPoly:
             vals = f(xnew)
             assert np.isfinite(vals).all()
 
-    def test_descending(self):
+    @make_xp_test_case((PPoly, "roots"))
+    def test_descending(self, xp):
         def binom_matrix(power):
             n = np.arange(power + 1).reshape(-1, 1)
             k = np.arange(power + 1)
@@ -1323,10 +1330,11 @@ class TestPPoly:
             cdp = np.dot(B.T, cap)
             cd = cdp / h_powers
 
+            ca, cd, x = map(xp.asarray, (ca, cd, x))
             pa = PPoly(ca, x, extrapolate=True)
-            pd = PPoly(cd[:, ::-1], x[::-1], extrapolate=True)
+            pd = PPoly(xp.flip(cd, axis=-1), xp.flip(x, axis=-1), extrapolate=True)
 
-            x_test = rng.uniform(-10, 20, 100)
+            x_test = xp.asarray(rng.uniform(-10, 20, 100))
             xp_assert_close(pa(x_test), pd(x_test), rtol=1e-13)
             xp_assert_close(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
 
@@ -1341,6 +1349,7 @@ class TestPPoly:
             pa_i = pa.antiderivative()
             pd_i = pd.antiderivative()
             for a, b in rng.uniform(-10, 20, (5, 2)):
+                a, b = map(xp.asarray, (a, b))
                 int_a = pa.integrate(a, b)
                 int_d = pd.integrate(a, b)
                 xp_assert_close(int_a, int_d, rtol=1e-13)
@@ -1349,7 +1358,7 @@ class TestPPoly:
 
             roots_d = pd.roots()
             roots_a = pa.roots()
-            xp_assert_close(roots_a, np.sort(roots_d), rtol=1e-12)
+            xp_assert_close(roots_a, xp.sort(roots_d), rtol=1e-12)
 
     def test_multi_shape(self, xp):
         c = np.random.rand(6, 2, 1, 2, 3)
@@ -1367,46 +1376,51 @@ class TestPPoly:
         ip = p.antiderivative()
         assert ip.c.shape == (7, 2, 1, 2, 3)
 
-    def test_construct_fast(self):
+    def test_construct_fast(self, xp):
         np.random.seed(1234)
         c = np.array([[1, 4], [2, 5], [3, 6]], dtype=float)
         x = np.array([0, 0.5, 1])
-        p = PPoly.construct_fast(c, x)
-        xp_assert_close(p(0.3), np.asarray(1*0.3**2 + 2*0.3 + 3))
-        xp_assert_close(p(0.7), np.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6))
+        p = PPoly.construct_fast(xp.asarray(c), xp.asarray(x))
+        xp_assert_close(p(0.3), xp.asarray(1*0.3**2 + 2*0.3 + 3, dtype=xp.float64))
+        xp_assert_close(
+            p(0.7), xp.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6, dtype=xp.float64)
+        )
 
-    def test_vs_alternative_implementations(self):
+    def test_vs_alternative_implementations(self, xp):
         rng = np.random.RandomState(1234)
-        c = rng.rand(3, 12, 22)
-        x = np.sort(np.r_[0, rng.rand(11), 1])
+        c_np = rng.rand(3, 12, 22)
+        x_np = np.sort(np.r_[0, rng.rand(11), 1])
+        x_p_np = np.r_[0.3, 0.5, 0.33, 0.6]
+
+        c, x, x_p = map(xp.asarray, (c_np, x_np, x_p_np))
 
         p = PPoly(c, x)
 
-        xp = np.r_[0.3, 0.5, 0.33, 0.6]
-        expected = _ppoly_eval_1(c, x, xp)
-        xp_assert_close(p(xp), expected)
+        expected = xp.asarray(_ppoly_eval_1(c_np, x_np, x_p_np))
+        xp_assert_close(p(x_p), expected)
 
-        expected = _ppoly_eval_2(c[:,:,0], x, xp)
-        xp_assert_close(p(xp)[:, 0], expected)
+        expected = xp.asarray(_ppoly_eval_2(c_np[:, :, 0], x_np, x_p_np))
+        xp_assert_close(p(x_p)[:, 0], expected)
 
-    def test_from_spline(self):
+    def test_from_spline(self, xp):
         rng = np.random.RandomState(1234)
         x = np.sort(np.r_[0, rng.rand(11), 1])
         y = rng.rand(len(x))
 
-        spl = splrep(x, y, s=0)
-        pp = PPoly.from_spline(spl)
+        t_np, c_np, k = splrep(x, y, s=0)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
-        xi = np.linspace(0, 1, 200)
-        xp_assert_close(pp(xi), splev(xi, spl))
+        xi_np = np.linspace(0, 1, 200)
+        xi = xp.asarray(xi_np)
+        xp_assert_close(pp(xi), xp.asarray(splev(xi_np, (t_np, c_np, k))))
 
         # make sure .from_spline accepts BSpline objects
-        b = BSpline(*spl)
+        b = BSpline(t, c, k)
         ppp = PPoly.from_spline(b)
         xp_assert_close(ppp(xi), b(xi))
 
         # BSpline's extrapolate attribute propagates unless overridden
-        t, c, k = spl
         for extrap in (None, True, False):
             b = BSpline(t, c, k, extrapolate=extrap)
             p = PPoly.from_spline(b)
@@ -1438,45 +1452,54 @@ class TestPPoly:
         xp_assert_close(pp.derivative().c, dpp.c)
         xp_assert_close(pp.derivative(2).c, ddpp.c)
 
-    def test_derivative_eval(self):
+    def test_derivative_eval(self, xp):
         rng = np.random.RandomState(1234)
         x = np.sort(np.r_[0, rng.rand(11), 1])
         y = rng.rand(len(x))
 
-        spl = splrep(x, y, s=0)
-        pp = PPoly.from_spline(spl)
+        t_np, c_np, k = splrep(x, y, s=0)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
-        xi = np.linspace(0, 1, 200)
+        xi_np = np.linspace(0, 1, 200)
+        xi = xp.asarray(xi_np)
         for dx in range(0, 3):
-            xp_assert_close(pp(xi, dx), splev(xi, spl, dx))
+            xp_assert_close(pp(xi, dx), xp.asarray(splev(xi_np, (t_np, c_np, k), dx)))
 
-    def test_derivative(self):
+    def test_derivative(self, xp):
         rng = np.random.RandomState(1234)
-        x = np.sort(np.r_[0, rng.rand(11), 1])
-        y = rng.rand(len(x))
+        x_np = np.sort(np.r_[0, rng.rand(11), 1])
+        y_np = rng.rand(len(x_np))
 
-        spl = splrep(x, y, s=0, k=5)
-        pp = PPoly.from_spline(spl)
+        t_np, c_np, k = splrep(x_np, y_np, s=0, k=5)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
-        xi = np.linspace(0, 1, 200)
+        xi = xp.linspace(0, 1, 200)
         for dx in range(0, 10):
             xp_assert_close(pp(xi, dx), pp.derivative(dx)(xi), err_msg=f"dx={dx}")
 
-    def test_antiderivative_of_constant(self):
+    def test_antiderivative_of_constant(self, xp):
         # https://github.com/scipy/scipy/issues/4216
-        p = PPoly([[1.]], [0, 1])
-        xp_assert_equal(p.antiderivative().c, PPoly([[1], [0]], [0, 1]).c)
-        xp_assert_equal(p.antiderivative().x, PPoly([[1], [0]], [0, 1]).x)
+        p = PPoly(xp.asarray([[1.]]), xp.asarray([0, 1]))
+        xp_assert_equal(
+            p.antiderivative().c,
+            PPoly(xp.asarray([[1], [0]]), xp.asarray([0, 1])).c
+        )
+        xp_assert_equal(
+            p.antiderivative().x,
+            PPoly(xp.asarray([[1], [0]]), xp.asarray([0, 1])).x
+        )
 
-    def test_antiderivative_regression_4355(self):
+    def test_antiderivative_regression_4355(self, xp):
         # https://github.com/scipy/scipy/issues/4355
-        p = PPoly([[1., 0.5]], [0, 1, 2])
+        p = PPoly(xp.asarray([[1., 0.5]]), xp.asarray([0, 1, 2]))
         q = p.antiderivative()
-        xp_assert_equal(q.c, [[1, 0.5], [0, 1]])
-        xp_assert_equal(q.x, [0.0, 1, 2])
-        xp_assert_close(p.integrate(0, 2), np.asarray(1.5))
-        xp_assert_close(np.asarray(q(2) - q(0)),
-                        np.asarray(1.5))
+        xp_assert_equal(q.c, xp.asarray([[1, 0.5], [0, 1]], dtype=xp.float64))
+        xp_assert_equal(q.x, xp.asarray([0.0, 1, 2], dtype=xp.float64))
+        xp_assert_close(p.integrate(0, 2), xp.asarray(1.5, dtype=xp.float64))
+        xp_assert_close(xp.asarray(q(2) - q(0)),
+                        xp.asarray(1.5, dtype=xp.float64))
 
     def test_antiderivative_simple(self, xp):
         # [ p1(x) = 3*x**2 + 2*x + 1,
@@ -1503,12 +1526,13 @@ class TestPPoly:
         xp_assert_close(iipp.c.T, iic.T)
         xp_assert_close(iipp2.c.T, iic.T)
 
-    def test_antiderivative_vs_derivative(self):
+    def test_antiderivative_vs_derivative(self, xp):
         rng = np.random.RandomState(1234)
-        x = np.linspace(0, 1, 30)**2
-        y = rng.rand(len(x))
-        spl = splrep(x, y, s=0, k=5)
-        pp = PPoly.from_spline(spl)
+        x_np = np.linspace(0, 1, 30)**2
+        y_np = rng.rand(len(x_np))
+        t_np, c_np, k = splrep(x_np, y_np, s=0, k=5)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
         for dx in range(0, 10):
             ipp = pp.antiderivative(dx)
@@ -1528,25 +1552,26 @@ class TestPPoly:
                     pp2(pp2.x[1:]), pp2(endpoint), rtol=1e-7, err_msg=f"dx={dx} k={k}"
                 )
 
-    def test_antiderivative_vs_spline(self):
+    def test_antiderivative_vs_spline(self, xp):
         rng = np.random.RandomState(1234)
-        x = np.sort(np.r_[0, rng.rand(11), 1])
-        y = rng.rand(len(x))
+        x_np = np.sort(np.r_[0, rng.rand(11), 1])
+        y_np = rng.rand(len(x_np))
 
-        spl = splrep(x, y, s=0, k=5)
-        pp = PPoly.from_spline(spl)
+        t_np, c_np, k = splrep(x_np, y_np, s=0, k=5)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
         for dx in range(0, 10):
             pp2 = pp.antiderivative(dx)
-            spl2 = splantider(spl, dx)
-
-            xi = np.linspace(0, 1, 200)
-            xp_assert_close(pp2(xi), splev(xi, spl2),
+            t2_np, c2_np, k2 = splantider((t_np, c_np, k), dx)
+            xi_np = np.linspace(0, 1, 200)
+            xi = xp.asarray(xi_np)
+            xp_assert_close(pp2(xi), xp.asarray(splev(xi_np, (t2_np, c2_np, k2))),
                             rtol=1e-7)
 
-    def test_antiderivative_continuity(self):
-        c = np.array([[2, 1, 2, 2], [2, 1, 3, 3]]).T
-        x = np.array([0, 0.5, 1])
+    def test_antiderivative_continuity(self, xp):
+        c = xp.asarray([[2, 1, 2, 2], [2, 1, 3, 3]]).T
+        x = xp.asarray([0, 0.5, 1], dtype=xp.float64)
 
         p = PPoly(c, x)
         ip = p.antiderivative()
@@ -1558,26 +1583,30 @@ class TestPPoly:
         p2 = ip.derivative()
         xp_assert_close(p2.c, p.c)
 
-    def test_integrate(self):
+    def test_integrate(self, xp):
         rng = np.random.RandomState(1234)
-        x = np.sort(np.r_[0, rng.rand(11), 1])
-        y = rng.rand(len(x))
+        x_np = np.sort(np.r_[0, rng.rand(11), 1])
+        y_np = rng.rand(len(x_np))
 
-        spl = splrep(x, y, s=0, k=5)
-        pp = PPoly.from_spline(spl)
+        t_np, c_np, k = splrep(x_np, y_np, s=0, k=5)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
         a, b = 0.3, 0.9
         ig = pp.integrate(a, b)
 
         ipp = pp.antiderivative()
         xp_assert_close(ig, ipp(b) - ipp(a), check_0d=False)
-        xp_assert_close(ig, splint(a, b, spl), check_0d=False)
+        xp_assert_close(
+            ig, xp.asarray(splint(a, b, (t_np, c_np, k)), dtype=xp.float64),
+            check_0d=False
+        )
 
         a, b = -0.3, 0.9
         ig = pp.integrate(a, b, extrapolate=True)
         xp_assert_close(ig, ipp(b) - ipp(a), check_0d=False)
 
-        assert np.isnan(pp.integrate(a, b, extrapolate=False)).all()
+        assert xp.all(xp.isnan(pp.integrate(a, b, extrapolate=False)))
 
     def test_integrate_readonly(self):
         x = np.array([1, 2, 4])
@@ -1591,108 +1620,138 @@ class TestPPoly:
 
             assert np.isfinite(vals).all()
 
-    def test_integrate_periodic(self):
-        x = np.array([1, 2, 4])
-        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+    def test_integrate_periodic(self, xp):
+        x_np = np.array([1, 2, 4])
+        c_np = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        x, c = xp.asarray(x_np), xp.asarray(c_np)
 
         P = PPoly(c, x, extrapolate='periodic')
         I = P.antiderivative()
 
-        period_int = np.asarray(I(4) - I(1))
+        period_int = xp.asarray(I(4) - I(1), dtype=xp.float64)
 
         xp_assert_close(P.integrate(1, 4), period_int)
         xp_assert_close(P.integrate(-10, -7), period_int)
-        xp_assert_close(P.integrate(-10, -4), np.asarray(2 * period_int))
+        xp_assert_close(P.integrate(-10, -4), xp.asarray(2 * period_int))
 
         xp_assert_close(P.integrate(1.5, 2.5),
-                        np.asarray(I(2.5) - I(1.5)))
+                        xp.asarray(I(2.5) - I(1.5), dtype=xp.float64))
         xp_assert_close(P.integrate(3.5, 5),
-                        np.asarray(I(2) - I(1) + I(4) - I(3.5)))
+                        xp.asarray(I(2) - I(1) + I(4) - I(3.5), dtype=xp.float64))
         xp_assert_close(P.integrate(3.5 + 12, 5 + 12),
-                        np.asarray(I(2) - I(1) + I(4) - I(3.5)))
-        xp_assert_close(P.integrate(3.5, 5 + 12),
-                        np.asarray(I(2) - I(1) + I(4) - I(3.5) + 4 * period_int))
+                        xp.asarray(I(2) - I(1) + I(4) - I(3.5), dtype=xp.float64))
+        xp_assert_close(
+            P.integrate(3.5, 5 + 12),
+            xp.asarray(
+                I(2) - I(1) + I(4) - I(3.5) + 4 * period_int, dtype=xp.float64
+            )
+        )
         xp_assert_close(P.integrate(0, -1),
-                        np.asarray(I(2) - I(3)))
+                        xp.asarray(I(2) - I(3), dtype=xp.float64))
         xp_assert_close(P.integrate(-9, -10),
-                        np.asarray(I(2) - I(3)))
+                        xp.asarray(I(2) - I(3), dtype=xp.float64))
         xp_assert_close(P.integrate(0, -10),
-                        np.asarray(I(2) - I(3) - 3 * period_int))
+                        xp.asarray(I(2) - I(3) - 3 * period_int, dtype=xp.float64))
 
-    def test_roots(self):
-        x = np.linspace(0, 1, 31)**2
-        y = np.sin(30*x)
+    @make_xp_test_case((PPoly, "roots"))
+    def test_roots(self, xp):
+        x_np = np.linspace(0, 1, 31)**2
+        y_np = np.sin(30*x_np)
 
-        spl = splrep(x, y, s=0, k=3)
-        pp = PPoly.from_spline(spl)
+        (t_np, c_np, k) = splrep(x_np, y_np, s=0, k=3)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
         r = pp.roots()
         r = r[(r >= 0 - 1e-15) & (r <= 1 + 1e-15)]
-        xp_assert_close(r, sproot(spl), atol=1e-15)
+        xp_assert_close(r, xp.asarray(sproot((t_np, c_np, k))), atol=1e-15)
 
-    def test_roots_idzero(self):
+    @make_xp_test_case((PPoly, "roots"))
+    def test_roots_idzero(self, xp):
         # Roots for piecewise polynomials with identically zero
         # sections.
-        c = np.array([[-1, 0.25], [0, 0], [-1, 0.25]]).T
-        x = np.array([0, 0.4, 0.6, 1.0])
+        c = xp.asarray([[-1, 0.25], [0, 0], [-1, 0.25]], dtype=xp.float64).T
+        x = xp.asarray([0, 0.4, 0.6, 1.0], dtype=xp.float64)
 
         pp = PPoly(c, x)
-        xp_assert_equal(pp.roots(),
-                        [0.25, 0.4, np.nan, 0.6 + 0.25])
-
+        xp_assert_equal(
+            pp.roots(),
+            xp.asarray([0.25, 0.4, xp.nan, 0.6 + 0.25], dtype=xp.float64),
+        )
         # ditto for p.solve(const) with sections identically equal const
         const = 2.
-        c1 = c.copy()
+        c1 = _xp_copy_to_numpy(c)
         c1[1, :] += const
+        c1 = xp.asarray(c1)
         pp1 = PPoly(c1, x)
 
-        xp_assert_equal(pp1.solve(const),
-                        [0.25, 0.4, np.nan, 0.6 + 0.25])
+        xp_assert_equal(
+            pp1.solve(const),
+            xp.asarray([0.25, 0.4, xp.nan, 0.6 + 0.25], dtype=xp.float64),
+        )
 
-    def test_roots_all_zero(self):
+    @make_xp_test_case((PPoly, "roots"), (PPoly, "solve"))
+    def test_roots_all_zero(self, xp):
         # test the code path for the polynomial being identically zero everywhere
         c = [[0], [0]]
         x = [0, 1]
-        p = PPoly(c, x)
-        xp_assert_equal(p.roots(), [0, np.nan])
-        xp_assert_equal(p.solve(0), [0, np.nan])
-        xp_assert_equal(p.solve(1), [])
+        p = PPoly(xp.asarray(c), xp.asarray(x))
+        xp_assert_equal(p.roots(), xp.asarray([0, xp.nan], dtype=xp.float64))
+        xp_assert_equal(p.solve(0), xp.asarray([0, xp.nan], dtype=xp.float64))
+        xp_assert_equal(p.solve(1), xp.asarray([], dtype=xp.float64))
 
         c = [[0, 0], [0, 0]]
         x = [0, 1, 2]
-        p = PPoly(c, x)
-        xp_assert_equal(p.roots(), [0, np.nan, 1, np.nan])
-        xp_assert_equal(p.solve(0), [0, np.nan, 1, np.nan])
-        xp_assert_equal(p.solve(1), [])
+        p = PPoly(xp.asarray(c), xp.asarray(x))
+        xp_assert_equal(
+            p.roots(), xp.asarray([0, xp.nan, 1, xp.nan], dtype=xp.float64)
+        )
+        xp_assert_equal(
+            p.solve(0), xp.asarray([0, xp.nan, 1, xp.nan], dtype=xp.float64)
+        )
+        xp_assert_equal(p.solve(1), xp.asarray([], dtype=xp.float64))
 
-    def test_roots_repeated(self):
+    @make_xp_test_case((PPoly, "roots"))
+    def test_roots_repeated(self, xp):
         # Check roots repeated in multiple sections are reported only
         # once.
 
         # [(x + 1)**2 - 1, -x**2] ; x == 0 is a repeated root
-        c = np.array([[1, 0, -1], [-1, 0, 0]]).T
-        x = np.array([-1, 0, 1])
+        c = xp.asarray([[1, 0, -1], [-1, 0, 0]], dtype=xp.float64).T
+        x = xp.asarray([-1, 0, 1], dtype=xp.float64)
 
         pp = PPoly(c, x)
-        xp_assert_equal(pp.roots(), np.asarray([-2.0, 0.0]))
-        xp_assert_equal(pp.roots(extrapolate=False), np.asarray([0.0]))
+        xp_assert_equal(pp.roots(), xp.asarray([-2.0, 0.0], dtype=xp.float64))
+        xp_assert_equal(
+            pp.roots(extrapolate=False), xp.asarray([0.0], dtype=xp.float64)
+        )
 
-    def test_roots_discont(self):
+    @make_xp_test_case((PPoly, "roots"), (PPoly, "solve"))
+    def test_roots_discont(self, xp):
         # Check that a discontinuity across zero is reported as root
-        c = np.array([[1], [-1]]).T
-        x = np.array([0, 0.5, 1])
+        c = xp.asarray([[1], [-1]], dtype=xp.float64).T
+        x = xp.asarray([0, 0.5, 1], dtype=xp.float64)
         pp = PPoly(c, x)
-        xp_assert_equal(pp.roots(), np.asarray([0.5]))
-        xp_assert_equal(pp.roots(discontinuity=False), np.asarray([]))
+        xp_assert_equal(pp.roots(), xp.asarray([0.5], dtype=xp.float64))
+        xp_assert_equal(
+            pp.roots(discontinuity=False), xp.asarray([], dtype=xp.float64)
+        )
 
         # ditto for a discontinuity across y:
-        xp_assert_equal(pp.solve(0.5), np.asarray([0.5]))
-        xp_assert_equal(pp.solve(0.5, discontinuity=False), np.asarray([]))
+        xp_assert_equal(pp.solve(0.5), xp.asarray([0.5], dtype=xp.float64))
+        xp_assert_equal(
+            pp.solve(0.5, discontinuity=False), xp.asarray([], dtype=xp.float64)
+        )
 
-        xp_assert_equal(pp.solve(1.5), np.asarray([]))
-        xp_assert_equal(pp.solve(1.5, discontinuity=False), np.asarray([]))
+        xp_assert_equal(pp.solve(1.5), xp.asarray([], dtype=xp.float64))
+        xp_assert_equal(
+            pp.solve(1.5, discontinuity=False), xp.asarray([], dtype=xp.float64)
+        )
 
-    def test_roots_random(self):
+    @make_xp_test_case((PPoly, "roots"), (PPoly, "solve"))
+    @skip_xp_backends(np_only=True, reason="solve returns object array for c.ndim > 2")
+    def test_roots_random(self, xp):
         # Check high-order polynomials with random coefficients
         rng = np.random.RandomState(1234)
 
@@ -1700,13 +1759,12 @@ class TestPPoly:
 
         for extrapolate in (True, False):
             for order in range(0, 20):
-                x = np.unique(np.r_[0, 10 * rng.rand(30), 10])
-                c = 2*rng.rand(order+1, len(x)-1, 2, 3) - 1
-
+                x_np = np.unique(np.r_[0, 10 * rng.rand(30), 10])
+                c_np = 2*rng.rand(order+1, len(x_np)-1, 2, 3) - 1
+                x, c = xp.asarray(x_np), xp.asarray(c_np)
                 pp = PPoly(c, x)
-                for y in [0, rng.random()]:
+                for y in [0.0, float(rng.random())]:
                     r = pp.solve(y, discontinuity=False, extrapolate=extrapolate)
-
                     for i in range(2):
                         for j in range(3):
                             rr = r[i,j]
@@ -1754,10 +1812,11 @@ class TestPPoly:
                 res = res[~np.isnan(res)]
                 xp_assert_close(res, np.zeros_like(res), atol=1e-10)
 
-    def test_extrapolate_attr(self):
+    def test_extrapolate_attr(self, xp):
         # [ 1 - x**2 ]
-        c = np.array([[-1, 0, 1]]).T
-        x = np.array([0, 1])
+        c_np = np.array([[-1, 0, 1]]).T
+        x_np = np.array([0, 1])
+        c, x = xp.asarray(c_np), xp.asarray(x_np)
 
         for extrapolate in [True, False, None]:
             pp = PPoly(c, x, extrapolate=extrapolate)
@@ -1765,15 +1824,24 @@ class TestPPoly:
             pp_i = pp.antiderivative()
 
             if extrapolate is False:
-                assert np.isnan(pp([-0.1, 1.1])).all()
-                assert np.isnan(pp_i([-0.1, 1.1])).all()
-                assert np.isnan(pp_d([-0.1, 1.1])).all()
-                assert pp.roots() == [1]
+                assert xp.all(xp.isnan(pp(xp.asarray([-0.1, 1.1]))))
+                assert xp.all(xp.isnan(pp_i(xp.asarray([-0.1, 1.1]))))
+                assert xp.all(xp.isnan(pp_d(xp.asarray([-0.1, 1.1]))))
+                if not is_cupy(xp):
+                    xp_assert_equal(
+                        pp.roots(), xp.asarray([1.0], dtype=xp.float64)
+                    )
             else:
-                xp_assert_close(pp([-0.1, 1.1]), [1-0.1**2, 1-1.1**2])
-                assert not np.isnan(pp_i([-0.1, 1.1])).any()
-                assert not np.isnan(pp_d([-0.1, 1.1])).any()
-                xp_assert_close(pp.roots(), np.asarray([1.0, -1.0]))
+                xp_assert_close(
+                    pp([-0.1, 1.1]),
+                    xp.asarray([1-0.1**2, 1-1.1**2], dtype=xp.float64),
+                )
+                assert not xp.any(xp.isnan(pp_i(xp.asarray([-0.1, 1.1]))))
+                assert not xp.any(xp.isnan(pp_d(xp.asarray([-0.1, 1.1]))))
+                if not is_cupy(xp):
+                    xp_assert_close(
+                        pp.roots(), xp.asarray([1.0, -1.0], dtype=xp.float64)
+                    )
 
 
 @make_xp_test_case(BPoly)
@@ -1834,20 +1902,22 @@ class TestBPoly:
         xp_assert_close(bp(3.4, 1), xp.asarray(-6 * 0.6, dtype=xp.float64))
         xp_assert_close(bp(-1.3, 1), xp.asarray(2 * (0.7/2), dtype=xp.float64))
 
-    def test_descending(self):
+    def test_descending(self, xp):
         rng = np.random.RandomState(0)
 
         power = 3
         for m in [10, 20, 30]:
-            x = np.sort(rng.uniform(0, 10, m + 1))
-            ca = rng.uniform(-0.1, 0.1, size=(power + 1, m))
+            x_np = np.sort(rng.uniform(0, 10, m + 1))
+            ca_np = rng.uniform(-0.1, 0.1, size=(power + 1, m))
             # We need only to flip coefficients to get it right!
-            cd = ca[::-1].copy()
+            cd_np = ca_np[::-1].copy()
+
+            x, ca, cd = map(xp.asarray, (x_np, ca_np, cd_np))
 
             pa = BPoly(ca, x, extrapolate=True)
-            pd = BPoly(cd[:, ::-1], x[::-1], extrapolate=True)
+            pd = BPoly(xp.flip(cd, axis=-1), xp.flip(x, axis=-1), extrapolate=True)
 
-            x_test = rng.uniform(-10, 20, 100)
+            x_test = xp.asarray(rng.uniform(-10, 20, 100))
             xp_assert_close(pa(x_test), pd(x_test), rtol=1e-13)
             xp_assert_close(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
 
@@ -1868,10 +1938,11 @@ class TestBPoly:
                 xp_assert_close(pa_i(b) - pa_i(a), pd_i(b) - pd_i(a),
                                 rtol=1e-12)
 
-    def test_multi_shape(self):
+    def test_multi_shape(self, xp):
         rng = np.random.RandomState(1234)
-        c = rng.rand(6, 2, 1, 2, 3)
-        x = np.array([0, 0.5, 1])
+        c_np = rng.rand(6, 2, 1, 2, 3)
+        x_np = np.array([0, 0.5, 1])
+        c, x = xp.asarray(c_np), xp.asarray(x_np)
         p = BPoly(c, x)
         assert p.x.shape == x.shape
         assert p.c.shape == c.shape
@@ -1900,20 +1971,20 @@ class TestBPoly:
         xp_assert_close(bp(0.4), xp.asarray(3 * 0.6*0.6, dtype=xp.float64))
         xp_assert_close(bp(1.7), xp.asarray(2 * (0.7/2)**2, dtype=xp.float64))
 
-    def test_extrapolate_attr(self):
-        x = [0, 2]
-        c = [[3], [1], [4]]
+    def test_extrapolate_attr(self, xp):
+        x = xp.asarray([0, 2], dtype=xp.float64)
+        c = xp.asarray([[3], [1], [4]], dtype=xp.float64)
         bp = BPoly(c, x)
 
         for extrapolate in (True, False, None):
             bp = BPoly(c, x, extrapolate=extrapolate)
             bp_d = bp.derivative()
             if extrapolate is False:
-                assert np.isnan(bp([-0.1, 2.1])).all()
-                assert np.isnan(bp_d([-0.1, 2.1])).all()
+                assert xp.all(xp.isnan(bp(xp.asarray([-0.1, 2.1]))))
+                assert xp.all(xp.isnan(bp_d(xp.asarray([-0.1, 2.1]))))
             else:
-                assert not np.isnan(bp([-0.1, 2.1])).any()
-                assert not np.isnan(bp_d([-0.1, 2.1])).any()
+                assert not xp.any(xp.isnan(bp(xp.asarray([-0.1, 2.1]))))
+                assert not xp.any(xp.isnan(bp_d(xp.asarray([-0.1, 2.1]))))
 
 
 @make_xp_test_case(BPoly)
@@ -1951,16 +2022,17 @@ class TestBPolyCalculus:
             xpp = xp.linspace(x[0], x[-1], 21)
             xp_assert_close(bp(xpp), pp(xpp))
 
-    def test_deriv_inplace(self):
+    def test_deriv_inplace(self, xp):
         rng = np.random.RandomState(1234)
         m, k = 5, 8   # number of intervals, order
-        x = np.sort(rng.random(m))
-        c = rng.random((k, m-1))
+        x_np = np.sort(rng.random(m))
+        c_np = rng.random((k, m-1))
 
         # test both real and complex coefficients
-        for cc in [c.copy(), c*(1. + 2.j)]:
+        for cc_np in [c_np.copy(), c_np*(1. + 2.j)]:
+            cc, x = xp.asarray(cc_np), xp.asarray(x_np)
             bp = BPoly(cc, x)
-            xpp = np.linspace(x[0], x[-1], 21)
+            xpp = xp.linspace(x[0], x[-1], 21)
             for i in range(k):
                 xp_assert_close(bp(xpp, i), bp.derivative(i)(xpp))
 
@@ -1984,13 +2056,13 @@ class TestBPolyCalculus:
                                          0.5 * xx * (xx/2. - 1) + 3./4),
                         atol=1e-12, rtol=1e-12)
 
-    def test_der_antider(self):
+    def test_der_antider(self, xp):
         rng = np.random.RandomState(1234)
-        x = np.sort(rng.random(11))
-        c = rng.random((4, 10, 2, 3))
+        x = xp.asarray(np.sort(rng.random(11)), dtype=xp.float64)
+        c = xp.asarray(rng.random((4, 10, 2, 3)), dtype=xp.float64)
         bp = BPoly(c, x)
 
-        xx = np.linspace(x[0], x[-1], 100)
+        xx = xp.linspace(x[0], x[-1], 100)
         xp_assert_close(bp.antiderivative().derivative()(xx),
                         bp(xx), atol=1e-12, rtol=1e-12)
 
@@ -2006,10 +2078,10 @@ class TestBPolyCalculus:
         xp_assert_close(bp.antiderivative(2)(xx),
                         pp.antiderivative(2)(xx), atol=1e-12, rtol=1e-12)
 
-    def test_antider_continuous(self):
+    def test_antider_continuous(self, xp):
         rng = np.random.RandomState(1234)
-        x = np.sort(rng.random(11))
-        c = rng.random((4, 10))
+        x = xp.asarray(np.sort(rng.random(11)), dtype=xp.float64)
+        c = xp.asarray(rng.random((4, 10)), dtype=xp.float64)
         bp = BPoly(c, x).antiderivative()
 
         xx = bp.x[1:-1]
@@ -2026,20 +2098,20 @@ class TestBPolyCalculus:
         xp_assert_close(bp.integrate(0, 1),
                         pp.integrate(0, 1), atol=1e-12, rtol=1e-12, check_0d=False)
 
-    def test_integrate_extrap(self):
-        c = [[1]]
-        x = [0, 1]
+    def test_integrate_extrap(self, xp):
+        c = xp.asarray([[1]], dtype=xp.float64)
+        x = xp.asarray([0, 1], dtype=xp.float64)
         b = BPoly(c, x)
 
         # default is extrapolate=True
-        xp_assert_close(b.integrate(0, 2), np.asarray(2.),
+        xp_assert_close(b.integrate(0, 2), xp.asarray(2., dtype=xp.float64),
                         atol=1e-14, check_0d=False)
 
         # .integrate argument overrides self.extrapolate
         b1 = BPoly(c, x, extrapolate=False)
-        assert np.isnan(b1.integrate(0, 2))
+        assert xp.isnan(b1.integrate(0, 2))
         xp_assert_close(b1.integrate(0, 2, extrapolate=True),
-                        np.asarray(2.), atol=1e-14, check_0d=False)
+                        xp.asarray(2., dtype=xp.float64), atol=1e-14, check_0d=False)
 
     def test_integrate_periodic(self, xp):
         x = xp.asarray([1, 2, 4])
@@ -2092,22 +2164,22 @@ class TestPolyConversions:
         xp_assert_close(pp(xv), bp(xv))
         xp_assert_close(pp(xv), pp1(xv))
 
-    def test_bp_from_pp_random(self):
+    def test_bp_from_pp_random(self, xp):
         rng = np.random.RandomState(1234)
         m, k = 5, 8   # number of intervals, order
-        x = np.sort(rng.random(m))
-        c = rng.random((k, m-1))
+        x = xp.asarray(np.sort(rng.random(m)))
+        c = xp.asarray(rng.random((k, m-1)))
         pp = PPoly(c, x)
         bp = BPoly.from_power_basis(pp)
         pp1 = PPoly.from_bernstein_basis(bp)
 
-        xv = np.linspace(x[0], x[-1], 21)
+        xv = xp.linspace(x[0], x[-1], 21)
         xp_assert_close(pp(xv), bp(xv))
         xp_assert_close(pp(xv), pp1(xv))
 
     def test_pp_from_bp(self, xp):
-        x = xp.asarray([0, 1, 3])
-        c = xp.asarray([[3, 3], [1, 1], [4, 2]])
+        x = xp.asarray([0, 1, 3], dtype=xp.float64)
+        c = xp.asarray([[3, 3], [1, 1], [4, 2]], dtype=xp.float64)
         bp = BPoly(c, x)
         pp = PPoly.from_bernstein_basis(bp)
         bp1 = BPoly.from_power_basis(pp)
@@ -2116,10 +2188,10 @@ class TestPolyConversions:
         xp_assert_close(bp(xv), pp(xv))
         xp_assert_close(bp(xv), bp1(xv))
 
-    def test_broken_conversions(self):
+    def test_broken_conversions(self, xp):
         # regression test for gh-10597: from_power_basis only accepts PPoly etc.
-        x = [0, 1, 3]
-        c = [[3, 3], [1, 1], [4, 2]]
+        x = xp.asarray([0, 1, 3], dtype=xp.float64)
+        c = xp.asarray([[3, 3], [1, 1], [4, 2]], dtype=xp.float64)
         pp = PPoly(c, x)
         with assert_raises(TypeError):
             PPoly.from_bernstein_basis(pp)
@@ -2129,114 +2201,143 @@ class TestPolyConversions:
             BPoly.from_power_basis(bp)
 
 
+@make_xp_test_case(BPoly)
 class TestBPolyFromDerivatives:
-    def test_make_poly_1(self):
-        c1 = BPoly._construct_from_derivatives(0, 1, [2], [3])
-        xp_assert_close(c1, [2., 3.])
+    def test_make_poly_1(self, xp):
+        c1 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([2], dtype=xp.float64), xp.asarray([3], dtype=xp.float64)
+        )
+        xp_assert_close(c1, xp.asarray([2., 3.], dtype=xp.float64))
 
-    def test_make_poly_2(self):
-        c1 = BPoly._construct_from_derivatives(0, 1, [1, 0], [1])
-        xp_assert_close(c1, [1., 1., 1.])
+    def test_make_poly_2(self, xp):
+        c1 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([1, 0], dtype=xp.float64),
+            xp.asarray([1], dtype=xp.float64)
+        )
+        xp_assert_close(c1, xp.asarray([1., 1., 1.], dtype=xp.float64))
 
         # f'(0) = 3
-        c2 = BPoly._construct_from_derivatives(0, 1, [2, 3], [1])
-        xp_assert_close(c2, [2., 7./2, 1.])
+        c2 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([2, 3], dtype=xp.float64),
+            xp.asarray([1], dtype=xp.float64)
+        )
+        xp_assert_close(c2, xp.asarray([2., 7./2, 1.], dtype=xp.float64))
 
         # f'(1) = 3
-        c3 = BPoly._construct_from_derivatives(0, 1, [2], [1, 3])
-        xp_assert_close(c3, [2., -0.5, 1.])
+        c3 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([2], dtype=xp.float64),
+            xp.asarray([1, 3], dtype=xp.float64)
+        )
+        xp_assert_close(c3, xp.asarray([2., -0.5, 1.], dtype=xp.float64))
 
-    def test_make_poly_3(self):
+    def test_make_poly_3(self, xp):
         # f'(0)=2, f''(0)=3
-        c1 = BPoly._construct_from_derivatives(0, 1, [1, 2, 3], [4])
-        xp_assert_close(c1, [1., 5./3, 17./6, 4.])
+        c1 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([1, 2, 3], dtype=xp.float64),
+            xp.asarray([4], dtype=xp.float64)
+        )
+        xp_assert_close(c1, xp.asarray([1., 5./3, 17./6, 4.], dtype=xp.float64))
 
         # f'(1)=2, f''(1)=3
-        c2 = BPoly._construct_from_derivatives(0, 1, [1], [4, 2, 3])
-        xp_assert_close(c2, [1., 19./6, 10./3, 4.])
+        c2 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([1], dtype=xp.float64),
+            xp.asarray([4, 2, 3], dtype=xp.float64),
+        )
+        xp_assert_close(c2, xp.asarray([1., 19./6, 10./3, 4.], dtype=xp.float64))
 
         # f'(0)=2, f'(1)=3
-        c3 = BPoly._construct_from_derivatives(0, 1, [1, 2], [4, 3])
-        xp_assert_close(c3, [1., 5./3, 3., 4.])
+        c3 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([1, 2], dtype=xp.float64),
+            xp.asarray([4, 3], dtype=xp.float64),
+        )
+        xp_assert_close(c3, xp.asarray([1., 5./3, 3., 4.], dtype=xp.float64))
 
-    def test_make_poly_12(self):
+    def test_make_poly_12(self, xp):
         rng = np.random.RandomState(12345)
-        ya = np.r_[0, rng.random(5)]
-        yb = np.r_[0, rng.random(5)]
+        ya = xp.asarray(np.r_[0, rng.random(5)])
+        yb = xp.asarray(np.r_[0, rng.random(5)])
 
         c = BPoly._construct_from_derivatives(0, 1, ya, yb)
-        pp = BPoly(c[:, None], [0, 1])
+        pp = BPoly(c[:, None], xp.asarray([0, 1], dtype=xp.float64))
         for j in range(6):
             xp_assert_close(pp(0.), ya[j], check_0d=False)
             xp_assert_close(pp(1.), yb[j], check_0d=False)
             pp = pp.derivative()
 
-    def test_raise_degree(self):
+    def test_raise_degree(self, xp):
         rng = np.random.RandomState(12345)
-        x = [0, 1]
+        x = xp.asarray([0, 1], dtype=xp.float64)
         k, d = 8, 5
-        c = rng.random((k, 1, 2, 3, 4))
+        c = xp.asarray(rng.random((k, 1, 2, 3, 4)), dtype=xp.float64)
         bp = BPoly(c, x)
 
         c1 = BPoly._raise_degree(c, d)
         bp1 = BPoly(c1, x)
 
-        xp = np.linspace(0, 1, 11)
+        xp = xp.linspace(0, 1, 11)
         xp_assert_close(bp(xp), bp1(xp))
 
-    def test_xi_yi(self):
-        assert_raises(ValueError, BPoly.from_derivatives, [0, 1], [0])
+    def test_xi_yi(self, xp):
+        assert_raises(
+            ValueError, BPoly.from_derivatives,
+            xp.asarray([0, 1], dtype=xp.float64), xp.asarray([0], dtype=xp.float64)
+        )
 
-    def test_coords_order(self):
-        xi = [0, 0, 1]
-        yi = [[0], [0], [0]]
+    def test_coords_order(self, xp):
+        xi = xp.asarray([0, 0, 1], dtype=xp.float64)
+        yi = xp.asarray([[0], [0], [0]], dtype=xp.float64)
         assert_raises(ValueError, BPoly.from_derivatives, xi, yi)
 
-    def test_zeros(self):
-        xi = [0, 1, 2, 3]
-        yi = [[0, 0], [0], [0, 0], [0, 0]]  # NB: will have to raise the degree
+    def test_zeros(self, xp):
+        xi = xp.asarray([0, 1, 2, 3], dtype=xp.float64)
+        # NB: will have to raise the degree
+        yi = list(
+            map(
+                lambda x: xp.asarray(x, dtype=xp.float64),
+                [[0, 0], [0], [0, 0], [0, 0]],
+            )
+        )
         pp = BPoly.from_derivatives(xi, yi)
         assert pp.c.shape == (4, 3)
 
         ppd = pp.derivative()
-        for xp in [0., 0.1, 1., 1.1, 1.9, 2., 2.5]:
-            xp_assert_close(pp(xp), np.asarray(0.0))
-            xp_assert_close(ppd(xp), np.asarray(0.0))
+        for x_p in [0., 0.1, 1., 1.1, 1.9, 2., 2.5]:
+            xp_assert_close(pp(x_p), xp.asarray(0.0, dtype=xp.float64))
+            xp_assert_close(ppd(x_p), xp.asarray(0.0, dtype=xp.float64))
 
-
-    def _make_random_mk(self, m, k):
+    def _make_random_mk(self, m, k, xp):
         # k derivatives at each breakpoint
         rng = np.random.RandomState(1234)
-        xi = np.asarray([1. * j**2 for j in range(m+1)])
-        yi = [rng.random(k) for j in range(m+1)]
+        xi = xp.asarray([1. * j**2 for j in range(m+1)], dtype=xp.float64)
+        yi = [xp.asarray(rng.random(k)) for j in range(m+1)]
         return xi, yi
 
-    def test_random_12(self):
+    def test_random_12(self, xp):
         m, k = 5, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
         pp = BPoly.from_derivatives(xi, yi)
 
         for order in range(k//2):
-            xp_assert_close(pp(xi), [yy[order] for yy in yi])
+            xp_assert_close(pp(xi), xp.stack([yy[order] for yy in yi]))
             pp = pp.derivative()
 
-    def test_order_zero(self):
+    def test_order_zero(self, xp):
         m, k = 5, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
         assert_raises(ValueError, BPoly.from_derivatives,
                 **dict(xi=xi, yi=yi, orders=0))
 
-    def test_orders_too_high(self):
+    def test_orders_too_high(self, xp):
         m, k = 5, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
 
         BPoly.from_derivatives(xi, yi, orders=2*k-1)   # this is still ok
         assert_raises(ValueError, BPoly.from_derivatives,   # but this is not
                 **dict(xi=xi, yi=yi, orders=2*k))
 
-    def test_orders_global(self):
+    def test_orders_global(self, xp):
         m, k = 5, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
 
         # ok, this is confusing. Local polynomials will be of the order 5
         # which means that up to the 2nd derivatives will be used at each point
@@ -2246,7 +2347,7 @@ class TestBPolyFromDerivatives:
         for j in range(order//2+1):
             xp_assert_close(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
             pp = pp.derivative()
-        assert not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
+        assert not xp.all(xpx.isclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
 
         # now repeat with `order` being even: on each interval, it uses
         # order//2 'derivatives' @ the right-hand endpoint and
@@ -2256,11 +2357,11 @@ class TestBPolyFromDerivatives:
         for j in range(order//2):
             xp_assert_close(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
             pp = pp.derivative()
-        assert not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
+        assert not xp.all(xpx.isclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
 
-    def test_orders_local(self):
+    def test_orders_local(self, xp):
         m, k = 7, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
 
         orders = [o + 1 for o in range(m)]
         for i, x in enumerate(xi[1:-1]):
@@ -2268,13 +2369,13 @@ class TestBPolyFromDerivatives:
             for j in range(orders[i] // 2 + 1):
                 xp_assert_close(pp(x - 1e-12), pp(x + 1e-12))
                 pp = pp.derivative()
-            assert not np.allclose(pp(x - 1e-12), pp(x + 1e-12))
+            assert not xp.all(xpx.isclose(pp(x - 1e-12), pp(x + 1e-12)))
 
-    def test_yi_trailing_dims(self):
+    def test_yi_trailing_dims(self, xp):
         rng = np.random.RandomState(1234)
         m, k = 7, 5
-        xi = np.sort(rng.random(m+1))
-        yi = rng.random((m+1, k, 6, 7, 8))
+        xi = xp.asarray(np.sort(rng.random(m+1)))
+        yi = xp.asarray(rng.random((m+1, k, 6, 7, 8)))
         pp = BPoly.from_derivatives(xi, yi)
         assert pp.c.shape == (2*k, m, 6, 7, 8)
 

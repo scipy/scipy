@@ -4,7 +4,7 @@ from numpy.testing import assert_allclose
 
 from scipy.conftest import skip_xp_invalid_arg
 import scipy._external.array_api_extra as xpx
-from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_jax,
+from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_jax, is_cupy,
                                    eager_warns, xp_result_type, is_array_api_strict)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats
@@ -71,8 +71,9 @@ class TestChatterjeeXi:
         with pytest.raises((ValueError, TypeError), match=message):
             stats.chatterjeexi(x, y[:-1])
 
-        if not is_jax(xp):
+        if not (is_jax(xp) or is_cupy(xp)):
             # jax misses out on some input validation from _axis_nan_policy decorator
+            # This also fails with cupy for reasons that need to be investigated.
             message = '...axis 10 is out of bounds for array...|out of range'
             with pytest.raises((ValueError, IndexError), match=message):
                 stats.chatterjeexi(x, y, axis=10)

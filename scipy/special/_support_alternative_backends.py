@@ -15,6 +15,7 @@ from . import _basic
 from . import _spfun_stats
 from . import _ufuncs
 
+# mypy: disable-error-code=dict-item
 
 def _special_namespace_for(xp):
     spx = scipy_namespace_for(xp)
@@ -43,15 +44,15 @@ class _FuncInfo:
     # Should map backend names to alternative function names.
     alt_names_map: dict[str, str] | None = None
     # Some functions only take integer arrays for some arguments.
-    int_only: tuple[bool] | None = None
+    int_only: tuple[bool, ...] | None = None
     # For testing purposes, whether tests should only use positive values
     # for some arguments. If bool and equal to True, restrict to positive
     # values for all arguments. To restrict only some arguments to positive
     # values, pass a tuple of bool of the same length as the number of
     # arguments, the ith entry in the tuple controls positive_only for
     # the ith argument. To make backend specific choices for positive_only,
-    # pass in a dict mapping backend names to bool or tuple[bool].
-    positive_only: bool | tuple[bool] | dict[str, tuple[bool]] = False
+    # pass in a dict mapping backend names to bool or tuple[bool, ...].
+    positive_only: bool | tuple[bool, ...] | dict[str, tuple[bool, ...]] = False
     # Some special functions are not ufuncs and ufunc-specific tests
     # should not be applied to these.
     is_ufunc: bool = True
@@ -61,9 +62,9 @@ class _FuncInfo:
     # Python int.
     # Can also take a dict mapping backends to such tuples if an argument being
     # Python int only is backend specific.
-    python_int_only: dict[str, tuple[bool]] | tuple[bool] | None = None
+    python_int_only: dict[str, tuple[bool, ...]] | tuple[bool, ...] | None = None
     # Some functions which seem to be scalar also accept 0d arrays.
-    scalar_or_0d_only: dict[str, tuple[bool]] | tuple[bool] | None = None
+    scalar_or_0d_only: dict[str, tuple[bool, ...]] | tuple[bool, ...] | None = None
     # Some functions may not work well with very large integer valued arguments.
     test_large_ints: bool = True
     # Some non-ufunc special functions don't decay 0d arrays to scalar.
@@ -80,7 +81,7 @@ class _FuncInfo:
     # Place a backend in this tuple if `func` is available as `xp.func` but not
     # available in the `scipy.special` namespace for this backend.
     # One example is `jax.numpy.sinc` being available but not `jax.scipy.special.sinc`.
-    backends_with_func_in_xp: tuple[str] = ()
+    backends_with_func_in_xp: tuple[str, ...] = ()
 
     @property
     def name(self):
@@ -926,5 +927,5 @@ globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
 # digamma is an alias for psi. Define here so it also has alternative backend
 # support. Add noqa because the linter gets confused by the sneaky way psi
 # is inserted into globals above.
-digamma = psi  # noqa: F821
+digamma = psi  # type:ignore[name-defined]  # noqa: F821
 __all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma"]

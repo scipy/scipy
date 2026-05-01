@@ -69,9 +69,8 @@ py3.extension_module('_lbfgsb',
     '_lbfgsbmodule.c',
     'src/lbfgsb.c',
   ],
-  include_directories: 'src/',
   dependencies: [lapack_dep, np_dep],
-  include_directories: ['../_build_utils/src'],
+  include_directories: ['src/'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -146,7 +145,6 @@ py3.extension_module('_slsqplib',
     'src/nnls.c'
   ],
   dependencies: [lapack_dep, np_dep],
-  include_directories: ['../_build_utils/src'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'

@@ -2,7 +2,6 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
-import warnings
 import threading
 import types
 import numpy as np
@@ -13,7 +12,7 @@ from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
 from scipy import special
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import check_random_state
-from scipy.linalg.blas import drot, get_blas_funcs
+from scipy.linalg.blas import get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
 from . import _covariance, _rcont
@@ -296,7 +295,7 @@ class multi_rv_frozen:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     @property
     def random_state(self):
@@ -4005,21 +4004,10 @@ class multinomial_gen(multi_rv_generic):
         """
         eps = np.finfo(np.result_type(np.asarray(p), np.float32)).eps * 10
         p = np.array(p, dtype=np.float64, copy=True)
-        p_adjusted = 1. - p[..., :-1].sum(axis=-1)
-        # only make adjustment when it's significant
-        i_adjusted = np.abs(1 - p.sum(axis=-1)) > eps
-        p[i_adjusted, -1] = p_adjusted[i_adjusted]
-
-        if np.any(i_adjusted):
-            message = ("Some rows of `p` do not sum to 1.0 within tolerance of "
-                       f"{eps=}. Currently, the last element of these rows is adjusted "
-                       "to compensate, but this condition will produce NaNs "
-                       "beginning in SciPy 1.18.0. Please ensure that rows of `p` sum "
-                       "to 1.0 to avoid futher disruption.")
-            warnings.warn(message, FutureWarning, stacklevel=3)
 
         # true for bad p
-        pcond = np.any(p < 0, axis=-1)
+        pcond = np.abs(1 - p.sum(axis=-1)) > eps
+        pcond |= np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
         n = np.array(n, dtype=int, copy=True)
@@ -4217,6 +4205,10 @@ class multinomial_gen(multi_rv_generic):
         %(_doc_callparams_note)s
         """
         n, p, npcond = self._process_parameters(n, p)
+        if np.any(npcond):
+            message = ("`multinomial.rvs` requires `n > 0`, `(p > 0).all()`, and"
+                       "`p.sum() == 1`.")
+            raise ValueError(message)
         random_state = self._get_random_state(random_state)
         return random_state.multinomial(n, p, size)
 
@@ -4732,6 +4724,8 @@ class random_correlation_gen(multi_rv_generic):
         if not (m.flags.c_contiguous and m.dtype == np.float64 and
                 m.shape[0] == m.shape[1]):
             raise ValueError()
+
+        drot = get_blas_funcs('rot', dtype=np.float64, ilp64='preferred')
 
         d = m.shape[0]
         for i in range(d-1):

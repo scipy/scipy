@@ -684,8 +684,8 @@ const char *ber_doc = R"(
 
     See Also
     --------
-    bei : the corresponding real part
-    berp : the derivative of bei
+    bei : the corresponding imaginary part
+    berp : the derivative of ber
     jv : Bessel function of the first kind
 
     References
@@ -726,7 +726,7 @@ const char *berp_doc = R"(
 
     See Also
     --------
-    ber
+    ber : Kelvin function ber
 
     References
     ----------
@@ -1688,38 +1688,44 @@ const char *expi_doc = R"(
 const char *erf_doc = R"(
     erf(z, out=None)
 
-    Returns the error function of complex argument.
+    Error function of real or complex argument.
 
-    It is defined as ``2/sqrt(pi)*integral(exp(-t**2), t=0..z)``.
+    .. math::
+
+        \operatorname{erf}(z) = \frac{2}{\sqrt{\pi}} \int_0^z e^{-t^2} dt
 
     Parameters
     ----------
-    x : ndarray
+    z : ndarray
         Input array.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     res : scalar or ndarray
-        The values of the error function at the given points `x`.
+        The values of the error function at the given points `z`.
 
     See Also
     --------
-    erfc, erfinv, erfcinv, wofz, erfcx, erfi
+    erfc, erfcx, erfi, erfinv, erfcinv, wofz
 
     Notes
     -----
-    The cumulative of the unit normal distribution is given by
-    ``Phi(z) = 1/2[1 + erf(z/sqrt(2))]``.
+    The cumulative distribution function (CDF) of the standard normal distribution can 
+    be expressed in terms of the error function as
+
+    .. math::
+
+        \Phi(z) = \frac{1}{2}
+        \left[1 + \operatorname{erf} \left(\frac{z}{\sqrt{2}}\right)\right]
 
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Error_function
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover,
-        1972. http://www.math.sfu.ca/~cbm/aands/page_297.htm
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [3] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
 
@@ -1728,17 +1734,23 @@ const char *erf_doc = R"(
     >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.erf(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$erf(x)$')
+    >>> z = np.linspace(-3, 3)
+    >>> plt.plot(z, special.erf(z))
+    >>> plt.xlabel('$z$')
+    >>> plt.ylabel('$erf(z)$')
     >>> plt.show()
     )";
 
 const char *erfc_doc = R"(
     erfc(x, out=None)
 
-    Complementary error function, ``1 - erf(x)``.
+    Complementary error function.
+
+    The complementary error function is defined as
+
+    .. math::
+
+        \operatorname{erfc}(x) = 1 - \operatorname{erf}(x)
 
     Parameters
     ----------
@@ -1776,7 +1788,13 @@ const char *erfc_doc = R"(
 const char *erfi_doc = R"(
     erfi(z, out=None)
 
-    Imaginary error function, ``-i erf(i z)``.
+    Imaginary error function.
+
+    The imaginary error function is defined as
+
+    .. math::
+
+        \operatorname{erfi}(z) = -i \operatorname{erf}(i z)
 
     Parameters
     ----------
@@ -1819,7 +1837,13 @@ const char *erfi_doc = R"(
 const char *erfcx_doc = R"(
     erfcx(x, out=None)
 
-    Scaled complementary error function, ``exp(x**2) * erfc(x)``.
+    Scaled complementary error function.
+
+    The scaled complementary error function is defined as
+
+    .. math::
+
+        \operatorname{erfcx}(x) = e^{x^2} \operatorname{erfc}(x)
 
     Parameters
     ----------
@@ -1863,7 +1887,7 @@ const char *erfcx_doc = R"(
 const char *expit_doc = R"(
     expit(x, out=None)
 
-    Expit (a.k.a. logistic sigmoid) ufunc for ndarrays.
+    Expit (also known as logistic sigmoid) ufunc for ndarrays.
 
     The expit function, also known as the logistic sigmoid function, is
     defined as ``expit(x) = 1/(1+exp(-x))``.  It is the inverse of the
@@ -2021,7 +2045,7 @@ const char *fresnel_doc = R"(
 
     .. math::
 
-       S(z) &= \int_0^z \sin(\pi t^2 /2) dt \\
+       S(z) &= \int_0^z \sin(\pi t^2 /2) dt, \\
        C(z) &= \int_0^z \cos(\pi t^2 /2) dt.
 
     See [dlmf]_ for details.
@@ -2050,27 +2074,45 @@ const char *fresnel_doc = R"(
     Examples
     --------
     >>> import numpy as np
-    >>> import scipy.special as sc
+    >>> from scipy.special import fresnel, erf
 
-    As z goes to infinity along the real axis, S and C converge to 0.5.
+    First, we verify the following limits:
 
-    >>> S, C = sc.fresnel([0.1, 1, 10, 100, np.inf])
+    .. math::
+
+         \lim_{z \to \infty} S(z) = \lim_{z \to \infty} C(z) = 1/2.
+
+    >>> S, C = fresnel([0.1, 1, 10, 100, np.inf])
     >>> S
     array([0.00052359, 0.43825915, 0.46816998, 0.4968169 , 0.5       ])
     >>> C
     array([0.09999753, 0.7798934 , 0.49989869, 0.4999999 , 0.5       ])
 
-    They are related to the error function `erf`.
+    Next, we verify the following relation to the error function:
 
-    >>> z = np.array([1, 2, 3, 4])
-    >>> zeta = 0.5 * np.sqrt(np.pi) * (1 - 1j) * z
-    >>> S, C = sc.fresnel(z)
-    >>> C + 1j*S
-    array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
-           0.60572079+0.496313j  , 0.49842603+0.42051575j])
-    >>> 0.5 * (1 + 1j) * sc.erf(zeta)
-    array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
-           0.60572079+0.496313j  , 0.49842603+0.42051575j])
+    .. math::
+
+        C(z) + i S(z) = \frac{1 + i}{2}
+        \operatorname{erf}\left(\frac{\sqrt{\pi}(1 - i)}{2} z\right).
+
+
+    >>> z = np.linspace(-10, 10)
+    >>> S, C = fresnel(z)
+    >>> RHS = (1 + 1j)/2 * erf((np.sqrt(np.pi)*(1 - 1j))/2*z)
+    >>> np.allclose(C + 1j*S, RHS)
+    True
+
+    Finally, we plot :math:`C(z)` against :math:`S(z)` to get the Euler or Cornu spiral.
+
+    >>> import matplotlib.pyplot as plt
+    >>> z = np.linspace(-10, 10, num=1000)
+    >>> S, C = fresnel(z)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(C, S)
+    >>> ax.set_aspect('equal')
+    >>> ax.set_xlabel('$C(z)$')
+    >>> ax.set_ylabel('$S(z)$')
+    >>> plt.show()
     )";
 
 const char *gamma_doc = R"(
@@ -6615,8 +6657,8 @@ const char *struve_h_doc = R"(
     function is defined as,
 
     .. math::
-        H_v(x) = (z/2)^{v + 1} \sum_{n=0}^\infty
-        \frac{(-1)^n (z/2)^{2n}}{\Gamma(n + \frac{3}{2}) \Gamma(n + v + \frac{3}{2})},
+        H_v(x) = (x/2)^{v + 1} \sum_{n=0}^\infty
+        \frac{(-1)^n (x/2)^{2n}}{\Gamma(n + \frac{3}{2}) \Gamma(n + v + \frac{3}{2})},
 
     where :math:`\Gamma` is the gamma function.
 
@@ -6628,7 +6670,7 @@ const char *struve_h_doc = R"(
         Argument of the Struve function (float; must be positive unless `v` is
         an integer).
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
@@ -6637,15 +6679,15 @@ const char *struve_h_doc = R"(
 
     See Also
     --------
-    modstruve: Modified Struve function
+    modstruve : Modified Struve function
 
     Notes
     -----
     Three methods discussed in [1]_ are used to evaluate the Struve function:
 
     - power series
-    - expansion in Bessel functions (if :math:`|z| < |v| + 20`)
-    - asymptotic large-z expansion (if :math:`z \geq 0.7v + 12`)
+    - expansion in Bessel functions (if :math:`|x| < |v| + 20`)
+    - asymptotic large-x expansion (if :math:`x \geq 0.7v + 12`)
 
     Rounding errors are estimated based on the largest terms in the sums, and
     the result associated with the smallest error is returned.
@@ -6679,7 +6721,7 @@ const char *struve_h_doc = R"(
     array([0.64676373, 0.80781195, 0.48811605])
 
     Compute the Struve function for several orders at several points by
-    providing arrays for `v` and `z`. The arrays have to be broadcastable
+    providing arrays for `v` and `x`. The arrays have to be broadcastable
     to the correct shapes.
 
     >>> orders = np.array([[1], [2], [3]])
@@ -6775,7 +6817,7 @@ const char *struve_l_doc = R"(
     array([  1.10275979,  23.72821578, 399.24709139])
 
     Compute the modified Struve function for several orders at several
-    points by providing arrays for `v` and `z`. The arrays have to be
+    points by providing arrays for `v` and `x`. The arrays have to be
     broadcastable to the correct shapes.
 
     >>> orders = np.array([[1], [2], [3]])
@@ -6908,9 +6950,11 @@ const char *wofz_doc = R"(
 
     Faddeeva function.
 
-    Returns the value of the Faddeeva function for complex argument::
+    Returns the value of the Faddeeva function for complex argument:
 
-        exp(-z**2) * erfc(-i*z)
+    .. math::
+
+        w(z) = e^{-z^2} \operatorname{erfc}(-i z)
 
     Parameters
     ----------

@@ -35,6 +35,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
@@ -66,6 +67,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -74,20 +76,20 @@ jobs:
           cache: "pip"
           cache-dependency-path: "environment.yml"
 
-      - name: Install rtools (mingw-w64)
+      - name: Set rtools location (mingw-w64)
         run: |
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
-          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+          echo "c:\rtools45\ucrt64\bin" >> $env:GITHUB_PATH
 
       - name: pip-packages
         run: |
           # 2.0.0 is currently our oldest supported NumPy version
-          python -m pip install numpy==2.0.0 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
+          python -m pip install numpy==2.0.0 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0" pkgconf
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
         run: |
-          spin build --with-scipy-openblas
+          $env:FORCE_PKGCONF_PYPI=1
+          spin build --with-scipy-openblas=32
 
       - name: Test
         run: |
@@ -108,6 +110,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -115,20 +118,20 @@ jobs:
           python-version: "3.12"
           architecture: "arm64"
 
-      - name: Set up Flang and pkgconf for ARM64
-        uses: ./.github/windows_arm64_steps
-
       - name: pip-packages
         run: |
-          pip install numpy cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
+          # `numpy<2.4.3` pin is due to np.linalg.solve crash, see gh-24774
+          pip install "numpy<2.4.3" cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
           python -m pip install -r requirements/openblas.txt
+          python -m pip install -r requirements/pkgconf.txt
 
       - name: Build
         run: |
+          $env:Path = "C:\Program Files\LLVM\bin;" + $env:Path
           $env:cc = "clang-cl"
           $env:cxx = "clang-cl"
-          $env:fc = "flang-new"
-          spin build --with-scipy-openblas --setup-args="-Duse-pythran=false"
+          $env:fc = "flang"
+          spin build --with-scipy-openblas=32 --setup-args="-Duse-pythran=false"
 
       - name: Test
         run: |

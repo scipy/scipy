@@ -270,7 +270,7 @@ add_newdoc("bdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     """)
 
@@ -322,7 +322,7 @@ add_newdoc("bdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     """)
 
@@ -370,7 +370,7 @@ add_newdoc("bdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
     """)
 
 add_newdoc("bdtrik",
@@ -2243,29 +2243,38 @@ add_newdoc(
 
     Computes the inverse of the complementary error function.
 
-    In the complex domain, there is no unique complex number w satisfying
-    erfc(w)=z. This indicates a true inverse function would be multivalued.
-    When the domain restricts to the real, 0 < x < 2, there is a unique real
-    number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+    In the complex domain, there is no unique complex number :math:`w` satisfying
+    :math:`\\operatorname{erfc}(w) = z`. This indicates a true inverse function
+    would be multivalued.
+    When the domain restricts to the real interval :math:`0 < x < 2`, there is
+    a unique real number satisfying
 
-    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
+    .. math::
+
+        \\operatorname{erfc}(\\operatorname{erfcinv}(x)) = x
+
+    It is related to the inverse of the error function by
+
+    .. math::
+
+        \\operatorname{erfcinv}(1 - x) = \\operatorname{erfinv}(x)
 
     Parameters
     ----------
     y : ndarray
-        Argument at which to evaluate. Domain: [0, 2]
+        Argument at which to evaluate. Domain: :math:`[0, 2]`
     out : ndarray, optional
         Optional output array for the function values
 
     Returns
     -------
     erfcinv : scalar or ndarray
-        The inverse of erfc of y, element-wise
+        The inverse of :math:`\\operatorname{erfc}` of :math:`y`, element-wise
 
     See Also
     --------
-    erf : Error function of a complex argument
-    erfc : Complementary error function, ``1 - erf(x)``
+    erf : Error function
+    erfc : Complementary error function
     erfinv : Inverse of the error function
 
     Examples
@@ -3638,7 +3647,7 @@ add_newdoc("gdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -3757,7 +3766,7 @@ add_newdoc("gdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -3935,7 +3944,7 @@ add_newdoc("gdtrib",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
     .. [2] Chandrupatla, Tirupathi R.
            "A new hybrid quadratic/bisection algorithm for finding the zero of a
            nonlinear function without using derivatives".
@@ -4158,7 +4167,7 @@ add_newdoc("hyp0f1",
     References
     ----------
     .. [1] Wolfram MathWorld, "Confluent Hypergeometric Limit Function",
-           http://mathworld.wolfram.com/ConfluentHypergeometricLimitFunction.html
+           https://mathworld.wolfram.com/ConfluentHypergeometricLimitFunction.html
 
     Examples
     --------
@@ -4435,7 +4444,7 @@ add_newdoc("kn",
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/
+           https://netlib.org/amos/
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265.
@@ -4873,7 +4882,7 @@ add_newdoc("nbdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -4999,7 +5008,7 @@ add_newdoc("nbdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -5111,7 +5120,7 @@ add_newdoc(
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -5206,30 +5215,11 @@ add_newdoc("nbdtrik",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
-
-    Formula 26.5.26 of [2]_ or [3]_,
-
-    .. math::
-        \sum_{j=k + 1}^\infty {{n + j - 1}
-        \choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
-
-    is used to reduce calculation of the cumulative distribution function to
-    that of a regularized incomplete beta :math:`I`.
-
-    Computation of `k` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `k`.
+    This function wraps routines from the Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [3] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.E24
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -6695,10 +6685,10 @@ add_newdoc("shichi",
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/6.2.E15 and https://dlmf.nist.gov/6.2.E16
     .. [3] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
     .. [4] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point
-           arithmetic" (Version 0.19) http://mpmath.org/
+           arithmetic" (Version 0.19) https://mpmath.org/
 
     Examples
     --------
@@ -6808,10 +6798,10 @@ add_newdoc("sici",
            https://dlmf.nist.gov/6.2.E9, https://dlmf.nist.gov/6.2.E12,
            and https://dlmf.nist.gov/6.2.E13
     .. [3] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
     .. [4] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point
-           arithmetic" (Version 0.19) http://mpmath.org/
+           arithmetic" (Version 0.19) https://mpmath.org/
 
     Examples
     --------
@@ -7194,7 +7184,7 @@ add_newdoc(
 
     References
     ----------
-    .. [1] Boost C++ Libraries, http://www.boost.org/
+    .. [1] Boost C++ Libraries, https://www.boost.org/
 
     Examples
     --------
@@ -7339,7 +7329,7 @@ add_newdoc("stdtrit",
 
     References
     ----------
-    .. [1] Boost C++ Libraries, http://www.boost.org/
+    .. [1] Boost C++ Libraries, https://www.boost.org/
 
     Examples
     --------
@@ -7558,7 +7548,7 @@ add_newdoc("yn",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------

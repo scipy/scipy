@@ -24,6 +24,10 @@
 #include "src/vode.h"
 #include "src/zvode.h"
 
+/* NPY type code matching CBLAS_INT (int or npy_int64 depending on ILP64) */
+#define CBLAS_INT_NPY (sizeof(CBLAS_INT) == 8 ? NPY_INT64 : NPY_INT)
+
+
 // Error handling macros
 #define PYERR(errobj, message) { \
     PyErr_SetString(errobj, message); \
@@ -348,27 +352,9 @@ dvode_jacobian_thunk(int neq, double t, double* y, int ml, int mu,
         return;
     }
 
-    // Copy result to output array with proper layout handling
-
-    if ((current_dvode_callback->jac_type == 0) && PyArray_IS_C_CONTIGUOUS(result_array)) {
-        // Full Jacobian in C-contiguous format - can use memcpy
-        double *src_data = (double*)PyArray_DATA(result_array);
-        memcpy(pd, src_data, neq * nrowpd * sizeof(double));
-    } else {
-        // Use stride-aware copy for any other layout (F-contiguous, banded, etc.)
-        npy_intp m;
-
-        if (current_dvode_callback->jac_type == 3) {
-            // Banded Jacobian: user provides compressed format (ml + mu + 1 rows)
-            // DVODE expects it in work array with leading dimension nrowpd
-            m = ml + mu + 1;
-        } else {
-            // Full Jacobian
-            m = neq;
-        }
-
-        copy_array_to_fortran(pd, nrowpd, m, neq, result_array);
-    }
+    // Copy C-contiguous result into Fortran-ordered pd (DVODE expects column-major).
+    npy_intp m = (current_dvode_callback->jac_type == 3) ? (ml + mu + 1) : neq;
+    copy_array_to_fortran(pd, nrowpd, m, neq, result_array);
 
     Py_DECREF(result_array);
     Py_DECREF(result);
@@ -704,7 +690,8 @@ dvode_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args, PyObject* kwdict)
     int neq, itol, iopt = 1, lrw, liw;
     double *y, t, *rtol, *atol, *rwork;
     double *state_doubles = NULL;
-    int *iwork, *state_ints = NULL;
+    int *state_ints = NULL;
+    CBLAS_INT *iwork;
     dvode_callback_t callback = {0};
     vode_common_struct_t solver_state = {0};
 
@@ -767,9 +754,9 @@ dvode_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args, PyObject* kwdict)
     rwork = (double*)PyArray_DATA(ap_rwork);
     lrw = (int)PyArray_SIZE(ap_rwork);
 
-    ap_iwork = (PyArrayObject*)PyArray_ContiguousFromObject(iwork_obj, NPY_INT, 1, 1);
+    ap_iwork = (PyArrayObject*)PyArray_ContiguousFromObject(iwork_obj, CBLAS_INT_NPY, 1, 1);
     if (!ap_iwork) { PYERR(PyExc_ValueError, "iwork must be a 1-D int array"); }
-    iwork = (int*)PyArray_DATA(ap_iwork);
+    iwork = (CBLAS_INT*)PyArray_DATA(ap_iwork);
     liw = (int)PyArray_SIZE(ap_iwork);
 
     // Setup callback for DVODE
@@ -935,7 +922,8 @@ zvode_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args, PyObject* kwdict)
     ZVODE_CPLX_TYPE *y, *zwork;
     double t, *rtol, *atol, *rwork;
     double *state_doubles = NULL;
-    int *iwork, *state_ints = NULL;
+    int *state_ints = NULL;
+    CBLAS_INT *iwork;
     dvode_callback_t callback = {0};
     zvode_common_struct_t solver_state = {0};
 
@@ -1004,9 +992,9 @@ zvode_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args, PyObject* kwdict)
     rwork = (double*)PyArray_DATA(ap_rwork);
     lrw = (int)PyArray_SIZE(ap_rwork);
 
-    ap_iwork = (PyArrayObject*)PyArray_ContiguousFromObject(iwork_obj, NPY_INT, 1, 1);
+    ap_iwork = (PyArrayObject*)PyArray_ContiguousFromObject(iwork_obj, CBLAS_INT_NPY, 1, 1);
     if (!ap_iwork) { PYERR(PyExc_ValueError, "iwork must be a 1-D int array"); }
-    iwork = (int*)PyArray_DATA(ap_iwork);
+    iwork = (CBLAS_INT*)PyArray_DATA(ap_iwork);
     liw = (int)PyArray_SIZE(ap_iwork);
 
     // Setup callback for ZVODE

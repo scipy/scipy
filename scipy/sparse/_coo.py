@@ -1656,6 +1656,15 @@ def _ravel_coords(coords, shape, order='C'):
 def isspmatrix_coo(x):
     """Is `x` of coo_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -1802,6 +1811,15 @@ class coo_matrix(spmatrix, _coo_base):
     A sparse matrix in COOrdinate format.
 
     Also known as the 'ijv' or 'triplet' format.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         coo_matrix(D)

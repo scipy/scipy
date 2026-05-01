@@ -1,0 +1,10 @@
+[build-system]
+requires = ["meson-python>=0.16.0", "cython>=3.2.0", "numpy>=2.0.0", "scipy"]
+build-backend = "mesonpy"
+
+[project]
+name = "ilp64_test_package"
+version = "0.1.0"
+license = "BSD-3-Clause"
+requires-python = ">=3.12"
+dependencies = ["scipy", "numpy"]

@@ -1461,6 +1461,33 @@ def hermitenorm(n, monic=False):
     The polynomials :math:`He_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2/2}`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import hermitenorm
+
+    >>> p_monic = hermitenorm(3)
+    >>> p_monic
+    poly1d([ 1.,  0., -3.,  0.])
+
+    Evaluate the probabilist's Hermite polynomial of degree 3 at x = 1:
+
+    >>> p_monic(1)
+    np.float64(-2.0)
+
+    Plot probabilist's Hermite polynomials of degree 0 to 4:
+    
+    >>> x = np.linspace(-3, 3, 100)
+    >>> fig, ax = plt.subplots()
+    >>> for i in range(5):
+    ...     ax.plot(x, hermitenorm(i)(x), label=f"n={i}")
+    >>> plt.title(f"Probabilist's Hermite polynomials $He_n$")
+    >>> plt.xlabel("x")
+    >>> plt.ylabel(rf"$He_n(x)$")
+    >>> plt.legend(loc="best")
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -2547,6 +2574,32 @@ def roots_sh_legendre(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+
+    Compute nodes and weights for a 7th-order shifted Gauss-Legendre quadrature:
+
+    >>> from scipy.special import roots_sh_legendre, eval_sh_legendre
+    >>> x, w = roots_sh_legendre(7)
+    >>> x
+    array([0.02544604, 0.12923441, 0.29707742, 0.5, 0.70292258, 0.87076559,
+        0.97455396])
+    >>> w
+    array([0.06474248, 0.1398527, 0.19091503, 0.20897959, 0.19091503, 0.1398527,
+        0.06474248])
+
+    Verify that ``x`` are the roots of the degree-7 shifted Legendre polynomial:
+
+    >>> eval_sh_legendre(7, x)
+    array([5.55111512e-16, 1.11022302e-16,  3.33066907e-16,  0.00000000e+00,
+        -2.22044605e-16, -1.11022302e-16, -1.85962357e-15])
+
+    The sum of the weights for shifted Gauss-Legendre quadrature is always 1:
+
+    >>> x, w, mu = roots_sh_legendre(10, mu=True)
+    >>> mu 
+    1.0  # Sum of weights of shifted Gauss-Legendre quadrature is always 1
 
     """
     x, w = roots_legendre(n)

@@ -103,6 +103,14 @@ class NonlinearConstraint:
     complex plane. The scheme '3-point' is more accurate than '2-point' but
     requires twice as many operations.
 
+    Whilst `NonlinearConstraint` can be used to specify constraints for many
+    different optimizers, the class is not responsible for enforcing those constraints,
+    that is done by the individual minimizer. Importantly, the `keep_feasible` keyword
+    is only ever used within the :ref:`trust-constr <optimize.minimize-trustconstr>`
+    optimizer, the `keep_feasible` keyword is not used by other `minimize` methods.
+    The other methods may, or may not, keep solutions strictly feasible during
+    operation.
+
     Examples
     --------
     Constrain ``x[0] < sin(x[1]) + 1.9``
@@ -162,6 +170,17 @@ class LinearConstraint:
         finite difference approximation of the Jacobian may still violate
         the constraint; it is recommended to provide an analytical Jacobian
         function to handle this case.
+
+    Notes
+    -----
+    Whilst `LinearConstraint` can be used to specify constraints for many
+    different optimizers, the class is not responsible for enforcing those constraints,
+    that is done by the individual minimizer. Importantly, the `keep_feasible` keyword
+    is only ever used within the :ref:`trust-constr <optimize.minimize-trustconstr>`
+    optimizer, the `keep_feasible` keyword is not used by other `minimize` methods.
+    The other methods may, or may not, keep solutions strictly feasible during
+    operation.
+
     """
     def _input_validation(self):
         if self.A.ndim != 2:
@@ -256,10 +275,21 @@ class Bounds:
         Whether to keep the constraint components feasible throughout
         iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
+
+    Notes
+    -----
+    Whilst `Bounds` can be used to specify box-bounds for many
+    different optimizers, the class is not responsible for enforcing those constraints,
+    that is done by the individual minimizer. Importantly, the `keep_feasible` keyword
+    is only ever used within the :ref:`trust-constr <optimize.minimize-trustconstr>`
+    optimizer, the `keep_feasible` keyword is not used by other `minimize` methods.
+    The other methods may, or may not, keep solutions strictly feasible during
+    operation.
+
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def _input_validation(self):
         try:
@@ -353,7 +383,7 @@ class PreparedConstraint:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, constraint, x0, sparse_jacobian=None,
                  finite_diff_bounds=(-np.inf, np.inf)):

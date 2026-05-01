@@ -1,20 +1,22 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 
+import itertools
 import os
+
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose)
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
+from scipy._lib._testutils import _run_concurrent_barrier
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
 from scipy.spatial.distance import cdist, minkowski
 from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
 
-import itertools
 
 @pytest.fixture(params=[KDTree, cKDTree])
 def kdtree_type(request):
@@ -427,8 +429,9 @@ def test_random_ball_vectorized(kdtree_type):
     assert_(isinstance(r[0, 0], list))
 
 
+@pytest.mark.thread_unsafe(reason="Test spawns worker threads")
 @pytest.mark.fail_slow(5)
-def test_query_ball_point_multithreading(kdtree_type):
+def test_query_ball_point_multithreaded_workers(kdtree_type):
     np.random.seed(0)
     n = 5000
     k = 2
@@ -445,6 +448,33 @@ def test_query_ball_point_multithreading(kdtree_type):
     for i in range(n):
         if l1[i] or l3[i]:
             assert_array_equal(l1[i], l3[i])
+
+
+@pytest.mark.thread_unsafe(reason="Test spawns worker threads")
+@pytest.mark.fail_slow(5)
+def test_query_ball_point_multithreaded_explicit(kdtree_type):
+    rng = np.random.RandomState(3819232613)
+    n = 10000
+    k = 2
+
+    points = rng.randn(n, k)
+    tree = kdtree_type(points)
+    max_workers = 10
+    assert(n//max_workers * max_workers == n)
+    search_points = rng.randn(max_workers, n//max_workers, k)
+    all_search_points = np.reshape(search_points, (n, k))
+    radius = 0.3
+
+    def worker_func(i, tree, search_points):
+        return tree.query_ball_point(search_points[i], radius)
+
+    results = _run_concurrent_barrier(
+        max_workers, worker_func, tree, search_points)
+
+    serial_results = tree.query_ball_point(all_search_points, radius)
+    # the results from concurrent searching the tree should match the results
+    # from searching the same set of points in one thread
+    assert_array_equal(np.sort(np.concatenate(results)), np.sort(serial_results))
 
 
 class two_trees_consistency:
@@ -1074,11 +1104,13 @@ def simulate_periodic_box(kdtree, data, k, boxsize, p):
     return result['dd'][:, :k], result['ii'][:, :k]
 
 
+@pytest.mark.fail_asan
 def test_ckdtree_memuse():
     # unit test adaptation of gh-5630
 
     # NOTE: this will fail when run via valgrind,
     # because rss is no longer a reliable memory usage indicator.
+    # It was also observed to be flaky under ASan.
 
     try:
         import resource
@@ -1415,11 +1447,7 @@ def test_kdtree_complex_data():
         t.query_ball_point(points, r=1)
 
 
-def test_kdtree_tree_access():
-    # Test KDTree.tree can be used to traverse the KDTree
-    np.random.seed(1234)
-    points = np.random.rand(100, 4)
-    t = KDTree(points)
+def visit_tree(i, t, points):
     root = t.tree
 
     assert isinstance(root, KDTree.innernode)
@@ -1427,6 +1455,7 @@ def test_kdtree_tree_access():
 
     # Visit the tree and assert some basic properties for each node
     nodes = [root]
+
     while nodes:
         n = nodes.pop(-1)
 
@@ -1443,6 +1472,25 @@ def test_kdtree_tree_access():
             assert n.children == n.less.children + n.greater.children
             nodes.append(n.greater)
             nodes.append(n.less)
+
+
+
+def test_kdtree_tree_access():
+    # Test KDTree.tree can be used to traverse the KDTree
+    np.random.seed(1234)
+    points = np.random.rand(100, 4)
+    t = KDTree(points)
+    visit_tree(0, t, points)
+
+
+@pytest.mark.thread_unsafe(reason="Spawns worker threads")
+def test_multithreaded_tree_access():
+    # Test that lazily generating KDTree.tree works when tree generation
+    # is reqested from multiple threads
+    rng = np.random.RandomState(3116978525)
+    points = rng.rand(100, 4)
+    t = KDTree(points)
+    _run_concurrent_barrier(10, visit_tree, t, points)
 
 
 def test_kdtree_attributes():
@@ -1462,7 +1510,7 @@ def test_kdtree_attributes():
 
     assert_array_equal(t.maxes, np.amax(points, axis=0))
     assert_array_equal(t.mins, np.amin(points, axis=0))
-    assert t.data is points
+    assert t.data.base is points
 
 
 @pytest.mark.parametrize("kdtree_class", [KDTree, cKDTree])
@@ -1548,3 +1596,31 @@ def test_gh_18800(incantation):
     tree = incantation(points, 10)
     tree.query(arr_like, 1)
     tree.query_ball_point(arr_like, 200)
+
+
+def test_immutable(kdtree_type):
+    rng = np.random.RandomState(3965682946)
+    n = 1000
+    k = 2
+    points = rng.rand(n, k)
+    T = kdtree_type(points, boxsize=1)
+    object_attrs = {
+        'm': 3,
+        'n': 3,
+        'size': 100,
+        'leafsize': 12,
+        'tree': None,
+    }
+    for attr, attr_val in object_attrs.items():
+        with pytest.raises(AttributeError, match="(is not writable|has no setter)"):
+            setattr(T, attr, attr_val)
+    array_attrs = {
+        'data': np.array([0, 0], dtype=np.float64),
+        'indices': 7,
+        'boxsize': 4,
+        'maxes': 1.5,
+        'mins': 1.5,
+    }
+    for attr, attr_val in array_attrs.items():
+        with pytest.raises(ValueError, match="destination is read-only"):
+            getattr(T, attr)[:] = attr_val

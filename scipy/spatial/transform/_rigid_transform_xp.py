@@ -211,7 +211,7 @@ def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
     # would raise heterogeneous error types and messages for different frameworks.
     # However, the error only mimics numpy's error message and does not provide the
     # same amount of context.
-    if not broadcastable(matrix.shape, vec.shape):
+    if not broadcastable(matrix.shape, vec.shape):  # type:ignore[arg-type]
         raise ValueError("operands could not be broadcast together")
     return (matrix @ vec)[..., :3, 0]
 
@@ -222,9 +222,9 @@ def pow(matrix: Array, n: float | Array) -> Array:
     # If n is an array, we sanitize it to a scalar and promote quat and n to
     # the same dtype.
     if is_array_api_obj(n):
-        if n.shape == (1,):
-            n = n[0]
-        elif n.ndim != 0:
+        if n.shape == (1,):  # type:ignore[union-attr]
+            n = n[0]  # type:ignore[index]
+        elif n.ndim != 0:  # type:ignore[union-attr]
             raise ValueError("Array exponent must be a scalar")
         matrix, n = xp_promote(matrix, n, force_floating=True, xp=xp)
 
@@ -281,14 +281,14 @@ def mean(
     if weights is None:
         quats_mean = quat_mean(quats, axis=axis)
     else:
-        neg_weights = weights < 0
+        neg_weights = weights < 0  # type:ignore[operator]
         any_neg_weights = xp.any(neg_weights)
         if not lazy and any_neg_weights:
             raise ValueError("`weights` must be non-negative.")
-        if weights.shape != matrix.shape[:-2]:
+        if weights.shape != matrix.shape[:-2]:  # type:ignore[union-attr]
             raise ValueError(
                 f"Expected `weights` to match transform shape, got shape "
-                f"{weights.shape} for {matrix.shape[:-2]} transformations."
+                f"{weights.shape} for {matrix.shape[:-2]} transformations."  # type:ignore[union-attr]
             )
         quats_mean = quat_mean(quats, weights=weights, axis=axis)
     r_mean = quat_as_matrix(quats_mean)
@@ -297,8 +297,8 @@ def mean(
     if weights is None:
         t_mean = xp.mean(t, axis=axis)
     else:
-        norm = xp.sum(weights[..., None], axis=axis)
-        wsum = xp.sum(t * weights[..., None], axis=axis)
+        norm = xp.sum(weights[..., None], axis=axis)  # type:ignore[index]
+        wsum = xp.sum(t * weights[..., None], axis=axis)  # type:ignore[index]
         t_mean = wsum / norm
 
     tf = _create_transformation_matrix(t_mean, r_mean)
@@ -318,9 +318,9 @@ def setitem(
     xp = array_namespace(matrix)
     if isinstance(indexer, EllipsisType):
         return xpx.at(matrix)[indexer].set(value)
-    if is_array_api_obj(indexer) and indexer.dtype == xp.bool:
-        return xpx.at(matrix)[indexer].set(value)
-    return xpx.at(matrix)[indexer, ...].set(value)
+    if is_array_api_obj(indexer) and indexer.dtype == xp.bool:  # type:ignore[union-attr]
+        return xpx.at(matrix)[indexer].set(value)  # type:ignore[index]
+    return xpx.at(matrix)[indexer, ...].set(value)  # type:ignore[index]
 
 
 def normalize_dual_quaternion(dual_quat: Array) -> Array:

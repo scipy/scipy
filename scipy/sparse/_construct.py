@@ -3,10 +3,10 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
-           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
+__all__ = ['kron', 'kronsum', 'hstack', 'vstack', 'block_diag',
            'diags_array', 'block_array', 'eye_array', 'random_array',
-           'expand_dims', 'permute_dims', 'swapaxes', 'matrix_transpose']
+           'expand_dims', 'permute_dims', 'swapaxes', 'matrix_transpose',
+           'spdiags', 'eye', 'identity', 'bmat', 'rand', 'random', 'diags']
 
 import numbers
 import math

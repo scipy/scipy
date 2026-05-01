@@ -32,7 +32,7 @@ was investigated. The study notably concluded:
 > ischemic stroke in women [...]
 
 The article lists studies of various cardiovascular events. Let's focus on the
-ischemic stoke in women.
+ischemic stroke in women.
 
 The following table summarizes the results of the experiment in which
 participants took aspirin or a placebo on a regular basis for several years.

@@ -1,10 +1,12 @@
 import warnings
 from types import GenericAlias
+import os
 
 import numpy as np
 from scipy.special import factorial
 from scipy._lib._util import (_asarray_validated, float_factorial, check_random_state,
                               _transition_to_rng)
+from scipy._lib._array_api import xp_capabilities
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate",
@@ -52,7 +54,7 @@ class _Interpolator1D:
     __slots__ = ('_y_axis', '_y_extra_shape', 'dtype')
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, xi=None, yi=None, axis=None):
         self._y_axis = axis
@@ -459,9 +461,25 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
         return P.derivatives(x, der=np.amax(der)+1)[der]
 
 
+@xp_capabilities(out_of_scope=True)
 def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     """
     Estimate the Taylor polynomial of f at x by polynomial fitting.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated and will be removed in SciPy 1.20.0. Use the
+        following code instead:
+
+        .. code-block:: python
+
+            import numpy as np
+
+            def f(z): return np.exp(z**2)  # example function
+            N = 10  # number of terms in the Taylor expansion
+            zz = np.exp(2j * np.pi * np.arange(N) / N)  # roots of unity
+            c = np.fft.fft(f(zz)) / N
+            c = np.real(c)  # c must be real by symmetry
+
 
     Parameters
     ----------
@@ -518,6 +536,10 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     >>> plt.show()
 
     """
+    _warn_skips = (os.path.dirname(__file__),)
+    msg = ("`approximate_taylor_polynomial` is deprecated and will be removed in "
+           "SciPy 1.20.0.")
+    warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     if order is None:
         order = degree
 

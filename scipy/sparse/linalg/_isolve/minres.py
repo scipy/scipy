@@ -246,7 +246,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
         # Compute the next plane rotation Qk
 
-        gamma = norm([gbar, beta])       # gammak
+        gamma = norm([gbar, beta]).astype(xtype)  # gammak
         gamma = max(gamma, eps)
         cs = gbar / gamma             # ck
         sn = beta / gamma             # sk

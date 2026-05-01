@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from types import EllipsisType, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
 from collections.abc import Callable
 
 import numpy as np
@@ -424,6 +424,9 @@ class RigidTransform:
     >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, matrix: ArrayLike, normalize: bool = True, copy: bool = True):
         """Initialize from a 4x4 transformation matrix.
@@ -1022,7 +1025,7 @@ class RigidTransform:
         if not all(isinstance(x, RigidTransform) for x in transforms):
             raise TypeError("input must contain RigidTransform objects only")
 
-        xp = array_namespace(transforms[0].as_matrix())
+        xp = array_namespace(transforms[0].as_matrix())  # type:ignore[index]
         matrix = xp.concat(
             [xpx.atleast_nd(x.as_matrix(), ndim=3, xp=xp) for x in transforms]
         )
@@ -1394,9 +1397,9 @@ class RigidTransform:
         # https://github.com/data-apis/array-api/pull/900#issuecomment-2674432480)
         # Ideally we would converge to [indexer, ...] indexing, but this is not
         # supported for now.
-        if is_array and indexer.dtype == xp.bool:
+        if is_array and indexer.dtype == xp.bool:  # type:ignore[union-attr]
             return RigidTransform(self._matrix[indexer], normalize=False)
-        if is_array and xp.isdtype(indexer.dtype, "integral"):
+        if is_array and xp.isdtype(indexer.dtype, "integral"):  # type:ignore[union-attr]
             if self._matrix.shape[0] == 0:
                 raise IndexError("cannot take from an empty array")
             return RigidTransform(
@@ -1567,8 +1570,7 @@ class RigidTransform:
             The composed transform.
         """
         if isinstance(other, Rotation):
-            other = RigidTransform.from_rotation(other)
-            return other * self
+            return RigidTransform.from_rotation(other) * self
         # When other is a RigidTransform __mul__ is called, so we don't handle it here
         return NotImplemented
 
@@ -1751,9 +1753,13 @@ class RigidTransform:
               components are expressed in the original frame before and after
               the transformation.
 
-        In terms of rotation matrices and translation vectors, this application
-        is the same as
-        ``self.translation + self.rotation.as_matrix() @ vector``.
+        In terms of the rotation matrix and translation,
+        this application is the same as
+        ``self.translation + (mat @ vector[..., np.newaxis])[..., 0]``,
+        where ``mat = self.rotation.as_matrix()``.
+
+        For a single transform, this is the same as
+        ``self.translation + vector @ self.rotation.as_matrix().T``.
 
         Parameters
         ----------

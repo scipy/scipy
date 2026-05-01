@@ -38,7 +38,7 @@ class _BarycentricRational:
     """Base class for barycentric representation of a rational function."""
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, x, y, axis=0, **kwargs):
         self._axis = axis

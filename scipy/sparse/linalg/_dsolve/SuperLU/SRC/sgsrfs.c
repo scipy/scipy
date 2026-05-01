@@ -148,7 +148,7 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 #define ITMAX 5
     
     /* Table of constant values */
-    int    ione = 1, nrow = A->nrow;
+    slu_blasint    ione = 1, nrow = A->nrow;
     float ndone = -1.;
     float done = 1.;
     
@@ -171,13 +171,6 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     int      isave[3];
 
     extern int slacon2_(int *, float *, float *, int *, float *, int *, int []);
-#ifdef _CRAY
-    extern int SCOPY(int *, float *, int *, float *, int *);
-    extern int SSAXPY(int *, float *, float *, int *, float *, int *);
-#else
-    extern int scopy_(int *, float *, int *, float *, int *);
-    extern int saxpy_(int *, float *, float *, int *, float *, int *);
-#endif
 
     Astore = A->Store;
     Aval   = Astore->nzval;
@@ -412,7 +405,8 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    slacon2_(&nrow, &work[A->nrow], work,
+	    int nrow_int = (int)nrow;
+	    slacon2_(&nrow_int, &work[A->nrow], work,
 		    &iwork[A->nrow], &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 
