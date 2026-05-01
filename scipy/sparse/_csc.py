@@ -1,7 +1,7 @@
 """Compressed Sparse Column matrix format"""
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
+__all__ = ['csc_array']
 
 
 import numpy as np
@@ -151,52 +151,6 @@ class _csc_base(_cs_matrix):
         return x[1], x[0]
 
 
-def isspmatrix_csc(x):
-    """Is `x` of csc_matrix type?
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    Parameters
-    ----------
-    x
-        object to check for being a csc matrix
-
-    Returns
-    -------
-    bool
-        True if `x` is a csc matrix, False otherwise
-
-    Examples
-    --------
-    >>> from scipy.sparse import csc_array, csc_matrix, coo_matrix, isspmatrix_csc
-    >>> isspmatrix_csc(csc_matrix([[5]]))  # doctest: +SKIP
-    True
-    >>> isspmatrix_csc(csc_array([[5]]))  # doctest: +SKIP
-    False
-    >>> isspmatrix_csc(coo_matrix([[5]]))  # doctest: +SKIP
-    False
-    """
-    msg = """`isspmatrix_csc` is being replaced by `self.format == "csc" and issparse`.
-
-        All sparse matrix classes (*_matrix) are being deprecated in favor of
-        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
-        is elementwise multiplication. See the spmatrix to sparray migration guide
-        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-
-        The isspmatrix_csc function will be removed no earlier than v1.20.
-        """
-    prefixes = (os.path.dirname(__file__),)
-    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-    return isinstance(x, csc_matrix)
-
-
 # This namespace class separates array from matrix with isinstance
 class csc_array(_csc_base, sparray):
     """
@@ -300,117 +254,3 @@ class csc_array(_csc_base, sparray):
            [2, 3, 6]])
 
     """  # numpydoc ignore=PR01
-
-
-class csc_matrix(spmatrix, _csc_base):
-    """
-    Compressed Sparse Column matrix.
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    This can be instantiated in several ways:
-        csc_matrix(D)
-            where D is a 2-D ndarray
-
-        csc_matrix(S)
-            with another sparse array or matrix S (equivalent to S.tocsc())
-
-        csc_matrix((M, N), [dtype])
-            to construct an empty matrix with shape (M, N)
-            dtype is optional, defaulting to dtype='d'.
-
-        csc_matrix((data, (row_ind, col_ind)), [shape=(M, N)])
-            where ``data``, ``row_ind`` and ``col_ind`` satisfy the
-            relationship ``a[row_ind[k], col_ind[k]] = data[k]``.
-
-        csc_matrix((data, indices, indptr), [shape=(M, N)])
-            is the standard CSC representation where the row indices for
-            column i are stored in ``indices[indptr[i]:indptr[i+1]]``
-            and their corresponding values are stored in
-            ``data[indptr[i]:indptr[i+1]]``.  If the shape parameter is
-            not supplied, the matrix dimensions are inferred from
-            the index arrays.
-
-    Attributes
-    ----------
-    data : ndarray
-        CSC format data array of the matrix
-    indices : ndarray
-        CSC format index array of the matrix
-    indptr : ndarray
-        CSC format index pointer array of the matrix
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-        Whether indices are sorted and no duplicate entries exist
-    dtype : dtype
-        Data type of the matrix
-    shape : 2-tuple
-        Shape of the matrix
-    ndim : int
-        Number of dimensions (this is always 2)
-    format : str
-        Three letter code for the format of the matrix storage, e.g. 'csc'
-    nnz : int
-        Number of values stored in the matrix
-    size : int
-        Number of values stored in the matrix
-    T : csc_matrix
-        The transpose of the matrix
-    mT : csc_matrix
-        The matrix transpose
-
-    Notes
-    -----
-
-    Sparse matrices can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-
-    Advantages of the CSC format
-        - efficient arithmetic operations CSC + CSC, CSC * CSC, etc.
-        - efficient column slicing
-        - fast matrix vector products (CSR, BSR may be faster)
-
-    Disadvantages of the CSC format
-      - slow row slicing operations (consider CSR)
-      - changes to the sparsity structure are expensive (consider LIL or DOK)
-
-    Canonical format
-      - Within each column, indices are sorted by row.
-      - There are no duplicate entries.
-
-    Examples
-    --------
-
-    >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
-    >>> csc_matrix((3, 4), dtype=np.int8).toarray()
-    array([[0, 0, 0, 0],
-           [0, 0, 0, 0],
-           [0, 0, 0, 0]], dtype=int8)
-
-    >>> row = np.array([0, 2, 2, 0, 1, 2])
-    >>> col = np.array([0, 0, 1, 2, 2, 2])
-    >>> data = np.array([1, 2, 3, 4, 5, 6])
-    >>> csc_matrix((data, (row, col)), shape=(3, 3)).toarray()
-    array([[1, 0, 4],
-           [0, 0, 5],
-           [2, 3, 6]])
-
-    >>> indptr = np.array([0, 2, 3, 6])
-    >>> indices = np.array([0, 2, 2, 0, 1, 2])
-    >>> data = np.array([1, 2, 3, 4, 5, 6])
-    >>> csc_matrix((data, indices, indptr), shape=(3, 3)).toarray()
-    array([[1, 0, 4],
-           [0, 0, 5],
-           [2, 3, 6]])
-
-    """
-
