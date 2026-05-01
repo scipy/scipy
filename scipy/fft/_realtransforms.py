@@ -713,7 +713,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     The IDST is equivalent to a normal DST except for the normalization and
     type. DST type 1 and 4 are their own inverse and DSTs 2 and 3 are each
     other's inverses. For an example that demonstrates the relation between
-    the DST and ISDT, see :ref:`DST and IDST <tutorial_FFT_DST_and_IDST>`.
+    the DST and ISDT, consult the :ref:`DST and IDST <tutorial_FFT_DST_and_IDST>` section of the of the :ref:`user_guide`.
 
     Examples
     --------
