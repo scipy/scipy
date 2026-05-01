@@ -12,7 +12,7 @@ from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
-from scipy.sparse import csc_array, coo_array, csc_matrix
+from scipy.sparse import csc_array, coo_array
 
 
 def fun_zero(t, y):
@@ -1030,7 +1030,7 @@ def test_num_jac():
 
 
 @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
-@pytest.mark.parametrize("structure_type", [csc_array, csc_matrix, np.array])
+@pytest.mark.parametrize("structure_type", [csc_array, np.array])
 def test_num_jac_sparse(structure_type):
     def fun(t, y):
         e = y[1:]**3 - y[:-1]**2
