@@ -907,17 +907,7 @@ class KDTree(cKDTree):
         output_type : str, optional
             Which container to use for output data. Options: ``'dok_array'``,
             ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
-            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
             Default: ``'dok_array'``.
-
-            .. warning:: dok_matrix and coo_matrix are being replaced.
-
-               All new code using scipy sparse should use sparse array
-               types 'dok_array' or 'coo_array'. The default value of
-               `output_type` will be deprecated at v2.0 and switch from
-               'dok_matrix' to 'dok_array' in v2.2.
-               The values 'dok_matrix' and 'coo_matrix' continue
-               to work now, but will go away too.
 
             .. versionadded:: 1.6.0
 
@@ -959,31 +949,6 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
-        dok_msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
-             The intended replacement is output_type="dok_array".
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-             See the spmatrix to sparray migration guide for details.
-             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-             To silence this message, set to "dok_array" and, if needed, wrap the
-             return in dok_matrix().
-             """
-        coo_msg = """The keyword output_type="coo_matrix" will not be supported in v2.2
-             The intended replacement is output_type="coo_array".
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-             See the spmatrix to sparray migration guide for details.
-             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-             To silence this message, set to "coo_array" and, if needed, wrap the
-             return in coo_matrix().
-             """
-        prefixes = (os.path.dirname(__file__),)
-        elif output_type == "dok_matrix":
-            warnings.warn(dok_msg, DeprecationWarning, skip_file_prefixes=prefixes)
-            output_type = "caught_dok_matrix"
-        elif output_type == "coo_matrix":
-            warnings.warn(coo_msg, DeprecationWarning, skip_file_prefixes=prefixes)
-            output_type = "caught_coo_matrix"
         return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
