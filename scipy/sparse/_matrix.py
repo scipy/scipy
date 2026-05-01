@@ -32,6 +32,7 @@ class spmatrix(_spbase):
 
         The spmatrix classes will be removed no earlier than v2.2.
         """
+        raise AttributeError("spmatrix was removed. SciPy 1.21 does not support it")
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
         super().__init__(*args, **kwargs)
