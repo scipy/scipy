@@ -6,7 +6,6 @@
 
 # cython: cpow=True
 
-
 import numpy as np
 import scipy.sparse
 
