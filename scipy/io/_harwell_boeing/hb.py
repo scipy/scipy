@@ -21,7 +21,7 @@ features are:
 import warnings
 
 import numpy as np
-from scipy.sparse import csc_array, csc_matrix
+from scipy.sparse import csc_array
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
 __all__ = ["hb_read", "hb_write"]
@@ -472,20 +472,9 @@ def hb_read(path_or_open_file, *, spmatrix=False):
     spmatrix : bool, optional (default: False)
         If ``True``, return sparse matrix. Otherwise return sparse array.
 
-        .. deprecated:: 1.18.0
-            The default value for `spmatrix` is changing to False in v2.1.
-            That means the default return value will be a sparse array.
-            Unless you use * instead of @, ** for matrix power, or you depend
-            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
-            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-        .. deprecated:: 2.0.0
-            The value `True` for `spmatrix` will no longer be supported in v2.2.
-            The spmatrix classes are deprecated and will be removed then.
-
     Returns
     -------
-    data : csc_array or csc_matrix
+    data : csc_array
         The data read from the HB file as a sparse array.
 
     Notes
@@ -523,17 +512,6 @@ def hb_read(path_or_open_file, *, spmatrix=False):
         with open(path_or_open_file) as f:
             data = _get_matrix(f)
 
-    if spmatrix:
-        msg = """The value `spmatrix=True` will no longer be supported in v2.2.
-         The spmatrix classes are deprecated and will be removed then.
-         The return value will always be a sparse array.
-         Unless you use * instead of @, ** for matrix power, or you depend
-         on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
-         See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-         """
-        prefixes = (os.path.dirname(__file__),)
-        warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
-        return csc_matrix(data)
     return data
 
 
