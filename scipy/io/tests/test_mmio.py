@@ -267,7 +267,6 @@ class TestMMIOSparseCSR(TestMMIOArray):
         a = scipy.sparse.csr_array(a)
         self.check(a, (20, 15, 300, 'coordinate', 'real', 'general'))
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_simple_pattern(self):
         a = scipy.sparse.csr_array([[0, 1.5], [3.0, 2.5]])
         p = np.zeros_like(a.toarray())
