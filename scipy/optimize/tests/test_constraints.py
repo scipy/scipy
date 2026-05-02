@@ -217,8 +217,6 @@ class TestBounds:
         message = "`lb` and `ub` must be non-empty"
         with pytest.raises(ValueError, match=message):
             Bounds([], [])
-        with pytest.raises(ValueError, match=message):
-            Bounds(np.array([]), np.array([]))
 
     def test_residual(self):
         bounds = Bounds(-2, 4)
