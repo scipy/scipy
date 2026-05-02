@@ -5,10 +5,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['csr_array']
 
 import numpy as np
-import os
-from warnings import warn
 
-from ._matrix import spmatrix
 from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix, csr_sample_values)
@@ -156,8 +153,8 @@ class _csr_base(_cs_matrix):
             return
 
         indptr = np.zeros(2, dtype=self.indptr.dtype)
-        # return 1d (sparray) or 2drow (spmatrix)
-        shape = self.shape[1:] if isinstance(self, sparray) else (1, self.shape[1])
+        # return 1d
+        shape = self.shape[1:]
         i0 = 0
         for i1 in self.indptr[1:]:
             indptr[1] = i1 - i0

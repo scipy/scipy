@@ -5,12 +5,10 @@ __docformat__ = "restructuredtext en"
 __all__ = ['coo_array']
 
 import math
-import os
 from warnings import warn
 
 import numpy as np
 
-from ._matrix import spmatrix
 from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
                            coo_matvec, coo_matvec_nd, coo_matmat_dense,
                            coo_matmat_dense_nd)
