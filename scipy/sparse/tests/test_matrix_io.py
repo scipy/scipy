@@ -39,7 +39,6 @@ def _check_save_and_load(dense_matrix):
         assert_(loaded_matrix.dtype == dense_matrix.dtype)
         assert_equal(loaded_matrix.toarray(), dense_matrix)
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_save_and_load_random():
     N = 10
     np.random.seed(0)
@@ -47,41 +46,14 @@ def test_save_and_load_random():
     dense_matrix[dense_matrix > 0.7] = 0
     _check_save_and_load(dense_matrix)
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_save_and_load_empty():
     dense_matrix = np.zeros((4,6))
     _check_save_and_load(dense_matrix)
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_save_and_load_one_entry():
     dense_matrix = np.zeros((4,6))
     dense_matrix[1,2] = 1
     _check_save_and_load(dense_matrix)
-
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-def test_sparray_vs_spmatrix():
-    #save/load matrix
-    fd, tmpfile = tempfile.mkstemp(suffix='.npz')
-    os.close(fd)
-    try:
-        save_npz(tmpfile, csr_matrix([[1.2, 0, 0.9], [0, 0.3, 0]]))
-        loaded_matrix = load_npz(tmpfile)
-    finally:
-        os.remove(tmpfile)
-
-    #save/load array
-    fd, tmpfile = tempfile.mkstemp(suffix='.npz')
-    os.close(fd)
-    try:
-        save_npz(tmpfile, csr_array([[1.2, 0, 0.9], [0, 0.3, 0]]))
-        loaded_array = load_npz(tmpfile)
-    finally:
-        os.remove(tmpfile)
-
-    assert not isinstance(loaded_matrix, sparray)
-    assert isinstance(loaded_array, sparray)
-    assert_(loaded_matrix.dtype == loaded_array.dtype)
-    assert_equal(loaded_matrix.toarray(), loaded_array.toarray())
 
 @pytest.mark.parametrize("value", [0, 1.2])
 @pytest.mark.parametrize("ndim", [1, 2, 3])
@@ -116,10 +88,7 @@ def test_malicious_load():
     finally:
         os.remove(tmpfile)
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-@pytest.mark.parametrize(
-    "container", [dok_matrix, dok_array, lil_matrix, lil_array]
-)
+@pytest.mark.parametrize("container", [dok_array, lil_array])
 def test_implemented_error(container):
     # Attempts to save an unsupported type and checks that an
     # NotImplementedError is raised.

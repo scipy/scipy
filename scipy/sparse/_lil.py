@@ -8,10 +8,7 @@ __all__ = ['lil_array']
 from bisect import bisect_left
 
 import numpy as np
-import os
-from warnings import warn
 
-from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,

@@ -6,10 +6,7 @@ __all__ = ['dok_array']
 
 import itertools
 import numpy as np
-import os
-from warnings import warn
 
-from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,

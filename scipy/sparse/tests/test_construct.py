@@ -44,7 +44,6 @@ class TestConstructUtils:
         ):
             cls(0)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     @pytest.mark.filterwarnings("ignore:.* output has been cast to:FutureWarning")
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
@@ -100,7 +99,6 @@ class TestConstructUtils:
         for d, o, m, n, result in cases:
             assert_equal(dia_array((d, o), shape=(m, n)).toarray(), result)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_diags(self):
         a = array([1.0, 2.0, 3.0, 4.0, 5.0])
         b = array([6.0, 7.0, 8.0, 9.0, 10.0])
@@ -179,17 +177,14 @@ class TestConstructUtils:
                 assert_equal(construct.diags_array(d, offsets=o).toarray(),
                              result, err_msg=err_msg)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_diags_default(self):
         a = array([1.0, 2.0, 3.0, 4.0, 5.0])
         assert_equal(construct.diags_array(a).toarray(), np.diag(a))
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_diags_default_bad(self):
         a = array([[1, 2, 3, 4, 5], [2, 3, 4, 5, 6]])
         assert_raises(ValueError, construct.diags_array, a)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_diags_bad(self):
         a = array([1.0, 2.0, 3.0, 4.0, 5.0])
         b = array([6.0, 7.0, 8.0, 9.0, 10.0])
@@ -207,7 +202,6 @@ class TestConstructUtils:
         for d, o, shape in cases:
             assert_raises(ValueError, construct.diags_array, d, offsets=o, shape=shape)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_diags_vs_diag(self):
         # Check that
         #
@@ -235,20 +229,17 @@ class TestConstructUtils:
                 dense_mat = np.diag(diagonals[0], offsets[0])
                 assert_array_almost_equal_nulp(mat.toarray(), dense_mat)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_diags_dtype(self):
         x = construct.diags_array([2.2], offsets=[0], shape=(2, 2), dtype=int)
         assert_equal(x.dtype, int)
         assert_equal(x.toarray(), [[2, 0], [0, 2]])
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_diags_one_diagonal(self):
         d = [0.0, 1.0, 2.0, 3.0, 4.0]
         for k in range(-5, 6):
             assert_equal(construct.diags_array(d, offsets=k).toarray(),
                          construct.diags_array([d], offsets=[k]).toarray())
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_diags_empty(self):
         x = construct.diags_array([])
         assert_equal(x.shape, (0, 0))
@@ -392,17 +383,6 @@ class TestConstructUtils:
             assert_array_equal(result.toarray(), expected)
             assert isinstance(result, sparray)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
-    def test_kron_spmatrix(self):
-        # check that spmatrix returned when both inputs are spmatrix
-        A = [[1, 0], [0, 1]]
-        expected = np.kron(A, A)
-        for fmt in sparse_formats[1:4]:
-            result = construct.kron(csr_matrix(A), csr_matrix(A), format=fmt)
-            assert_equal(result.format, fmt)
-            assert_array_equal(result.toarray(), expected)
-            assert isinstance(result, spmatrix)
-
     @pytest.mark.parametrize(
         "b",
         [
@@ -418,7 +398,6 @@ class TestConstructUtils:
         assert result.dtype == np.int64
         assert result.nnz == 0
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_kron_ndim_exceptions(self):
         # check that 3D input is ok
         construct.kron([[0], [1]], [[[0, 1]]])
@@ -462,7 +441,6 @@ class TestConstructUtils:
                             + np.kron(b, np.eye(a.shape[0])))
                 assert_array_equal(result, expected)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_kronsum_ndim_exceptions(self):
         with pytest.raises(ValueError, match='requires 2D input'):
             construct.kronsum([[0], [1]], csr_array([0, 1]))
@@ -471,7 +449,6 @@ class TestConstructUtils:
         with pytest.raises(ValueError, match='requires 2D input'):
             construct.kronsum([[0, 1], [1, 0]], [2])
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_vstack(self):
         coo_cls = coo_array
         A = coo_cls([[1,2],[3,4]])
@@ -544,7 +521,6 @@ class TestConstructUtils:
         with pytest.raises(ValueError, match="incompatible column dimensions"):
             construct.vstack([arr, np.array([0, 0])])
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_hstack(self):
         coo_cls = coo_array
         A = coo_cls([[1,2],[3,4]])
@@ -569,7 +545,6 @@ class TestConstructUtils:
                                       dtype=np.float32).dtype,
                      np.float32)
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_block_creation(self):
         block_array = construct.block_array
 
@@ -648,7 +623,6 @@ class TestConstructUtils:
             block_array([[A.tocsc(), C.tocsc()]])
         excinfo.match(r'incompatible dimensions for axis 0')
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_block_return_type(self):
         block = construct.block_array
 
@@ -699,7 +673,6 @@ class TestConstructUtils:
         X.coords = tuple(co.astype(np.int64) for co in X.coords)
         assert construct.block_diag([X, X]).coords[0].dtype == np.int64
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
         # one 1d matrix and a scalar
@@ -711,7 +684,6 @@ class TestConstructUtils:
         assert_array_equal(construct.block_diag([A, B]).toarray(),
                            [[1, 0, 3, 0, 0], [0, 0, 0, 0, 4]])
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_block_diag_1(self):
         """ block_diag with one matrix """
         assert_equal(construct.block_diag([[1, 0]]).toarray(),
@@ -737,7 +709,6 @@ class TestConstructUtils:
         assert_equal(construct.block_diag([A, B]).toarray(),
                      array([[1, 0], [2, 0], [3, 0], [0, 4], [0, 5]]))
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
         for f in sprand, _sprandn:
@@ -768,7 +739,6 @@ class TestConstructUtils:
             assert_raises(ValueError, lambda: f((5, 10), density=1.1))
             assert_raises(ValueError, lambda: f((5, 10), density=-0.1))
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     @pytest.mark.parametrize("rng", [None, 4321, np.random.default_rng(4321)])
     def test_rand(self, rng):
         # Simple distributional checks for sparse.rand.
@@ -776,7 +746,6 @@ class TestConstructUtils:
         assert_(np.all(np.less_equal(0, x.data)))
         assert_(np.all(np.less_equal(x.data, 1)))
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     @pytest.mark.parametrize("rng", [None, 4321, np.random.default_rng(4321)])
     def test_randn(self, rng):
         # Simple distributional checks for sparse.randn.
@@ -786,7 +755,6 @@ class TestConstructUtils:
         assert_(np.any(np.less(x.data, 0)))
         assert_(np.any(np.less(1, x.data)))
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_random_accept_str_dtype(self):
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
@@ -810,7 +778,6 @@ class TestConstructUtils:
         A = construct.random_array((10, 10))
         assert A.coords[0].dtype == np.int32
 
-    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
         # 10 x 10 x 0.1265 = 12.65, which should be rounded up to 13, not 12.

@@ -6,12 +6,6 @@ import numpy as np
 from scipy.sparse import csr_array, csc_array, lil_array
 
 import pytest
-import warnings
-
-pytestmark = pytest.mark.filterwarnings(
-    "ignore:.*_matrix is being replaced:DeprecationWarning",
-)
-warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
 
 LINUX_INTEL = (sys.platform == 'linux') and (platform.machine() == 'x86_64')
 

@@ -5,11 +5,8 @@ __docformat__ = "restructuredtext en"
 __all__ = ['dia_array']
 
 import numpy as np
-import os
-from warnings import warn
 
 from .._lib._util import _prune_array, copy_if_needed
-from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
 from ._sputils import (

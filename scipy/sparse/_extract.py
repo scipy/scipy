@@ -9,7 +9,6 @@ import os
 from warnings import warn
 
 from ._coo import coo_array
-from ._base import sparray
 
 
 def find(A):

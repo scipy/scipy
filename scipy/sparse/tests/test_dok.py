@@ -4,13 +4,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal
 import scipy as sp
-from scipy.sparse import dok_array, dok_matrix
-
-
-pytestmark = [
-    pytest.mark.thread_unsafe,
-    pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
-]
+from scipy.sparse import dok_array
 
 
 @pytest.fixture
@@ -21,15 +15,15 @@ def d():
 def A():
     return np.array([[0, 1, 2], [0, 0, 0], [0, 0, 0]])
 
-@pytest.fixture(params=[dok_array, dok_matrix])
-def Asp(request):
-    A = request.param((3, 3))
+@pytest.fixture
+def Asp():
+    A = dok_array((3, 3))
     A[(0, 1)] = 1
     A[(0, 2)] = 2
     yield A
 
 # Note: __iter__ and comparison dunders act like ndarrays for DOK, not dict.
-# Dunders reversed, or, ror, ior work as dict for dok_matrix, raise for dok_array
+# Dunders reversed, or, ror, ior work as dict for dok_array, raise for dok_array
 # All other dict methods on DOK format act like dict methods (with extra checks).
 
 # Start of tests
@@ -152,7 +146,7 @@ def test_dunder_contains(d, Asp):
 def test_dunder_len(d, Asp):
     assert len(d) == len(Asp)
 
-# Note: dunders reversed, or, ror, ior work as dict for dok_matrix, raise for dok_array
+# Note: dunders reversed, or, ror, ior work as dict for dok_array, raise for dok_array
 def test_dunder_reversed(d, Asp):
     if isinstance(Asp, dok_array):
         with pytest.raises(TypeError):
