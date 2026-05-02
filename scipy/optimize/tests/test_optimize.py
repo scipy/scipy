@@ -3405,7 +3405,6 @@ def test_gh12513_trustregion_exact_infinite_loop():
     assert abs(fun(res.x)) < 1e-5
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
 @pytest.mark.parametrize('sparse_type', [coo_array, csr_array, csc_array])
 def test_sparse_hessian(method, sparse_type):
