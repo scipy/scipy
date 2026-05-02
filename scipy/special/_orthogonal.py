@@ -1307,7 +1307,7 @@ def hermite(n, monic=False):
     Returns
     -------
     H : orthopoly1d
-        Hermite polynomial.
+        Physicist's Hermite polynomial.
 
     Notes
     -----
@@ -1432,7 +1432,7 @@ def roots_hermitenorm(n, mu=False):
 
 
 def hermitenorm(n, monic=False):
-    r"""Normalized (probabilist's) Hermite polynomial.
+    r"""Probabilist's Hermite polynomial.
 
     Defined by
 
@@ -1453,7 +1453,7 @@ def hermitenorm(n, monic=False):
     Returns
     -------
     He : orthopoly1d
-        Hermite polynomial.
+        Probabilist's Hermite polynomial.
 
     Notes
     -----
