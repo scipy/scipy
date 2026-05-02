@@ -212,6 +212,14 @@ class TestBounds:
         with pytest.raises(ValueError, match=message):
             Bounds([1, 2], [1, 2, 3])
 
+        # gh-25086: empty `lb`/`ub` describes a zero-variable problem, and
+        # rejecting early prevents issues in downstream optimizers.
+        message = "`lb` and `ub` must be non-empty"
+        with pytest.raises(ValueError, match=message):
+            Bounds([], [])
+        with pytest.raises(ValueError, match=message):
+            Bounds(np.array([]), np.array([]))
+
     def test_residual(self):
         bounds = Bounds(-2, 4)
         x0 = [-1, 2]

@@ -292,6 +292,8 @@ class Bounds:
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def _input_validation(self):
+        if self.lb.size == 0 or self.ub.size == 0:
+            raise ValueError("`lb` and `ub` must be non-empty.")
         try:
             res = np.broadcast_arrays(self.lb, self.ub, self.keep_feasible)
             self.lb, self.ub, self.keep_feasible = res

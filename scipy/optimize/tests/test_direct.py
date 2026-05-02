@@ -313,6 +313,17 @@ class TestDIRECT:
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, bounds)
 
+    def test_empty_bounds(self):
+        # gh-25086: empty Bounds() is invalid. This is checked at
+        # Bounds() init time, but the C kernel has an additional
+        # defense-in-depth check, which we exercise here.
+        bounds = Bounds([-1.0], [1.0])
+        bounds.lb = np.array([], dtype=np.float64)
+        bounds.ub = np.array([], dtype=np.float64)
+        error_msg = "DIRECT requires at least one dimension"
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, bounds)
+
     @pytest.mark.parametrize("locally_biased", ["bias", [0, 0], 2.])
     def test_locally_biased_validation(self, locally_biased):
         error_msg = 'locally_biased must be True or False.'
