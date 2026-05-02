@@ -229,15 +229,6 @@ cdef class coo_entries:
     def dok_array(coo_entries self, m, n):
         return self.coo_array(m,n).todok()
 
-    def coo_matrix(coo_entries self, m, n):
-        res_arr = self.ndarray()
-        return scipy.sparse.coo_matrix(
-                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
-                                       shape=(m, n))
-
-    def dok_matrix(coo_entries self, m, n):
-        return self.coo_matrix(m,n).todok()
-
 
 # ordered_pair wrapper
 # ====================
