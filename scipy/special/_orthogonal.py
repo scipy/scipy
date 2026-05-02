@@ -2163,7 +2163,7 @@ def chebys(n, monic=False):
     Notes
     -----
     The polynomials :math:`S_n(x)` are orthogonal over :math:`[-2, 2]`
-    with weight function :math:`\sqrt{1 - (x/2)}^2`.
+    with weight function :math:`\sqrt{1 - (x/2)^2}`.
 
     References
     ----------
