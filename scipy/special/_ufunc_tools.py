@@ -5,7 +5,7 @@ import re
 import numpy as np
 
 
-def _parse_core_ndims(signature: str) -> tuple[int]:
+def _parse_core_ndims(signature):
     """Return tuple of num core dims per input from gufunc signature."""
     input_sig = signature.split('->')[0]
     groups = re.findall(r"\((.*?)\)", input_sig)
