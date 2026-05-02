@@ -20,7 +20,11 @@ def _with_cache_optimization(
         ufunc,
         cache_arg_indices,
 ):
-    """Helper to ensure optimal iteration order for ufuncs that use caching
+    """Helper to ensure optimal iteration order for ufuncs that use caching.
+
+    This concerns internal caches which are only live over the course of one
+    call to a ufunc to avoid repeated computations during the course of the
+    loops. See the notes below for more information.
 
     Parameters
     ----------
@@ -46,24 +50,30 @@ def _with_cache_optimization(
     -----
     There is a common pattern in ufunc kernels exemplified by the situation
     where some of the arguments are used to compute coeffients of an expansion
-    over other the arguments. A classic example is mathieu functions, which
-    compute coefficients corresponding to the shape parameter q and order m
-    which in principle could be reused for varying values of the parameter
-    x.
+    that is taken over one or more of the other arguments. A classic example is
+    Mathieu functions, which compute coefficients corresponding to the shape
+    parameter q and order m which in principle could be reused for varying
+    values of the parameter x.
 
-    It has long been the case that the expensive computation of coefficients is
+    It had long been the case that the expensive computation of coefficients is
     repeated unnecessarily across values of x. It is possible to add a cache to
-    the ufunc kernel in this case which stores the expansion coefficients and
-    only updates it if the pointers for the q and m arrays advance, however
-    whether this cache actually helps depends on the order in which iteration
+    the ufunc kernel which stores the expansion coefficients and only updates
+    if the pointers into the q and m arrays advance during the course of the
+    ufunc loops. Such a cache is instantiated each time a ufunc is called and
+    only lives during the course of the loops that are carried out for that
+    particular call.
+
+    Whether such a cache actually helps depends on the order in which iteration
     occurs. Ideally, one would want q and m to advance most slowly and for the
     iterations over x for fixed q and m to be pushed to the inner most loops.
-    To work around difficulties in controlling the iteration order in ufuncs,
-    this helper will transpose the axes which we want to vary most slowly to
-    the ends of the arrays and force computation in C order.
+    This helper replaces each input array (and a pre-allocated output array)
+    with a view where the axes which should vary most slowly are transposed to
+    the ends and forces computation in C order. This ensures iteration proceeds
+    in the optimal order.
 
-    Take note that the output will be C contiguous regardless of contiguity
-    of the inputs.
+    Note that because the pre-allocated output array used internally is C
+    contiguous, the output will be C contiguous regardless of contiguity of
+    the inputs.
 
     """
 
