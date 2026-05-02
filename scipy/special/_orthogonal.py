@@ -734,7 +734,8 @@ def laguerre(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        x\frac{d^2}{dx^2}L_n + (1 - x)\frac{d}{dx}L_n + nL_n = 0;
+        x\frac{d^2}{dx^2}L_n(x) + (1 - x)\frac{d}{dx}L_n(x)
+          + nL_n(x) = 0;
 
     :math:`L_n` is a polynomial of degree :math:`n`.
 
