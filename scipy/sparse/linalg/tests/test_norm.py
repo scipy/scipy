@@ -13,7 +13,6 @@ from scipy.sparse.linalg import norm as spnorm
 
 # https://github.com/scipy/scipy/issues/16031
 # https://github.com/scipy/scipy/issues/21690
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_sparse_norm():
     row = np.array([0, 0, 1, 1])
     col = np.array([0, 1, 2, 3])
