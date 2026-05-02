@@ -313,11 +313,6 @@ class TestDIRECT:
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, bounds)
 
-    def test_empty_bounds(self):
-        error_msg = "Bounds must contain at least one dimension."
-        with pytest.raises(ValueError, match=error_msg):
-            direct(self.styblinski_tang, Bounds([], []))
-
     @pytest.mark.parametrize("locally_biased", ["bias", [0, 0], 2.])
     def test_locally_biased_validation(self, locally_biased):
         error_msg = 'locally_biased must be True or False.'

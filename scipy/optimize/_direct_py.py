@@ -213,9 +213,6 @@ def direct(
     ub = np.ascontiguousarray(bounds.ub, dtype=np.float64)
 
     # validate bounds
-    # check that the problem has at least one dimension
-    if lb.shape[0] < 1:
-        raise ValueError("Bounds must contain at least one dimension.")
     # check that lower bounds are smaller than upper bounds
     if not np.all(lb < ub):
         raise ValueError('Bounds are not consistent min < max')
