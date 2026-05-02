@@ -21,7 +21,7 @@ features are:
 import warnings
 
 import numpy as np
-from scipy.sparse import csc_array, csc_matrix
+from scipy.sparse import csc_array
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
 __all__ = ["hb_read", "hb_write"]
@@ -469,16 +469,9 @@ def hb_read(path_or_open_file, *, spmatrix=False):
     spmatrix : bool, optional (default: False)
         If ``True``, return sparse matrix. Otherwise return sparse array.
 
-        .. deprecated:: 1.18.0
-            The default value for `spmatrix` changed to False in v1.20.
-            That means the default return value is a sparse array.
-            Unless you use * instead of @, ** for matrix power, or you depend
-            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
-            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
     Returns
     -------
-    data : csc_array or csc_matrix
+    data : csc_array
         The data read from the HB file as a sparse array.
 
     Notes
@@ -516,8 +509,6 @@ def hb_read(path_or_open_file, *, spmatrix=False):
         with open(path_or_open_file) as f:
             data = _get_matrix(f)
 
-    if spmatrix:
-        return csc_matrix(data)
     return data
 
 

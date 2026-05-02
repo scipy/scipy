@@ -15,7 +15,7 @@ import os
 from warnings import warn
 
 import numpy as np
-from scipy.sparse import coo_array, issparse, coo_matrix
+from scipy.sparse import coo_array, issparse
 from scipy.io import _mmio
 
 __all__ = ['mminfo', 'mmread', 'mmwrite']
@@ -371,8 +371,6 @@ def mmread(source, *, spmatrix=False):
         if stream_to_close:
             stream_to_close.close()
 
-        if spmatrix:
-            return coo_matrix(triplet, shape=shape)
         return coo_array(triplet, shape=shape)
 
 

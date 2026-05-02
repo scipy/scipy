@@ -16,7 +16,7 @@ import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 
-from scipy.sparse import coo_array, issparse, coo_matrix
+from scipy.sparse import coo_array, issparse
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
@@ -102,7 +102,7 @@ def mmread(source, *, spmatrix=False):
 
     Returns
     -------
-    a : ndarray or coo_array or coo_matrix
+    a : ndarray or coo_array
         Dense or sparse array depending on the matrix format in the
         Matrix Market file.
 
@@ -576,16 +576,9 @@ class MMFile:
         spmatrix : bool, optional (default: True)
             If ``True``, return sparse matrix. Otherwise return sparse array.
 
-            .. deprecated:: 1.18.0
-                The default value for `spmatrix` changed to False in v1.20.
-                That means the default return value will be a sparse array.
-                Unless you use * instead of @, ** for matrix power, or you depend
-                on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
-                See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
         Returns
         -------
-        a : ndarray or coo_array or coo_matrix
+        a : ndarray or coo_array
             Dense or sparse array depending on the matrix format in the
             Matrix Market file.
         """
@@ -599,8 +592,6 @@ class MMFile:
             if close_it:
                 stream.close()
 
-        if spmatrix and isinstance(data, coo_array):
-            data = coo_matrix(data)
         return data
 
 

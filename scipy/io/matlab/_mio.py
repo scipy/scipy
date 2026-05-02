@@ -94,13 +94,6 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=False, **kwargs):
         Format is `COO` for MatFile 4 and `CSC` for MatFile 5.
         Only relevant for sparse variables.
 
-        .. deprecated:: 1.18.0
-            The default value for `spmatrix` changed to False in v1.20.
-            That means the default return value is a sparse array.
-            Unless you use * instead of @, ** for matrix power, or you depend
-            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
-            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
     **kwargs
         The following aditional keyword arguments can be passed:
 
@@ -237,13 +230,10 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=False, **kwargs):
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
 
-    from scipy.sparse import issparse, coo_matrix, csc_matrix, coo_array, csc_array
+    from scipy.sparse import issparse, coo_array, csc_array
     for name, var in list(matfile_dict.items()):
         if issparse(var):
-            if spmatrix:
-                fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix
-            else:
-                fmt_matrix = coo_array if var.format == "coo" else csc_array
+            fmt_matrix = coo_array if var.format == "coo" else csc_array
             matfile_dict[name] = fmt_matrix(var)
 
     if mdict is not None:
