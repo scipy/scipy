@@ -69,7 +69,21 @@ auto _as_mdspan(const std::vector<T>& vec) {
     return std::mdspan<const T, std::dextents<ptrdiff_t, 1>>(vec.data(), vec.size());
 }
 
-// gufunc kernels which are capable of caching
+/* gufunc kernels which use internal caches.
+ *
+ * Such caches live only during the course of a single call to the ufunc
+ * in order to eliminate redundant calculations. This does not concern
+ * user-facing caching across ufunc calls.
+ *
+ * In order for such caches to serve their purpose, the iteration order over the
+ * course of the ufunc loops must be chosen so that elements (or core slices) of
+ * the inputs that go into the cached computation vary most slowly and elements
+ * of the inputs for which the cached result can be reused vary most quickly.
+ * This can be accomplished by wrapping the gufunc with `_with_cache_optimization`
+ * from ./_ufunc_tools.py. See the docstring of `_with_cache_optimization` for
+ * more information.
+ */
+
 template <typename T_1d>
 struct _poisson_binom_pmf_kernel {
     using T = typename T_1d::value_type;
@@ -81,6 +95,9 @@ struct _poisson_binom_pmf_kernel {
             dist.resize(p.extent(0) + 1);
         }
         if (p.data_handle() != last_p_ptr) {
+            /* If p is stepped through in the outer loops and k in the inner loops,
+             * this will yield a cache hit for each inner iteration. The cache is
+             * overwritten unconditionally whenever this steps to a new slice of p. */
             xsf::poisson_binom_pmf_all(p, _as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }
@@ -100,6 +117,9 @@ struct _poisson_binom_cdf_kernel {
             dist.resize(p.extent(0) + 1);
         }
         if (p.data_handle() != last_p_ptr) {
+          /* If p is stepped through in the outer loops and k in the inner loops,
+           * this will yield a cache hit for each inner iteration. The cache is
+           * overwritten unconditionally whenever this steps to a new slice of p. */
             xsf::poisson_binom_cdf_all(p, _as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }
