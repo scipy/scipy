@@ -1176,7 +1176,6 @@ def test_logical_sparse():
                         [False, False, False, False]])
 
 
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_empty_sparse():
     # Can we read empty sparse matrices?
     sio = BytesIO()
