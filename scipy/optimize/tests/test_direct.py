@@ -318,9 +318,9 @@ class TestDIRECT:
         # Bounds() init time, but the C kernel has an additional
         # defense-in-depth check, which we exercise here.
         bounds = Bounds([-1.0], [1.0])
-        bounds.lb = np.array([], dtype=np.float64)
-        bounds.ub = np.array([], dtype=np.float64)
-        error_msg = "DIRECT requires at least one dimension"
+        bounds.lb = []
+        bounds.ub = []
+        error_msg = "DIRECT requires at least one dimension, got 0"
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, bounds)
 
