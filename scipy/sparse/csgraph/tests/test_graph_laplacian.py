@@ -167,7 +167,6 @@ COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("arr_type", [np.array, sparse.csr_array, sparse.coo_array])
 @pytest.mark.parametrize("copy", [True, False])
@@ -242,7 +241,6 @@ def test_sparse_formats(fmt, normed, copy):
     _check_symmetric_graph_laplacian(mat, normed, copy)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize( "arr_type", [np.asarray, sparse.csr_array, sparse.coo_array])
 @pytest.mark.parametrize("form", ["array", "function", "lo"])
 def test_laplacian_symmetrized(arr_type, form):
@@ -298,7 +296,6 @@ def test_laplacian_symmetrized(arr_type, form):
     _assert_allclose_sparse(d["Ls_normed"], d["Lss_normed"])
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize("arr_type", [np.asarray, sparse.csr_array, sparse.coo_array])
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("normed", [True, False])
