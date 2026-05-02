@@ -493,6 +493,38 @@ def sh_jacobi(n, p, q, monic=False):
     orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
     x)^{p - q}x^{q - 1}`.
 
+    Examples
+    --------
+    Evaluate the shifted Jacobi polynomial :math:`G_3^{(2, 1)}` at
+    :math:`x = 0.5`:
+
+    >>> import numpy as np
+    >>> from scipy.special import binom, jacobi, sh_jacobi
+    >>> np.isclose(sh_jacobi(3, 2, 1)(0.5), -3/280)
+    True
+
+    The polynomial is related to the Jacobi polynomial
+    :math:`P_n^{(p - q, q - 1)}`:
+
+    >>> x = np.linspace(0, 1, 5)
+    >>> n, p, q = 3, 2, 1
+    >>> scale = 1 / binom(2*n + p - 1, n)
+    >>> np.allclose(sh_jacobi(n, p, q)(x),
+    ...             scale * jacobi(n, p - q, q - 1)(2*x - 1))
+    True
+
+    Plot :math:`G_3^{(p, 1)}` for several values of :math:`p`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for p in [1, 2, 3]:
+    ...     ax.plot(x, sh_jacobi(3, p, 1)(x), label=rf"$p={p}$")
+    >>> ax.set_title(r"Shifted Jacobi polynomials $G_3^{(p, 1)}$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
