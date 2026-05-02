@@ -4,13 +4,10 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['bsr_array']
 
-import os
 from warnings import warn
-
 import numpy as np
 
 from scipy._lib._util import copy_if_needed
-from ._matrix import spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
 from ._base import issparse, _formats, _spbase, sparray
