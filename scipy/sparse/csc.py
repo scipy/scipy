@@ -6,9 +6,6 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'csc_matrix',
-    'isspmatrix_csc',
-    'spmatrix',
 ]
 
 

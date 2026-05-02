@@ -9,8 +9,6 @@ __all__ = [  # noqa: F822
     'SparseEfficiencyWarning',
     'SparseWarning',
     'issparse',
-    'isspmatrix',
-    'spmatrix',
 ]
 
 
