@@ -693,9 +693,9 @@ class sparse_distance_matrix_consistency:
         tree = self.kdtree_type(np.array([[0.0, 0.0], [1.0, 1.0]]))
         tree.sparse_distance_matrix(tree, 3, output_type="coo_array")
         tree.sparse_distance_matrix(tree, 3, output_type="dok_array")
-        with pytest.deprecated_call(match='Invalid output type; Use'):
+        with pytest.raises(ValueError, match='Invalid output type; Use'):
             tree.sparse_distance_matrix(tree, 3, output_type="dok_matrix")
-        with pytest.deprecated_call(match='Invalid output type; Use'):
+        with pytest.raises(ValueError, match='Invalid output type; Use'):
             tree.sparse_distance_matrix(tree, 3, output_type="coo_matrix")
         tree.sparse_distance_matrix(tree, 3)
 
