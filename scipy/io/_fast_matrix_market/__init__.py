@@ -15,7 +15,7 @@ import os
 from warnings import warn
 
 import numpy as np
-from scipy.sparse import coo_array, issparse, coo_matrix
+from scipy.sparse import coo_array, issparse
 from scipy.io import _mmio
 
 __all__ = ['mminfo', 'mmread', 'mmwrite']
@@ -374,18 +374,6 @@ def mmread(source, *, spmatrix=False):
         triplet, shape = _read_body_coo(cursor, generalize_symmetry=True)
         if stream_to_close:
             stream_to_close.close()
-
-        if spmatrix:
-            msg = """The value `spmatrix=True` will no longer be supported in v2.2.
-             The spmatrix classes are deprecated and will be removed then.
-             The return value will always be a sparse array.
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
-             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-             """
-            prefixes = (os.path.dirname(__file__),)
-            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
-            return coo_matrix(triplet, shape=shape)
         return coo_array(triplet, shape=shape)
 
 
