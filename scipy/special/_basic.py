@@ -1506,10 +1506,23 @@ def fresnel_zeros(nt):
 
 
 def assoc_laguerre(x, n, k=0.0):
-    """Compute the generalized (associated) Laguerre polynomial of degree n and order k.
+    r"""Compute the generalized (associated) Laguerre polynomial of degree :math:`n`
+    and order :math:`k`.
 
-    The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
-    with weighting function ``exp(-x) * x**k`` with ``k > -1``.
+    This function evaluates the generalized Laguerre polynomial
+
+    .. math::
+
+        L^{(k)}_n(x).
+
+    The polynomial is orthogonal over :math:`[0, \infty)` with weight
+    function
+
+    .. math::
+
+        e^{-x}x^k
+
+    for :math:`k > -1`.
 
     Parameters
     ----------
