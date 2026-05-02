@@ -1,6 +1,6 @@
 from io import StringIO
-import pytest
 import tempfile
+import pytest
 
 import numpy as np
 
@@ -49,12 +49,8 @@ class TestHBReader:
         m = hb_read(StringIO(SIMPLE), spmatrix=False)
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
         assert isinstance(m, sparray)
-        with pytest.deprecated_call(match="The value `spmatrix=True"):
-            m = hb_read(StringIO(SIMPLE), spmatrix=True)
-            assert issparse(m) and not isinstance(m, sparray)
-        with pytest.deprecated_call(match="The default value for `spmatrix"):
-            m = hb_read(StringIO(SIMPLE))  # default
-            assert issparse(m) and isinstance(m, sparray)
+        m = hb_read(StringIO(SIMPLE))  # default
+        assert issparse(m) and isinstance(m, sparray)
 
 
 class TestHBReadWrite:
