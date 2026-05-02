@@ -7,23 +7,11 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'block_diag',
-    'bmat',
-    'bsr_matrix',
-    'coo_matrix',
-    'csc_matrix',
-    'csr_matrix',
-    'dia_matrix',
-    'diags',
-    'eye',
     'get_index_dtype',
     'hstack',
-    'identity',
     'issparse',
     'kron',
     'kronsum',
-    'rand',
-    'random',
-    'spdiags',
     'vstack',
 ]
 
