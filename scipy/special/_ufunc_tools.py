@@ -137,6 +137,8 @@ def _with_cache_optimization(
         ufunc(*args_t, out=out_t, order='C')
         return out_final
 
+    # Do some metaprogramming with exec so that the arg names and func
+    # name are as expected.
     arg_str = ", ".join(arg_names)
     code = (
         f"""def {name}({arg_str}):
