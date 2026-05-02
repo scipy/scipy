@@ -589,9 +589,9 @@ def genlaguerre(n, alpha, monic=False):
     Defined to be the solution of
 
     .. math::
-        x\frac{d^2}{dx^2}L_n^{(\alpha)}
-          + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}
-          + nL_n^{(\alpha)} = 0,
+        x\frac{d^2}{dx^2}L_n^{(\alpha)}(x)
+          + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}(x)
+          + nL_n^{(\alpha)}(x) = 0,
 
     where :math:`\alpha > -1`; :math:`L_n^{(\alpha)}` is a polynomial
     of degree :math:`n`.
@@ -637,7 +637,7 @@ def genlaguerre(n, alpha, monic=False):
     hypergeometric function :math:`{}_1F_1`:
 
         .. math::
-            L_n^{(\alpha)} = \binom{n + \alpha}{n} {}_1F_1(-n, \alpha +1, x)
+            L_n^{(\alpha)}(x) = \binom{n + \alpha}{n} {}_1F_1(-n, \alpha +1, x)
 
     This can be verified, for example,  for :math:`n = \alpha = 3` over the
     interval :math:`[-1, 1]`:
