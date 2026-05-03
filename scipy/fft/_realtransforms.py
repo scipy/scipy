@@ -641,7 +641,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     >>> dst(x, type=2)
     array([0., 0., 0., 8.])
 
-    This computes the Discrete Sine Transform (DST) of type-II for the input array. 
+    This computes the Discrete Sine Transform (DST) of type-II for the input array.
     The output contains the transformed values corresponding to the given input sequence
 
     References
@@ -713,7 +713,8 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     The IDST is equivalent to a normal DST except for the normalization and
     type. DST type 1 and 4 are their own inverse and DSTs 2 and 3 are each
     other's inverses. For an example that demonstrates the relation between
-    the DST and ISDT, consult the :ref:`DST and IDST <tutorial_FFT_DST_and_IDST>` section of the of the :ref:`user_guide`.
+    the DST and ISDT, consult the :ref:`DST and IDST <tutorial_FFT_DST_and_IDST>`
+    section of the :ref:`user_guide`.
 
     Examples
     --------
