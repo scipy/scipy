@@ -307,7 +307,7 @@ use the classes to create a reusable function instead.
 from ._support_alternative_backends import *
 from . import _support_alternative_backends
 __all__ = _support_alternative_backends.__all__
-del _support_alternative_backends, _signal_api, _delegators  # noqa: F821
+del _support_alternative_backends, _signal_api, _delegators  # noqa: F821  # pyrefly:ignore[unbound-name]
 
 
 # Deprecated namespaces, to be removed in v2.0.0

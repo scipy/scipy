@@ -305,7 +305,7 @@ def mean(
     if weights is not None and lazy:
         # We cannot raise on negative weights because jit code needs to be
         # non-branching. We return NaN instead
-        mask = xp.where(any_neg_weights, xp.nan, 1.0)
+        mask = xp.where(any_neg_weights, xp.nan, 1.0)  # pyrefly:ignore[unbound-name]
         tf = mask * tf
     return tf
 

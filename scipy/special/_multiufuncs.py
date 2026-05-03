@@ -56,7 +56,7 @@ class MultiUFunc:
         self._ufunc_default_kwargs = lambda *args, **kwargs: {}
 
     @property
-    def __doc__(self):
+    def __doc__(self):  # pyrefly:ignore[bad-override]
         return self.__doc
 
     def _override_key(self, func):

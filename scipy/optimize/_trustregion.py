@@ -110,7 +110,7 @@ class BaseQuadraticSubproblem:
         tb = -2*c / aux
         return sorted([ta, tb])
 
-    def solve(self, trust_radius):
+    def solve(self, trust_radius, /):
         raise NotImplementedError('The solve method should be implemented by '
                                   'the child class')
 
