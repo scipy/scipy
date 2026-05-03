@@ -7,6 +7,9 @@ import scipy as sp
 from scipy.sparse import dok_array
 
 
+pytestmark = pytest.mark.thread_unsafe
+
+
 @pytest.fixture
 def d():
     return {(0, 1): 1, (0, 2): 2}
@@ -23,7 +26,7 @@ def Asp():
     yield A
 
 # Note: __iter__ and comparison dunders act like ndarrays for DOK, not dict.
-# Dunders reversed, or, ror, ior work as dict for dok_array, raise for dok_array
+# Dunders reversed, or, ror, ior raise for dok_array
 # All other dict methods on DOK format act like dict methods (with extra checks).
 
 # Start of tests
@@ -146,7 +149,7 @@ def test_dunder_contains(d, Asp):
 def test_dunder_len(d, Asp):
     assert len(d) == len(Asp)
 
-# Note: dunders reversed, or, ror, ior work as dict for dok_array, raise for dok_array
+# Note: dunders reversed, or, ror, ior raise for dok_array
 def test_dunder_reversed(d, Asp):
     if isinstance(Asp, dok_array):
         with pytest.raises(TypeError):
