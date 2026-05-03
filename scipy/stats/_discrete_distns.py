@@ -8,6 +8,7 @@ from types import MethodType
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 import scipy.special._ufuncs as scu
+from scipy.special._spfun_stats import _poisson_binom_pmf, _poisson_binom_cdf
 from scipy._lib._util import rng_integers
 import scipy._external.array_api_extra as xpx
 from scipy.interpolate import interp1d
@@ -23,7 +24,6 @@ from ._distn_infrastructure import (rv_discrete, get_distribution_names,
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
-from ._stats_pythran import _poisson_binom
 
 
 class binom_gen(rv_discrete):
@@ -1631,14 +1631,14 @@ class poisson_binom_gen(rv_discrete):
     def _pmf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64)
-        return _poisson_binom(k, args, 'pmf')
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _poisson_binom_pmf(k, p)
 
     def _cdf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64)
-        return _poisson_binom(k, args, 'cdf')
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _poisson_binom_cdf(k, p)
 
     def _stats(self, *args, **kwds):
         p = np.stack(args, axis=0)
