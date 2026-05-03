@@ -128,7 +128,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         trust-ncg, trust-krylov, trust-exact and trust-constr.
         If it is callable, it should return the Hessian matrix::
 
-            hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)
+            hess(x, *args) -> {LinearOperator, array, array}, (n, n)
 
         where ``x`` is a (n,) ndarray and ``args`` is a tuple with the fixed
         parameters.
