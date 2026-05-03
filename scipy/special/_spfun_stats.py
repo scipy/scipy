@@ -146,12 +146,12 @@ _poisson_binom_pmf = _with_cache_optimization(
 
 
 _poisson_binom_cdf_doc = (
-    """Returns pmf of Poisson Binomial distribution.
+    """Returns cdf of Poisson Binomial distribution.
 
     Parameters
     ----------
     k : array
-        Number of successes at which to evaluate pmf.
+        Number of successes at which to evaluate cdf.
 
     p : array
         Success probabilities of independent Bernoulli trials.

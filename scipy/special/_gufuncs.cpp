@@ -117,9 +117,9 @@ struct _poisson_binom_cdf_kernel {
             dist.resize(p.extent(0) + 1);
         }
         if (p.data_handle() != last_p_ptr) {
-          /* If p is stepped through in the outer loops and k in the inner loops,
-           * this will yield a cache hit for each inner iteration. The cache is
-           * overwritten unconditionally whenever this steps to a new slice of p. */
+            /* If p is stepped through in the outer loops and k in the inner loops,
+            * this will yield a cache hit for each inner iteration. The cache is
+            * overwritten unconditionally whenever this steps to a new slice of p. */
             xsf::poisson_binom_cdf_all(p, _as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }

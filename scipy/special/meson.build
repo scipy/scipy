@@ -277,7 +277,6 @@ python_sources = [
   'specfun.py',
   'spfun_stats.py',
   '_ufunc_tools.py'
-  
 ]
 
 py3.install_sources(
