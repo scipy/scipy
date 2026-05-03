@@ -223,9 +223,9 @@ def roots_jacobi(n, alpha, beta, mu=False):
     n : int
         Quadrature order.
     alpha : float
-        alpha must be > -1
+        alpha must be > -1.
     beta : float
-        beta must be > -1
+        beta must be > -1.
     mu : bool, optional
         If True, return the sum of the weights in addition to sample points and weights.
 
@@ -419,11 +419,11 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     p1 : float
-        (p1 - q1) must be > -1
+        (p1 - q1) must be > -1.
     q1 : float
-        q1 must be > 0
+        q1 must be > 0.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
@@ -1405,18 +1405,18 @@ def roots_hermitenorm(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
@@ -1562,9 +1562,9 @@ def roots_gegenbauer(n, alpha, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     alpha : float
-        alpha must be > -0.5
+        alpha must be > -0.5.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
@@ -1990,7 +1990,7 @@ def chebyu(n, monic=False):
     .. math::
         U_{2n-1}(x) = 2 T_n(x)U_{n-1}(x)
 
-    where the :math:`T_n` are the Chebyshev polynomial of the first kind.
+    where :math:`T_n` is the Chebyshev polynomial of the first kind.
     Let's verify it for :math:`n = 2`:
 
     >>> from scipy.special import chebyt
@@ -2073,7 +2073,7 @@ def chebyc(n, monic=False):
     r"""Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
 
     Defined as :math:`C_n(x) = 2T_n(x/2)`, where :math:`T_n` is the
-    nth Chebychev polynomial of the first kind.
+    nth Chebyshev polynomial of the first kind.
 
     Parameters
     ----------
@@ -2205,7 +2205,7 @@ def chebys(n, monic=False):
     r"""Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
 
     Defined as :math:`S_n(x) = U_n(x/2)` where :math:`U_n` is the
-    nth Chebychev polynomial of the second kind.
+    nth Chebyshev polynomial of the second kind.
 
     Parameters
     ----------
@@ -2300,18 +2300,18 @@ def roots_sh_chebyt(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
@@ -2519,18 +2519,18 @@ def roots_legendre(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
