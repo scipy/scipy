@@ -1764,7 +1764,8 @@ def chebyt(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}T_n - x\frac{d}{dx}T_n + n^2T_n = 0;
+        (1 - x^2)\frac{d^2}{dx^2}T_n(x) - x\frac{d}{dx}T_n(x)
+          + n^2T_n(x) = 0;
 
     :math:`T_n` is a polynomial of degree :math:`n`.
 
@@ -1924,8 +1925,8 @@ def chebyu(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}U_n - 3x\frac{d}{dx}U_n
-          + n(n + 2)U_n = 0;
+        (1 - x^2)\frac{d^2}{dx^2}U_n(x) - 3x\frac{d}{dx}U_n(x)
+          + n(n + 2)U_n(x) = 0;
 
     :math:`U_n` is a polynomial of degree :math:`n`.
 
