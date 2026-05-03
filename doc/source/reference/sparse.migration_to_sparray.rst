@@ -106,7 +106,7 @@ Recommended steps for migration
       ``issparse(G) and G.format in ['csr', 'csc']``.
       The git search idiom ``git grep 'isspm[a-z_]*('`` can help find these.
    -  Convert all ``spdiags`` calls to ``dia_matrix``.
-      See docs in :func:`spdiags<scipy.sparse.spdiags>`.
+      See docs in ``spdiags``.
       A search for ``spdiags`` is all you need here.
    -  Run all your tests on the resulting code. You are still using
       spmatrix, not sparray. But your code and tests are prepared for
@@ -174,9 +174,9 @@ change the function name, switch the shape argument to a single tuple argument,
 leave any other parameters as before, and think about what
 sort of ``rng=`` argument should be used, if any.
 
-The `diags_array` function uses keyword-only rules for arguments. So you have
-to type the `offsets=` in front of the offsets arguments. That seems like a pain
-during migration from using `diags`, but it helps avoid confusion and eases reading.
+The ``diags_array`` function uses keyword-only rules for arguments. So you have
+to type the ``offsets=`` in front of the offsets arguments. That seems like a pain
+during migration from using ``diags``, but it helps avoid confusion and eases reading.
 A single shape parameter replaces two integers for this migration as well.
 
 Existing functions that need careful migration
