@@ -1686,7 +1686,7 @@ def gegenbauer(n, alpha, monic=False):
     >>> ax.plot(x, y)
     >>> ax.set_title("Gegenbauer (ultraspherical) polynomial of degree 3")
     >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel("G_3(x)")
+    >>> ax.set_ylabel(r"$C_3^{(0.5)}(x)$")
     >>> plt.show()
 
     """
