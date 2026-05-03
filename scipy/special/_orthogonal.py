@@ -689,9 +689,9 @@ def genlaguerre(n, alpha, monic=False):
     >>> x = np.arange(-4.0, 12.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-5.0, 10.0)
-    >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{\alpha}$')
+    >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{(\alpha)}$')
     >>> for alpha in np.arange(0, 5):
-    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf'$L_3^{(alpha)}$')
+    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf"$L_3^{{(\alpha)}}$")
     >>> plt.legend(loc='best')
     >>> plt.show()
 
