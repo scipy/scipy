@@ -249,7 +249,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         Computes the Hessian matrix. If it is callable, it should return the
         Hessian matrix:
 
-            ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
+            ``hess(x, *args) -> {LinearOperator, sparray, array}, (n, n)``
 
         Alternatively, the keywords {'2-point', '3-point', 'cs'} select a
         finite difference scheme for numerical estimation.

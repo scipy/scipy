@@ -320,26 +320,26 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             beneficial to set different `atol` values for different components by
             passing array_like with shape (n,) for `atol`. Default values are
             1e-3 for `rtol` and 1e-6 for `atol`.
-        jac : array_like, sparse_matrix, callable or None, optional
+        jac : array_like, sparse, callable or None, optional
             Jacobian matrix of the right-hand side of the system with respect
             to y, required by the 'Radau', 'BDF' and 'LSODA' method. The
             Jacobian matrix has shape (n, n) and its element (i, j) is equal to
             ``d f_i / d y_j``.  There are three ways to define the Jacobian:
 
-            * If array_like or sparse_matrix, the Jacobian is assumed to
+            * If array_like or sparse, the Jacobian is assumed to
               be constant. Not supported by 'LSODA'.
             * If callable, the Jacobian is assumed to depend on both
               t and y; it will be called as ``jac(t, y)``, as necessary.
               Additional arguments have to be passed if ``args`` is
               used (see documentation of ``args`` argument).
-              For 'Radau' and 'BDF' methods, the return value might be a
+              For 'Radau' and 'BDF' methods, the return value can be a
               sparse matrix.
             * If None (default), the Jacobian will be approximated by
               finite differences.
 
             It is generally recommended to provide the Jacobian rather than
             relying on a finite-difference approximation.
-        jac_sparsity : array_like, sparse matrix or None, optional
+        jac_sparsity : array_like, sparse or None, optional
             Defines a sparsity structure of the Jacobian matrix for a finite-
             difference approximation. Its shape must be (n, n). This argument
             is ignored if `jac` is not `None`. If the Jacobian has only few

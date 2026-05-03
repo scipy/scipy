@@ -2,14 +2,12 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr']
+__all__ = ['bsr_array']
 
 from warnings import warn
-
 import numpy as np
 
 from scipy._lib._util import copy_if_needed
-from ._matrix import spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
 from ._base import issparse, _formats, _spbase, sparray
@@ -620,40 +618,6 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         return _spbase._broadcast_to(self, shape, copy)
 
 
-def isspmatrix_bsr(x):
-    """Is `x` of a bsr_matrix type?
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    Parameters
-    ----------
-    x
-        object to check for being a bsr matrix
-
-    Returns
-    -------
-    bool
-        True if `x` is a bsr matrix, False otherwise
-
-    Examples
-    --------
-    >>> from scipy.sparse import bsr_array, bsr_matrix, csr_matrix, isspmatrix_bsr
-    >>> isspmatrix_bsr(bsr_matrix([[5]]))
-    True
-    >>> isspmatrix_bsr(bsr_array([[5]]))
-    False
-    >>> isspmatrix_bsr(csr_matrix([[5]]))
-    False
-    """
-    return isinstance(x, bsr_matrix)
-
 
 # This namespace class separates array from matrix with isinstance
 class bsr_array(_bsr_base, sparray):
@@ -773,132 +737,3 @@ class bsr_array(_bsr_base, sparray):
            [4, 4, 5, 5, 6, 6]])
 
     """  # numpydoc ignore=PR01
-
-
-class bsr_matrix(spmatrix, _bsr_base):
-    """
-    Block Sparse Row format sparse matrix.
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    This can be instantiated in several ways:
-        bsr_matrix(D, [blocksize=(R,C)])
-            where D is a 2-D ndarray.
-
-        bsr_matrix(S, [blocksize=(R,C)])
-            with another sparse array or matrix S (equivalent to S.tobsr())
-
-        bsr_matrix((M, N), [blocksize=(R,C), dtype])
-            to construct an empty sparse matrix with shape (M, N)
-            dtype is optional, defaulting to dtype='d'.
-
-        bsr_matrix((data, ij), [blocksize=(R,C), shape=(M, N)])
-            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
-
-        bsr_matrix((data, indices, indptr), [shape=(M, N)])
-            is the standard BSR representation where the block column
-            indices for row i are stored in ``indices[indptr[i]:indptr[i+1]]``
-            and their corresponding block values are stored in
-            ``data[ indptr[i]: indptr[i+1] ]``. If the shape parameter is not
-            supplied, the matrix dimensions are inferred from the index arrays.
-
-    Attributes
-    ----------
-    data : ndarray
-        BSR format data array of the matrix
-    indices : ndarray
-        BSR format index array of the matrix
-    indptr : ndarray
-        BSR format index pointer array of the matrix
-    blocksize : 2-tuple of integers
-        Block size (R, C)
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-        Whether indices are sorted and no duplicate entries exist
-    dtype : dtype
-        Data type of the matrix
-    shape : 2-tuple
-        Shape of the matrix
-    ndim : int
-        Number of dimensions (this is always 2)
-    format : str
-        Three letter code for the format of the matrix storage, e.g. 'bsr'
-    nnz : int
-        Number of values stored in the matrix
-    size : int
-        Number of values stored in the matrix
-    T : bsr_matrix
-        The transpose of the matrix
-    mT : bsr_matrix
-        The matrix transpose
-
-    Notes
-    -----
-    Sparse matrices can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-
-    **Summary of BSR format**
-
-    The Block Sparse Row (BSR) format is very similar to the Compressed
-    Sparse Row (CSR) format. BSR is appropriate for sparse matrices with dense
-    sub matrices like the last example below. Such sparse block matrices often
-    arise in vector-valued finite element discretizations. In such cases, BSR is
-    considerably more efficient than CSR and CSC for many sparse arithmetic
-    operations.
-
-    **Blocksize**
-
-    The blocksize (R,C) must evenly divide the shape of the sparse matrix (M,N).
-    That is, R and C must satisfy the relationship ``M % R = 0`` and
-    ``N % C = 0``.
-
-    If no blocksize is specified, a simple heuristic is applied to determine
-    an appropriate blocksize.
-
-    **Canonical Format**
-
-    In canonical format, there are no duplicate blocks and indices are sorted
-    per row.
-
-    **Limitations**
-
-    Block Sparse Row format sparse matrices do not support slicing.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse import bsr_matrix
-    >>> bsr_matrix((3, 4), dtype=np.int8).toarray()
-    array([[0, 0, 0, 0],
-           [0, 0, 0, 0],
-           [0, 0, 0, 0]], dtype=int8)
-
-    >>> row = np.array([0, 0, 1, 2, 2, 2])
-    >>> col = np.array([0, 2, 2, 0, 1, 2])
-    >>> data = np.array([1, 2, 3 ,4, 5, 6])
-    >>> bsr_matrix((data, (row, col)), shape=(3, 3)).toarray()
-    array([[1, 0, 2],
-           [0, 0, 3],
-           [4, 5, 6]])
-
-    >>> indptr = np.array([0, 2, 3, 6])
-    >>> indices = np.array([0, 2, 2, 0, 1, 2])
-    >>> data = np.array([1, 2, 3, 4, 5, 6]).repeat(4).reshape(6, 2, 2)
-    >>> bsr_matrix((data,indices,indptr), shape=(6, 6)).toarray()
-    array([[1, 1, 0, 0, 2, 2],
-           [1, 1, 0, 0, 2, 2],
-           [0, 0, 0, 0, 3, 3],
-           [0, 0, 0, 0, 3, 3],
-           [4, 4, 5, 5, 6, 6],
-           [4, 4, 5, 5, 6, 6]])
-
-    """
-

@@ -1314,8 +1314,7 @@ def _make_diagonal_csr(data, is_array=False):
     Parameter `data` should be a raveled numpy array holding the
     values on the diagonal of the resulting sparse matrix.
     """
-    from ._csr import csr_array, csr_matrix
-    csr_array = csr_array if is_array else csr_matrix
+    from ._csr import csr_array
 
     N = len(data)
     idx_dtype = get_index_dtype(maxval=N)

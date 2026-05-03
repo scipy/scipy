@@ -6,8 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['find', 'tril', 'triu']
 
 
-from ._coo import coo_matrix, coo_array
-from ._base import sparray
+from ._coo import coo_array
 
 
 def find(A):
@@ -97,16 +96,14 @@ def tril(A, k=0, format=None):
         with 4 stored elements and shape (3, 5)>
 
     """
-    coo_sparse = coo_array if isinstance(A, sparray) else coo_matrix
-
     # convert to COOrdinate format where things are easy
-    A = coo_sparse(A, copy=False)
+    A = coo_array(A, copy=False)
     mask = A.row + k >= A.col
 
     row = A.row[mask]
     col = A.col[mask]
     data = A.data[mask]
-    new_coo = coo_sparse((data, (row, col)), shape=A.shape, dtype=A.dtype)
+    new_coo = coo_array((data, (row, col)), shape=A.shape, dtype=A.dtype)
     return new_coo.asformat(format)
 
 
@@ -165,14 +162,12 @@ def triu(A, k=0, format=None):
         with 8 stored elements and shape (3, 5)>
 
     """
-    coo_sparse = coo_array if isinstance(A, sparray) else coo_matrix
-
     # convert to COOrdinate format where things are easy
-    A = coo_sparse(A, copy=False)
+    A = coo_array(A, copy=False)
     mask = A.row + k <= A.col
 
     row = A.row[mask]
     col = A.col[mask]
     data = A.data[mask]
-    new_coo = coo_sparse((data, (row, col)), shape=A.shape, dtype=A.dtype)
+    new_coo = coo_array((data, (row, col)), shape=A.shape, dtype=A.dtype)
     return new_coo.asformat(format)

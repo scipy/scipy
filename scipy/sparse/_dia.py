@@ -2,12 +2,11 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
+__all__ = ['dia_array']
 
 import numpy as np
 
 from .._lib._util import _prune_array, copy_if_needed
-from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
 from ._sputils import (
@@ -477,41 +476,6 @@ def _invert_index(idx):
     return inv
 
 
-def isspmatrix_dia(x):
-    """Is `x` of dia_matrix type?
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    Parameters
-    ----------
-    x
-        object to check for being a dia matrix
-
-    Returns
-    -------
-    bool
-        True if `x` is a dia matrix, False otherwise
-
-    Examples
-    --------
-    >>> from scipy.sparse import dia_array, dia_matrix, coo_matrix, isspmatrix_dia
-    >>> isspmatrix_dia(dia_matrix([[5]]))
-    True
-    >>> isspmatrix_dia(dia_array([[5]]))
-    False
-    >>> isspmatrix_dia(coo_matrix([[5]]))
-    False
-    """
-    return isinstance(x, dia_matrix)
-
-
 # This namespace class separates array from matrix with isinstance
 class dia_array(_dia_base, sparray):
     """
@@ -594,95 +558,3 @@ class dia_array(_dia_base, sparray):
            [0., 0., 0., ..., 1., 2., 1.],
            [0., 0., 0., ..., 0., 1., 2.]])
     """  # numpydoc ignore=PR01
-
-
-class dia_matrix(spmatrix, _dia_base):
-    """
-    Sparse matrix with DIAgonal storage.
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    This can be instantiated in several ways:
-        dia_matrix(D)
-            where D is a 2-D ndarray
-
-        dia_matrix(S)
-            with another sparse array or matrix S (equivalent to S.todia())
-
-        dia_matrix((M, N), [dtype])
-            to construct an empty matrix with shape (M, N),
-            dtype is optional, defaulting to dtype='d'.
-
-        dia_matrix((data, offsets), shape=(M, N))
-            where the ``data[k,:]`` stores the diagonal entries for
-            diagonal ``offsets[k]`` (See example below)
-
-    Attributes
-    ----------
-    data
-        DIA format data array of the matrix
-    offsets
-        DIA format offset array of the matrix
-    dtype : dtype
-        Data type of the matrix
-    shape : 2-tuple
-        Shape of the matrix
-    ndim : int
-        Number of dimensions (this is always 2)
-    format : str
-        Three letter code for the format of the matrix storage, e.g. 'dia'
-    nnz : int
-        Number of values stored in the matrix
-    size : int
-        Number of values stored in the matrix
-    T : dia_matrix
-        The transpose of the matrix
-    mT : dia_matrix
-        The matrix transpose
-
-    Notes
-    -----
-
-    Sparse matrices can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-    Sparse matrices with DIAgonal storage do not support slicing.
-
-    Examples
-    --------
-
-    >>> import numpy as np
-    >>> from scipy.sparse import dia_matrix
-    >>> dia_matrix((3, 4), dtype=np.int8).toarray()
-    array([[0, 0, 0, 0],
-           [0, 0, 0, 0],
-           [0, 0, 0, 0]], dtype=int8)
-
-    >>> data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
-    >>> offsets = np.array([0, -1, 2])
-    >>> dia_matrix((data, offsets), shape=(4, 4)).toarray()
-    array([[1, 0, 3, 0],
-           [1, 2, 0, 4],
-           [0, 2, 3, 0],
-           [0, 0, 3, 4]])
-
-    >>> from scipy.sparse import dia_matrix
-    >>> n = 10
-    >>> ex = np.ones(n)
-    >>> data = np.array([ex, 2 * ex, ex])
-    >>> offsets = np.array([-1, 0, 1])
-    >>> dia_matrix((data, offsets), shape=(n, n)).toarray()
-    array([[2., 1., 0., ..., 0., 0., 0.],
-           [1., 2., 1., ..., 0., 0., 0.],
-           [0., 1., 2., ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0., ..., 2., 1., 0.],
-           [0., 0., 0., ..., 1., 2., 1.],
-           [0., 0., 0., ..., 0., 1., 2.]])
-    """

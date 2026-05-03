@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from scipy.sparse import csr_array, issparse, csr_matrix
+from scipy.sparse import csr_array, issparse
 from scipy.sparse._sputils import (convert_pydata_sparse_to_scipy, is_pydata_spmatrix,
                                    safely_cast_index_arrays)
 
@@ -277,8 +277,6 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     flow_matrix = csr_array((flow_array, m.indices, m.indptr), shape=m.shape)
     if is_pydata_sparse:
         flow_matrix = pydata_sparse_cls.from_scipy_sparse(flow_matrix)
-    elif isinstance(csgraph_orig, csr_matrix):
-        flow_matrix = csr_matrix(flow_matrix)
     source_flow = flow_array[m.indptr[source]:m.indptr[source + 1]]
     return MaximumFlowResult(source_flow.sum(), flow_matrix)
 

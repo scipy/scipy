@@ -93,7 +93,7 @@ def _ident_like(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.issparse(A):
         # Creates a sparse matrix in dia format
-        out = scipy.sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
+        out = scipy.sparse.eye_array(A.shape[0], A.shape[1], dtype=A.dtype)
         if scipy.sparse.issparse(A):
             return out.asformat(A.format)
         return scipy.sparse.dia_array(out).asformat(A.format)

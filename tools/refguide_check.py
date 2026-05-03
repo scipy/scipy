@@ -113,7 +113,12 @@ for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
              'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
              'kaiser', 'nuttall', 'parzen', 'triang', 'tukey'):
     REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
-
+# deprecated windows in scipy.signal namespace
+for name in ('spdiags', 'diags', 'identity', 'eye', 'bmat', 'rand', 'random',
+             'isspmatrix'):
+    REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.sparse\.' + name)
+for fmt in ["bsr", "coo", "csc", "csr", "dia", "dok", "lil"]:
+    REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.sparse\.isspmatrix_' + fmt)
 
 def short_path(path, cwd=None):
     """
@@ -546,18 +551,6 @@ def main(argv):
 
         all_dict, deprecated, others = get_all_dict(module)
         names = names_dict.get(module.__name__, set())
-
-        # TODO: remove this if-clause when spmatrix removed
-        if module.__name__ == 'scipy.sparse':
-            # these now in separate docs page for spmatrix
-            soon_deprecated = ['bsr_matrix', 'csr_matrix', 'csc_matrix',
-                               'lil_matrix', 'coo_matrix', 'dia_matrix',
-                               'dok_matrix', 'spmatrix',
-                               'isspmatrix_bsr', 'isspmatrix_coo', 'isspmatrix_csr',
-                               'isspmatrix_csc', 'isspmatrix_dia', 'isspmatrix_dok',
-                               'isspmatrix_lil', 'spdiags', 'eye', 'identity',
-                               'bmat', 'rand', 'random', 'diags']
-            names.update(soon_deprecated)
 
         mod_results = []
         mod_results += check_items(all_dict, names, deprecated, others, module.__name__)
