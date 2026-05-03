@@ -252,6 +252,17 @@ assoc_legendre_p = MultiUFunc(
 
     Associated Legendre polynomial of the first kind.
 
+    Defined as
+
+    .. math::
+
+        P_n^m(z) = (-1)^m (1 - z^2)^{m/2}
+            \frac{d^m}{dz^m} P_n(z)
+
+    where :math:`P_n` is the Legendre polynomial.
+
+    This definition includes the Condon-Shortley phase :math:`(-1)^m`.
+
     Parameters
     ----------
     n : ArrayLike[int]
@@ -284,6 +295,23 @@ assoc_legendre_p = MultiUFunc(
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
+
+    Examples
+    --------
+    Evaluate :math:`P_2^1(z)` on :math:`[-1, 1]`:
+
+    >>> import numpy as np
+    >>> from scipy.special import assoc_legendre_p
+    >>> z = np.linspace(-1, 1, 11)
+    >>> expected = -3 * z * np.sqrt(1 - z**2)
+    >>> np.allclose(assoc_legendre_p(2, 1, z), expected)
+    True
+
+    Compute the normalized associated Legendre polynomial:
+
+    >>> scale = np.sqrt(5/12)
+    >>> np.allclose(assoc_legendre_p(2, 1, z, norm=True), scale * expected)
+    True
     """, branch_cut=2, norm=False, diff_n=0
 )
 
