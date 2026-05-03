@@ -312,10 +312,13 @@ def jacobi(n, alpha, beta, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}P_n^{(\alpha, \beta)}
-          + (\beta - \alpha - (\alpha + \beta + 2)x)
-            \frac{d}{dx}P_n^{(\alpha, \beta)}
-          + n(n + \alpha + \beta + 1)P_n^{(\alpha, \beta)} = 0
+
+        \begin{aligned}
+        (1 - x^2)\frac{d^2}{dx^2} P_n^{(\alpha, \beta)}(x)
+        &+ \left(\beta - \alpha - (\alpha + \beta + 2)x\right)
+        \frac{d}{dx} P_n^{(\alpha, \beta)}(x) \\
+        &+ n(n + \alpha + \beta + 1) P_n^{(\alpha, \beta)}(x) = 0
+        \end{aligned}
 
     for :math:`\alpha, \beta > -1`; :math:`P_n^{(\alpha, \beta)}` is a
     polynomial of degree :math:`n`.
