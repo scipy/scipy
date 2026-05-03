@@ -432,6 +432,21 @@ legendre_p = MultiUFunc(
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Evaluate the Legendre polynomial :math:`P_3` at :math:`z = 0.5`:
+
+    >>> import numpy as np
+    >>> from scipy.special import legendre_p
+    >>> np.allclose(legendre_p(3, 0.5), -0.4375)
+    True
+
+    Compute the value and first derivative with respect to ``z``:
+
+    >>> p, dp = legendre_p(3, 0.5, diff_n=1)
+    >>> np.allclose([p, dp], [-0.4375, 0.375])
+    True
     """, diff_n=0
 )
 
