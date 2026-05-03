@@ -2099,6 +2099,33 @@ def chebyc(n, monic=False):
     .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
            Section 22. National Bureau of Standards, 1972.
 
+    Examples
+    --------
+    Evaluate the Chebyshev polynomial :math:`C_3` at :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebyc, chebyt
+    >>> np.isclose(chebyc(3)(1), -2.0)
+    True
+
+    The polynomial :math:`C_n` is a scaled Chebyshev polynomial of the
+    first kind:
+
+    >>> x = np.linspace(-2, 2, 5)
+    >>> np.allclose(chebyc(3)(x), 2 * chebyt(3)(x/2))
+    True
+
+    Plot :math:`C_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-2, 2, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, chebyc(n)(x), label=rf"$C_{n}$")
+    >>> ax.set_title(r"Chebyshev polynomials $C_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
