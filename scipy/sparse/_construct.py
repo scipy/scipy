@@ -840,7 +840,6 @@ def block_array(blocks, *, format=None, dtype=None):
     See Also
     --------
     block_diag : specify blocks along the main diagonals
-    diags : specify (possibly offset) diagonals
 
     Examples
     --------
