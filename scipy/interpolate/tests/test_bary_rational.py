@@ -30,6 +30,10 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_less
 import pytest
 import scipy
 from scipy.interpolate import AAA, FloaterHormannInterpolator, BarycentricInterpolator
+from scipy._lib._array_api import (
+    xp_assert_equal, xp_assert_close,
+    make_xp_test_case
+)
 
 TOL = 1e4 * np.finfo(np.float64).eps
 UNIT_INTERVAL = np.linspace(-1, 1, num=1000)
@@ -283,7 +287,7 @@ class BatchFloaterHormann:
         y = np.reshape(y, self._batch_shape + x.shape)
         return np.moveaxis(y, -1, self._axis) if x.shape else y
 
-
+@make_xp_test_case(FloaterHormannInterpolator)
 class TestFloaterHormann:
     def runge(self, z):
         return 1/(1 + z**2)
@@ -315,60 +319,69 @@ class TestFloaterHormann:
         (3, [1, 4, 7, 8, 8, 8, 8, 8, 7, 4, 1]),
         (4, [1, 5, 11, 15, 16, 16, 16, 15, 11, 5, 1])
     ])
-    def test_uniform_grid(self, d, expected):
+    def test_uniform_grid(self, d, expected, xp):
         # Check against explicit results on a uniform grid
-        x = np.arange(11)
-        r = FloaterHormannInterpolator(x, 0.0*x, d=d)
-        assert_allclose(r.weights.ravel()*self.scale(x.size, d), expected,
+        x = xp.arange(11, dtype=xp.float64)
+        y = xp.zeros_like(x)
+        r = FloaterHormannInterpolator(x, y, d=d)
+        weights = xp.reshape(r.weights, (-1,))
+        expected = xp.asarray(expected, dtype=xp.float64)
+        idx = xp.arange(x.size)
+        even = (idx + d) % 2 == 0
+        ones = xp.ones(x.size, dtype=x.dtype)
+        sign = xp.where(even, ones, -ones)
+
+        scale = sign * xp.asarray(factorial(d), dtype=x.dtype)
+        xp_assert_close(weights * scale, expected,
                         rtol=1e-15, atol=1e-15)
 
     @pytest.mark.parametrize("d", range(10))
-    def test_runge(self, d):
-        x = np.linspace(0, 1, 51)
+    def test_runge(self, d, xp):
+        x = xp.linspace(0, 1, 51)
         rng = np.random.default_rng(802754237598370893)
-        xx = rng.uniform(0, 1, size=1000)
+        xx = xp.asarray(rng.uniform(0, 1, size=1000))
         y = self.runge(x)
         h = x[1] - x[0]
 
         r = FloaterHormannInterpolator(x, y, d=d)
 
         tol = 10*h**(d+1)
-        assert_allclose(r(xx), self.runge(xx), atol=1e-10, rtol=tol)
+        xp_assert_close(r(xx), self.runge(xx), atol=1e-10, rtol=float(tol))
         # check interpolation property
-        assert_equal(r(x), self.runge(x))
+        xp_assert_equal(r(x), self.runge(x))
 
-    def test_complex(self):
-        x = np.linspace(-1, 1)
+    def test_complex(self, xp):
+        x = xp.linspace(-1, 1, num=50)
         z = x + x*1j
-        r = FloaterHormannInterpolator(z, np.sin(z), d=12)
-        xx = np.linspace(-1, 1, num=1000)
+        r = FloaterHormannInterpolator(z, xp.sin(z), d=12)
+        xx = xp.linspace(-1, 1, num=1000)
         zz = xx + xx*1j
-        assert_allclose(r(zz), np.sin(zz), rtol=1e-12)
+        assert_allclose(r(zz), xp.sin(zz), rtol=1e-12)
 
-    def test_polyinterp(self):
+    def test_polyinterp(self, xp):
         # check that when d=n-1 FH gives a polynomial interpolant
-        x = np.linspace(0, 1, 11)
-        xx = np.linspace(0, 1, 1001)
-        y = np.sin(x)
+        x = xp.linspace(0, 1, 11)
+        xx = xp.linspace(0, 1, 1001)
+        y = xp.sin(x)
         r = FloaterHormannInterpolator(x, y, d=x.size-1)
         p = BarycentricInterpolator(x, y)
         assert_allclose(r(xx), p(xx), rtol=1e-12, atol=1e-12)
 
     @pytest.mark.parametrize("y_shape", [(2,), (2, 3, 1), (1, 5, 6, 4)])
     @pytest.mark.parametrize("xx_shape", [(100), (10, 10)])
-    def test_trailing_dim(self, y_shape, xx_shape):
-        x = np.linspace(0, 1)
-        y = np.broadcast_to(
-            np.expand_dims(np.sin(x), tuple(range(1, len(y_shape) + 1))),
+    def test_trailing_dim(self, y_shape, xx_shape, xp):
+        x = xp.linspace(0, 1, num=50)
+        y = xp.broadcast_to(
+            xp.expand_dims(xp.sin(x), tuple(range(1, len(y_shape) + 1))),
             x.shape + y_shape
         )
 
         r = FloaterHormannInterpolator(x, y)
 
         rng = np.random.default_rng(897138947238097528091759187597)
-        xx = rng.random(xx_shape)
-        yy = np.broadcast_to(
-            np.expand_dims(np.sin(xx), tuple(range(xx.ndim, len(y_shape) + xx.ndim))),
+        xx = xp.asarray(rng.random(xx_shape))
+        yy = xp.broadcast_to(
+            xp.expand_dims(xp.sin(xx), tuple(range(xx.ndim, len(y_shape) + xx.ndim))),
             xx.shape + y_shape
         )
         rr = r(xx)
@@ -376,11 +389,11 @@ class TestFloaterHormann:
         assert_allclose(rr, yy, rtol=1e-6)
 
 
-    def test_zeros(self):
-        x = np.linspace(0, 10, num=100)
-        r = FloaterHormannInterpolator(x, np.sin(np.pi*x))
+    def test_zeros(self, xp):
+        x = xp.linspace(0, 10, num=100)
+        r = FloaterHormannInterpolator(x, xp.sin(xp.pi*x))
 
-        err = np.abs(np.subtract.outer(r.roots(), np.arange(11))).min(axis=0)
+        err = xp.abs(xp.subtract(r.roots()[..., None], xp.arange(11))).min(axis=0)
         assert_array_less(err, 1e-5)
 
     def test_no_poles(self):

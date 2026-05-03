@@ -29,11 +29,11 @@ from types import GenericAlias
 
 import numpy as np
 import scipy
-
+from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
 
 __all__ = ["AAA", "FloaterHormannInterpolator"]
 
-
+@xp_capabilities()
 class _BarycentricRational:
     """Base class for barycentric representation of a rational function."""
 
@@ -41,25 +41,31 @@ class _BarycentricRational:
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, x, y, axis=0, **kwargs):
+        xp = array_namespace(x, y)
         self._axis = axis
 
-        # input validation
-        z = np.asarray(x)
-        f = np.asarray(y)
+        # Convert inputs
+        z = xp.asarray(x)
+        f = xp.asarray(y)
 
         self._input_validation(z, f, **kwargs)
 
-        f = np.moveaxis(f, self._axis, 0)
+        f = xp.moveaxis(f, axis, 0)
 
-        # Remove infinite or NaN function values and repeated entries
-        to_keep = np.logical_and.reduce(
-            ((np.isfinite(f)) & (~np.isnan(f))).reshape(f.shape[0], -1),
+        # Remove infinite or NaN function values and repeated entries    
+        reshaped = xp.reshape(xp.isfinite(f), (f.shape[0], -1))
+        to_keep = xp.all(
+            reshaped,
             axis=-1
         )
-        f = f[to_keep, ...]
-        z = z[to_keep]
-        z, uni = np.unique(z, return_index=True)
-        f = f[uni, ...]
+        idx = xp.nonzero(to_keep)[0]
+        f = xp.take(f, idx, axis=0)
+        z = xp.take(z, idx, axis=0)
+        res = xp.unique_all(z)
+
+        z = res.values
+        idx = res.indices
+        f = xp.take(f, idx, axis=0)
 
         self._shape = f.shape[1:]
         self._support_points, self._support_values, self.weights = (
@@ -97,40 +103,48 @@ class _BarycentricRational:
             Input values.
         """
         # evaluate rational function in barycentric form.
-        z = np.asarray(z)
-        zv = np.ravel(z)
+        xp = array_namespace(z)
+        z = xp.asarray(z)
+        zv = xp.reshape(z, (-1,))
 
-        support_values = self._support_values.reshape(
+        support_values = xp.reshape(
+            self._support_values,
             (self._support_values.shape[0], -1)
         )
-        weights = self.weights[..., np.newaxis]
+        weights = self.weights[..., xp.newaxis]
 
         # Cauchy matrix
         # Ignore errors due to inf/inf at support points, these will be fixed later
-        with np.errstate(invalid="ignore", divide="ignore"):
-            CC = 1 / np.subtract.outer(zv, self._support_points)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            diff = xp.expand_dims(zv, 1) - xp.expand_dims(self._support_points, 0)
+            CC = xp.divide(1, diff)
             # Vector of values
             r = CC @ (weights * support_values) / (CC @ weights)
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
-        if np.any(np.isinf(zv)):
-            r[np.isinf(zv)] = (np.sum(weights * support_values)
-                               / np.sum(weights))
+        if xp.any(xp.isinf(zv)):
+            r[xp.isinf(zv)] = (xp.sum(weights * support_values)
+                               / xp.sum(weights))
 
         # Deal with NaN
-        ii = np.nonzero(np.isnan(r))[0]
+        ii = xp.nonzero(xp.isnan(r))[0]
+        r = xp.reshape(r, (-1,))
         for jj in ii:
-            if np.isnan(zv[jj]) or not np.any(zv[jj] == self._support_points):
+            if xp.isnan(zv[jj]) or not xp.any(zv[jj] == self._support_points):
                 # r(NaN) = NaN is fine.
                 # The second case may happen if `r(zv[ii]) = 0/0` at some point.
                 pass
             else:
                 # Clean up values `NaN = inf/inf` at support points.
                 # Find the corresponding node and set entry to correct value:
-                r[jj] = support_values[zv[jj] == self._support_points].squeeze()
+                mask = zv[jj] == self._support_points
+                idx = xp.nonzero(mask)[0]
+                value = xp.reshape(xp.take(self._support_values, idx, axis=0), ())
+                r = xp.where(xp.arange(r.shape[0]) == jj, value, r)
 
-        res = np.reshape(r, z.shape + self._shape)
-        return np.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
+        res = xp.reshape(r, z.shape + self._shape)
+        return xp.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
 
     def poles(self):
         """Compute the poles of the rational approximation.
@@ -626,7 +640,7 @@ class AAA(_BarycentricRational):
 
         return ni
 
-
+@xp_capabilities()
 class FloaterHormannInterpolator(_BarycentricRational):
     r"""Floater-Hormann barycentric rational interpolator (C∞ smooth on real axis).
 
@@ -731,18 +745,27 @@ class FloaterHormannInterpolator(_BarycentricRational):
 
     def _input_validation(self, x, y, d):
         d = operator.index(d)
-        if not (0 <= d < len(x)):
+        n = x.shape[0]
+        if not (0 <= d < n):
             raise ValueError("`d` must satisfy 0 <= d < n")
 
         super()._input_validation(x, y)
 
     def _compute_weights(self, z, f, d):
         # Floater and Hormann 2007 Eqn. (18) 3 equations later
-        w = np.zeros_like(z, dtype=np.result_type(z, 1.0))
-        n = w.size
+        xp = array_namespace(z)
+        w = xp.zeros_like(z, dtype=xp.result_type(z, 1.0))
+        n = w.shape[0]
         for k in range(n):
             for i in range(max(k-d, 0), min(k+1, n-d)):
-                w[k] += 1/np.prod(np.abs(np.delete(z[k] - z[i : i + d + 1], k - i)))
-        w *= (-1.)**(np.arange(n) - d)
+                window = z[i : i + d + 1]
+                diff = z[k] - window
+                idx = xp.arange(window.shape[0])
+                mask = idx != (k - i)
+                safe_diff = xp.where(mask, diff, xp.ones_like(diff))
+                w[k] += 1 / xp.prod(xp.abs(safe_diff))
+        ones = xp.ones(n, dtype=z.dtype)
+        sign = xp.where((xp.arange(n) - d) % 2 == 0, ones, -ones)
+        w = w * sign
 
         return z, f, w
