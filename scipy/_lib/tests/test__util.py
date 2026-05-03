@@ -454,12 +454,6 @@ class TestTransitionToRNG:
     def random_array(self, **kwargs):
         return sparse.random_array((10, 10), density=1.0, **kwargs).toarray()
 
-    def random(self, **kwargs):
-        return sparse.random(10, 10, density=1.0, **kwargs).toarray()
-
-    def rand(self, **kwargs):
-        return sparse.rand(10, 10, density=1.0, **kwargs).toarray()
-
     def svds(self, **kwargs):
         rng = np.random.default_rng(3458934594269824562)
         A = rng.random((10, 10))
@@ -547,8 +541,6 @@ class TestTransitionToRNG:
         (dual_annealing, "seed"),
         (check_grad, "seed"),
         (random_array, 'random_state'),
-        (random, 'random_state'),
-        (rand, 'random_state'),
         (random_rotation, "random_state"),
         (goodness_of_fit, "random_state"),
         (permutation_test, "random_state"),

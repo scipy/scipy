@@ -6,6 +6,8 @@ __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 
 import itertools
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
@@ -660,13 +662,24 @@ def isspmatrix_dok(x):
     Examples
     --------
     >>> from scipy.sparse import dok_array, dok_matrix, coo_matrix, isspmatrix_dok
-    >>> isspmatrix_dok(dok_matrix([[5]]))
+    >>> isspmatrix_dok(dok_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_dok(dok_array([[5]]))
+    >>> isspmatrix_dok(dok_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_dok(coo_matrix([[5]]))
+    >>> isspmatrix_dok(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_dok` is being replaced by `self.format == "dok" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_dok function will be removed no earlier than v1.20.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, dok_matrix)
 
 

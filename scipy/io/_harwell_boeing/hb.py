@@ -497,8 +497,8 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_array, eye
-    >>> data = csr_array(eye(3))  # create a sparse array
+    >>> from scipy.sparse import csr_array, eye_array
+    >>> data = csr_array(eye_array(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
     <Compressed Sparse Column sparse array of dtype 'float64'
@@ -562,8 +562,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_array, eye
-    >>> data = csr_array(eye(3))  # create a sparse array
+    >>> from scipy.sparse import csr_array, eye_array
+    >>> data = csr_array(eye_array(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
     <Compressed Sparse Column sparse array of dtype 'float64'
