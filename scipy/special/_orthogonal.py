@@ -2231,6 +2231,33 @@ def chebys(n, monic=False):
     .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
            Section 22. National Bureau of Standards, 1972.
 
+    Examples
+    --------
+    Evaluate the Chebyshev polynomial of the second kind :math:`S_3` at :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebys, chebyu
+    >>> np.isclose(chebys(3)(1), -1.0)
+    True
+
+    The polynomial :math:`S_n` is a scaled Chebyshev polynomial of the
+    second kind:
+
+    >>> x = np.linspace(-2, 2, 5)
+    >>> np.allclose(chebys(3)(x), chebyu(3)(x/2))
+    True
+
+    Plot :math:`S_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-2, 2, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, chebys(n)(x), label=rf"$S_{n}$")
+    >>> ax.set_title(r"Chebyshev polynomials $S_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
