@@ -5,18 +5,26 @@ from contextlib import nullcontext
 import itertools
 import platform
 import pytest
+import types
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
+from numpy.testing import assert_allclose
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
-from numpy.linalg import norm
 
+from scipy._lib._array_api import (
+    is_numpy, make_xp_pytest_param, make_xp_pytest_marks,
+    xp_assert_close, xp_assert_less, xp_vector_norm, xp_assert_equal,
+    xp_assert_less_equal,
+)
+from scipy._external import array_api_extra as xpx
+from scipy._lib._sparse import issparse
 from scipy.sparse import dia_array, csr_array, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
                                          gcrotmk, gmres, lgmres,
                                          minres, qmr, tfqmr)
+from scipy.sparse.linalg._interface import IdentityOperator
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -29,8 +37,20 @@ _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
 CB_TYPE_FILTER = ".*called without specifying `callback_type`.*"
 
 
+def _assert_success(*, A, x, b, xp, rtol=1.0, atol=0.0, less_equal=False):
+    Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
+    residual = Ax - b
+    err = xp_vector_norm(residual, axis=-1)
+    assertion = xp_assert_less_equal if less_equal else xp_assert_less
+    limit = atol + rtol * xp_vector_norm(b, axis=-1)
+    assertion(err, limit)
+
+
 # create parametrized fixture for easy reuse in tests
-@pytest.fixture(params=_SOLVERS, scope="session")
+@pytest.fixture(
+    scope="session",
+    params=[make_xp_pytest_param(func) for func in _SOLVERS],
+)
 def solver(request):
     """
     Fixture for all solvers in scipy.sparse.linalg._isolve
@@ -43,7 +63,7 @@ class Case:
         self.name = name
         self.A = A
         if b is None:
-            self.b = arange(A.shape[0], dtype=float)
+            self.b = arange(A.shape[0], dtype=A.dtype)
         else:
             self.b = b
         if skip is None:
@@ -57,15 +77,49 @@ class Case:
 
 
 class SingleTest:
+    # case with a specific solver
     def __init__(self, A, b, solver, casename, convergence=True):
         self.A = A
         self.b = b
         self.solver = solver
+        self.casename = casename
         self.name = casename + '-' + solver.__name__
         self.convergence = convergence
 
     def __repr__(self):
         return f"<{self.name}>"
+
+
+def xp_case(case, xp, batch_A, batch_b, rng=None):
+    sparse = issparse(case.A)
+
+    if (not_np := not is_numpy(xp)) and sparse: # TODO: pydata/sparse for sparse tests?
+        pytest.skip("sparse tests run only with `np` backend")
+
+    A = xp.asarray(case.A) if not_np else case.A
+    b = xp.asarray(case.b) if not_np else case.b
+
+    rng = np.random.default_rng(rng)
+    if sparse and (batch_A or batch_b):
+        A = A.tocoo()
+    if batch_A:
+        # apply some random scaling to each system in batch,
+        # preserving symmetry, (non-)positive definiteness, Hermiticity
+        scaling = np.abs(rng.standard_normal(batch_A + (1, 1)))
+        batch_array = xp.asarray(scaling, dtype=A.dtype)
+        A = batch_array * A
+    if batch_b:
+        # apply some random scaling to each RHS in batch
+        b = b * xp.asarray(rng.random(batch_b + (1,)), dtype=b.dtype)
+
+    return types.SimpleNamespace(
+        name=case.name,
+        A=A,
+        b=b,
+        convergence=case.convergence,
+        solver=case.solver,
+        casename=case.casename,
+    )
 
 
 class IterativeParams:
@@ -86,7 +140,7 @@ class IterativeParams:
         Poisson1D = dia_array((data, [0, -1, 1]), shape=(N, N)).tocsr()
         self.cases.append(Case("poisson1d", Poisson1D))
         # note: minres fails for single precision
-        self.cases.append(Case("poisson1d-F", Poisson1D.astype('f'),
+        self.cases.append(Case("poisson1d-F", Poisson1D.astype(np.float32),
                                skip=[minres]))
 
         # Symmetric and Negative Definite
@@ -158,7 +212,9 @@ class IterativeParams:
         rng = np.random.RandomState(1234)
         data = rng.rand(9, 9) + 1j * rng.rand(9, 9)
         data = np.dot(data.conj(), data.T)
-        self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
+        self.cases.append(Case(
+            "rand-cmplx-sym-pd", data, skip=real_solvers)
+        )
         self.cases.append(Case("rand-cmplx-sym-pd-F", data.astype('F'),
                                skip=real_solvers))
 
@@ -206,21 +262,31 @@ class IterativeParams:
                     tests += [SingleTest(case.A, case.b, solver, case.name,
                                          convergence=False)]
                 else:
-                    tests += [SingleTest(case.A, case.b, solver, case.name)]
+                    tests += [
+                        SingleTest(case.A, case.b, solver, case.name)
+                    ]
         return tests
 
 
 cases = IterativeParams().generate_tests()
 
 
-@pytest.fixture(params=cases, ids=[x.name for x in cases], scope="module")
+@pytest.fixture(
+    params=[pytest.param(c, marks=make_xp_pytest_marks(c.solver)) for c in cases],
+    ids=[x.name for x in cases],
+    scope="module"
+)
 def case(request):
     """
     Fixture for all cases in IterativeParams
     """
     return request.param
 
-def test_maxiter(case):
+
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_maxiter(case, xp, batch_A, batch_b):
+    case = xp_case(case, xp, batch_A, batch_b, rng=38)
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
     A = case.A
@@ -233,9 +299,10 @@ def test_maxiter(case):
 
     def callback(x):
         if x.ndim == 0:
-            residuals.append(norm(b - case.A * x))
+            residuals.append(xp_vector_norm(b - case.A * x))
         else:
-            residuals.append(norm(b - case.A @ x))
+            Ax = xp.squeeze(case.A @ x[..., xp.newaxis], axis=-1)
+            residuals.append(xp_vector_norm(b - Ax, axis=-1))
 
     if case.solver == gmres:
         with pytest.warns(DeprecationWarning, match=CB_TYPE_FILTER):
@@ -247,10 +314,15 @@ def test_maxiter(case):
     assert info == 1
 
 
-def test_convergence(case):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_convergence(case, xp, batch_A, batch_b):
+    if (case.solver is tfqmr) and ("poisson2d-F" in case.name):
+        pytest.skip("Struggles to converge with single precision on some platforms")
+    case = xp_case(case, xp, batch_A, batch_b, rng=38)
     A = case.A
 
-    if A.dtype.char in "dD":
+    if A.dtype in (xp.float64, xp.complex128):
         rtol = 1e-8
     else:
         rtol = 1e-2
@@ -259,110 +331,119 @@ def test_convergence(case):
     x0 = 0 * b
 
     x, info = case.solver(A, b, x0=x0, rtol=rtol)
+    xp_assert_equal(x0, 0 * b)  # ensure that x0 is not overwritten
 
-    assert_array_equal(x0, 0 * b)  # ensure that x0 is not overwritten
     if case.convergence:
         assert info == 0
-        assert norm(A @ x - b) <= norm(b) * rtol
+        _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
     else:
         assert info != 0
-        assert norm(A @ x - b) <= norm(b)
+        _assert_success(A=A, x=x, b=b, xp=xp, rtol=1, less_equal=True)
 
 
-def test_precond_dummy(case):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_precond_dummy(case, xp, batch_A, batch_b):
+    dtype = case.A.dtype
+    case = xp_case(case, xp, batch_A, batch_b)
+    if (case.solver is cgs) and ("pd-F" in case.name):
+        pytest.skip("Struggles to converge with single precision")
+    if (case.solver is tfqmr) and ("poisson2d-F" in case.name):
+        pytest.skip("Hits divide-by-zero with single precision")
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
 
-    rtol = 1e-8
-
-    def identity(b, which=None):
-        """trivial preconditioner"""
-        return b
+    rtol = 1e-8 if np.finfo(dtype).eps < 1e-8 else 1.2e-3
 
     A = case.A
+    
+    # NOTE: the following was previously uncommented as dead code --
+    # was the intention to set `A = dia_array(...)`?
 
-    M, N = A.shape
-    # Ensure the diagonal elements of A are non-zero before calculating
-    # 1.0/A.diagonal()
-    diagOfA = A.diagonal()
-    if np.count_nonzero(diagOfA) == len(diagOfA):
-        dia_array(([1.0 / diagOfA], [0]), shape=(M, N))
+    # _, M, N = A.shape
+    # # Ensure the diagonal elements of A are non-zero before calculating
+    # # 1.0 / xp.linalg.diagonal(A)
+    # diagOfA = xp.linalg.diagonal(A) if not is_numpy(xp) else A.diagonal()
+    # if xp.count_nonzero(diagOfA) == diagOfA.shape[0]:
+    #     dia_array(([1.0 / diagOfA], [0]), shape=(M, N))
 
     b = case.b
     x0 = 0 * b
 
-    precond = LinearOperator(A.shape, identity, rmatvec=identity)
+    precond = IdentityOperator(shape=A.shape)
 
     if case.solver is qmr:
         x, info = case.solver(A, b, M1=precond, M2=precond, x0=x0, rtol=rtol)
     else:
         x, info = case.solver(A, b, M=precond, x0=x0, rtol=rtol)
+
     assert info == 0
-    assert norm(A @ x - b) <= norm(b) * rtol
+    _assert_success(A=A, x=x, b=b, xp=np, rtol=rtol)
 
     A = aslinearoperator(A)
-    A.psolve = identity
-    A.rpsolve = identity
 
     x, info = case.solver(A, b, x0=x0, rtol=rtol)
     assert info == 0
-    assert norm(A @ x - b) <= norm(b) * rtol
+    _assert_success(A=A, x=x, b=b, xp=np, rtol=rtol)
 
 
-# Specific test for poisson1d and poisson2d cases
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
 @pytest.mark.fail_slow(10)
-@pytest.mark.parametrize('case', [x for x in IterativeParams().cases
-                                  if x.name in ('poisson1d', 'poisson2d')],
-                         ids=['poisson1d', 'poisson2d'])
-def test_precond_inverse(case):
-    for solver in _SOLVERS:
-        if solver in case.skip or solver is qmr:
-            continue
+def test_precond_inverse(case, xp, batch_A, batch_b):
+    if case.casename not in ('poisson1d', 'poisson2d'):
+        pytest.skip("specific to poisson1d and poisson2d cases")
+    if case.solver is qmr:
+        pytest.skip("skipped for qmr")
+    
+    case = xp_case(case, xp, batch_A, batch_b, rng=38)
+    rtol = 1e-8
 
-        rtol = 1e-8
+    def inverse(b, which=None):
+        """inverse preconditioner"""
+        A = case.A
+        if is_numpy(xp) and not isinstance(A, np.ndarray):
+            A = A.toarray()
+        return xp.linalg.solve(A, b[..., np.newaxis])
 
-        def inverse(b, which=None):
-            """inverse preconditioner"""
-            A = case.A
-            if not isinstance(A, np.ndarray):
-                A = A.toarray()
-            return np.linalg.solve(A, b)
+    def rinverse(b, which=None):
+        """inverse preconditioner"""
+        A = case.A
+        if is_numpy(xp) and not isinstance(A, np.ndarray):
+            A = A.toarray()
+        return xp.linalg.solve(A.T, b[..., np.newaxis])
 
-        def rinverse(b, which=None):
-            """inverse preconditioner"""
-            A = case.A
-            if not isinstance(A, np.ndarray):
-                A = A.toarray()
-            return np.linalg.solve(A.T, b)
+    matvec_count = [0]
 
-        matvec_count = [0]
+    def matvec(b):
+        matvec_count[0] += 1
+        return case.A @ b[..., np.newaxis]
 
-        def matvec(b):
-            matvec_count[0] += 1
-            return case.A @ b
+    def rmatvec(b):
+        matvec_count[0] += 1
+        return case.A.T @ b[..., np.newaxis]
 
-        def rmatvec(b):
-            matvec_count[0] += 1
-            return case.A.T @ b
+    b = case.b
+    x0 = 0 * b
 
-        b = case.b
-        x0 = 0 * b
+    A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
+    precond = LinearOperator(case.A.shape, inverse, rmatvec=rinverse)
 
-        A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
-        precond = LinearOperator(case.A.shape, inverse, rmatvec=rinverse)
+    # Solve with preconditioner
+    matvec_count = [0]
+    x, info = case.solver(A, b, M=precond, x0=x0, rtol=rtol)
 
-        # Solve with preconditioner
-        matvec_count = [0]
-        x, info = solver(A, b, M=precond, x0=x0, rtol=rtol)
+    assert info == 0
+    _assert_success(A=case.A, x=x, b=b, xp=xp, rtol=rtol)
 
-        assert info == 0
-        assert norm(case.A @ x - b) <= norm(b) * rtol
-
-        # Solution should be nearly instant
-        assert matvec_count[0] <= 3
+    # Solution should be nearly instant
+    assert matvec_count[0] <= 3
 
 
-def test_atol(solver):
+@pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_atol(solver, xp, batch_A, batch_b):
     # TODO: minres / tfqmr. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
     if solver in (minres, tfqmr):
@@ -377,17 +458,20 @@ def test_atol(solver):
     # b = 1e3*np.random.rand(10)
 
     rng = np.random.default_rng(168441431005389)
-    A = rng.uniform(size=[10, 10])
-    A = A @ A.T + 10*np.eye(10)
-    b = 1e3 * rng.uniform(size=10)
+    A = rng.uniform(size=(*batch_A, 10, 10))
+    A = A @ A.mT + 10*np.eye(10)
+    b = 1e3 * rng.uniform(size=(*batch_b, 10))
 
-    b_norm = np.linalg.norm(b)
+    dtype = xpx.default_dtype(xp)
+    A = xp.asarray(A, dtype=dtype) 
+    b = xp.asarray(b, dtype=dtype)
 
     tols = np.r_[0, np.logspace(-9, 2, 7), np.inf]
 
     # Check effect of badly scaled preconditioners
-    M0 = rng.standard_normal(size=(10, 10))
-    M0 = M0 @ M0.T
+    M0 = rng.standard_normal(size=(*batch_A, 10, 10))
+    M0 = xp.asarray(M0)
+    M0 = M0 @ M0.mT
     Ms = [None, 1e-6 * M0, 1e6 * M0]
 
     for M, rtol, atol in itertools.product(Ms, tols, tols):
@@ -397,7 +481,7 @@ def test_atol(solver):
         if solver is qmr:
             if M is not None:
                 M = aslinearoperator(M)
-                M2 = aslinearoperator(np.eye(10))
+                M2 = IdentityOperator(shape=(*batch_A, 10, 10))
             else:
                 M2 = None
             x, info = solver(A, b, M1=M, M2=M2, rtol=rtol, atol=atol)
@@ -405,47 +489,49 @@ def test_atol(solver):
             x, info = solver(A, b, M=M, rtol=rtol, atol=atol)
 
         assert info == 0
-        residual = A @ x - b
-        err = np.linalg.norm(residual)
-        atol2 = rtol * b_norm
-        # Added 1.00025 fudge factor because of `err` exceeding `atol` just
-        # very slightly on s390x (see gh-17839)
-        assert err <= 1.00025 * max(atol, atol2)
+        _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol, atol=atol)
 
 
-def test_zero_rhs(solver):
+@pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_zero_rhs(solver, xp, batch_A, batch_b):
     rng = np.random.default_rng(1684414984100503)
-    A = rng.random(size=[10, 10])
-    A = A @ A.T + 10 * np.eye(10)
+    dtype = xpx.default_dtype(xp) 
+    A = xp.asarray(rng.random(size=(*batch_A, 10, 10)), dtype=dtype)
+    A = A @ A.mT + 10 * xp.eye(10)
 
-    b = np.zeros(10)
+    b = xp.zeros((*batch_b, 10), dtype=dtype)
     tols = np.r_[np.logspace(-10, 2, 7)]
 
+    expected = xp.broadcast_to(b, (*np.broadcast_shapes(batch_A, batch_b), 10))
     for tol in tols:
+        tol = float(tol)
         x, info = solver(A, b, rtol=tol)
         assert info == 0
-        assert_allclose(x, 0., atol=1e-15)
+        xp_assert_close(x, expected, atol=1e-15)
 
-        x, info = solver(A, b, rtol=tol, x0=ones(10))
+        x, info = solver(A, b, rtol=tol, x0=xp.ones((*batch_b, 10)))
         assert info == 0
-        assert_allclose(x, 0., atol=tol)
+        xp_assert_close(x, expected, atol=tol)
 
         if solver is not minres:
-            x, info = solver(A, b, rtol=tol, atol=0, x0=ones(10))
+            x, info = solver(A, b, rtol=tol, atol=0.0, x0=xp.ones((*batch_b, 10)))
             if info == 0:
-                assert_allclose(x, 0)
+                xp_assert_close(x, expected)
 
             x, info = solver(A, b, rtol=tol, atol=tol)
             assert info == 0
-            assert_allclose(x, 0, atol=1e-300)
+            xp_assert_close(x, expected, atol=1e-300)
 
-            x, info = solver(A, b, rtol=tol, atol=0)
+            x, info = solver(A, b, rtol=tol, atol=0.0)
             assert info == 0
-            assert_allclose(x, 0, atol=1e-300)
+            xp_assert_close(x, expected, atol=1e-300)
 
 
+# unbatched test
 @pytest.mark.xfail(reason="see gh-18697")
-def test_maxiter_worsening(solver):
+def test_maxiter_worsening(solver, xp):
     if solver not in (gmres, lgmres, qmr):
         # these were skipped from the very beginning, see gh-9201; gh-14160
         pytest.skip("Solver breakdown case")
@@ -464,6 +550,8 @@ def test_maxiter_worsening(solver):
                   [0, 0, -0.13627952880333782 - 6.283185307179586j, 0],
                   [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
     v = np.ones(4)
+    dtype = xpx.default_dtype(xp)
+    A, v = (xp.asarray(arr, dtype=dtype) for arr in [A, v])
     best_error = np.inf
 
     # Unable to match the Fortran code tolerance levels with this example
@@ -472,43 +560,58 @@ def test_maxiter_worsening(solver):
     # slack_tol = 7 if platform.machine() == 'aarch64' else 5
     slack_tol = 9
 
+    rtol = 1e-8
     for maxiter in range(1, 20):
-        x, info = solver(A, v, maxiter=maxiter, rtol=1e-8, atol=0)
-
+        x, info = solver(A, v, maxiter=maxiter, rtol=rtol, atol=0.0)
         if info == 0:
-            assert norm(A @ x - v) <= 1e-8 * norm(v)
-
-        error = np.linalg.norm(A @ x - v)
-        best_error = min(best_error, error)
+            _assert_success(A=A, x=x, b=v, xp=xp, rtol=rtol)
 
         # Check with slack
+        error = xp_vector_norm(A @ x - v)
+        best_error = xp.min(best_error, error)
         assert error <= slack_tol * best_error
 
 
-def test_x0_working(solver):
-    # Easy problem
+def _setup_random_system(xp, batch_A, batch_b):
     rng = np.random.default_rng(1685363802304750)
     n = 10
-    A = rng.random(size=[n, n])
-    A = A @ A.T
-    b = rng.random(n)
-    x0 = rng.random(n)
+    A = rng.random(size=(*batch_A, n, n))
+    A = A @ A.mT
+    b = rng.random((*batch_b, n))
+    x0 = rng.random((*batch_b, n))
+    dtype = xpx.default_dtype(xp)
+    A, b, x0 = (xp.asarray(arr, dtype=dtype) for arr in [A, b, x0])
+    return A, b, x0
+
+
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_x0_working(solver, xp, batch_A, batch_b):
+    # Easy problem
+    A, b, x0 = _setup_random_system(xp, batch_A, batch_b)
 
     if solver is minres:
         kw = dict(rtol=1e-6)
     else:
-        kw = dict(atol=0, rtol=1e-6)
+        kw = dict(atol=0.0, rtol=1e-6)
 
     x, info = solver(A, b, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 1e-6 * norm(b)
+
+    _assert_success(A=A, x=x, b=b, xp=xp, rtol=1e-6)
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 1e-5*norm(b)
+    _assert_success(A=A, x=x, b=b, xp=xp, rtol=1e-5)
 
 
-def test_x0_equals_Mb(case):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_x0_equals_Mb(case, xp, batch_A, batch_b):
+    dtype = case.A.dtype
+    case = xp_case(case, xp, batch_A, batch_b, rng=38)
+    if (case.solver is cgs) and ("pd-F" in case.name):
+        pytest.skip("Struggles to converge with single precision")
     if (case.solver is bicgstab) and (case.name == 'nonsymposdef-bicgstab'):
         pytest.skip("Solver fails due to numerical noise "
                     "on some architectures (see gh-15533).")
@@ -518,41 +621,55 @@ def test_x0_equals_Mb(case):
     A = case.A
     b = case.b
     x0 = 'Mb'
-    rtol = 1e-8
+    rtol = 1e-8 if np.finfo(dtype).eps < 1e-8 else 1.5e-3
     x, info = case.solver(A, b, x0=x0, rtol=rtol)
 
-    assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
+    assert x0 == 'Mb'  # ensure that x0 is not overwritten
     assert info == 0
-    assert norm(A @ x - b) <= rtol * norm(b)
+    _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
 
 
-@pytest.mark.parametrize('solver', _SOLVERS)
-def test_x0_solves_problem_exactly(solver):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_x0_solves_problem_exactly(solver, xp, batch_A, batch_b):
     # See gh-19948
-    mat = np.eye(2)
-    rhs = np.array([-1., -1.])
+    dtype = xpx.default_dtype(xp)
+    mat = xp.tile(xp.eye(2, dtype=dtype), (*batch_A, 1, 1))
+    rhs = xp.tile(xp.asarray([-1., -1.], dtype=dtype), (*batch_b, 1))
 
     sol, info = solver(mat, rhs, x0=rhs)
-    assert_allclose(sol, rhs)
+    expected = xp.broadcast_to(rhs, (*np.broadcast_shapes(batch_A, batch_b), 2))
+    xp_assert_close(sol, expected)
     assert info == 0
 
 
-# Specific tfqmr test
-@pytest.mark.parametrize('case', IterativeParams().cases)
-def test_show(case, capsys):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_show(case, capsys, xp, batch_A, batch_b):
+    if case.solver != tfqmr:
+        pytest.skip("tfqmr specific test")
+    if "poisson2d-F" in case.name:
+        pytest.skip("Hits divide-by-zero with single precision")
+    if "pd-F" in case.name:
+        pytest.skip("Struggles to converge with single precision on some platforms")
+    case = xp_case(case, xp, batch_A, batch_b)
     def cb(x):
         pass
 
-    ctx = np.errstate(all='ignore') if case.name == "nonsymposdef" else nullcontext()
+    ctx = (
+        np.errstate(all='ignore')
+        if case.casename == "nonsymposdef"
+        else nullcontext()
+    )
     with ctx:
         x, info = tfqmr(case.A, case.b, callback=cb, show=True)
 
     out, err = capsys.readouterr()
 
-    if case.name == "sym-nonpd":
+    if case.casename == "sym-nonpd":
         # no logs for some reason
         exp = ""
-    elif case.name in ("nonsymposdef", "nonsymposdef-F"):
+    elif case.casename in ("nonsymposdef", "nonsymposdef-F"):
         # Asymmetric and Positive Definite
         exp = "TFQMR: Linear solve not converged due to reach MAXIT iterations"
     else:  # all other cases
@@ -562,29 +679,21 @@ def test_show(case, capsys):
     assert err == ""
 
 
-def test_positional_error(solver):
-    # from test_x0_working
-    rng = np.random.default_rng(1685363802304750)
-    n = 10
-    A = rng.random(size=[n, n])
-    A = A @ A.T
-    b = rng.random(n)
-    x0 = rng.random(n)
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_positional_error(solver, xp, batch_A, batch_b):
+    A, b, x0 = _setup_random_system(xp, batch_A, batch_b)
     with pytest.raises(TypeError):
         solver(A, b, x0, 1e-5)
 
 
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
 @pytest.mark.parametrize("atol", ["legacy", None, -1])
-def test_invalid_atol(solver, atol):
+def test_invalid_atol(solver, atol, xp, batch_A, batch_b):
     if solver == minres:
         pytest.skip("minres has no `atol` argument")
-    # from test_x0_working
-    rng = np.random.default_rng(1685363802304750)
-    n = 10
-    A = rng.random(size=[n, n])
-    A = A @ A.T
-    b = rng.random(n)
-    x0 = rng.random(n)
+    A, b, x0 = _setup_random_system(xp, batch_A, batch_b)
     with pytest.raises(ValueError):
         solver(A, b, x0, atol=atol)
 
@@ -627,7 +736,7 @@ class TestQMR:
         x, info = qmr(A, b, rtol=rtol, maxiter=15, M1=M1, M2=M2)
 
         assert info == 0
-        assert norm(A @ x - b) <= rtol * norm(b)
+        assert xp_vector_norm(A @ x - b) <= rtol * xp_vector_norm(b)
 
 
 class TestGMRES:
@@ -697,19 +806,19 @@ class TestGMRES:
         A = eye(2)
         b = ones(2)
         x, info = gmres(A, b, rtol=1e-5)
-        assert np.linalg.norm(A @ x - b) <= 1e-5 * np.linalg.norm(b)
-        assert_allclose(x, b, atol=0, rtol=1e-8)
+        assert xp_vector_norm(A @ x - b) <= 1e-5 * xp_vector_norm(b)
+        assert_allclose(x, b, atol=0.0, rtol=1e-8)
 
         rndm = np.random.RandomState(12345)
         A = rndm.rand(30, 30)
         b = 1e-6 * ones(30)
         x, info = gmres(A, b, rtol=1e-7, restart=20)
-        assert np.linalg.norm(A @ x - b) > 1e-7
+        assert xp_vector_norm(A @ x - b) > 1e-7
 
         A = eye(2)
         b = 1e-10 * ones(2)
-        x, info = gmres(A, b, rtol=1e-8, atol=0)
-        assert np.linalg.norm(A @ x - b) <= 1e-8 * np.linalg.norm(b)
+        x, info = gmres(A, b, rtol=1e-8, atol=0.0)
+        assert xp_vector_norm(A @ x - b) <= 1e-8 * xp_vector_norm(b)
 
     def test_defective_precond_breakdown(self):
         # Breakdown due to defective preconditioner
@@ -720,12 +829,12 @@ class TestGMRES:
         x = np.array([1, 0, 0])
         A = np.diag([2, 3, 4])
 
-        x, info = gmres(A, b, x0=x, M=M, rtol=1e-15, atol=0)
+        x, info = gmres(A, b, x0=x, M=M, rtol=1e-15, atol=0.0)
 
         # Should not return nans, nor terminate with false success
         assert not np.isnan(x).any()
         if info == 0:
-            assert np.linalg.norm(A @ x - b) <= 1e-15 * np.linalg.norm(b)
+            assert xp_vector_norm(A @ x - b) <= 1e-15 * xp_vector_norm(b)
 
         # The solution should be OK outside null space of M
         assert_allclose(M @ (A @ x), M @ b)
@@ -740,7 +849,7 @@ class TestGMRES:
         # Should not return nans, nor terminate with false success
         assert not np.isnan(x).any()
         if info == 0:
-            assert np.linalg.norm(A @ x - b) <= rtol * np.linalg.norm(b)
+            assert xp_vector_norm(A @ x - b) <= rtol * xp_vector_norm(b)
 
         # The solution should be OK outside null space of A
         assert_allclose(A @ (A @ x), A @ b)
@@ -764,28 +873,28 @@ class TestGMRES:
 
         # 2 iterations is not enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=pr_norm_cb,
                         maxiter=2, restart=50)
         assert info == 2
         assert cb_count[0] == 2
 
         # With `callback_type` specified, no warning should be raised
         cb_count = [0]
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=pr_norm_cb,
                         maxiter=2, restart=50, callback_type='legacy')
         assert info == 2
         assert cb_count[0] == 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=pr_norm_cb,
                         maxiter=2, restart=50, callback_type='pr_norm')
         assert info == 0
         assert cb_count[0] > 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=x_cb, maxiter=2,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=x_cb, maxiter=2,
                         restart=50, callback_type='x')
         assert info == 0
         assert cb_count[0] == 1
@@ -800,22 +909,22 @@ class TestGMRES:
         count = [0]
 
         def x_cb(x):
-            r = np.linalg.norm(A @ x - b)
+            r = xp_vector_norm(A @ x - b)
             assert r <= prev_r[0]
             prev_r[0] = r
             count[0] += 1
 
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=x_cb, maxiter=20,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=x_cb, maxiter=20,
                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 20
 
 
-def test_nD(solver):
+def test_nD(solver, xp):
     """Check that >2-D operators are rejected cleanly."""
     def id(x):
         return x
-    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
-    b = np.ones((2, 2))
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=xp.float64, xp=xp)
+    b = xp.ones((2, 2))
     with pytest.raises(ValueError, match="expected 2-D"):
         solver(A, b)

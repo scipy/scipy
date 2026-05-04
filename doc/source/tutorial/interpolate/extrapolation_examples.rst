@@ -33,6 +33,11 @@ are deliberately pared down to bare essentials needed to demonstrate the
 main ideas, in a hope that they serve as an inspiration for your
 handling of your particular problem.
 
+.. note::
+
+   The ``extrapolate`` argument is covered in detail in the 
+   :ref:`1-D interpolation tutorial <tutorial-interpolate_out_of_bounds>`.
+
 
 .. _tutorial-extrapolation-left-right:
 
@@ -77,7 +82,7 @@ To illustrate:
     xnew = np.linspace(-np.pi, 2.5*np.pi, 51)
     ynew = clipped(xnew, bare_func, x, y)
 
-    fix, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
     ax1.plot(xnew, ynew[:, 0])
     ax1.plot(x, y[:, 0], 'o')
 
@@ -86,7 +91,7 @@ To illustrate:
     plt.tight_layout()
 
 
-The snippet above is straightforward to adapt for other ways of handing out-of-bounds
+The snippet above is straightforward to adapt for other ways of handling out-of-bounds
 values, such as raising errors; see also :ref:`tutorial-extrapolation-asymptotics` for a
 variation where we match in-bounds interpolation with known out-of-bounds asymptotic
 functions.
@@ -206,7 +211,7 @@ extrapolation proceeds using these two additional intervals.
     # not-a-knot does not require additional intervals
 
     natural = CubicSpline(xs,ys, bc_type='natural')
-    # extend the natural natural spline with linear extrapolating knots
+    # extend the natural spline with linear extrapolating knots
     add_boundary_knots(natural)
 
     clamped = CubicSpline(xs,ys, bc_type='clamped')
@@ -283,7 +288,7 @@ of roots due to periodicity of the ``tan`` function), repeated calls to
 
 To circumvent this difficulty, we tabulate :math:`y = ax - 1/\tan{x}`
 and interpolate it on the tabulated grid. In fact, we will use the *inverse*
-interpolation: we interpolate the values of :math:`x` versus :math:`у`.
+interpolation: we interpolate the values of :math:`x` versus :math:`y`.
 This way, solving the original equation becomes simply an evaluation of
 the interpolated function at zero :math:`y` argument.
 
@@ -374,7 +379,7 @@ implementation may look like this
         def root(self):
             out = self.spl(0)
             asympt = 1./np.sqrt(self.a)
-            return np.where(spl.x.min() < asympt, out, asympt)
+            return np.where(self.spl.x.min() < asympt, out, asympt)
 
 And then
 

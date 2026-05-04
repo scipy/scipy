@@ -15,6 +15,7 @@ from . import types
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
+# mypy: disable-error-code=attr-defined
 
 class TestNdimageMorphology:
 
@@ -2714,6 +2715,7 @@ class TestNdimageMorphology:
 
     @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
     @skip_xp_backends("dask.array", reason="output=array requires buffer view")
+    @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9756")
     @make_xp_test_case(ndimage.white_tophat)
     def test_white_tophat04(self, xp):
         array = np.eye(5, dtype=bool)
@@ -2785,6 +2787,7 @@ class TestNdimageMorphology:
 
     @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
     @skip_xp_backends("dask.array", reason="output=array requires buffer view")
+    @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9756")
     @make_xp_test_case(ndimage.black_tophat)
     def test_black_tophat04(self, xp):
         array = xp.asarray(np.eye(5, dtype=bool))
@@ -2959,7 +2962,7 @@ class TestDilateFix:
         else:
             self.dilated3x3 = xp.astype(dilated3x3, xp.uint8)
 
-
+    @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9756")
     def test_dilation_square_structure(self, xp):
         self._setup(xp)
         result = ndimage.grey_dilation(self.array, structure=self.sq3x3)

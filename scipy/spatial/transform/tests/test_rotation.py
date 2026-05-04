@@ -953,7 +953,7 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
 
     seq = "".join(seq_tuple)
     if intrinsic:
-        # Extrinsic rotation (wrt to global world) at lower case
+        # Extrinsic rotation (w.r.t. global world) at lower case
         # intrinsic (WRT the object itself) lower case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
@@ -1027,7 +1027,7 @@ def test_as_euler_degenerate_asymmetric_axes(
 
     seq = "".join(seq_tuple)
     if intrinsic:
-        # Extrinsic rotation (wrt to global world) at lower case
+        # Extrinsic rotation (w.r.t. global world) at lower case
         # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles, degrees=True)
@@ -1064,7 +1064,7 @@ def test_as_euler_degenerate_symmetric_axes(
     # Rotation of the form A/B/A are rotation around symmetric axes
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
-        # Extrinsic rotation (wrt to global world) at lower case
+        # Extrinsic rotation (w.r.t. global world) at lower case
         # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles, degrees=True)
@@ -1274,6 +1274,8 @@ def test_approx_equal_single_rotation(xp):
     q = Rotation.from_quat(xp.eye(4))
     assert p.approx_equal(q[3])
     assert not p.approx_equal(q[0])
+    # Regression test for gh-24769: single approx_equal should return a bool
+    assert isinstance(p.approx_equal(q[0]), np.bool_) or not is_numpy(xp)
 
     # test passing atol and using degrees
     assert not p.approx_equal(q[3], atol=1e-10)
@@ -1657,6 +1659,23 @@ def test_apply_array_like():
     v = r.apply(t.tolist())
     v_expected = r.apply(t)
     xp_assert_close(v, v_expected, atol=1e-12)
+
+
+def test_apply_matrix_equivalence():
+    """Test documented equivalence for single rotation:
+    `apply(vectors) == vectors @ as_matrix().T.`"""
+    r = Rotation.from_rotvec([0, 0, 1])
+    # Single vector (3,)
+    v = np.array([1.0, 0.0, 0.0])
+    xp_assert_close(r.apply(v), v @ r.as_matrix().T)
+    # Multiple vectors (P, 3)
+    arr = np.array([[1, 0, 0], [1, 2, 3]], dtype=float)
+    xp_assert_close(r.apply(arr), arr @ r.as_matrix().T)
+    # (3, 3) case: `as_matrix() @ vectors` would not error but give wrong result
+    arr33 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=float)
+    xp_assert_close(r.apply(arr33), arr33 @ r.as_matrix().T)
+    wrong_result = r.as_matrix() @ arr33
+    assert not np.allclose(r.apply(arr33), wrong_result)
 
 
 @make_xp_test_case((Rotation, "apply"))
@@ -3189,3 +3208,16 @@ def test_non_writeable():
     q = np.array([0, 0, 0, 1.0])
     q.flags.writeable = False
     Rotation.from_quat(q)  # Regression test against gh-24354, should not raise
+
+
+def test_gh_24751():
+    points = np.array([[0.0, 0.0, 0.0]])
+    points.flags.writeable = False
+    rot = Rotation.from_euler("z", 0.0)
+    rot.apply(points)
+
+
+def test_rotvec_non_writeable():
+    rotvec = np.array([0, 0, 1]) * np.pi / 2
+    rotvec.flags.writeable = False
+    Rotation.from_rotvec(rotvec)

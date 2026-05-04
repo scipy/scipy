@@ -153,7 +153,7 @@ Currently, SciPy wheels are being built as follows:
  OSX x86_64 (Accelerate)     ``macos-15-intel``               Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
  OSX arm64 (OpenBLAS)        ``macos-14``                     Apple clang 15.0.0/gfortran 12.1.0     ``cibuildwheel``
  OSX arm64 (Accelerate)      ``macos-14``                     Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
- Windows                     ``windows-2019``                 GCC 10.3.0 (`rtools`_)                 ``cibuildwheel``
+ Windows                     ``windows-2025``                 GCC 15.2.0 (`rtools`_)                 ``cibuildwheel``
 =========================   ==============================   ====================================   =============================
 
 .. _CI: https://github.com/actions/runner-images
@@ -161,8 +161,7 @@ Currently, SciPy wheels are being built as follows:
 .. _Images: https://github.com/orgs/cirruslabs/packages?tab=packages&q=macos
 .. _rtools: https://community.chocolatey.org/packages/rtools#versionhistory
 
-Note that the OSX wheels additionally vendor gfortran 11.3.0 for x86_64,
-and gfortran 12.1.0 for arm64. See ``tools/wheels/cibw_before_build_macos.sh``.
+Note that the OSX wheels additionally vendor the libgfortran dylib.
 
 
 C Compilers

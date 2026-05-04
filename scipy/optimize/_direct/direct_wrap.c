@@ -69,7 +69,13 @@ PyObject* direct_optimize(
      if (fglobal == DIRECT_UNKNOWN_FGLOBAL)
       fglobal_reltol = DIRECT_UNKNOWN_FGLOBAL_RELTOL;
 
-     if (dimension < 1) *ret_code = DIRECT_INVALID_ARGS;
+     /* Quit early on zero-dimension input. See gh-25086. */
+     if (dimension < 1) {
+      PyErr_Format(PyExc_ValueError,
+              "DIRECT requires at least one dimension, got %d", dimension);
+      *ret_code = DIRECT_INVALID_ARGS;
+      return NULL;
+     }
 
      l = (doublereal *) malloc(sizeof(doublereal) * dimension * 2);
      if (!l) {

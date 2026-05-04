@@ -1,7 +1,7 @@
 from functools import update_wrapper, lru_cache
 import inspect
 
-from ._pocketfft import helper as _helper
+from ._duccfft import helper as _helper
 
 import numpy as np
 from scipy._lib._array_api import array_namespace

@@ -2,7 +2,6 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
-import warnings
 import threading
 import types
 import numpy as np
@@ -13,7 +12,7 @@ from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
 from scipy import special
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import check_random_state
-from scipy.linalg.blas import drot, get_blas_funcs
+from scipy.linalg.blas import get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
 from . import _covariance, _rcont
@@ -296,7 +295,7 @@ class multi_rv_frozen:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     @property
     def random_state(self):
@@ -956,7 +955,7 @@ multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, mean=None, cov=1, allow_singular=False, seed=None,
                  maxpts=None, abseps=1e-5, releps=1e-5):
@@ -1498,7 +1497,7 @@ class matrix_normal_frozen(multi_rv_frozen):
     >>> distn.logpdf(X)
     -10.590229595124615
     """
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
         self._dist = matrix_normal_gen(seed)
@@ -2544,7 +2543,7 @@ dirichlet = dirichlet_gen()
 
 
 class dirichlet_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
@@ -3243,7 +3242,7 @@ class wishart_frozen(multi_rv_frozen):
         that instance is used.
 
     """
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, df, scale, seed=None):
         self._dist = wishart_gen(seed)
@@ -3777,7 +3776,7 @@ invwishart = invwishart_gen()
 
 
 class invwishart_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, df, scale, seed=None):
         """Create a frozen inverse Wishart distribution.
@@ -4005,21 +4004,10 @@ class multinomial_gen(multi_rv_generic):
         """
         eps = np.finfo(np.result_type(np.asarray(p), np.float32)).eps * 10
         p = np.array(p, dtype=np.float64, copy=True)
-        p_adjusted = 1. - p[..., :-1].sum(axis=-1)
-        # only make adjustment when it's significant
-        i_adjusted = np.abs(1 - p.sum(axis=-1)) > eps
-        p[i_adjusted, -1] = p_adjusted[i_adjusted]
-
-        if np.any(i_adjusted):
-            message = ("Some rows of `p` do not sum to 1.0 within tolerance of "
-                       f"{eps=}. Currently, the last element of these rows is adjusted "
-                       "to compensate, but this condition will produce NaNs "
-                       "beginning in SciPy 1.18.0. Please ensure that rows of `p` sum "
-                       "to 1.0 to avoid futher disruption.")
-            warnings.warn(message, FutureWarning, stacklevel=3)
 
         # true for bad p
-        pcond = np.any(p < 0, axis=-1)
+        pcond = np.abs(1 - p.sum(axis=-1)) > eps
+        pcond |= np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
         n = np.array(n, dtype=int, copy=True)
@@ -4217,6 +4205,10 @@ class multinomial_gen(multi_rv_generic):
         %(_doc_callparams_note)s
         """
         n, p, npcond = self._process_parameters(n, p)
+        if np.any(npcond):
+            message = ("`multinomial.rvs` requires `n > 0`, `(p > 0).all()`, and"
+                       "`p.sum() == 1`.")
+            raise ValueError(message)
         random_state = self._get_random_state(random_state)
         return random_state.multinomial(n, p, size)
 
@@ -4395,7 +4387,7 @@ special_ortho_group = special_ortho_group_gen()
 
 
 class special_ortho_group_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, dim=None, seed=None):
         """Create a frozen SO(N) distribution.
@@ -4551,7 +4543,7 @@ ortho_group = ortho_group_gen()
 
 
 class ortho_group_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, dim=None, seed=None):
         """Create a frozen O(N) distribution.
@@ -4733,6 +4725,8 @@ class random_correlation_gen(multi_rv_generic):
                 m.shape[0] == m.shape[1]):
             raise ValueError()
 
+        drot = get_blas_funcs('rot', dtype=np.float64, ilp64='preferred')
+
         d = m.shape[0]
         for i in range(d-1):
             if m[i, i] == 1:
@@ -4808,7 +4802,7 @@ random_correlation = random_correlation_gen()
 
 
 class random_correlation_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, eigs, seed=None, tol=1e-13, diag_tol=1e-7):
         """Create a frozen random correlation matrix distribution.
@@ -4970,7 +4964,7 @@ unitary_group = unitary_group_gen()
 
 
 class unitary_group_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, dim=None, seed=None):
         """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
@@ -5538,7 +5532,7 @@ class multivariate_t_gen(multi_rv_generic):
 
 
 class multivariate_t_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
@@ -6458,7 +6452,7 @@ random_table = random_table_gen()
 
 
 class random_table_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, row, col, *, seed=None):
         self._dist = random_table_gen(seed)

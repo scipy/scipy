@@ -91,7 +91,7 @@ at the top-level directory.
 
 void
 sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
-        int *perm_c, int *perm_r, SuperMatrix *B,
+        const int *perm_c, const int *perm_r, SuperMatrix *B,
         SuperLUStat_t *stat, int *info)
 {
 
@@ -107,12 +107,12 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     SCformat *Lstore;
     NCformat *Ustore;
     float   *Lval, *Uval;
-    int      fsupc, nrow, nsupr, nsupc, irow;
+    int      fsupc, irow, jcol;
+    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
     int_t    i, j, k, luptr, istart, iptr;
-    int      jcol, n, ldb, nrhs;
     float   *work, *rhs_work, *soln;
     flops_t  solve_ops;
-    void sprint_soln(int n, int nrhs, float *soln);
+    void sprint_soln(int n, int nrhs, const float *soln);
 
     /* Test input parameters ... */
     *info = 0;
@@ -331,7 +331,7 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
  * Diagnostic print of the solution vector 
  */
 void
-sprint_soln(int n, int nrhs, float *soln)
+sprint_soln(int n, int nrhs, const float *soln)
 {
     int i;
 

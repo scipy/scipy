@@ -1,6 +1,7 @@
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from types import GenericAlias
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
@@ -51,6 +52,10 @@ class DunnettResult:
     _rng: SeedType = field(repr=False)
     _ci: ConfidenceInterval | None = field(default=None, repr=False)
     _ci_cl: DecimalNumber | None = field(default=None, repr=False)
+
+    # generic type compatibility with scipy-stubs
+    # pyrefly:ignore[bad-class-definition]
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __str__(self):
         # Note: `__str__` prints the confidence intervals from the most

@@ -412,6 +412,26 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                 if kwarg in marker.kwargs:
                     raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
 
+        elif len(marker.args) == 2 and isinstance(marker.args[1], bool | type(None)):
+            # condition is provided:
+            #   1. check it
+            #   2. reason is required (similar to pytest's xfail/skipif)
+            backend, condition = marker.args
+
+            if backend not in xp_known_backends:
+                raise ValueError(f"Unknown backend: {backend}; "
+                                 f"must be one of {list(xp_known_backends)}")
+
+            if condition:
+                reason = marker.kwargs.get("reason")
+                # reason overrides the ones from cpu_only, np_only, and eager_only.
+                # This is regardless of order of appearance of the markers.
+                reasons[backend].insert(0, reason)
+
+            for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
+                if kwarg in marker.kwargs:
+                    raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
+
         elif len(marker.args) > 1:
             raise ValueError(
                 f"Please specify only one backend per marker: {marker.args}"
@@ -438,11 +458,13 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
         ...
 
         @skip_xp_backends(backend, *, reason=None)
+        @skip_xp_backends(backend, condition, /, *, reason='skip because condition')
         @skip_xp_backends(*, cpu_only=True, exceptions=(), reason=None)
         @skip_xp_backends(*, eager_only=True, exceptions=(), reason=None)
         @skip_xp_backends(*, np_only=True, exceptions=(), reason=None)
 
         @xfail_xp_backends(backend, *, reason=None)
+        @xfail_xp_backends(backend, condition, /, *, reason='xfail because condition')
         @xfail_xp_backends(*, cpu_only=True, exceptions=(), reason=None)
         @xfail_xp_backends(*, eager_only=True, exceptions=(), reason=None)
         @xfail_xp_backends(*, np_only=True, exceptions=(), reason=None)
@@ -526,7 +548,7 @@ if hypothesis_available:
     # Following the approach of NumPy's conftest.py...
     # Use a known and persistent tmpdir for hypothesis' caches, which
     # can be automatically cleared by the OS or user.
-    hypothesis.configuration.set_hypothesis_home_dir(
+    hypothesis.configuration.set_hypothesis_home_dir(  # pyrefly:ignore[unbound-name]
         os.path.join(tempfile.gettempdir(), ".hypothesis")
     )
 
@@ -632,7 +654,7 @@ if HAVE_SCPDT:
                     warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
-    dt_config.user_context_mgr = warnings_errors_and_rng
+    dt_config.user_context_mgr = warnings_errors_and_rng  # pyrefly:ignore[unbound-name]
     dt_config.skiplist = set([
         'scipy.linalg.LinAlgError',     # comes from numpy
         'scipy.fftpack.fftshift',       # fftpack stuff is also from numpy
@@ -649,7 +671,12 @@ if HAVE_SCPDT:
         'scipy.io.matlab.MatlabOpaque.dtype',
         'scipy.io.matlab.MatlabOpaque.strides',
         'scipy.io.matlab.MatlabFunction.strides',
-        'scipy.io.matlab.MatlabFunction.dtype'
+        'scipy.io.matlab.MatlabFunction.dtype',
+        # deprecated
+        'scipy.interpolate.lagrange',
+        'scipy.interpolate.approximate_taylor_polynomial',
+        'scipy.interpolate.pade',
+        'scipy.spatial.tsearch',
     ])
 
     # help pytest collection a bit: these names are either private

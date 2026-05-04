@@ -68,9 +68,7 @@ from scipy.sparse._sputils import asmatrix, is_pydata_spmatrix, isintlike, issha
 __all__ = ["LinearOperator", "aslinearoperator"]
 
 
-@xp_capabilities(skip_backends=[
-    ("cupy", "TODO: waiting for scipy/scipy#24670"),
-])
+@xp_capabilities()
 class LinearOperator:
     """Common interface for performing matrix vector products.
 
@@ -193,13 +191,13 @@ class LinearOperator:
     >>> A @ np.ones(2)
     array([ 2.,  3.])
 
-    """  # numpydoc ignore=PR02
+    """  # numpydoc ignore=PR01,PR02
 
     # Necessary for right matmul with numpy arrays.
     __array_ufunc__ = None
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     ndim: int
 
@@ -274,7 +272,7 @@ class LinearOperator:
             else:
                 self.dtype = matvec_v.dtype
 
-    def _matmat(self, X):
+    def _matmat(self, X, /):
         """Default matrix-matrix multiplication handler.
 
         If ``self`` is a linear operator of shape ``(..., M, N)``,
@@ -517,7 +515,7 @@ class LinearOperator:
         """
         return self._shared_matmat(X, adjoint=True)
 
-    def _rmatmat(self, X):
+    def _rmatmat(self, X, /):
         """Default implementation of `_rmatmat`; defers to `rmatvec` or `adjoint`."""
         if type(self)._adjoint == LinearOperator._adjoint:
             xp = self._xp

@@ -38,14 +38,17 @@ Uses ARPACK: https://github.com/opencollab/arpack-ng
 import numpy as np
 import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, issparse
+from scipy.sparse import eye_array, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
+from scipy.linalg.lapack import HAS_ILP64
 from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
 )
 from scipy.sparse.linalg import gmres, splu
 
 from . import _arpacklib
+
+_int_dtype = np.int64 if HAS_ILP64 else np.int32
 
 __docformat__ = "restructuredtext en"
 
@@ -279,6 +282,13 @@ HOWMNY_DICT = {'A': 0, 'P': 1, 'S': 2}
 class ArpackError(RuntimeError):
     """
     ARPACK error.
+
+    Parameters
+    ----------
+    info : int or str
+        Key for `infodict` to get error message.
+    infodict : dict, optional
+        Dictionary mapping `info` keys to error messages.
     """
 
     def __init__(self, info, infodict=None):
@@ -293,6 +303,15 @@ class ArpackError(RuntimeError):
 class ArpackNoConvergence(ArpackError):
     """
     ARPACK iteration did not converge.
+
+    Parameters
+    ----------
+    msg : str
+        Error message.
+    eigenvalues : ndarray
+        Conveged eigenvalues.
+    eigenvectors : ndarray
+        Converged eigenvectors.
 
     Attributes
     ----------
@@ -578,7 +597,7 @@ class _SymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _SAUPD_ERRORS[ltr]
         self.extract_infodict = _SEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(11, dtype=np.int32)
+        self.ipntr = np.zeros(11, dtype=_int_dtype)
 
     def iterate(self):
         self._arpack_solver(self.arpack_dict, self.resid, self.v, self.ipntr,
@@ -632,7 +651,7 @@ class _SymmetricArpackParams(_ArpackParams):
         ierr = 0
         self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
         howmny = HOWMNY_DICT["A"]  # return all eigenvectors
-        sselect = np.zeros(self.ncv, dtype=np.int32)
+        sselect = np.zeros(self.ncv, dtype=_int_dtype)
         d = np.zeros(self.k, dtype=self.tp)
         z = np.zeros((self.n, self.ncv), dtype=self.tp, order='F')
 
@@ -772,7 +791,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _NAUPD_ERRORS[ltr]
         self.extract_infodict = _NEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(14, dtype=np.int32)
+        self.ipntr = np.zeros(14, dtype=_int_dtype)
 
         if self.tp in 'FD':
             self.rwork = np.zeros(self.ncv, dtype=self.tp.lower())
@@ -839,7 +858,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         ierr = 0
         self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
         howmny = HOWMNY_DICT['A']  # return all eigenvectors
-        sselect = np.zeros(self.ncv, dtype=np.int32)
+        sselect = np.zeros(self.ncv, dtype=_int_dtype)
         sigmar = float(np.real(self.sigma))
         sigmai = float(np.imag(self.sigma))
         workev = np.zeros(3 * self.ncv, self.tp)
@@ -1142,7 +1161,7 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             A.flat[::A.shape[1] + 1] -= sigma
             return LuInv(A).matvec
         elif issparse(A) or is_pydata_spmatrix(A):
-            A = A - sigma * eye(A.shape[0])
+            A = A - sigma * eye_array(A.shape[0])
             A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
             return SpLuInv(A).matvec
         else:
@@ -1264,6 +1283,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionadded:: 1.17.0
 
     Returns
     -------
@@ -1588,6 +1609,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionadded:: 1.17.0
 
     Raises
     ------

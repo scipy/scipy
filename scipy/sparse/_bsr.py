@@ -354,25 +354,14 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     ######################
 
     def tobsr(self, blocksize=None, copy=False):
-        """Convert this array/matrix into Block Sparse Row Format.
-
-        With copy=False, the data/indices may be shared between this
-        array/matrix and the resultant bsr_array/bsr_matrix.
-
-        If blocksize=(R, C) is provided, it will be used for determining
-        block size of the bsr_array/bsr_matrix.
-
-        Returns
-        -------
-        bsr array/matrix
-            The converted array/matrix in BSR format.
-        """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
         if copy:
             return self.copy()
         else:
             return self
+
+    tobsr.__doc__ = _spbase.tobsr.__doc__
 
     def tocsr(self, copy=False):
         M, N = self.shape
@@ -403,17 +392,6 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocoo(self, copy=True):
-        """Convert this array/matrix to COOrdinate format.
-
-        When copy=False the data array will be shared between
-        this array/matrix and the resultant coo_array/coo_matrix.
-
-        Returns
-        -------
-        coo array/matrix
-            The converted array/matrix in COO format.
-        """
-
         M,N = self.shape
         R,C = self.blocksize
 
@@ -444,6 +422,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         return self._coo_container(
             (data, (row, col)), shape=self.shape
         )
+
+    tocoo.__doc__ = _spbase.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
         return self.tocoo(copy=False).toarray(order=order, out=out)
@@ -643,6 +623,15 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 def isspmatrix_bsr(x):
     """Is `x` of a bsr_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -720,6 +709,8 @@ class bsr_array(_bsr_base, sparray):
         Number of values stored in the array
     T : bsr_array
         The transpose of the array
+    mT : bsr_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -781,12 +772,21 @@ class bsr_array(_bsr_base, sparray):
            [4, 4, 5, 5, 6, 6],
            [4, 4, 5, 5, 6, 6]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class bsr_matrix(spmatrix, _bsr_base):
     """
     Block Sparse Row format sparse matrix.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         bsr_matrix(D, [blocksize=(R,C)])
@@ -837,6 +837,8 @@ class bsr_matrix(spmatrix, _bsr_base):
         Number of values stored in the matrix
     T : bsr_matrix
         The transpose of the matrix
+    mT : bsr_matrix
+        The matrix transpose
 
     Notes
     -----

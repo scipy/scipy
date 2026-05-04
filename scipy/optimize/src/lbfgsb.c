@@ -143,10 +143,21 @@ static void dcstep(
 );
 
 // Helper functions
+static inline void save_local_vars(
+    CBLAS_INT prjctd, CBLAS_INT cnstnd, CBLAS_INT boxed, CBLAS_INT updatd,
+    CBLAS_INT nintol,
+    CBLAS_INT iback, CBLAS_INT nskip, CBLAS_INT head, CBLAS_INT col, CBLAS_INT itail,
+    CBLAS_INT iter, CBLAS_INT iupdat, CBLAS_INT nseg, CBLAS_INT nfgv, CBLAS_INT info,
+    CBLAS_INT ifun, CBLAS_INT iword, CBLAS_INT nfree, CBLAS_INT nact, CBLAS_INT ileave,
+    CBLAS_INT nenter,
+    double theta, double fold, double tol, double dnorm, double gd,
+    double stpmx, double sbgnrm, double stp, double gdold, double dtd,
+    CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave
+);
 static inline void save_vars(
-    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    CBLAS_INT brackt, CBLAS_INT stage, double ginit, double gtest, double gx, double gy,
     double finit, double fx, double fy, double stx, double sty, double stmin,
-    double stmax, double width, double width1, int* isave, double* dsave
+    double stmax, double width, double width1, CBLAS_INT* isave, double* dsave
 );
 
 static double epsmach = 2.220446049250313e-016;  /* np.finfo(np.float64).eps  */
@@ -230,8 +241,9 @@ setulb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u, CBLAS_INT* nbd
     //
     //     iwa is an integer working array of length 3nmax.
     //
-    //     task is a working string of characters of length 60 indicating
+    //     task is a working integer array of length 2. task[0] indicates
     //       the current job when entering and quitting this subroutine.
+    //       task[1] indicates the status message.
     //
     //     iprint is an integer variable that must be set by the user.
     //       It controls the frequency and type of output generated:
@@ -382,6 +394,61 @@ setulb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u, CBLAS_INT* nbd
 }
 
 
+static inline void save_local_vars(
+    CBLAS_INT prjctd, CBLAS_INT cnstnd, CBLAS_INT boxed, CBLAS_INT updatd,
+    CBLAS_INT nintol,
+    CBLAS_INT iback, CBLAS_INT nskip, CBLAS_INT head, CBLAS_INT col, CBLAS_INT itail,
+    CBLAS_INT iter, CBLAS_INT iupdat, CBLAS_INT nseg, CBLAS_INT nfgv, CBLAS_INT info,
+    CBLAS_INT ifun, CBLAS_INT iword, CBLAS_INT nfree, CBLAS_INT nact, CBLAS_INT ileave,
+    CBLAS_INT nenter,
+    double theta, double fold, double tol, double dnorm, double gd,
+    double stpmx, double sbgnrm, double stp, double gdold, double dtd,
+    CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave
+)
+{
+    // Save local variables
+    lsave[0]  = prjctd;
+    lsave[1]  = cnstnd;
+    lsave[2]  = boxed;
+    lsave[3]  = updatd;
+
+    isave[0]  = nintol;
+    isave[3]  = iback;
+    isave[4]  = nskip;
+    isave[5]  = head;
+    isave[6]  = col;
+    isave[7]  = itail;
+    isave[8]  = iter;
+    isave[9]  = iupdat;
+    isave[11] = nseg;
+    isave[12] = nfgv;
+    isave[13] = info;
+    isave[14] = ifun;
+    isave[15] = iword;
+    isave[16] = nfree;
+    isave[17] = nact;
+    isave[18] = ileave;
+    isave[19] = nenter;
+
+    dsave[0]  = theta;
+    dsave[1]  = fold;
+    dsave[2]  = tol;
+    dsave[3]  = dnorm;
+    // dsave[4]  = epsmch;
+    // dsave[5]  = cpu1;
+    // dsave[6]  = cachyt;
+    // dsave[7]  = sbtime;
+    // dsave[8]  = lnscht;
+    // dsave[9]  = time1;
+    dsave[10] = gd;
+    dsave[11] = stpmx;
+    dsave[12] = sbgnrm;
+    dsave[13] = stp;
+    dsave[14] = gdold;
+    dsave[15] = dtd;
+}
+
+
 void
 mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
        CBLAS_INT* nbd, double* f, double* g, double factr, double pgtol,
@@ -505,8 +572,10 @@ mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
     //       the free set is stored in indx2, and it is passed on to
     //       subroutine formk with this information.
     //
-    //     task is a working string of characters of length 60 indicating
+    //     task is a working integer indicating
     //       the current job when entering and leaving this subroutine.
+    //
+    //     task_msg is a working integer indicating the status message.
     //
     //     iprint is an INTEGER variable that must be set by the user.
     //       It controls the frequency and type of output generated:
@@ -679,7 +748,14 @@ mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
                 BLAS_FUNC(dcopy)(&n, r, &one_int, g, &one_int);
                 *f = fold;
             }
-            goto LINE999;
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
         }
     }
 
@@ -688,7 +764,14 @@ mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
     *task_msg = FG_START;
 
     // Return to the driver to calculate f and g, then reenter at 111
-    goto LINE1000;
+    save_local_vars(
+        prjctd, cnstnd, boxed, updatd, nintol,
+        iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+        ifun, iword, nfree, nact, ileave, nenter,
+        theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+        lsave, isave, dsave
+    );
+    return;
 
 LINE111:
     nfgv = 1;
@@ -700,303 +783,297 @@ LINE111:
     {
         *task = CONVERGENCE;
         *task_msg = CONV_GRAD;
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
     // ----------------- the beginning of the loop --------------------------
-LINE222:
-    iword = -1;
-
-    if ((!cnstnd) && (col > 0))
+    while(1)
     {
-        BLAS_FUNC(dcopy)(&n, x, &one_int, z, &one_int);
-        wrk = updatd;
-        nseg = 0;
-        goto LINE333;
-    }
+        iword = -1;
 
-    /////////////////////////////////////////////////////
-    //
-    // Compute the Generalized Cauchy Point (GCP).
-    //
-    /////////////////////////////////////////////////////
-    cauchy(n, x, l, u, nbd, g, indx2, iwhere, t, d, z, m, wy, ws, sy, wt, theta,
-           col, head, wa, &wa[2*m], &wa[4*m], &wa[6*m], &nseg, sbgnrm, &info);
-    if (info != 0)
-    {
-        // Singular triangular system detected; refresh the lbfgs memory.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
-
-    nintol += nseg;
-
-    // Count the entering and leaving variables for iter > 0;
-    // find the index set of free and active variables at the GCP.
-    freev(n, &nfree, index, &nenter, &ileave, indx2, iwhere, &wrk, updatd,
-          cnstnd, iter);
-    nact = n - nfree;
-
-LINE333:
-    // If there are no free variables or B=theta*I, then skip the subspace
-    // minimization.
-    if ((nfree == 0) || (col == 0)) { goto LINE555; }
-
-    /////////////////////////////////////////////////////
-    //
-    // Subspace minimization
-    //
-    /////////////////////////////////////////////////////
-
-    // Form  the LEL^T factorization of the indefinite
-    //   matrix    K = [-D -Y'ZZ'Y/theta     L_a'-R_z'  ]
-    //                 [L_a -R_z           theta*S'AA'S ]
-    //   where     E = [-I  0]
-    //                 [ 0  I]
-    if (wrk)
-    {
-        formk(n, nfree, index, nenter, ileave, indx2, iupdat, updatd, wn, snd,
-              m, ws, wy, sy, theta, col, head, &info);
-    }
-    if (info != 0)
-    {
-        // nonpositive definiteness in Cholesky factorization;
-        // refresh the lbfgs memory and restart the iteration.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
-
-    // compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) from 'cauchy').
-    cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index, theta, col, head, nfree,
-           cnstnd, &info);
-    if (info != 0) { goto LINE444; }
-
-    // Call the direct method.
-    subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
-          head, &iword, wa, wn, &info);
-
-LINE444:
-    if (info != 0)
-    {
-        // singular triangular system detected;
-        // refresh the lbfgs memory and restart the iteration.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
-
-LINE555:
-
-    /////////////////////////////////////////////////////
-    //
-    // Line search and optimality tests.
-    //
-    /////////////////////////////////////////////////////
-
-    // Generate the search direction d := z - x.
-    for (i = 0; i < n; i++)
-    {
-        d[i] = z[i] - x[i];
-    }
-
-LINE666:
-    lnsrlb(n, l, u, nbd, x, *f, &fold, &gd, &gdold, g, d, r, t, z, &stp, &dnorm,
-           &dtd, &xstep, &stpmx, iter, &ifun, &iback, &nfgv, &info, task,
-           task_msg, boxed, cnstnd, &isave[21], &dsave[16], temp_task, temp_taskmsg);
-
-    if ((info != 0) || (iback >= maxls))
-    {
-        BLAS_FUNC(dcopy)(&n, t, &one_int, x, &one_int);
-        BLAS_FUNC(dcopy)(&n, r, &one_int, g, &one_int);
-        *f = fold;
-
-        if (col == 0)
+        if ((cnstnd) || (col == 0))
         {
-            // Abnormal termination
+            /////////////////////////////////////////////////////
+            //
+            // Compute the Generalized Cauchy Point (GCP).
+            //
+            /////////////////////////////////////////////////////
+            cauchy(n, x, l, u, nbd, g, indx2, iwhere, t, d, z, m, wy, ws, sy, wt, theta,
+                col, head, wa, &wa[2*m], &wa[4*m], &wa[6*m], &nseg, sbgnrm, &info);
+            if (info != 0)
+            {
+                // Singular triangular system detected; refresh the lbfgs memory.
+                info = 0;
+                col = 0;
+                head = 0;
+                theta = 1.0;
+                iupdat = 0;
+                updatd = 0;
+                continue;
+            }
+
+            nintol += nseg;
+
+            // Count the entering and leaving variables for iter > 0;
+            // find the index set of free and active variables at the GCP.
+            freev(n, &nfree, index, &nenter, &ileave, indx2, iwhere, &wrk, updatd,
+                cnstnd, iter);
+            nact = n - nfree;
+        } else {
+            BLAS_FUNC(dcopy)(&n, x, &one_int, z, &one_int);
+            wrk = updatd;
+            nseg = 0;
+        } 
+
+        // If there are no free variables or B=theta*I, then skip the subspace
+        // minimization.
+        if ((nfree != 0) && (col != 0))
+        {
+            /////////////////////////////////////////////////////
+            //
+            // Subspace minimization
+            //
+            /////////////////////////////////////////////////////
+
+            // Form  the LEL^T factorization of the indefinite
+            //   matrix    K = [-D -Y'ZZ'Y/theta     L_a'-R_z'  ]
+            //                 [L_a -R_z           theta*S'AA'S ]
+            //   where     E = [-I  0]
+            //                 [ 0  I]
+            if (wrk)
+            {
+                formk(n, nfree, index, nenter, ileave, indx2, iupdat, updatd, wn, snd,
+                    m, ws, wy, sy, theta, col, head, &info);
+            }
+            if (info != 0)
+            {
+                // nonpositive definiteness in Cholesky factorization;
+                // refresh the lbfgs memory and restart the iteration.
+                info = 0;
+                col = 0;
+                head = 0;
+                theta = 1.0;
+                iupdat = 0;
+                updatd = 0;
+                continue;
+            }
+
+            // compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) from 'cauchy').
+            cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index, theta, col, head, nfree,
+                cnstnd, &info);
+
             if (info == 0)
             {
-                info = -9;
-                // Restore the actual number of f and g evaluations etc.
-                nfgv--;
-                ifun--;
-                iback--;
+                // Call the direct method.
+                subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
+                    head, &iword, wa, wn, &info);
             }
-            *task = ABNORMAL;
-            *task_msg = NO_MSG;
-            iter++;
-            goto LINE999;
+            
+            if (info != 0)
+            {
+                // singular triangular system detected;
+                // refresh the lbfgs memory and restart the iteration.
+                info = 0;
+                col = 0;
+                head = 0;
+                theta = 1.0;
+                iupdat = 0;
+                updatd = 0;
+                continue;
+            }
+        }
+
+        /////////////////////////////////////////////////////
+        //
+        // Line search and optimality tests.
+        //
+        /////////////////////////////////////////////////////
+
+        // Generate the search direction d := z - x.
+        for (i = 0; i < n; i++)
+        {
+            d[i] = z[i] - x[i];
+        }
+
+LINE666:
+        lnsrlb(n, l, u, nbd, x, *f, &fold, &gd, &gdold, g, d, r, t, z, &stp, &dnorm,
+            &dtd, &xstep, &stpmx, iter, &ifun, &iback, &nfgv, &info, task,
+            task_msg, boxed, cnstnd, &isave[21], &dsave[16], temp_task, temp_taskmsg);
+
+        if ((info != 0) || (iback >= maxls))
+        {
+            BLAS_FUNC(dcopy)(&n, t, &one_int, x, &one_int);
+            BLAS_FUNC(dcopy)(&n, r, &one_int, g, &one_int);
+            *f = fold;
+
+            if (col == 0)
+            {
+                // Abnormal termination
+                if (info == 0)
+                {
+                    info = -9;
+                    // Restore the actual number of f and g evaluations etc.
+                    nfgv--;
+                    ifun--;
+                    iback--;
+                }
+                *task = ABNORMAL;
+                *task_msg = NO_MSG;
+                iter++;
+                save_local_vars(
+                    prjctd, cnstnd, boxed, updatd, nintol,
+                    iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                    ifun, iword, nfree, nact, ileave, nenter,
+                    theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                    lsave, isave, dsave
+                );
+                return;
+            } else {
+                // Refresh the lbfgs memory and restart the iteration.
+                if (info == 0) { nfgv--; }
+                info = 0;
+                col = 0;
+                head = 0;
+                theta = 1.0;
+                iupdat = 0;
+                updatd = 0;
+                *task = RESTART;
+                *task_msg = NO_MSG;
+                continue;
+            }
+        } else if ((*task == FG) && (*task_msg == FG_LNSRCH)) {
+            // Return to the driver for calculating f and g; renter at 666.
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
         } else {
-            // Refresh the lbfgs memory and restart the iteration.
-            if (info == 0) { nfgv--; }
+            // Calculate and print out the quantities related to the new X.
+            iter++;
+
+            // Compute the infinity norm of the projected (-)gradient.
+            projgr(n, l, u, nbd, x, g, &sbgnrm);
+
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
+        }
+
+LINE777:
+
+        // Test for termination.
+        if (sbgnrm <= pgtol)
+        {
+            // Terminate the algorithm.
+            *task = CONVERGENCE;
+            *task_msg = CONV_GRAD;
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
+        }
+        ddum = fmax(fmax(fabs(fold), fabs(*f)), 1.0);
+        if ((fold - *f) <= tol*ddum)
+        {
+            // Terminate the algorithm.
+            *task = CONVERGENCE;
+            *task_msg = CONV_F;
+            if (iback >= 10) { info = -5; }
+            // i.e. to issue a warning if iback > 10 in the line search.
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
+        }
+
+        // Compute d=newx-oldx, r=newg-oldg, rr=y'y and dr=y's.
+        for (i = 0; i < n; i++)
+        {
+            r[i] = g[i] - r[i];
+        }
+        // 42
+        rr = pow(BLAS_FUNC(dnrm2)(&n, r, &one_int), 2.0);
+
+        if (stp == 1.0)
+        {
+            dr = gd - gdold;
+            ddum = -gdold;
+        } else {
+            dr = (gd - gdold)*stp;
+            BLAS_FUNC(dscal)(&n, &stp, d, &one_int);
+            ddum = -gdold*stp;
+        }
+
+        if (dr <= epsmach*ddum)
+        {
+            // Skip the L-BFGS update.
+            nskip += 1;
+            updatd = 0;
+            continue;
+        }
+
+        /////////////////////////////////////////////////////
+        //
+        // Update the L-BFGS matrix.
+        //
+        /////////////////////////////////////////////////////
+        updatd = 1;
+        iupdat += 1;
+
+        // Update matrices WS and WY and form the middle matrix in B.
+        matupd(n, m, ws, wy, sy, ss, d, r, &itail, iupdat, &col, &head, &theta,
+            rr, dr, stp, dtd);
+
+        // Form the upper half of the pds T = theta*SS + L*D^(-1)*L';
+        //    Store T in the upper triangular of the array wt;
+        //    Cholesky factorize T to J*J' with
+        //       J' stored in the upper triangular of wt.
+        formt(m, wt, sy, ss, col, theta, &info);
+
+        if (info != 0)
+        {
+            // Nonpositive definiteness in Cholesky factorization;
+            // refresh the lbfgs memory and restart the iteration.
             info = 0;
             col = 0;
             head = 0;
             theta = 1.0;
             iupdat = 0;
             updatd = 0;
-            *task = RESTART;
-            *task_msg = NO_MSG;
-            goto LINE222;
+            continue;
         }
-    } else if ((*task == FG) && (*task_msg == FG_LNSRCH)) {
-        // Return to the driver for calculating f and g; renter at 666.
-        goto LINE1000;
-    } else {
-        // Calculate and print out the quantities related to the new X.
-        iter++;
 
-        // Compute the infinity norm of the projected (-)gradient.
-        projgr(n, l, u, nbd, x, g, &sbgnrm);
+        // Now the inverse of the middle matrix in B is
 
-        goto LINE1000;
+        // [  D^(1/2)      O ] [ -D^(1/2)  D^(-1/2)*L' ]
+        // [ -L*D^(-1/2)   J ] [  0        J'          ]
+
     }
-
-LINE777:
-
-    // Test for termination.
-    if (sbgnrm <= pgtol)
-    {
-        // Terminate the algorithm.
-        *task = CONVERGENCE;
-        *task_msg = CONV_GRAD;
-        goto LINE999;
-    }
-    ddum = fmax(fmax(fabs(fold), fabs(*f)), 1.0);
-    if ((fold - *f) <= tol*ddum)
-    {
-        // Terminate the algorithm.
-        *task = CONVERGENCE;
-        *task_msg = CONV_F;
-        if (iback >= 10) { info = -5; }
-        // i.e. to issue a warning if iback > 10 in the line search.
-        goto LINE999;
-    }
-
-    // Compute d=newx-oldx, r=newg-oldg, rr=y'y and dr=y's.
-    for (i = 0; i < n; i++)
-    {
-        r[i] = g[i] - r[i];
-    }
-    // 42
-    rr = pow(BLAS_FUNC(dnrm2)(&n, r, &one_int), 2.0);
-
-    if (stp == 1.0)
-    {
-        dr = gd - gdold;
-        ddum = -gdold;
-    } else {
-        dr = (gd - gdold)*stp;
-        BLAS_FUNC(dscal)(&n, &stp, d, &one_int);
-        ddum = -gdold*stp;
-    }
-
-    if (dr <= epsmach*ddum)
-    {
-        // Skip the L-BFGS update.
-        nskip += 1;
-        updatd = 0;
-        goto LINE888;
-    }
-
-    /////////////////////////////////////////////////////
-    //
-    // Update the L-BFGS matrix.
-    //
-    /////////////////////////////////////////////////////
-    updatd = 1;
-    iupdat += 1;
-
-    // Update matrices WS and WY and form the middle matrix in B.
-    matupd(n, m, ws, wy, sy, ss, d, r, &itail, iupdat, &col, &head, &theta,
-           rr, dr, stp, dtd);
-
-    // Form the upper half of the pds T = theta*SS + L*D^(-1)*L';
-    //    Store T in the upper triangular of the array wt;
-    //    Cholesky factorize T to J*J' with
-    //       J' stored in the upper triangular of wt.
-    formt(m, wt, sy, ss, col, theta, &info);
-
-    if (info != 0)
-    {
-        // Nonpositive definiteness in Cholesky factorization;
-        // refresh the lbfgs memory and restart the iteration.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
-
-    // Now the inverse of the middle matrix in B is
-
-    // [  D^(1/2)      O ] [ -D^(1/2)  D^(-1/2)*L' ]
-    // [ -L*D^(-1/2)   J ] [  0        J'          ]
-LINE888:
     // -------------------- the end of the loop -----------------------------
-    goto LINE222;
-
-LINE999:
-    ;
-
-LINE1000:
-    // Save local variables
-    lsave[0]  = prjctd;
-    lsave[1]  = cnstnd;
-    lsave[2]  = boxed;
-    lsave[3]  = updatd;
-
-    isave[0]  = nintol;
-    isave[3]  = iback;
-    isave[4]  = nskip;
-    isave[5]  = head;
-    isave[6]  = col;
-    isave[7]  = itail;
-    isave[8]  = iter;
-    isave[9]  = iupdat;
-    isave[11] = nseg;
-    isave[12] = nfgv;
-    isave[13] = info;
-    isave[14] = ifun;
-    isave[15] = iword;
-    isave[16] = nfree;
-    isave[17] = nact;
-    isave[18] = ileave;
-    isave[19] = nenter;
-
-    dsave[0]  = theta;
-    dsave[1]  = fold;
-    dsave[2]  = tol;
-    dsave[3]  = dnorm;
-    // dsave[4]  = epsmch;
-    // dsave[5]  = cpu1;
-    // dsave[6]  = cachyt;
-    // dsave[7]  = sbtime;
-    // dsave[8]  = lnscht;
-    // dsave[9]  = time1;
-    dsave[10] = gd;
-    dsave[11] = stpmx;
-    dsave[12] = sbgnrm;
-    dsave[13] = stp;
-    dsave[14] = gdold;
-    dsave[15] = dtd;
-
-    return;
 }
 
 
@@ -1533,14 +1610,13 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
     tsum = 0.0;
     *nseg = 1;
 
-    // If there are no breakpoints, locate the GCP and return.
-    if (nbreak == -1) { goto LINE888; }
     nleft = nbreak;
     iter = 0;
     tj = 0.0;
 
     // ------------------- the beginning of the loop -------------------------
-    while (1)
+    // If there are no breakpoints, we skip the loop, locate the GCP and return.
+    while (nbreak > -1)
     {
         // Find the next smallest breakpoint;
         // compute dt = t(nleft) - t(nleft + 1).
@@ -1572,7 +1648,19 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
         dt = tj - tj0;
 
         // If a minimizer is within this interval, locate the GCP and return.
-        if (dtm < dt) { goto LINE888; }
+        if (dtm < dt) {
+            if (dtm <= 0.0) { dtm = 0.0; }
+            tsum = tsum + dtm;
+            // Move free variables (i.e. the ones w/o breakpoints) and the variables
+            // whose breakpoints haven't been reached.
+            BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
+
+            // Update c = c + dtm*p = W'(x^c - x)
+            // which will be used in computing r = Z'(B(x^c - x) + g).
+            if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
+
+            return;
+        }
 
         // Otherwise fix one variable and reset the corresponding component
         // of d to zero.
@@ -1593,7 +1681,10 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
         if (nleft == -1 && nbreak == n) {
             // All n variables are fixed, return with xcp as GCP.
             dtm = dt;
-            goto LINE999;
+            // Update c = c + dtm*p = W'(x^c - x)
+            // which will be used in computing r = Z'(B(x^c - x) + g).
+            if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
+            return;
         }
 
         // Update the derivative information.
@@ -1649,18 +1740,14 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
 
     // ------------------- the end of the loop -------------------------------
 
-LINE888:
     if (dtm <= 0.0) { dtm = 0.0; }
     tsum = tsum + dtm;
-
     // Move free variables (i.e. the ones w/o breakpoints) and the variables
     // whose breakpoints haven't been reached.
     BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
 
-LINE999:
     // Update c = c + dtm*p = W'(x^c - x)
     // which will be used in computing r = Z'(B(x^c - x) + g).
-
     if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
 
     return;
@@ -3175,24 +3262,24 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
     //         On entry stpmax is a nonnegative upper bound for the step.
     //         On exit stpmax is unchanged.
     //
-    //       task is a character variable of length at least 60.
+    //       task is an integer variable with values from enum Status.
     //         On initial entry task must be set to 'START'.
     //         On exit task indicates the required action:
     //
-    //            If task(1:2) = 'FG' then evaluate the function and
+    //            If task = 'FG' then evaluate the function and
     //            derivative at stp and call dcsrch again.
     //
-    //            If task(1:4) = 'CONV' then the search is successful.
+    //            If task = 'CONV' then the search is successful.
     //
-    //            If task(1:4) = 'WARN' then the subroutine is not able
+    //            If task = 'WARN' then the subroutine is not able
     //            to satisfy the convergence conditions. The exit value of
     //            stp contains the best point found during the search.
     //
-    //            If task(1:5) = 'ERROR' then there is an error in the
+    //            If task = 'ERROR' then there is an error in the
     //            input arguments.
     //
     //         On exit with convergence, a warning or an error, the
-    //            variable task contains additional information.
+    //            variable task_msg contains additional information.
     //
     //       isave is an integer work array of dimension 2.
     //
@@ -3393,9 +3480,9 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
 }
 
 static inline void save_vars(
-    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    CBLAS_INT brackt, CBLAS_INT stage, double ginit, double gtest, double gx, double gy,
     double finit, double fx, double fy, double stx, double sty, double stmin,
-    double stmax, double width, double width1, int* isave, double* dsave) {
+    double stmax, double width, double width1, CBLAS_INT* isave, double* dsave) {
     if (brackt)
     {
         isave[0] = 1;

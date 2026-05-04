@@ -26,6 +26,9 @@ from scipy._external.array_api_compat import device as xp_device
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
+# mypy: disable-error-code=index
+# mypy: disable-error-code=operator
+# mypy: disable-error-code=union-attr
 
 def from_quat(
     quat: Array,
@@ -222,7 +225,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
 
 
 def from_davenport(
-    axes: Array, order: str, angles: Array | float, degrees: bool = False
+    axes: Array, order: str, angles: Array, degrees: bool = False
 ) -> Array:
     xp = array_namespace(axes)
     device = xp_device(axes)
@@ -240,7 +243,7 @@ def from_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
     num_axes = axes.shape[-2]
     if num_axes < 1 or num_axes > 3:
         raise ValueError(f"Expected up to 3 axes, got {num_axes}")
@@ -400,7 +403,7 @@ def as_euler(
 
 def as_davenport(
     quat: Array,
-    axes: ArrayLike,
+    axes: Array,
     order: str,
     degrees: bool = False,
     *,
@@ -926,9 +929,9 @@ def pow(quat: Array, n: float | Array) -> Array:
     # If n is an array, we sanitize it to a scalar and promote quat and n to
     # the same dtype.
     if is_array_api_obj(n):
-        if n.shape == (1,):
-            n = n[0]
-        elif n.ndim != 0:
+        if n.shape == (1,):  # pyrefly:ignore[missing-attribute]
+            n = n[0]  # pyrefly:ignore[bad-index]
+        elif n.ndim != 0:  # pyrefly:ignore[missing-attribute]
             raise ValueError("Array exponent must be a scalar")
         quat, n = xp_promote(quat, n, force_floating=True, xp=xp)
 

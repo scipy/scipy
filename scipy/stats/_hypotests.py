@@ -11,7 +11,8 @@ from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
-                                   is_lazy_array, _count_nonmasked, is_marray)
+                                   is_lazy_array, _count_nonmasked, is_marray,
+                                   _masked_apply)
 import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
@@ -103,6 +104,27 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
        - the Epps-Singleton two-sample test using the empirical characteristic
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
+    Examples
+    --------
+    Generate random samples ``x`` and ``y``.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(66326777)
+    >>> x = rng.normal(0, 1, size=100)
+    >>> y = rng.normal(5, 3, size=100)
+
+    Test the null hypothesis that ``x`` and ``y`` are sampled from the same
+    distribution.
+
+    >>> res = stats.epps_singleton_2samp(x, y)
+    >>> res.statistic
+    np.float64(316.6441136688085)
+    >>> res.pvalue
+    np.float64(2.778946959815902e-67)
+    
+    The large value of the statistic and small p-value may be taken as evidence that
+    ``x`` and ``y`` were not sampled from the same distribution. 
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
@@ -533,7 +555,8 @@ def _cvm_result_to_tuple(res, _):
 
 @xp_capabilities(cpu_only=True,  # needs special function `kv`
                  skip_backends=[('dask.array', 'typical dask issues')],
-                 jax_jit=False)  # array boolean indices must be concrete
+                 jax_jit=False,  # array boolean indices must be concrete
+                 marray=True)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=(), *, axis=0):
@@ -653,20 +676,20 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
         message = "`cdf` must be a callable if `rvs` is a non-NumPy array."
         raise ValueError(message)
 
-    n = rvs.shape[-1]
-    if n <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
+    n_length = rvs.shape[-1]
+    if n_length <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
         raise ValueError('The sample must contain at least two observations.')
 
     rvs = xp_promote(rvs, force_floating=True, xp=xp)
-    n = float(n)
     vals = xp.sort(rvs, axis=-1)
-    cdfvals = cdf(vals, *args)
+    cdfvals = _masked_apply(cdf, args=(vals, *args), xp=xp)
+    n_count = xp.asarray(_count_nonmasked(rvs, axis=-1, xp=xp), dtype=rvs.dtype)
 
-    u = (2*xp.arange(1, n+1, dtype=rvs.dtype) - 1)/(2*n)
-    w = 1/(12*n) + xp.sum((u - cdfvals)**2, axis=-1)
+    u = (2*xp.arange(1, n_length+1, dtype=rvs.dtype) - 1)/(2*n_count[..., xp.newaxis])
+    w = 1/(12*n_count) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
-    p = xp.clip(1. - _cdf_cvm(w, n), 0., None)
+    p = xp.clip(1. - _masked_apply(_cdf_cvm, args=(w, n_count), xp=xp), 0., None)
 
     return CramerVonMisesResult(statistic=w, pvalue=p)
 
@@ -1639,9 +1662,10 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     return p
 
 
-@xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
-                                ('dask.array', 'needs rankdata')],
-                 cpu_only=True, jax_jit=False)  # due to p-value calculation
+@xp_capabilities(skip_backends=[('dask.array', 'needs rankdata')],
+                 cpu_only=True, jax_jit=False,  # due to p-value calculation
+                 marray=True,
+                 extra_note="Only `method='exact'` is compatible with MArray input.")
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):

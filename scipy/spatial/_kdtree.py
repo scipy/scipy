@@ -2,6 +2,7 @@
 # Released under the scipy license
 import numpy as np
 from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
+from .distance import minkowski
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -99,6 +100,27 @@ class Rectangle:
     """Hyperrectangle class.
 
     Represents a Cartesian product of intervals.
+
+    Parameters
+    ----------
+    maxes : array_like of shape (m,)
+        Upper bounds of the hyperrectangle along each dimension.
+    mins : array_like of shape (m,)
+        Lower bounds of the hyperrectangle along each dimension.
+
+    Attributes
+    ----------
+    maxes : ndarray of shape (m,)
+        Upper bounds for each dimension.
+    mins : ndarray of shape (m,)
+        Lower bounds for each dimension.
+    m : int
+        Dimensionality of the hyperrectangle.
+
+    Notes
+    -----
+    If any element of `maxes` is smaller than the corresponding element in `mins`, the
+    values are swapped automatically.
     """
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""
@@ -165,10 +187,8 @@ class Rectangle:
         dist : ndarray
             Minimum distance.
         """
-        return minkowski_distance(
-            0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
-            p
-        )
+        delta = np.maximum(0, np.maximum(self.mins - x, x - self.maxes))
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def max_distance_point(self, x, p=2.0):
         """
@@ -186,7 +206,8 @@ class Rectangle:
         dist : ndarray
             Maximum distance.
         """
-        return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
+        delta = np.maximum(self.maxes - x, x - self.mins)
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def min_distance_rectangle(self, other, p=2.0):
         """
@@ -204,12 +225,9 @@ class Rectangle:
         dist : float
             Minimum distance between the two hyperrectangles.
         """
-        return minkowski_distance(
-            0,
-            np.maximum(0, np.maximum(self.mins-other.maxes,
-                                     other.mins-self.maxes)),
-            p
-        )
+        delta = np.maximum(0, np.maximum(self.mins - other.maxes,
+                                         other.mins - self.maxes))
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def max_distance_rectangle(self, other, p=2.0):
         """
@@ -227,8 +245,8 @@ class Rectangle:
         dist : float
             Maximum distance between the two hyperrectangles.
         """
-        return minkowski_distance(
-            0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)
+        delta = np.maximum(self.maxes - other.mins, other.maxes - self.mins)
+        return minkowski(np.zeros_like(delta), delta, p)
 
 
 class KDTree(cKDTree):
@@ -244,9 +262,12 @@ class KDTree(cKDTree):
     data : array_like, shape (n,m)
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
-        array of doubles, and so modifying this data will result in
-        bogus results. The data are also copied if the kd-tree is built
-        with copy_data=True.
+        array of doubles. The data are also copied if the kd-tree is built
+        with copy_data=True. Concurrently modifying the data while constructing
+        a KDTree is not well-defined and may lead to crashes or data
+        corruption. If no copy happens, modifying the data *after* creating
+        the KDTree may lead to data corruption or incorrect answers when
+        searching the tree.
     leafsize : positive int, optional
         The number of points at which the algorithm switches over to
         brute-force.  Default: 10.
@@ -289,6 +310,9 @@ class KDTree(cKDTree):
         The minimum value in each dimension of the n data points.
     size : int
         The number of nodes in the tree.
+    boxsize : None or ndarray, shape (m.)
+        If boxsize is passed to the initializer, this will be set to the bounds
+        of the periodic box. None if no boxsize is passed.
 
     Notes
     -----

@@ -60,8 +60,8 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
-if not cy.version().version_compare('>=3.0.8')
-  error('SciPy requires Cython >= 3.0.8')
+if not cy.version().version_compare('>=3.2.0')
+  error('SciPy requires Cython >= 3.2.0')
 endif
 
 _global_c_args = cc.get_supported_arguments(
@@ -201,9 +201,6 @@ endif
 if not fs.exists('subprojects/cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('subprojects/pocketfft/README.md')
-  error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('subprojects/unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -231,14 +228,14 @@ foreach prefix, files : cobyqa_sources
   py3.install_sources(files, subdir: external_dir / prefix)
 endforeach
 
+duccfft = subproject('duccfft')
+duccfft_dep = duccfft.get_variable('duccfft_dep')
+
 pyprima = subproject('pyprima')
 pyprima_sources = pyprima.get_variable('sources')
 foreach prefix, files : pyprima_sources
   py3.install_sources(files, subdir: external_dir / prefix)
 endforeach
-
-pocketfft = subproject('pocketfft')
-pocketfft_dep = pocketfft.get_variable('pocketfft_dep')
 
 unuran = subproject('unuran')
 
@@ -259,15 +256,16 @@ elif use_system_libraries.contains('auto')
   auto_system_libraries = true
 endif
 
+boost_version = '1.91.0'
 if all_system_libraries or use_system_libraries.contains('boost.math')
-  boost_math_dep = dependency('boost', version : '1.89.0')
+  boost_math_dep = dependency('boost', version : boost_version)
 elif auto_system_libraries
   boost_math_dep = dependency(
-    'boost', version : '1.89.0',
+    'boost', version : boost_version,
     fallback : ['boost_math', 'boost_math_dep']
   )
 else
-  boost_math = subproject('boost_math', version : '1.89.0')
+  boost_math = subproject('boost_math', version : boost_version)
   boost_math_dep = boost_math.get_variable('boost_math_dep')
 endif
 

@@ -830,3 +830,24 @@ class Quantile(Benchmark):
 
     def time_quantile(self, size, d):
         stats.quantile(self.x, 0.5, axis=1)
+
+
+class PoissonBinom(Benchmark):
+    param_names = ["size_p", "batch_shape"]
+    params = [
+        [10, 100],
+        [(), (10, ), (100, ), (1000, )]
+    ]
+
+    def setup(self, size_p, batch_shape):
+        self.rng = np.random.default_rng(12345678)
+        shape = batch_shape + (size_p,)
+
+        self.p = self.rng.uniform(size=shape)
+        self.k = self.rng.integers(size_p + 1, size=batch_shape)
+
+    def time_poisson_binom_pmf(self, size_p, batch_shape):
+        stats.poisson_binom.pmf(self.k, self.p)
+
+    def time_poisson_binom_cdf(self, size_p, batch_shape):
+        stats.poisson_binom.cdf(self.k, self.p)

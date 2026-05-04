@@ -4,6 +4,7 @@ import itertools
 import re
 import contextlib
 import warnings
+import importlib
 
 import numpy as np
 import pytest
@@ -35,6 +36,11 @@ uses_output_dtype = skip_xp_backends(
     np_only=True, exceptions=["cupy"],
     reason="output=dtype is numpy-specific"
 )
+
+try:
+    CUPY_VERSION = importlib.metadata.version('cupy')
+except ImportError:
+    CUPY_VERSION = None
 
 
 def uses_output_array(f):
@@ -497,7 +503,12 @@ class TestNdimageFilters:
         assert output.dtype.type == xp.float32
 
     @make_xp_test_case(ndimage.correlate, ndimage.convolve)
+    @xfail_xp_backends(
+        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+        reason="multiple modes work in CuPy 14"
+    )
     def test_correlate_mode_sequence(self, xp):
+
         kernel = xp.ones((2, 2))
         array = xp.ones((3, 3), dtype=xp.float64)
         with assert_raises(RuntimeError):
@@ -1706,7 +1717,12 @@ class TestNdimageFilters:
         assert_array_almost_equal(output2, output)
 
     @make_xp_test_case(ndimage.minimum_filter)
+    @xfail_xp_backends(
+        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+        reason="multiple modes work in CuPy 14"
+    )
     def test_minimum_filter07(self, xp):
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
                             [5, 8, 3, 7, 1]])
@@ -1715,6 +1731,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[2, 2, 1, 1, 1],
                                               [2, 3, 1, 3, 1],
                                               [5, 5, 3, 3, 1]]), output)
+
         with assert_raises(RuntimeError):
             ndimage.minimum_filter(array, footprint=footprint,
                                    mode=['reflect', 'constant'])
@@ -1797,7 +1814,12 @@ class TestNdimageFilters:
         assert_array_almost_equal(output2, output)
 
     @make_xp_test_case(ndimage.maximum_filter)
+    @xfail_xp_backends(
+        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+        reason="multiple modes work in CuPy 14"
+    )
     def test_maximum_filter07(self, xp):
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
                             [5, 8, 3, 7, 1]])
@@ -1983,6 +2005,18 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
         output = ndimage.median_filter(array, size=(2, 3))
         xp_assert_equal(expected, output)
+
+    @make_xp_test_case(
+        ndimage.rank_filter, ndimage.percentile_filter, ndimage.median_filter
+    )
+    @xfail_xp_backends(
+        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+        reason="multiple modes work in CuPy 14"
+    )
+    def test_rank08_1(self, xp):
+        array = xp.asarray([[3, 2, 5, 1, 4],
+                            [5, 8, 3, 7, 1],
+                            [5, 6, 9, 3, 5]])
 
         # non-separable: does not allow mode sequence
         with assert_raises(RuntimeError):
@@ -2544,6 +2578,8 @@ def test_multiple_modes(xp, filter_func, args, kwargs):
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])
+    if is_cupy(xp) and filter_func.__name__ in ['prewitt', 'sobel']:
+        pytest.xfail("https://github.com/cupy/cupy/issues/9760")
 
     mode1 = 'reflect'
     mode2 = ['reflect', 'reflect']
@@ -2592,8 +2628,13 @@ def test_multiple_modes_sequentially(xp):
 
 
 @make_xp_test_case(ndimage.prewitt)
+@xfail_xp_backends(
+    "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+    reason="https://github.com/cupy/cupy/issues/9760"
+)
 def test_multiple_modes_prewitt(xp):
     # Test prewitt filter for multiple extrapolation modes
+
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])
@@ -2609,8 +2650,13 @@ def test_multiple_modes_prewitt(xp):
 
 
 @make_xp_test_case(ndimage.sobel)
+@xfail_xp_backends(
+    "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+    reason="https://github.com/cupy/cupy/issues/9760"
+)
 def test_multiple_modes_sobel(xp):
     # Test sobel filter for multiple extrapolation modes
+
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])

@@ -34,7 +34,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                 msg += f" '{func_name}'."
             else:
                 msg += "."
-            msg += f'Shape should be {output_shape} but it is {shape(res)}.'
+            msg += f' Shape should be {output_shape} but it is {shape(res)}.'
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
@@ -773,6 +773,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     RuntimeError
         if the least-squares minimization fails.
+
+    TypeError
+        if the number of data points is fewer than the number of parameters
 
     OptimizeWarning
         if covariance of the parameters can not be estimated.

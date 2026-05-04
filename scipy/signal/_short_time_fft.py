@@ -426,7 +426,7 @@ class ShortTimeFFT:
         ('onesided', -1, 1.), np.ndarray([])
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, win: np.ndarray, hop: int, fs: float, *,
                  fft_mode: FFT_MODE_TYPE = 'onesided',
@@ -1010,6 +1010,11 @@ class ShortTimeFFT:
         `from_win_equals_dual` to create a unitary `ShortTimeFFT` instance.
 
         This method is called, if the initializer parameter `scale_to` is set.
+
+        Parameters
+        ----------
+        scaling : {'magnitude', 'psd'}
+            The scaling type to which the window is scaled.
 
         See Also
         --------

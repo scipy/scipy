@@ -9,6 +9,7 @@ from collections import defaultdict
 from enum import auto, Enum
 from importlib import import_module
 from types import ModuleType
+from typing import Any
 
 from scipy._lib._array_api import xp_capabilities_table
 from scipy._lib._array_api import _make_sphinx_capabilities
@@ -80,12 +81,14 @@ class BackendSupportStatus(Enum):
     UNKNOWN = auto()
 
 
-def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str, bool]]:
+def _process_capabilities_table_entry(
+    entry: dict | None
+) -> dict[str, dict[str, BackendSupportStatus]]:
     """Returns dict showing alternative backend support in easy to consume form.
 
     Parameters
     ----------
-    entry : Optional[dict]
+    entry : dict | None
        A dict with the structure of the values of the dict
        scipy._lib._array_api.xp_capabilities_table. If None, it is
        assumped that no alternative backends are supported.
@@ -134,8 +137,10 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     # For now, use _make_sphinx_capabilities because that's where
     # the relevant logic for determining what is and isn't
     # supported based on xp_capabilities_table entries lives.
-    # Perhaps this logic should be decoupled from sphinx.
-    for backend, capabilities in _make_sphinx_capabilities(**entry).items():
+    # This logic should be decoupled from this function due to exceptions; e.g. marray.
+    sphinx_capabilities = _make_sphinx_capabilities(**entry)
+    sphinx_capabilities.pop("marray")
+    for backend, capabilities in sphinx_capabilities.items():
         if backend in {"array_api_strict", "numpy"}:
             continue
         backend = BACKEND_NAMES_MAP.get(backend, backend)
@@ -158,7 +163,7 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
             output["jit"]["jax"] = entry["jax_jit"] and output["cpu"]["jax"]
         if backend == "dask.array":
             support_lazy = not entry["allow_dask_compute"] and output["dask"]
-            output["lazy"]["dask"] = support_lazy
+            output["lazy"]["dask"] = bool(support_lazy)
     return {
         outer_key: {
             inner_key: S.YES if inner_value else S.NO
@@ -183,8 +188,8 @@ def make_flat_capabilities_table(
         backend_type: str,
         /,
         *,
-        capabilities_table: list[str] | None = None,
-) -> list[dict[str, str]]:
+        capabilities_table: dict | None = None,
+) -> list[dict[str, str | int]]:
     """Generate full table of array api capabilities across public functions.
 
     Parameters
@@ -195,7 +200,7 @@ def make_flat_capabilities_table(
 
     backend_type : {'cpu', 'gpu', 'jit', 'lazy'}
 
-    capabilities_table : Optional[list[str]]
+    capabilities_table : dict | None
         Table in the form of `scipy._lib._array_api.xp_capabilities_table`.
         If None, uses `scipy._lib._array_api.xp_capabilities_table`.
         Default: None.
@@ -234,9 +239,9 @@ def make_flat_capabilities_table(
             thing = getattr(module, name)
             if is_inherently_out_of_scope(thing):
                 continue
-            entry = xp_capabilities_table.get(thing, None)
+            entry = capabilities_table.get(thing, None)
             capabilities = _process_capabilities_table_entry(entry)[backend_type]
-            row = {"module": module_name}
+            row: dict[str, Any] = {"module": module_name}
             row.update({"function": name})
             row.update(capabilities)
             output.append(row)
@@ -245,7 +250,7 @@ def make_flat_capabilities_table(
 
 def calculate_table_statistics(
     flat_table: list[dict[str, str]]
-) -> dict[str, dict[str, str]]:
+) -> dict[str, dict[str, int]]:
     """Get counts of what is supported per module.
 
     Parameters
@@ -255,7 +260,7 @@ def calculate_table_statistics(
 
     Returns
     -------
-    dict[str, dict[str, str]]
+    dict[str, dict[str, int]]
         dict mapping module names to inner dicts.
         bool. The inner dicts have a key "total" along with keys for each
         backend column of the supplied flat capabilities table. The value
@@ -264,8 +269,9 @@ def calculate_table_statistics(
         functions that support that particular backend.
     """
     if not flat_table:
-        return []
+        return {}
 
+    counter: defaultdict[str, defaultdict[str, int]]
     counter = defaultdict(lambda: defaultdict(int))
 
     S = BackendSupportStatus
@@ -287,4 +293,4 @@ def calculate_table_statistics(
                 # set up to return information needed to put asterisks next
                 # to percentages impacted by missing xp_capabilities decorators.
                 current_counter[key] += 1 if value == S.YES else 0
-    return dict(counter)
+    return {mod: dict(counts) for mod, counts in counter.items()}

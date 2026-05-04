@@ -1,7 +1,6 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-from __future__ import annotations  # Provides typing union operator `|` in Python 3.9
 import operator
 import math
 from math import prod as _prod
@@ -123,8 +122,9 @@ def correlate(in1, in2, mode='full', method='auto'):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     method : str {'auto', 'direct', 'fft'}, optional
         A string indicating which method to use to calculate the correlation.
 
@@ -616,8 +616,9 @@ def fftconvolve(in1, in2, mode="full", axes=None):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
@@ -627,6 +628,13 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     out : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     See Also
     --------
@@ -868,8 +876,9 @@ def oaconvolve(in1, in2, mode="full", axes=None):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
@@ -879,6 +888,13 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     out : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     See Also
     --------
@@ -1257,8 +1273,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
            The output consists only of those elements that do not
            rely on the zero-padding.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     measure : bool, optional
         If True, run and time the convolution of `in1` and `in2` with both
         methods and return the fastest. If False (default), predict the fastest
@@ -1396,8 +1413,9 @@ def convolve(in1, in2, mode='full', method='auto'):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     method : str {'auto', 'direct', 'fft'}, optional
         A string indicating which method to use to calculate the convolution.
 
@@ -1418,6 +1436,13 @@ def convolve(in1, in2, mode='full', method='auto'):
     convolve : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     Warns
     -----
@@ -3788,7 +3813,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     `resample_poly` (``padtype='wrap'``) on the other hand produces significant
     deviations. This is caused by the disconiuity at the beginning of the signal, for
     which the default filter of `resample_poly` is not suited well. This example
-    illustrates that for some use cases, adpating the `resample_poly` parameters may
+    illustrates that for some use cases, adapting the `resample_poly` parameters may
     be beneficial. `resample` has a big advantage in this regard: It uses the ideal
     antialiasing filter with the maximum bandwidth by default.
 

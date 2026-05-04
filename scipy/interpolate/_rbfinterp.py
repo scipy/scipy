@@ -221,7 +221,7 @@ class RBFInterpolator:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, y, d,
                  neighbors=None,

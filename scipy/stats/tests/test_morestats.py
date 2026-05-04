@@ -1262,7 +1262,7 @@ class TestBinomTest:
         n = xp.asarray(11, dtype=dtype)
         p = xp.asarray(0.4, dtype=dtype)
         if is_jax(xp) and alternative=='two-sided':
-            message = "`alternative='two-sided' is incompatible with JAX arrays."
+            message = "`alternative='two-sided'` is incompatible with JAX arrays."
             with pytest.raises(ValueError, match=message):
                 stats.binomtest(k, n, p)
             return
@@ -1295,7 +1295,7 @@ class TestBinomTest:
         p = rng.uniform(-0.1, 1.1, size=shape)
 
         if is_jax(xp) and alternative=='two-sided':
-            pytest.skip("`alternative='two-sided' is incompatible with JAX arrays.")
+            pytest.skip("`alternative='two-sided'` is incompatible with JAX arrays.")
 
         res = stats.binomtest(xp.asarray(k), xp.asarray(n), xp.asarray(p),
                               alternative=alternative)
@@ -1320,6 +1320,151 @@ class TestBinomTest:
         ci = res.proportion_ci(method=method)
         xp_assert_close(ci.low, xp.asarray(ci_low))
         xp_assert_close(ci.high, xp.asarray(ci_high))
+
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest(self, xp):
+        # precision tests compared to R for ticket:986
+        pp = xp.concat((xp.linspace(0.1, 0.2, 5),
+                        xp.linspace(0.45, 0.65, 5),
+                        xp.linspace(0.85, 0.95, 5)))
+        n = 501
+        x = 450
+        results = [0.0, 0.0, 1.0159969301994141e-304,
+                   2.9752418572150531e-275, 7.7668382922535275e-250,
+                   2.3381250925167094e-099, 7.8284591587323951e-081,
+                   9.9155947819961383e-065, 2.8729390725176308e-050,
+                   1.7175066298388421e-037, 0.0021070691951093692,
+                   0.12044570587262322, 0.88154763174802508, 0.027120993063129286,
+                   2.6102587134694721e-006]
+
+        xp_assert_close(stats.binomtest(x, n, pp).pvalue, xp.asarray(results))
+
+        xp_assert_close(stats.binomtest(50, 100, xp.asarray(0.1)).pvalue,
+                        xp.asarray(5.8320387857343647e-024))
+
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest2(self, xp):
+        # test added for issue #2384
+        res2 = [
+            [1.0, 1.0],
+            [0.5, 1.0, 0.5],
+            [0.25, 1.00, 1.00, 0.25],
+            [0.125, 0.625, 1.000, 0.625, 0.125],
+            [0.0625, 0.3750, 1.0000, 1.0000, 0.3750, 0.0625],
+            [0.03125, 0.21875, 0.68750, 1.00000, 0.68750, 0.21875, 0.03125],
+            [0.015625, 0.125000, 0.453125, 1.000000, 1.000000, 0.453125, 0.125000,
+             0.015625],
+            [0.0078125, 0.0703125, 0.2890625, 0.7265625, 1.0000000, 0.7265625,
+             0.2890625, 0.0703125, 0.0078125],
+            [0.00390625, 0.03906250, 0.17968750, 0.50781250, 1.00000000,
+             1.00000000, 0.50781250, 0.17968750, 0.03906250, 0.00390625],
+            [0.001953125, 0.021484375, 0.109375000, 0.343750000, 0.753906250,
+             1.000000000, 0.753906250, 0.343750000, 0.109375000, 0.021484375,
+             0.001953125]
+        ]
+        for k in range(1, 11):
+            v = xp.arange(k+1, dtype=xp.float64)
+            res1 = stats.binomtest(v, k, 0.5).pvalue
+            xp_assert_close(res1, xp.asarray(res2[k-1], dtype=xp.float64))
+
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest3(self, xp):
+        # test added for issue #2384
+        # test when x == n*p and neighbors
+        v = xp.arange(1., 11.)[:, xp.newaxis]
+        k = xp.arange(2., 11.)
+        shape = (v.shape[0], k.shape[0])
+
+        res3 = stats.binomtest(v, v*k, 1./k).pvalue
+        xp_assert_close(res3, xp.ones(shape))
+
+        # > bt=c()
+        # > for(i in as.single(1:10)) {
+        # +     for(k in as.single(2:10)) {
+        # +         bt = c(bt, binom.test(i-1, k*i,(1/k))$p.value);
+        # +         print(c(i+1, k*i,(1/k)))
+        # +     }
+        # + }
+        binom_testm1 = xp.asarray([
+             0.5, 0.5555555555555556, 0.578125, 0.5904000000000003,
+             0.5981224279835393, 0.603430543396034, 0.607304096221924,
+             0.610255656871054, 0.612579511000001, 0.625, 0.670781893004115,
+             0.68853759765625, 0.6980101120000006, 0.703906431368616,
+             0.70793209416498, 0.7108561134173507, 0.713076544331419,
+             0.714820192935702, 0.6875, 0.7268709038256367, 0.7418963909149174,
+             0.74986110468096, 0.7548015520398076, 0.7581671424768577,
+             0.760607984787832, 0.762459425024199, 0.7639120677676575, 0.7265625,
+             0.761553963657302, 0.774800934828818, 0.7818005980538996,
+             0.78613491480358, 0.789084353140195, 0.7912217659828884,
+             0.79284214559524, 0.794112956558801, 0.75390625, 0.7856929451142176,
+             0.7976688481430754, 0.8039848974727624, 0.807891868948366,
+             0.8105487660137676, 0.812473307174702, 0.8139318233591120,
+             0.815075399104785, 0.7744140625, 0.8037322594985427,
+             0.814742863657656, 0.8205425178645808, 0.8241275984172285,
+             0.8265645374416, 0.8283292196088257, 0.829666291102775,
+             0.8307144686362666, 0.7905273437499996, 0.8178712053954738,
+             0.828116983756619, 0.833508948940494, 0.8368403871552892,
+             0.839104213210105, 0.840743186196171, 0.84198481438049,
+             0.8429580531563676, 0.803619384765625, 0.829338573944648,
+             0.8389591907548646, 0.84401876783902, 0.84714369697889,
+             0.8492667010581667, 0.850803474598719, 0.851967542858308,
+             0.8528799045949524, 0.8145294189453126, 0.838881732845347,
+             0.847979024541911, 0.852760894015685, 0.8557134656773457,
+             0.8577190131799202, 0.85917058278431, 0.860270010472127,
+             0.861131648404582, 0.823802947998047, 0.846984756807511,
+             0.855635653643743, 0.860180994825685, 0.86298688573253,
+             0.864892525675245, 0.866271647085603, 0.867316125625004,
+             0.8681346531755114
+            ])
+
+        # > bt=c()
+        # > for(i in as.single(1:10)) {
+        # +     for(k in as.single(2:10)) {
+        # +         bt = c(bt, binom.test(i+1, k*i,(1/k))$p.value);
+        # +         print(c(i+1, k*i,(1/k)))
+        # +     }
+        # + }
+
+        binom_testp1 = xp.asarray([
+             0.5, 0.259259259259259, 0.26171875, 0.26272, 0.2632244513031551,
+             0.2635138663069203, 0.2636951804161073, 0.2638162407564354,
+             0.2639010709000002, 0.625, 0.4074074074074074, 0.42156982421875,
+             0.4295746560000003, 0.43473045988554, 0.4383309503172684,
+             0.4409884859402103, 0.4430309389962837, 0.444649849401104, 0.6875,
+             0.4927602499618962, 0.5096031427383425, 0.5189636628480,
+             0.5249280070771274, 0.5290623300865124, 0.5320974248125793,
+             0.5344204730474308, 0.536255847400756, 0.7265625, 0.5496019313526808,
+             0.5669248746708034, 0.576436455045805, 0.5824538812831795,
+             0.5866053321547824, 0.589642781414643, 0.5919618019300193,
+             0.593790427805202, 0.75390625, 0.590868349763505, 0.607983393277209,
+             0.617303847446822, 0.623172512167948, 0.627208862156123,
+             0.6301556891501057, 0.632401894928977, 0.6341708982290303,
+             0.7744140625, 0.622562037497196, 0.639236102912278, 0.648263335014579,
+             0.65392850011132, 0.657816519817211, 0.660650782947676,
+             0.662808780346311, 0.6645068560246006, 0.7905273437499996,
+             0.6478843304312477, 0.6640468318879372, 0.6727589686071775,
+             0.6782129857784873, 0.681950188903695, 0.684671508668418,
+             0.686741824999918, 0.688369886732168, 0.803619384765625,
+             0.668716055304315, 0.684360013879534, 0.6927642396829181,
+             0.6980155964704895, 0.701609591890657, 0.7042244320992127,
+             0.7062125081341817, 0.707775152962577, 0.8145294189453126,
+             0.686243374488305, 0.7013873696358975, 0.709501223328243,
+             0.714563595144314, 0.718024953392931, 0.7205416252126137,
+             0.722454130389843, 0.723956813292035, 0.823802947998047,
+             0.701255953767043, 0.715928221686075, 0.723772209289768,
+             0.7286603031173616, 0.7319999279787631, 0.7344267920995765,
+             0.736270323773157, 0.737718376096348
+            ])
+
+        k, v = xp.asarray(k, dtype=xp.float64), xp.asarray(v, dtype=xp.float64)
+        binom_testp1 = xp.reshape(xp.asarray(binom_testp1, dtype=xp.float64), shape)
+        binom_testm1 = xp.reshape(xp.asarray(binom_testm1, dtype=xp.float64), shape)
+
+        res4_p1 = stats.binomtest(v+1, v*k, 1./k).pvalue
+        res4_m1 = stats.binomtest(v-1, v*k, 1./k).pvalue
+
+        xp_assert_close(res4_p1, binom_testp1)
+        xp_assert_close(res4_m1, binom_testm1)
 
 
 @make_xp_test_case(stats.fligner)
@@ -1356,8 +1501,7 @@ class TestFligner:
         xp_assert_close(Xsq1, Xsq2)
         xp_assert_close(pval1, pval2)
 
-    @pytest.mark.skip_xp_backends(np_only=True,
-                                  reason="inconsistent tie-breaking across backends")
+    @skip_xp_backends(np_only=True, reason="inconsistent tie-breaking across backends")
     def test_trimmed_nonregression(self, xp):
         # This is a non-regression test
         # Expected results are *not* from an external gold standard,
@@ -1982,7 +2126,7 @@ class TestWilcoxon:
         xp_assert_equal(stats.wilcoxon(d, method="asymptotic").pvalue, xp.asarray(p))
 
     @pytest.mark.xslow
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @skip_xp_backends("jax.numpy", reason="lazy -> limited `method` choices")
     def test_auto_permutation_edge_case(self, xp):
         # Check that `PermutationMethod()` is used and results are deterministic when
         # `method='auto'`, there are zeros or ties in `d = x-y`, and `len(d) <= 13`.
@@ -3150,7 +3294,7 @@ class TestCircFuncs:
     @pytest.mark.parametrize('circfunc', [stats.circmean,
                                           stats.circvar,
                                           stats.circstd])
-    def test_circmean_axis(self, xp, circfunc):
+    def test_circmean_axis(self, circfunc, xp):
         x = xp.asarray([[355, 5, 2, 359, 10, 350],
                         [351, 7, 4, 352, 9, 349],
                         [357, 9, 8, 358, 4, 356.]])

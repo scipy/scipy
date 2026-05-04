@@ -6,7 +6,7 @@
 #include "Python.h"
 #include <tuple>
 #include "numpy/npy_math.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 /*
  * declare LAPACK prototypes
@@ -263,6 +263,9 @@ void BLAS_FUNC(zggev)(char *jobvl, char *jobvr, CBLAS_INT *n, c128_t *a, CBLAS_I
 
 
 } // extern "C"
+
+
+namespace sp_linalg {
 
 
 /*
@@ -638,6 +641,56 @@ GEN_GBCON_CZ(c, npy_complex64, float)
 GEN_GBCON_CZ(z, npy_complex128, double)
 
 
+#define GEN_GEQRF(PREFIX, TYPE) \
+inline void \
+call_geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
+};
+
+GEN_GEQRF(s, float);
+GEN_GEQRF(d, double);
+GEN_GEQRF(c, npy_complex64);
+GEN_GEQRF(z, npy_complex128);
+
+
+// N.B. `rwork` is not used for `s` and `d` variants, so swallowed prior to calling LAPACK
+#define GEN_GEQP3(PREFIX, TYPE) \
+inline void \
+call_geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, info); \
+};
+
+GEN_GEQP3(s, float);
+GEN_GEQP3(d, double);
+
+
+#define GEN_GEQP3_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+call_geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, (RTYPE *)rwork, info); \
+};
+
+GEN_GEQP3_CZ(c, npy_complex64, float);
+GEN_GEQP3_CZ(z, npy_complex128, double);
+
+
+// NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
+#define GEN_OR_UN_GQR(PREFIX, TYPE) \
+inline void \
+call_or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
+};
+
+GEN_OR_UN_GQR(sor, float)
+GEN_OR_UN_GQR(dor, double)
+GEN_OR_UN_GQR(cun, npy_complex64)
+GEN_OR_UN_GQR(zun, npy_complex128)
+
+
 /*
  * ?GESVD wrappers.
  *
@@ -719,37 +772,6 @@ inline void call_gesdd(
 {
     BLAS_FUNC(zgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, iwork, info);
 };
-
-
-
-
-#define GEN_GEQRF(PREFIX, TYPE) \
-inline void \
-geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
-};
-
-GEN_GEQRF(s, float)
-GEN_GEQRF(d, double)
-GEN_GEQRF(c, npy_complex64)
-GEN_GEQRF(z, npy_complex128)
-
-
-
-// NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
-#define GEN_OR_UN_GQR(PREFIX, TYPE) \
-inline void \
-or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
-};
-
-GEN_OR_UN_GQR(sor, float)
-GEN_OR_UN_GQR(dor, double)
-GEN_OR_UN_GQR(cun, npy_complex64)
-GEN_OR_UN_GQR(zun, npy_complex128)
-
 
 
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
@@ -901,6 +923,15 @@ enum St : Py_ssize_t
     HER = 211
 };
 
+// QR mode tags; python side maps mode strings to these values
+enum QR_mode : Py_ssize_t
+{
+    FULL = 1,
+    R = 11,
+    RAW_MODE = 21,
+    ECONOMIC = 31
+};
+
 
 /*
  * Rich return object
@@ -973,9 +1004,9 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  */
 template<typename T>
 CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
-    real_type value = real_part(_lwrk) * fudge_factor;
+    real_type value = detail::real_part(_lwrk) * fudge_factor;
     if((std::is_same<real_type, float>::value) ||
        (std::is_same<real_type, npy_complex64>::value)
     ) {
@@ -1069,15 +1100,52 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
 
 
 /*
+ * Copy one triangle of a strided m-by-n `src` to C-ordered `dst`.
+ * Note that by specifying m and/or n smaller than the input array `src`
+ * it is possible to only copy a subset of the triangle.
+ *
+ * Only elements in the `uplo` triangle are copied;
+ * `dst` is assumed zero-initialized for the other triangle.
+ *
+ * The function does not use the symmetry of `src` — it reads exactly the
+ * triangle specified by `uplo`. The caller is responsible for ensuring
+ * that the correct triangle is populated in `src`.
+ *
+ * Examples (matrix dimension m x n):
+ *   C-contiguous src (s0=n, s1=1): src[i*n + j] -> dst[i*n + j]
+ *      both sequential in the inner loop - effectively a partial memcpy.
+ *   F-contiguous src (s0=1, s2=m): src[i + j*m] -> dst[i*n + j],
+ *      column-sequential reads, row-sequential writes.
+ */
+template<typename T>
+void copy_triangle_to_C(T *dst, const T *src, const npy_intp m, const npy_intp n, const npy_intp s0, const npy_intp s1, const char uplo) {
+    if (uplo == 'L') {
+        for (npy_intp i = 0; i < m; i++) {
+            npy_intp stop = std::min(i + 1, n);
+            for (npy_intp j = 0; j < stop; j++) {
+                dst[i * n + j] = *(src + i * s0 + j * s1);
+            }
+        }
+    } else {
+        for (npy_intp i = 0; i < m; i++) {
+            for (npy_intp j = i; j < n; j++) {
+                dst[i * n + j] = *(src + i * s0 + j * s1);
+            }
+        }
+    }
+}
+
+
+/*
  * 1-norm of a matrix
  */
 
 template<typename T>
-typename type_traits<T>::real_type
+typename detail::type_traits<T>::real_type
 norm1_(T* A, T* work, const npy_intp n)
 {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename detail::type_traits<T>::real_type;
+    using value_type = typename detail::type_traits<T>::value_type;
     value_type *pA = reinterpret_cast<value_type *>(A);
 
     Py_ssize_t i, j;
@@ -1094,11 +1162,11 @@ norm1_(T* A, T* work, const npy_intp n)
 
 
 template<typename T>
-typename type_traits<T>::real_type
+typename detail::type_traits<T>::real_type
 norm1_sym_herm_upper(T* A, T* work, const npy_intp n)
 {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename detail::type_traits<T>::real_type;
+    using value_type = typename detail::type_traits<T>::value_type;
     value_type *pA = reinterpret_cast<value_type *>(A);
 
     Py_ssize_t i, j;
@@ -1125,11 +1193,11 @@ norm1_sym_herm_upper(T* A, T* work, const npy_intp n)
 
 
 template<typename T>
-typename type_traits<T>::real_type
+typename detail::type_traits<T>::real_type
 norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
 {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename detail::type_traits<T>::real_type;
+    using value_type = typename detail::type_traits<T>::value_type;
     value_type *pA = reinterpret_cast<value_type *>(A);
 
     Py_ssize_t i, j;
@@ -1154,7 +1222,7 @@ norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
 
 
 template<typename T>
-typename type_traits<T>::real_type
+typename detail::type_traits<T>::real_type
 norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
     // NB: transpose for the F order
     if (uplo == 'U') {return norm1_sym_herm_lower(A, work, n);}
@@ -1164,10 +1232,10 @@ norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
 
 
 template<typename T>
-typename type_traits<T>::real_type
+typename detail::type_traits<T>::real_type
 norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename detail::type_traits<T>::real_type;
+    using value_type = typename detail::type_traits<T>::value_type;
 
     value_type *pd = reinterpret_cast<value_type *>(d);
     value_type *pdu = reinterpret_cast<value_type *>(du);
@@ -1196,10 +1264,10 @@ norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
  * is always such that its number of rows is `2 * kl + ku + 1`.
  */
 template <typename T>
-typename type_traits<T>::real_type
+typename detail::type_traits<T>::real_type
 norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_intp n) {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename detail::type_traits<T>::real_type;
+    using value_type = typename detail::type_traits<T>::value_type;
 
     value_type *pab = reinterpret_cast<value_type *>(ab);
     real_type *rwork = (real_type *)work;
@@ -1238,7 +1306,7 @@ template<typename T>
 void
 bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
 {
-    using value_type = typename type_traits<T>::value_type;
+    using value_type = typename detail::type_traits<T>::value_type;
     value_type *p_data = reinterpret_cast<value_type *>(data);
     value_type zero = value_type(0.);
 
@@ -1277,7 +1345,7 @@ template<typename T>
 void
 bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy_intp *lower_band, npy_intp *upper_band)
 {
-    using value_type = typename type_traits<T>::value_type;
+    using value_type = typename detail::type_traits<T>::value_type;
     value_type *p_data = reinterpret_cast<value_type *>(data);
     value_type zero = value_type(0.);
 
@@ -1303,13 +1371,14 @@ bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy
 
 template<typename T>
 void
-detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *kl_max, npy_intp *ku_max) {
+detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *ldab_max) {
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T* slice_ptr = compute_slice_ptr(idx, data, ndim, shape, strides);
 
         bandwidth_strided(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
-        if (kl[idx] > *kl_max) {*kl_max = kl[idx];}
-        if (ku[idx] > *ku_max) {*ku_max = ku[idx];}
+        if (2 * kl[idx] + ku[idx] + 1 > *ldab_max) {
+            *ldab_max = 2 * kl[idx] + ku[idx] + 1;
+        }
     }
 }
 
@@ -1318,7 +1387,7 @@ template<typename T>
 std::tuple<bool, bool>
 is_sym_or_herm(const T *data, npy_intp n) {
     // Return a pair of (is_symmetric, is_hermitian)
-    using value_type = typename type_traits<T>::value_type;
+    using value_type = typename detail::type_traits<T>::value_type;
     const value_type *p_data = reinterpret_cast<const value_type *>(data);
     bool all_sym = true, all_herm = true;
 
@@ -1383,13 +1452,13 @@ fill_other_triangle(char uplo, T *data, npy_intp n) {
     if (uplo == 'U') {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=i+1; j<n; j++){
-                data[j + i*n] = conj(data[i + j*n]);
+                data[j + i*n] = detail::conj(data[i + j*n]);
             }
         }
     } else {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=0; j<i+1; j++){
-                data[j + i*n] = conj(data[i + j*n]);
+                data[j + i*n] = detail::conj(data[i + j*n]);
             }
         }
     }
@@ -1479,17 +1548,21 @@ to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T 
 
 template<typename T>
 inline void
-zero_other_triangle(char uplo, T *data, npy_intp n) {
+zero_other_triangle(char uplo, T *data, const npy_intp m, npy_intp n = -1, npy_intp lda = -1) {
+    if (n == -1) { n = m; }
+    if (lda == -1) { lda = m; }
+
     if (uplo == 'U') {
         for (npy_intp i=0; i<n; i++) {
-            for (npy_intp j=i+1; j<n; j++){
-                data[j + i*n] = numeric_limits<T>::zero;
+            for (npy_intp j=i+1; j<m; j++){
+                data[j + i*lda] = detail::numeric_limits<T>::zero;
             }
         }
     } else {
         for (npy_intp i=0; i<n; i++) {
-            for (npy_intp j=0; j<i; j++){
-                data[j + i*n] = numeric_limits<T>::zero;
+            npy_intp stop = std::min(i, m);
+            for (npy_intp j=0; j < stop; j++){
+                data[j + i*lda] = detail::numeric_limits<T>::zero;
             }
         }
     }
@@ -1501,8 +1574,10 @@ inline void
 nan_matrix(T * data, npy_intp n) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            data[i * n + j] = numeric_limits<T>::nan;
+            data[i * n + j] = detail::numeric_limits<T>::nan;
         }
     }
 }
+
+} // namespace sp_linalg
 #endif
