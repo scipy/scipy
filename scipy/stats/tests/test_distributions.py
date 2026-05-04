@@ -1711,7 +1711,7 @@ class TestHalfgennorm:
     #    mp.dps = 100
     #    n = 3
     #    beta = mp.mpf(1.25)
-    #    ref = float(mp.gamma((n + 1)/beta) / mp.gamma(1/beta))
+    #    ref = float(mp.rf(1/beta, n/beta))
     @pytest.mark.parametrize('n, beta, ref',
                              [(0, 2.25, 1),
                               (1, 0.5, 6.0),
@@ -1725,7 +1725,7 @@ class TestHalfgennorm:
     #    from mpmath import mp
     #    mp.dps = 100
     #    beta = mp.mpf(0.02)
-    #    ref = float(mp.gamma(2/beta) / mp.gamma(1/beta))
+    #    ref = float(mp.rf(1/beta, 1/beta))
     @pytest.mark.parametrize('beta, ref',
                              [(0.02, 1.5342593781274747e+93),
                               (0.125, 259459200.0),
@@ -1741,9 +1741,9 @@ class TestHalfgennorm:
     #    from mpmath import mp
     #    mp.dps = 100
     #    beta = mp.mpf(0.02)
-    #    mu = mp.gamma(2/beta)/mp.gamma(1/beta)
+    #    mu = mp.rf(1/beta, 1/beta)
     #    # var = E(X**2) - E(X)**2:
-    #    ref = float(mp.gamma(3/beta)/mp.gamma(1/beta) - mu**2)
+    #    ref = float(mp.rf(1/beta, 2/beta) - mu**2)
     @pytest.mark.parametrize('beta, ref',
                              [(0.02, 6.261772482175519e+197),
                               (0.125, 5.062049324107776e+18),
