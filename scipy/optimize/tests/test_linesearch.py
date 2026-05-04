@@ -255,8 +255,8 @@ class TestLineSearch:
                 s, fc, gc, fv, ofv, gv = line_search_wolfe2(
                     f, fprime, x, p, g0, f0, old_f, amax=smax)
             assert_equal(self.fcount.c, fc+gc)
-            xp_assert_close_nulp(ofv, f(x), nulp=50)
-            xp_assert_close_nulp(fv, f(x + s*p), nulp=50)
+            xp_assert_close_nulp(ofv, f(x), nulp=50, check_namespace=False)
+            xp_assert_close_nulp(fv, f(x + s*p), nulp=50, check_namespace=False)
             if gv is not None:
                 xp_assert_close(gv, fprime(x + s*p), rtol=1e-14)
             if s < smax:
