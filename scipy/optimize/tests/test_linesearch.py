@@ -8,8 +8,9 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp)
 import pytest
-from scipy._lib._array_api import make_xp_test_case, xp_assert_close
-
+from scipy._lib._array_api import (
+    make_xp_test_case, xp_assert_close, xp_assert_close_nulp
+)
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import line_search_wolfe2
 from scipy.optimize._linesearch import LineSearchWarning
@@ -254,8 +255,8 @@ class TestLineSearch:
                 s, fc, gc, fv, ofv, gv = line_search_wolfe2(
                     f, fprime, x, p, g0, f0, old_f, amax=smax)
             assert_equal(self.fcount.c, fc+gc)
-            assert_fp_equal(ofv, float(f(x)))
-            assert_fp_equal(fv, float(f(x + s*p)))
+            xp_assert_close_nulp(ofv, f(x), nulp=50)
+            xp_assert_close_nulp(fv, f(x + s*p), nulp=50)
             if gv is not None:
                 xp_assert_close(gv, fprime(x + s*p), rtol=1e-14)
             if s < smax:
