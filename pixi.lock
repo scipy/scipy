@@ -5608,7 +5608,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/ld_impl_linux-64-2.45-default_hbd61a6d_104.conda
       - conda: https://prefix.dev/conda-forge/linux-64/libamd-3.3.3-h456b2da_7100101.conda
       - conda: https://prefix.dev/conda-forge/linux-64/libblas-3.11.0-4_h4a7cf45_openblas.conda
-      - conda: https://prefix.dev/conda-forge/linux-64/libboost-headers-1.89.0-ha770c72_3.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/libboost-headers-1.91.0-ha770c72_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/libbtf-2.3.2-hf02c80a_7100101.conda
       - conda: https://prefix.dev/conda-forge/linux-64/libcamd-3.3.3-hf02c80a_7100101.conda
       - conda: https://prefix.dev/conda-forge/linux-64/libcblas-3.11.0-4_h0358290_openblas.conda
@@ -5748,7 +5748,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/ld64_osx-arm64-956.6-llvm19_1_h6922315_1.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libamd-3.3.3-h5087772_7100102.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libblas-3.11.0-4_h51639a9_openblas.conda
-      - conda: https://prefix.dev/conda-forge/osx-arm64/libboost-headers-1.89.0-hce30654_3.conda
+      - conda: https://prefix.dev/conda-forge/osx-arm64/libboost-headers-1.91.0-hce30654_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libbtf-2.3.2-h99b4a89_7100102.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libcamd-3.3.3-h99b4a89_7100102.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libcblas-3.11.0-4_hb0561ab_openblas.conda
@@ -5887,7 +5887,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/win-64/libamd-3.3.3-h60129d2_7100102.conda
       - conda: https://prefix.dev/conda-forge/win-64/libblas-3.11.0-4_hf2e6a31_mkl.conda
-      - conda: https://prefix.dev/conda-forge/win-64/libboost-headers-1.89.0-h57928b3_3.conda
+      - conda: https://prefix.dev/conda-forge/win-64/libboost-headers-1.91.0-h57928b3_0.conda
       - conda: https://prefix.dev/conda-forge/win-64/libbtf-2.3.2-h8c1c262_7100102.conda
       - conda: https://prefix.dev/conda-forge/win-64/libcamd-3.3.3-h8c1c262_7100102.conda
       - conda: https://prefix.dev/conda-forge/win-64/libcblas-3.11.0-4_h2a3cdd5_mkl.conda
@@ -13953,30 +13953,30 @@ packages:
   purls: []
   size: 68082
   timestamp: 1774503684284
-- conda: https://prefix.dev/conda-forge/linux-64/libboost-headers-1.89.0-ha770c72_3.conda
-  sha256: 0720a747b51953b6ffcb1d3c5af766a6e34d3b7c4f0f1160d414951ba3f0d343
-  md5: e8913467ec252af573eb66b4b46dd023
+- conda: https://prefix.dev/conda-forge/linux-64/libboost-headers-1.91.0-ha770c72_0.conda
+  sha256: a0c091d6d98fdee01d64af4c139ca3e58e23eb1fac5bb06eda2fd10fb98b5a4f
+  md5: 0ab87c8e28a0ed791fd021f8eb48e0e0
   constrains:
   - boost-cpp <0.0a0
   license: BSL-1.0
-  size: 14494859
-  timestamp: 1763012937547
-- conda: https://prefix.dev/conda-forge/osx-arm64/libboost-headers-1.89.0-hce30654_3.conda
-  sha256: f8a440340ee7641ef1d60e0480bf0fc8ae895631c1242816b798c07ed0cf994c
-  md5: 3a6a7a35d2501dd269fb1da2fb0d7d5b
+  size: 15120635
+  timestamp: 1776906304661
+- conda: https://prefix.dev/conda-forge/osx-arm64/libboost-headers-1.91.0-hce30654_0.conda
+  sha256: 3fee05bc086ef520e1f05ce4b9be48971ee504d9a78c433cd98e8d9b39316f20
+  md5: 7c364719d869c7e3e313b2bb618c1bec
   constrains:
   - boost-cpp <0.0a0
   license: BSL-1.0
-  size: 14675191
-  timestamp: 1763015199104
-- conda: https://prefix.dev/conda-forge/win-64/libboost-headers-1.89.0-h57928b3_3.conda
-  sha256: 4d93e7b933f8dd23f9085e2cbfa96fcdcd45176f9d95b914139ecf95a866f53a
-  md5: a210974ad34d132f01c6f7dc8ef2f25b
+  size: 15154734
+  timestamp: 1776908824946
+- conda: https://prefix.dev/conda-forge/win-64/libboost-headers-1.91.0-h57928b3_0.conda
+  sha256: 3cec732adc6917c0758508225a9e98a7645c7bca53a10d404a6ebd5007da3a6d
+  md5: 8f3e2156298d3144ebe2b266f54de33e
   constrains:
   - boost-cpp <0.0a0
   license: BSL-1.0
-  size: 14664131
-  timestamp: 1763014457361
+  size: 15213014
+  timestamp: 1776908030589
 - conda: https://prefix.dev/conda-forge/linux-64/libbrotlicommon-1.2.0-hb03c661_1.conda
   sha256: 318f36bd49ca8ad85e6478bd8506c88d82454cc008c1ac1c6bf00a3c42fa610e
   md5: 72c8fd1af66bd67bf580645b426513ed
