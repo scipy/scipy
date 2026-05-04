@@ -769,7 +769,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.system-libs.dependencies]
 # Pinned to match versions in `meson.build`
-libboost-headers = "==1.89.0"
+libboost-headers = "==1.91.0"
 qhull = "==2020.2"
 
 [feature.system-libs.activation.env]
