@@ -9,7 +9,7 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp)
 import pytest
 from scipy._lib._array_api import (
-    make_xp_test_case, xp_assert_close, xp_assert_close_nulp
+    make_xp_test_case, xp_assert_close, xp_assert_close_nulp, _xp_copy_to_numpy
 )
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import line_search_wolfe2
@@ -264,7 +264,7 @@ class TestLineSearch:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert c > 3  # check that the iterator really works...
-        self.A = np.asarray(self.A)  # Revert the hack.
+        self.A = _xp_copy_to_numpy(self.A)  # Revert the hack.
 
     def test_line_search_wolfe2_bounds(self):
         # See gh-7475
