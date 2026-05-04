@@ -32,7 +32,7 @@ import scipy
 from scipy.interpolate import AAA, FloaterHormannInterpolator, BarycentricInterpolator
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close,
-    make_xp_test_case
+    make_xp_test_case, xp_ravel
 )
 
 TOL = 1e4 * np.finfo(np.float64).eps
@@ -292,8 +292,9 @@ class TestFloaterHormann:
     def runge(self, z):
         return 1/(1 + z**2)
 
-    def scale(self, n, d):
-        return (-1)**(np.arange(n) + d) * factorial(d)
+    def scale(self, n, d, xp):
+        scale =  (-1)**(xp.arange(n) + d) * factorial(d)
+        return xp.asarray(scale, dtype=xp.float64)
 
     def test_iv(self):
         with pytest.raises(ValueError, match="`x`"):
@@ -324,15 +325,8 @@ class TestFloaterHormann:
         x = xp.arange(11, dtype=xp.float64)
         y = xp.zeros_like(x)
         r = FloaterHormannInterpolator(x, y, d=d)
-        weights = xp.reshape(r.weights, (-1,))
-        expected = xp.asarray(expected, dtype=xp.float64)
-        idx = xp.arange(x.size)
-        even = (idx + d) % 2 == 0
-        ones = xp.ones(x.size, dtype=x.dtype)
-        sign = xp.where(even, ones, -ones)
 
-        scale = sign * xp.asarray(factorial(d), dtype=x.dtype)
-        xp_assert_close(weights * scale, expected,
+        xp_assert_close(xp_ravel(r.weights) * self.scale(x.size, d, xp), xp.asarray(expected, dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
 
     @pytest.mark.parametrize("d", range(10))
@@ -356,7 +350,7 @@ class TestFloaterHormann:
         r = FloaterHormannInterpolator(z, xp.sin(z), d=12)
         xx = xp.linspace(-1, 1, num=1000)
         zz = xx + xx*1j
-        assert_allclose(r(zz), xp.sin(zz), rtol=1e-12)
+        xp_assert_close(r(zz), xp.sin(zz), rtol=1e-12)
 
     def test_polyinterp(self, xp):
         # check that when d=n-1 FH gives a polynomial interpolant
@@ -365,7 +359,7 @@ class TestFloaterHormann:
         y = xp.sin(x)
         r = FloaterHormannInterpolator(x, y, d=x.size-1)
         p = BarycentricInterpolator(x, y)
-        assert_allclose(r(xx), p(xx), rtol=1e-12, atol=1e-12)
+        xp_assert_close(r(xx), p(xx), rtol=1e-12, atol=1e-12)
 
     @pytest.mark.parametrize("y_shape", [(2,), (2, 3, 1), (1, 5, 6, 4)])
     @pytest.mark.parametrize("xx_shape", [(100), (10, 10)])
@@ -386,14 +380,14 @@ class TestFloaterHormann:
         )
         rr = r(xx)
         assert rr.shape == xx.shape + y_shape
-        assert_allclose(rr, yy, rtol=1e-6)
+        xp_assert_close(rr, yy, rtol=1e-6)
 
 
-    def test_zeros(self, xp):
-        x = xp.linspace(0, 10, num=100)
-        r = FloaterHormannInterpolator(x, xp.sin(xp.pi*x))
+    def test_zeros(self):
+        x = np.linspace(0, 10, num=100)
+        r = FloaterHormannInterpolator(x, np.sin(np.pi*x))
 
-        err = xp.abs(xp.subtract(r.roots()[..., None], xp.arange(11))).min(axis=0)
+        err = np.abs(np.subtract(r.roots()[..., None], np.arange(11))).min(axis=0)
         assert_array_less(err, 1e-5)
 
     def test_no_poles(self):

@@ -29,11 +29,10 @@ from types import GenericAlias
 
 import numpy as np
 import scipy
-from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
+from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities, xp_ravel
 
 __all__ = ["AAA", "FloaterHormannInterpolator"]
 
-@xp_capabilities()
 class _BarycentricRational:
     """Base class for barycentric representation of a rational function."""
 
@@ -50,7 +49,7 @@ class _BarycentricRational:
 
         self._input_validation(z, f, **kwargs)
 
-        f = xp.moveaxis(f, axis, 0)
+        f = xp.moveaxis(f, self._axis, 0)
 
         # Remove infinite or NaN function values and repeated entries    
         reshaped = xp.reshape(xp.isfinite(f), (f.shape[0], -1))
@@ -105,7 +104,7 @@ class _BarycentricRational:
         # evaluate rational function in barycentric form.
         xp = array_namespace(z)
         z = xp.asarray(z)
-        zv = xp.reshape(z, (-1,))
+        zv = xp_ravel(z)
 
         support_values = xp.reshape(
             self._support_values,
