@@ -11652,6 +11652,9 @@ class halfgennorm_gen(rv_continuous):
     def _isf(self, x, beta):
         return sc.gammainccinv(1.0/beta, x)**(1.0/beta)
 
+    def _munp(self, n, beta):
+        return sc.poch(1/beta, n/beta)
+
     def _entropy(self, beta):
         return 1.0/beta - np.log(beta) + sc.gammaln(1.0/beta)
 

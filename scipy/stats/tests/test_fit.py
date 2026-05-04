@@ -77,7 +77,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
 
 # not sure if these fail, but they caused my patience to fail
 mm_XXslow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                  'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
+                  'genhalflogistic', 'gompertz', 'johnsonsb',
                   'kappa4', 'kstwobign', 'recipinvgauss',
                   'truncexpon', 'vonmises', 'vonmises_line']
 
@@ -243,7 +243,7 @@ def cases_test_fit_mle():
                       'chi', 'crystalball', 'dweibull', 'erlang', 'exponnorm',
                       'exponpow', 'f', 'fatiguelife', 'fisk', 'foldcauchy', 'gamma',
                       'genexpon', 'genextreme', 'gennorm', 'genpareto',
-                      'gompertz', 'halfgennorm', 'invgamma', 'invgauss', 'invweibull',
+                      'gompertz', 'invgamma', 'invgauss', 'invweibull',
                       'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
                       'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
                       'nbinom', 'norminvgauss',
@@ -313,7 +313,7 @@ def cases_test_fit_mse():
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
                        'dgamma', 'dpareto_lognorm', 'f', 'gengamma', 'gennorm',
-                       'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t',
+                       'invgamma', 'invgauss', 'jf_skew_t',
                        'johnsonsb', 'kappa4', 'loguniform', 'mielke',
                        'nakagami', 'ncf', 'nchypergeom_fisher',
                        'nchypergeom_wallenius', 'nct', 'ncx2',
