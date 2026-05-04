@@ -1,4 +1,5 @@
 import itertools
+import pytest
 
 import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
@@ -573,6 +574,7 @@ class BaseQRdelete(BaseQRdeltas):
         r = r[1:]
         assert_raises(ValueError, qr_delete, q, r, 0, 1)
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
@@ -1118,6 +1120,7 @@ class BaseQRinsert(BaseQRdeltas):
         assert_raises(ValueError, qr_insert, q[:-2], r, u, 0, 'col')
         assert_raises(ValueError, qr_insert, q, r, u[1:], 0, 'col')
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
@@ -1552,6 +1555,7 @@ class BaseQRupdate(BaseQRdeltas):
         assert_raises(ValueError, qr_update, q, r, u[1:], v)
         assert_raises(ValueError, qr_update, q, r, u, v[1:])
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
