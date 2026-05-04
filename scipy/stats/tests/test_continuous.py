@@ -1135,7 +1135,7 @@ class TestMakeDistribution:
     def test_rv_generic(self, i, distdata):
         distname = distdata[0]
 
-        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
+        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz',
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
                 'vonmises_line'}  # continuous

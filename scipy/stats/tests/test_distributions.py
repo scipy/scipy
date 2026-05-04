@@ -1706,6 +1706,55 @@ class TestHalfgennorm:
         pdf2 = stats.gennorm.pdf(points, .497324)
         assert_almost_equal(pdf1, 2*pdf2)
 
+    # Reference values (e.g. for n=3, beta=1.25)
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    n = 3
+    #    beta = mp.mpf(1.25)
+    #    ref = float(mp.rf(1/beta, n/beta))
+    @pytest.mark.parametrize('n, beta, ref',
+                             [(0, 2.25, 1),
+                              (1, 0.5, 6.0),
+                              (2, 12.5, 0.3155489903298712),
+                              (3, 0.125, 1.631515605987683e+30)])
+    def test_munp(self, n, beta, ref):
+        munp = stats.halfgennorm._munp(n, beta)
+        assert_allclose(munp, ref, rtol=5e-15)
+
+    # Reference values (e.g. for beta=0.02)
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    beta = mp.mpf(0.02)
+    #    ref = float(mp.rf(1/beta, 1/beta))
+    @pytest.mark.parametrize('beta, ref',
+                             [(0.02, 1.5342593781274747e+93),
+                              (0.125, 259459200.0),
+                              (0.5, 6.0),
+                              (10.0, 0.48256057149575027),
+                              (125.0, 0.49777435261046765),
+                              (15000.0, 0.49998076533051666)])
+    def test_mean(self, beta, ref):
+        m = stats.halfgennorm.mean(beta)
+        assert_allclose(m, ref, rtol=1e-14)
+
+    # Reference values (e.g. for beta=0.02)
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    beta = mp.mpf(0.02)
+    #    mu = mp.rf(1/beta, 1/beta)
+    #    # var = E(X**2) - E(X)**2:
+    #    ref = float(mp.rf(1/beta, 2/beta) - mu**2)
+    @pytest.mark.parametrize('beta, ref',
+                             [(0.02, 6.261772482175519e+197),
+                              (0.125, 5.062049324107776e+18),
+                              (0.5, 84.0),
+                              (10.0, 0.08159018176717249),
+                              (125.0, 0.0826270885971827),
+                              (15000.0, 0.08332692433644018)])
+    def test_var(self, beta, ref):
+        v = stats.halfgennorm.var(beta)
+        assert_allclose(v, ref, rtol=1.5e-14)
+
 
 class TestLaplaceasymmetric:
     def test_laplace(self):
