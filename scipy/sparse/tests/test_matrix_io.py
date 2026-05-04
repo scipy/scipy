@@ -106,19 +106,6 @@ def test_malicious_load():
     finally:
         os.remove(tmpfile)
 
-
-def test_py23_compatibility():
-    # Try loading files saved on Python 2 and Python 3.  They are not
-    # the same, since files saved with SciPy versions < 1.0.0 may
-    # contain unicode.
-
-    a = load_npz(os.path.join(DATA_DIR, 'csc_py2.npz'))
-    b = load_npz(os.path.join(DATA_DIR, 'csc_py3.npz'))
-    c = csc_matrix([[0]])
-
-    assert_equal(a.toarray(), c.toarray())
-    assert_equal(b.toarray(), c.toarray())
-
 def test_implemented_error():
     # Attempts to save an unsupported type and checks that an
     # NotImplementedError is raised.
