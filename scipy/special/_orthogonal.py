@@ -678,9 +678,7 @@ def genlaguerre(n, alpha, monic=False):
     interval :math:`[-1, 1]`:
 
     >>> import numpy as np
-    >>> from scipy.special import binom
-    >>> from scipy.special import genlaguerre
-    >>> from scipy.special import hyp1f1
+    >>> from scipy.special import binom, genlaguerre, hyp1f1
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> np.allclose(genlaguerre(3, 3)(x), binom(6, 3) * hyp1f1(-3, 4, x))
     True
@@ -694,7 +692,7 @@ def genlaguerre(n, alpha, monic=False):
     >>> ax.set_ylim(-5.0, 10.0)
     >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{(\alpha)}$')
     >>> for alpha in np.arange(0, 5):
-    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf"$L_3^{{(\alpha)}}$")
+    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf"$L_3^{{({alpha})}}$")
     >>> plt.legend(loc='best')
     >>> plt.show()
 
