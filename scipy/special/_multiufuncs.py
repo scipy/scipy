@@ -207,9 +207,9 @@ sph_legendre_p_all = MultiUFunc(
 
     Parameters
     ----------
-    n : array_like of ints
+    n : int
         Degree of the spherical Legendre polynomials. Must have ``n >= 0``.
-    m : array_like of ints
+    m : int
         Order of the spherical Legendre polynomials.
     theta : array_like
         Input value.
@@ -336,9 +336,9 @@ assoc_legendre_p_all = MultiUFunc(
 
     Parameters
     ----------
-    n : array_like of ints
+    n : int
         Degree of the associated Legendre polynomials. Must have ``n >= 0``.
-    m : array_like of ints
+    m : int
         Order of the associated Legendre polynomials.
     z : array_like
         Input value.
@@ -475,7 +475,7 @@ legendre_p_all = MultiUFunc(
 
     Parameters
     ----------
-    n : array_like of ints
+    n : int
         Degree of the Legendre polynomials. Must have ``n >= 0``.
     z : array_like
         Input value.
@@ -629,11 +629,11 @@ sph_harm_y_all = MultiUFunc(
 
     Parameters
     ----------
-    n : array_like of ints
+    n : int
         Degree of the harmonics. Must have ``n >= 0``. This is
         often denoted by ``l`` (lower case L) in descriptions of
         spherical harmonics.
-    m : array_like of ints
+    m : int
         Order of the harmonics.
     theta : array_like
         Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
