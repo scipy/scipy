@@ -562,6 +562,19 @@ class dia_array(_dia_base, sparray):
     addition, subtraction, multiplication, division, and matrix power.
     Sparse arrays with DIAgonal storage do not support slicing.
 
+    When using the ``(data, offsets)`` constructor, the format of ``data``
+    is consistent with the BLAS/LAPACK general band format when ``offsets``
+    is a decreasing range. Specifically:
+
+    - Sub-diagonals (negative offsets) are left-aligned among themselves
+      and with the main diagonal, while super-diagonals (positive offsets)
+      are right-aligned among themselves and with the main diagonal.
+    - Columns of ``data`` become (subsets of) columns of the generated
+      sparse array.
+    - When ``offsets`` is a decreasing range (e.g., ``[1, 0, -1, -2]``),
+      the ``data`` array is compatible with BLAS/LAPACK band routines
+      such as ``dgbmv``.
+
     Examples
     --------
 
@@ -653,6 +666,19 @@ class dia_matrix(spmatrix, _dia_base):
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
     Sparse matrices with DIAgonal storage do not support slicing.
+
+    When using the ``(data, offsets)`` constructor, the format of ``data``
+    is consistent with the BLAS/LAPACK general band format when ``offsets``
+    is a decreasing range. Specifically:
+
+    - Sub-diagonals (negative offsets) are left-aligned among themselves
+      and with the main diagonal, while super-diagonals (positive offsets)
+      are right-aligned among themselves and with the main diagonal.
+    - Columns of ``data`` become (subsets of) columns of the generated
+      sparse matrix.
+    - When ``offsets`` is a decreasing range (e.g., ``[1, 0, -1, -2]``),
+      the ``data`` array is compatible with BLAS/LAPACK band routines
+      such as ``dgbmv``.
 
     Examples
     --------
