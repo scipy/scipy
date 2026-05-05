@@ -264,71 +264,94 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b, xp, batched = make_system(A, M, x0, b)
-    bnrm2 = np.linalg.norm(b)
-
-    atol, _ = _get_atol_rtol('bicgstab', bnrm2, atol, rtol)
-
-    if bnrm2 == 0:
-        return b, 0
-
-    n = len(b)
-
-    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
-
-    if maxiter is None:
-        maxiter = n*10
-
+    A, M, x, b, xp, batched = make_system(A, M, x0, b, nd_support=True)
     matvec = A.matvec
     psolve = M.matvec
+    bnrm2, dotprod, maxiter, r = _cg_setup(
+        A, b, x, maxiter=maxiter, xp=xp
+    )
+
+    atol, _ = _get_atol_rtol('bicgstab', bnrm2, atol, rtol, xp=xp)
+
+    if not xp.any(bnrm2):
+        return b, 0
 
     # These values make no sense but coming from original Fortran code
     # sqrt might have been meant instead.
-    rhotol = np.finfo(x.dtype.char).eps**2
+    rhotol = np.finfo(x.dtype).eps**2
     omegatol = rhotol
 
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, omega, alpha, p, v = None, None, None, None, None
 
-    r = b - matvec(x) if x.any() else b.copy()
-    rtilde = r.copy()
+    r = b - matvec(x) if xp.any(x) else xp_copy(b, xp=xp)
+    rtilde = xp_copy(r)
 
     for iteration in range(maxiter):
-        if np.linalg.norm(r) < atol:  # Are we done?
+        converged = xp_vector_norm(r, axis=-1, xp=xp) < atol
+        if xp.all(converged):
             return x, 0
 
         rho = dotprod(rtilde, r)
-        if np.abs(rho) < rhotol:  # rho breakdown
+        if xp.any((xp.abs(rho) < rhotol)[~converged]):  # rho breakdown
             return x, -10
 
         if iteration > 0:
-            if np.abs(omega) < omegatol:  # omega breakdown
+            if xp.any((xp.abs(omega) < omegatol)[~converged]):  # omega breakdown
                 return x, -11
 
-            beta = (rho / rho_prev) * (alpha / omega)
+            if not batched:
+                beta = (rho / rho_prev) * (alpha / omega)
+            else:
+                rho_over_rho_prev = xp.zeros_like(rho)
+                alpha_over_omega = xp.zeros_like(alpha)
+                mask = ~converged
+                rho_over_rho_prev[mask] = rho[mask] / rho_prev[mask]
+                alpha_over_omega[mask] = alpha[mask] / omega[mask]
+                beta = rho_over_rho_prev[..., xp.newaxis] * alpha_over_omega
+
             p -= omega*v
             p *= beta
             p += r
         else:  # First spin
-            s = np.empty_like(r)
-            p = r.copy()
+            s = xp.empty_like(r)
+            p = xp_copy(r, xp=xp)
 
         phat = psolve(p)
         v = matvec(phat)
         rv = dotprod(rtilde, v)
-        if rv == 0:
+        
+        if not xp.any(rv[~converged]):  # Dot product breakdown
             return x, -11
-        alpha = rho / rv
-        r -= alpha*v
-        s[:] = r[:]
+        
+        if not batched:
+            alpha = rho / rv
+        else:
+            alpha = xp.zeros_like(rho)
+            mask = ~converged
+            alpha[mask] = rho[mask] / rv[mask]
+            alpha = alpha[..., xp.newaxis]
 
-        if np.linalg.norm(s) < atol:
-            x += alpha*phat
+        r -= alpha*v
+        s[...] = r[...]
+
+        if xp.all(xp_vector_norm(r, axis=-1, xp=xp) < atol):
+            x[~converged] += (alpha*phat)[~converged]
             return x, 0
 
         shat = psolve(s)
         t = matvec(shat)
-        omega = dotprod(t, s) / dotprod(t, t)
+        ts = dotprod(t, s)
+        tt = dotprod(t, t)
+        
+        if not batched:
+            omega = ts / tt
+        else:
+            omega = xp.zeros_like(ts)
+            mask = ~converged
+            omega[mask] = ts[mask] / tt[mask]
+            omega = omega[..., xp.newaxis]
+        
         x += alpha*phat
         x += omega*shat
         r -= omega*t

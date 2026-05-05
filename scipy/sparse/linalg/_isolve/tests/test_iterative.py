@@ -54,6 +54,7 @@ class SOLVERS(StrEnum):
     def batch_support(self):
         return self in (
             SOLVERS.bicg,
+            SOLVERS.bicgstab,
             SOLVERS.cg,
             SOLVERS.cgs,
             SOLVERS.tfqmr,
