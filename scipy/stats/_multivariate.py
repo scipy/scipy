@@ -31,6 +31,7 @@ __all__ = ['multivariate_normal',
            'ortho_group',
            'random_correlation',
            'unitary_group',
+           'symplectic_group',
            'multivariate_t',
            'multivariate_hypergeom',
            'random_table',
@@ -4993,6 +4994,288 @@ class unitary_group_frozen(multi_rv_frozen):
 
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.dim, size, random_state)
+
+
+class symplectic_group_gen(multi_rv_generic):
+    r"""
+    A matrix-valued USp(2N) random variable.
+
+    Return a random unitary symplectic matrix.
+
+    The `dim` keyword specifies the dimension 2N.
+
+    Parameters
+    ----------
+    dim : scalar
+        Quaternionic dimension N (matrix of size 2N x 2N)
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random samples from USp(2N).
+
+        .. versionadded:: 1.18.0
+
+    See Also
+    --------
+    ortho_group
+    unitary_group
+
+    Notes
+    -----
+    This class is similar to `ortho_group` and `unitary_group`.
+
+    References
+    ----------
+    .. [1] F. Mezzadri, "How to generate random matrices from the classical
+           compact groups", :arXiv:`math-ph/0609050v2`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import symplectic_group 
+
+    >>> x = symplectic_group.rvs(2)
+    >>> x
+    array([[-0.2957023 -0.17052923j -0.6177162 -0.14328784j  0.42257825-0.00835543j
+        0.53369545+0.13379912j]
+        [ 0.10037284-0.39500828j  0.0864186 +0.22984548j  0.62968766-0.37712723j
+        -0.45511186+0.1665483j ]
+        [-0.42257825-0.00835543j -0.53369545+0.13379912j -0.2957023 +0.17052923j
+        -0.6177162 +0.14328784j]
+        [-0.62968766-0.37712723j  0.45511186+0.1665483j   0.10037284+0.39500828j
+        0.0864186 -0.22984548j]])
+
+    Generates one random matrix from USp(2n), with n = 2
+
+    Make J of standard form preseved by USp(4):
+
+    >>> J = np.zeros((4, 4))
+    >>> J[0:2, 2:4] = np.eye(2)
+    >>> J[2:4, 0:2] = -np.eye(2)
+    >>> J
+    array([[ 0.  0.  1.  0.]
+        [ 0.  0.  0.  1.]
+        [-1. -0.  0.  0.]
+        [-0. -1.  0.  0.]])
+
+    Check x is symplectic:
+
+    >>> y = x.T @ J @ x
+    >>> y
+    array([[-1.14138989e-17-5.55111512e-17j -7.37257477e-17-2.77555756e-17j
+        1.00000000e+00+0.00000000e+00j  5.55111512e-17-4.16333634e-17j]
+        [ 5.37764278e-17+3.46944695e-17j  3.23600370e-17+0.00000000e+00j
+        5.55111512e-17+4.16333634e-17j  1.00000000e+00+0.00000000e+00j]
+        [-1.00000000e+00+0.00000000e+00j -8.32667268e-17-2.77555756e-17j
+        1.14138989e-17-5.55111512e-17j -5.37764278e-17+3.46944695e-17j]
+        [-8.32667268e-17+2.77555756e-17j -1.00000000e+00+0.00000000e+00j
+        7.37257477e-17-2.77555756e-17j -3.23600370e-17+0.00000000e+00j]])
+
+    This equals J up to machine precision, hence x is symplectic.
+
+    Check accuracy error:
+
+    >>> np.linalg.norm(y - J)
+    2.327184989818874e-16 
+
+    This generates one random matrix from U(3). The dot product confirms that
+    it is unitary up to machine precision.
+
+    Alternatively, the object may be called (as a function) to fix the `dim`
+    parameter, return a "frozen" symplectic_group random variable:
+
+    >>> rv = symplectic_group(5)
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__)
+
+    def __call__(self, dim=None, seed=None):
+        """Create a frozen (USp(N)) 2n-dimensional unitary 
+        symplectic matrix distribution.
+
+        See `unitary_group_frozen` for more information.
+        """
+        return symplectic_group_frozen(dim, seed=seed)
+
+    def _process_parameters(self, dim):
+        """Dimension N must be specified; it cannot be inferred."""
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
+            raise ValueError("Dimension of rotation must be specified,"
+                             "and must be a scalar nonnegative integer.")
+
+        return dim
+
+    def rvs(self, dim, size=1, random_state=None):
+        """Draw random samples from USp(2N).
+
+        Parameters
+        ----------
+        dim : int
+            Quaternionic dimension N (matrix of size 2N x 2N)
+        size : int, optional
+            Number of samples to draw (default 1).
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random size 2N-dimensional matrices, dimension (size, 2*dim, 2*dim)
+        """
+        random_state = self._get_random_state(random_state)
+
+        size = int(size)
+
+        dim = self._process_parameters(dim)
+
+        if dim==0:
+            return np.empty((size, 0, 0))
+
+        rvs = []
+
+        for i in range(size):
+
+            # build random quaternion matrix:
+            # in form a + bi + cj + dk
+
+            a = random_state.normal(size=(dim, dim))
+            b = random_state.normal(size=(dim, dim))
+            c = random_state.normal(size=(dim, dim))
+            d = random_state.normal(size=(dim, dim))
+
+            basis = []
+
+            # perform Gram Schmidt with inner product on H
+
+            for j in range(dim):
+                v_0, v_1, v_2, v_3 = (
+                    a[:, j].copy(), b[:, j].copy(), 
+                    c[:, j].copy(), d[:, j].copy()
+                )
+                for (u_0, u_1, u_2, u_3) in basis:
+                    
+                    # conjugate of u0 + u1i + u2j + u3k is
+                    # u0 - u1i - u2j - u3k
+
+                    u_0_conj, u_1_conj, u_2_conj, u_3_conj = (
+                        u_0, -u_1, -u_2, -u_3
+                    )
+
+                    # take inner product p = <u, v>:
+
+                    p_0 = (
+                        u_0_conj @ v_0 - u_1_conj @ v_1 
+                        - u_2_conj @ v_2 - u_3_conj @ v_3
+                    )
+                    p_1 = ( 
+                        u_0_conj @ v_1 + u_1_conj @ v_0 
+                        + u_2_conj @ v_3 - u_3_conj @ v_2 
+                    )
+                    p_2 = (
+                        u_0_conj @ v_2 - u_1_conj @ v_3 
+                        + u_2_conj @ v_0 + u_3_conj @ v_1
+                    )
+                    p_3 = (
+                        u_0_conj @ v_3 + u_1_conj @ v_2 
+                        - u_2_conj @ v_1 + u_3_conj @ v_0
+                    )
+
+                    # subtract projection <u, v>*u
+
+                    v_0 -= (
+                        u_0 * p_0 - u_1 * p_1 
+                        - u_2 * p_2 - u_3 * p_3
+                    )
+                    v_1 -= (
+                    u_0 * p_1 + u_1 * p_0 
+                    + u_2 * p_3 - u_3 * p_2
+                    )
+                    v_2 -= ( 
+                        u_0 * p_2 - u_1 * p_3 
+                        + u_2 * p_0 + u_3 * p_1
+                    )
+                    v_3 -= ( 
+                        u_0 * p_3 + u_1 * p_2 
+                        - u_2 * p_1 + u_3 * p_0
+                    )
+
+                # normalise resulting quaternion vector v
+
+                v_norm = math.sqrt(v_0 @ v_0 + v_1 @ v_1 
+                                   + v_2 @ v_2 + v_3 @ v_3)
+
+                v_0 /= v_norm
+                v_1 /= v_norm
+                v_2 /= v_norm
+                v_3 /= v_norm
+
+                basis.append((v_0, v_1, v_2, v_3))
+
+            # Haar measure phase change step
+
+            # build Sp(N) matrix Q = Q_0 + Q_1 i + Q_2 j + Q_3 k
+
+            Q_0, Q_1, Q_2, Q_3 = map(np.column_stack, zip(*basis))
+
+            Q = np.zeros((2*dim, 2*dim), dtype=complex)
+
+            # map this to a USp(2N) matrix; USp(2N, C) isomorphic to Sp(N, H)
+
+            Z = Q_0 + 1j * Q_1
+            W = Q_2 + 1j * Q_3
+
+            Q[0: dim, 0: dim] = Z
+            Q[0: dim, dim: 2*dim] = W
+            Q[dim: 2*dim, 0:dim] = -W.conj()
+            Q[dim: 2*dim, dim: 2*dim] = Z.conj()
+
+            rvs.append(Q)
+            
+        return np.array(rvs) if size > 1 else rvs[0]
+
+symplectic_group = symplectic_group_gen()
+
+class symplectic_group_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
+    def __init__(self, dim=None, seed=None):
+        """Create a frozen (USp(2N)) 2n-dimensional unitary symplectic matrix distribution.
+
+        Parameters
+        ----------
+        dim : scalar
+            Quaternionic dimension N (matrix of size 2N x 2N)
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Examples
+        --------
+        >>> from scipy.stats import symplectic_group
+        >>> x = symplectic_group(2)
+        >>> x.rvs()
+
+        """ # numpy/numpydoc#87  # noqa: E501
+        self._dist = symplectic_group_gen(seed)
+        self.dim = self._dist._process_parameters(dim)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.dim, size, random_state)
+
+
 
 
 _mvt_doc_default_callparams = """\
