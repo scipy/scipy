@@ -946,8 +946,8 @@ class KDTree(cKDTree):
 
         You can check distances above the `max_distance` are zeros:
 
-        >>> from scipy.spatial import distance_matrix
-        >>> distance_matrix(points1, points2)
+        >>> from scipy.spatial.distance import cdist
+        >>> cdist(points1, points2)
         array([[0.56906522, 0.39923701, 0.12295571, 0.8658745 , 0.79428925],
            [0.37327919, 0.7225693 , 0.87665969, 0.32580855, 0.75679479],
            [0.28942611, 0.30088013, 0.6395831 , 0.2333084 , 0.33630734],
