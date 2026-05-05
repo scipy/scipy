@@ -677,6 +677,9 @@ if HAVE_SCPDT:
         'scipy.interpolate.approximate_taylor_polynomial',
         'scipy.interpolate.pade',
         'scipy.spatial.tsearch',
+        'scipy.spatial.minkowski_distance_p',
+        'scipy.spatial.minkowski_distance',
+        'scipy.spatial.distance_matrix',
     ])
 
     # help pytest collection a bit: these names are either private

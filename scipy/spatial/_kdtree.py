@@ -1,14 +1,19 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
+import warnings
+import os
+
 import numpy as np
 from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
 from .distance import minkowski
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
            'Rectangle', 'KDTree']
 
 
+@xp_capabilities(out_of_scope=True)
 def minkowski_distance_p(x, y, p=2.0):
     """Compute the pth power of the L**p distance between two arrays.
 
@@ -18,6 +23,10 @@ def minkowski_distance_p(x, y, p=2.0):
 
     The last dimensions of `x` and `y` must be the same length.  Any
     other dimensions must be compatible for broadcasting.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated in favor of `scipy.spatial.distance.minkowski`
+        and will be removed in SciPy 1.20.0.
 
     Parameters
     ----------
@@ -40,6 +49,11 @@ def minkowski_distance_p(x, y, p=2.0):
     array([2., 1.])
 
     """
+    msg = ("`minkowski_distance_p` is deprecated in favor of "
+           "`scipy.spatial.distance.minkowski` as of SciPy 1.18.0 and will be removed "
+           "in SciPy 1.20.0.")
+    warnings.warn(msg, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)
     y = np.asarray(y)
 
@@ -61,11 +75,16 @@ def minkowski_distance_p(x, y, p=2.0):
         return np.sum(np.abs(y-x)**p, axis=-1)
 
 
+@xp_capabilities(out_of_scope=True)
 def minkowski_distance(x, y, p=2.0):
     """Compute the L**p distance between two arrays.
 
     The last dimensions of `x` and `y` must be the same length.  Any
     other dimensions must be compatible for broadcasting.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated in favor of `scipy.spatial.distance.minkowski`
+        and will be removed in SciPy 1.20.0.
 
     Parameters
     ----------
@@ -88,6 +107,11 @@ def minkowski_distance(x, y, p=2.0):
     array([ 1.41421356,  1.        ])
 
     """
+    msg = ("`minkowski_distance` is deprecated in favor of "
+           "`scipy.spatial.distance.minkowski` as of SciPy 1.18.0 and will be removed "
+           "in SciPy 1.20.0.")
+    warnings.warn(msg, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)
     y = np.asarray(y)
     if p == np.inf or p == 1:
@@ -922,8 +946,8 @@ class KDTree(cKDTree):
 
         You can check distances above the `max_distance` are zeros:
 
-        >>> from scipy.spatial import distance_matrix
-        >>> distance_matrix(points1, points2)
+        >>> from scipy.spatial.distance import cdist
+        >>> cdist(points1, points2)
         array([[0.56906522, 0.39923701, 0.12295571, 0.8658745 , 0.79428925],
            [0.37327919, 0.7225693 , 0.87665969, 0.32580855, 0.75679479],
            [0.28942611, 0.30088013, 0.6395831 , 0.2333084 , 0.33630734],
@@ -934,10 +958,15 @@ class KDTree(cKDTree):
         return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
+@xp_capabilities(out_of_scope=True)
 def distance_matrix(x, y, p=2.0, threshold=1000000):
     """Compute the distance matrix.
 
     Returns the matrix of all pair-wise distances.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated in favor of `scipy.spatial.distance.cdist`
+        and will be removed in SciPy 1.20.0.
 
     Parameters
     ----------
@@ -965,7 +994,11 @@ def distance_matrix(x, y, p=2.0, threshold=1000000):
            [ 1.41421356,  1.        ]])
 
     """
-
+    msg = ("`distance_matrix` is deprecated in favor of "
+           "`scipy.spatial.distance.cdist` as of SciPy 1.18.0 and will be removed "
+           "in SciPy 1.20.0.")
+    warnings.warn(msg, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)
     m, k = x.shape
     y = np.asarray(y)
