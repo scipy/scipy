@@ -2,7 +2,11 @@ import pickle
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
+
+from scipy import LowLevelCallable
 from scipy._lib._array_api import xp_assert_close, make_xp_test_case
+from scipy.interpolate._rbfinterp_np import _get_kernel_capsule
+from scipy.interpolate.tests import _rbfinterp_kernel_pythran
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree  # type: ignore[attr-defined]
 from scipy.interpolate._rbfinterp import (
@@ -55,7 +59,8 @@ def _is_conditionally_positive_definite(kernel, m):
         seq = Halton(ndim, scramble=False, seed=np.random.RandomState())
         for _ in range(ntests):
             x = 2*seq.random(nx) - 1
-            A = _rbfinterp_pythran._kernel_matrix(x, kernel)
+            capsule = _get_kernel_capsule(kernel)
+            A = _rbfinterp_pythran._kernel_matrix(x, capsule)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
@@ -262,7 +267,11 @@ class _TestRBFInterpolator:
 
         y = _1d_test_function(x, xp)
         ytrue = _1d_test_function(xitp, xp)
-        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+
+        # Matern 1_2 is C0 so "rough" kernel need more smoothing
+        epsilon = 5.0 if not kernel == 'matern1_2' else 3.0
+
+        yitp = self.build(x, y, epsilon=epsilon, kernel=kernel)(xitp)
 
         mse = xp.mean((yitp - ytrue)**2)
         assert mse < 1.0e-4
@@ -280,7 +289,11 @@ class _TestRBFInterpolator:
 
         y = _2d_test_function(x, xp)
         ytrue = _2d_test_function(xitp, xp)
-        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+
+        # Matern 1_2 is C0 so "rough" kernel need more smoothing
+        epsilon = 5.0 if not kernel == 'matern1_2' else 3.0
+
+        yitp = self.build(x, y, epsilon=epsilon, kernel=kernel)(xitp)
 
         mse = xp.mean((yitp - ytrue)**2)
         assert mse < 2.0e-4
@@ -459,6 +472,34 @@ class _TestRBFInterpolator:
         yitp2 = pickle.loads(pickle.dumps(interp))(xitp)
 
         xp_assert_close(yitp1, yitp2, atol=1e-16)
+
+    @skip_xp_backends(np_only=True, reason="llc only supports numpy backend")
+    def test_custom_kernel(self, xp):
+        # Make sure custom kernels work match builtin
+        llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
+                               signature="double (double)")
+
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+        x, xitp = xp.asarray(x), xp.asarray(xitp)
+        y = _1d_test_function(x, xp)
+
+        with pytest.raises(ValueError):
+            self.build(x, y, kernel=llc)
+
+        with pytest.raises(ValueError):
+            self.build(x, y, kernel=llc)
+
+        interp_llc = self.build(x, y, kernel=llc, degree=0, epsilon=1.0)
+        interp = self.build(x, y, kernel='linear', degree=0, epsilon=1.0)
+
+        yitp_llc = interp_llc(xitp)
+        yipt = interp(xitp)
+
+        xp_assert_close(yitp_llc, yipt)
+
 
 
 @make_xp_test_case(RBFInterpolator)

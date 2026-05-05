@@ -25,6 +25,8 @@ the following differences:
 In general, we would prefer less code duplication. The main blocker ATM is
 that pythran cannot compile functions with an xp= argument where xp is numpy.
 """
+from math import sqrt
+
 from numpy.linalg import LinAlgError
 from ._rbfinterp_common import _monomial_powers_impl
 
@@ -124,16 +126,34 @@ def gaussian(r, xp):
     return xp.exp(-r**2)
 
 
+def matern1_2(r, xp):
+    return xp.exp(-r)
+
+
+def matern3_2(r, xp):
+    # sqrt is just a constant number
+    term = sqrt(3.0) * r
+    return (1.0 + term) * xp.exp(-term)
+
+
+def matern5_2(r, xp):
+    term = sqrt(5.0) * r
+    return (1.0 + term + 5.0 * r**2 / 3.0) * xp.exp(-term)
+
+
 NAME_TO_FUNC = {
-   "linear": linear,
-   "thin_plate_spline": thin_plate_spline,
-   "cubic": cubic,
-   "quintic": quintic,
-   "multiquadric": multiquadric,
-   "inverse_multiquadric": inverse_multiquadric,
-   "inverse_quadratic": inverse_quadratic,
-   "gaussian": gaussian
-   }
+  "linear": linear,
+  "thin_plate_spline": thin_plate_spline,
+  "cubic": cubic,
+  "quintic": quintic,
+  "multiquadric": multiquadric,
+  "inverse_multiquadric": inverse_multiquadric,
+  "inverse_quadratic": inverse_quadratic,
+  "gaussian": gaussian,
+  "matern1_2": matern1_2,
+  "matern3_2": matern3_2,
+  "matern5_2": matern5_2
+  }
 
 
 def kernel_matrix(x, kernel_func, xp):
