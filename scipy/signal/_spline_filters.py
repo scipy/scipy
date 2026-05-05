@@ -585,6 +585,10 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     if res.size == 0:
         return xp.asarray(res)
     N = len(cj)
+    # Handle single coefficient case: avoid infinite recursion from mirror symmetry
+    if N == 1:
+        res[:] = cj[0]
+        return xp.asarray(res)
     cond1 = newx < 0
     cond2 = newx > (N - 1)
     cond3 = ~(cond1 | cond2)
@@ -668,6 +672,10 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
         raise ValueError("Spline coefficients 'cj' must not be empty.")
     
     N = len(cj)
+    # Handle single coefficient case: avoid infinite recursion from mirror symmetry
+    if N == 1:
+        res[:] = cj[0]
+        return xp.asarray(res)
     cond1 = newx < 0
     cond2 = newx > (N - 1)
     cond3 = ~(cond1 | cond2)
