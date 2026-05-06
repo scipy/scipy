@@ -576,13 +576,13 @@ class dia_array(_dia_base, sparray):
 
     Each column of ``data`` corresponds to a diagonal in the resulting matrix.
 
-    Mathematically, the element at row `r` and column `c` of the matrix is
-    stored in the ``data`` array at row `i` and column
-    ``c - max(0, -offsets[i])``, where `i` is the index of the diagonal
+    Mathematically, the element at row ``r`` and column ``c`` of the matrix is
+    stored in the ``data`` array at row ``i`` and column
+    ``c - max(0, -offsets[i])``, where ``i`` is the index of the diagonal
     in ``offsets``.
 
     Note that if ``offsets`` is provided in decreasing order, this format
-    matches the BLAS/LAPACK general band format (e.g., as used in `dgbmv`).
+    matches the BLAS/LAPACK general band format (e.g., as used in ``dgbmv``).
 
     Examples
     --------
@@ -689,13 +689,13 @@ class dia_matrix(spmatrix, _dia_base):
 
     Each column of ``data`` corresponds to a diagonal in the resulting matrix.
 
-    Mathematically, the element at row `r` and column `c` of the matrix is
-    stored in the ``data`` array at row `i` and column
-    ``c - max(0, -offsets[i])``, where `i` is the index of the diagonal
+    Mathematically, the element at row ``r`` and column ``c`` of the matrix is
+    stored in the ``data`` array at row ``i`` and column
+    ``c - max(0, -offsets[i])``, where ``i`` is the index of the diagonal
     in ``offsets``.
 
     Note that if ``offsets`` is provided in decreasing order, this format
-    matches the BLAS/LAPACK general band format (e.g., as used in `dgbmv`).
+    matches the BLAS/LAPACK general band format (e.g., as used in ``dgbmv``).
 
     Examples
     --------
