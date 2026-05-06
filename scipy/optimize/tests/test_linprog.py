@@ -2506,10 +2506,13 @@ class TestLinprogHiGHSMIP:
         # monotonically with the mip_rel_gap parameter. np.diff does
         # x[i+1] - x[i], so flip the array before differencing to get
         # what should be a positive, monotone decreasing series of solution
-        # gaps
+        # gaps. Allow a small tolerance because consecutive runs may produce
+        # mathematically-equal gaps that differ only by floating-point noise
+        # from the solver's internal arithmetic (gh-24821).
         gap_diffs = np.diff(np.flip(sol_mip_gaps))
-        assert np.all(gap_diffs >= 0)
-        assert not np.all(gap_diffs == 0)
+        atol = 1e-12
+        assert np.all(gap_diffs >= -atol)
+        assert not np.all(np.abs(gap_diffs) <= atol)
 
     def test_semi_continuous(self):
         # See issue #18106. This tests whether the solution is being
