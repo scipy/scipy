@@ -181,6 +181,9 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
         return np.asarray(
             xp.asarray(x, device=xp.Device("CPU_DEVICE")), copy=True
         )
+    if is_mparray(xp):
+        return np.asarray(x._data, dtype=x.dtype)
+
     # Fall back to np.asarray. This works for dask.array. It
     # currently works for jax.numpy, but hopefully JAX will make
     # the transfer guard workable enough for use in scipy tests, in
@@ -297,6 +300,10 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
                                        check_dtype=False, msg=err_msg)
+    elif is_mparray(xp):  # mparray uses np.testing on underlying data
+        actual = np.asarray(actual._data, dtype=actual.dtype)
+        desired = np.asarray(desired._data, dtype=desired.dtype)
+
     # JAX uses `np.testing`
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
@@ -328,6 +335,10 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
                                        equal_nan=True, check_dtype=False, msg=err_msg)
+    elif is_mparray(xp):  # mparray uses np.testing on underlying data
+        actual = np.asarray(actual._data, dtype=actual.dtype)
+        desired = np.asarray(desired._data, dtype=desired.dtype)
+
     # JAX uses `np.testing`
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
@@ -357,6 +368,11 @@ def _assert_less(actual, desired, *, err_msg, verbose, xp):
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
+
+    elif is_mparray(xp):  # mparray uses np.testing on underlying data
+        actual = np.asarray(actual._data, dtype=actual.dtype)
+        desired = np.asarray(desired._data, dtype=desired.dtype)
+
     # JAX uses `np.testing`
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
@@ -444,6 +460,9 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
         return jax.scipy
 
     if is_torch(xp):
+        return xp
+
+    if is_mparray(xp):
         return xp
 
     return None
@@ -1186,3 +1205,7 @@ def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:
 
 def xp_isscalar(x):
     return np.isscalar(x) or (is_array_api_obj(x) and x.ndim == 0)
+
+
+def is_mparray(xp):
+    return "mparray" in str(xp)
