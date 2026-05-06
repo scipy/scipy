@@ -84,6 +84,7 @@ from scipy._lib._array_api import (
     _masked_apply,
     xp_swapaxes,
     xp_device,
+    xp_copy,
 )
 import scipy._external.array_api_extra as xpx
 from scipy.stats._quantile import _xp_searchsorted
@@ -618,6 +619,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     # Extract the corresponding element/count, and eliminate the reduced dimension
     modes = xp.take_along_axis(y, k, axis=-1)[..., 0]
     counts = xp.take_along_axis(counts, k, axis=-1)[..., 0]
+    counts = xp.where(modes.mask, 0, counts.data) if is_marray(xp) else counts
     modes = modes[()] if modes.ndim == 0 else modes
     counts = counts[()] if counts.ndim == 0 else counts
     return ModeResult(modes, counts)
@@ -713,7 +715,9 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     sum = xp.sum(a, axis=axis, dtype=a.dtype)
     n = xp.sum(xp.asarray(~mask, dtype=a.dtype, device=xp_device(a)), axis=axis,
                dtype=a.dtype)
-    mean = xpx.apply_where(n != 0, (sum, n), operator.truediv, fill_value=xp.nan)
+    valid = xp.asarray((n != 0).data) if is_marray(xp) else (n != 0)
+    mean = xpx.apply_where(valid, (sum, n), operator.truediv, fill_value=xp.nan)
+    mean = xp.asarray(mean.data, mask=n.mask | mean.mask) if is_marray(xp) else mean
     return mean[()] if mean.ndim == 0 else mean
 
 
@@ -2925,6 +2929,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
         eps = xp.finfo(z.dtype).eps
         zero = std <= xp.abs(eps * mn)
         zero = xp.broadcast_to(zero, z.shape)
+        zero = xp.asarray(zero.data) if is_marray(xp) else zero
         z = xpx.at(z, zero).set(xp.nan)
 
     return z
@@ -4000,7 +4005,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
         if is_marray(xp):
             n_t = xp.stack([_count_nonmasked(sample, axis=-1, xp=xp)
                             for sample in samples])
-            n_t = xp.asarray(n_t, dtype=n_t.dtype)
+            mask = xp.any(n_t == 0, axis=0, keepdims=True).data
+            n_t = xp.asarray(n_t, mask=mask, dtype=n_t.dtype)
         else:
             n_t = xp.asarray([sample.shape[-1] for sample in samples], dtype=y_t.dtype)
             n_t = xp.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
@@ -4162,7 +4168,6 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
     # tests that serve as the basis for equation (8) but are not needed
     # to perform the test.
-
     # precalculate mean and length of each sample
     lengths = [_count_nonmasked(sample, axis=-1, xp=xp) for sample in samples]
     means = xp.stack([_xp_mean(sample, axis=-1) for sample in samples])
@@ -4193,6 +4198,8 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # calculate parameters to be used in transformation
     if is_marray(xp):
         v = xp.stack(lengths) - 1
+        # propagate mask
+        t_stats = xp.asarray(t_stats.data, mask=zero._xp.any(zero.mask, axis=0))
     else:
         v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
         # align along 0th axis, which corresponds with separate samples
@@ -4240,7 +4247,7 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     """
     xp = array_namespace(r)
 
-    ones = xp.ones_like(r)
+    ones = xp_copy(xp.ones_like(r))  # copy to avoid sharing r's mask object
     n = xp.asarray(n, dtype=r.dtype, device=xp_device(r))
     confidence_level = xp.asarray(confidence_level, dtype=r.dtype, device=xp_device(r))
 
@@ -4273,7 +4280,7 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
 
     rlo = xpx.at(rlo)[mask].set(-1)
     rhi = xpx.at(rhi)[mask].set(1)
-
+    rlo, rhi, r = _share_masks(rlo, rhi, r, xp=xp)
     rlo = rlo[()] if rlo.ndim == 0 else rlo
     rhi = rhi[()] if rhi.ndim == 0 else rhi
     return ConfidenceInterval(low=rlo, high=rhi)
@@ -4798,7 +4805,10 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
     r = xp.clip(r, -1., 1.)
+    r_mask = xp_copy(r.mask) if is_marray(xp) else None
+    const_xy = xp.asarray(const_xy.data) if is_marray(xp) else const_xy
     r = xpx.at(r, const_xy).set(xp.nan)
+    r = xp.asarray(r, mask=r_mask) if is_marray(xp) else r
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
@@ -5714,13 +5724,16 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
             raise ValueError(message)
         nan_policy = 'omit'
         x[mask_x], y[mask_y] = np.nan, np.nan
+        out_mask = (np.all(mask_x, axis=axis, keepdims=keepdims)
+                    | np.all(mask_y, axis=axis, keepdims=keepdims))
     else:
         x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
     res = _kendalltau(x, y, nan_policy=nan_policy, method=method, variant=variant,
                       alternative=alternative, axis=axis, keepdims=keepdims)
+    mask = {'mask': out_mask} if is_marray(xp) else {}
     vals = res.statistic, res.pvalue, res.statistic
-    vals = (xp.asarray(val, dtype=dtype)[()] if val.ndim == 0
-            else xp.asarray(val, dtype=dtype) for val in vals)
+    vals = (xp.asarray(val, dtype=dtype, **mask)[()] if val.ndim == 0
+            else xp.asarray(val, dtype=dtype, **mask) for val in vals)
     return _pack_CorrelationResult(*vals)
 
 
@@ -7660,27 +7673,19 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     cdfvals = _masked_apply(cdf, args=(x, *args), xp=xp)
 
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
+    ones = xp.asarray(ones.data, mask=(N.data == 0)) if is_marray(xp) else ones
     ones = ones[()] if ones.ndim == 0 else ones
 
-    if alternative == 'greater':
-        Dplus, d_location = _compute_d(cdfvals, x, +1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
+    if alternative in ('greater', 'less'):
+        statistic_sign = 1 if alternative == 'greater' else -1
+        D, d_location = _compute_d(cdfvals, x, statistic_sign)
+        pvalue = _masked_apply(distributions.ksone.sf, args=(D, N), xp=xp)
         pvalue = xp.asarray(pvalue, dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-        Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
-        return KstestResult(Dplus, pvalue,
+        D = xp.asarray(D) if is_marray(xp) else D
+        return KstestResult(D, pvalue,
                             statistic_location=d_location,
-                            statistic_sign=ones)
-
-    if alternative == 'less':
-        Dminus, d_location = _compute_d(cdfvals, x, -1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
-        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-        Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
-        return KstestResult(Dminus, pvalue,
-                            statistic_location=d_location,
-                            statistic_sign=-ones)
+                            statistic_sign=ones*statistic_sign)
 
     # alternative == 'two-sided':
     Dplus, dplus_location = _compute_d(cdfvals, x, +1)
@@ -8122,12 +8127,14 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     d_sign = xp.where(selector, -one, one)
 
     if is_marray(xp):
+        d.data[d.mask] = 0  # was NaN; which causes problems in _ks_2samp_prob
         d = d.data  # converted to NumPy below
         n1, n2 = np.asarray(n1.data, dtype=int), np.asarray(n2.data, dtype=int)
     prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
     dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
     prob = xp.asarray(prob, dtype=dtype)
     d = xp.asarray(d, dtype=dtype)
+    d, prob, d_location, d_sign = _share_masks(d, prob, d_location, d_sign, xp=xp)
     if d.ndim == 0:
         d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
     return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
@@ -10929,6 +10936,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
     degenerate = (ssxm == 0.0) | (ssym == 0.0)
+    degenerate = xp.asarray(degenerate.data) if is_marray(xp) else degenerate
     NaN = xp.asarray(xp.nan, dtype=ssxym.dtype)
     r = xpx.apply_where(
         ~degenerate,
@@ -11161,7 +11169,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
             n = n - xp.sum(nan_mask, axis=axis, keepdims=keepdims)
 
         # Produce NaNs silently when n - correction <= 0
-        nc = n - correction
+        nc = xp.asarray((n - correction).data) if is_marray(xp) else n - correction
         factor = xpx.apply_where(nc > 0, (n, nc), operator.truediv, fill_value=xp.nan)
         var *= factor
 
