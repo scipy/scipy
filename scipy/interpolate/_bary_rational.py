@@ -29,7 +29,7 @@ from types import GenericAlias
 
 import numpy as np
 import scipy
-from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities, xp_ravel
+from scipy._lib._array_api import array_namespace, is_numpy, xp_capabilities, xp_ravel
 
 __all__ = ["AAA", "FloaterHormannInterpolator"]
 
@@ -43,7 +43,7 @@ class _BarycentricRational:
         xp = array_namespace(x, y)
         self._axis = axis
 
-        # Convert inputs
+        # input validation
         z = xp.asarray(x)
         f = xp.asarray(y)
 
@@ -51,20 +51,19 @@ class _BarycentricRational:
 
         f = xp.moveaxis(f, self._axis, 0)
 
-        # Remove infinite or NaN function values and repeated entries    
+        # Remove infinite or NaN function values and repeated entries
         reshaped = xp.reshape(xp.isfinite(f), (f.shape[0], -1))
         to_keep = xp.all(
             reshaped,
             axis=-1
         )
-        idx = xp.nonzero(to_keep)[0]
+        idx = xp.nonzero(to_keep)[0]    
         f = xp.take(f, idx, axis=0)
         z = xp.take(z, idx, axis=0)
         res = xp.unique_all(z)
 
-        z = res.values
-        idx = res.indices
-        f = xp.take(f, idx, axis=0)
+        z, uni = res.values, res.indices
+        f = xp.take(f, uni, axis=0)
 
         self._shape = f.shape[1:]
         self._support_points, self._support_values, self.weights = (
@@ -116,8 +115,7 @@ class _BarycentricRational:
         # Ignore errors due to inf/inf at support points, these will be fixed later
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            diff = xp.expand_dims(zv, 1) - xp.expand_dims(self._support_points, 0)
-            CC = xp.divide(1, diff)
+            CC = xp.divide(1, xp.subtract(zv[..., None], self._support_points))
             # Vector of values
             r = CC @ (weights * support_values) / (CC @ weights)
 
@@ -128,8 +126,8 @@ class _BarycentricRational:
 
         # Deal with NaN
         ii = xp.nonzero(xp.isnan(r))[0]
-        r = xp.reshape(r, (-1,))
         for jj in ii:
+            jj = int(jj)
             if xp.isnan(zv[jj]) or not xp.any(zv[jj] == self._support_points):
                 # r(NaN) = NaN is fine.
                 # The second case may happen if `r(zv[ii]) = 0/0` at some point.
@@ -139,8 +137,7 @@ class _BarycentricRational:
                 # Find the corresponding node and set entry to correct value:
                 mask = zv[jj] == self._support_points
                 idx = xp.nonzero(mask)[0]
-                value = xp.reshape(xp.take(self._support_values, idx, axis=0), ())
-                r = xp.where(xp.arange(r.shape[0]) == jj, value, r)
+                r[jj, :] = xp.squeeze(xp.take(self._support_values, idx, axis=0), axis=0)
 
         res = xp.reshape(r, z.shape + self._shape)
         return xp.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
@@ -155,19 +152,25 @@ class _BarycentricRational:
             but not in any specific order.
         """
         if self._poles is None:
+            xp = array_namespace(self._poles, self.weights)
             # Compute poles via generalized eigenvalue problem
             m = self.weights.size
-            B = np.eye(m + 1, dtype=self.weights.dtype)
+            B = xp.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
 
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+            E = xp.zeros_like(B, dtype=xp.result_type(self.weights,
                                                       self._support_points))
             E[0, 1:] = self.weights
+            np.fill_diagonal
             E[1:, 0] = 1
-            np.fill_diagonal(E[1:, 1:], self._support_points)
-
-            pol = scipy.linalg.eigvals(E, B)
-            self._poles = pol[np.isfinite(pol)]
+            i = xp.arange(E[1:, 1:].shape[0])
+            e = xp.where(i[:, None] == i[None, :], self._support_points, E[1:, 1:])
+            E = xp.concat([E[:1, :], xp.concat([E[1:, :1], e], axis=1)], axis=0)
+            if is_numpy(xp):
+                pol = scipy.linalg.eigvals(E, B, check_finite=False)
+            else:
+                raise AssertionError("`scipy.linalg.eigvals` does not support non-NumPy arrays.")
+            self._poles = pol[xp.isfinite(pol)]
         return self._poles
 
     def residues(self):
@@ -183,12 +186,13 @@ class _BarycentricRational:
                                       " data.")
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
-            with np.errstate(divide="ignore", invalid="ignore"):
-                N = (1/(np.subtract.outer(self.poles(), self._support_points))) @ (
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                N = (1/((self.poles()[..., None] - self._support_points))) @ (
                     self._support_values * self.weights
                 )
                 Ddiff = (
-                    -((1/np.subtract.outer(self.poles(), self._support_points))**2)
+                    -((1/(self.poles()[..., None] - self._support_points))**2)
                     @ self.weights
                 )
                 self._residues = N / Ddiff
@@ -207,19 +211,24 @@ class _BarycentricRational:
             raise NotImplementedError("Roots not implemented for multi-dimensional"
                                       " data.")
         if self._roots is None:
+            xp = array_namespace(self._roots, self.weights)
             # Compute zeros via generalized eigenvalue problem
             m = self.weights.size
-            B = np.eye(m + 1, dtype=self.weights.dtype)
+            B = xp.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+            E = xp.zeros_like(B, dtype=xp.result_type(self.weights,
                                                       self._support_values,
                                                       self._support_points))
             E[0, 1:] = self.weights * self._support_values
             E[1:, 0] = 1
-            np.fill_diagonal(E[1:, 1:], self._support_points)
-
-            zer = scipy.linalg.eigvals(E, B)
-            self._roots = zer[np.isfinite(zer)]
+            i = xp.arange(E[1:, 1:].shape[0])
+            e = xp.where(i[:, None] == i[None, :], self._support_points, E[1:, 1:])
+            E = xp.concat([E[:1, :], xp.concat([E[1:, :1], e], axis=1)], axis=0)
+            if is_numpy(xp):
+                zer = scipy.linalg.eigvals(E, B)
+            else:
+                raise AssertionError("`scipy.linalg.eigvals` does not support non-NumPy arrays.")
+            self._roots = zer[xp.isfinite(zer)]
         return self._roots
 
 
@@ -639,7 +648,21 @@ class AAA(_BarycentricRational):
 
         return ni
 
-@xp_capabilities()
+@xp_capabilities(
+    jax_jit=False,
+    method_capabilities={
+        "poles": dict(
+            skip_backends=[
+                ('array_api_strict', '`scipy.linalg` does not support non-NumPy arrays.')
+            ],
+        ),
+        "roots": dict(
+            skip_backends=[
+                ('array_api_strict', '`scipy.linalg` does not support non-NumPy arrays.')
+            ],
+        ),
+    },
+)
 class FloaterHormannInterpolator(_BarycentricRational):
     r"""Floater-Hormann barycentric rational interpolator (C∞ smooth on real axis).
 
@@ -754,17 +777,13 @@ class FloaterHormannInterpolator(_BarycentricRational):
         # Floater and Hormann 2007 Eqn. (18) 3 equations later
         xp = array_namespace(z)
         w = xp.zeros_like(z, dtype=xp.result_type(z, 1.0))
-        n = w.shape[0]
+        n = w.size
         for k in range(n):
             for i in range(max(k-d, 0), min(k+1, n-d)):
-                window = z[i : i + d + 1]
-                diff = z[k] - window
-                idx = xp.arange(window.shape[0])
-                mask = idx != (k - i)
-                safe_diff = xp.where(mask, diff, xp.ones_like(diff))
-                w[k] += 1 / xp.prod(xp.abs(safe_diff))
-        ones = xp.ones(n, dtype=z.dtype)
-        sign = xp.where((xp.arange(n) - d) % 2 == 0, ones, -ones)
-        w = w * sign
+                diff = z[k] - z[i : i + d + 1]
+                diff = xp.concat([diff[:(k - i)], diff[(k - i) + 1:]], axis=0)
+                w[k] += 1 / xp.prod(xp.abs(diff))
+        one = xp.ones((n,), dtype=w.dtype)
+        w *= xp.where((xp.arange(n) - d) % 2 == 0, one, -one)
 
         return z, f, w
