@@ -824,12 +824,12 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "assoc_legendre_p", assoc_legendre_p);
 
     PyObject *mathieu_a =
-      xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(special::mathieu_a), static_cast<xsf::numpy::dd_d>(special::mathieu_a)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(special::mathieu_a), static_cast<xsf::numpy::dd_d>(special::mathieu_a)},
                           "mathieu_a", mathieu_a_doc);
     PyModule_AddObjectRef(module, "mathieu_a", mathieu_a);
 
     PyObject *mathieu_b =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::sem_cva), static_cast<xsf::numpy::dd_d>(xsf::sem_cva)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(special::mathieu_b), static_cast<xsf::numpy::dd_d>(special::mathieu_b)},
                           "mathieu_b", mathieu_b_doc);
     PyModule_AddObjectRef(module, "mathieu_b", mathieu_b);
 
