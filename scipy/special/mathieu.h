@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <xsf/error.h>
+#include <xsf/mathieu.h>
 #include <xsf/mathieu_very_new.h>
 
 #include "tridiagonal.h"
@@ -15,9 +16,8 @@ double mathieu_a(double m, double q) {
       return std::numeric_limits<double>::quiet_NaN();
     }
     if (m > 500) {
-      // Don't support absurdly larger orders for now.
-      xsf::set_error("mathieu_a", SF_ERROR_NO_RESULT, NULL);
-      return std::numeric_limits<double>::quiet_NaN();
+      // Fallback to Zhang and Jin implementation for very high order.
+      return xsf::cem_cva(m, q);
     }
 
     auto int_m = static_cast<CBLAS_INT>(m);
