@@ -599,8 +599,8 @@ class BSpline:
 
     References
     ----------
-    .. [1] Tom Lyche and Knut Morken, Spline methods,
-        http://www.uio.no/studier/emner/matnat/ifi/INF-MAT5340/v05/undervisningsmateriale/
+    .. [1] Michael Floater, An introduction to spline theory, 2025,
+        https://www.uio.no/studier/emner/matnat/math/MAT4170/v25/undervisningsmateriale/spline_notes.pdf
     .. [2] Carl de Boor, A practical guide to splines, Springer, 2001.
 
     """
@@ -1104,7 +1104,8 @@ class BSpline:
 
         References
         ----------
-        .. [1] Tom Lyche and Knut Morken, Spline Methods, 2005, Section 3.1.2
+        .. [1] Michael Floater, An introduction to spline theory, 2025, Section 4.1
+            https://www.uio.no/studier/emner/matnat/math/MAT4170/v25/undervisningsmateriale/spline_notes.pdf
 
         """
         xp = array_namespace(pp.x, pp.c)
