@@ -334,6 +334,17 @@ class TestSparseUtils:
             np.dtype('int64')
         )
 
+    @pytest.mark.parametrize("dtype,expected", [
+        (np.dtype('uint32'), np.dtype(np.uint)),
+        (np.dtype('int32'), np.dtype(np.int_)),
+        (np.dtype(np.uint), np.dtype(np.uint)),
+        (np.dtype(np.int_), np.dtype(np.int_)),
+        (np.dtype('float64'), np.dtype('float64')),
+        (np.dtype('complex64'), np.dtype('complex64')),
+    ])
+    def test_get_sum_dtype(self, dtype, expected):
+        assert_equal(sputils.get_sum_dtype(dtype), expected)
+
     # tests public broadcast_shapes largely from
     # numpy/numpy/lib/tests/test_stride_tricks.py
     # first 3 cause np.broadcast to raise index too large, but not sputils
