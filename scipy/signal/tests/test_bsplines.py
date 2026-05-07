@@ -200,6 +200,11 @@ class TestBSplines:
             signal.cspline1d_eval(xp.asarray([], dtype=xp.float64),
                                   xp.asarray([0.0], dtype=xp.float64))
 
+        # gh-25094: N=1 previously caused RecursionError
+        r = signal.cspline1d_eval(xp.asarray([5.0], dtype=xp.float64),
+                                  xp.asarray([0.0, 0.5, 1.0], dtype=xp.float64))
+        xp_assert_close(r, xp.asarray([5.0, 5.0, 5.0], dtype=xp.float64))
+
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9484")
     @make_xp_test_case(signal.qspline1d_eval)  # type:ignore[attr-defined]
     def test_qspline1d_eval(self, xp):
@@ -240,6 +245,11 @@ class TestBSplines:
                            match="Spline coefficients 'cj' must not be empty."):
             signal.qspline1d_eval(xp.asarray([], dtype=xp.float64),
                                   xp.asarray([0.0], dtype=xp.float64))
+
+        # gh-25094: N=1 previously caused RecursionError
+        r = signal.qspline1d_eval(xp.asarray([5.0], dtype=xp.float64),
+                                  xp.asarray([0.0, 0.5, 1.0], dtype=xp.float64))
+        xp_assert_close(r, xp.asarray([5.0, 5.0, 5.0], dtype=xp.float64))
 
 
 # i/o dtypes with scipy 1.9.1, likely fixed by backwards compat
