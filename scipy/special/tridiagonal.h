@@ -1,7 +1,6 @@
-/* Compute eigenvectors and eigenvalues of symmetric tridiagonal matrices for use in 
+/* Compute eigenvectors and eigenvalues of symmetric tridiagonal matrices for use in
  * special function kernels. Wraps LAPACK dstevd.
  */
-
 
 #pragma once
 
@@ -12,8 +11,7 @@
 
 #include "blaslapack_declarations.h"
 
-
-sf_error_t eigvalsh_tridiagonal(std::vector<double>& D, std::vector<double>& E) {
+sf_error_t eigvalsh_tridiagonal(std::vector<double> &D, std::vector<double> &E) {
     auto N = static_cast<CBLAS_INT>(D.size());
 
     if (N == 0) {
@@ -46,7 +44,7 @@ sf_error_t eigvalsh_tridiagonal(std::vector<double>& D, std::vector<double>& E) 
 }
 
 sf_error_t eigh_tridiagonal(std::vector<double> D, std::vector<double> E, std::vector<double> Z) {
-  auto N = static_cast<CBLAS_INT>(D.size());
+    auto N = static_cast<CBLAS_INT>(D.size());
     if (N == 0) {
         return SF_ERROR_OK;
     }
@@ -62,8 +60,7 @@ sf_error_t eigh_tridiagonal(std::vector<double> D, std::vector<double> E, std::v
     CBLAS_INT liwork_q = -1;
 
     BLAS_FUNC(dstevd)
-    (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, &work_query, &lwork_q, &liwork_query_res,
-     &liwork_q, &info);
+    (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, &work_query, &lwork_q, &liwork_query_res, &liwork_q, &info);
 
     if (info != 0) {
         return SF_ERROR_OTHER;
@@ -76,8 +73,7 @@ sf_error_t eigh_tridiagonal(std::vector<double> D, std::vector<double> E, std::v
     std::vector<CBLAS_INT> iwork(liwork);
 
     BLAS_FUNC(dstevd)
-    (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, work.data(), &lwork, iwork.data(), &liwork,
-     &info);
+    (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, work.data(), &lwork, iwork.data(), &liwork, &info);
 
     if (info < 0) {
         return SF_ERROR_OTHER;
