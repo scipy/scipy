@@ -356,6 +356,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
+            # _coo_to_compressed copy kwarg only for 1D. CSC cant be 1D. See gh-24676
             from ._csc import csc_array
             indptr, indices, data, shape = self._coo_to_compressed(csc_array._swap)
 
