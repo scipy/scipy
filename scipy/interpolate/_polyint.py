@@ -130,7 +130,7 @@ class _Interpolator1D:
         shape = yi.shape
         if shape == ():
             shape = (1,)
-        if xi is not None and shape[axis] != xi.shape[axis]:
+        if xi is not None and shape[axis] != len(xi):
             raise ValueError("x and y arrays must be equal in length along "
                              "interpolation axis.")
 
