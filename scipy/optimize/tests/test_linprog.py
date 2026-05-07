@@ -2508,7 +2508,7 @@ class TestLinprogHiGHSMIP:
         # what should be a positive, monotone decreasing series of solution
         # gaps. Allow a small tolerance because consecutive runs may produce
         # mathematically-equal gaps that differ only by floating-point noise
-        # from the solver's internal arithmetic (gh-24821).
+        # from the solver's internal arithmetic.
         gap_diffs = np.diff(np.flip(sol_mip_gaps))
         atol = 1e-12
         assert np.all(gap_diffs >= -atol)
