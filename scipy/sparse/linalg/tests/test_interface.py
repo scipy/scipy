@@ -25,6 +25,7 @@ from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse._sputils import matrix
 from scipy._lib._gcutils import assert_deallocated
 
+
 pytestmark = make_xp_pytest_marks(
     (LinearOperator, "__init__"),
     (LinearOperator, "matvec"),
@@ -35,6 +36,10 @@ pytestmark = make_xp_pytest_marks(
     (LinearOperator, "rmatmat"),
     aslinearoperator
 )
+pytestmark += [pytest.mark.skip_xp_backends(
+    "dask.array", reason="https://github.com/dask/dask/issues/11711"
+)]
+
 
 def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
     rng = np.random.default_rng(rng)
@@ -332,7 +337,6 @@ class TestLinearOperator:
             A.rdot(xp.ones((4, 4)))
         
 
-@pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
 class TestDotTests:
     """
     This class aims to help ensure correctness of the LinearOperator
@@ -627,7 +631,6 @@ class TestDotTests:
         self.check_matmat(xp, op, data_dtype=data_dtype, complex_data=False)
 
     @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
-    @pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
     def test_aslinearop_dense(
         self, batch_shape: tuple[int, ...], xp
     ):
@@ -1063,7 +1066,6 @@ def test_transpose_noconjugate(xp):
     xp_assert_equal(B.T.dot(v), xp.vecdot(Y.T, v))
 
 
-@pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
 @pytest.mark.skip_xp_backends(
     "array_api_strict",
     reason="https://github.com/data-apis/array-api-strict/issues/188"
@@ -1137,7 +1139,6 @@ def test_MatrixLinearOperator_refcycle(xp):
 @pytest.mark.parametrize("batch_A", [(), (5,), (0,)])
 @pytest.mark.parametrize("batch_x", [(), (6, 1), (0, 1)])
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
-@pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
 @pytest.mark.skip_xp_backends(
     "array_api_strict",
     reason="https://github.com/data-apis/array-api-strict/issues/188"
