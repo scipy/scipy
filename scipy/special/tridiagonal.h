@@ -12,9 +12,9 @@
 
 #include "blaslapack_declarations.h"
 
-template <typename DMat, typename EMat>
-sf_error_t eigvalsh_tridiagonal(DMat D, EMat E) {
-    auto N = static_cast<CBLAS_INT>(D.extent(0));
+
+sf_error_t eigvalsh_tridiagonal(std::vector<double>& D, std::vector<double>& E) {
+    auto N = static_cast<CBLAS_INT>(D.size());
 
     if (N == 0) {
         return SF_ERROR_OK;
@@ -32,7 +32,7 @@ sf_error_t eigvalsh_tridiagonal(DMat D, EMat E) {
     std::vector<CBLAS_INT> iwork(liwork);
 
     BLAS_FUNC(dstevd)
-    (&jobz, &N, D.data_handle(), E.data_handle(), Z.data(), &ldz, work.data(), &lwork, iwork.data(), &liwork, &info);
+    (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, work.data(), &lwork, iwork.data(), &liwork, &info);
 
     if (info < 0) {
         return SF_ERROR_OTHER;
@@ -45,9 +45,8 @@ sf_error_t eigvalsh_tridiagonal(DMat D, EMat E) {
     return SF_ERROR_OK;
 }
 
-template <typename DMat, typename EMat, typename ZMat>
-sf_error_t eigh_tridiagonal(DMat D, EMat E, ZMat Z) {
-    auto N = static_cast<CBLAS_INT>(D.extent(0));
+sf_error_t eigh_tridiagonal(std::vector<double> D, std::vector<double> E, std::vector<double> Z) {
+  auto N = static_cast<CBLAS_INT>(D.size());
     if (N == 0) {
         return SF_ERROR_OK;
     }
@@ -63,7 +62,7 @@ sf_error_t eigh_tridiagonal(DMat D, EMat E, ZMat Z) {
     CBLAS_INT liwork_q = -1;
 
     BLAS_FUNC(dstevd)
-    (&jobz, &N, D.data_handle(), E.data_handle(), Z.data_handle(), &ldz, &work_query, &lwork_q, &liwork_query_res,
+    (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, &work_query, &lwork_q, &liwork_query_res,
      &liwork_q, &info);
 
     if (info != 0) {
@@ -77,7 +76,7 @@ sf_error_t eigh_tridiagonal(DMat D, EMat E, ZMat Z) {
     std::vector<CBLAS_INT> iwork(liwork);
 
     BLAS_FUNC(dstevd)
-    (&jobz, &N, D.data_handle(), E.data_handle(), Z.data_handle(), &ldz, work.data(), &lwork, iwork.data(), &liwork,
+    (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, work.data(), &lwork, iwork.data(), &liwork,
      &info);
 
     if (info < 0) {
