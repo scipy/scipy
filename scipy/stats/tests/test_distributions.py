@@ -3420,6 +3420,17 @@ class TestInvgauss:
         logsf = stats.invgauss.logsf(110, 1.05)
         assert_allclose(logsf, -56.1467092416426)
 
+    def test_logsf_logcdf_small_mu(self):
+        # gh-25080: logsf returned NaN for small mu due to
+        # catastrophic cancellation in b = 2/mu + log(Phi(-z2))
+        # Reference computed with mpmath (mp.dps=50)
+        x = 8.286427728546843e-06
+        mu = 1e-9
+        assert_allclose(stats.invgauss.logsf(x, mu),
+                        -4142213924637.175, rtol=1e-10)
+        # logcdf ~ 0 here (CDF is essentially 1 for x >> mu)
+        assert_allclose(stats.invgauss.logcdf(x, mu), 0.0, atol=1e-10)
+
     # from mpmath import mp
     # mp.dps = 100
     # mu = mp.mpf(1e-2)
