@@ -1,15 +1,19 @@
 """
 Tests for line search routines
 """
+import threading
 import warnings
 
+import numpy as np
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp)
-import scipy.optimize._linesearch as ls
-from scipy.optimize._linesearch import LineSearchWarning
-import numpy as np
 import pytest
-import threading
+from scipy._lib._array_api import (
+    make_xp_test_case, xp_assert_close, xp_assert_close_nulp, _xp_copy_to_numpy
+)
+import scipy.optimize._linesearch as ls
+from scipy.optimize._linesearch import line_search_wolfe2
+from scipy.optimize._linesearch import LineSearchWarning
 
 
 def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
@@ -39,7 +43,7 @@ def assert_armijo(s, phi, c1=1e-4, err_msg=""):
 
 def assert_line_wolfe(x, p, s, f, fprime, **kw):
     assert_wolfe(s, phi=lambda sp: f(x + p*sp),
-                 derphi=lambda sp: np.dot(fprime(x + p*sp), p), **kw)
+                 derphi=lambda sp: fprime(x + p*sp) @ p, **kw)
 
 
 def assert_line_armijo(x, p, s, f, **kw):
@@ -86,7 +90,7 @@ class TestLineSearch:
         if not hasattr(self.fcount, 'c'):
             self.fcount.c = 0
         self.fcount.c += 1
-        f = np.dot(x, x)
+        f = x @ x
         df = 2*x
         return f, df
 
@@ -94,8 +98,8 @@ class TestLineSearch:
         if not hasattr(self.fcount, 'c'):
             self.fcount.c = 0
         self.fcount.c += 1
-        f = np.dot(x, np.dot(self.A, x)) + 1
-        df = np.dot(self.A + self.A.T, x)
+        f = (x @ self.A @ x) + 1
+        df = (self.A + self.A.T) @ x
         return f, df
 
     # --
@@ -130,14 +134,15 @@ class TestLineSearch:
             for old_phi0 in rng.standard_normal(3):
                 yield name, phi, derphi, old_phi0
 
-    def line_iter(self):
+    def line_iter(self, xp=None):
+        xp = np if xp is None else xp
         rng = np.random.default_rng(2231892908)
         for name, f, fprime in self.line_funcs:
             k = 0
             while k < 9:
-                x = rng.standard_normal(self.N)
-                p = rng.standard_normal(self.N)
-                if np.dot(p, fprime(x)) >= 0:
+                x = xp.asarray(rng.standard_normal(self.N))
+                p = xp.asarray(rng.standard_normal(self.N))
+                if p @ fprime(x) >= 0:
                     # always pick a descent direction
                     continue
                 k += 1
@@ -229,10 +234,12 @@ class TestLineSearch:
 
         assert c > 3  # check that the iterator really works...
 
-    def test_line_search_wolfe2(self):
+    @make_xp_test_case(line_search_wolfe2)
+    def test_line_search_wolfe2(self, xp):
         c = 0
         smax = 512
-        for name, f, fprime, x, p, old_f in self.line_iter():
+        for name, f, fprime, x, p, old_f in self.line_iter(xp=xp):
+            self.A = xp.asarray(self.A)  # This is a hack.
             f0 = f(x)
             g0 = fprime(x)
             self.fcount.c = 0
@@ -245,18 +252,19 @@ class TestLineSearch:
                     "ignore",
                     "The line search algorithm did not converge",
                     LineSearchWarning)
-                s, fc, gc, fv, ofv, gv = ls.line_search_wolfe2(f, fprime, x, p,
-                                                               g0, f0, old_f,
-                                                               amax=smax)
+                s, fc, gc, fv, ofv, gv = line_search_wolfe2(
+                    f, fprime, x, p, g0, f0, old_f, amax=smax)
             assert_equal(self.fcount.c, fc+gc)
-            assert_fp_equal(ofv, f(x))
-            assert_fp_equal(fv, f(x + s*p))
+            params = dict(nulp=50, check_namespace=False, check_dtype=False)
+            xp_assert_close_nulp(ofv, f(x), **params)
+            xp_assert_close_nulp(fv, f(x + s*p), **params)
             if gv is not None:
-                assert_array_almost_equal(gv, fprime(x + s*p), decimal=14)
+                xp_assert_close(gv, fprime(x + s*p), rtol=1e-14)
             if s < smax:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert c > 3  # check that the iterator really works...
+        self.A = _xp_copy_to_numpy(self.A)  # Revert the hack.
 
     def test_line_search_wolfe2_bounds(self):
         # See gh-7475
