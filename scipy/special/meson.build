@@ -52,7 +52,7 @@ endif
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [xsf_dep, np_dep, lapack_dep],
   link_args: version_link_args,
   cpp_args: ufuncs_cpp_args,
   install: true,
