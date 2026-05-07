@@ -268,6 +268,17 @@ assoc_legendre_p = MultiUFunc(
 
     Associated Legendre polynomial of the first kind.
 
+    Defined as
+
+    .. math::
+
+        P_n^m(z) = (-1)^m (1 - z^2)^{m/2}
+            \frac{d^m}{dz^m} P_n(z)
+
+    where :math:`P_n` is the Legendre polynomial.
+
+    This definition includes the Condon-Shortley phase :math:`(-1)^m`.
+
     Parameters
     ----------
     n : array_like of ints
@@ -300,6 +311,23 @@ assoc_legendre_p = MultiUFunc(
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
+
+    Examples
+    --------
+    Evaluate :math:`P_2^1(z)` on :math:`[-1, 1]`:
+
+    >>> import numpy as np
+    >>> from scipy.special import assoc_legendre_p
+    >>> z = np.linspace(-1, 1, 11)
+    >>> expected = -3 * z * np.sqrt(1 - z**2)
+    >>> np.allclose(assoc_legendre_p(2, 1, z), expected)
+    True
+
+    Compute the normalized associated Legendre polynomial:
+
+    >>> scale = np.sqrt(5/12)
+    >>> np.allclose(assoc_legendre_p(2, 1, z, norm=True), scale * expected)
+    True
     """, branch_cut=2, norm=False, diff_n=0
 )
 
@@ -442,6 +470,21 @@ legendre_p = MultiUFunc(
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Evaluate the Legendre polynomial :math:`P_3` at :math:`z = 0.5`:
+
+    >>> import numpy as np
+    >>> from scipy.special import legendre_p
+    >>> np.allclose(legendre_p(3, 0.5), -0.4375)
+    True
+
+    Compute the value and first derivative with respect to ``z``:
+
+    >>> p, dp = legendre_p(3, 0.5, diff_n=1)
+    >>> np.allclose([p, dp], [-0.4375, 0.375])
+    True
     """, diff_n=0
 )
 

@@ -223,9 +223,9 @@ def roots_jacobi(n, alpha, beta, mu=False):
     n : int
         Quadrature order.
     alpha : float
-        alpha must be > -1
+        alpha must be > -1.
     beta : float
-        beta must be > -1
+        beta must be > -1.
     mu : bool, optional
         If True, return the sum of the weights in addition to sample points and weights.
 
@@ -312,10 +312,13 @@ def jacobi(n, alpha, beta, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}P_n^{(\alpha, \beta)}
-          + (\beta - \alpha - (\alpha + \beta + 2)x)
-            \frac{d}{dx}P_n^{(\alpha, \beta)}
-          + n(n + \alpha + \beta + 1)P_n^{(\alpha, \beta)} = 0
+
+        \begin{aligned}
+        (1 - x^2)\frac{d^2}{dx^2} P_n^{(\alpha, \beta)}(x)
+        &+ \left(\beta - \alpha - (\alpha + \beta + 2)x\right)
+        \frac{d}{dx} P_n^{(\alpha, \beta)}(x) \\
+        &+ n(n + \alpha + \beta + 1) P_n^{(\alpha, \beta)}(x) = 0
+        \end{aligned}
 
     for :math:`\alpha, \beta > -1`; :math:`P_n^{(\alpha, \beta)}` is a
     polynomial of degree :math:`n`.
@@ -416,11 +419,11 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     p1 : float
-        (p1 - q1) must be > -1
+        (p1 - q1) must be > -1.
     q1 : float
-        q1 must be > 0
+        q1 must be > 0.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
@@ -492,6 +495,38 @@ def sh_jacobi(n, p, q, monic=False):
     For fixed :math:`p, q`, the polynomials :math:`G_n^{(p, q)}` are
     orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
     x)^{p - q}x^{q - 1}`.
+
+    Examples
+    --------
+    Evaluate the shifted Jacobi polynomial :math:`G_3^{(2, 1)}` at
+    :math:`x = 0.5`:
+
+    >>> import numpy as np
+    >>> from scipy.special import binom, jacobi, sh_jacobi
+    >>> np.isclose(sh_jacobi(3, 2, 1)(0.5), -3/280)
+    True
+
+    The polynomial is related to the Jacobi polynomial
+    :math:`P_n^{(p - q, q - 1)}`:
+
+    >>> x = np.linspace(0, 1, 5)
+    >>> n, p, q = 3, 2, 1
+    >>> scale = 1 / binom(2*n + p - 1, n)
+    >>> np.allclose(sh_jacobi(n, p, q)(x),
+    ...             scale * jacobi(n, p - q, q - 1)(2*x - 1))
+    True
+
+    Plot :math:`G_3^{(p, 1)}` for several values of :math:`p`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for p in [1, 2, 3]:
+    ...     ax.plot(x, sh_jacobi(3, p, 1)(x), label=rf"$p={p}$")
+    >>> ax.set_title(r"Shifted Jacobi polynomials $G_3^{(p, 1)}$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
 
     """
     if n < 0:
@@ -589,9 +624,9 @@ def genlaguerre(n, alpha, monic=False):
     Defined to be the solution of
 
     .. math::
-        x\frac{d^2}{dx^2}L_n^{(\alpha)}
-          + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}
-          + nL_n^{(\alpha)} = 0,
+        x\frac{d^2}{dx^2}L_n^{(\alpha)}(x)
+          + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}(x)
+          + nL_n^{(\alpha)}(x) = 0,
 
     where :math:`\alpha > -1`; :math:`L_n^{(\alpha)}` is a polynomial
     of degree :math:`n`.
@@ -637,15 +672,13 @@ def genlaguerre(n, alpha, monic=False):
     hypergeometric function :math:`{}_1F_1`:
 
         .. math::
-            L_n^{(\alpha)} = \binom{n + \alpha}{n} {}_1F_1(-n, \alpha +1, x)
+            L_n^{(\alpha)}(x) = \binom{n + \alpha}{n} {}_1F_1(-n, \alpha +1, x)
 
     This can be verified, for example,  for :math:`n = \alpha = 3` over the
     interval :math:`[-1, 1]`:
 
     >>> import numpy as np
-    >>> from scipy.special import binom
-    >>> from scipy.special import genlaguerre
-    >>> from scipy.special import hyp1f1
+    >>> from scipy.special import binom, genlaguerre, hyp1f1
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> np.allclose(genlaguerre(3, 3)(x), binom(6, 3) * hyp1f1(-3, 4, x))
     True
@@ -657,9 +690,9 @@ def genlaguerre(n, alpha, monic=False):
     >>> x = np.arange(-4.0, 12.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-5.0, 10.0)
-    >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{\alpha}$')
+    >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{(\alpha)}$')
     >>> for alpha in np.arange(0, 5):
-    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf'$L_3^{(alpha)}$')
+    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf"$L_3^{{({alpha})}}$")
     >>> plt.legend(loc='best')
     >>> plt.show()
 
@@ -734,7 +767,8 @@ def laguerre(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        x\frac{d^2}{dx^2}L_n + (1 - x)\frac{d}{dx}L_n + nL_n = 0;
+        x\frac{d^2}{dx^2}L_n(x) + (1 - x)\frac{d}{dx}L_n(x)
+          + nL_n(x) = 0;
 
     :math:`L_n` is a polynomial of degree :math:`n`.
 
@@ -1307,7 +1341,7 @@ def hermite(n, monic=False):
     Returns
     -------
     H : orthopoly1d
-        Hermite polynomial.
+        Physicist's Hermite polynomial.
 
     Notes
     -----
@@ -1369,18 +1403,18 @@ def roots_hermitenorm(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
@@ -1432,7 +1466,7 @@ def roots_hermitenorm(n, mu=False):
 
 
 def hermitenorm(n, monic=False):
-    r"""Normalized (probabilist's) Hermite polynomial.
+    r"""Probabilist's Hermite polynomial.
 
     Defined by
 
@@ -1453,7 +1487,7 @@ def hermitenorm(n, monic=False):
     Returns
     -------
     He : orthopoly1d
-        Hermite polynomial.
+        Probabilist's Hermite polynomial.
 
     Notes
     -----
@@ -1526,9 +1560,9 @@ def roots_gegenbauer(n, alpha, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     alpha : float
-        alpha must be > -0.5
+        alpha must be > -0.5.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
@@ -1653,7 +1687,7 @@ def gegenbauer(n, alpha, monic=False):
     >>> ax.plot(x, y)
     >>> ax.set_title("Gegenbauer (ultraspherical) polynomial of degree 3")
     >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel("G_3(x)")
+    >>> ax.set_ylabel(r"$C_3^{(0.5)}(x)$")
     >>> plt.show()
 
     """
@@ -1731,7 +1765,8 @@ def chebyt(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}T_n - x\frac{d}{dx}T_n + n^2T_n = 0;
+        (1 - x^2)\frac{d^2}{dx^2}T_n(x) - x\frac{d}{dx}T_n(x)
+          + n^2T_n(x) = 0;
 
     :math:`T_n` is a polynomial of degree :math:`n`.
 
@@ -1891,8 +1926,8 @@ def chebyu(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}U_n - 3x\frac{d}{dx}U_n
-          + n(n + 2)U_n = 0;
+        (1 - x^2)\frac{d^2}{dx^2}U_n(x) - 3x\frac{d}{dx}U_n(x)
+          + n(n + 2)U_n(x) = 0;
 
     :math:`U_n` is a polynomial of degree :math:`n`.
 
@@ -1953,7 +1988,7 @@ def chebyu(n, monic=False):
     .. math::
         U_{2n-1}(x) = 2 T_n(x)U_{n-1}(x)
 
-    where the :math:`T_n` are the Chebyshev polynomial of the first kind.
+    where :math:`T_n` is the Chebyshev polynomial of the first kind.
     Let's verify it for :math:`n = 2`:
 
     >>> from scipy.special import chebyt
@@ -2036,7 +2071,7 @@ def chebyc(n, monic=False):
     r"""Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
 
     Defined as :math:`C_n(x) = 2T_n(x/2)`, where :math:`T_n` is the
-    nth Chebychev polynomial of the first kind.
+    nth Chebyshev polynomial of the first kind.
 
     Parameters
     ----------
@@ -2065,6 +2100,33 @@ def chebyc(n, monic=False):
     .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
            Section 22. National Bureau of Standards, 1972.
 
+    Examples
+    --------
+    Evaluate the Chebyshev polynomial :math:`C_3` at :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebyc, chebyt
+    >>> np.isclose(chebyc(3)(1), -2.0)
+    True
+
+    The polynomial :math:`C_n` is a scaled Chebyshev polynomial of the
+    first kind:
+
+    >>> x = np.linspace(-2, 2, 5)
+    >>> np.allclose(chebyc(3)(x), 2 * chebyt(3)(x/2))
+    True
+
+    Plot :math:`C_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-2, 2, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, chebyc(n)(x), label=rf"$C_{n}$")
+    >>> ax.set_title(r"Chebyshev polynomials $C_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -2141,7 +2203,7 @@ def chebys(n, monic=False):
     r"""Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
 
     Defined as :math:`S_n(x) = U_n(x/2)` where :math:`U_n` is the
-    nth Chebychev polynomial of the second kind.
+    nth Chebyshev polynomial of the second kind.
 
     Parameters
     ----------
@@ -2163,13 +2225,40 @@ def chebys(n, monic=False):
     Notes
     -----
     The polynomials :math:`S_n(x)` are orthogonal over :math:`[-2, 2]`
-    with weight function :math:`\sqrt{1 - (x/2)}^2`.
+    with weight function :math:`\sqrt{1 - (x/2)^2}`.
 
     References
     ----------
     .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
            Section 22. National Bureau of Standards, 1972.
 
+    Examples
+    --------
+    Evaluate the Chebyshev polynomial of the second kind :math:`S_3` at :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebys, chebyu
+    >>> np.isclose(chebys(3)(1), -1.0)
+    True
+
+    The polynomial :math:`S_n` is a scaled Chebyshev polynomial of the
+    second kind:
+
+    >>> x = np.linspace(-2, 2, 5)
+    >>> np.allclose(chebys(3)(x), chebyu(3)(x/2))
+    True
+
+    Plot :math:`S_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-2, 2, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, chebys(n)(x), label=rf"$S_{n}$")
+    >>> ax.set_title(r"Chebyshev polynomials $S_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -2209,18 +2298,18 @@ def roots_sh_chebyt(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
@@ -2260,6 +2349,35 @@ def sh_chebyt(n, monic=False):
     -----
     The polynomials :math:`T^*_n` are orthogonal over :math:`[0, 1]`
     with weight function :math:`(x - x^2)^{-1/2}`.
+
+    Examples
+    --------
+    Evaluate the shifted Chebyshev polynomial of the first kind :math:`T^*_3` at
+    :math:`x = 0.75`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebyt, sh_chebyt
+    >>> np.isclose(sh_chebyt(3)(0.75), -1.0)
+    True
+
+    The polynomial :math:`T^*_n` is the Chebyshev polynomial
+    :math:`T_n` shifted from :math:`[-1, 1]` to :math:`[0, 1]`:
+
+    >>> x = np.linspace(0, 1, 5)
+    >>> np.allclose(sh_chebyt(3)(x), chebyt(3)(2*x - 1))
+    True
+
+    Plot :math:`T^*_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, sh_chebyt(n)(x), label=rf"$T^*_{n}$")
+    >>> ax.set_title(r"Shifted Chebyshev polynomials $T^*_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
 
     """
     base = sh_jacobi(n, 0.0, 0.5, monic=monic)
@@ -2346,6 +2464,35 @@ def sh_chebyu(n, monic=False):
     The polynomials :math:`U^*_n` are orthogonal over :math:`[0, 1]`
     with weight function :math:`(x - x^2)^{1/2}`.
 
+    Examples
+    --------
+    Evaluate the shifted Chebyshev polynomial of the second kind :math:`U^*_3` at
+    :math:`x = 0.75`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebyu, sh_chebyu
+    >>> np.isclose(sh_chebyu(3)(0.75), -1.0)
+    True
+
+    The polynomial :math:`U^*_n` is the Chebyshev polynomial
+    :math:`U_n` shifted from :math:`[-1, 1]` to :math:`[0, 1]`:
+
+    >>> x = np.linspace(0, 1, 5)
+    >>> np.allclose(sh_chebyu(3)(x), chebyu(3)(2*x - 1))
+    True
+
+    Plot :math:`U^*_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, sh_chebyu(n)(x), label=rf"$U^*_{n}$")
+    >>> ax.set_title(r"Shifted Chebyshev polynomials $U^*_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
+
     """
     base = sh_jacobi(n, 2.0, 1.5, monic=monic)
     if monic:
@@ -2370,18 +2517,18 @@ def roots_legendre(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
