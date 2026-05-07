@@ -36,6 +36,7 @@
 #include <xsf/wright_bessel.h>
 #include <xsf/zeta.h>
 #include "gen_harmonic.h"
+#include "mathieu.h"
 
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "xsf::numpy::ufunc" with a braced list of kernel functions that will become the ufunc overloads. There are
@@ -205,10 +206,7 @@ static PyObject* _set_action(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
-static PyMethodDef _methods[] = {
-    {"_set_action", _set_action, METH_VARARGS, NULL},
-    {NULL, NULL, 0, NULL}
-};
+static PyMethodDef _methods[] = {{"_set_action", _set_action, METH_VARARGS, NULL}, {NULL, NULL, 0, NULL}};
 
 
 static int
@@ -826,7 +824,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "assoc_legendre_p", assoc_legendre_p);
 
     PyObject *mathieu_a =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::cem_cva), static_cast<xsf::numpy::dd_d>(xsf::cem_cva)},
+      xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(special::mathieu_a), static_cast<xsf::numpy::dd_d>(special::mathieu_a)},
                           "mathieu_a", mathieu_a_doc);
     PyModule_AddObjectRef(module, "mathieu_a", mathieu_a);
 
