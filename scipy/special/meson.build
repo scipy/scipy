@@ -33,7 +33,7 @@ ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
-  dependencies: [boost_math_dep, xsf_dep, np_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep, lapack_dep],
   link_args: version_link_args,
   cpp_args: ['-DBOOST_MATH_STANDALONE=1'] + ufuncs_cpp_args,
   install: true,
