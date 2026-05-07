@@ -329,7 +329,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         Parameters
         ----------
         copy : bool, optional
-            Unused.
+            Unused. A copy is always made in the 2D case. And CSC is 2D.
 
         Returns
         -------
@@ -374,7 +374,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         ----------
         copy : bool, optional
             With ``copy=False``, the data/indices may be shared between this
-            array/matrix and the resultant csr_array/matrix.
+            array/matrix and the resultant csr_array/matrix. But only for 1D.
+            For 2D, a copy will always be made.
 
         Returns
         -------
