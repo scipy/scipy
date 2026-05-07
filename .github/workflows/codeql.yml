@@ -28,7 +28,8 @@ jobs:
     #   - https://gh.io/recommended-hardware-resources-for-running-codeql
     #   - https://gh.io/supported-runners-and-hardware-resources
     #   - https://gh.io/using-larger-runners (GitHub.com only)
-    # Consider using larger runners or machines with greater resources for possible analysis time improvements.
+    # Consider using larger runners or machines with greater resources for
+    # possible analysis time improvements.
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     permissions:
       security-events: write  # required for all workflows
@@ -44,14 +45,15 @@ jobs:
           build-mode: manual
         - language: python
           build-mode: none
-        # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
+        # CodeQL supports the following values keywords for 'language': 'actions',
+        # 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript',
+        # 'python', 'ruby', 'rust', 'swift'
         # Use `c-cpp` to analyze code written in C, C++ or both
         # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
-        # Use 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
-        # To learn more about changing the languages that are analyzed or customizing the build mode for your analysis,
-        # see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning.
-        # If you are analyzing a compiled language, you can modify the 'build-mode' for that language to customize how
-        # your codebase is analyzed, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+        # Use 'javascript-typescript' to analyze code written in JavaScript,
+        # TypeScript or both
+        # To learn more about changing the languages that are analyzed or
+        # customizing the build mode for your analysis,
     steps:
     - name: Checkout repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -63,18 +65,32 @@ jobs:
     # or others). This is typically only required for manual builds.
     # - name: Setup runtime (example)
     #   uses: actions/setup-example@v1
+    - name: Install dependencies
+      if: matrix.language == 'c-cpp'
+      run: |
+        git submodule update --init
+        sudo apt update
+        sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
+        python -m pip install -r requirements/build.txt -r requirements/dev.txt
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
       with:
+        debug: true
         languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
+        config-file: .github/codeql/codeql-config.yml
+
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+        # queries: ./path/to/local/query, your-org/your-repo/queries@main
+
+
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
 
-        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
 
     # If the analyze step fails for one of the languages you are analyzing with
@@ -83,8 +99,8 @@ jobs:
     # to build your code.
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - if: matrix.build-mode == 'manual'
-      name: Install dependencies and build SciPy
+    - name: Build (manual)
+      if: matrix.build-mode == 'manual'
       shell: bash
       run: |
         git submodule update --init
@@ -100,7 +116,35 @@ jobs:
         set -euxo pipefail
         mkdir -p "${RUNNER_TEMP}/trapCaches/cpp/tarballs"
 
+    - name: Ensure CodeQL trap cache directory exists (workaround)
+      if: matrix.language == 'c-cpp'
+      shell: bash
+      run: |
+        set -euxo pipefail
+        mkdir -p "$RUNNER_TEMP/trapCaches/cpp/tarballs"
+        ls -la "$RUNNER_TEMP/trapCaches/cpp" || true
+
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
       with:
         category: "/language:${{matrix.language}}"
+        output: sarif-results
+        upload: failure-only
+
+    - name: filter-sarif
+      if: matrix.language == 'c-cpp'
+      uses: advanced-security/filter-sarif@2da736ff05ef065cb2894ac6892e47b5eac2c3c0 # v1.1
+      with:
+        patterns: |
+          -dist/**
+          -build/**
+          -tools/**
+          -benchmarks/**
+        input: sarif-results/cpp.sarif
+        output: sarif-results/cpp.sarif
+
+    - name: Upload SARIF
+      if: matrix.language == 'c-cpp'
+      uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4
+      with:
+        sarif_file: sarif-results/cpp.sarif
