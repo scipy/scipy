@@ -103,8 +103,8 @@ struct mathieu_coeffs {
             return status;
         }
 
-        auto idx = cv_index<FuncParity>(m);
-        std::copy_n(Z.begin() + idx * N, N, X.begin());
+        auto col = cv_index<FuncParity>(m);
+        std::copy_n(Z.begin() + col * N, N, X.begin());
         if constexpr (FuncParity == Even) {
             if (m % 2 == 0) {
                 X[0] /= M_SQRT2;
@@ -151,9 +151,9 @@ struct mathieu_xem {
         auto int_m = static_cast<int>(m);
 
         if (q_d != last_q || int_m != last_m) {
-            auto N = get_partial_sum_N(m, q_d);
+            auto N = get_partial_sum_N(int_m, q_d);
             coefs.resize(N);
-            auto status = get_coefs(m, q_d, coefs);
+            auto status = get_coefs(int_m, q_d, coefs);
             if (status != SF_ERROR_OK) {
                 out = std::numeric_limits<T>::quiet_NaN();
                 out_diff = std::numeric_limits<T>::quiet_NaN();
