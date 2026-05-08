@@ -765,6 +765,19 @@ def kron(A, B, format=None):
     made of blocks consisting of the second input array multiplied
     by each element of the first input array.
 
+    .. warning::
+
+        `kron` is switching to the sparse array interface.
+
+        For the case where no input arrays are sparse, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Control the sparse return class by making at least one input sparse,
+        e.g., ``kron(coo_matrix(A), B)``, or ``kron(coo_array(A), B)``.
+        That removes any deprecation warnings as well.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        Handling of this no sparse input case will change no earlier than v1.20.
+
     Parameters
     ----------
     A : sparse or dense array
@@ -899,6 +912,19 @@ def kronsum(A, B, format=None):
     products ``kron(I_n,A) + kron(B,I_m)`` where `A` has shape ``(m, m)``
     and `B` has shape ``(n, n)`` and ``I_m`` and ``I_n`` are identity matrices
     of shape ``(m, m)`` and ``(n, n)``, respectively.
+
+    .. warning::
+
+        `kronsum` is switching to the sparse array interface.
+
+        For the case where no input arrays are sparse, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Control the sparse return class by making at least one input sparse,
+        e.g., ``kronsum(coo_matrix(A), B)``, or ``kronsum(coo_array(A), B)``.
+        That removes any deprecation warnings as well.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        Handling of this no sparse input case will change no earlier than v1.20.
 
     Parameters
     ----------
@@ -1384,6 +1410,19 @@ def _block(blocks, format, dtype, return_spmatrix=False):
 def block_diag(mats, format=None, dtype=None):
     """
     Build a block diagonal sparse matrix or array from provided matrices.
+
+    .. warning::
+
+        `block_diag` is switching to the sparse array interface.
+
+        For the case where no input arrays are sparse, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Control the sparse return class by making at least one input sparse,
+        e.g., ``block_diag([coo_matrix(A), B])``, or ``block_diag([coo_array(A), B])``.
+        That removes any deprecation warnings as well.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        Handling of this no sparse input case will change no earlier than v1.20.
 
     Parameters
     ----------
