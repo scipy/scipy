@@ -121,13 +121,15 @@ struct mathieu_xem {
     int last_m{-1};
     mathieu_coeffs<FuncParity> get_coefs;
     std::vector<double> coefs;
-    void operator()(T m, T q, T v, T &out, T &out_diff) {
+    void operator()(T m, T q, T x, T &out, T &out_diff) {
         using namespace xsf::mathieu;
         auto constexpr Even = Parity::Even;
         auto constexpr Odd = Parity::Odd;
 
         double q_d = static_cast<double>(q);
-        double v_d = static_cast<double>(v);
+        /* SciPy's mathieu functions take angles in degrees.
+         * Convert to radians for internal calculation.*/
+        double v = static_cast<double>(x) * (M_PI / 180.0);
         double out_d, out_diff_d;
 
         if constexpr (FuncParity == Even) {
@@ -169,12 +171,13 @@ struct mathieu_xem {
             last_m = int_m;
         }
         if (int_m % 2) {
-            sum_fourier_series<FuncParity, Odd>(xsf::numpy::as_mdspan(coefs), v_d, out_d, out_diff_d);
+            sum_fourier_series<FuncParity, Odd>(xsf::numpy::as_mdspan(coefs), v, out_d, out_diff_d);
         } else {
-            sum_fourier_series<FuncParity, Even>(xsf::numpy::as_mdspan(coefs), v_d, out_d, out_diff_d);
+            sum_fourier_series<FuncParity, Even>(xsf::numpy::as_mdspan(coefs), v, out_d, out_diff_d);
         }
         out = static_cast<T>(out_d);
-        out_diff = static_cast<T>(out_diff_d);
+        /* Need to map to the derivative with respect to an angle in radians. */
+        out_diff = static_cast<T>(out_diff_d * (M_PI / 180.0));
     }
 };
 
