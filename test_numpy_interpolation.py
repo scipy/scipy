@@ -17,6 +17,9 @@ Strategy
                                     reproduced exactly (polynomial order of TPS
                                     augmentation); smooth approximation to scipy
                                     CloughTocher (no bit-exact match expected).
+* High-precision (decimal)      →  NumpyInterpolator(precision=40) with string
+                                    inputs and eval_hp() achieves 10^-35 accuracy
+                                    (well beyond the 10^-32 requirement).
 """
 
 import numpy as np
@@ -564,7 +567,135 @@ if __name__ == '__main__':
         test_newton_extrapolate_false,
         test_newton_interp1d,
         test_lagrange_newton_agreement,
+        test_hp_eval_hp_decimal_output,
+        test_hp_32digit_input_accuracy,
+        test_hp_call_returns_float64,
+        test_hp_interp1d_wrapper,
+        test_hp_extrapolate_false,
+        test_hp_float64_input,
+        test_hp_scalar_query,
+        test_hp_lagrange_newton_agree,
     ]
     for t in tests:
         t()
     print("\nDone.")
+
+
+# ============================================================
+# High-precision (decimal) tests
+# ============================================================
+
+_HP_PREC = 40   # 40 decimal digits → arithmetic error ~10^-40
+
+
+def test_hp_eval_hp_decimal_output():
+    """eval_hp() returns Decimal results accurate to < 10^-35."""
+    print("\n--- hp: eval_hp() Decimal output ---")
+    from decimal import Decimal, localcontext
+    xs = ['0', '1', '2', '3', '4', '5']
+    ys = ['0', '1', '16', '81', '256', '625']   # y = x^4
+    f_lag = NumpyInterpolator(xs, ys, kind='lagrange', precision=_HP_PREC)
+    f_new = NumpyInterpolator(xs, ys, kind='newton',   precision=_HP_PREC)
+    with localcontext() as ctx:
+        ctx.prec = 60
+        true_val = Decimal('2.7') ** 4
+    for f, tag in [(f_lag, 'lagrange'), (f_new, 'newton')]:
+        r = f.eval_hp(['2.7'])[0]
+        err = abs(r - true_val)
+        ok = err < Decimal('1e-35')
+        print(f"  [{'PASS' if ok else 'FAIL'}] {tag}: err={err}")
+        assert ok
+
+
+def test_hp_32digit_input_accuracy():
+    """String inputs with 34 sig figs + eval_hp() achieves error < 10^-32."""
+    print("\n--- hp: 32-digit input accuracy ---")
+    from decimal import Decimal
+    xs = ['0', '1', '2', '3', '4']
+    ys = ['0', '1', '4', '9', '16']
+    for kind in ('lagrange', 'newton'):
+        f = NumpyInterpolator(xs, ys, kind=kind, precision=_HP_PREC)
+        r = f.eval_hp(['1.5000000000000000000000000000000000'])[0]
+        err = abs(r - Decimal('2.25'))
+        ok = err < Decimal('1e-32')
+        print(f"  [{'PASS' if ok else 'FAIL'}] {kind}: err={err}")
+        assert ok
+
+
+def test_hp_call_returns_float64():
+    """__call__() returns a standard float64 numpy array even with precision set."""
+    print("\n--- hp: __call__ returns float64 ---")
+    f = NumpyInterpolator(['0', '1', '2', '3', '4'], ['0', '1', '4', '9', '16'],
+                          kind='lagrange', precision=_HP_PREC)
+    res = f(['0.5', '1.5', '2.5', '3.5'])
+    ok = (isinstance(res, np.ndarray) and res.dtype == np.float64
+          and np.allclose(res, [0.25, 2.25, 6.25, 12.25], atol=1e-14))
+    print(f"  [{'PASS' if ok else 'FAIL'}] dtype={res.dtype} values={res}")
+    assert ok
+
+
+def test_hp_interp1d_wrapper():
+    """interp1d(precision=40) works for both lagrange and newton."""
+    print("\n--- hp: interp1d wrapper with precision=40 ---")
+    for kind in ('lagrange', 'newton'):
+        fl = interp1d(['0', '1', '2', '3', '4'], ['0', '1', '8', '27', '64'],
+                      kind=kind, fill_value='extrapolate', precision=_HP_PREC)
+        res = fl(['1.5', '2.5', '3.5'])
+        exp = np.array([1.5**3, 2.5**3, 3.5**3])
+        ok = np.allclose(res, exp, atol=1e-14)
+        print(f"  [{'PASS' if ok else 'FAIL'}] {kind}")
+        assert ok
+
+
+def test_hp_extrapolate_false():
+    """extrapolate=False with precision=40: out-of-bounds → NaN, interior OK."""
+    print("\n--- hp: extrapolate=False ---")
+    f = NumpyInterpolator(['0', '1', '2', '3'], ['0', '1', '4', '9'],
+                          kind='lagrange', extrapolate=False, precision=_HP_PREC)
+    res = f(['-0.5', '1.5', '3.5'])
+    ok = (np.isnan(res[0]) and np.isnan(res[2])
+          and abs(res[1] - 2.25) < 1e-14)
+    print(f"  [{'PASS' if ok else 'FAIL'}] {res}")
+    assert ok
+
+
+def test_hp_float64_input():
+    """float64 inputs with precision=40: output limited to ~10^-15 but correct."""
+    print("\n--- hp: float64 input (output at float64 precision) ---")
+    x = np.array([0., 1., 2., 3., 4.])
+    y = x**2
+    for kind in ('lagrange', 'newton'):
+        f = NumpyInterpolator(x, y, kind=kind, precision=_HP_PREC)
+        xq = np.array([0.5, 1.5, 2.5, 3.5])
+        ok = np.allclose(f(xq), xq**2, atol=1e-13)
+        print(f"  [{'PASS' if ok else 'FAIL'}] {kind}")
+        assert ok
+
+
+def test_hp_scalar_query():
+    """eval_hp() accepts a single scalar string."""
+    print("\n--- hp: scalar query eval_hp ---")
+    from decimal import Decimal
+    f = NumpyInterpolator(['0', '1', '2', '3', '4'], ['0', '1', '4', '9', '16'],
+                          kind='newton', precision=_HP_PREC)
+    r = f.eval_hp('2.5')
+    err = abs(r[0] - Decimal('6.25'))
+    ok = err < Decimal('1e-35')
+    print(f"  [{'PASS' if ok else 'FAIL'}] err={err}")
+    assert ok
+
+
+def test_hp_lagrange_newton_agree():
+    """lagrange and newton agree at full Decimal precision (error < 10^-35)."""
+    print("\n--- hp: lagrange == newton at Decimal precision ---")
+    from decimal import Decimal
+    xs = ['0', '1', '2', '3', '4', '5', '6']
+    ys = ['1', '3', '5', '4', '2', '6', '8']
+    fl = NumpyInterpolator(xs, ys, kind='lagrange', precision=_HP_PREC)
+    fn = NumpyInterpolator(xs, ys, kind='newton',   precision=_HP_PREC)
+    queries = ['0.3', '1.7', '3.14159', '5.5']
+    rl = fl.eval_hp(queries)
+    rn = fn.eval_hp(queries)
+    ok = all(abs(rl[i] - rn[i]) < Decimal('1e-35') for i in range(len(queries)))
+    print(f"  [{'PASS' if ok else 'FAIL'}]")
+    assert ok

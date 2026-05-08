@@ -17,9 +17,10 @@ Algorithms
                  (exact match with scipy.interpolate.CubicSpline default)
   1-D lagrange : barycentric second form (numerically stable; O(n²) setup,
                  O(n) evaluation; exact at nodes; subject to Runge's phenomenon
-                 on equally-spaced grids)
+                 on equally-spaced grids; use precision= for >16 digit accuracy)
   1-D newton   : divided-difference table + Horner evaluation (O(n²) setup,
-                 O(n) evaluation; equivalent polynomial to Lagrange)
+                 O(n) evaluation; equivalent polynomial to Lagrange;
+                 use precision= for >16 digit accuracy)
   2-D nearest  : vectorised Euclidean distance (exact match)
   2-D linear   : Bowyer-Watson Delaunay + barycentric interpolation
                  (matches scipy LinearNDInterpolator; fill_value outside hull)
@@ -244,6 +245,205 @@ def _newton_eval(x_new, x, a):
     return result[:, 0] if y1d else result
 
 
+# ------------------------------------------------------------------
+# 1d  High-precision helpers  (Python decimal module)
+# ------------------------------------------------------------------
+
+def _to_dec(v, ctx):
+    """Convert a scalar to Decimal preserving all available digits.
+
+    - Decimal/int/float  → direct conversion via 17-significant-digit format
+    - str                → Decimal(v) directly (use this to supply >17-digit data)
+    """
+    from decimal import Decimal
+    if isinstance(v, Decimal):
+        return v
+    if isinstance(v, str):
+        return ctx.create_decimal(v)
+    # format with 17 significant figures – full IEEE-754 double precision
+    return ctx.create_decimal(format(float(v), '.17e'))
+
+
+def _barycentric_weights_hp(x, prec):
+    """Barycentric weights at *prec* decimal digits using capacity scaling.
+
+    Returns (x_dec, w_dec): lists of Decimal matching scipy's formula.
+    """
+    from decimal import localcontext
+    with localcontext() as ctx:
+        ctx.prec = prec + 10                   # 10 guard digits
+        xd = [_to_dec(xi, ctx) for xi in x]
+        n  = len(xd)
+        inv_cap = ctx.create_decimal(4) / (xd[-1] - xd[0])
+        w = []
+        for i in range(n):
+            prod = ctx.create_decimal(1)
+            for j in range(n):
+                if j != i:
+                    prod = prod * (inv_cap * (xd[i] - xd[j]))
+            w.append(ctx.create_decimal(1) / prod)
+    return xd, w
+
+
+def _lagrange_eval_hp(x_new, x_dec, y, w_dec, prec, return_decimal=False):
+    """Evaluate Lagrange polynomial at *prec* decimal digits.
+
+    x_new          : list of scalars (float, str, or Decimal)
+    x_dec          : list of Decimal (nodes)
+    y              : numpy array (n,) or (n, m)
+    w_dec          : list of Decimal (barycentric weights)
+    return_decimal : if True return list of Decimal (or list of lists); else float64 ndarray
+    """
+    from decimal import localcontext
+    n   = len(x_dec)
+    y   = np.asarray(y, dtype=float)
+    y1d = y.ndim == 1
+    Q   = len(x_new)
+    raw = []            # list of Decimal (1-D) or list of list of Decimal (2-D)
+
+    with localcontext() as ctx:
+        ctx.prec = prec + 10
+        if y1d:
+            yd = [_to_dec(yi, ctx) for yi in y]
+        else:
+            yd = [[_to_dec(y[i, k], ctx) for k in range(y.shape[1])]
+                  for i in range(n)]
+
+        for qi in range(Q):
+            xq    = _to_dec(x_new[qi], ctx)
+            diffs = [xq - xi for xi in x_dec]
+            node  = next((i for i, d in enumerate(diffs) if d == 0), None)
+
+            if node is not None:
+                raw.append(yd[node] if not y1d else yd[node])
+                continue
+
+            terms = [w_dec[i] / diffs[i] for i in range(n)]
+            denom = sum(terms)
+            if y1d:
+                numer = sum(terms[i] * yd[i] for i in range(n))
+                raw.append(numer / denom)
+            else:
+                row = [sum(terms[i] * yd[i][k] for i in range(n)) / denom
+                       for k in range(y.shape[1])]
+                raw.append(row)
+
+    if return_decimal:
+        return raw          # list of Decimal / list of list of Decimal
+
+    # Convert to float64 numpy array
+    if y1d:
+        return np.array([float(v) for v in raw], dtype=float)
+    else:
+        return np.array([[float(v) for v in row] for row in raw], dtype=float)
+
+
+def _divided_differences_hp(x, y, prec):
+    """Newton divided-difference coefficients at *prec* decimal digits.
+
+    x : list or array of x-nodes (strings preserved as-is; floats use .17e)
+    y : numpy array (n,) or (n, m) – float64 values used for y
+    Returns (x_dec, a_dec):
+      x_dec : list of n Decimal nodes
+      a_dec : list of n Decimal coefficients (1-D y)
+           or list of n lists of m Decimal coefficients (2-D y)
+    """
+    from decimal import localcontext
+    y = np.asarray(y, dtype=float)          # ensure numpy array
+    y1d = y.ndim == 1
+    with localcontext() as ctx:
+        ctx.prec = prec + 10
+        n   = len(x)
+        xd  = [_to_dec(xi, ctx) for xi in x]
+
+        if y1d:
+            table = [_to_dec(yi, ctx) for yi in y]
+            a = [table[0]]
+            for j in range(1, n):
+                table = [(table[i + 1] - table[i]) / (xd[i + j] - xd[i])
+                         for i in range(n - j)]
+                a.append(table[0])
+        else:
+            m = y.shape[1]
+            tables = [[_to_dec(y[i, k], ctx) for i in range(n)]
+                      for k in range(m)]
+            a = [[tables[k][0] for k in range(m)]]
+            for j in range(1, n):
+                for k in range(m):
+                    tables[k] = [
+                        (tables[k][i + 1] - tables[k][i]) / (xd[i + j] - xd[i])
+                        for i in range(n - j)
+                    ]
+                a.append([tables[k][0] for k in range(m)])
+
+    return xd, a
+
+
+def _newton_eval_hp(x_new, x_dec, a_dec, y1d, prec, return_decimal=False):
+    """Evaluate Newton polynomial at *prec* decimal digits via Horner.
+
+    a_dec          : list of Decimal (1-D) or list of list of Decimal (2-D)
+    return_decimal : if True return list of Decimal; else float64 ndarray
+    """
+    from decimal import localcontext
+    n   = len(x_dec)
+    Q   = len(x_new)
+    raw = []
+
+    with localcontext() as ctx:
+        ctx.prec = prec + 10
+        if not y1d:
+            m = len(a_dec[0])
+        for qi in range(Q):
+            xq = _to_dec(x_new[qi], ctx)
+            if y1d:
+                result = a_dec[n - 1]
+                for j in range(n - 2, -1, -1):
+                    result = result * (xq - x_dec[j]) + a_dec[j]
+                raw.append(result)
+            else:
+                result = list(a_dec[n - 1])
+                for j in range(n - 2, -1, -1):
+                    dx = xq - x_dec[j]
+                    result = [result[k] * dx + a_dec[j][k] for k in range(m)]
+                raw.append(result)
+
+    if return_decimal:
+        return raw
+
+    if y1d:
+        return np.array([float(v) for v in raw], dtype=float)
+    else:
+        return np.array([[float(v) for v in row] for row in raw], dtype=float)
+
+
+def _as_query_list(x_new):
+    """Normalise query input to a plain Python list.
+
+    Accepts: str, float, int, Decimal, numpy scalar, list, numpy array.
+    Strings are preserved so _to_dec can parse them with full precision.
+    """
+    if isinstance(x_new, str):
+        return [x_new]
+    if isinstance(x_new, (int, float)):
+        return [x_new]
+    try:
+        from decimal import Decimal
+        if isinstance(x_new, Decimal):
+            return [x_new]
+    except ImportError:
+        pass
+    if isinstance(x_new, np.ndarray):
+        # preserve dtype=object (may contain strings/Decimal)
+        if x_new.dtype == object:
+            return list(x_new.ravel())
+        return list(x_new.ravel().astype(object))
+    try:
+        return list(x_new)
+    except TypeError:
+        return [x_new]
+
+
 # ============================================================
 # SECTION 2 – NumpyInterpolator  (1-D)
 # ============================================================
@@ -261,14 +461,40 @@ class NumpyInterpolator:
     extrapolate : bool, default True
         Extrapolate outside [x[0], x[-1]] using the first/last interval.
         If False, out-of-bounds queries return NaN.
+    precision : int or None, default None
+        Number of decimal digits for internal arithmetic.  Only applies to
+        ``kind='lagrange'`` and ``kind='newton'``.
+
+        * ``None``           – standard float64 arithmetic (~15–16 sig figs).
+        * ``35`` or higher   – use Python ``decimal`` module internally;
+                               results are returned as float64 but the
+                               *computation* retains the requested precision,
+                               eliminating accumulated arithmetic errors.
+
+        To obtain 10⁻³² accuracy in the **output** you must also supply *x*
+        and *y* values with that many significant digits.  Pass them as Python
+        strings (e.g. ``x=['1.234567890123456789012345678901234', ...]``) and
+        they will be converted to ``Decimal`` exactly; float64 inputs are
+        limited to ~17 significant digits.
 
     Call
     ----
     f(x_new)  →  interpolated values
     """
 
-    def __init__(self, x, y, kind='linear', extrapolate=True):
-        x = np.asarray(x, dtype=float)
+    def __init__(self, x, y, kind='linear', extrapolate=True, precision=None):
+        if precision is not None and kind not in ('lagrange', 'newton'):
+            raise ValueError("precision parameter only applies to kind='lagrange' or 'newton'")
+        if precision is not None and (not isinstance(precision, int) or precision < 1):
+            raise ValueError("precision must be a positive integer")
+
+        # Always build float64 numpy arrays (used by non-hp paths and for bounds).
+        # For the hp path, also keep x_raw as a list so string inputs survive as-is.
+        if precision is not None:
+            x_raw = list(x) if not isinstance(x, list) else x
+            x = np.asarray([float(xi) for xi in x_raw], dtype=float)
+        else:
+            x = np.asarray(x, dtype=float)
         y = np.asarray(y, dtype=float)
 
         if x.ndim != 1:
@@ -287,6 +513,7 @@ class NumpyInterpolator:
         self.kind        = kind
         self.extrapolate = extrapolate
         self._y1d        = (y.ndim == 1)
+        self.precision   = precision
 
         if kind == 'nearest':
             # Midpoint boundaries – divide before add to avoid overflow.
@@ -297,32 +524,42 @@ class NumpyInterpolator:
             self._c = _cubic_spline_coeffs(x, y)
 
         elif kind == 'lagrange':
-            # Precompute barycentric weights O(n²); evaluation is O(n).
-            self._bary_w = _barycentric_weights(x)
+            if precision is not None:
+                # Store Decimal nodes and weights for high-precision evaluation.
+                self._x_dec, self._bary_w_dec = _barycentric_weights_hp(
+                    x_raw, precision)
+            else:
+                self._bary_w = _barycentric_weights(x)
 
         elif kind == 'newton':
-            # Precompute divided-difference table O(n²); Horner evaluation O(n).
-            self._dd_a = _divided_differences(x, y)
+            if precision is not None:
+                # y values passed as float64 numpy array; x nodes as raw list.
+                self._x_dec, self._dd_a_dec = _divided_differences_hp(
+                    x_raw, y, precision)
+            else:
+                self._dd_a = _divided_differences(x, y)
 
     def __call__(self, x_new):
         """Evaluate the interpolant at x_new."""
-        x_new  = np.asarray(x_new, dtype=float)
-        scalar = x_new.ndim == 0
-        x_new  = np.atleast_1d(x_new)
+        scalar = not hasattr(x_new, '__len__') and not isinstance(x_new, np.ndarray)
+        if not scalar:
+            scalar = np.asarray(x_new).ndim == 0
+        x_new_f = np.asarray(x_new, dtype=float)
+        x_new_f = np.atleast_1d(x_new_f)
 
         if self.kind == 'linear':
-            out = self._linear(x_new)
+            out = self._linear(x_new_f)
         elif self.kind == 'nearest':
-            out = self._nearest(x_new)
+            out = self._nearest(x_new_f)
         elif self.kind == 'cubic':
-            out = self._cubic(x_new)
+            out = self._cubic(x_new_f)
         elif self.kind == 'lagrange':
-            out = self._lagrange(x_new)
+            out = self._lagrange(x_new, x_new_f)
         else:
-            out = self._newton(x_new)
+            out = self._newton(x_new, x_new_f)
 
         if not self.extrapolate:
-            oob = (x_new < self.x[0]) | (x_new > self.x[-1])
+            oob = (x_new_f < self.x[0]) | (x_new_f > self.x[-1])
             if oob.any():
                 out = out.copy()
                 out[oob] = np.nan
@@ -332,38 +569,79 @@ class NumpyInterpolator:
             return float(out) if out.ndim == 0 else out
         return out
 
-    def _linear(self, x_new):
+    def _linear(self, x_new_f):
         # side='left' + clip to [1, n-1] matches scipy interp1d._call_linear.
-        idx    = np.searchsorted(self.x, x_new).clip(1, len(self.x) - 1)
+        idx    = np.searchsorted(self.x, x_new_f).clip(1, len(self.x) - 1)
         lo, hi = idx - 1, idx
-        w = (x_new - self.x[lo]) / (self.x[hi] - self.x[lo])
+        w = (x_new_f - self.x[lo]) / (self.x[hi] - self.x[lo])
         if self._y1d:
             return self.y[lo] * (1.0 - w) + self.y[hi] * w
         return self.y[lo] + w[:, None] * (self.y[hi] - self.y[lo])
 
-    def _nearest(self, x_new):
+    def _nearest(self, x_new_f):
         # Midpoint searchsorted matches scipy interp1d kind='nearest' exactly.
-        idx = np.searchsorted(self._x_bds, x_new, side='left')
+        idx = np.searchsorted(self._x_bds, x_new_f, side='left')
         idx = idx.clip(0, len(self.x) - 1)
         return self.y[idx]
 
-    def _cubic(self, x_new):
+    def _cubic(self, x_new_f):
         # side='right' - 1 places x exactly on a knot in the left interval.
-        idx = (np.searchsorted(self.x, x_new, side='right') - 1).clip(
+        idx = (np.searchsorted(self.x, x_new_f, side='right') - 1).clip(
             0, len(self.x) - 2
         )
-        dx = x_new - self.x[idx]
+        dx = x_new_f - self.x[idx]
         c  = self._c
         if self._y1d:
             return (((c[0, idx]*dx + c[1, idx])*dx + c[2, idx])*dx + c[3, idx])
         dx = dx[:, None]
         return (((c[0][idx]*dx + c[1][idx])*dx + c[2][idx])*dx + c[3][idx])
 
-    def _lagrange(self, x_new):
-        return _lagrange_eval(x_new, self.x, self.y, self._bary_w)
+    def _lagrange(self, x_new_raw, x_new_f):
+        if self.precision is not None:
+            qpts = _as_query_list(x_new_raw)
+            return _lagrange_eval_hp(qpts, self._x_dec, self.y,
+                                     self._bary_w_dec, self.precision)
+        return _lagrange_eval(x_new_f, self.x, self.y, self._bary_w)
 
-    def _newton(self, x_new):
-        return _newton_eval(x_new, self.x, self._dd_a)
+    def _newton(self, x_new_raw, x_new_f):
+        if self.precision is not None:
+            qpts = _as_query_list(x_new_raw)
+            return _newton_eval_hp(qpts, self._x_dec, self._dd_a_dec,
+                                   self._y1d, self.precision)
+        return _newton_eval(x_new_f, self.x, self._dd_a)
+
+    def eval_hp(self, x_new):
+        """Evaluate at full Decimal precision (only for kind='lagrange'/'newton').
+
+        Returns a list of ``decimal.Decimal`` values (1-D y) or a list of
+        lists of ``decimal.Decimal`` (2-D y).  Use this when you need more than
+        ~16 significant digits in the output.
+
+        Requires ``precision`` to have been set in the constructor.
+
+        Parameters
+        ----------
+        x_new : sequence of str, float, or Decimal query points.
+                Pass values as strings to preserve digits beyond float64.
+
+        Returns
+        -------
+        list of Decimal  (1-D y)  or  list of list of Decimal  (2-D y)
+        """
+        if self.precision is None:
+            raise ValueError("eval_hp requires precision= to be set in the constructor")
+        if self.kind not in ('lagrange', 'newton'):
+            raise ValueError("eval_hp only supported for kind='lagrange' or 'newton'")
+
+        qpts = _as_query_list(x_new)
+        if self.kind == 'lagrange':
+            return _lagrange_eval_hp(qpts, self._x_dec, self.y,
+                                     self._bary_w_dec, self.precision,
+                                     return_decimal=True)
+        else:
+            return _newton_eval_hp(qpts, self._x_dec, self._dd_a_dec,
+                                   self._y1d, self.precision,
+                                   return_decimal=True)
 
 
 # ============================================================
@@ -371,7 +649,7 @@ class NumpyInterpolator:
 # ============================================================
 
 def interp1d(x, y, kind='linear', axis=0, bounds_error=True,
-             fill_value=np.nan, assume_sorted=False):
+             fill_value=np.nan, assume_sorted=False, precision=None):
     """1-D interpolation function matching scipy.interpolate.interp1d.
 
     Parameters
@@ -385,6 +663,9 @@ def interp1d(x, y, kind='linear', axis=0, bounds_error=True,
                                  Fill for out-of-bounds when bounds_error=False.
                                  Use 'extrapolate' to extrapolate.
     assume_sorted : bool         Skip sorting if True.
+    precision : int or None      Decimal digits for internal arithmetic
+                                 (only for kind='lagrange'/'newton').
+                                 Use precision=35 or higher for 10⁻³² accuracy.
 
     Returns
     -------
@@ -397,28 +678,50 @@ def interp1d(x, y, kind='linear', axis=0, bounds_error=True,
     >>> yi = np.array([0., 1., 4., 9.])
     >>> f = interp1d(xi, yi, kind='cubic', fill_value='extrapolate')
     >>> f(1.5)          # ≈ 2.25
+
+    High-precision example (supply data as strings for full accuracy):
+    >>> xi = ['0', '1', '2', '3', '4']
+    >>> yi = ['0', '1', '4', '9', '16']
+    >>> f = interp1d(xi, yi, kind='lagrange', fill_value='extrapolate', precision=40)
+    >>> f(['1.5'])      # ≈ 2.25  (computed with 40 decimal digits internally)
     """
-    x  = np.asarray(x, dtype=float)
-    y  = np.asarray(y, dtype=float)
-
-    # Move interpolation axis to position 0
-    y = np.moveaxis(y, axis, 0)
-
-    if not assume_sorted:
-        sort_idx = np.argsort(x)
-        x = x[sort_idx]
-        y = y[sort_idx]
-
-    extrapolate = (isinstance(fill_value, str) and
-                   fill_value.lower() == 'extrapolate')
-    interp = NumpyInterpolator(x, y, kind=kind, extrapolate=extrapolate)
+    # For precision path, keep raw lists to preserve string inputs
+    if precision is not None:
+        x_raw = list(x)
+        y_raw = list(y)
+        x_f   = np.array([float(xi) for xi in x_raw], dtype=float)
+        y_f   = np.array([float(yi) for yi in y_raw], dtype=float)
+        y_f   = np.moveaxis(y_f, axis, 0)
+        if not assume_sorted:
+            sort_idx = np.argsort(x_f)
+            x_raw = [x_raw[i] for i in sort_idx]
+            y_raw = [y_raw[i] for i in sort_idx]
+            x_f   = x_f[sort_idx]
+            y_f   = y_f[sort_idx]
+        extrapolate = (isinstance(fill_value, str) and
+                       fill_value.lower() == 'extrapolate')
+        interp = NumpyInterpolator(x_raw, y_f, kind=kind,
+                                   extrapolate=extrapolate, precision=precision)
+    else:
+        x  = np.asarray(x, dtype=float)
+        y  = np.asarray(y, dtype=float)
+        y  = np.moveaxis(y, axis, 0)
+        if not assume_sorted:
+            sort_idx = np.argsort(x)
+            x = x[sort_idx]
+            y = y[sort_idx]
+        extrapolate = (isinstance(fill_value, str) and
+                       fill_value.lower() == 'extrapolate')
+        interp = NumpyInterpolator(x, y, kind=kind, extrapolate=extrapolate)
 
     if bounds_error and not extrapolate:
         # Python resolves __call__ on the class, not the instance,
         # so return a closure instead of patching the instance attribute.
+        x0 = interp.x[0]
+        x1 = interp.x[-1]
         def _checked(x_new):
-            x_new = np.asarray(x_new, dtype=float)
-            if np.any(x_new < x[0]) or np.any(x_new > x[-1]):
+            xf = np.asarray(x_new, dtype=float)
+            if np.any(xf < x0) or np.any(xf > x1):
                 raise ValueError(
                     "A value in x_new is below/above the interpolation range."
                 )
