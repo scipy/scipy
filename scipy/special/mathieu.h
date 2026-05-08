@@ -77,12 +77,12 @@ struct mathieu_coeffs {
     std::vector<double> Z;
     eigh_tridiagonal solver;
 
-    sf_error_t operator()(int m, double q, std::vector<double> &AA) {
+    sf_error_t operator()(int m, double q, std::vector<double> &X) {
         using namespace xsf::mathieu;
         auto constexpr Even = Parity::Even;
         auto constexpr Odd = Parity::Odd;
 
-        auto N = AA.size();
+        auto N = X.size();
 
         if (N == 0) {
             return SF_ERROR_OK;
@@ -104,7 +104,7 @@ struct mathieu_coeffs {
         }
 
         auto idx = cv_index<FuncParity>(m);
-        std::copy_n(Z.begin() + idx * N, N, AA.begin());
+        std::copy_n(Z.begin() + idx * N, N, X.begin());
 
         return SF_ERROR_OK;
     }
