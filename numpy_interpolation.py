@@ -7,7 +7,7 @@ Public API (matching scipy signatures):
   griddata(points, values, xi, method, fill_value, rescale) – scipy.interpolate.griddata clone
 
 Supported methods
-  interp1d / NumpyInterpolator : 'linear', 'nearest', 'cubic'
+  interp1d / NumpyInterpolator : 'linear', 'nearest', 'cubic', 'lagrange', 'newton'
   griddata                     : 'nearest', 'linear', 'cubic'
 
 Algorithms
@@ -15,6 +15,11 @@ Algorithms
   1-D nearest  : midpoint-boundary searchsorted    (exact match with scipy)
   1-D cubic    : not-a-knot C² spline via Thomas-algorithm tridiagonal solve
                  (exact match with scipy.interpolate.CubicSpline default)
+  1-D lagrange : barycentric second form (numerically stable; O(n²) setup,
+                 O(n) evaluation; exact at nodes; subject to Runge's phenomenon
+                 on equally-spaced grids)
+  1-D newton   : divided-difference table + Horner evaluation (O(n²) setup,
+                 O(n) evaluation; equivalent polynomial to Lagrange)
   2-D nearest  : vectorised Euclidean distance (exact match)
   2-D linear   : Bowyer-Watson Delaunay + barycentric interpolation
                  (matches scipy LinearNDInterpolator; fill_value outside hull)
@@ -132,6 +137,99 @@ def _cubic_spline_coeffs(x, y):
     return c[:, :, 0] if y1d else c
 
 
+# ------------------------------------------------------------------
+# 1b  Lagrange polynomial helpers  (barycentric second form)
+# ------------------------------------------------------------------
+
+def _barycentric_weights(x):
+    """Barycentric weights for Lagrange interpolation.
+
+    w_j = 1 / prod_{m != j} (x_j - x_m), scaled by max(|w|) for stability.
+    """
+    n    = len(x)
+    diff = x[:, None] - x[None, :]    # (n, n)  diff[j, m] = x_j - x_m
+    np.fill_diagonal(diff, 1.0)        # avoid 0 on diagonal
+    w    = 1.0 / diff.prod(axis=1)     # (n,)
+    w   /= np.abs(w).max()
+    return w
+
+
+def _lagrange_eval(x_new, x, y, w):
+    """Evaluate Lagrange polynomial via the barycentric second form.
+
+    L(x) = [Σ_j w_j/(x-x_j) * y_j] / [Σ_j w_j/(x-x_j)]
+
+    Exactly returns y_j when x equals a node x_j.
+    """
+    diff    = x_new[:, None] - x[None, :]          # (Q, n)
+    atol    = np.finfo(float).eps * (np.abs(x).max() + 1.0) * 16.0
+    on_node = np.abs(diff) < atol                   # (Q, n)
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        terms = w[None, :] / diff                   # (Q, n)
+    terms[on_node] = 0.0                            # prevent 0*inf → nan
+
+    if y.ndim == 1:
+        numer = (terms * y[None, :]).sum(axis=1)    # (Q,)
+        denom = terms.sum(axis=1)                   # (Q,)
+        denom_safe = np.where(np.abs(denom) < 1e-300, 1.0, denom)
+        out = numer / denom_safe
+        for qi in np.where(on_node.any(axis=1))[0]:
+            out[qi] = y[np.argmax(on_node[qi])]
+    else:
+        numer = (terms[:, :, None] * y[None, :, :]).sum(axis=1)  # (Q, m)
+        denom = terms.sum(axis=1)                                  # (Q,)
+        denom_safe = np.where(np.abs(denom) < 1e-300, 1.0, denom)
+        out = numer / denom_safe[:, None]
+        for qi in np.where(on_node.any(axis=1))[0]:
+            out[qi] = y[np.argmax(on_node[qi])]
+
+    return out
+
+
+# ------------------------------------------------------------------
+# 1c  Newton polynomial helpers  (divided differences + Horner)
+# ------------------------------------------------------------------
+
+def _divided_differences(x, y):
+    """Compute Newton divided-difference coefficients.
+
+    Returns a where a[j] is the j-th divided difference [y_0, ..., y_j].
+    Shape: (n,) for 1-D y, or (n, m) for 2-D y.
+    """
+    n   = len(x)
+    y1d = y.ndim == 1
+    table = np.asarray(y, dtype=float).copy()
+    if y1d:
+        table = table[:, np.newaxis]               # (n, 1) for uniform code
+
+    a = np.zeros_like(table)
+    a[0] = table[0]
+
+    for j in range(1, n):
+        table[:n - j] = ((table[1:n - j + 1] - table[:n - j])
+                         / (x[j:] - x[:n - j])[:, np.newaxis])
+        a[j] = table[0]
+
+    return a[:, 0] if y1d else a
+
+
+def _newton_eval(x_new, x, a):
+    """Evaluate Newton polynomial at x_new via Horner's method.
+
+    p(x) = a[0] + (x-x[0])*(a[1] + (x-x[1])*(... + (x-x[n-2])*a[n-1]...))
+    """
+    n   = len(x)
+    y1d = a.ndim == 1
+    A   = a[:, np.newaxis] if y1d else a            # (n, m)
+
+    result = np.tile(A[n - 1], (len(x_new), 1)).astype(float)  # (Q, m)
+    for j in range(n - 2, -1, -1):
+        result = result * (x_new - x[j])[:, np.newaxis] + A[j][np.newaxis, :]
+
+    return result[:, 0] if y1d else result
+
+
 # ============================================================
 # SECTION 2 – NumpyInterpolator  (1-D)
 # ============================================================
@@ -145,7 +243,7 @@ class NumpyInterpolator:
         Strictly increasing sample points.
     y : array_like (n,) or (n, m)
         Sample values.
-    kind : {'linear', 'nearest', 'cubic'}
+    kind : {'linear', 'nearest', 'cubic', 'lagrange', 'newton'}
     extrapolate : bool, default True
         Extrapolate outside [x[0], x[-1]] using the first/last interval.
         If False, out-of-bounds queries return NaN.
@@ -165,8 +263,10 @@ class NumpyInterpolator:
             raise ValueError("y.shape[0] must equal len(x)")
         if len(x) < 2:
             raise ValueError("Need at least 2 data points")
-        if kind not in ('linear', 'nearest', 'cubic'):
-            raise ValueError("kind must be 'linear', 'nearest', or 'cubic'")
+        if kind not in ('linear', 'nearest', 'cubic', 'lagrange', 'newton'):
+            raise ValueError(
+                "kind must be 'linear', 'nearest', 'cubic', 'lagrange', or 'newton'"
+            )
 
         self.x           = x
         self.y           = y
@@ -182,6 +282,14 @@ class NumpyInterpolator:
         elif kind == 'cubic':
             self._c = _cubic_spline_coeffs(x, y)
 
+        elif kind == 'lagrange':
+            # Precompute barycentric weights O(n²); evaluation is O(n).
+            self._bary_w = _barycentric_weights(x)
+
+        elif kind == 'newton':
+            # Precompute divided-difference table O(n²); Horner evaluation O(n).
+            self._dd_a = _divided_differences(x, y)
+
     def __call__(self, x_new):
         """Evaluate the interpolant at x_new."""
         x_new  = np.asarray(x_new, dtype=float)
@@ -192,8 +300,12 @@ class NumpyInterpolator:
             out = self._linear(x_new)
         elif self.kind == 'nearest':
             out = self._nearest(x_new)
-        else:
+        elif self.kind == 'cubic':
             out = self._cubic(x_new)
+        elif self.kind == 'lagrange':
+            out = self._lagrange(x_new)
+        else:
+            out = self._newton(x_new)
 
         if not self.extrapolate:
             oob = (x_new < self.x[0]) | (x_new > self.x[-1])
@@ -233,6 +345,12 @@ class NumpyInterpolator:
         dx = dx[:, None]
         return (((c[0][idx]*dx + c[1][idx])*dx + c[2][idx])*dx + c[3][idx])
 
+    def _lagrange(self, x_new):
+        return _lagrange_eval(x_new, self.x, self.y, self._bary_w)
+
+    def _newton(self, x_new):
+        return _newton_eval(x_new, self.x, self._dd_a)
+
 
 # ============================================================
 # SECTION 3 – interp1d  (scipy.interpolate.interp1d drop-in)
@@ -246,7 +364,7 @@ def interp1d(x, y, kind='linear', axis=0, bounds_error=True,
     ----------
     x : (n,) array_like          Strictly monotonic sample x-coordinates.
     y : array_like               Sample values; interpolation axis is `axis`.
-    kind : str                   'linear', 'nearest', or 'cubic'.
+    kind : str                   'linear', 'nearest', 'cubic', 'lagrange', or 'newton'.
     axis : int                   Axis of y along which to interpolate (default 0).
     bounds_error : bool          Raise ValueError for out-of-bounds if True.
     fill_value : float or 'extrapolate'

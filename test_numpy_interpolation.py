@@ -407,6 +407,119 @@ def test_griddata_rescale():
 
 
 # ============================================================
+# 1-D Lagrange polynomial
+# ============================================================
+
+def test_lagrange_1d():
+    print("\n--- lagrange 1-D ---")
+    # Polynomial of degree ≤ n-1 is reproduced exactly.
+    x = np.linspace(0.0, 4.0, 6)
+    y = x**3 - 2*x**2 + x - 1              # degree-3 polynomial
+    f = NumpyInterpolator(x, y, kind='lagrange')
+    xq = np.linspace(0.0, 4.0, 40)
+    check(f(xq),  xq**3 - 2*xq**2 + xq - 1, "reproduces cubic polynomial",  atol=1e-9)
+    check(f(x),   y,                          "exact at nodes",               atol=1e-11)
+    check(f(2.0), float(2.0**3 - 2*2.0**2 + 2.0 - 1), "scalar query",        atol=1e-11)
+
+
+def test_lagrange_2d_y():
+    print("\n--- lagrange 2-D y ---")
+    x = np.linspace(0.0, np.pi, 7)
+    y = np.column_stack([np.sin(x), np.cos(x)])   # (7, 2)
+    f = NumpyInterpolator(x, y, kind='lagrange')
+    xq = np.linspace(0.2, np.pi - 0.2, 20)
+    res = f(xq)
+    # 7 equally-spaced nodes → small but nonzero approximation error
+    check(res[:, 0], np.sin(xq), "sin column approx",  atol=5e-4)
+    check(res[:, 1], np.cos(xq), "cos column approx",  atol=5e-4)
+    # Exact at nodes
+    check(f(x), y, "exact at nodes (2-D)",  atol=1e-10)
+
+
+def test_lagrange_extrapolate_false():
+    print("\n--- lagrange extrapolate=False ---")
+    x = np.linspace(0.0, 5.0, 6)
+    y = x**2
+    f = NumpyInterpolator(x, y, kind='lagrange', extrapolate=False)
+    q = np.array([-0.5, 2.5, 5.5])
+    res = f(q)
+    assert np.isnan(res[0]), "below range → nan"
+    assert np.isnan(res[2]), "above range → nan"
+    check(res[1], 2.5**2, "interior finite",  atol=1e-9)
+    print("  [PASS] extrapolate=False")
+
+
+def test_lagrange_interp1d():
+    print("\n--- lagrange via interp1d ---")
+    x = np.array([0., 1., 2., 3., 4.])
+    y = np.array([0., 1., 4., 9., 16.])     # y = x^2
+    fl = interp1d(x, y, kind='lagrange', fill_value='extrapolate')
+    xq = np.array([0.5, 1.5, 2.5, 3.5])
+    check(fl(xq), xq**2, "interp1d lagrange",  atol=1e-9)
+
+
+# ============================================================
+# 1-D Newton polynomial
+# ============================================================
+
+def test_newton_1d():
+    print("\n--- newton 1-D ---")
+    x = np.linspace(0.0, 4.0, 6)
+    y = x**3 - 2*x**2 + x - 1
+    f = NumpyInterpolator(x, y, kind='newton')
+    xq = np.linspace(0.0, 4.0, 40)
+    check(f(xq),  xq**3 - 2*xq**2 + xq - 1, "reproduces cubic polynomial",  atol=1e-9)
+    check(f(x),   y,                          "exact at nodes",               atol=1e-11)
+    check(f(2.0), float(2.0**3 - 2*2.0**2 + 2.0 - 1), "scalar query",        atol=1e-11)
+
+
+def test_newton_2d_y():
+    print("\n--- newton 2-D y ---")
+    x = np.linspace(0.0, np.pi, 7)
+    y = np.column_stack([np.sin(x), np.cos(x)])
+    f = NumpyInterpolator(x, y, kind='newton')
+    xq = np.linspace(0.2, np.pi - 0.2, 20)
+    res = f(xq)
+    check(res[:, 0], np.sin(xq), "sin column approx",  atol=5e-4)
+    check(res[:, 1], np.cos(xq), "cos column approx",  atol=5e-4)
+    check(f(x), y, "exact at nodes (2-D)",  atol=1e-10)
+
+
+def test_newton_extrapolate_false():
+    print("\n--- newton extrapolate=False ---")
+    x = np.linspace(0.0, 5.0, 6)
+    y = x**2
+    f = NumpyInterpolator(x, y, kind='newton', extrapolate=False)
+    q = np.array([-0.5, 2.5, 5.5])
+    res = f(q)
+    assert np.isnan(res[0]), "below range → nan"
+    assert np.isnan(res[2]), "above range → nan"
+    check(res[1], 2.5**2, "interior finite",  atol=1e-9)
+    print("  [PASS] extrapolate=False")
+
+
+def test_newton_interp1d():
+    print("\n--- newton via interp1d ---")
+    x = np.array([0., 1., 2., 3., 4.])
+    y = np.array([0., 1., 4., 9., 16.])
+    fn = interp1d(x, y, kind='newton', fill_value='extrapolate')
+    xq = np.array([0.5, 1.5, 2.5, 3.5])
+    check(fn(xq), xq**2, "interp1d newton",  atol=1e-9)
+
+
+def test_lagrange_newton_agreement():
+    """Lagrange and Newton must produce identical polynomials."""
+    print("\n--- lagrange == newton agreement ---")
+    rng = np.random.default_rng(42)
+    x   = np.unique(rng.uniform(0, 5, 8))
+    y   = np.sin(x) * x
+    fl  = NumpyInterpolator(x, y, kind='lagrange')
+    fn  = NumpyInterpolator(x, y, kind='newton')
+    xq  = np.linspace(0, 5, 50)
+    check(fl(xq), fn(xq), "lagrange == newton",  atol=1e-9)
+
+
+# ============================================================
 # Run all
 # ============================================================
 
@@ -427,6 +540,15 @@ if __name__ == '__main__':
         test_griddata_cubic,
         test_user_griddata_pattern,
         test_griddata_rescale,
+        test_lagrange_1d,
+        test_lagrange_2d_y,
+        test_lagrange_extrapolate_false,
+        test_lagrange_interp1d,
+        test_newton_1d,
+        test_newton_2d_y,
+        test_newton_extrapolate_false,
+        test_newton_interp1d,
+        test_lagrange_newton_agreement,
     ]
     for t in tests:
         t()
