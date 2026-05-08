@@ -22,8 +22,8 @@ def _solve_WH_order2_fast(y, lamb):
     # Convert penalty to convention of Weinert (2007), i.e. A = lambda I + D'D.
     # Note that Weinert denotes the difference matrix M instead of D.
     lamb = 1 / lamb
-    # A = LDL' decompositon, i.e. L is unit lower triangular and banded
-    # (bandwith=2) and D diagonal.
+    # A = LDL' decomposition, i.e. L is unit lower triangular and banded
+    # (bandwidth=2) and D diagonal.
     # First subdiagonal of L is (-e_1, .., -e_{n-1}) and 2nd subdiagonal
     # (f_1, .., f_{n-2}). Diagonal of D is (d_1, .., d_n).
     # The equation A @ x = lamb * y becomes
@@ -264,7 +264,7 @@ def test_whittaker_limit_infinity_penalty(weights, order):
     assert_allclose(wh.x, poly(x_poly), rtol=10**(-6 + order), atol=1e-5)
     if order == 2:
         # Linear interpolation:
-        # As the sine is positive fom 0 to pi and negative from pi to 2*pi, we expect
+        # As the sine is positive from 0 to pi and negative from pi to 2*pi, we expect
         # a negative slope.
         assert np.diff(wh.x)[0] < 0
 

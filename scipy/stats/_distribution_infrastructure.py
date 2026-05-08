@@ -50,7 +50,7 @@ _NO_CACHE = "no_cache"
 #  Add distribution-specific tests - just enough to confirm that distribution is the
 #    one it is supposed to be; maybe check finite vs undefined vs infinite moments.
 #  `_tanhsinh` special case when there are no abscissae between the limits
-#     example: cdf of uniform betweeen 1.0 and np.nextafter(1.0, np.inf)
+#     example: cdf of uniform between 1.0 and np.nextafter(1.0, np.inf)
 #  implement symmetric distribution (take advantage of symmetry)
 #  implement composite distribution (for using different implementations depending on
 #    shape parameters - e.g. t distribution with df = np.inf delegates to normal)
