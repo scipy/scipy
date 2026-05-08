@@ -36,6 +36,7 @@ import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import softplus
+from scipy.special import mathieu_cem, mathieu_sem
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
 from scipy._lib._util import np_long, np_ulong
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
@@ -576,7 +577,7 @@ class TestCephes:
         assert_allclose(y, ref, rtol=1e-15)
 
     def test_mathieu_cem(self):
-        assert_equal(cephes.mathieu_cem(1,0,0),(1.0,0.0))
+        assert_equal(mathieu_cem(1,0,0),(1.0,0.0))
 
         # Test AMS 20.2.27
         @np.vectorize
@@ -596,12 +597,12 @@ class TestCephes:
                 return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1)))
         m = np.arange(0, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
-        assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
+        assert_allclose(mathieu_cem(m[:,None], q[None,:], 0.123)[0],
                         ce_smallq(m[:,None], q[None,:], 0.123),
                         rtol=5e-14, atol=0)
 
     def test_mathieu_sem(self):
-        assert_equal(cephes.mathieu_sem(1,0,0),(0.0,1.0))
+        assert_equal(mathieu_sem(1,0,0),(0.0,1.0))
 
         # Test AMS 20.2.27
         @np.vectorize
@@ -618,7 +619,7 @@ class TestCephes:
                 return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1)))
         m = np.arange(1, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
-        assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
+        assert_allclose(mathieu_sem(m[:,None], q[None,:], 0.123)[0],
                         se_smallq(m[:,None], q[None,:], 0.123),
                         rtol=5e-14, atol=0)
 
@@ -663,22 +664,22 @@ class TestCephes:
         # Fixed in https://github.com/scipy/xsf/pull/99 and now these return accurate
         # values.
         assert_allclose(
-            cephes.mathieu_cem(10000, 0, 1.3),
+            mathieu_cem(10000, 0, 1.3),
             (0.7660444431189781, -6427.876096865392),
             rtol=1e-9,
         )
         assert_allclose(
-            cephes.mathieu_sem(10000, 0, 1.3),
+            mathieu_sem(10000, 0, 1.3),
             (0.6427876096865393, 7660.444431189781),
             rtol=1e-9,
         )
         assert_allclose(
-            cephes.mathieu_cem(10000, 1.5, 1.3),
+            mathieu_cem(10000, 1.5, 1.3),
             (0.7660466357615003, -6427.849986120524),
             rtol=1e-9,
         )
         assert_allclose(
-            cephes.mathieu_sem(10000, 1.5, 1.3),
+            mathieu_sem(10000, 1.5, 1.3),
             (0.6427850082438498, 7660.466242825855),
             rtol=1e-9,
         )
