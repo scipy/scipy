@@ -142,15 +142,21 @@ def _cubic_spline_coeffs(x, y):
 # ------------------------------------------------------------------
 
 def _barycentric_weights(x):
-    """Barycentric weights for Lagrange interpolation.
+    """Barycentric weights matching scipy.BarycentricInterpolator.
 
-    w_j = 1 / prod_{m != j} (x_j - x_m), scaled by max(|w|) for stability.
+    Uses capacity scaling c = 4/(x_max - x_min) so each factor in the
+    product stays in [-4, 4], preventing overflow/underflow for large n.
+    Matches scipy's formula exactly (without the optional random permutation).
+
+    w_j = 1 / prod_{m != j} c*(x_j - x_m)
     """
-    n    = len(x)
-    diff = x[:, None] - x[None, :]    # (n, n)  diff[j, m] = x_j - x_m
-    np.fill_diagonal(diff, 1.0)        # avoid 0 on diagonal
-    w    = 1.0 / diff.prod(axis=1)     # (n,)
-    w   /= np.abs(w).max()
+    n       = len(x)
+    inv_cap = 4.0 / (x.max() - x.min())
+    w       = np.zeros(n)
+    for i in range(n):
+        dist    = inv_cap * (x[i] - x)   # scaled differences
+        dist[i] = 1.0                     # skip self-term
+        w[i]    = 1.0 / np.prod(dist)
     return w
 
 
@@ -159,30 +165,38 @@ def _lagrange_eval(x_new, x, y, w):
 
     L(x) = [Σ_j w_j/(x-x_j) * y_j] / [Σ_j w_j/(x-x_j)]
 
-    Exactly returns y_j when x equals a node x_j.
+    Mirrors scipy.BarycentricInterpolator._evaluate exactly:
+    - uses exact equality to detect queries that fall on a node,
+    - overwrites those positions with the node value directly.
     """
-    diff    = x_new[:, None] - x[None, :]          # (Q, n)
-    atol    = np.finfo(float).eps * (np.abs(x).max() + 1.0) * 16.0
-    on_node = np.abs(diff) < atol                   # (Q, n)
+    c       = x_new[:, None] - x[None, :]   # (Q, n)  differences
+    z       = (c == 0)                       # (Q, n)  on-node mask (exact)
+    c[z]    = 1.0                            # avoid division by zero temporarily
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        terms = w[None, :] / diff                   # (Q, n)
-    terms[on_node] = 0.0                            # prevent 0*inf → nan
+        c = w[None, :] / c                   # (Q, n)  barycentric terms
 
     if y.ndim == 1:
-        numer = (terms * y[None, :]).sum(axis=1)    # (Q,)
-        denom = terms.sum(axis=1)                   # (Q,)
-        denom_safe = np.where(np.abs(denom) < 1e-300, 1.0, denom)
-        out = numer / denom_safe
-        for qi in np.where(on_node.any(axis=1))[0]:
-            out[qi] = y[np.argmax(on_node[qi])]
+        numer = c.dot(y)                     # (Q,)
+        denom = c.sum(axis=1)                # (Q,)
+        out   = numer / denom
+        # Overwrite positions where query == node
+        r = np.nonzero(z)
+        if len(r) == 1:                      # scalar query path
+            if len(r[0]) > 0:
+                out = y[r[0][0]]
+        else:
+            out[r[0]] = y[r[1]]
     else:
-        numer = (terms[:, :, None] * y[None, :, :]).sum(axis=1)  # (Q, m)
-        denom = terms.sum(axis=1)                                  # (Q,)
-        denom_safe = np.where(np.abs(denom) < 1e-300, 1.0, denom)
-        out = numer / denom_safe[:, None]
-        for qi in np.where(on_node.any(axis=1))[0]:
-            out[qi] = y[np.argmax(on_node[qi])]
+        numer = c.dot(y)                              # (Q, m)
+        denom = c.sum(axis=1)                         # (Q,)
+        out   = numer / denom[:, None]
+        r = np.nonzero(z)
+        if len(r) == 1:
+            if len(r[0]) > 0:
+                out = y[r[0][0]]
+        else:
+            out[r[0]] = y[r[1]]
 
     return out
 

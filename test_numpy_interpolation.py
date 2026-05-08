@@ -507,6 +507,20 @@ def test_newton_interp1d():
     check(fn(xq), xq**2, "interp1d newton",  atol=1e-9)
 
 
+def test_lagrange_vs_scipy_barycentric():
+    """Our Lagrange must match scipy.BarycentricInterpolator to machine precision."""
+    print("\n--- lagrange vs scipy BarycentricInterpolator ---")
+    from scipy.interpolate import BarycentricInterpolator
+    rng = np.random.default_rng(42)
+    x   = np.unique(np.sort(rng.uniform(0, 6, 12)))
+    y   = np.sin(x)
+    bi  = BarycentricInterpolator(x, y)
+    f   = NumpyInterpolator(x, y, kind='lagrange')
+    xq  = np.linspace(x[0], x[-1], 60)
+    check(f(xq), bi(xq), "matches BarycentricInterpolator",  atol=1e-9)
+    check(f(x),  y,       "exact at nodes",                   atol=1e-12)
+
+
 def test_lagrange_newton_agreement():
     """Lagrange and Newton must produce identical polynomials."""
     print("\n--- lagrange == newton agreement ---")
@@ -544,6 +558,7 @@ if __name__ == '__main__':
         test_lagrange_2d_y,
         test_lagrange_extrapolate_false,
         test_lagrange_interp1d,
+        test_lagrange_vs_scipy_barycentric,
         test_newton_1d,
         test_newton_2d_y,
         test_newton_extrapolate_false,
