@@ -1,5 +1,5 @@
 /** \file ducc0/infra/threading.h
- *  Mulithreading support, similar to functionality provided by OpenMP
+ *  Multithreading support, similar to functionality provided by OpenMP
  *
  * \copyright Copyright (C) 2019-2023 Peter Bell, Max-Planck-Society
  * \authors Peter Bell, Martin Reinecke
