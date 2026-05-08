@@ -129,7 +129,7 @@ struct mathieu_xem {
         double q_d = static_cast<double>(q);
         /* SciPy's mathieu functions take angles in degrees.
          * Convert to radians for internal calculation.*/
-        double v = static_cast<double>(x) * (M_PI / 180.0);
+        double x_d = static_cast<double>(x);
         double out_d, out_diff_d;
 
         if constexpr (FuncParity == Even) {
@@ -171,13 +171,13 @@ struct mathieu_xem {
             last_m = int_m;
         }
         if (int_m % 2) {
-            sum_fourier_series<FuncParity, Odd>(xsf::numpy::as_mdspan(coefs), v, out_d, out_diff_d);
+            sum_fourier_series<FuncParity, Odd>(xsf::numpy::as_mdspan(coefs), x_d, out_d, out_diff_d);
         } else {
-            sum_fourier_series<FuncParity, Even>(xsf::numpy::as_mdspan(coefs), v, out_d, out_diff_d);
+            sum_fourier_series<FuncParity, Even>(xsf::numpy::as_mdspan(coefs), x_d, out_d, out_diff_d);
         }
         out = static_cast<T>(out_d);
         /* Need to map to the derivative with respect to an angle in radians. */
-        out_diff = static_cast<T>(out_diff_d * (M_PI / 180.0));
+        out_diff = static_cast<T>(out_diff_d);
     }
 };
 
