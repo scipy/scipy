@@ -110,10 +110,4 @@ struct mathieu_coeffs {
     }
 };
 
-// scalar versions for cython special.
-template <typename T>
-T mathieu_a(T m, T q) {
-    return mathieu_cv<xsf::mathieu::Parity::Even, T>{}(m, q);
-}
-
 } // namespace special
