@@ -1726,11 +1726,11 @@ class skellam_gen(rv_discrete):
     References
     ----------
     .. [1] Skellam, J. G. "The Frequency Distribution of the Difference
-       Between Two Poisson Variates Belonging to Different Populations."
-       *Journal of the Royal Statistical Society* 109, no. 3 (1946): 296-296.
-       :doi:`10.2307/2981372`
+           Between Two Poisson Variates Belonging to Different Populations."
+           *Journal of the Royal Statistical Society* 109, no. 3 (1946): 296-296.
+           :doi:`10.2307/2981372`
     .. [2] "Skellam distribution", Wikipedia,
-       https://en.wikipedia.org/wiki/Skellam_distribution
+           https://en.wikipedia.org/wiki/Skellam_distribution
 
     %(example)s
 

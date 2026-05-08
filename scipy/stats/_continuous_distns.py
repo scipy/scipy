@@ -10937,7 +10937,7 @@ class uniform_gen(rv_continuous):
     References
     ----------
     .. [1] "Continuous uniform distribution", Wikipedia,
-       https://en.wikipedia.org/wiki/Continuous_uniform_distribution
+           https://en.wikipedia.org/wiki/Continuous_uniform_distribution
 
     %(example)s
 
@@ -11157,7 +11157,7 @@ class vonmises_gen(rv_continuous):
     .. [1] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
            John Wiley & Sons, 1999, p. 36.
     .. [2] "von Mises distribution", Wikipedia,
-       https://en.wikipedia.org/wiki/Von_Mises_distribution
+           https://en.wikipedia.org/wiki/Von_Mises_distribution
 
     Examples
     --------

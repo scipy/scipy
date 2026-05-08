@@ -1172,7 +1172,7 @@ class matrix_normal_gen(multi_rv_generic):
     References
     ----------
     .. [1] "Matrix normal distribution", Wikipedia,
-       https://en.wikipedia.org/wiki/Matrix_normal_distribution
+           https://en.wikipedia.org/wiki/Matrix_normal_distribution
 
     Examples
     --------
