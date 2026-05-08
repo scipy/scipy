@@ -11143,6 +11143,15 @@ class vonmises_gen(rv_continuous):
     (circular mean). A ``scale`` parameter is accepted but does not have any
     effect.
 
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
+           John Wiley & Sons, 1999, p. 36.
+    .. [2] "von Mises distribution", Wikipedia,
+       https://en.wikipedia.org/wiki/Von_Mises_distribution
+
     Examples
     --------
     Import the necessary modules.
