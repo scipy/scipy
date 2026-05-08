@@ -2,13 +2,14 @@
 Numpy-only drop-in replacements for scipy.interpolate.interp1d and griddata.
 
 Public API (matching scipy signatures):
-  NumpyInterpolator(x, y, kind, extrapolate)   – 1-D interpolant object
-  interp1d(x, y, kind, fill_value, bounds_error) – scipy.interpolate.interp1d clone
-  griddata(points, values, xi, method, fill_value, rescale) – scipy.interpolate.griddata clone
+  interp1d(x, y, kind, fill_value, bounds_error, precision)
+      – scipy.interpolate.interp1d clone; returns a plain callable f(x_new).
+  griddata(points, values, xi, method, fill_value, rescale)
+      – scipy.interpolate.griddata clone.
 
 Supported methods
-  interp1d / NumpyInterpolator : 'linear', 'nearest', 'cubic', 'lagrange', 'newton'
-  griddata                     : 'nearest', 'linear', 'cubic'
+  interp1d : 'linear', 'nearest', 'cubic', 'lagrange', 'newton'
+  griddata : 'nearest', 'linear', 'cubic'
 
 Algorithms
   1-D linear   : searchsorted + de Boor weighting  (exact match with scipy)
@@ -445,231 +446,45 @@ def _as_query_list(x_new):
 
 
 # ============================================================
-# SECTION 2 – NumpyInterpolator  (1-D)
-# ============================================================
-
-class NumpyInterpolator:
-    """1-D interpolation using NumPy only, matching SciPy behavior.
-
-    Parameters
-    ----------
-    x : array_like (n,)
-        Strictly increasing sample points.
-    y : array_like (n,) or (n, m)
-        Sample values.
-    kind : {'linear', 'nearest', 'cubic', 'lagrange', 'newton'}
-    extrapolate : bool, default True
-        Extrapolate outside [x[0], x[-1]] using the first/last interval.
-        If False, out-of-bounds queries return NaN.
-    precision : int or None, default None
-        Number of decimal digits for internal arithmetic.  Only applies to
-        ``kind='lagrange'`` and ``kind='newton'``.
-
-        * ``None``           – standard float64 arithmetic (~15–16 sig figs).
-        * ``35`` or higher   – use Python ``decimal`` module internally;
-                               results are returned as float64 but the
-                               *computation* retains the requested precision,
-                               eliminating accumulated arithmetic errors.
-
-        To obtain 10⁻³² accuracy in the **output** you must also supply *x*
-        and *y* values with that many significant digits.  Pass them as Python
-        strings (e.g. ``x=['1.234567890123456789012345678901234', ...]``) and
-        they will be converted to ``Decimal`` exactly; float64 inputs are
-        limited to ~17 significant digits.
-
-    Call
-    ----
-    f(x_new)  →  interpolated values
-    """
-
-    def __init__(self, x, y, kind='linear', extrapolate=True, precision=None):
-        if precision is not None and kind not in ('lagrange', 'newton'):
-            raise ValueError("precision parameter only applies to kind='lagrange' or 'newton'")
-        if precision is not None and (not isinstance(precision, int) or precision < 1):
-            raise ValueError("precision must be a positive integer")
-
-        # Always build float64 numpy arrays (used by non-hp paths and for bounds).
-        # For the hp path, also keep x_raw as a list so string inputs survive as-is.
-        if precision is not None:
-            x_raw = list(x) if not isinstance(x, list) else x
-            x = np.asarray([float(xi) for xi in x_raw], dtype=float)
-        else:
-            x = np.asarray(x, dtype=float)
-        y = np.asarray(y, dtype=float)
-
-        if x.ndim != 1:
-            raise ValueError("x must be 1-D")
-        if y.shape[0] != len(x):
-            raise ValueError("y.shape[0] must equal len(x)")
-        if len(x) < 2:
-            raise ValueError("Need at least 2 data points")
-        if kind not in ('linear', 'nearest', 'cubic', 'lagrange', 'newton'):
-            raise ValueError(
-                "kind must be 'linear', 'nearest', 'cubic', 'lagrange', or 'newton'"
-            )
-
-        self.x           = x
-        self.y           = y
-        self.kind        = kind
-        self.extrapolate = extrapolate
-        self._y1d        = (y.ndim == 1)
-        self.precision   = precision
-
-        if kind == 'nearest':
-            # Midpoint boundaries – divide before add to avoid overflow.
-            # Exactly matches scipy interp1d kind='nearest'.
-            self._x_bds = x[:-1] / 2.0 + x[1:] / 2.0
-
-        elif kind == 'cubic':
-            self._c = _cubic_spline_coeffs(x, y)
-
-        elif kind == 'lagrange':
-            if precision is not None:
-                # Store Decimal nodes and weights for high-precision evaluation.
-                self._x_dec, self._bary_w_dec = _barycentric_weights_hp(
-                    x_raw, precision)
-            else:
-                self._bary_w = _barycentric_weights(x)
-
-        elif kind == 'newton':
-            if precision is not None:
-                # y values passed as float64 numpy array; x nodes as raw list.
-                self._x_dec, self._dd_a_dec = _divided_differences_hp(
-                    x_raw, y, precision)
-            else:
-                self._dd_a = _divided_differences(x, y)
-
-    def __call__(self, x_new):
-        """Evaluate the interpolant at x_new."""
-        scalar = not hasattr(x_new, '__len__') and not isinstance(x_new, np.ndarray)
-        if not scalar:
-            scalar = np.asarray(x_new).ndim == 0
-        x_new_f = np.asarray(x_new, dtype=float)
-        x_new_f = np.atleast_1d(x_new_f)
-
-        if self.kind == 'linear':
-            out = self._linear(x_new_f)
-        elif self.kind == 'nearest':
-            out = self._nearest(x_new_f)
-        elif self.kind == 'cubic':
-            out = self._cubic(x_new_f)
-        elif self.kind == 'lagrange':
-            out = self._lagrange(x_new, x_new_f)
-        else:
-            out = self._newton(x_new, x_new_f)
-
-        if not self.extrapolate:
-            oob = (x_new_f < self.x[0]) | (x_new_f > self.x[-1])
-            if oob.any():
-                out = out.copy()
-                out[oob] = np.nan
-
-        if scalar:
-            out = out.squeeze()
-            return float(out) if out.ndim == 0 else out
-        return out
-
-    def _linear(self, x_new_f):
-        # side='left' + clip to [1, n-1] matches scipy interp1d._call_linear.
-        idx    = np.searchsorted(self.x, x_new_f).clip(1, len(self.x) - 1)
-        lo, hi = idx - 1, idx
-        w = (x_new_f - self.x[lo]) / (self.x[hi] - self.x[lo])
-        if self._y1d:
-            return self.y[lo] * (1.0 - w) + self.y[hi] * w
-        return self.y[lo] + w[:, None] * (self.y[hi] - self.y[lo])
-
-    def _nearest(self, x_new_f):
-        # Midpoint searchsorted matches scipy interp1d kind='nearest' exactly.
-        idx = np.searchsorted(self._x_bds, x_new_f, side='left')
-        idx = idx.clip(0, len(self.x) - 1)
-        return self.y[idx]
-
-    def _cubic(self, x_new_f):
-        # side='right' - 1 places x exactly on a knot in the left interval.
-        idx = (np.searchsorted(self.x, x_new_f, side='right') - 1).clip(
-            0, len(self.x) - 2
-        )
-        dx = x_new_f - self.x[idx]
-        c  = self._c
-        if self._y1d:
-            return (((c[0, idx]*dx + c[1, idx])*dx + c[2, idx])*dx + c[3, idx])
-        dx = dx[:, None]
-        return (((c[0][idx]*dx + c[1][idx])*dx + c[2][idx])*dx + c[3][idx])
-
-    def _lagrange(self, x_new_raw, x_new_f):
-        if self.precision is not None:
-            qpts = _as_query_list(x_new_raw)
-            return _lagrange_eval_hp(qpts, self._x_dec, self.y,
-                                     self._bary_w_dec, self.precision)
-        return _lagrange_eval(x_new_f, self.x, self.y, self._bary_w)
-
-    def _newton(self, x_new_raw, x_new_f):
-        if self.precision is not None:
-            qpts = _as_query_list(x_new_raw)
-            return _newton_eval_hp(qpts, self._x_dec, self._dd_a_dec,
-                                   self._y1d, self.precision)
-        return _newton_eval(x_new_f, self.x, self._dd_a)
-
-    def eval_hp(self, x_new):
-        """Evaluate at full Decimal precision (only for kind='lagrange'/'newton').
-
-        Returns a list of ``decimal.Decimal`` values (1-D y) or a list of
-        lists of ``decimal.Decimal`` (2-D y).  Use this when you need more than
-        ~16 significant digits in the output.
-
-        Requires ``precision`` to have been set in the constructor.
-
-        Parameters
-        ----------
-        x_new : sequence of str, float, or Decimal query points.
-                Pass values as strings to preserve digits beyond float64.
-
-        Returns
-        -------
-        list of Decimal  (1-D y)  or  list of list of Decimal  (2-D y)
-        """
-        if self.precision is None:
-            raise ValueError("eval_hp requires precision= to be set in the constructor")
-        if self.kind not in ('lagrange', 'newton'):
-            raise ValueError("eval_hp only supported for kind='lagrange' or 'newton'")
-
-        qpts = _as_query_list(x_new)
-        if self.kind == 'lagrange':
-            return _lagrange_eval_hp(qpts, self._x_dec, self.y,
-                                     self._bary_w_dec, self.precision,
-                                     return_decimal=True)
-        else:
-            return _newton_eval_hp(qpts, self._x_dec, self._dd_a_dec,
-                                   self._y1d, self.precision,
-                                   return_decimal=True)
-
-
-# ============================================================
-# SECTION 3 – interp1d  (scipy.interpolate.interp1d drop-in)
+# SECTION 2 – interp1d  (scipy.interpolate.interp1d drop-in)
+#             Pure closure – no classes used.
 # ============================================================
 
 def interp1d(x, y, kind='linear', axis=0, bounds_error=True,
              fill_value=np.nan, assume_sorted=False, precision=None):
-    """1-D interpolation function matching scipy.interpolate.interp1d.
+    """1-D interpolation returning a plain callable f(x_new).
+
+    Matches scipy.interpolate.interp1d exactly for 'linear', 'nearest',
+    and 'cubic'.  Also supports 'lagrange' and 'newton' polynomial
+    interpolation, with an optional high-precision decimal arithmetic path.
 
     Parameters
     ----------
-    x : (n,) array_like          Strictly monotonic sample x-coordinates.
-    y : array_like               Sample values; interpolation axis is `axis`.
-    kind : str                   'linear', 'nearest', 'cubic', 'lagrange', or 'newton'.
-    axis : int                   Axis of y along which to interpolate (default 0).
-    bounds_error : bool          Raise ValueError for out-of-bounds if True.
+    x : (n,) array_like
+        Strictly monotonic sample x-coordinates.
+    y : array_like
+        Sample values; interpolation axis selected by `axis`.
+    kind : {'linear', 'nearest', 'cubic', 'lagrange', 'newton'}
+    axis : int
+        Axis of y along which to interpolate (default 0).
+    bounds_error : bool
+        Raise ValueError for out-of-bounds queries when True (default).
     fill_value : float or 'extrapolate'
-                                 Fill for out-of-bounds when bounds_error=False.
-                                 Use 'extrapolate' to extrapolate.
-    assume_sorted : bool         Skip sorting if True.
-    precision : int or None      Decimal digits for internal arithmetic
-                                 (only for kind='lagrange'/'newton').
-                                 Use precision=35 or higher for 10⁻³² accuracy.
+        Value used outside [x[0], x[-1]] when bounds_error=False.
+        Pass 'extrapolate' to extend using the first/last polynomial piece.
+    assume_sorted : bool
+        Skip sorting when True (x must already be increasing).
+    precision : int or None
+        Decimal digits for *internal* arithmetic (lagrange/newton only).
+        Use precision=40 for 10⁻³² accuracy; combine with string inputs and
+        f.eval_hp(x_new) to get full-precision Decimal output.
 
     Returns
     -------
-    Callable f such that f(x_new) returns interpolated values.
+    f : callable
+        f(x_new) → numpy float64 array of interpolated values.
+        If precision is set, f also has an f.eval_hp(x_new) attribute that
+        returns a list of Decimal objects at full precision.
 
     Examples
     --------
@@ -679,56 +494,177 @@ def interp1d(x, y, kind='linear', axis=0, bounds_error=True,
     >>> f = interp1d(xi, yi, kind='cubic', fill_value='extrapolate')
     >>> f(1.5)          # ≈ 2.25
 
-    High-precision example (supply data as strings for full accuracy):
-    >>> xi = ['0', '1', '2', '3', '4']
-    >>> yi = ['0', '1', '4', '9', '16']
-    >>> f = interp1d(xi, yi, kind='lagrange', fill_value='extrapolate', precision=40)
-    >>> f(['1.5'])      # ≈ 2.25  (computed with 40 decimal digits internally)
+    High-precision Lagrange (string inputs preserve all digits):
+    >>> f = interp1d(['0','1','2','3','4'], ['0','1','4','9','16'],
+    ...              kind='lagrange', fill_value='extrapolate', precision=40)
+    >>> f.eval_hp(['1.5'])   # list of Decimal accurate to ~10^-40
     """
-    # For precision path, keep raw lists to preserve string inputs
+    # ------------------------------------------------------------------
+    # Input validation
+    # ------------------------------------------------------------------
+    if kind not in ('linear', 'nearest', 'cubic', 'lagrange', 'newton'):
+        raise ValueError(
+            "kind must be 'linear', 'nearest', 'cubic', 'lagrange', or 'newton'"
+        )
     if precision is not None:
-        x_raw = list(x)
-        y_raw = list(y)
-        x_f   = np.array([float(xi) for xi in x_raw], dtype=float)
-        y_f   = np.array([float(yi) for yi in y_raw], dtype=float)
-        y_f   = np.moveaxis(y_f, axis, 0)
-        if not assume_sorted:
-            sort_idx = np.argsort(x_f)
-            x_raw = [x_raw[i] for i in sort_idx]
-            y_raw = [y_raw[i] for i in sort_idx]
-            x_f   = x_f[sort_idx]
-            y_f   = y_f[sort_idx]
-        extrapolate = (isinstance(fill_value, str) and
-                       fill_value.lower() == 'extrapolate')
-        interp = NumpyInterpolator(x_raw, y_f, kind=kind,
-                                   extrapolate=extrapolate, precision=precision)
-    else:
-        x  = np.asarray(x, dtype=float)
-        y  = np.asarray(y, dtype=float)
-        y  = np.moveaxis(y, axis, 0)
-        if not assume_sorted:
-            sort_idx = np.argsort(x)
-            x = x[sort_idx]
-            y = y[sort_idx]
-        extrapolate = (isinstance(fill_value, str) and
-                       fill_value.lower() == 'extrapolate')
-        interp = NumpyInterpolator(x, y, kind=kind, extrapolate=extrapolate)
+        if kind not in ('lagrange', 'newton'):
+            raise ValueError("precision only applies to kind='lagrange' or 'newton'")
+        if not isinstance(precision, int) or precision < 1:
+            raise ValueError("precision must be a positive integer")
 
+    # ------------------------------------------------------------------
+    # Prepare data arrays
+    # ------------------------------------------------------------------
+    extrapolate = (isinstance(fill_value, str) and
+                   fill_value.lower() == 'extrapolate')
+
+    if precision is not None:
+        # Keep raw list so string values survive Decimal conversion losslessly
+        x_raw = list(x) if not isinstance(x, list) else x
+        x     = np.asarray([float(v) for v in x_raw], dtype=float)
+        y     = np.asarray(y, dtype=float)
+        y     = np.moveaxis(y, axis, 0)
+        if not assume_sorted:
+            idx   = np.argsort(x)
+            x_raw = [x_raw[i] for i in idx]
+            x     = x[idx]
+            y     = y[idx]
+    else:
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        y = np.moveaxis(y, axis, 0)
+        if not assume_sorted:
+            idx = np.argsort(x)
+            x   = x[idx]
+            y   = y[idx]
+
+    if x.ndim != 1:
+        raise ValueError("x must be 1-D")
+    if y.shape[0] != len(x):
+        raise ValueError("y.shape[0] must equal len(x)")
+    if len(x) < 2:
+        raise ValueError("Need at least 2 data points")
+
+    n   = len(x)
+    y1d = (y.ndim == 1)
+
+    # ------------------------------------------------------------------
+    # Precompute kind-specific data  (pure numpy / decimal, no classes)
+    # ------------------------------------------------------------------
+    if kind == 'nearest':
+        # Midpoint boundaries: exactly matches scipy interp1d kind='nearest'
+        x_bds = x[:-1] / 2.0 + x[1:] / 2.0
+
+    elif kind == 'cubic':
+        # Not-a-knot C² spline coefficients via Thomas algorithm
+        c = _cubic_spline_coeffs(x, y)
+
+    elif kind == 'lagrange':
+        if precision is not None:
+            x_dec, bary_w_dec = _barycentric_weights_hp(x_raw, precision)
+        else:
+            bary_w = _barycentric_weights(x)
+
+    else:  # newton
+        if precision is not None:
+            x_dec, dd_a_dec = _divided_differences_hp(x_raw, y, precision)
+        else:
+            dd_a = _divided_differences(x, y)
+
+    # ------------------------------------------------------------------
+    # Core evaluator  (closure captures all precomputed data above)
+    # ------------------------------------------------------------------
+    def _evaluate(x_new):
+        xf     = np.asarray(x_new, dtype=float)
+        scalar = xf.ndim == 0
+        xf     = np.atleast_1d(xf)
+
+        # ---- dispatch ----
+        if kind == 'linear':
+            idx    = np.searchsorted(x, xf).clip(1, n - 1)
+            lo, hi = idx - 1, idx
+            w      = (xf - x[lo]) / (x[hi] - x[lo])
+            out    = y[lo] * (1.0 - w) + y[hi] * w if y1d else \
+                     y[lo] + w[:, None] * (y[hi] - y[lo])
+
+        elif kind == 'nearest':
+            idx = np.searchsorted(x_bds, xf, side='left').clip(0, n - 1)
+            out = y[idx]
+
+        elif kind == 'cubic':
+            idx = (np.searchsorted(x, xf, side='right') - 1).clip(0, n - 2)
+            dx  = xf - x[idx]
+            if y1d:
+                out = (((c[0, idx]*dx + c[1, idx])*dx + c[2, idx])*dx + c[3, idx])
+            else:
+                dx  = dx[:, None]
+                out = (((c[0][idx]*dx + c[1][idx])*dx + c[2][idx])*dx + c[3][idx])
+
+        elif kind == 'lagrange':
+            if precision is not None:
+                out = _lagrange_eval_hp(_as_query_list(x_new), x_dec, y,
+                                        bary_w_dec, precision)
+            else:
+                out = _lagrange_eval(xf, x, y, bary_w)
+
+        else:  # newton
+            if precision is not None:
+                out = _newton_eval_hp(_as_query_list(x_new), x_dec, dd_a_dec,
+                                      y1d, precision)
+            else:
+                out = _newton_eval(xf, x, dd_a)
+
+        # ---- out-of-bounds mask (when not extrapolating) ----
+        if not extrapolate:
+            oob = (xf < x[0]) | (xf > x[-1])
+            if oob.any():
+                out      = out.copy()
+                out[oob] = np.nan
+
+        if scalar:
+            out = out.squeeze()
+            return float(out) if out.ndim == 0 else out
+        return out
+
+    # ------------------------------------------------------------------
+    # eval_hp: full-precision Decimal output (lagrange / newton only)
+    # ------------------------------------------------------------------
+    if precision is not None:
+        def eval_hp(x_new):
+            """Evaluate at full Decimal precision; returns list of Decimal.
+
+            Pass query points as strings to preserve digits beyond float64.
+            """
+            qpts = _as_query_list(x_new)
+            if kind == 'lagrange':
+                return _lagrange_eval_hp(qpts, x_dec, y, bary_w_dec,
+                                         precision, return_decimal=True)
+            else:
+                return _newton_eval_hp(qpts, x_dec, dd_a_dec, y1d,
+                                       precision, return_decimal=True)
+
+        _evaluate.eval_hp = eval_hp
+
+    # ------------------------------------------------------------------
+    # Bounds-error wrapper
+    # ------------------------------------------------------------------
     if bounds_error and not extrapolate:
-        # Python resolves __call__ on the class, not the instance,
-        # so return a closure instead of patching the instance attribute.
-        x0 = interp.x[0]
-        x1 = interp.x[-1]
+        x0, x1  = x[0], x[-1]
+        _inner   = _evaluate
+
         def _checked(x_new):
             xf = np.asarray(x_new, dtype=float)
             if np.any(xf < x0) or np.any(xf > x1):
                 raise ValueError(
                     "A value in x_new is below/above the interpolation range."
                 )
-            return interp(x_new)
+            return _inner(x_new)
+
+        if hasattr(_inner, 'eval_hp'):
+            _checked.eval_hp = _inner.eval_hp
         return _checked
 
-    return interp
+    return _evaluate
 
 
 # ============================================================
