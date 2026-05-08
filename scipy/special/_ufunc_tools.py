@@ -138,9 +138,18 @@ def _with_cache_optimization(
         # Premake the output array.
         input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
         out_dtype = ufunc.resolve_dtypes(input_dtypes)[-1]
-        out_final = np.empty(batch_shape, dtype=out_dtype, order='C')
-        # a view of the output array with axes sorted as needed.
-        out_t = np.transpose(out_final, axes=sorted_batch_axes)
+        if ufunc.nout == 1:
+            out_final = np.empty(batch_shape, dtype=out_dtype, order='C')
+            # a view of the output array with axes sorted as needed.
+            out_t = np.transpose(out_final, axes=sorted_batch_axes)
+        else:
+            out_final = tuple(
+                np.empty(batch_shape, dtype=out_dtype, order='C')
+                for _ in range(ufunc.nout)
+            )
+            out_t = tuple(
+                np.transpose(x, axes=sorted_batch_axes) for x in out_final
+            )
 
         # Set out to the above view, but return the C contiguous output.
         # This avoids having non-contiguous output.
