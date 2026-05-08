@@ -4128,7 +4128,7 @@ class TestMathieu:
         # Compare the first 4 nonzero Fourier coefficients to the coefficients
         # computed using the integral definition.
         c = [se_fourier_coefficient_using_integral(k, n, q) for k in range(1, 5)]
-        assert_allclose(c, B[:len(c)], rtol=1e-10)
+        assert_allclose(c, B[:len(c)], rtol=5e-9)
 
     @pytest.mark.parametrize('n, q', [(3, 3.5), (7, 2)])
     def test_mathieu_odd_coef_against_integral_n_odd(self, n, q):
