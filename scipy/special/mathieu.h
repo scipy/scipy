@@ -115,42 +115,48 @@ struct mathieu_coeffs {
     }
 };
 
-template <xsf::mathieu::Parity FuncParity>
+template <xsf::mathieu::Parity FuncParity, typename T>
 struct mathieu_xem {
     double last_q{std::numeric_limits<double>::quiet_NaN()};
-    int last_m = -1;
+    int last_m{-1};
     mathieu_coeffs<FuncParity> get_coefs;
     std::vector<double> coefs;
-    void operator()(int m, double q, double v, double &out, double &out_diff) {
+    void operator()(T m, T q, T v, T &out, T &out_diff) {
         using namespace xsf::mathieu;
         auto constexpr Even = Parity::Even;
         auto constexpr Odd = Parity::Odd;
 
+        double q_d = static_cast<double>(q);
+        double v_d = static_cast<double>(v);
+        double out_d, out_diff_d;
+
         if constexpr (FuncParity == Even) {
-            if (m < 0) {
-                out = std::numeric_limits<double>::quiet_NaN();
-                out_diff = std::numeric_limits<double>::quiet_NaN();
+            if ((m < 0) || m != std::floor(m)) {
+                out = std::numeric_limits<T>::quiet_NaN();
+                out_diff = std::numeric_limits<T>::quiet_NaN();
                 xsf::set_error("mathieu_cem", SF_ERROR_DOMAIN, NULL);
                 last_m = -1; // invalidate cache upon error
                 return;
             }
         } else {
-            if (m <= 0) {
-                out = std::numeric_limits<double>::quiet_NaN();
-                out_diff = std::numeric_limits<double>::quiet_NaN();
+            if ((m <= 0) || m != std::floor(m)) {
+                out = std::numeric_limits<T>::quiet_NaN();
+                out_diff = std::numeric_limits<T>::quiet_NaN();
                 xsf::set_error("mathieu_sem", SF_ERROR_DOMAIN, NULL);
                 last_m = -1; // invalidate cache upon error
                 return;
             }
         }
 
-        if (q != last_q || m != last_m) {
-            auto N = get_partial_sum_N(m, q);
+        auto int_m = static_cast<int>(m);
+
+        if (q_d != last_q || int_m != last_m) {
+            auto N = get_partial_sum_N(m, q_d);
             coefs.resize(N);
-            auto status = get_coefs(m, q, coefs);
+            auto status = get_coefs(m, q_d, coefs);
             if (status != SF_ERROR_OK) {
-                out = std::numeric_limits<double>::quiet_NaN();
-                out_diff = std::numeric_limits<double>::quiet_NaN();
+                out = std::numeric_limits<T>::quiet_NaN();
+                out_diff = std::numeric_limits<T>::quiet_NaN();
                 last_m = -1; // invalidate cache upon error
                 if constexpr (FuncParity == Even) {
                     xsf::set_error("mathieu_cem", status, NULL);
@@ -159,15 +165,16 @@ struct mathieu_xem {
                 }
                 return;
             }
-
             last_q = q;
-            last_m = m;
+            last_m = int_m;
         }
-        if (m % 2) {
-            sum_fourier_series<FuncParity, Odd>(xsf::numpy::as_mdspan(coefs), v, out, out_diff);
+        if (int_m % 2) {
+            sum_fourier_series<FuncParity, Odd>(xsf::numpy::as_mdspan(coefs), v_d, out_d, out_diff_d);
         } else {
-            sum_fourier_series<FuncParity, Even>(xsf::numpy::as_mdspan(coefs), v, out, out_diff);
+            sum_fourier_series<FuncParity, Even>(xsf::numpy::as_mdspan(coefs), v_d, out_d, out_diff_d);
         }
+        out = static_cast<T>(out_d);
+        out_diff = static_cast<T>(out_diff_d);
     }
 };
 
