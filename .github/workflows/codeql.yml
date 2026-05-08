@@ -80,13 +80,20 @@ jobs:
 
         # queries: security-extended,security-and-quality
 
+    # NOTE: submodules might be c/c++ or they might be python so we need this
+    #       to be outside of the manual build mode so that we have the python
+    #       scan to have access to traverse the python submodules
+    - name: Update Submodules
+      shell: bash
+      run: |
+        git submodule update --init
+
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
     - name: Build (manual)
       if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-        git submodule update --init
         sudo apt update
         sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
         python -m pip install -r requirements/build.txt -r requirements/dev.txt
