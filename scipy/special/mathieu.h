@@ -105,6 +105,11 @@ struct mathieu_coeffs {
 
         auto idx = cv_index<FuncParity>(m);
         std::copy_n(Z.begin() + idx * N, N, X.begin());
+        if constexpr (FuncParity == Even) {
+            if (m % 2 == 0) {
+                X[0] /= M_SQRT2;
+            }
+        }
 
         return SF_ERROR_OK;
     }
