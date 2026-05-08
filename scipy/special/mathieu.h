@@ -110,4 +110,60 @@ struct mathieu_coeffs {
     }
 };
 
+template <xsf::mathieu::Parity FuncParity>
+struct mathieu_xem {
+    double last_q{std::numeric_limits<double>::quiet_NaN()};
+    int last_m = -1;
+    mathieu_coeffs<FuncParity> get_coefs;
+    std::vector<double> coefs;
+    void operator()(int m, double q, double v, double &out, double &out_diff) {
+        using namespace xsf::mathieu;
+        auto constexpr Even = Parity::Even;
+        auto constexpr Odd = Parity::Odd;
+
+        if constexpr (FuncParity == Even) {
+            if (m < 0) {
+                out = std::numeric_limits<double>::quiet_NaN();
+                out_diff = std::numeric_limits<double>::quiet_NaN();
+                xsf::set_error("mathieu_cem", SF_ERROR_DOMAIN, NULL);
+                last_m = -1; // invalidate cache upon error
+                return;
+            }
+        } else {
+            if (m <= 0) {
+                out = std::numeric_limits<double>::quiet_NaN();
+                out_diff = std::numeric_limits<double>::quiet_NaN();
+                xsf::set_error("mathieu_sem", SF_ERROR_DOMAIN, NULL);
+                last_m = -1; // invalidate cache upon error
+                return;
+            }
+        }
+
+        if (q != last_q || m != last_m) {
+            auto N = get_partial_sum_N(m, q);
+            coefs.resize(N);
+            auto status = get_coefs(m, q, coefs);
+            if (status != SF_ERROR_OK) {
+                out = std::numeric_limits<double>::quiet_NaN();
+                out_diff = std::numeric_limits<double>::quiet_NaN();
+                last_m = -1; // invalidate cache upon error
+                if constexpr (FuncParity == Even) {
+                    xsf::set_error("mathieu_cem", status, NULL);
+                } else {
+                    xsf::set_error("mathieu_sem", status, NULL);
+                }
+                return;
+            }
+
+            last_q = q;
+            last_m = m;
+        }
+        if (m % 2) {
+            sum_fourier_series<FuncParity, Odd>(xsf::numpy::as_mdspan(coefs), v, out, out_diff);
+        } else {
+            sum_fourier_series<FuncParity, Even>(xsf::numpy::as_mdspan(coefs), v, out, out_diff);
+        }
+    }
+};
+
 } // namespace special
