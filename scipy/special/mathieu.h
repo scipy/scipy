@@ -117,8 +117,8 @@ struct mathieu_coeffs {
 
 template <xsf::mathieu::Parity FuncParity, typename T>
 struct mathieu_xem {
-    double last_q{std::numeric_limits<double>::quiet_NaN()};
-    int last_m{-1};
+    double last_q = std::numeric_limits<double>::quiet_NaN();
+    int last_m = -1;
     mathieu_coeffs<FuncParity> get_coefs;
     std::vector<double> coefs;
     void operator()(T m, T q, T x, T &out, T &out_diff) {
@@ -145,6 +145,14 @@ struct mathieu_xem {
         }
 
         auto int_m = static_cast<int>(m);
+        if constexpr (FuncParity == Odd) {
+            if (int_m == 0) {
+                out = static_cast<T>(0);
+                out_diff = static_cast<T>(0);
+                last_m = -1; // invalidate cache since no coefs in this case.
+                return;
+            }
+        }
 
         if (q_d != last_q || int_m != last_m) {
             auto N = get_partial_sum_N(int_m, q_d);
@@ -161,15 +169,7 @@ struct mathieu_xem {
                 }
                 return;
             }
-            if constexpr (FuncParity == Odd) {
-                if (int_m == 0) {
-                    out = static_cast<T>(0);
-                    out_diff = static_cast<T>(0);
-                    last_m = -1; // invalidate cache since no coefs in this case.
-                    return;
-                }
-            }
-            last_q = q;
+            last_q = q_d;
             last_m = int_m;
         }
         if (int_m % 2) {
