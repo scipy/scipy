@@ -10932,6 +10932,13 @@ class uniform_gen(rv_continuous):
 
     %(before_notes)s
 
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Continuous uniform distribution", Wikipedia,
+       https://en.wikipedia.org/wiki/Continuous_uniform_distribution
+
     %(example)s
 
     """
