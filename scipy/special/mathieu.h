@@ -132,22 +132,16 @@ struct mathieu_xem {
         double x_d = static_cast<double>(x);
         double out_d, out_diff_d;
 
-        if constexpr (FuncParity == Even) {
-            if ((m < 0) || m != std::floor(m)) {
-                out = std::numeric_limits<T>::quiet_NaN();
-                out_diff = std::numeric_limits<T>::quiet_NaN();
+        if ((m < 0) || m != std::floor(m)) {
+            out = std::numeric_limits<T>::quiet_NaN();
+            out_diff = std::numeric_limits<T>::quiet_NaN();
+            if constexpr (FuncParity == Even) {
                 xsf::set_error("mathieu_cem", SF_ERROR_DOMAIN, NULL);
-                last_m = -1; // invalidate cache upon error
-                return;
-            }
-        } else {
-            if ((m <= 0) || m != std::floor(m)) {
-                out = std::numeric_limits<T>::quiet_NaN();
-                out_diff = std::numeric_limits<T>::quiet_NaN();
+            } else {
                 xsf::set_error("mathieu_sem", SF_ERROR_DOMAIN, NULL);
-                last_m = -1; // invalidate cache upon error
-                return;
             }
+            last_m = -1; // invalidate cache upon error
+            return;
         }
 
         auto int_m = static_cast<int>(m);
@@ -166,6 +160,14 @@ struct mathieu_xem {
                     xsf::set_error("mathieu_sem", status, NULL);
                 }
                 return;
+            }
+            if constexpr (FuncParity == Odd) {
+                if (int_m == 0) {
+                    out = static_cast<T>(0);
+                    out_diff = static_cast<T>(0);
+                    last_m = -1; // invalidate cache since no coefs in this case.
+                    return;
+                }
             }
             last_q = q;
             last_m = int_m;
