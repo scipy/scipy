@@ -1,0 +1,433 @@
+"""
+Full validation of NumpyInterpolator, interp1d, and griddata.
+
+Strategy
+--------
+* 1-D linear / nearest / cubic  →  exact match with scipy (atol 1e-11).
+* 2-D nearest                   →  exact match for random float coords
+                                    (no equidistance ties); for integer pilot
+                                    coords we verify all returned values belong
+                                    to the pilot set and unambiguous cells match.
+* 2-D linear                    →  same NaN mask as scipy; exact at data points;
+                                    linear functions reproduced exactly; interior
+                                    cells within 0.05 of scipy (different but
+                                    valid Delaunay triangulations may differ on
+                                    co-circular point sets).
+* 2-D cubic (TPS RBF)           →  exact at data points; linear functions
+                                    reproduced exactly (polynomial order of TPS
+                                    augmentation); smooth approximation to scipy
+                                    CloughTocher (no bit-exact match expected).
+"""
+
+import numpy as np
+from scipy.interpolate import (interp1d as scipy_interp1d,
+                                CubicSpline,
+                                griddata as scipy_griddata)
+from numpy_interpolation import NumpyInterpolator, interp1d, griddata
+
+ATOL   = 1e-11   # tight tolerance for 1-D and for exactly-reproduced functions
+LINEAR_ATOL = 0.05  # Delaunay-triangulation-dependent tolerance for 2-D linear
+
+
+def check(a, b, tag, atol=ATOL):
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    ok = np.allclose(a, b, atol=atol, rtol=1e-9, equal_nan=True)
+    print(f"  [{'PASS' if ok else 'FAIL'}] {tag}")
+    if not ok:
+        diff = np.abs(a - b)
+        print(f"         max|diff|={np.nanmax(diff):.3e}  (atol={atol:.0e})")
+    return ok
+
+
+# ============================================================
+# helpers
+# ============================================================
+
+def make_1d(n=20, seed=0):
+    rng = np.random.default_rng(seed)
+    x   = np.unique(np.sort(rng.uniform(0, 10, n)))
+    y   = np.sin(x) + 0.1 * rng.standard_normal(len(x))
+    return x, y
+
+
+def make_2d_y(n=20, m=3, seed=0):
+    rng = np.random.default_rng(seed)
+    x   = np.unique(np.sort(rng.uniform(0, 10, n)))
+    y   = np.column_stack([np.sin(x) + 0.1*rng.standard_normal(len(x))
+                           for _ in range(m)])
+    return x, y
+
+
+def q1d(x, ni=40, ne=5):
+    return np.concatenate([
+        np.linspace(x[0]-1.5,  x[0]-0.01, ne),
+        np.linspace(x[0],      x[-1],      ni),
+        np.linspace(x[-1]+0.01, x[-1]+1.5, ne),
+    ])
+
+
+# ============================================================
+# 1-D linear
+# ============================================================
+
+def test_linear_1d():
+    print("\n--- linear 1-D ---")
+    x, y = make_1d()
+    xq   = q1d(x)
+    sci  = scipy_interp1d(x, y, kind='linear', fill_value='extrapolate')
+    ours = NumpyInterpolator(x, y, kind='linear', extrapolate=True)
+    check(ours(xq), sci(xq), "extrapolate interior+exterior")
+    check(ours(x),  sci(x),  "exactly on knots")
+    check(ours(x[0]), float(sci(x[0])), "scalar query")
+
+
+def test_linear_2d_y():
+    print("\n--- linear 2-D y ---")
+    x, y = make_2d_y()
+    xq   = q1d(x)
+    sci  = scipy_interp1d(x, y.T, kind='linear', fill_value='extrapolate', axis=1)
+    ours = NumpyInterpolator(x, y, kind='linear', extrapolate=True)
+    check(ours(xq), sci(xq).T, "2-D extrapolate")
+    check(ours(x),  sci(x).T,  "2-D on knots")
+
+
+# ============================================================
+# 1-D nearest
+# ============================================================
+
+def test_nearest_1d():
+    print("\n--- nearest 1-D ---")
+    x, y = make_1d()
+    xq   = np.linspace(x[0], x[-1], 80)
+    sci  = scipy_interp1d(x, y, kind='nearest')
+    ours = NumpyInterpolator(x, y, kind='nearest')
+    check(ours(xq), sci(xq), "interior")
+    check(ours(x),  sci(x),  "on knots")
+
+
+def test_nearest_2d_y():
+    print("\n--- nearest 2-D y ---")
+    x, y = make_2d_y()
+    xq   = np.linspace(x[0], x[-1], 60)
+    sci  = scipy_interp1d(x, y.T, kind='nearest', axis=1)
+    ours = NumpyInterpolator(x, y, kind='nearest')
+    check(ours(xq), sci(xq).T, "2-D interior")
+
+
+# ============================================================
+# 1-D cubic
+# ============================================================
+
+def test_cubic_1d():
+    print("\n--- cubic 1-D ---")
+    x, y = make_1d()
+    xq   = q1d(x)
+    sci  = CubicSpline(x, y, bc_type='not-a-knot', extrapolate=True)
+    ours = NumpyInterpolator(x, y, kind='cubic', extrapolate=True)
+    check(ours(xq), sci(xq), "extrapolate interior+exterior")
+    check(ours(x),  sci(x),  "on knots")
+    check(ours(x[0]), float(sci(x[0])), "scalar")
+
+
+def test_cubic_2d_y():
+    print("\n--- cubic 2-D y ---")
+    x, y = make_2d_y()
+    xq   = q1d(x)
+    sci  = CubicSpline(x, y, bc_type='not-a-knot', extrapolate=True)
+    ours = NumpyInterpolator(x, y, kind='cubic', extrapolate=True)
+    check(ours(xq), sci(xq), "2-D extrapolate")
+    check(ours(x),  sci(x),  "2-D on knots")
+
+
+def test_cubic_small_n():
+    print("\n--- cubic small n ---")
+    x2, y2 = np.array([1.0, 3.0]), np.array([2.0, 6.0])
+    check(NumpyInterpolator(x2, y2, kind='cubic')(np.linspace(1, 3, 20)),
+          CubicSpline(x2, y2)(np.linspace(1, 3, 20)), "n=2 linear degenerate")
+    x3 = np.array([0.0, 1.0, 3.0]); y3 = x3**2
+    check(NumpyInterpolator(x3, y3, kind='cubic')(np.linspace(0, 3, 30)),
+          CubicSpline(x3, y3)(np.linspace(0, 3, 30)), "n=3 parabola")
+
+
+# ============================================================
+# extrapolate=False → NaN outside bounds
+# ============================================================
+
+def test_extrapolate_false():
+    print("\n--- extrapolate=False ---")
+    x, y = make_1d()
+    xq_in  = np.linspace(x[0], x[-1], 30)
+    xq_out = np.array([x[0]-1.0, x[-1]+1.0])
+    for kind in ('linear', 'nearest', 'cubic'):
+        f  = NumpyInterpolator(x, y, kind=kind, extrapolate=False)
+        ok = not np.any(np.isnan(f(xq_in))) and np.all(np.isnan(f(xq_out)))
+        print(f"  [{'PASS' if ok else 'FAIL'}] {kind}: interior finite, exterior NaN")
+
+
+# ============================================================
+# interp1d wrapper
+# ============================================================
+
+def test_interp1d_wrapper():
+    print("\n--- interp1d wrapper ---")
+    x, y = make_1d()
+    xq   = np.linspace(x[0], x[-1], 40)
+    for kind in ('linear', 'nearest', 'cubic'):
+        ref  = NumpyInterpolator(x, y, kind=kind)
+        wrap = interp1d(x, y, kind=kind, bounds_error=False,
+                        fill_value='extrapolate')
+        check(wrap(xq), ref(xq), f"wrapper kind={kind}")
+
+    f_strict = interp1d(x, y, kind='linear', bounds_error=True)
+    try:
+        f_strict(np.array([x[0]-1.0]))
+        print("  [FAIL] bounds_error=True did not raise")
+    except ValueError:
+        print("  [PASS] bounds_error=True raises ValueError")
+
+
+# ============================================================
+# interp1d – exact pattern from user's channel-estimation code
+# ============================================================
+
+def test_user_interp1d_pattern():
+    """Replicates the exact interp1d usage in the user's 1-D pilot code."""
+    print("\n--- user interp1d pattern ---")
+    symbols_sorted = np.array([0., 3., 7., 11., 14.], dtype=float)
+    values_sorted  = np.array([0.8+0.1j, 0.9+0.05j, 0.85+0.0j,
+                                0.88-0.05j, 0.82-0.1j])
+    x_interp = symbols_sorted + 1   # "add 1 like MATLAB"
+    x_query  = np.arange(1, 15, dtype=float)
+
+    for part, arr in (('real', values_sorted.real), ('imag', values_sorted.imag)):
+        f   = interp1d(x_interp, arr, kind='linear',
+                       fill_value='extrapolate', bounds_error=False)
+        sci = scipy_interp1d(x_interp, arr, kind='linear',
+                             fill_value='extrapolate', bounds_error=False)
+        check(f(x_query), sci(x_query), f"user interp1d – {part}")
+
+
+# ============================================================
+# griddata nearest  (random float coords – no equidistance ties)
+# ============================================================
+
+def test_griddata_nearest_float():
+    print("\n--- griddata nearest (float coords) ---")
+    rng    = np.random.default_rng(7)
+    pts    = rng.random((60, 2))
+    vals   = np.sin(pts[:,0]) + np.cos(pts[:,1])
+    XX, YY = np.meshgrid(np.linspace(0,1,15), np.linspace(0,1,15))
+
+    ours = griddata(pts, vals, (XX, YY), method='nearest')
+    sci  = scipy_griddata(pts, vals, (XX, YY), method='nearest')
+    check(ours, sci, "meshgrid xi, random float pts – exact match scipy")
+
+    xi2 = rng.random((30, 2))
+    check(griddata(pts, vals, xi2, method='nearest'),
+          scipy_griddata(pts, vals, xi2, method='nearest'),
+          "array xi, random float pts")
+
+
+# ============================================================
+# griddata linear
+# ============================================================
+
+def test_griddata_linear():
+    print("\n--- griddata linear ---")
+    rng    = np.random.default_rng(8)
+    pts    = rng.random((80, 2))
+    vals   = np.sin(2*np.pi*pts[:,0]) * np.cos(2*np.pi*pts[:,1])
+    XX, YY = np.meshgrid(np.linspace(0.1, 0.9, 12), np.linspace(0.1, 0.9, 12))
+
+    ours = griddata(pts, vals, (XX, YY), method='linear')
+    sci  = scipy_griddata(pts, vals, (XX, YY), method='linear')
+
+    # 1. NaN mask must be identical (same convex hull boundary)
+    ok_nan = np.array_equal(np.isnan(ours), np.isnan(sci))
+    print(f"  [{'PASS' if ok_nan else 'FAIL'}] linear: NaN mask identical to scipy")
+
+    # 2. Exact at data points (interpolation property)
+    out_at = griddata(pts, vals, pts, method='linear')
+    check(out_at, vals, "linear: exact at data points")
+
+    # 3. Linear functions exactly reproduced everywhere inside hull
+    rng2     = np.random.default_rng(42)
+    pts_lin  = rng2.random((60, 2))
+    f_lin    = lambda p: 2.5*p[:,0] - 1.3*p[:,1] + 0.7   # linear function
+    vals_lin = f_lin(pts_lin)
+    q_lin    = rng2.random((40, 2)) * 0.6 + 0.2            # safely inside hull
+    check(griddata(pts_lin, vals_lin, q_lin, method='linear'),
+          f_lin(q_lin), "linear: exactly reproduces linear f(x,y)=ax+by+c")
+
+    # 4. Interior cells close to scipy (different valid triangulations may
+    #    differ slightly at co-circular point sets)
+    mask_both = ~np.isnan(ours) & ~np.isnan(sci)
+    check(ours[mask_both], sci[mask_both],
+          "linear: interior cells agree with scipy", atol=LINEAR_ATOL)
+
+    # 5. Outside convex hull → fill_value (NaN)
+    xi_out  = np.array([[2.0, 2.0], [-1.0, -1.0]])
+    out_out = griddata(pts, vals, xi_out, method='linear')
+    ok_fv   = np.all(np.isnan(out_out))
+    print(f"  [{'PASS' if ok_fv else 'FAIL'}] linear: outside hull → NaN")
+
+
+# ============================================================
+# griddata cubic (TPS RBF)
+# ============================================================
+
+def test_griddata_cubic():
+    print("\n--- griddata cubic (TPS RBF) ---")
+    rng    = np.random.default_rng(9)
+    pts    = rng.random((50, 2))
+    XX, YY = np.meshgrid(np.linspace(0.05,0.95,10), np.linspace(0.05,0.95,10))
+
+    # 1. Exact at data points (primary TPS guarantee)
+    vals = np.sin(2*np.pi*pts[:,0]) * np.cos(2*np.pi*pts[:,1])
+    out_at = griddata(pts, vals, pts, method='cubic')
+    check(out_at, vals, "cubic: exact at data points", atol=1e-10)
+
+    # 2. Linear functions reproduced exactly (TPS polynomial augmentation is degree-1)
+    vals_lin  = 3.1*pts[:,0] - 2.7*pts[:,1] + 1.4
+    out_grid  = griddata(pts, vals_lin, (XX, YY), method='cubic')
+    exact_lin = 3.1*XX - 2.7*YY + 1.4
+    check(out_grid, exact_lin, "cubic: exactly reproduces linear f(x,y)", atol=1e-8)
+
+    # 3. Smooth interpolation close to scipy CloughTocher for interior pts
+    #    Use a gentle function; TPS and CloughTocher are both C∞ at interior.
+    vals_s = pts[:,0]*(1-pts[:,0]) * pts[:,1]*(1-pts[:,1])
+    ours   = griddata(pts, vals_s, (XX, YY), method='cubic')
+    sci    = scipy_griddata(pts, vals_s, (XX, YY), method='cubic')
+    mask   = ~np.isnan(sci)
+    diff   = np.abs(ours[mask] - sci[mask])
+    ok3    = diff.max() < 0.1
+    print(f"  [{'PASS' if ok3 else 'FAIL'}] cubic: smooth approx to CloughTocher "
+          f"(max|diff|={diff.max():.3e})")
+
+
+# ============================================================
+# griddata – exact pattern from user's channel-estimation code
+# ============================================================
+
+def test_user_griddata_pattern():
+    """Replicates the exact griddata usage in the user's channel-estimation code."""
+    print("\n--- user griddata pattern ---")
+    rng = np.random.default_rng(11)
+    n   = 40
+    Xp  = rng.integers(1, 64, n).astype(float)
+    Yp  = rng.integers(1, 14, n).astype(float)
+    Zd  = rng.standard_normal(n) + 1j * rng.standard_normal(n)
+
+    xx, yy = np.arange(1,65,dtype=float), np.arange(1,15,dtype=float)
+    XX, YY = np.meshgrid(xx, yy)
+    points = np.column_stack([Xp, Yp])
+    xi     = (XX, YY)
+
+    for method in ('nearest', 'linear'):
+        Z_real = np.real(Zd)
+        Z_imag = np.imag(Zd)
+
+        htemp_real = griddata(points, Z_real, xi, method=method)
+        htemp_imag = griddata(points, Z_imag, xi, method=method)
+        htemp      = htemp_real + 1j * htemp_imag
+
+        sci_real = scipy_griddata(points, Z_real, xi, method=method)
+        sci_imag = scipy_griddata(points, Z_imag, xi, method=method)
+
+        # Output shape must match meshgrid shape
+        ok_shape = htemp.shape == XX.shape
+        print(f"  [{'PASS' if ok_shape else 'FAIL'}] {method}: "
+              f"output shape {htemp.shape} == {XX.shape}")
+
+        if method == 'nearest':
+            # Nearest: every returned value must be one of the pilot values.
+            # (Tie-breaking with integer coords may differ from scipy KDTree.)
+            vals_r = Z_real
+            vals_i = Z_imag
+            flat_r = htemp_real.ravel()
+            flat_i = htemp_imag.ravel()
+            in_set_r = all(any(np.isclose(v, vals_r)) for v in flat_r)
+            in_set_i = all(any(np.isclose(v, vals_i)) for v in flat_i)
+            ok = in_set_r and in_set_i
+            print(f"  [{'PASS' if ok else 'FAIL'}] {method}: "
+                  "all values belong to pilot set (real+imag)")
+
+            # For cells that are clearly unambiguous (no equidistance tie):
+            # find cells where nearest pilot is strictly closer than 2nd nearest
+            xi_flat = np.column_stack([XX.ravel(), YY.ravel()])
+            d2 = np.sum((xi_flat[:, None, :] - points[None, :, :])**2, axis=2)
+            d_sorted = np.sort(d2, axis=1)
+            unambiguous = d_sorted[:, 0] < d_sorted[:, 1] - 0.01   # strictly nearer
+            unambig_2d  = unambiguous.reshape(XX.shape)
+            n_unambig   = unambiguous.sum()
+            if n_unambig > 0:
+                check(htemp_real[unambig_2d],
+                      sci_real[unambig_2d],
+                      f"{method}: unambiguous cells match scipy ({n_unambig} cells)")
+
+        elif method == 'linear':
+            # Linear interpolation with integer-coordinate pilots:
+            # multiple valid Delaunay triangulations exist (co-circular points)
+            # so we verify correctness properties rather than exact scipy match.
+
+            # 1. Same NaN mask (same convex hull)
+            ok_nan = np.array_equal(np.isnan(htemp_real), np.isnan(sci_real))
+            print(f"  [{'PASS' if ok_nan else 'FAIL'}] {method}: NaN mask identical to scipy")
+
+            # 2. Exact at pilot positions (dedup first – scipy also can't handle dups)
+            _, uniq = np.unique(points, axis=0, return_index=True)
+            uniq    = np.sort(uniq)
+            pts_u   = points[uniq]
+            Zr_u, Zi_u = Z_real[uniq], Z_imag[uniq]
+            out_at_r = griddata(pts_u, Zr_u, pts_u, method='linear')
+            out_at_i = griddata(pts_u, Zi_u, pts_u, method='linear')
+            check(out_at_r, Zr_u, f"{method}: exact at unique pilot positions (real)")
+            check(out_at_i, Zi_u, f"{method}: exact at unique pilot positions (imag)")
+
+            # 3. All interior values are finite (no spurious NaN inside hull)
+            interior = ~np.isnan(htemp_real)
+            ok_fin   = np.all(np.isfinite(htemp_real[interior]))
+            print(f"  [{'PASS' if ok_fin else 'FAIL'}] {method}: "
+                  f"all {interior.sum()} interior cells are finite")
+
+
+# ============================================================
+# griddata rescale flag
+# ============================================================
+
+def test_griddata_rescale():
+    print("\n--- griddata rescale ---")
+    rng  = np.random.default_rng(13)
+    pts  = rng.random((50, 2)) * np.array([1e6, 1e-3])
+    vals = pts[:,0] / 1e6 + pts[:,1] / 1e-3
+    xi   = rng.random((20, 2)) * np.array([1e6, 1e-3])
+    ours = griddata(pts, vals, xi, method='nearest', rescale=True)
+    sci  = scipy_griddata(pts, vals, xi, method='nearest', rescale=True)
+    check(ours, sci, "rescale=True, nearest")
+
+
+# ============================================================
+# Run all
+# ============================================================
+
+if __name__ == '__main__':
+    tests = [
+        test_linear_1d,
+        test_linear_2d_y,
+        test_nearest_1d,
+        test_nearest_2d_y,
+        test_cubic_1d,
+        test_cubic_2d_y,
+        test_cubic_small_n,
+        test_extrapolate_false,
+        test_interp1d_wrapper,
+        test_user_interp1d_pattern,
+        test_griddata_nearest_float,
+        test_griddata_linear,
+        test_griddata_cubic,
+        test_user_griddata_pattern,
+        test_griddata_rescale,
+    ]
+    for t in tests:
+        t()
+    print("\nDone.")
