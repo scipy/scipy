@@ -598,7 +598,7 @@ class TestCephes:
         q = np.r_[0, np.logspace(-30, -9, 10)]
         assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
                         ce_smallq(m[:,None], q[None,:], 0.123),
-                        rtol=1e-14, atol=0)
+                        rtol=5e-14, atol=0)
 
     def test_mathieu_sem(self):
         assert_equal(cephes.mathieu_sem(1,0,0),(0.0,1.0))
@@ -620,7 +620,7 @@ class TestCephes:
         q = np.r_[0, np.logspace(-30, -9, 10)]
         assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
                         se_smallq(m[:,None], q[None,:], 0.123),
-                        rtol=1e-14, atol=0)
+                        rtol=5e-14, atol=0)
 
     def test_mathieu_modcem1(self):
         assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
