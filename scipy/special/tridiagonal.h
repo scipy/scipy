@@ -59,22 +59,9 @@ struct eigh_tridiagonal {
         CBLAS_INT ldz = N;
         CBLAS_INT info = 0;
 
-        // query for optimal workspace
-        double work_query;
-        CBLAS_INT liwork_query_res;
-        CBLAS_INT lwork_q = -1;
-        CBLAS_INT liwork_q = -1;
-
-        BLAS_FUNC(dstevd)
-        (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, &work_query, &lwork_q, &liwork_query_res, &liwork_q, &info);
-
-        if (info != 0) {
-            return SF_ERROR_OTHER;
-        }
-
-        CBLAS_INT lwork = static_cast<CBLAS_INT>(work_query);
-        CBLAS_INT liwork = liwork_query_res;
-
+        /* Allocate the optimal workspace */
+        CBLAS_INT lwork = 1 + 4 * N + N * N;
+        CBLAS_INT liwork = 3 + 5 * N;
         work.resize(lwork);
         iwork.resize(liwork);
 
