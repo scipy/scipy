@@ -659,11 +659,29 @@ class TestCephes:
         assert_allclose(y1, y2, rtol=1e-10)
 
     def test_mathieu_overflow(self):
-        # Check that these return NaNs instead of causing a SEGV
-        assert_equal(cephes.mathieu_cem(10000, 0, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_sem(10000, 0, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_cem(10000, 1.5, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_sem(10000, 1.5, 1.3), (np.nan, np.nan))
+        # This originally checked that these return NaNs instead of causing a SEGV.
+        # Fixed in https://github.com/scipy/xsf/pull/99 and now these return accurate
+        # values.
+        assert_allclose(
+            cephes.mathieu_cem(10000, 0, 1.3),
+            (0.7660444431189781, -6427.876096865392),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            cephes.mathieu_sem(10000, 0, 1.3),
+            (0.6427876096865393, 7660.444431189781),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            cephes.mathieu_cem(10000, 1.5, 1.3),
+            (0.7660466357615003, -6427.849986120524),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            cephes.mathieu_sem(10000, 1.5, 1.3),
+            (0.6427850082438498, 7660.466242825855),
+            rtol=1e-9,
+        )
         assert_equal(cephes.mathieu_modcem1(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modsem1(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modcem2(10000, 1.5, 1.3), (np.nan, np.nan))
