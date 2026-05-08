@@ -79,6 +79,8 @@ extern const char *_kolmogp_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
+extern const char *_mathieu_cem_doc;
+extern const char *_mathieu_sem_doc;
 extern const char *_normalized_gen_harmonic_doc;
 extern const char *_stirling2_inexact_doc;
 extern const char *_von_mises_cdf_doc;
@@ -197,12 +199,10 @@ extern const char *log_wright_bessel_doc;
 extern const char *lpmv_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
-extern const char *mathieu_cem_doc;
 extern const char *mathieu_modcem1_doc;
 extern const char *mathieu_modcem2_doc;
 extern const char *mathieu_modsem1_doc;
 extern const char *mathieu_modsem2_doc;
-extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *nbdtrik_doc;
@@ -1212,11 +1212,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "mathieu_b", mathieu_b_doc);
     PyModule_AddObjectRef(module, "mathieu_b", mathieu_b);
 
-    PyObject *mathieu_cem =
+    PyObject *_mathieu_cem =
         xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Even, float>{},
                            special::mathieu_xem<xsf::mathieu::Parity::Even, double>{}},
-                          2, "mathieu_cem", mathieu_cem_doc);
-    PyModule_AddObjectRef(module, "mathieu_cem", mathieu_cem);
+                          2, "_mathieu_cem", _mathieu_cem_doc);
+    PyModule_AddObjectRef(module, "_mathieu_cem", _mathieu_cem);
 
 
     PyObject *mathieu_modcem1 =
@@ -1239,11 +1239,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "mathieu_modsem2", mathieu_modsem2_doc);
     PyModule_AddObjectRef(module, "mathieu_modsem2", mathieu_modsem2);
 
-    PyObject *mathieu_sem =
+    PyObject *_mathieu_sem =
         xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Odd, float>{},
                            special::mathieu_xem<xsf::mathieu::Parity::Odd, double>{}},
-                          2, "mathieu_sem", mathieu_sem_doc);
-    PyModule_AddObjectRef(module, "mathieu_sem", mathieu_sem);
+                          2, "_mathieu_sem", _mathieu_sem_doc);
+    PyModule_AddObjectRef(module, "_mathieu_sem", _mathieu_sem);
 
     PyObject *modfresnelm = xsf::numpy::ufunc({static_cast<xsf::numpy::f_FF>(xsf::modified_fresnel_minus),
                                                static_cast<xsf::numpy::d_DD>(xsf::modified_fresnel_minus)},

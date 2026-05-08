@@ -232,7 +232,8 @@ python_sources = [
   'sf_error.py',
   'specfun.py',
   'spfun_stats.py',
-  '_ufunc_tools.py'
+  '_ufunc_tools.py',
+  '_mathieu.py'
 ]
 
 py3.install_sources(
