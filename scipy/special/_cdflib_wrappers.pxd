@@ -25,7 +25,6 @@ cdef extern from "cdflib.h" nogil:
     TupleDID cdffnc_which5(double, double, double, double, double);
     TupleDID cdft_which3(double, double, double);
     TupleDID cdftnc_which3(double, double, double, double);
-    TupleDID cdftnc_which4(double, double, double, double);
 
 
 cdef inline double get_result(
@@ -170,27 +169,6 @@ cdef inline double nctdtridf(double p, double nc, double t) noexcept nogil:
     ret = cdftnc_which3(p, q, t, nc)
     result, status, bound = ret.d1, ret.i1, ret.d2
     return get_result("nctdtridf", argnames, result, status, bound, 1)
-
-
-cdef inline double nctdtrinc(double df, double p, double t) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[4]
-        TupleDID ret
-
-    if isnan(df) or isnan(p) or isnan(t):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "t"
-    argnames[3] = "df"
-
-    ret = cdftnc_which4(p, q, t, df)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("nctdtrinc", argnames, result, status, bound, 1)
 
 
 cdef inline double stdtridf(double p, double t) noexcept nogil:
