@@ -11159,8 +11159,6 @@ class vonmises_gen(rv_continuous):
     (circular mean). A ``scale`` parameter is accepted but does not have any
     effect.
 
-    %(after_notes)s
-
     References
     ----------
     .. [1] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
