@@ -29,7 +29,9 @@ from types import GenericAlias
 
 import numpy as np
 import scipy
-from scipy._lib._array_api import array_namespace, is_numpy, xp_capabilities, xp_ravel
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, xp_capabilities, xp_ravel, xp_fill_diagonal
+)
 
 __all__ = ["AAA", "FloaterHormannInterpolator"]
 
@@ -137,7 +139,9 @@ class _BarycentricRational:
                 # Find the corresponding node and set entry to correct value:
                 mask = zv[jj] == self._support_points
                 idx = xp.nonzero(mask)[0]
-                r[jj, :] = xp.squeeze(xp.take(self._support_values, idx, axis=0), axis=0)
+                r[jj, :] = xp.squeeze(
+                    xp.take(self._support_values, idx, axis=0), axis=0
+                )
 
         res = xp.reshape(r, z.shape + self._shape)
         return xp.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
@@ -161,15 +165,14 @@ class _BarycentricRational:
             E = xp.zeros_like(B, dtype=xp.result_type(self.weights,
                                                       self._support_points))
             E[0, 1:] = self.weights
-            np.fill_diagonal
             E[1:, 0] = 1
-            i = xp.arange(E[1:, 1:].shape[0])
-            e = xp.where(i[:, None] == i[None, :], self._support_points, E[1:, 1:])
-            E = xp.concat([E[:1, :], xp.concat([E[1:, :1], e], axis=1)], axis=0)
+            E[1:, 1:] = xp_fill_diagonal(E[1:, 1:], self._support_points, xp=xp)
             if is_numpy(xp):
                 pol = scipy.linalg.eigvals(E, B, check_finite=False)
             else:
-                raise AssertionError("`scipy.linalg.eigvals` does not support non-NumPy arrays.")
+                raise AssertionError(
+                    "`scipy.linalg.eigvals` does not support non-NumPy arrays."
+                )
             self._poles = pol[xp.isfinite(pol)]
         return self._poles
 
@@ -188,7 +191,7 @@ class _BarycentricRational:
             # Compute residues via formula for res of quotient of analytic functions
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", RuntimeWarning)
-                N = (1/((self.poles()[..., None] - self._support_points))) @ (
+                N = (1/(self.poles()[..., None] - self._support_points)) @ (
                     self._support_values * self.weights
                 )
                 Ddiff = (
@@ -221,13 +224,13 @@ class _BarycentricRational:
                                                       self._support_points))
             E[0, 1:] = self.weights * self._support_values
             E[1:, 0] = 1
-            i = xp.arange(E[1:, 1:].shape[0])
-            e = xp.where(i[:, None] == i[None, :], self._support_points, E[1:, 1:])
-            E = xp.concat([E[:1, :], xp.concat([E[1:, :1], e], axis=1)], axis=0)
+            E[1:, 1:] = xp_fill_diagonal(E[1:, 1:], self._support_points, xp=xp)
             if is_numpy(xp):
                 zer = scipy.linalg.eigvals(E, B)
             else:
-                raise AssertionError("`scipy.linalg.eigvals` does not support non-NumPy arrays.")
+                raise AssertionError(
+                    "`scipy.linalg.eigvals` does not support non-NumPy arrays."
+                )
             self._roots = zer[xp.isfinite(zer)]
         return self._roots
 
@@ -653,12 +656,14 @@ class AAA(_BarycentricRational):
     method_capabilities={
         "poles": dict(
             skip_backends=[
-                ('array_api_strict', '`scipy.linalg` does not support non-NumPy arrays.')
+                ('array_api_strict',
+                 '`scipy.linalg` does not support non-NumPy arrays.')
             ],
         ),
         "roots": dict(
             skip_backends=[
-                ('array_api_strict', '`scipy.linalg` does not support non-NumPy arrays.')
+                ('array_api_strict',
+                 '`scipy.linalg` does not support non-NumPy arrays.')
             ],
         ),
     },

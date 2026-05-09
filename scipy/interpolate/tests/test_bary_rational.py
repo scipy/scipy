@@ -26,7 +26,7 @@
 from math import factorial
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_array_less
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 import scipy
 from scipy.interpolate import AAA, FloaterHormannInterpolator, BarycentricInterpolator
@@ -327,8 +327,11 @@ class TestFloaterHormann:
         # Check against explicit results on a uniform grid
         x = xp.arange(11, dtype=xp.float64)
         r = FloaterHormannInterpolator(x, xp.zeros_like(x), d=d)
-        xp_assert_close(xp_ravel(r.weights) * self.scale(x.size, d, xp), xp.asarray(expected, dtype=xp.float64),
-                        rtol=1e-15, atol=1e-15)
+        xp_assert_close(
+            xp_ravel(r.weights) * self.scale(x.size, d, xp),
+            xp.asarray(expected, dtype=xp.float64),
+            rtol=1e-15, atol=1e-15
+        )
 
     @pytest.mark.parametrize("d", range(10))
     def test_runge(self, d, xp):
