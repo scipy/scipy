@@ -89,28 +89,28 @@ Real ibeta_wrap(Real a, Real b, Real x)
      */
 
     if (((a == 0) && (b == 0)) || (std::isinf(a) && std::isinf(b))) {
-	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
-	 * to a Bernoulli(p) distribution, where p depends on the path in
-	 * which (a, b) approaches (0+, 0+).
-	 * e.g. if a = t*b then the limiting distribution will be
-	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
-	 * A similar statement can be made for the limit (a, b) -> (inf, inf).
-	 */
+        /* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
+         * to a Bernoulli(p) distribution, where p depends on the path in
+         * which (a, b) approaches (0+, 0+).
+         * e.g. if a = t*b then the limiting distribution will be
+         * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
+         * A similar statement can be made for the limit (a, b) -> (inf, inf).
+         */
         return NAN;
     }
 
     if ((a == 0) || std::isinf(b)) {
-	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
-	 * at x = 0. The same is true in the limit b -> inf for fixed a.
-	 */
-	return x > 0 ? 1 : 0;
+        /* Distribution in the limit a -> 0+, b > 0 is a point distribution
+         * at x = 0. The same is true in the limit b -> inf for fixed a.
+         */
+        return x > 0 ? 1 : 0;
     }
 
     if ((b == 0) || std::isinf(a)) {
-	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
-	 * at x = 1. The same is true in the limit a -> inf for fixed b.
-	 */
-	return x < 1 ? 0 : 1;
+        /* Distribution in the limit b -> 0+, a > 0 is a point distribution
+         * at x = 1. The same is true in the limit a -> inf for fixed b.
+         */
+        return x < 1 ? 0 : 1;
     }
 
     try {
@@ -166,28 +166,28 @@ Real ibetac_wrap(Real a, Real b, Real x)
      */
 
     if (((a == 0) && (b == 0)) || (std::isinf(a) && std::isinf(b))) {
-	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
-	 * to a Bernoulli(p) distribution, where p depends on the path in
-	 * which (a, b) approaches (0+, 0+).
-	 * e.g. if a = t*b then the limiting distribution will be
-	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
-	 * A similar statement can be made for the limit (a, b) -> (inf, inf).
-	 */
+        /* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
+         * to a Bernoulli(p) distribution, where p depends on the path in
+         * which (a, b) approaches (0+, 0+).
+         * e.g. if a = t*b then the limiting distribution will be
+         * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
+         * A similar statement can be made for the limit (a, b) -> (inf, inf).
+         */
         return NAN;
     }
 
     if ((a == 0) || std::isinf(b)) {
-	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
-	 * at x = 0. The same is true in the limit b -> inf for fixed a.
-	 */
-	return x > 0 ? 0 : 1;
+        /* Distribution in the limit a -> 0+, b > 0 is a point distribution
+         * at x = 0. The same is true in the limit b -> inf for fixed a.
+         */
+        return x > 0 ? 0 : 1;
     }
 
     if ((b == 0) || std::isinf(a)) {
-	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
-	 * at x = 1.  The same is true in the limit a -> inf for fixed b.
-	 */
-	return x < 1 ? 1 : 0;
+        /* Distribution in the limit b -> 0+, a > 0 is a point distribution
+         * at x = 1.  The same is true in the limit a -> inf for fixed b.
+         */
+        return x < 1 ? 1 : 0;
     }
 
     try {
@@ -785,21 +785,22 @@ ncx2_pdf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isfinite(x)) {
         try {
-        return boost::math::pdf(
-            boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
-    }
-    catch (const std::overflow_error& e) {
-        sf_error("_ncx2_pdf", SF_ERROR_OVERFLOW, NULL);
-        return INFINITY;
-    }
-    catch (const std::underflow_error& e) {
-        sf_error("_ncx2_pdf", SF_ERROR_UNDERFLOW, NULL);
-        return 0;
-    }
-    catch (...) {
-        sf_error("_ncx2_pdf", SF_ERROR_OTHER, NULL);
-        return NAN;
-    }
+            using namespace boost::math;
+            return pdf(
+                non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+        }
+        catch (const std::overflow_error& e) {
+            sf_error("_ncx2_pdf", SF_ERROR_OVERFLOW, NULL);
+            return INFINITY;
+        }
+        catch (const std::underflow_error& e) {
+            sf_error("_ncx2_pdf", SF_ERROR_UNDERFLOW, NULL);
+            return 0;
+        }
+        catch (...) {
+            sf_error("_ncx2_pdf", SF_ERROR_OTHER, NULL);
+            return NAN;
+        }
     }
     return NAN; // inf or -inf returns NAN
 }
@@ -821,43 +822,44 @@ Real
 ncx2_cdf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
-	return NAN;
+        return NAN;
     }
     if (k < 0 || x < 0 || l < 0) {
-	sf_error("chndtr", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+        sf_error("chndtr", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
-    /* Special case handling for zero noncentrality
-    to get the same edge case behaviour as chdtr */
+    // Special case handling for zero noncentrality
+    // to get the same edge case behaviour as chdtr.
     if (l == 0 && (k == 0 || std::isinf(x))) {
-    return 1;
+        return 1;
     }
     if (l == 0 && std::isinf(k)) {
-    return 0;
+        return 0;
     }
     /* Edge case handling including noncentrality*/
     if (k == 0 || (!std::isinf(l) && std::isinf(k))) {
-    return NAN;
+        return NAN;
     }
     if (std::isinf(l)) {
-    return (std::isinf(x)) ? NAN : 0;
+        return (std::isinf(x)) ? NAN : 0;
     }
     if (std::isinf(x) && !std::isinf(k)) {
-    return 1;
+        return 1;
     }
     Real y;
     try {
-	y = boost::math::cdf(
-                boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+        using namespace boost::math;
+        y = cdf(non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
     } catch (...) {
-	/* Boost was unable to produce a result. */
+        /* Boost was unable to produce a result. */
         sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if (y < 0 || y > 1) {
-	/* Result must be between 0 and 1 to be a valid CDF value.
-       Return NAN if the result is out of bounds because the answer cannot be trusted. */
-	    sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
+        // Result must be between 0 and 1 to be a valid CDF value.
+        // Return NAN if the result is out of bounds because the answer
+        // cannot be trusted.
+        sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     return y;
@@ -931,7 +933,7 @@ ncx2_find_noncentrality_wrap(const Real x, const Real k, const Real p)
     }
     if (k < 0 || x < 0 || p < 0 || p > 1) {
         sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
-    return NAN;
+        return NAN;
     }
     Real y;
     try {
@@ -977,7 +979,7 @@ ncx2_find_degrees_of_freedom_wrap(const Real x, const Real p, const Real l)
     }
     if (l < 0 || x < 0 || p < 0 || p > 1) {
         sf_error("chndtridf", SF_ERROR_DOMAIN, NULL);
-    return NAN;
+        return NAN;
     }
     Real y;
     try {
@@ -1082,32 +1084,32 @@ Real
 ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 {
     if (std::isnan(x) || std::isnan(v1) || std::isnan(v2) || std::isnan(l)) {
-	return NAN;
+        return NAN;
     }
     if ((v1 <= 0) || (v2 <= 0) || (l < 0) || (x < 0)) {
-	sf_error("ncfdtr", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+        sf_error("ncfdtr", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     if (std::isinf(x)) {
-	// inf => 1. We've already returned if x < 0, so this can only be +inf.
-	return 1.0;
+        // inf => 1. We've already returned if x < 0, so this can only be +inf.
+        return 1.0;
     }
     Real y;
     try {
-	y = boost::math::cdf(
-                boost::math::non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
+        using namespace boost::math;
+        y = cdf(non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
     } catch (...) {
-	/* Boost was unable to produce a result. Can happen when one or both
-	 * of v1 and v2 is very small and x is very large. e.g.
-	 * ncdtr(1e-100, 3, 1.5, 1e100). */
+        /* Boost was unable to produce a result. Can happen when one or both
+         * of v1 and v2 is very small and x is very large. e.g.
+         * ncdtr(1e-100, 3, 1.5, 1e100). */
         sf_error("ncfdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if ((y < 0) || (y > 1)) {
-	/* Boost can return results far out of bounds when dfd and dfn are both large
-	 * and of similar magnitude. Return NAN if the result is out of bounds because
-	 * the answer cannot be trusted. */
-	sf_error("ncfdtr", SF_ERROR_NO_RESULT, NULL);
+        /* Boost can return results far out of bounds when dfd and dfn are both large
+         * and of similar magnitude. Return NAN if the result is out of bounds because
+         * the answer cannot be trusted. */
+        sf_error("ncfdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     return y;
@@ -1130,16 +1132,17 @@ Real
 ncf_ppf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 {
     if (std::isnan(x) || std::isnan(v1) || std::isnan(v2) || std::isnan(l)) {
-	return NAN;
+        return NAN;
     }
     if ((v1 <= 0) || (v2 <= 0) || (l < 0) || (x < 0) || (x > 1)) {
-	sf_error("ncfdtri", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+        sf_error("ncfdtri", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     Real y;
     try {
-	y = boost::math::quantile<Real, SpecialPolicy>(
-                boost::math::non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
+        using namespace boost::math;
+        y = quantile<Real, SpecialPolicy>(
+                non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
     } catch (const std::domain_error& e) {
         sf_error("ncfdtri", SF_ERROR_DOMAIN, NULL);
         y = NAN;
@@ -1273,28 +1276,29 @@ Real
 nct_cdf_wrap(const Real v, const Real l, const Real x)
 {
     if (std::isnan(x) || std::isnan(v) || std::isnan(l)) {
-	return NAN;
+        return NAN;
     }
     if (v <= 0) {
-	sf_error("nctdtr", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+        sf_error("nctdtr", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     if (std::isinf(x)) {
-	return  (x > 0) ? 1.0 : 0.0;
+        return (x > 0) ? 1.0 : 0.0;
     }
     Real y;
     try {
-	y = boost::math::cdf(
-                boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
+        using namespace boost::math;
+        y = cdf(non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
     } catch (...) {
-	/* Boost was unable to produce a result. */
+        /* Boost was unable to produce a result. */
         sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if ((y < 0) || (y > 1)) {
-	/* Result must be between 0 and 1 to be a valid CDF value.
-       Return NAN if the result is out of bounds because the answer cannot be trusted. */
-	    sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
+        // Result must be between 0 and 1 to be a valid CDF value.
+        // Return NAN if the result is out of bounds because the answer
+        // cannot be trusted.
+        sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     return y;
@@ -1361,7 +1365,7 @@ nct_ppf_wrap(const Real v, const Real l, const Real x)
         sf_error("nctdtrit", SF_ERROR_UNDERFLOW, NULL);
         y = 0; 
     } catch (...) {
-	/* Boost was unable to produce a result. */
+        /* Boost was unable to produce a result. */
         sf_error("nctdtrit", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
@@ -1667,7 +1671,7 @@ binom_cdf_wrap(const Real x, const Real n, const Real p)
         }
     }
     if (std::isnan(x)) {
-	    return NAN;
+        return NAN;
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
@@ -2313,27 +2317,27 @@ Real
 f_cdf_wrap(const Real dfn, const Real dfd, const Real x)
 {
     if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
-	return NAN;
+        return NAN;
     }
     if ((dfn <= 0) || (dfd <= 0) || (x < 0)) {
-	sf_error("fdtr", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+        sf_error("fdtr", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     if (std::isinf(x)) {
-	// inf => 1. We've already returned if x < 0, so this can only be +inf.
-	return 1.0;
+        // inf => 1. We've already returned if x < 0, so this can only be +inf.
+        return 1.0;
     }
     Real y;
     try {
-	y = boost::math::cdf(
-                boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x);
+        using namespace boost::math;
+        y = cdf(fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x);
     } catch (...) {
-	/* Boost was unable to produce a result. */
+        /* Boost was unable to produce a result. */
         sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if ((y < 0) || (y > 1)) {
-	sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
+        sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     return y;
@@ -2356,16 +2360,17 @@ Real
 f_ppf_wrap(const Real dfn, const Real dfd, const Real x)
 {
     if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
-	return NAN;
+        return NAN;
     }
     if ((dfn <= 0) || (dfd <= 0) || (x < 0) || (x > 1)) {
-	sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+        sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     Real y;
     try {
-	y = boost::math::quantile<Real, SpecialPolicy>(
-                boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x);
+        using namespace boost::math;
+        y = quantile<Real, SpecialPolicy>(
+                fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x);
     } catch (const std::domain_error& e) {
         sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
         y = NAN;
@@ -2403,26 +2408,26 @@ Real
 f_sf_wrap(const Real dfn, const Real dfd, const Real x)
 {
     if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
-	return NAN;
+        return NAN;
     }
     if ((dfn <= 0) || (dfd <= 0) || (x < 0)) {
-	sf_error("fdtrc", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+        sf_error("fdtrc", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     if (std::isinf(x)) {
-	// inf => 0. We've already returned if x < 0, so this can only be +inf.
-	return 0.0;
+        // inf => 0. We've already returned if x < 0, so this can only be +inf.
+        return 0.0;
     }
     Real y;
     try {
-	y = boost::math::cdf(boost::math::complement(
-                boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x));
+        using namespace boost::math;
+        y = cdf(complement(fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x));
     } catch (...) {
         sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if ((y < 0) || (y > 1)) {
-	sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
+        sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     return y;
