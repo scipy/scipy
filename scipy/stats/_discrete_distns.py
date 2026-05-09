@@ -144,6 +144,11 @@ class bernoulli_gen(binom_gen):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Bernoulli distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Bernoulli_distribution
+
     %(example)s
 
     """
@@ -981,6 +986,11 @@ class poisson_gen(rv_discrete):
     returns ``1.0`` at quantile :math:`k = 0`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Poisson distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Poisson_distribution
 
     %(example)s
 

@@ -1636,6 +1636,11 @@ class chi2_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Chi-squared distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Chi-squared_distribution
+
     %(example)s
 
     """
@@ -2070,6 +2075,11 @@ class expon_gen(rv_continuous):
 
     The exponential distribution is a special case of the gamma
     distributions, with gamma shape parameter ``a = 1``.
+
+    References
+    ----------
+    .. [1] "Exponential distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Exponential_distribution
 
     %(example)s
 
@@ -6092,6 +6102,11 @@ class laplace_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Laplace distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Laplace_distribution
+
     %(example)s
 
     """
@@ -6526,6 +6541,11 @@ class logistic_gen(rv_continuous):
     Fermi-Dirac distribution describing fermionic statistics.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Logistic distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Logistic_distribution
 
     %(example)s
 
@@ -9111,6 +9131,11 @@ class rayleigh_gen(rv_continuous):
     `rayleigh` is a special case of `chi` with ``df=2``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Rayleigh distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Rayleigh_distribution
 
     %(example)s
 
