@@ -78,7 +78,10 @@ PyObject* direct_optimize(
      }
 
      l = (doublereal *) malloc(sizeof(doublereal) * dimension * 2);
-     if (!l) *ret_code = DIRECT_OUT_OF_MEMORY;
+     if (!l) {
+      PyErr_NoMemory();
+      return NULL;
+     }
      u = l + dimension;
      for (i = 0; i < dimension; ++i) {
       l[i] = lower_bounds[i];
