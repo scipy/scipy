@@ -278,59 +278,68 @@ def _assert_matching_namespace(actual, desired, xp):
             f"Desired: {xp.__name__}")
     assert actual_arr_space == xp, _msg
 
+def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True, check_dtype=True,
+                    check_shape=True, check_0d=True, err_msg='', xp=None):
+    from scipy._external.array_api_extra._lib._testing import xp_assert_close
+    return xp_assert_close(actual, desired,rtol=rtol, atol=atol, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
 
 def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
                     check_shape=True, check_0d=True, err_msg='', xp=None):
-    __tracebackhide__ = True  # Hide traceback for py.test
+    from scipy._external.array_api_extra._lib._testing import xp_assert_equal
+    return xp_assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
 
-    actual, desired, xp = _strict_check(
-        actual, desired, xp, check_namespace=check_namespace,
-        check_dtype=check_dtype, check_shape=check_shape,
-        check_0d=check_0d
-    )
+# def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
+#                     check_shape=True, check_0d=True, err_msg='', xp=None):
+#     __tracebackhide__ = True  # Hide traceback for py.test
 
-    if is_cupy(xp):
-        return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
-    elif is_torch(xp):
-        # PyTorch recommends using `rtol=0, atol=0` like this
-        # to test for exact equality
-        err_msg = None if err_msg == '' else err_msg
-        return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
-                                       check_dtype=False, msg=err_msg)
-    # JAX uses `np.testing`
-    return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
+#     actual, desired, xp = _strict_check(
+#         actual, desired, xp, check_namespace=check_namespace,
+#         check_dtype=check_dtype, check_shape=check_shape,
+#         check_0d=check_0d
+#     )
+
+#     if is_cupy(xp):
+#         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
+#     elif is_torch(xp):
+#         # PyTorch recommends using `rtol=0, atol=0` like this
+#         # to test for exact equality
+#         err_msg = None if err_msg == '' else err_msg
+#         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
+#                                        check_dtype=False, msg=err_msg)
+#     # JAX uses `np.testing`
+#     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
-def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
-                    check_dtype=True, check_shape=True, check_0d=True,
-                    err_msg='', xp=None):
-    __tracebackhide__ = True  # Hide traceback for py.test
+# def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
+#                     check_dtype=True, check_shape=True, check_0d=True,
+#                     err_msg='', xp=None):
+#     __tracebackhide__ = True  # Hide traceback for py.test
 
-    actual, desired, xp = _strict_check(
-        actual, desired, xp,
-        check_namespace=check_namespace, check_dtype=check_dtype,
-        check_shape=check_shape, check_0d=check_0d
-    )
+#     actual, desired, xp = _strict_check(
+#         actual, desired, xp,
+#         check_namespace=check_namespace, check_dtype=check_dtype,
+#         check_shape=check_shape, check_0d=check_0d
+#     )
 
-    floating = xp.isdtype(actual.dtype, ('real floating', 'complex floating'))
-    if rtol is None and floating:
-        # multiplier of 4 is used as for `np.float64` this puts the default `rtol`
-        # roughly half way between sqrt(eps) and the default for
-        # `numpy.testing.assert_allclose`, 1e-7
-        rtol = xp.finfo(actual.dtype).eps**0.5 * 4
-    elif rtol is None:
-        rtol = 1e-7
+#     floating = xp.isdtype(actual.dtype, ('real floating', 'complex floating'))
+#     if rtol is None and floating:
+#         # multiplier of 4 is used as for `np.float64` this puts the default `rtol`
+#         # roughly half way between sqrt(eps) and the default for
+#         # `numpy.testing.assert_allclose`, 1e-7
+#         rtol = xp.finfo(actual.dtype).eps**0.5 * 4
+#     elif rtol is None:
+#         rtol = 1e-7
 
-    if is_cupy(xp):
-        return xp.testing.assert_allclose(actual, desired, rtol=rtol,
-                                          atol=atol, err_msg=err_msg)
-    elif is_torch(xp):
-        err_msg = None if err_msg == '' else err_msg
-        return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
-                                       equal_nan=True, check_dtype=False, msg=err_msg)
-    # JAX uses `np.testing`
-    return np.testing.assert_allclose(actual, desired, rtol=rtol,
-                                      atol=atol, err_msg=err_msg)
+#     if is_cupy(xp):
+#         return xp.testing.assert_allclose(actual, desired, rtol=rtol,
+#                                           atol=atol, err_msg=err_msg)
+#     elif is_torch(xp):
+#         err_msg = None if err_msg == '' else err_msg
+#         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
+#                                        equal_nan=True, check_dtype=False, msg=err_msg)
+#     # JAX uses `np.testing`
+#     return np.testing.assert_allclose(actual, desired, rtol=rtol,
+#                                       atol=atol, err_msg=err_msg)
 
 
 def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
