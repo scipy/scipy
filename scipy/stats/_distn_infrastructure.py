@@ -507,7 +507,7 @@ def _sum_finite(x):
 class rv_frozen:
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     def __init__(self, dist, *args, **kwds):
         self.args = args
@@ -1871,6 +1871,8 @@ class rv_continuous(rv_generic):
     ``gaussian._pdf(y) / scale``.
 
     """
+
+    _support: tuple[float | str, float | str]  # not required
 
     def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
                  badvalue=None, name=None, longname=None,

@@ -23,7 +23,7 @@ class TestBSplines:
     purposes. Others (at integer points) are compared to theoretical
     expressions (cf. Unser, Aldroubi, Eden, IEEE TSP 1993, Table 1)."""
 
-    @make_xp_test_case(signal.spline_filter)
+    @make_xp_test_case(signal.spline_filter)  # type:ignore[attr-defined]
     def test_spline_filter(self, xp):
         rng = np.random.RandomState(12457)
         # Test the type-error branch
@@ -74,7 +74,7 @@ class TestBSplines:
                         result_array_real)
 
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9758")
-    @make_xp_test_case(signal.spline_filter)
+    @make_xp_test_case(signal.spline_filter)  # type:ignore[attr-defined]
     def test_spline_filter_complex(self, xp):
         rng = np.random.RandomState(12457)
         data_array_complex = rng.rand(7, 7) + rng.rand(7, 7)*1j
@@ -117,7 +117,7 @@ class TestBSplines:
         xp_assert_close(signal.spline_filter(data_array_complex, 0),
                         result_array_complex, rtol=1e-6)
 
-    @make_xp_test_case(signal.gauss_spline)
+    @make_xp_test_case(signal.gauss_spline)  # type:ignore[attr-defined]
     def test_gauss_spline(self, xp):
         assert math.isclose(signal.gauss_spline(0, 0), 1.381976597885342)
 
@@ -126,7 +126,7 @@ class TestBSplines:
         )
 
     @skip_xp_backends(np_only=True, reason="deliberate: array-likes are accepted")
-    @make_xp_test_case(signal.gauss_spline)
+    @make_xp_test_case(signal.gauss_spline)  # type:ignore[attr-defined]
     def test_gauss_spline_list(self, xp):
         # regression test for gh-12152 (accept array_like)
         knots = [-1.0, 0.0, -1.0]
@@ -134,7 +134,7 @@ class TestBSplines:
                             np.asarray([0.15418033, 0.6909883, 0.15418033])
         )
 
-    @make_xp_test_case(signal.cspline1d)
+    @make_xp_test_case(signal.cspline1d)  # type:ignore[attr-defined]
     def test_cspline1d(self, xp):
         xp_assert_equal(signal.cspline1d(xp.asarray([0])),
                         xp.asarray([0.], dtype=xp.float64))
@@ -146,7 +146,7 @@ class TestBSplines:
                            5.21051638], dtype=xp.float64)
         xp_assert_close(signal.cspline1d(xp.asarray([1., 2, 3, 4, 5])), c1d0)
 
-    @make_xp_test_case(signal.qspline1d)
+    @make_xp_test_case(signal.qspline1d)  # type:ignore[attr-defined]
     def test_qspline1d(self, xp):
         xp_assert_equal(signal.qspline1d(xp.asarray([0])),
                         xp.asarray([0.], dtype=xp.float64))
@@ -160,7 +160,7 @@ class TestBSplines:
         )
 
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9484")
-    @make_xp_test_case(signal.cspline1d_eval)
+    @make_xp_test_case(signal.cspline1d_eval)  # type:ignore[attr-defined]
     def test_cspline1d_eval(self, xp):
         r = signal.cspline1d_eval(xp.asarray([0., 0], dtype=xp.float64),
                                xp.asarray([0.], dtype=xp.float64))
@@ -169,9 +169,9 @@ class TestBSplines:
         r = signal.cspline1d_eval(xp.asarray([1., 0, 1], dtype=xp.float64),
                                xp.asarray([], dtype=xp.float64))
         xp_assert_equal(r, xp.asarray([], dtype=xp.float64))
-        
+
         # Test case for newx that gets filtered down to empty
-        r = signal.cspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64), 
+        r = signal.cspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64),
                                   xp.asarray([-1.0], dtype=xp.float64))
         xp_assert_close(r, xp.asarray([0.33333333], dtype=xp.float64))
 
@@ -197,11 +197,11 @@ class TestBSplines:
 
         with pytest.raises(ValueError,
                             match="Spline coefficients 'cj' must not be empty."):
-            signal.cspline1d_eval(xp.asarray([], dtype=xp.float64), 
+            signal.cspline1d_eval(xp.asarray([], dtype=xp.float64),
                                   xp.asarray([0.0], dtype=xp.float64))
 
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9484")
-    @make_xp_test_case(signal.qspline1d_eval)
+    @make_xp_test_case(signal.qspline1d_eval)  # type:ignore[attr-defined]
     def test_qspline1d_eval(self, xp):
         xp_assert_close(signal.qspline1d_eval(xp.asarray([0., 0]), xp.asarray([0.])),
                         xp.asarray([0.])
@@ -211,10 +211,10 @@ class TestBSplines:
         )
 
         # Test case for newx that gets filtered down to empty
-        r = signal.qspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64), 
+        r = signal.qspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64),
                                   xp.asarray([-1.0], dtype=xp.float64))
         xp_assert_equal(r, xp.asarray([0.25], dtype=xp.float64))
-        
+
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1] - x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,
@@ -236,9 +236,9 @@ class TestBSplines:
         )
         xp_assert_close(r, newy)
 
-        with pytest.raises(ValueError, 
+        with pytest.raises(ValueError,
                            match="Spline coefficients 'cj' must not be empty."):
-            signal.qspline1d_eval(xp.asarray([], dtype=xp.float64), 
+            signal.qspline1d_eval(xp.asarray([], dtype=xp.float64),
                                   xp.asarray([0.0], dtype=xp.float64))
 
 
@@ -248,7 +248,7 @@ sepfir_dtype_map = {np.uint8: np.float32, int: np.float64,
                     np.complex64: np.complex64, complex: complex}
 
 
-@make_xp_test_case(signal.sepfir2d)
+@make_xp_test_case(signal.sepfir2d)  # type:ignore[attr-defined]
 class TestSepfir2d:
     def test_sepfir2d_invalid_filter(self, xp):
         filt = xp.asarray([1.0, 2.0, 4.0, 2.0, 1.0])
@@ -374,7 +374,7 @@ class TestSepfir2d:
         assert result.dtype == sepfir_dtype_map[dtyp]
 
 
-@make_xp_test_case(signal.cspline2d)
+@make_xp_test_case(signal.cspline2d)  # type:ignore[attr-defined]
 def test_cspline2d(xp):
     rng = np.random.RandomState(181819142)
     image = rng.rand(71, 73)
@@ -383,7 +383,7 @@ def test_cspline2d(xp):
     assert array_namespace(result) == xp
 
 
-@make_xp_test_case(signal.qspline2d)
+@make_xp_test_case(signal.qspline2d)  # type:ignore[attr-defined]
 def test_qspline2d(xp):
     rng = np.random.RandomState(181819143)
     image = rng.rand(71, 73)

@@ -177,7 +177,7 @@ def _cached_roots_legendre(n):
     return _cached_roots_legendre.cache[n]
 
 
-_cached_roots_legendre.cache = dict()
+_cached_roots_legendre.cache = dict()  # pyrefly:ignore[missing-attribute]
 
 
 @xp_capabilities()

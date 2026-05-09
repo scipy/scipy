@@ -14,6 +14,7 @@ permissions:
 
 env:
   INSTALLDIR: "build-install"
+  CCACHE_MAXSIZE: "250M"
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
 
 concurrency:
@@ -36,10 +37,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.55.0
+          pixi-version: v0.68.0
           cache: false
           environments: py312-system-libs-osx
 
@@ -75,16 +77,19 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.55.0
+          pixi-version: v0.68.0
           cache: false
           environments: ${{ matrix.environment }}
 
       - name: Test SciPy
         # mpmath tests are too slow for CI
-        run: pixi run test-${{ matrix.environment }} -m full -- -k "not mpmath"
+        run: pixi run test-${ENVIRONMENT} -m full -- -k "not mpmath"
+        env:
+          ENVIRONMENT: ${{ matrix.environment }}
 
   clang_ASAN:
     name: Test under AddressSanitizer

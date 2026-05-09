@@ -289,9 +289,11 @@ class Bounds:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def _input_validation(self):
+        if self.lb.size == 0 or self.ub.size == 0:
+            raise ValueError("`lb` and `ub` must be non-empty.")
         try:
             res = np.broadcast_arrays(self.lb, self.ub, self.keep_feasible)
             self.lb, self.ub, self.keep_feasible = res
@@ -383,7 +385,7 @@ class PreparedConstraint:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, constraint, x0, sparse_jacobian=None,
                  finite_diff_bounds=(-np.inf, np.inf)):

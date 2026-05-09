@@ -826,7 +826,7 @@ __all__ += [
     'logsumexp',
     'softmax',
     'log_softmax',
-    'multigammaln',
+    'multigammaln',  # pyrefly:ignore[bad-dunder-all]
     'ellip_harm',
     'ellip_harm_2',
     'ellip_normal',

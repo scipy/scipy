@@ -753,7 +753,7 @@ class TestInsert:
         y = xp.sin(x)**3
         spl = make_interp_spline(x, y, k=3)
 
-        tck = (spl._t, spl._c, spl.k)
+        tck = (_xp_copy_to_numpy(spl.t), _xp_copy_to_numpy(spl.c), spl.k)
         spl_1f = BSpline(*insert(xval, tck))     # FITPACK
         spl_1 = spl.insert_knot(xval)
 
@@ -791,7 +791,11 @@ class TestInsert:
         y = xp.sin(x)**3
         spl = make_interp_spline(x, y, k=3)
 
-        spl_1f = BSpline(*insert(xval, (spl._t, spl._c, spl.k), m=m))
+        spl_1f = BSpline(
+            *insert(
+                xval, (_xp_copy_to_numpy(spl.t), _xp_copy_to_numpy(spl.c), spl.k), m=m
+            )
+        )
         spl_1 = spl.insert_knot(xval, m)
 
         xp_assert_close(spl_1.t, xp.asarray(spl_1f.t), atol=1e-15)

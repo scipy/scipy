@@ -398,7 +398,7 @@ for obj_name in _signal_api.__all__:
         capabilities = capabilities_overrides.get(
             obj_name, get_default_capabilities(obj_name, delegator)
         )
-        f = capabilities(f)
+        f = capabilities(f)  # pyrefly:ignore[not-callable]
 
     # add the decorated function to the namespace, to be imported in __init__.py
     vars()[obj_name] = f

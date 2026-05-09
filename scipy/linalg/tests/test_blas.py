@@ -14,13 +14,15 @@ from numpy import (arange, triu, tril, zeros, tril_indices, ones,
 
 import scipy
 from scipy.linalg import get_blas_funcs, toeplitz, solve
-from scipy.linalg.blas import HAS_ILP64, HAS_LP64
+from scipy.linalg.blas import HAS_ILP64
 
 try:
     from scipy.linalg import _fblas as fblas
     FBLAS_ERROR = fblas.__fblas_error
+    HAS_LP64_FBLAS = True
 except ImportError:
     fblas = None
+    HAS_LP64_FBLAS = False
 
 try:
     from scipy.linalg import _fblas_64 as fblas_64
@@ -89,20 +91,18 @@ def test_get_blas_funcs_ilp_true():
         assert gemm.int_dtype == np.int64
         assert gemm.module_name == 'fblas_64'
     else:
-        assert HAS_LP64
         with pytest.raises(RuntimeError):
             get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
 
 
 def test_get_blas_funcs_ilp_false():
     # False is LP64 or fail if not available
-    if HAS_LP64:
+    if HAS_LP64_FBLAS:
         gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
         assert gemm.int_dtype == np.int32
         assert gemm.module_name == 'fblas'
     else:
-        assert HAS_ILP64
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
 
 

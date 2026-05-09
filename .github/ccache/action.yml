@@ -37,3 +37,9 @@ runs:
         path: ${{ steps.prep-ccache.outputs.dir }}
         key: ${{ inputs.workflow_name }}-${{ inputs.job_name}}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
         restore-keys: ${{ inputs.workflow_name }}-${{ inputs.job_name }}-ccache-linux-
+    - name: Reset stats
+      shell: bash
+      run: |
+        # Restoring the cache also restored the stats from the previous run
+        # Try to search for ccache on our path, or try pixi
+        pixi exec ccache --zero-stats || ccache --zero-stats

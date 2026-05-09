@@ -116,7 +116,7 @@ def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
     api_arrays = []
 
     for array in arrays:
-        arr_info = _validate_array_cls(type(array), sparse_ok=sparse_ok)
+        arr_info = _validate_array_cls(type(array), sparse_ok=sparse_ok)  # type:ignore[arg-type]
         if arr_info is _ArrayClsInfo.skip:
             pass
 

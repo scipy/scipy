@@ -116,6 +116,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     } else {
         goto skip_warn;
     }
+    Py_DECREF(py_SpecialFunctionWarning);
 
 skip_warn:
     PyGILState_Release(save);

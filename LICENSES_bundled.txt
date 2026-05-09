@@ -87,10 +87,15 @@ License: BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exc
   For details, see subprojects/xsf/LICENSE and
   subprojects/xsf/LICENSES_bundled.txt
 
-Name: pypocketfft
-Files: scipy/fft/_pocketfft/pypocketfft.cxx
-License: BSD-3-Clause
-  For details, see scipy/fft/_pocketfft/LICENSE.md
+Name: pyduccfft
+Files: scipy/fft/_duccfft/pyduccfft.cxx
+License: 3-Clause BSD
+  For details, see scipy/fft/_duccfft/LICENSE.md
+
+Name: ducc0
+Files: subprojects/duccfft/ducc0/*
+License: 3-Clause BSD
+  For details, see subprojects/duccfft/LICENSE.md
 
 Name: uarray
 Files: scipy/_lib/_uarray/*

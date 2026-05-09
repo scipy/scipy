@@ -4,7 +4,7 @@ import numpy as np
 from numpy import asarray_chkfinite, asarray, empty_like
 
 # Local imports
-from scipy._lib._util import _asarray_validated, _apply_over_batch
+from scipy._lib._util import _asarray_validated, _apply_over_batch, _deprecate_dtypes
 from ._misc import LinAlgError, _datacopied
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _ensure_aligned_and_native
@@ -33,11 +33,14 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     if a1.shape[-1] != a1.shape[-2]:
         raise ValueError(f"Expected a square matrix or batch thereof, got {a1.shape=}")
 
+    _deprecate_dtypes("linalg.cholesky", a1)
+
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
-    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
+    overwrite_a = (overwrite_a and (a1.ndim == 2)
+                   and (a1.flags["F_CONTIGUOUS"] or a1.flags["C_CONTIGUOUS"]))
 
-    # accomodate empty arrays
+    # accommodate empty arrays
     if a1.shape[-1] == 0:
         batch_shape = a1.shape[:-2]
         c = np.zeros(batch_shape + (0, 0), dtype=a1.dtype)
@@ -68,7 +71,8 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
         factorization. During decomposition, only the selected half of the
         matrix is referenced. Default is upper-triangular.
     overwrite_a : bool, optional
-        Whether to overwrite data in `a` (may improve performance).
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the entire input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -142,7 +146,8 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
         During decomposition, only the selected half of the matrix is referenced.
         (Default: upper-triangular)
     overwrite_a : bool, optional
-        Whether to overwrite data in a (may improve performance)
+        Whether to overwrite data in ``a`` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the entire input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -233,6 +238,7 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
         Right-hand side
     overwrite_b : bool, optional
         Whether to overwrite data in b (may improve performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -320,6 +326,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
         Banded matrix
     overwrite_ab : bool, optional
         Discard data in ab (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
     check_finite : bool, optional
@@ -392,6 +399,7 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
         Right-hand side
     overwrite_b : bool, optional
         If True, the function will overwrite the values in `b`.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems

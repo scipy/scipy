@@ -25,7 +25,7 @@ from numpy import zeros, concatenate, ravel, diff, array
 import numpy as np
 
 from . import _fitpack_impl
-from . import _fitpack
+from . import _fitpack  # type:ignore[attr-defined]
 from scipy._lib._array_api import xp_capabilities
 
 

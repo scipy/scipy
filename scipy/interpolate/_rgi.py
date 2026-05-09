@@ -283,7 +283,7 @@ class RegularGridInterpolator:
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan, *, solver=None, solver_args=None):
@@ -738,6 +738,47 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     12.63 # up to rounding
 
     Since the function is linear, the interpolation is exact using linear method.
+
+    If ``fill_value=None``, then values outside of the domain are extrapolated.
+
+    >>> x = np.linspace(0, 10, 11)
+    >>> y = np.linspace(0, 15, 16)
+    >>> def value_func_2d(x, y):
+    ...    return 5 * x - 3 * y
+    >>> points = (x, y)
+    >>> values = value_func_2d(*np.meshgrid(*points, indexing='ij'))
+    >>> xi = np.array([[25, 36]])
+    >>> interpn(points, values, xi, method='linear', bounds_error=False,
+    ...         fill_value=None)
+    array([17.])
+
+    If a ``fill_value`` is specified, any points outside the domain will be set to
+    ``fill_value``.
+
+    >>> interpn(points, values, xi, method='linear', bounds_error=False, fill_value=42)
+    array([42.])
+
+    When one axis is a single grid point, interpolation is only done at that
+    coordinate. Any other value along that axis is out of bounds, and set
+    to ``fill_value`` (if there is one).
+
+    Evaluate interpolation function at a point outside of the single-point axis
+
+    >>> x = np.array([0.0]) # x axis has length 1
+    >>> y = np.linspace(0, 10, 11)
+    >>> points = (x, y) 
+    >>> values = value_func_2d(*np.meshgrid(*points, indexing='ij'))
+    >>> xi = np.array([[1.0, 0.5]])
+    >>> interpn(points, values, xi, method='linear', bounds_error=False,
+    ...         fill_value = 42)
+    array([42.])
+
+    Evaluate interpolation function at a point on the single-point axis
+
+    >>> xi = np.array([[0.0, 0.5]])
+    >>> interpn(points, values, xi, method='linear', bounds_error=False,
+    ...         fill_value = 42) 
+    array([-1.5])   # interpolation as normal along y
 
     """
     # sanity check 'method' kwarg

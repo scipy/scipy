@@ -10,7 +10,9 @@ option('use-ilp64', type: 'boolean', value: false,
 option('cython-blas-abi', type: 'combo', choices: ['auto', 'lp64', 'ilp64'],
        value: 'auto',
        description: 'Integer ABI for the cython_blas/cython_lapack Cython ' +
-                    'API. Default (auto) matches use-ilp64.')
+                    'API. Default (auto) matches use-ilp64. Also keeps the ' +
+                    'low-level wrappers in linalg.blas/linalg.lapack as LP64.' +
+                    'This option is a temporary bridge, aim to support ILP64!')
 option('blas-symbol-suffix', type: 'string', value: 'auto',
         description: 'BLAS and LAPACK symbol suffix to use, if any')
 option('mkl-threading', type: 'string', value: 'auto',

@@ -30,14 +30,15 @@ B-splines
 .. autosummary::
    :toctree: generated/
 
-   gauss_spline   -- Gaussian approximation to the B-spline basis function.
-   cspline1d      -- Coefficients for 1-D cubic (3rd order) B-spline.
-   qspline1d      -- Coefficients for 1-D quadratic (2nd order) B-spline.
-   cspline2d      -- Coefficients for 2-D cubic (3rd order) B-spline.
-   qspline2d      -- Coefficients for 2-D quadratic (2nd order) B-spline.
-   cspline1d_eval -- Evaluate a cubic spline at the given points.
-   qspline1d_eval -- Evaluate a quadratic spline at the given points.
-   spline_filter  -- Smoothing spline (cubic) filtering of a rank-2 array.
+   gauss_spline        -- Gaussian approximation to the B-spline basis function.
+   cspline1d           -- Coefficients for 1-D cubic (3rd order) B-spline.
+   qspline1d           -- Coefficients for 1-D quadratic (2nd order) B-spline.
+   cspline2d           -- Coefficients for 2-D cubic (3rd order) B-spline.
+   qspline2d           -- Coefficients for 2-D quadratic (2nd order) B-spline.
+   cspline1d_eval      -- Evaluate a cubic spline at the given points.
+   qspline1d_eval      -- Evaluate a quadratic spline at the given points.
+   spline_filter       -- Smoothing spline (cubic) filtering of a rank-2 array.
+   whittaker_henderson -- Whittaker-Henderson smoothing/graduation
 
 Filtering
 =========
@@ -306,7 +307,7 @@ use the classes to create a reusable function instead.
 from ._support_alternative_backends import *
 from . import _support_alternative_backends
 __all__ = _support_alternative_backends.__all__
-del _support_alternative_backends, _signal_api, _delegators  # noqa: F821
+del _support_alternative_backends, _signal_api, _delegators  # noqa: F821  # pyrefly:ignore[unbound-name]
 
 
 # Deprecated namespaces, to be removed in v2.0.0

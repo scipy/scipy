@@ -6,7 +6,7 @@ from types import GenericAlias
 class _ProbabilityDistribution(ABC):
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     @abstractmethod
     def support(self):

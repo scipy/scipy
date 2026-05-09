@@ -334,7 +334,7 @@ def test_repr(func):
 
 
 @pytest.mark.skipif(
-    version.parse(np.__version__) < version.parse("2.2"),
+    version.parse(np.__version__) < version.parse("2.2"),  # type:ignore[attr-defined]
     reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
 @pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
 def test_doc(func):

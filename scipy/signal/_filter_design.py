@@ -1161,10 +1161,10 @@ def tf2zpk(b, a):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
 
     Returns
     -------
@@ -1318,10 +1318,10 @@ def tf2sos(b, a, pairing=None, *, analog=False):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     pairing : {None, 'nearest', 'keep_odd', 'minimal'}, optional
         The method to use to combine pairs of poles and zeros into sections.
         See `zpk2sos` for information and restrictions on `pairing` and
@@ -1962,10 +1962,10 @@ def lp2lp(b, a, wo=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired cutoff, as angular frequency (e.g. rad/s).
         Defaults to no change.
@@ -2061,10 +2061,10 @@ def lp2hp(b, a, wo=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired cutoff, as angular frequency (e.g., rad/s).
         Defaults to no change.
@@ -2150,10 +2150,10 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired passband center, as angular frequency (e.g., rad/s).
         Defaults to no change.
@@ -2243,10 +2243,10 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired stopband center, as angular frequency (e.g., rad/s).
         Defaults to no change.

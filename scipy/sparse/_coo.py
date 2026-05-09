@@ -27,7 +27,7 @@ import operator
 
 class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
-    _allow_nd = range(1, 65)
+    _allow_nd = tuple(range(1, 65))
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
@@ -329,7 +329,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         Parameters
         ----------
         copy : bool, optional
-            Unused.
+            Unused. A copy is always made in the 2D case. And CSC is 2D.
 
         Returns
         -------
@@ -356,6 +356,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
+            # _coo_to_compressed copy kwarg only for 1D. CSC cant be 1D. See gh-24676
             from ._csc import csc_array
             indptr, indices, data, shape = self._coo_to_compressed(csc_array._swap)
 
@@ -373,7 +374,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         ----------
         copy : bool, optional
             With ``copy=False``, the data/indices may be shared between this
-            array/matrix and the resultant csr_array/matrix.
+            array/matrix and the resultant csr_array/matrix. But only for 1D.
+            For 2D, a copy will always be made.
 
         Returns
         -------
@@ -1656,6 +1658,15 @@ def _ravel_coords(coords, shape, order='C'):
 def isspmatrix_coo(x):
     """Is `x` of coo_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -1802,6 +1813,15 @@ class coo_matrix(spmatrix, _coo_base):
     A sparse matrix in COOrdinate format.
 
     Also known as the 'ijv' or 'triplet' format.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         coo_matrix(D)
