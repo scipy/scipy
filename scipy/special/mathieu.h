@@ -1,3 +1,34 @@
+/* UFunc scalar kernels for Mathieu functions.
+ *
+ * These are based on the work of Stuart Brorson (see
+ * https://github.com/scipy/xsf/pull/99), whose code has been refactored by
+ * Scipy developers so that only parts fit for xsf as a library of simple
+ * numerical kernels which can be used on both CPU and GPU are included in
+ * xsf. The below code uses dstevd from LAPACK to calculate eigenvalues and
+ * eigenvectors of symmetric tridiagonal recurrence matrices, and thus is not
+ * fit for xsf.
+ *
+ * A full write up of the mathematics behind Stuart Brorson's implementation can
+ * be found at https://github.com/brorson/ScipyMathieuPaper.
+ *
+ * The below kernels are stateful functors. `mathieu_xem`, a template which can
+ * compute either of the angular mathieu functions `mathieu_cem` and
+ * `mathieu_sem` each cache the fourier coefficients corresponding to the last
+ * seen pair of `m` and `q`. Such caches live only during the process of
+ * iteration for a single call to the ufunc. They do not persist between calls
+ * to the ufunc.
+ *
+ * The ufuncs corresponding to these stateful kernels which perform caching
+ * should be wrapped with `scipy._ufunc_tools._with_cache_optimization` so that
+ * ufunc iteration will proceed in the optimal order for cache reuse (with `m`
+ * and `q` varying most slowly and `x` varying most quickly). `mathieu_cv`, a
+ * template which can compute either of the characteristic value functions
+ * `mathieu_a` and `mathieu_b` is also a stateful functor, but it performs no
+ * caching and thus does not need
+ * `scipy._ufunc_tools._with_cache_optimization`. It is stateful so that it can
+ * hold on to `std::vector` instances, to resize and reuse as needed, rather
+ * than created and destroyed in each ufunc iteration.  */
+
 #pragma once
 
 #include <algorithm>
@@ -12,11 +43,19 @@
 
 namespace special {
 
+/* Stateful functor for mathieu characteristic values
+ *
+ * Computes characteristic values of the even angular mathieu function ce
+ * when the template argument FuncParity = xsf::mathieu::Parity::Even and
+ * of the odd angular mathieu function se when FuncParity = xsf::mathieu::Parity::Odd.
+ */
 template <xsf::mathieu::Parity FuncParity, typename T>
 struct mathieu_cv {
 
     std::vector<double> D;
     std::vector<double> E;
+    /* The solver is itself a stateful functor so that it can hold on to std::vectors
+     * to resize and reuse as needed. */
     eigvalsh_tridiagonal solver;
 
     T operator()(T m, T q) {
@@ -50,12 +89,16 @@ struct mathieu_cv {
         D.resize(N);
         E.resize(N - 1);
 
+        // Generate recurrence matrix.
         if (int_m % 2) {
             make_matrix<FuncParity, Odd>(q, as_mdspan(D), as_mdspan(E));
         } else {
             make_matrix<FuncParity, Even>(q, as_mdspan(D), as_mdspan(E));
         }
 
+        /* Solve for eigenvalues. Solver here wraps LAPACK's dstevd with
+         * jobz set to 'N" to onl compute eigenvalues. D is overwritten
+         * with the eigenvalues. */
         auto status = solver(D, E);
         if (status != SF_ERROR_OK) {
             if constexpr (FuncParity == Even) {
@@ -66,11 +109,18 @@ struct mathieu_cv {
             return std::numeric_limits<double>::quiet_NaN();
         }
 
+        // Pull out the characteristic value from among the eigenvalues.
         auto idx = cv_index<FuncParity>(int_m);
         return static_cast<T>(D[idx]);
     }
 };
 
+/* Compute fourier coefficients of mathieu functions. These are the values of the eigenvector
+ * corresponding to the characteristic value. FuncParity works as it did for mathieu_cv.
+ *
+ * Like mathieu_cv, this is stateful so that it can reuse std::vector instances, but no caching is
+ * performed here.
+ */
 template <xsf::mathieu::Parity FuncParity>
 struct mathieu_coeffs {
     std::vector<double> D;
@@ -93,21 +143,27 @@ struct mathieu_coeffs {
         E.resize(N - 1);
         Z.resize(N * N);
 
+        // Generate recurrence matrix.
         if (m % 2) {
             make_matrix<FuncParity, Odd>(q, as_mdspan(D), as_mdspan(E));
         } else {
             make_matrix<FuncParity, Even>(q, as_mdspan(D), as_mdspan(E));
         }
 
+        /* Solver wraps LAPACK dstevd with jobz set 'V'. Eigenvectors will be written
+         * into the flat buffer Z in column major order. */
         auto status = solver(D, E, Z);
         if (status != SF_ERROR_OK) {
             return status;
         }
 
+        /* Pull out the eigenvector corresponding to the characteristic value and write it
+         * into the output vector X. */
         auto col = cv_index<FuncParity>(m);
         std::copy_n(Z.begin() + col * N, N, X.begin());
         if constexpr (FuncParity == Even) {
             if (m % 2 == 0) {
+                /* This normalization step is required in the even/even case. */
                 X[0] /= M_SQRT2;
             }
         }
@@ -116,6 +172,13 @@ struct mathieu_coeffs {
     }
 };
 
+/* Computes even and odd angular mathieu functions ce and se depending on template parameter FuncParity
+ *
+ * This caches the fourier coefficients so that they can be reused as x varies while m and q stay fixed
+ * during the course of ufunc iteration. A ufunc using this kernel should use
+ * scipy.special._ufunc_tools._with_cache_optimization. Following SciPy's longstanding unorthodox
+ * behavior, the angle x is taken in units of degrees.
+ */
 template <xsf::mathieu::Parity FuncParity, typename T>
 struct mathieu_xem {
     double last_q = std::numeric_limits<double>::quiet_NaN();
@@ -128,8 +191,6 @@ struct mathieu_xem {
         auto constexpr Odd = Parity::Odd;
 
         double q_d = static_cast<double>(q);
-        /* SciPy's mathieu functions take angles in degrees.
-         * Convert to radians for internal calculation.*/
         double x_d = static_cast<double>(x);
         double out_d, out_diff_d;
 
@@ -155,7 +216,9 @@ struct mathieu_xem {
             }
         }
 
+        /* Check if either q or m has changed, and if so recompute the fourier coefficients. */
         if (q_d != last_q || int_m != last_m) {
+            // Chooses
             auto N = get_partial_sum_N(int_m, q_d);
             coefs.resize(N);
             auto status = get_coefs(int_m, q_d, coefs);
@@ -173,13 +236,13 @@ struct mathieu_xem {
             last_q = q_d;
             last_m = int_m;
         }
+        /* Compute mathieu function and its derivative by summing the fourier series. */
         if (int_m % 2) {
             sum_fourier_series<FuncParity, Odd, AngleUnitPolicy::Degrees>(as_mdspan(coefs), x_d, out_d, out_diff_d);
         } else {
             sum_fourier_series<FuncParity, Even, AngleUnitPolicy::Degrees>(as_mdspan(coefs), x_d, out_d, out_diff_d);
         }
         out = static_cast<T>(out_d);
-        /* Need to map to the derivative with respect to an angle in radians. */
         out_diff = static_cast<T>(out_diff_d);
     }
 };
