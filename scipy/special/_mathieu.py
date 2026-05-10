@@ -50,6 +50,7 @@ _mathieu_cem_doc = (
     ----------
     .. [1] 'Mathieu function'. *Wikipedia*.
            https://en.wikipedia.org/wiki/Mathieu_function
+    .. [2] https://github.com/brorson/ScipyMathieuPaper
 
     Examples
     --------
@@ -130,6 +131,7 @@ _mathieu_sem_doc = (
     ----------
     .. [1] 'Mathieu function'. *Wikipedia*.
            https://en.wikipedia.org/wiki/Mathieu_function
+    .. [2] https://github.com/brorson/ScipyMathieuPaper
 
     Examples
     --------
