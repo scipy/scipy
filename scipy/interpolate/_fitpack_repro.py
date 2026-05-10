@@ -480,7 +480,7 @@ def disc(t, k):
            :doi:`10.1016/0146-664X(82)90043-0`
 
     .. [2] Tom Lyche and Knut Morken, Spline methods,
-        http://www.uio.no/studier/emner/matnat/ifi/INF-MAT5340/v05/undervisningsmateriale/
+        https://web.archive.org/web/20221205112612/https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/hele.pdf
 
     """
     n = t.shape[0]
