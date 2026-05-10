@@ -6,7 +6,7 @@ SciPy 1.18.0 Release Notes
 
 .. contents::
 
-SciPy 1.18.0 is the culmination of X months of hard work. It contains
+SciPy 1.18.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and better
 documentation. There have been a number of deprecations and API changes
 in this release, which are documented below. All users are encouraged to
@@ -15,9 +15,9 @@ optimizations. Before upgrading, we recommend that users check that
 their own code does not use deprecated SciPy functionality (to do so,
 run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
-1.17.x branch, and on adding new features on the main branch.
+1.18.x branch, and on adding new features on the main branch.
 
-This release requires Python 3.12-3.14 and NumPy 1.26.4 or greater.
+This release requires Python 3.12-3.14 and NumPy 2.0.0 or greater.
 
 
 **************************
@@ -39,6 +39,20 @@ New features
 
 ``scipy.linalg`` improvements
 =============================
+- We now support three different build modes for BLAS and LAPACK: LP64-only,
+  ILP64-only, and ILP64 for everyting except ``cython_blas``/``cython_lapack``/
+  ``linalg.blas``/``linalg.lapack`` (support for Accelerate and MKL).
+- Machinery is now provided for downstream ``cython_lapack`` users to gracefully
+  handle LP64/ILP64 backend builds. Worked examples, including build system
+  details, have been included in this release.
+- An ``overwrite_b`` keyword argument was added to ``eigvals``, for consistency
+  with other similar ``linalg`` functions.
+- ``linalg.cholesky`` now leverages symmetry properties for performance
+  improvements, especially for real matrices. The batching loop of ``cholesky``
+  has now also been moved to a C implementation.
+- `scipy.linalg.lu` and `scipy.linalg.det` have been rewritten in C++ with
+  batching support in the compiled code.
+- Added ILP64 support to `scipy.linalg.expm` and `scipy.linalg.sqrtm`.
 
 
 ``scipy.ndimage`` improvements
@@ -47,7 +61,13 @@ New features
 
 ``scipy.optimize`` improvements
 ===============================
-
+- The ``trust_constr`` method for ``minimize`` was adjusted so that if the ``x``
+  array would result in infeasible constraints, and those constraints were
+  marked as ``keep_feasible``, then the objective function is not called with
+  that ``x`` array.
+- The ``COBYQA`` method for ``minimize`` now supports being called
+  concurrently by multiple threads. Previously, multiple threads calling this
+  function would only run one at a time.
 
 ``scipy.signal`` improvements
 =============================
@@ -59,40 +79,99 @@ New features
   `~scipy.signal.savgol_filter`.
   In econometrics, Whittaker-Henderson graduation of penalty order 2 is also known as
   Hodrick-Prescott filter.
+- ``lfilter_zi`` was refactored for improved numerical stability and
+  efficiency. It now raises a ``ValueError`` if parameter ``a`` has leading
+  zeros, i.e., ``a[0] == 0``, since ``lfilter`` and ``filtfilt`` do not support
+  that as well. Furthermore, a ``ValueError`` instead of a ``LinAlgError`` is
+  raised if the filter is unstable due to having a pole at ``z = 1``.
 
 
 ``scipy.sparse`` improvements
 =============================
+- In `scipy.sparse.csgraph` the computation of strongly connected components
+  for directed graphs is now performed by an implementation of Tarjan's
+  algorithm utilizing the improvements described in the recent survey by
+  Tarjan and Zwick, yielding a 2x speed improvement and better cache locality.
+- Added ILP64 BLAS/LAPACK support to SuperLU and PROPACK extensions.
+
+
+``scipy.integrate`` improvements
+================================
+- ILP64 support was added for ODEPACK
 
 
 ``scipy.spatial`` improvements
 ==============================
+- 3D area calculations are now faster in `scipy.spatial.SphericalVoronoi`.
+- N-dimensional input is now supported for `scipy.spatial.distance.minkowski`,
+  `scipy.spatial.distance.euclidean`, and `scipy.spatial.distance.seuclidean`.
 
 
 ``scipy.special`` improvements
 ==============================
-
+- The accuracy of the following functions was improved: `scipy.special.bdtrik`,
+  `scipy.special.bdtrin`, `scipy.special.nbdtrik`, `scipy.special.nbdtrin`.
 
 ``scipy.stats`` improvements
 ============================
+- The accuracy of `scipy.stats.pmean` with tiny, nonzero ``p`` has been
+  improved.
+- The performance of `scipy.stats.halfgennorm` has been improved.
+-
 
 
+************************
+Python Array API Support
+************************
+- Support has been added for CuPy delegation for: ``interpolate.PPoly``,
+  ``interpolate.BPoly``, and ``interpolate.BSpline``.
+- CuPy support has been added for `scipy.stats.rankdata`.
+- Array API support has been added for ``method`` and ``trim`` usage
+  in `scipy.stats.ttest_ind`.
 
-*******************
-Deprecated features
-*******************
 
+**************************************
+Deprecated features and future changes
+**************************************
+- passing ``lwork`` parameter to `scipy.linalg.qr` has been deprecated. The
+  functionality was rarely used; the function computes the optimal size of the
+  work arrays automatically, therefore users should simply remove their uses
+  of the ``lwork`` parameter.
+- The sparse construction functions ``kron``, ``kronsum`` and ``build_diag``
+  choose return type ``sparray`` or ``spmatrix`` depending on the type of the
+  sparse input arrays. When no inputs are sparse, the output is chosen to be
+  ``spmatrix``. That has been deprecated. The return type when no inputs are
+  sparse will be changing to ``sparray``. You can control the output type by
+  ensuring that at least one input array is sparse. If any are ``sparray``,
+  the output will be ``sparray``. If all sparse inputs are ``spmatrix``,
+  the output will be ``spmatrix``.
 
 
 
 ******************************
 Backwards incompatible changes
 ******************************
+- The output of `scipy.stats.rankdata` is now always of a floating point
+  dtype -- the result dtype of the input and a Python ``float``.
+- The behavior of the ``residuals`` returned by `scipy.linalg.lstsq` has been
+  changed. For ``lapack_driver == "gelsy"`` or the system being either
+  underdetermined or square, empty residuals are still returned. For
+  ``lapack_driver == "gesld"/"gelss"`` in combination with an overdetermined
+  system a non-empty residual is always returned. However, in the case where a
+  slice is not full column rank, the corresponding residual is set to ``NaN``.
+- The 2nd output object of `scipy.stats.contingency.crosstab` when kwarg
+  ``sparse=True`` is now a sparse array holding the counts instead of a sparse
+  matrix. This allows it to be nD, so can accept more than 2 sequences as
+  inputs, but it is a different class. Most operations work the same for
+  sparse arrays and matrixes with notable differences for matrix: ``*`` means
+  matmul and always-2D. For more info see :ref:`migration_to_sparray`.
 
 *************
 Other changes
 *************
-
+- The vendored ``Boost.Math`` was updated from ``1.89.0`` to ``1.91.0``.
+- SciPy now has a pixi package definition, allowing developers to build
+  SciPy from source via `pixi build`.
 
 
 *******
