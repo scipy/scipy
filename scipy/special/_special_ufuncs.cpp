@@ -1203,7 +1203,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *mathieu_a =
         xsf::numpy::ufunc({special::mathieu_cv<xsf::mathieu::Parity::Even, float>{},
                            special::mathieu_cv<xsf::mathieu::Parity::Even, double>{}},
-                          "mathieu_a", mathieu_b_doc);
+                          "mathieu_a", mathieu_a_doc);
     PyModule_AddObjectRef(module, "mathieu_a", mathieu_a);
 
     PyObject *mathieu_b =
