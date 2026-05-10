@@ -1735,11 +1735,18 @@ class skellam_gen(rv_discrete):
 
     Parameters :math:`\mu_1` and :math:`\mu_2` must be strictly positive.
 
-    For details see: https://en.wikipedia.org/wiki/Skellam_distribution
-
     `skellam` takes :math:`\mu_1` and :math:`\mu_2` as shape parameters.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Skellam, J. G. "The Frequency Distribution of the Difference
+           Between Two Poisson Variates Belonging to Different Populations."
+           *Journal of the Royal Statistical Society* 109, no. 3 (1946): 296-296.
+           :doi:`10.2307/2981372`
+    .. [2] "Skellam distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Skellam_distribution
 
     %(example)s
 
