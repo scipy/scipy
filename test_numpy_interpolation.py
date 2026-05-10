@@ -293,21 +293,22 @@ def test_griddata_cubic():
     out_at = griddata(pts, vals, pts, method='cubic')
     check(out_at, vals, "cubic: exact at data points", atol=1e-10)
 
-    # 2. Linear functions reproduced exactly (TPS polynomial augmentation is degree-1)
+    # 2. Linear functions reproduced exactly (CT is a cubic; linears are exact)
     vals_lin  = 3.1*pts[:,0] - 2.7*pts[:,1] + 1.4
     out_grid  = griddata(pts, vals_lin, (XX, YY), method='cubic')
     exact_lin = 3.1*XX - 2.7*YY + 1.4
-    check(out_grid, exact_lin, "cubic: exactly reproduces linear f(x,y)", atol=1e-8)
+    mask_in   = ~np.isnan(out_grid)   # CT returns NaN outside convex hull
+    check(out_grid[mask_in], exact_lin[mask_in],
+          "cubic: exactly reproduces linear f(x,y) (interior)", atol=1e-7)
 
-    # 3. Smooth interpolation close to scipy CloughTocher for interior pts
-    #    Use a gentle function; TPS and CloughTocher are both C∞ at interior.
+    # 3. Match scipy CloughTocher2DInterpolator (same algorithm now)
     vals_s = pts[:,0]*(1-pts[:,0]) * pts[:,1]*(1-pts[:,1])
     ours   = griddata(pts, vals_s, (XX, YY), method='cubic')
     sci    = scipy_griddata(pts, vals_s, (XX, YY), method='cubic')
     mask   = ~np.isnan(sci)
     diff   = np.abs(ours[mask] - sci[mask])
-    ok3    = diff.max() < 0.1
-    print(f"  [{'PASS' if ok3 else 'FAIL'}] cubic: smooth approx to CloughTocher "
+    ok3    = diff.max() < 1e-4
+    print(f"  [{'PASS' if ok3 else 'FAIL'}] cubic: matches CloughTocher2DInterpolator "
           f"(max|diff|={diff.max():.3e})")
 
 

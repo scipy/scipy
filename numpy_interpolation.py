@@ -25,8 +25,9 @@ Algorithms
   2-D nearest  : vectorised Euclidean distance (exact match)
   2-D linear   : Bowyer-Watson Delaunay + barycentric interpolation
                  (matches scipy LinearNDInterpolator; fill_value outside hull)
-  2-D cubic    : Thin-plate spline RBF (C∞, exact at data points;
-                 smooth approximation to scipy CloughTocher2DInterpolator)
+  2-D cubic    : Clough-Tocher C1 piecewise cubic (curvature-minimising
+                 Gauss-Seidel gradient estimation + 10-point Bezier patch;
+                 exact match with scipy CloughTocher2DInterpolator)
 """
 
 import numpy as np
@@ -867,104 +868,268 @@ def _linear_2d(pts, vals, xi, fill_value):
 
 
 # ------------------------------------------------------------------
-# 4d  Thin-plate spline RBF (cubic-equivalent for 2-D scattered data)
+# 4d  Clough-Tocher 2-D C1 cubic interpolation  (scipy-faithful)
+#
+#  Matches scipy.interpolate.CloughTocher2DInterpolator exactly:
+#    • curvature-minimising Gauss-Seidel gradient estimation
+#      (Nielson 1983 / Renka 1984)
+#    • 10-point cubic Bezier patch in barycentric coordinates
+#      (Alfeld 1984 / Farin 1986)
+#    • affine-invariant g[] factors via neighbouring-triangle centroids
 # ------------------------------------------------------------------
 
-def _tps_phi(r2):
-    """Thin-plate spline kernel: φ(r) = r² ln(r), with φ(0)=0."""
-    with np.errstate(divide='ignore', invalid='ignore'):
-        out = 0.5 * r2 * np.log(r2)
-    out[r2 < 1e-300] = 0.0
-    return out
+def _build_vertex_neighbors(n, triangles):
+    """CSR adjacency list: vertex → all neighbouring vertices."""
+    adj = [set() for _ in range(n)]
+    for tri in triangles:
+        a, b, c = int(tri[0]), int(tri[1]), int(tri[2])
+        adj[a].update((b, c))
+        adj[b].update((a, c))
+        adj[c].update((a, b))
+    indptr  = np.empty(n + 1, dtype=int)
+    indices = []
+    indptr[0] = 0
+    for i in range(n):
+        nb = sorted(adj[i])
+        indices.extend(nb)
+        indptr[i + 1] = len(indices)
+    return indptr, np.array(indices, dtype=int)
 
 
-def _cubic_2d(pts, vals, xi):
-    """Thin-plate spline RBF interpolation (2-D cubic).
+def _build_triangle_neighbors(triangles):
+    """neighbor[t, k] = triangle opposite vertex k in triangle t, or -1."""
+    T        = len(triangles)
+    edge_map = {}
+    for t in range(T):
+        for k in range(3):
+            v1   = int(triangles[t][(k + 1) % 3])
+            v2   = int(triangles[t][(k + 2) % 3])
+            edge = (min(v1, v2), max(v1, v2))
+            edge_map.setdefault(edge, []).append((t, k))
+    nbrs = np.full((T, 3), -1, dtype=int)
+    for edge, ent in edge_map.items():
+        if len(ent) == 2:
+            (t1, k1), (t2, k2) = ent
+            nbrs[t1, k1] = t2
+            nbrs[t2, k2] = t1
+    return nbrs
 
-    Gives exact interpolation at data points and a C∞ smooth surface.
-    Approximates scipy CloughTocher2DInterpolator for interior queries;
-    extrapolates globally (no fill_value region).
+
+def _estimate_gradients_2d(pts, indptr, indices, data, maxiter=400, tol=1e-6):
+    """Curvature-minimising Gauss-Seidel gradient estimation.
+
+    Mirrors scipy's _estimate_gradients_2d_global exactly:
+      Q  = 4 Σ_E  [e eᵀ] / L³
+      s  = Σ_E  (6(f1-f2) - 2 df2) e / L³
+      grad = Q⁻¹ s
+    where the sum runs over all edges incident on the vertex.
+    """
+    n    = len(pts)
+    grad = np.zeros((n, 2))
+    for _ in range(maxiter):
+        err = 0.0
+        for i in range(n):
+            Q00 = Q01 = Q11 = s0 = s1 = 0.0
+            for jj in range(indptr[i], indptr[i + 1]):
+                j   = indices[jj]
+                ex  = pts[j, 0] - pts[i, 0]
+                ey  = pts[j, 1] - pts[i, 1]
+                L   = np.hypot(ex, ey)
+                L3  = L * L * L
+                f1, f2 = data[i], data[j]
+                df2 = -(ex * grad[j, 0] + ey * grad[j, 1])
+                t6  = (6.0 * (f1 - f2) - 2.0 * df2) / L3
+                Q00 += 4.0 * ex * ex / L3
+                Q01 += 4.0 * ex * ey / L3
+                Q11 += 4.0 * ey * ey / L3
+                s0  += t6 * ex
+                s1  += t6 * ey
+            det = Q00 * Q11 - Q01 * Q01
+            if abs(det) < 1e-300:
+                continue
+            r0 =  (Q11 * s0 - Q01 * s1) / det
+            r1 = (-Q01 * s0 + Q00 * s1) / det
+            change      = max(abs(grad[i, 0] + r0), abs(grad[i, 1] + r1))
+            grad[i, 0]  = -r0
+            grad[i, 1]  = -r1
+            err = max(err, change / max(1.0, abs(r0), abs(r1)))
+        if err < tol:
+            break
+    return grad
+
+
+def _ct_g_factors(pts, triangles, tri_nbrs, isimplex):
+    """Affine-invariant g[] for the Clough-Tocher patch.
+
+    Matches scipy's choice: w = centroid(neighbour) − centroid(current)
+    expressed in the current triangle's barycentric coordinates.
+    Boundary edges (no neighbour) use g = -1/2.
+    """
+    tri = triangles[isimplex]
+    v   = [pts[tri[k]] for k in range(3)]
+    T   = np.array([[v[0][0] - v[2][0], v[1][0] - v[2][0]],
+                    [v[0][1] - v[2][1], v[1][1] - v[2][1]]])
+    try:
+        T_inv = np.linalg.inv(T)
+    except np.linalg.LinAlgError:
+        return np.full(3, -0.5)
+    g = np.empty(3)
+    for k in range(3):
+        itri = tri_nbrs[isimplex, k]
+        if itri == -1:
+            g[k] = -0.5
+            continue
+        ntri = triangles[itri]
+        cen  = (pts[ntri[0]] + pts[ntri[1]] + pts[ntri[2]]) / 3.0
+        c02  = T_inv @ (cen - v[2])
+        c    = np.array([c02[0], c02[1], 1.0 - c02[0] - c02[1]])
+        if k == 0:
+            g[k] = (2*c[2] + c[1] - 1) / (2 - 3*c[2] - 3*c[1])
+        elif k == 1:
+            g[k] = (2*c[0] + c[2] - 1) / (2 - 3*c[0] - 3*c[2])
+        else:
+            g[k] = (2*c[1] + c[0] - 1) / (2 - 3*c[1] - 3*c[0])
+    return g
+
+
+def _cubic_2d(pts, vals, xi, fill_value=np.nan):
+    """Clough-Tocher C1 piecewise cubic 2-D interpolation.
+
+    Implements scipy.interpolate.CloughTocher2DInterpolator exactly:
+      1. Bowyer-Watson Delaunay triangulation
+      2. Curvature-minimising Gauss-Seidel gradient estimation
+      3. 10-point cubic Bezier patch evaluation with affine-invariant
+         g[] factors derived from neighbouring-triangle centroids
+      4. fill_value for queries outside the convex hull
 
     pts  : (N, 2)
     vals : (N,) or (N, m)
     xi   : (Q, 2)
     """
-    N = len(pts)
+    n    = len(pts)
+    vals = np.asarray(vals, dtype=float)
+    y1d  = vals.ndim == 1
+    V    = vals[:, None] if y1d else vals          # (n, m)
+    m    = V.shape[1]
 
-    # --- Build (N+3) × (N+3) TPS system ---
-    diff   = pts[:, None, :] - pts[None, :, :]           # (N, N, 2)
-    r2_mat = (diff * diff).sum(axis=2)                    # (N, N)
-    Phi    = _tps_phi(r2_mat.copy())                      # (N, N)
+    tris     = _delaunay_2d(pts)                   # (T, 3)
+    T_count  = len(tris)
+    indptr, adj_idx = _build_vertex_neighbors(n, tris)
+    tri_nbrs = _build_triangle_neighbors(tris)
 
-    P = np.column_stack([np.ones(N), pts[:, 0], pts[:, 1]])  # (N, 3)
+    # --- gradient estimation (one column at a time; matches scipy exactly) ---
+    grads = np.zeros((n, m, 2))
+    for k in range(m):
+        grads[:, k, :] = _estimate_gradients_2d(pts, indptr, adj_idx, V[:, k])
 
-    M          = np.zeros((N + 3, N + 3))
-    M[:N, :N]  = Phi
-    M[:N, N:]  = P
-    M[N:, :N]  = P.T
-    # M[N:, N:] = 0   (already zero)
+    # --- precompute affine-invariant g[] for every triangle ---
+    g_all = np.empty((T_count, 3))
+    for t in range(T_count):
+        g_all[t] = _ct_g_factors(pts, tris, tri_nbrs, t)
 
-    rhs      = np.zeros((N + 3,) + vals.shape[1:], dtype=float)
-    rhs[:N]  = vals.real if np.iscomplexobj(vals) else vals
+    # --- edge vectors (T, 2) ---
+    v0  = pts[tris[:, 0]]
+    v1  = pts[tris[:, 1]]
+    v2  = pts[tris[:, 2]]
+    e12 = v1 - v0
+    e23 = v2 - v1
+    e31 = v0 - v2
 
-    try:
-        coeffs_r = np.linalg.solve(M, rhs.reshape(N + 3, -1))
-    except np.linalg.LinAlgError:
-        coeffs_r, *_ = np.linalg.lstsq(M, rhs.reshape(N + 3, -1), rcond=None)
+    # --- barycentric simplex-finder (same kernel as _linear_2d) ---
+    P0, P1, P2 = v0, v1, v2
+    denom = ((P1[:, 1] - P2[:, 1]) * (P0[:, 0] - P2[:, 0]) +
+             (P2[:, 0] - P1[:, 0]) * (P0[:, 1] - P2[:, 1]))
 
-    if np.iscomplexobj(vals):
-        rhs[:N] = vals.imag
-        try:
-            coeffs_i = np.linalg.solve(M, rhs.reshape(N + 3, -1))
-        except np.linalg.LinAlgError:
-            coeffs_i, *_ = np.linalg.lstsq(M, rhs.reshape(N + 3, -1), rcond=None)
-
-    w_r = coeffs_r[:N]     # (N, ...)  RBF weights
-    a_r = coeffs_r[N:]     # (3, ...)  polynomial coefficients
-
-    # --- Evaluate at query points in chunks ---
-    Q     = len(xi)
-    CHUNK = 1024
-    out_r = np.empty((Q,) + vals.shape[1:], dtype=float)
+    Q    = len(xi)
+    out  = np.full((Q, m), fill_value, dtype=float)
+    eps  = -1e-10
+    CHUNK = 512
 
     for start in range(0, Q, CHUNK):
-        end  = min(start + CHUNK, Q)
-        diff_q = xi[start:end, None, :] - pts[None, :, :]  # (Qc, N, 2)
-        r2_q   = (diff_q * diff_q).sum(axis=2)              # (Qc, N)
-        Phi_q  = _tps_phi(r2_q.copy())                      # (Qc, N)
+        end = min(start + CHUNK, Q)
+        qx  = xi[start:end, 0]
+        qy  = xi[start:end, 1]
 
-        P_q = np.column_stack([
-            np.ones(end - start),
-            xi[start:end, 0],
-            xi[start:end, 1],
-        ])                                                    # (Qc, 3)
+        dx = qx[:, None] - P2[None, :, 0]
+        dy = qy[:, None] - P2[None, :, 1]
 
-        out_r[start:end] = (Phi_q @ w_r + P_q @ a_r).reshape(
-            (end - start,) + vals.shape[1:]
-        )
+        l0 = ((P1[:, 1]-P2[:, 1])[None, :]*dx +
+              (P2[:, 0]-P1[:, 0])[None, :]*dy) / denom[None, :]
+        l1 = ((P2[:, 1]-P0[:, 1])[None, :]*dx +
+              (P0[:, 0]-P2[:, 0])[None, :]*dy) / denom[None, :]
+        l2 = 1.0 - l0 - l1
 
-    if not np.iscomplexobj(vals):
-        return out_r
+        inside  = (l0 >= eps) & (l1 >= eps) & (l2 >= eps)
+        valid   = inside.any(axis=1)
+        tri_idx = np.argmax(inside, axis=1)
 
-    # Imaginary part
-    out_i = np.empty_like(out_r)
-    w_i   = coeffs_i[:N]
-    a_i   = coeffs_i[N:]
-    for start in range(0, Q, CHUNK):
-        end    = min(start + CHUNK, Q)
-        diff_q = xi[start:end, None, :] - pts[None, :, :]
-        r2_q   = (diff_q * diff_q).sum(axis=2)
-        Phi_q  = _tps_phi(r2_q.copy())
-        P_q = np.column_stack([
-            np.ones(end - start),
-            xi[start:end, 0],
-            xi[start:end, 1],
-        ])
-        out_i[start:end] = (Phi_q @ w_i + P_q @ a_i).reshape(
-            (end - start,) + vals.shape[1:]
-        )
+        for qi in range(end - start):
+            if not valid[qi]:
+                continue
+            t  = tri_idx[qi]
+            b1 = l0[qi, t];  b2 = l1[qi, t];  b3 = l2[qi, t]
 
-    return out_r + 1j * out_i
+            # Scipy's "extended" barycentric: subtract min, scale fourth coord
+            mv  = min(b1, b2, b3)
+            b1e = b1 - mv;  b2e = b2 - mv;  b3e = b3 - mv;  b4e = 3.0 * mv
+
+            g = g_all[t]
+            i0, i1, i2 = int(tris[t, 0]), int(tris[t, 1]), int(tris[t, 2])
+
+            for k in range(m):
+                f1 = V[i0, k];  f2 = V[i1, k];  f3 = V[i2, k]
+                gx0, gy0 = grads[i0, k, 0], grads[i0, k, 1]
+                gx1, gy1 = grads[i1, k, 0], grads[i1, k, 1]
+                gx2, gy2 = grads[i2, k, 0], grads[i2, k, 1]
+
+                # Directional derivatives along each edge (scipy formula)
+                df12 =  gx0*e12[t, 0] + gy0*e12[t, 1]
+                df21 = -(gx1*e12[t, 0] + gy1*e12[t, 1])
+                df23 =  gx1*e23[t, 0] + gy1*e23[t, 1]
+                df32 = -(gx2*e23[t, 0] + gy2*e23[t, 1])
+                df31 =  gx2*e31[t, 0] + gy2*e31[t, 1]
+                df13 = -(gx0*e31[t, 0] + gy0*e31[t, 1])
+
+                # 10 Bezier control points (scipy _clough_tocher_2d_single)
+                c3000 = f1
+                c2100 = (df12 + 3*c3000) / 3
+                c2010 = (df13 + 3*c3000) / 3
+                c0300 = f2
+                c1200 = (df21 + 3*c0300) / 3
+                c0210 = (df23 + 3*c0300) / 3
+                c0030 = f3
+                c1020 = (df31 + 3*c0030) / 3
+                c0120 = (df32 + 3*c0030) / 3
+
+                c2001 = (c2100 + c2010 + c3000) / 3
+                c0201 = (c1200 + c0300 + c0210) / 3
+                c0021 = (c1020 + c0120 + c0030) / 3
+
+                c0111 = (g[0]*(-c0300 + 3*c0210 - 3*c0120 + c0030)
+                         + (-c0300 + 2*c0210 - c0120 + c0021 + c0201)) / 2
+                c1011 = (g[1]*(-c0030 + 3*c1020 - 3*c2010 + c3000)
+                         + (-c0030 + 2*c1020 - c2010 + c2001 + c0021)) / 2
+                c1101 = (g[2]*(-c3000 + 3*c2100 - 3*c1200 + c0300)
+                         + (-c3000 + 2*c2100 - c1200 + c2001 + c0201)) / 2
+
+                c1002 = (c1101 + c1011 + c2001) / 3
+                c0102 = (c1101 + c0111 + c0201) / 3
+                c0012 = (c1011 + c0111 + c0021) / 3
+                c0003 = (c1002 + c0102 + c0012) / 3
+
+                # Degree-3 polynomial in extended barycentric coords
+                out[start + qi, k] = (
+                    b1e**3*c3000 + 3*b1e**2*b2e*c2100 + 3*b1e**2*b3e*c2010 +
+                    3*b1e**2*b4e*c2001 + 3*b1e*b2e**2*c1200 +
+                    6*b1e*b2e*b4e*c1101 + 3*b1e*b3e**2*c1020 +
+                    6*b1e*b3e*b4e*c1011 + 3*b1e*b4e**2*c1002 +
+                    b2e**3*c0300 + 3*b2e**2*b3e*c0210 + 3*b2e**2*b4e*c0201 +
+                    3*b2e*b3e**2*c0120 + 6*b2e*b3e*b4e*c0111 +
+                    3*b2e*b4e**2*c0102 + b3e**3*c0030 + 3*b3e**2*b4e*c0021 +
+                    3*b3e*b4e**2*c0012 + b4e**3*c0003
+                )
+
+    return out[:, 0] if y1d else out
 
 
 # ============================================================
@@ -990,8 +1155,9 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         * 'nearest' – value at closest data point (no fill_value region).
         * 'linear'  – Delaunay triangulation + barycentric interpolation;
                       fill_value used outside the convex hull.
-        * 'cubic'   – thin-plate spline RBF (C∞, exact at data points;
-                      smooth approximation to scipy CloughTocher).
+        * 'cubic'   – Clough-Tocher C1 piecewise cubic; curvature-minimising
+                      gradient estimation + 10-point Bezier patch; matches
+                      scipy CloughTocher2DInterpolator.
     fill_value : float, default np.nan
         Value for queries outside the convex hull ('linear' only).
     rescale : bool, default False
@@ -1042,13 +1208,13 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         raise ValueError("points and xi must have the same number of dimensions")
 
     # ---------- optional rescale ----------
+    # Matches scipy exactly: offset = mean, scale = ptp (peak-to-peak = max-min)
     if rescale:
-        pmin = points.min(0)
-        pmax = points.max(0)
-        span = pmax - pmin
-        span[span < 1e-12] = 1.0
-        points  = (points  - pmin) / span
-        xi_flat = (xi_flat - pmin) / span
+        offset = points.mean(0)
+        scale  = np.ptp(points, axis=0)
+        scale[~(scale > 0)] = 1.0
+        points  = (points  - offset) / scale
+        xi_flat = (xi_flat - offset) / scale
 
     # ---------- dispatch ----------
     method = method.lower()
@@ -1063,7 +1229,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         ndim = points.shape[1]
         if ndim != 2:
             raise ValueError("cubic griddata is only supported for 2-D data")
-        out_flat = _cubic_2d(points, values, xi_flat)
+        out_flat = _cubic_2d(points, values, xi_flat, fill_value)
 
     else:
         raise ValueError(
