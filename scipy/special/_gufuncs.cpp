@@ -3,6 +3,7 @@
 #include <xsf/sph_harm.h>
 #include <xsf/stats.h>
 
+#include "mdspan_helpers.h"
 #include "sf_error.h"
 
 extern const char *lpn_all_doc;
@@ -86,11 +87,11 @@ struct _poisson_binom_pmf_kernel {
             /* If p is stepped through in the outer loops and k in the inner loops,
              * this will yield a cache hit for each inner iteration. The cache is
              * overwritten unconditionally whenever this steps to a new slice of p. */
-            xsf::poisson_binom_pmf_all(p, xsf::numpy::as_mdspan(dist));
+            xsf::poisson_binom_pmf_all(p, special::as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }
 
-        return xsf::take_from_pmf(xsf::numpy::as_mdspan(dist), k);
+        return xsf::take_from_pmf(special::as_mdspan(dist), k);
     }
 };
 
@@ -108,11 +109,11 @@ struct _poisson_binom_cdf_kernel {
             /* If p is stepped through in the outer loops and k in the inner loops,
             * this will yield a cache hit for each inner iteration. The cache is
             * overwritten unconditionally whenever this steps to a new slice of p. */
-            xsf::poisson_binom_cdf_all(p, xsf::numpy::as_mdspan(dist));
+            xsf::poisson_binom_cdf_all(p, special::as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }
 
-        return xsf::take_from_discrete_cdf(xsf::numpy::as_mdspan(dist), k);
+        return xsf::take_from_discrete_cdf(special::as_mdspan(dist), k);
     }
 };
 

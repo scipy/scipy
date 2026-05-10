@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <xsf/error.h>
-#include <xsf/numpy.h>
-
 #include <vector>
+#include <xsf/error.h>
 
 #include "blaslapack_declarations.h"
+
+namespace special {
 
 struct eigvalsh_tridiagonal {
     std::vector<double> Z{0.0};
@@ -79,3 +79,4 @@ struct eigh_tridiagonal {
         return SF_ERROR_OK;
     }
 };
+} // namespace special

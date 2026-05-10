@@ -392,6 +392,12 @@ double xsf_tandg(double x);
 double xsf_cotdg(double x);
 double xsf_radian(double d, double m, double s);
 
+// scipy.special specific kernels that depend on xsf
+double special_mathieu_a(double m, double q);
+double special_mathieu_b(double m, double q);
+void special_mathieu_cem(double m, double q, double x, double* out, double* out_diff);
+void special_mathieu_sem(double m, double q, double x, double* out, double* out_diff);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
