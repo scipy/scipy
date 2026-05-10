@@ -1,3 +1,5 @@
+#include "mathieu.h"
+
 #include <cmath>
 
 #include "cython_special_wrappers.h"
@@ -27,7 +29,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/loggamma.h>
-#include <xsf/mathieu.h>
+#include <xsf/mathieu_legacy.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/sici.h>
@@ -59,6 +61,7 @@
 #include <xsf/cephes/trig.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/cephes/yn.h>
+
 
 #include "boost_special_functions.h"
 
@@ -439,6 +442,18 @@ double xsf_struve_h(double v, double z) { return xsf::struve_h(v, z); }
 
 double xsf_struve_l(double v, double z) { return xsf::struve_l(v, z); }
 
+double special_mathieu_a(double m, double q) { return special::mathieu_a(m, q); }
+
+double special_mathieu_b(double m, double q) { return special::mathieu_b(m, q); }
+
+void special_mathieu_cem(double m, double q, double x, double *out, double *out_diff) {
+   return special::mathieu_cem(m, q, x, *out, *out_diff);
+}
+
+void special_mathieu_sem(double m, double q, double x, double *out, double *out_diff) {
+   return special::mathieu_sem(m, q, x, *out, *out_diff);
+}
+
 // Exp
 
 double xsf_expm1(double x) { return xsf::expm1(x); }
@@ -763,3 +778,5 @@ double boost_stdtr_double(double df, double t) { return t_cdf_double(df, t); }
 float boost_stdtrit_float(float df, float p) { return t_ppf_float(df, p); }
 
 double boost_stdtrit_double(double df, double p) { return t_ppf_double(df, p); }
+
+

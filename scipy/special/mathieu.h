@@ -5,8 +5,9 @@
 
 #include <xsf/error.h>
 #include <xsf/mathieu.h>
-#include <xsf/mathieu_very_new.h>
+#include <xsf/mathieu_legacy.h>
 
+#include "mdspan_helpers.h"
 #include "tridiagonal.h"
 
 namespace special {
@@ -50,9 +51,9 @@ struct mathieu_cv {
         E.resize(N - 1);
 
         if (int_m % 2) {
-            make_matrix<FuncParity, Odd>(q, xsf::numpy::as_mdspan(D), xsf::numpy::as_mdspan(E));
+            make_matrix<FuncParity, Odd>(q, as_mdspan(D), as_mdspan(E));
         } else {
-            make_matrix<FuncParity, Even>(q, xsf::numpy::as_mdspan(D), xsf::numpy::as_mdspan(E));
+            make_matrix<FuncParity, Even>(q, as_mdspan(D), as_mdspan(E));
         }
 
         auto status = solver(D, E);
@@ -93,9 +94,9 @@ struct mathieu_coeffs {
         Z.resize(N * N);
 
         if (m % 2) {
-            make_matrix<FuncParity, Odd>(q, xsf::numpy::as_mdspan(D), xsf::numpy::as_mdspan(E));
+            make_matrix<FuncParity, Odd>(q, as_mdspan(D), as_mdspan(E));
         } else {
-            make_matrix<FuncParity, Even>(q, xsf::numpy::as_mdspan(D), xsf::numpy::as_mdspan(E));
+            make_matrix<FuncParity, Even>(q, as_mdspan(D), as_mdspan(E));
         }
 
         auto status = solver(D, E, Z);
@@ -173,14 +174,27 @@ struct mathieu_xem {
             last_m = int_m;
         }
         if (int_m % 2) {
-            sum_fourier_series<FuncParity, Odd>(xsf::numpy::as_mdspan(coefs), x_d, out_d, out_diff_d);
+            sum_fourier_series<FuncParity, Odd, AngleUnitPolicy::Degrees>(as_mdspan(coefs), x_d, out_d, out_diff_d);
         } else {
-            sum_fourier_series<FuncParity, Even>(xsf::numpy::as_mdspan(coefs), x_d, out_d, out_diff_d);
+            sum_fourier_series<FuncParity, Even, AngleUnitPolicy::Degrees>(as_mdspan(coefs), x_d, out_d, out_diff_d);
         }
         out = static_cast<T>(out_d);
         /* Need to map to the derivative with respect to an angle in radians. */
         out_diff = static_cast<T>(out_diff_d);
     }
 };
+
+// Non-stateful overloads for use in Cython special.
+inline double mathieu_a(double m, double q) { return mathieu_cv<xsf::mathieu::Parity::Even, double>{}(m, q); }
+
+inline double mathieu_b(double m, double q) { return mathieu_cv<xsf::mathieu::Parity::Odd, double>{}(m, q); }
+
+inline void mathieu_cem(double m, double q, double x, double &out, double &out_diff) {
+    return mathieu_xem<xsf::mathieu::Parity::Even, double>{}(m, q, x, out, out_diff);
+}
+
+inline void mathieu_sem(double m, double q, double x, double &out, double &out_diff) {
+    return mathieu_xem<xsf::mathieu::Parity::Odd, double>{}(m, q, x, out, out_diff);
+}
 
 } // namespace special
