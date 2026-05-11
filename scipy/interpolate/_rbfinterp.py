@@ -90,7 +90,7 @@ class RBFInterpolator:
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.
     kernel : str or LowLevelCallable optional
-        Type of RBF. This should be one of,  default is 'thin_plate_spline',
+        Type of RBF. This should be one of,  default is ``'thin_plate_spline'``,
 
         - 'linear'               : ``-r``
         - 'thin_plate_spline'    : ``r**2 * log(r)``
