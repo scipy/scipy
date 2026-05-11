@@ -53,6 +53,8 @@ jobs:
 # Build SciPy from source
   build_scipy:
     <<: *defaults
+    environment:
+      CCACHE_DIR: /home/circleci/.ccache
     steps:
       - checkout
       - check-skip
@@ -68,8 +70,13 @@ jobs:
 
       - restore_cache:
           keys:
-              - deps_ccache-{{ .Branch }}
-              - deps_ccache
+              - pip-{{ .Branch }}
+              - pip
+
+      - restore_cache:
+          keys:
+              - ccache-{{ .Branch }}
+              - ccache
 
       - run:
           name: setup Python venv
@@ -82,15 +89,24 @@ jobs:
             pip install pyfftw cffi pytest
 
       - run:
+          name: clear ccache stats
+          command: |
+            ccache --zero-stats
+
+      - run:
           name: build SciPy
           command: |
             spin build -j2
 
       - save_cache:
-          key: deps_ccache-{{ .Branch }}
+          key: pip-{{ .Branch }}
+          paths:
+            - ~/.cache/pip
+
+      - save_cache:
+          key: ccache-{{ .Branch }}
           paths:
             - ~/.ccache
-            - ~/.cache/pip
 
       - run:
           name: ccache performance
