@@ -118,6 +118,7 @@ py3.extension_module('_ufuncs',
   dependencies: [
     xsf_dep,
     np_dep,
+    lapack_dep
   ],
   link_args: version_link_args,
   link_with: cdflib_lib,
