@@ -32,9 +32,18 @@ New features
 ``scipy.cluster`` improvements
 ==============================
 
+``scipy.fft`` improvements
+==============================
+- The built-in FFT library has been switched from ``pocketfft`` to its
+  successor, ``ducc.fft``.
+
 
 ``scipy.interpolate`` improvements
 ==================================
+- Users may now increase the QHull simplex assignment tolerance via the new
+  ``simplex_tolerance`` argument to the ``_call__`` methods of
+  ``LinearNDInterpolator`` and ``CloughTocher2dInterpolator``. This can
+  help users avoid holes in certain interpolation problems.
 
 ``scipy.differentiate`` improvements
 ====================================
@@ -58,9 +67,11 @@ New features
 - `scipy.linalg.lu` and `scipy.linalg.det` have been rewritten in C++ with
   batching support in the compiled code.
 - Added ILP64 support to `scipy.linalg.expm` and `scipy.linalg.sqrtm`.
-- The batching loops of `scipy.linalg.qr` and `scipy.linalg.eig` have been
-  moved to C, providing a substantial speedup for batched input.
+- The batching loops of `scipy.linalg.qr`, `scipy.linalg.eig`, and
+  `scipy.linalg.svd` have been moved to C, providing a substantial speedup
+  for batched input.
 - The performance of `scipy.linalg.expm` has been improved.
+- The performance for `scipy.linalg.solve` has improved for batched inputs.
 
 
 ``scipy.ndimage`` improvements
@@ -105,6 +116,9 @@ New features
   algorithm utilizing the improvements described in the recent survey by
   Tarjan and Zwick, yielding a 2x speed improvement and better cache locality.
 - Added ILP64 BLAS/LAPACK support to SuperLU and PROPACK extensions.
+- All sparse array/matrix formats now support ``matrix_transpose``/``.mT``.
+- Support for n-dimensional batches of linear operators has been added to
+  `scipy.sparse.linalg.LinearOperator`.
 
 
 ``scipy.integrate`` improvements
@@ -121,8 +135,8 @@ New features
   `scipy.spatial.distance.euclidean`, and `scipy.spatial.distance.seuclidean`.
 - It is now possible to return sparse arrays rather than matrices from
   ``KDTree.sparse_distance_matrix``.
-- It is now possible to compose ``Rotation``s and ``RigidTransform``s directly,
-  by automatically promoting ``Rotation``s when the two are composed via
+- It is now possible to compose ``Rotation`` and ``RigidTransform`` directly,
+  by automatically promoting ``Rotation`` when the two are composed via
   a multiplication operator.
 
 
@@ -146,6 +160,8 @@ New features
   `scipy.stats.obrientransform`, `scipy.stats.boxcox`,
   `scipy.stats.boxcox_normmax`, `scipy.stats.yeojohnson`,
   `scipy.stats.yeojohnson_normmax`, and `scipy.stats.sigmaclip`.
+- ``scipy.stats.ContinuousDistribution.lmoment`` has been added for computing
+  population L-moments.
 
 
 ************************
@@ -169,7 +185,9 @@ Python Array API Support
   `scipy.stats.relfreq`, `scipy.stats.ks_2samp`, `scipy.stats.theilslopes`,
   `scipy.stats.siegelslopes`, `scipy.stats.obrientransform` (including marray),
   `scipy.stats.binomtest`, `scipy.integrate.fixed_quad`, `scipy.signal.square`,
-  and `scipy.stats.expectile`.
+  `scipy.stats.expectile`, `scipy.stats.shapiro`, `scipy.stats.pointbiserialr`,
+  `scipy.stats.bws_test`, `scipy.stats.estimated_cdf` (new function),
+  `scipy.stats.linregress`, and `scipy.integrate.simpson`.
 - The ``torch`` support for `scipy.signal.fftconvolve` now correctly
   handles the ``float32`` dtype.
 - JAX JIT support has been added for: `scipy.stats.binomtest`
@@ -196,6 +214,9 @@ Deprecated features and future changes
   ensuring that at least one input array is sparse. If any are ``sparray``,
   the output will be ``sparray``. If all sparse inputs are ``spmatrix``,
   the output will be ``spmatrix``.
+- A ``FutureWarning`` is now issued for calling ``{r}matvec`` on column vectors
+  with ``LinearOperator``. Identical behavior can be achieved (and extended to
+  batch dimensions) via ``{r}matmat``.
 
 
 
@@ -225,10 +246,14 @@ Other changes
 - The vendored ``Boost.Math`` was updated from ``1.89.0`` to ``1.91.0``.
 - SciPy now has a pixi package definition, allowing developers to build
   SciPy from source via `pixi build`.
-- Developers may be interested in the private build option `_without-fortran`,
+- Developers may be interested in the private build option ``_without-fortran``,
   which allows building SciPy from source in the absence of a Fortran compiler.
   This is an early prototype of the planned capability of a Fortran-free
   SciPy.
+- The private ``scipy.interpolate._regrid`` function may be of experimental
+  interest. It provides an interface for 2-D smoothing B-spline fitting via
+  separable 1-D FITPACK kernels. It is under consideraton for public exposure
+  in some form in the future.
 
 
 *******
