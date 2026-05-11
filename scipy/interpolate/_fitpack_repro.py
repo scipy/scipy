@@ -822,7 +822,7 @@ condition abs(fp-s)/s < tol.
 }
 
 
-def root_rati(f, p0, bracket, acc):
+def root_rati(f, p0, bracket, acc, maxit=MAXIT):
     """Solve `f(p) = 0` using a rational function approximation.
 
     In a nutshell, since the function f(p) is known to be monotonically decreasing, we
@@ -855,7 +855,7 @@ def root_rati(f, p0, bracket, acc):
     (p1, f1), (p3, f3)  = bracket
     p = p0
 
-    for it in range(MAXIT):
+    for it in range(maxit):
         p2, f2 = p, f(p)
 
         # c  test whether the approximation sp(x) is an acceptable solution.
@@ -871,7 +871,7 @@ def root_rati(f, p0, bracket, acc):
                 f3 = f2
                 p = p*con4
                 if p <= p1:
-                     p = p1*con9 + p2*con1
+                    p = p1*con9 + p2*con1
                 continue
             else:
                 if f2 < 0:
@@ -884,7 +884,7 @@ def root_rati(f, p0, bracket, acc):
                 f1 = f2
                 p = p/con4
                 if p3 != np.inf and p <= p3:
-                     p = p2*con1 + p3*con9
+                    p = p2*con1 + p3*con9
                 continue
             else:
                 if f2 > 0:
