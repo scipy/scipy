@@ -32,6 +32,7 @@
 #pragma once
 
 #include <algorithm>
+#include <new>
 #include <vector>
 
 #include <xsf/error.h>
@@ -86,8 +87,13 @@ struct mathieu_cv {
         auto int_m = static_cast<CBLAS_INT>(m);
         auto N = int_m + 25;
 
-        D.resize(N);
-        E.resize(N - 1);
+        try {
+            // Make sure allocation actually succeeds.
+            D.resize(N);
+            E.resize(N - 1);
+        } catch (const std::bad_alloc &) {
+            return SF_ERROR_MEMORY;
+        }
 
         // Generate recurrence matrix.
         if (int_m % 2) {
@@ -139,9 +145,14 @@ struct mathieu_coeffs {
             return SF_ERROR_OK;
         }
 
-        D.resize(N);
-        E.resize(N - 1);
-        Z.resize(N * N);
+        try {
+            // Make sure allocation actually succeeds.
+            D.resize(N);
+            E.resize(N - 1);
+            Z.resize(N * N);
+        } catch (const std::bad_alloc &) {
+            return SF_ERROR_MEMORY;
+        }
 
         // Generate recurrence matrix.
         if (m % 2) {
@@ -220,7 +231,19 @@ struct mathieu_xem {
         if (q_d != last_q || int_m != last_m) {
             // Chooses
             auto N = get_partial_sum_N(int_m, q_d);
-            coefs.resize(N);
+
+            try {
+                // Make sure allocation actually succeeds.
+                coefs.resize(N);
+            } catch (const std::bad_alloc &) {
+                if constexpr (FuncParity == Even) {
+                    xsf::set_error("mathieu_cem", SF_ERROR_MEMORY, NULL);
+                } else {
+                    xsf::set_error("mathieu_sem", SF_ERROR_MEMORY, NULL);
+                }
+                return;
+            }
+
             auto status = get_coefs(int_m, q_d, coefs);
             if (status != SF_ERROR_OK) {
                 out = std::numeric_limits<T>::quiet_NaN();

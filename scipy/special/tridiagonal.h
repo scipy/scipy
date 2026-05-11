@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <new>
 #include <vector>
 #include <xsf/error.h>
 
@@ -12,9 +13,7 @@
 namespace special {
 
 struct eigvalsh_tridiagonal {
-    std::vector<double> Z{0.0};
     std::vector<double> work;
-    std::vector<CBLAS_INT> iwork{0};
     sf_error_t operator()(std::vector<double> &D, std::vector<double> &E) {
         auto N = static_cast<CBLAS_INT>(D.size());
 
@@ -26,12 +25,21 @@ struct eigvalsh_tridiagonal {
         CBLAS_INT ldz = 1;
         CBLAS_INT info;
 
+        // Dummy values for Z and iwork, since these won't be used when jobz = 'N'.
+        double Z = 0.0;
+        CBLAS_INT iwork = 0;
+
         /* Allocate the optimal workspace */
         CBLAS_INT lwork = 1 + 2 * N;
         CBLAS_INT liwork = 1;
-        work.resize(lwork);
+        try {
+            // Make sure allocation actually succeeds.
+            work.resize(lwork);
+        } catch (const std::bad_alloc &) {
+            return SF_ERROR_MEMORY;
+        }
         BLAS_FUNC(dstevd)
-        (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, work.data(), &lwork, iwork.data(), &liwork, &info);
+        (&jobz, &N, D.data(), E.data(), &Z, &ldz, work.data(), &lwork, &iwork, &liwork, &info);
 
         if (info < 0) {
             return SF_ERROR_OTHER;
@@ -62,8 +70,14 @@ struct eigh_tridiagonal {
         /* Allocate the optimal workspace */
         CBLAS_INT lwork = 1 + 4 * N + N * N;
         CBLAS_INT liwork = 3 + 5 * N;
-        work.resize(lwork);
-        iwork.resize(liwork);
+
+        try {
+            // Make sure allocation actually succeeds.
+            work.resize(lwork);
+            iwork.resize(liwork);
+        } catch (const std::bad_alloc &) {
+            return SF_ERROR_MEMORY;
+        }
 
         BLAS_FUNC(dstevd)
         (&jobz, &N, D.data(), E.data(), Z.data(), &ldz, work.data(), &lwork, iwork.data(), &liwork, &info);
