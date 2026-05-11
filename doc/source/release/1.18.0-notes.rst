@@ -36,6 +36,11 @@ New features
 ``scipy.interpolate`` improvements
 ==================================
 
+``scipy.differentiate`` improvements
+====================================
+- `scipy.differentiate.derivative` now supports passing ``kwargs`` to the
+  function whose derivative is desired.
+
 
 ``scipy.linalg`` improvements
 =============================
@@ -70,6 +75,8 @@ New features
   function would only run one at a time.
 - `scipy.optimize.nnls`, and ``minimize`` methods ``SLSQP`` and ``L-BFGS-B``
   now have support for ILP64 LAPACK, when available.
+- Functions in `scipy.optimize.elementwise` now support passing ``kwargs``
+  to the callable function.
 
 ``scipy.signal`` improvements
 =============================
@@ -100,6 +107,8 @@ New features
 ``scipy.integrate`` improvements
 ================================
 - ILP64 support was added for ODEPACK
+- `scipy.integrate.tanhsinh` and `scipy.integrate.nsum` now support passing
+  ``kwargs`` to the function to be integrated.
 
 
 ``scipy.spatial`` improvements
@@ -133,11 +142,20 @@ Python Array API Support
 - Array API support has been added for ``method`` and ``trim`` usage
   in `scipy.stats.ttest_ind`.
 - Support for MArrays has been added to: `scipy.stats.cramervonmises`,
-  `scipy.stats.ks_1samp`, `scipy.stats.ks_2samp`, and `scipy.stats.mode`.
-- Array API support has been added to: `scipy.stats.quantile_test` and
-  `scipy.stats.kendalltau` (via NumPy conversion).
+  `scipy.stats.ks_1samp`, `scipy.stats.ks_2samp`, `scipy.stats.mode`,
+  `scipy.stats.rankdata`, `scipy.stats.kruskal`, `scipy.stats.brunnermunzel`,
+  `scipy.stats.spearmanrho`, `scipy.stats.friedmanchisquare`,
+  `scipy.stats.cramervonmises_2samp`, `scipy.stats.mannwhitneyu`,
+  `scipy.stats.wilcoxon`, `scipy.stats.fligner`, `scipy.stats.linregress`,
+  `scipy.stats.alexandergovern`, and `scipy.stats.levene`.
+- Array API support has been added to: `scipy.stats.quantile_test`,
+  `scipy.stats.kendalltau` (via NumPy conversion), `scipy.stats.kstest`, and
+  `scipy.sparse.linalg.LinearOperator`.
 - The ``torch`` support for `scipy.signal.fftconvolve` now correctly
   handles the ``float32`` dtype.
+- JAX JIT support has been added for: `scipy.stats.binomtest`
+  (except for ``method='two-sided'``), `scipy.stats.mannwhitneyu`
+  (except for ``method='auto'``), `scipy.stats.lmoment`.
 
 
 **************************************
@@ -182,6 +200,10 @@ Other changes
 - The vendored ``Boost.Math`` was updated from ``1.89.0`` to ``1.91.0``.
 - SciPy now has a pixi package definition, allowing developers to build
   SciPy from source via `pixi build`.
+- Developers may be interested in the private build option `_without-fortran`,
+  which allows building SciPy from source in the absence of a Fortran compiler.
+  This is an early prototype of the planned capability of a Fortran-free
+  SciPy.
 
 
 *******
