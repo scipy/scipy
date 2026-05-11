@@ -109,10 +109,6 @@ def _with_cache_optimization(
     the ends and forces computation in C order. This ensures iteration proceeds
     in the optimal order.
 
-    Note that because the pre-allocated output array used internally is C
-    contiguous, the output will be C contiguous regardless of contiguity of
-    the inputs.
-
     """
 
     # Need to keep track of the number of core dimensions for each input
@@ -136,9 +132,14 @@ def _with_cache_optimization(
             order="K",
             dtype=None,
             subok=True,
+            signature=None,
+            **kwargs,
     ):
+        if signature is None:
+            signature = kwargs.pop("sig", None)
+
         args = [np.asanyarray(arg) if subok else np.asarray(arg) for arg in args]
-        kwargs = dict(casting=casting, dtype=dtype, subok=subok)
+        kwargs = dict(casting=casting, dtype=dtype, subok=subok, signature=signature)
         if out is not None:
             kwargs["out"] = out
             if is_elementwise:
@@ -220,7 +221,9 @@ def _with_cache_optimization(
                 out_dtype = np.dtype(dtype)
             else:
                 input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
-                out_dtype = ufunc.resolve_dtypes(input_dtypes, casting=casting)[-1]
+                out_dtype = ufunc.resolve_dtypes(
+                    input_dtypes, casting=casting, signature=signature
+                )[-1]
             if ufunc.nout == 1:
                 out_final = _allocate_out(
                     args, batch_shape, out_dtype, alloc_order, subok
@@ -252,10 +255,19 @@ def _with_cache_optimization(
 
     # Handle kwargs for function definition and call to wrapper.
     kwarg_defs = [
-        "out=None", "casting='same_kind'", "order='K'", "dtype=None", "subok=True"
+         "casting='same_kind'",
+         "order='K'",
+         "dtype=None",
+         "subok=True",
+         "signature=None",
     ]
     kwarg_calls = [
-        "out=out", "casting=casting", "order=order", "dtype=dtype", "subok=subok"
+        "out=out",
+        "casting=casting",
+        "order=order",
+        "dtype=dtype",
+        "subok=subok",
+        "signature=signature",
     ]
     if is_elementwise:
         # where is only available for elementwise ufuncs, not gufuncs.
@@ -264,8 +276,8 @@ def _with_cache_optimization(
     signature_kwargs = ", ".join(kwarg_defs)
     call_kwargs = ", ".join(kwarg_calls)
     code = (
-        f"""def {name}({arg_str}, {signature_kwargs}):
-            return _wrapper({arg_str}, {call_kwargs})
+        f"""def {name}({arg_str}, /, out=None, *, {signature_kwargs}, **kwargs):
+            return _wrapper({arg_str}, {call_kwargs}, **kwargs)
         """
         )
     namespace = {"_wrapper": _wrapper}
