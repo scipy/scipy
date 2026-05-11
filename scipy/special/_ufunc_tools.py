@@ -191,9 +191,19 @@ def _with_cache_optimization(
     # Do some metaprogramming with exec so that the arg names and func
     # name are as expected.
     arg_str = ", ".join(arg_names)
+
+    # Handle kwargs for function definition and call to wrapper.
+    kwarg_defs = ["out=None", "casting='same_kind'", "dtype=None"]
+    kwarg_calls = ["out=out", "casting=casting", "dtype=dtype"]
+    if is_elementwise:
+        # where is only available for elementwise ufuncs, not gufuncs.
+        kwarg_defs.insert(1, "where=True")
+        kwarg_calls.insert(1, "where=where")
+    signature_kwargs = ", ".join(kwarg_defs)
+    call_kwargs = ", ".join(kwarg_calls)
     code = (
-        f"""def {name}({arg_str}, out=None, where=True, casting='same_kind', dtype=None):
-            return _wrapper({arg_str}, out=out, where=where, casting=casting, dtype=dtype)
+        f"""def {name}({arg_str}, {signature_kwargs}):
+            return _wrapper({arg_str}, {call_kwargs})
         """
         )
     namespace = {"_wrapper": _wrapper}
