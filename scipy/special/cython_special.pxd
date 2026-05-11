@@ -149,6 +149,7 @@ cpdef Dd_number_t iv(double x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t ive(double x0, Dd_number_t x1) noexcept nogil
 cpdef double j0(double x0) noexcept nogil
 cpdef double j1(double x0) noexcept nogil
+cpdef double js_div(double x0, double x1) noexcept nogil
 cpdef Dd_number_t jv(double x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t jve(double x0, Dd_number_t x1) noexcept nogil
 cpdef double k0(double x0) noexcept nogil
