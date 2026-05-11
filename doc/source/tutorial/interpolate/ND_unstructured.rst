@@ -193,7 +193,7 @@ neither has a default.
     Only NumPy arrays currently supported with a `scipy.LowLevelCallable` kernel.
 
 This can be done usig pythran to compile python to C++ or by directly writing
-and compile a C/C++ fucnction.
+and compile a C/C++ function.
 
 **Pythran**
 

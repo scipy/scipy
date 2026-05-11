@@ -182,7 +182,7 @@ def _build_evaluation_coefficients_with_kernel(x, y, kernel_func, epsilon,
         Evaluation point coordinates.
     y : (P, N) float ndarray
         Data point coordinates.
-    kernel_func : float(float) capsule
+    kernel_func : double(double) capsule
         Compiled RBF kernel: maps scalar distance r to scalar value.
     epsilon : float
         Shape parameter.
