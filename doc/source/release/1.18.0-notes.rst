@@ -68,6 +68,8 @@ New features
 - The ``COBYQA`` method for ``minimize`` now supports being called
   concurrently by multiple threads. Previously, multiple threads calling this
   function would only run one at a time.
+- `scipy.optimize.nnls`, and ``minimize`` methods ``SLSQP`` and ``L-BFGS-B``
+  now have support for ILP64 LAPACK, when available.
 
 ``scipy.signal`` improvements
 =============================
@@ -105,6 +107,8 @@ New features
 - 3D area calculations are now faster in `scipy.spatial.SphericalVoronoi`.
 - N-dimensional input is now supported for `scipy.spatial.distance.minkowski`,
   `scipy.spatial.distance.euclidean`, and `scipy.spatial.distance.seuclidean`.
+- It is now possible to return sparse arrays rather than matrices from
+  ``KDTree.sparse_distance_matrix``.
 
 
 ``scipy.special`` improvements
@@ -128,6 +132,12 @@ Python Array API Support
 - CuPy support has been added for `scipy.stats.rankdata`.
 - Array API support has been added for ``method`` and ``trim`` usage
   in `scipy.stats.ttest_ind`.
+- Support for MArrays has been added to: `scipy.stats.cramervonmises`,
+  `scipy.stats.ks_1samp`, `scipy.stats.ks_2samp`, and `scipy.stats.mode`.
+- Array API support has been added to: `scipy.stats.quantile_test` and
+  `scipy.stats.kendalltau` (via NumPy conversion).
+- The ``torch`` support for `scipy.signal.fftconvolve` now correctly
+  handles the ``float32`` dtype.
 
 
 **************************************
