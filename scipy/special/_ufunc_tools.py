@@ -85,13 +85,20 @@ def _with_cache_optimization(
         else (0,)*ufunc.nin
     )
 
-    def _wrapper(*args, out=None):
+    # The kwarg ``where`` is only supported for elementwise ufuncs, while
+    # the kwarg ``axes` is only supported for non-elementwise gufuncs, so
+    # keep track of this here for later.
+    is_elementwise = sum(core_ndims) == 0
+
+    def _wrapper(*args, out=None, where=True):
         args = [np.asarray(arg) for arg in args]
 
         # Fast path for when the arguments which are used in the cached
         # computation don't have batches.
         if all(args[i].ndim == core_ndims[i] for i in cache_arg_indices):
-            return ufunc(*args)
+            if is_elementwise:
+                return ufunc(*args, out=out, where=where)
+            return ufunc(*args, out=out)
 
         # To get batch_shapes, need to exclude core dimensions. Again, the core
         # dimensions won't participate in broadcasting.
@@ -135,6 +142,14 @@ def _with_cache_optimization(
             )
             args_t.append(np.transpose(arg_b, axes=axes))
 
+        # Handle ``where`` kwarg.
+        if is_elementwise and where is not True:
+            where_t = np.transpose(
+                np.broadcast_to(where, batch_shape), axes=sorted_batch_axes
+            )
+        else:
+            where_t = True
+
         # Handle output array (use provided 'out' or pre-allocate)
         if out is not None:
             out_final = out
@@ -163,15 +178,18 @@ def _with_cache_optimization(
 
         # Set out to the above view, but return the C contiguous output.
         # This avoids having non-contiguous output.
-        ufunc(*args_t, out=out_t, order='C')
+        if is_elementwise:
+            ufunc(*args_t, out=out_t, where=where_t, order='C')
+        else:
+            ufunc(*args_t, out=out_t, order='C')
         return out_final
 
     # Do some metaprogramming with exec so that the arg names and func
     # name are as expected.
     arg_str = ", ".join(arg_names)
     code = (
-        f"""def {name}({arg_str}, out=None):
-            return _wrapper({arg_str}, out=out)
+        f"""def {name}({arg_str}, out=None, where=True):
+            return _wrapper({arg_str}, out=out, where=where)
         """
         )
     namespace = {"_wrapper": _wrapper}
