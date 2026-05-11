@@ -90,15 +90,15 @@ def _with_cache_optimization(
     # keep track of this here for later.
     is_elementwise = sum(core_ndims) == 0
 
-    def _wrapper(*args, out=None, where=True):
+    def _wrapper(*args, out=None, where=True, casting="same_kind"):
         args = [np.asarray(arg) for arg in args]
 
         # Fast path for when the arguments which are used in the cached
         # computation don't have batches.
         if all(args[i].ndim == core_ndims[i] for i in cache_arg_indices):
             if is_elementwise:
-                return ufunc(*args, out=out, where=where)
-            return ufunc(*args, out=out)
+                return ufunc(*args, out=out, where=where, casting=casting)
+            return ufunc(*args, out=out, casting=casting)
 
         # To get batch_shapes, need to exclude core dimensions. Again, the core
         # dimensions won't participate in broadcasting.
@@ -162,7 +162,7 @@ def _with_cache_optimization(
                 )
         else:
             input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
-            out_dtype = ufunc.resolve_dtypes(input_dtypes)[-1]
+            out_dtype = ufunc.resolve_dtypes(input_dtypes, casting=casting)[-1]
             if ufunc.nout == 1:
                 out_final = np.empty(batch_shape, dtype=out_dtype, order='C')
                 # a view of the output array with axes sorted as needed.
@@ -179,17 +179,17 @@ def _with_cache_optimization(
         # Set out to the above view, but return the C contiguous output.
         # This avoids having non-contiguous output.
         if is_elementwise:
-            ufunc(*args_t, out=out_t, where=where_t, order='C')
+            ufunc(*args_t, out=out_t, where=where_t, casting=casting, order='C')
         else:
-            ufunc(*args_t, out=out_t, order='C')
+            ufunc(*args_t, out=out_t, casting=casting, order='C')
         return out_final
 
     # Do some metaprogramming with exec so that the arg names and func
     # name are as expected.
     arg_str = ", ".join(arg_names)
     code = (
-        f"""def {name}({arg_str}, out=None, where=True):
-            return _wrapper({arg_str}, out=out, where=where)
+        f"""def {name}({arg_str}, out=None, where=True, casting='same_kind'):
+            return _wrapper({arg_str}, out=out, where=where, casting=casting)
         """
         )
     namespace = {"_wrapper": _wrapper}
