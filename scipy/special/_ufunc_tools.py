@@ -29,6 +29,27 @@ def _resolve_alloc_order(args, order):
     return order  # Returns 'C' or 'F'
 
 
+def _allocate_out(args, shape, dtype, order, subok):
+    """Allocate output array, respecting subclasses and priority."""
+    prototype = None
+    if subok and args:
+        prototype = max(args, key=lambda x: getattr(x, "__array_priority__", 0.0))
+
+    if prototype is not None:
+        return np.empty_like(
+            prototype, shape=shape, dtype=dtype, order=order, subok=subok
+        )
+
+    return np.empty(shape, dtype=dtype, order=order)
+
+
+def _get_prototype(args):
+    """Find the input argument with the highest __array_priority__."""
+    if not args:
+        return None
+    return
+
+
 def _with_cache_optimization(
         *,
         name,
@@ -108,10 +129,16 @@ def _with_cache_optimization(
     is_elementwise = sum(core_ndims) == 0
 
     def _wrapper(
-            *args, out=None, where=True, casting="same_kind", order="K", dtype=None
+            *args,
+            out=None,
+            where=True,
+            casting="same_kind",
+            order="K",
+            dtype=None,
+            subok=True,
     ):
-        args = [np.asarray(arg) for arg in args]
-        kwargs = dict(casting=casting, dtype=dtype)
+        args = [np.asanyarray(arg) if subok else np.asarray(arg) for arg in args]
+        kwargs = dict(casting=casting, dtype=dtype, subok=subok)
         if out is not None:
             kwargs["out"] = out
             if is_elementwise:
@@ -135,8 +162,8 @@ def _with_cache_optimization(
         # Broadcast each arg so that the batch shapes all agree, but the
         # core dimensions may still differ.
         args_b = [
-            np.broadcast_to(arg, batch_shape + arg.shape[-core_ndims[i]:])
-            if core_ndims[i] > 0 else np.broadcast_to(arg, batch_shape)
+            np.broadcast_to(arg, batch_shape + arg.shape[-core_ndims[i]:], subok=subok)
+            if core_ndims[i] > 0 else np.broadcast_to(arg, batch_shape, subok=subok)
             for i, arg in enumerate(args)
         ]
 
@@ -168,7 +195,8 @@ def _with_cache_optimization(
         # Handle ``where`` kwarg.
         if is_elementwise and where is not True:
             kwargs["where"] = np.transpose(
-                np.broadcast_to(where, batch_shape), axes=sorted_batch_axes
+                np.broadcast_to(where, batch_shape, subok=subok),
+                axes=sorted_batch_axes,
             )
 
         # Handle output array (use provided 'out' or pre-allocate)
@@ -194,12 +222,16 @@ def _with_cache_optimization(
                 input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
                 out_dtype = ufunc.resolve_dtypes(input_dtypes, casting=casting)[-1]
             if ufunc.nout == 1:
-                out_final = np.empty(batch_shape, dtype=out_dtype, order=alloc_order)
+                out_final = _allocate_out(
+                    args, batch_shape, out_dtype, alloc_order, subok
+                )
                 # a view of the output array with axes sorted as needed.
                 out_t = np.transpose(out_final, axes=sorted_batch_axes)
             else:
                 out_final = tuple(
-                    np.empty(batch_shape, dtype=out_dtype, order=alloc_order)
+                    _allocate_out(
+                        args, batch_shape, out_dtype, alloc_order, subok
+                    )
                     for _ in range(ufunc.nout)
                 )
                 out_t = tuple(
@@ -219,8 +251,12 @@ def _with_cache_optimization(
     arg_str = ", ".join(arg_names)
 
     # Handle kwargs for function definition and call to wrapper.
-    kwarg_defs = ["out=None", "casting='same_kind'", "order='K'", "dtype=None"]
-    kwarg_calls = ["out=out", "casting=casting", "order=order", "dtype=dtype"]
+    kwarg_defs = [
+        "out=None", "casting='same_kind'", "order='K'", "dtype=None", "subok=True"
+    ]
+    kwarg_calls = [
+        "out=out", "casting=casting", "order=order", "dtype=dtype", "subok=subok"
+    ]
     if is_elementwise:
         # where is only available for elementwise ufuncs, not gufuncs.
         kwarg_defs.insert(1, "where=True")
