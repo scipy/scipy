@@ -12,6 +12,23 @@ def _parse_core_ndims(signature):
     return tuple(0 if not g.strip() else g.count(',') + 1 for g in groups)
 
 
+def _resolve_alloc_order(args, order):
+    """Determine contiguity of output when using in-ufunc caching.
+
+    Since we hijack the iteration order, 'K' isn't really possible
+    so it's just treated like 'A'.
+
+    """
+    order = order.upper() if order is None else "K"
+    if order in ('K', 'A'):
+        # If all inputs are F-contiguous, return F-contiguous.
+        # Otherwise, default to C.
+        if all(arg.flags.f_contiguous for arg in args):
+            return 'F'
+        return 'C'
+    return order  # Returns 'C' or 'F'
+
+
 def _with_cache_optimization(
         *,
         name,
@@ -90,7 +107,9 @@ def _with_cache_optimization(
     # keep track of this here for later.
     is_elementwise = sum(core_ndims) == 0
 
-    def _wrapper(*args, out=None, where=True, casting="same_kind", dtype=None):
+    def _wrapper(
+            *args, out=None, where=True, casting="same_kind", order="K", dtype=None
+    ):
         args = [np.asarray(arg) for arg in args]
         kwargs = dict(casting=casting, dtype=dtype)
         if out is not None:
@@ -101,6 +120,7 @@ def _with_cache_optimization(
         # Fast path for when the arguments which are used in the cached
         # computation don't have batches.
         if all(args[i].ndim == core_ndims[i] for i in cache_arg_indices):
+            kwargs["order"] = order
             return ufunc(*args, **kwargs)
 
         # To get batch_shapes, need to exclude core dimensions. Again, the core
@@ -162,18 +182,24 @@ def _with_cache_optimization(
                     np.transpose(x, axes=sorted_batch_axes) for x in out_final
                 )
         else:
+            # Respect users choice of order, and preserve F-contiguity is all inputs
+            # are F-contiguous and order="K" or "A". This departs from the typical
+            # meaning of order = "K", which enables NumPy's clever logic to determine
+            # a cache friendly iteration order. This is because we hijack the iteration
+            # order for the benefit of in-ufunc caches.
+            alloc_order = _resolve_alloc_order(args, order)
             if dtype is not None:
                 out_dtype = np.dtype(dtype)
             else:
                 input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
                 out_dtype = ufunc.resolve_dtypes(input_dtypes, casting=casting)[-1]
             if ufunc.nout == 1:
-                out_final = np.empty(batch_shape, dtype=out_dtype, order='C')
+                out_final = np.empty(batch_shape, dtype=out_dtype, order=alloc_order)
                 # a view of the output array with axes sorted as needed.
                 out_t = np.transpose(out_final, axes=sorted_batch_axes)
             else:
                 out_final = tuple(
-                    np.empty(batch_shape, dtype=out_dtype, order='C')
+                    np.empty(batch_shape, dtype=out_dtype, order=alloc_order)
                     for _ in range(ufunc.nout)
                 )
                 out_t = tuple(
@@ -193,8 +219,8 @@ def _with_cache_optimization(
     arg_str = ", ".join(arg_names)
 
     # Handle kwargs for function definition and call to wrapper.
-    kwarg_defs = ["out=None", "casting='same_kind'", "dtype=None"]
-    kwarg_calls = ["out=out", "casting=casting", "dtype=dtype"]
+    kwarg_defs = ["out=None", "casting='same_kind'", "order='K'", "dtype=None"]
+    kwarg_calls = ["out=out", "casting=casting", "order=order", "dtype=dtype"]
     if is_elementwise:
         # where is only available for elementwise ufuncs, not gufuncs.
         kwarg_defs.insert(1, "where=True")
