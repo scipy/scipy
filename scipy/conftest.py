@@ -176,7 +176,7 @@ if not PARALLEL_RUN_AVAILABLE:
 
 # Array API backend handling
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
-                     'dask.array'}
+                     'dask.array', 'mparray'}
 xp_available_backends = [
     pytest.param(np, id='numpy', marks=pytest.mark.array_api_backends)
 ]
@@ -195,6 +195,14 @@ if SCIPY_ARRAY_API:
         array_api_strict.set_array_api_strict_flags(
             api_version='2025.12'
         )
+    except ImportError:
+        pass
+
+    try:
+        import mparray
+        xp_available_backends.append(
+            pytest.param(mparray, id='mparray',
+                         marks=pytest.mark.array_api_backends))
     except ImportError:
         pass
 
