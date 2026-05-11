@@ -356,12 +356,18 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         Numerator of a linear filter. If `b` has dimension greater than 1,
         it is assumed that the coefficients are stored in the first dimension,
         and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
-        array must be compatible for broadcasting.
+        array must be compatible for broadcasting. When `worN` is an integer
+        (the default), the generated frequency array has shape ``(worN,)``,
+        which only broadcasts cleanly against trailing axes of `b` of size 1;
+        to compute the response of multiple filters at one go, either reshape
+        `b` to add a trailing singleton axis (see Broadcasting Examples below)
+        or pass `worN` as an array_like of compatible shape.
     a : array_like
-        Denominator of a linear filter. If `b` has dimension greater than 1,
+        Denominator of a linear filter. If `a` has dimension greater than 1,
         it is assumed that the coefficients are stored in the first dimension,
         and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
-        array must be compatible for broadcasting.
+        array must be compatible for broadcasting. The same caveat about
+        `worN` being an integer applies as for `b`.
     worN : {None, int, array_like}, optional
         If a single integer, then compute at that many frequencies (default is
         N=512). This is a convenient alternative to::
