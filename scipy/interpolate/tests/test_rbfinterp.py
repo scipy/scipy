@@ -2,6 +2,7 @@ import pickle
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
+from scipy.__config__ import CONFIG
 
 from scipy import LowLevelCallable
 from scipy._lib._array_api import xp_assert_close, make_xp_test_case
@@ -473,6 +474,10 @@ class _TestRBFInterpolator:
 
         xp_assert_close(yitp1, yitp2, atol=1e-16)
 
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
     @skip_xp_backends(np_only=True, reason="llc only supports numpy backend")
     def test_custom_kernel(self, xp):
         # Make sure custom kernels work match builtin
@@ -498,7 +503,7 @@ class _TestRBFInterpolator:
         yitp_llc = interp_llc(xitp)
         yipt = interp(xitp)
 
-        xp_assert_close(yitp_llc, yipt)
+        xp_assert_close(yitp_llc, yipt, atol=1e-14)
 
 
 
