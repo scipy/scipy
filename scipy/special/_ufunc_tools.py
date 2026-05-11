@@ -85,7 +85,7 @@ def _with_cache_optimization(
         else (0,)*ufunc.nin
     )
 
-    def _wrapper(*args):
+    def _wrapper(*args, out=None):
         args = [np.asarray(arg) for arg in args]
 
         # Fast path for when the arguments which are used in the cached
@@ -135,21 +135,31 @@ def _with_cache_optimization(
             )
             args_t.append(np.transpose(arg_b, axes=axes))
 
-        # Premake the output array.
-        input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
-        out_dtype = ufunc.resolve_dtypes(input_dtypes)[-1]
-        if ufunc.nout == 1:
-            out_final = np.empty(batch_shape, dtype=out_dtype, order='C')
-            # a view of the output array with axes sorted as needed.
-            out_t = np.transpose(out_final, axes=sorted_batch_axes)
+        # Handle output array (use provided 'out' or pre-allocate)
+        if out is not None:
+            out_final = out
+            if ufunc.nout == 1:
+                # a view of the provided output array with axes sorted as needed.
+                out_t = np.transpose(out_final, axes=sorted_batch_axes)
+            else:
+                out_t = tuple(
+                    np.transpose(x, axes=sorted_batch_axes) for x in out_final
+                )
         else:
-            out_final = tuple(
-                np.empty(batch_shape, dtype=out_dtype, order='C')
-                for _ in range(ufunc.nout)
-            )
-            out_t = tuple(
-                np.transpose(x, axes=sorted_batch_axes) for x in out_final
-            )
+            input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
+            out_dtype = ufunc.resolve_dtypes(input_dtypes)[-1]
+            if ufunc.nout == 1:
+                out_final = np.empty(batch_shape, dtype=out_dtype, order='C')
+                # a view of the output array with axes sorted as needed.
+                out_t = np.transpose(out_final, axes=sorted_batch_axes)
+            else:
+                out_final = tuple(
+                    np.empty(batch_shape, dtype=out_dtype, order='C')
+                    for _ in range(ufunc.nout)
+                )
+                out_t = tuple(
+                    np.transpose(x, axes=sorted_batch_axes) for x in out_final
+                )
 
         # Set out to the above view, but return the C contiguous output.
         # This avoids having non-contiguous output.
@@ -160,8 +170,8 @@ def _with_cache_optimization(
     # name are as expected.
     arg_str = ", ".join(arg_names)
     code = (
-        f"""def {name}({arg_str}):
-            return _wrapper({arg_str})
+        f"""def {name}({arg_str}, out=None):
+            return _wrapper({arg_str}, out=out)
         """
         )
     namespace = {"_wrapper": _wrapper}
