@@ -90,15 +90,18 @@ def _with_cache_optimization(
     # keep track of this here for later.
     is_elementwise = sum(core_ndims) == 0
 
-    def _wrapper(*args, out=None, where=True, casting="same_kind"):
+    def _wrapper(*args, out=None, where=True, casting="same_kind", dtype=None):
         args = [np.asarray(arg) for arg in args]
+        kwargs = dict(casting=casting, dtype=dtype)
+        if out is not None:
+            kwargs["out"] = out
+            if is_elementwise:
+                kwargs["where"] = where
 
         # Fast path for when the arguments which are used in the cached
         # computation don't have batches.
         if all(args[i].ndim == core_ndims[i] for i in cache_arg_indices):
-            if is_elementwise:
-                return ufunc(*args, out=out, where=where, casting=casting)
-            return ufunc(*args, out=out, casting=casting)
+            return ufunc(*args, **kwargs)
 
         # To get batch_shapes, need to exclude core dimensions. Again, the core
         # dimensions won't participate in broadcasting.
@@ -144,11 +147,9 @@ def _with_cache_optimization(
 
         # Handle ``where`` kwarg.
         if is_elementwise and where is not True:
-            where_t = np.transpose(
+            kwargs["where"] = np.transpose(
                 np.broadcast_to(where, batch_shape), axes=sorted_batch_axes
             )
-        else:
-            where_t = True
 
         # Handle output array (use provided 'out' or pre-allocate)
         if out is not None:
@@ -161,8 +162,11 @@ def _with_cache_optimization(
                     np.transpose(x, axes=sorted_batch_axes) for x in out_final
                 )
         else:
-            input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
-            out_dtype = ufunc.resolve_dtypes(input_dtypes, casting=casting)[-1]
+            if dtype is not None:
+                out_dtype = np.dtype(dtype)
+            else:
+                input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
+                out_dtype = ufunc.resolve_dtypes(input_dtypes, casting=casting)[-1]
             if ufunc.nout == 1:
                 out_final = np.empty(batch_shape, dtype=out_dtype, order='C')
                 # a view of the output array with axes sorted as needed.
@@ -175,21 +179,21 @@ def _with_cache_optimization(
                 out_t = tuple(
                     np.transpose(x, axes=sorted_batch_axes) for x in out_final
                 )
+        kwargs["out"] = out_t
+        kwargs["order"] = "C"
 
         # Set out to the above view, but return the C contiguous output.
         # This avoids having non-contiguous output.
-        if is_elementwise:
-            ufunc(*args_t, out=out_t, where=where_t, casting=casting, order='C')
-        else:
-            ufunc(*args_t, out=out_t, casting=casting, order='C')
+        ufunc(*args_t, **kwargs)
+
         return out_final
 
     # Do some metaprogramming with exec so that the arg names and func
     # name are as expected.
     arg_str = ", ".join(arg_names)
     code = (
-        f"""def {name}({arg_str}, out=None, where=True, casting='same_kind'):
-            return _wrapper({arg_str}, out=out, where=where, casting=casting)
+        f"""def {name}({arg_str}, out=None, where=True, casting='same_kind', dtype=None):
+            return _wrapper({arg_str}, out=out, where=where, casting=casting, dtype=dtype)
         """
         )
     namespace = {"_wrapper": _wrapper}
