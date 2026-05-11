@@ -1,51 +1,51 @@
 import numpy as np
 
-# pythran export capsule linear(double)
+# pythran export capsule linear(float64)
 def linear(r):
     return -r
 
-# pythran export capsule thin_plate_spline(double)
+# pythran export capsule thin_plate_spline(float64)
 def thin_plate_spline(r):
     if r == 0:
         return 0.0
     else:
         return r**2*np.log(r)
 
-# pythran export capsule cubic(double)
+# pythran export capsule cubic(float64)
 def cubic(r):
     return r**3
 
-# pythran export capsule quintic(double)
+# pythran export capsule quintic(float64)
 def quintic(r):
     return -r**5
 
-# pythran export capsule multiquadric(double)
+# pythran export capsule multiquadric(float64)
 def multiquadric(r):
     return -np.sqrt(r**2 + 1)
 
-# pythran export capsule inverse_multiquadric(double)
+# pythran export capsule inverse_multiquadric(float64)
 def inverse_multiquadric(r):
     return 1/np.sqrt(r**2 + 1)
 
-# pythran export capsule inverse_quadratic(double)
+# pythran export capsule inverse_quadratic(float64)
 def inverse_quadratic(r):
     return 1/(r**2 + 1)
 
-# pythran export capsule gaussian(double)
+# pythran export capsule gaussian(float64)
 def gaussian(r):
     return np.exp(-r**2)
 
-# pythran export capsule matern1_2(double)
+# pythran export capsule matern1_2(float64)
 def matern1_2(r):
     return np.exp(-r)
 
-# pythran export capsule matern3_2(double)
+# pythran export capsule matern3_2(float64)
 def matern3_2(r):
     term = np.sqrt(3.0) * r
     return (1.0 + term) * np.exp(-term)
 
 
-# pythran export capsule matern5_2(double)
+# pythran export capsule matern5_2(float64)
 def matern5_2(r):
     term = np.sqrt(5.0) * r
     return (1.0 + term + 5.0 * r**2 / 3.0) * np.exp(-term)
