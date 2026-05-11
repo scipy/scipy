@@ -58,6 +58,9 @@ New features
 - `scipy.linalg.lu` and `scipy.linalg.det` have been rewritten in C++ with
   batching support in the compiled code.
 - Added ILP64 support to `scipy.linalg.expm` and `scipy.linalg.sqrtm`.
+- The batching loops of `scipy.linalg.qr` and `scipy.linalg.eig` have been
+  moved to C, providing a substantial speedup for batched input.
+- The performance of `scipy.linalg.expm` has been improved.
 
 
 ``scipy.ndimage`` improvements
@@ -118,19 +121,31 @@ New features
   `scipy.spatial.distance.euclidean`, and `scipy.spatial.distance.seuclidean`.
 - It is now possible to return sparse arrays rather than matrices from
   ``KDTree.sparse_distance_matrix``.
+- It is now possible to compose ``Rotation``s and ``RigidTransform``s directly,
+  by automatically promoting ``Rotation``s when the two are composed via
+  a multiplication operator.
 
 
 ``scipy.special`` improvements
 ==============================
 - The accuracy of the following functions was improved: `scipy.special.bdtrik`,
   `scipy.special.bdtrin`, `scipy.special.nbdtrik`, `scipy.special.nbdtrin`.
+- The numerical behavior for `scipy.special.eval_jacobi` has been improved
+  for several parameter combinations.
 
 ``scipy.stats`` improvements
 ============================
 - The accuracy of `scipy.stats.pmean` with tiny, nonzero ``p`` has been
   improved.
 - The performance of `scipy.stats.halfgennorm` has been improved.
--
+- ``zstatistic`` has been added to the result object of
+  `scipy.stats.mannwhitneyu`.
+- A large number of ``stats`` functions now support lazy arrays and JAX
+  JIT (see Python Array API support section below).
+- Support for the ``nan_policy`` keyword argument has been added to:
+  `scipy.stats.obrientransform`, `scipy.stats.boxcox`,
+  `scipy.stats.boxcox_normmax`, `scipy.stats.yeojohnson`,
+  `scipy.stats.yeojohnson_normmax`, and `scipy.stats.sigmaclip`.
 
 
 ************************
@@ -149,13 +164,21 @@ Python Array API Support
   `scipy.stats.wilcoxon`, `scipy.stats.fligner`, `scipy.stats.linregress`,
   `scipy.stats.alexandergovern`, and `scipy.stats.levene`.
 - Array API support has been added to: `scipy.stats.quantile_test`,
-  `scipy.stats.kendalltau` (via NumPy conversion), `scipy.stats.kstest`, and
-  `scipy.sparse.linalg.LinearOperator`.
+  `scipy.stats.kendalltau` (via NumPy conversion), `scipy.stats.kstest`,
+  `scipy.sparse.linalg.LinearOperator`, `scipy.stats.cumfreq`,
+  `scipy.stats.relfreq`, `scipy.stats.ks_2samp`, `scipy.stats.theilslopes`,
+  `scipy.stats.siegelslopes`, `scipy.stats.obrientransform` (including marray),
+  `scipy.stats.binomtest`, `scipy.integrate.fixed_quad`, `scipy.signal.square`,
+  and `scipy.stats.expectile`.
 - The ``torch`` support for `scipy.signal.fftconvolve` now correctly
   handles the ``float32`` dtype.
 - JAX JIT support has been added for: `scipy.stats.binomtest`
   (except for ``method='two-sided'``), `scipy.stats.mannwhitneyu`
-  (except for ``method='auto'``), `scipy.stats.lmoment`.
+  (except for ``method='auto'``), `scipy.stats.lmoment`, `scipy.stats.moment`,
+  `scipy.stats.ansari` (related to new ``method`` argument),
+  `scipy.stats.yeojohnson_llf`, `scipy.stats.epps_singleton_2samp`,
+  `scipy.stats.wilcoxon` (except for ``method='exact'`` and ``method='auto'``),
+  and `scipy.stats.rankdata` (via delegation).
 
 
 **************************************
@@ -193,6 +216,8 @@ Backwards incompatible changes
   inputs, but it is a different class. Most operations work the same for
   sparse arrays and matrixes with notable differences for matrix: ``*`` means
   matmul and always-2D. For more info see :ref:`migration_to_sparray`.
+- `scipy.stats.obrientransform` now returns a tuple of arrays instead of
+  a single ``ndarray``.
 
 *************
 Other changes
