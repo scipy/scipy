@@ -19,7 +19,7 @@ def _resolve_alloc_order(args, order):
     so it's just treated like 'A'.
 
     """
-    order = order.upper() if order is None else "K"
+    order = order.upper() if order is not None else "K"
     if order in ('K', 'A'):
         # If all inputs are F-contiguous, return F-contiguous.
         # Otherwise, default to C.
