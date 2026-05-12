@@ -1,4 +1,4 @@
-#ifndef BLASKLAPACK_DECLARATIONS_H
+#ifndef BLASLAPACK_DECLARATIONS_H
 #define BLASLAPACK_DECLARATIONS_H
 #include "scipy_blas_defines.h"
 
