@@ -263,14 +263,12 @@ Authors
 * Joseph Adams (1) +
 * Adrián Raso González (1) +
 * Virgile Andreani (1)
-* Aniket (1) +
 * AshwathElang0 (1) +
 * Mart-Mihkel Aun (1) +
 * BarnikRB (2) +
-* BasilLiekens (3) +
 * Richie Bendall (1) +
 * J Berg (7) +
-* Florian Bourgey (27)
+* Florian Bourgey (35)
 * Jake Bowhay (94)
 * Jonathan Brodrick (1) +
 * Dietrich Brunn (36)
@@ -282,10 +280,10 @@ Authors
 * Dan (3) +
 * devdanzin (2) +
 * Martin Diehl (4)
+* Sam Dolat (2) +
 * dphipps-qnx (1) +
 * DWesl (2)
 * efrat99 (3) +
-* fbourgey (8) +
 * August Femtehjell (2) +
 * Matthew H Flamm (1)
 * Juan Flores (1) +
@@ -294,6 +292,7 @@ Authors
 * Wei Bo Gao (1) +
 * Christoph Gohlke (1)
 * Nathan Goldbaum (20)
+* Ludmila Golomozin (11) +
 * Ralf Gommers (153)
 * Mathieu Guay-Paquet (1) +
 * Matt Haberland (147)
@@ -312,14 +311,12 @@ Authors
 * krishneetRAJ (1) +
 * Iason Krommydas (1) +
 * Eric Larson (1)
-* Basil Liekens (28) +
+* Basil Liekens (31) +
 * Christian Lorentzen (15)
 * Alex Lubbock (1) +
-* LudmilaGolomozin (7) +
 * Echedey Luis (2) +
 * Lunyxis (1) +
 * Zhang Maiyun (1) +
-* MilaGolomozin (4) +
 * Elle Musoke (11) +
 * Andrew Nelson (102)
 * Nick ODell (26)
@@ -332,8 +329,6 @@ Authors
 * Aditya Rawat (1) +
 * Tyler Reddy (68)
 * Martin Reinecke (1)
-* RivkaW327 (8) +
-* RivkaWalles (6) +
 * Lucas Roberts (6)
 * Pamphile Roy (1)
 * Daniel Schmitz (25)
@@ -342,28 +337,27 @@ Authors
 * Scott Shambaugh (16)
 * Sabaa Siddique (1) +
 * Nicholas Smith (1) +
-* SoheilStar (2) +
 * Johannes F. Sommerfeldt (1) +
 * Claude Sonnet (1) +
 * Albert Steppi (79)
-* stratakis (4) +
-* Charalampos Stratakis (12) +
+* Charalampos Stratakis (16) +
 * Taylor (1) +
 * thecaptain789 (1) +
 * Christian Veenhuis (2)
 * Sebastiano Vigna (1)
+* Rivka Walles (14) +
 * Warren Weckesser (4)
 * Soeren Wolfers (1) +
 * wongaokay (1) +
 * Xuefeng Xu (1)
-* Aniket Singh Yadav (1) +
+* Aniket Singh Yadav (2) +
 * yaochengchen (2) +
 * Fadi Younes (2) +
 * Isaiah Zimmerman (1) +
 * Simon Zwieback (1) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (2)
 
-    A total of 102 people contributed to this release.
+    A total of 96 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
