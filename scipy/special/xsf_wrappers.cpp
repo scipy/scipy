@@ -1,3 +1,5 @@
+#include "mathieu.h"
+
 #include <cmath>
 
 #include "xsf_wrappers.h"
@@ -20,7 +22,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/loggamma.h>
-#include <xsf/mathieu.h>
+#include <xsf/mathieu_legacy.h>
 #include <xsf/par_cyl.h>
 #include <xsf/sici.h>
 #include <xsf/specfun.h>
@@ -50,6 +52,7 @@
 #include <xsf/cephes/trig.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/cephes/yn.h>
+
 
 using namespace std;
 
@@ -740,3 +743,15 @@ double xsf_tandg(double x) { return xsf::tandg(x); }
 double xsf_cotdg(double x) { return xsf::cotdg(x); }
 
 double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
+
+double special_mathieu_a(double m, double q) { return special::mathieu_a(m, q); }
+
+double special_mathieu_b(double m, double q) { return special::mathieu_b(m, q); }
+
+void special_mathieu_cem(double m, double q, double x, double *out, double *out_diff) {
+   return special::mathieu_cem(m, q, x, *out, *out_diff);
+}
+
+void special_mathieu_sem(double m, double q, double x, double *out, double *out_diff) {
+   return special::mathieu_sem(m, q, x, *out, *out_diff);
+}

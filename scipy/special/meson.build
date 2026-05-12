@@ -52,7 +52,7 @@ endif
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [xsf_dep, np_dep, lapack_dep],
   link_args: version_link_args,
   cpp_args: ufuncs_cpp_args,
   install: true,
@@ -118,6 +118,7 @@ py3.extension_module('_ufuncs',
   dependencies: [
     xsf_dep,
     np_dep,
+    lapack_dep
   ],
   link_args: version_link_args,
   link_with: cdflib_lib,
@@ -184,7 +185,7 @@ py3.extension_module('cython_special',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [xsf_dep, np_dep, lapack_dep],
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
@@ -276,7 +277,8 @@ python_sources = [
   'sf_error.py',
   'specfun.py',
   'spfun_stats.py',
-  '_ufunc_tools.py'
+  '_ufunc_tools.py',
+  '_mathieu.py'
 ]
 
 py3.install_sources(

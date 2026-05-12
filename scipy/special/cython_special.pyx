@@ -1123,14 +1123,14 @@ cdef extern from r"xsf_wrappers.h":
     void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     npy_double special_ker(npy_double) nogil
     double special_kerp(double) nogil
-    npy_double _func_cem_cva_wrap "cem_cva_wrap"(npy_double, npy_double) nogil
-    npy_double _func_sem_cva_wrap "sem_cva_wrap"(npy_double, npy_double) nogil
-    void _func_cem_wrap "cem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_special_mathieu_a "special_mathieu_a"(npy_double, npy_double) nogil
+    npy_double _func_special_mathieu_b "special_mathieu_b"(npy_double, npy_double) nogil
+    void _func_special_mathieu_cem "special_mathieu_cem"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_mcm1_wrap "mcm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_mcm2_wrap "mcm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_msm1_wrap "msm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_msm2_wrap "msm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
-    void _func_sem_wrap "sem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    void _func_special_mathieu_sem "special_mathieu_sem"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_modified_fresnel_minus_wrap "modified_fresnel_minus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
     void _func_modified_fresnel_plus_wrap "modified_fresnel_plus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
     npy_double _func_oblate_aswfa_nocv_wrap "oblate_aswfa_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
@@ -2921,15 +2921,15 @@ cpdef double lpmv(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double mathieu_a(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_a"""
-    return _func_cem_cva_wrap(x0, x1)
+    return _func_special_mathieu_a(x0, x1)
 
 cpdef double mathieu_b(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_b"""
-    return _func_sem_cva_wrap(x0, x1)
+    return _func_special_mathieu_b(x0, x1)
 
 cdef void mathieu_cem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_cem"""
-    _func_cem_wrap(x0, x1, x2, y0, y1)
+    _func_special_mathieu_cem(x0, x1, x2, y0, y1)
 
 def _mathieu_cem_pywrap(double x0, double x1, double x2):
     cdef double y0
@@ -2979,7 +2979,7 @@ def _mathieu_modsem2_pywrap(double x0, double x1, double x2):
 
 cdef void mathieu_sem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_sem"""
-    _func_sem_wrap(x0, x1, x2, y0, y1)
+    _func_special_mathieu_sem(x0, x1, x2, y0, y1)
 
 def _mathieu_sem_pywrap(double x0, double x1, double x2):
     cdef double y0

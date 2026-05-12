@@ -155,12 +155,10 @@ __all__ = [
     'lpmv',
     'mathieu_a',
     'mathieu_b',
-    'mathieu_cem',
     'mathieu_modcem1',
     'mathieu_modcem2',
     'mathieu_modsem1',
     'mathieu_modsem2',
-    'mathieu_sem',
     'modfresnelm',
     'modfresnelp',
     'modstruve',
@@ -267,6 +265,8 @@ _lanczos_sum_expg_scaled: np.ufunc
 _lgam1p: np.ufunc
 _log1mexp: np.ufunc
 _log1pmx: np.ufunc
+_mathieu_cem: np.ufunc
+_mathieu_sem: np.ufunc
 _normalized_gen_harmonic: np.ufunc
 _riemann_zeta: np.ufunc
 _scaled_exp1: np.ufunc
@@ -437,12 +437,10 @@ logit: np.ufunc
 lpmv: np.ufunc
 mathieu_a: np.ufunc
 mathieu_b: np.ufunc
-mathieu_cem: np.ufunc
 mathieu_modcem1: np.ufunc
 mathieu_modcem2: np.ufunc
 mathieu_modsem1: np.ufunc
 mathieu_modsem2: np.ufunc
-mathieu_sem: np.ufunc
 modfresnelm: np.ufunc
 modfresnelp: np.ufunc
 modstruve: np.ufunc
