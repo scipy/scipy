@@ -99,6 +99,12 @@ jobs:
           command: |
             spin build -j2
 
+      - run:
+          name: ccache performance
+          command: |
+            ccache --evict-older-than 1d
+            ccache -s
+
       - save_cache:
           key: pip-{{ .Branch }}
           paths:
@@ -108,12 +114,6 @@ jobs:
           key: ccache-{{ .Branch }}
           paths:
             - ~/.ccache
-
-      - run:
-          name: ccache performance
-          command: |
-            ccache --evict-older-than 1d
-            ccache -s
 
       - persist_to_workspace:
           root: ~/
