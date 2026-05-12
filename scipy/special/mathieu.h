@@ -70,7 +70,7 @@ struct mathieu_cv {
                 return std::numeric_limits<double>::quiet_NaN();
             }
         } else {
-            if ((m <= 0) || (m != std::floor(m))) {
+            if ((m <= 0) || (m != std::floor(m)) || std::isnan(q)) {
                 xsf::set_error("mathieu_b", SF_ERROR_DOMAIN, NULL);
                 return std::numeric_limits<double>::quiet_NaN();
             }
