@@ -659,6 +659,7 @@ class TestCephes:
               - 2*fr*cephes.mathieu_modsem1(m, q, z)[0])
         assert_allclose(y1, y2, rtol=1e-10)
 
+    @pytest.mark.slow
     def test_mathieu_overflow(self):
         # This originally checked that these return NaNs instead of causing a SEGV.
         # Fixed in https://github.com/scipy/xsf/pull/99 and now these return accurate
