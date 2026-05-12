@@ -143,6 +143,8 @@ def _with_cache_optimization(
         if out is not None:
             kwargs["out"] = out
             if is_elementwise:
+                if not isinstance(where, bool):
+                    where = np.asanyarray(where) if subok else np.asarray(where)
                 kwargs["where"] = where
 
         # Fast path for when the arguments which are used in the cached
@@ -157,6 +159,13 @@ def _with_cache_optimization(
             arg.shape[:-core_ndims[i]] if core_ndims[i] > 0 else arg.shape
             for i, arg in enumerate(args)
         ]
+        if is_elementwise and not isinstance(where, bool):
+            batch_shapes.append(where.shape)
+
+        if out is not None:
+            out_sample = out[0] if isinstance(out, tuple) else out
+            batch_shapes.append(out_sample.shape)
+
         batch_shape = np.broadcast_shapes(*batch_shapes)
         batch_ndim = len(batch_shape)
 
@@ -167,6 +176,7 @@ def _with_cache_optimization(
             if core_ndims[i] > 0 else np.broadcast_to(arg, batch_shape, subok=subok)
             for i, arg in enumerate(args)
         ]
+
 
         # After broadcasting, determine which axes have stride-length
         # zero for each of the args participating in the cache. The cached
@@ -220,9 +230,12 @@ def _with_cache_optimization(
             if dtype is not None:
                 out_dtype = np.dtype(dtype)
             else:
+                resolve_kwargs = {"casting": casting}
+                if signature is not None:
+                    resolve_kwargs["signature"] = signature
                 input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
                 out_dtype = ufunc.resolve_dtypes(
-                    input_dtypes, casting=casting, signature=signature
+                    input_dtypes, **resolve_kwargs
                 )[-1]
             if ufunc.nout == 1:
                 out_final = _allocate_out(
