@@ -55,6 +55,7 @@ jobs:
     <<: *defaults
     environment:
       CCACHE_DIR: /home/circleci/.ccache
+      CCACHE_MAXSIZE: "250M"
     steps:
       - checkout
       - check-skip
