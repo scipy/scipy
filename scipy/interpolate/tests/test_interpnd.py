@@ -23,6 +23,12 @@ def data_file(basename):
 
 
 class TestLinearNDInterpolation:
+    def test_gh_21279(self):
+        points2d = np.load(data_file('gh_21279.npy'))
+        r = np.ones_like(points2d[:, 0])
+        r_predictor = interpnd.LinearNDInterpolator(points2d, r)
+        assert np.isnan(r_predictor(points2d)).sum() == 0
+
     def test_smoketest(self):
         # Test at single points
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
