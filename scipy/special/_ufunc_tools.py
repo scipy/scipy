@@ -133,19 +133,19 @@ def _with_cache_optimization(
             dtype=None,
             subok=True,
             signature=None,
-            **kwargs,
     ):
-        if signature is None:
-            signature = kwargs.pop("sig", None)
-
         args = [np.asanyarray(arg) if subok else np.asarray(arg) for arg in args]
-        kwargs = dict(casting=casting, dtype=dtype, subok=subok, signature=signature)
+        kwargs = dict(casting=casting, subok=subok)
         if out is not None:
             kwargs["out"] = out
             if is_elementwise:
                 if not isinstance(where, bool):
                     where = np.asanyarray(where) if subok else np.asarray(where)
                 kwargs["where"] = where
+        if signature is not None:
+            kwargs["signature"] = signature
+        if dtype is not None:
+            kwargs["dtype"] = dtype
 
         # Fast path for when the arguments which are used in the cached
         # computation don't have batches.
@@ -176,7 +176,6 @@ def _with_cache_optimization(
             if core_ndims[i] > 0 else np.broadcast_to(arg, batch_shape, subok=subok)
             for i, arg in enumerate(args)
         ]
-
 
         # After broadcasting, determine which axes have stride-length
         # zero for each of the args participating in the cache. The cached
