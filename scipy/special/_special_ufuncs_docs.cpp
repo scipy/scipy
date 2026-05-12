@@ -5412,6 +5412,11 @@ const char *mathieu_a_doc = R"(
     --------
     mathieu_b, mathieu_cem, mathieu_sem
 
+    References
+    ----------
+    .. [1] Stuart Brorson, A New Implementation of the Mathieu Functions for SciPy.
+           https://github.com/brorson/ScipyMathieuPaper
+
     )";
 
 const char *mathieu_b_doc = R"(
@@ -5437,6 +5442,11 @@ const char *mathieu_b_doc = R"(
     See Also
     --------
     mathieu_a, mathieu_cem, mathieu_sem
+
+    References
+    ----------
+    .. [1] Stuart Brorson, A New Implementation of the Mathieu Functions for SciPy.
+           https://github.com/brorson/ScipyMathieuPaper
 
     )";
 
