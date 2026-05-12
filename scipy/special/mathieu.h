@@ -205,7 +205,7 @@ struct mathieu_xem {
         double x_d = static_cast<double>(x);
         double out_d, out_diff_d;
 
-        if ((m < 0) || m != std::floor(m)) {
+        if ((m < 0) || m != std::floor(m) || std::isnan(q) || std::isnan(x)) {
             out = std::numeric_limits<T>::quiet_NaN();
             out_diff = std::numeric_limits<T>::quiet_NaN();
             if constexpr (FuncParity == Even) {
@@ -231,6 +231,17 @@ struct mathieu_xem {
         if (q_d != last_q || int_m != last_m) {
             // Chooses
             auto N = get_partial_sum_N(int_m, q_d);
+            if (N > 100000) {
+                out = std::numeric_limits<T>::quiet_NaN();
+                out_diff = std::numeric_limits<T>::quiet_NaN();
+                if constexpr (FuncParity == Even) {
+                    xsf::set_error("mathieu_cem", SF_ERROR_NO_RESULT, NULL);
+                } else {
+                    xsf::set_error("mathieu_sem", SF_ERROR_NO_RESULT, NULL);
+                }
+                last_m = -1; // invalidate cache upon error
+                return;
+            }
 
             try {
                 // Make sure allocation actually succeeds.
