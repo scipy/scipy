@@ -550,49 +550,18 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 /*
  * Python module initialization
  */
-
-/* Prevent the name mangling */
-extern "C" {
+#include <pybind11/pybind11.h>
 #include "sparsetools_impl.h"
+
+namespace py = pybind11;
+
+PYBIND11_MODULE(_sparsetools, m) {
+    if (_import_array() != 0) {
+      throw py::error_already_set();
+    }
+    init_bsr(m);
+    init_csr(m);
+    init_csc(m);
+    init_other(m);
 }
 
-
-static int
-_sparsetools_module_exec(PyObject *module)
-{
-    (void)module;  /* unused */
-
-    if (_import_array() < 0) { return -1; }
-
-    return 0;
-}
-
-
-static PyModuleDef_Slot _sparsetools_slots[] = {
-    {Py_mod_exec, (void *)_sparsetools_module_exec},
-    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
-    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-#endif
-    {0, NULL},
-};
-
-
-static struct PyModuleDef moduledef = {
-    /* m_base     */ PyModuleDef_HEAD_INIT,
-    /* m_name     */ "_sparsetools",
-    /* m_doc      */ NULL,
-    /* m_size     */ 0,
-    /* m_methods  */ sparsetools_methods,
-    /* m_slots    */ _sparsetools_slots,
-    /* m_traverse */ NULL,
-    /* m_clear    */ NULL,
-    /* m_free     */ NULL
-};
-
-
-PyMODINIT_FUNC
-PyInit__sparsetools(void)
-{
-    return PyModuleDef_Init(&moduledef);
-}
