@@ -1446,6 +1446,24 @@ def sos2zpk(sos):
     even if some of these are (effectively) zero.
 
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Convert a second-order Butterworth filter from second-order sections
+    to zeros, poles, and gain format.
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> sos = signal.butter(2, 0.25, output='sos')
+    >>> z, p, k = signal.sos2zpk(sos)
+    >>> np.round(z.real, 4)
+    array([-1., -1.])
+    >>> np.round(p, 4)
+    array([0.4714+0.3333j, 0.4714-0.3333j])
+    >>> f"{k:.4f}"
+    '0.0976'
+    >>> np.allclose(signal.zpk2sos(z, p, k), sos)
+    True
     """
     xp = array_namespace(sos)
     sos = xp.asarray(sos)
