@@ -868,11 +868,15 @@ def _dirty_git_working_dir():
         "'jax.numpy', 'dask.array')."
     )
 )
+@click.option(
+    '--dry-run', '-n', is_flag=True, default=True,
+    help="Run benchmarks without saving results to disk (default: True). "
+)
 @meson.build_option
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, build, build_dir, *args, **kwargs):
+          commits, array_api_backend, dry_run, build, build_dir, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -908,6 +912,9 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if quick:
         bench_args = ['--quick'] + bench_args
 
+    if dry_run:
+        bench_args = ['--dry-run'] + bench_args
+
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 
@@ -936,7 +943,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        cmd = ['asv', 'run', '--dry-run', '--show-stderr', '--python=same'] + bench_args
+        cmd = ['asv', 'run', '--show-stderr', '--python=same'] + bench_args
         _run_asv(cmd)
     else:
         # Ensure that we don't have uncommited changes
