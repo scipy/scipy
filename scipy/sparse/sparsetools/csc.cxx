@@ -4,6 +4,4 @@
 #include "sparsetools.h"
 #include "csc.h"
 
-extern "C" {
 #include "csc_impl.h"
-}
