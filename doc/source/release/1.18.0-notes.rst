@@ -217,6 +217,22 @@ Deprecated features and future changes
 - A ``FutureWarning`` is now issued for calling ``{r}matvec`` on column vectors
   with ``LinearOperator``. Identical behavior can be achieved (and extended to
   batch dimensions) via ``{r}matmat``.
+- `scipy.linalg` functions are now stricter--using non-LAPACK dtypes is
+  deprecated. When the deprecations expire, this will effectively limit the
+  dtypes allowed in linear algebra functions to: integers (upcast to float),
+  and single/double precision float/complex dtypes.
+- `scipy.spatial.minkowsi_distance`, `scipy.spatial.minkowsi_distance_p`,
+  and `scipy.spatial.distance_matrix` have been deprecated in favor of
+  other superior functions.
+- `scipy.spatial.tsearch` has been deprecated because it duplicates functionality
+  more conveniently provided within the ``Delaunay`` class proper.
+- The following functions have been deprecated because they were deemed
+  not practically useful: `scipy.interpolate.pade`, `scipy.interpolate.lagrange`,
+  and `scipy.interpolate.approximate_taylor_polynomial`.
+- Setting ``spmatrix=True`` for the `scipy.io` readers ``mmio``, ``FFM``, ``hb``,
+  and ``matlab/_mio`` is now deprecated, including when set as the default
+  value.
+- The unintentionally public `scipy.cluster.vq.py_vq` has been deprecated.
 
 
 
@@ -239,6 +255,12 @@ Backwards incompatible changes
   matmul and always-2D. For more info see :ref:`migration_to_sparray`.
 - `scipy.stats.obrientransform` now returns a tuple of arrays instead of
   a single ``ndarray``.
+- `scipy.stats.multinomial` now returns NaNs when the category probability
+  (``p``) rows/arrays do not sum to unity. This is an expiration of the deprecated
+  behavior of adjusting the final element in the ``p`` array to compensate.
+  Note that ``multinomial.rvs`` will now raise an error in such cases, since it
+  has an integral return type.
+
 
 *************
 Other changes
