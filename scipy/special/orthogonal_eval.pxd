@@ -149,10 +149,10 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
         return 2*alpha*x
 
     # Symmetry property: C_n^alpha(-x) = (-1)^n C_n^alpha(x) for integer n
-    sign = -1 if (x < 0 and (n & 1)) else 1
+    sign = -1 if (x < 0 and n % 2) else 1
     x = fabs(x)
     
-    if fabs(x) < 1e-5:
+    if x < 1e-5:
         # Power series rather than recurrence due to loss of precision
         # http://functions.wolfram.com/Polynomials/GegenbauerC3/02/
         a = n//2
@@ -193,7 +193,7 @@ cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) noexcep
 
     # If n is an integer, use more stable `eval_gegenbauer_l`
     ni = <long long> n
-    if number_t is double and n == ni:
+    if number_t is double and n == ni and n < 1e10:
         return <number_t> eval_gegenbauer_l(<Py_ssize_t> ni, alpha, <double> x)
 
     cdef double a, b, c, d
