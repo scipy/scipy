@@ -407,7 +407,8 @@ def _solve_2d_fitpack(Ax, Ay, Q, p,
     Residual computation:
     --------------------------------------------------------
         Zhat = Ax * C * Ay^T
-        fp   = sum((Z - Zhat)^2)
+        R    = Z - Zhat
+        fp   = sum(R^2)
 
     Parameters
     ----------
@@ -436,6 +437,8 @@ def _solve_2d_fitpack(Ax, Ay, Q, p,
         2-D B-spline coefficient grid.
     fp : float
         Residual sum of squares between fitted surface and `z`.
+    R : ndarray, shape (mx, my)
+        Residual matrix ``z - zhat``, where ``zhat = Ax @ C @ Ay.T``.
 
     Notes
     -----
