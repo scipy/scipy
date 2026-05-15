@@ -191,21 +191,21 @@ class TestArrayAPI:
         if y.dtype.name in str(x.dtype):
             xp_assert_equal(x, y, **options)
         else:
-            with pytest.raises(AssertionError, match="dtypes do not match."):
+            with pytest.raises(AssertionError, match="dtypes do not match:*"):
                 xp_assert_equal(x, y, **options)
 
         options = dict(zip(kwarg_names, [False, False, True, False]))
         if x.shape == y.shape:
             xp_assert_equal(x, y, **options)
         else:
-            with pytest.raises(AssertionError, match="Shapes do not match."):
+            with pytest.raises(AssertionError, match="shapes do not match:*"):
                 xp_assert_equal(x, xp.asarray(y), **options)
 
         options = dict(zip(kwarg_names, [False, False, False, True]))
         if is_numpy(xp) and x.shape == y.shape:
             xp_assert_equal(x, y, **options)
         elif is_numpy(xp):
-            with pytest.raises(AssertionError, match="Array-ness does not match."):
+            with pytest.raises(AssertionError, match="array-ness does not match:*"):
                 xp_assert_equal(x, y, **options)
 
     @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
@@ -217,7 +217,7 @@ class TestArrayAPI:
         xp_assert_equal(xp.asarray(0.), xp.asarray(0.), check_0d=False)
 
         # Check default convention: 0d-arrays are distinguished from scalars
-        message = "Array-ness does not match:.*"
+        message = "array-ness does not match:*"
         with pytest.raises(AssertionError, match=message):
             xp_assert_equal(xp.asarray(0.), xp.float64(0))
         with pytest.raises(AssertionError, match=message):
@@ -260,7 +260,7 @@ class TestArrayAPI:
         xp_assert_equal_no_0d(xp.int64(42), xp.asarray(42))
 
         # opt in to 0d-check remains possible
-        message = "Array-ness does not match:.*"
+        message = "array-ness does not match:*"
         with pytest.raises(AssertionError, match=message):
             xp_assert_equal_no_0d(xp.asarray(0.), xp.float64(0), check_0d=True)
         with pytest.raises(AssertionError, match=message):
