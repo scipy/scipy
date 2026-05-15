@@ -45,55 +45,37 @@ _NO_CACHE = "no_cache"
 # TODO:
 #  Test sample dtypes
 #  Add dtype kwarg (especially for distributions with no parameters)
-#  When drawing endpoint/out-of-bounds values of a parameter, draw them from
-#   the endpoints/out-of-bounds region of the full `domain`, not `typical`.
-#  Distributions without shape parameters probably need to accept a `dtype` parameter;
-#    right now they default to float64. If we have them default to float16, they will
-#    need to determine result_type when input is not float16 (overhead).
-#  Test _solve_bounded bracket logic, and decide what to do about warnings
-#  Get test coverage to 100%
-#  Raise when distribution method returns wrong shape/dtype?
-#  Consider ensuring everything is at least 1D for calculations? Would avoid needing
-#    to sprinkle `np.asarray` throughout due to indescriminate conversion of 0D arrays
-#    to scalars
-#  Break up `test_basic`: test each method separately
-#  Fix `sample` for QMCEngine (implementation does not match documentation)
-#  When a parameter is invalid, set only the offending parameter to NaN (if possible)?
+#  Rewrite `test_continuous` without Hypothesis, more modular tests that are easier to
+#    run individually.
+#  Add distribution-specific tests - just enough to confirm that distribution is the
+#    one it is supposed to be; maybe check finite vs undefined vs infinite moments.
 #  `_tanhsinh` special case when there are no abscissae between the limits
-#    example: cdf of uniform betweeen 1.0 and np.nextafter(1.0, np.inf)
-#  check behavior of moment methods when moments are undefined/infinite -
-#    basically OK but needs tests
-#  investigate use of median
-#  implement symmetric distribution
-#  implement composite distribution
-#  implement wrapped distribution
-#  profile/optimize
-#  general cleanup (choose keyword-only parameters)
-#  compare old/new distribution timing
-#  make video
-#  add array API support
-#  use `median` information to improve integration? In some cases this will
-#   speed things up. If it's not needed, it may be about twice as slow. I think
-#   it should depend on the accuracy setting (and whether median formula is available).
-#  in tests, check reference value against that produced using np.vectorize?
-#  User tips for faster execution:
+#     example: cdf of uniform betweeen 1.0 and np.nextafter(1.0, np.inf)
+#  implement symmetric distribution (take advantage of symmetry)
+#  implement composite distribution (for using different implementations depending on
+#    shape parameters - e.g. t distribution with df = np.inf delegates to normal)
+#  Add array API support
+#  Investigate use `median` information throughout, e.g. to improve integration of
+#    CDF or to provide initial bracket for ICDF. (Only if `_median_formula` is provided.)
+#  Document user tips for faster execution:
 #  - pass NumPy arrays
 #  - pass inputs of floating point type (not integers)
 #  - prefer NumPy scalars or 0d arrays over other size 1 arrays
-#  - pass no invalid parameters and disable invalid parameter checks with iv_profile
+#  - pass no invalid parameters and disable invalid parameter checks (validation_policy)
 #  - provide a Generator if you're going to do sampling
-#  add options for drawing parameters: log-spacing
-#  accuracy benchmark suite
+#  Add options for drawing parameters: log-spacing
+#  Accuracy benchmark suite. Ideally, when all code is array API compatible and mparray
+#    provides an array-API compatible arbitrary precision array, we can just compare
+#    results when using NumPy backend against mparray backend.
 #  Should caches be attributes so we can more easily ensure that they are not
-#   modified when caching is turned off?
+#    modified when caching is turned off?
 #  Make ShiftedScaledDistribution more efficient - only process underlying
-#   distribution parameters as necessary.
-#  Reconsider `all_inclusive`
-#  Should process_parameters update kwargs rather than returning? Should we
-#   update parameters rather than setting to what process_parameters returns?
+#    distribution parameters as necessary.
+#  Reconsider `all_inclusive` - see comment in `contains` method of `_interval`
 # `validation_policy` needs testing
 # `tol` does not offer very fine-grained control; consider improving
-# report accuracy estimates?
+# report accuracy estimates? How?
+# reconsider distribution mutability
 
 # Originally, I planned to filter out invalid distribution parameters;
 # distribution implementation functions would always work with "compressed",
@@ -1552,14 +1534,19 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         Parameters
         ----------
+        validation_policy : {None, "skip_all"}
+            Specifies the level of input validation to perform. Left unspecified,
+            input validation is performed to ensure appropriate behavior in edge
+            case (e.g. parameters out of domain, argument outside of distribution
+            support, etc.) and improve consistency of output dtype, shape, etc.
+            Pass ``'skip_all'`` to avoid the computational overhead of these
+            checks when rough edges are acceptable.
+
         **params : array_like
             Desired numerical values of the distribution parameters. Any or all
             of the parameters initially used to instantiate the distribution
             may be modified. Parameters used in alternative parameterizations
             are not accepted.
-
-        validation_policy : str
-            To be documented. See Question 3 at the top.
         """
 
         parameters = original_parameters = self._original_parameters.copy()
@@ -1586,7 +1573,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # distributions, the domain of a parameter doesn't depend on other
             # parameters, so parameters could safely be modified without
             # re-validating all other parameters. To handle these cases more
-            # efficiently, we could allow the developer  to override this
+            # efficiently, we could allow the developer to override this
             # behavior.
 
             # Currently the user can only update the original parameterization.

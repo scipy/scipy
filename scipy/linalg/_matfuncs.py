@@ -7,7 +7,7 @@ import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 
 # Local imports
 from scipy.linalg import LinAlgError, LinAlgWarning
@@ -279,6 +279,8 @@ def expm(A):
 
     """
     a = np.asarray(A)
+    _deprecate_dtypes("expm", a)
+
     if a.size == 1 and a.ndim < 2:
         return np.array([[np.exp(a.item())]])
 
@@ -385,6 +387,7 @@ def sqrtm(A):
 
     """
     a = np.asarray(A)
+    _deprecate_dtypes('sqrtm', a)
     if a.size == 1 and a.ndim < 2:
         return np.array([[np.exp(a.item())]])
 

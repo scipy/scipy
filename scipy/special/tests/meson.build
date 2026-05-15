@@ -1,5 +1,6 @@
 python_sources = [
   '__init__.py',
+  'cython_abi_signatures.json',
   'test_basic.py',
   'test_bdtr.py',
   'test_boxcox.py',
@@ -7,6 +8,7 @@ python_sources = [
   'test_cdft_asymptotic.py',
   'test_cephes_intp_cast.py',
   'test_cosine_distr.py',
+  'test_cython_abi.py',
   'test_cython_special.py',
   'test_data.py',
   'test_dd.py',
@@ -57,6 +59,7 @@ python_sources = [
   'test_wrightomega.py',
   'test_zeta.py',
   'test_boost_ufuncs.py',
+  'test_ufunc_infra.py'
 ]
 
 

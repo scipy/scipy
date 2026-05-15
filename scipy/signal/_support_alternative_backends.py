@@ -302,7 +302,6 @@ capabilities_overrides = {
                                  jax_jit=False, allow_dask_compute=True),
     "oaconvolve": xp_capabilities(
         cpu_only=True, exceptions=["cupy", "torch"],
-        skip_backends=[("jax.numpy", "fails all around")],
         xfail_backends=[("dask.array", "wrong answer")],
     ),
     "order_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
@@ -398,7 +397,7 @@ for obj_name in _signal_api.__all__:
         capabilities = capabilities_overrides.get(
             obj_name, get_default_capabilities(obj_name, delegator)
         )
-        f = capabilities(f)
+        f = capabilities(f)  # pyrefly:ignore[not-callable]
 
     # add the decorated function to the namespace, to be imported in __init__.py
     vars()[obj_name] = f

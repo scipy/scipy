@@ -89,7 +89,7 @@ class _spbase(SparseABC):
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
-    _allow_nd = (2,)
+    _allow_nd: tuple[int, ...] = (2,)
 
     @property
     def ndim(self) -> int:
@@ -693,7 +693,7 @@ class _spbase(SparseABC):
         """
         return self.tocsr().power(n, dtype=dtype)
 
-    def _broadcast_to(self, shape, copy=False):
+    def _broadcast_to(self, shape, /, copy=False):
         if self.shape == shape:
             return self.copy() if copy else self
         else:
@@ -1186,7 +1186,7 @@ class _spbase(SparseABC):
         nz_mask = A.data != 0
         return tuple(idx[nz_mask] for idx in A.coords)
 
-    def _getcol(self, j):
+    def _getcol(self, j, /):
         """Returns a copy of column j of the array, as an (m x 1) sparse
         array (column vector).
         """

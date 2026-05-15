@@ -358,6 +358,9 @@ for key in (
         'lagrange',
         'approximate_taylor_polynomial',
         'tsearch',
+        'minkowski_distance_p',
+        'minkowski_distance',
+        'distance_matrix'
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

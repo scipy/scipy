@@ -1376,7 +1376,7 @@ class TestSystematic:
             # Deal with n=0, n=1 correctly; mpmath 0.17 doesn't do these
             # always correctly
             if n == 0:
-                r = 1.0
+                r = 0.0 if a == 0.0 else 1.0
             elif n == 1:
                 r = 2*a*x
             else:

@@ -214,7 +214,7 @@ def _convert_codecs(template, byte_order):
     return codecs.copy()
 
 
-MDTYPES = {}
+MDTYPES: dict[str, dict[str, dict[str, str]]] = {}
 for _bytecode in '<>':
     _def = {'dtypes': convert_dtypes(mdtypes_template, _bytecode),
             'classes': convert_dtypes(mclass_dtypes_template, _bytecode),

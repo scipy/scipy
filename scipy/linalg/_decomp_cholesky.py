@@ -4,7 +4,7 @@ import numpy as np
 from numpy import asarray_chkfinite, asarray, empty_like
 
 # Local imports
-from scipy._lib._util import _asarray_validated, _apply_over_batch
+from scipy._lib._util import _asarray_validated, _apply_over_batch, _deprecate_dtypes
 from ._misc import LinAlgError, _datacopied
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _ensure_aligned_and_native
@@ -32,6 +32,8 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     a1 = np.atleast_2d(a1)
     if a1.shape[-1] != a1.shape[-2]:
         raise ValueError(f"Expected a square matrix or batch thereof, got {a1.shape=}")
+
+    _deprecate_dtypes("linalg.cholesky", a1)
 
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)

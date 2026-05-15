@@ -436,6 +436,7 @@ def test_default_is_matrix_identity():
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
 def test_default_is_matrix_kron_dense():
     m = scipy.sparse.kron(
         np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]])
@@ -443,6 +444,7 @@ def test_default_is_matrix_kron_dense():
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
 def test_default_is_matrix_kron_sparse():
     m = scipy.sparse.kron(
         np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]])
@@ -450,6 +452,7 @@ def test_default_is_matrix_kron_sparse():
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
 def test_default_is_matrix_kronsum():
     m = scipy.sparse.kronsum(
         np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]])
@@ -477,12 +480,25 @@ def test_default_is_matrix_stacks(fn):
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
 def test_blocks_default_construction_fn_matrices():
-    """Same idea as `test_default_construction_fn_matrices`, but for the block
-    creation function"""
+    """Same idea as `test_default_construction_fn_matrices`, but block functions"""
     A = scipy.sparse.coo_matrix(np.eye(2))
     B = scipy.sparse.coo_matrix([[2], [0]])
     C = scipy.sparse.coo_matrix([[3]])
+
+    # block diag
+    m = scipy.sparse.block_diag((A, B, C))
+    assert not isinstance(m, scipy.sparse.sparray)
+
+    # bmat
+    m = scipy.sparse.bmat([[A, None], [None, C]])
+    assert not isinstance(m, scipy.sparse.sparray)
+
+    # ndarray input
+    A = np.eye(2)
+    B = [[2], [0]]
+    C = [[3]]
 
     # block diag
     m = scipy.sparse.block_diag((A, B, C))

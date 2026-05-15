@@ -1,6 +1,6 @@
 import functools
 import operator
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import ModuleType
 
@@ -52,7 +52,9 @@ class _FuncInfo:
     # arguments, the ith entry in the tuple controls positive_only for
     # the ith argument. To make backend specific choices for positive_only,
     # pass in a dict mapping backend names to bool or tuple[bool, ...].
-    positive_only: bool | tuple[bool, ...] | dict[str, tuple[bool, ...]] = False
+    positive_only: (
+        bool | tuple[bool, ...] | Mapping[str, bool | tuple[bool, ...]]
+    ) = False
     # Some special functions are not ufuncs and ufunc-specific tests
     # should not be applied to these.
     is_ufunc: bool = True
@@ -734,15 +736,15 @@ _special_funcs = (
         _spfun_stats.multigammaln, 2,
         is_ufunc=False,
         python_int_only={
-            "cupy": [False, True],
-            "jax.numpy": [False, True],
-            "torch": [False, True],
+            "cupy": (False, True),
+            "jax.numpy": (False, True),
+            "torch": (False, True),
         },
         scalar_or_0d_only={
-            "array_api_strict": [False, True],
-            "numpy": [False, True],
-            "dask.array": [False, True],
-            "marray": [False, True],
+            "array_api_strict": (False, True),
+            "numpy": (False, True),
+            "dask.array": (False, True),
+            "marray": (False, True),
         },
         int_only=(False, True), test_large_ints=False,
         positive_only=True, torch_native=False,
