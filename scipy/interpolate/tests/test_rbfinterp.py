@@ -478,8 +478,7 @@ class _TestRBFInterpolator:
         CONFIG['Compilers']['pythran'] == {},
         reason = "LLC kernels are not supported in the no-pythran build"
     )
-    @skip_xp_backends(np_only=True, reason="llc only supports numpy backend")
-    def test_custom_kernel(self, xp):
+    def test_custom_kernel(self):
         # Make sure custom kernels work match builtin
         llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
                                signature="double (double)")
@@ -488,8 +487,8 @@ class _TestRBFInterpolator:
 
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)
-        x, xitp = xp.asarray(x), xp.asarray(xitp)
-        y = _1d_test_function(x, xp)
+        x, xitp = np.asarray(x), np.asarray(xitp)
+        y = _1d_test_function(x, np)
 
         with pytest.raises(ValueError, match="`degree` must be specified"):
             self.build(x, y, kernel=llc, epsilon=1.0)
@@ -505,6 +504,20 @@ class _TestRBFInterpolator:
 
         xp_assert_close(yitp_llc, yipt, atol=1e-14)
 
+    @skip_xp_backends('numpy', reason="error should only raise on non-numpy backends")
+    def test_custom_kernel_only_valid_with_numpy(self, xp):
+        llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
+                           signature="double (double)")
+
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+        x, xitp = xp.asarray(x), xp.asarray(xitp)
+        y = _1d_test_function(x, xp)
+
+        with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
+            self.build(x, y, kernel=llc, degree=0, epsilon=1.0)
 
 
 @make_xp_test_case(RBFInterpolator)
