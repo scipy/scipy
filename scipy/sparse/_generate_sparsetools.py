@@ -169,7 +169,8 @@ static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 
 METHOD_TEMPLATE = """
 m.def("%(name)s", [](py::args args) {
-    PyObject* result = call_thunk('%(ret_spec)s', "%(arg_spec)s", %(name)s_thunk, args.ptr());
+    PyObject* result = call_thunk('%(ret_spec)s', "%(arg_spec)s", %(name)s_thunk,
+                                  args.ptr());
     if (!result) throw py::error_already_set();
     return py::reinterpret_steal<py::object>(result);
 });
