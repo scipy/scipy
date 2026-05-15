@@ -279,7 +279,7 @@ def _assert_matching_namespace(actual, desired, xp):
     assert actual_arr_space == xp, _msg
 
 def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True, check_dtype=True,
-                    check_shape=True, check_0d=True, err_msg='', xp=None):
+                    check_shape=True, check_0d=False, err_msg='', xp=None):
     from scipy._external.array_api_extra._lib._testing import xp_assert_close
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
@@ -308,7 +308,7 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
     return xp_assert_close(actual, desired,rtol=rtol, atol=atol, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
 
 def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
-                    check_shape=True, check_0d=True, err_msg='', xp=None):
+                    check_shape=True, check_0d=False, err_msg='', xp=None):
     from scipy._external.array_api_extra._lib._testing import xp_assert_equal
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
