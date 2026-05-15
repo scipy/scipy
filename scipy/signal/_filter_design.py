@@ -2661,7 +2661,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                      ftype=ftype, output=output, fs=fs)
 
 
-def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
+def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
               ftype='butter', output='ba', fs=None):
     """
     IIR digital and analog filter design given order and critical points.
@@ -2767,7 +2767,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> import matplotlib.pyplot as plt
 
     >>> b, a = signal.iirfilter(17, [2*np.pi*50, 2*np.pi*200], rs=60,
-    ...                         btype='band', analog=True, ftype='cheby2')
+    ...                         btype='bandpass', analog=True, ftype='cheby2')
     >>> w, h = signal.freqs(b, a, 1000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(1, 1, 1)
@@ -2784,7 +2784,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     sections implementation is required to ensure stability of a filter of
     this order):
 
-    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
+    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='bandpass',
     ...                        analog=False, ftype='cheby2', fs=2000,
     ...                        output='sos')
     >>> w, h = signal.freqz_sos(sos, 2000, fs=2000)
@@ -3373,7 +3373,7 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     return z_bs, p_bs, k_bs
 
 
-def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
+def butter(N, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Butterworth digital and analog filter design.
 
@@ -3503,7 +3503,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='butter', fs=fs)
 
 
-def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
+def cheby1(N, rp, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Chebyshev type I digital and analog filter design.
 
@@ -3625,7 +3625,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby1', fs=fs)
 
 
-def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
+def cheby2(N, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Chebyshev type II digital and analog filter design.
 
@@ -3741,7 +3741,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby2', fs=fs)
 
 
-def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
+def ellip(N, rp, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Elliptic (Cauer) digital and analog filter design.
 
@@ -3870,7 +3870,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='elliptic', fs=fs)
 
 
-def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
+def bessel(N, Wn, btype='lowpass', analog=False, output='ba', norm='phase',
            fs=None):
     """
     Bessel/Thomson digital and analog filter design.
