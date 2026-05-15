@@ -555,7 +555,7 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(_sparsetools, m) {
+PYBIND11_MODULE(_sparsetools, m, py::mod_gil_not_used()) {
     if (_import_array() != 0) {
       throw py::error_already_set();
     }
