@@ -534,11 +534,15 @@ def _solve_2d_fitpack(Ax, Ay, Q, p,
     # Note: C currently aligns so that C.T matches x-first multiplication order.
     zhat = _Ax @ C.T @ _Ay.T
 
-    # Compute the residual sum of squares against the original data z.
-    fp = np.sum(np.square(z - zhat))
+    # Compute residual matrix R and fp in one pass; return R so callers that
+    # need per-span energy for knot placement can reuse it directly instead of
+    # recomputing zhat a second time.
+    R = z - zhat
+    fp = np.sum(np.square(R))
 
-    # Return coefficients in the conventional (nx_coef, ny_coef) orientation and fp.
-    return C.T, fp
+    # Return coefficients in the conventional (nx_coef, ny_coef) orientation,
+    # fp, and the residual matrix R.
+    return C.T, fp, R
 
 class F:
     """
@@ -592,19 +596,15 @@ class F:
         self.z = z
 
     def __call__(self, p):
-        Ax_copy = PackedMatrix(
-            self.Ax.a.copy(), self.Ax.offset.copy(), self.Ax.nc)
-        Dx_copy = PackedMatrix(
-            self.Dx.a.copy(), self.Dx.offset.copy(), self.Dx.nc)
-        Ay_copy = PackedMatrix(
-            self.Ay.a.copy(), self.Ay.offset.copy(), self.Ay.nc)
-        Dy_copy = PackedMatrix(
-            self.Dy.a.copy(), self.Dy.offset.copy(), self.Dy.nc)
-        C, fp = _solve_2d_fitpack(
-            Ax_copy, Ay_copy, self.Q.copy(),
+        # _stack_augmented_fitpack always allocates fresh arrays (np.zeros for
+        # p != -1, .copy() for p == -1), so qr_reduce never writes back into
+        # the original PackedMatrix.a buffers.  The four copies below are
+        # therefore unnecessary and are removed to reduce memory pressure.
+        C, fp, _ = _solve_2d_fitpack(
+            self.Ax, self.Ay, self.Q.copy(),
             p, self.kx, self.tx, self.x_x,
             self.ky, self.ty, self.x_y, self.z,
-            Dx=Dx_copy, Dy=Dy_copy)
+            Dx=self.Dx, Dy=self.Dy)
         self.C = C
         self.fp = fp
         return fp
@@ -975,9 +975,9 @@ def _regrid_fitpack(
         ty = _not_a_knot(y_fit, ky)
         (Ax, Ay, Q) = _build_design_matrices(
              x_fit, y_fit, Z, tx, ty, kx, ky)
-        C0, fp  = _solve_2d_fitpack(Ax, Ay, Q, p,
-                                    kx, tx, x_fit, ky, ty,
-                                    y_fit, Z_fit)
+        C0, fp, _ = _solve_2d_fitpack(Ax, Ay, Q, p,
+                                     kx, tx, x_fit, ky, ty,
+                                     y_fit, Z_fit)
         return return_NdBSpline(fp, (tx, ty, C0), (kx, ky))
 
     tx, nestx, nminx, nmaxx = _initialise_knots(x_fit.size, xb, xe, kx, nest=nestx)
@@ -995,10 +995,13 @@ def _regrid_fitpack(
 
         (Ax, Ay, Q) = _build_design_matrices(
              x_fit, y_fit, Z, tx, ty, kx, ky)
-        C0, fp  = _solve_2d_fitpack(Ax, Ay, Q, p,
-                                    kx, tx, x_fit,
-                                    ky, ty, y_fit,
-                                    Z_fit)
+        # _solve_2d_fitpack now returns R = Z_fit - zhat alongside C0 and fp,
+        # so we can reuse it directly for knot placement instead of
+        # recomputing zhat a second time via tocsr + dense matmul.
+        C0, fp, R = _solve_2d_fitpack(Ax, Ay, Q, p,
+                                      kx, tx, x_fit,
+                                      ky, ty, y_fit,
+                                      Z_fit)
 
         # https://github.com/scipy/scipy/blob/v1.16.2/scipy/interpolate/fitpack/fpregr.f#L190
         # https://github.com/scipy/scipy/blob/v1.16.2/scipy/interpolate/fitpack/fpregr.f#L224
@@ -1007,18 +1010,6 @@ def _regrid_fitpack(
 
         if fp < s:
             break
-
-        # Note: We call PackedMatrix.tocsr here because matrix multiplication
-        # with the packed banded format (returned by _dierckx.data_matrix)
-        # is not implemented. PackedMatrix.tocsr returns the design matrix,
-        # in CSR format, that supports standard @ operations for residual
-        # evaluation and diagnostics.
-        _Ax = Ax.tocsr(kx, x_fit.shape[0], len(tx))
-        _Ay = Ay.tocsr(ky, y_fit.shape[0], len(ty))
-
-
-        Z0  = _Ax @ C0 @ _Ay.T
-        R = Z_fit - Z0
 
         # https://github.com/scipy/scipy/blob/v1.16.2/scipy/interpolate/fitpack/fpregr.f#L265-L295
         if last_axis == "y":
@@ -1035,6 +1026,11 @@ def _regrid_fitpack(
                 residuals=np.sum(R**2, axis=0),
                 nplus=nplusy)
             last_axis = "y"
+
+        # When both knot vectors have reached their maximum size no further
+        # growth is possible; break to avoid redundant loop iterations.
+        if len(tx) >= nmaxx and len(ty) >= nmaxy:
+            break
 
         fpold = fp
 
