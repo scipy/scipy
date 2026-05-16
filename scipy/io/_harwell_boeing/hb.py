@@ -75,31 +75,21 @@ class HBInfo:
         nnon_zeros = m.nnz
 
         if fmt is None:
-            # +1 because HB use one-based indexing (Fortran), and we will write
-            # the indices /pointer as such
-            if pointer.size > 0:
-                pointer_fmt = IntFormat.from_number(np.max(pointer + 1))
-            else:
-                pointer_fmt = IntFormat.from_number(1)
+            # +1 because HB uses one-based (Fortran) indexing.
+            # initial=1 supplies np.max's identity so empty indices/values
+            # (nnz == 0) still yield a valid format.
+            pointer_fmt = IntFormat.from_number(np.max(pointer + 1, initial=1))
+            indices_fmt = IntFormat.from_number(np.max(indices + 1, initial=1))
 
-            # indices: if empty choose a safe minimal integer format
-            if indices.size > 0:
-                indices_fmt = IntFormat.from_number(np.max(indices + 1))
+            if values.dtype.kind in np.typecodes["AllFloat"]:
+                values_fmt = ExpFormat.from_number(
+                    -np.max(np.abs(values), initial=np.float64(1)))
+            elif values.dtype.kind in np.typecodes["AllInteger"]:
+                values_fmt = IntFormat.from_number(
+                    -np.max(np.abs(values), initial=1))
             else:
-                indices_fmt = IntFormat.from_number(1)
-
-            # values: choose format depending on dtype and whether values array is empty
-            if values.size > 0:
-                if values.dtype.kind in np.typecodes["AllFloat"]:
-                    values_fmt = ExpFormat.from_number(-np.max(np.abs(values)))
-                elif values.dtype.kind in np.typecodes["AllInteger"]:
-                    values_fmt = IntFormat.from_number(-np.max(np.abs(values)))
-                else:
-                    message = f"type {values.dtype.kind} not implemented yet"
-                    raise NotImplementedError(message)
-            else:
-                # no stored values: choose a conservative float exponential format
-                values_fmt = ExpFormat.from_number(np.float64(-1))
+                message = f"type {values.dtype.kind} not implemented yet"
+                raise NotImplementedError(message)
         else:
             raise NotImplementedError("fmt argument not supported yet.")
 

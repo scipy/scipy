@@ -73,14 +73,9 @@ class TestHBReadWrite:
             arr = random_arr.asformat(format, copy=False)
             self.check_save_load(arr)
 
-
-class TestHBReadWriteEmpty:
-
-    def test_hb_write_empty_array_roundtrip(self):
-        m = csr_array([[0.0, 0.0], [0.0, 0.0]])   # shape (2,2) and nnz == 0
-        buf = StringIO()
-        hb_write(buf, m)          # should NOT raise
-        buf.seek(0)
-        out = hb_read(buf, spmatrix=False)
-        assert out.shape == (2, 2)
-        assert out.nnz == 0
+    @pytest.mark.parametrize("dtype", [np.float64, np.int64])
+    def test_empty_roundtrip(self, dtype):
+        # gh-24082: nnz == 0 used to crash in HBInfo.from_data; the integer
+        # variant additionally exercised a mxtype/format inconsistency.
+        m = csr_array(np.zeros((2, 2), dtype=dtype))
+        self.check_save_load(m)
