@@ -2590,7 +2590,6 @@ class TestNdBSpline:
                 np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:])
         xp_assert_close(bspl2_22(xi),
                         xp.broadcast_to(xp.asarray(target, dtype=xp.float64)[:, None, None], bspl2_22(xi).shape),
-                        check_shape=False,
                         atol=5e-14)
 
     def test_2D_separable_2_complex(self, xp):
