@@ -45,6 +45,10 @@ from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy._lib._array_api_override import (
     array_namespace, SCIPY_ARRAY_API, SCIPY_DEVICE
 )
+from scipy._external.array_api_extra._lib._testing import xp_assert_less as xpx_assert_less
+from scipy._external.array_api_extra._lib._testing import xp_assert_equal as xpx_assert_equal
+from scipy._external.array_api_extra._lib._testing import xp_assert_close as xpx_assert_close
+
 from scipy._lib._docscrape import FunctionDoc
 from scipy._external import array_api_extra as xpx
 
@@ -278,117 +282,43 @@ def _assert_matching_namespace(actual, desired, xp):
             f"Desired: {xp.__name__}")
     assert actual_arr_space == xp, _msg
 
-def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True, check_dtype=True,
+def _convert_scalar_to_array(x, xp):
+    if isinstance(x, (list, tuple)) or type(x) in (
+        int,
+        float,
+        complex,
+        bool,
+    ):
+        return xp.asarray(x)
+    return x
+
+def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_dtype=True,
                     check_shape=True, check_0d=False, err_msg='', xp=None):
-    from scipy._external.array_api_extra._lib._testing import xp_assert_close
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         try:
             xp = _default_xp_ctxvar.get()
         except LookupError:
             xp = array_namespace(desired)
-    if check_namespace:
-        _assert_matching_namespace(actual, desired, xp)
 
-    if isinstance(actual, (list, tuple)) or type(actual) in (
-        int,
-        float,
-        complex,
-        bool,
-    ):
-        actual = xp.asarray(actual)
-    if isinstance(desired, (list, tuple)) or type(desired) in (
-        int,
-        float,
-        complex,
-        bool,
-    ):
-        desired = xp.asarray(desired)
+    actual = _convert_scalar_to_array(actual, xp)
+    desired = _convert_scalar_to_array(desired, xp)
 
-    return xp_assert_close(actual, desired,rtol=rtol, atol=atol, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
+    return xpx_assert_close(actual, desired,rtol=rtol, atol=atol, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
 
-def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
+def xp_assert_equal(actual, desired, *, check_dtype=True,
                     check_shape=True, check_0d=False, err_msg='', xp=None):
-    from scipy._external.array_api_extra._lib._testing import xp_assert_equal
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         try:
             xp = _default_xp_ctxvar.get()
         except LookupError:
             xp = array_namespace(desired)
-    if check_namespace:
-        _assert_matching_namespace(actual, desired, xp)
 
-    if isinstance(actual, (list, tuple)) or type(actual) in (
-        int,
-        float,
-        complex,
-        bool,
-    ):
-        actual = xp.asarray(actual)
+    actual = _convert_scalar_to_array(actual, xp)
+    desired = _convert_scalar_to_array(desired, xp)
 
-    if isinstance(desired, (list, tuple)) or type(desired) in (
-        int,
-        float,
-        complex,
-        bool,
-    ):
-        desired = xp.asarray(desired)
-
-    return xp_assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
-
-# def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
-#                     check_shape=True, check_0d=True, err_msg='', xp=None):
-#     __tracebackhide__ = True  # Hide traceback for py.test
-
-#     actual, desired, xp = _strict_check(
-#         actual, desired, xp, check_namespace=check_namespace,
-#         check_dtype=check_dtype, check_shape=check_shape,
-#         check_0d=check_0d
-#     )
-
-#     if is_cupy(xp):
-#         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
-#     elif is_torch(xp):
-#         # PyTorch recommends using `rtol=0, atol=0` like this
-#         # to test for exact equality
-#         err_msg = None if err_msg == '' else err_msg
-#         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
-#                                        check_dtype=False, msg=err_msg)
-#     # JAX uses `np.testing`
-#     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
-
-
-# def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
-#                     check_dtype=True, check_shape=True, check_0d=True,
-#                     err_msg='', xp=None):
-#     __tracebackhide__ = True  # Hide traceback for py.test
-
-#     actual, desired, xp = _strict_check(
-#         actual, desired, xp,
-#         check_namespace=check_namespace, check_dtype=check_dtype,
-#         check_shape=check_shape, check_0d=check_0d
-#     )
-
-#     floating = xp.isdtype(actual.dtype, ('real floating', 'complex floating'))
-#     if rtol is None and floating:
-#         # multiplier of 4 is used as for `np.float64` this puts the default `rtol`
-#         # roughly half way between sqrt(eps) and the default for
-#         # `numpy.testing.assert_allclose`, 1e-7
-#         rtol = xp.finfo(actual.dtype).eps**0.5 * 4
-#     elif rtol is None:
-#         rtol = 1e-7
-
-#     if is_cupy(xp):
-#         return xp.testing.assert_allclose(actual, desired, rtol=rtol,
-#                                           atol=atol, err_msg=err_msg)
-#     elif is_torch(xp):
-#         err_msg = None if err_msg == '' else err_msg
-#         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
-#                                        equal_nan=True, check_dtype=False, msg=err_msg)
-#     # JAX uses `np.testing`
-#     return np.testing.assert_allclose(actual, desired, rtol=rtol,
-#                                       atol=atol, err_msg=err_msg)
+    return xpx_assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
 
 
 def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
@@ -416,8 +346,8 @@ def _assert_less(actual, desired, *, err_msg, verbose, xp):
         if desired.device.type != 'cpu':
             desired = desired.cpu()
     # JAX uses `np.testing`
-    from scipy._external.array_api_extra._lib._testing import xp_assert_less
-    return xp_assert_less(actual, desired,
+
+    return xpx_assert_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
 

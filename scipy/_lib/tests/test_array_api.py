@@ -168,43 +168,45 @@ class TestArrayAPI:
         # Check that `_strict_check` behaves as expected
         dtype = getattr(xp, dtype)
         x = xp.broadcast_to(xp.asarray(1, dtype=dtype), shape)
-        x = x if shape else x[()]
-        y = np_compat.asarray(1)[()]
+        x = x if shape else x[()] # either a 0d-array or a scalar, depending on `shape`
+        y = np_compat.asarray(1)[()] # a numpy scalar
 
-        kwarg_names = ["check_namespace", "check_dtype", "check_shape", "check_0d"]
-        options = dict(zip(kwarg_names, [True, False, False, False]))
+        kwarg_names = ["check_dtype", "check_shape", "check_0d"]
+        options = dict(zip(kwarg_names, [False, False, False]))
         if is_numpy(xp):
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(
                 AssertionError,
-                match="Namespace of desired array does not match",
+                match="namespaces do not match:*",
             ):
                 xp_assert_equal(x, y, **options)
             with pytest.raises(
                 AssertionError,
-                match="Namespace of actual and desired arrays do not match",
+                match="namespaces do not match:*",
             ):
                 xp_assert_equal(y, x, **options)
 
-        options = dict(zip(kwarg_names, [False, True, False, False]))
-        if y.dtype.name in str(x.dtype):
+        y = xp.broadcast_to(xp.asarray(1, dtype=dtype), shape)
+        y = y if shape else y[()]
+        options = dict(zip(kwarg_names, [True, False, False]))
+        if y.dtype == x.dtype:
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="dtypes do not match:*"):
                 xp_assert_equal(x, y, **options)
 
-        options = dict(zip(kwarg_names, [False, False, True, False]))
+        options = dict(zip(kwarg_names, [False, True, False]))
         if x.shape == y.shape:
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="shapes do not match:*"):
                 xp_assert_equal(x, xp.asarray(y), **options)
 
-        options = dict(zip(kwarg_names, [False, False, False, True]))
+        options = dict(zip(kwarg_names, [False, False, True]))
         if is_numpy(xp) and x.shape == y.shape:
             xp_assert_equal(x, y, **options)
-        elif is_numpy(xp):
+        elif is_numpy(xp): 
             with pytest.raises(AssertionError, match="array-ness does not match:*"):
                 xp_assert_equal(x, y, **options)
 
@@ -219,13 +221,11 @@ class TestArrayAPI:
         # Check default convention: 0d-arrays are distinguished from scalars
         message = "array-ness does not match:*"
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.asarray(0.), xp.float64(0))
+            xp_assert_equal(xp.asarray(0.), xp.float64(0), check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.float64(0), xp.asarray(0.))
+            xp_assert_equal(xp.float64(0), xp.asarray(0.), check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.asarray(42), xp.int64(42))
-        with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.int64(42), xp.asarray(42))
+            xp_assert_equal(xp.int64(42), xp.asarray(42), check_0d=True)
 
         # with `check_0d=False`, scalars-vs-0d passes (if values match)
         xp_assert_equal(xp.asarray(0.), xp.float64(0), check_0d=False)
