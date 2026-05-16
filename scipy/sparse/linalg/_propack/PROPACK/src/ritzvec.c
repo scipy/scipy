@@ -1,11 +1,11 @@
 #include "ritzvec.h"
 
 
-void sritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, float* restrict U, const int ldu,
-              float* restrict V, const int ldv, float* restrict work, const int in_lwrk, int* restrict iwork)
+void sritzvec(const int which, const int jobu, const int jobv, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT k, CBLAS_INT dim,
+              float* restrict D, float* restrict E, float* restrict U, const CBLAS_INT ldu,
+              float* restrict V, const CBLAS_INT ldv, float* restrict work, const CBLAS_INT in_lwrk, CBLAS_INT* restrict iwork)
 {
-    int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
+    CBLAS_INT lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
     float c1, c2, dd[1];
 
     // The bidiagonal SVD is computed in a two-stage procedure:
@@ -25,7 +25,7 @@ void sritzvec(const int which, const int jobu, const int jobv, const int m, cons
     //   B = M * [R; 0]
     sbdqr((dim == (m < n ? m : n)), jobu, dim, D, E, &c1, &c2, &work[imt], dim+1);
     // Compute SVD of R using the Divide-and-conquer SVD: R = P * S * Q^T,
-    sbdsdc_("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
+    BLAS_FUNC(sbdsdc)("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
     // Compute left singular vectors for B, X = P^T * M^T
     sgemm_ovwr(1, dim, dim+1, dim, 1.0f, &work[ip], dim, 0.0f, &work[imt], dim+1, &work[iwrk], lwrk / dim);
 
@@ -44,11 +44,11 @@ void sritzvec(const int which, const int jobu, const int jobv, const int m, cons
 }
 
 
-void dritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, double* restrict U, const int ldu,
-              double* restrict V, const int ldv, double* restrict work, const int in_lwrk, int* restrict iwork)
+void dritzvec(const int which, const int jobu, const int jobv, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT k, CBLAS_INT dim,
+              double* restrict D, double* restrict E, double* restrict U, const CBLAS_INT ldu,
+              double* restrict V, const CBLAS_INT ldv, double* restrict work, const CBLAS_INT in_lwrk, CBLAS_INT* restrict iwork)
 {
-    int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
+    CBLAS_INT lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
     double c1, c2, dd[1];
 
     // The bidiagonal SVD is computed in a two-stage procedure:
@@ -68,7 +68,7 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
     //   B = M * [R; 0]
     dbdqr((dim == (m < n ? m : n)), jobu, dim, D, E, &c1, &c2, &work[imt], dim+1);
     // Compute SVD of R using the Divide-and-conquer SVD: R = P * S * Q^T,
-    dbdsdc_("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
+    BLAS_FUNC(dbdsdc)("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
     // Compute left singular vectors for B, X = P^T * M^T
     dgemm_ovwr(1, dim, dim+1, dim, 1.0, &work[ip], dim, 0.0, &work[imt], dim+1, &work[iwrk], lwrk / dim);
 
@@ -87,12 +87,12 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
 }
 
 
-void critzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, PROPACK_CPLXF_TYPE* restrict U, const int ldu,
-              PROPACK_CPLXF_TYPE* restrict V, const int ldv, float* restrict work, const int in_lwrk,
-              PROPACK_CPLXF_TYPE* restrict cwork, const int lcwrk, int* restrict iwork)
+void critzvec(const int which, const int jobu, const int jobv, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT k, CBLAS_INT dim,
+              float* restrict D, float* restrict E, PROPACK_CPLXF_TYPE* restrict U, const CBLAS_INT ldu,
+              PROPACK_CPLXF_TYPE* restrict V, const CBLAS_INT ldv, float* restrict work, const CBLAS_INT in_lwrk,
+              PROPACK_CPLXF_TYPE* restrict cwork, const CBLAS_INT lcwrk, CBLAS_INT* restrict iwork)
 {
-    int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
+    CBLAS_INT lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
     float c1, c2, dd[1];
 
     // The bidiagonal SVD is computed in a two-stage procedure:
@@ -113,7 +113,7 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
     sbdqr((dim == (m < n ? m : n)), jobu, dim, D, E, &c1, &c2, &work[imt], dim+1);
 
     // Compute SVD of R using the Divide-and-conquer SVD: R = P * S * Q^T,
-    sbdsdc_("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
+    BLAS_FUNC(sbdsdc)("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
 
     // Compute left singular vectors for B, X = P^T * M^T
     sgemm_ovwr(1, dim, dim+1, dim, 1.0f, &work[ip], dim, 0.0f, &work[imt], dim+1, &work[iwrk], lwrk / dim);
@@ -134,12 +134,12 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
 }
 
 
-void zritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, PROPACK_CPLX_TYPE* restrict U, const int ldu,
-              PROPACK_CPLX_TYPE* restrict V, const int ldv, double* restrict work, const int in_lwrk,
-              PROPACK_CPLX_TYPE* restrict zwork, const int lzwrk, int* restrict iwork)
+void zritzvec(const int which, const int jobu, const int jobv, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT k, CBLAS_INT dim,
+              double* restrict D, double* restrict E, PROPACK_CPLX_TYPE* restrict U, const CBLAS_INT ldu,
+              PROPACK_CPLX_TYPE* restrict V, const CBLAS_INT ldv, double* restrict work, const CBLAS_INT in_lwrk,
+              PROPACK_CPLX_TYPE* restrict zwork, const CBLAS_INT lzwrk, CBLAS_INT* restrict iwork)
 {
-    int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
+    CBLAS_INT lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
     double c1, c2, dd[1];
 
     // The bidiagonal SVD is computed in a two-stage procedure:
@@ -159,7 +159,7 @@ void zritzvec(const int which, const int jobu, const int jobv, const int m, cons
     //   B = M * [R; 0]
     dbdqr((dim == (m < n ? m : n)), jobu, dim, D, E, &c1, &c2, &work[imt], dim+1);
     // Compute SVD of R using the Divide-and-conquer SVD: R = P * S * Q^T,
-    dbdsdc_("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
+    BLAS_FUNC(dbdsdc)("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
     // Compute left singular vectors for B, X = P^T * M^T
     dgemm_ovwr(1, dim, dim+1, dim, 1.0, &work[ip], dim, 0.0, &work[imt], dim+1, &work[iwrk], lwrk / dim);
 

@@ -393,22 +393,28 @@ cdef double[:, :] _elementary_quat_compose(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_quat(double[:, :] quat, bint normalize=True, bint copy=True, bint scalar_first=False):
+def from_quat(const double[:, :] quat, bint normalize=True, bint copy=True, bint scalar_first=False):
     if quat.ndim != 2 or quat.shape[1] != 4:
         raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
 
+    cdef double[:, :] quat_mut  # Non-const to enable in-place normalization
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
     if num_rotations > 0:  # Avoid 0-sized axis errors
         if scalar_first:
-            quat = np.roll(quat, -1, axis=1)
+            quat_mut = np.roll(quat, -1, axis=1)
         elif normalize or copy:
-            quat = quat.copy()
+            quat_mut = quat.copy()
+        else:  
+            # quat is not altered, so we return directly using quat instead of quat_mut
+            return np.asarray(quat, dtype=float)
 
         if normalize:
             for ind in range(num_rotations):
-                if isnan(_normalize4(quat[ind, :])):
+                if isnan(_normalize4(quat_mut[ind, :])):
                     raise ValueError("Found zero norm quaternions in `quat`.")
+
+        return np.asarray(quat_mut, dtype=float)
 
     return np.asarray(quat, dtype=float)
 
@@ -574,7 +580,7 @@ def from_rotvec(rotvec, bint degrees=False):
     # If a single vector is given, convert it to a 2D 1 x 3 matrix but
     # set self._single to True so that we can return appropriate objects
     # in the `as_...` methods
-    cdef double[:, :] crotvec
+    cdef const double[:, :] crotvec
     if rotvec.shape == (3,):
         crotvec = rotvec[None, :]
         is_single = True
@@ -638,8 +644,8 @@ def from_mrp(mrp):
         quat[ind, 3] = (2 - mrp_squared_plus_1) / mrp_squared_plus_1
 
     if is_single:
-        return quat[0]
-    return quat
+        return np.asarray(quat, dtype=float)[0]
+    return np.asarray(quat, dtype=float)
     
 
 @cython.embedsignature(True)
@@ -1069,7 +1075,7 @@ def reduce(double[:, :] quat, left=None, right=None):
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-def apply(double[:, :] quat, double[:, :] vectors, bint inverse=False) -> double[:, :]:
+def apply(double[:, :] quat, const double[:, :] vectors, bint inverse=False) -> double[:, :]:
     cdef Py_ssize_t n_vectors = len(vectors)
     cdef Py_ssize_t n_rotations = len(quat)
 
@@ -1289,7 +1295,7 @@ def pow(double[:, :] quat, n) -> double[:, :]:
     elif n == -1:
         return inv(quat)
     elif n == 1:
-        return quat
+        return np.asarray(quat)
     # general scaling of rotation angle
     return from_rotvec(n * as_rotvec(quat))
 

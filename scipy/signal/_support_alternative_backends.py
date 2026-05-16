@@ -75,10 +75,12 @@ untested = {
     "argrelmax",
     "argrelmin",
     "band_stop_obj",
+    "bode",
     "check_NOLA",
     "chirp",
     "coherence",
     "csd",
+    "czt",
     "czt_points",
     "dbode",
     "dfreqresp",
@@ -88,13 +90,15 @@ untested = {
     "find_peaks_cwt",
     "freqresp",
     "gausspulse",
+    "iirdesign", # There's no reason this shouldn't work. It just needs tests.
+    "istft",
     "lombscargle",
     "lsim",
     "max_len_seq",
     "peak_prominences",
     "peak_widths",
     "periodogram",
-    "place_pols",
+    "place_poles",
     "sawtooth",
     "sepfir2d",
     "ss2tf",
@@ -154,7 +158,14 @@ zpk2tf_extra_note = \
 
     """
 
+abcd_normalize_extra_note = \
+    """The result dtype when all array inputs are of integer dtype is the
+    backend's current default floating point dtype.
+
+    """
+
 capabilities_overrides = {
+    "abcd_normalize": xp_capabilities(extra_note=abcd_normalize_extra_note),
     "bessel": xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True),
     "bilinear": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True,
@@ -198,7 +209,6 @@ capabilities_overrides = {
                                       jax_jit=False, allow_dask_compute=True),
     "cspline2d": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                  jax_jit=False, allow_dask_compute=True),
-    "czt": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "deconvolve": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                   allow_dask_compute=True,
                                   skip_backends=[("jax.numpy", "item assignment")]),
@@ -223,7 +233,8 @@ capabilities_overrides = {
     "firwin2": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                jax_jit=False, allow_dask_compute=True,
                                reason="firwin uses np.interp"),
-    "fftconvolve": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"]),
+    "fftconvolve": xp_capabilities(cpu_only=True,
+                                   exceptions=["cupy", "jax.numpy", "torch"]),
     "freqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                              jax_jit=False, allow_dask_compute=True),
     "freqs_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
@@ -291,7 +302,6 @@ capabilities_overrides = {
                                  jax_jit=False, allow_dask_compute=True),
     "oaconvolve": xp_capabilities(
         cpu_only=True, exceptions=["cupy", "torch"],
-        skip_backends=[("jax.numpy", "fails all around")],
         xfail_backends=[("dask.array", "wrong answer")],
     ),
     "order_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
@@ -320,13 +330,17 @@ capabilities_overrides = {
     "savgol_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                      jax_jit=False,
                                      reason="convolve1d is cpu-only"),
+    "sawtooth": xp_capabilities(jax_jit=False,
+                                skip_backends=[("dask.array", "dask tests fail")]),
     "sepfir2d": xp_capabilities(np_only=True),
     "sos2zpk": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
     "sos2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
-    "sosfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+    "sosfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
+    "sosfilt_zi": xp_capabilities(cpu_only=True, allow_dask_compute=True,
+                                  jax_jit=False),
     "sosfiltfilt": xp_capabilities(
         cpu_only=True, exceptions=["cupy"],
         skip_backends=[
@@ -383,7 +397,7 @@ for obj_name in _signal_api.__all__:
         capabilities = capabilities_overrides.get(
             obj_name, get_default_capabilities(obj_name, delegator)
         )
-        f = capabilities(f)
+        f = capabilities(f)  # pyrefly:ignore[not-callable]
 
     # add the decorated function to the namespace, to be imported in __init__.py
     vars()[obj_name] = f

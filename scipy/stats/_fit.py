@@ -317,7 +317,7 @@ class FitResult:
 @xp_capabilities(out_of_scope=True)
 def fit(dist, data, bounds=None, *, guess=None, method='mle',
         optimizer=optimize.differential_evolution):
-    r"""Fit a discrete or continuous distribution to data
+    r"""Fit a discrete or continuous distribution to data.
 
     Given a distribution, data, and bounds on the parameters of the
     distribution, return maximum likelihood estimates of the parameters.

@@ -47,6 +47,7 @@ py3.install_sources([
     'data/fortran-si4-1x1x7.dat',
     'data/fortran-si4-1x3x5.dat',
     'data/invalid_pointer.sav',
+    'data/identification.sav',
     'data/null_pointer.sav',
     'data/scalar_byte.sav',
     'data/scalar_byte_descr.sav',

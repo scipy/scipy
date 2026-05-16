@@ -55,8 +55,8 @@ Assume we're starting from a clean repo and a fully set up conda environment::
 
   git clone git@github.com:scipy/scipy.git
   git submodule update --init
-  mamba env create -f environment.yml
-  mamba activate scipy-dev
+  conda env create -f environment.yml
+  conda activate scipy-dev
 
 To now run the configure stage of the build and instruct Meson to put the build
 artifacts in ``build/`` and a local install under ``build-install/`` relative

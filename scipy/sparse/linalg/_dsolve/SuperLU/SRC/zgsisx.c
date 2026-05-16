@@ -13,10 +13,10 @@ at the top-level directory.
  * \brief Computes an approximate solutions of linear equations A*X=B or A'*X=B
  *
  * <pre>
- * -- SuperLU routine (version 4.2) --
+ * -- SuperLU routine (version 7.0.0) --
  * Lawrence Berkeley National Laboratory.
  * November, 2010
- * August, 2011
+ * August 2024
  * </pre>
  */
 #include "slu_zdefs.h"
@@ -105,7 +105,7 @@ at the top-level directory.
  *			      p = gamma * nnz(A(:,j)).
  *		DROP_AREA:    Variation of ILUTP, for j-th column, use
  *			      nnz(F(:,1:j)) / nnz(A(:,1:j)) to control memory.
- *		DROP_DYNAMIC: Modify the threshold tau during factorizaion:
+ *		DROP_DYNAMIC: Modify the threshold tau during factorization:
  *			      If nnz(L(:,1:j)) / nnz(A(:,1:j)) > gamma
  *				  tau_L(j) := MIN(tau_0, tau_L(j-1) * 2);
  *			      Otherwise
@@ -231,7 +231,7 @@ at the top-level directory.
  *            obtained from MC64.
  *            If MC64 fails, zgsequ() is used to equilibrate the system,
  *            and A is scaled as above, but no permutation is involved.
- *            On exit, A is restored to the orginal row numbering, so
+ *            On exit, A is restored to the original row numbering, so
  *            Dr*A*Dc is returned.
  *
  * perm_c  (input/output) int*
@@ -373,7 +373,7 @@ at the top-level directory.
  * mem_usage (output) mem_usage_t*
  *	   Record the memory usage statistics, consisting of following fields:
  *	   - for_lu (float)
- *	     The amount of space used in bytes for L\U data structures.
+ *	     The amount of space used in bytes for L\\U data structures.
  *	   - total_needed (float)
  *	     The amount of space needed in bytes to perform factorization.
  *	   - expansions (int)
@@ -417,7 +417,6 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     int       colequ, equil, nofact, notran, rowequ, permc_spec, mc64;
     trans_t   trant;
     char      norm[1];
-    int_t     i, j;
     double    amax, anorm, bignum, smlnum, colcnd, rowcnd, rcmax, rcmin;
     int       relax, panel_size, info1;
     double    t0;      /* temporary time */
@@ -472,7 +471,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	if (rowequ) {
 	    rcmin = bignum;
 	    rcmax = 0.;
-	    for (j = 0; j < A->nrow; ++j) {
+	    for (int j = 0; j < A->nrow; ++j) {
 		rcmin = SUPERLU_MIN(rcmin, R[j]);
 		rcmax = SUPERLU_MAX(rcmax, R[j]);
 	    }
@@ -484,7 +483,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	if (colequ && *info == 0) {
 	    rcmin = bignum;
 	    rcmax = 0.;
-	    for (j = 0; j < A->nrow; ++j) {
+	    for (int j = 0; j < A->nrow; ++j) {
 		rcmin = SUPERLU_MIN(rcmin, C[j]);
 		rcmax = SUPERLU_MAX(rcmax, C[j]);
 	    }
@@ -538,7 +537,6 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     }
 
     if ( nofact ) {
-	register int i, j;
 	NCformat *Astore = AA->Store;
 	int_t nnz = Astore->nnz;
 	int_t *colptr = Astore->colptr;
@@ -559,13 +557,13 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	    } else {
 	        if ( equil ) {
 	            rowequ = colequ = 1;
-		    for (i = 0; i < n; i++) {
+		    for (int i = 0; i < n; i++) {
 		        R[i] = exp(R[i]);
 		        C[i] = exp(C[i]);
 		    }
 		    /* scale the matrix */
-		    for (j = 0; j < n; j++) {
-		        for (i = colptr[j]; i < colptr[j + 1]; i++) {
+		    for (int j = 0; j < n; j++) {
+		        for (int i = colptr[j]; i < colptr[j + 1]; i++) {
                             zd_mult(&nzval[i], &nzval[i], R[rowind[i]] * C[j]);
 		        }
 		    }
@@ -573,8 +571,8 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
                 }
 
                 /* permute the matrix */
-		for (j = 0; j < n; j++) {
-		    for (i = colptr[j]; i < colptr[j + 1]; i++) {
+		for (int j = 0; j < n; j++) {
+		    for (int i = colptr[j]; i < colptr[j + 1]; i++) {
 			/*nzval[i] *= R[rowind[i]] * C[j];*/
 			rowind[i] = perm[rowind[i]];
 		    }
@@ -637,14 +635,14 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	    if ((perm_tmp = int32Malloc(2*n)) == NULL)
 		ABORT("SUPERLU_MALLOC fails for perm_tmp[]");
 	    iperm = perm_tmp + n;
-	    for (i = 0; i < n; ++i) perm_tmp[i] = perm_r[perm[i]];
-	    for (i = 0; i < n; ++i) {
+	    for (int i = 0; i < n; ++i) perm_tmp[i] = perm_r[perm[i]];
+	    for (int i = 0; i < n; ++i) {
 		perm_r[i] = perm_tmp[i];
 		iperm[perm[i]] = i;
 	    }
 
 	    /* Restore A's original row indices. */
-	    for (i = 0; i < nnz; ++i) rowind[i] = iperm[rowind[i]];
+	    for (int i = 0; i < nnz; ++i) rowind[i] = iperm[rowind[i]];
 
 	    SUPERLU_FREE(perm); /* MC64 permutation */
 	    SUPERLU_FREE(perm_tmp);
@@ -677,20 +675,20 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
            and permutation from MC64 were performed. */
 	if ( notran ) {
 	    if ( rowequ ) {
-		for (j = 0; j < nrhs; ++j)
-		    for (i = 0; i < n; ++i)
+		for (int j = 0; j < nrhs; ++j)
+		    for (int i = 0; i < n; ++i)
                         zd_mult(&Bmat[i+j*ldb], &Bmat[i+j*ldb], R[i]);
 	    }
 	} else if ( colequ ) {
-	    for (j = 0; j < nrhs; ++j)
-		for (i = 0; i < n; ++i) {
+	    for (int j = 0; j < nrhs; ++j)
+		for (int i = 0; i < n; ++i) {
                     zd_mult(&Bmat[i+j*ldb], &Bmat[i+j*ldb], C[i]);
 		}
 	}
 
 	/* Compute the solution matrix X. */
-	for (j = 0; j < nrhs; j++)  /* Save a copy of the right hand sides */
-	    for (i = 0; i < B->nrow; i++)
+	for (int j = 0; j < nrhs; j++)  /* Save a copy of the right hand sides */
+	    for (int i = 0; i < B->nrow; i++)
 		Xmat[i + j*ldx] = Bmat[i + j*ldb];
 
 	t0 = SuperLU_timer_();
@@ -701,15 +699,15 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	   system. */
 	if ( notran ) {
 	    if ( colequ ) {
-		for (j = 0; j < nrhs; ++j)
-		    for (i = 0; i < n; ++i) {
+		for (int j = 0; j < nrhs; ++j)
+		    for (int i = 0; i < n; ++i) {
                         zd_mult(&Xmat[i+j*ldx], &Xmat[i+j*ldx], C[i]);
                     }
 	    }
 	} else { /* transposed system */
 	    if ( rowequ ) {
-	        for (j = 0; j < nrhs; ++j)
-		    for (i = 0; i < A->nrow; ++i) {
+	        for (int j = 0; j < nrhs; ++j)
+		    for (int i = 0; i < A->nrow; ++i) {
                         zd_mult(&Xmat[i+j*ldx], &Xmat[i+j*ldx], R[i]);
                     }
 	    }

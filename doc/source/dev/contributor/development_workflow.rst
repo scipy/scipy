@@ -10,7 +10,7 @@ reading to see an example of fixing a bug and submitting a pull request.*
 This guide assumes that you have created your own fork (copy) of the SciPy
 repository, cloned the repository on your own machine, and built SciPy from this
 source code. If you haven't, check the :ref:`building-from-source` pages appropriate to your
-system. Before getting started here, there are two other things you need to do
+system. Before getting started here, there are three other things you need to do
 just once before you start modifying SciPy.
 
 #. In a terminal, introduce yourself to Git::
@@ -282,6 +282,7 @@ Checklist before submitting a PR
 
 -  Did you check that the code can be distributed under a BSD license? See
    :ref:`license-considerations`.
+-  Have you checked SciPy's AI policy? See :ref:`ai_policy`.
 -  Are there unit tests with good code coverage? See
    `NumPy/SciPy Testing Guidelines`_.
 -  Do all unit tests pass locally? See :ref:`the-spin-interface`.

@@ -6,8 +6,20 @@
 
 URL=$1
 COMPONENTS=$2
+EXPECTED_SHA256=$3
 
 curl --output webimage.sh --url "$URL" --retry 5 --retry-delay 5
+
+if [ -n "$EXPECTED_SHA256" ]; then
+  file_hash=$(sha256sum webimage.sh | cut -d ' ' -f 1)
+  if [ "$file_hash" != "$EXPECTED_SHA256" ]; then
+    echo "Checksum verification failed for $URL"
+    echo "Expected: $EXPECTED_SHA256"
+    echo "Got:      $file_hash"
+    exit 1
+  fi
+fi
+
 chmod +x webimage.sh
 ./webimage.sh -x -f webimage_extracted --log extract.log
 rm -rf webimage.sh

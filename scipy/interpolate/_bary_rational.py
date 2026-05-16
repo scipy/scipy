@@ -38,7 +38,7 @@ class _BarycentricRational:
     """Base class for barycentric representation of a rational function."""
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, x, y, axis=0, **kwargs):
         self._axis = axis
@@ -85,7 +85,7 @@ class _BarycentricRational:
         if not np.all(np.isfinite(x)):
             raise ValueError("`x` must be finite.")
 
-    def _compute_weights(z, f, **kwargs):
+    def _compute_weights(self, z, f, **kwargs):
         raise NotImplementedError
 
     def __call__(self, z):
@@ -433,6 +433,7 @@ class AAA(_BarycentricRational):
         if clean_up:
             self.clean_up(clean_up_tol)
 
+    # pyrefly:ignore[bad-override]
     def _input_validation(self, x, y, rtol=None, max_terms=100, clean_up=True,
                           clean_up_tol=1e-13):
         max_terms = operator.index(max_terms)
@@ -453,6 +454,7 @@ class AAA(_BarycentricRational):
     def support_values(self):
         return self._support_values
 
+    # pyrefly:ignore[bad-override]
     def _compute_weights(self, z, f, rtol, max_terms):
         # Initialization for AAA iteration
         M = np.size(z)
@@ -635,10 +637,10 @@ class FloaterHormannInterpolator(_BarycentricRational):
 
     Parameters
     ----------
-    x : 1D array_like, shape (n,)
+    points : 1D array_like, shape (n,)
         1-D array containing values of the independent variable. Values may be real or
         complex but must be finite.
-    y : array_like, shape (n, ...)
+    values : array_like, shape (n, ...)
         Array containing values of the dependent variable. Infinite and NaN values
         of `y` and corresponding values of `x` will be discarded.
     d : int, default: 3
@@ -729,6 +731,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
     def __init__(self, points, values, *, d=3, axis=0):
         super().__init__(points, values, d=d, axis=axis)
 
+    # pyrefly:ignore[bad-override]
     def _input_validation(self, x, y, d):
         d = operator.index(d)
         if not (0 <= d < len(x)):
@@ -736,6 +739,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
 
         super()._input_validation(x, y)
 
+    # pyrefly:ignore[bad-override]
     def _compute_weights(self, z, f, d):
         # Floater and Hormann 2007 Eqn. (18) 3 equations later
         w = np.zeros_like(z, dtype=np.result_type(z, 1.0))

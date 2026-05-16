@@ -1,5 +1,6 @@
 py3.install_sources([
     '__init__.py',
+    'cython_abi_signatures.json',
     'test__basinhopping.py',
     'test__differential_evolution.py',
     'test__dual_annealing.py',
@@ -15,6 +16,7 @@ py3.install_sources([
     'test_cobyqa.py',
     'test_constraint_conversion.py',
     'test_constraints.py',
+    'test_cython_abi.py',
     'test_cython_optimize.py',
     'test_differentiable_functions.py',
     'test_direct.py',

@@ -156,7 +156,6 @@ Mass
 ``oz``             one ounce in kg
 ``ounce``          one ounce in kg
 ``stone``          one stone in kg
-``grain``          one grain in kg
 ``long_ton``       one long ton in kg
 ``short_ton``      one short ton in kg
 ``troy_ounce``     one Troy ounce in kg

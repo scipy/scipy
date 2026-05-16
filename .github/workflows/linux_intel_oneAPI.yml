@@ -52,9 +52,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       # Reference https://github.com/easimon/maximize-build-space/blob/master/action.yml
       # see https://github.com/scipy/scipy/issues/23813
@@ -66,7 +67,7 @@ jobs:
 
       - name: cache install
         id: cache-install
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
               /opt/intel/oneapi/
@@ -75,20 +76,20 @@ jobs:
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           printenv LINUX_CPPKIT_URL
-          bash tools/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL "" a585655669cee57a0965eba46d96b1081d9ab86e3e4b421505ebec651b41564b  # 2025.0.1.27
       - name: Install oneAPI Fortran kit
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           printenv LINUX_FORTRANKIT_URL
-          bash tools/install_intel_oneAPI_linux.sh $LINUX_FORTRANKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_FORTRANKIT_URL "" ff9eb5a639c0fcc3d386f5798cc4259103842d783f34c08da27155431215ed0c  # 2025.0.1.27
       - name: Install oneAPI HPC kit
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           printenv LINUX_HPCKIT_URL
-          bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL "" 941a4d4ccc05cfb60f5edbe7c2c5e34197cce561c12d565cd8c6fefe6b752fb6  # 2025.0.1.47
 
       - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
+        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
         with:
           python-version: ${{ matrix.python-version }}
           channels: conda-forge

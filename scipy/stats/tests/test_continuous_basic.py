@@ -1,5 +1,6 @@
 import sys
 import warnings
+import platform
 
 import numpy as np
 import numpy.testing as npt
@@ -60,7 +61,7 @@ xfail_fit_mle = {'ksone', 'kstwo', 'truncpareto', 'irwinhall'}
 skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 slow_fit_mm = {'chi2', 'expon', 'lognorm', 'loguniform', 'powerlaw', 'reciprocal'}
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
-                'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
+                'genhalflogistic', 'geninvgauss', 'gompertz',
                 'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'trapezoid',
                 'truncnorm', 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
@@ -205,7 +206,8 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
     check_meth_dtype(distfn, arg, meths)
     check_ppf_dtype(distfn, arg)
 
-    if distname not in fails_cmplx:
+    # complex special functions known to fail on sparc64 (gh-22577)
+    if distname not in fails_cmplx and platform.machine() != 'sparc64':
         check_cmplx_deriv(distfn, arg)
 
     if distname != 'truncnorm':

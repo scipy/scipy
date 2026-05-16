@@ -13,7 +13,7 @@ import pytest
 
 import scipy
 
-from scipy._lib._public_api import PUBLIC_MODULES
+from scipy._lib._public_api import PUBLIC_MODULES, _without_fortran
 from scipy.conftest import xp_available_backends
 
 
@@ -145,6 +145,10 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.stats.mvn',
     'scipy.stats.stats',
 ]
+
+if _without_fortran:
+    PRIVATE_BUT_PRESENT_MODULES.remove('scipy.odr.models')
+    PRIVATE_BUT_PRESENT_MODULES.remove('scipy.odr.odrpack')
 
 
 def is_unexpected(name):

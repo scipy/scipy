@@ -3,6 +3,7 @@ import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
@@ -21,6 +22,7 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
     return atol, rtol
 
 
+@xp_capabilities(np_only=True)
 def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the BIConjugate Gradient method.
@@ -40,7 +42,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse array, ndarray, LinearOperator}
@@ -56,7 +58,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
@@ -155,6 +157,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
              callback=None):
     """
@@ -175,7 +178,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse array, ndarray, LinearOperator}
@@ -191,7 +194,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
@@ -304,6 +307,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric,
@@ -325,7 +329,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse array, ndarray, LinearOperator}
@@ -342,7 +346,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
@@ -426,6 +430,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
         return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the Conjugate Gradient Squared method.
@@ -445,7 +450,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse array, ndarray, LinearOperator}
@@ -461,7 +466,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
@@ -584,6 +589,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
         return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=None,
           callback=None, callback_type=None):
     """
@@ -600,7 +606,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
         Starting guess for the solution (a vector of zeros by default).
-    atol, rtol : float
+    rtol, atol : float
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
@@ -846,6 +852,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     return x, info
 
 
+@xp_capabilities(np_only=True)
 def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         callback=None):
     """
@@ -862,11 +869,11 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
         Starting guess for the solution.
-    atol, rtol : float, optional
+    rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M1 : {sparse array, ndarray, LinearOperator}
@@ -883,7 +890,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations

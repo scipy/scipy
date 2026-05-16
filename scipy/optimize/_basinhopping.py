@@ -371,7 +371,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         in the dict `minimizer_kwargs`
     x0 : array_like
         Initial guess.
-    niter : integer, optional
+    niter : int, optional
         The number of basin-hopping iterations. There will be a total of
         ``niter + 1`` runs of the local minimizer.
     T : float, optional
@@ -415,11 +415,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         be used, for example, to save the lowest N minima found. Also,
         `callback` can be used to specify a user defined stop criterion by
         optionally returning True to stop the `basinhopping` routine.
-    interval : integer, optional
+    interval : int, optional
         interval for how often to update the `stepsize`
     disp : bool, optional
         Set to True to print status messages
-    niter_success : integer, optional
+    niter_success : int, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
     rng : `numpy.random.Generator`, optional

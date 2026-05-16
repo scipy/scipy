@@ -297,6 +297,15 @@ class _csr_base(_cs_matrix):
 def isspmatrix_csr(x):
     """Is `x` of csr_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -349,23 +358,32 @@ class csr_array(_csr_base, sparray):
 
     Attributes
     ----------
+    data : ndarray
+        CSR format data array of the array
+    indices : ndarray
+        CSR format index array of the array
+    indptr : ndarray
+        CSR format index pointer array of the array
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        CSR format data array of the array
-    indices
-        CSR format index array of the array
-    indptr
-        CSR format index pointer array of the array
-    has_sorted_indices
-    has_canonical_format
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'csr'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : csr_array
+        The transpose of the array
+    mT : csr_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -441,12 +459,21 @@ class csr_array(_csr_base, sparray):
     array([[2, 1, 0, 0],
            [0, 1, 1, 1]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class csr_matrix(spmatrix, _csr_base):
     """
     Compressed Sparse Row matrix.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         csr_matrix(D)
@@ -472,23 +499,32 @@ class csr_matrix(spmatrix, _csr_base):
 
     Attributes
     ----------
+    data : ndarray
+        CSR format data array of the matrix
+    indices : ndarray
+        CSR format index array of the matrix
+    indptr : ndarray
+        CSR format index pointer array of the matrix
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        CSR format data array of the matrix
-    indices
-        CSR format index array of the matrix
-    indptr
-        CSR format index pointer array of the matrix
-    has_sorted_indices
-    has_canonical_format
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'csr'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : csr_matrix
+        The transpose of the matrix
+    mT : csr_matrix
+        The matrix transpose
 
     Notes
     -----

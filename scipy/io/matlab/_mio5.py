@@ -375,7 +375,7 @@ class MatFile5Reader(MatFileReader):
 
 
 def varmats_from_mat(file_obj):
-    """ Pull variables out of mat 5 file as a sequence of mat file objects
+    """Pull variables out of mat 5 file as a sequence of mat file objects.
 
     This can be useful with a difficult mat file, containing unreadable
     variables. This routine pulls the variables out in raw form and puts them,
@@ -472,7 +472,7 @@ def to_writeable(source):
                   hasattr(source, 'items'))
     # Objects that don't implement mappings, but do have dicts
     if isinstance(source, np.generic):
-        # NumPy scalars are never mappings (PyPy issue workaround)
+        # NumPy scalars are never mappings
         pass
     elif not is_mapping and hasattr(source, '__dict__'):
         source = {key: value for key, value in source.__dict__.items()

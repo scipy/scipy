@@ -66,13 +66,13 @@ def _compute_outer_prob_inside_method(m, n, g, h):
 
     Parameters
     ----------
-    m : integer
+    m : int
         m > 0
-    n : integer
+    n : int
         n > 0
-    g : integer
+    g : int
         g is greatest common divisor of m and n
-    h : integer
+    h : int
         0 <= h <= lcm(m,n)
 
     Returns
@@ -179,37 +179,6 @@ def siegelslopes(y, x, method):
         medinter = np.median(y - medslope*x)
 
     return medslope, medinter
-
-
-# pythran export _poisson_binom_pmf(float64[:])
-def _poisson_binom_pmf(p):
-    # implemented from poisson_binom [2] Equation 2
-    n = p.shape[0]
-    pmf = np.zeros(n + 1, dtype=np.float64)
-    pmf[:2] = 1 - p[0], p[0]
-    for i in range(1, n):
-        tmp = pmf[:i+1] * p[i]
-        pmf[:i+1] *= (1 - p[i])
-        pmf[1:i+2] += tmp
-    return pmf
-
-
-# pythran export _poisson_binom(int64[:], float64[:, :], str)
-def _poisson_binom(k, args, tp):
-    # PDF/CDF of Poisson binomial distribution
-    # k - arguments, shape (m,)
-    # args - shape parameters, shape (n, m)
-    # kind - {'pdf', 'cdf'}
-    n, m = args.shape  # number of shapes, batch size
-    cache = {}
-    out = np.zeros(m, dtype=np.float64)
-    for i in range(m):
-        p = tuple(args[:, i])
-        if p not in cache:
-            pmf = _poisson_binom_pmf(args[:, i])
-            cache[p] = np.cumsum(pmf) if tp=='cdf' else pmf
-        out[i] = cache[p][k[i]]
-    return out
 
 
 # function p = phid(z), p = erfc( -z/sqrt(2) )/2; % Normal cdf

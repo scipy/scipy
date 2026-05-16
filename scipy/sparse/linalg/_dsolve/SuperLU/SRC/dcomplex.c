@@ -29,7 +29,7 @@ at the top-level directory.
 
 
 /*! \brief Complex Division c = a/b */
-void z_div(doublecomplex *c, doublecomplex *a, doublecomplex *b)
+void z_div(doublecomplex *c, const doublecomplex *a, const doublecomplex *b)
 {
     double ratio, den;
     double abr, abi, cr, ci;

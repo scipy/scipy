@@ -4,7 +4,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.4
+    jupytext_version: 1.17.3
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
@@ -77,7 +77,7 @@ To address these and other shortcomings, [gh-15928](https://github.com/scipy/sci
 
 +++
 
-In the new infrastructure, distributions families are classes named according to `CamelCase` conventions. They must be instantiated before use, with parameters passed as keyword-only arguments.
+In the new infrastructure, distribution families are classes named according to `CamelCase` conventions. They must be instantiated before use, with parameters passed as keyword-only arguments.
 *Instances* of the distribution family classes can be thought of as random variables, which are commonly denoted in mathematics using capital letters.
 
 ```{code-cell} ipython3
@@ -136,11 +136,11 @@ Besides `pdf` and `mean`, several other methods of the new infrastructure are es
 
 +++
 
-Others methods have new names, but are otherwise drop-in replacements.
+Other methods have new names, but are otherwise drop-in replacements.
 - `sf` (survival function) $\rightarrow$ `ccdf` (complementary cumulative distribution function)
 - `logsf` $\rightarrow$ `logccdf`
 - `ppf` (percent point function) $\rightarrow$ `icdf` (inverse cumulative distribution function)
-- `isf` (inverse survive function) $\rightarrow$ `iccdf` (inverse complementary cumulative distribution function)
+- `isf` (inverse survival function) $\rightarrow$ `iccdf` (inverse complementary cumulative distribution function)
 - `std` $\rightarrow$ `standard_deviation`
 - `var` $\rightarrow$ `variance`
 
@@ -214,8 +214,8 @@ However, the old infrastructure also has a `stats` method, which provided variou
 
 - Mean (first raw moment about the origin, `'m'`)
 - Variance (second central moment, `'v'`)
-- Skewness (third standarized moment, `'s'`)
-- Excess kurtosis (fourh standarized moment minus 3, `'k'`)
+- Skewness (third standardized moment, `'s'`)
+- Excess kurtosis (fourth standardized moment minus 3, `'k'`)
 
 For example:
 
@@ -254,7 +254,7 @@ stats.Normal().kurtosis(convention='excess'), stats.Normal().kurtosis(convention
 
 +++
 
-The old infrastructure's `rvs` method has been replaced with `sample`, but there are a two differences that should be noted when either 1) control of the random state is required or 2) arrays are used for shape, location, or scale parameters.
+The old infrastructure's `rvs` method has been replaced with `sample`, but there are two differences that should be noted when either 1) control of the random state is required or 2) arrays are used for shape, location, or scale parameters.
 
 First, argument `random_state` is replaced by `rng` per [SPEC 7](https://scientific-python.org/specs/spec-0007/). A pattern to control the random state in the past has been to use `numpy.random.seed` or to pass integer seeds to the `random_state` argument. The integer seeds were converted to instances of `numpy.random.RandomState`, so behavior for a given integer seed would be identical in these two cases:
 
@@ -292,7 +292,7 @@ dist.rvs(size=(3, 4, 2), loc=[0, 1]).shape  # `loc` has shape (2,)
 Now, the shape of the parameter arrays is considered to be a property of the random variable object itself. Specifying the shape of array shape parameters would be redundant, so it is not included when specifying the `shape` of the sample.
 
 ```{code-cell} ipython3
-Y = stats.Normal(mu = [0, 1])
+Y = stats.Normal(mu=[0, 1])
 Y.sample(shape=(3, 4)).shape  # the sample has shape (3, 4); each element is of shape (2,)
 ```
 
@@ -327,7 +327,7 @@ data = stats.norm.rvs(size=100, loc=mu, scale=sigma)
 stats.norm.nnlf((mu, sigma), data)
 ```
 
-Now, simply compute the negative log-likehood according to its mathematical definition.
+Now, simply compute the negative log-likelihood according to its mathematical definition.
 
 ```{code-cell} ipython3
 X = stats.Normal(mu=mu, sigma=sigma)
@@ -360,7 +360,7 @@ def f(x): return x**4 * X.pdf(x)
 integrate.quad(f, a=-np.inf, b=np.inf)  # integral estimate, estimate of the error
 ```
 
-The `conditional` argument simply scales the result by inverse of the probability mass contained within the interval.
+The `conditional` argument simply scales the result by the inverse of the probability mass contained within the interval.
 
 ```{code-cell} ipython3
 a, b = -1, 3
@@ -455,7 +455,7 @@ Another problem is that MLE is inherently poorly behaved for some distributions.
 stats.weibull_min.nnlf((0.1, np.min(data), 10), data)
 ```
 
-Compounding with these issues is that `fit` estimates all distribution parameters by default, including the location. In the example above, we are probably only interested in the more common two-parameter Weibull distribution because the actual location is zero. `fit` *can* accommodate this by specifing that the location is fixed parameter.
+Compounding with these issues is that `fit` estimates all distribution parameters by default, including the location. In the example above, we are probably only interested in the more common two-parameter Weibull distribution because the actual location is zero. `fit` *can* accommodate this by specifing that the location is a fixed parameter.
 
 ```{code-cell} ipython3
 # c_, loc_, scale_ = stats.weibull_min.fit(data, loc=0)  # careful! this provides loc=0 as a *guess*
@@ -536,9 +536,7 @@ For method of [L-moments](https://en.wikipedia.org/wiki/L-moment) (which attempt
 def lmoment_residual(x):
     c, scale = x
     X = Weibull(c=c) * scale
-    E11 = stats.order_statistic(X, r=1, n=1).mean()
-    E12, E22 = stats.order_statistic(X, r=[1, 2], n=2).mean()
-    lmoments_X = [E11, 0.5*(E22 - E12)]  # the first two l-moments of the distribution
+    lmoments_X = [X.lmoment(1), X.lmoment(2)]  # the first two l-moments of the distribution
     lmoments_x = stats.lmoment(data, order=[1, 2])  # first two l-moments of the data
     return np.linalg.norm(lmoments_x - lmoments_X)  # Minimize the norm of the difference
 
@@ -699,7 +697,7 @@ x = np.linspace(-4, 4, 300)
 plt.plot(x, Y.pdf(x))
 plt.plot(x, stats.dgamma(a=a).pdf(x), '--')
 plt.legend(['`Mixture(X, -X)`', '`dgamma`'])
-plt.title("Double Gammma PDF")
+plt.title("Double Gamma PDF")
 plt.show()
 ```
 
@@ -790,7 +788,7 @@ frozen.sf(x)
 frozen.sf(x) == 1 - integrate.quad(frozen.pdf, 0, x)[0]
 ```
 
-However, another aproach would be to numerically integrate the PDF from `x` to `1` (the right end of the support).
+However, another approach would be to numerically integrate the PDF from `x` to `1` (the right end of the support).
 
 ```{code-cell} ipython3
 integrate.quad(frozen.pdf, x, 1)[0]

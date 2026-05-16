@@ -87,10 +87,13 @@ import warnings
 import numpy as np
 from numpy import asarray, array, zeros, isscalar, real, imag
 
+from scipy.linalg.blas import HAS_ILP64
+
 from . import _vode
 from . import _dop
 from ._odepack import lsoda as lsoda_step
 
+_iwork_dtype = np.int64 if HAS_ILP64 else np.int32
 
 # ------------------------------------------------------------------------------
 # User interface
@@ -125,7 +128,7 @@ class ode:
     y : ndarray
         Current variable values.
 
-    See also
+    See Also
     --------
     odeint : an integrator with a simpler interface based on lsoda from ODEPACK
     quad : for finding the area under a curve
@@ -286,6 +289,13 @@ class ode:
 
         Options and references the same as "dopri5".
 
+    References
+    ----------
+    .. [HNW93] E. Hairer, S.P. Norsett and G. Wanner, Solving Ordinary
+        Differential Equations i. Nonstiff Problems. 2nd edition.
+        Springer Series in Computational Mathematics,
+        Springer-Verlag (1993)
+
     Examples
     --------
 
@@ -318,18 +328,10 @@ class ode:
     8.0 [-0.15986733-0.61234476j  0.06060616+0.j        ]
     9.0 [0.64850462+0.15048982j 0.05405414+0.j        ]
     10.0 [-0.38404699+0.56382299j  0.04878055+0.j        ]
-
-    References
-    ----------
-    .. [HNW93] E. Hairer, S.P. Norsett and G. Wanner, Solving Ordinary
-        Differential Equations i. Nonstiff Problems. 2nd edition.
-        Springer Series in Computational Mathematics,
-        Springer-Verlag (1993)
-
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     def __init__(self, f, jac=None):
         self.stiff = 0
@@ -773,7 +775,7 @@ class IntegratorBase:
     scalar = float
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     def acquire_new_handle(self):
         # Some of the integrators have internal state (ancient
@@ -800,12 +802,12 @@ class IntegratorBase:
         raise NotImplementedError('all integrators must define '
                                   'run(f, jac, t0, t1, y0, f_params, jac_params)')
 
-    def step(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def step(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Make one integration step and return (y1,t1)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support step() method')
 
-    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support run_relax() method')
@@ -956,7 +958,7 @@ class vode(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), dtype=np.int32)
+        iwork = zeros((liw,), dtype=_iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1029,7 +1031,7 @@ class zvode(vode):
     supports_step = 1
     scalar = complex
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1081,7 +1083,7 @@ class zvode(vode):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), np.int32)
+        iwork = zeros((liw,), _iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1120,7 +1122,7 @@ class dopri5(IntegratorBase):
                 -4: 'problem is probably stiff (interrupted)',
                 }
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self,
                  rtol=1e-6, atol=1e-12,
@@ -1248,7 +1250,7 @@ class lsoda(IntegratorBase):
         -7: "Internal workspace insufficient to finish (internal error)."
     }
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self,
                  with_jacobian=False,
@@ -1334,7 +1336,7 @@ class lsoda(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), dtype=np.int32)
+        iwork = zeros((liw,), dtype=_iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:

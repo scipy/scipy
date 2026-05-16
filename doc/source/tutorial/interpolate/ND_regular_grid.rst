@@ -3,7 +3,7 @@
 .. currentmodule:: scipy.interpolate
 
 =====================================================================================
-Multivariate data interpolation on a regular grid  (:class:`RegularGridInterpolator`)
+Multivariate data interpolation on a regular grid (:class:`RegularGridInterpolator`)
 =====================================================================================
 
 Suppose you have N-dimensional data on a regular grid, and you
@@ -120,7 +120,7 @@ In accordance with how :ref:`1D interpolators
 interpret multidimensional arrays <tutorial-interpolate_batching>`, the interpretation is
 that the first :math:`N` dimensions of the ``values`` arrays are data dimensions
 (i.e. they correspond to the points defined by the ``grid`` argument), and the *trailing*
-dimensions are batch axes. Note that this disagrees with a usual NumPy broadcasting
+dimensions are batch axes. Note that this disagrees with the usual NumPy broadcasting
 conventions, where broadcasting proceeds along the *leading* dimensions.
 
 To illustrate:
@@ -173,8 +173,10 @@ using `scipy.ndimage.map_coordinates` instead.
 
 For floating-point data on grids with equal spacing, ``map_coordinates`` can
 be easily wrapped into a `RegularGridInterpolator` look-alike. The following is
-a bare-bones example originating from `the Johanness Buchner's
+a bare-bones example originating from `the Johannes Buchner's
 'regulargrid' package <https://github.com/JohannesBuchner/regulargrid/>`_::
+
+    from scipy.ndimage import map_coordinates
 
     class CartesianGridInterpolator:
         def __init__(self, points, values, method='linear'):

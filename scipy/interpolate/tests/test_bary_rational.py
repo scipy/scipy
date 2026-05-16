@@ -316,7 +316,7 @@ class TestFloaterHormann:
         (4, [1, 5, 11, 15, 16, 16, 16, 15, 11, 5, 1])
     ])
     def test_uniform_grid(self, d, expected):
-        # Check against explicit results on an uniform grid
+        # Check against explicit results on a uniform grid
         x = np.arange(11)
         r = FloaterHormannInterpolator(x, 0.0*x, d=d)
         assert_allclose(r.weights.ravel()*self.scale(x.size, d), expected,
