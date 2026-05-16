@@ -2573,7 +2573,6 @@ class TestNdBSpline:
         assert bspl2_4(xi).shape == np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
         xp_assert_close(bspl2_4(xi),
                         xp.broadcast_to(xp.asarray(target, dtype=xp.float64)[:, None], bspl2_4(xi).shape),
-                        check_shape=False,
                         atol=5e-14)
 
         # two trailing dimensions
