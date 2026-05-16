@@ -7,9 +7,7 @@ import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_almost_equal_nulp
 
-from scipy.sparse import (
-    coo_array, csc_array, csr_array, random_array, sparray, issparse
-)
+from scipy.sparse import coo_array, csc_array, random_array, sparray, issparse
 
 from scipy.io import hb_read, hb_write
 
@@ -77,5 +75,5 @@ class TestHBReadWrite:
     def test_empty_roundtrip(self, dtype):
         # gh-24082: nnz == 0 used to crash in HBInfo.from_data; the integer
         # variant additionally exercised a mxtype/format inconsistency.
-        m = csr_array(np.zeros((2, 2), dtype=dtype))
+        m = csc_array(np.zeros((2, 2), dtype=dtype))
         self.check_save_load(m)
