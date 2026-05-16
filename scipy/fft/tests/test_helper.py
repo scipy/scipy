@@ -514,7 +514,7 @@ class TestFFTFreq:
         # default dtype varies across backends
 
         y = 9 * fft.fftfreq(9, xp=xp)
-        xp_assert_close(y, x, check_dtype=False, check_namespace=True)
+        xp_assert_close(y, x, check_dtype=False)
 
         y = 9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp)
         xp_assert_close(y, x, check_dtype=False)
@@ -542,7 +542,7 @@ class TestRFFTFreq:
         # default dtype varies across backends
 
         y = 9 * fft.rfftfreq(9, xp=xp)
-        xp_assert_close(y, x, check_dtype=False, check_namespace=True)
+        xp_assert_close(y, x, check_dtype=False)
 
         y = 9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp)
         xp_assert_close(y, x, check_dtype=False)
