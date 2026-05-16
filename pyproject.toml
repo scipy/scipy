@@ -88,6 +88,15 @@ test = [
     'ninja; sys_platform != "emscripten"',
     "scipy-doctest>=2.0.0"
 ]
+
+[project.urls]
+homepage = "https://scipy.org/"
+documentation = "https://docs.scipy.org/doc/scipy/"
+source = "https://github.com/scipy/scipy"
+download = "https://github.com/scipy/scipy/releases"
+tracker = "https://github.com/scipy/scipy/issues"
+
+[dependency-groups]
 doc = [
     "sphinx>=5.0.0,<8.2.0",
     "intersphinx_registry",
@@ -118,13 +127,6 @@ dev = [
     "ruff>=0.12.0",
     "cython-lint>=0.12.2",
 ]
-
-[project.urls]
-homepage = "https://scipy.org/"
-documentation = "https://docs.scipy.org/doc/scipy/"
-source = "https://github.com/scipy/scipy"
-download = "https://github.com/scipy/scipy/releases"
-tracker = "https://github.com/scipy/scipy/issues"
 
 [tool.spin]
 package = 'scipy'
