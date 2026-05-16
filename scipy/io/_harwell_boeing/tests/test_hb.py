@@ -7,7 +7,9 @@ import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_almost_equal_nulp
 
-from scipy.sparse import coo_array, csc_array, random_array, sparray, issparse, csr_matrix
+from scipy.sparse import (
+    coo_array, csc_array, csr_array, random_array, sparray, issparse
+)
 
 from scipy.io import hb_read, hb_write
 
@@ -74,11 +76,11 @@ class TestHBReadWrite:
 
 class TestHBReadWriteEmpty:
 
-    def test_hb_write_empty_matrix_roundtrip(self):
-        m = csr_matrix([[0.0, 0.0], [0.0, 0.0]])   # shape (2,2) and nnz == 0
+    def test_hb_write_empty_array_roundtrip(self):
+        m = csr_array([[0.0, 0.0], [0.0, 0.0]])   # shape (2,2) and nnz == 0
         buf = StringIO()
         hb_write(buf, m)          # should NOT raise
         buf.seek(0)
-        out = hb_read(buf)
+        out = hb_read(buf, spmatrix=False)
         assert out.shape == (2, 2)
         assert out.nnz == 0
