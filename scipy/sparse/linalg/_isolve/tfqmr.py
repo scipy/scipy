@@ -178,5 +178,5 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
     if (show):
         print("TFQMR: Linear solve not converged due to reach MAXIT "
-              f"iterations {iter+1}")
+                f"iterations {maxiter}")
     return (x, maxiter)

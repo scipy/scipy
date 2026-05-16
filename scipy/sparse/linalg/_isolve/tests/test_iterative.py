@@ -678,6 +678,21 @@ def test_show(case, capsys, xp, batch_A, batch_b):
     assert out.startswith(exp)
     assert err == ""
 
+def test_tfqmr_show_maxiter_zero(capsys):
+    A = eye(2)
+    b = ones(2)
+
+    x, info = tfqmr(A, b, maxiter=0, show=True)
+
+    out, err = capsys.readouterr()
+
+    assert info == 0
+    assert_allclose(x, zeros(2))
+    assert out.startswith(
+        "TFQMR: Linear solve not converged due to reach MAXIT iterations 0"
+    )
+    assert err == ""
+
 
 @pytest.mark.parametrize("batch_A", [()])
 @pytest.mark.parametrize("batch_b", [()])
