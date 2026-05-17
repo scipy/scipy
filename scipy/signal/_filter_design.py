@@ -2129,13 +2129,13 @@ def lp2hp(b, a, wo=1.0):
     if d >= n:
         outa = xp.flip(a) * pwo
         outb = _resize(b, (d,), xp=xp)
-        outb[n:] = 0.0
-        outb[:n] = xp.flip(b) * pwo[:n]
+        outb = xpx.at(outb)[n:].set(0.0)
+        outb = xpx.at(outb)[:n].set(xp.flip(b) * pwo[:n])
     else:
         outb = xp.flip(b) * pwo
         outa = _resize(a, (n,), xp=xp)
-        outa[d:] = 0.0
-        outa[:d] = xp.flip(a) * pwo[:d]
+        outa = xpx.at(outa)[d:].set(0.0)
+        outa = xpx.at(outa)[:d].set(xp.flip(a) * pwo[:d])
 
     return normalize(outb, outa)
 
