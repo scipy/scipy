@@ -853,6 +853,10 @@ class MMFile:
                 precision = 8
             else:
                 precision = 16
+        if precision is not None and precision > 21:
+            raise ValueError("precision should be at most 21 to avoid "
+                           "segmentation faults in mmread; got "
+                           f"{precision}")
         if field is None:
             kind = a.dtype.kind
             if kind == 'i':
