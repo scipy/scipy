@@ -336,51 +336,41 @@ def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
     return np.testing.assert_array_almost_equal_nulp(actual, desired, nulp=nulp)
 
 
-def _assert_less(actual, desired, *, err_msg, verbose, xp):
-    if is_cupy(xp):
-        return xp.testing.assert_array_less(actual, desired,
-                                            err_msg=err_msg, verbose=verbose)
-    elif is_torch(xp):
-        if actual.device.type != 'cpu':
-            actual = actual.cpu()
-        if desired.device.type != 'cpu':
-            desired = desired.cpu()
-    # JAX uses `np.testing`
-
-    return xpx_assert_less(actual, desired,
-                                        err_msg=err_msg, verbose=verbose)
-
-
-def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
-                   check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None):
+def _assert_less(actual, desired, *, check_dtype=True,
+                   check_shape=True, check_0d=True, err_msg, verbose, xp):
     __tracebackhide__ = True  # Hide traceback for py.test
+    if xp is None:
+        try:
+            xp = _default_xp_ctxvar.get()
+        except LookupError:
+            xp = array_namespace(desired)
 
-    actual, desired, xp = _strict_check(
-        actual, desired, xp, check_namespace=check_namespace,
-        check_dtype=check_dtype, check_shape=check_shape,
-        check_0d=check_0d
-    )
+    actual = _convert_scalar_to_array(actual, xp)
+    desired = _convert_scalar_to_array(desired, xp)
+    xpx_assert_less(actual, desired, check_dtype=check_dtype,
+                   check_shape=check_shape, check_scalar=check_0d, err_msg=err_msg, verbose=verbose)
 
-    _assert_less(actual, desired, err_msg=err_msg, verbose=verbose, xp=xp)
+
+def xp_assert_less(actual, desired, *, check_dtype=True,
+                   check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None):
+    _assert_less(actual, desired, err_msg=err_msg, verbose=verbose, xp=xp, check_dtype=check_dtype,
+                   check_shape=check_shape, check_0d=check_0d)
 
 
 def xp_assert_less_equal(
-    actual, desired, *, check_namespace=True, check_dtype=True,
+    actual, desired, *, check_dtype=True,
     check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None
 ):
     __tracebackhide__ = True  # Hide traceback for py.test
-
-    actual, desired, xp = _strict_check(
-        actual, desired, xp, check_namespace=check_namespace,
-        check_dtype=check_dtype, check_shape=check_shape,
-        check_0d=check_0d
-    )
-
-    # we call `_strict_check` before `_assert_less` so that scalars are
-    # coerced to the `xp` namespace before we apply `xp.nextafter`
+    if xp is None:
+        try:
+            xp = _default_xp_ctxvar.get()
+        except LookupError:
+            xp = array_namespace(desired)
     _assert_less(
         actual, xp.nextafter(desired, desired + 1),
-        err_msg=err_msg, verbose=verbose, xp=xp
+        check_dtype=check_dtype,
+    check_shape=check_shape, check_0d=check_0d, err_msg=err_msg, verbose=verbose, xp=xp
     )
 
 
