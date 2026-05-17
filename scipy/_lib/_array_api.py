@@ -45,9 +45,11 @@ from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy._lib._array_api_override import (
     array_namespace, SCIPY_ARRAY_API, SCIPY_DEVICE
 )
-from scipy._external.array_api_extra._lib._testing import xp_assert_less as xpx_assert_less
-from scipy._external.array_api_extra._lib._testing import xp_assert_equal as xpx_assert_equal
-from scipy._external.array_api_extra._lib._testing import xp_assert_close as xpx_assert_close
+from scipy._external.array_api_extra._lib._testing import (
+    xp_assert_close as xpx_assert_close,
+    xp_assert_equal as xpx_assert_equal,
+    xp_assert_less as xpx_assert_less,
+)
 
 from scipy._lib._docscrape import FunctionDoc
 from scipy._external import array_api_extra as xpx
@@ -304,7 +306,9 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_dtype=True,
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
 
-    return xpx_assert_close(actual, desired,rtol=rtol, atol=atol, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
+    return xpx_assert_close(actual, desired,rtol=rtol, atol=atol, 
+                            err_msg=err_msg, check_dtype=check_dtype, 
+                            check_shape=check_shape, check_scalar=check_0d)
 
 def xp_assert_equal(actual, desired, *, check_dtype=True,
                     check_shape=True, check_0d=False, err_msg='', xp=None):
@@ -318,7 +322,8 @@ def xp_assert_equal(actual, desired, *, check_dtype=True,
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
 
-    return xpx_assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype, check_shape=check_shape, check_scalar=check_0d)
+    return xpx_assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype, 
+                            check_shape=check_shape, check_scalar=check_0d)
 
 
 def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
@@ -348,13 +353,17 @@ def _assert_less(actual, desired, *, check_dtype=True,
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
     xpx_assert_less(actual, desired, check_dtype=check_dtype,
-                   check_shape=check_shape, check_scalar=check_0d, err_msg=err_msg, verbose=verbose)
+                   check_shape=check_shape, check_scalar=check_0d, err_msg=err_msg,
+                    verbose=verbose)
 
 
 def xp_assert_less(actual, desired, *, check_dtype=True,
-                   check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None):
-    _assert_less(actual, desired, err_msg=err_msg, verbose=verbose, xp=xp, check_dtype=check_dtype,
-                   check_shape=check_shape, check_0d=check_0d)
+                   check_shape=True, check_0d=True, 
+                   err_msg='', verbose=True, xp=None):
+    _assert_less(actual, desired, err_msg=err_msg, verbose=verbose, xp=xp,
+                  check_dtype=check_dtype,
+                   check_shape=check_shape, 
+                   check_0d=check_0d)
 
 
 def xp_assert_less_equal(

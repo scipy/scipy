@@ -2572,7 +2572,9 @@ class TestNdBSpline:
         # is the number of points in xi and 4 is the trailing dimension of c
         assert bspl2_4(xi).shape == np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
         xp_assert_close(bspl2_4(xi),
-                        xp.broadcast_to(xp.asarray(target, dtype=xp.float64)[:, None], bspl2_4(xi).shape),
+                        xp.broadcast_to(xp.asarray(target,
+                                                    dtype=xp.float64)[:, None],
+                                                    bspl2_4(xi).shape),
                         atol=5e-14)
 
         # two trailing dimensions
@@ -2589,7 +2591,9 @@ class TestNdBSpline:
         assert (bspl2_22(xi).shape ==
                 np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:])
         xp_assert_close(bspl2_22(xi),
-                        xp.broadcast_to(xp.asarray(target, dtype=xp.float64)[:, None, None], bspl2_22(xi).shape),
+                        xp.broadcast_to(xp.asarray(target, 
+                                                   dtype=xp.float64)[:, None, None],
+                                         bspl2_22(xi).shape),
                         atol=5e-14)
 
     def test_2D_separable_2_complex(self, xp):
