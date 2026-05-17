@@ -2221,14 +2221,14 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
                     val += comb(i, k) * b[N - i] * (wosq) ** (i - k) / bw ** i
-        bprime = xpx.at(bprime, Np - j).set(val)
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
                     val += comb(i, k) * a[D - i] * (wosq) ** (i - k) / bw ** i
-        aprime = xpx.at(aprime, Dp - j).set(val)
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2314,7 +2314,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
                 if i + 2 * k == j:
                     val += (comb(M - i, k) * b[N - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        bprime = xpx.at(bprime, Np - j).set(val)
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
@@ -2322,7 +2322,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
                 if i + 2 * k == j:
                     val += (comb(M - i, k) * a[D - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        aprime = xpx.at(aprime, Dp - j).set(val)
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
