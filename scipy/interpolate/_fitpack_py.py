@@ -608,7 +608,7 @@ def spalde(x, tck):
 
     Examples
     --------
-    To calculate the derivatives of a B-spline there are several aproaches. 
+    To calculate the derivatives of a B-spline there are several approaches. 
     In this example, we will demonstrate that `spalde` is equivalent to
     calling `splev` and `splder`.
     

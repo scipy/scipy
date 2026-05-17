@@ -277,7 +277,7 @@ def selectx(fhist: npt.NDArray, chist: npt.NDArray, cweight: float, ctol: float)
         # N.B.:
         # 1. This process is the opposite of selecting kworst in savefilt
         # 2. In finite-precision arithmetic, phi_2 == phi_2 and cstrv_shift_1 == cstrv_shifted_2 do
-        # not ensure thatn f_1 == f_2!
+        # not ensure that f_1 == f_2!
         phimin = np.min(phi[np.logical_and(fhist < fref, chist_shifted <= cref)])
         cref = np.min(chist_shifted[np.logical_and(fhist < fref, phi <= phimin)])
         fref = np.min(fhist[chist_shifted <= cref])

@@ -77,7 +77,7 @@ In this case, we say that the *batch shape* is `(2, 4)`, and the *core shape* of
 input.shape
 ```
 
-Since each 3 x 3 matrix is converted to a zero-dimensional scalar, we say that the core shape of the outuput is `()`. The shape of the output is the sum of the batch shape and core shape, so the result is a 2 x 4 array.
+Since each 3 x 3 matrix is converted to a zero-dimensional scalar, we say that the core shape of the output is `()`. The shape of the output is the sum of the batch shape and core shape, so the result is a 2 x 4 array.
 
 ```{code-cell} ipython3
 output = linalg.det(input)

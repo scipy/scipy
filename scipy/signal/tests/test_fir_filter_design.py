@@ -494,7 +494,7 @@ class TestFirwin2:
         assert_array_almost_equal(taps1, taps2)
 
     @skip_xp_backends("jax.numpy", reason="immutable arrays")
-    def test_input_modyfication(self, xp):
+    def test_input_modification(self, xp):
         freq1 = xp.asarray([0.0, 0.5, 0.5, 1.0])
         freq2 = xp.asarray(freq1)
         firwin2(80, freq1, xp.asarray([1.0, 1.0, 0.0, 0.0]))

@@ -31,7 +31,7 @@ def trstlp(A, b, delta, g):
     icon is the index of a most violated constraint if cviol is positive.
 
     nact is the number of constraints in the active set and iact[0], ..., iact[nact-1] are their indices,
-    while the remainder of the iact contains a permutation of the remaining constraint indicies.
+    while the remainder of the iact contains a permutation of the remaining constraint indices.
     N.B.: nact <= min(num_constraints, num_vars). Obviously nact <= num_constraints. In addition, the constraints
     in iact[0, ..., nact-1] have linearly independent gradients (see the comments above the instruction
     that delete a constraint from the active set to make room for the new active constraint with index iact[icon]);

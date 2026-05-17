@@ -44,7 +44,7 @@ constexpr int PSWF_ERROR = 42;
    of order zero (Psi_0^c) inside [-1,1], for arbitrary frequency parameter c.
    Computation is done using a basis of Legendre polynomials.
    This implementation is based on work by Libin Lu for FINUFFT.
-   The orignal implementation was done by Vladimir Rokhlin and 
+   The original implementation was done by Vladimir Rokhlin and 
    can be found in src/common/specialfunctions/ of the DMK repo
    https://github.com/flatironinstitute/dmk */
 class PSWF0 {
