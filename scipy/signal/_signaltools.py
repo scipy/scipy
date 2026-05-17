@@ -2543,11 +2543,11 @@ def hilbert(x, N=None, axis=-1):
     Xf = sp_fft.fft(x, N, axis=axis)
     Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        Xf[..., 1: N // 2] *= 2.0
-        Xf[..., N // 2 + 1:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: N // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., N // 2 + 1:N].set(0.0)
     else:
-        Xf[..., 1:(N + 1) // 2] *= 2.0
-        Xf[..., (N + 1) // 2:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: (N + 1) // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., (N + 1) // 2:N].set(0.0)
 
     Xf = xp.moveaxis(Xf, -1, axis)
     x = sp_fft.ifft(Xf, axis=axis)
@@ -2725,11 +2725,11 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
     if k0 > 1:  # condition k0 > 1 needed for Dask backend
-        Xf[..., 1:k0, :] *= 2.0
+        Xf = xpx.at(Xf)[..., 1:k0, :].multiply(2.0)
     if k1 > 1:  # condition k1 > 1 needed for Dask backend
-        Xf[..., :, 1:k1] *= 2.0
-    Xf[..., k0:, :] = 0.0
-    Xf[..., :, k1:] = 0.0
+        Xf = xpx.at(Xf)[..., :, 1:k1].multiply(2.0)
+    Xf = xpx.at(Xf)[..., k0:, :].set(0.0)
+    Xf = xpx.at(Xf)[..., :, k1:].set(0.0)
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)
