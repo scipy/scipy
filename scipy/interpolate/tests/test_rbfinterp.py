@@ -506,6 +506,9 @@ class _TestRBFInterpolator:
 
     @skip_xp_backends('numpy', reason="error should only raise on non-numpy backends")
     def test_custom_kernel_raises_error_with_alt_backends(self, xp):
+        # patch_lazy_xp_functions tries to pickle/unflatten the LLC which doesn't work
+        # so use locally imported version for this test as only testing warnings
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
         llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
                            signature="double (double)")
 
@@ -517,7 +520,7 @@ class _TestRBFInterpolator:
         y = _1d_test_function(x, xp)
 
         with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
-            self.build(x, y, kernel=llc, degree=0, epsilon=1.0)
+            _RBFInterpolator(x, y, kernel=llc, degree=0, epsilon=1.0)
 
     def test_degree_validation(self):
         llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
@@ -538,6 +541,9 @@ class _TestRBFInterpolator:
 
     @skip_xp_backends('numpy', reason="error should only raise on non-numpy backends")
     def test_degree_validation_llc(self, xp):
+        # patch_lazy_xp_functions tries to pickle/unflatten the LLC which doesn't work
+        # so use locally imported version for this test as only testing warnings
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
         llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
                            signature="double (double)")
 
@@ -548,12 +554,11 @@ class _TestRBFInterpolator:
         x, xitp = xp.asarray(x), xp.asarray(xitp)
         y = _1d_test_function(x, xp)
 
-        with pytest.raises(ValueError, match="LowLevelCallable kernels are only supported with the NumPy backend."):
-            self.build(x, y, kernel=llc, epsilon=1.0)
+        with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
+            _RBFInterpolator(x, y, kernel=llc, epsilon=1.0)
 
-        with pytest.raises(ValueError, match="LowLevelCallable kernels are only supported with the NumPy backend."):
-            self.build(x, y, kernel=llc, degree=-2, epsilon=1.0)
-
+        with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
+            _RBFInterpolator(x, y, kernel=llc, degree=-2, epsilon=1.0)
 
 
 @make_xp_test_case(RBFInterpolator)
