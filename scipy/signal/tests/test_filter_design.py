@@ -1606,7 +1606,7 @@ class TestLp2lp:
 @make_xp_test_case(lp2hp)
 class TestLp2hp:
 
-    def test_basic(self, xp):
+    def test_denominator_order_greater_than_numerator_order(self, xp):
         b = xp.asarray([0.25059432325190018])
         a = xp.asarray(
             [1, 0.59724041654134863, 0.92834805757524175, 0.25059432325190018]
@@ -1616,6 +1616,13 @@ class TestLp2hp:
         xp_assert_close(
             a_hp, xp.asarray([1, 1.1638e5, 2.3522e9, 1.2373e14]), rtol=1e-4
         )
+
+    def test_numerator_order_greater_than_denominator_order(self, xp):
+        b = xp.asarray([1.0, 2.0, 3.0])
+        a = xp.asarray([1.0])
+        b_hp, a_hp = lp2hp(b, a, 2.0)
+        xp_assert_close(b_hp, xp.asarray([3.0, 4.0, 4.0]))
+        xp_assert_close(a_hp, xp.asarray([1.0, 0.0, 0.0]))
 
 
 @make_xp_test_case(lp2bp)
