@@ -44,6 +44,7 @@ New features
   ``simplex_tolerance`` argument to the ``_call__`` methods of
   ``LinearNDInterpolator`` and ``CloughTocher2dInterpolator``. This can
   help users avoid holes in certain interpolation problems.
+- The FITPACK Fortran code has been ported to C.
 
 ``scipy.differentiate`` improvements
 ====================================
@@ -59,6 +60,8 @@ New features
 - Machinery is now provided for downstream ``cython_lapack`` users to gracefully
   handle LP64/ILP64 backend builds. Worked examples, including build system
   details, have been included in this release.
+- ``scipy.linalg.{get_lapack_funcs, get_blas_funcs}`` have a new (optional)
+  ``ilp64`` keyword parameter.
 - An ``overwrite_b`` keyword argument was added to ``eigvals``, for consistency
   with other similar ``linalg`` functions.
 - ``linalg.cholesky`` now leverages symmetry properties for performance
@@ -67,9 +70,9 @@ New features
 - `scipy.linalg.lu` and `scipy.linalg.det` have been rewritten in C++ with
   batching support in the compiled code.
 - Added ILP64 support to `scipy.linalg.expm` and `scipy.linalg.sqrtm`.
-- The batching loops of `scipy.linalg.qr`, `scipy.linalg.eig`, and
-  `scipy.linalg.svd` have been moved to C, providing a substantial speedup
-  for batched input.
+- The batching loops of `scipy.linalg.qr`, `scipy.linalg.eig`,
+  `scipy.linalg.lstsq`, and `scipy.linalg.svd` have been moved to C,
+  providing a substantial speedup for batched input.
 - The performance of `scipy.linalg.expm` has been improved.
 - The performance for `scipy.linalg.solve` has improved for batched inputs.
 
@@ -112,12 +115,11 @@ New features
 ``scipy.sparse`` improvements
 =============================
 - In `scipy.sparse.csgraph` the computation of strongly connected components
-  for directed graphs is now performed by an implementation of Tarjan's
-  algorithm utilizing the improvements described in the recent survey by
-  Tarjan and Zwick, yielding a 2x speed improvement and better cache locality.
+  for directed graphs is now 2x faster with better cache locality, using
+  algorithmic improvements described in the recent survey by Tarjan and Zwick.
 - Added ILP64 BLAS/LAPACK support to SuperLU and PROPACK extensions.
 - All sparse array/matrix formats now support ``matrix_transpose``/``.mT``.
-- Support for n-dimensional batches of linear operators has been added to
+- Support for n-dimensional linear operators has been added to
   `scipy.sparse.linalg.LinearOperator`.
 
 
@@ -146,6 +148,8 @@ New features
   `scipy.special.bdtrin`, `scipy.special.nbdtrik`, `scipy.special.nbdtrin`.
 - The numerical behavior for `scipy.special.eval_jacobi` has been improved
   for several parameter combinations.
+- The Bessel functions `scipy.special.j0` and `scipy.special.y0`
+  have improved accuracy for large arguments.
 
 ``scipy.stats`` improvements
 ============================
@@ -187,7 +191,8 @@ Python Array API Support
   `scipy.stats.binomtest`, `scipy.integrate.fixed_quad`, `scipy.signal.square`,
   `scipy.stats.expectile`, `scipy.stats.shapiro`, `scipy.stats.pointbiserialr`,
   `scipy.stats.bws_test`, `scipy.stats.estimated_cdf` (new function),
-  `scipy.stats.linregress`, and `scipy.integrate.simpson`.
+  `scipy.stats.linregress`, `scipy.integrate.simpson`, and
+  `scipy.signal.sawtooth`.
 - The ``torch`` support for `scipy.signal.fftconvolve` now correctly
   handles the ``float32`` dtype.
 - JAX JIT support has been added for: `scipy.stats.binomtest`
@@ -232,7 +237,7 @@ Deprecated features and future changes
 - Setting ``spmatrix=True`` for the `scipy.io` readers ``mmio``, ``FFM``, ``hb``,
   and ``matlab/_mio`` is now deprecated, including when set as the default
   value.
-- The unintentionally public `scipy.cluster.vq.py_vq` has been deprecated.
+- The unintentionally public ``scipy.cluster.vq.py_vq`` has been deprecated.
 
 
 
@@ -260,6 +265,10 @@ Backwards incompatible changes
   behavior of adjusting the final element in the ``p`` array to compensate.
   Note that ``multinomial.rvs`` will now raise an error in such cases, since it
   has an integral return type.
+- The ``iprint`` and ``disp`` parameters of `scipy.optimize.fmin_l_bfgs_b`
+  have been removed, following the expiry of their deprecation.
+- For ``scipy.linalg.{sqrtm, logm, signm}``, ``disp`` (and ``sqrtm``
+  ``blocksize``) parameters were removed (expired deprecations).
 
 
 *************
@@ -342,7 +351,6 @@ Authors
 * Elle Musoke (11) +
 * Andrew Nelson (102)
 * Nick ODell (26)
-* Claude Opus (6) +
 * Dimitri Papadopoulos Orfanos (1)
 * partev (1)
 * Matti Picus (7)
@@ -360,7 +368,6 @@ Authors
 * Sabaa Siddique (1) +
 * Nicholas Smith (1) +
 * Johannes F. Sommerfeldt (1) +
-* Claude Sonnet (1) +
 * Albert Steppi (79)
 * Charalampos Stratakis (16) +
 * Taylor (1) +
@@ -379,7 +386,7 @@ Authors
 * Simon Zwieback (1) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (2)
 
-    A total of 96 people contributed to this release.
+    A total of 94 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
