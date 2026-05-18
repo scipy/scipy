@@ -83,6 +83,8 @@ def check_dtype(interpolator_cls, x_dtype, y_dtype, xi_dtype, deriv_shape=None,
 
 real_dtypes = "".join(["" if np.issubdtype(c, np.complexfloating)
                        else c for c in supported_dtypes])
+x_dtypes = "".join(["" if np.issubdtype(c, np.unsignedinteger)
+                       else c for c in real_dtypes])
 
 def test_dtypes():
 
@@ -90,7 +92,7 @@ def test_dtypes():
         return make_interp_spline(x, y, axis=axis)
 
     for ip in [KroghInterpolator, BarycentricInterpolator, CubicHermiteSpline]:
-        for d1 in real_dtypes:
+        for d1 in x_dtypes:
             for d2 in supported_dtypes:
                 for d3 in real_dtypes:
                     if ip != CubicSpline:
@@ -101,7 +103,7 @@ def test_dtypes():
                             check_dtype(ip, d1, d2, d3, None, extra)
 
     for ip in [pchip, Akima1DInterpolator, CubicSpline, spl_interp]:
-        for d1 in real_dtypes:
+        for d1 in x_dtypes:
             for d2 in real_dtypes:
                 for d3 in real_dtypes:
                     if ip != CubicSpline:
@@ -116,7 +118,7 @@ def test_derivs_dtypes():
         def interpolator_derivs(x, y, axis=0):
             return ip(x, y, axis).derivatives
 
-        for d1 in real_dtypes:
+        for d1 in x_dtypes:
             for d2 in supported_dtypes:
                 for d3 in real_dtypes:
                     check_dtype(interpolator_derivs, d1, d2, d3, (6,))
@@ -167,14 +169,14 @@ def test_deriv_dtypes():
 
     for ip in [krogh_deriv, bary_deriv, cspline_deriv, cspline_antideriv,
                bspl_deriv, bspl_antideriv]:
-        for d1 in real_dtypes:
+        for d1 in x_dtypes:
             for d2 in supported_dtypes:
                 for d3 in real_dtypes:
                     check_dtype(ip, d1, d2, d3, ())
 
     for ip in [pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
                pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv]:
-        for d1 in real_dtypes:
+        for d1 in x_dtypes:
             for d2 in real_dtypes:
                 for d3 in real_dtypes:
                     check_dtype(ip, d1, d2, d3, ())
