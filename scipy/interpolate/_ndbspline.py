@@ -12,33 +12,9 @@ import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
 from scipy._lib._array_api import array_namespace, xp_capabilities
 
-from ._bsplines import _not_a_knot, BSpline
+from ._bsplines import _not_a_knot, BSpline, _get_dtype, _deprecate_dtypes
 
 __all__ = ["NdBSpline"]
-
-
-def _deprecate_dtypes(self, *args):
-    """
-    A temporary helper for deprecating dtypes.
-    """
-    for dtype in args:
-        if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
-            msg = (f"Interpolations with arguments of dtype={dtype} "
-                   f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
-                    "removed in SciPy 1.20.0. Please cast inputs to one of "
-                    "np.float{32,64} or np.complex{64,128} manually."
-                   )
-            import warnings
-            warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-            return
-
-
-def _get_dtype(dtype):
-    """Return np.complex128 for complex dtypes, np.float64 otherwise."""
-    if np.issubdtype(dtype, np.complexfloating):
-        return np.complex128
-    else:
-        return np.float64
 
 
 @xp_capabilities(
