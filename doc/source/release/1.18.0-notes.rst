@@ -23,6 +23,19 @@ This release requires Python 3.12-3.14 and NumPy 2.0.0 or greater.
 **************************
 Highlights of this release
 **************************
+- SciPy now supports three different build modes for BLAS and LAPACK
+  LP64/ILP64 support, and machinery is provided for downstream ``cython_lapack``
+  consumers to gracefully handle LP64/ILP64 backend builds. ILP64 support
+  has been substantially improved across the SciPy library.
+- Remaining Fortran to C translations have been completed---an experimental
+  Fortran-free build option is now available to developers for testing
+  purposes. Developer feedback is welcome on Fortran-free builds.
+- `scipy.signal.whittaker_henderson` now provides access to Whittaker-Henderson
+  smoothing of a discrete signal.
+- A large number of `scipy.stats` functions now support lazy arrays and JAX
+  JIT. Array API support has been improved substantially in SciPy, with at least
+  21 functions gaining new support in this release. 16 `scipy.stats` functions
+  have also gained support for MArray input.
 
 
 ************
