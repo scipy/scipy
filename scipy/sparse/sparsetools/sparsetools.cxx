@@ -207,18 +207,47 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             /* csr_struct */
             arg = PyTuple_GetItem(args, arg_j);
             if (arg == NULL)  goto fail;
+
             if (!PyTuple_Check(arg)) {
-                PyErr_SetString(PyExc_ValueError, "CSR/CSC info is not a tuple");
-                return NULL;
-            }
-            /* setup for tuples -- TODO allow passing of python sparse arrays */
-            if (PyTuple_Size(arg) != 5) {
-                PyErr_SetString(PyExc_ValueError, "CSR/CSC tuple must have 5 items");
-                return NULL;
-            }
-            for (int i = 0; i < 5; i++) {
-                csr[i] = PyTuple_GetItem(arg, i);
-                if (csr[i] == NULL) goto fail;
+                /* raise if not tuple or sparse array */
+                if (!PyObject_HasAttrString(arg, "indptr")) {
+                    PyErr_SetString(PyExc_ValueError,
+                            "CSR/CSC info is not a tuple or sparse array");
+                    goto fail;
+                }
+
+                /* setup for sparse arrays */
+                PyObject* shape_as_2d = PyObject_GetAttrString(arg, "_shape_as_2d");
+                if (!PyTuple_Check(shape_as_2d) || PyTuple_Size(shape_as_2d) != 2) {
+                    PyErr_SetString(PyExc_ValueError, "CSR/CSC has invalid shape tuple");
+                    goto fail;
+                }
+                // Note the parens around the "O" to denote a staticmethod call -- no self
+                PyObject* shape = PyObject_CallMethod(arg, "_swap", "(O)", shape_as_2d);
+                    if (shape == NULL) goto fail;
+                Py_DECREF(shape_as_2d);
+
+                csr[0] = PyTuple_GetItem(shape, 0);
+                    if (csr[0] == NULL) goto fail;
+                csr[1] = PyTuple_GetItem(shape, 1);
+                    if (csr[1] == NULL) goto fail;
+                Py_DECREF(shape);
+                csr[2] = PyObject_GetAttrString(arg, "indptr");
+                    if (csr[2] == NULL) goto fail;
+                csr[3] = PyObject_GetAttrString(arg, "indices");
+                    if (csr[3] == NULL) goto fail;
+                csr[4] = PyObject_GetAttrString(arg, "data");
+                    if (csr[4] == NULL) goto fail;
+            } else {
+                /* setup for tuples */
+                if (PyTuple_Size(arg) != 5) {
+                    PyErr_SetString(PyExc_ValueError, "CSR/CSC tuple must have 5 items");
+                    goto fail;
+                }
+                for (int i = 0; i < 5; i++) {
+                    csr[i] = PyTuple_GetItem(arg, i);
+                    if (csr[i] == NULL) goto fail;
+                }
             }
 
             /* load csr parts into arg_arrays -- csr_struct has 5 parts: iiIIT */
