@@ -29,9 +29,6 @@ Highlights of this release
 New features
 ************
 
-``scipy.cluster`` improvements
-==============================
-
 ``scipy.fft`` improvements
 ==============================
 - The built-in FFT library has been switched from ``pocketfft`` to its
@@ -75,10 +72,6 @@ New features
   providing a substantial speedup for batched input.
 - The performance of `scipy.linalg.expm` has been improved.
 - The performance for `scipy.linalg.solve` has improved for batched inputs.
-
-
-``scipy.ndimage`` improvements
-==============================
 
 
 ``scipy.optimize`` improvements
@@ -276,7 +269,7 @@ Other changes
 *************
 - The vendored ``Boost.Math`` was updated from ``1.89.0`` to ``1.91.0``.
 - SciPy now has a pixi package definition, allowing developers to build
-  SciPy from source via `pixi build`.
+  SciPy from source via ``pixi build``.
 - Developers may be interested in the private build option ``_without-fortran``,
   which allows building SciPy from source in the absence of a Fortran compiler.
   This is an early prototype of the planned capability of a Fortran-free
