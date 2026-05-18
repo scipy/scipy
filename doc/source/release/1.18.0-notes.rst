@@ -262,6 +262,8 @@ Backwards incompatible changes
   have been removed, following the expiry of their deprecation.
 - For ``scipy.linalg.{sqrtm, logm, signm}``, ``disp`` (and ``sqrtm``
   ``blocksize``) parameters were removed (expired deprecations).
+- The deprecated ``atol`` argument of `scipy.optimize.nnls` has been
+  removed.
 
 
 *************
