@@ -205,7 +205,7 @@ class LinearConstraint:
             # prefer that this just error out immediately so it can handle it
             # rather than concerning the user.
             with catch_warnings():
-                simplefilter("error")
+                simplefilter("error", category=np.exceptions.VisibleDeprecationWarning)
                 self.A = np.atleast_2d(A).astype(np.float64)
         else:
             self.A = A

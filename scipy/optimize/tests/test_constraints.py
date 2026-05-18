@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 import numpy as np
 from numpy.testing import TestCase, assert_array_equal
@@ -259,3 +261,13 @@ class TestLinearConstraint:
         lc = LinearConstraint(A, -2, 4)
         x0 = [-1, 2]
         np.testing.assert_allclose(lc.residual(x0), ([1, 4], [5, 2]))
+
+    def test_init_does_not_promote_unrelated_warnings(self):
+        # gh-25123: an unqualified simplefilter("error") in __init__
+        # could turn unrelated warnings into errors.
+        A = np.eye(2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("always")
+            LinearConstraint(A, lb=0.0, ub=1.0)
+            # Should not raise
+            warnings.warn("unrelated", UserWarning)
