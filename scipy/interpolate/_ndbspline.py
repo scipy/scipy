@@ -17,6 +17,22 @@ from ._bsplines import _not_a_knot, BSpline
 __all__ = ["NdBSpline"]
 
 
+def _deprecate_dtypes(self, *args):
+    """
+    A temporary helper for deprecating non-LAPACK dtypes.
+    """
+    for dtype in args:
+        if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
+            msg = (f"Interpolations with arguments of dtype={dtype} "
+                   f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
+                    "removed in SciPy 1.20.0. Please cast inputs to one of "
+                    "np.float{32,64} or np.complex{64,128} manually."
+                   )
+            import warnings
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+            return
+
+
 def _get_dtype(dtype):
     """Return np.complex128 for complex dtypes, np.float64 otherwise."""
     if np.issubdtype(dtype, np.complexfloating):
@@ -98,6 +114,7 @@ class NdBSpline:
         self.extrapolate = bool(extrapolate)
 
         self._c = np.asarray(c)
+        _deprecate_dtypes(*[np.asarray(v).dtype for v in t], self._c.dtype)
 
         ndim = self._t.shape[0]   # == len(self.t)
         if self._c.ndim < ndim:

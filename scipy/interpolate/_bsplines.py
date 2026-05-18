@@ -23,6 +23,22 @@ __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
 
 
+def _deprecate_dtypes(*args):
+    """
+    A temporary helper for deprecating non-LAPACK dtypes.
+    """
+    for dtype in args:
+        if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
+            msg = (f"Interpolations with arguments of dtype={dtype} "
+                   f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
+                    "removed in SciPy 1.20.0. Please cast inputs to one of "
+                    "np.float{32,64} or np.complex{64,128} manually."
+                   )
+            import warnings
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+            return
+
+
 def _get_dtype(dtype):
     """Return np.complex128 for complex dtypes, np.float64 otherwise."""
     if np.issubdtype(dtype, np.complexfloating):
@@ -37,6 +53,7 @@ def _as_float_array(x, check_finite=False):
     NB: Upcasts half- and single-precision floats to double precision.
     """
     x = np.ascontiguousarray(x)
+    _deprecate_dtypes(x.dtype)
     dtyp = _get_dtype(x.dtype)
     x = x.astype(dtyp, copy=False)
     if check_finite and not np.isfinite(x).all():
@@ -632,6 +649,50 @@ class BSpline:
         # keeping modules in attributes like this.
         self._xp = xp
         self._xp_internal = xp_internal
+        self.k = operator.index(k)
+        self._c = np.asarray(c)
+        self._t = np.ascontiguousarray(t, dtype=np.float64)
+        _deprecate_dtypes(self._c.dtype, np.asarray(t).dtype)
+
+        if extrapolate == 'periodic':
+            self.extrapolate = extrapolate
+        else:
+            self.extrapolate = bool(extrapolate)
+
+        n = self._t.shape[0] - self.k - 1
+
+        axis = normalize_axis_index(axis, self._c.ndim)
+
+        # Note that the normalized axis is stored in the object.
+        self.axis = axis
+        if axis != 0:
+            # roll the interpolation axis to be the first one in self.c
+            # More specifically, the target shape for self.c is (n, ...),
+            # and axis !=0 means that we have c.shape (..., n, ...)
+            #                                               ^
+            #                                              axis
+            self._c = np.moveaxis(self._c, axis, 0)
+
+        if k < 0:
+            raise ValueError("Spline order cannot be negative.")
+        if self._t.ndim != 1:
+            raise ValueError("Knot vector must be one-dimensional.")
+        if n < self.k + 1:
+            raise ValueError(f"Need at least {2*k + 2} knots for degree {k}")
+        if (np.diff(self._t) < 0).any():
+            raise ValueError("Knots must be in a non-decreasing order.")
+        if len(np.unique(self._t[k:n+1])) < 2:
+            raise ValueError("Need at least two internal knots.")
+        if not np.isfinite(self._t).all():
+            raise ValueError("Knots should not have nans or infs.")
+        if self._c.ndim < 1:
+            raise ValueError("Coefficients must be at least 1-dimensional.")
+        if self._c.shape[0] < n:
+            raise ValueError("Knots, coefficients and degree are inconsistent.")
+
+        dt = _get_dtype(self._c.dtype)
+
+        self._c = np.ascontiguousarray(self._c, dtype=dt)
 
     @classmethod
     def _construct_from_xp(cls, xp_bspline, *, xp_external):
