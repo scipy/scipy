@@ -618,7 +618,7 @@ class _PPolyBase:
 
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
-        _deprecate_dtypes(self._c.dtype, np.asarray(x).dtype)
+        _deprecate_dtypes(self.c.dtype, np.asarray(x).dtype)
 
         if extrapolate is None:
             extrapolate = True
@@ -657,24 +657,8 @@ class _PPolyBase:
         dx = np.diff(self.x)
         if not (np.all(dx >= 0) or np.all(dx <= 0)):
             raise ValueError("`x` must be strictly increasing or decreasing.")
-        dtype = self._get_dtype(self.c.dtype)
+        dtype = _get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dtype)
-
-    @property
-    def x(self):
-        return self._asarray(self._x)
-
-    @x.setter
-    def x(self, xval):
-        self._x = np.asarray(xval)
-
-    @property
-    def c(self):
-        return self._asarray(self._c)
-
-    @c.setter
-    def c(self, cval):
-        self._c = np.asarray(cval)
 
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None, axis=0):
