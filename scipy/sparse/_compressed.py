@@ -250,8 +250,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         order = self._swap('CF')[0]
         result = np.array(other, dtype=dtype, order=order, copy=True)
         y = result if result.flags.c_contiguous else result.T
-        M, N = self._swap(self._shape_as_2d)
-        csr_todense((M, N, self.indptr, self.indices, self.data), y)
+        csr_todense(self, y)
         return self._container(result, copy=False)
 
     def _add_sparse(self, other):
@@ -1021,8 +1020,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             x = self.tocsc()
             y = out.T
-        M, N = x._swap(x._shape_as_2d)
-        csr_todense((M, N, x.indptr, x.indices, x.data), y)
+        csr_todense(x, y)
         return out
 
     toarray.__doc__ = _spbase.toarray.__doc__
