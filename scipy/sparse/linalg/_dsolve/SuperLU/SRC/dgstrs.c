@@ -91,7 +91,7 @@ at the top-level directory.
 
 void
 dgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
-        int *perm_c, int *perm_r, SuperMatrix *B,
+        const int *perm_c, const int *perm_r, SuperMatrix *B,
         SuperLUStat_t *stat, int *info)
 {
 
@@ -107,12 +107,12 @@ dgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     SCformat *Lstore;
     NCformat *Ustore;
     double   *Lval, *Uval;
-    int      fsupc, nrow, nsupr, nsupc, irow;
+    int      fsupc, irow, jcol;
+    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
     int_t    i, j, k, luptr, istart, iptr;
-    int      jcol, n, ldb, nrhs;
     double   *work, *rhs_work, *soln;
     flops_t  solve_ops;
-    void dprint_soln(int n, int nrhs, double *soln);
+    void dprint_soln(int n, int nrhs, const double *soln);
 
     /* Test input parameters ... */
     *info = 0;
@@ -331,7 +331,7 @@ dgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
  * Diagnostic print of the solution vector 
  */
 void
-dprint_soln(int n, int nrhs, double *soln)
+dprint_soln(int n, int nrhs, const double *soln)
 {
     int i;
 

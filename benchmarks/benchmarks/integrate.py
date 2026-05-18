@@ -1,5 +1,5 @@
 import numpy as np
-from .common import Benchmark, safe_import
+from .common import Benchmark, safe_import, is_xslow
 
 from scipy.integrate import quad, cumulative_simpson, nquad, quad_vec, cubature
 
@@ -184,6 +184,9 @@ class NquadOscillatory(Benchmark):
 
         self.ranges = [(0, 1) for _ in range(self.ndim)]
 
+        if ndim == 5 and not is_xslow():
+            raise SkipNotImplemented("Takes too long to run in CI")
+
     def f(self, *x):
         x_arr = np.array(x)
         r = 0.5
@@ -354,8 +357,11 @@ class CubatureOscillatory(Benchmark):
         if rule == "genz-malik" and ndim == 1:
             raise SkipNotImplemented(f"{rule} not defined for 1D integrals")
 
-        if (rule == "gk-15" or rule == "gk-15") and ndim > 5:
+        if (rule == "gk-15" or rule == "gk-21") and ndim > 5:
             raise SkipNotImplemented(f"{rule} uses too much memory for ndim > 5")
+
+        if rule == "gk-21" and ndim >= 5 and fdim == 8 and not is_xslow():
+            raise SkipNotImplemented("Takes too long to run in CI")
 
     def f(self, x):
         npoints, ndim = x.shape[0], x.shape[-1]

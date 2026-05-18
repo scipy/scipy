@@ -4,6 +4,7 @@ python_sources = [
   'test_conversions.py',
   'test_flow.py',
   'test_graph_laplacian.py',
+  'test_index_arrays_dtype.py',
   'test_matching.py',
   'test_pydata_sparse.py',
   'test_reordering.py',

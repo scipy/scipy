@@ -13,7 +13,7 @@ from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
 from scipy.integrate._tanhsinh import _pair_cache
-from scipy.stats._discrete_distns import _gen_harmonic_gt1
+from scipy.special._ufuncs import _gen_harmonic
 
 
 def norm_pdf(x, xp=None):
@@ -694,7 +694,7 @@ class TestTanhSinh:
         def f(x, c):
             return x**c
 
-        res = _tanhsinh(f, a, b, args=29)
+        res = _tanhsinh(f, a, b, args=xp.asarray(29.))
         xp_assert_close(res.integral, xp.asarray(1/30))
 
         # Test NaNs
@@ -756,6 +756,20 @@ class TestTanhSinh:
         assert res.maxlevel < 5
         xp_assert_close(res.integral, ref.integral, rtol=1e-15)
 
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**p + c
+
+        a = xp.zeros((), dtype=xp.float32)
+        b = xp.ones((), dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = _tanhsinh(f, a, b, args=(c,), kwargs={'p': p})
+        ref = b**(p+1) / (p+1) + c
+        xp_assert_close(res.integral, ref)
+
 
 @make_xp_test_case(nsum)
 class TestNSum:
@@ -785,7 +799,7 @@ class TestNSum:
 
     f3.a = 1
     f3.b = rng.integers(5, 15, size=(3, 1))
-    f3.ref = _gen_harmonic_gt1(f3.b, p)
+    f3.ref = _gen_harmonic(f3.b, p)
     f3.args = (p,)
 
     def test_input_validation(self, xp):
@@ -1116,7 +1130,7 @@ class TestNSum:
         assert res.error.dtype == dtype
 
         rtol = 1e-12 if dtype == xp.float64 else 1e-6
-        ref = _gen_harmonic_gt1(np.asarray([10, xp.inf]), 2)
+        ref = [_gen_harmonic(10, 2), special.zeta(2, 1)]
         xp_assert_close(res.sum, xp.asarray(ref, dtype=dtype), rtol=rtol)
 
     @pytest.mark.parametrize('case', [(10, 100), (100, 10)])
@@ -1156,3 +1170,18 @@ class TestNSum:
 
         res = nsum(f, 1, np.inf)
         assert_allclose(res.sum, ref)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**-p + c
+
+        a = xp.ones((), dtype=xp.float32)
+        b = xp.full((), 10, dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = nsum(f, a, b, args=(c,), kwargs={'p': p})
+        x = xp.arange(1, 11, dtype=xp.float32)
+        ref = xp.sum(f(x, c[..., xp.newaxis], p=p[..., xp.newaxis]), axis=-1)
+        xp_assert_close(res.sum, ref)

@@ -333,7 +333,7 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
         Value at the border in the output array.
     origin : int or tuple of ints, optional
         Placement of the filter, by default 0.
-    brute_force : boolean, optional
+    brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated (eroded) in
         the current iteration; if True all pixels are considered as candidates
@@ -434,7 +434,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
         Value at the border in the output array.
     origin : int or tuple of ints, optional
         Placement of the filter, by default 0.
-    brute_force : boolean, optional
+    brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated (dilated)
         in the current iteration; if True all pixels are considered as
@@ -582,10 +582,10 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         Value at the border in the output array.
 
         .. versionadded:: 1.1.0
-    brute_force : boolean, optional
+    brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated in the
-        current iteration; if true all pixels are considered as candidates for
+        current iteration; if True all pixels are considered as candidates for
         update, regardless of what happened in the previous iteration.
         False by default.
 
@@ -712,10 +712,10 @@ def binary_closing(input, structure=None, iterations=1, output=None,
         Value at the border in the output array.
 
         .. versionadded:: 1.1.0
-    brute_force : boolean, optional
+    brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated in the
-        current iteration; if true al pixels are considered as candidates for
+        current iteration; if True all pixels are considered as candidates for
         update, regardless of what happened in the previous iteration.
         False by default.
 
@@ -1642,7 +1642,7 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
     Parameters
     ----------
     input : array_like
-        Array over which to compute the morphlogical gradient.
+        Array over which to compute the morphological gradient.
     size : tuple of ints
         Shape of a flat and full structuring element used for the mathematical
         morphology operations. Optional if `footprint` or `structure` is
@@ -2025,7 +2025,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
@@ -2142,7 +2142,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     """
     ft_inplace = isinstance(indices, np.ndarray)
     dt_inplace = isinstance(distances, np.ndarray)
-    _distance_tranform_arg_check(
+    _distance_transform_arg_check(
         dt_inplace, ft_inplace, return_distances, return_indices
     )
 
@@ -2201,7 +2201,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         ft = np.ravel(ft)
         for ii in range(tmp2.shape[0]):
             rtmp = np.ravel(tmp2[ii, ...])[ft]
-            rtmp.shape = tmp1.shape
+            rtmp = rtmp.reshape(tmp1.shape)
             tmp2[ii, ...] = rtmp
         ft = tmp2
 
@@ -2264,7 +2264,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
@@ -2354,7 +2354,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     """
     ft_inplace = isinstance(indices, np.ndarray)
     dt_inplace = isinstance(distances, np.ndarray)
-    _distance_tranform_arg_check(
+    _distance_transform_arg_check(
         dt_inplace, ft_inplace, return_distances, return_indices
     )
     input = np.asarray(input)
@@ -2390,8 +2390,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 
     rank = dt.ndim
     if return_indices:
-        ft = np.arange(dt.size, dtype=np.int32)
-        ft.shape = dt.shape
+        ft = np.arange(dt.size, dtype=np.int32).reshape(dt.shape)
     else:
         ft = None
 
@@ -2414,7 +2413,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
             tmp = np.indices(dt.shape, dtype=np.int32)
         for ii in range(tmp.shape[0]):
             rtmp = np.ravel(tmp[ii, ...])[ft]
-            rtmp.shape = dt.shape
+            rtmp = rtmp.reshape(dt.shape)
             tmp[ii, ...] = rtmp
         ft = tmp
 
@@ -2469,7 +2468,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
@@ -2561,7 +2560,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     """
     ft_inplace = isinstance(indices, np.ndarray)
     dt_inplace = isinstance(distances, np.ndarray)
-    _distance_tranform_arg_check(
+    _distance_transform_arg_check(
         dt_inplace, ft_inplace, return_distances, return_indices
     )
 
@@ -2617,8 +2616,8 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         return None
 
 
-def _distance_tranform_arg_check(distances_out, indices_out,
-                                 return_distances, return_indices):
+def _distance_transform_arg_check(distances_out, indices_out,
+                                  return_distances, return_indices):
     """Raise a RuntimeError if the arguments are invalid"""
     error_msgs = []
     if (not return_distances) and (not return_indices):

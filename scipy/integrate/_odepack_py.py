@@ -7,12 +7,7 @@ from . import _odepack
 from copy import copy
 import warnings
 
-from threading import Lock
-
 from scipy._lib._array_api import xp_capabilities
-
-
-ODE_LOCK = Lock()
 
 
 class ODEintWarning(Warning):
@@ -253,11 +248,11 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     t = copy(t)
     y0 = copy(y0)
 
-    with ODE_LOCK:
-        output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
-                                full_output, rtol, atol, tcrit, h0, hmax, hmin,
-                                ixpr, mxstep, mxhnil, mxordn, mxords,
-                                int(bool(tfirst)))
+
+    output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
+                            full_output, rtol, atol, tcrit, h0, hmax, hmin,
+                            ixpr, mxstep, mxhnil, mxordn, mxords,
+                            int(bool(tfirst)))
     if output[-1] < 0:
         warning_msg = (f"{_msgs[output[-1]]} Run with full_output = 1 to "
                        f"get quantitative information.")

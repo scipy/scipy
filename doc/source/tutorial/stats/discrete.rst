@@ -51,8 +51,8 @@ although technically
 is the probability density function for a discrete distribution [#]_ .
 
 .. [#]
-    XXX: Unknown layout Plain Layout: Note that we will be using :math:`p` to represent the probability mass function and a parameter (a
-    XXX: probability). The usage should be obvious from context.
+    Note that we will be using :math:`p` to represent the probability mass function and a parameter (a
+    probability). The usage should be obvious from context.
 
 
 Cumulative Distribution Function (CDF)

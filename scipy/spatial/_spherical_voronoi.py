@@ -34,7 +34,8 @@ def calculate_solid_angles(R):
 
 
 class SphericalVoronoi:
-    """ Voronoi diagrams on the surface of a sphere.
+    """
+    Voronoi diagrams on the surface of a sphere.
 
     .. versionadded:: 0.18.0
 
@@ -80,6 +81,10 @@ class SphericalVoronoi:
         If there are duplicates in `points`.
         If the provided `radius` is not consistent with `points`.
 
+    See Also
+    --------
+    Voronoi : Conventional Voronoi diagrams in N dimensions.
+
     Notes
     -----
     The spherical Voronoi diagram algorithm proceeds as follows. The Convex
@@ -102,10 +107,6 @@ class SphericalVoronoi:
     .. [VanOosterom] Van Oosterom and Strackee. The solid angle of a plane
                      triangle. IEEE Transactions on Biomedical Engineering,
                      2, 1983, pp 125--126.
-
-    See Also
-    --------
-    Voronoi : Conventional Voronoi diagrams in N dimensions.
 
     Examples
     --------
@@ -162,7 +163,6 @@ class SphericalVoronoi:
     >>> _ = ax.set_zticks([])
     >>> fig.set_size_inches(4, 4)
     >>> plt.show()
-
     """
     def __init__(self, points, radius=1, center=None, threshold=1e-06):
 
@@ -216,16 +216,16 @@ class SphericalVoronoi:
         # for 3D input tri_indices will have shape: (6N-12,)
         tri_indices = np.column_stack([simplex_indices] * self._dim).ravel()
         # for 3D input point_indices will have shape: (6N-12,)
-        point_indices = self._simplices.ravel()
+        self._point_indices = self._simplices.ravel()
         # for 3D input indices will have shape: (6N-12,)
-        indices = np.argsort(point_indices, kind='mergesort')
+        self._indices = np.argsort(self._point_indices, kind='mergesort')
         # for 3D input flattened_groups will have shape: (6N-12,)
-        flattened_groups = tri_indices[indices].astype(np.intp)
+        flattened_groups = tri_indices[self._indices].astype(np.intp)
         # intervals will have shape: (N+1,)
-        intervals = np.cumsum(np.bincount(point_indices + 1))
+        self._intervals = np.cumsum(np.bincount(self._point_indices + 1))
         # split flattened groups to get nested list of unsorted regions
-        groups = [list(flattened_groups[intervals[i]:intervals[i + 1]])
-                  for i in range(len(intervals) - 1)]
+        groups = [list(flattened_groups[self._intervals[i]:self._intervals[i + 1]])
+                  for i in range(len(self._intervals) - 1)]
         self.regions = groups
 
     def sort_vertices_of_regions(self):
@@ -262,15 +262,14 @@ class SphericalVoronoi:
 
     def _calculate_areas_3d(self):
         self.sort_vertices_of_regions()
-        sizes = [len(region) for region in self.regions]
+        sizes = np.diff(self._intervals)
         csizes = np.cumsum(sizes)
         num_regions = csizes[-1]
 
         # We create a set of triangles consisting of one point and two Voronoi
         # vertices. The vertices of each triangle are adjacent in the sorted
         # regions list.
-        point_indices = [i for i, size in enumerate(sizes)
-                         for j in range(size)]
+        point_indices = self._point_indices[self._indices]
 
         nbrs1 = np.array([r for region in self.regions for r in region])
 
@@ -311,9 +310,8 @@ class SphericalVoronoi:
         areas = self.radius * theta
 
         # Correct arcs which go the wrong way (single-hemisphere inputs)
-        signs = np.sign(np.einsum('ij,ij->i', arcs[:, 0],
-                                              self.vertices - self.center))
-        indices = np.where(signs < 0)
+        indices = np.einsum('ij,ij->i', arcs[:, 0],
+                            self.vertices - self.center) < 0
         areas[indices] = 2 * np.pi * self.radius - areas[indices]
         return areas
 

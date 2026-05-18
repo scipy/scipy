@@ -8,7 +8,8 @@ import pytest
 import numpy as np
 import scipy
 
-from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
+from scipy.optimize import (fmin_slsqp, minimize, Bounds, NonlinearConstraint,
+                            OptimizeResult)
 
 
 class MyCallBack:
@@ -21,8 +22,18 @@ class MyCallBack:
         self.ncalls = 0
 
     def __call__(self, x):
+        assert not isinstance(x, OptimizeResult)
         self.been_called = True
         self.ncalls += 1
+
+    def callback2(self, intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        self.been_called = True
+        self.ncalls += 1
+
+    def callback3(self, intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        raise StopIteration
 
 
 class TestSLSQP:
@@ -358,9 +369,32 @@ class TestSLSQP:
         callback = MyCallBack()
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                        method='SLSQP', callback=callback, options=self.opts)
-        assert_(res['success'], res['message'])
-        assert_(callback.been_called)
+        assert res.success
+        assert res.message
+        assert callback.been_called
         assert_equal(callback.ncalls, res['nit'])
+
+        res = minimize(
+            self.fun,
+            [-1.0, 1.0],
+            args=(-1.0, ),
+            method='SLSQP',
+            callback=callback.callback2,
+            options=self.opts
+        )
+        assert res.success
+        assert callback.been_called
+
+        res = minimize(
+            self.fun,
+            [-1.0, 1.0],
+            args=(-1.0, ),
+            method='SLSQP',
+            callback=callback.callback3,
+            options=self.opts
+        )
+        assert not res.success
+        assert res.message.startswith("`callback` raised `StopIteration`")
 
     def test_inconsistent_linearization(self):
         # SLSQP must be able to solve this problem, even if the
@@ -578,7 +612,6 @@ class TestSLSQP:
         assert res.success
 
     def test_gh9640(self):
-        np.random.seed(10)
         cons = ({'type': 'ineq', 'fun': lambda x: -x[0] - x[1] - 3},
                 {'type': 'ineq', 'fun': lambda x: x[1] + x[2] - 2})
         bnds = ((-2, 2), (-2, 2), (-2, 2))
@@ -597,11 +630,12 @@ class TestSLSQP:
         # outside one of the lower/upper bounds. When this happens
         # approx_derivative complains because it's being asked to evaluate
         # a gradient outside its domain.
-        np.random.seed(1)
+
+        # gh21872, removal of random initial position, replacing with specific
+        # starting point, because success/fail depends on the seed used.
         bounds = Bounds(np.array([0.1]), np.array([1.0]))
-        n_inputs = len(bounds.lb)
         x0 = np.array(bounds.lb + (bounds.ub - bounds.lb) *
-                      np.random.random(n_inputs))
+                      0.417022004702574)
 
         def f(x):
             assert (x >= bounds.lb).all()

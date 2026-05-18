@@ -8,6 +8,7 @@ from pytest import raises as assert_raises
 
 from scipy._lib._util import MapWrapper, _ScalarFunctionWrapper
 from scipy.sparse import csr_array, csc_array, lil_array
+from scipy._lib._array_api import xp_result_type
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
@@ -486,7 +487,7 @@ class TestApproxDerivativesDense:
     def test_fp(self):
         # checks that approx_derivative works for FP size other than 64.
         # Example is derived from the minimal working example in gh12991.
-        np.random.seed(1)
+        rng = np.random.default_rng(1)
 
         def func(p, x):
             return p[0] + p[1] * x
@@ -495,7 +496,7 @@ class TestApproxDerivativesDense:
             return func(p, x) - y
 
         x = np.linspace(0, 1, 100, dtype=np.float64)
-        y = np.random.random(100).astype(np.float64)
+        y = rng.random(size=100, dtype=np.float64)
         p0 = np.array([-1.0, -1.0])
 
         jac_fp64 = approx_derivative(err, p0, method='2-point', args=(x, y))
@@ -514,6 +515,7 @@ class TestApproxDerivativesDense:
         jac_fp = approx_derivative(err_fp32, p0.astype(np.float32),
                                    method='2-point')
         assert_allclose(jac_fp, jac_fp64, atol=1e-3)
+        assert jac_fp.dtype == np.float32
 
         # check upper bound of error on the derivative for 2-point
         def f(x):
@@ -540,6 +542,36 @@ class TestApproxDerivativesDense:
             err = approx_derivative(f, x0, method='2-point',
                                     abs_step=h) - g(x0)
             assert abs(err) < atol
+
+
+    @pytest.mark.parametrize("x0_dtype", (np.float16, np.float32, np.float64))
+    @pytest.mark.parametrize("f0_dtype", (np.float16, np.float32, np.float64))
+    @pytest.mark.parametrize("method", ['2-point', '3-point'])
+    def test_check_dtype(self, x0_dtype, f0_dtype, method):
+        # the output of approx_derivative should be the promoted
+        # type of x0, f0.
+
+        # both are of the same dtype
+        x = np.array([2.0, 3.0, 4.0], dtype=x0_dtype)
+
+        def f(x):
+            return f0_dtype(rosen(x))
+
+        promoted_type = xp_result_type(
+        x,
+            f(x),
+            force_floating=True,
+            xp=np
+        )
+        g = approx_derivative(f, x, method=method)
+        assert g.dtype == promoted_type
+
+        # setting abs_step or rel_step shouldn't change output dtype
+        g = approx_derivative(f, x, rel_step=np.float16(0.1), method=method)
+        assert g.dtype == promoted_type
+
+        g = approx_derivative(f, x, abs_step=np.float16(0.1), method=method)
+        assert g.dtype == promoted_type
 
     def test_check_derivative(self):
         x0 = np.array([-10.0, 10])
@@ -570,7 +602,7 @@ class TestApproxDerivativesDense:
 class TestApproxDerivativeSparse:
     # Example from Numerical Optimization 2nd edition, p. 198.
     def setup_method(self):
-        np.random.seed(0)
+        self.rng = np.random.default_rng(121091202)
         self.n = 50
         self.lb = -0.1 * (1 + np.arange(self.n))
         self.ub = 0.1 * (1 + np.arange(self.n))
@@ -614,7 +646,7 @@ class TestApproxDerivativeSparse:
         A = self.structure(self.n)
         order = np.arange(self.n)
         groups_1 = group_columns(A, order)
-        np.random.shuffle(order)
+        self.rng.shuffle(order)
         groups_2 = group_columns(A, order)
 
         with MapWrapper(2) as mapper:
@@ -712,9 +744,9 @@ class TestApproxDerivativeLinearOperator:
                                        method='cs',
                                        as_linear_operator=True)
         jac_true = self.jac_scalar_scalar(x0)
-        np.random.seed(1)
+        rng = np.random.default_rng(11290049580398)
         for i in range(10):
-            p = np.random.uniform(-10, 10, size=(1,))
+            p = rng.uniform(-10, 10, size=(1,))
             assert_allclose(jac_diff_2.dot(p), jac_true*p,
                             rtol=1e-5)
             assert_allclose(jac_diff_3.dot(p), jac_true*p,
@@ -733,9 +765,9 @@ class TestApproxDerivativeLinearOperator:
                                        method='cs',
                                        as_linear_operator=True)
         jac_true = self.jac_scalar_vector(np.atleast_1d(x0))
-        np.random.seed(1)
+        rng = np.random.default_rng(11290049580398)
         for i in range(10):
-            p = np.random.uniform(-10, 10, size=(1,))
+            p = rng.uniform(-10, 10, size=(1,))
             assert_allclose(jac_diff_2.dot(p), jac_true.dot(p),
                             rtol=1e-5)
             assert_allclose(jac_diff_3.dot(p), jac_true.dot(p),
@@ -754,9 +786,9 @@ class TestApproxDerivativeLinearOperator:
                                        method='cs',
                                        as_linear_operator=True)
         jac_true = self.jac_vector_scalar(x0)
-        np.random.seed(1)
+        rng = np.random.default_rng(11290049580398)
         for i in range(10):
-            p = np.random.uniform(-10, 10, size=x0.shape)
+            p = rng.uniform(-10, 10, size=x0.shape)
             assert_allclose(jac_diff_2.dot(p), np.atleast_1d(jac_true.dot(p)),
                             rtol=1e-5)
             assert_allclose(jac_diff_3.dot(p), np.atleast_1d(jac_true.dot(p)),
@@ -775,9 +807,9 @@ class TestApproxDerivativeLinearOperator:
                                        method='cs',
                                        as_linear_operator=True)
         jac_true = self.jac_vector_vector(x0)
-        np.random.seed(1)
+        rng = np.random.default_rng(11290049580398)
         for i in range(10):
-            p = np.random.uniform(-10, 10, size=x0.shape)
+            p = rng.uniform(-10, 10, size=x0.shape)
             assert_allclose(jac_diff_2.dot(p), jac_true.dot(p), rtol=1e-5)
             assert_allclose(jac_diff_3.dot(p), jac_true.dot(p), rtol=1e-6)
             assert_allclose(jac_diff_4.dot(p), jac_true.dot(p), rtol=1e-7)
@@ -883,3 +915,30 @@ def test__compute_absolute_step():
     sign_x0 = (-x0 >= 0).astype(float) * 2 - 1
     abs_step = _compute_absolute_step(rel_step, -x0, f0, '2-point')
     assert_allclose(abs_step, sign_x0 * correct_step)
+
+    # the dtype of absolute step should be the same as x0
+    #def _compute_absolute_step(rel_step, x0, f0, method):
+    x0 = np.array([1e-5, 0, 1, 1e5], dtype=np.float32)
+    abs_step = _compute_absolute_step(None, x0, f0, '3-point')
+    assert abs_step.dtype == np.float32
+    abs_step = _compute_absolute_step(None, x0, f0, '2-point')
+    assert abs_step.dtype == np.float32
+
+    x0 = np.array([0.1, 0, 1, 50], dtype=np.float16)
+    abs_step = _compute_absolute_step(None, x0, f0, '3-point')
+    assert abs_step.dtype == np.float16
+    abs_step = _compute_absolute_step(None, x0, f0, '2-point')
+    assert abs_step.dtype == np.float16
+
+    x0 = np.array([1e-3, 0, 1, 10], dtype=np.float64)
+    f0 = np.array(1.0, dtype=np.float16)
+    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+    assert abs_step.dtype == np.float64
+
+    x0 = np.array([1e-5, 0, 1, 1e5], dtype=np.float32)
+    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+    assert abs_step.dtype == np.float32
+
+    x0 = np.array([1e-3, 0, 1, 10], dtype=np.float16)
+    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+    assert abs_step.dtype == np.float16

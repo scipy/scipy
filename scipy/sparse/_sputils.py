@@ -2,7 +2,7 @@
 """
 
 import sys
-from typing import Any, Literal, Union
+from typing import Any, Literal
 import operator
 import numpy as np
 from math import prod
@@ -173,7 +173,7 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     idx_dtype : dtype
         Desired dtype. Should be an integer dtype (default: ``np.int32``).
         Most of scipy.sparse uses either int64 or int32.
-    msg : string, optional
+    msg : str, optional
         A string to be added to the end of the ValueError message
         if the array shape is too big to fit in `idx_dtype`.
         The error message is ``f"<index> values too large for {msg}"``
@@ -333,7 +333,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     return np.int32
 
 
-def get_sum_dtype(dtype: np.dtype) -> np.dtype:
+def get_sum_dtype(dtype: np.dtype) -> np.dtype | type[np.generic]:
     """Mimic numpy's casting for np.sum"""
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
         return np.uint
@@ -369,14 +369,14 @@ def isintlike(x) -> bool:
     return True
 
 
-def isshape(x, nonneg=False, *, allow_nd=(2,)) -> bool:
+def isshape(x, nonneg=False, *, allow_nd=(2,), check_nd=True) -> bool:
     """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
     Shapes of length in the tuple allow_nd are allowed.
     """
     ndim = len(x)
-    if ndim not in allow_nd:
+    if check_nd and ndim not in allow_nd:
         return False
 
     for d in x:
@@ -538,23 +538,6 @@ def broadcast_shapes(*shapes):
     return (*out,)
 
 
-def check_reshape_kwargs(kwargs):
-    """Unpack keyword arguments for reshape function.
-
-    This is useful because keyword arguments after star arguments are not
-    allowed in Python 2, but star keyword arguments are. This function unpacks
-    'order' and 'copy' from the star keyword arguments (with defaults) and
-    throws an error for any remaining.
-    """
-
-    order = kwargs.pop('order', 'C')
-    copy = kwargs.pop('copy', False)
-    if kwargs:  # Some unused kwargs remain
-        raise TypeError("reshape() got unexpected keywords arguments: "
-                        f"{', '.join(kwargs.keys())}")
-    return order, copy
-
-
 def is_pydata_spmatrix(m) -> bool:
     """
     Check whether object is pydata/sparse matrix, avoiding importing the module.
@@ -567,7 +550,7 @@ def convert_pydata_sparse_to_scipy(
     arg: Any,
     target_format: None | Literal["csc", "csr"] = None,
     accept_fv: Any = None,
-) -> Union[Any, "sp.spmatrix"]:
+) -> "sp.spmatrix | Any":
     """
     Convert a pydata/sparse array to scipy sparse matrix,
     pass through anything else.

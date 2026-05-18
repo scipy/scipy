@@ -9,8 +9,8 @@ Discrete Alias Urn (DAU)
 * Required: probability vector (PV) or the PMF along with a finite domain
 * Speed:
 
-    * Set-up: slow (linear with the vector-length)
-    * Sampling: very fast 
+  * Set-up: slow (linear with the vector-length)
+  * Sampling: very fast 
 
 
 DAU samples from distributions with arbitrary but finite probability vectors

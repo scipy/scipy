@@ -1,10 +1,12 @@
 from ._basic import _dispatch
 from scipy._lib.uarray import Dispatchable
+from scipy._lib._array_api import xp_capabilities
 import numpy as np
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None, *, orthogonalize=None):
@@ -70,6 +72,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None, orthogonalize=None):
@@ -135,6 +138,7 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
@@ -200,6 +204,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None, orthogonalize=None):
@@ -265,6 +270,8 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(cpu_only=True, allow_dask_compute=True,
+                 skip_backends=[('jax.numpy', 'XXX large tolerance violations')])
 @_dispatch
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
         orthogonalize=None):
@@ -415,6 +422,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
@@ -495,6 +503,8 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(cpu_only=True, allow_dask_compute=True,
+                 skip_backends=[('jax.numpy', 'XXX large tolerance violations')])
 @_dispatch
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
         orthogonalize=None):
@@ -608,8 +618,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     **Type IV**
 
     There are several definitions of the DST-IV, we use the following (for
-    ``norm="backward"``). DST-IV assumes the input is odd around :math:`n=-0.5` and
-    even around :math:`n=N-0.5`
+    ``norm="backward"``). DST-IV assumes the input is odd around :math:`n=-1/2` and
+    even around :math:`n=N-1/2`
 
     .. math::
 
@@ -631,7 +641,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     >>> dst(x, type=2)
     array([0., 0., 0., 8.])
 
-    This computes the Discrete Sine Transform (DST) of type-II for the input array. 
+    This computes the Discrete Sine Transform (DST) of type-II for the input array.
     The output contains the transformed values corresponding to the given input sequence
 
     References
@@ -643,6 +653,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
@@ -684,6 +695,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     See Also
     --------
     dst : Forward DST
+    irfft : Inverse FFT for real input
 
     Notes
     -----
@@ -700,7 +712,48 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
 
     The IDST is equivalent to a normal DST except for the normalization and
     type. DST type 1 and 4 are their own inverse and DSTs 2 and 3 are each
-    other's inverses.
+    other's inverses. For an example that demonstrates the relation between
+    the DST and ISDT, consult the :ref:`DST and IDST <tutorial_FFT_DST_and_IDST>`
+    section of the :ref:`user_guide`.
+
+    Examples
+    --------
+    The following example calculates the signal from a spectrum `X` where only the first
+    bin has a non-zero value. The signal for all four DST types is plotted:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.fft import idst
+    ...
+    >>> N = 15
+    >>> X = np.array([0, N])  # the last `N-2` bin zero-valued bins are not needed
+    ...
+    >>> _, ax = plt.subplots()
+    >>> ax.set(title=f"Inverse of one component DST ({N} samples)",
+    ...        xlim=(0, N), xlabel="k", ylabel="x[k]")
+    >>> for t_ in range(1, 5):
+    ...     x = idst(X, type=t_, n=N)  # parameter `n` pads `X` to length `N`.
+    ...     ax.plot(x, '.-', alpha=0.5, label=f"Type {t_}")
+    >>> ax.grid(True)
+    >>> ax.legend()
+    >>> plt.show()
+
+    The resulting signals are sines with their period and their phase determined by the
+    used DST type. The following table shows those, with `N` being the number of signal
+    samples and `n` is the index of the non-zero bin (here: ``N, n = 15, 1``):
+
+    +------+------------------------------+------------------------+
+    | Type | period in samples            | phase shift in samples |
+    +======+==============================+========================+
+    |  1   | :math:`2 (N+1) / (n+1) = 16` | :math:`-1`             |
+    +------+------------------------------+------------------------+
+    |  2   | :math:`2 N / (n+1) = 15`     | :math:`-1/2`           |
+    +------+------------------------------+------------------------+
+    |  3   | :math:`2 N / (n+1/2) = 20`   | :math:`-1`             |
+    +------+------------------------------+------------------------+
+    |  4   | :math:`2 N / (n+1/2) = 20`   | :math:`-1/2`           |
+    +------+------------------------------+------------------------+
 
     """
     return (Dispatchable(x, np.ndarray),)
+

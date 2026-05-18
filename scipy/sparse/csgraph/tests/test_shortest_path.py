@@ -229,7 +229,7 @@ def test_star_graph(n, method, directed):
     star_arr = np.zeros((n, n), dtype=float)
     star_center_idx = 0
     star_arr[star_center_idx, :] = star_arr[:, star_center_idx] = range(n)
-    G = scipy.sparse.csr_matrix(star_arr, shape=(n, n))
+    G = scipy.sparse.csr_array(star_arr, shape=(n, n))
     # Build the distances matrix
     SP_solution = np.zeros((n, n), dtype=float)
     SP_solution[:] = star_arr[star_center_idx]
@@ -514,6 +514,13 @@ def test_yen_negative_weights():
         K=1,
     )
     assert_allclose(distances, [-2.])
+
+
+@pytest.mark.parametrize('source, sink', [(0, -1), (10000, 1), (2, 6)])
+def test_yen_source_sink_validation(source, sink):
+    # directed_G has shape (6, 6)
+    with pytest.raises(ValueError, match="must have 0 <="):
+        yen(directed_G, source, sink, 2)
 
 
 @pytest.mark.parametrize("min_only", (True, False))

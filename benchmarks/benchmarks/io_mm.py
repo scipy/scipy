@@ -19,7 +19,7 @@ def generate_coo(size):
     rows = np.arange(nnz, dtype=np.int32)
     cols = np.arange(nnz, dtype=np.int32)
     data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
-    return scipy.sparse.coo_matrix((data, (rows, cols)), shape=(nnz, nnz))
+    return scipy.sparse.coo_array((data, (rows, cols)), shape=(nnz, nnz))
 
 
 def generate_csr(size):
@@ -29,7 +29,7 @@ def generate_csr(size):
     indptr[-1] = nnz
     indices = np.arange(nnz, dtype=np.int32)
     data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
-    return scipy.sparse.csr_matrix((data, indices, indptr), shape=(nrows, nnz))
+    return scipy.sparse.csr_array((data, indices, indptr), shape=(nrows, nnz))
 
 
 def generate_dense(size):
@@ -125,7 +125,7 @@ class MemUsage(Benchmark):
             rows = np.arange(nnz, dtype=np.int32)
             cols = np.arange(nnz, dtype=np.int32)
             data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
-            return scipy.sparse.coo_matrix((data, (rows, cols)), shape=(nnz, nnz))
+            return scipy.sparse.coo_array((data, (rows, cols)), shape=(nnz, nnz))
 
         def generate_csr(size):
             nrows = 1000
@@ -134,7 +134,7 @@ class MemUsage(Benchmark):
             indptr[-1] = nnz
             indices = np.arange(nnz, dtype=np.int32)
             data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
-            return scipy.sparse.csr_matrix((data, indices, indptr), shape=(nrows, nnz))
+            return scipy.sparse.csr_array((data, indices, indptr), shape=(nrows, nnz))
         
         def generate_dense(size):
             nnz = size // 8

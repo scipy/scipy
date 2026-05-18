@@ -1,0 +1,84 @@
+project-includes = ["scipy"]
+project-excludes = ["scipy/*/tests/**"]
+
+ignore-missing-imports = [
+    "_wrappers_common",
+    "array_api_strict",
+    "dask.*",
+    "convert",
+    "cupyx.*",
+    "matplotlib.*",
+    "mpmath",
+    "pooch",
+    "pytest_run_parallel",
+    "scikits.*",
+    "scipy_doctest.*",
+    "sksparse.*",
+    "sympy.*",
+    "tempita",
+    "threadpoolctl",
+    "uarray",
+    #
+    "scipy.__config__",
+    "scipy._external.*",
+    "scipy._lib._fpumode",
+    "scipy._lib._uarray.*",
+    "scipy.fft._duccfft.pyduccfft",
+    "scipy.linalg._batched_linalg",
+    "scipy.linalg._decomp_update",
+    "scipy.linalg._fblas",
+    "scipy.linalg._fblas_64",
+    "scipy.linalg._flapack",
+    "scipy.linalg._flapack_64",
+    "scipy.linalg._internal_matfuncs",
+    "scipy.linalg.blas.dtrsm",
+    "scipy.odr.__odrpack",
+    "scipy.optimize._highspy._core",
+    "scipy.optimize._lbfgsb",
+    "scipy.optimize._lsap",
+    "scipy.optimize._minpack",
+    "scipy.optimize._moduleTNC",
+    "scipy.optimize._pava_pybind",
+    "scipy.optimize._slsqplib",
+    "scipy.optimize._zeros",
+    "scipy.integrate._dop",
+    "scipy.integrate._odepack",
+    "scipy.integrate._quadpack",
+    "scipy.integrate._vode",
+    "scipy.interpolate._dierckx",
+    "scipy.interpolate._fitpack",
+    "scipy.ndimage._nd_image",
+    "scipy.ndimage._ni_label",
+    "scipy.ndimage._rank_filter_1d",
+    "scipy.sparse._sparsetools",
+    "scipy.sparse.linalg._dsolve._superlu",
+    "scipy.sparse.linalg._eigen.arpack._arpacklib",
+    "scipy.signal._sigtools",
+    "scipy.spatial._distance_pybind",
+    "scipy.spatial._distance_wrap",
+    "scipy.spatial.cKDTree",
+    "scipy.special._gufuncs",
+    "scipy.special._special_ufuncs",
+    "scipy.version",
+]
+replace-imports-with-any = [
+    "scipy.sparse.linalg._propack.*",
+]
+
+# for compatibility with mypy
+check-unannotated-defs = false
+infer-return-types = "never"
+errors = {"redundant-cast" = "error", "bad-override-mutable-attribute" = "ignore" }
+
+# there are currently 960 `bad-override` errors in `scipy/stats/**`, most of which
+# are caused by violations of Liskov's substitution principle in the distributions
+[[sub-config]]
+matches = "scipy/stats/**/*.py"
+check-unannotated-defs = false
+errors = { "bad-override" = "ignore" }
+
+# there are currently 55 `missing-attribute` errors in `scipy/optimize/_tstutils.py`, 
+# which are caused by accessing attributes on functions.
+[[sub-config]]
+matches = "scipy/optimize/_tstutils.py"
+errors = { "missing-attribute" = "ignore" }

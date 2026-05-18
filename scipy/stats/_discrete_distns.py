@@ -3,11 +3,14 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
+from types import MethodType
 
 from scipy import special
-from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln
+import scipy.special._ufuncs as scu
+from scipy.special._spfun_stats import _poisson_binom_pmf, _poisson_binom_cdf
 from scipy._lib._util import rng_integers
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -21,16 +24,17 @@ from ._distn_infrastructure import (rv_discrete, get_distribution_names,
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
-from ._stats_pythran import _poisson_binom
-
-import scipy.special._ufuncs as scu
-
 
 
 class binom_gen(rv_discrete):
-    r"""A binomial discrete random variable.
+    r"""
+    A binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    hypergeom, nbinom, nhypergeom
 
     Notes
     -----
@@ -57,18 +61,15 @@ class binom_gen(rv_discrete):
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
-
-    See Also
-    --------
-    hypergeom, nbinom, nhypergeom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
                 _ShapeInfo("p", False, (0, 1), (True, True))]
 
     def _rvs(self, n, p, size=None, random_state=None):
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _argcheck(self, n, p):
         return (n >= 0) & _isintegral(n) & (p >= 0) & (p <= 1)
@@ -116,11 +117,6 @@ class binom_gen(rv_discrete):
             t2 = 6.0/n
             g2 = t1 - t2
         return mu, var, g1, g2
-
-    def _entropy(self, n, p):
-        k = np.r_[0:n + 1]
-        vals = self._pmf(k, n, p)
-        return np.sum(entr(vals), axis=0)
 
 
 binom = binom_gen(name='binom')
@@ -195,9 +191,14 @@ bernoulli = bernoulli_gen(b=1, name='bernoulli')
 
 
 class betabinom_gen(rv_discrete):
-    r"""A beta-binomial discrete random variable.
+    r"""
+    A beta-binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    beta, binom
 
     Notes
     -----
@@ -223,12 +224,7 @@ class betabinom_gen(rv_discrete):
 
     .. versionadded:: 1.4.0
 
-    See Also
-    --------
-    beta, binom
-
     %(example)s
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -237,7 +233,9 @@ class betabinom_gen(rv_discrete):
 
     def _rvs(self, n, a, b, size=None, random_state=None):
         p = random_state.beta(a, b, size)
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _get_support(self, n, a, b):
         return 0, n
@@ -280,9 +278,14 @@ betabinom = betabinom_gen(name='betabinom')
 
 
 class nbinom_gen(rv_discrete):
-    r"""A negative binomial discrete random variable.
+    r"""
+    A negative binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    hypergeom, binom, nhypergeom
 
     Notes
     -----
@@ -332,11 +335,6 @@ class nbinom_gen(rv_discrete):
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
-
-    See Also
-    --------
-    hypergeom, binom, nhypergeom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -400,9 +398,14 @@ nbinom = nbinom_gen(name='nbinom')
 
 
 class betanbinom_gen(rv_discrete):
-    r"""A beta-negative-binomial discrete random variable.
+    r"""
+    A beta-negative-binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    betabinom : Beta binomial distribution
 
     Notes
     -----
@@ -429,12 +432,7 @@ class betanbinom_gen(rv_discrete):
 
     .. versionadded:: 1.12.0
 
-    See Also
-    --------
-    betabinom : Beta binomial distribution
-
     %(example)s
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -500,6 +498,10 @@ class geom_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    planck
+
     Notes
     -----
     The probability mass function for `geom` is:
@@ -521,12 +523,7 @@ class geom_gen(rv_discrete):
 
     %(after_notes)s
 
-    See Also
-    --------
-    planck
-
     %(example)s
-
     """
 
     def _shape_info(self):
@@ -589,6 +586,10 @@ class hypergeom_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    nhypergeom, binom, nbinom
+
     Notes
     -----
     The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
@@ -647,11 +648,6 @@ class hypergeom_gen(rv_discrete):
     And to generate random numbers:
 
     >>> R = hypergeom.rvs(M, n, N, size=10)
-
-    See Also
-    --------
-    nhypergeom, binom, nbinom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("M", True, (0, np.inf), (True, False)),
@@ -748,6 +744,10 @@ class nhypergeom_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    hypergeom, binom, nbinom
+
     Notes
     -----
     The symbols used to denote the shape parameters (`M`, `n`, and `r`) are not
@@ -778,6 +778,14 @@ class nhypergeom_gen(rv_discrete):
     PMF of the hypergeometric distribution.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Negative Hypergeometric Distribution on Wikipedia
+           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
+
+    .. [2] Negative Hypergeometric Distribution from
+           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
 
     Examples
     --------
@@ -823,19 +831,6 @@ class nhypergeom_gen(rv_discrete):
     0.06180776620271643
     >>> hypergeom.pmf(k, M, n, k+r-1) * (M - n - (r-1)) / (M - (k+r-1))
     0.06180776620271644
-
-    See Also
-    --------
-    hypergeom, binom, nbinom
-
-    References
-    ----------
-    .. [1] Negative Hypergeometric Distribution on Wikipedia
-           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
-
-    .. [2] Negative Hypergeometric Distribution from
-           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
-
     """
 
     def _shape_info(self):
@@ -939,6 +934,14 @@ class logser_gen(rv_discrete):
         # logser.pmf(k) = - p**k / (k*log(1-p))
         return -np.power(p, k) * 1.0 / k / special.log1p(-p)
 
+    def _sf(self, k, p):
+        tiny = 1e-100
+        # Ideally, this is the unregularized beta function with `b=0`. We don't have
+        # an unregularized beta function (yet, although we could get it from Boost),
+        # and neither technically support `b=0` - despite the function being accurate
+        # for `b` super close to zero. See https://github.com/scipy/scipy/issues/3890.
+        return -special.betainc(k+1, tiny, p) * special.beta(k+1, tiny) / np.log1p(-p)
+
     def _stats(self, p):
         r = special.log1p(-p)
         mu = p / (p - 1.0) / r
@@ -1032,6 +1035,10 @@ class planck_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    geom
+
     Notes
     -----
     The probability mass function for `planck` is:
@@ -1048,12 +1055,7 @@ class planck_gen(rv_discrete):
 
     %(after_notes)s
 
-    See Also
-    --------
-    geom
-
     %(example)s
-
     """
     def _shape_info(self):
         return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False))]
@@ -1361,32 +1363,6 @@ class zipf_gen(rv_discrete):
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
 
 
-def _gen_harmonic_gt1(n, a):
-    """Generalized harmonic number, a > 1"""
-    # See https://en.wikipedia.org/wiki/Harmonic_number; search for "hurwitz"
-    return zeta(a, 1) - zeta(a, n+1)
-
-
-def _gen_harmonic_leq1(n, a):
-    """Generalized harmonic number, a <= 1"""
-    if not np.size(n):
-        return n
-    n_max = np.nanmax(n)  # loop starts at maximum of all n
-    out = np.zeros_like(a, dtype=float)
-    # add terms of harmonic series; starting from smallest to avoid roundoff
-    for i in np.arange(n_max, 0, -1, dtype=float):
-        mask = i <= n  # don't add terms after nth
-        out[mask] += 1/i**a[mask]
-    out[np.isnan(n)] = np.nan
-    return out
-
-
-def _gen_harmonic(n, a):
-    """Generalized harmonic number"""
-    n, a = np.broadcast_arrays(n, a)
-    return xpx.apply_where(a > 1, (n, a), _gen_harmonic_gt1, _gen_harmonic_leq1)
-
-
 class zipfian_gen(rv_discrete):
     r"""A Zipfian discrete random variable.
 
@@ -1411,8 +1387,12 @@ class zipfian_gen(rv_discrete):
     :math:`H_{n,a}` is the :math:`n`:sup:`th` generalized harmonic
     number of order :math:`a`.
 
-    The Zipfian distribution reduces to the Zipf (zeta) distribution as
-    :math:`n \rightarrow \infty`.
+    The SciPy implementation of this distribution requires :math:`1 \le n \le 2^{53}`.
+    For larger values of :math:`n`, the `zipfian` methods (`pmf`, `cdf`, `mean`, etc.)
+    will return `nan`.
+
+    When :math:`a > 1`, the Zipfian distribution reduces to the Zipf (zeta)
+    distribution as :math:`n \rightarrow \infty`.
 
     %(after_notes)s
 
@@ -1439,33 +1419,48 @@ class zipfian_gen(rv_discrete):
                 _ShapeInfo("n", True, (0, np.inf), (False, False))]
 
     def _argcheck(self, a, n):
-        # we need np.asarray here because moment (maybe others) don't convert
-        return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=int))
+        # The upper bound on n is for practical numerical reasons.  The numerical
+        # methods for computing the PMF, CDF and SF involve sums over range(1, n+1)
+        # when a <= 1, so there is no way they can be computed for extremely large
+        # n--even 2**53 is ridiculously large for those calculations.  The bound is
+        # also required to ensure that the loops compute the sums correctly when
+        # the inputs are double precision instead of integers.
+        #
+        # n may be an integer or a float, but the value must be an integer in the
+        # range 1 <= n <= 2**53.  The expression below clips n to the accepted range
+        # before attempting to cast to integer to avoid warnings generated by an
+        # input such as n=1e100.  The extra `np.asarray()` wrapper avoids the error
+        # that arises with an input such as `n=2**100`.
+        # upper limit changed in gh-24119 because of overflow on windows, linux32 bit
+        return ((a >= 0) &
+                (n == np.asarray(np.clip(n, 1, 2**31 - 1)).astype(dtype=np.int64)))
 
     def _get_support(self, a, n):
-        return 1, n
+        return 1, np.floor(n)
 
     def _pmf(self, k, a, n):
-        k = k.astype(np.float64)
-        return 1.0 / _gen_harmonic(n, a) * k**-a
+        k = np.floor(k)
+        n = np.floor(n)
+        return scu._normalized_gen_harmonic(k, k, n, a)
 
     def _cdf(self, k, a, n):
         k = np.floor(k)
-        return _gen_harmonic(k, a) / _gen_harmonic(n, a)
+        n = np.floor(n)
+        return scu._normalized_gen_harmonic(1, k, n, a)
 
     def _sf(self, k, a, n):
-        k = np.floor(k + 1)  # # to match SciPy convention
-        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
-                / (k**a*_gen_harmonic(n, a)))
+        k = np.floor(k)
+        n = np.floor(n)
+        return scu._normalized_gen_harmonic(k + 1, n, n, a)
 
     def _stats(self, a, n):
-        # see # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        Hna = _gen_harmonic(n, a)
-        Hna1 = _gen_harmonic(n, a-1)
-        Hna2 = _gen_harmonic(n, a-2)
-        Hna3 = _gen_harmonic(n, a-3)
-        Hna4 = _gen_harmonic(n, a-4)
+        n = np.floor(n)
+        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
+        Hna = scu._gen_harmonic(n, a)
+        Hna1 = scu._gen_harmonic(n, a-1)
+        Hna2 = scu._gen_harmonic(n, a-2)
+        Hna3 = scu._gen_harmonic(n, a-3)
+        Hna4 = scu._gen_harmonic(n, a-4)
         mu1 = Hna1/Hna
         mu2n = (Hna2*Hna - Hna1**2)
         mu2d = Hna**2
@@ -1605,6 +1600,11 @@ class poisson_binom_gen(rv_discrete):
     %(example)s
 
     """  # noqa: E501
+
+    _parse_args_rvs: MethodType
+    _parse_args_stats: MethodType
+    _parse_args: MethodType
+
     def _shape_info(self):
         # message = 'Fitting is not implemented for this distribution."
         # raise NotImplementedError(message)
@@ -1631,14 +1631,14 @@ class poisson_binom_gen(rv_discrete):
     def _pmf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64)
-        return _poisson_binom(k, args, 'pmf')
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _poisson_binom_pmf(k, p)
 
     def _cdf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64)
-        return _poisson_binom(k, args, 'cdf')
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _poisson_binom_cdf(k, p)
 
     def _stats(self, *args, **kwds):
         p = np.stack(args, axis=0)
@@ -1719,11 +1719,18 @@ class skellam_gen(rv_discrete):
 
     Parameters :math:`\mu_1` and :math:`\mu_2` must be strictly positive.
 
-    For details see: https://en.wikipedia.org/wiki/Skellam_distribution
-
     `skellam` takes :math:`\mu_1` and :math:`\mu_2` as shape parameters.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Skellam, J. G. "The Frequency Distribution of the Difference
+           Between Two Poisson Variates Belonging to Different Populations."
+           *Journal of the Royal Statistical Society* 109, no. 3 (1946): 296-296.
+           :doi:`10.2307/2981372`
+    .. [2] "Skellam distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Skellam_distribution
 
     %(example)s
 
@@ -1749,8 +1756,8 @@ class skellam_gen(rv_discrete):
         x = floor(x)
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          scu._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                          1 - scu._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                          special.chndtr(2*mu2, -2*x, 2*mu1),
+                          scu._ncx2_sf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):

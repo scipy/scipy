@@ -14,8 +14,10 @@ from scipy.interpolate import make_splrep
 
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
-from scipy.interpolate._dfitpack import regrid_smth
-from scipy.interpolate._fitpack2 import dfitpack_int
+from scipy.interpolate._fitpack2 import _regrid_smth as regrid_smth
+from scipy.interpolate._regrid import _regrid
+
+dfitpack_int = np.int32
 
 
 def data_file(basename):
@@ -88,6 +90,16 @@ class TestSmokeTests:
                     xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
                 else:
                     assert k == 5   # knot length differ in some k=5 cases
+            else:
+                if np.allclose(v[0], v[-1], atol=1e-15):
+                    spl = make_splrep(x, v, k=k, s=s, xb=xb, xe=xe, bc_type='periodic')
+                    if k != 1: # knots for k == 1 in some cases
+                        xp_assert_close(spl.t, tck[0], atol=1e-15)
+                        xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
+                else:
+                    with assert_raises(ValueError):
+                        spl = make_splrep(x, v, k=k, s=s,
+                                          xb=xb, xe=xe, bc_type='periodic')
 
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi
@@ -117,7 +129,10 @@ class TestSmokeTests:
     def test_smoke_splrep_splev(self):
         self.check_1(s=1e-6)
         self.check_1(b=1.5*np.pi)
+
+    def test_smoke_splrep_splev_periodic(self):
         self.check_1(b=1.5*np.pi, xe=2*np.pi, per=1, s=1e-1)
+        self.check_1(b=2*np.pi, per=1, s=1e-1)
 
     @pytest.mark.parametrize('per', [0, 1])
     @pytest.mark.parametrize('at_nodes', [True, False])
@@ -191,7 +206,7 @@ class TestSmokeTests:
         t2 = makepairs(tt[0], tt[1])
         v1 = bisplev(tt[0], tt[1], tck)
         v2 = f2(t2[0], t2[1])
-        v2.shape = len(tt[0]), len(tt[1])
+        v2 = v2.reshape(len(tt[0]), len(tt[1]))
 
         assert norm2(np.ravel(v1 - v2)) < 1e-2
 
@@ -391,20 +406,33 @@ class TestBisplrep:
         xp_assert_close(bisplev(0.5, 0.5, tck), 0.0)
 
 
-def test_dblint():
+@pytest.mark.parametrize("k", [3, 4])
+def test_dblint(k):
     # Basic test to see it runs and gives the correct result on a trivial
     # problem. Note that `dblint` is not exposed in the interpolate namespace.
     x = np.linspace(0, 1)
     y = np.linspace(0, 1)
     xx, yy = np.meshgrid(x, y)
-    rect = RectBivariateSpline(x, y, 4 * xx * yy)
+    rect = RectBivariateSpline(x, y, 4 * xx * yy,
+                               kx=k, ky=k)
+    rect_custom = _regrid(x, y, 4 * xx * yy,
+                                              kx=k, ky=k)
     tck = list(rect.tck)
     tck.extend(rect.degrees)
+    tck_custom = list(rect_custom.t + (rect_custom.c.flatten(),))
+    tck_custom.extend(rect.degrees)
 
     assert abs(dblint(0, 1, 0, 1, tck) - 1) < 1e-10
+    assert abs(dblint(0, 1, 0, 1, tck_custom) - 1) < 1e-10
+
     assert abs(dblint(0, 0.5, 0, 1, tck) - 0.25) < 1e-10
+    assert abs(dblint(0, 0.5, 0, 1, tck_custom) - 0.25) < 1e-10
+
     assert abs(dblint(0.5, 1, 0, 1, tck) - 0.75) < 1e-10
+    assert abs(dblint(0.5, 1, 0, 1, tck_custom) - 0.75) < 1e-10
+
     assert abs(dblint(-100, 100, -100, 100, tck) - 1) < 1e-10
+    assert abs(dblint(-100, 100, -100, 100, tck_custom) - 1) < 1e-10
 
 
 def test_splev_der_k():
@@ -460,7 +488,7 @@ def test_bisplev_integer_overflow():
     ky = 1
 
     nx, tx, ny, ty, c, fp, ier = regrid_smth(
-        x, y, z, None, None, None, None, kx=kx, ky=ky, s=0.0)
+        x, y, z, None, None, None, None, kx=kx, ky=ky, s=0.0, maxit=20)
     tck = (tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)], kx, ky)
 
     xp = np.zeros([2621440])

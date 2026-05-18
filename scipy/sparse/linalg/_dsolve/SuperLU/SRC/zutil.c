@@ -432,7 +432,7 @@ void zinf_norm_error(int nrhs, SuperMatrix *X, doublecomplex *xtrue)
 void
 zPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
            double rpg, double rcond, double *ferr,
-           double *berr, char *equed, SuperLUStat_t *stat)
+           const double *berr, const char *equed, SuperLUStat_t *stat)
 {
     SCformat *Lstore;
     NCformat *Ustore;
@@ -474,7 +474,7 @@ zPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
 
 
 int
-print_doublecomplex_vec(char *what, int n, doublecomplex *vec)
+print_doublecomplex_vec(const char *what, int n, const doublecomplex *vec)
 {
     int i;
     printf("%s: n %d\n", what, n);

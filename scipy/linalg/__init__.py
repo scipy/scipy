@@ -21,8 +21,7 @@ Linear algebra functions.
 .. seealso::
 
    `numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__
-   for more linear algebra functions. Note that
-   although `scipy.linalg` imports most of them, identically named
+   for more linear algebra functions. Note that identically named
    functions from `scipy.linalg` may offer more or slightly differing
    functionality.
 

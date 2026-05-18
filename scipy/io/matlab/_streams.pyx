@@ -2,7 +2,7 @@
 
 import zlib
 
-from cpython cimport PyBytes_AS_STRING, PyBytes_Size
+from cpython cimport PyBytes_AsString, PyBytes_Size
 
 from ._pyalloc cimport pyalloc_v
 
@@ -68,7 +68,7 @@ cdef class GenericStream:
             data = self.fobj.read(n)
             if PyBytes_Size(data) != n:
                 raise OSError('could not read bytes')
-            pp[0] = <void*>PyBytes_AS_STRING(data)
+            pp[0] = <void*>PyBytes_AsString(data)
             return data
 
         cdef object d_copy = pyalloc_v(n, pp)

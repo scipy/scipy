@@ -61,14 +61,14 @@ This is because reductions over sparse arrays are often dense.
 Understanding sparse array formats
 -----------------------------------
 
-Different kinds of sparse arrays have different capabilities. For example, COO arrays cannot be subscripted or sliced:  
+Different kinds of sparse arrays have different capabilities. For example, DIA arrays cannot be subscripted or sliced:
    
    >>> dense[2, 2]
    5
-   >>> sparse[2, 2]
+   >>> sparse.todia()[2, 2]
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: 'coo_array' object is not subscriptable
+   TypeError: 'dia_array' object is not subscriptable
 
 But, other formats, such as the Compressed Sparse Row (CSR) :func:`csr_array()` support slicing and element indexing:
    

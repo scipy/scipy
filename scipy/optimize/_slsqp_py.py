@@ -18,13 +18,15 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 import numpy as np
 from ._slsqplib import slsqp
 from scipy.linalg import norm as lanorm
+from scipy.linalg.lapack import HAS_ILP64
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
-                        _check_clip_x)
+                        _check_clip_x, _wrap_callback)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import array_namespace
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
+from scipy._lib._util import _call_callback_maybe_halt
 from numpy.typing import NDArray
 
 __docformat__ = "restructuredtext en"
@@ -72,7 +74,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
                iprint=1, disp=None, full_output=0, epsilon=_epsilon,
                callback=None):
     """
-    Minimize a function using Sequential Least Squares Programming
+    Minimize a function using Sequential Least Squares Programming.
 
     Python interface function for the SLSQP Optimization subroutine
     originally implemented by Dieter Kraft.
@@ -149,10 +151,10 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         The number of iterations.
     imode : int, if full_output is true
         The exit mode from the optimizer (see below).
-    smode : string, if full_output is true
+    smode : str, if full_output is true
         Message describing the exit mode from the optimizer.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'SLSQP' `method` in particular.
@@ -180,6 +182,9 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     """
     if disp is not None:
         iprint = disp
+
+    # selects whether to use callback(x) or callback(intermediate_result)
+    callback = _wrap_callback(callback, "slsqp")
 
     opts = {'maxiter': iter,
             'ftol': acc,
@@ -234,8 +239,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     disp : bool
         Set to True to print convergence messages. If False,
         `verbosity` is ignored and set to 0.
-    maxiter : int
-        Maximum number of iterations.
+    maxiter : int, optional
+        Maximum number of iterations. Default value is 100.
     finite_diff_rel_step : None or array_like, optional
         If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of `jac`. The absolute step
@@ -268,8 +273,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     attribute as a NumPy array. Denoting the dimension of the equality constraints
     with ``meq``, and of inequality constraints with ``mineq``, then the returned
     array slice ``m[:meq]`` contains the multipliers for the equality constraints,
-    and the remaining ``m[meq:meq + mineq]`` contains the multipliers for the 
-    inequality constraints. The multipliers corresponding to bound inequalities 
+    and the remaining ``m[meq:meq + mineq]`` contains the multipliers for the
+    inequality constraints. The multipliers corresponding to bound inequalities
     are not returned. See [1]_ pp. 321 or [2]_ for an explanation of how to interpret
     these multipliers. The internal QP problem is solved using the methods given
     in [3]_ Chapter 25.
@@ -461,7 +466,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         "inconsistent": 0,
         "reset": 0,
         "iter": 0,
-        "itermax": maxiter,
+        "itermax": int(maxiter),
         "line": 0,
         "m": m,
         "meq": meq,
@@ -473,8 +478,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if iprint >= 2:
         print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} {'GNORM':>16}")
 
+    # XXX: check problem size too large for LP64?
+
     # Internal buffer and int array
-    indices = np.zeros([max(m + 2*n + 2, 1)], dtype=np.int32)
+    indices = np.zeros(
+        [max(m + 2*n + 2, 1)], dtype=np.int64 if HAS_ILP64 else np.int32
+    )
 
     # The worst case workspace requirements for the buffer are:
 
@@ -527,7 +536,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if state_dict['iter'] > iter_prev:
             # call callback if major iteration has incremented
             if callback is not None:
-                callback(np.copy(x))
+                intermediate_result = OptimizeResult(
+                    x=np.copy(x),
+                    fun=fx
+                )
+                if _call_callback_maybe_halt(callback, intermediate_result):
+                    break
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:

@@ -184,7 +184,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         NOTE: THIS INPUT IS DISABLED FOR NOW. Use ordqz instead.
 
         Specifies whether the upper eigenvalues should be sorted. A callable
-        may be passed that, given a eigenvalue, returns a boolean denoting
+        may be passed that, given an eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True). For
         real matrix pairs, the sort function takes three real arguments
         (alphar, alphai, beta). The eigenvalue
@@ -193,16 +193,18 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         (alpha, beta). The eigenvalue ``x = (alpha/beta)``.  Alternatively,
         string parameters may be used:
 
-            - 'lhp'   Left-hand plane (x.real < 0.0)
-            - 'rhp'   Right-hand plane (x.real > 0.0)
-            - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
-            - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+        - 'lhp'   Left-hand plane (x.real < 0.0)
+        - 'rhp'   Right-hand plane (x.real > 0.0)
+        - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
+        - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         Defaults to None (no sorting).
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         Whether to overwrite data in b (may improve performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to
@@ -341,10 +343,10 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         complex. The callable must be able to accept a NumPy
         array. Alternatively, string parameters may be used:
 
-            - 'lhp'   Left-hand plane (x.real < 0.0)
-            - 'rhp'   Right-hand plane (x.real > 0.0)
-            - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
-            - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+        - 'lhp'   Left-hand plane (x.real < 0.0)
+        - 'rhp'   Right-hand plane (x.real > 0.0)
+        - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
+        - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         With the predefined sorting functions, an infinite eigenvalue
         (i.e., ``alpha != 0`` and ``beta = 0``) is considered to lie in
@@ -357,8 +359,10 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         Default is 'real'.
     overwrite_a : bool, optional
         If True, the contents of A are overwritten.
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         If True, the contents of B are overwritten.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to

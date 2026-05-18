@@ -1005,7 +1005,7 @@ subroutine <prefix>geqrfp(m,n,a,lda,tau,work,lwork,info)
     !
     ! where:
     !
-    !    Q is a M-by-M orthogonal matrix;
+    !    Q is an M-by-M orthogonal matrix;
     !    R is an upper-triangular N-by-N matrix with nonnegative diagonal
     !    entries;
     !    0 is a (M-N)-by-N zero matrix, if M > N.

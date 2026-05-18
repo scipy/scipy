@@ -5,15 +5,16 @@ Simple Ratio-of-Uniforms (SROU)
 
 .. currentmodule:: scipy.stats.sampling
 
-* Required: PDF, area under PDF if different than 1
+* Required: PDF, area under PDF if different from 1
 * Optional: mode, CDF at mode
 * Speed:
 
   * Set-up: fast
   * Sampling: slow
 
-SROU is based on the ratio-of-uniforms method that uses universal inequalities for constructing
-a (universal) bounding rectangle. It works for T-concave distributions with T(x) = -1/sqrt(x).
+SROU is based on the ratio-of-uniforms method that uses universal inequalities to construct
+a (universal) bounding rectangle. It works for T-concave distributions with 
+:math:`T(x) = -1/\sqrt{x}`.
 
     >>> import numpy as np
     >>> from scipy.stats.sampling import SimpleRatioUniforms
@@ -24,7 +25,7 @@ Suppose we have the normal distribution:
     ...     def pdf(self, x):
     ...         return np.exp(-0.5 * x**2)
 
-Notice that the PDF doesn't integrate to 1. We can either pass the exact
+Notice that the PDF does not integrate to 1. We can either pass the exact
 area under the PDF during initialization of the generator or an upper
 bound to the exact area under the PDF. Also, it is recommended to pass
 the mode of the distribution to speed up the setup:
@@ -39,7 +40,7 @@ Now, we can use the `rvs` method to generate samples from the distribution:
 
     >>> rvs = rng.rvs(10)
 
-If the CDF at mode is available, it can be set to improve the performance of `rvs`:
+If the CDF at the mode is available, it can be set to improve the performance of `rvs`:
 
     >>> from scipy.stats import norm
     >>> rng = SimpleRatioUniforms(dist, mode=0,
@@ -79,15 +80,16 @@ its histogram:
     >>> ax.legend()
     >>> plt.show()
 
-The main advantage of the method is a fast setup. This can be beneficial if one
+The main advantage of the method is a fast setup. This can be beneficial when one
 repeatedly needs to generate small to moderate samples of a distribution with
 different shape parameters. In such a situation, the setup step of
 `sampling.NumericalInverseHermite` or `sampling.NumericalInversePolynomial` will
 lead to poor performance. As an example, assume we are interested to generate
 100 samples for the Gamma distribution with 1000 different shape parameters
-given by ``np.arange(1.5, 5, 1000)``.
+given by ``np.linspace(1.5, 5, 1000)``.
 
     >>> import math
+    >>> import warnings
     >>> class GammaDist:
     ...     def __init__(self, p):
     ...         self.p = p
@@ -95,7 +97,7 @@ given by ``np.arange(1.5, 5, 1000)``.
     ...         return x**(self.p-1) * np.exp(-x)
     ...
     >>> urng = np.random.default_rng()
-    >>> p = np.arange(1.5, 5, 1000)
+    >>> p = np.linspace(1.5, 5, 1000)
     >>> res = np.empty((1000, 100))
     >>> for i in range(1000):
     ...     dist = GammaDist(p[i])

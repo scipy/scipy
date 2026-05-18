@@ -4,7 +4,7 @@
 Hypergeometric Distribution
 ===========================
 
-The hypergeometric random variable with parameters :math:`\left(M,n,N\right)` counts the number of "good "objects in a sample of size :math:`N` chosen without replacement from a population of :math:`M` objects where :math:`n` is the number of "good "objects in the total population.
+The hypergeometric random variable with parameters :math:`\left(M,n,N\right)` counts the number of "good" objects in a sample of size :math:`N` chosen without replacement from a population of :math:`M` objects where :math:`n` is the number of "good" objects in the total population.
 
 .. math::
    :nowrap:

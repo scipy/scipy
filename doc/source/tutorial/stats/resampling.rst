@@ -61,7 +61,7 @@ count does not exceed 45.
     >>> N = 100000  # We'll do 100000 trials, each with 100 flips
     >>> rng = np.random.default_rng()  # use the "new" Generator interface
     >>> simulation = rng.random(size=(n, N)) < p  # False for tails, True for heads
-    >>> counts = np.sum(simulation, axis=0)  # count the number of heads each trial
+    >>> counts = np.sum(simulation, axis=0)  # count the number of heads in each trial
     >>> prob = np.sum(counts <= x) / N  # estimate the probability as the observed proportion of cases in which the count did not exceed 45
     >>> print(f"The Monte Carlo approach estimates the probability as {prob:.3f}")
     The Monte Carlo approach estimates the probability as 0.187
@@ -69,7 +69,7 @@ count does not exceed 45.
 The demon replies:
 
    You are both incorrect. The probability is given by the binomial
-   distribution. Specifically.
+   distribution. Specifically:
 
 .. math::
 
@@ -81,7 +81,7 @@ The demon replies:
     >>> from scipy.stats import binom
     >>> prob = binom.cdf(x, n, p)
     >>> print(f"The correct answer is approximately {prob}")
-    The correct answer is approximately 0.18410080866334788
+    The correct answer is approximately 0.18410080866334808
 
 As your soul is being eaten, you take solace in the knowledge that your
 simple Monte Carlo approach was more accurate than Kyle's normal
@@ -95,7 +95,7 @@ Resampling and Monte Carlo methods tutorials
 --------------------------------------------
 
 Although it's best to use an exact approach when it's available,
-learning to use computational statistics techniques can improve the
+learning to use computational statistical techniques can improve the
 accuracy of `scipy.stats` features that rely on analytical
 approximations, dramatically extend your statistical analysis
 capabilities, and even improve your understanding of statistics.

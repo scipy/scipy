@@ -25,6 +25,7 @@ from scipy import special
 from scipy.stats import chisquare, cramervonmises
 from scipy.stats._distr_params import distdiscrete, distcont
 from scipy._lib._util import check_random_state
+from scipy._lib._gcutils import assert_deallocated
 
 
 # common test data: this data can be shared between all the tests.
@@ -52,12 +53,7 @@ all_methods = [
     ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
-if (sys.implementation.name == 'pypy'
-        and sys.implementation.version < (7, 3, 10)):
-    # changed in PyPy for v7.3.10
-    floaterr = r"unsupported operand type for float\(\): 'list'"
-else:
-    floaterr = r"must be real number, not list"
+floaterr = r"must be real number, not list"
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
 # passed. Moreover, different generators throw different error messages.
 # So, in case of an `UNURANError`, we do not validate the error message.
@@ -176,7 +172,7 @@ def test_random_state(method, kwargs):
     rng = np.random.RandomState(123)
     rng1 = Method(**kwargs)
     rvs1 = rng1.rvs(100, random_state=rng)
-    np.random.seed(None)
+    np.random.seed(None)  # valid use of np.random.seed
     rng2 = Method(**kwargs, random_state=123)
     rvs2 = rng2.rvs(100)
     assert_equal(rvs1, rvs2)
@@ -294,6 +290,17 @@ def test_with_scipy_distribution():
     domain = dist.support()
     pv = dist.pmf(np.arange(domain[0], domain[1]+1))
     check_discr_samples(rng, pv, dist.stats())
+
+
+def test_NumericalInverseHermite_refcycle():
+    # test if NumericalInverseHermite contains a reference cycle
+    dist = stats.norm()
+    urng = np.random.default_rng(0)
+    with assert_deallocated(NumericalInverseHermite, dist, random_state=urng) as rng:
+        u = np.linspace(0, 1, num=100)
+        check_cont_samples(rng, dist, dist.stats())
+        assert_allclose(dist.ppf(u), rng.ppf(u))
+        del rng
 
 
 def check_cont_samples(rng, dist, mv_ex, rtol=1e-7, atol=1e-1):
@@ -1114,7 +1121,7 @@ class TestNumericalInverseHermite:
 
     @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
-    @pytest.mark.parallel_threads(4)  # Very slow
+    @pytest.mark.parallel_threads_limit(4)  # Very slow
     def test_basic_truncnorm_gh17155(self):
         self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 

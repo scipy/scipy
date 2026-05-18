@@ -1,7 +1,9 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
-
+import functools
+import os
 from math import prod
 from types import GenericAlias
+import warnings
 
 import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
@@ -10,6 +12,10 @@ import scipy.special as spec
 from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy
+)
+
 from . import _fitpack_py
 from ._polyint import _Interpolator1D
 from . import _ppoly
@@ -17,6 +23,7 @@ from ._interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
 
+@xp_capabilities(out_of_scope=True)
 def lagrange(x, w):
     r"""
     Return a Lagrange interpolating polynomial.
@@ -26,6 +33,10 @@ def lagrange(x, w):
 
     Warning: This implementation is numerically unstable. Do not expect to
     be able to use more than about 20 points even if they are chosen optimally.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        `scipy.interpolate.BarycentricInterpolator` instead.
 
     Parameters
     ----------
@@ -90,7 +101,10 @@ def lagrange(x, w):
     >>> plt.show()
 
     """
-
+    _warn_skips = (os.path.dirname(__file__),)
+    msg = ("`lagrange` is deprecated and will be removed in SciPy 1.20.0. Use "
+           "`scipy.interpolate.BarycentricInterpolator` instead.")
+    warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     M = len(x)
     p = poly1d(0.0)
     for j in range(M):
@@ -128,7 +142,7 @@ class interp2d:
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
-    Class for 2D interpolation (deprecated and removed)
+    Class for 2D interpolation (deprecated and removed).
 
     .. versionremoved:: 1.14.0
 
@@ -171,6 +185,7 @@ def _do_extrapolate(fill_value):
             fill_value == 'extrapolate')
 
 
+@xp_capabilities(out_of_scope=True)
 class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function (legacy).
@@ -189,7 +204,7 @@ class interp1d(_Interpolator1D):
     x : (npoints, ) array_like
         A 1-D array of real values.
     y : (..., npoints, ...) array_like
-        A N-D array of real values. The length of `y` along the interpolation
+        An N-D array of real values. The length of `y` along the interpolation
         axis must be equal to the length of `x`. Use the ``axis`` parameter
         to select correct axis. Unlike other interpolators, the default
         interpolation axis is the last axis of `y`.
@@ -216,7 +231,7 @@ class interp1d(_Interpolator1D):
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised unless ``fill_value="extrapolate"``.
     fill_value : array-like or (array-like, array_like) or "extrapolate", optional
-        - if a ndarray (or float), this value will be used to fill in for
+        - if an ndarray (or float), this value will be used to fill in for
           requested points outside of the data range. If not provided, then
           the default is NaN. The array-like must broadcast properly to the
           dimensions of the non-interpolation axes.
@@ -484,7 +499,7 @@ class interp1d(_Interpolator1D):
         #    of x_new[n] = x[0]
         x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 
-        # 4. Calculate the slope of regions that each x_new value falls in.
+        # 4. Calculate y_new using de Boor's algorithm for linear interpolation.
         lo = x_new_indices - 1
         hi = x_new_indices
 
@@ -493,13 +508,13 @@ class interp1d(_Interpolator1D):
         y_lo = self._y[lo]
         y_hi = self._y[hi]
 
-        # Note that the following two expressions rely on the specifics of the
+        # Note that the following expression relies on the specifics of the
         # broadcasting semantics.
-        slope = (y_hi - y_lo) / (x_hi - x_lo)[:, None]
-
-        # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new - x_lo)[:, None] + y_lo
-
+        y_new = (
+            ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
+            + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
+            )
+        
         return y_new
 
     def _call_nearest(self, x_new):
@@ -542,6 +557,7 @@ class interp1d(_Interpolator1D):
         out[...] = np.nan
         return out
 
+    # pyrefly: ignore[bad-override-param-name]
     def _evaluate(self, x_new):
         # 1. Handle values in x_new that are outside of x. Throw error,
         #    or return a list of mask array indicating the outofbounds values.
@@ -591,11 +607,11 @@ class interp1d(_Interpolator1D):
 
 
 class _PPolyBase:
-    """Base class for piecewise polynomials."""
+    """Base class for piecewise polynomials -- NumPy backend."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
@@ -651,17 +667,9 @@ class _PPolyBase:
 
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None, axis=0):
-        """
-        Construct the piecewise polynomial without making checks.
-
-        Takes the same parameters as the constructor. Input arguments
-        ``c`` and ``x`` must be arrays of the correct shape and type. The
-        ``c`` array can only be of dtypes float and complex, and ``x``
-        array must have dtype float.
-        """
         self = object.__new__(cls)
-        self.c = c
-        self.x = x
+        self.c = np.asarray(c)
+        self.x = np.asarray(x)
         self.axis = axis
         if extrapolate is None:
             extrapolate = True
@@ -679,27 +687,6 @@ class _PPolyBase:
             self.c = self.c.copy()
 
     def extend(self, c, x):
-        """
-        Add additional breakpoints and coefficients to the polynomial.
-
-        Parameters
-        ----------
-        c : ndarray, size (k, m, ...)
-            Additional coefficients for polynomials in intervals. Note that
-            the first additional interval will be formed using one of the
-            ``self.x`` end points.
-        x : ndarray, size (m,)
-            Additional breakpoints. Must be sorted in the same order as
-            ``self.x`` and either to the right or to the left of the current
-            breakpoints.
-
-        Notes
-        -----
-        This method is not thread safe and must not be executed concurrently
-        with other methods available in this class. Doing so may cause
-        unexpected errors or numerical output mismatches.
-        """
-
         c = np.asarray(c)
         x = np.asarray(x)
 
@@ -764,35 +751,6 @@ class _PPolyBase:
         self.c = c2
 
     def __call__(self, x, nu=0, extrapolate=None):
-        """
-        Evaluate the piecewise polynomial or its derivative.
-
-        Parameters
-        ----------
-        x : array_like
-            Points to evaluate the interpolant at.
-        nu : int, optional
-            Order of derivative to evaluate. Must be non-negative.
-        extrapolate : {bool, 'periodic', None}, optional
-            If bool, determines whether to extrapolate to out-of-bounds points
-            based on first and last intervals, or to return NaNs.
-            If 'periodic', periodic extrapolation is used.
-            If None (default), use `self.extrapolate`.
-
-        Returns
-        -------
-        y : array_like
-            Interpolated values. Shape is determined by replacing
-            the interpolation axis in the original array with the shape of x.
-
-        Notes
-        -----
-        Derivatives are evaluated piecewise for each polynomial
-        segment, even if the polynomial is not differentiable at the
-        breakpoints. The polynomial intervals are considered half-open,
-        ``[a, b)``, except for the last interval which is closed
-        ``[a, b]``.
-        """
         if extrapolate is None:
             extrapolate = self.extrapolate
         x = np.asarray(x)
@@ -817,93 +775,14 @@ class _PPolyBase:
         return out
 
 
-class PPoly(_PPolyBase):
-    """Piecewise polynomial in the power basis.
-
-    The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
-    local power basis::
-
-        S = sum(c[m, i] * (xp - x[i])**(k-m) for m in range(k+1))
-
-    where ``k`` is the degree of the polynomial.
-
-    Parameters
-    ----------
-    c : ndarray, shape (k+1, m, ...)
-        Polynomial coefficients, degree `k` and `m` intervals.
-    x : ndarray, shape (m+1,)
-        Polynomial breakpoints. Must be sorted in either increasing or
-        decreasing order.
-    extrapolate : bool or 'periodic', optional
-        If bool, determines whether to extrapolate to out-of-bounds points
-        based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. Default is True.
-    axis : int, optional
-        Interpolation axis. Default is zero.
-
-    Attributes
-    ----------
-    x : ndarray
-        Breakpoints.
-    c : ndarray
-        Coefficients of the polynomials. They are reshaped
-        to a 3-D array with the last dimension representing
-        the trailing dimensions of the original coefficient array.
-    axis : int
-        Interpolation axis.
-
-    Methods
-    -------
-    __call__
-    derivative
-    antiderivative
-    integrate
-    solve
-    roots
-    extend
-    from_spline
-    from_bernstein_basis
-    construct_fast
-
-    See also
-    --------
-    BPoly : piecewise polynomials in the Bernstein basis
-
-    Notes
-    -----
-    High-order polynomials in the power basis can be numerically
-    unstable. Precision problems can start to appear for orders
-    larger than 20-30.
-    """
+class _PPoly(_PPolyBase):
+    """NumPy backend for PPoly."""
 
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                         self.x, x, nu, bool(extrapolate), out)
 
     def derivative(self, nu=1):
-        """
-        Construct a new piecewise polynomial representing the derivative.
-
-        Parameters
-        ----------
-        nu : int, optional
-            Order of derivative to evaluate. Default is 1, i.e., compute the
-            first derivative. If negative, the antiderivative is returned.
-
-        Returns
-        -------
-        pp : PPoly
-            Piecewise polynomial of order k2 = k - n representing the derivative
-            of this polynomial.
-
-        Notes
-        -----
-        Derivatives are evaluated piecewise for each polynomial
-        segment, even if the polynomial is not differentiable at the
-        breakpoints. The polynomial intervals are considered half-open,
-        ``[a, b)``, except for the last interval which is closed
-        ``[a, b]``.
-        """
         if nu < 0:
             return self.antiderivative(-nu)
 
@@ -979,26 +858,6 @@ class PPoly(_PPolyBase):
         return self.construct_fast(c, self.x, extrapolate, self.axis)
 
     def integrate(self, a, b, extrapolate=None):
-        """
-        Compute a definite integral over a piecewise polynomial.
-
-        Parameters
-        ----------
-        a : float
-            Lower integration bound
-        b : float
-            Upper integration bound
-        extrapolate : {bool, 'periodic', None}, optional
-            If bool, determines whether to extrapolate to out-of-bounds points
-            based on first and last intervals, or to return NaNs.
-            If 'periodic', periodic extrapolation is used.
-            If None (default), use `self.extrapolate`.
-
-        Returns
-        -------
-        ig : array_like
-            Definite integral of the piecewise polynomial over [a, b]
-        """
         if extrapolate is None:
             extrapolate = self.extrapolate
 
@@ -1061,6 +920,702 @@ class PPoly(_PPolyBase):
         return range_int.reshape(self.c.shape[2:])
 
     def solve(self, y=0., discontinuity=True, extrapolate=None):
+
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+
+        self._ensure_c_contiguous()
+
+        if np.issubdtype(self.c.dtype, np.complexfloating):
+            raise ValueError("Root finding is only for "
+                             "real-valued polynomials")
+
+        y = float(y)
+        r = _ppoly.real_roots(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                              self.x, y, bool(discontinuity),
+                              bool(extrapolate))
+        if self.c.ndim == 2:
+            return r[0]
+        else:
+            r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
+            # this for-loop is equivalent to ``r2[...] = r``, but that's broken
+            # in NumPy 1.6.0
+            for ii, root in enumerate(r):
+                r2[ii] = root
+
+            return r2.reshape(self.c.shape[2:])
+
+    def roots(self, discontinuity=True, extrapolate=None):
+        return self.solve(0, discontinuity, extrapolate)
+
+    @classmethod
+    def from_spline(cls, tck, extrapolate=None):
+        t, c, k = tck
+
+        cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
+        for m in range(k, -1, -1):
+            y = _fitpack_py.splev(t[:-1], (t, c, k), der=m)
+            cvals[k - m, :] = y / spec.gamma(m+1)
+
+        return cls.construct_fast(cvals, t, extrapolate)
+
+    @classmethod
+    def from_bernstein_basis(cls, bp, extrapolate=None):
+        dx = np.diff(bp.x)
+        k = bp.c.shape[0] - 1  # polynomial order
+
+        rest = (None,)*(bp.c.ndim-2)
+
+        c = np.zeros_like(bp.c)
+        for a in range(k+1):
+            factor = (-1)**a * comb(k, a) * bp.c[a]
+            for s in range(a, k+1):
+                val = comb(k-a, s-a) * (-1)**s
+                c[k-s] += factor * val / dx[(slice(None),)+rest]**s
+
+        if extrapolate is None:
+            extrapolate = bp.extrapolate
+
+        return cls.construct_fast(c, bp.x, extrapolate, bp.axis)
+
+
+class _BPoly(_PPolyBase):
+    """NumPy backend for BPoly."""
+
+    def _evaluate(self, x, nu, extrapolate, out):
+        _ppoly.evaluate_bernstein(
+            self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+            self.x, x, nu, bool(extrapolate), out)
+
+    def derivative(self, nu=1):
+        if nu < 0:
+            return self.antiderivative(-nu)
+
+        if nu > 1:
+            bp = self
+            for k in range(nu):
+                bp = bp.derivative()
+            return bp
+
+        # reduce order
+        if nu == 0:
+            c2 = self.c.copy()
+        else:
+            # For a polynomial
+            #    B(x) = \sum_{a=0}^{k} c_a b_{a, k}(x),
+            # we use the fact that
+            #   b'_{a, k} = k ( b_{a-1, k-1} - b_{a, k-1} ),
+            # which leads to
+            #   B'(x) = \sum_{a=0}^{k-1} (c_{a+1} - c_a) b_{a, k-1}
+            #
+            # finally, for an interval [y, y + dy] with dy != 1,
+            # we need to correct for an extra power of dy
+
+            rest = (None,)*(self.c.ndim-2)
+
+            k = self.c.shape[0] - 1
+            dx = np.diff(self.x)[(None, slice(None))+rest]
+            c2 = k * np.diff(self.c, axis=0) / dx
+
+        if c2.shape[0] == 0:
+            # derivative of order 0 is zero
+            c2 = np.zeros((1,) + c2.shape[1:], dtype=c2.dtype)
+
+        # construct a compatible polynomial
+        return self.construct_fast(c2, self.x, self.extrapolate, self.axis)
+
+    def antiderivative(self, nu=1):
+        if nu <= 0:
+            return self.derivative(-nu)
+
+        if nu > 1:
+            bp = self
+            for k in range(nu):
+                bp = bp.antiderivative()
+            return bp
+
+        # Construct the indefinite integrals on individual intervals
+        c, x = self.c, self.x
+        k = c.shape[0]
+        c2 = np.zeros((k+1,) + c.shape[1:], dtype=c.dtype)
+
+        c2[1:, ...] = np.cumsum(c, axis=0) / k
+        delta = x[1:] - x[:-1]
+        c2 *= delta[(None, slice(None)) + (None,)*(c.ndim-2)]
+
+        # Now fix continuity: on the very first interval, take the integration
+        # constant to be zero; on an interval [x_j, x_{j+1}) with j>0,
+        # the integration constant is then equal to the jump of the `bp` at x_j.
+        # The latter is given by the coefficient of B_{n+1, n+1}
+        # *on the previous interval* (other B. polynomials are zero at the
+        # breakpoint). Finally, use the fact that BPs form a partition of unity.
+        c2[:, 1:] += np.cumsum(c2[k, :], axis=0)[:-1]
+
+        if self.extrapolate == 'periodic':
+            extrapolate = False
+        else:
+            extrapolate = self.extrapolate
+
+        return self.construct_fast(c2, self.x, extrapolate, axis=self.axis)
+
+    def integrate(self, a, b, extrapolate=None):
+        # XXX: can probably use instead the fact that
+        # \int_0^{1} B_{j, n}(x) \dx = 1/(n+1)
+        ib = self.antiderivative()
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+
+        # ib.extrapolate shouldn't be 'periodic', it is converted to
+        # False for 'periodic. in antiderivative() call.
+        if extrapolate != 'periodic':
+            ib.extrapolate = extrapolate
+
+        if extrapolate == 'periodic':
+            # Split the integral into the part over period (can be several
+            # of them) and the remaining part.
+
+            # For simplicity and clarity convert to a <= b case.
+            if a <= b:
+                sign = 1
+            else:
+                a, b = b, a
+                sign = -1
+
+            xs, xe = self.x[0], self.x[-1]
+            period = xe - xs
+            interval = b - a
+            n_periods, left = divmod(interval, period)
+            res = n_periods * (ib(xe) - ib(xs))
+
+            # Map a and b to [xs, xe].
+            a = xs + (a - xs) % period
+            b = a + left
+
+            # If b <= xe then we need to integrate over [a, b], otherwise
+            # over [a, xe] and from xs to what is remained.
+            if b <= xe:
+                res += ib(b) - ib(a)
+            else:
+                res += ib(xe) - ib(a) + ib(xs + left + a - xe) - ib(xs)
+
+            return sign * res
+        else:
+            return ib(b) - ib(a)
+
+    def extend(self, c, x):
+        k = max(self.c.shape[0], c.shape[0])
+        self.c = self._raise_degree(self.c, k - self.c.shape[0])
+        c = self._raise_degree(c, k - c.shape[0])
+        _PPolyBase.extend(self, c, x)
+    extend.__doc__ = _PPolyBase.extend.__doc__
+
+    @classmethod
+    def from_power_basis(cls, pp, extrapolate=None):
+        dx = np.diff(pp.x)
+        k = pp.c.shape[0] - 1   # polynomial order
+
+        rest = (None,)*(pp.c.ndim-2)
+
+        c = np.zeros_like(pp.c)
+        for a in range(k+1):
+            factor = pp.c[a] / comb(k, k-a) * dx[(slice(None),) + rest]**(k-a)
+            for j in range(k-a, k+1):
+                c[j] += factor * comb(j, k-a)
+
+        if extrapolate is None:
+            extrapolate = pp.extrapolate
+
+        return cls.construct_fast(c, pp.x, extrapolate, pp.axis)
+
+    @classmethod
+    def from_derivatives(cls, xi, yi, orders=None, extrapolate=None):
+        xi = np.asarray(xi)
+        if len(xi) != len(yi):
+            raise ValueError("xi and yi need to have the same length")
+        if np.any(xi[1:] - xi[:1] <= 0):
+            raise ValueError("x coordinates are not in increasing order")
+
+        # number of intervals
+        m = len(xi) - 1
+
+        # global poly order is k-1, local orders are <=k and can vary
+        try:
+            k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
+        except TypeError as e:
+            raise ValueError(
+                "Using a 1-D array for y? Please .reshape(-1, 1)."
+            ) from e
+
+        if orders is None:
+            orders = [None] * m
+        else:
+            if isinstance(orders, int | np.integer):
+                orders = [orders] * m
+            k = max(k, max(orders))
+
+            if any(o <= 0 for o in orders):
+                raise ValueError("Orders must be positive.")
+
+        c = []
+        for i in range(m):
+            y1, y2 = yi[i], yi[i+1]
+            if orders[i] is None:
+                n1, n2 = len(y1), len(y2)
+            else:
+                n = orders[i]+1
+                n1 = min(n//2, len(y1))
+                n2 = min(n - n1, len(y2))
+                n1 = min(n - n2, len(y2))
+                if n1 + n2 != n:
+                    mesg = (
+                        f"Point {xi[i]} has {len(y1)} derivatives, point {xi[i+1]} has "
+                        f"{len(y2)} derivatives, but order {orders[i]} requested"
+                    )
+                    raise ValueError(mesg)
+
+                if not (n1 <= len(y1) and n2 <= len(y2)):
+                    raise ValueError("`order` input incompatible with"
+                                     " length y1 or y2.")
+
+            b = _BPoly._construct_from_derivatives(xi[i], xi[i+1],
+                                                  y1[:n1], y2[:n2])
+            if len(b) < k:
+                b = _BPoly._raise_degree(b, k - len(b))
+            c.append(b)
+
+        c = np.asarray(c)
+        return cls(c.swapaxes(0, 1), xi, extrapolate)
+
+    @staticmethod
+    def _construct_from_derivatives(xa, xb, ya, yb):
+        ya, yb = np.asarray(ya), np.asarray(yb)
+        if ya.shape[1:] != yb.shape[1:]:
+            raise ValueError(
+                f"Shapes of ya {ya.shape} and yb {yb.shape} are incompatible"
+            )
+
+        dta, dtb = ya.dtype, yb.dtype
+        if (np.issubdtype(dta, np.complexfloating) or
+               np.issubdtype(dtb, np.complexfloating)):
+            dt = np.complex128
+        else:
+            dt = np.float64
+
+        na, nb = len(ya), len(yb)
+        n = na + nb
+
+        c = np.empty((na+nb,) + ya.shape[1:], dtype=dt)
+
+        # compute coefficients of a polynomial degree na+nb-1
+        # walk left-to-right
+        for q in range(0, na):
+            c[q] = ya[q] / spec.poch(n - q, q) * (xb - xa)**q
+            for j in range(0, q):
+                c[q] -= (-1)**(j+q) * comb(q, j) * c[j]
+
+        # now walk right-to-left
+        for q in range(0, nb):
+            c[-q-1] = yb[q] / spec.poch(n - q, q) * (-1)**q * (xb - xa)**q
+            for j in range(0, q):
+                c[-q-1] -= (-1)**(j+1) * comb(q, j+1) * c[-q+j]
+
+        return c
+
+    @staticmethod
+    def _raise_degree(c, d):
+        if d == 0:
+            return c
+
+        k = c.shape[0] - 1
+        out = np.zeros((c.shape[0] + d,) + c.shape[1:], dtype=c.dtype)
+
+        for a in range(c.shape[0]):
+            f = c[a] * comb(k, a)
+            for j in range(d+1):
+                out[a+j] += f * comb(d, j) / comb(k+d, a+j)
+        return out
+
+
+@functools.lru_cache(16)
+def _get_xp_ppoly_cls(xp):
+    """Returns ppoly class to delegate to for xp along with internal array namespace.
+
+    Parameters
+    ----------
+    xp : module
+
+    Returns
+    -------
+    cls : type
+        The ppoly class to delegate to for namespace `xp`.
+    namespace : module
+        The internal namespace that calculations are performed with
+        (may differ from `xp`, e.g. numpy delegation for torch on CPU).
+    """
+    # A device kwarg could be added to give device dependent delegation
+    # e.g., delegating torch to numpy on CPU and cupy on GPU.
+    if is_numpy(xp):
+        return _PPoly, xp
+    spx = scipy_namespace_for(xp)
+    cls = getattr(getattr(spx, "interpolate", None), "PPoly", None)
+    if cls is not None:
+        return cls, xp
+    return _PPoly, np
+
+
+@functools.lru_cache(16)
+def _get_xp_bpoly_cls(xp):
+    """Returns bpoly class to delegate to for xp along with internal array namespace.
+
+    Parameters
+    ----------
+    xp : module
+
+    Returns
+    -------
+    cls : type
+        The bpoly class to delegate to for namespace `xp`.
+    namespace : module
+        The internal namespace that calculations are performed with
+        (may differ from `xp`, e.g. numpy delegation for torch on CPU).
+    """
+    # A device kwarg could be added to give device dependent delegation
+    # e.g., delegating torch to numpy on CPU and cupy on GPU.
+    if is_numpy(xp):
+        return _BPoly, xp
+    spx = scipy_namespace_for(xp)
+    cls = getattr(getattr(spx, "interpolate", None), "BPoly", None)
+    if cls is not None:
+        return cls, xp
+    return _BPoly, np
+
+
+_ppoly_extra_note = (
+    """The methods ``solve`` and ``roots`` are currently not supported
+    with CuPy. ``solve`` and ``roots`` with ``c.ndim > 2`` are currently
+    only supported with NumPy.
+
+    If a ppoly object is called on an input array ``x`` with namespace
+    different from the namespace ``xp`` of the breakpoints and coefficients
+    with which the ppoly object was instantiated, an attempt will be made to
+    coerce ``x`` to the ``xp`` namespace. If the conversion succeeds, the
+    output will be an array from the ``xp`` namespace. Mixing namespaces in
+    this way is not recommended.
+
+    """
+)
+
+
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    exceptions=["cupy"],
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/scipy/scipy/issues/24205")
+    ],
+    method_capabilities={
+        "roots": dict(
+            cpu_only=True,
+            jax_jit=False,
+            skip_backends=[
+                ("dask.array",
+                 "https://github.com/scipy/scipy/issues/24205")
+            ],
+        ),
+        "solve": dict(
+            cpu_only=True,
+            jax_jit=False,
+            skip_backends=[
+                ("dask.array",
+                 "https://github.com/scipy/scipy/issues/24205")
+            ],
+        ),
+    },
+    extra_note=_ppoly_extra_note,
+)
+class PPoly:
+    """Piecewise polynomial in the power basis.
+
+    The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
+    local power basis::
+
+        S = sum(c[m, i] * (xp - x[i])**(k-m) for m in range(k+1))
+
+    where ``k`` is the degree of the polynomial.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k+1, m, ...)
+        Polynomial coefficients, degree `k` and `m` intervals.
+    x : ndarray, shape (m+1,)
+        Polynomial breakpoints. Must be sorted in either increasing or
+        decreasing order.
+    extrapolate : {bool, 'periodic', None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
+    axis : int, optional
+        Interpolation axis. Default is zero.
+
+    Attributes
+    ----------
+    x : ndarray
+        Breakpoints.
+    c : ndarray
+        Coefficients of the polynomials. They are reshaped
+        to a 3-D array with the last dimension representing
+        the trailing dimensions of the original coefficient array.
+    axis : int
+        Interpolation axis.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    solve
+    roots
+    extend
+    from_spline
+    from_bernstein_basis
+    construct_fast
+
+    See Also
+    --------
+    BPoly : piecewise polynomials in the Bernstein basis
+
+    Notes
+    -----
+    High-order polynomials in the power basis can be numerically
+    unstable. Precision problems can start to appear for orders
+    larger than 20-30.
+    """
+
+    def __init__(self, c, x, extrapolate=None, axis=0):
+        xp = array_namespace(c, x)
+        xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        if not is_numpy(xp):
+            c, x = xp_internal.asarray(c), xp_internal.asarray(x)
+        self._delegate_to = xp_ppoly_cls(c, x, extrapolate=extrapolate, axis=axis)
+        self._xp = xp
+        self._xp_internal = xp_internal
+
+    @classmethod
+    def _construct_from_xp(cls, xp_ppoly, *, xp_external):
+        self = object.__new__(cls)
+        self._delegate_to = xp_ppoly
+        self._xp = xp_external
+        self._xp_internal = array_namespace(xp_ppoly.c)
+        return self
+
+    @classmethod
+    def construct_fast(cls, c, x, extrapolate=None, axis=0):
+        """
+        Construct the piecewise polynomial without making checks.
+
+        Takes the same parameters as the constructor. Input arguments
+        ``c`` and ``x`` must be arrays of the correct shape and type. The
+        ``c`` array can only be of dtypes float and complex, and ``x``
+        array must have dtype float.
+        """
+        xp = array_namespace(c, x)
+        xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        c, x = xp_internal.asarray(c), xp_internal.asarray(x)
+        return cls._construct_from_xp(
+            xp_ppoly_cls.construct_fast(
+                c, x, extrapolate=extrapolate, axis=axis
+            ),
+            xp_external=xp,
+        )
+
+    @property
+    def c(self):
+        return self._xp.asarray(self._delegate_to.c)
+
+    @c.setter
+    def c(self, c):
+        self._delegate_to.c = (
+            self._xp_internal.asarray(c) if is_numpy(self._xp_internal) else c
+        )
+
+    @property
+    def x(self):
+        return self._xp.asarray(self._delegate_to.x)
+
+    @x.setter
+    def x(self, x):
+        self._delegate_to.x = (
+            self._xp_internal.asarray(x) if is_numpy(self._xp_internal) else x
+        )
+
+    @property
+    def extrapolate(self):
+        return self._delegate_to.extrapolate
+
+    @extrapolate.setter
+    def extrapolate(self, extrapolate):
+        self._delegate_to.extrapolate = extrapolate
+
+    @property
+    def axis(self):
+        return self._delegate_to.axis
+
+    @axis.setter
+    def axis(self, axis):
+        self._delegate_to.axis = axis
+
+    def extend(self, c, x):
+        """
+        Add additional breakpoints and coefficients to the polynomial.
+
+        Parameters
+        ----------
+        c : ndarray, size (k, m, ...)
+            Additional coefficients for polynomials in intervals. Note that
+            the first additional interval will be formed using one of the
+            ``self.x`` end points.
+        x : ndarray, size (m,)
+            Additional breakpoints. Must be sorted in the same order as
+            ``self.x`` and either to the right or to the left of the current
+            breakpoints.
+
+        Notes
+        -----
+        This method is not thread safe and must not be executed concurrently
+        with other methods available in this class. Doing so may cause
+        unexpected errors or numerical output mismatches.
+        """
+        c, x = self._xp_internal.asarray(c), self._xp_internal.asarray(x)
+        self._delegate_to.extend(c, x)
+
+    def __call__(self, x, nu=0, extrapolate=None):
+        """
+        Evaluate the piecewise polynomial or its derivative.
+
+        Parameters
+        ----------
+        x : array_like
+            Points to evaluate the interpolant at.
+        nu : int, optional
+            Order of derivative to evaluate. Must be non-negative.
+        extrapolate : {bool, 'periodic', None}, optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used.
+            If None (default), use `self.extrapolate`.
+
+        Returns
+        -------
+        y : array_like
+            Interpolated values. Shape is determined by replacing
+            the interpolation axis in the original array with the shape of x.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals are considered half-open,
+        ``[a, b)``, except for the last interval which is closed
+        ``[a, b]``.
+        """
+        return self._xp.asarray(
+            self._delegate_to(
+                self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
+            )
+        )
+
+    def derivative(self, nu=1):
+        """
+        Construct a new piecewise polynomial representing the derivative.
+
+        Parameters
+        ----------
+        nu : int, optional
+            Order of derivative to evaluate. Default is 1, i.e., compute the
+            first derivative. If negative, the antiderivative is returned.
+
+        Returns
+        -------
+        pp : PPoly
+            Piecewise polynomial of order k2 = k - n representing the derivative
+            of this polynomial.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals are considered half-open,
+        ``[a, b)``, except for the last interval which is closed
+        ``[a, b]``.
+        """
+        return self._construct_from_xp(
+            self._delegate_to.derivative(nu=nu),
+            xp_external=self._xp,
+        )
+
+    def antiderivative(self, nu=1):
+        """
+        Construct a new piecewise polynomial representing the antiderivative.
+
+        Antiderivative is also the indefinite integral of the function,
+        and derivative is its inverse operation.
+
+        Parameters
+        ----------
+        nu : int, optional
+            Order of antiderivative to evaluate. Default is 1, i.e., compute
+            the first integral. If negative, the derivative is returned.
+
+        Returns
+        -------
+        pp : PPoly
+            Piecewise polynomial of order k2 = k + n representing
+            the antiderivative of this polynomial.
+
+        Notes
+        -----
+        The antiderivative returned by this function is continuous and
+        continuously differentiable to order n-1, up to floating point
+        rounding error.
+
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
+        it will be set to False for the returned instance. This is done because
+        the antiderivative is no longer periodic and its correct evaluation
+        outside of the initially given x interval is difficult.
+        """
+        return self._construct_from_xp(
+            self._delegate_to.antiderivative(nu=nu),
+            xp_external=self._xp,
+        )
+
+    def integrate(self, a, b, extrapolate=None):
+        """
+        Compute a definite integral over a piecewise polynomial.
+
+        Parameters
+        ----------
+        a : float
+            Lower integration bound
+        b : float
+            Upper integration bound
+        extrapolate : {bool, 'periodic', None}, optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used.
+            If None (default), use `self.extrapolate`.
+
+        Returns
+        -------
+        ig : array_like
+            Definite integral of the piecewise polynomial over [a, b]
+        """
+        return self._xp.asarray(
+            self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+        )
+
+    def solve(self, y=0, discontinuity=True, extrapolate=None):
         """
         Find real solutions of the equation ``pp(x) == y``.
 
@@ -1109,29 +1664,11 @@ class PPoly(_PPolyBase):
         >>> pp.solve()
         array([-1.,  1.])
         """
-        if extrapolate is None:
-            extrapolate = self.extrapolate
-
-        self._ensure_c_contiguous()
-
-        if np.issubdtype(self.c.dtype, np.complexfloating):
-            raise ValueError("Root finding is only for "
-                             "real-valued polynomials")
-
-        y = float(y)
-        r = _ppoly.real_roots(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-                              self.x, y, bool(discontinuity),
-                              bool(extrapolate))
-        if self.c.ndim == 2:
-            return r[0]
-        else:
-            r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
-            # this for-loop is equivalent to ``r2[...] = r``, but that's broken
-            # in NumPy 1.6.0
-            for ii, root in enumerate(r):
-                r2[ii] = root
-
-            return r2.reshape(self.c.shape[2:])
+        return self._xp.asarray(
+            self._delegate_to.solve(
+                y=y, discontinuity=discontinuity, extrapolate=extrapolate
+            )
+        )
 
     def roots(self, discontinuity=True, extrapolate=None):
         """
@@ -1231,17 +1768,16 @@ class PPoly(_PPolyBase):
         """
         if isinstance(tck, BSpline):
             t, c, k = tck.tck
+            xp = tck._xp
             if extrapolate is None:
                 extrapolate = tck.extrapolate
         else:
             t, c, k = tck
-
-        cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
-        for m in range(k, -1, -1):
-            y = _fitpack_py.splev(t[:-1], tck, der=m)
-            cvals[k - m, :] = y/spec.gamma(m+1)
-
-        return cls.construct_fast(cvals, t, extrapolate)
+            xp = array_namespace(t, c)
+        xp_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        t, c = xp_internal.asarray(t), xp_internal.asarray(c)
+        pp = xp_cls.from_spline((t, c, k), extrapolate=extrapolate)
+        return cls._construct_from_xp(pp, xp_external=xp)
 
     @classmethod
     def from_bernstein_basis(cls, bp, extrapolate=None):
@@ -1261,26 +1797,34 @@ class PPoly(_PPolyBase):
         if not isinstance(bp, BPoly):
             raise TypeError(f".from_bernstein_basis only accepts BPoly instances. "
                             f"Got {type(bp)} instead.")
-
-        dx = np.diff(bp.x)
-        k = bp.c.shape[0] - 1  # polynomial order
-
-        rest = (None,)*(bp.c.ndim-2)
-
-        c = np.zeros_like(bp.c)
-        for a in range(k+1):
-            factor = (-1)**a * comb(k, a) * bp.c[a]
-            for s in range(a, k+1):
-                val = comb(k-a, s-a) * (-1)**s
-                c[k-s] += factor * val / dx[(slice(None),)+rest]**s
-
-        if extrapolate is None:
-            extrapolate = bp.extrapolate
-
-        return cls.construct_fast(c, bp.x, extrapolate, bp.axis)
+        xp = bp._xp
+        xp_cls, _ = _get_xp_ppoly_cls(xp)
+        pp = xp_cls.from_bernstein_basis(bp._delegate_to, extrapolate=extrapolate)
+        return cls._construct_from_xp(pp, xp_external=xp)
 
 
-class BPoly(_PPolyBase):
+_bpoly_extra_note = (
+    """If a bpoly object is called on an input array ``x`` with namespace
+    different from the namespace ``xp`` of the breakpoints and coefficients
+    with which the bpoly object was instantiated, an attempt will be made to
+    coerce ``x`` to the ``xp`` namespace. If the conversion succeeds, the
+    output will be an array from the ``xp`` namespace. Mixing namespaces in
+    this way is not recommended.
+
+    """
+)
+
+
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    exceptions=["cupy"],
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/scipy/scipy/issues/24205")
+    ],
+    extra_note=_bpoly_extra_note,
+)
+class BPoly:
     """Piecewise polynomial in the Bernstein basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
@@ -1302,10 +1846,11 @@ class BPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.
-    extrapolate : bool, optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. Default is True.
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
     axis : int, optional
         Interpolation axis. Default is zero.
 
@@ -1331,7 +1876,7 @@ class BPoly(_PPolyBase):
     from_power_basis
     from_derivatives
 
-    See also
+    See Also
     --------
     PPoly : piecewise polynomials in the power basis
 
@@ -1367,10 +1912,138 @@ class BPoly(_PPolyBase):
 
     """  # noqa: E501
 
-    def _evaluate(self, x, nu, extrapolate, out):
-        _ppoly.evaluate_bernstein(
-            self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-            self.x, x, nu, bool(extrapolate), out)
+    def __init__(self, c, x, extrapolate=None, axis=0):
+        xp = array_namespace(c, x)
+        xp_bpoly_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        if not is_numpy(xp):
+            c, x = xp_internal.asarray(c), xp_internal.asarray(x)
+        self._delegate_to = xp_bpoly_cls(c, x, extrapolate=extrapolate, axis=axis)
+        self._xp = xp
+        self._xp_internal = xp_internal
+
+    @classmethod
+    def _construct_from_xp(cls, xp_bpoly, *, xp_external):
+        self = object.__new__(cls)
+        self._delegate_to = xp_bpoly
+        self._xp = xp_external
+        self._xp_internal = array_namespace(xp_bpoly.c)
+        return self
+
+    @classmethod
+    def construct_fast(cls, c, x, extrapolate=None, axis=0):
+        """
+        Construct the piecewise polynomial without making checks.
+
+        Takes the same parameters as the constructor. Input arguments
+        ``c`` and ``x`` must be arrays of the correct shape and type. The
+        ``c`` array can only be of dtypes float and complex, and ``x``
+        array must have dtype float.
+        """
+        xp = array_namespace(c, x)
+        xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        c, x = xp_internal.asarray(c), xp_internal.asarray(x)
+        return cls._construct_from_xp(
+            xp_ppoly_cls.construct_fast(
+                c, x, extrapolate=extrapolate, axis=axis
+            ),
+            xp_external=xp,
+        )
+
+    @property
+    def c(self):
+        return self._xp.asarray(self._delegate_to.c)
+
+    @c.setter
+    def c(self, c):
+        self._delegate_to.c = (
+            self._xp_internal.asarray(c) if is_numpy(self._xp_internal) else c
+        )
+
+    @property
+    def x(self):
+        return self._xp.asarray(self._delegate_to.x)
+
+    @x.setter
+    def x(self, x):
+        self._delegate_to.x = (
+            self._xp_internal.asarray(x) if is_numpy(self._xp_internal) else x
+        )
+
+    @property
+    def extrapolate(self):
+        return self._delegate_to.extrapolate
+
+    @extrapolate.setter
+    def extrapolate(self, extrapolate):
+        self._delegate_to.extrapolate = extrapolate
+
+    @property
+    def axis(self):
+        return self._delegate_to.axis
+
+    @axis.setter
+    def axis(self, axis):
+        self._delegate_to.axis = axis
+
+    def extend(self, c, x):
+        """
+        Add additional breakpoints and coefficients to the polynomial.
+
+        Parameters
+        ----------
+        c : ndarray, size (k, m, ...)
+            Additional coefficients for polynomials in intervals. Note that
+            the first additional interval will be formed using one of the
+            ``self.x`` end points.
+        x : ndarray, size (m,)
+            Additional breakpoints. Must be sorted in the same order as
+            ``self.x`` and either to the right or to the left of the current
+            breakpoints.
+
+        Notes
+        -----
+        This method is not thread safe and must not be executed concurrently
+        with other methods available in this class. Doing so may cause
+        unexpected errors or numerical output mismatches.
+        """
+        c, x = self._xp_internal.asarray(c), self._xp_internal.asarray(x)
+        self._delegate_to.extend(c, x)
+
+    def __call__(self, x, nu=0, extrapolate=None):
+        """
+        Evaluate the piecewise polynomial or its derivative.
+
+        Parameters
+        ----------
+        x : array_like
+            Points to evaluate the interpolant at.
+        nu : int, optional
+            Order of derivative to evaluate. Must be non-negative.
+        extrapolate : {bool, 'periodic', None}, optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used.
+            If None (default), use `self.extrapolate`.
+
+        Returns
+        -------
+        y : array_like
+            Interpolated values. Shape is determined by replacing
+            the interpolation axis in the original array with the shape of x.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals are considered half-open,
+        ``[a, b)``, except for the last interval which is closed
+        ``[a, b]``.
+        """
+        return self._xp.asarray(
+            self._delegate_to(
+                self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
+            )
+        )
 
     def derivative(self, nu=1):
         """
@@ -1389,41 +2062,10 @@ class BPoly(_PPolyBase):
             this polynomial.
 
         """
-        if nu < 0:
-            return self.antiderivative(-nu)
-
-        if nu > 1:
-            bp = self
-            for k in range(nu):
-                bp = bp.derivative()
-            return bp
-
-        # reduce order
-        if nu == 0:
-            c2 = self.c.copy()
-        else:
-            # For a polynomial
-            #    B(x) = \sum_{a=0}^{k} c_a b_{a, k}(x),
-            # we use the fact that
-            #   b'_{a, k} = k ( b_{a-1, k-1} - b_{a, k-1} ),
-            # which leads to
-            #   B'(x) = \sum_{a=0}^{k-1} (c_{a+1} - c_a) b_{a, k-1}
-            #
-            # finally, for an interval [y, y + dy] with dy != 1,
-            # we need to correct for an extra power of dy
-
-            rest = (None,)*(self.c.ndim-2)
-
-            k = self.c.shape[0] - 1
-            dx = np.diff(self.x)[(None, slice(None))+rest]
-            c2 = k * np.diff(self.c, axis=0) / dx
-
-        if c2.shape[0] == 0:
-            # derivative of order 0 is zero
-            c2 = np.zeros((1,) + c2.shape[1:], dtype=c2.dtype)
-
-        # construct a compatible polynomial
-        return self.construct_fast(c2, self.x, self.extrapolate, self.axis)
+        return self._construct_from_xp(
+            self._delegate_to.derivative(nu=nu),
+            xp_external=self._xp,
+        )
 
     def antiderivative(self, nu=1):
         """
@@ -1448,38 +2090,10 @@ class BPoly(_PPolyBase):
         the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
         """
-        if nu <= 0:
-            return self.derivative(-nu)
-
-        if nu > 1:
-            bp = self
-            for k in range(nu):
-                bp = bp.antiderivative()
-            return bp
-
-        # Construct the indefinite integrals on individual intervals
-        c, x = self.c, self.x
-        k = c.shape[0]
-        c2 = np.zeros((k+1,) + c.shape[1:], dtype=c.dtype)
-
-        c2[1:, ...] = np.cumsum(c, axis=0) / k
-        delta = x[1:] - x[:-1]
-        c2 *= delta[(None, slice(None)) + (None,)*(c.ndim-2)]
-
-        # Now fix continuity: on the very first interval, take the integration
-        # constant to be zero; on an interval [x_j, x_{j+1}) with j>0,
-        # the integration constant is then equal to the jump of the `bp` at x_j.
-        # The latter is given by the coefficient of B_{n+1, n+1}
-        # *on the previous interval* (other B. polynomials are zero at the
-        # breakpoint). Finally, use the fact that BPs form a partition of unity.
-        c2[:,1:] += np.cumsum(c2[k, :], axis=0)[:-1]
-
-        if self.extrapolate == 'periodic':
-            extrapolate = False
-        else:
-            extrapolate = self.extrapolate
-
-        return self.construct_fast(c2, x, extrapolate, axis=self.axis)
+        return self._construct_from_xp(
+            self._delegate_to.antiderivative(nu=nu),
+            xp_external=self._xp,
+        )
 
     def integrate(self, a, b, extrapolate=None):
         """
@@ -1502,55 +2116,9 @@ class BPoly(_PPolyBase):
             Definite integral of the piecewise polynomial over [a, b]
 
         """
-        # XXX: can probably use instead the fact that
-        # \int_0^{1} B_{j, n}(x) \dx = 1/(n+1)
-        ib = self.antiderivative()
-        if extrapolate is None:
-            extrapolate = self.extrapolate
-
-        # ib.extrapolate shouldn't be 'periodic', it is converted to
-        # False for 'periodic. in antiderivative() call.
-        if extrapolate != 'periodic':
-            ib.extrapolate = extrapolate
-
-        if extrapolate == 'periodic':
-            # Split the integral into the part over period (can be several
-            # of them) and the remaining part.
-
-            # For simplicity and clarity convert to a <= b case.
-            if a <= b:
-                sign = 1
-            else:
-                a, b = b, a
-                sign = -1
-
-            xs, xe = self.x[0], self.x[-1]
-            period = xe - xs
-            interval = b - a
-            n_periods, left = divmod(interval, period)
-            res = n_periods * (ib(xe) - ib(xs))
-
-            # Map a and b to [xs, xe].
-            a = xs + (a - xs) % period
-            b = a + left
-
-            # If b <= xe then we need to integrate over [a, b], otherwise
-            # over [a, xe] and from xs to what is remained.
-            if b <= xe:
-                res += ib(b) - ib(a)
-            else:
-                res += ib(xe) - ib(a) + ib(xs + left + a - xe) - ib(xs)
-
-            return sign * res
-        else:
-            return ib(b) - ib(a)
-
-    def extend(self, c, x):
-        k = max(self.c.shape[0], c.shape[0])
-        self.c = self._raise_degree(self.c, k - self.c.shape[0])
-        c = self._raise_degree(c, k - c.shape[0])
-        return _PPolyBase.extend(self, c, x)
-    extend.__doc__ = _PPolyBase.extend.__doc__
+        return self._xp.asarray(
+            self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+        )
 
     @classmethod
     def from_power_basis(cls, pp, extrapolate=None):
@@ -1570,22 +2138,10 @@ class BPoly(_PPolyBase):
         if not isinstance(pp, PPoly):
             raise TypeError(f".from_power_basis only accepts PPoly instances. "
                             f"Got {type(pp)} instead.")
-
-        dx = np.diff(pp.x)
-        k = pp.c.shape[0] - 1   # polynomial order
-
-        rest = (None,)*(pp.c.ndim-2)
-
-        c = np.zeros_like(pp.c)
-        for a in range(k+1):
-            factor = pp.c[a] / comb(k, k-a) * dx[(slice(None),)+rest]**(k-a)
-            for j in range(k-a, k+1):
-                c[j] += factor * comb(j, k-a)
-
-        if extrapolate is None:
-            extrapolate = pp.extrapolate
-
-        return cls.construct_fast(c, pp.x, extrapolate, pp.axis)
+        xp = pp._xp
+        xp_cls, _ = _get_xp_bpoly_cls(xp)
+        bp = xp_cls.from_power_basis(pp._delegate_to, extrapolate=extrapolate)
+        return cls._construct_from_xp(bp, xp_external=xp)
 
     @classmethod
     def from_derivatives(cls, xi, yi, orders=None, extrapolate=None):
@@ -1651,62 +2207,27 @@ class BPoly(_PPolyBase):
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
-        xi = np.asarray(xi)
-        if len(xi) != len(yi):
-            raise ValueError("xi and yi need to have the same length")
-        if np.any(xi[1:] - xi[:1] <= 0):
-            raise ValueError("x coordinates are not in increasing order")
-
-        # number of intervals
-        m = len(xi) - 1
-
-        # global poly order is k-1, local orders are <=k and can vary
-        try:
-            k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
-        except TypeError as e:
-            raise ValueError(
-                "Using a 1-D array for y? Please .reshape(-1, 1)."
-            ) from e
-
-        if orders is None:
-            orders = [None] * m
+        if isinstance(yi, (list, tuple)):
+            # yi is documented as accepting arrays or lists of
+            # arrays.  The following line with star unpacking will not
+            # work for array ``yi`` for some backends because some are
+            # stricting than others about whether arrays can be iterated over.
+            xp = array_namespace(xi, *yi)
         else:
-            if isinstance(orders, int | np.integer):
-                orders = [orders] * m
-            k = max(k, max(orders))
+            xp = array_namespace(xi, yi)
+        xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        xi = xp_internal.asarray(xi)
+        if isinstance(yi, (list, tuple)):
+            # If yi is a ragged list or tuple of arrays, then need to apply
+            # xp_internal.asarray separately over each element.
+            yi = list(map(xp_internal.asarray, yi))
+        else:
+            yi = xp_internal.asarray(yi)
 
-            if any(o <= 0 for o in orders):
-                raise ValueError("Orders must be positive.")
-
-        c = []
-        for i in range(m):
-            y1, y2 = yi[i], yi[i+1]
-            if orders[i] is None:
-                n1, n2 = len(y1), len(y2)
-            else:
-                n = orders[i]+1
-                n1 = min(n//2, len(y1))
-                n2 = min(n - n1, len(y2))
-                n1 = min(n - n2, len(y2))
-                if n1 + n2 != n:
-                    mesg = (
-                        f"Point {xi[i]} has {len(y1)} derivatives, point {xi[i+1]} has "
-                        f"{len(y2)} derivatives, but order {orders[i]} requested"
-                    )
-                    raise ValueError(mesg)
-
-                if not (n1 <= len(y1) and n2 <= len(y2)):
-                    raise ValueError("`order` input incompatible with"
-                                     " length y1 or y2.")
-
-            b = BPoly._construct_from_derivatives(xi[i], xi[i+1],
-                                                  y1[:n1], y2[:n2])
-            if len(b) < k:
-                b = BPoly._raise_degree(b, k - len(b))
-            c.append(b)
-
-        c = np.asarray(c)
-        return cls(c.swapaxes(0, 1), xi, extrapolate)
+        bp = xp_cls.from_derivatives(
+            xi, yi, orders=orders, extrapolate=extrapolate
+        )
+        return cls._construct_from_xp(bp, xp_external=xp)
 
     @staticmethod
     def _construct_from_derivatives(xa, xb, ya, yb):
@@ -1763,38 +2284,10 @@ class BPoly(_PPolyBase):
         At ``x = xb`` it's the same with ``a = n - q``.
 
         """
-        ya, yb = np.asarray(ya), np.asarray(yb)
-        if ya.shape[1:] != yb.shape[1:]:
-            raise ValueError(
-                f"Shapes of ya {ya.shape} and yb {yb.shape} are incompatible"
-            )
-
-        dta, dtb = ya.dtype, yb.dtype
-        if (np.issubdtype(dta, np.complexfloating) or
-               np.issubdtype(dtb, np.complexfloating)):
-            dt = np.complex128
-        else:
-            dt = np.float64
-
-        na, nb = len(ya), len(yb)
-        n = na + nb
-
-        c = np.empty((na+nb,) + ya.shape[1:], dtype=dt)
-
-        # compute coefficients of a polynomial degree na+nb-1
-        # walk left-to-right
-        for q in range(0, na):
-            c[q] = ya[q] / spec.poch(n - q, q) * (xb - xa)**q
-            for j in range(0, q):
-                c[q] -= (-1)**(j+q) * comb(q, j) * c[j]
-
-        # now walk right-to-left
-        for q in range(0, nb):
-            c[-q-1] = yb[q] / spec.poch(n - q, q) * (-1)**q * (xb - xa)**q
-            for j in range(0, q):
-                c[-q-1] -= (-1)**(j+1) * comb(q, j+1) * c[-q+j]
-
-        return c
+        xp = array_namespace(ya, yb)
+        xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        ya, yb = xp_internal.asarray(ya), xp_internal.asarray(yb)
+        return xp.asarray(xp_cls._construct_from_derivatives(xa, xb, ya, yb))
 
     @staticmethod
     def _raise_degree(c, d):
@@ -1807,7 +2300,7 @@ class BPoly(_PPolyBase):
         ----------
         c : array_like
             coefficient array, 1-D
-        d : integer
+        d : int
 
         Returns
         -------
@@ -1824,22 +2317,13 @@ class BPoly(_PPolyBase):
                                  comb(d, j) / comb(k+d, a+j)
 
         """
-        if d == 0:
-            return c
-
-        k = c.shape[0] - 1
-        out = np.zeros((c.shape[0] + d,) + c.shape[1:], dtype=c.dtype)
-
-        for a in range(c.shape[0]):
-            f = c[a] * comb(k, a)
-            for j in range(d+1):
-                out[a+j] += f * comb(d, j) / comb(k+d, a+j)
-        return out
-
+        xp = array_namespace(c)
+        xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        return xp.asarray(xp_cls._raise_degree(xp_internal.asarray(c), d))
 
 class NdPPoly:
     """
-    Piecewise tensor product polynomial
+    Piecewise tensor product polynomial.
 
     The value at point ``xp = (x', y', z', ...)`` is evaluated by first
     computing the interval indices `i` such that::
@@ -1889,7 +2373,7 @@ class NdPPoly:
     integrate_1d
     construct_fast
 
-    See also
+    See Also
     --------
     PPoly : piecewise polynomials in 1D
 
@@ -2162,7 +2646,7 @@ class NdPPoly:
 
     def integrate_1d(self, a, b, axis, extrapolate=None):
         r"""
-        Compute NdPPoly representation for one dimensional definite integral
+        Compute NdPPoly representation for one dimensional definite integral.
 
         The result is a piecewise polynomial representing the integral:
 

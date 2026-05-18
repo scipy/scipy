@@ -63,7 +63,7 @@ class TestOldToNew:
 
 class TestNewToOld:
     @pytest.mark.fail_slow(2)
-    def test_multiple_constraint_objects(self, num_parallel_threads):
+    def test_multiple_constraint_objects(self):
         def fun(x):
             return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2 + (x[2] - 0.75) ** 2
         x0 = [2, 0, 1]
@@ -89,12 +89,11 @@ class TestNewToOld:
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-4)
             assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-4)
-            if num_parallel_threads == 1:
-                assert_allclose(funs['cobyqa'], funs['trust-constr'],
-                                rtol=1e-4)
+            assert_allclose(funs['cobyqa'], funs['trust-constr'],
+                            rtol=1e-4)
 
     @pytest.mark.fail_slow(20)
-    def test_individual_constraint_objects(self, num_parallel_threads):
+    def test_individual_constraint_objects(self):
         def fun(x):
             return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2 + (x[2] - 0.75) ** 2
         x0 = [2, 0, 1]
@@ -161,9 +160,8 @@ class TestNewToOld:
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
             assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-3)
-            if num_parallel_threads == 1:
-                assert_allclose(funs['cobyqa'], funs['trust-constr'],
-                                rtol=1e-3)
+            assert_allclose(funs['cobyqa'], funs['trust-constr'],
+                            rtol=1e-3)
 
         for con in cone:
             funs = {}
@@ -173,9 +171,8 @@ class TestNewToOld:
                     result = minimize(fun, x0, method=method, constraints=con)
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
-            if num_parallel_threads == 1:
-                assert_allclose(funs['cobyqa'], funs['trust-constr'],
-                                rtol=1e-3)
+            assert_allclose(funs['cobyqa'], funs['trust-constr'],
+                            rtol=1e-3)
 
 
 class TestNewToOldSLSQP:

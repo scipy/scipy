@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.linalg.lapack import HAS_ILP64
 from scipy.optimize import _lbfgsb, minimize
 
 
@@ -77,7 +78,9 @@ def test_setulb_floatround():
     factr = 1e7
     pgtol = 1e-5
     maxls = 20
-    nbd = np.full(shape=(n,), fill_value=2, dtype=np.int32)
+    int_dtype = np.int64 if HAS_ILP64 else np.int32
+
+    nbd = np.full(shape=(n,), fill_value=2, dtype=int_dtype)
     low_bnd = np.zeros(n, dtype=np.float64)
     upper_bnd = np.ones(n, dtype=np.float64)
 
@@ -93,11 +96,11 @@ def test_setulb_floatround():
     g = np.zeros(n, dtype=np.float64)
 
     wa = np.zeros(2*m*n + 5*n + 11*m*m + 8*m, dtype=np.float64)
-    iwa = np.zeros(3*n, dtype=np.int32)
-    task = np.zeros(2, dtype=np.int32)
-    ln_task = np.zeros(2, dtype=np.int32)
-    lsave = np.zeros(4, dtype=np.int32)
-    isave = np.zeros(44, dtype=np.int32)
+    iwa = np.zeros(3*n, dtype=int_dtype)
+    task = np.zeros(2, dtype=int_dtype)
+    ln_task = np.zeros(2, dtype=int_dtype)
+    lsave = np.zeros(4, dtype=int_dtype)
+    isave = np.zeros(44, dtype=int_dtype)
     dsave = np.zeros(29, dtype=np.float64)
 
     for n_iter in range(7):  # 7 steps required to reproduce error

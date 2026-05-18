@@ -18,7 +18,7 @@ TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
     2: "`xtol` termination condition is satisfied.",
-    3: "`callback` function requested termination.",
+    3: "`callback` raised `StopIteration`.",
     4: "Constraint violation exceeds 'gtol'"
 }
 
@@ -186,7 +186,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         barrier tolerance. Default is 0.1 for both values (recommended in [1]_ p. 19).
         Also note that ``barrier_parameter`` and ``barrier_tolerance`` are updated
         with the same prefactor.
-    factorization_method : string or None, optional
+    factorization_method : str or None, optional
         Method to factorize the Jacobian of the constraints. Use None (default)
         for the auto selection or one of:
 
@@ -260,11 +260,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Gradient of the Lagrangian function at the solution.
     nit : int
         Total number of iterations.
-    nfev : integer
+    nfev : int
         Number of the objective function evaluations.
-    njev : integer
+    njev : int
         Number of the objective function gradient evaluations.
-    nhev : integer
+    nhev : int
         Number of the objective function Hessian evaluations.
     cg_niter : int
         Total number of the conjugate gradient method iterations.
@@ -306,7 +306,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         * 0 : The maximum number of function evaluations is exceeded.
         * 1 : `gtol` termination condition is satisfied.
         * 2 : `xtol` termination condition is satisfied.
-        * 3 : `callback` function requested termination.
+        * 3 : `callback` raised `StopIteration`.
         * 4 : Constraint violation exceeds 'gtol'.
 
         .. versionchanged:: 1.15.0
@@ -338,8 +338,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         verbose = 1
 
     if bounds is not None:
-        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf)
-        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf)
+        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf,
+                                   out=None)
+        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf,
+                                   out=None)
         modified_lb = np.where(np.isfinite(bounds.lb), modified_lb, bounds.lb)
         modified_ub = np.where(np.isfinite(bounds.ub), modified_ub, bounds.ub)
         bounds = Bounds(modified_lb, modified_ub, keep_feasible=bounds.keep_feasible)

@@ -11,12 +11,14 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 import os
+from warnings import warn
 
 import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 
 from scipy.sparse import coo_array, issparse, coo_matrix
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
@@ -81,7 +83,7 @@ def mminfo(source):
 # -----------------------------------------------------------------------------
 
 
-def mmread(source, *, spmatrix=True):
+def mmread(source, *, spmatrix=_NoValue):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -91,7 +93,14 @@ def mmread(source, *, spmatrix=True):
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
     spmatrix : bool, optional (default: True)
-        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        If ``True``, return sparse matrix. Otherwise return sparse array.
+
+        .. deprecated:: 1.18.0
+            The default value for `spmatrix` is changing to False in v1.20.
+            That means the default return value will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Returns
     -------
@@ -153,10 +162,6 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
         values.
-
-    Returns
-    -------
-    None
 
     Examples
     --------
@@ -561,7 +566,7 @@ class MMFile:
         self._init_attrs(**kwargs)
 
     # -------------------------------------------------------------------------
-    def read(self, source, *, spmatrix=True):
+    def read(self, source, *, spmatrix=_NoValue):
         """
         Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -571,7 +576,14 @@ class MMFile:
             Matrix Market filename (extensions .mtx, .mtz.gz)
             or open file object.
         spmatrix : bool, optional (default: True)
-            If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+            If ``True``, return sparse matrix. Otherwise return sparse array.
+
+            .. deprecated:: 1.18.0
+                The default value for `spmatrix` is changing to False in v1.20.
+                That means the default return value will be a sparse array.
+                Unless you use * instead of @, ** for matrix power, or you depend
+                on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+                See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
         Returns
         -------
@@ -588,6 +600,19 @@ class MMFile:
         finally:
             if close_it:
                 stream.close()
+
+        if spmatrix is _NoValue:
+            msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+             That means the default return type will be a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            spmatrix = True
+
         if spmatrix and isinstance(data, coo_array):
             data = coo_matrix(data)
         return data

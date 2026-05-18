@@ -263,7 +263,7 @@ def _deprecate_positional_args(func=None, *, version=None,
         admonition += custom_message
         doc['Extended Summary'] += [admonition]
 
-        doc = str(doc).split("\n", 1)[1]  # remove signature
+        doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         inner_f.__doc__ = str(doc)
 
         return inner_f

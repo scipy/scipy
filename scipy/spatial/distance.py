@@ -111,7 +111,7 @@ import numpy as np
 
 from scipy._lib._array_api import _asarray
 from scipy._lib._util import _asarray_validated, _transition_to_rng
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy.linalg import norm
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
@@ -372,10 +372,11 @@ def directed_hausdorff(u, v, rng=0):
     (as with the brute force algorithm), this is unlikely in practice
     as the input data would have to require the algorithm to explore
     every single point interaction, and after the algorithm shuffles
-    the input points at that. The best case performance is O(m), which
-    is satisfied by selecting an inner loop distance that is less than
-    cmax and leads to an early break as often as possible. The authors
-    have formally shown that the average runtime is closer to O(m).
+    the input points at that. The best case performance is ``O(m)``,
+    which is satisfied by selecting an inner loop distance that is
+    less than cmax and leads to an early break as often as possible.
+    The authors have formally shown that the average runtime is
+    closer to ``O(m)``.
 
     .. versionadded:: 0.19.0
 
@@ -383,8 +384,8 @@ def directed_hausdorff(u, v, rng=0):
     ----------
     .. [1] A. A. Taha and A. Hanbury, "An efficient algorithm for
            calculating the exact Hausdorff distance." IEEE Transactions On
-           Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
-           2015.
+           Pattern Analysis And Machine Intelligence, vol. 37, no. 11,
+           pp. 2153-63, 2015. :doi:`10.1109/TPAMI.2015.2408351`.
 
     Examples
     --------
@@ -431,9 +432,9 @@ def directed_hausdorff(u, v, rng=0):
 
 def minkowski(u, v, p=2, w=None):
     """
-    Compute the Minkowski distance between two 1-D arrays.
+    Compute the Minkowski distance between two arrays.
 
-    The Minkowski distance between 1-D arrays `u` and `v`,
+    The Minkowski distance between arrays `u` and `v`,
     is defined as
 
     .. math::
@@ -445,9 +446,9 @@ def minkowski(u, v, p=2, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
     p : scalar
         The order of the norm of the difference :math:`{\\|u-v\\|}_p`. Note
@@ -459,7 +460,7 @@ def minkowski(u, v, p=2, w=None):
 
     Returns
     -------
-    minkowski : double
+    minkowski : float or ndarray
         The Minkowski distance between vectors `u` and `v`.
 
     Examples
@@ -479,8 +480,8 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = _asarray(u, order='C')
+    v = _asarray(v, order='C')
     if p <= 0:
         raise ValueError("p must be greater than 0")
     u_v = u - v
@@ -496,15 +497,15 @@ def minkowski(u, v, p=2, w=None):
         else:
             root_w = np.power(w, 1/p)
         u_v = root_w * u_v
-    dist = norm(u_v, ord=p)
+    dist = norm(u_v, ord=p, axis=-1)
     return dist
 
 
 def euclidean(u, v, w=None):
     """
-    Computes the Euclidean distance between two 1-D arrays.
+    Computes the Euclidean distance between two arrays.
 
-    The Euclidean distance between 1-D arrays `u` and `v`, is defined as
+    The Euclidean distance between arrays `u` and `v`, is defined as
 
     .. math::
 
@@ -514,9 +515,9 @@ def euclidean(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -524,7 +525,7 @@ def euclidean(u, v, w=None):
 
     Returns
     -------
-    euclidean : double
+    euclidean : float or ndarray
         The Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -541,7 +542,7 @@ def euclidean(u, v, w=None):
 
 def sqeuclidean(u, v, w=None):
     """
-    Compute the squared Euclidean distance between two 1-D arrays.
+    Compute the squared Euclidean distance between two arrays.
 
     The squared Euclidean distance between `u` and `v` is defined as
 
@@ -551,9 +552,9 @@ def sqeuclidean(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -561,7 +562,7 @@ def sqeuclidean(u, v, w=None):
 
     Returns
     -------
-    sqeuclidean : double
+    sqeuclidean : float or ndarray
         The squared Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -581,14 +582,14 @@ def sqeuclidean(u, v, w=None):
     if not (hasattr(v, "dtype") and np.issubdtype(v.dtype, np.inexact)):
         vtype = np.float64
 
-    u = _validate_vector(u, dtype=utype)
-    v = _validate_vector(v, dtype=vtype)
+    u = _asarray(u, dtype=utype, order='C')
+    v = _asarray(v, dtype=vtype, order='C')
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
         w = _validate_weights(w)
         u_v_w = w * u_v
-    return np.dot(u_v, u_v_w)
+    return np.vecdot(u_v, u_v_w)
 
 
 def correlation(u, v, w=None, centered=True):
@@ -916,7 +917,7 @@ def seuclidean(u, v, V):
     v : (N,) array_like
         Input array.
     V : (N,) array_like
-        `V` is an 1-D array of component variances. It is usually computed
+        `V` is a 1-D array of component variances. It is usually computed
         among a larger collection of vectors.
 
     Returns
@@ -2182,7 +2183,7 @@ def squareform(X, force="no", checks=True):
     1. ``v = squareform(X)``
 
        Given a square n-by-n symmetric distance matrix ``X``,
-       ``v = squareform(X)`` returns a ``n * (n-1) / 2``
+       ``v = squareform(X)`` returns an ``n * (n-1) / 2``
        (i.e. binomial coefficient n choose 2) sized vector `v`
        where :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        is the distance between distinct points ``i`` and ``j``.
@@ -2190,9 +2191,9 @@ def squareform(X, force="no", checks=True):
 
     2. ``X = squareform(v)``
 
-       Given a ``n * (n-1) / 2`` sized vector ``v``
+       Given an ``n * (n-1) / 2`` sized vector ``v``
        for some integer ``n >= 1`` encoding distances as described,
-       ``X = squareform(v)`` returns a n-by-n distance matrix ``X``.
+       ``X = squareform(v)`` returns an n-by-n distance matrix ``X``.
        The ``X[i, j]`` and ``X[j, i]`` values are set to
        :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        and all diagonal elements are zero.
@@ -2316,7 +2317,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
 
     The triangle inequality states that for any three points ``i``, ``j``, and ``k``:
     ``D[i,k] <= D[i,j] + D[j,k]``
-    
+
     Parameters
     ----------
     D : array_like
@@ -2332,7 +2333,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         `throw` is True to identify the offending variable.
     warning : bool, optional
         If True, a warning message is raised instead of throwing an exception.
-        
+
     Returns
     -------
     valid : bool
@@ -2624,6 +2625,9 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
         'seuclidean', 'sokalsneath', 'sqeuclidean', 'yule'.
+    out : ndarray, optional
+        Output array in which to place the result. It must have the same
+        shape as the expected output.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.

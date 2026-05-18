@@ -3,13 +3,43 @@ from numpy.testing import (assert_allclose,
                            assert_equal)
 import scipy.linalg.cython_blas as blas
 
+
+class TestBlasInt:
+    """Tests for blas_int type used in cython_blas/cython_lapack."""
+
+    def test_blas_int_size(self):
+        """Verify blas_int size matches the build configuration."""
+        from scipy.__config__ import CONFIG
+        size = blas._blas_int_size()
+        cython_blas_ilp64 = CONFIG['Build Dependencies']['blas']['cython blas ilp64']
+        if cython_blas_ilp64:
+            assert size == 8, f"ILP64 build but blas_int is {size} bytes"
+        else:
+            assert size == 4, f"LP64 build but blas_int is {size} bytes"
+
+        # also verify blas_bint size
+        bint_sizes = blas._blas_bint_bint_sizes()  # (sizeof(blas_bint), sizeof(bint))
+        if cython_blas_ilp64:
+            assert bint_sizes == (8, 4)
+        else:
+            assert bint_sizes == (4, 4)
+
+    def test_dgemm_with_blas_int_dimensions(self):
+        """Test dgemm works correctly - exercises blas_int for dimensions."""
+        a = np.eye(3, dtype=np.float64)
+        b = np.arange(9, dtype=np.float64).reshape((3, 3))
+        c = np.empty((3, 3), dtype=np.float64)
+        blas._test_dgemm(1., a, b, 0., c)
+        assert_allclose(c, b)
+
+
 class TestDGEMM:
-    
+
     def test_transposes(self):
 
-        a = np.arange(12, dtype='d').reshape((3, 4))[:2,:2]
-        b = np.arange(1, 13, dtype='d').reshape((4, 3))[:2,:2]
-        c = np.empty((2, 4))[:2,:2]
+        a = np.arange(12, dtype=np.float64).reshape((3, 4))[:2,:2]
+        b = np.arange(1, 13, dtype=np.float64).reshape((4, 3))[:2,:2]
+        c = np.empty((2, 4), dtype=np.float64)[:2,:2]
 
         blas._test_dgemm(1., a, b, 0., c)
         assert_allclose(c, a.dot(b))
@@ -34,18 +64,18 @@ class TestDGEMM:
 
         blas._test_dgemm(1., a.T, b.T, 0., c.T)
         assert_allclose(c, a.T.dot(b.T).T)
-    
+
     def test_shapes(self):
-        a = np.arange(6, dtype='d').reshape((3, 2))
-        b = np.arange(-6, 2, dtype='d').reshape((2, 4))
-        c = np.empty((3, 4))
+        a = np.arange(6, dtype=np.float64).reshape((3, 2))
+        b = np.arange(-6, 2, dtype=np.float64).reshape((2, 4))
+        c = np.empty((3, 4), dtype=np.float64)
 
         blas._test_dgemm(1., a, b, 0., c)
         assert_allclose(c, a.dot(b))
 
         blas._test_dgemm(1., b.T, a.T, 0., c.T)
         assert_allclose(c, b.T.dot(a.T).T)
-        
+
 class TestWfuncPointers:
     """ Test the function pointers that are expected to fail on
     Mac OS X without the additional entry statement in their definitions
@@ -72,7 +102,7 @@ class TestWfuncPointers:
                         -6.10000038147+30.7999992371j)
         assert_allclose(blas._test_scasum(cx[::2]), 18.)
         assert_allclose(blas._test_scnrm2(cx[::2]), 13.1719398499)
-    
+
     def test_double_args(self):
 
         x = np.array([5., -3, -.5], np.float64)
@@ -115,4 +145,3 @@ class TestWfuncPointers:
 
         assert_allclose(blas._test_zdotc(cx[::2], cy[::2]), -18.5625+22.125j)
         assert_allclose(blas._test_zdotu(cx[::2], cy[::2]), -6.5625+31.875j)
-

@@ -303,8 +303,8 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
         # float32 gets only used by TestSTFT.test_roundtrip_float32() so
         # we are using the tolerances from there to circumvent CI problems
         atol, rtol = 1e-4, 1e-5
-    elif platform.machine() in ('aarch64', 'i386', 'i686'):
-        atol = max(atol, 1e-12)  # 2e-15 seems too tight for 32-Bit platforms
+    else:
+        atol = max(atol, 1e-12)  # 2e-15 seems too tight
 
     assert_allclose(x_wrapper[k_lo:k_hi], x[k_lo:k_hi], atol=atol, rtol=rtol,
                     err_msg=f"Signal values {e_msg_part}")

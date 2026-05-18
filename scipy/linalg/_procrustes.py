@@ -2,14 +2,19 @@
 Solve the orthogonal Procrustes problem.
 
 """
-import numpy as np
+
 from scipy._lib._util import _apply_over_batch
 from ._decomp_svd import svd
+from scipy._lib._array_api import array_namespace, xp_capabilities, _asarray, is_numpy
 
 
 __all__ = ['orthogonal_procrustes']
 
 
+@xp_capabilities(
+    jax_jit=False,
+    skip_backends=[("dask.array", "full_matrices=True is not supported by dask")],
+)
 @_apply_over_batch(('A', 2), ('B', 2))
 def orthogonal_procrustes(A, B, check_finite=True):
     """
@@ -50,8 +55,6 @@ def orthogonal_procrustes(A, B, check_finite=True):
     Note that unlike higher level Procrustes analyses of spatial data, this
     function only uses orthogonal transformations like rotations and
     reflections, and it does not use scaling or translation.
-
-    .. versionadded:: 0.15.0
 
     References
     ----------
@@ -94,20 +97,23 @@ def orthogonal_procrustes(A, B, check_finite=True):
     True
 
     """
-    if check_finite:
-        A = np.asarray_chkfinite(A)
-        B = np.asarray_chkfinite(B)
-    else:
-        A = np.asanyarray(A)
-        B = np.asanyarray(B)
+    xp = array_namespace(A, B)
+
+    A = _asarray(A, xp=xp, check_finite=check_finite, subok=True)
+    B = _asarray(B, xp=xp, check_finite=check_finite, subok=True)
+
     if A.ndim != 2:
         raise ValueError(f'expected ndim to be 2, but observed {A.ndim}')
     if A.shape != B.shape:
         raise ValueError(f'the shapes of A and B differ ({A.shape} vs {B.shape})')
+
     # Be clever with transposes, with the intention to save memory.
     # The conjugate has no effect for real inputs, but gives the correct solution
     # for complex inputs.
-    u, w, vt = svd((B.T @ np.conjugate(A)).T)
+    if is_numpy(xp):
+        u, w, vt = svd((B.T @ xp.conj(A)).T)
+    else:
+        u, w, vt = xp.linalg.svd((B.T @ xp.conj(A)).T)
     R = u @ vt
-    scale = w.sum()
+    scale = xp.sum(w)
     return R, scale

@@ -734,8 +734,10 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
  exit:
     if (PyErr_Occurred()) {
         free(*offsets);
+        *offsets = NULL;
         if (coordinate_offsets) {
             free(*coordinate_offsets);
+            *coordinate_offsets = NULL;
         }
         return 0;
     } else {
