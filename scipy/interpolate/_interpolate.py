@@ -663,7 +663,7 @@ class _PPolyBase:
 
     def _deprecate_dtypes(self, *args):
         """
-        A temporary helper for deprecating non-LAPACK dtypes.
+        A temporary helper for deprecating dtypes.
         """
         for dtype in args:
             if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
@@ -2447,7 +2447,7 @@ class NdPPoly:
 
     def _deprecate_dtypes(self, *args):
         """
-        A temporary helper for deprecating non-LAPACK dtypes.
+        A temporary helper for deprecating dtypes.
         """
         for dtype in args:
             if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
