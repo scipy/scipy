@@ -77,7 +77,7 @@ class TestBartHann:
         N_fft = 131072
         w = windows.barthann(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -110,7 +110,7 @@ class TestBartlett:
         N_fft = 131072
         w = windows.bartlett(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -154,7 +154,7 @@ class TestBlackman:
         N_fft = 131072
         w = windows.blackman(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -196,7 +196,7 @@ class TestBlackmanHarris:
         N_fft = 131072
         w = windows.blackmanharris(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -313,7 +313,7 @@ class TestBohman:
         N_fft = 131072
         w = windows.bohman(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -346,7 +346,7 @@ class TestBoxcar:
         N_fft = 131072
         w = windows.boxcar(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -604,7 +604,7 @@ class TestHamming:
         N_fft = 131072
         w = windows.hamming(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -649,7 +649,7 @@ class TestHann:
         N_fft = 131072
         w = windows.hann(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -772,7 +772,7 @@ class TestNuttall:
         N_fft = 131072
         w = windows.nuttall(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -812,7 +812,7 @@ class TestParzen:
         N_fft = 131072
         w = windows.parzen(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
@@ -1271,7 +1271,7 @@ class TestCosine:
         N_fft = 131072
         w = windows.cosine(M_win, sym=False, xp=xp)
         f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
+        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
         first_zero = np.argmax(np.diff(spec) > 0)
         PSLL = np.max(spec[first_zero:-first_zero])
         BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
