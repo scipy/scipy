@@ -3,7 +3,7 @@
 Quasi-Monte Carlo
 -----------------
 
-Before talking about Quasi-Monte Carlo (QMC), a quick introduction about Monte
+Before talking about Quasi-Monte Carlo (QMC), a quick introduction to Monte
 Carlo (MC). MC methods, or MC experiments, are a broad class of
 computational algorithms that rely on repeated random sampling to obtain
 numerical results. The underlying concept is to use randomness to solve
@@ -14,7 +14,7 @@ three problem classes: optimization, numerical integration, and generating
 draws from a probability distribution.
 
 Generating random numbers with specific properties is a more complex problem
-than it sounds. Simple MC methods are designed to sample points to be
+than it sounds. Simple MC methods are designed to sample points that are
 independent and identically distributed (IID). But generating multiple sets
 of random points can produce radically different results.
 
@@ -26,7 +26,7 @@ of random points can produce radically different results.
 In both cases in the plot above, points are generated randomly without any
 knowledge about previously drawn points. It is clear that some regions of
 the space are left unexplored - which can cause problems in simulations as a
-particular set of points might trigger a totally different behaviour.
+particular set of points might trigger a totally different behavior.
 
 A great benefit of MC is that it has known convergence properties.
 Let's look at the mean of the squared sum in 5 dimensions:
@@ -46,18 +46,18 @@ theoretical rate of :math:`O(n^{-1/2})`.
    :include-source: 0
 
 Although the convergence is ensured, practitioners tend to want to have an
-exploration process which is more deterministic. With normal MC, a seed can be
+exploration process that is more deterministic. With normal MC, a seed can be
 used to have a repeatable process. But fixing the seed would break the
 convergence property: a given seed could work for a given class of problem
 and break for another one.
 
-What is commonly done to walk through the space in a deterministic manner, is
+What is commonly done to walk through the space in a deterministic manner is
 to use a regular grid spanning all parameter dimensions, also called a
 saturated design. Let’s consider the unit-hypercube, with all bounds ranging
 from 0 to 1. Now, having a distance of 0.1 between points, the number of points
 required to fill the unit interval would be 10. In a 2-dimensional hypercube
 the same spacing would require 100, and in 3 dimensions 1,000 points. As the
-number of dimensions grows, the number of experiments which is required to fill
+number of dimensions grows, the number of experiments required to fill
 the space rises exponentially as the dimensionality of the space increases.
 This exponential growth is called "the curse of dimensionality".
 
@@ -77,7 +77,7 @@ To mitigate this issue, QMC methods have been designed. They are
 deterministic, have a good coverage of the space and some of them can be
 continued and retain good properties.
 The main difference with MC methods is that the points are not IID but they
-know about previous points. Hence, some methods are also referred to as
+depend on previous points. Hence, some methods are also referred to as
 sequences.
 
 .. plot:: tutorial/stats/plots/qmc_plot_mc_qmc.py
@@ -88,9 +88,9 @@ sequences.
 This figure presents 2 sets of 256 points. The design of the left is a plain
 MC whereas the design of the right is a QMC design using the *Sobol'* method.
 We clearly see that the QMC version is more uniform. The points sample better
-near the boundaries and there are less clusters or gaps.
+near the boundaries and there are fewer clusters or gaps.
 
-One way to assess the uniformity is to use a measure called the discrepancy.
+One way to assess the uniformity is to use a measure called discrepancy.
 Here the discrepancy of *Sobol'* points is better than crude MC.
 
 Coming back to the computation of the mean, QMC methods also have better rates
@@ -201,7 +201,7 @@ Making a QMC engine, i.e., subclassing ``QMCEngine``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To make your own :class:`scipy.stats.qmc.QMCEngine`, a few methods have to be
-defined. Following is an example wrapping `numpy.random.Generator`.
+defined. The following is an example wrapping `numpy.random.Generator`.
 
     >>> import numpy as np
     >>> from scipy.stats import qmc

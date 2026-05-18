@@ -97,13 +97,16 @@ def csgraph_masked_from_dense(graph,
     ----------
     graph : array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
-    null_value : float or None (optional)
+    null_value : float or None, optional
         Value that denotes non-edges in the graph.  Default is zero.
-    infinity_null : bool
+    nan_null : bool, optional
+        If True (default), then NaN entries are treated as non-edges
+    infinity_null : bool, optional
         If True (default), then infinite entries (both positive and negative)
         are treated as null edges.
-    nan_null : bool
-        If True (default), then NaN entries are treated as non-edges
+    copy : bool, optional
+        If True (default), then the array data is copied. See `numpy.array` for more
+        details.
 
     Returns
     -------
@@ -185,12 +188,12 @@ def csgraph_from_dense(graph,
     graph : array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
     null_value : float or None (optional)
-        Value that denotes non-edges in the graph.  Default is zero.
+        Value that denotes non-edges in the graph. Default is zero.
+    nan_null : bool
+        If True (default), then NaN entries are treated as non-edges
     infinity_null : bool
         If True (default), then infinite entries (both positive and negative)
         are treated as null edges.
-    nan_null : bool
-        If True (default), then NaN entries are treated as non-edges
 
     Returns
     -------
@@ -224,7 +227,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     """
     csgraph_to_dense(csgraph, null_value=0)
 
-    Convert a sparse graph representation to a dense representation
+    Convert a sparse graph representation to a dense representation.
 
     .. versionadded:: 0.11.0
 
@@ -342,7 +345,7 @@ def csgraph_to_masked(csgraph):
     """
     csgraph_to_masked(csgraph)
 
-    Convert a sparse graph representation to a masked array representation
+    Convert a sparse graph representation to a masked array representation.
 
     .. versionadded:: 0.11.0
 
@@ -426,13 +429,13 @@ def reconstruct_path(csgraph, predecessors, directed=True):
         The N x N matrix representing the directed or undirected graph
         from which the predecessors are drawn.
     predecessors : array_like, one dimension
-        The length-N array of indices of predecessors for the tree.  The
-        index of the parent of node i is given by predecessors[i].
+        The length-N array of indices of predecessors for the tree. The
+        index of the parent of node ``i`` is given by ``predecessors[i]``.
     directed : bool, optional
         If True (default), then operate on a directed graph: only move from
-        point i to point j along paths csgraph[i, j].
+        point ``i`` to point ``j`` along paths ``csgraph[i, j]``.
         If False, then operate on an undirected graph: the algorithm can
-        progress from point i to j along csgraph[i, j] or csgraph[j, i].
+        progress from point ``i`` to ``j`` along ``csgraph[i, j]`` or ``csgraph[j, i]``.
 
     Returns
     -------
@@ -475,6 +478,10 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     from ._validation import validate_graph
     csgraph_orig = csgraph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
+    predecessors = np.asarray(predecessors)
+    if not np.isdtype(predecessors.dtype, "integral"):
+        msg = "`predecessors` must be of an integral dtype"
+        raise ValueError(msg)
 
     N = csgraph.shape[0]
 
@@ -529,7 +536,7 @@ def construct_dist_matrix(graph,
     """
     construct_dist_matrix(graph, predecessors, directed=True, null_value=np.inf)
 
-    Construct distance matrix from a predecessor matrix
+    Construct distance matrix from a predecessor matrix.
 
     .. versionadded:: 0.11.0
 

@@ -1,7 +1,7 @@
 from scipy._lib._util import float_factorial
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 from scipy._lib._array_api import array_namespace, xp_swapaxes, xp_device
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy.ndimage import convolve1d  # type: ignore[attr-defined]
 from scipy.signal import _polyutils as _pu
@@ -35,6 +35,14 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
         coefficients are ordered to be used in a convolution. With
         use='dot', the order is reversed, so the filter is applied by
         dotting the coefficients with the data set.
+    xp : array_namespace, optional
+        Optional array namespace.
+        Should be compatible with the array API standard, or supported by
+        array-api-compat.
+        Default: ``numpy``
+    device : any
+        optional device specification for output. Should match one of the
+        supported device specifications in ``xp``.
 
     Returns
     -------

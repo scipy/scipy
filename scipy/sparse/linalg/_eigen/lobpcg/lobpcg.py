@@ -547,6 +547,7 @@ def lobpcg(
                     raise ValueError(
                         f"The shape {A.shape} of the primary matrix\n"
                         f"defined by a callable object is wrong.\n"
+                        f"Expected {(n, n)}."
                     )
             elif issparse(A):
                 A = A.toarray()

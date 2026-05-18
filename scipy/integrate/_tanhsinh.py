@@ -16,22 +16,15 @@ __all__ = ['nsum']
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
 #    Is that OK? If so, we can probably get rid of `status=3`.
-#  Add heuristic to stop when improvement is too slow / antithrashing
 #  support singularities? interval subdivision? this feature will be added
 #    eventually, but do we adjust the interface now?
-#  When doing log-integration, should the tolerances control the error of the
-#    log-integral or the error of the integral?  The trouble is that `log`
-#    inherently looses some precision so it may not be possible to refine
-#    the integral further. Example: 7th moment of stats.f(15, 20)
-#  respect function evaluation limit?
-#  make public?
 
 
 @xp_capabilities(skip_backends=[('array_api_strict', 'No fancy indexing.'),
                                 ('jax.numpy', 'No mutation.'),
                                 ('dask.array',
                                  'Data-dependent shapes in boolean index assignment')])
-def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
+def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minlevel=2,
              atol=None, rtol=None, preserve_shape=False, callback=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
@@ -69,6 +62,8 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     log : bool, default: False
         Setting to True indicates that `f` returns the log of the integrand
         and that `atol` and `rtol` are expressed as the logs of the absolute
@@ -329,9 +324,9 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     """
     maxfun = None  # unused right now
     (f, a, b, log, maxfun, maxlevel, minlevel,
-     atol, rtol, args, preserve_shape, callback, xp) = _tanhsinh_iv(
+     atol, rtol, args, kwargs, preserve_shape, callback, xp) = _tanhsinh_iv(
         f, a, b, log, maxfun, maxlevel, minlevel, atol,
-        rtol, args, preserve_shape, callback)
+        rtol, args, kwargs, preserve_shape, callback)
 
     # Initialization
     # `eim._initialize` does several important jobs, including
@@ -347,7 +342,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         c[inf_a] = b[inf_a] - 1.  # takes care of infinite a
         c[inf_b] = a[inf_b] + 1.  # takes care of infinite b
         c[inf_a & inf_b] = 0.  # takes care of infinite a and b
-        temp = eim._initialize(f, (c,), args, complex_ok=True,
+        temp = eim._initialize(f, (c,), args, kwargs=kwargs, complex_ok=True,
                                preserve_shape=preserve_shape, xp=xp)
     f, xs, fs, args, shape, dtype, xp = temp
     a = xp_ravel(xp.astype(xp.broadcast_to(a, shape), dtype))
@@ -824,7 +819,7 @@ def _transform_integrals(a, b, xp):
 
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
-                 atol, rtol, args, preserve_shape, callback):
+                 atol, rtol, args, kwargs, preserve_shape, callback):
     # Input validation and standardization
 
     xp = array_namespace(a, b)
@@ -887,7 +882,6 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
 
     if not np.iterable(args):
         args = (args,)
-    args = (xp.asarray(arg) for arg in args)
 
     message = '`preserve_shape` must be True or False.'
     if preserve_shape not in {True, False}:
@@ -897,10 +891,10 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
         raise ValueError('`callback` must be callable.')
 
     return (f, a, b, log, maxfun, maxlevel, minlevel,
-            atol, rtol, args, preserve_shape, callback, xp)
+            atol, rtol, args, kwargs, preserve_shape, callback, xp)
 
 
-def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
+def _nsum_iv(f, a, b, step, args, kwargs, log, maxterms, tolerances):
     # Input validation and standardization
 
     xp = array_namespace(a, b, step)
@@ -956,7 +950,7 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     if not np.iterable(args):
         args = (args,)
 
-    return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol, xp
+    return f, a, b, step, valid_abstep, args, kwargs, log, maxterms_int, atol, rtol, xp
 
 
 @xp_capabilities(skip_backends=[('torch', 'data-apis/array-api-compat#271'),
@@ -964,7 +958,8 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
                                 ('jax.numpy', 'No mutation.'),
                                 ('dask.array',
                                  'Data-dependent shapes in boolean index assignment')])
-def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
+def nsum(f, a, b, *, step=1, args=(), kwargs=None,
+         log=False, maxterms=int(2**20), tolerances=None):
     r"""Evaluate a convergent finite or infinite series.
 
     For finite `a` and `b`, this evaluates::
@@ -1008,6 +1003,8 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         requires arguments that are not broadcastable with `a`, `b`, and `step`,
         wrap that callable with `f` such that `f` accepts only `x` and
         broadcastable ``*args``. See Examples.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     log : bool, default: False
         Setting to True indicates that `f` returns the log of the terms
         and that `atol` and `rtol` are expressed as the logs of the absolute
@@ -1158,11 +1155,11 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     # - check for violations of monotonicity?
 
     # Function-specific input validation / standardization
-    tmp = _nsum_iv(f, a, b, step, args, log, maxterms, tolerances)
-    f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol, xp = tmp
+    tmp = _nsum_iv(f, a, b, step, args, kwargs, log, maxterms, tolerances)
+    f, a, b, step, valid_abstep, args, kwargs, log, maxterms, atol, rtol, xp = tmp
 
     # Additional elementwise algorithm input validation / standardization
-    tmp = eim._initialize(f, (a,), args, complex_ok=False, xp=xp)
+    tmp = eim._initialize(f, (a,), args, kwargs=kwargs, complex_ok=False, xp=xp)
     f, xs, fs, args, shape, dtype, xp = tmp
 
     # Finish preparing `a`, `b`, and `step` arrays

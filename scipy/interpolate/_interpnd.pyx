@@ -57,7 +57,7 @@ class NDInterpolatorBase:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, points, values, fill_value=np.nan, ndim=None,
                  rescale=False, need_contiguous=True, need_values=True):

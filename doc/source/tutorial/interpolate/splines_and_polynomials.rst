@@ -19,7 +19,7 @@ A polynomial of degree :math:`k` can be thought of as a linear combination of
 In some applications, it is useful to consider alternative (if formally
 equivalent) bases. Two popular bases, implemented in `scipy.interpolate` are
 B-splines (`BSpline`) and Bernstein polynomials (`BPoly`).
-B-splines are often used for, for example, non-parametric regression problems,
+B-splines are often used, for example, in non-parametric regression problems,
 and Bernstein polynomials are used for constructing Bezier curves.
 
 `PPoly` objects represent piecewise polynomials in the 'usual' power basis.
@@ -75,9 +75,9 @@ the ``dspl`` object, we can find the zeros of the derivative of ``spl``:
     >>> dspl.roots() / np.pi
     array([-0.45480801,  0.50000034,  1.50000099,  2.5000016 ,  3.46249993])
 
-This agrees well with roots :math:`\pi/2 + \pi\,n` of
+This agrees well with the roots :math:`\pi/2 + \pi\,n` of
 :math:`\cos(x) = \sin'(x)`.
-Note that by default it computed the roots *extrapolated* to the outside of
+Note that by default it computes the roots *extrapolated* to the outside of
 the interpolation interval :math:`0 \leqslant x \leqslant 10`, and that
 the extrapolated results (the first and last values) are much less accurate.
 We can switch off the extrapolation and limit the root-finding to the
@@ -86,7 +86,7 @@ interpolation interval:
     >>> dspl.roots(extrapolate=False) / np.pi
     array([0.50000034,  1.50000099,  2.5000016])
 
-In fact, the ``root`` method is a special case of a more general ``solve``
+In fact, the ``roots`` method is a special case of a more general ``solve``
 method which finds for a given constant :math:`y` the solutions of the
 equation :math:`f(x) = y` , where :math:`f(x)` is the piecewise polynomial:
 
@@ -106,7 +106,7 @@ example, we compute an approximation to the complete elliptic integral
     1.8540746773013719
 
 To this end, we tabulate the integrand and interpolate it using the monotone
-PCHIP interpolant (we could as well used a `CubicSpline`):
+PCHIP interpolant (we could as well have used a `CubicSpline`):
 
     >>> from scipy.interpolate import PchipInterpolator
     >>> x = np.linspace(0, np.pi/2, 70)
@@ -121,7 +121,7 @@ and integrate
 which is indeed close to the value computed by `scipy.special.ellipk`.
 
 All piecewise polynomials can be constructed with N-dimensional ``y`` values.
-If ``y.ndim > 1``, it is understood as a stack of 1D ``y`` values, which are
+If ``y.ndim > 1``, it is interpreted as a stack of 1D ``y`` values, which are
 arranged along the interpolation axis (with the default value of 0).
 The latter is specified via the ``axis`` argument, and the invariant is that
 ``len(x) == y.shape[axis]``. As an example, we extend the elliptic integral

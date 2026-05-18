@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
 )
 
 import scipy.signal._waveforms as waveforms
-from scipy.signal import square, sawtooth
+from scipy.signal import square, sawtooth  # type:ignore[attr-defined]
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals

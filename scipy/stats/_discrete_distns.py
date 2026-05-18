@@ -3,12 +3,14 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
+from types import MethodType
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 import scipy.special._ufuncs as scu
+from scipy.special._spfun_stats import _poisson_binom_pmf, _poisson_binom_cdf
 from scipy._lib._util import rng_integers
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -22,7 +24,6 @@ from ._distn_infrastructure import (rv_discrete, get_distribution_names,
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
-from ._stats_pythran import _poisson_binom
 
 
 class binom_gen(rv_discrete):
@@ -66,7 +67,9 @@ class binom_gen(rv_discrete):
                 _ShapeInfo("p", False, (0, 1), (True, True))]
 
     def _rvs(self, n, p, size=None, random_state=None):
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _argcheck(self, n, p):
         return (n >= 0) & _isintegral(n) & (p >= 0) & (p <= 1)
@@ -114,11 +117,6 @@ class binom_gen(rv_discrete):
             t2 = 6.0/n
             g2 = t1 - t2
         return mu, var, g1, g2
-
-    def _entropy(self, n, p):
-        k = np.r_[0:n + 1]
-        vals = self._pmf(k, n, p)
-        return np.sum(entr(vals), axis=0)
 
 
 binom = binom_gen(name='binom')
@@ -235,7 +233,9 @@ class betabinom_gen(rv_discrete):
 
     def _rvs(self, n, a, b, size=None, random_state=None):
         p = random_state.beta(a, b, size)
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _get_support(self, n, a, b):
         return 0, n
@@ -1600,6 +1600,11 @@ class poisson_binom_gen(rv_discrete):
     %(example)s
 
     """  # noqa: E501
+
+    _parse_args_rvs: MethodType
+    _parse_args_stats: MethodType
+    _parse_args: MethodType
+
     def _shape_info(self):
         # message = 'Fitting is not implemented for this distribution."
         # raise NotImplementedError(message)
@@ -1626,14 +1631,14 @@ class poisson_binom_gen(rv_discrete):
     def _pmf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64)
-        return _poisson_binom(k, args, 'pmf')
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _poisson_binom_pmf(k, p)
 
     def _cdf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64)
-        return _poisson_binom(k, args, 'cdf')
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _poisson_binom_cdf(k, p)
 
     def _stats(self, *args, **kwds):
         p = np.stack(args, axis=0)
@@ -1714,11 +1719,18 @@ class skellam_gen(rv_discrete):
 
     Parameters :math:`\mu_1` and :math:`\mu_2` must be strictly positive.
 
-    For details see: https://en.wikipedia.org/wiki/Skellam_distribution
-
     `skellam` takes :math:`\mu_1` and :math:`\mu_2` as shape parameters.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Skellam, J. G. "The Frequency Distribution of the Difference
+           Between Two Poisson Variates Belonging to Different Populations."
+           *Journal of the Royal Statistical Society* 109, no. 3 (1946): 296-296.
+           :doi:`10.2307/2981372`
+    .. [2] "Skellam distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Skellam_distribution
 
     %(example)s
 

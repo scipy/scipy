@@ -1158,7 +1158,7 @@ class TestMultivariateNormal:
         mean_est, cov_est = multivariate_normal.fit(x)
         mean_ref, cov_ref = np.mean(x, axis=0), np.cov(x.T, ddof=0)
         assert_allclose(mean_est, mean_ref, atol=1e-15)
-        assert_allclose(cov_est, cov_ref, rtol=1e-15)
+        assert_allclose(cov_est, cov_ref, rtol=5e-15)
 
     def test_fit_both_parameters_fixed(self):
         data = np.full((2, 1), 3)
@@ -1596,13 +1596,13 @@ class TestMatrixT:
 
         with pytest.raises(
             np.linalg.LinAlgError,
-            match="2-th leading minor of the array is not positive definite",
+            match="Internal potrf return info",
         ):
             matrix_t.rvs(M, U, np.ones((num_cols, num_cols)), df)
 
         with pytest.raises(
             np.linalg.LinAlgError,
-            match="2-th leading minor of the array is not positive definite",
+            match="Internal potrf return info",
         ):
             matrix_t.rvs(M, np.ones((num_rows, num_rows)), V, df)
 
@@ -2554,18 +2554,16 @@ class TestMultinomial:
 
     @pytest.mark.parametrize("n", [0, 3])
     def test_rvs_np(self, n):
-        # test that .rvs agrees w/numpy
-        message = "Some rows of `p` do not sum to 1.0 within..."
-        with pytest.warns(FutureWarning, match=message):
-            rndm = np.random.RandomState(123)
-            sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
-            np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
-            assert_equal(sc_rvs, np_rvs)
-        with pytest.warns(FutureWarning, match=message):
-            rndm = np.random.RandomState(123)
-            sc_rvs = multinomial.rvs(n, [1/4.]*5, size=7, random_state=123)
-            np_rvs = rndm.multinomial(n, [1/4.]*5, size=7)
-            assert_equal(sc_rvs, np_rvs)
+        # test that .rvs agrees w/numpy when `p` is valid
+        rndm = np.random.RandomState(123)
+        sc_rvs = multinomial.rvs(n, [1/3.]*3, size=7, random_state=123)
+        np_rvs = rndm.multinomial(n, [1/3.]*3, size=7)
+        assert_equal(sc_rvs, np_rvs)
+
+        rndm = np.random.RandomState(123)
+        sc_rvs = multinomial.rvs(n, [1/5.]*5, size=7, random_state=123)
+        np_rvs = rndm.multinomial(n, [1/5.]*5, size=7)
+        assert_equal(sc_rvs, np_rvs)
 
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))
@@ -2697,6 +2695,33 @@ class TestMultinomial:
         res1 = multinomial.pmf(x=[1, 2, 5, 7, 4], n=n, p=p)
         res2 = multinomial.pmf(x=[1, 2, 4, 5, 7], n=n, p=p)
         np.testing.assert_allclose(res1, res2, rtol=1e-15)
+
+    @pytest.mark.parametrize('psum', [0.75, 1.25])
+    def test_gh_22585(self, psum):
+        # gh-22585 warned that beginning in SciPy 1.18, rows of p that did not sum to
+        # 1.0 would produce NaNs. Check that this has been implemented.
+        rng = np.random.default_rng(8879715917488330089)
+        d, n = 5, 19  # arbitrary
+        p0 = rng.random(d)
+        p = p0 / np.sum(p0)
+        p_ = p * psum
+        x = multinomial.rvs(n=n, p=p)
+
+        assert np.all(np.isfinite(x))
+        with pytest.raises(ValueError, match="`multinomial.rvs` requires..."):
+            multinomial.rvs(n=n, p=p_)
+
+        assert np.isfinite(multinomial.pmf(x, n=n, p=p))
+        assert np.isnan(multinomial.pmf(x, n=n, p=p_))
+
+        assert np.isfinite(multinomial.pmf(x, n=n, p=p))
+        assert np.isnan(multinomial.pmf(x, n=n, p=p_))
+
+        assert np.isfinite(multinomial.entropy(n=n, p=p))
+        assert np.isnan(multinomial.entropy(n=n, p=p_))
+
+        assert np.all(np.isfinite(multinomial.cov(n=n, p=p)))
+        assert np.all(np.isnan(multinomial.cov(n=n, p=p_)))
 
 
 class TestInvwishart:

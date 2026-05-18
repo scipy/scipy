@@ -281,7 +281,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     Parameters
     ----------
-    distname : string
+    distname : str
         name of distribution function
     arg : sequence
         parameters of distribution

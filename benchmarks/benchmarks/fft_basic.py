@@ -238,7 +238,7 @@ class FftBackends(Benchmark):
     params = [
         [100, 256, 313, 512, 1000, 1024, 2048, 2048*2, 2048*4],
         ['real', 'cmplx'],
-        ['pocketfft', 'pyfftw', 'numpy', 'direct']
+        ['duccfft', 'pyfftw', 'numpy', 'direct']
     ]
     param_names = ['size', 'type', 'backend']
 
@@ -252,7 +252,7 @@ class FftBackends(Benchmark):
         self.fft = scipy.fft.fft
         self.ifft = scipy.fft.ifft
 
-        if backend == 'pocketfft':
+        if backend == 'duccfft':
             scipy.fft.set_global_backend('scipy')
         elif backend == 'pyfftw':
             if not has_pyfftw:
@@ -262,9 +262,9 @@ class FftBackends(Benchmark):
             from scipy.fft._debug_backends import NumPyBackend
             scipy.fft.set_global_backend(NumPyBackend)
         elif backend == 'direct':
-            import scipy.fft._pocketfft
-            self.fft = scipy.fft._pocketfft.fft
-            self.ifft = scipy.fft._pocketfft.ifft
+            import scipy.fft._duccfft
+            self.fft = scipy.fft._duccfft.fft
+            self.ifft = scipy.fft._duccfft.ifft
 
     def time_fft(self, size, cmplx, module):
         self.fft(self.x)
@@ -277,7 +277,7 @@ class FftnBackends(Benchmark):
     params = [
         ["100x100", "313x100", "1000x100", "256x256", "512x512"],
         ['real', 'cmplx'],
-        ['pocketfft', 'pyfftw', 'numpy', 'direct']
+        ['duccfft', 'pyfftw', 'numpy', 'direct']
     ]
     param_names = ['size', 'type', 'backend']
 
@@ -293,7 +293,7 @@ class FftnBackends(Benchmark):
         self.fftn = scipy.fft.fftn
         self.ifftn = scipy.fft.ifftn
 
-        if backend == 'pocketfft':
+        if backend == 'duccfft':
             scipy.fft.set_global_backend('scipy')
         elif backend == 'pyfftw':
             if not has_pyfftw:
@@ -303,9 +303,9 @@ class FftnBackends(Benchmark):
             from scipy.fft._debug_backends import NumPyBackend
             scipy.fft.set_global_backend(NumPyBackend)
         elif backend == 'direct':
-            import scipy.fft._pocketfft
-            self.fftn = scipy.fft._pocketfft.fftn
-            self.ifftn = scipy.fft._pocketfft.ifftn
+            import scipy.fft._duccfft
+            self.fftn = scipy.fft._duccfft.fftn
+            self.ifftn = scipy.fft._duccfft.ifftn
 
     def time_fft(self, size, cmplx, module):
         self.fftn(self.x)

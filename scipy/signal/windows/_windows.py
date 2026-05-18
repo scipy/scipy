@@ -7,10 +7,10 @@ import warnings
 from scipy._lib import doccer
 
 from scipy import linalg, special, fft as sp_fft
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 from scipy._lib._array_api import array_namespace, xp_device
 from scipy._lib._array_api import xp_capabilities
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',
@@ -68,7 +68,7 @@ def _general_cosine_impl(M, a, xp, device, sym=True):
 @xp_capabilities()
 def general_cosine(M, a, sym=True):
     r"""
-    Generic weighted sum of cosine terms window
+    Generic weighted sum of cosine terms window.
 
     Parameters
     ----------

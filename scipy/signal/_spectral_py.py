@@ -22,7 +22,7 @@ def lombscargle(
     y: npt.ArrayLike,
     freqs: npt.ArrayLike,
     *,
-    precenter: bool = _NoValue,
+    precenter: bool = _NoValue,  # type:ignore[assignment]
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     weights: npt.NDArray | None = None,
     floating_mean: bool = False,
@@ -272,7 +272,7 @@ def lombscargle(
     freqs = freqs.reshape(1, -1)
     # column vectors
     x = x.reshape(-1, 1)
-    y = y.reshape(-1, 1)
+    y = y.reshape(-1, 1)  # type:ignore[union-attr]
     weights = weights.reshape(-1, 1)
 
     # store frequent intermediates
@@ -317,7 +317,7 @@ def lombscargle(
     # to prevent division by zero errors with a and b, as well as correcting for
     # numerical precision errors that lead to CC or SS being approximately -0.0,
     # make sure CC and SS are both > 0
-    epsneg = np.finfo(dtype=y.dtype).epsneg
+    epsneg = np.finfo(dtype=y.dtype).epsneg  # type:ignore[union-attr]
     CC[CC < epsneg] = epsneg
     SS[SS < epsneg] = epsneg
 
@@ -2409,7 +2409,7 @@ def _triage_segments(window, nperseg, input_length):
 
     Parameters
     ----------
-    window : string, tuple, or ndarray
+    window : str, tuple, or ndarray
         If window is specified by a string or tuple and nperseg is not
         specified, nperseg is set to the default of 256 and returns a window of
         that length.

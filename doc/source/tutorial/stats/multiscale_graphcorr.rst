@@ -2,18 +2,18 @@ Multiscale Graph Correlation (MGC)
 ----------------------------------
 
 With :func:`scipy.stats.multiscale_graphcorr`, we can test for independence on
-high dimensional and nonlinear data. Before we start, let's import some useful
+high-dimensional and nonlinear data. Before we start, let us import some useful
 packages:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt; plt.style.use('classic')
     >>> from scipy.stats import multiscale_graphcorr
 
-Let's use a custom plotting function to plot the data relationship:
+Let us use a custom plotting function to plot the data relationship:
 
     >>> def mgc_plot(x, y, sim_name, mgc_dict=None, only_viz=False,
     ...              only_mgc=False):
-    ...     """Plot sim and MGC-plot"""
+    ...     """Plot simulation and MGC plot"""
     ...     if not only_mgc:
     ...         # simulation
     ...         plt.figure(figsize=(8, 8))
@@ -46,7 +46,7 @@ Let's use a custom plotting function to plot the data relationship:
     ...         ax.scatter(opt_scale[0], opt_scale[1],
     ...                    marker='X', s=200, color='red')
     ...         # other formatting
-    ...         ax.tick_params(bottom="off", left="off")
+    ...         ax.tick_params(bottom=False, left=False)
     ...         ax.set_xlabel('#Neighbors for X', fontsize=15)
     ...         ax.set_ylabel('#Neighbors for Y', fontsize=15)
     ...         ax.tick_params(axis="x", labelsize=15)

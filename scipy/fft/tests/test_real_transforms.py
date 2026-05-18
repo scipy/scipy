@@ -8,7 +8,7 @@ import scipy.fft as fft
 from scipy import fftpack
 from scipy._lib._array_api import (xp_copy, xp_assert_close, make_xp_test_case,
                                    make_xp_pytest_param)
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 

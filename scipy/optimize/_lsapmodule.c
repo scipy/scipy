@@ -110,6 +110,7 @@ cleanup:
 
 static char doc_linear_sum_assignment[] =
     "linear_sum_assignment(cost_matrix, maximize=False)\n"
+    "--\n"  // needed to populate `__text_signature__`
     "\n"
     "Solve the linear sum assignment problem.\n"
     "\n"

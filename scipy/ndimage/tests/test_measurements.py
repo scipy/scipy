@@ -22,6 +22,7 @@ from . import types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+# mypy: disable-error-code=attr-defined
 
 @skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
 @pytest.mark.uses_xp_capabilities(False, reason="private")

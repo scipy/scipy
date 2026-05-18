@@ -38,14 +38,17 @@ Uses ARPACK: https://github.com/opencollab/arpack-ng
 import numpy as np
 import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, issparse
+from scipy.sparse import eye_array, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
+from scipy.linalg.lapack import HAS_ILP64
 from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
 )
 from scipy.sparse.linalg import gmres, splu
 
 from . import _arpacklib
+
+_int_dtype = np.int64 if HAS_ILP64 else np.int32
 
 __docformat__ = "restructuredtext en"
 
@@ -278,7 +281,14 @@ HOWMNY_DICT = {'A': 0, 'P': 1, 'S': 2}
 
 class ArpackError(RuntimeError):
     """
-    ARPACK error
+    ARPACK error.
+
+    Parameters
+    ----------
+    info : int or str
+        Key for `infodict` to get error message.
+    infodict : dict, optional
+        Dictionary mapping `info` keys to error messages.
     """
 
     def __init__(self, info, infodict=None):
@@ -292,7 +302,16 @@ class ArpackError(RuntimeError):
 
 class ArpackNoConvergence(ArpackError):
     """
-    ARPACK iteration did not converge
+    ARPACK iteration did not converge.
+
+    Parameters
+    ----------
+    msg : str
+        Error message.
+    eigenvalues : ndarray
+        Conveged eigenvalues.
+    eigenvectors : ndarray
+        Converged eigenvectors.
 
     Attributes
     ----------
@@ -578,7 +597,7 @@ class _SymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _SAUPD_ERRORS[ltr]
         self.extract_infodict = _SEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(11, dtype=np.int32)
+        self.ipntr = np.zeros(11, dtype=_int_dtype)
 
     def iterate(self):
         self._arpack_solver(self.arpack_dict, self.resid, self.v, self.ipntr,
@@ -632,7 +651,7 @@ class _SymmetricArpackParams(_ArpackParams):
         ierr = 0
         self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
         howmny = HOWMNY_DICT["A"]  # return all eigenvectors
-        sselect = np.zeros(self.ncv, dtype=np.int32)
+        sselect = np.zeros(self.ncv, dtype=_int_dtype)
         d = np.zeros(self.k, dtype=self.tp)
         z = np.zeros((self.n, self.ncv), dtype=self.tp, order='F')
 
@@ -772,7 +791,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _NAUPD_ERRORS[ltr]
         self.extract_infodict = _NEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(14, dtype=np.int32)
+        self.ipntr = np.zeros(14, dtype=_int_dtype)
 
         if self.tp in 'FD':
             self.rwork = np.zeros(self.ncv, dtype=self.tp.lower())
@@ -839,7 +858,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         ierr = 0
         self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
         howmny = HOWMNY_DICT['A']  # return all eigenvectors
-        sselect = np.zeros(self.ncv, dtype=np.int32)
+        sselect = np.zeros(self.ncv, dtype=_int_dtype)
         sigmar = float(np.real(self.sigma))
         sigmai = float(np.imag(self.sigma))
         workev = np.zeros(3 * self.ncv, self.tp)
@@ -986,8 +1005,7 @@ class SpLuInv(LinearOperator):
 
     def __init__(self, M):
         self.M_lu = splu(M)
-        self.shape = M.shape
-        self.dtype = M.dtype
+        super().__init__(dtype=M.dtype, shape=M.shape)
         self.isreal = not np.issubdtype(self.dtype, np.complexfloating)
 
     def _matvec(self, x):
@@ -1010,8 +1028,7 @@ class LuInv(LinearOperator):
 
     def __init__(self, M):
         self.M_lu = lu_factor(M)
-        self.shape = M.shape
-        self.dtype = M.dtype
+        super().__init__(dtype=M.dtype, shape=M.shape)
 
     def _matvec(self, x):
         return lu_solve(self.M_lu, x)
@@ -1036,11 +1053,11 @@ class IterInv(LinearOperator):
     def __init__(self, M, ifunc=gmres_loose, tol=0):
         self.M = M
         if hasattr(M, 'dtype'):
-            self.dtype = M.dtype
+            dtype = M.dtype
         else:
             x = np.zeros(M.shape[1])
-            self.dtype = (M * x).dtype
-        self.shape = M.shape
+            dtype = (M * x).dtype
+        super().__init__(dtype=dtype, shape=M.shape)
 
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
@@ -1088,7 +1105,7 @@ class IterOpInv(LinearOperator):
             self.OP = LinearOperator(self.A.shape,
                                      mult_func,
                                      dtype=dtype)
-        self.shape = A.shape
+        super().__init__(dtype=dtype, shape=A.shape)
 
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
@@ -1105,10 +1122,6 @@ class IterOpInv(LinearOperator):
                 f"did not converge (info = {info})."
             )
         return b
-
-    @property
-    def dtype(self):
-        return self.OP.dtype
 
 
 def _fast_spmatrix_to_csc(A, hermitian=False):
@@ -1148,7 +1161,7 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             A.flat[::A.shape[1] + 1] -= sigma
             return LuInv(A).matvec
         elif issparse(A) or is_pydata_spmatrix(A):
-            A = A - sigma * eye(A.shape[0])
+            A = A - sigma * eye_array(A.shape[0])
             A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
             return SpLuInv(A).matvec
         else:
@@ -1230,13 +1243,6 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
           ``w'[i] = 1/2i * [1/(w[i]-sigma) - 1/(w[i]-conj(sigma))]``.
         - If A is complex, ``w'[i] = 1/(w[i]-sigma)``.
 
-    v0 : ndarray, optional
-        Starting vector for iteration.
-        Default: random
-    ncv : int, optional
-        The number of Lanczos vectors generated
-        `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, max(2*k + 1, 20))``
     which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI'], optional
         Which `k` eigenvectors and eigenvalues to find:
 
@@ -1251,6 +1257,13 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
+    v0 : ndarray, optional
+        Starting vector for iteration.
+        Default: random
+    ncv : int, optional
+        The number of Lanczos vectors generated
+        `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
+        Default: ``min(n, max(2*k + 1, 20))``
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed
         Default: ``n*10``
@@ -1270,6 +1283,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionadded:: 1.17.0
 
     Returns
     -------
@@ -1320,6 +1335,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     """
     A = convert_pydata_sparse_to_scipy(A)
+    if (A_ndim := len(A.shape)) > 2:
+        raise ValueError(f"{A_ndim}-dimensional `A` is unsupported, expected 2-D.")
     M = convert_pydata_sparse_to_scipy(M)
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
@@ -1502,13 +1519,6 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         - if ``mode == 'buckling'``: ``w'[i] = w[i] / (w[i] - sigma)``.
 
         (see further discussion in 'mode' below)
-    v0 : ndarray, optional
-        Starting vector for iteration.
-        Default: random
-    ncv : int, optional
-        The number of Lanczos vectors generated ncv must be greater than k and
-        smaller than n; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, max(2*k + 1, 20))``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
         If A is a complex Hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
@@ -1524,16 +1534,18 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
+    v0 : ndarray, optional
+        Starting vector for iteration. Default: random
+    ncv : int, optional
+        The number of Lanczos vectors generated ncv must be greater than k and
+        smaller than n; it is recommended that ``ncv > 2*k``.
+        Default: ``min(n, max(2*k + 1, 20))``
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed.
         Default: ``n*10``
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
-    Minv : N x N matrix, array, sparse matrix, or LinearOperator
-        See notes in M, above.
-    OPinv : N x N matrix, array, sparse matrix, or LinearOperator
-        See notes in sigma, above.
     return_eigenvectors : bool
         Return eigenvectors (True) in addition to eigenvalues.
         This value determines the order in which eigenvalues are sorted.
@@ -1557,7 +1569,11 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
           - If `return_eigenvectors` is False, eigenvalues are sorted by
             decreasing absolute value.
 
-    mode : string ['normal' | 'buckling' | 'cayley']
+    Minv : N x N matrix, array, sparse matrix, or LinearOperator
+        See notes in M, above.
+    OPinv : N x N matrix, array, sparse matrix, or LinearOperator
+        See notes in sigma, above.
+    mode : str ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
         only for real-valued A and sigma != None.  For shift-invert mode,
         ARPACK internally solves the eigenvalue problem
@@ -1593,6 +1609,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionadded:: 1.17.0
 
     Raises
     ------
@@ -1653,6 +1671,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             return ret.real
 
+    if (A_ndim := len(A.shape)) > 2:
+        raise ValueError(f"{A_ndim}-dimensional `A` is unsupported, expected 2-D.")
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:

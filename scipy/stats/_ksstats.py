@@ -512,7 +512,7 @@ def kolmogn(n, x, cdf=True):
 
     Parameters
     ----------
-    n : integer, array_like
+    n : int, array_like
         the number of samples
     x : float, array_like
         The K-S statistic, float between 0 and 1
@@ -544,7 +544,7 @@ def kolmognp(n, x):
 
     Parameters
     ----------
-    n : integer, array_like
+    n : int, array_like
         the number of samples
     x : float, array_like
         The K-S statistic, float between 0 and 1
@@ -573,7 +573,7 @@ def kolmogni(n, q, cdf=True):
 
     Parameters
     ----------
-    n : integer, array_like
+    n : int, array_like
         the number of samples
     q : float, array_like
         Probabilities, float between 0 and 1

@@ -1,7 +1,6 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-from __future__ import annotations  # Provides typing union operator `|` in Python 3.9
 import operator
 import math
 from math import prod as _prod
@@ -29,8 +28,8 @@ from ._sosfilt import _sosfilt
 from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
     xp_promote, xp_swapaxes,)
-from scipy._lib.array_api_compat import is_array_api_obj
-import scipy._lib.array_api_extra as xpx
+from scipy._external.array_api_compat import is_array_api_obj
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -123,8 +122,9 @@ def correlate(in1, in2, mode='full', method='auto'):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     method : str {'auto', 'direct', 'fft'}, optional
         A string indicating which method to use to calculate the correlation.
 
@@ -532,9 +532,9 @@ def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
     if xp.isdtype(in1.dtype, 'integral'):
-        in1 = xp.astype(in1, xp.float64)
+        in1 = xp.astype(in1, xp_default_dtype(xp))
     if xp.isdtype(in2.dtype, 'integral'):
-        in2 = xp.astype(in2, xp.float64)
+        in2 = xp.astype(in2, xp_default_dtype(xp))
 
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
@@ -616,8 +616,9 @@ def fftconvolve(in1, in2, mode="full", axes=None):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
@@ -627,6 +628,13 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     out : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     See Also
     --------
@@ -820,7 +828,7 @@ def _calc_oa_lens(s1, s2):
 # may want to look at moving xp_swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
-    """A simplified version of np.split, with `indices` being an list.
+    """A simplified version of np.split, with `indices` being a list.
     """
     # https://github.com/numpy/numpy/blob/v2.2.0/numpy/lib/_shape_base_impl.py#L743
     Ntotal = x.shape[axis]
@@ -868,8 +876,9 @@ def oaconvolve(in1, in2, mode="full", axes=None):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
@@ -879,6 +888,13 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     out : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     See Also
     --------
@@ -1032,9 +1048,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         ret, overpart = _split(ret, [-overlap], ax_fft, xp=xp)
         overpart = _split(overpart, [-1], ax_split, xp=xp)[0]
 
-        ret_overpart = _split(ret, [overlap], ax_fft, xp=xp)[0]
-        ret_overpart = _split(ret_overpart, [1], ax_split, xp)[1]
-        ret_overpart += overpart
+        overlap_slice = [slice(None)] * ret.ndim
+        overlap_slice[ax_fft] = slice(0, overlap)
+        overlap_slice[ax_split] = slice(1, None)
+        ret = xpx.at(ret)[tuple(overlap_slice)].add(overpart)
 
     # Reshape back to the correct dimensionality.
     shape_ret = [ret.shape[i] if i not in fft_axes else
@@ -1257,8 +1274,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
            The output consists only of those elements that do not
            rely on the zero-padding.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     measure : bool, optional
         If True, run and time the convolution of `in1` and `in2` with both
         methods and return the fastest. If False (default), predict the fastest
@@ -1396,8 +1414,9 @@ def convolve(in1, in2, mode='full', method='auto'):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     method : str {'auto', 'direct', 'fft'}, optional
         A string indicating which method to use to calculate the convolution.
 
@@ -1418,6 +1437,13 @@ def convolve(in1, in2, mode='full', method='auto'):
     convolve : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     Warns
     -----
@@ -2399,7 +2425,7 @@ def deconvolve(signal, divisor):
         rem = num
     else:
         input = xp.zeros(N - D + 1, dtype=xp.float64)
-        input[0] = 1
+        input = xpx.at(input)[0].set(1)
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
@@ -2517,11 +2543,11 @@ def hilbert(x, N=None, axis=-1):
     Xf = sp_fft.fft(x, N, axis=axis)
     Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        Xf[..., 1: N // 2] *= 2.0
-        Xf[..., N // 2 + 1:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: N // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., N // 2 + 1:N].set(0.0)
     else:
-        Xf[..., 1:(N + 1) // 2] *= 2.0
-        Xf[..., (N + 1) // 2:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: (N + 1) // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., (N + 1) // 2:N].set(0.0)
 
     Xf = xp.moveaxis(Xf, -1, axis)
     x = sp_fft.ifft(Xf, axis=axis)
@@ -2699,11 +2725,11 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
     if k0 > 1:  # condition k0 > 1 needed for Dask backend
-        Xf[..., 1:k0, :] *= 2.0
+        Xf = xpx.at(Xf)[..., 1:k0, :].multiply(2.0)
     if k1 > 1:  # condition k1 > 1 needed for Dask backend
-        Xf[..., :, 1:k1] *= 2.0
-    Xf[..., k0:, :] = 0.0
-    Xf[..., :, k1:] = 0.0
+        Xf = xpx.at(Xf)[..., :, 1:k1].multiply(2.0)
+    Xf = xpx.at(Xf)[..., k0:, :].set(0.0)
+    Xf = xpx.at(Xf)[..., :, k1:].set(0.0)
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)
@@ -2777,16 +2803,10 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     which produces a complex-valued signal with the same envelope :math:`|a(t)|`.
 
     The implementation is based on computing the FFT of the input signal and then
-    performing the necessary operations in Fourier space. Hence, the typical FFT
-    caveats need to be taken into account:
-
-    * The signal is assumed to be periodic. Discontinuities between signal start and
-      end can lead to unwanted results due to Gibbs phenomenon.
-    * The FFT is slow if the signal length is prime or very long. Also, the memory
-      demands are typically higher than a comparable FIR/IIR filter based
-      implementation.
-    * The frequency spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter
-      corresponds to the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
+    performing the necessary operations in Fourier space. Hence, the typical :ref:`FFT
+    caveats <tutorial_FFT_Caveats>` need to be taken into account. The frequency
+    spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter corresponds to
+    the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
 
     If the envelope of a complex-valued signal `z` with no bandpass filtering is
     desired, i.e., ``bp_in=(None, None)``, then the envelope corresponds to the
@@ -3590,7 +3610,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     axis : int, optional
         The time/frequency axis of `x` along which the resampling take place.
         The Default is 0.
-    window : array_like, callable, string, float, or tuple, optional
+    window : array_like, callable, str, float, or tuple, optional
         If not ``None``, it specifies a filter in the Fourier domain, which is applied
         before resampling. I.e., the FFT ``X`` of `x` is calculated by
         ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral windowing
@@ -3794,7 +3814,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     `resample_poly` (``padtype='wrap'``) on the other hand produces significant
     deviations. This is caused by the disconiuity at the beginning of the signal, for
     which the default filter of `resample_poly` is not suited well. This example
-    illustrates that for some use cases, adpating the `resample_poly` parameters may
+    illustrates that for some use cases, adapting the `resample_poly` parameters may
     be beneficial. `resample` has a big advantage in this regard: It uses the ideal
     antialiasing filter with the maximum bandwidth by default.
 
@@ -3882,10 +3902,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         The downsampling factor.
     axis : int, optional
         The axis of `x` that is resampled. Default is 0.
-    window : string, tuple, or array_like, optional
+    window : str, tuple, or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
-    padtype : string, optional
+    padtype : str, optional
         `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
         the other signal extension modes supported by `scipy.signal.upfirdn`.
         Changes assumptions on values beyond the boundary. If `constant`,

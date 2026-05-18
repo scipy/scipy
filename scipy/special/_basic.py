@@ -976,7 +976,7 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute derivatives of real-order modified Bessel function Kv(z)
+    """Compute derivatives of real-order modified Bessel function Kv(z).
 
     Kv(z) is the modified Bessel function of the second kind.
     Derivative is calculated with respect to `z`.
@@ -1506,10 +1506,23 @@ def fresnel_zeros(nt):
 
 
 def assoc_laguerre(x, n, k=0.0):
-    """Compute the generalized (associated) Laguerre polynomial of degree n and order k.
+    r"""Compute the generalized (associated) Laguerre polynomial of degree :math:`n`
+    and order :math:`k`.
 
-    The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
-    with weighting function ``exp(-x) * x**k`` with ``k > -1``.
+    This function evaluates the generalized Laguerre polynomial
+
+    .. math::
+
+        L^{(k)}_n(x).
+
+    The polynomial is orthogonal over :math:`[0, \infty)` with weight
+    function
+
+    .. math::
+
+        e^{-x}x^k
+
+    for :math:`k > -1`.
 
     Parameters
     ----------
@@ -1529,6 +1542,35 @@ def assoc_laguerre(x, n, k=0.0):
     -----
     `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
+
+    Examples
+    --------
+    Evaluate the associated Laguerre polynomial :math:`L_3^{(2)}` at
+    :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import assoc_laguerre, eval_genlaguerre
+    >>> np.isclose(assoc_laguerre(1, 3, 2), 7/3)
+    True
+
+    `assoc_laguerre` is equivalent to `eval_genlaguerre` with reversed
+    argument order:
+
+    >>> x = np.linspace(0, 5, 6)
+    >>> np.allclose(assoc_laguerre(x, 3, 2), eval_genlaguerre(3, 2, x))
+    True
+
+    Plot :math:`L_3^{(k)}` for several values of :math:`k`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 8, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for k in range(3):
+    ...     ax.plot(x, assoc_laguerre(x, 3, k), label=rf"$k={k}$")
+    >>> ax.set_title(r"Associated Laguerre polynomials $L_3^{(k)}$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
 
     """
     return _ufuncs.eval_genlaguerre(n, k, x)
@@ -2453,13 +2495,18 @@ def keip_zeros(nt):
 
 
 def kelvin_zeros(nt):
-    """Compute nt zeros of all Kelvin functions.
+    """Compute `nt` zeros of all Kelvin functions.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute for each function.
 
     Returns
     -------
     zeros : tuple of arrays
-        Length-8 tuple of arrays of length nt.  The tuple contains the arrays of zeros
-        of (ber, bei, ker, kei, ber', bei', ker', kei').
+        Length-8 tuple of arrays of length `nt`.  The tuple contains the arrays of zeros
+        of ``(ber, bei, ker, kei, ber', bei', ker', kei')``.
 
     References
     ----------
@@ -2484,8 +2531,15 @@ def pro_cv_seq(m, n, c):
     """Characteristic values for prolate spheroidal wave functions.
 
     Compute a sequence of characteristic values for the prolate
-    spheroidal wave functions for mode m and n'=m..n and spheroidal
-    parameter c.
+    spheroidal wave functions for mode `m` and n'=m..n and spheroidal
+    parameter `c`.
+
+    Parameters
+    ----------
+    m, n : int
+        Non-negative mode parameters.
+    c : float
+        Spheroidal parameter.
 
     Returns
     -------
@@ -2515,6 +2569,13 @@ def obl_cv_seq(m, n, c):
     Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
+
+    Parameters
+    ----------
+    m, n : int
+        Non-negative mode parameters.
+    c : float
+        Spheroidal parameter.
 
     Returns
     -------
@@ -3014,7 +3075,7 @@ def factorial(n, exact=False, extend="zero"):
         integer arithmetic, otherwise approximate using the gamma function
         (faster, but yields floats instead of integers).
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
         complex extension of the factorial (see below).
@@ -3075,7 +3136,7 @@ def factorial2(n, exact=False, extend="zero"):
         integer arithmetic, otherwise use above approximation (faster,
         but yields floats instead of integers).
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
         complex extension of the double factorial. This also enables passing
@@ -3135,7 +3196,7 @@ def factorialk(n, k, exact=False, extend="zero"):
         integer arithmetic, otherwise use an approximation (faster,
         but yields floats instead of integers)
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0`` are
         handled - by default they are 0, but it is possible to opt into the complex
         extension of the multifactorial. This enables passing complex values,

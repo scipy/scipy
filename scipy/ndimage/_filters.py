@@ -206,7 +206,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 def vectorized_filter(input, function, *, size=None, footprint=None, output=None,
                       mode='reflect', cval=None, origin=None, axes=None,
                       batch_memory=2**30):
-    """Filter an array with a vectorized Python callable as the kernel
+    """Filter an array with a vectorized Python callable as the kernel.
 
     Parameters
     ----------
@@ -1003,8 +1003,8 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(extra_keywords)s
     %(extra_arguments)s
+    %(extra_keywords)s
     axes : tuple of int or None
         The axes over which to apply the filter. If a `mode` tuple is
         provided, its length must match the number of axes.
@@ -1089,7 +1089,8 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     axes : tuple of int or None
         The axes over which to apply the filter. If `sigma` or `mode` tuples
         are provided, their length must match the number of axes.
-    Extra keyword arguments will be passed to gaussian_filter().
+    **kwargs
+        Extra keyword arguments will be passed to `gaussian_filter`.
 
     Returns
     -------
@@ -1161,8 +1162,8 @@ def generic_gradient_magnitude(input, derivative, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(extra_keywords)s
     %(extra_arguments)s
+    %(extra_keywords)s
     axes : tuple of int or None
         The axes over which to apply the filter. If a `mode` tuple is
         provided, its length must match the number of axes.
@@ -1214,7 +1215,8 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     axes : tuple of int or None
         The axes over which to apply the filter. If `sigma` or `mode` tuples
         are provided, their length must match the number of axes.
-    Extra keyword arguments will be passed to gaussian_filter().
+    **kwargs
+        Extra keyword arguments will be passed to `gaussian_filter`.
 
     Returns
     -------
@@ -2250,6 +2252,27 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
+
+    Examples
+    --------
+    This example defines and applies a custom callback function that computes
+    the range (maximum minus minimum) within a sliding window of size 3.
+    It utilizes `numpy.lib.stride_tricks.sliding_window_view` and demonstrates the
+    required in-place modification of the ``output_line`` array.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import generic_filter1d
+    >>> from numpy.lib.stride_tricks import sliding_window_view
+
+    >>> def local_range(input_line, output_line):
+    ...     # input_line includes padded values according to `filter_size` and `mode`
+    ...     v = sliding_window_view(input_line, 3)
+    ...     # modify `output_line` in-place rather than returning the result
+    ...     output_line[:] = v.max(axis=1) - v.min(axis=1)
+
+    >>> x = np.array([1, 2, 3, 4, 5], dtype=np.float64)
+    >>> generic_filter1d(x, local_range, filter_size=3)
+    array([1., 2., 2., 2., 1.])
 
     """
     if extra_keywords is None:

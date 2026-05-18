@@ -60,17 +60,13 @@ def _clear_cache(datasets, cache_dir=None, method_map=None):
 @xp_capabilities(out_of_scope=True)
 def clear_cache(datasets=None):
     """
-    Cleans the scipy datasets cache directory.
-
-    If a scipy.datasets method or a list/tuple of the same is
-    provided, then clear_cache removes all the data files
-    associated to the passed dataset method callable(s).
-
-    By default, it removes all the cached data files.
+    Cleans the SciPy datasets cache directory.
 
     Parameters
     ----------
     datasets : callable or list/tuple of callable or None
+        Dataset whose cached files are to be removed. If None (default), all cached
+        files are removed.
 
     Examples
     --------

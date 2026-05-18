@@ -10,7 +10,7 @@ from scipy import linalg
 
 from scipy._lib._array_api import (array_namespace, xp_size, xp_promote,
                                    xp_result_type)
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
 
@@ -332,7 +332,7 @@ def ss2tf(A, B, C, D, input=0):
 
 
 def zpk2ss(z, p, k):
-    """Zero-pole-gain representation to state-space representation
+    """Zero-pole-gain representation to state-space representation.
 
     Parameters
     ----------

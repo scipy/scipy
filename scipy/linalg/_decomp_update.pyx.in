@@ -69,6 +69,7 @@ cdef extern from *:
 
 from . cimport cython_blas as blas_pointers
 from . cimport cython_lapack as lapack_pointers
+from .cython_blas cimport blas_int
 
 import numpy as np
 from scipy._lib._util import _apply_over_batch
@@ -97,32 +98,32 @@ cdef inline blas_t* row(blas_t* a, int* as, int i) noexcept nogil:
 cdef inline blas_t* col(blas_t* a, int* as, int j) noexcept nogil:
     return a + j*as[1]
 
-cdef inline void copy(int n, blas_t* x, int incx, blas_t* y, int incy) noexcept nogil:
+cdef inline void copy(blas_int n, blas_t* x, blas_int incx, blas_t* y, blas_int incy) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}copy(&n, x, &incx, y, &incy)
     {{endfor}}
 
-cdef inline void swap(int n, blas_t* x, int incx, blas_t* y, int incy) noexcept nogil:
+cdef inline void swap(blas_int n, blas_t* x, blas_int incx, blas_t* y, blas_int incy) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}swap(&n, x, &incx, y, &incy)
     {{endfor}}
 
-cdef inline void scal(int n, blas_t a, blas_t* x, int incx) noexcept nogil:
+cdef inline void scal(blas_int n, blas_t a, blas_t* x, blas_int incx) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}scal(&n, &a, x, &incx)
     {{endfor}}
 
-cdef inline void axpy(int n, blas_t a, blas_t* x, int incx,
-                      blas_t* y, int incy) noexcept nogil:
+cdef inline void axpy(blas_int n, blas_t a, blas_t* x, blas_int incx,
+                      blas_t* y, blas_int incy) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}axpy(&n, &a, x, &incx, y, &incy)
     {{endfor}}
 
-cdef inline blas_t nrm2(int n, blas_t* x, int incx) noexcept nogil:
+cdef inline blas_t nrm2(blas_int n, blas_t* x, blas_int incx) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, ['s', 'd', 'sc', 'dz'])}}
     {{COND}} blas_t is {{CNAME}}:
         return blas_pointers.{{C}}nrm2(&n, x, &incx)
@@ -144,7 +145,7 @@ cdef inline void lartg(blas_t* a, blas_t* b, blas_t* c, blas_t* s) noexcept nogi
     a[0] = g
     b[0] = 0
 
-cdef inline void rot(int n, blas_t* x, int incx, blas_t* y, int incy,
+cdef inline void rot(blas_int n, blas_t* x, blas_int incx, blas_t* y, blas_int incy,
                      blas_t c, blas_t s) noexcept nogil:
     if blas_t is float:
         blas_pointers.srot(&n, x, &incx, y, &incy, &c, &s)
@@ -155,22 +156,22 @@ cdef inline void rot(int n, blas_t* x, int incx, blas_t* y, int incy,
     else:
         lapack_pointers.zrot(&n, x, &incx, y, &incy, <double*>&c, &s)
 
-cdef inline void larfg(int n, blas_t* alpha, blas_t* x, int incx,
+cdef inline void larfg(blas_int n, blas_t* alpha, blas_t* x, blas_int incx,
                        blas_t* tau) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         lapack_pointers.{{C}}larfg(&n, alpha, x, &incx, tau)
     {{endfor}}
 
-cdef inline void larf(char* side, int m, int n, blas_t* v, int incv, blas_t tau,
-    blas_t* c, int ldc, blas_t* work) noexcept nogil:
+cdef inline void larf(char* side, blas_int m, blas_int n, blas_t* v, blas_int incv, blas_t tau,
+    blas_t* c, blas_int ldc, blas_t* work) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         lapack_pointers.{{C}}larf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
     {{endfor}}
 
-cdef inline void ger(int m, int n, blas_t alpha, blas_t* x, int incx, blas_t* y,
-        int incy, blas_t* a, int lda) noexcept nogil:
+cdef inline void ger(blas_int m, blas_int n, blas_t alpha, blas_t* x, blas_int incx, blas_t* y,
+        blas_int incy, blas_t* a, blas_int lda) noexcept nogil:
     if blas_t is float:
         blas_pointers.sger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda)
     elif blas_t is double:
@@ -180,43 +181,43 @@ cdef inline void ger(int m, int n, blas_t alpha, blas_t* x, int incx, blas_t* y,
     else:
         blas_pointers.zgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda)
 
-cdef inline void gemv(char* trans, int m, int n, blas_t alpha, blas_t* a,
-        int lda, blas_t* x, int incx, blas_t beta, blas_t* y, int incy) noexcept nogil:
+cdef inline void gemv(char* trans, blas_int m, blas_int n, blas_t alpha, blas_t* a,
+        blas_int lda, blas_t* x, blas_int incx, blas_t beta, blas_t* y, blas_int incy) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}gemv(trans, &m, &n, &alpha, a, &lda, x, &incx,
                 &beta, y, &incy)
     {{endfor}}
 
-cdef inline void gemm(char* transa, char* transb, int m, int n, int k,
-        blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb, blas_t beta,
-        blas_t* c, int ldc) noexcept nogil:
+cdef inline void gemm(char* transa, char* transb, blas_int m, blas_int n, blas_int k,
+        blas_t alpha, blas_t* a, blas_int lda, blas_t* b, blas_int ldb, blas_t beta,
+        blas_t* c, blas_int ldc) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}gemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
                 b, &ldb, &beta, c, &ldc)
     {{endfor}}
 
-cdef inline void trmm(char* side, char* uplo, char* transa, char* diag, int m,
-        int n, blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb) noexcept nogil:
+cdef inline void trmm(char* side, char* uplo, char* transa, char* diag, blas_int m,
+        blas_int n, blas_t alpha, blas_t* a, blas_int lda, blas_t* b, blas_int ldb) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}trmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
                 b, &ldb)
     {{endfor}}
 
-cdef inline int geqrf(int m, int n, blas_t* a, int lda, blas_t* tau,
-                      blas_t* work, int lwork) noexcept nogil:
-    cdef int info
+cdef inline int geqrf(blas_int m, blas_int n, blas_t* a, blas_int lda, blas_t* tau,
+                      blas_t* work, blas_int lwork) noexcept nogil:
+    cdef blas_int info
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         lapack_pointers.{{C}}geqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
     {{endfor}}
     return info
 
-cdef inline int ormqr(char* side, char* trans, int m, int n, int k, blas_t* a,
-    int lda, blas_t* tau, blas_t* c, int ldc, blas_t* work, int lwork) noexcept nogil:
-    cdef int info = 0
+cdef inline int ormqr(char* side, char* trans, blas_int m, blas_int n, blas_int k, blas_t* a,
+    blas_int lda, blas_t* tau, blas_t* c, blas_int ldc, blas_t* work, blas_int lwork) noexcept nogil:
+    cdef blas_int info = 0
     if blas_t is float:
         lapack_pointers.sormqr(side, trans, &m, &n, &k, a, &lda, tau, c, &ldc,
                 work, &lwork, &info)
@@ -1401,7 +1402,7 @@ cdef void* extract(cnp.ndarray arr, int* arrs) noexcept:
 def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
               check_finite=True):
     """
-    QR downdate on row or column deletions
+    QR downdate on row or column deletions.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A`` where ``p`` rows or columns have been removed
@@ -1618,7 +1619,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
 @cython.embedsignature(True)
 def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_finite=True):
     """
-    QR update on row or column insertions
+    QR update on row or column insertions.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A`` where rows or columns have been inserted starting
@@ -2033,7 +2034,7 @@ RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
 @cython.embedsignature(True)
 def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     """
-    Rank-k QR update
+    Rank-k QR update.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A + u v**T`` for real ``A`` or ``A + u v**H``
