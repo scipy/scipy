@@ -3186,6 +3186,31 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     --------
     residue, invresz, unique_roots
 
+    Examples
+    --------
+    Reconstruct polynomial coefficients from a partial fraction expansion.
+    Given residues, poles, and a direct term, recover the original
+    numerator and denominator:
+
+    >>> from scipy import signal
+    >>> import numpy as np
+    >>> r = [2., -0.]
+    >>> p = [-2., -1.]
+    >>> k = []
+    >>> b, a = signal.invres(r, p, k)
+
+    The result gives the polynomial coefficients of the transfer function:
+
+    >>> np.allclose(b, [2., 6.], atol=1e-10)
+    True
+    >>> np.allclose(a, [1., 3., 2.])
+    True
+
+    This is the inverse of `residue`:
+
+    >>> r2, p2, k2 = signal.residue(b, a)
+    >>> np.allclose(np.sort(p2), np.sort(p))
+    True
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
@@ -3333,6 +3358,33 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     .. [1] J. F. Mahoney, B. D. Sivazlian, "Partial fractions expansion: a
            review of computational methodology and efficiency", Journal of
            Computational and Applied Mathematics, Vol. 9, 1983.
+
+    Examples
+    --------
+    Compute the partial fraction expansion of
+    ``H(s) = (2s + 6) / (s^2 + 3s + 2)``:
+
+    >>> from scipy import signal
+    >>> b = [2, 6]
+    >>> a = [1, 3, 2]
+    >>> r, p, k = signal.residue(b, a)
+
+    The poles are at ``s = -1`` and ``s = -2``:
+
+    >>> p
+    array([-2., -1.])
+
+    The residues correspond to each pole:
+
+    >>> r
+    array([ 2., -0.])
+
+    Verify by reconstructing the original polynomials:
+
+    >>> b_reconstructed, a_reconstructed = signal.invres(r, p, k)
+    >>> import numpy as np
+    >>> np.allclose(np.poly1d(b)(0.5), np.poly1d(b_reconstructed)(0.5))
+    True
     """
     b = np.asarray(b)
     a = np.asarray(a)

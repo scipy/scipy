@@ -1440,12 +1440,38 @@ def sos2zpk(sos):
     k : float
         System gain.
 
+    See Also
+    --------
+    zpk2sos, sos2tf, sosfilt
+
     Notes
     -----
     The number of zeros and poles returned will be ``n_sections * 2``
     even if some of these are (effectively) zero.
 
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Design a 4th-order Butterworth lowpass filter as second-order sections
+    and then extract the zeros, poles, and gain:
+
+    >>> from scipy import signal
+    >>> sos = signal.butter(4, 0.25, output='sos')
+    >>> z, p, k = signal.sos2zpk(sos)
+    >>> len(z)
+    4
+    >>> len(p)
+    4
+
+    The gain can be verified against the zpk form directly:
+
+    >>> z2, p2, k2 = signal.butter(4, 0.25, output='zpk')
+    >>> import numpy as np
+    >>> np.allclose(np.sort(np.abs(z)), np.sort(np.abs(z2)))
+    True
+    >>> np.allclose(k, k2)
+    True
     """
     xp = array_namespace(sos)
     sos = xp.asarray(sos)

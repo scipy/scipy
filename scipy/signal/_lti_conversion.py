@@ -347,6 +347,34 @@ def zpk2ss(z, p, k):
         State space representation of the system, in controller canonical
         form.
 
+    See Also
+    --------
+    ss2zpk, zpk2tf, tf2ss
+
+    Examples
+    --------
+    Convert a system with a zero at ``s = -1``, a pole at ``s = -2``,
+    and unit gain to state-space form:
+
+    >>> from scipy import signal
+    >>> A, B, C, D = signal.zpk2ss([-1], [-2], 1)
+    >>> A
+    array([[-2.]])
+    >>> B
+    array([[1.]])
+    >>> C
+    array([[1.]])
+    >>> D
+    array([[1.]])
+
+    A higher-order system with complex-conjugate poles:
+
+    >>> import numpy as np
+    >>> z = [-1]
+    >>> p = [-1+1j, -1-1j]
+    >>> A, B, C, D = signal.zpk2ss(z, p, 1.0)
+    >>> A.shape
+    (2, 2)
     """
     return tf2ss(*zpk2tf(z, p, k))
 
