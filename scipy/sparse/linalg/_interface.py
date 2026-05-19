@@ -120,6 +120,9 @@ class LinearOperator:
         and where ``V`` is a dense matrix with dimensions ``(..., M, K)``.
     dtype : dtype
         Data type of the matrix or matrices.
+    xp : array_namespace, optional
+        A namespace compatible with the array API standard for use in array operations.
+        Default: ``numpy``.
 
     Attributes
     ----------
