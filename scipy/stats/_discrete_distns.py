@@ -148,7 +148,7 @@ class bernoulli_gen(binom_gen):
     ----------
     .. [1] Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete
            Distributions*. 3rd ed., John Wiley & Sons, 2005, Chapter 3,
-           p. 105.
+           p. 108.
     .. [2] "Bernoulli distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Bernoulli_distribution
 
@@ -994,7 +994,7 @@ class poisson_gen(rv_discrete):
     ----------
     .. [1] Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete
            Distributions*. 3rd ed., John Wiley & Sons, 2005, Chapter 4,
-           p. 151.
+           p. 156.
     .. [2] "Poisson distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Poisson_distribution
 
