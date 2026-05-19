@@ -31,6 +31,7 @@ import sys
 from numpy import eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
+from scipy.linalg.blas import get_blas_funcs
 from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           line_search_wolfe2 as line_search,
@@ -1425,8 +1426,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     k = 0
     N = len(x0)
-    I = np.eye(N, dtype=int)
-    Hk = I if hess_inv0 is None else hess_inv0
+    Hk = np.eye(N, dtype=x0.dtype, order="F") if hess_inv0 is None else hess_inv0
+
+    symv, syr, syr2 = get_blas_funcs(("symv", "syr", "syr2"), (Hk, gfk))
 
     # Sets the initial step guess to dx ~ 1
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
@@ -1436,8 +1438,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         allvecs = [x0]
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
+
+    pk = np.empty_like(gfk)
     while (gnorm > gtol) and (k < maxiter):
-        pk = -np.dot(Hk, gfk)
+        # pk = -1 * Hk @ gfk
+        pk = symv(-1.0, Hk, gfk, 0.0, pk, overwrite_y=True)
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
@@ -1492,10 +1497,15 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         else:
             rhok = 1. / rhok_inv
 
-        A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
-        A2 = I - yk[:, np.newaxis] * sk[np.newaxis, :] * rhok
-        Hk = np.dot(A1, np.dot(Hk, A2)) + (rhok * sk[:, np.newaxis] *
-                                                 sk[np.newaxis, :])
+        # BFGS update formula
+        # https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm
+        # Hk+1 = Hk
+        #        + (sk @ yk + yk @ Hk @ yk) / (sk @ yk)**2 * (sk @ sk^T)
+        #        - (Hk @ yk @ sk^T + sk @ yk^T @ Hk) / (sk @ yk)
+        Hk_yk = symv(1.0, Hk, yk)
+
+        Hk = syr((1 + np.dot(yk, Hk_yk) * rhok) * rhok, sk, a=Hk, overwrite_a=True)
+        Hk = syr2(-rhok, Hk_yk, sk, a=Hk, overwrite_a=True)
 
     fval = old_fval
 
@@ -1516,6 +1526,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         print(f"         Iterations: {k:d}")
         print(f"         Function evaluations: {sf.nfev:d}")
         print(f"         Gradient evaluations: {sf.ngev:d}")
+
+    # Convert back to C-contiguous, symmetric matrix
+    Hk = np.copy(Hk, order='C')
+    Hk[np.tril_indices_from(Hk, -1)] = Hk.T[np.tril_indices_from(Hk, -1)]
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,
