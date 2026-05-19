@@ -95,6 +95,7 @@ inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
+nanobind_dep = dependency('nanobind')
 
 # Pythran include directory and build flags
 if use_pythran
