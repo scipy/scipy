@@ -7985,7 +7985,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     Suppose we wish to test the null hypothesis that two samples were drawn
     from the same distribution.
     We choose a confidence level of 95%; that is, we will reject the null
-    hypothesis in favor of the alternative if the p-value is less than 0.05.
+    hypothesis in favor of the alternative (the two samples are *not* from the same underlying distribution)
+    if the p-value is less than 0.05.
 
     If the first sample were drawn from a uniform distribution and the second
     were drawn from the standard normal, we would expect the null hypothesis
@@ -7993,13 +7994,13 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
     >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(21)
     >>> sample1 = stats.uniform.rvs(size=100, random_state=rng)
     >>> sample2 = stats.norm.rvs(size=110, random_state=rng)
     >>> stats.ks_2samp(sample1, sample2)
-    KstestResult(statistic=0.5454545454545454,
-                 pvalue=7.37417839555191e-15,
-                 statistic_location=-0.014071496412861274,
+    KstestResult(statistic=0.5636363636363636,
+                 pvalue=6.788389136133105e-16,
+                 statistic_location=-0.011057745469750928,
                  statistic_sign=-1)
 
 
@@ -8010,16 +8011,17 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     When both samples are drawn from the same distribution, we expect the data
     to be consistent with the null hypothesis most of the time.
 
-    >>> sample1 = stats.norm.rvs(size=105, random_state=rng)
-    >>> sample2 = stats.norm.rvs(size=95, random_state=rng)
+    >>> sample1 = stats.norm.rvs(size=405, random_state=rng)
+    >>> sample2 = stats.norm.rvs(size=395, random_state=rng)
     >>> stats.ks_2samp(sample1, sample2)
-    KstestResult(statistic=0.10927318295739348,
-                 pvalue=0.5438289009927495,
-                 statistic_location=-0.1670157701848795,
-                 statistic_sign=-1)
+    KstestResult(statistic=0.03775589935927489,
+                 pvalue=0.9230663309557195,
+                 statistic_location=0.5652951110659917,
+                 statistic_sign=1)
 
-    As expected, the p-value of 0.54 is not below our threshold of 0.05, so
-    we cannot reject the null hypothesis.
+    As expected, the p-value of 0.92 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis, and thus the two samples are found to be 
+    from the same underlying distribution.
 
     Suppose, however, that the first sample were drawn from
     a normal distribution shifted toward greater values. In this case,
@@ -8027,11 +8029,11 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     to be *less* than the CDF underlying the second sample. Therefore, we would
     expect the null hypothesis to be rejected with ``alternative='less'``:
 
-    >>> sample1 = stats.norm.rvs(size=105, loc=0.5, random_state=rng)
+    >>> sample1 = stats.norm.rvs(size=405, loc=0.5, random_state=rng)
     >>> stats.ks_2samp(sample1, sample2, alternative='less')
-    KstestResult(statistic=0.4055137844611529,
-                 pvalue=3.5474563068855554e-08,
-                 statistic_location=-0.13249370614972575,
+    KstestResult(statistic=0.17415221128301298,
+                 pvalue=4.378286065404051e-06,
+                 statistic_location=-0.08273265613519568,
                  statistic_sign=-1)
 
     and indeed, with p-value smaller than our threshold, we reject the null
