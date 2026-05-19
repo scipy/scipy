@@ -11,9 +11,6 @@ import dataclasses
 import functools
 import textwrap
 
-from collections.abc import Generator
-from contextlib import contextmanager
-from contextvars import ContextVar
 from types import ModuleType
 from typing import Any, Literal
 from collections.abc import Iterable
@@ -49,6 +46,7 @@ from scipy._external.array_api_extra._lib._testing import (
     xp_assert_close as xpx_assert_close,
     xp_assert_equal as xpx_assert_equal,
     xp_assert_less as xpx_assert_less,
+    default_xp
 )
 
 from scipy._lib._docscrape import FunctionDoc
@@ -196,23 +194,6 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     return np.asarray(x, copy=True)
 
 
-_default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
-
-@contextmanager
-def default_xp(xp: ModuleType) -> Generator[None, None, None]:
-    """In all ``xp_assert_*`` and ``assert_*`` function calls executed within this
-    context manager, test by default that the array namespace is
-    the provided across all arrays, unless one explicitly passes the ``xp=``
-    parameter or ``check_namespace=False``.
-
-    Without this context manager, the default value for `xp` is the namespace
-    for the desired array (the second parameter of the tests).
-    """
-    token = _default_xp_ctxvar.set(xp)
-    try:
-        yield
-    finally:
-        _default_xp_ctxvar.reset(token)
 
 
 def eager_warns(warning_type, *, match=None, xp):
@@ -232,11 +213,6 @@ def _strict_check(actual, desired, xp, *,
                   check_0d=True):
     __tracebackhide__ = True  # Hide traceback for py.test
 
-    if xp is None:
-        try:
-            xp = _default_xp_ctxvar.get()
-        except LookupError:
-            xp = array_namespace(desired)
 
     if check_namespace:
         _assert_matching_namespace(actual, desired, xp)
@@ -297,33 +273,23 @@ def _convert_scalar_to_array(x, xp):
 def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_dtype=True,
                     check_shape=True, check_0d=False, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
-    if xp is None:
-        try:
-            xp = _default_xp_ctxvar.get()
-        except LookupError:
-            xp = array_namespace(desired)
 
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
 
     return xpx_assert_close(actual, desired,rtol=rtol, atol=atol, 
                             err_msg=err_msg, check_dtype=check_dtype, 
-                            check_shape=check_shape, check_scalar=check_0d)
+                            check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
 def xp_assert_equal(actual, desired, *, check_dtype=True,
                     check_shape=True, check_0d=False, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
-    if xp is None:
-        try:
-            xp = _default_xp_ctxvar.get()
-        except LookupError:
-            xp = array_namespace(desired)
 
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
 
     return xpx_assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype, 
-                            check_shape=check_shape, check_scalar=check_0d)
+                            check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
 
 def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
@@ -344,17 +310,12 @@ def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
 def _assert_less(actual, desired, *, check_dtype=True,
                    check_shape=True, check_0d=True, err_msg, verbose, xp):
     __tracebackhide__ = True  # Hide traceback for py.test
-    if xp is None:
-        try:
-            xp = _default_xp_ctxvar.get()
-        except LookupError:
-            xp = array_namespace(desired)
 
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
     xpx_assert_less(actual, desired, check_dtype=check_dtype,
                    check_shape=check_shape, check_scalar=check_0d, err_msg=err_msg,
-                    verbose=verbose)
+                    verbose=verbose, xp=xp)
 
 
 def xp_assert_less(actual, desired, *, check_dtype=True,
@@ -371,11 +332,6 @@ def xp_assert_less_equal(
     check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None
 ):
     __tracebackhide__ = True  # Hide traceback for py.test
-    if xp is None:
-        try:
-            xp = _default_xp_ctxvar.get()
-        except LookupError:
-            xp = array_namespace(desired)
     _assert_less(
         actual, xp.nextafter(desired, desired + 1),
         check_dtype=check_dtype,
