@@ -927,9 +927,10 @@ def xp_capabilities(
         # Don't use a wrapper, as in some cases @xp_capabilities is
         # applied to a ufunc
         capabilities_table[f] = capabilities
-        note = _make_capabilities_note(f.__name__, sphinx_capabilities, extra_note)
         doc = FunctionDoc(f)
-        doc['Notes'].append(note)
+        if not np_only or out_of_scope:
+            note = _make_capabilities_note(f.__name__, sphinx_capabilities, extra_note)
+            doc['Notes'].append(note)
         doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         try:
             f.__doc__ = doc

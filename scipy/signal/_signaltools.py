@@ -1048,9 +1048,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         ret, overpart = _split(ret, [-overlap], ax_fft, xp=xp)
         overpart = _split(overpart, [-1], ax_split, xp=xp)[0]
 
-        ret_overpart = _split(ret, [overlap], ax_fft, xp=xp)[0]
-        ret_overpart = _split(ret_overpart, [1], ax_split, xp)[1]
-        ret_overpart += overpart
+        overlap_slice = [slice(None)] * ret.ndim
+        overlap_slice[ax_fft] = slice(0, overlap)
+        overlap_slice[ax_split] = slice(1, None)
+        ret = xpx.at(ret)[tuple(overlap_slice)].add(overpart)
 
     # Reshape back to the correct dimensionality.
     shape_ret = [ret.shape[i] if i not in fft_axes else
@@ -2424,7 +2425,7 @@ def deconvolve(signal, divisor):
         rem = num
     else:
         input = xp.zeros(N - D + 1, dtype=xp.float64)
-        input[0] = 1
+        input = xpx.at(input)[0].set(1)
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
@@ -2542,11 +2543,11 @@ def hilbert(x, N=None, axis=-1):
     Xf = sp_fft.fft(x, N, axis=axis)
     Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        Xf[..., 1: N // 2] *= 2.0
-        Xf[..., N // 2 + 1:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: N // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., N // 2 + 1:N].set(0.0)
     else:
-        Xf[..., 1:(N + 1) // 2] *= 2.0
-        Xf[..., (N + 1) // 2:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: (N + 1) // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., (N + 1) // 2:N].set(0.0)
 
     Xf = xp.moveaxis(Xf, -1, axis)
     x = sp_fft.ifft(Xf, axis=axis)
@@ -2724,11 +2725,11 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
     if k0 > 1:  # condition k0 > 1 needed for Dask backend
-        Xf[..., 1:k0, :] *= 2.0
+        Xf = xpx.at(Xf)[..., 1:k0, :].multiply(2.0)
     if k1 > 1:  # condition k1 > 1 needed for Dask backend
-        Xf[..., :, 1:k1] *= 2.0
-    Xf[..., k0:, :] = 0.0
-    Xf[..., :, k1:] = 0.0
+        Xf = xpx.at(Xf)[..., :, 1:k1].multiply(2.0)
+    Xf = xpx.at(Xf)[..., k0:, :].set(0.0)
+    Xf = xpx.at(Xf)[..., :, k1:].set(0.0)
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)

@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
+from scipy._lib._testutils import check_free_memory
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
 import pytest
@@ -230,6 +231,9 @@ def test_broadcast_to():
 @pytest.mark.xslow
 def test_large_assignments():
     # When nnz grows bigger than int32 can hold, shift to int64 index arrays
+
+    # This test requires *a lot* of memory!
+    check_free_memory(65536)
 
     # parametrize puts lots of slow stuff into pytest's collection phase. So dont use it
     def check(A_info, index, rhs):

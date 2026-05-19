@@ -1606,7 +1606,7 @@ class TestLp2lp:
 @make_xp_test_case(lp2hp)
 class TestLp2hp:
 
-    def test_basic(self, xp):
+    def test_denominator_order_greater_than_numerator_order(self, xp):
         b = xp.asarray([0.25059432325190018])
         a = xp.asarray(
             [1, 0.59724041654134863, 0.92834805757524175, 0.25059432325190018]
@@ -1617,11 +1617,18 @@ class TestLp2hp:
             a_hp, xp.asarray([1, 1.1638e5, 2.3522e9, 1.2373e14]), rtol=1e-4
         )
 
+    def test_numerator_order_greater_than_denominator_order(self, xp):
+        b = xp.asarray([1.0, 2.0, 3.0])
+        a = xp.asarray([1.0])
+        b_hp, a_hp = lp2hp(b, a, 2.0)
+        xp_assert_close(b_hp, xp.asarray([3.0, 4.0, 4.0]))
+        xp_assert_close(a_hp, xp.asarray([1.0, 0.0, 0.0]))
+
 
 @make_xp_test_case(lp2bp)
 class TestLp2bp:
 
-    def test_basic(self, xp):
+    def test_denominator_order_greater_than_numerator_order(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 2, 2, 1])
         b_bp, a_bp = lp2bp(b, a, 2*math.pi*4000, 2*math.pi*2000)
@@ -1632,16 +1639,30 @@ class TestLp2bp:
                         1.3965e18, 1.0028e22, 2.5202e26]), rtol=1e-4
         )
 
+    def test_numerator_order_greater_than_denominator_order(self, xp):
+        b = xp.asarray([1.0, 2.0, 3.0])
+        a = xp.asarray([1.0])
+        b_bp, a_bp = lp2bp(b, a, 2.0, 3.0)
+        xp_assert_close(b_bp, xp.asarray([1/9, 2/3, 35/9, 8/3, 16/9]))
+        xp_assert_close(a_bp, xp.asarray([1.0, 0.0, 0.0]))
+
 
 @make_xp_test_case(lp2bs)
 class TestLp2bs:
 
-    def test_basic(self, xp):
+    def test_denominator_order_greater_than_numerator_order(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 1])
         b_bs, a_bs = lp2bs(b, a, 0.41722257286366754, 0.18460575326152251)
         assert_array_almost_equal(b_bs, xp.asarray([1, 0, 0.17407]), decimal=5)
         assert_array_almost_equal(a_bs, xp.asarray([1, 0.18461, 0.17407]), decimal=5)
+
+    def test_numerator_order_greater_than_denominator_order(self, xp):
+        b = xp.asarray([1.0, 2.0, 3.0])
+        a = xp.asarray([1.0])
+        b_bs, a_bs = lp2bs(b, a, 2.0, 3.0)
+        xp_assert_close(b_bs, xp.asarray([3.0, 6.0, 33.0, 24.0, 48.0]))
+        xp_assert_close(a_bs, xp.asarray([1.0, 0.0, 8.0, 0.0, 16.0]))
 
 
 @make_xp_test_case(bilinear)
