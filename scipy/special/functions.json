@@ -1027,5 +1027,10 @@
             "hypergeom_skewness_float": "fff->f",
             "hypergeom_skewness_double": "ddd->d"
         }
+    },
+    "_von_mises_cdf": {
+        "xsf_wrappers.h": {
+            "xsf_von_mises_cdf": "dd->d"
+        }
     }
 }

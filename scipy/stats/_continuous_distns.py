@@ -11254,7 +11254,7 @@ class vonmises_gen(rv_continuous):
         return kappa * sc.cosm1(x) - np.log(2*np.pi) - np.log(sc.i0e(kappa))
 
     def _cdf(self, x, kappa):
-        return _stats.von_mises_cdf(kappa, x)
+        return sc._ufuncs._von_mises_cdf(kappa, x)
 
     def _stats_skip(self, kappa):
         return 0, None, 0, None

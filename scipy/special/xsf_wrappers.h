@@ -391,6 +391,7 @@ double xsf_cosdg(double x);
 double xsf_tandg(double x);
 double xsf_cotdg(double x);
 double xsf_radian(double d, double m, double s);
+double xsf_von_mises_cdf(double k, double x);
 
 #ifdef __cplusplus
 } /* extern "C" */

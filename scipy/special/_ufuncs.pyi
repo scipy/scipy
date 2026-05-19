@@ -265,6 +265,7 @@ _kolmogp: np.ufunc
 _lambertw: np.ufunc
 _lanczos_sum_expg_scaled: np.ufunc
 _lgam1p: np.ufunc
+_von_mises_cdf: np.ufunc
 _log1mexp: np.ufunc
 _log1pmx: np.ufunc
 _normalized_gen_harmonic: np.ufunc

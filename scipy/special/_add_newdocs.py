@@ -4747,6 +4747,11 @@ add_newdoc("_lgam1p",
     Internal function, do not use.
     """)
 
+add_newdoc("_von_mises_cdf",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("lpmv",
     r"""
     lpmv(m, v, x, out=None)

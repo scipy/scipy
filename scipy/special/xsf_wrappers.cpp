@@ -740,3 +740,5 @@ double xsf_tandg(double x) { return xsf::tandg(x); }
 double xsf_cotdg(double x) { return xsf::cotdg(x); }
 
 double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
+
+double xsf_von_mises_cdf(double k, double x) { return xsf::von_mises_cdf(k, x); }
