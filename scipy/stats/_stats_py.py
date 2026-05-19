@@ -7662,10 +7662,16 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
     ones = ones[()] if ones.ndim == 0 else ones
 
+    def _ksone_asymp(d, n):
+        return np.exp(-2 * n * d**2)
+
     if alternative == 'greater':
         Dplus, d_location = _compute_d(cdfvals, x, +1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
+        if mode == 'asymp':
+            pvalue = _masked_apply(_ksone_asymp, args=(Dplus, N), xp=xp)
+        else:  # 'auto', 'exact', or 'approx' - use exact one-sided distribution
+            pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
+        pvalue = xp.clip(xp.asarray(pvalue, dtype=x.dtype), 0., 1.)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
         return KstestResult(Dplus, pvalue,
@@ -7674,8 +7680,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
 
     if alternative == 'less':
         Dminus, d_location = _compute_d(cdfvals, x, -1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
+        if mode == 'asymp':
+            pvalue = _masked_apply(_ksone_asymp, args=(Dminus, N), xp=xp)
+        else:  # 'auto', 'exact', or 'approx' - use exact one-sided distribution
+            pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
+        pvalue = xp.clip(xp.asarray(pvalue, dtype=x.dtype), 0., 1.)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
         return KstestResult(Dminus, pvalue,
