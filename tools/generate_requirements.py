@@ -50,6 +50,9 @@ def main():
     for key, opt_list in pyproject["project"]["optional-dependencies"].items():
         generate_requirement_file(key, opt_list)
 
+    for key, opt_list in pyproject["dependency-groups"].items():
+        generate_requirement_file(key, opt_list)
+
     # generate requirements/all.txt
     all_path = repo_dir / "requirements" / "all.txt"
     files = ["build", "dev", "doc", "test"]
