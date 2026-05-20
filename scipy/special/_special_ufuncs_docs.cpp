@@ -6464,7 +6464,7 @@ const char *digamma_inv_doc = R"(
 
     Plot the digamma function and its inverse:
 
-    >>> x = np.linspace(0.3, 4, 200)
+    >>> x = np.linspace(0.3, 5, 200)
     >>> y = digamma(x)
     >>> t = np.linspace(-3, 4, 200)
     >>> fig, ax = plt.subplots()
@@ -6473,6 +6473,7 @@ const char *digamma_inv_doc = R"(
     >>> ax.plot(t, t, "--", label=r"$y = x$")
     >>> ax.set_xlabel("input")
     >>> ax.legend()
+    >>> plt.show()
     )";
 
 const char *radian_doc = R"(
