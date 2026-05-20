@@ -316,15 +316,16 @@ class TestWelch:
                        dtype=xp.float64)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_complex(self):
-        x = np.zeros(16, np.complex128)
-        x[0] = 1.0 + 2.0j
-        x[8] = 1.0 + 2.0j
+    def test_complex(self, xp):
+        x = xp.zeros((16,), dtype=xp.complex128)
+        x = xpx.at(x)[0].set(1.0 + 2.0j)
+        x = xpx.at(x)[8].set(1.0 + 2.0j)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
-                      0.55555556, 0.55555556, 0.55555556, 0.38194444])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=xp.float64))
+        q = xp.asarray([0.41666667, 0.38194444, 0.55555556, 0.55555556,
+                        0.55555556, 0.55555556, 0.55555556, 0.38194444],
+                       dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     def test_unk_scaling(self):
         assert_raises(ValueError, welch, np.zeros(4, np.complex128),
