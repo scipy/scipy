@@ -471,16 +471,16 @@ class TestWelch:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_real_twosided_32(self):
-        x = np.zeros(16, 'f')
-        x[0] = 1
-        x[8] = 1
+    def test_real_twosided_32(self, xp):
+        x = xp.zeros((16,), dtype=xp.float32)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.11111111,
-                      0.07638889], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=xp.float32))
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111,
+                        0.11111111, 0.11111111, 0.11111111, 0.11111111,
+                        0.07638889], dtype=xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     def test_complex_32(self, xp):
