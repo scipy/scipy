@@ -495,23 +495,23 @@ class TestWelch:
         assert_(p.dtype == q.dtype,
                 f'dtype mismatch, {p.dtype}, {q.dtype}')
 
-    def test_padded_freqs(self):
-        x = np.zeros(12)
+    def test_padded_freqs(self, xp):
+        x = xp.zeros((12,))
 
         nfft = 24
         f = fftfreq(nfft, 1.0)[:nfft//2+1]
         f[-1] *= -1
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
-        assert_allclose(f, fodd)
-        assert_allclose(f, feven)
+        xp_assert_close(fodd, xp.asarray(f, dtype=xp.float64))
+        xp_assert_close(feven, xp.asarray(f, dtype=xp.float64))
 
         nfft = 25
         f = fftfreq(nfft, 1.0)[:(nfft + 1)//2]
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
-        assert_allclose(f, fodd)
-        assert_allclose(f, feven)
+        xp_assert_close(fodd, xp.asarray(f, dtype=xp.float64))
+        xp_assert_close(feven, xp.asarray(f, dtype=xp.float64))
 
     def test_window_correction(self, xp):
         A = 20
