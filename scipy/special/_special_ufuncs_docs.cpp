@@ -6431,6 +6431,54 @@ const char *psi_doc = R"(
     (1.55035981733341+1.0105022091860445j)
     )";
 
+const char *digamma_inv_doc = R"(
+    digamma_inv(y, out=None)
+
+    Inverse of the digamma function.
+
+    Parameters
+    ----------
+    y : array_like of float
+        Real-valued argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Positive real solution of :math:`\psi(x) = y`.
+
+    See Also
+    --------
+    psi : The digamma function.
+    digamma : Alias for `psi`.
+
+    Notes
+    -----
+    .. versionadded:: 1.19.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import digamma, digamma_inv
+    >>> x = np.logspace(-2, 2, 5)
+    >>> np.allclose(digamma_inv(digamma(x)), x)
+    True
+
+    Plot the digamma function and its inverse:
+
+    >>> x = np.linspace(0.3, 4, 200)
+    >>> y = digamma(x)
+    >>> t = np.linspace(-3, 4, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y, label=r"$\psi(x)$")
+    >>> ax.plot(y, digamma_inv(y), label=r"$\psi^{-1}(y)$")
+    >>> ax.plot(t, t, "--", label=r"$y = x$")
+    >>> ax.set_xlabel("input")
+    >>> ax.legend()
+    )";
+
 const char *radian_doc = R"(
     radian(d, m, s, out=None)
 
