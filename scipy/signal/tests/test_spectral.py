@@ -346,14 +346,14 @@ class TestWelch:
     def test_detrend_external(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10,
-                     detrend=lambda seg: signal.detrend(seg, type='l'))
+                     detrend=lambda seg: signal.detrend(seg, type='linear'))
         xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
     def test_detrend_external_nd_m1(self, xp):
         x = xp.arange(40, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (2,2,10))
         f, p = welch(x, nperseg=10,
-                     detrend=lambda seg: signal.detrend(seg, type='l'))
+                     detrend=lambda seg: signal.detrend(seg, type='linear'))
         xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
     def test_detrend_external_nd_0(self, xp):
@@ -361,7 +361,7 @@ class TestWelch:
         x = xp.reshape(x, (2,1,10))
         x = xp.moveaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
-                     detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
+                     detrend=lambda seg: signal.detrend(seg, axis=0, type='linear'))
         xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
     def test_nd_axis_m1(self, xp):
