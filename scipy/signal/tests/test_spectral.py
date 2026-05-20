@@ -382,20 +382,20 @@ class TestWelch:
         f0, p0 = welch(x[:,0,0], nperseg=10)
         xp_assert_close(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
 
-    def test_window_external(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_window_external(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, 10, 'hann', nperseg=8)
-        win = signal.get_window('hann', 8)
+        win = xp.asarray(signal.get_window('hann', 8))
         fe, pe = welch(x, 10, win, nperseg=None)
-        assert_array_almost_equal_nulp(p, pe)
-        assert_array_almost_equal_nulp(f, fe)
-        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
-        assert_array_equal(pe.shape, (5,))
+        xp_assert_close(p, pe, atol=1e-15, rtol=1e-15)
+        xp_assert_close(f, fe, atol=1e-15, rtol=1e-15)
+        assert fe.shape == (5,)  # because win length used as nperseg
+        assert pe.shape == (5,)
         assert_raises(ValueError, welch, x,
                       10, win, nperseg=4)  # because nperseg != win.shape[-1]
-        win_err = signal.get_window('hann', 32)
+        win_err = xp.asarray(signal.get_window('hann', 32))
         assert_raises(ValueError, welch, x,
                       10, win_err, nperseg=None)  # win longer than signal
 
