@@ -435,13 +435,13 @@ class TestWelch:
         assert_raises(ValueError, welch, np.zeros(4), 1,
                       np.arange(6).reshape((2,3)))
 
-    def test_nondefault_noverlap(self):
-        x = np.zeros(64)
-        x[::8] = 1
+    def test_nondefault_noverlap(self, xp):
+        x = xp.zeros((64,), dtype=xp.float64)
+        x = xpx.at(x)[::8].set(1)
         f, p = welch(x, nperseg=16, noverlap=4)
-        q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
-                      1./6.])
-        assert_allclose(p, q, atol=1e-12)
+        q = xp.asarray([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
+                        1./6.], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-12)
 
     def test_bad_noverlap(self, xp):
         assert_raises(ValueError, welch, xp.zeros((4,)), 1, 'hann', 2, 7)
