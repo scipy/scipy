@@ -4987,7 +4987,52 @@ class TestLIL(sparse_test_class(minmax=False)):
         a = self.lil_container(np.ones((3, 3)))
         a *= 2.
         a[0, :] = 0
+        
+    def _run_assign_case(self, row_slice, col_slice, nrows, ncols, checks):
+        rows = [0, 0, 4, 7]
+        cols = [1, 0, 3, 3]
+        vals = [2, 1, 3, 9]
+        m, n = int(1e4), int(1e8)
+        mat = sparse.csr_matrix((vals, (rows, cols)), shape=(m, n), dtype=np.float32)
 
+        mini_rows = [0, 0, 2, 3]
+        mini_cols = [0, 1, 2, 2]
+        mini_vals = [1, 2, 3, 9]
+        mini_mat = sparse.csr_matrix(
+            (mini_vals, (mini_rows, mini_cols)),
+            shape=(nrows, ncols),
+            dtype=np.float32,
+        )
+
+        mat_lil = mat.tolil()
+        mat_lil[row_slice, col_slice] = mini_mat.tolil()
+
+        for (r, c), expected in checks:
+            assert mat_lil[r, c] == expected
+
+    @pytest.mark.timeout(2)
+    def test_lil_sparse_assignment_no_densify_memory_error(self):
+        mini_m, mini_n = int(5e3), int(1e7)
+        self._run_assign_case(
+            slice(1, mini_m + 1),
+            slice(10, mini_n + 10),
+            mini_m,
+            mini_n,
+            [((1, 10), 1), ((1, 11), 2)],
+        )
+
+    @pytest.mark.timeout(2)
+    def test_lil_sparse_assignment_with_step_no_densify_memory_error(self):
+        mini_m, mini_n = int(5e3), int(1e7)
+        nrows = len(range(1, mini_m + 1, 2))
+        ncols = len(range(10, mini_n + 10, 3))
+        self._run_assign_case(
+            slice(1, mini_m + 1, 2),
+            slice(10, mini_n + 10, 3),
+            nrows,
+            ncols,
+            [((1, 10), 1), ((1, 13), 2)],
+        )        
 
 class TestLILMatrix(_MatrixMixin, TestLIL):
     spcreator = lil_matrix
