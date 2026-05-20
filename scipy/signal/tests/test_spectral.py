@@ -244,15 +244,15 @@ class TestPeriodogram:
 
 @make_xp_test_case(welch)
 class TestWelch:
-    def test_real_onesided_even(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_real_onesided_even(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=xp.float64))
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+                        0.11111111], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_onesided_odd(self):
         x = np.zeros(16)
