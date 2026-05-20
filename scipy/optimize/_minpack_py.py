@@ -81,11 +81,11 @@ def fsolve(func, x0, args=(), fprime=None, full_output=False,
         super-diagonals within the band of the Jacobi matrix, the
         Jacobi matrix is considered banded (only for ``fprime=None``).
     epsfcn : float, optional
-        A suitable step length for the forward-difference
-        approximation of the Jacobian (for ``fprime=None``). If
-        `epsfcn` is less than the machine precision, it is assumed
-        that the relative errors in the functions are of the order of
-        the machine precision.
+        A variable used in determining a suitable step length for the
+        forward-difference approximation of the Jacobian (for
+        ``fprime=None``). The step length for variable ``i`` is
+        ``sqrt(max(epsfcn, machine precision)) * abs(x[i])``, or
+        ``sqrt(max(epsfcn, machine precision))`` if ``x[i]`` is zero.
     factor : float, optional
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in the interval
@@ -215,11 +215,11 @@ def _root_hybr(func, x0, args=(), jac=None,
         super-diagonals within the band of the Jacobi matrix, the
         Jacobi matrix is considered banded (only for ``jac=None``).
     eps : float
-        A suitable step length for the forward-difference
-        approximation of the Jacobian (for ``jac=None``). If
-        `eps` is less than the machine precision, it is assumed
-        that the relative errors in the functions are of the order of
-        the machine precision.
+        Passed to MINPACK as ``epsfcn``, a variable used in determining
+        a suitable step length for the forward-difference approximation
+        of the Jacobian (for ``jac=None``). The step length for variable
+        ``i`` is ``sqrt(max(eps, machine precision)) * abs(x[i])``, or
+        ``sqrt(max(eps, machine precision))`` if ``x[i]`` is zero.
     factor : float
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in the interval
@@ -332,9 +332,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
     epsfcn : float, optional
         A variable used in determining a suitable step length for the forward-
         difference approximation of the Jacobian (for Dfun=None).
-        Normally the actual step length will be sqrt(epsfcn)*x
-        If epsfcn is less than the machine precision, it is assumed that the
-        relative errors are of the order of the machine precision.
+        The step length for variable ``i`` is ``sqrt(max(epsfcn, machine
+        precision)) * abs(x[i])``, or ``sqrt(max(epsfcn, machine
+        precision))`` if ``x[i]`` is zero.
     factor : float, optional
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
