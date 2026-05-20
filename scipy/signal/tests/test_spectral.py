@@ -535,22 +535,23 @@ class TestWelch:
             assert_allclose(np.sqrt(trapezoid(p_dens, freq)), A*np.sqrt(2)/2,
                             rtol=1e-3)
 
-    def test_axis_rolling(self):
+    def test_axis_rolling(self, xp):
         np.random.seed(1234)
 
-        x_flat = np.random.randn(1024)
+        x_flat = xp.asarray(np.random.randn(1024))
         _, p_flat = welch(x_flat)
 
         for a in range(3):
             newshape = [1,]*3
             newshape[a] = -1
-            x = x_flat.reshape(newshape)
+            x = xp.reshape(x_flat, tuple(newshape))
 
             _, p_plus = welch(x, axis=a)  # Positive axis index
             _, p_minus = welch(x, axis=a-x.ndim)  # Negative axis index
 
-            assert_equal(p_flat, p_plus.squeeze(), err_msg=a)
-            assert_equal(p_flat, p_minus.squeeze(), err_msg=a-x.ndim)
+            xp_assert_close(p_flat, xp.reshape(p_plus, p_flat.shape), err_msg=a)
+            xp_assert_close(p_flat, xp.reshape(p_minus, p_flat.shape),
+                            err_msg=a-x.ndim)
 
     def test_average(self, xp):
         x = xp.zeros((16,), dtype=xp.float64)
