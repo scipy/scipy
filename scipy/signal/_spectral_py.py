@@ -3,6 +3,7 @@
 import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
+from scipy._lib._array_api import array_namespace
 from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 from . import _signaltools
 from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
@@ -679,10 +680,16 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
     >>> plt.show()
 
     """
-    freqs, Pxx = csd(x, x, fs=fs, window=window, nperseg=nperseg,
-                     noverlap=noverlap, nfft=nfft, detrend=detrend,
-                     return_onesided=return_onesided, scaling=scaling,
-                     axis=axis, average=average)
+    xp = (
+        array_namespace(x)
+        if isinstance(window, str | tuple)
+        else array_namespace(x, window)
+    )
+    x_np = np.asarray(x)
+    freqs_np, Pxx_np = csd(x_np, x_np, fs=fs, window=window, nperseg=nperseg,
+                           noverlap=noverlap, nfft=nfft, detrend=detrend,
+                           return_onesided=return_onesided, scaling=scaling,
+                           axis=axis, average=average)
 
     return freqs, Pxx.real
 
