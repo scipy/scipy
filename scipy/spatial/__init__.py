@@ -87,8 +87,8 @@ The Delaunay triangulation objects offer a method for locating the
 simplex containing a given point, and barycentric coordinate
 computations.
 
-Functions
----------
+Miscellaneous Functions
+=======================
 
 .. autosummary::
    :toctree: generated/
@@ -101,7 +101,7 @@ Functions
    geometric_slerp
 
 Warnings / Errors used in :mod:`scipy.spatial`
-----------------------------------------------
+==============================================
 .. autosummary::
    :toctree: generated/
 

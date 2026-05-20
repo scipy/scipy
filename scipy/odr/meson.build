@@ -12,7 +12,7 @@ odrpack = static_library('odrpack',
 
 py3.extension_module('__odrpack',
   '__odrpack.c',
-  link_with: odrpack,
+  link_with: [odrpack, blas_lapack_wrapper_lib_lp64],
   link_args: version_link_args,
   dependencies: [blas_lp64_dep, np_dep],
   install: true,

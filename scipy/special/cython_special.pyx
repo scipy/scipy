@@ -1358,6 +1358,8 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_log_ndtr(double x) nogil
     npy_cdouble xsf_clog_ndtr(npy_cdouble x) nogil
     double xsf_ndtri(double x) nogil
+    double special_nrdtrimn(double p, double std, double x) nogil
+    double special_nrdtrisd(double mean, double p, double x) nogil
     double xsf_owens_t(double h, double a) nogil
     double xsf_pdtr(double k, double m) nogil
     double xsf_pdtrc(double k, double m) nogil
@@ -1384,14 +1386,6 @@ cdef _proto_bdtrc_unsafe_t *_proto_bdtrc_unsafe_t_var = &_func_bdtrc_unsafe
 from ._legacy cimport bdtri_unsafe as _func_bdtri_unsafe
 ctypedef double _proto_bdtri_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_bdtri_unsafe_t *_proto_bdtri_unsafe_t_var = &_func_bdtri_unsafe
-
-from ._cdflib_wrappers cimport bdtrik as _func_bdtrik
-ctypedef double _proto_bdtrik_t(double, double, double) noexcept nogil
-cdef _proto_bdtrik_t *_proto_bdtrik_t_var = &_func_bdtrik
-
-from ._cdflib_wrappers cimport bdtrin as _func_bdtrin
-ctypedef double _proto_bdtrin_t(double, double, double) noexcept nogil
-cdef _proto_bdtrin_t *_proto_bdtrin_t_var = &_func_bdtrin
 
 from ._boxcox cimport boxcox as _func_boxcox
 ctypedef double _proto_boxcox_t(double, double) noexcept nogil
@@ -1701,14 +1695,6 @@ from ._legacy cimport nbdtri_unsafe as _func_nbdtri_unsafe
 ctypedef double _proto_nbdtri_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_nbdtri_unsafe_t *_proto_nbdtri_unsafe_t_var = &_func_nbdtri_unsafe
 
-from ._cdflib_wrappers cimport nbdtrik as _func_nbdtrik
-ctypedef double _proto_nbdtrik_t(double, double, double) noexcept nogil
-cdef _proto_nbdtrik_t *_proto_nbdtrik_t_var = &_func_nbdtrik
-
-from ._cdflib_wrappers cimport nbdtrin as _func_nbdtrin
-ctypedef double _proto_nbdtrin_t(double, double, double) noexcept nogil
-cdef _proto_nbdtrin_t *_proto_nbdtrin_t_var = &_func_nbdtrin
-
 from ._cdflib_wrappers cimport ncfdtridfd as _func_ncfdtridfd
 ctypedef double _proto_ncfdtridfd_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfd_t *_proto_ncfdtridfd_t_var = &_func_ncfdtridfd
@@ -1728,14 +1714,6 @@ cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 from ._cdflib_wrappers cimport nctdtrinc as _func_nctdtrinc
 ctypedef double _proto_nctdtrinc_t(double, double, double) noexcept nogil
 cdef _proto_nctdtrinc_t *_proto_nctdtrinc_t_var = &_func_nctdtrinc
-
-from ._cdflib_wrappers cimport nrdtrimn as _func_nrdtrimn
-ctypedef double _proto_nrdtrimn_t(double, double, double) noexcept nogil
-cdef _proto_nrdtrimn_t *_proto_nrdtrimn_t_var = &_func_nrdtrimn
-
-from ._cdflib_wrappers cimport nrdtrisd as _func_nrdtrisd
-ctypedef double _proto_nrdtrisd_t(double, double, double) noexcept nogil
-cdef _proto_nrdtrisd_t *_proto_nrdtrisd_t_var = &_func_nrdtrisd
 
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
@@ -1884,11 +1862,7 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
-    return _func_bdtrik(x0, x1, x2)
-
-cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.bdtrin"""
-    return _func_bdtrin(x0, x1, x2)
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrik_double)(x0, x1, x2)
 
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""
@@ -3078,13 +3052,13 @@ cpdef double nbdtri(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     else:
         return NAN
 
-cpdef double nbdtrik(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.nbdtrik"""
-    return _func_nbdtrik(x0, x1, x2)
-
 cpdef double nbdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrin"""
-    return _func_nbdtrin(x0, x1, x2)
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_invn_double)(x0, x1, x2)
+
+cpdef double nbdtrik(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.nbdtrik"""
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbdtrik_double)(x0, x1, x2)
 
 cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtr"""
@@ -3124,6 +3098,10 @@ cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_double)(x0, x1, x2)
     else:
         return NAN
+
+cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.bdtrin"""
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrin_double)(x0, x1, x2)
 
 cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtri"""
@@ -3193,11 +3171,11 @@ cpdef double ndtri(double x0) noexcept nogil:
 
 cpdef double nrdtrimn(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrimn"""
-    return _func_nrdtrimn(x0, x1, x2)
+    return special_nrdtrimn(x0, x1, x2)
 
 cpdef double nrdtrisd(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrisd"""
-    return _func_nrdtrisd(x0, x1, x2)
+    return special_nrdtrisd(x0, x1, x2)
 
 cdef void obl_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.obl_ang1"""

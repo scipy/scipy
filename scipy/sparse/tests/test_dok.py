@@ -92,7 +92,8 @@ def test_pop(d, Asp):
     assert Asp.pop((22, 21), "other") == "other"
     with pytest.raises(KeyError, match="(22, 21)"):
         Asp.pop((22, 21))
-    with pytest.raises(TypeError, match="got an unexpected keyword argument"):
+    msg = "got some positional-only arguments passed as keyword arguments: 'default'"
+    with pytest.raises(TypeError, match=msg):
         Asp.pop((22, 21), default=5)
 
 def test_popitem(d, Asp):

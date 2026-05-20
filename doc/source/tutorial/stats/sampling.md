@@ -39,19 +39,19 @@ Random variate generation is the small field of research that deals with
 algorithms to generate random variates from various distributions. It is
 common to assume that a uniform random number generator is available.
 This is a program that produces a sequence of independent and identically
-distributed continuous U(0,1) random variates (i.e. uniform random variates
-on the interval (0,1)). Of course, real-world computers can never generate
+distributed continuous $U(0,1)$ random variates (i.e. uniform random variates
+on the interval $(0,1)$). Of course, real-world computers can never generate
 ideal random numbers and they cannot produce numbers of arbitrary precision
 but state-of-the-art uniform random number generators come close to this
-aim. Thus random variate generation deals with the problem of transforming
-such a sequence of U(0,1) random numbers into non-uniform random variates.
+aim. Thus, random variate generation deals with the problem of transforming
+such a sequence of $U(0,1)$ random numbers into non-uniform random variates.
 These methods are universal and work in a black-box fashion.
 
 Some methods to do that are:
 
 * The Inversion method: When the inverse $F^{-1}$ of the cumulative
   distribution function is known, then random variate generation is easy.
-  We just generate a uniformly U(0,1) distributed random number U and
+  We just generate a uniformly $U(0,1)$ distributed random number U and
   return $X = F^{-1}(U)$. As closed form solutions for the inverse
   are rarely available, one usually needs to rely on approximations of
   the inverse (e.g. {class}`scipy.special.ndtri`,
@@ -61,9 +61,9 @@ Some methods to do that are:
   acceptance-rejection method, has been suggested by John von Neumann in
   1951[^1]. It involves computing an upper bound to the PDF (also called the
   hat function) and using the inversion method to generate a random
-  variate, say Y, from this bound. Then a uniform random number can be
-  drawn between 0 to the value of the upper bound at Y. If this number
-  is less than the PDF at Y, return the sample otherwise reject it. See
+  variate, say $Y$, from this bound. Then a uniform random number can be
+  drawn between $0$ and the value of the upper bound at $Y$. If this number
+  is less than the PDF at $Y$, return the sample otherwise reject it. See
   {class}`scipy.stats.sampling.TransformedDensityRejection`.
 * The Ratio-of-Uniforms Method: This is a type of acceptance-rejection
   method which is uses minimal bounding rectangles to construct the hat
@@ -72,7 +72,7 @@ Some methods to do that are:
   continuous case is that $F$ is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
   is *sequential search*. A uniform random number is generated from
-  U(0, 1) and probabilities are summed until the cumulative probability
+  $U(0, 1)$ and probabilities are summed until the cumulative probability
   exceeds the uniform random number. The index at which this happens is
   the required random variate and is returned.
 
@@ -136,7 +136,7 @@ possible to truncate the distributions using a `domain` parameter.  All
 generators need a stream of uniform random numbers that are transformed into
 random variates of the given distribution. This is done by passing a `random_state`
 parameter with a NumPy BitGenerator as the uniform random number generator.
-`random_state` can either be a integer, {class}`numpy.random.Generator`,
+`random_state` can either be an integer, {class}`numpy.random.Generator`,
 or {class}`numpy.random.RandomState`.
 
 ```{warning}

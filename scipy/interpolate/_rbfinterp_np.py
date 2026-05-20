@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
+from scipy.linalg.lapack import get_lapack_funcs
 from ._rbfinterp_common import _monomial_powers_impl
 
 from ._rbfinterp_pythran import (
@@ -8,6 +8,9 @@ from ._rbfinterp_pythran import (
     _build_evaluation_coefficients as _pythran_build_evaluation_coefficients,
     _polynomial_matrix as _pythran_polynomial_matrix
 )
+
+
+dgesv = get_lapack_funcs('gesv', dtype=np.float64, ilp64="preferred")
 
 
 # trampolines for pythran-compiled functions to drop the `xp` argument

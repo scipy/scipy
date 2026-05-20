@@ -54,11 +54,11 @@ dsnode_bmod (
 	 ftcs2 = _cptofcd("N", strlen("N")),
 	 ftcs3 = _cptofcd("U", strlen("U"));
 #endif
-    int            incx = 1, incy = 1;
+    slu_blasint    incx = 1, incy = 1;
     double         alpha = -1.0, beta = 1.0;
 #endif
 
-    int     nsupc, nsupr, nrow;
+    slu_blasint nsupc, nsupr, nrow;
     int_t   isub, irow;
     int_t   ufirst, nextlu;
     int_t   *lsub, *xlsub;

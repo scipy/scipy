@@ -39,7 +39,9 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
                        args=(), c1=1e-4, c2=0.9, amax=50, amin=1e-8,
                        xtol=1e-14):
     """
-    As `scalar_search_wolfe1` but do a line search to direction `pk`
+    As `scalar_search_wolfe1` but do a line search to direction `pk`.
+
+    This implements the DCSRCH function of MINPACK.
 
     Parameters
     ----------
@@ -70,6 +72,12 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
     Notes
     -----
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
+
+    References
+    ----------
+    .. [1] Jorge J. Moré and David J. Thuente. 1994. "Line search algorithms with
+       guaranteed sufficient decrease". ACM Trans. Math. Softw. 20, 3 (Sept. 1994),
+       286-307. doi:`10.1145/192115.192132`
 
     """
     if gfk is None:
@@ -143,11 +151,9 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
 
     References
     ----------
-    
-    .. [1] Nocedal, J., & Wright, S. J. (2006). Numerical optimization.
-       In Springer Series in Operations Research and Financial Engineering.
-       (Springer Series in Operations Research and Financial Engineering).
-       Springer Nature.
+    .. [1] J. Nocedal and S. J. Wright. "Numerical Optimization". Springer Ser.
+       Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition,
+       2006. :doi:`10.1007/978-0-387-40065-5`
 
     """
     _check_c1_c2(c1, c2)
@@ -248,14 +254,22 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     Notes
     -----
-    Uses the line search algorithm to enforce strong Wolfe
-    conditions. See Wright and Nocedal, 'Numerical Optimization',
-    1999, pp. 59-61.
+    Uses the line search algorithm to enforce strong Wolfe conditions. See algorithms
+    3.5 and 3.6 on pp. 60-61 in [1]_ (first edition, algorithms 3.2 and 3.3 on
+    pp. 59-61), see also [2]_.
 
     The search direction `pk` must be a descent direction (e.g.
     ``-myfprime(xk)``) to find a step length that satisfies the strong Wolfe
     conditions. If the search direction is not a descent direction (e.g.
     ``myfprime(xk)``), then `alpha`, `new_fval`, and `new_slope` will be None.
+
+    References
+    ----------
+    .. [1] J. Nocedal and S. J. Wright. "Numerical Optimization". Springer Ser.
+       Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition,
+       2006. doi:`10.1007/978-0-387-40065-5`
+    .. [2] R. Fletcher, "Practical Methods of Optimization." Wiley, May 23, 2000.
+       doi:`10.1002/9781118723203`
 
     Examples
     --------

@@ -102,7 +102,8 @@ capabilities_dict = {
     "map_coordinates": xp_capabilities(
         cpu_only=True, exceptions=["cupy", "jax.numpy"],
         allow_dask_compute=True, jax_jit=True
-    )
+    ),
+    "labeled_comprehension": xp_capabilities(np_only=True),
 }
 
 # ### decorate ###
@@ -112,6 +113,7 @@ for func_name in _ndimage_api.__all__:
 
     capabilities = capabilities_dict.get(func_name, default_capabilities)
 
+    # pyrefly:ignore[not-callable]
     f = capabilities(
         delegate_xp(delegator, MODULE_NAME)(bare_func)
         if SCIPY_ARRAY_API else bare_func

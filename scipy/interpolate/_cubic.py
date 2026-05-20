@@ -6,7 +6,7 @@ import numpy as np
 
 from scipy.linalg import solve, solve_banded
 from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 
 from . import PPoly
 from ._polyint import _isscalar
@@ -104,6 +104,7 @@ class CubicHermiteSpline(PPoly):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Attributes
     ----------
@@ -169,13 +170,17 @@ class CubicHermiteSpline(PPoly):
         self.axis = axis
 
 
-@xp_capabilities(
-    cpu_only=True, jax_jit=False,
-    skip_backends=[
-        ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
-    ]
-)
+# The commented out xp_capabilities below are probably right but since
+# this is untested, mark as np_only. TODO: convert the tests.
+#
+# @xp_capabilities(
+#     cpu_only=True, jax_jit=False,
+#     skip_backends=[
+#         ("dask.array",
+#          "https://github.com/data-apis/array-api-extra/issues/488")
+#     ]
+# )
+@xp_capabilities(np_only=True, reason="not tested")
 class PchipInterpolator(CubicHermiteSpline):
     r"""PCHIP shape-preserving interpolator (C1 smooth).
 
@@ -196,9 +201,11 @@ class PchipInterpolator(CubicHermiteSpline):
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
-    extrapolate : bool, optional
-        Whether to extrapolate to out-of-bounds points based on first
-        and last intervals, or to return NaNs.
+    extrapolate : {bool, 'periodic', None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Methods
     -------
@@ -256,7 +263,7 @@ class PchipInterpolator(CubicHermiteSpline):
     """
 
     # PchipInterpolator is not generic in scipy-stubs
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, x, y, axis=0, extrapolate=None):
         xp = array_namespace(x, y)
@@ -428,10 +435,11 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         .. versionadded:: 1.13.0
 
-    extrapolate : {bool, None}, optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
-        based on first and last intervals, or to return NaNs. If None,
-        ``extrapolate`` is set to False.
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), it is set to False.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Methods
     -------
@@ -517,7 +525,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     """
 
     # PchipInterpolator is not generic in scipy-stubs
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
@@ -597,6 +605,8 @@ class Akima1DInterpolator(CubicHermiteSpline):
         self.axis = axis
 
     def extend(self, c, x, right=True):
+        """Extending a 1-D Akima interpolator is not yet implemented."""
+        # numpydoc ignore=PR01
         raise NotImplementedError("Extending a 1-D Akima interpolator is not "
                                   "yet implemented")
 
@@ -640,7 +650,7 @@ class CubicSpline(CubicHermiteSpline):
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
         Default is 0.
-    bc_type : string or 2-tuple, optional
+    bc_type : str or 2-tuple, optional
         Boundary condition type. Two additional equations, given by the
         boundary conditions, are required to determine all coefficients of
         polynomials on each segment [2]_.
@@ -677,6 +687,7 @@ class CubicSpline(CubicHermiteSpline):
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), ``extrapolate`` is
         set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Attributes
     ----------

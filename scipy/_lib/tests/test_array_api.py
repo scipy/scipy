@@ -3,17 +3,13 @@ import re
 import numpy as np
 import pytest
 
-from importlib import import_module
-
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    np_compat, xp_default_dtype, xp_result_type, is_torch,
-    xp_capabilities_table, _xp_copy_to_numpy
+    np_compat, xp_default_dtype, xp_result_type, is_torch, _xp_copy_to_numpy
 )
-from scipy._lib._array_api_docs_tables import is_named_function_like_object
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
-from scipy._lib.array_api_extra.testing import lazy_xp_function
+from scipy._external.array_api_extra.testing import lazy_xp_function
 
 # Run all tests in this module in the Array API CI,
 # including those without the `xp` fixture
@@ -23,6 +19,7 @@ lazy_xp_function(_asarray)
 lazy_xp_function(xp_copy)
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
 @pytest.mark.skipif(not SCIPY_ARRAY_API,
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
@@ -309,6 +306,7 @@ def is_inexact(x, xp):
 
 @pytest.mark.parametrize('x', scalars + lists + types + arrays)
 @pytest.mark.parametrize('y', scalars + lists + types + arrays)
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
 def test_xp_result_type_no_force(x, y, xp):
     # When force_floating==False (default), behavior of `xp_result_type`
     # should match that of `xp.result_type` on the same arguments after
@@ -335,6 +333,7 @@ def test_xp_result_type_no_force(x, y, xp):
 
 @pytest.mark.parametrize('x', scalars + lists + types + arrays)
 @pytest.mark.parametrize('y', scalars + lists + types + arrays)
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
 def test_xp_result_type_force_floating(x, y, xp):
     # When `force_floating==True`, behavior of `xp_result_type`
     # should match that of `xp.result_type` with `1.0` appended to the set of
@@ -372,29 +371,3 @@ def test_xp_result_type_force_floating(x, y, xp):
 
     dtype_res = xp_result_type(x, y, force_floating=True, xp=xp)
     assert dtype_res == dtype_ref
-
-# Test that the xp_capabilities decorator has been applied to all
-# functions and function-likes in the public API. Modules will be
-# added to the list of tested_modules below as decorator coverage
-# is added on a module by module basis. It remains for future work
-# to offer similar functionality to xp_capabilities for classes in
-# the public API.
-
-tested_modules = ["scipy.stats"]
-
-
-def collect_public_functions():
-    functions = []
-    for module_name in tested_modules:
-        module = import_module(module_name)
-        for name in module.__all__:
-            obj = getattr(module, name)
-            if not is_named_function_like_object(obj):
-                continue
-            functions.append(pytest.param(obj, id=f"{module_name}.{name}"))
-    return functions
-
-
-@pytest.mark.parametrize("func", collect_public_functions())
-def test_xp_capabilities_coverage(func):
-    assert func in xp_capabilities_table

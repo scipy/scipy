@@ -596,7 +596,7 @@ class FunctionDoc(NumpyDocString):
             func = self._f
         return func, func_name
 
-    def __str__(self):
+    def __str__(self):  # pyrefly:ignore[bad-override]
         out = ""
 
         func, func_name = self.get_func()

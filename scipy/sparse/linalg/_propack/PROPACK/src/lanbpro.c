@@ -3,8 +3,8 @@
 #include "lanbpro.h"
 
 
-static inline int int_min(const int a, const int b) { return a < b ? a : b; }
-static inline int int_max(const int a, const int b) { return a > b ? a : b; }
+static inline CBLAS_INT int_min(const CBLAS_INT a, const CBLAS_INT b) { return a < b ? a : b; }
+static inline CBLAS_INT int_max(const CBLAS_INT a, const CBLAS_INT b) { return a > b ? a : b; }
 
 
 /**
@@ -14,20 +14,20 @@ static inline int int_max(const int a, const int b) { return a > b ? a : b; }
  * @param alpha The scaling factor.
  * @param x The vector to be scaled.
  */
-static void ssafescal(int n, float alpha, float* x)
+static void ssafescal(CBLAS_INT n, float alpha, float* x)
 {
     // Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
     static float sfmin = FLT_MIN;
-    int ione = 1;
-    int info;
+    CBLAS_INT ione = 1;
+    CBLAS_INT info;
 
     if (fabsf(alpha) >= sfmin) {
         float inv_alpha = 1.0f / alpha;
-        sscal_(&n, &inv_alpha, x, &ione);
+        BLAS_FUNC(sscal)(&n, &inv_alpha, x, &ione);
     } else {
         // Use LAPACK's safe scaling for very small alpha values
         float one = 1.0f;
-        slascl_("G", &ione, &ione, &alpha, &one, &n, &ione, x, &n, &info);
+        BLAS_FUNC(slascl)("G", &ione, &ione, &alpha, &one, &n, &ione, x, &n, &info);
     }
 }
 
@@ -39,20 +39,20 @@ static void ssafescal(int n, float alpha, float* x)
  * @param alpha The scaling factor.
  * @param x The vector to be scaled.
  */
-void dsafescal(int n, double alpha, double* x)
+void dsafescal(CBLAS_INT n, double alpha, double* x)
 {
     // Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
     static double sfmin = DBL_MIN;
-    int ione = 1;
-    int info;
+    CBLAS_INT ione = 1;
+    CBLAS_INT info;
 
     if (fabs(alpha) >= sfmin) {
         double inv_alpha = 1.0 / alpha;
-        dscal_(&n, &inv_alpha, x, &ione);
+        BLAS_FUNC(dscal)(&n, &inv_alpha, x, &ione);
     } else {
         // Use LAPACK's safe scaling for very small alpha values
         double one = 1.0;
-        dlascl_("G", &ione, &ione, &alpha, &one, &n, &ione, x, &n, &info);
+        BLAS_FUNC(dlascl)("G", &ione, &ione, &alpha, &one, &n, &ione, x, &n, &info);
     }
 }
 
@@ -64,20 +64,20 @@ void dsafescal(int n, double alpha, double* x)
  * @param alpha The scaling factor.
  * @param x The complex vector to be scaled.
  */
-void csafescal(int n, float alpha, PROPACK_CPLXF_TYPE* x)
+void csafescal(CBLAS_INT n, float alpha, PROPACK_CPLXF_TYPE* x)
 {
     // Scale the complex vector x by 1/alpha avoiding unnecessary under- and overflow.
     static float sfmin = FLT_MIN;
-    int ione = 1;
-    int info;
+    CBLAS_INT ione = 1;
+    CBLAS_INT info;
 
     if (fabsf(alpha) >= sfmin) {
         float inv_alpha = 1.0f / alpha;
-        csscal_(&n, &inv_alpha, x, &ione);
+        BLAS_FUNC(csscal)(&n, &inv_alpha, x, &ione);
     } else {
         // Use LAPACK's safe scaling for very small alpha values
         float one = 1.0f;
-        clascl_("G", &ione, &ione, &alpha, &one, &n, &ione, x, &n, &info);
+        BLAS_FUNC(clascl)("G", &ione, &ione, &alpha, &one, &n, &ione, x, &n, &info);
     }
 }
 
@@ -89,28 +89,28 @@ void csafescal(int n, float alpha, PROPACK_CPLXF_TYPE* x)
  * @param alpha The scaling factor.
  * @param x The complex vector to be scaled.
  */
-void zsafescal(int n, double alpha, PROPACK_CPLX_TYPE* x)
+void zsafescal(CBLAS_INT n, double alpha, PROPACK_CPLX_TYPE* x)
 {
     // Scale the complex vector x by 1/alpha avoiding unnecessary under- and overflow.
     static double sfmin = DBL_MIN;
-    int ione = 1;
-    int info;
+    CBLAS_INT ione = 1;
+    CBLAS_INT info;
 
     if (fabs(alpha) >= sfmin) {
         double inv_alpha = 1.0 / alpha;
-        zdscal_(&n, &inv_alpha, x, &ione);
+        BLAS_FUNC(zdscal)(&n, &inv_alpha, x, &ione);
     } else {
         // Use LAPACK's safe scaling for very small alpha values
         double one = 1.0;
-        zlascl_("G", &ione, &ione, &alpha, &one, &n, &ione, x, &n, &info);
+        BLAS_FUNC(zlascl)("G", &ione, &ione, &alpha, &one, &n, &ione, x, &n, &info);
     }
 }
 
 
-void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
-              float* U, int ldu, float* V, int ldv, float* B, int ldb,
-              float* rnorm, float* doption, int* ioption, float* work, int* iwork,
-              float* dparm, int* iparm, int* ierr, uint64_t* rng_state)
+void slanbpro(CBLAS_INT m, CBLAS_INT n, CBLAS_INT k0, CBLAS_INT* k, PROPACK_aprod_s aprod,
+              float* U, CBLAS_INT ldu, float* V, CBLAS_INT ldv, float* B, CBLAS_INT ldb,
+              float* rnorm, float* doption, CBLAS_INT* ioption, float* work, CBLAS_INT* iwork,
+              float* dparm, CBLAS_INT* iparm, CBLAS_INT* ierr, uint64_t* rng_state)
 {
 
     // Constants
@@ -124,10 +124,10 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
     const float epsn2 = sqrtf((float)int_max(m, n)) * eps;
 
     // Local variables
-    int i, j, inu, imu, is, iidx, j0;
+    CBLAS_INT i, j, inu, imu, is, iidx, j0;
     float s, mumax, numax, alpha, beta, a1, b1, amax, anormest;
     int force_reorth, full_reorth;
-    int ione = 1;
+    CBLAS_INT ione = 1;
 
     // Set default parameters
     float delta, eta, anorm;
@@ -223,7 +223,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         iwork[iidx + 2] = k0;
         iwork[iidx + 3] = k0;
 
-        sscal_(&m, rnorm, &U[k0 * ldu], &ione);
+        BLAS_FUNC(sscal)(&m, rnorm, &U[k0 * ldu], &ione);
         sreorth(m, k0, U, ldu, &U[k0 * ldu], rnorm, &iwork[iidx], kappa, &work[is], cgs);
         ssafescal(m, *rnorm, &U[k0 * ldu]);
         sset_mu(k0, &work[imu], &iwork[iidx], epsn2);
@@ -264,27 +264,27 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
 
         if (j == 0)
         {
-            alpha = snrm2_(&n, &V[j * ldv], &ione);
+            alpha = BLAS_FUNC(snrm2)(&n, &V[j * ldv], &ione);
             anorm = fmaxf(anorm, FUDGE * alpha);
         } else {
             float neg_beta = -beta;
-            saxpy_(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-            alpha = snrm2_(&n, &V[j * ldv], &ione);
+            BLAS_FUNC(saxpy)(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+            alpha = BLAS_FUNC(snrm2)(&n, &V[j * ldv], &ione);
 
             // Extended local reorthogonalization
             if ((j > 0) && (elr > 0) && (alpha < kappa * beta))
             {
                 for (i = 0; i < elr; i++)
                 {
-                    s = sdot_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+                    s = BLAS_FUNC(sdot)(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     float neg_s = -s;
-                    saxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+                    BLAS_FUNC(saxpy)(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     if (beta != 0.0f)
                     {
                         beta = beta + s;
                         B[j - 1 + ldb] = beta;
                     }
-                    s = snrm2_(&n, &V[j * ldv], &ione);
+                    s = BLAS_FUNC(snrm2)(&n, &V[j * ldv], &ione);
                     if (s >= kappa * alpha) { break; }
                     alpha = s;
                 }
@@ -378,23 +378,23 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         aprod(0, m, n, &V[j * ldv], &U[(j + 1) * ldu], dparm, iparm);
 
         float neg_alpha = -alpha;
-        saxpy_(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-        beta = snrm2_(&m, &U[(j + 1) * ldu], &ione);
+        BLAS_FUNC(saxpy)(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+        beta = BLAS_FUNC(snrm2)(&m, &U[(j + 1) * ldu], &ione);
 
         // Extended local reorthogonalization
         if ((elr > 0) && (beta < kappa * alpha))
         {
             for (i = 0; i < elr; i++)
             {
-                s = sdot_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+                s = BLAS_FUNC(sdot)(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 float neg_s = -s;
-                saxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+                BLAS_FUNC(saxpy)(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 if (alpha != 0.0f)
                 {
                     alpha = alpha + s;
                     B[j] = alpha;
                 }
-                s = snrm2_(&m, &U[(j + 1) * ldu], &ione);
+                s = BLAS_FUNC(snrm2)(&m, &U[(j + 1) * ldu], &ione);
                 if (s >= kappa * beta) { break; }
                 beta = s;
             }
@@ -495,10 +495,10 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
 }
 
 
-void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
-              double* U, int ldu, double* V, int ldv, double* B, int ldb,
-              double* rnorm, double* doption, int* ioption, double* work, int* iwork,
-              double* dparm, int* iparm, int* ierr, uint64_t* rng_state) {
+void dlanbpro(CBLAS_INT m, CBLAS_INT n, CBLAS_INT k0, CBLAS_INT* k, PROPACK_aprod_d aprod,
+              double* U, CBLAS_INT ldu, double* V, CBLAS_INT ldv, double* B, CBLAS_INT ldb,
+              double* rnorm, double* doption, CBLAS_INT* ioption, double* work, CBLAS_INT* iwork,
+              double* dparm, CBLAS_INT* iparm, CBLAS_INT* ierr, uint64_t* rng_state) {
 
     // Constants
     const double FUDGE = 1.01;
@@ -511,10 +511,10 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
     const double epsn2 = sqrt((double)int_max(m, n)) * eps;
 
     // Local variables
-    int i, j, inu, imu, is, iidx, j0;
+    CBLAS_INT i, j, inu, imu, is, iidx, j0;
     double s, mumax, numax, alpha, beta, a1, b1, amax, anormest;
     int force_reorth, full_reorth;
-    int ione = 1;
+    CBLAS_INT ione = 1;
 
     // Set default parameters
     double delta, eta, anorm;
@@ -610,7 +610,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
         iwork[iidx + 2] = k0;
         iwork[iidx + 3] = k0;
 
-        dscal_(&m, rnorm, &U[k0 * ldu], &ione);
+        BLAS_FUNC(dscal)(&m, rnorm, &U[k0 * ldu], &ione);
         dreorth(m, k0, U, ldu, &U[k0 * ldu], rnorm, &iwork[iidx], kappa, &work[is], cgs);
         dsafescal(m, *rnorm, &U[k0 * ldu]);
         dset_mu(k0, &work[imu], &iwork[iidx], epsn2);
@@ -651,27 +651,27 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
 
         if (j == 0)
         {
-            alpha = dnrm2_(&n, &V[j * ldv], &ione);
+            alpha = BLAS_FUNC(dnrm2)(&n, &V[j * ldv], &ione);
             anorm = fmax(anorm, FUDGE * alpha);
         } else {
             double neg_beta = -beta;
-            daxpy_(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-            alpha = dnrm2_(&n, &V[j * ldv], &ione);
+            BLAS_FUNC(daxpy)(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+            alpha = BLAS_FUNC(dnrm2)(&n, &V[j * ldv], &ione);
 
             // Extended local reorthogonalization
             if ((j > 0) && (elr > 0) && (alpha < kappa * beta))
             {
                 for (i = 0; i < elr; i++)
                 {
-                    s = ddot_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+                    s = BLAS_FUNC(ddot)(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     double neg_s = -s;
-                    daxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+                    BLAS_FUNC(daxpy)(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     if (beta != 0.0)
                     {
                         beta = beta + s;
                         B[j - 1 + ldb] = beta;
                     }
-                    s = dnrm2_(&n, &V[j * ldv], &ione);
+                    s = BLAS_FUNC(dnrm2)(&n, &V[j * ldv], &ione);
                     if (s >= kappa * alpha) { break; }
                     alpha = s;
                 }
@@ -764,23 +764,23 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
         aprod(0, m, n, &V[j * ldv], &U[(j + 1) * ldu], dparm, iparm);
 
         double neg_alpha = -alpha;
-        daxpy_(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-        beta = dnrm2_(&m, &U[(j + 1) * ldu], &ione);
+        BLAS_FUNC(daxpy)(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+        beta = BLAS_FUNC(dnrm2)(&m, &U[(j + 1) * ldu], &ione);
 
         // Extended local reorthogonalization
         if ((elr > 0) && (beta < kappa * alpha))
         {
             for (i = 0; i < elr; i++)
             {
-                s = ddot_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+                s = BLAS_FUNC(ddot)(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 double neg_s = -s;
-                daxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+                BLAS_FUNC(daxpy)(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 if (alpha != 0.0)
                 {
                     alpha = alpha + s;
                     B[j] = alpha;
                 }
-                s = dnrm2_(&m, &U[(j + 1) * ldu], &ione);
+                s = BLAS_FUNC(dnrm2)(&m, &U[(j + 1) * ldu], &ione);
                 if (s >= kappa * beta) { break; }
                 beta = s;
             }
@@ -881,10 +881,10 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
 
 
 void clanbpro(
-    int m, int n, int k0, int* k, PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, int ldu,
-    PROPACK_CPLXF_TYPE* V, int ldv, float* B, int ldb, float* rnorm, float* soption,
-    int* ioption, float* swork, PROPACK_CPLXF_TYPE* cwork, int* iwork, PROPACK_CPLXF_TYPE* cparm,
-    int* iparm, int* ierr, uint64_t* rng_state)
+    CBLAS_INT m, CBLAS_INT n, CBLAS_INT k0, CBLAS_INT* k, PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, CBLAS_INT ldu,
+    PROPACK_CPLXF_TYPE* V, CBLAS_INT ldv, float* B, CBLAS_INT ldb, float* rnorm, float* soption,
+    CBLAS_INT* ioption, float* swork, PROPACK_CPLXF_TYPE* cwork, CBLAS_INT* iwork, PROPACK_CPLXF_TYPE* cparm,
+    CBLAS_INT* iparm, CBLAS_INT* ierr, uint64_t* rng_state)
 {
 
     // Constants
@@ -898,11 +898,11 @@ void clanbpro(
     const float epsn2 = sqrtf((float)int_max(m, n)) * eps;
 
     // Local variables
-    int i, j, inu, imu, is, iidx, j0;
+    CBLAS_INT i, j, inu, imu, is, iidx, j0;
     float mumax, numax, alpha, beta, a1, b1, amax, anormest, nrm;
     PROPACK_CPLXF_TYPE s;
     int force_reorth, full_reorth;
-    int ione = 1;
+    CBLAS_INT ione = 1;
 
     // Set default parameters
     float delta, eta, anorm;
@@ -1000,7 +1000,7 @@ void clanbpro(
         iwork[iidx + 2] = k0;
         iwork[iidx + 3] = k0;
 
-        csscal_(&m, rnorm, &U[k0 * ldu], &ione);
+        BLAS_FUNC(csscal)(&m, rnorm, &U[k0 * ldu], &ione);
         creorth(m, k0, U, ldu, &U[k0 * ldu], rnorm, &iwork[iidx], kappa, &cwork[is], cgs);
         csafescal(m, *rnorm, &U[k0 * ldu]);
         sset_mu(k0, &swork[imu], &iwork[iidx], epsn2);
@@ -1041,12 +1041,12 @@ void clanbpro(
 
         if (j == 0)
         {
-            alpha = scnrm2_(&n, &V[j * ldv], &ione);
+            alpha = BLAS_FUNC(scnrm2)(&n, &V[j * ldv], &ione);
             anorm = fmaxf(anorm, FUDGE * alpha);
         } else {
             PROPACK_CPLXF_TYPE neg_beta = PROPACK_cplxf(-beta, 0.0);
-            caxpy_(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-            alpha = scnrm2_(&n, &V[j * ldv], &ione);
+            BLAS_FUNC(caxpy)(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+            alpha = BLAS_FUNC(scnrm2)(&n, &V[j * ldv], &ione);
 
             // Extended local reorthogonalization
             if ((j > 0) && (elr > 0) && (alpha < kappa * beta))
@@ -1055,8 +1055,8 @@ void clanbpro(
                 {
                     s = cdotc_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     PROPACK_CPLXF_TYPE neg_s = PROPACK_cplxf(-crealf(s), -cimagf(s));
-                    caxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-                    nrm = scnrm2_(&n, &V[j * ldv], &ione);
+                    BLAS_FUNC(caxpy)(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+                    nrm = BLAS_FUNC(scnrm2)(&n, &V[j * ldv], &ione);
                     if (nrm >= kappa * alpha) { break; }
                     alpha = nrm;
                 }
@@ -1151,8 +1151,8 @@ void clanbpro(
         aprod(0, m, n, &V[j * ldv], &U[(j + 1) * ldu], cparm, iparm);
 
         PROPACK_CPLXF_TYPE neg_alpha = PROPACK_cplxf(-alpha, 0.0);
-        caxpy_(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-        beta = scnrm2_(&m, &U[(j + 1) * ldu], &ione);
+        BLAS_FUNC(caxpy)(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+        beta = BLAS_FUNC(scnrm2)(&m, &U[(j + 1) * ldu], &ione);
 
         // Extended local reorthogonalization
         if ((elr > 0) && (beta < kappa * alpha))
@@ -1161,8 +1161,8 @@ void clanbpro(
             {
                 s = cdotc_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 PROPACK_CPLXF_TYPE neg_s = PROPACK_cplxf(-crealf(s), -cimagf(s));
-                caxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-                nrm = scnrm2_(&m, &U[(j + 1) * ldu], &ione);
+                BLAS_FUNC(caxpy)(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+                nrm = BLAS_FUNC(scnrm2)(&m, &U[(j + 1) * ldu], &ione);
                 if (nrm >= kappa * beta) { break; }
                 beta = nrm;
             }
@@ -1265,10 +1265,10 @@ void clanbpro(
 
 
 void zlanbpro(
-    int m, int n, int k0, int* k, PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, int ldu,
-    PROPACK_CPLX_TYPE* V, int ldv, double* B, int ldb, double* rnorm, double* doption,
-    int* ioption, double* dwork, PROPACK_CPLX_TYPE* zwork, int* iwork, PROPACK_CPLX_TYPE* zparm,
-    int* iparm, int* ierr, uint64_t* rng_state)
+    CBLAS_INT m, CBLAS_INT n, CBLAS_INT k0, CBLAS_INT* k, PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, CBLAS_INT ldu,
+    PROPACK_CPLX_TYPE* V, CBLAS_INT ldv, double* B, CBLAS_INT ldb, double* rnorm, double* doption,
+    CBLAS_INT* ioption, double* dwork, PROPACK_CPLX_TYPE* zwork, CBLAS_INT* iwork, PROPACK_CPLX_TYPE* zparm,
+    CBLAS_INT* iparm, CBLAS_INT* ierr, uint64_t* rng_state)
 {
 
     // Constants
@@ -1282,11 +1282,11 @@ void zlanbpro(
     const double epsn2 = sqrt((double)int_max(m, n)) * eps;
 
     // Local variables
-    int i, j, inu, imu, is, iidx, j0;
+    CBLAS_INT i, j, inu, imu, is, iidx, j0;
     double mumax, numax, alpha, beta, a1, b1, amax, anormest, nrm;
     PROPACK_CPLX_TYPE s;
     int force_reorth, full_reorth;
-    int ione = 1;
+    CBLAS_INT ione = 1;
 
     // Set default parameters
     double delta, eta, anorm;
@@ -1384,7 +1384,7 @@ void zlanbpro(
         iwork[iidx + 2] = k0;
         iwork[iidx + 3] = k0;
 
-        zdscal_(&m, rnorm, &U[k0 * ldu], &ione);
+        BLAS_FUNC(zdscal)(&m, rnorm, &U[k0 * ldu], &ione);
         zreorth(m, k0, U, ldu, &U[k0 * ldu], rnorm, &iwork[iidx], kappa, &zwork[is], cgs);
         zsafescal(m, *rnorm, &U[k0 * ldu]);
         dset_mu(k0, &dwork[imu], &iwork[iidx], epsn2);
@@ -1425,12 +1425,12 @@ void zlanbpro(
 
         if (j == 0)
         {
-            alpha = dznrm2_(&n, &V[j * ldv], &ione);
+            alpha = BLAS_FUNC(dznrm2)(&n, &V[j * ldv], &ione);
             anorm = fmax(anorm, FUDGE * alpha);
         } else {
             PROPACK_CPLX_TYPE neg_beta = PROPACK_cplx(-beta, 0.0);
-            zaxpy_(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-            alpha = dznrm2_(&n, &V[j * ldv], &ione);
+            BLAS_FUNC(zaxpy)(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+            alpha = BLAS_FUNC(dznrm2)(&n, &V[j * ldv], &ione);
 
             // Extended local reorthogonalization
             if ((j > 0) && (elr > 0) && (alpha < kappa * beta))
@@ -1439,8 +1439,8 @@ void zlanbpro(
                 {
                     s = zdotc_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     PROPACK_CPLX_TYPE neg_s = PROPACK_cplx(-creal(s), -cimag(s));
-                    zaxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-                    nrm = dznrm2_(&n, &V[j * ldv], &ione);
+                    BLAS_FUNC(zaxpy)(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
+                    nrm = BLAS_FUNC(dznrm2)(&n, &V[j * ldv], &ione);
                     if (nrm >= kappa * alpha) { break; }
                     alpha = nrm;
                 }
@@ -1535,8 +1535,8 @@ void zlanbpro(
         aprod(0, m, n, &V[j * ldv], &U[(j + 1) * ldu], zparm, iparm);
 
         PROPACK_CPLX_TYPE neg_alpha = PROPACK_cplx(-alpha, 0.0);
-        zaxpy_(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-        beta = dznrm2_(&m, &U[(j + 1) * ldu], &ione);
+        BLAS_FUNC(zaxpy)(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+        beta = BLAS_FUNC(dznrm2)(&m, &U[(j + 1) * ldu], &ione);
 
         // Extended local reorthogonalization
         if ((elr > 0) && (beta < kappa * alpha))
@@ -1545,8 +1545,8 @@ void zlanbpro(
             {
                 s = zdotc_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 PROPACK_CPLX_TYPE neg_s = PROPACK_cplx(-creal(s), -cimag(s));
-                zaxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-                nrm = dznrm2_(&m, &U[(j + 1) * ldu], &ione);
+                BLAS_FUNC(zaxpy)(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
+                nrm = BLAS_FUNC(dznrm2)(&m, &U[(j + 1) * ldu], &ione);
                 if (nrm >= kappa * beta) { break; }
                 beta = nrm;
             }

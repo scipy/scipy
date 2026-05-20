@@ -16,6 +16,13 @@ class TestNNLS:
         x, res = nnls(a, y)
         assert res < 1e-7
         assert np.linalg.norm((a @ x) - y) < 1e-7
+        
+    def test_nnls_empty(self):
+        a = np.zeros((2, 0))
+        y = np.ones((2,))
+        x, res = nnls(a, y)
+        assert res == np.linalg.norm(y)
+        assert x.size == 0
 
     def test_nnls_tall(self):
         a = self.rng.uniform(low=-10, high=10, size=[50, 10])
@@ -428,14 +435,6 @@ class TestNNLS:
         assert_allclose(sol, np.array([0.0, 0.0, 76.3611306173957, 0.0, 0.0]),
                         atol=5e-14)
         assert np.abs(np.linalg.norm(A@sol - b) - res) < 5e-14
-
-    def test_atol_deprecation_warning(self):
-        """Test that using atol parameter triggers deprecation warning"""
-        a = np.array([[1, 0], [1, 0], [0, 1]])
-        b = np.array([2, 1, 1])
-
-        with pytest.warns(DeprecationWarning, match="{'atol'}"):
-            nnls(a, b, atol=1e-8)
 
     def test_2D_singleton_RHS_input(self):
         # Test that a 2D singleton RHS input is accepted

@@ -35,6 +35,8 @@ using tools available in SciPy, with an emphasis on transitioning from use of le
 In the past, SciPy has offered several "convenience functions" that combine trimming with computation of a statistic. Consider, for instance, {func}`scipy.stats.trim_mean`.
 
 ```{code-cell} ipython3
+import os
+os.environ['SCIPY_ARRAY_API'] = '1'
 import numpy as np
 from scipy import stats
 np.set_printoptions(linewidth=120)
@@ -409,7 +411,7 @@ else:
 
 +++
 
-So it is also convenience function that simply wraps the functions {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` and {func}`stats.mstats.trima <scipy.stats.mstats.trima>`.
+So it is also a convenience function that simply wraps the functions {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` and {func}`stats.mstats.trima <scipy.stats.mstats.trima>`.
 
 +++
 

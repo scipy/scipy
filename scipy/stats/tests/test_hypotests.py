@@ -14,23 +14,39 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
 from scipy._lib._testutils import _TestPythranFunc
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_numpy,
-                                   eager_warns)
+                                   eager_warns, xp_ravel, is_jax)
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
+
+lazy_xp_modules = [stats]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 @make_xp_test_case(epps_singleton_2samp)
 class TestEppsSingleton:
+    def test_epps_singleton_iv(self, xp):
+        # partial input validation test relevant to the addition of JIT support
+        # TODO: complete input validation tests
+        x = xp.asarray([-0.35, 2.55, 1.73, 0.73, 0.35])
+        y = xp.asarray([-1.15, -0.15, 2.48, 3.25, 3.71])
+        t = xp.asarray([0.4, -0.4])
+        if is_jax(xp):
+            w, p = epps_singleton_2samp(x, y, t=t)
+            xp_assert_equal(w, xp.asarray(xp.nan))
+            xp_assert_equal(p, xp.asarray(xp.nan))
+        else:
+            message = "t must contain positive elements only."
+            with pytest.raises(ValueError, match=message):
+                epps_singleton_2samp(x, y, t=t)
+
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_statistic_1(self, dtype, xp):
         # first example in Goerg & Kaiser, also in original paper of
         # Epps & Singleton. Note: values do not match exactly, the
         # value of the interquartile range varies depending on how
         # quantiles are computed
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.asarray([-0.35, 2.55, 1.73, 0.73, 0.35,
                         2.69, 0.46, -0.94, -0.37, 12.07], dtype=dtype)
@@ -132,7 +148,6 @@ class TestCvm:
         assert _cdf_cvm(res.statistic, n, xp=xp) > 1.0
         xp_assert_equal(res.pvalue, xp.asarray(0.))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('x', [(), [1.5]])
     def test_invalid_input(self, x, xp):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
@@ -142,8 +157,6 @@ class TestCvm:
 
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_values_R(self, dtype, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         # compared against R package goftest, version 1.1.1
         # library(goftest)
@@ -192,7 +205,15 @@ class TestMannWhitneyU:
 
     # --- Test Input Validation ---
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
+    def get_zstatistic_from_pvalue(self, p, U, n1, n2, alternative):
+        if alternative == 'less':
+            z = special.ndtri(p)
+        elif alternative == 'greater':
+            z = -special.ndtri(p)
+        else:
+            z = special.ndtri(p/2) if U < n1*n2/2 else -special.ndtri(p/2)
+        return z
+
     def test_empty(self, xp):
         x = xp.asarray([1, 2])  # generic, valid inputs
         y = xp.asarray([3, 4])
@@ -228,6 +249,11 @@ class TestMannWhitneyU:
 
     def test_auto(self, xp):
         # Test that default method ('auto') chooses intended method
+        if is_jax(xp):
+            message = "`method='auto'` is incompatible with JAX arrays."
+            with pytest.raises(ValueError, match=message):
+                mannwhitneyu(xp.arange(10), xp.arange(10))
+            return
 
         rng = np.random.default_rng(923823782530925934)
         n = 8  # threshold to switch from exact to asymptotic
@@ -315,13 +341,16 @@ class TestMannWhitneyU:
     @pytest.mark.parametrize(("kwds", "expected"), cases_basic)
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     def test_basic(self, kwds, expected, dtype, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x, y = xp.asarray(self.x, dtype=dtype), xp.asarray(self.y, dtype=dtype)
         res = mannwhitneyu(x, y, **kwds)
         xp_assert_close(res.statistic, xp.asarray(expected[0], dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(expected[1], dtype=dtype))
+        if kwds['method'] == 'asymptotic':
+            z = self.get_zstatistic_from_pvalue(res.pvalue, res.statistic,
+                                                x.shape[0], y.shape[0],
+                                                alternative=kwds['alternative'])
+            xp_assert_close(res.zstatistic, xp.asarray(z, dtype=dtype))
 
     cases_continuity = [[{"alternative": 'two-sided', "use_continuity": True},
                          (23., 0.6865041817876)],
@@ -351,6 +380,10 @@ class TestMannWhitneyU:
         res = mannwhitneyu(y, x, method='asymptotic', **kwds)
         xp_assert_close(res.statistic, xp.asarray(expected[0]))
         xp_assert_close(res.pvalue, xp.asarray(expected[1]))
+        z = self.get_zstatistic_from_pvalue(res.pvalue, res.statistic,
+                                            x.shape[0], y.shape[0],
+                                            alternative=kwds['alternative'])
+        xp_assert_close(res.zstatistic, xp.asarray(z))
 
     def test_tie_correct(self, xp):
         # Test tie correction against R's wilcox.test
@@ -484,19 +517,26 @@ class TestMannWhitneyU:
     def test_equal_scalar_data(self):  # not important to preserve w/ array API
         # when two scalars are equal, there is an -0.5/0 in the asymptotic
         # approximation. R gives pvalue=1.0 for alternatives 'less' and
-        # 'greater' but NA for 'two-sided'. I don't see why, so I don't
-        # see a need for a special case to match that behavior.
+        # 'greater' but NA for 'two-sided'.
         assert_equal(mannwhitneyu(1, 1, method="exact"), (0.5, 1))
-        assert_equal(mannwhitneyu(1, 1, method="asymptotic"), (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='less'),
+                     (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='greater'),
+                     (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic"),
+                     (0.5, np.nan))
 
-        # without continuity correction, this becomes 0/0, which really
+        # without continuity correction, this definitely becomes 0/0, which really
         # is undefined
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='less',
+                                  use_continuity=False), (0.5, np.nan))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='greater',
+                                  use_continuity=False), (0.5, np.nan))
         assert_equal(mannwhitneyu(1, 1, method="asymptotic",
                                   use_continuity=False), (0.5, np.nan))
 
     # --- Test Enhancements / Bug Reports ---
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
     @pytest.mark.parametrize("method", ["asymptotic", "exact"])
     def test_gh_12837_11113(self, method, xp):
         # Test that behavior for broadcastable nd arrays is appropriate:
@@ -545,17 +585,17 @@ class TestMannWhitneyU:
         # Test for correct behavior with NaN/Inf in input
         x = [1, 2, 3, 4]
         y = [3, 6, 7, 8, 9, 3, 2, 1, 4, 4, 5]
-        res1 = mannwhitneyu(xp.asarray(x), xp.asarray(y))
+        res1 = mannwhitneyu(xp.asarray(x), xp.asarray(y), method='asymptotic')
 
         # Inf is not a problem. This is a rank test, and it's the largest value
         x[0] = 1.  # ensure floating point
         y[4] = np.inf
-        res2 = mannwhitneyu(xp.asarray(x), xp.asarray(y))
+        res2 = mannwhitneyu(xp.asarray(x), xp.asarray(y), method='asymptotic')
 
         xp_assert_equal(res1.statistic, res2.statistic)
         xp_assert_equal(res1.pvalue, res2.pvalue)
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
+    @skip_xp_backends("jax.numpy", reason="needs jax-ml/jax#34490")
     def test_gh11355_nan(self, xp):
         # NaNs should propagate by default.
         x = [1., 2., 3., 4.]
@@ -628,7 +668,7 @@ class TestMannWhitneyU:
         xp_assert_equal(res.statistic, xp.asarray(statistic_exp))
         xp_assert_close(res.pvalue, xp.asarray(pvalue_exp))
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
+    @skip_xp_backends("jax.numpy", reason="needs jax-ml/jax#34490")
     def test_gh_4067(self, xp):
         # Test for correct behavior with all NaN input - default is propagate
         nan = xp.asarray(xp.nan)
@@ -664,15 +704,15 @@ class TestMannWhitneyU:
         xp_assert_close(res.statistic, xp.asarray(expected[0]), rtol=rtol)
         xp_assert_close(res.pvalue, xp.asarray(expected[1]), rtol=rtol)
 
-    def test_gh19692_smaller_table(self):
+    def test_gh19692_smaller_table(self, xp):
         # In gh-19692, we noted that the shape of the cache used in calculating
         # p-values was dependent on the order of the inputs because the sample
         # sizes n1 and n2 changed. This was indicative of unnecessary cache
         # growth and redundant calculation. Check that this is resolved.
         rng = np.random.default_rng(7600451795963068007)
         m, n = 5, 11
-        x = rng.random(size=m)
-        y = rng.random(size=n)
+        x = xp.asarray(rng.random(size=m).tolist())
+        y = xp.asarray(rng.random(size=n).tolist())
 
         setattr(_mwu_state, 's', _MWU(0, 0))
         _mwu_state.s.reset()  # reset cache
@@ -694,16 +734,16 @@ class TestMannWhitneyU:
         assert shape == _mwu_state.s.configurations.shape
 
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
-    def test_permutation_method(self, alternative):
+    def test_permutation_method(self, alternative, xp):
         rng = np.random.default_rng(7600451795963068007)
-        x = rng.random(size=(2, 5))
-        y = rng.random(size=(2, 6))
+        x = xp.asarray(rng.random(size=(2, 5)))
+        y = xp.asarray(rng.random(size=(2, 6)))
         res = stats.mannwhitneyu(x, y, method=stats.PermutationMethod(),
                                  alternative=alternative, axis=1)
         res2 = stats.mannwhitneyu(x, y, method='exact',
                                   alternative=alternative, axis=1)
-        assert_allclose(res.statistic, res2.statistic, rtol=1e-15)
-        assert_allclose(res.pvalue, res2.pvalue, rtol=1e-15)
+        xp_assert_close(res.statistic, res2.statistic, rtol=1e-15)
+        xp_assert_close(res.pvalue, res2.pvalue, rtol=1e-15)
 
     # Old tests moved from test_stats. Source of magic numbers unknown.
     X = [19.8958398126694, 19.5452691647182, 19.0577309166425, 21.716543054589,
@@ -725,10 +765,11 @@ class TestMannWhitneyU:
 
     def test_mannwhitneyu_one_sided(self, xp):
         X, Y = xp.asarray(self.X), xp.asarray(self.Y)
-        u1, p1 = stats.mannwhitneyu(X, Y, alternative='less')
-        u2, p2 = stats.mannwhitneyu(Y, X, alternative='greater')
-        u3, p3 = stats.mannwhitneyu(X, Y, alternative='greater')
-        u4, p4 = stats.mannwhitneyu(Y, X, alternative='less')
+        kwargs = dict(method='asymptotic')
+        u1, p1 = stats.mannwhitneyu(X, Y, alternative='less', **kwargs)
+        u2, p2 = stats.mannwhitneyu(Y, X, alternative='greater', **kwargs)
+        u3, p3 = stats.mannwhitneyu(X, Y, alternative='greater', **kwargs)
+        u4, p4 = stats.mannwhitneyu(Y, X, alternative='less', **kwargs)
 
         xp_assert_equal(p1, p2)
         xp_assert_equal(p3, p4)
@@ -743,8 +784,9 @@ class TestMannWhitneyU:
 
     def test_mannwhitneyu_two_sided(self, xp):
         X, Y = xp.asarray(self.X), xp.asarray(self.Y)
-        u1, p1 = stats.mannwhitneyu(X, Y, alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(Y, X, alternative='two-sided')
+        kwargs = dict(alternative='two-sided', method='asymptotic')
+        u1, p1 = stats.mannwhitneyu(X, Y, **kwargs)
+        u2, p2 = stats.mannwhitneyu(Y, X, **kwargs)
 
         xp_assert_equal(p1, p2)
         xp_assert_equal(u1, xp.asarray(498.))
@@ -754,10 +796,11 @@ class TestMannWhitneyU:
 
     def test_mannwhitneyu_no_correct_one_sided(self, xp):
         X, Y = xp.asarray(self.X), xp.asarray(self.Y)
-        u1, p1 = stats.mannwhitneyu(X, Y, False, alternative='less')
-        u2, p2 = stats.mannwhitneyu(Y, X, False, alternative='greater')
-        u3, p3 = stats.mannwhitneyu(X, Y, False, alternative='greater')
-        u4, p4 = stats.mannwhitneyu(Y, X, False, alternative='less')
+        kwargs = dict(use_continuity=False, method='asymptotic')
+        u1, p1 = stats.mannwhitneyu(X, Y, alternative='less', **kwargs)
+        u2, p2 = stats.mannwhitneyu(Y, X, alternative='greater', **kwargs)
+        u3, p3 = stats.mannwhitneyu(X, Y, alternative='greater', **kwargs)
+        u4, p4 = stats.mannwhitneyu(Y, X, alternative='less', **kwargs)
 
         xp_assert_equal(p1, p2)
         xp_assert_equal(p3, p4)
@@ -772,8 +815,9 @@ class TestMannWhitneyU:
 
     def test_mannwhitneyu_no_correct_two_sided(self, xp):
         X, Y = xp.asarray(self.X), xp.asarray(self.Y)
-        u1, p1 = stats.mannwhitneyu(X, Y, False, alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(Y, X, False, alternative='two-sided')
+        kwargs = dict(use_continuity=False, method='asymptotic')
+        u1, p1 = stats.mannwhitneyu(X, Y, **kwargs)
+        u2, p2 = stats.mannwhitneyu(Y, X, **kwargs)
 
         xp_assert_equal(p1, p2)
         xp_assert_equal(u1, xp.asarray(498.))
@@ -816,13 +860,14 @@ class TestMannWhitneyU:
                         1., 1., 1., 1.])
 
         # p-value from R, e.g. wilcox.test(x, y, alternative="g")
-        res = stats.mannwhitneyu(x, y, alternative='less')
+        kwargs = dict(method='asymptotic')
+        res = stats.mannwhitneyu(x, y, alternative='less', **kwargs)
         xp_assert_close(res.statistic, xp.asarray(16980.5))
         xp_assert_close(res.pvalue, xp.asarray(2.8214327656317373e-5))
-        res = stats.mannwhitneyu(x, y, alternative='greater')
+        res = stats.mannwhitneyu(x, y, alternative='greater', **kwargs)
         xp_assert_close(res.statistic, xp.asarray(16980.5))
         xp_assert_close(res.pvalue, xp.asarray(0.9999719954296))
-        res = stats.mannwhitneyu(x, y, alternative='two-sided')
+        res = stats.mannwhitneyu(x, y, alternative='two-sided', **kwargs)
         xp_assert_close(res.statistic, xp.asarray(16980.5))
         xp_assert_close(res.pvalue, xp.asarray(5.642865531266e-5))
 
@@ -1498,7 +1543,6 @@ class TestBoschlooExact:
 class TestCvm_2samp:
     @pytest.mark.parametrize('args', [([], np.arange(5)),
                                       (np.arange(5), [1])])
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no axis_nan_policy")
     def test_too_small_input(self, args, xp):
         args = (xp.asarray(arg, dtype=xp_default_dtype(xp)) for arg in args)
         with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
@@ -1523,8 +1567,6 @@ class TestCvm_2samp:
     def test_example_conover(self, dtype, xp):
         # Example 2 in Section 6.2 of W.J. Conover: Practical Nonparametric
         # Statistics, 1971.
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.asarray([7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2], dtype=dtype)
         y = xp.asarray([5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8,
@@ -2045,24 +2087,26 @@ class TestPoissonMeansTest:
             stats.poisson_means_test(1, 2, 1, 2, alternative='error')
 
 
+@make_xp_test_case(stats.bws_test)
 class TestBWSTest:
 
-    def test_bws_input_validation(self):
+    def test_bws_input_validation(self, xp):
         rng = np.random.default_rng(4571775098104213308)
 
         x, y = rng.random(size=(2, 7))
+        x, y = xp.asarray(x), xp.asarray(y)
 
-        message = '`x` and `y` must be exactly one-dimensional.'
+        message = '`axis` must be an integer or None.'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test([x, x], [y, y])
+            stats.bws_test(x, y, axis=1.5)
 
-        message = '`x` and `y` must not contain NaNs.'
+        message = '`axis` is not compatible with the shapes of the inputs.'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test([np.nan], y)
+            stats.bws_test(x, y, axis=3)
 
-        message = '`x` and `y` must be of nonzero size.'
+        message = '`x` and `y` must contain...'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test(x, [])
+            stats.bws_test(x, xp.asarray([], dtype=x.dtype))
 
         message = 'alternative` must be one of...'
         with pytest.raises(ValueError, match=message):
@@ -2072,22 +2116,22 @@ class TestBWSTest:
         with pytest.raises(ValueError, match=message):
             stats.bws_test(x, y, method=42)
 
-
-    def test_against_published_reference(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_against_published_reference(self, dtype, xp):
         # Test against Example 2 in bws_test Reference [1], pg 9
         # https://link.springer.com/content/pdf/10.1007/BF02762032.pdf
-        x = [1, 2, 3, 4, 6, 7, 8]
-        y = [5, 9, 10, 11, 12, 13, 14]
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([1, 2, 3, 4, 6, 7, 8], dtype=dtype)
+        y = xp.asarray([5, 9, 10, 11, 12, 13, 14], dtype=dtype)
         res = stats.bws_test(x, y, alternative='two-sided')
-        assert_allclose(res.statistic, 5.132, atol=1e-3)
-        assert_equal(res.pvalue, 10/3432)
-
+        xp_assert_close(res.statistic, xp.asarray(5.132, dtype=dtype), atol=1e-3)
+        xp_assert_close(res.pvalue, xp.asarray(10/3432, dtype=dtype))
 
     @pytest.mark.parametrize(('alternative', 'statistic', 'pvalue'),
                              [('two-sided', 1.7510204081633, 0.1264422777777),
                               ('less', -1.7510204081633, 0.05754662004662),
                               ('greater', -1.7510204081633, 0.9424533799534)])
-    def test_against_R(self, alternative, statistic, pvalue):
+    def test_against_R(self, alternative, statistic, pvalue, xp):
         # Test against R library BWStest function bws_test
         # library(BWStest)
         # options(digits=16)
@@ -2096,15 +2140,18 @@ class TestBWSTest:
         # bws_test(x, y, alternative='two.sided')
         rng = np.random.default_rng(4571775098104213308)
         x, y = rng.random(size=(2, 7))
+        x, y = xp.asarray(x, dtype=xp.float64), xp.asarray(y, dtype=xp.float64)
         res = stats.bws_test(x, y, alternative=alternative)
-        assert_allclose(res.statistic, statistic, rtol=1e-13)
-        assert_allclose(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
+        statistic = xp.asarray(statistic, dtype=xp.float64)
+        pvalue = xp.asarray(pvalue, dtype=xp.float64)
+        xp_assert_close(res.statistic, statistic, rtol=1e-13)
+        xp_assert_close(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
 
     @pytest.mark.parametrize(('alternative', 'statistic', 'pvalue'),
                              [('two-sided', 1.142629265891, 0.2903950180801),
                               ('less', 0.99629665877411, 0.8545660222131),
                               ('greater', 0.99629665877411, 0.1454339777869)])
-    def test_against_R_imbalanced(self, alternative, statistic, pvalue):
+    def test_against_R_imbalanced(self, alternative, statistic, pvalue, xp):
         # Test against R library BWStest function bws_test
         # library(BWStest)
         # options(digits=16)
@@ -2114,51 +2161,88 @@ class TestBWSTest:
         rng = np.random.default_rng(5429015622386364034)
         x = rng.random(size=9)
         y = rng.random(size=8)
+        x, y = xp.asarray(x), xp.asarray(y)
         res = stats.bws_test(x, y, alternative=alternative)
-        assert_allclose(res.statistic, statistic, rtol=1e-13)
-        assert_allclose(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
+        x, y = xp.asarray(x, dtype=xp.float64), xp.asarray(y, dtype=xp.float64)
+        res = stats.bws_test(x, y, alternative=alternative)
+        statistic = xp.asarray(statistic, dtype=xp.float64)
+        pvalue = xp.asarray(pvalue, dtype=xp.float64)
+        xp_assert_close(res.statistic, statistic, rtol=1e-13)
+        xp_assert_close(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
 
-    def test_method(self):
+    def test_method(self, xp):
         # Test that `method` parameter has the desired effect
         rng = np.random.default_rng(1520514347193347862)
         x, y = rng.random(size=(2, 10))
+        x, y = xp.asarray(x), xp.asarray(y)
 
         rng = np.random.default_rng(1520514347193347862)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res1 = stats.bws_test(x, y, method=method)
 
-        assert len(res1.null_distribution) == 10
+        assert res1.null_distribution.shape[0] == 10
 
         rng = np.random.default_rng(1520514347193347862)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res2 = stats.bws_test(x, y, method=method)
 
-        assert_allclose(res1.null_distribution, res2.null_distribution)
+        xp_assert_close(res1.null_distribution, res2.null_distribution)
 
         rng = np.random.default_rng(5205143471933478621)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res3 = stats.bws_test(x, y, method=method)
 
-        assert not np.allclose(res3.null_distribution, res1.null_distribution)
+        assert xp.all(xp.abs(res3.null_distribution - res1.null_distribution) > 0.1)
 
-    def test_directions(self):
+    def test_directions(self, xp):
         # Sanity check of the sign of the one-sided statistic
         rng = np.random.default_rng(1520514347193347862)
-        x = rng.random(size=5)
-        y = x - 1
+        x = xp.asarray(rng.random(size=5))
+        y = x - 1.
+
+        pmin = xp.asarray(1 / 252, dtype=xp.float64)
+        pmax = xp.asarray(1, dtype=xp.float64)
 
         res = stats.bws_test(x, y, alternative='greater')
         assert res.statistic > 0
-        assert_equal(res.pvalue, 1 / len(res.null_distribution))
+        xp_assert_equal(res.pvalue, pmin)
 
         res = stats.bws_test(x, y, alternative='less')
         assert res.statistic > 0
-        assert_equal(res.pvalue, 1)
+        xp_assert_equal(res.pvalue, pmax)
 
         res = stats.bws_test(y, x, alternative='less')
         assert res.statistic < 0
-        assert_equal(res.pvalue, 1 / len(res.null_distribution))
+        xp_assert_equal(res.pvalue, pmin)
 
         res = stats.bws_test(y, x, alternative='greater')
         assert res.statistic < 0
-        assert_equal(res.pvalue, 1)
+        xp_assert_equal(res.pvalue, pmax)
+
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_nd(self, axis, xp):
+        rng = np.random.default_rng(1520514347193347862)
+        z = rng.random(size=(2, 3, 5))
+
+        x, y = z
+        res = stats.bws_test(xp.asarray(x), xp.asarray(y), axis=axis)
+
+        x, y = np.moveaxis(z, axis+1, -1)
+        ref_statistic, ref_pvalue = [], []
+        for x_, y_ in zip(x, y):
+            ref = stats.bws_test(xp.asarray(x_), xp.asarray(y_))
+            ref_statistic.append(ref.statistic)
+            ref_pvalue.append(ref.pvalue)
+        ref_statistic, ref_pvalue = xp.stack(ref_statistic), xp.stack(ref_pvalue)
+
+        xp_assert_close(res.statistic, ref_statistic)
+        xp_assert_close(res.pvalue, ref_pvalue)
+
+    def test_axis_None(self, xp):
+        rng = np.random.default_rng(5205143471933478621)
+        x, y = rng.random(size=(2, 2, 3))
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.bws_test(x, y, axis=None)
+        ref = stats.bws_test(xp_ravel(x), xp_ravel(y))
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)

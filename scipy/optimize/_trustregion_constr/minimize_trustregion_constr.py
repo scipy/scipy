@@ -186,7 +186,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         barrier tolerance. Default is 0.1 for both values (recommended in [1]_ p. 19).
         Also note that ``barrier_parameter`` and ``barrier_tolerance`` are updated
         with the same prefactor.
-    factorization_method : string or None, optional
+    factorization_method : str or None, optional
         Method to factorize the Jacobian of the constraints. Use None (default)
         for the auto selection or one of:
 
@@ -260,11 +260,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Gradient of the Lagrangian function at the solution.
     nit : int
         Total number of iterations.
-    nfev : integer
+    nfev : int
         Number of the objective function evaluations.
-    njev : integer
+    njev : int
         Number of the objective function gradient evaluations.
-    nhev : integer
+    nhev : int
         Number of the objective function Hessian evaluations.
     cg_niter : int
         Total number of the conjugate gradient method iterations.

@@ -22,7 +22,7 @@ class LRUDict(collections.OrderedDict):
         elif len(self) > self.__max_size:
             self.popitem(last=False)
 
-    def update(self, other):
+    def update(self, other, /, **kwargs):
         # Not needed below
         raise NotImplementedError()
 
@@ -80,16 +80,6 @@ class DoubleInfiniteFunc:
 
 def _max_norm(x):
     return np.amax(abs(x))
-
-
-def _get_sizeof(obj):
-    try:
-        return sys.getsizeof(obj)
-    except TypeError:
-        # occurs on pypy
-        if hasattr(obj, '__sizeof__'):
-            return int(obj.__sizeof__())
-        return 64
 
 
 class _Bunch:
@@ -350,7 +340,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
             global_error = float(err)
             rounding_error = float(rnd)
 
-            cache_count = cache_size // _get_sizeof(ig)
+            cache_count = cache_size // sys.getsizeof(ig)
             interval_cache = LRUDict(cache_count)
         else:
             global_integral += ig
@@ -500,8 +490,8 @@ def _quadrature_trapezoid(x1, x2, f, norm_func):
     return s2, err, round_err
 
 
-_quadrature_trapezoid.cache_size = 3 * 3
-_quadrature_trapezoid.num_eval = 3
+_quadrature_trapezoid.cache_size = 3 * 3  # pyrefly:ignore[missing-attribute]
+_quadrature_trapezoid.num_eval = 3  # pyrefly:ignore[missing-attribute]
 
 
 def _quadrature_gk(a, b, f, norm_func, x, w, v):
@@ -620,7 +610,7 @@ def _quadrature_gk21(a, b, f, norm_func):
     return _quadrature_gk(a, b, f, norm_func, x, w, v)
 
 
-_quadrature_gk21.num_eval = 21
+_quadrature_gk21.num_eval = 21  # pyrefly:ignore[missing-attribute]
 
 
 def _quadrature_gk15(a, b, f, norm_func):
@@ -673,4 +663,4 @@ def _quadrature_gk15(a, b, f, norm_func):
     return _quadrature_gk(a, b, f, norm_func, x, w, v)
 
 
-_quadrature_gk15.num_eval = 15
+_quadrature_gk15.num_eval = 15  # pyrefly:ignore[missing-attribute]

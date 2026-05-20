@@ -75,6 +75,7 @@ def test_ElasticRod(n):
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.filterwarnings("ignore:Casting complex values to real")
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.filterwarnings("ignore:An ill-conditioned matrix")
 @pytest.mark.parametrize("Vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("Bdtype", ALLDTYPES)
@@ -348,8 +349,6 @@ def test_failure_to_run_iterations_nonsymmetric():
     assert np.max(eigenvalues) > 0
 
 
-@pytest.mark.skipif(_IS_32BIT and np.lib.NumpyVersion(np.__version__) < "2.0.0",
-                  reason="Was failing in CI, see gh-23077")
 @pytest.mark.filterwarnings("ignore:The problem size")
 def test_hermitian():
     """Check complex-value Hermitian cases.
@@ -445,6 +444,7 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.parametrize("vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("mdtype", ALLDTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,

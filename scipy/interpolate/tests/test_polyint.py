@@ -334,7 +334,8 @@ class TestKrogh:
 class TestTaylor:
     def test_exponential(self):
         degree = 5
-        p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
+        with pytest.warns(DeprecationWarning, match="`approximate_taylor_polynomial`"):
+            p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
         for i in range(degree+1):
             assert_almost_equal(p(0),1)
             p = p.deriv()
