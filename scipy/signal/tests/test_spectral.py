@@ -343,11 +343,11 @@ class TestWelch:
         xp_assert_close(f1, f2, atol=1e-15)
         xp_assert_close(p1, p2, atol=1e-15)
 
-    def test_detrend_external(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    def test_detrend_external(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10,
                      detrend=lambda seg: signal.detrend(seg, type='l'))
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+        xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
     def test_detrend_external_nd_m1(self):
         x = np.arange(40, dtype=np.float64) + 0.04
