@@ -364,14 +364,14 @@ class TestWelch:
                      detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
-    def test_nd_axis_m1(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
-        x = x.reshape((2,1,10))
+    def test_nd_axis_m1(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (2,1,10))
         f, p = welch(x, nperseg=10)
-        assert_array_equal(p.shape, (2, 1, 6))
-        assert_allclose(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
+        assert p.shape == (2, 1, 6)
+        xp_assert_close(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
         f0, p0 = welch(x[0,0,:], nperseg=10)
-        assert_allclose(p0[np.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13)
+        xp_assert_close(p0[None,:], p[1,...], atol=1e-13, rtol=1e-13)
 
     def test_nd_axis_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
