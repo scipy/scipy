@@ -373,14 +373,14 @@ class TestWelch:
         f0, p0 = welch(x[0,0,:], nperseg=10)
         xp_assert_close(p0[None,:], p[1,...], atol=1e-13, rtol=1e-13)
 
-    def test_nd_axis_0(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
-        x = x.reshape((10,2,1))
+    def test_nd_axis_0(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (10,2,1))
         f, p = welch(x, nperseg=10, axis=0)
-        assert_array_equal(p.shape, (6,2,1))
-        assert_allclose(p[:,0,0], p[:,1,0], atol=1e-13, rtol=1e-13)
+        assert p.shape == (6,2,1)
+        xp_assert_close(p[:,0,0], p[:,1,0], atol=1e-13, rtol=1e-13)
         f0, p0 = welch(x[:,0,0], nperseg=10)
-        assert_allclose(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
+        xp_assert_close(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
 
     def test_window_external(self):
         x = np.zeros(16)
