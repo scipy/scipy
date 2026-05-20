@@ -691,10 +691,7 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
                            return_onesided=return_onesided, scaling=scaling,
                            axis=axis, average=average)
 
-    Pxx = xp.asarray(Pxx_np.real)
-    freqs = xp.asarray(freqs_np, dtype=Pxx.dtype)
-
-    return freqs, Pxx
+    return xp.asarray(freqs_np), xp.asarray(Pxx_np.real)
 
 
 def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
