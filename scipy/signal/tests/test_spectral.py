@@ -497,7 +497,7 @@ class TestWelch:
                 f'dtype mismatch, {p.dtype}, {q.dtype}')
 
     def test_padded_freqs(self, xp):
-        x = xp.zeros((12,))
+        x = xp.zeros((12,), dtype=xp.float64)
 
         nfft = 24
         f = fftfreq(nfft, 1.0)[:nfft//2+1]
