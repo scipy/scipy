@@ -109,7 +109,6 @@ untested = {
     "symiirorder2",
     "tf2ss",
     "unit_impulse",
-    "welch",
     "zoom_fft",
     "zpk2ss",
 }
@@ -161,6 +160,12 @@ zpk2tf_extra_note = \
 abcd_normalize_extra_note = \
     """The result dtype when all array inputs are of integer dtype is the
     backend's current default floating point dtype.
+
+    """
+
+welch_extra_note = \
+    """Support for CuPy and JAX is provided by delegation to
+    ``cupyx.scipy.signal.welch`` and ``jax.scipy.signal.welch``.
 
     """
 
@@ -356,6 +361,9 @@ capabilities_overrides = {
                                extra_note=upfirdn_extra_note),
     "vectorstrength": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                       allow_dask_compute=True, jax_jit=False),
+    "welch": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
+                             allow_dask_compute=True,
+                             extra_note=welch_extra_note),
     "wiener": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
                               allow_dask_compute=True, jax_jit=False,
                               reason="uses scipy.signal.correlate"),
