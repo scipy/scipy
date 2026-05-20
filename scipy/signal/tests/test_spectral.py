@@ -483,15 +483,16 @@ class TestWelch:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_complex_32(self):
-        x = np.zeros(16, 'F')
-        x[0] = 1.0 + 2.0j
-        x[8] = 1.0 + 2.0j
+    def test_complex_32(self, xp):
+        x = xp.zeros((16,), dtype=xp.complex64)
+        x = xpx.at(x)[0].set(1.0 + 2.0j)
+        x = xpx.at(x)[8].set(1.0 + 2.0j)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
-                      0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=xp.float32))
+        q = xp.asarray([0.41666666, 0.38194442, 0.55555552, 0.55555552,
+                        0.55555558, 0.55555552, 0.55555552, 0.38194442],
+                       dtype=xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
                 f'dtype mismatch, {p.dtype}, {q.dtype}')
 
