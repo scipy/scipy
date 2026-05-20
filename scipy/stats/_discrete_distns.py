@@ -146,10 +146,7 @@ class bernoulli_gen(binom_gen):
 
     References
     ----------
-    .. [1] Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete
-           Distributions*. 3rd ed., John Wiley & Sons, 2005, Chapter 3,
-           p. 108.
-    .. [2] "Bernoulli distribution", Wikipedia,
+    .. [1] "Bernoulli distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Bernoulli_distribution
 
     %(example)s
