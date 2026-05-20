@@ -295,15 +295,15 @@ class TestWelch:
                         0.11111111], dtype=xp.float64)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_onesided_odd(self):
-        x = np.zeros(16, dtype=int)
-        x[0] = 1
-        x[8] = 1
+    def test_integer_onesided_odd(self, xp):
+        x = xp.zeros((16,), dtype=xp.int64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
-                      0.17072113])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.arange(5.0, dtype=xp.float64)/9.0)
+        q = xp.asarray([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                        0.17072113], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
         x = np.zeros(16, dtype=int)
