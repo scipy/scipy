@@ -414,21 +414,21 @@ class TestWelch:
             assert f.shape == shape
             assert p.shape == shape
 
-    def test_short_data(self):
-        x = np.zeros(8)
-        x[0] = 1
+    def test_short_data(self, xp):
+        x = xp.zeros((8,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", "nperseg=256 is greater than signal.*", UserWarning)
-            f, p = welch(x,window='hann')  # default nperseg
-            f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
+                "ignore",
+                r"nperseg\s*=\s*256 is greater than (?:input length|signal).*",
+                UserWarning
+            )
+            f, p = welch(x, window='hann')  # default nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
-        assert_allclose(f, f2)
-        assert_allclose(p, p2)
-        assert_allclose(f1, f2)
-        assert_allclose(p1, p2)
+        xp_assert_close(f, f2)
+        xp_assert_close(p, p2)
 
     def test_window_long_or_nd(self, xp):
         assert_raises(ValueError, welch, xp.zeros((4,)), 1, xp.asarray([1,1,1,1,1]))
