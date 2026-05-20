@@ -408,11 +408,11 @@ class TestWelch:
             assert f.shape == shape
             assert p.shape == shape
 
-    def test_empty_input_other_axis(self):
+    def test_empty_input_other_axis(self, xp):
         for shape in [(3,0), (0,5,2)]:
-            f, p = welch(np.empty(shape), axis=1)
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+            f, p = welch(xp.empty(shape), axis=1)
+            assert f.shape == shape
+            assert p.shape == shape
 
     def test_short_data(self):
         x = np.zeros(8)
