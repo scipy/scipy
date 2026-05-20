@@ -430,10 +430,10 @@ class TestWelch:
         assert_allclose(f1, f2)
         assert_allclose(p1, p2)
 
-    def test_window_long_or_nd(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
-        assert_raises(ValueError, welch, np.zeros(4), 1,
-                      np.arange(6).reshape((2,3)))
+    def test_window_long_or_nd(self, xp):
+        assert_raises(ValueError, welch, xp.zeros((4,)), 1, xp.asarray([1,1,1,1,1]))
+        assert_raises(ValueError, welch, xp.zeros((4,)), 1,
+                      xp.reshape(xp.arange(6), (2,3)))
 
     def test_nondefault_noverlap(self, xp):
         x = xp.zeros((64,), dtype=xp.float64)
