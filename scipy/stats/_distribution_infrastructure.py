@@ -2071,7 +2071,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         a, b = self._support(**params)
 
-        res_b = elementwise.bracket_minimum(f, m, xmin=a, xmax=b, kwargs=params)
+        res_b = elementwise.bracket_minimum(f, x0, xmin=a, xmax=b, kwargs=params)
         res = elementwise.find_minimum(f, res_b.bracket, kwargs=params,
                                        tolerances=dict(xatol=xatol))
         x = np.asarray(res.x)
@@ -2081,8 +2081,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # all very close to `a`. In this case, we assume the function is unimodal, and
         # the optimum is at the endpoint.
         x_at_boundary = res_b.status == -1
-        x_at_left = x_at_boundary & (res_b.fl <= res_b.fm)
-        x_at_right = x_at_boundary & (res_b.fr < res_b.fm)
+        fl, fm, fr = res_b.f_bracket
+        x_at_left = x_at_boundary & (fl <= fm)
+        x_at_right = x_at_boundary & (fr < fm)
         x[x_at_left] = a[x_at_left]
         x[x_at_right] = b[x_at_right]
         return x[()]
