@@ -283,6 +283,7 @@ _spherical_kn: np.ufunc
 _spherical_kn_d: np.ufunc
 _spherical_yn: np.ufunc
 _spherical_yn_d: np.ufunc
+_von_mises_cdf: np.ufunc
 _stirling2_inexact: np.ufunc
 _struve_asymp_large_z: np.ufunc
 _struve_bessel_series: np.ufunc
@@ -519,4 +520,3 @@ yn: np.ufunc
 yv: np.ufunc
 yve: np.ufunc
 zetac: np.ufunc
-
