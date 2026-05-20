@@ -446,8 +446,8 @@ class TestWelch:
     def test_bad_noverlap(self):
         assert_raises(ValueError, welch, np.zeros(4), 1, 'hann', 2, 7)
 
-    def test_nfft_too_short(self):
-        assert_raises(ValueError, welch, np.ones(12), nfft=3, nperseg=4)
+    def test_nfft_too_short(self, xp):
+        assert_raises(ValueError, welch, xp.ones((12,)), nfft=3, nperseg=4)
 
     def test_real_onesided_even_32(self, xp):
         x = xp.zeros((16,), dtype=xp.float32)
