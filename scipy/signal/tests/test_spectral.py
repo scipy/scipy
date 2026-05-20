@@ -460,15 +460,15 @@ class TestWelch:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_real_onesided_odd_32(self):
-        x = np.zeros(16, 'f')
-        x[0] = 1
-        x[8] = 1
+    def test_real_onesided_odd_32(self, xp):
+        x = xp.zeros((16,), dtype=xp.float32)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
-                      0.17072113], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.arange(5.0, dtype=xp.float32)/9.0)
+        q = xp.asarray([0.12477458, 0.23430935, 0.17072113, 0.17072116,
+                        0.17072113], dtype=xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     def test_real_twosided_32(self, xp):
