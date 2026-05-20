@@ -331,10 +331,10 @@ class TestWelch:
         assert_raises(ValueError, welch, xp.zeros((4,), dtype=xp.complex128),
                       scaling='foo', nperseg=4)
 
-    def test_detrend_linear(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    def test_detrend_linear(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10, detrend='linear')
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+        xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
     def test_no_detrending(self):
         x = np.arange(10, dtype=np.float64) + 0.04
