@@ -327,8 +327,8 @@ class TestWelch:
                        dtype=xp.float64)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_unk_scaling(self):
-        assert_raises(ValueError, welch, np.zeros(4, np.complex128),
+    def test_unk_scaling(self, xp):
+        assert_raises(ValueError, welch, xp.zeros((4,), dtype=xp.complex128),
                       scaling='foo', nperseg=4)
 
     def test_detrend_linear(self):
