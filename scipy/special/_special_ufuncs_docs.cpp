@@ -6380,6 +6380,8 @@ const char *psi_doc = R"(
 
     The logarithmic derivative of the gamma function evaluated at ``z``.
 
+    .. math:: \psi(z) = \frac{d}{dz}\log\Gamma(z) = \frac{\Gamma'(z)}{\Gamma(z)}
+
     Parameters
     ----------
     z : array_like
