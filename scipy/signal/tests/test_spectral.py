@@ -443,8 +443,8 @@ class TestWelch:
                       1./6.])
         assert_allclose(p, q, atol=1e-12)
 
-    def test_bad_noverlap(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, 'hann', 2, 7)
+    def test_bad_noverlap(self, xp):
+        assert_raises(ValueError, welch, xp.zeros((4,)), 1, 'hann', 2, 7)
 
     def test_nfft_too_short(self, xp):
         assert_raises(ValueError, welch, xp.ones((12,)), nfft=3, nperseg=4)
