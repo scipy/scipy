@@ -7,7 +7,7 @@ from numpy.testing import (assert_,
                            assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._array_api import make_xp_test_case, xp_assert_close
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close, is_jax
 import scipy._external.array_api_extra as xpx
 from scipy import signal
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
@@ -454,7 +454,8 @@ class TestWelch:
         x = xpx.at(x)[0].set(1)
         x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8)
-        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=xp.float32))
+        f_dtype = xp.float32 if is_jax(xp) else xp.float64
+        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=f_dtype))
         q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                         0.11111111], dtype=xp.float32)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
@@ -465,7 +466,8 @@ class TestWelch:
         x = xpx.at(x)[0].set(1)
         x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=9)
-        xp_assert_close(f, xp.arange(5.0, dtype=xp.float32)/9.0)
+        f_dtype = xp.float32 if is_jax(xp) else xp.float64
+        xp_assert_close(f, xp.arange(5.0, dtype=f_dtype)/9.0)
         q = xp.asarray([0.12477458, 0.23430935, 0.17072113, 0.17072116,
                         0.17072113], dtype=xp.float32)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
@@ -476,7 +478,8 @@ class TestWelch:
         x = xpx.at(x)[0].set(1)
         x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=xp.float32))
+        f_dtype = xp.float32 if is_jax(xp) else xp.float64
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=f_dtype))
         q = xp.asarray([0.08333333, 0.07638889, 0.11111111,
                         0.11111111, 0.11111111, 0.11111111, 0.11111111,
                         0.07638889], dtype=xp.float32)
@@ -488,7 +491,8 @@ class TestWelch:
         x = xpx.at(x)[0].set(1.0 + 2.0j)
         x = xpx.at(x)[8].set(1.0 + 2.0j)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=xp.float32))
+        f_dtype = xp.float32 if is_jax(xp) else xp.float64
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=f_dtype))
         q = xp.asarray([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                         0.55555558, 0.55555552, 0.55555552, 0.38194442],
                        dtype=xp.float32)
