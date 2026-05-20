@@ -399,14 +399,14 @@ class TestWelch:
         assert_raises(ValueError, welch, x,
                       10, win_err, nperseg=None)  # win longer than signal
 
-    def test_empty_input(self):
-        f, p = welch([])
-        assert_array_equal(f.shape, (0,))
-        assert_array_equal(p.shape, (0,))
+    def test_empty_input(self, xp):
+        f, p = welch(xp.asarray([]))
+        assert f.shape == (0,)
+        assert p.shape == (0,)
         for shape in [(0,), (3,0), (0,5,2)]:
-            f, p = welch(np.empty(shape))
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+            f, p = welch(xp.empty(shape))
+            assert f.shape == shape
+            assert p.shape == shape
 
     def test_empty_input_other_axis(self):
         for shape in [(3,0), (0,5,2)]:
