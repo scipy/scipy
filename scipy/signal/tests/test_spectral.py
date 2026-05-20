@@ -513,15 +513,15 @@ class TestWelch:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
-    def test_window_correction(self):
+    def test_window_correction(self, xp):
         A = 20
         fs = 1e4
         nperseg = int(fs//10)
         fsig = 300
         ii = int(fsig*nperseg//fs)  # Freq index of fsig
 
-        tt = np.arange(fs)/fs
-        x = A*np.sin(2*np.pi*fsig*tt)
+        tt = xp.arange(fs, dtype=xp.float64)/fs
+        x = A*xp.sin(2*xp.pi*fsig*tt)
 
         for window in ['hann', 'bartlett', ('tukey', 0.1), 'flattop']:
             _, p_spec = welch(x, fs=fs, nperseg=nperseg, window=window,
@@ -530,9 +530,13 @@ class TestWelch:
                                  scaling='density')
 
             # Check peak height at signal frequency for 'spectrum'
-            assert_allclose(p_spec[ii], A**2/2.0)
+            xp_assert_close(p_spec[ii], xp.asarray(A**2/2.0, dtype=xp.float64),
+                            check_0d=False)
             # Check integrated spectrum RMS for 'density'
-            assert_allclose(np.sqrt(trapezoid(p_dens, freq)), A*np.sqrt(2)/2,
+            rms_sq = xp.sum((p_dens[1:] + p_dens[:-1])
+                            * (freq[1:] - freq[:-1]) / 2)
+            rms = xp.asarray(xp.sqrt(rms_sq))
+            xp_assert_close(rms, xp.asarray(A*np.sqrt(2)/2, dtype=xp.float64),
                             rtol=1e-3)
 
     def test_axis_rolling(self, xp):
