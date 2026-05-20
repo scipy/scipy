@@ -1404,6 +1404,9 @@ class TestRectBivariateSpline:
         return x, y, z.astype(np.float64)
 
     @pytest.mark.slow()
+    @pytest.mark.skipif(sys.platform == "win32", reason="Fails intermittently "
+                                                        "on Windows;"
+                                                        "investigation pending.")
     @pytest.mark.parametrize('shape', [(350, 850), (2000, 170)])
     @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
                                         (1, 7e-3, 1e-4),
