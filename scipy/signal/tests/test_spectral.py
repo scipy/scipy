@@ -7,11 +7,10 @@ from numpy.testing import (assert_,
                            assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
-
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close
+import scipy._external.array_api_extra as xpx
 from scipy import signal
-from scipy._lib._array_api import xp_assert_close
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
-from scipy.integrate import trapezoid
 from scipy.signal import (periodogram, welch, lombscargle, coherence, csd,
                           spectrogram, check_COLA, check_NOLA)
 from scipy.signal.windows import hann
@@ -243,6 +242,7 @@ class TestPeriodogram:
             periodogram(x, window=win)
 
 
+@make_xp_test_case(welch)
 class TestWelch:
     def test_real_onesided_even(self):
         x = np.zeros(16)
