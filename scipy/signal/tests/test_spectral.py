@@ -275,15 +275,15 @@ class TestWelch:
                        dtype=xp.float64)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_spectrum(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_real_spectrum(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, scaling='spectrum')
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
-                      0.02083333])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=xp.float64))
+        q = xp.asarray([0.015625, 0.02864583, 0.04166667, 0.04166667,
+                        0.02083333], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_even(self):
         x = np.zeros(16, dtype=int)
