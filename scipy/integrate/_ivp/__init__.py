@@ -1,5 +1,6 @@
 """Suite of ODE solvers implemented in Python."""
 from .ivp import solve_ivp
+from ._osc import solve_ivp_osc
 from .rk import RK23, RK45, DOP853
 from .radau import Radau
 from .bdf import BDF

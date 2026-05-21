@@ -41,6 +41,14 @@ New features
 =============================
 
 
+``scipy.integrate`` improvements
+================================
+
+- Added :func:`scipy.integrate.solve_ivp_osc`, a Riccati-based solver for
+  oscillatory second-order ODEs with specialized ``omega_fun``/``gamma_fun``
+  callbacks and dense output support.
+
+
 ``scipy.ndimage`` improvements
 ==============================
 
@@ -109,5 +117,4 @@ Issues closed for 1.18.0
 ************************
 Pull requests for 1.18.0
 ************************
-
 
