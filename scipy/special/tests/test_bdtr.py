@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import scipy.special as sc
 import pytest
@@ -22,13 +20,10 @@ class TestBdtr:
 
     @pytest.mark.parametrize('k, n, p', [
         (np.inf, 2, 0.5),
-        (1.0, np.inf, 0.5),
         (1.0, 2, np.inf)
     ])
     def test_inf(self, k, n, p):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            val = sc.bdtr(k, n, p)
+        val = sc.bdtr(k, n, p)
         assert np.isnan(val)
 
     def test_domain(self):
@@ -52,13 +47,10 @@ class TestBdtrc:
 
     @pytest.mark.parametrize('k, n, p', [
         (np.inf, 2, 0.5),
-        (1.0, np.inf, 0.5),
         (1.0, 2, np.inf)
     ])
     def test_inf(self, k, n, p):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            val = sc.bdtrc(k, n, p)
+        val = sc.bdtrc(k, n, p)
         assert np.isnan(val)
 
     def test_domain(self):
@@ -91,13 +83,10 @@ class TestBdtri:
 
     @pytest.mark.parametrize('k, n, p', [
         (np.inf, 2, 0.5),
-        (1.0, np.inf, 0.5),
         (1.0, 2, np.inf)
     ])
     def test_inf(self, k, n, p):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            val = sc.bdtri(k, n, p)
+        val = sc.bdtri(k, n, p)
         assert np.isnan(val)
 
     @pytest.mark.parametrize('k, n, p', [

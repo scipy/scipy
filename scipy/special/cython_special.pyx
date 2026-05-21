@@ -1375,18 +1375,6 @@ from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
 cdef _proto_agm_t *_proto_agm_t_var = &_func_agm
 
-from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
-ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
-cdef _proto_bdtr_unsafe_t *_proto_bdtr_unsafe_t_var = &_func_bdtr_unsafe
-
-from ._legacy cimport bdtrc_unsafe as _func_bdtrc_unsafe
-ctypedef double _proto_bdtrc_unsafe_t(double, double, double) noexcept nogil
-cdef _proto_bdtrc_unsafe_t *_proto_bdtrc_unsafe_t_var = &_func_bdtrc_unsafe
-
-from ._legacy cimport bdtri_unsafe as _func_bdtri_unsafe
-ctypedef double _proto_bdtri_unsafe_t(double, double, double) noexcept nogil
-cdef _proto_bdtri_unsafe_t *_proto_bdtri_unsafe_t_var = &_func_bdtri_unsafe
-
 from ._boxcox cimport boxcox as _func_boxcox
 ctypedef double _proto_boxcox_t(double, double) noexcept nogil
 cdef _proto_boxcox_t *_proto_boxcox_t_var = &_func_boxcox
@@ -1829,9 +1817,7 @@ def _airye_pywrap(Dd_number_t x0):
 
 cpdef double bdtr(double x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtr"""
-    if dlp_number_t is double:
-        return _func_bdtr_unsafe(x0, x1, x2)
-    elif dlp_number_t is long:
+    if dlp_number_t is long:
         return xsf_bdtr(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_bdtr(x0, x1, x2)
@@ -1840,9 +1826,7 @@ cpdef double bdtr(double x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double bdtrc(double x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrc"""
-    if dlp_number_t is double:
-        return _func_bdtrc_unsafe(x0, x1, x2)
-    elif dlp_number_t is long:
+    if dlp_number_t is long:
         return xsf_bdtrc(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_bdtrc(x0, x1, x2)
@@ -1851,9 +1835,7 @@ cpdef double bdtrc(double x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtri"""
-    if dlp_number_t is double:
-        return _func_bdtri_unsafe(x0, x1, x2)
-    elif dlp_number_t is long:
+    if dlp_number_t is long:
         return xsf_bdtri(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_bdtri(x0, x1, x2)

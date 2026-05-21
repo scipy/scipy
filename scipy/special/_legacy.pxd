@@ -56,27 +56,6 @@ cdef inline double ellip_harmonic_unsafe(double h2, double k2, double n,
     _legacy_cast_check("_ellip_harm", n, p)
     return ellip_harmonic(h2, k2, <int>n, <int>p, l, signm, signn)
 
-cdef inline double bdtr_unsafe(double k, double n, double p) noexcept nogil:
-    _legacy_deprecation("bdtr", k, n)
-    if isnan(n) or isinf(n):
-        return NAN
-    else:
-        return cephes_bdtr_wrap(k, <int>n, p)
-
-cdef inline double bdtrc_unsafe(double k, double n, double p) noexcept nogil:
-    _legacy_deprecation("bdtrc", k, n)
-    if isnan(n) or isinf(n):
-        return NAN
-    else:
-        return cephes_bdtrc_wrap(k, <int>n, p)
-
-cdef inline double bdtri_unsafe(double k, double n, double p) noexcept nogil:
-    _legacy_deprecation("bdtri", k, n)
-    if isnan(n) or isinf(n):
-        return NAN
-    else:
-        return cephes_bdtri_wrap(k, <int>n, p)
-
 cdef inline double expn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):
         return n
