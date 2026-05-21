@@ -454,6 +454,7 @@ class TestWelch:
         x = xpx.at(x)[0].set(1)
         x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8)
+        # JAX uses different dtype promotion rules and keeps the output as float32
         f_dtype = xp.float32 if is_jax(xp) else xp.float64
         xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=f_dtype))
         q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
@@ -466,6 +467,7 @@ class TestWelch:
         x = xpx.at(x)[0].set(1)
         x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=9)
+        # JAX uses different dtype promotion rules and keeps the output as float32
         f_dtype = xp.float32 if is_jax(xp) else xp.float64
         xp_assert_close(f, xp.arange(5.0, dtype=f_dtype)/9.0)
         q = xp.asarray([0.12477458, 0.23430935, 0.17072113, 0.17072116,
@@ -478,6 +480,7 @@ class TestWelch:
         x = xpx.at(x)[0].set(1)
         x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, return_onesided=False)
+        # JAX uses different dtype promotion rules and keeps the output as float32
         f_dtype = xp.float32 if is_jax(xp) else xp.float64
         xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=f_dtype))
         q = xp.asarray([0.08333333, 0.07638889, 0.11111111,
@@ -491,6 +494,7 @@ class TestWelch:
         x = xpx.at(x)[0].set(1.0 + 2.0j)
         x = xpx.at(x)[8].set(1.0 + 2.0j)
         f, p = welch(x, nperseg=8, return_onesided=False)
+        # JAX uses different dtype promotion rules and keeps the output as float32
         f_dtype = xp.float32 if is_jax(xp) else xp.float64
         xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=f_dtype))
         q = xp.asarray([0.41666666, 0.38194442, 0.55555552, 0.55555552,
