@@ -2183,6 +2183,18 @@ class TestNdimageFilters:
             y = ndimage.rank_filter(x, -2, size=3)
             assert y.dtype == x.dtype
 
+    def test_rank_1d_long_long(self):
+        # regression test for https://github.com/scipy/scipy/issues/22368
+        # The OP reported the error via signal.medfilt, which calls ndimage.rank_filter
+        # Here we extract the values of inputs the OP example feeds to rank_filter.
+        volume = np.ones(10, dtype='q')   # np.longlong
+        rank, size = 1, 3
+        result_q = ndimage.rank_filter(volume, rank, size=size, mode="constant")
+        result_l = ndimage.rank_filter(
+            volume.astype("int64"), rank, size=size, mode="constant"
+        )
+        xp_assert_equal(result_q, result_l)
+
     @skip_xp_backends(np_only=True, exceptions=["cupy"],
                       reason="off-by-ones on alt backends")
     @xfail_xp_backends("cupy", reason="does not support extra_arguments")

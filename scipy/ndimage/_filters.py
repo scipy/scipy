@@ -2000,7 +2000,10 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         # if algorithmic fixes are found.
         lim2 = input.size - ((footprint.size - 1) // 2 - origin)
         if input.ndim == 1 and ((lim2 >= 0) or (input.size == 1)):
-            if input.dtype in (np.int64, np.float64, np.float32):
+            if (
+                (input.dtype in (np.int64, np.float64, np.float32))
+                and (input.dtype.char != 'q')   # np.longlong pretending to be int64
+            ):
                 x = input
                 x_out = output
             elif input.dtype == np.float16:
@@ -2018,7 +2021,10 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             cval = x.dtype.type(cval)
             _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
                                         origin)
-            if input.dtype not in (np.int64, np.float64, np.float32):
+            if (
+                input.dtype not in (np.int64, np.float64, np.float32)
+                or (input.dtype.char == 'q')
+            ):
                 np.copyto(output, x_out, casting='unsafe')
         else:
             _nd_image.rank_filter(input, rank, footprint, output, mode, cval, origins)
