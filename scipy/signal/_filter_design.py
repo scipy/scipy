@@ -693,7 +693,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     return w, h
 
 
-def group_delay(system, w=512, whole=False, fs=2*pi):
+def group_delay(system, w=512, whole=False, fs=2*pi, method='convolve'):
     r"""Compute the group delay of a digital filter.
 
     The group delay measures by how many samples amplitude envelopes of
@@ -724,12 +724,23 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
         .. versionadded:: 1.2.0
 
+    method: str, optional
+        Numerical method used to compute the group delay. Must be one of:
+
+        - 'convolve' (default) = utilize the ratio of convoluted polynomials as described
+          in Reference [2] (similar to the algorithm implemented in Matlab)
+        - 'unwrap' = compute the system frequency response using `freqz`, unwrap the
+          phase, and then directly compute the finite difference derivative versus frequency.
+
+        .. versionadded:: 1.18.0
+
     Returns
     -------
     w : ndarray
         The frequencies at which group delay was computed, in the same units
         as `fs`.  By default, `w` is normalized to the range [0, pi)
-        (radians/sample).
+        (radians/sample). For the 'unwrap' method, these are also the frequencies used
+        to compute the finite difference phase derivatives.
     gd : ndarray
         The group delay.
 
@@ -746,7 +757,17 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     When such a case arises the warning is raised and the group delay
     is set to 0 at those frequencies.
 
-    For the details of numerical computation of the group delay refer to [1]_ or [2]_.
+    Some particularly ill-conditioned filters can result in non-sensical group delay
+    calculations even far away from distinct frequency response discontinuities when using
+    the default convolution algorithm. In these cases, the brute force method of computing
+    the derivative of the unwrapped frequency response phase versus frequency can provide more useful
+    results. Note when using this method, however, that the computed group delay is directly
+    affected by the density of the requested output frequencies - denser frequency distributions
+    will provide more accurate results. Unlike the nominal convolution algorithm, this unwrapping
+    method cannot be used to compute the group delay at a single frequency, and will be inaccurate
+    for very sparse frequency output requests.
+
+    For additional details on numerical computation of the group delay refer to [1]_ or [2]_.
 
     .. versionadded:: 0.16.0
 
@@ -761,18 +782,56 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     Examples
     --------
+
+    Compute the group delay for a well-behaved filter with non-linear phase
+
     >>> from scipy import signal
-    >>> b, a = signal.iirdesign(0.1, 0.3, 5, 50, ftype='cheby1')
-    >>> w, gd = signal.group_delay((b, a))
+    >>> b1, a1 = signal.iirdesign(0.1, 0.3, 5, 50, ftype='cheby1')
+    >>> w1_c, gd1_c = signal.group_delay((b1, a1))
+    >>> w1_u, gd1_u = signal.group_delay((b1, a1), 2048, method='unwrap')
+    >>> wf1, h1 = signal.freqz(b1, a1)
+
+    Now compute the group delay for a poorly conditioned filter
+
+    >>> import warnings
+    >>> b2, a2 = signal.ellip(7, 0.02, 60.0, 10.0, fs=1280)
+    >>> with warnings.catch_warnings(action='ignore'):      # ignore warnings for example plotting
+    >>>     w2_c, gd2_c = signal.group_delay((b2, a2), w=2048, fs=1280)
+    >>> w2_u, gd2_u = signal.group_delay((b2, a2), w=2048, fs=1280, method='unwrap')
+    >>> wf2, h2 = signal.freqz(b2, a2, 2048, fs=1280)
+
+    Plot results to compare. Both group delay calculation methods perform well for the Chebychev filter,
+    but the convolution algorithm fails on the narrowband elliptical filter.
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.title('Digital filter group delay')
-    >>> plt.plot(w, gd)
-    >>> plt.ylabel('Group delay [samples]')
-    >>> plt.xlabel('Frequency [rad/sample]')
+    >>> import numpy as np
+    >>> fig, axes = plt.subplots(3, 2)
+    >>> axes[0, 0].semilogy(wf1, np.abs(h1))
+    >>> axes[1, 0].plot(wf1, np.angle(h1))
+    >>> axes[2, 0].plot(w1_c, gd1_c, label="convolve")
+    >>> axes[2, 0].plot(w1_u, gd1_u, label="unwrap")
+
+    >>> axes[0, 1].semilogy(wf2, np.abs(h2))
+    >>> axes[1, 1].plot(wf2, np.angle(h2))
+    >>> axes[2, 1].plot(w2_c, gd2_c)
+    >>> axes[2, 1].plot(w2_u, gd2_u)
+
+    >>> axes[0, 0].set_title("Chebyshev type I filter")
+    >>> axes[2, 0].set_xlabel("Frequency [rad/sample]")
+    >>> axes[0, 0].set_ylabel("|H|")
+    >>> axes[1, 0].set_ylabel(r"$\angle$ H [rad]")
+    >>> axes[2, 0].set_ylabel("Group delay\n[samples]")
+    >>> axes[2, 0].legend()
+    >>> axes[0, 1].set_title("Narrowband elliptical filter")
+    >>> axes[2, 1].set_xlabel("Frequency [Hz]")
+    >>> for ax in axes[:, 1]:
+    >>>     ax.set_xlim((0., 15.))
+    >>> axes[2, 1].set_ylim((-50., 400.))
+    >>> fig.tight_layout()
     >>> plt.show()
 
     """
+    # parameter extractions
     xp = array_namespace(*system, w)
     b, a = map(np.atleast_1d, system)
 
@@ -782,6 +841,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     fs = _validate_fs(fs, allow_none=False)
 
+    # generate frequency vector (if not directly provided)
     if _is_int_type(w):
         if whole:
             w = np.linspace(0, 2 * pi, w, endpoint=False)
@@ -789,16 +849,38 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
             w = np.linspace(0, pi, w, endpoint=False)
     else:
         w = np.atleast_1d(w)
-        w = 2*pi*w/fs
+        w = 2 * pi * w / fs  # convert to radians per sample
 
-    c = np.convolve(b, np.conjugate(a[::-1]))
-    cr = c * np.arange(c.size)
-    z = np.exp(-1j * w)
-    num = np.polyval(cr[::-1], z)
-    den = np.polyval(c[::-1], z)
-    gd = np.real(num / den) - a.size + 1
+    # compute group delay
+    if method == 'convolve':
+        c = np.convolve(b, np.conjugate(a[::-1]))
+        cr = c * np.arange(c.size)
+        z = np.exp(-1j * w)
+        num = np.polyval(cr[::-1], z)
+        den = np.polyval(c[::-1], z)
+        gd = np.real(num / den) - a.size + 1
+
+        # check for near singularities in denominator
+        near_singular = np.absolute(den) < 10 * EPSILON
+        if np.any(near_singular):
+            warnings.warn(
+                "The filter's group delay denominator is extremely small at frequencies "
+                f"[{', '.join(f'{ws:.3f}' for ws in w[near_singular])}], "
+                "around which a singularity may be present. If the group delay calculation using the 'convolve' method "
+                "is producing unreasonable results where the filter frequency response is continuous, the 'unwrap'"
+                "method may provide better results.",
+                stacklevel=2
+            )
+
+    elif method == 'unwrap':
+        _, H = freqz(system[0], system[1], worN=w)
+        gd = -np.gradient(np.unwrap(np.angle(H)), w)
+
+    else:
+        raise ValueError("group delay method must be one of {'convolve', 'unwrap'}")
+
+    # check for singularities
     singular = ~np.isfinite(gd)
-    near_singular = np.absolute(den) < 10 * EPSILON
 
     if np.any(singular):
         gd[singular] = 0
@@ -808,15 +890,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
             stacklevel=2
         )
 
-    elif np.any(near_singular):
-        warnings.warn(
-            "The filter's denominator is extremely small at frequencies "
-            f"[{', '.join(f'{ws:.3f}' for ws in w[near_singular])}], "
-            "around which a singularity may be present",
-            stacklevel=2
-        )
-
-    w = w * (fs / (2 * xp.pi))
+    w = w * (fs / (2 * xp.pi))      # convert back to user specified frequency
 
     return xp.asarray(w), xp.asarray(gd)
 
