@@ -338,6 +338,9 @@ class _LogUniform(ContinuousDistribution):
     def _pdf_formula(self, x, *, log_a, log_b, **kwargs):
         return ((log_b - log_a)*x)**-1
 
+    def _mode_formula(self, *, a, **kwargs):
+        return a
+
     def _moment_raw_formula(self, order, log_a, log_b, **kwargs):
         if order == 0:
             return self._one
