@@ -45,12 +45,12 @@ def test_nonfinite():
     assert_(all(np.isnan(sc.digamma([-np.inf, -1]))))
 
 
-def test_digamma_inv_roundtrip():
+def test_digammainv_roundtrip():
     x = np.logspace(-20, 20, 500)
-    assert_allclose(sc.digamma_inv(sc.digamma(x)), x, rtol=2e-14)
+    assert_allclose(sc.digammainv(sc.digamma(x)), x, rtol=2e-14)
 
 
-def test_digamma_inv_special_values():
+def test_digammainv_special_values():
     # Reference values for digamma were computed with mpmath.
     dataset = np.array([
         (1e-100, -1e100),
@@ -69,23 +69,23 @@ def test_digamma_inv_special_values():
         (1e50, 115.12925464970229),
         (1e200, 460.51701859880916),
     ])
-    assert_allclose(sc.digamma_inv(dataset[:, 1]), dataset[:, 0], rtol=1e-13)
+    assert_allclose(sc.digammainv(dataset[:, 1]), dataset[:, 0], rtol=1e-13)
 
 
-def test_digamma_inv_nonfinite():
-    res = sc.digamma_inv([np.nan, np.inf, -np.inf])
+def test_digammainv_nonfinite():
+    res = sc.digammainv([np.nan, np.inf, -np.inf])
     assert_(np.isnan(res[0]))
     assert_equal(res[1:], [np.inf, 0.0])
 
 
-def test_digamma_inv_ufunc():
+def test_digammainv_ufunc():
     y = np.array([sc.digamma(0.5), 0.0, sc.digamma(10.0)])
     out = np.empty_like(y)
-    res = sc.digamma_inv(y, out=out)
+    res = sc.digammainv(y, out=out)
     assert_(res is out)
     assert_allclose(out, [0.5, 1.4616321449683623, 10.0], rtol=1e-14)
 
     y32 = y.astype(np.float32)
-    res32 = sc.digamma_inv(y32)
+    res32 = sc.digammainv(y32)
     assert_equal(res32.dtype, np.float32)
     assert_allclose(res32, [0.5, 1.4616321, 10.0], rtol=2e-6)
