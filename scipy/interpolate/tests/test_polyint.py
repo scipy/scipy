@@ -14,12 +14,172 @@ from scipy.interpolate import (
     BarycentricInterpolator, barycentric_interpolate,
     approximate_taylor_polynomial, CubicHermiteSpline, pchip,
     PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
-    make_interp_spline)
+    make_interp_spline, supported_dtypes)
 from scipy._lib._testutils import _run_concurrent_barrier
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
+def check_dtype(interpolator_cls, x_dtype, y_dtype, xi_dtype, deriv_shape=None,
+                extra_args=None):
+
+    axis = 0
+    x_shape = (1,)
+    y_shape = (1,)
+
+    if extra_args is None:
+        extra_args = {}
+    rng = np.random.RandomState(1234)
+
+    s = list(range(1, len(y_shape)+1))
+    s.insert(axis % (len(y_shape)+1), 0)
+
+    # make sure no negatives for unsigned integers
+    if np.issubdtype(x_dtype, np.unsignedinteger):
+        x = np.array([0, 1, 2, 3, 4, 5], dtype=x_dtype)
+    else:
+        x = np.array([-1, 0, 1, 2, 3, 4], dtype=x_dtype)
+
+    # if y is an integer type, scale values up to more "integer-y" data
+    if np.issubdtype(y_dtype, np.integer):
+        y = (rng.rand(*((6,) + y_shape)) * 1e3).astype(y_dtype).transpose(s)
+    else:
+        y = rng.rand(*((6,) + y_shape)).astype(y_dtype).transpose(s)
+
+    xi = np.zeros(x_shape, dtype=xi_dtype)
+    if interpolator_cls is CubicHermiteSpline:
+        if np.issubdtype(y_dtype, np.integer):
+            dydx = (rng.rand(*((6,) + y_shape)) * 1e3).astype(y_dtype).transpose(s)
+        else:
+            dydx = rng.rand(*((6,) + y_shape)).astype(y_dtype).transpose(s)
+        yi = interpolator_cls(x, y, dydx, axis=axis, **extra_args)(xi)
+    else:
+        yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
+
+    if np.issubdtype(y_dtype, np.complexfloating):
+        expected_dtype = np.complex128
+    else:
+        expected_dtype = np.float64
+
+    assert yi.dtype == expected_dtype
+
+    # check it works also with lists
+    if x_shape and y.size > 0:
+        if interpolator_cls is CubicHermiteSpline:
+            interpolator_cls(list(x), list(y), list(dydx), axis=axis,
+                             **extra_args)(list(xi))
+        else:
+            interpolator_cls(list(x), list(y), axis=axis,
+                             **extra_args)(list(xi))
+
+    # check also values
+    if xi.size > 0 and deriv_shape is None:
+        bs_shape = y.shape[:axis] + (1,)*len(x_shape) + y.shape[axis:][1:]
+        yv = y[((slice(None,),)*(axis % y.ndim)) + (1,)]
+        yv = yv.reshape(bs_shape).astype(expected_dtype)
+
+        yi, y = np.broadcast_arrays(yi, yv)
+        xp_assert_close(yi, y)
+
+real_dtypes = "".join(["" if np.issubdtype(c, np.complexfloating)
+                       else c for c in supported_dtypes])
+x_dtypes = "".join(["" if np.issubdtype(c, np.unsignedinteger)
+                       else c for c in real_dtypes])
+
+def test_dtypes():
+
+    def spl_interp(x, y, axis):
+        return make_interp_spline(x, y, axis=axis)
+
+    for ip in [KroghInterpolator, BarycentricInterpolator, CubicHermiteSpline]:
+        for d1 in x_dtypes:
+            for d2 in supported_dtypes:
+                for d3 in real_dtypes:
+                    if ip != CubicSpline:
+                        check_dtype(ip, d1, d2, d3, None)
+                    else:
+                        for bc in ['natural', 'clamped']:
+                            extra = {'bc_type': bc}
+                            check_dtype(ip, d1, d2, d3, None, extra)
+
+    for ip in [pchip, Akima1DInterpolator, CubicSpline, spl_interp]:
+        for d1 in x_dtypes:
+            for d2 in real_dtypes:
+                for d3 in real_dtypes:
+                    if ip != CubicSpline:
+                        check_dtype(ip, d1, d2, d3, None)
+                    else:
+                        for bc in ['natural', 'clamped']:
+                            extra = {'bc_type': bc}
+                            check_dtype(ip, d1, d2, d3, None, extra)
+
+def test_derivs_dtypes():
+    for ip in [KroghInterpolator, BarycentricInterpolator]:
+        def interpolator_derivs(x, y, axis=0):
+            return ip(x, y, axis).derivatives
+
+        for d1 in x_dtypes:
+            for d2 in supported_dtypes:
+                for d3 in real_dtypes:
+                    check_dtype(interpolator_derivs, d1, d2, d3, (6,))
+
+def test_deriv_dtypes():
+    def krogh_deriv(x, y, axis=0):
+        return KroghInterpolator(x, y, axis).derivative
+
+    def bary_deriv(x, y, axis=0):
+        return BarycentricInterpolator(x, y, axis).derivative
+
+    def pchip_deriv(x, y, axis=0):
+        return pchip(x, y, axis).derivative()
+
+    def pchip_deriv2(x, y, axis=0):
+        return pchip(x, y, axis).derivative(2)
+
+    def pchip_antideriv(x, y, axis=0):
+        return pchip(x, y, axis).antiderivative()
+
+    def pchip_antideriv2(x, y, axis=0):
+        return pchip(x, y, axis).antiderivative(2)
+
+    def pchip_deriv_inplace(x, y, axis=0):
+        class P(PchipInterpolator):
+            def __call__(self, x):
+                return PchipInterpolator.__call__(self, x, 1)
+            pass
+        return P(x, y, axis)
+
+    def akima_deriv(x, y, axis=0):
+        return Akima1DInterpolator(x, y, axis).derivative()
+
+    def akima_antideriv(x, y, axis=0):
+        return Akima1DInterpolator(x, y, axis).antiderivative()
+
+    def cspline_deriv(x, y, axis=0):
+        return CubicSpline(x, y, axis).derivative()
+
+    def cspline_antideriv(x, y, axis=0):
+        return CubicSpline(x, y, axis).antiderivative()
+
+    def bspl_deriv(x, y, axis=0):
+        return make_interp_spline(x, y, axis=axis).derivative()
+
+    def bspl_antideriv(x, y, axis=0):
+        return make_interp_spline(x, y, axis=axis).antiderivative()
+
+    for ip in [krogh_deriv, bary_deriv, cspline_deriv, cspline_antideriv,
+               bspl_deriv, bspl_antideriv]:
+        for d1 in x_dtypes:
+            for d2 in supported_dtypes:
+                for d3 in real_dtypes:
+                    check_dtype(ip, d1, d2, d3, ())
+
+    for ip in [pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
+               pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv]:
+        for d1 in x_dtypes:
+            for d2 in real_dtypes:
+                for d3 in real_dtypes:
+                    check_dtype(ip, d1, d2, d3, ())
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
                 extra_args=None):

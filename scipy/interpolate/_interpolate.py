@@ -20,7 +20,7 @@ from . import _fitpack_py
 from ._polyint import _Interpolator1D
 from . import _ppoly
 from ._interpnd import _ndim_coords_from_arrays
-from ._bsplines import make_interp_spline, BSpline
+from ._bsplines import make_interp_spline, BSpline, _get_dtype, _deprecate_dtypes
 
 
 @xp_capabilities(out_of_scope=True)
@@ -514,7 +514,7 @@ class interp1d(_Interpolator1D):
             ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
             + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
             )
-        
+
         return y_new
 
     def _call_nearest(self, x_new):
@@ -562,7 +562,7 @@ class interp1d(_Interpolator1D):
         # 1. Handle values in x_new that are outside of x. Throw error,
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
-        x_new = asarray(x_new)
+        x_new = asarray(x_new, dtype=np.float64)
         y_new = self._call(self, x_new)
         if not self._extrapolate:
             below_bounds, above_bounds = self._check_bounds(x_new)
@@ -614,8 +614,11 @@ class _PPolyBase:
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None, axis=0):
+        self._asarray  = array_namespace(c, x).asarray
+
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
+        _deprecate_dtypes(self.c.dtype, np.asarray(x).dtype)
 
         if extrapolate is None:
             extrapolate = True
@@ -654,16 +657,8 @@ class _PPolyBase:
         dx = np.diff(self.x)
         if not (np.all(dx >= 0) or np.all(dx <= 0)):
             raise ValueError("`x` must be strictly increasing or decreasing.")
-
-        dtype = self._get_dtype(self.c.dtype)
+        dtype = _get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dtype)
-
-    def _get_dtype(self, dtype):
-        if np.issubdtype(dtype, np.complexfloating) \
-               or np.issubdtype(self.c.dtype, np.complexfloating):
-            return np.complex128
-        else:
-            return np.float64
 
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None, axis=0):
@@ -689,6 +684,7 @@ class _PPolyBase:
     def extend(self, c, x):
         c = np.asarray(c)
         x = np.asarray(x)
+        _deprecate_dtypes(c.dtype, x.dtype)
 
         if c.ndim < 2:
             raise ValueError("invalid dimensions for c")
@@ -733,7 +729,7 @@ class _PPolyBase:
                 raise ValueError("`x` is neither on the left or on the right "
                                 "from `self.x`.")
 
-        dtype = self._get_dtype(c.dtype)
+        dtype = _get_dtype(c.dtype)
 
         k2 = max(c.shape[0], self.c.shape[0])
         c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
@@ -742,12 +738,11 @@ class _PPolyBase:
         if action == 'append':
             c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
             c2[k2-c.shape[0]:, self.c.shape[1]:] = c
-            self.x = np.r_[self.x, x]
+            self.x = np.r_[self.x, x].astype(np.float64)
         elif action == 'prepend':
             c2[k2-self.c.shape[0]:, :c.shape[1]] = c
             c2[k2-c.shape[0]:, c.shape[1]:] = self.c
-            self.x = np.r_[x, self.x]
-
+            self.x = np.r_[x, self.x].astype(np.float64)
         self.c = c2
 
     def __call__(self, x, nu=0, extrapolate=None):
@@ -2387,6 +2382,7 @@ class NdPPoly:
     def __init__(self, c, x, extrapolate=None):
         self.x = tuple(np.ascontiguousarray(v, dtype=np.float64) for v in x)
         self.c = np.asarray(c)
+        _deprecate_dtypes(self.c.dtype, *[np.asarray(v).dtype for v in x])
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = bool(extrapolate)
@@ -2403,7 +2399,7 @@ class NdPPoly:
         if any(a != b.size - 1 for a, b in zip(c.shape[ndim:2*ndim], self.x)):
             raise ValueError("x and c do not agree on the number of intervals")
 
-        dtype = self._get_dtype(self.c.dtype)
+        dtype = _get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dtype)
 
     @classmethod
@@ -2424,13 +2420,6 @@ class NdPPoly:
             extrapolate = True
         self.extrapolate = extrapolate
         return self
-
-    def _get_dtype(self, dtype):
-        if np.issubdtype(dtype, np.complexfloating) \
-               or np.issubdtype(self.c.dtype, np.complexfloating):
-            return np.complex128
-        else:
-            return np.float64
 
     def _ensure_c_contiguous(self):
         if not self.c.flags.c_contiguous:
