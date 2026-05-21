@@ -46,6 +46,7 @@
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
 extern const char *_cospi_doc;
+extern const char *_bivariate_normal_cdf_doc;
 extern const char *_sinpi_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_log1mexp_doc;
@@ -211,11 +212,24 @@ static PyMethodDef _methods[] = {
 };
 
 
+static float
+bivariate_normal_cdf_float(float dh, float dk, float r)
+{
+    return static_cast<float>(xsf::bivariate_normal_cdf(dh, dk, r));
+}
+
+
 static int
 _special_ufuncs_module_exec(PyObject *module)
 {
     if (_import_array() < 0) { return -1; }
     if (_import_umath() < 0) { return -1; }
+
+    PyObject *_bivariate_normal_cdf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(bivariate_normal_cdf_float),
+         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_cdf)},
+        "_bivariate_normal_cdf", _bivariate_normal_cdf_doc);
+    PyModule_AddObjectRef(module, "_bivariate_normal_cdf", _bivariate_normal_cdf);
 
     PyObject *_cospi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::cospi), static_cast<xsf::numpy::d_d>(xsf::cospi),
