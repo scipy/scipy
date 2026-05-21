@@ -167,6 +167,8 @@ welch_extra_note = \
     """Support for CuPy and JAX is provided by delegation to
     ``cupyx.scipy.signal.welch`` and ``jax.scipy.signal.welch``.
 
+    For single-precision input (float32 or complex64), JAX returns the sample
+    frequencies in float32, whereas SciPy and CuPy always return them in float64.
     """
 
 capabilities_overrides = {
