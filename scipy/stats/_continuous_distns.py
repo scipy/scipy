@@ -5087,7 +5087,17 @@ class invgauss_gen(rv_continuous):
         fac = 1 / np.sqrt(x)
         a = _norm_logsf(fac * (x/mu - 1))
         b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
-        return a + np.log1p(-np.exp(b - a))
+        # When x/mu is large, both a and b are huge negative numbers and
+        # b-a loses precision due to catastrophic cancellation in b
+        # (b = 2/mu + log(Phi(-z2)), where 2/mu and log(Phi) nearly cancel).
+        # Since z2^2 - z1^2 = 4/mu exactly, the asymptotic form is
+        # b - a = -log((x+mu)/(x-mu)), computed stably via log1p.
+        b_minus_a = b - a
+        if np.any(b_minus_a >= 0):
+            safe_denom = np.where(x > mu, x - mu, np.ones_like(x))
+            b_minus_a_asymp = -np.log1p(2 * mu / safe_denom)
+            b_minus_a = np.where(b_minus_a >= 0, b_minus_a_asymp, b_minus_a)
+        return a + np.log1p(-np.exp(b_minus_a))
 
     def _sf(self, x, mu):
         return np.exp(self._logsf(x, mu))
