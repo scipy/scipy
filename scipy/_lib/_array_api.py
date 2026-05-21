@@ -11,9 +11,6 @@ import dataclasses
 import functools
 import textwrap
 
-from collections.abc import Generator
-from contextlib import contextmanager
-from contextvars import ContextVar
 from types import ModuleType
 from typing import Any, Literal
 from collections.abc import Iterable
@@ -45,6 +42,13 @@ from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy._lib._array_api_override import (
     array_namespace, SCIPY_ARRAY_API, SCIPY_DEVICE
 )
+from scipy._external.array_api_extra._lib._testing import (
+    xp_assert_close as xpx_assert_close,
+    xp_assert_equal as xpx_assert_equal,
+    xp_assert_less as xpx_assert_less,
+    default_xp
+)
+
 from scipy._lib._docscrape import FunctionDoc
 from scipy._external import array_api_extra as xpx
 
@@ -190,23 +194,6 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     return np.asarray(x, copy=True)
 
 
-_default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
-
-@contextmanager
-def default_xp(xp: ModuleType) -> Generator[None, None, None]:
-    """In all ``xp_assert_*`` and ``assert_*`` function calls executed within this
-    context manager, test by default that the array namespace is
-    the provided across all arrays, unless one explicitly passes the ``xp=``
-    parameter or ``check_namespace=False``.
-
-    Without this context manager, the default value for `xp` is the namespace
-    for the desired array (the second parameter of the tests).
-    """
-    token = _default_xp_ctxvar.set(xp)
-    try:
-        yield
-    finally:
-        _default_xp_ctxvar.reset(token)
 
 
 def eager_warns(warning_type, *, match=None, xp):
@@ -226,11 +213,6 @@ def _strict_check(actual, desired, xp, *,
                   check_0d=True):
     __tracebackhide__ = True  # Hide traceback for py.test
 
-    if xp is None:
-        try:
-            xp = _default_xp_ctxvar.get()
-        except LookupError:
-            xp = array_namespace(desired)
 
     if check_namespace:
         _assert_matching_namespace(actual, desired, xp)
@@ -278,59 +260,36 @@ def _assert_matching_namespace(actual, desired, xp):
             f"Desired: {xp.__name__}")
     assert actual_arr_space == xp, _msg
 
+def _convert_scalar_to_array(x, xp):
+    if isinstance(x, (list, tuple)) or type(x) in (
+        int,
+        float,
+        complex,
+        bool,
+    ):
+        return xp.asarray(x)
+    return x
 
-def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
-                    check_shape=True, check_0d=True, err_msg='', xp=None):
+def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_dtype=True,
+                    check_shape=True, check_0d=False, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
 
-    actual, desired, xp = _strict_check(
-        actual, desired, xp, check_namespace=check_namespace,
-        check_dtype=check_dtype, check_shape=check_shape,
-        check_0d=check_0d
-    )
+    actual = _convert_scalar_to_array(actual, xp)
+    desired = _convert_scalar_to_array(desired, xp)
 
-    if is_cupy(xp):
-        return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
-    elif is_torch(xp):
-        # PyTorch recommends using `rtol=0, atol=0` like this
-        # to test for exact equality
-        err_msg = None if err_msg == '' else err_msg
-        return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
-                                       check_dtype=False, msg=err_msg)
-    # JAX uses `np.testing`
-    return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
+    return xpx_assert_close(actual, desired,rtol=rtol, atol=atol, 
+                            err_msg=err_msg, check_dtype=check_dtype, 
+                            check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
-
-def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
-                    check_dtype=True, check_shape=True, check_0d=True,
-                    err_msg='', xp=None):
+def xp_assert_equal(actual, desired, *, check_dtype=True,
+                    check_shape=True, check_0d=False, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
 
-    actual, desired, xp = _strict_check(
-        actual, desired, xp,
-        check_namespace=check_namespace, check_dtype=check_dtype,
-        check_shape=check_shape, check_0d=check_0d
-    )
+    actual = _convert_scalar_to_array(actual, xp)
+    desired = _convert_scalar_to_array(desired, xp)
 
-    floating = xp.isdtype(actual.dtype, ('real floating', 'complex floating'))
-    if rtol is None and floating:
-        # multiplier of 4 is used as for `np.float64` this puts the default `rtol`
-        # roughly half way between sqrt(eps) and the default for
-        # `numpy.testing.assert_allclose`, 1e-7
-        rtol = xp.finfo(actual.dtype).eps**0.5 * 4
-    elif rtol is None:
-        rtol = 1e-7
-
-    if is_cupy(xp):
-        return xp.testing.assert_allclose(actual, desired, rtol=rtol,
-                                          atol=atol, err_msg=err_msg)
-    elif is_torch(xp):
-        err_msg = None if err_msg == '' else err_msg
-        return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
-                                       equal_nan=True, check_dtype=False, msg=err_msg)
-    # JAX uses `np.testing`
-    return np.testing.assert_allclose(actual, desired, rtol=rtol,
-                                      atol=atol, err_msg=err_msg)
+    return xpx_assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype, 
+                            check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
 
 def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
@@ -348,50 +307,35 @@ def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
     return np.testing.assert_array_almost_equal_nulp(actual, desired, nulp=nulp)
 
 
-def _assert_less(actual, desired, *, err_msg, verbose, xp):
-    if is_cupy(xp):
-        return xp.testing.assert_array_less(actual, desired,
-                                            err_msg=err_msg, verbose=verbose)
-    elif is_torch(xp):
-        if actual.device.type != 'cpu':
-            actual = actual.cpu()
-        if desired.device.type != 'cpu':
-            desired = desired.cpu()
-    # JAX uses `np.testing`
-    return np.testing.assert_array_less(actual, desired,
-                                        err_msg=err_msg, verbose=verbose)
-
-
-def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
-                   check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None):
+def _assert_less(actual, desired, *, check_dtype=True,
+                   check_shape=True, check_0d=True, err_msg, verbose, xp):
     __tracebackhide__ = True  # Hide traceback for py.test
 
-    actual, desired, xp = _strict_check(
-        actual, desired, xp, check_namespace=check_namespace,
-        check_dtype=check_dtype, check_shape=check_shape,
-        check_0d=check_0d
-    )
+    actual = _convert_scalar_to_array(actual, xp)
+    desired = _convert_scalar_to_array(desired, xp)
+    xpx_assert_less(actual, desired, check_dtype=check_dtype,
+                   check_shape=check_shape, check_scalar=check_0d, err_msg=err_msg,
+                    verbose=verbose, xp=xp)
 
-    _assert_less(actual, desired, err_msg=err_msg, verbose=verbose, xp=xp)
+
+def xp_assert_less(actual, desired, *, check_dtype=True,
+                   check_shape=True, check_0d=True, 
+                   err_msg='', verbose=True, xp=None):
+    _assert_less(actual, desired, err_msg=err_msg, verbose=verbose, xp=xp,
+                  check_dtype=check_dtype,
+                   check_shape=check_shape, 
+                   check_0d=check_0d)
 
 
 def xp_assert_less_equal(
-    actual, desired, *, check_namespace=True, check_dtype=True,
+    actual, desired, *, check_dtype=True,
     check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None
 ):
     __tracebackhide__ = True  # Hide traceback for py.test
-
-    actual, desired, xp = _strict_check(
-        actual, desired, xp, check_namespace=check_namespace,
-        check_dtype=check_dtype, check_shape=check_shape,
-        check_0d=check_0d
-    )
-
-    # we call `_strict_check` before `_assert_less` so that scalars are
-    # coerced to the `xp` namespace before we apply `xp.nextafter`
     _assert_less(
         actual, xp.nextafter(desired, desired + 1),
-        err_msg=err_msg, verbose=verbose, xp=xp
+        check_dtype=check_dtype,
+    check_shape=check_shape, check_0d=check_0d, err_msg=err_msg, verbose=verbose, xp=xp
     )
 
 

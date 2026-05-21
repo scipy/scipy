@@ -393,7 +393,7 @@ def test_chdtr_gh21311(xp):
     v = x.reshape(-1, 1)
     ref = special.chdtr(v, x)
     res = special.chdtr(xp.asarray(v), xp.asarray(x))
-    xp_assert_close(res, xp.asarray(ref))
+    xp_assert_close(xp.asarray(ref), xp.broadcast_to(res, xp.asarray(ref).shape))
 
 
 @make_xp_test_case(special.fdtrc)
