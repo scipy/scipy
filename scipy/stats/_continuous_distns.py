@@ -411,6 +411,14 @@ class norm_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 13, p. 80.
+    .. [2] "Normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Normal_distribution
+
     %(example)s
 
     """
@@ -1465,6 +1473,11 @@ class cauchy_gen(rv_continuous):
     References
     ----------
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 16, p. 299.
+    .. [3] "Cauchy distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Cauchy_distribution
 
     %(example)s
 
@@ -1548,6 +1561,14 @@ class chi_gen(rv_continuous):
     `chi` takes ``df`` as a shape parameter.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 18, p. 417.
+    .. [2] "Chi distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Chi_distribution
 
     %(example)s
 
@@ -2766,9 +2787,13 @@ class weibull_min_gen(rv_continuous):
 
     References
     ----------
-    https://en.wikipedia.org/wiki/Weibull_distribution
-
-    https://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 21, p. 629.
+    .. [2] "Weibull distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Weibull_distribution
+    .. [3] "Fisher-Tippett-Gnedenko theorem", Wikipedia,
+           https://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
 
     %(example)s
 
@@ -3033,9 +3058,13 @@ class weibull_max_gen(rv_continuous):
 
     References
     ----------
-    https://en.wikipedia.org/wiki/Weibull_distribution
-
-    https://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 21, p. 629.
+    .. [2] "Weibull distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Weibull_distribution
+    .. [3] "Fisher-Tippett-Gnedenko theorem", Wikipedia,
+           https://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
 
     %(example)s
 
@@ -3615,6 +3644,14 @@ class gamma_gen(rv_continuous):
     ``scale = 1 / beta``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 17, p. 337.
+    .. [2] "Gamma distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Gamma_distribution
 
     %(example)s
 
@@ -6876,6 +6913,14 @@ class lognorm_gen(rv_continuous):
     standard deviation ``sigma``. Then ``Y = exp(X)`` is lognormally
     distributed with ``s = sigma`` and ``scale = exp(mu)``.
 
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 14, p. 208.
+    .. [2] "Log-normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Log-normal_distribution
+
     %(example)s
 
     The logarithm of a log-normally distributed random variable is
@@ -8221,6 +8266,14 @@ class pareto_gen(rv_continuous):
     `pareto` takes ``b`` as a shape parameter for :math:`b`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 20, p. 574.
+    .. [2] "Pareto distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Pareto_distribution
 
     %(example)s
 
