@@ -5,6 +5,7 @@ from math import sqrt
 from scipy._lib._array_api import xp_capabilities
 
 from .utils import make_system
+from scipy._lib._util import (_validate_int)
 
 __all__ = ['minres']
 
@@ -105,6 +106,8 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
     if maxiter is None:
         maxiter = 5 * n
+    # Check maxiter if a value is given
+    _validate_int(maxiter, 'maxiter', minimum=1)
 
     msg = [' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
             ' beta1 = 0.  The exact solution is x0          ',   # 0
