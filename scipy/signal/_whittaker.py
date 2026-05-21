@@ -7,6 +7,7 @@ from scipy.special import binom
 from scipy.sparse import csr_array
 from scipy.sparse.linalg import LinearOperator, cg
 from functools import lru_cache
+import os
 
 
 def _solveh_banded(ab, b, calc_logdet=False):
@@ -663,6 +664,6 @@ def _solve_WH_sparse(y, lamb, order, weights=None):
             f"CG solver did not converge (info = {info}). "
             "Result may be inaccurate, try different lamb.",
             UserWarning,
-            stacklevel=3
+            skip_file_prefixes=(os.path.dirname(__file__),)
         )
     return x.reshape(nx, nz)
