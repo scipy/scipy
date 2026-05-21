@@ -1034,7 +1034,7 @@ add_newdoc("boxcox1p",
     """)
 
 add_newdoc("inv_boxcox",
-    """
+    r"""
     inv_boxcox(y, lmbda, out=None)
 
     Compute the inverse of the Box-Cox transformation.
@@ -1081,29 +1081,38 @@ add_newdoc("inv_boxcox",
     """)
 
 add_newdoc("inv_boxcox1p",
-    """
+    r"""
     inv_boxcox1p(y, lmbda, out=None)
 
-    Compute the inverse of the Box-Cox transformation.
+    Compute the inverse of the Box-Cox transformation of :math:`1 + x`.
 
-    Find ``x`` such that::
+    Find :math:`x` such that
 
-        y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0
-            log(1+x)                    if lmbda == 0
+    .. math::
+
+        y = \begin{cases}
+            ((1+x)^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(1+x) & \text{if } \lambda = 0
+        \end{cases}
 
     Parameters
     ----------
     y : array_like
-        Data to be transformed.
+        Transformed data (input to the inverse transform).
     lmbda : array_like
-        Power parameter of the Box-Cox transform.
+        Power parameter :math:`\lambda` of the Box-Cox transform.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     x : scalar or ndarray
-        Transformed data.
+        Original data (inverse Box-Cox transform of `y`).
+
+    See Also
+    --------
+    boxcox1p : Box-Cox transformation of ``1 + x``.
+    inv_boxcox : Inverse of the Box-Cox transformation.
 
     Notes
     -----
