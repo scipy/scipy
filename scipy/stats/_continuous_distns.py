@@ -3738,7 +3738,7 @@ class gamma_gen(rv_continuous):
             # The MLE for the shape parameter `a` is the solution to:
             # sc.digamma(a) - np.log(data).mean() + np.log(fscale) = 0
             c = np.log(data).mean() - np.log(fscale)
-            a = sc.digamma_inv(c)
+            a = sc.digammainv(c)
             scale = fscale
 
         return a, floc, scale

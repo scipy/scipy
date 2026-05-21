@@ -67,7 +67,7 @@ extern const char *cosdg_doc;
 extern const char *cosm1_doc;
 extern const char *cotdg_doc;
 extern const char *dawsn_doc;
-extern const char *digamma_inv_doc;
+extern const char *digammainv_doc;
 extern const char *ellipe_doc;
 extern const char *ellipeinc_doc;
 extern const char *ellipj_doc;
@@ -970,10 +970,10 @@ _special_ufuncs_module_exec(PyObject *module)
                           "psi", psi_doc);
     PyModule_AddObjectRef(module, "psi", psi);
 
-    PyObject *digamma_inv = xsf::numpy::ufunc(
+    PyObject *digammainv = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::digamma_inv), static_cast<xsf::numpy::d_d>(xsf::digamma_inv)},
-        "digamma_inv", digamma_inv_doc);
-    PyModule_AddObjectRef(module, "digamma_inv", digamma_inv);
+        "digammainv", digammainv_doc);
+    PyModule_AddObjectRef(module, "digammainv", digammainv);
 
     PyObject *radian =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(xsf::radian), static_cast<xsf::numpy::ddd_d>(xsf::radian)},

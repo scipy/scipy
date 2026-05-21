@@ -6427,8 +6427,8 @@ const char *psi_doc = R"(
     (1.55035981733341+1.0105022091860445j)
     )";
 
-const char *digamma_inv_doc = R"(
-    digamma_inv(y, out=None)
+const char *digammainv_doc = R"(
+    digammainv(y, out=None)
 
     Inverse of the digamma function.
 
@@ -6457,9 +6457,9 @@ const char *digamma_inv_doc = R"(
     --------
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import digamma, digamma_inv
+    >>> from scipy.special import digamma, digammainv
     >>> x = np.logspace(-2, 2, 5)
-    >>> np.allclose(digamma_inv(digamma(x)), x)
+    >>> np.allclose(digammainv(digamma(x)), x)
     True
 
     Plot the digamma function and its inverse:
@@ -6469,7 +6469,7 @@ const char *digamma_inv_doc = R"(
     >>> t = np.linspace(-3, 4, 200)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, y, label=r"$\psi(x)$")
-    >>> ax.plot(y, digamma_inv(y), label=r"$\psi^{-1}(y)$")
+    >>> ax.plot(y, digammainv(y), label=r"$\psi^{-1}(y)$")
     >>> ax.plot(t, t, "--", label=r"$y = x$")
     >>> ax.set_xlabel("input")
     >>> ax.legend()
