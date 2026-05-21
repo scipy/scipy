@@ -167,6 +167,13 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
     files. Because SciPy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
 
+    .. warning::
+        The MAT-file readers used by ``loadmat`` are not hardened against adversarial
+        input and should not be used to load files from untrusted sources. Malformed
+        files may cause excessive memory use or read errors. The reader does not execute
+        arbitrary code, but the format is complex and not all corruption modes are
+        caught explicitly.
+
     Examples
     --------
     >>> from os.path import dirname, join as pjoin
