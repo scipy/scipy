@@ -3839,13 +3839,31 @@ def dbode(system, w=None, n=100):
     >>> plt.show()
     """
     w, y = dfreqresp(system, w=w, n=n)
-
     if isinstance(system, dlti):
         dt = system.dt
     else:
         dt = system[-1]
 
+    valid = ~np.isnan(y)
+    if np.any(~valid):
+        idx = np.arange(len(y))
+        mag_noNaN = np.interp(idx, idx[valid], np.abs(y[valid]))
+        phase_noNaN =np.interp(idx,idx[valid],np.unwrap(np.angle(y[valid])))
+        
+        if len(y)>= 3:
+            if ~valid[0]:
+                mag_noNaN[0]=2*mag_noNaN[1] - mag_noNaN[2]
+                phase_noNaN[0]=2*phase_noNaN[1] - phase_noNaN[2]
+            
+            if ~valid[-1]:
+                mag_noNaN[-1]=2*mag_noNaN[-2] - mag_noNaN[-3]
+                phase_noNaN[-1]=2*phase_noNaN[-2] - phase_noNaN[-3]
+        
+        y = mag_noNaN * np.exp(1j * phase_noNaN)
+
     mag = 20.0 * np.log10(abs(y))
     phase = np.rad2deg(np.unwrap(np.angle(y)))
 
     return w / dt, mag, phase
+
+ 
