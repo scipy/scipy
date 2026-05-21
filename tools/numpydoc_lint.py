@@ -100,6 +100,8 @@ compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
     "scipy.special.kn" : ['PR02', 'PR01'],
     "scipy.special.kolmogi" : ['PR02', 'PR01'],
     "scipy.special.kolmogorov" : ['PR02', 'PR01'],
+    "scipy.special.log_gammainc": ['PR02', 'PR01'],
+    "scipy.special.log_gammaincc": ['PR02', 'PR01'],
     "scipy.special.lpmv" : ['PR02', 'PR01'],
     "scipy.special.nbdtr" : ['PR02', 'PR01'],
     "scipy.special.nbdtrc" : ['PR02', 'PR01'],

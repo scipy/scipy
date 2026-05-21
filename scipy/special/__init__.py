@@ -424,6 +424,8 @@ Gamma and related functions
    gammaincinv  -- Inverse to `gammainc`.
    gammaincc    -- Regularized upper incomplete gamma function.
    gammainccinv -- Inverse to `gammaincc`.
+   log_gammainc -- Log of the regularized lower incomplete gamma function.
+   log_gammaincc -- Log of the regularized upper incomplete gamma function.
    beta         -- Beta function.
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.

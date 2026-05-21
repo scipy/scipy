@@ -8,6 +8,7 @@
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
+#include "boost/math/special_functions/gamma.hpp"
 #include "boost/math/special_functions/hypergeometric_1F1.hpp"
 #include "boost/math/special_functions/hypergeometric_pFq.hpp"
 
@@ -2560,6 +2561,76 @@ double
 pdtrik_double(double p, double x)
 {
     return poisson_ppf_wrap(p, x);
+}
+
+template<typename Real>
+static inline
+Real lgamma_p_wrap(Real a, Real z)
+{
+    Real y;
+    try {
+        y = boost::math::lgamma_p(a, z, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("log_gammainc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("log_gammainc", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("log_gammainc", SF_ERROR_UNDERFLOW, NULL);
+        y = -INFINITY;
+    } catch (...) {
+        sf_error("log_gammainc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+lgamma_p_float(float a, float z)
+{
+    return lgamma_p_wrap(a, z);
+}
+
+double
+lgamma_p_double(double a, double z)
+{
+    return lgamma_p_wrap(a, z);
+}
+
+template<typename Real>
+static inline
+Real lgamma_q_wrap(Real a, Real z)
+{
+    Real y;
+    try {
+        y = boost::math::lgamma_q(a, z, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("log_gammaincc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("log_gammaincc", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("log_gammaincc", SF_ERROR_UNDERFLOW, NULL);
+        y = -INFINITY;
+    } catch (...) {
+        sf_error("log_gammaincc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+lgamma_q_float(float a, float z)
+{
+    return lgamma_q_wrap(a, z);
+}
+
+double
+lgamma_q_double(double a, double z)
+{
+    return lgamma_q_wrap(a, z);
 }
 
 #endif

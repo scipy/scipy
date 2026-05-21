@@ -3117,6 +3117,18 @@ class TestGamma:
     def test_poles(self, x, expected):
         assert_array_equal(special.gamma(x), expected)
 
+    @pytest.mark.parametrize("a, x", [
+        (1, 2), (2, 1)
+    ])
+    def test_log_gammainc_gammaincc(self, a, x):
+        # Basic consistency check with gammainc/gammaincc away from the tails.
+        # Tail accuracy is covered by Boost's tests, where log_gammainc and
+        # log_gammaincc are implemented.
+        assert_allclose(np.log(special.gammainc(a, x)), special.log_gammainc(a, x),
+                        rtol=1e-15)
+        assert_allclose(np.log(special.gammaincc(a, x)), special.log_gammaincc(a, x),
+                        rtol=1e-15)
+
 
 class TestHankel:
 
