@@ -36,21 +36,21 @@ def save_npz(file, matrix, compressed=True):
 
     >>> import numpy as np
     >>> import scipy as sp
-    >>> sparse_matrix = sp.sparse.csc_matrix([[0, 0, 3], [4, 0, 0]])
-    >>> sparse_matrix
-    <Compressed Sparse Column sparse matrix of dtype 'int64'
+    >>> sparse_array = sp.sparse.csc_array([[0, 0, 3], [4, 0, 0]])
+    >>> sparse_array
+    <Compressed Sparse Column sparse array of dtype 'int64'
         with 2 stored elements and shape (2, 3)>
-    >>> sparse_matrix.toarray()
+    >>> sparse_array.toarray()
     array([[0, 0, 3],
            [4, 0, 0]], dtype=int64)
 
-    >>> sp.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
-    >>> sparse_matrix = sp.sparse.load_npz('/tmp/sparse_matrix.npz')
+    >>> sp.sparse.save_npz('/tmp/sparse_array.npz', sparse_array)
+    >>> sparse_array = sp.sparse.load_npz('/tmp/sparse_array.npz')
 
-    >>> sparse_matrix
-    <Compressed Sparse Column sparse matrix of dtype 'int64'
+    >>> sparse_array
+    <Compressed Sparse Column sparse array of dtype 'int64'
         with 2 stored elements and shape (2, 3)>
-    >>> sparse_matrix.toarray()
+    >>> sparse_array.toarray()
     array([[0, 0, 3],
            [4, 0, 0]], dtype=int64)
     """
