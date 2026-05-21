@@ -130,8 +130,11 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     >>> F = fft.fht(f, dln, mu=ord)
 
     Calculate the evaluation points for the transformed data ``F``.
-    Since ``fht`` returns the transformed data in ascending order of
-    evaluation points, flip ``r`` in the evaluation points equation.
+    ``fht`` calculates evaluation points ``k`` such that ``kr`` is
+    constant for each ``r`` and then returns the transformed data in
+    ascending order of evaluation points. To calculate the evaluation
+    points in ascending order, flip the order of ``r`` in the equation
+    for ``k``.
 
 
     >>> k = 1/np.flip(r)
@@ -281,8 +284,11 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     >>> a = fft.ifht(A, dln, mu=2)
 
     Calculate the evaluation points for the transformed data ``a``.
-    Since ``ifht`` returns the transformed data in ascending order of
-    evaluation points, flip ``k`` in the evaluation points equation.
+    ``ifht`` calculates evaluation points ``r`` such that ``kr`` is
+    constant for each ``k`` and then returns the transformed data in
+    ascending order of evaluation points. To calculate the evaluation
+    points in ascending order, flip the order of ``k`` in the equation
+    for ``r``.
 
     >>> r = 1/np.flip(k)
 
