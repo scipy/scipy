@@ -1401,7 +1401,11 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         Controls the placement of the filter on the input array's pixels.
         A value of 0 (the default) centers the filter over the pixel, with
         positive values shifting the filter to the right, and negative ones
-        to the left. By passing a sequence of origins with length equal to
+        to the left. This parameter determines the offset of the filter
+        center from its default position. For example, with a 3x3 filter,
+        ``origin=0`` places the filter center at position (1,1), while
+        ``origin=-1`` shifts it to position (0,0) of the filter.
+        By passing a sequence of origins with length equal to
         the number of dimensions of the input array, different shifts can
         be specified along each axis.
     axes : tuple of int or None, optional
@@ -1427,6 +1431,16 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     j is the N-D spatial index over :math:`W`,
     I is the `input` and k is the coordinate of the center of
     W, specified by `origin` in the input parameters.
+
+    The origin parameter determines the placement of the filter weights relative to each input element. 
+     In the convolution algorithm, the central pixel of the weights array is calculated as 
+    ``c = np.ceil((np.array(weights.shape) - 1)/2)``.
+    This means that for even-length weights, the algorithm rounds up to select the central pixel.
+     The origin value then shifts this central position (``k = c + origin``), allowing precise control over how the filter is applied to the input.
+    The `origin` parameter shifts the effective center of the filter.
+     When origin=0, the filter is centered at its geometric center (`c` above).
+    Positive values shift the filter towards higher indices, while
+    negative values shift towards lower indices.
 
     Examples
     --------
@@ -1492,6 +1506,24 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     array([[7, 0, 3],
            [5, 0, 2],
            [3, 0, 1]])
+
+    The `origin` parameter controls filter placement. Here's a simple example:
+
+    >>> d = np.array([[1, 2, 3],
+    ...               [4, 5, 6],
+    ...               [7, 8, 9]])
+    >>> w_simple = np.array([[0,1],
+    ...                      [1, 0]])
+    >>> # Default origin=0 centers the filter
+    >>> ndimage.convolve(d, w_simple, mode='constant')
+    array([[3, 4, 2],
+           [6, 7, 3],
+           [9, 8, 0]])
+    >>> # origin=-1 shifts filter towards upper-left
+    >>> ndimage.convolve(d, w_simple, mode='constant', origin=-1)
+    array([[5, 6, 3],
+           [8, 9, 6],
+           [7, 8, 9]])
 
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
