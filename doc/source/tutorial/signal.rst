@@ -599,8 +599,8 @@ stop-band attenuation of :math:`\approx 60` dB.
         >>> _, ax = plt.subplots(layout="constrained")
         >>> ax.plot(f, h_amp, label="FIR")
         >>> ax.grid(True)
-
-        >>> b, a = sig.iirfilter(15, 2500, btype="low", fs=fs)
+        ...
+        >>> b, a = sig.iirfilter(15, 2500, btype="lowpass", fs=fs)
         >>> f, h_fft = sig.freqz(b, a, fs=fs)
         >>> h_amp = 20 * np.log10(np.abs(h_fft))
         >>> ax.plot(f, h_amp, label="IIR")
