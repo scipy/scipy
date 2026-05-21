@@ -431,6 +431,7 @@ Gamma and related functions
    betaincinv   -- Inverse function to beta integral.
    betainccinv  -- Inverse of the complemented incomplete beta integral.
    psi          -- The digamma function.
+   digammainv   -- Inverse of the digamma function.
    rgamma       -- Gamma function inverted.
    polygamma    -- Polygamma function n.
    multigammaln -- Returns the log of multivariate gamma, also sometimes called the generalized gamma.

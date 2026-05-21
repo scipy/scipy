@@ -2,8 +2,8 @@
 # AUTO-GENERATED - do not edit by hand.
 # Re-generate with:  python tools/generate_cython_abi_tests.py special
 #
-# Generated against SciPy 1.17.0 on 2026-05-08
-# Python 3.14.4
+# Generated against SciPy 1.18.0.dev0+git20260521.90a11c1 on 2026-05-21
+# Python 3.14.2
 # ---------------------------------------------------------------------------
 
 """
