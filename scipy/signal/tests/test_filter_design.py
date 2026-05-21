@@ -1024,6 +1024,39 @@ class TestFreqz:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
+    def test_multidim_default_worN_gh_17387(self, xp):
+        # gh-17387: with default integer worN, multidim b only works when the
+        # trailing axes of b have size 1; non-trivial trailing axes raise a
+        # broadcasting error. Document and test both cases.
+        b = xp.asarray(np.random.default_rng(0).random((4, 5)))
+
+        # Bare (M, K) with default integer worN cannot broadcast: w is shape
+        # (worN,) while b.shape[1:] is (K,) for K != 1.
+        with pytest.raises(ValueError, match="broadcast"):
+            freqz(b, worN=16)
+
+        # Workaround documented in the docstring: add a trailing singleton.
+        # b[..., np.newaxis] has shape (M, K, 1) and broadcasts cleanly,
+        # giving output shape (K, worN).
+        w, h = freqz(b[..., None], worN=16)
+        assert w.shape == (16,)
+        assert h.shape == (5, 16)
+
+        # Each row of the output must equal the per-row 1-D freqz.
+        for k in range(5):
+            ww, hh = freqz(b[:, k], worN=16)
+            xp_assert_close(ww, w)
+            xp_assert_close(hh, h[k, :])
+
+    def test_multidim_worN_array_gh_17387(self, xp):
+        # gh-17387: passing worN as an array of shape matching b.shape[1:]
+        # also broadcasts cleanly, which the docstring claims and which works.
+        b = xp.asarray(np.random.default_rng(1).random((4, 3)))
+        worN = xp.asarray([0.1, 0.2, 0.3])
+        w, h = freqz(b, worN=worN)
+        assert h.shape == (3,)
+        xp_assert_close(w, worN)
+
     def test_fs_param(self, xp):
         fs = 900
         b = xp.asarray([0.039479155677484369, 0.11843746703245311, 0.11843746703245311,
