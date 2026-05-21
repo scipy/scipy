@@ -1754,6 +1754,18 @@ sparray.__doc__ = _spbase.__doc__
 def isspmatrix(x):
     """Is `x` of a sparse matrix type?
 
+    .. warning::
+
+        scipy.sparse is switching to the sparse array interface.
+
+        The ``isspmatrix`` function returns ``False`` for sparse arrays.
+        It will remain after the switch to sparse arrays (sparray).
+        So this is a future proof way to check for sparray vs spmatrix.
+        If you just want to check for sparse, use ``issparse(A)``.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        The switch to sparse arrays will occur no earlier than v1.21.
+
     Parameters
     ----------
     x

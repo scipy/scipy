@@ -37,8 +37,8 @@ import numpy as np
 
 from scipy.fft import fft, ifft
 from scipy.special import ndtr as phi, ndtri as phinv
+from scipy.special._ufuncs import _bivariate_normal_cdf as _bvnu
 from scipy.stats._qmc import primes_from_2_to
-from scipy.stats._stats_pythran import _bvnu
 
 from ._qmvnt_cy import _qmvn_inner, _qmvt_inner
 
