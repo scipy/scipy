@@ -932,32 +932,41 @@ add_newdoc(
     """)
 
 add_newdoc("boxcox",
-    """
+    r"""
     boxcox(x, lmbda, out=None)
 
     Compute the Box-Cox transformation.
 
-    The Box-Cox transformation is::
+    The Box-Cox transformation is
 
-        y = (x**lmbda - 1) / lmbda  if lmbda != 0
-            log(x)                  if lmbda == 0
+    .. math::
 
-    Returns `nan` if ``x < 0``.
-    Returns `-inf` if ``x == 0`` and ``lmbda < 0``.
+        y = \begin{cases}
+            (x^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(x) & \text{if } \lambda = 0
+        \end{cases}
+
+    Returns ``nan`` if :math:`x < 0`.
+    Returns ``-inf`` if :math:`x = 0` and :math:`\lambda < 0`.
 
     Parameters
     ----------
     x : array_like
         Data to be transformed.
     lmbda : array_like
-        Power parameter of the Box-Cox transform.
+        Power parameter :math:`\lambda` of the Box-Cox transform.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     y : scalar or ndarray
         Transformed data.
+
+    See Also
+    --------
+    boxcox1p : Box-Cox transformation of ``1 + x``.
+    inv_boxcox : Inverse of the Box-Cox transformation.
 
     Notes
     -----
