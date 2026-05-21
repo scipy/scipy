@@ -1039,24 +1039,33 @@ add_newdoc("inv_boxcox",
 
     Compute the inverse of the Box-Cox transformation.
 
-    Find ``x`` such that::
+    Find :math:`x` such that
 
-        y = (x**lmbda - 1) / lmbda  if lmbda != 0
-            log(x)                  if lmbda == 0
+    .. math::
+
+        y = \begin{cases}
+            (x^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(x) & \text{if } \lambda = 0
+        \end{cases}
 
     Parameters
     ----------
     y : array_like
-        Data to be transformed.
+        Transformed data (input to the inverse transform).
     lmbda : array_like
-        Power parameter of the Box-Cox transform.
+        Power parameter :math:`\lambda` of the Box-Cox transform.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     x : scalar or ndarray
-        Transformed data.
+        Original data (inverse Box-Cox transform of `y`).
+
+    See Also
+    --------
+    boxcox : Box-Cox transformation.
+    inv_boxcox1p : Inverse of the Box-Cox transformation of ``1 + x``.
 
     Notes
     -----
