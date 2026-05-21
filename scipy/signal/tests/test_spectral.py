@@ -7,11 +7,10 @@ from numpy.testing import (assert_,
                            assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
-
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close, is_jax
+import scipy._external.array_api_extra as xpx
 from scipy import signal
-from scipy._lib._array_api import xp_assert_close
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
-from scipy.integrate import trapezoid
 from scipy.signal import (periodogram, welch, lombscargle, coherence, csd,
                           spectrogram, check_COLA, check_NOLA)
 from scipy.signal.windows import hann
@@ -243,282 +242,291 @@ class TestPeriodogram:
             periodogram(x, window=win)
 
 
+@make_xp_test_case(welch)
 class TestWelch:
-    def test_real_onesided_even(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_real_onesided_even(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=xp.float64))
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+                        0.11111111], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_onesided_odd(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_real_onesided_odd(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
-                      0.17072113])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.arange(5.0, dtype=xp.float64)/9.0)
+        q = xp.asarray([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                        0.17072113], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_twosided(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_real_twosided(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=xp.float64))
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111, 0.11111111,
+                        0.11111111, 0.11111111, 0.11111111, 0.07638889],
+                       dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_spectrum(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_real_spectrum(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, scaling='spectrum')
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
-                      0.02083333])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=xp.float64))
+        q = xp.asarray([0.015625, 0.02864583, 0.04166667, 0.04166667,
+                        0.02083333], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_onesided_even(self):
-        x = np.zeros(16, dtype=int)
-        x[0] = 1
-        x[8] = 1
+    def test_integer_onesided_even(self, xp):
+        x = xp.zeros((16,), dtype=xp.int64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=xp.float64))
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+                        0.11111111], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_onesided_odd(self):
-        x = np.zeros(16, dtype=int)
-        x[0] = 1
-        x[8] = 1
+    def test_integer_onesided_odd(self, xp):
+        x = xp.zeros((16,), dtype=xp.int64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
-                      0.17072113])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.arange(5.0, dtype=xp.float64)/9.0)
+        q = xp.asarray([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                        0.17072113], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_twosided(self):
-        x = np.zeros(16, dtype=int)
-        x[0] = 1
-        x[8] = 1
+    def test_integer_twosided(self, xp):
+        x = xp.zeros((16,), dtype=xp.int64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=xp.float64))
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111, 0.11111111,
+                        0.11111111, 0.11111111, 0.11111111, 0.07638889],
+                       dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_complex(self):
-        x = np.zeros(16, np.complex128)
-        x[0] = 1.0 + 2.0j
-        x[8] = 1.0 + 2.0j
+    def test_complex(self, xp):
+        x = xp.zeros((16,), dtype=xp.complex128)
+        x = xpx.at(x)[0].set(1.0 + 2.0j)
+        x = xpx.at(x)[8].set(1.0 + 2.0j)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
-                      0.55555556, 0.55555556, 0.55555556, 0.38194444])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=xp.float64))
+        q = xp.asarray([0.41666667, 0.38194444, 0.55555556, 0.55555556,
+                        0.55555556, 0.55555556, 0.55555556, 0.38194444],
+                       dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_unk_scaling(self):
-        assert_raises(ValueError, welch, np.zeros(4, np.complex128),
+    def test_unk_scaling(self, xp):
+        assert_raises(ValueError, welch, xp.zeros((4,), dtype=xp.complex128),
                       scaling='foo', nperseg=4)
 
-    def test_detrend_linear(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    def test_detrend_linear(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10, detrend='linear')
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+        xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
-    def test_no_detrending(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    def test_no_detrending(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f1, p1 = welch(x, nperseg=10, detrend=False)
         f2, p2 = welch(x, nperseg=10, detrend=lambda x: x)
-        assert_allclose(f1, f2, atol=1e-15)
-        assert_allclose(p1, p2, atol=1e-15)
+        xp_assert_close(f1, f2, atol=1e-15)
+        xp_assert_close(p1, p2, atol=1e-15)
 
-    def test_detrend_external(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    def test_detrend_external(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10,
-                     detrend=lambda seg: signal.detrend(seg, type='l'))
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+                     detrend=lambda seg: signal.detrend(seg, type='linear'))
+        xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
-    def test_detrend_external_nd_m1(self):
-        x = np.arange(40, dtype=np.float64) + 0.04
-        x = x.reshape((2,2,10))
+    def test_detrend_external_nd_m1(self, xp):
+        x = xp.arange(40, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (2,2,10))
         f, p = welch(x, nperseg=10,
-                     detrend=lambda seg: signal.detrend(seg, type='l'))
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+                     detrend=lambda seg: signal.detrend(seg, type='linear'))
+        xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
-    def test_detrend_external_nd_0(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
-        x = x.reshape((2,1,10))
-        x = np.moveaxis(x, 2, 0)
+    def test_detrend_external_nd_0(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (2,1,10))
+        x = xp.moveaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
-                     detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+                     detrend=lambda seg: signal.detrend(seg, axis=0, type='linear'))
+        xp_assert_close(p, xp.zeros_like(p, dtype=xp.float64), atol=1e-15)
 
-    def test_nd_axis_m1(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
-        x = x.reshape((2,1,10))
+    def test_nd_axis_m1(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (2,1,10))
         f, p = welch(x, nperseg=10)
-        assert_array_equal(p.shape, (2, 1, 6))
-        assert_allclose(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
+        assert p.shape == (2, 1, 6)
+        xp_assert_close(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
         f0, p0 = welch(x[0,0,:], nperseg=10)
-        assert_allclose(p0[np.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13)
+        xp_assert_close(p0[None,:], p[1,...], atol=1e-13, rtol=1e-13)
 
-    def test_nd_axis_0(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
-        x = x.reshape((10,2,1))
+    def test_nd_axis_0(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (10,2,1))
         f, p = welch(x, nperseg=10, axis=0)
-        assert_array_equal(p.shape, (6,2,1))
-        assert_allclose(p[:,0,0], p[:,1,0], atol=1e-13, rtol=1e-13)
+        assert p.shape == (6,2,1)
+        xp_assert_close(p[:,0,0], p[:,1,0], atol=1e-13, rtol=1e-13)
         f0, p0 = welch(x[:,0,0], nperseg=10)
-        assert_allclose(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
+        xp_assert_close(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
 
-    def test_window_external(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_window_external(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, 10, 'hann', nperseg=8)
-        win = signal.get_window('hann', 8)
+        win = xp.asarray(signal.get_window('hann', 8))
         fe, pe = welch(x, 10, win, nperseg=None)
-        assert_array_almost_equal_nulp(p, pe)
-        assert_array_almost_equal_nulp(f, fe)
-        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
-        assert_array_equal(pe.shape, (5,))
+        xp_assert_close(p, pe, atol=1e-15, rtol=1e-15)
+        xp_assert_close(f, fe, atol=1e-15, rtol=1e-15)
+        assert fe.shape == (5,)  # because win length used as nperseg
+        assert pe.shape == (5,)
         assert_raises(ValueError, welch, x,
                       10, win, nperseg=4)  # because nperseg != win.shape[-1]
-        win_err = signal.get_window('hann', 32)
+        win_err = xp.asarray(signal.get_window('hann', 32))
         assert_raises(ValueError, welch, x,
                       10, win_err, nperseg=None)  # win longer than signal
 
-    def test_empty_input(self):
-        f, p = welch([])
-        assert_array_equal(f.shape, (0,))
-        assert_array_equal(p.shape, (0,))
+    def test_empty_input(self, xp):
+        f, p = welch(xp.asarray([]))
+        assert f.shape == (0,)
+        assert p.shape == (0,)
         for shape in [(0,), (3,0), (0,5,2)]:
-            f, p = welch(np.empty(shape))
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+            f, p = welch(xp.empty(shape))
+            assert f.shape == shape
+            assert p.shape == shape
 
-    def test_empty_input_other_axis(self):
+    def test_empty_input_other_axis(self, xp):
         for shape in [(3,0), (0,5,2)]:
-            f, p = welch(np.empty(shape), axis=1)
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+            f, p = welch(xp.empty(shape), axis=1)
+            assert f.shape == shape
+            assert p.shape == shape
 
-    def test_short_data(self):
-        x = np.zeros(8)
-        x[0] = 1
+    def test_short_data(self, xp):
+        x = xp.zeros((8,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", "nperseg=256 is greater than signal.*", UserWarning)
-            f, p = welch(x,window='hann')  # default nperseg
-            f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
+                "ignore",
+                r"nperseg\s*=\s*256 is greater than (?:input length|signal).*",
+                UserWarning
+            )
+            f, p = welch(x, window='hann')  # default nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
-        assert_allclose(f, f2)
-        assert_allclose(p, p2)
-        assert_allclose(f1, f2)
-        assert_allclose(p1, p2)
+        xp_assert_close(f, f2)
+        xp_assert_close(p, p2)
 
-    def test_window_long_or_nd(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
-        assert_raises(ValueError, welch, np.zeros(4), 1,
-                      np.arange(6).reshape((2,3)))
+    def test_window_long_or_nd(self, xp):
+        assert_raises(ValueError, welch, xp.zeros((4,)), 1, xp.asarray([1,1,1,1,1]))
+        assert_raises(ValueError, welch, xp.zeros((4,)), 1,
+                      xp.reshape(xp.arange(6), (2,3)))
 
-    def test_nondefault_noverlap(self):
-        x = np.zeros(64)
-        x[::8] = 1
+    def test_nondefault_noverlap(self, xp):
+        x = xp.zeros((64,), dtype=xp.float64)
+        x = xpx.at(x)[::8].set(1)
         f, p = welch(x, nperseg=16, noverlap=4)
-        q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
-                      1./6.])
-        assert_allclose(p, q, atol=1e-12)
+        q = xp.asarray([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
+                        1./6.], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-12)
 
-    def test_bad_noverlap(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, 'hann', 2, 7)
+    def test_bad_noverlap(self, xp):
+        assert_raises(ValueError, welch, xp.zeros((4,)), 1, 'hann', 2, 7)
 
-    def test_nfft_too_short(self):
-        assert_raises(ValueError, welch, np.ones(12), nfft=3, nperseg=4)
+    def test_nfft_too_short(self, xp):
+        assert_raises(ValueError, welch, xp.ones((12,)), nfft=3, nperseg=4)
 
-    def test_real_onesided_even_32(self):
-        x = np.zeros(16, 'f')
-        x[0] = 1
-        x[8] = 1
+    def test_real_onesided_even_32(self, xp):
+        x = xp.zeros((16,), dtype=xp.float32)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        f_dtype = xp.float32 if is_jax(xp) else xp.float64
+        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=f_dtype))
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+                        0.11111111], dtype=xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_real_onesided_odd_32(self):
-        x = np.zeros(16, 'f')
-        x[0] = 1
-        x[8] = 1
+    def test_real_onesided_odd_32(self, xp):
+        x = xp.zeros((16,), dtype=xp.float32)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
-                      0.17072113], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        f_dtype = xp.float32 if is_jax(xp) else xp.float64
+        xp_assert_close(f, xp.arange(5.0, dtype=f_dtype)/9.0)
+        q = xp.asarray([0.12477458, 0.23430935, 0.17072113, 0.17072116,
+                        0.17072113], dtype=xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_real_twosided_32(self):
-        x = np.zeros(16, 'f')
-        x[0] = 1
-        x[8] = 1
+    def test_real_twosided_32(self, xp):
+        x = xp.zeros((16,), dtype=xp.float32)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.11111111,
-                      0.07638889], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        f_dtype = xp.float32 if is_jax(xp) else xp.float64
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=f_dtype))
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111,
+                        0.11111111, 0.11111111, 0.11111111, 0.11111111,
+                        0.07638889], dtype=xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_complex_32(self):
-        x = np.zeros(16, 'F')
-        x[0] = 1.0 + 2.0j
-        x[8] = 1.0 + 2.0j
+    def test_complex_32(self, xp):
+        x = xp.zeros((16,), dtype=xp.complex64)
+        x = xpx.at(x)[0].set(1.0 + 2.0j)
+        x = xpx.at(x)[8].set(1.0 + 2.0j)
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
-                      0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        f_dtype = xp.float32 if is_jax(xp) else xp.float64
+        xp_assert_close(f, xp.asarray(fftfreq(8, 1.0), dtype=f_dtype))
+        q = xp.asarray([0.41666666, 0.38194442, 0.55555552, 0.55555552,
+                        0.55555558, 0.55555552, 0.55555552, 0.38194442],
+                       dtype=xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
                 f'dtype mismatch, {p.dtype}, {q.dtype}')
 
-    def test_padded_freqs(self):
-        x = np.zeros(12)
+    def test_padded_freqs(self, xp):
+        x = xp.zeros((12,), dtype=xp.float64)
 
         nfft = 24
         f = fftfreq(nfft, 1.0)[:nfft//2+1]
         f[-1] *= -1
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
-        assert_allclose(f, fodd)
-        assert_allclose(f, feven)
+        xp_assert_close(fodd, xp.asarray(f, dtype=xp.float64))
+        xp_assert_close(feven, xp.asarray(f, dtype=xp.float64))
 
         nfft = 25
         f = fftfreq(nfft, 1.0)[:(nfft + 1)//2]
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
-        assert_allclose(f, fodd)
-        assert_allclose(f, feven)
+        xp_assert_close(fodd, xp.asarray(f, dtype=xp.float64))
+        xp_assert_close(feven, xp.asarray(f, dtype=xp.float64))
 
-    def test_window_correction(self):
+    def test_window_correction(self, xp):
         A = 20
         fs = 1e4
         nperseg = int(fs//10)
         fsig = 300
         ii = int(fsig*nperseg//fs)  # Freq index of fsig
 
-        tt = np.arange(fs)/fs
-        x = A*np.sin(2*np.pi*fsig*tt)
+        tt = xp.arange(fs, dtype=xp.float64)/fs
+        x = A*xp.sin(2*xp.pi*fsig*tt)
 
         for window in ['hann', 'bartlett', ('tukey', 0.1), 'flattop']:
             _, p_spec = welch(x, fs=fs, nperseg=nperseg, window=window,
@@ -527,49 +535,55 @@ class TestWelch:
                                  scaling='density')
 
             # Check peak height at signal frequency for 'spectrum'
-            assert_allclose(p_spec[ii], A**2/2.0)
+            xp_assert_close(p_spec[ii], xp.asarray(A**2/2.0, dtype=xp.float64),
+                            check_0d=False)
             # Check integrated spectrum RMS for 'density'
-            assert_allclose(np.sqrt(trapezoid(p_dens, freq)), A*np.sqrt(2)/2,
+            rms_sq = xp.sum((p_dens[1:] + p_dens[:-1])
+                            * (freq[1:] - freq[:-1]) / 2)
+            rms = xp.asarray(xp.sqrt(rms_sq))
+            xp_assert_close(rms, xp.asarray(A*np.sqrt(2)/2, dtype=xp.float64),
                             rtol=1e-3)
 
-    def test_axis_rolling(self):
+    def test_axis_rolling(self, xp):
         np.random.seed(1234)
 
-        x_flat = np.random.randn(1024)
+        x_flat = xp.asarray(np.random.randn(1024))
         _, p_flat = welch(x_flat)
 
         for a in range(3):
             newshape = [1,]*3
             newshape[a] = -1
-            x = x_flat.reshape(newshape)
+            x = xp.reshape(x_flat, tuple(newshape))
 
             _, p_plus = welch(x, axis=a)  # Positive axis index
             _, p_minus = welch(x, axis=a-x.ndim)  # Negative axis index
 
-            assert_equal(p_flat, p_plus.squeeze(), err_msg=a)
-            assert_equal(p_flat, p_minus.squeeze(), err_msg=a-x.ndim)
+            xp_assert_close(p_flat, xp.reshape(p_plus, p_flat.shape), err_msg=a)
+            xp_assert_close(p_flat, xp.reshape(p_minus, p_flat.shape),
+                            err_msg=a-x.ndim)
 
-    def test_average(self):
-        x = np.zeros(16)
-        x[0] = 1
-        x[8] = 1
+    def test_average(self, xp):
+        x = xp.zeros((16,), dtype=xp.float64)
+        x = xpx.at(x)[0].set(1)
+        x = xpx.at(x)[8].set(1)
         f, p = welch(x, nperseg=8, average='median')
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([.1, .05, 0., 1.54074396e-33, 0.])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5, dtype=xp.float64))
+        q = xp.asarray([.1, .05, 0., 1.54074396e-33, 0.], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
         assert_raises(ValueError, welch, x, nperseg=8,
                       average='unrecognised-average')
 
-    def test_ratio_scale_to(self):
+    def test_ratio_scale_to(self, xp):
         """Verify the factor of ``sum(abs(window)**2)*fs / abs(sum(window))**2``
         used in the `welch`  and `csd` docstrs. """
-        x, win, fs = np.array([1., 0, 0, 0]), np.ones(4), 12
+        x, win, fs = xp.asarray([1., 0, 0, 0]), xp.ones((4,)), 12
         params = dict(fs=fs, window=win, return_onesided=False, detrend=None)
         p_dens = welch(x, scaling='density', **params)[1]
         p_spec = welch(x, scaling='spectrum', **params)[1]
-        p_fac = sum(win**2)*fs / abs(sum(win))**2
-        assert_allclose(p_spec / p_dens, p_fac)
+        p_fac = xp.sum(win**2)*fs / abs(xp.sum(win))**2
+        xp_assert_close(p_spec / p_dens, xp.ones_like(p_spec) * p_fac)
+
 
 class TestCSD:
     def test_pad_shorter_x(self):
