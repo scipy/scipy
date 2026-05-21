@@ -947,7 +947,7 @@ add_newdoc("boxcox",
         \end{cases}
 
     Returns ``nan`` if :math:`x < 0`.
-    Returns ``-inf`` if :math:`x = 0` and :math:`\lambda < 0`.
+    Returns ``-inf`` if :math:`x = 0` and :math:`\lambda \leq 0`.
 
     Parameters
     ----------
@@ -998,7 +998,7 @@ add_newdoc("boxcox1p",
         \end{cases}
 
     Returns ``nan`` if :math:`x < -1`.
-    Returns ``-inf`` if :math:`x = -1` and :math:`\lambda < 0`.
+    Returns ``-inf`` if :math:`x = -1` and :math:`\lambda \leq 0`.
 
     Parameters
     ----------
