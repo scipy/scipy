@@ -572,8 +572,9 @@
         }
     },
     "nctdtrinc": {
-        "_cdflib_wrappers.pxd": {
-            "nctdtrinc": "ddd->d"
+        "boost_special_functions.h++": {
+            "nct_find_non_centrality_float": "fff->f",
+            "nct_find_non_centrality_double": "ddd->d"
         }
     },
     "nctdtrit": {

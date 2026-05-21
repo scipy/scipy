@@ -1424,6 +1424,44 @@ nct_isf_double(double x, double v, double l)
     return nct_isf_wrap(x, v, l);
 }
 
+// Wrapper for Boost noncentral T find_non_centrality
+template<typename Real>
+Real
+nct_find_non_centrality_wrap(const Real v, const Real p, const Real x)
+{
+    if (std::isnan(v) || std::isnan(x) || std::isnan(p)) {
+        return NAN;
+    }
+    if (v <= 0 || p < 0 || p > 1) {
+        sf_error("nctdtrinc", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_t_distribution<Real, SpecialPolicy>::find_non_centrality(v, x, p);
+    } catch (const std::domain_error& e) {
+        sf_error("nctdtrinc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::underflow_error& e) {
+        sf_error("nctdtrinc", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("nctdtrinc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float nct_find_non_centrality_float(float v, float p, float x)
+{
+    return nct_find_non_centrality_wrap(v, p, x);
+}
+
+double nct_find_non_centrality_double(double v, double p, double x)
+{
+    return nct_find_non_centrality_wrap(v, p, x);
+}
+
 float
 nct_mean_float(float v, float l)
 {

@@ -7,7 +7,6 @@ The following functions still need tests:
 - ncfdtridfd
 - ncfdtrinc
 - nctdtridf
-- nctdtrinc
 
 """
 import itertools
@@ -449,20 +448,6 @@ def test_chndtrix_gh2158():
     assert_allclose(res, res_exp)
 
 
-def test_nctdtrinc_gh19896():
-    # test that gh-19896 is resolved.
-    # Compared to SciPy 1.11 results from Fortran code.
-    dfarr = [0.001, 0.98, 9.8, 98, 980, 10000, 98, 9.8, 0.98, 0.001]
-    parr = [0.001, 0.1, 0.3, 0.8, 0.999, 0.001, 0.1, 0.3, 0.8, 0.999]
-    tarr = [0.0015, 0.15, 1.5, 15, 300, 0.0015, 0.15, 1.5, 15, 300]
-    desired = [3.090232306168629, 1.406141304556198, 2.014225177124157,
-               13.727067118283456, 278.9765683871208, 3.090232306168629,
-               1.4312427877936222, 2.014225177124157, 3.712743137978295,
-               -3.086951096691082]
-    actual = sp.nctdtrinc(dfarr, parr, tarr)
-    assert_allclose(actual, desired, rtol=5e-12, atol=0.0)
-
-
 def test_stdtr_stdtrit_neg_inf():
     # -inf was treated as +inf and values from the normal were returned
     assert np.all(np.isnan(sp.stdtr(-np.inf, [-np.inf, -1.0, 0.0, 1.0, np.inf])))
@@ -699,10 +684,35 @@ class TestNoncentralTFunctions:
         (3000, 3, 0.1, 0.0018657780826323328),
         (0.98, -3.8, 15, 0.9999990264591945),
         (9.8, 38, 15, 2.252076291604796e-09),
-
     ])
-    def test_nctdtrit(self, df, nc, x, expected_cdf):
+    def test_inverses(self, df, nc, x, expected_cdf):
         assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)
+        assert_allclose(sp.nctdtrinc(df, expected_cdf, x), nc, rtol=1e-10)
+
+    def test_nctdtrinc_gh19896(self):
+        # test that gh-19896 is resolved.
+        # Originally compared to SciPy 1.11 results from Fortran code.
+        # The references for p were generated using the mpmath implementation
+        dfarr = [0.001, 0.98, 9.8, 98, 10000, 98, 9.8, 0.98, 0.001]
+        parr = [0.0010002124119858726, 0.09999999952796973, 0.29999999681977191,
+                0.79999995857148565, 0.0010050622307837085, 0.099999999324025535,
+                0.29999999681977191, 0.79999999843644154, 0.99899999955163477,
+            ]
+        tarr = [0.0015, 0.15, 1.5, 15, 0.0015, 0.15, 1.5, 15, 300]
+        nc = [3.090232306168629, 1.406141304556198, 2.014225177124157,
+            13.727067118283456, 3.090232306168629, 1.4312427877936222,
+            2.014225177124157, 3.712743137978295, -3.086951096691082
+            ]
+        actual = sp.nctdtrinc(dfarr, parr, tarr)
+        assert_allclose(actual, nc, rtol=5e-12, atol=0.0)
+
+    @pytest.mark.parametrize("df, x", [(10, 2), (100, -3), (1000, 4)])
+    def test_nctdtrinc_zero_nc(self, df, x):
+        # For nc = 0 we should get the same result as the central t distribution
+        assert_allclose(
+            sp.nctdtrinc(df, sp.stdtr(df, x), x), 0,
+            atol=1e-11, rtol=0
+        )
 
 
 class TestNegativeBinomialFunctions:

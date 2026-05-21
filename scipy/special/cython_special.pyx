@@ -1711,10 +1711,6 @@ from ._cdflib_wrappers cimport nctdtridf as _func_nctdtridf
 ctypedef double _proto_nctdtridf_t(double, double, double) noexcept nogil
 cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 
-from ._cdflib_wrappers cimport nctdtrinc as _func_nctdtrinc
-ctypedef double _proto_nctdtrinc_t(double, double, double) noexcept nogil
-cdef _proto_nctdtrinc_t *_proto_nctdtrinc_t_var = &_func_nctdtrinc
-
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
 cdef _proto_pdtri_unsafe_t *_proto_pdtri_unsafe_t_var = &_func_pdtri_unsafe
@@ -3142,7 +3138,7 @@ cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrinc"""
-    return _func_nctdtrinc(x0, x1, x2)
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_find_non_centrality_double)(x0, x1, x2)
 
 cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrit"""
