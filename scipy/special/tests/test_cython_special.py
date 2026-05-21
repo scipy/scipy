@@ -79,6 +79,7 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.cosm1, cython_special.cosm1, ('d',), None),
     (special.cotdg, cython_special.cotdg, ('d',), None),
     (special.dawsn, cython_special.dawsn, ('d', 'D'), None),
+    (special.digammainv, cython_special.digammainv, ('f', 'd'), None),
     (special.ellipe, cython_special.ellipe, ('d',), None),
     (special.ellipeinc, cython_special.ellipeinc, ('dd',), None),
     (special.ellipj, cython_special._ellipj_pywrap, ('dd',), None),
