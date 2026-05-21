@@ -58,25 +58,16 @@
         }
     },
     "bdtr": {
-        "_legacy.pxd": {
-            "bdtr_unsafe": "ddd->d"
-        },
         "xsf_wrappers.h": {
             "cephes_bdtr_wrap": "dpd->d"
         }
     },
     "bdtrc": {
-        "_legacy.pxd": {
-            "bdtrc_unsafe": "ddd->d"
-        },
         "xsf_wrappers.h": {
             "cephes_bdtrc_wrap": "dpd->d"
         }
     },
     "bdtri": {
-        "_legacy.pxd": {
-            "bdtri_unsafe": "ddd->d"
-        },
         "xsf_wrappers.h": {
             "cephes_bdtri_wrap": "dpd->d"
         }
