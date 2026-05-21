@@ -4155,6 +4155,38 @@ def vectorstrength(events, period):
         when we vary the "probing" frequency while keeping the spike times
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
+
+    Examples
+    --------
+    Five events occurring at the same phase of each period are perfectly
+    phase-locked, so the vector strength is 1. The returned phase tells you
+    where on the cycle the events cluster -- here, a quarter-period offset
+    gives phase = pi/2.
+
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    >>> events = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
+    >>> strength, phase = vectorstrength(events, period=1.0)
+    >>> float(np.round(strength, 8))
+    1.0
+    >>> float(np.round(phase, 8))
+    1.57079633
+
+    1000 events spaced evenly across one period give a vector strength near
+    zero, indicating no phase synchronization.
+
+    >>> events = np.linspace(0.0, 1.0, 1000, endpoint=False)
+    >>> strength, _ = vectorstrength(events, period=1.0)
+    >>> float(np.round(strength, 8))
+    0.0
+
+    ``period`` can be an array to evaluate the resonating vector strength
+    against several candidate periods at once.
+
+    >>> events = np.arange(0.0, 10.0, 0.5)
+    >>> strengths, _ = vectorstrength(events, period=[0.5, 1.0])
+    >>> np.round(strengths, 8)
+    array([1., 0.])
     '''
     xp = array_namespace(events, period)
 
