@@ -672,6 +672,16 @@ Available functions
         double log_ndtr(double)
         double complex log_ndtr(double complex)
 
+- :py:func:`~scipy.special.log_gammainc`::
+
+        float log_gammainc(float, float)
+        double log_gammainc(double, double)
+
+- :py:func:`~scipy.special.log_gammaincc`::
+
+        float log_gammaincc(float, float)
+        double log_gammaincc(double, double)
+
 - :py:func:`~scipy.special.loggamma`::
 
         double loggamma(double)
@@ -2886,6 +2896,24 @@ cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
             return NAN
         else:
             return NAN
+
+cpdef df_number_t log_gammainc(df_number_t x0, df_number_t x1) noexcept nogil:
+    """See the documentation for scipy.special.log_gammainc"""
+    if df_number_t is float:
+        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_p_float)(x0, x1)
+    elif df_number_t is double:
+        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_p_double)(x0, x1)
+    else:
+        return NAN
+
+cpdef df_number_t log_gammaincc(df_number_t x0, df_number_t x1) noexcept nogil:
+    """See the documentation for scipy.special.log_gammaincc"""
+    if df_number_t is float:
+        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_q_float)(x0, x1)
+    elif df_number_t is double:
+        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_q_double)(x0, x1)
+    else:
+        return NAN
 
 cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.loggamma"""
