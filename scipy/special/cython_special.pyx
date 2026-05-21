@@ -1703,10 +1703,6 @@ from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
 ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
 
-from ._cdflib_wrappers cimport ncfdtrinc as _func_ncfdtrinc
-ctypedef double _proto_ncfdtrinc_t(double, double, double, double) noexcept nogil
-cdef _proto_ncfdtrinc_t *_proto_ncfdtrinc_t_var = &_func_ncfdtrinc
-
 from ._cdflib_wrappers cimport nctdtridf as _func_nctdtridf
 ctypedef double _proto_nctdtridf_t(double, double, double) noexcept nogil
 cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
@@ -3125,7 +3121,7 @@ cpdef double ncfdtridfn(double x0, double x1, double x2, double x3) noexcept nog
 
 cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtrinc"""
-    return _func_ncfdtrinc(x0, x1, x2, x3)
+    return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_find_non_centrality_double)(x0, x1, x2, x3)
 
 cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtr"""
