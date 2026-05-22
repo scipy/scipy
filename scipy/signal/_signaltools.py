@@ -4187,6 +4187,31 @@ def vectorstrength(events, period):
     >>> strengths, _ = vectorstrength(events, period=[0.5, 1.0])
     >>> np.round(strengths, 8)
     array([1., 0.])
+
+    The following example depicts the vector strength and its phase for
+    100 samples with a constant period of 10 s. The maximum strength of 1
+    occurs at 10 s with phase 0 rad. Due to the finite number of samples,
+    the strength does not drop to zero away from 10 s but exhibits
+    secondary maxima similar to those of an FFT sidelobe pattern. The
+    phase decreases roughly linearly with jumps of pi rad at each
+    sidelobe minimum, consistent with an underlying sinc-like function.
+
+    >>> import matplotlib.pyplot as plt
+    >>> N, T = 100, 10  # samples and sampling interval in seconds
+    >>> events = np.arange(N) * T
+    >>> periods = np.linspace(9.5, 10.5, 101)
+    >>> strength, phase = vectorstrength(events, periods)
+    >>> fig, (ax_strength, ax_phase) = plt.subplots(
+    ...     2, 1, sharex=True, tight_layout=True)
+    >>> ax_strength.set_title(
+    ...     f"Vector strength of {N} samples at {T} s spacing")
+    >>> ax_strength.set(ylabel="Strength", xlim=(periods[0], periods[-1]))
+    >>> ax_strength.grid(True)
+    >>> ax_phase.set(xlabel="Period (s)", ylabel="Phase (rad)")
+    >>> ax_phase.grid(True)
+    >>> ax_strength.plot(periods, strength, 'C0.-')
+    >>> ax_phase.plot(periods, phase, 'C1.-')
+    >>> plt.show()
     '''
     xp = array_namespace(events, period)
 
