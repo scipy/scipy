@@ -311,15 +311,15 @@ Authors
 * BarnikRB (2) +
 * Richie Bendall (1) +
 * J Berg (7) +
-* Florian Bourgey (48)
+* Florian Bourgey (50)
 * Jake Bowhay (98)
 * Jonathan Brodrick (1) +
 * Dietrich Brunn (36)
-* Evgeni Burovski (194)
-* Matthias Bussonnier (4)
+* Evgeni Burovski (200)
+* Matthias Bussonnier (6)
 * CJ Carey (9)
 * Christine P. Chai (2)
-* Lucas Colley (87)
+* Lucas Colley (89)
 * Dan (3) +
 * devdanzin (2) +
 * Martin Diehl (4)
@@ -327,6 +327,7 @@ Authors
 * dphipps-qnx (1) +
 * DWesl (2)
 * efrat99 (3) +
+* fbrandt (1) +
 * August Femtehjell (2) +
 * Matthew H Flamm (1)
 * Juan Flores (1) +
@@ -337,7 +338,7 @@ Authors
 * Christoph Gohlke (1)
 * Nathan Goldbaum (20)
 * Ludmila Golomozin (11) +
-* Ralf Gommers (166)
+* Ralf Gommers (172)
 * Mathieu Guay-Paquet (1) +
 * Matt Haberland (147)
 * Joren Hammudoglu (24)
@@ -372,13 +373,13 @@ Authors
 * Ilhan Polat (190)
 * Adrian Raso (3)
 * Aditya Rawat (1) +
-* Tyler Reddy (87)
+* Tyler Reddy (94)
 * Martin Reinecke (1)
 * Lucas Roberts (6)
 * Pamphile Roy (1)
 * Daniel Schmitz (26)
 * Martin Schuck (4)
-* Dan Schult (46)
+* Dan Schult (47)
 * Scott Shambaugh (16)
 * Sabaa Siddique (1) +
 * Nicholas Smith (1) +
@@ -392,7 +393,7 @@ Authors
 * Christian Veenhuis (2)
 * Sebastiano Vigna (1)
 * Rivka Walles (14) +
-* Warren Weckesser (7)
+* Warren Weckesser (10)
 * Soeren Wolfers (1) +
 * wongaokay (1) +
 * Xuefeng Xu (1)
@@ -401,9 +402,9 @@ Authors
 * Fadi Younes (2) +
 * Isaiah Zimmerman (1) +
 * Simon Zwieback (1) +
-* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (16)
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (19)
 
-    A total of 99 people contributed to this release.
+    A total of 100 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
@@ -450,7 +451,9 @@ Issues closed for 1.18.0
 * `#23577 <https://github.com/scipy/scipy/issues/23577>`__: BUG: sparse.csgraph.reconstruct_path: segfault for ``nan`` ``predecessors``
 * `#23582 <https://github.com/scipy/scipy/issues/23582>`__: ``xp_capabilities`` needs a proper documentation
 * `#23748 <https://github.com/scipy/scipy/issues/23748>`__: BUG: scipy.sparse.linalg.lsmr() uninitialised variable if maxiter=0...
+* `#23761 <https://github.com/scipy/scipy/issues/23761>`__: BUG: interpolate.RBFInterpolator: numerically unstable when two...
 * `#23768 <https://github.com/scipy/scipy/issues/23768>`__: BUG: sparse: cs{cr}_{array,matrix}’s ``sum(axis=0|1)`` doesn’t...
+* `#23814 <https://github.com/scipy/scipy/issues/23814>`__: ENH: sparse.linalg.minres: support complex hermitian matrices
 * `#23839 <https://github.com/scipy/scipy/issues/23839>`__: Wheels for next release
 * `#23868 <https://github.com/scipy/scipy/issues/23868>`__: BUG: stats: docstrings of several discrete distr. methods show...
 * `#23894 <https://github.com/scipy/scipy/issues/23894>`__: DOC: interpolate.make_interp_spline: tutorial for replicating...
@@ -521,6 +524,7 @@ Issues closed for 1.18.0
 * `#25086 <https://github.com/scipy/scipy/issues/25086>`__: BUG: optimize.direct: interpreter crash on empty Bounds
 * `#25106 <https://github.com/scipy/scipy/issues/25106>`__: BUG: ``nct.cdf`` return ``nan``
 * `#25133 <https://github.com/scipy/scipy/issues/25133>`__: BUG: signal savgol_filter fails for large >20000 window_length...
+* `#25162 <https://github.com/scipy/scipy/issues/25162>`__: MAINT, TST: a few test failures against NumPy ``2.4.5``
 
 ************************
 Pull requests for 1.18.0
@@ -542,6 +546,7 @@ Pull requests for 1.18.0
 * `#23798 <https://github.com/scipy/scipy/pull/23798>`__: ENH: stats.linregress: vectorize implementation and add array...
 * `#23830 <https://github.com/scipy/scipy/pull/23830>`__: ENH: stats.theilslopes: vectorize implementation
 * `#23836 <https://github.com/scipy/scipy/pull/23836>`__: ENH/DEP: sparse.linalg.LinearOperator: n-D batch support
+* `#23900 <https://github.com/scipy/scipy/pull/23900>`__: ENH: sparse.linalg.minres: support for complex hermitian matrices
 * `#23919 <https://github.com/scipy/scipy/pull/23919>`__: ENH: linalg/SVD: move the batching loop to C
 * `#23935 <https://github.com/scipy/scipy/pull/23935>`__: DOC: special.sh_legendre: add Examples section
 * `#23949 <https://github.com/scipy/scipy/pull/23949>`__: ENH: stats.estimated_cdf: array API function for ``plotting_positions``\...
@@ -1003,3 +1008,13 @@ Pull requests for 1.18.0
 * `#25159 <https://github.com/scipy/scipy/pull/25159>`__: ENH: signal.lp2hp: add JAX support
 * `#25160 <https://github.com/scipy/scipy/pull/25160>`__: ENH: signal.lp2bp, signal.lp2bs: add JAX support
 * `#25168 <https://github.com/scipy/scipy/pull/25168>`__: BUG: io: The 'scipy_mmio' threadpoolctl was not setting the version...
+* `#25169 <https://github.com/scipy/scipy/pull/25169>`__: MAINT: convert ``interpolate._dierckx`` and test modules to multi-phase...
+* `#25170 <https://github.com/scipy/scipy/pull/25170>`__: DOC: sparse: sparse docs changes related to spmatrix
+* `#25173 <https://github.com/scipy/scipy/pull/25173>`__: BUG/TST: io: Fix test_threadpoolctl in scipy/io/tests/test_mmio.py.
+* `#25174 <https://github.com/scipy/scipy/pull/25174>`__: DOC: sparse.linalg.LinearOperator: ``xp`` param
+* `#25179 <https://github.com/scipy/scipy/pull/25179>`__: DOC: unbalanced backticks in release notes an ND_regular_grid
+* `#25183 <https://github.com/scipy/scipy/pull/25183>`__: interpolate: skip ``test_spline_large_2d`` on Windows pending...
+* `#25189 <https://github.com/scipy/scipy/pull/25189>`__: BUG: interpolate/RBF: use a symmetric solver where available
+* `#25191 <https://github.com/scipy/scipy/pull/25191>`__: DOC: special: Improve documentation for ``boxcox`` functions
+* `#25193 <https://github.com/scipy/scipy/pull/25193>`__: DOC: stats: Note that halfgennorm is a special case of gengamma.
+* `#25194 <https://github.com/scipy/scipy/pull/25194>`__: interpolate: parametrize ``test_spline_large_2d*`` over ``spl_apis``\...
