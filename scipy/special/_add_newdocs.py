@@ -4492,7 +4492,7 @@ add_newdoc("kolmogi",
     -----
     `kolmogorov` is used by `stats.kstest` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in ``scipy.special``, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.kstwobign` distribution.
 
@@ -4509,24 +4509,24 @@ add_newdoc("kolmogorov",
     r"""
     kolmogorov(x, out=None)
 
-    Complementary cumulative distribution function (survival function) of the 
-    Kolmogorov distribution.
+    Complementary cumulative distribution function (survival function) of
+    the Kolmogorov distribution.
 
-    Returns the complementary cumulative distribution function of
-    Kolmogorov's limiting distribution, which is the distribution of
-    :math:`D_n \sqrt{n}` as :math:`n \to \infty`, where :math:`D_n` is the maximum absolute difference between an empirical cumulative 
-    distribution function (ECDF) and a theoretical CDF in a two-sided
-    Kolmogorov-Smirnov test:
-    
-    .. math::
+    Returns the survival function of Kolmogorov's limiting distribution,
+    i.e. the distribution of :math:`\sqrt{n}\, D_n` as
+    :math:`n \to \infty`, where :math:`D_n` is the Kolmogorov--Smirnov
+    statistic defined by::
 
-        D_n = \max_{x} |F_n(x) - F(x)|
+        .. math::
 
-    where :math:`F_n(x)` is the empirical CDF and :math:`F(x)` is the theoretical CDF.
-    The function computes:
-    .. math::
+            D_n = \sup_x |F_n(x) - F(x)|
 
-        P(D_n \sqrt{n} > x)
+    with :math:`F_n` the empirical cumulative distribution function (ECDF)
+    and :math:`F` the theoretical CDF. The function computes::
+
+        .. math::
+
+            \mathbb{P}(\sqrt{n}\, D_n > x)
 
     Parameters
     ----------
@@ -6907,7 +6907,7 @@ add_newdoc("smirnov",
     -----
     `smirnov` is used by `stats.kstest` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in ``scipy.special``, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
@@ -7017,7 +7017,7 @@ add_newdoc("smirnovi",
     -----
     `smirnov` is used by `stats.kstest` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in ``scipy.special``, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
