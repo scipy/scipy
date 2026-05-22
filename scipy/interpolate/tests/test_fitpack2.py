@@ -1403,54 +1403,68 @@ class TestRectBivariateSpline:
 
         return x, y, z.astype(np.float64)
 
+    # Thin wrapper used as the ``RectBivariateSpline`` entry in the
+    # ``spl_apis`` parametrize dimension of ``test_spline_large_2d`` and
+    # ``test_spline_large_2d_maxit``.  A standalone callable is required
+    # because ``RectBivariateSpline.__call__`` cannot be passed directly as a
+    # parametrize value alongside ``_ndbspline_call_like_bivariate``.
+    def _RectBivariateSplineEval(spl, x, y):
+        return spl(x, y)
+
     @pytest.mark.slow()
-    @pytest.mark.skipif(sys.platform == "win32", reason="Fails intermittently "
-                                                        "on Windows;"
-                                                        "investigation pending.")
     @pytest.mark.parametrize('shape', [(350, 850), (2000, 170)])
     @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
                                         (1, 7e-3, 1e-4),
                                         (3, 2e-2, 1e-4)])
-    def test_spline_large_2d(self, shape, s_tols):
+    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline, _RectBivariateSplineEval),
+                                          (_regrid, _ndbspline_call_like_bivariate)])
+    def test_spline_large_2d(self, shape, s_tols, spl_apis):
         # Reference - https://github.com/scipy/scipy/issues/17787
+        #
+        # ``spl_apis`` is intentionally a parametrize dimension
+        # so that pytest-timeout's ``--timeout`` limit is applied
+        # individually to each (API, shape, s_tols) combination.  If both APIs
+        # were called sequentially inside a single test function they would
+        # share one timeout budget, making it much easier to exceed the limit
+        # on slow platforms (e.g. Windows CI) and triggering the
+        # ``--timeout-method=thread`` worker crash described in gh-25142.
         nx, ny = shape
         s, atol, rtol = s_tols
         x, y, z = self._sample_large_2d_data(nx, ny)
 
-        spl = RectBivariateSpline(x, y, z, s=s)
-        z_spl = spl(x, y)
+        spl_construct, spl_eval = spl_apis
+
+        spl = spl_construct(x, y, z, s=s)
+        z_spl = spl_eval(spl, x, y)
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
-        spl_custom = _regrid(x, y, z, s=s)
-        z_spl_custom = _ndbspline_call_like_bivariate(spl_custom, x, y)
-        assert(not np.isnan(z_spl_custom).any())
-        xp_assert_close(z_spl_custom, z, atol=atol, rtol=rtol)
-
     @pytest.mark.xslow()
-    @pytest.mark.skipif(sys.platform == "win32", reason="Fails intermittently "
-                                                        "on Windows;"
-                                                        "investigation pending.")
     @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system "
                                                      "due to large input data")
     @pytest.mark.parametrize("k", [3, 4])
-    def test_spline_large_2d_maxit(self, k):
+    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline, _RectBivariateSplineEval),
+                                          (_regrid, _ndbspline_call_like_bivariate)])
+    def test_spline_large_2d_maxit(self, k, spl_apis):
         # Reference - for https://github.com/scipy/scipy/issues/17787
+        #
+        # ``spl_apis`` is intentionally a parametrize dimension
+        # for the same reason as in ``test_spline_large_2d``: so
+        # that pytest-timeout's ``--timeout`` limit is applied individually to
+        # each (API, k) combination instead of being shared across both APIs
+        # in a single call, which would risk a ``--timeout-method=thread``
+        # worker crash on Windows CI (see gh-25142).
         nx, ny = 1000, 1700
         s, atol, rtol = 2, 2e-2, 1e-12
         x, y, z = self._sample_large_2d_data(nx, ny)
 
-        spl = RectBivariateSpline(x, y, z, s=s,
-                                  maxit=25, kx=k, ky=k)
-        z_spl = spl(x, y)
+        spl_construct, spl_eval = spl_apis
+
+        spl = spl_construct(x, y, z, s=s,
+                            maxit=30, kx=k, ky=k)
+        z_spl = spl_eval(spl, x, y)
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
-
-        spl_custom = _regrid(x, y, z, s=s,
-                                                 maxit=30, kx=k, ky=k)
-        z_spl_custom = _ndbspline_call_like_bivariate(spl_custom, x, y)
-        assert(not np.isnan(z_spl_custom).any())
-        xp_assert_close(z_spl_custom, z, atol=atol, rtol=rtol)
 
     def test_spline_synthetic_data(self):
         """
