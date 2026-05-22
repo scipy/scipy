@@ -210,7 +210,8 @@ Python Array API Standard Support
   `scipy.stats.ansari` (related to new ``method`` argument),
   `scipy.stats.yeojohnson_llf`, `scipy.stats.epps_singleton_2samp`,
   `scipy.stats.wilcoxon` (except for ``method='exact'`` and ``method='auto'``),
-  and `scipy.stats.rankdata` (via delegation).
+  `scipy.stats.rankdata` (via delegation), `scipy.signal.oaconvolve`,
+  `scipy.signal.hilbert`, and `scipy.signal.hilbert2`.
 
 
 **************************************
