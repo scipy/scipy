@@ -178,12 +178,12 @@ class TestArrayAPI:
         else:
             with pytest.raises(
                 AssertionError,
-                match="namespaces do not match:*",
+                match="Namespace of desired array does not match",
             ):
                 xp_assert_equal(x, y, **options)
             with pytest.raises(
                 AssertionError,
-                match="namespaces do not match:*",
+                match="Namespaces of actual and desired arrays do not match",
             ):
                 xp_assert_equal(y, x, **options)
 
