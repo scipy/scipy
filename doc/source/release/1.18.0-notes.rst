@@ -130,6 +130,7 @@ New features
 - All sparse array/matrix formats now support ``matrix_transpose``/``.mT``.
 - Support for n-dimensional linear operators has been added to
   `scipy.sparse.linalg.LinearOperator`.
+- `scipy.sparse.linalg.minres` now supports complex hermitian matrices.
 
 
 ``scipy.integrate`` improvements
