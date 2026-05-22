@@ -1470,10 +1470,18 @@ class TestRectBivariateSpline:
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
-    def test_spline_synthetic_data(self):
+    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline,
+                                           _RectBivariateSplineEval),
+                                          (_regrid,
+                                           _ndbspline_call_like_bivariate)])
+    def test_spline_synthetic_data(self, spl_apis):
         """
         Test regrid with synthetic smooth data (mixed frequencies + noise).
         """
+        # ``spl_apis`` is parametrized for consistency with
+        # ``test_spline_large_2d`` and ``test_spline_large_2d_maxit``,
+        # ensuring both APIs are exercised under the same test structure.
+        #
         # Create strictly-increasing axes and smooth test surface
         nx, ny = 64, 64
         kx, ky = 3, 3
@@ -1491,17 +1499,12 @@ class TestRectBivariateSpline:
             + 0.05 * rng.normal(size=(nx, ny))
         ).astype(float)
 
-        # Test RectBivariateSpline
-        spl = RectBivariateSpline(x, y, z, kx=kx, ky=ky, s=s)
-        z_spl = spl(x, y)
+        spl_construct, spl_eval = spl_apis
+
+        spl = spl_construct(x, y, z, kx=kx, ky=ky, s=s)
+        z_spl = spl_eval(spl, x, y)
         assert not np.isnan(z_spl).any()
         xp_assert_close(z_spl, z, atol=0.1, rtol=0.1)
-
-        # Test regrid
-        spl_custom = _regrid(x, y, z, kx=kx, ky=ky, s=s)
-        z_spl_custom = _ndbspline_call_like_bivariate(spl_custom, x, y)
-        assert not np.isnan(z_spl_custom).any()
-        xp_assert_close(z_spl_custom, z, atol=0.1, rtol=0.1)
 
 
 class TestRectSphereBivariateSpline:
