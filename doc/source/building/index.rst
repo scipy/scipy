@@ -32,7 +32,7 @@ your system.
     If you are using Conda, you can skip the steps in this section - with the
     exception of installing compilers for Windows or the Apple Developer Tools
     for macOS. All other dependencies will be installed automatically by the
-    ``mamba env create -f environment.yml`` command.
+    ``conda env create -f environment.yml`` command.
 
 .. tab-set::
 
@@ -248,10 +248,10 @@ Building from source to use SciPy
     environment::
 
       # Either install all SciPy dev dependencies into a fresh conda environment
-      mamba env create -f environment.yml
+      conda env create -f environment.yml
 
       # Or, install only the required build dependencies
-      mamba install python numpy cython pythran pybind11 compilers openblas meson-python pkg-config
+      conda install python numpy cython pythran pybind11 compilers openblas meson-python pkg-config
 
       # To build the latest stable release:
       pip install scipy --no-build-isolation --no-binary scipy
@@ -326,8 +326,8 @@ virtual environments:
     To create a ``scipy-dev`` development environment with every required and
     optional dependency installed, run::
 
-        mamba env create -f environment.yml
-        mamba activate scipy-dev
+        conda env create -f environment.yml
+        conda activate scipy-dev
 
   .. tab-item:: Virtual env or system Python
     :sync: pip

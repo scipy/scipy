@@ -22,8 +22,8 @@ from scipy._lib._array_api import (
     is_cupy, is_dask, is_jax, is_torch,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
-from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
-from scipy._lib import _pep440
+from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
+from scipy._external.packaging_version import version
 
 try:
     from scipy_doctest.conftest import dt_config
@@ -63,6 +63,12 @@ def pytest_configure(config):
         ("xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
          "eager_only=False, exceptions=None): mark the desired xfail configuration " +
          "for the `xfail_xp_backends` fixture"))
+    config.addinivalue_line("markers",
+                            ("uses_xp_capabilities(status, funcs=None, " +
+                             "reason=None): mark " +
+                            "whether pytest markers for array API backends are " +
+                            " generated from the xp_capabilities entries for one or "
+                             " more functions"))
 
     try:
         import pytest_timeout  # noqa:F401
@@ -91,7 +97,7 @@ def pytest_configure(config):
             "iterations(n): run the given test function `n` times in each thread",
         )
 
-    if os.name == 'posix' and sys.version_info < (3, 14):
+    if os.name == 'posix' and sys.version_info < (3, 14) and sys.platform != "cygwin":
         # On POSIX, Python 3.13 and older uses the 'fork' context by
         # default. Calling fork() from multiple threads leads to
         # deadlocks. This has been changed in 3.14 to 'forkserver'.
@@ -184,10 +190,10 @@ if SCIPY_ARRAY_API:
         xp_available_backends.append(
             pytest.param(array_api_strict, id='array_api_strict',
                          marks=pytest.mark.array_api_backends))
-        if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.3'):
+        if version.parse(array_api_strict.__version__) < version.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
-            api_version='2024.12'
+            api_version='2025.12'
         )
     except ImportError:
         pass
@@ -241,6 +247,10 @@ if SCIPY_ARRAY_API:
                    pytest.mark.thread_unsafe]))
 
         jax.config.update("jax_enable_x64", True)
+        # Make sure JAX won't default to less accurate TensorFloat32 precision
+        # in matmuls with float32 inputs on GPUs that support this floating
+        # point format.
+        jax.config.update("jax_default_matmul_precision", "float32")
         jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('jax.numpy')
@@ -309,6 +319,20 @@ def xp(request):
     # Read all @pytest.marks.xfail_xp_backends markers that decorate the test,
     # if any, and raise pytest.xfail() if the current xp is in the list.
     skip_or_xfail_xp_backends(request, "xfail")
+
+    # Check if ``uses_xp_capabilities`` mark is present.
+    # ``scipy._lib._array_api.make_xp_pytest_marks``, which draws from
+    # ``xp_capabilities``, will set ``pytest.mark.uses_xp_capabilities(True)``.
+    # Tests which are unconverted or which are for private functions without
+    # ``xp_capabilities`` entries should have
+    # ``pytest.mark.uses_xp_capabilities(False)`` explicitly set.
+    if request.node.get_closest_marker("uses_xp_capabilities") is None:
+        warnings.warn(
+            "test uses `xp` fixture without drawing from `xp_capabilities` "
+            " but is not explicitly marked with"
+            " ``pytest.mark.uses_xp_capabilities(False)``",
+            stacklevel=0,
+        )
 
     xp = request.param
     # Potentially wrap namespace with array_api_compat
@@ -388,6 +412,26 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                 if kwarg in marker.kwargs:
                     raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
 
+        elif len(marker.args) == 2 and isinstance(marker.args[1], bool | type(None)):
+            # condition is provided:
+            #   1. check it
+            #   2. reason is required (similar to pytest's xfail/skipif)
+            backend, condition = marker.args
+
+            if backend not in xp_known_backends:
+                raise ValueError(f"Unknown backend: {backend}; "
+                                 f"must be one of {list(xp_known_backends)}")
+
+            if condition:
+                reason = marker.kwargs.get("reason")
+                # reason overrides the ones from cpu_only, np_only, and eager_only.
+                # This is regardless of order of appearance of the markers.
+                reasons[backend].insert(0, reason)
+
+            for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
+                if kwarg in marker.kwargs:
+                    raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
+
         elif len(marker.args) > 1:
             raise ValueError(
                 f"Please specify only one backend per marker: {marker.args}"
@@ -414,11 +458,13 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
         ...
 
         @skip_xp_backends(backend, *, reason=None)
+        @skip_xp_backends(backend, condition, /, *, reason='skip because condition')
         @skip_xp_backends(*, cpu_only=True, exceptions=(), reason=None)
         @skip_xp_backends(*, eager_only=True, exceptions=(), reason=None)
         @skip_xp_backends(*, np_only=True, exceptions=(), reason=None)
 
         @xfail_xp_backends(backend, *, reason=None)
+        @xfail_xp_backends(backend, condition, /, *, reason='xfail because condition')
         @xfail_xp_backends(*, cpu_only=True, exceptions=(), reason=None)
         @xfail_xp_backends(*, eager_only=True, exceptions=(), reason=None)
         @xfail_xp_backends(*, np_only=True, exceptions=(), reason=None)
@@ -495,15 +541,14 @@ def devices(xp):
         devices = xp.__array_namespace_info__().devices()
         # open an issue about this - cannot branch based on `any`/`all`?
         return (device for device in devices if device.type != 'meta')
-
-    return xp.__array_namespace_info__().devices() + [None]
+    return tuple(xp.__array_namespace_info__().devices()) + (None,)
 
 
 if hypothesis_available:
     # Following the approach of NumPy's conftest.py...
     # Use a known and persistent tmpdir for hypothesis' caches, which
     # can be automatically cleared by the OS or user.
-    hypothesis.configuration.set_hypothesis_home_dir(
+    hypothesis.configuration.set_hypothesis_home_dir(  # pyrefly:ignore[unbound-name]
         os.path.join(tempfile.gettempdir(), ".hypothesis")
     )
 
@@ -609,7 +654,7 @@ if HAVE_SCPDT:
                     warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
-    dt_config.user_context_mgr = warnings_errors_and_rng
+    dt_config.user_context_mgr = warnings_errors_and_rng  # pyrefly:ignore[unbound-name]
     dt_config.skiplist = set([
         'scipy.linalg.LinAlgError',     # comes from numpy
         'scipy.fftpack.fftshift',       # fftpack stuff is also from numpy
@@ -626,30 +671,16 @@ if HAVE_SCPDT:
         'scipy.io.matlab.MatlabOpaque.dtype',
         'scipy.io.matlab.MatlabOpaque.strides',
         'scipy.io.matlab.MatlabFunction.strides',
-        'scipy.io.matlab.MatlabFunction.dtype'
+        'scipy.io.matlab.MatlabFunction.dtype',
+        # deprecated
+        'scipy.interpolate.lagrange',
+        'scipy.interpolate.approximate_taylor_polynomial',
+        'scipy.interpolate.pade',
+        'scipy.spatial.tsearch',
+        'scipy.spatial.minkowski_distance_p',
+        'scipy.spatial.minkowski_distance',
+        'scipy.spatial.distance_matrix',
     ])
-
-    # these are affected by NumPy 2.0 scalar repr: rely on string comparison
-    if np.__version__ < "2":
-        dt_config.skiplist.update(set([
-            'scipy.io.hb_read',
-            'scipy.io.hb_write',
-            'scipy.sparse.csgraph.connected_components',
-            'scipy.sparse.csgraph.depth_first_order',
-            'scipy.sparse.csgraph.shortest_path',
-            'scipy.sparse.csgraph.floyd_warshall',
-            'scipy.sparse.csgraph.dijkstra',
-            'scipy.sparse.csgraph.bellman_ford',
-            'scipy.sparse.csgraph.johnson',
-            'scipy.sparse.csgraph.yen',
-            'scipy.sparse.csgraph.breadth_first_order',
-            'scipy.sparse.csgraph.reverse_cuthill_mckee',
-            'scipy.sparse.csgraph.structural_rank',
-            'scipy.sparse.csgraph.construct_dist_matrix',
-            'scipy.sparse.csgraph.reconstruct_path',
-            'scipy.ndimage.value_indices',
-            'scipy.stats.mstats.describe',
-    ]))
 
     # help pytest collection a bit: these names are either private
     # (distributions), or just do not need doctesting.
@@ -663,6 +694,7 @@ if HAVE_SCPDT:
         "scipy/interpolate/_interpnd_info.py",
         "scipy/interpolate/_rbfinterp_pythran.py",
         "scipy/_build_utils/tempita.py",
+        "scipy/_external",
         "scipy/_lib/array_api_compat",
         "scipy/_lib/highs",
         "scipy/_lib/unuran",

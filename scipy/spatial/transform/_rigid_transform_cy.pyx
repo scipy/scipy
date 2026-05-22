@@ -16,7 +16,7 @@ np.import_array()
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-def from_matrix(double[:, :, :] matrix, bint normalize=True, bint copy=True):
+def from_matrix(const double[:, :, :] matrix, bint normalize=True, bint copy=True):
     mat = np.asarray(matrix, dtype=float)
 
     if mat.shape[-1] != 4 or mat.shape[-2] != 4:
@@ -241,7 +241,7 @@ def pow(double[:, :, :] matrix, float n):
     elif n == -1:
         return inv(matrix)
     elif n == 1:
-        return matrix
+        return np.asarray(matrix)
     return from_exp_coords(as_exp_coords(matrix) * n)
 
 

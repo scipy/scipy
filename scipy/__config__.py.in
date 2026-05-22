@@ -88,6 +88,7 @@ CONFIG = _cleanup(
                 "openblas configuration": r"@BLAS_OPENBLAS_CONFIG@",
                 "pc file directory": r"@BLAS_PCFILEDIR@",
                 "has ilp64": bool(r"@BLAS_HAS_ILP64@".lower().replace('false', '')),
+                "cython blas ilp64": bool(r"@BLAS_CYTHON_ILP64@".lower().replace('false', '')),
             },
             "lapack": {
                 "name": "@LAPACK_NAME@",

@@ -35,10 +35,9 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     Returns
     -------
     expm_A : ndarray
-        Matrix exponential of A.
+        Matrix exponential of A. Only present when ``compute_expm`` is True.
     expm_frechet_AE : ndarray
         Frechet derivative of the matrix exponential of A in the direction E.
-    For ``compute_expm = False``, only `expm_frechet_AE` is returned.
 
     See Also
     --------

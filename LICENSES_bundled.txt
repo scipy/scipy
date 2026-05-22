@@ -87,10 +87,15 @@ License: BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exc
   For details, see subprojects/xsf/LICENSE and
   subprojects/xsf/LICENSES_bundled.txt
 
-Name: pypocketfft
-Files: scipy/fft/_pocketfft/pypocketfft.cxx
-License: BSD-3-Clause
-  For details, see scipy/fft/_pocketfft/LICENSE.md
+Name: pyduccfft
+Files: scipy/fft/_duccfft/pyduccfft.cxx
+License: 3-Clause BSD
+  For details, see scipy/fft/_duccfft/LICENSE.md
+
+Name: ducc0
+Files: subprojects/duccfft/ducc0/*
+License: 3-Clause BSD
+  For details, see subprojects/duccfft/LICENSE.md
 
 Name: uarray
 Files: scipy/_lib/_uarray/*
@@ -150,9 +155,9 @@ License: BSD-3-Clause
   For details, see scipy/stats/biasedurn/license.txt
 
 Name: UNU.RAN
-Files: scipy/_lib/unuran/*
+Files: subprojects/unuran/unuran/*
 License: BSD-3-Clause
-  For details, see scipy/_lib/unuran/license.txt
+  For details, see subprojects/unuran/unuran/license.txt
 
 Name: NumPy
 Files: scipy/stats/libnpyrandom/[logfactorial.h,logfactorial.c]
@@ -161,9 +166,14 @@ License: BSD-3-Clause
   and scipy/stats/libnpyrandom/logfactorial.c
 
 Name: array-api-compat
-Files: scipy/_lib/array_api_compat/*
+Files: subprojects/array_api_compat/array_api_compat/*
 License: MIT
-  For details, see scipy/_lib/array_api_compat/LICENSE
+  For details, see subprojects/array_api_compat/array_api_compat/LICENSE
+
+Name: array-api-extra
+Files: subprojects/array_api_extra/*
+License: MIT
+  For details, see subprojects/array_api_extra/LICENSE
 
 Name: Tempita
 Files: scipy/_build_utils/tempita/*
@@ -181,6 +191,11 @@ License: BSD-2-Clause
   For details, see scipy/integrate/_lebedev.py
 
 Name: prima
-Files: scipy/_lib/pyprima
+Files: subprojects/pyprima/pyprima
 License: BSD-3-Clause
-  For details, see scipy/_lib/pyprima/LICENCE.txt
+  For details, see subprojects/pyprima/pyprima/LICENCE.txt
+
+Name: packaging.version
+Files: scipy/_external/packaging_version/*
+License: BSD-3-Clause
+  For details, see scipy/_external/src/LICENSE.BSD

@@ -203,7 +203,7 @@ py_fpbacp(PyObject* self, PyObject *args)
     Py_ssize_t m = PyArray_DIM(a_x, 0);
     Py_ssize_t len_t = PyArray_DIM(a_t, 0);
 
-    int64_t nc = len_t - k - 1;
+    Py_ssize_t nc = len_t - k - 1;
 
     // allocate the output buffer
     npy_intp dims[2] = {nc, PyArray_DIM(a_y, 1)};
@@ -1494,31 +1494,41 @@ static PyMethodDef DierckxMethods[] = {
 
 
 
+static int dierckx_module_exec(PyObject *module)
+{
+    if (_import_array() < 0) { return -1; }
+    return 0;
+}
+
+
+static PyModuleDef_Slot dierckx_module_slots[] = {
+    {Py_mod_exec, (void *)dierckx_module_exec},
+    // signal that this module can be imported in isolated subinterpreters
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL}
+};
+
+
+// Designated initializers require C++20; MSVC /std:c++17 rejects them.
 static struct PyModuleDef dierckxmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_dierckx",   /* name of module */
-    NULL, //spam_doc, /* module documentation, may be NULL */
-    -1,       /* size of per-interpreter state of the module,
-                 or -1 if the module keeps state in global variables. */
-    DierckxMethods
+    PyModuleDef_HEAD_INIT,                /* m_base */
+    "_dierckx",                           /* m_name */
+    NULL,                                 /* m_doc */
+    0,                                    /* m_size */
+    DierckxMethods,                       /* m_methods */
+    dierckx_module_slots,                 /* m_slots */
+    NULL,                                 /* m_traverse */
+    NULL,                                 /* m_clear */
+    NULL                                  /* m_free */
 };
 
 
 PyMODINIT_FUNC
 PyInit__dierckx(void)
 {
-    PyObject *module;
-
-    import_array();
-
-    module = PyModule_Create(&dierckxmodule);
-    if (module == NULL) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&dierckxmodule);
 }

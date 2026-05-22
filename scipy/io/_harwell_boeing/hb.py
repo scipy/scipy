@@ -18,9 +18,11 @@ features are:
 # having reusable facilities to efficiently read/write fortran-formatted files
 # would be useful outside this module.
 
+import os
 import warnings
 
 import numpy as np
+from scipy._lib.deprecation import _NoValue
 from scipy.sparse import csc_array, csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
@@ -73,15 +75,18 @@ class HBInfo:
         nnon_zeros = m.nnz
 
         if fmt is None:
-            # +1 because HB use one-based indexing (Fortran), and we will write
-            # the indices /pointer as such
-            pointer_fmt = IntFormat.from_number(np.max(pointer+1))
-            indices_fmt = IntFormat.from_number(np.max(indices+1))
+            # +1 because HB uses one-based (Fortran) indexing.
+            # initial=1 supplies np.max's identity so empty indices/values
+            # (nnz == 0) still yield a valid format.
+            pointer_fmt = IntFormat.from_number(np.max(pointer + 1, initial=1))
+            indices_fmt = IntFormat.from_number(np.max(indices + 1, initial=1))
 
             if values.dtype.kind in np.typecodes["AllFloat"]:
-                values_fmt = ExpFormat.from_number(-np.max(np.abs(values)))
+                values_fmt = ExpFormat.from_number(
+                    -np.max(np.abs(values), initial=np.float64(1)))
             elif values.dtype.kind in np.typecodes["AllInteger"]:
-                values_fmt = IntFormat.from_number(-np.max(np.abs(values)))
+                values_fmt = IntFormat.from_number(
+                    -np.max(np.abs(values), initial=1))
             else:
                 message = f"type {values.dtype.kind} not implemented yet"
                 raise NotImplementedError(message)
@@ -458,7 +463,7 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file, *, spmatrix=True):
+def hb_read(path_or_open_file, *, spmatrix=_NoValue):
     """Read HB-format file.
 
     Parameters
@@ -468,6 +473,13 @@ def hb_read(path_or_open_file, *, spmatrix=True):
         before reading.
     spmatrix : bool, optional (default: True)
         If ``True``, return sparse matrix. Otherwise return sparse array.
+
+        .. deprecated:: 1.18.0
+            The default value for `spmatrix` is changing to False in v1.20.
+            That means the default return value will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
+            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Returns
     -------
@@ -479,9 +491,9 @@ def hb_read(path_or_open_file, *, spmatrix=True):
     At the moment not the full Harwell-Boeing format is supported. Supported
     features are:
 
-        - assembled, non-symmetric, real matrices
-        - integer for pointer/indices
-        - exponential format for float values, and int format
+    - assembled, non-symmetric, real matrices
+    - integer for pointer/indices
+    - exponential format for float values, and int format
 
     Examples
     --------
@@ -508,6 +520,19 @@ def hb_read(path_or_open_file, *, spmatrix=True):
     else:
         with open(path_or_open_file) as f:
             data = _get_matrix(f)
+
+    if spmatrix is _NoValue:
+        msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+            That means the default return type will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+            See the spmatrix to sparray migration guide for details.
+            https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+            """
+        prefixes = (os.path.dirname(__file__),)
+        warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+        spmatrix = True
+
     if spmatrix:
         return csc_matrix(data)
     return data
@@ -526,18 +551,14 @@ def hb_write(path_or_open_file, m, hb_info=None):
     hb_info : HBInfo
         contains the meta-data for write
 
-    Returns
-    -------
-    None
-
     Notes
     -----
     At the moment not the full Harwell-Boeing format is supported. Supported
     features are:
 
-        - assembled, non-symmetric, real matrices
-        - integer for pointer/indices
-        - exponential format for float values, and int format
+    - assembled, non-symmetric, real matrices
+    - integer for pointer/indices
+    - exponential format for float values, and int format
 
     Examples
     --------
@@ -562,10 +583,10 @@ def hb_write(path_or_open_file, m, hb_info=None):
 
     def _set_matrix(fid):
         hb = HBFile(fid, hb_info)
-        return hb.write_matrix(m)
+        hb.write_matrix(m)
 
     if hasattr(path_or_open_file, 'write'):
-        return _set_matrix(path_or_open_file)
+        _set_matrix(path_or_open_file)
     else:
         with open(path_or_open_file, 'w') as f:
-            return _set_matrix(f)
+            _set_matrix(f)

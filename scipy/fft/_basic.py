@@ -472,7 +472,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
@@ -624,7 +624,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
@@ -840,7 +840,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
-    Compute the 2-D discrete Fourier Transform
+    Compute the 2-D discrete Fourier Transform.
 
     This function computes the N-D discrete Fourier Transform
     over any axes in an M-D array by means of the
@@ -1032,7 +1032,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -1200,7 +1200,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Computes the inverse of `rfftn`
+    Computes the inverse of `rfftn`.
 
     This function computes the inverse of the N-D discrete
     Fourier Transform for real input over any number of axes in an
@@ -1308,7 +1308,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Computes the inverse of `rfft2`
+    Computes the inverse of `rfft2`.
 
     Parameters
     ----------

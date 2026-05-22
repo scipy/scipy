@@ -85,19 +85,19 @@ def xp_assert_less(actual, desired, *, check_0d=False, **kwargs):
     return xp_assert_less_base(actual, desired, check_0d=check_0d, **kwargs)
 
 
-def assert_array_almost_equal(actual, desired, decimal=6, *args, **kwds):
+def assert_array_almost_equal(actual, desired, decimal=6, **kwds):
     """Backwards compatible replacement. In new code, use xp_assert_close instead.
     """
     rtol, atol = 0, 1.5*10**(-decimal)
     return xp_assert_close(actual, desired,
                            atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
-                           *args, **kwds)
+                           **kwds)
 
 
-def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
+def assert_almost_equal(actual, desired, decimal=7, **kwds):
     """Backwards compatible replacement. In new code, use xp_assert_close instead.
     """
     rtol, atol = 0, 1.5*10**(-decimal)
     return xp_assert_close(actual, desired,
                            atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
-                           *args, **kwds)
+                           **kwds)

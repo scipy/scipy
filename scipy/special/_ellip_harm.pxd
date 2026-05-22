@@ -35,13 +35,7 @@ from . cimport sf_error
 from libc.math cimport sqrt, fabs, pow, NAN
 from libc.stdlib cimport malloc, free
 
-cdef extern from "lapack_defs.h":
-    ctypedef int CBLAS_INT  # actual type defined in the header
-    void c_dstevr(char *jobz, char *range, CBLAS_INT *n, double *d, double *e,
-                  double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol,
-                  CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz,
-                  double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork,
-                  CBLAS_INT *info) nogil
+from scipy.linalg.cython_lapack cimport blas_int, dstevr
 
 
 @cython.wraparound(False)
@@ -68,7 +62,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
         return NULL
 
     cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
-    cdef CBLAS_INT r, tp, j, size, i, info, lwork, liwork, c, iu
+    cdef blas_int r, tp, j, size, i, info, lwork, liwork, c, iu
     cdef Py_UCS4 t
 
     r = n/2
@@ -95,7 +89,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
     vu = 0
 
     cdef void *buffer = malloc((sizeof(double)*(7*size + lwork))
-                               + (sizeof(CBLAS_INT)*(2*size + liwork)))
+                               + (sizeof(blas_int)*(2*size + liwork)))
     bufferp[0] = buffer
     if not buffer:
         sf_error.error("ellip_harm", sf_error.MEMORY, "failed to allocate memory")
@@ -110,8 +104,8 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
     cdef double *eigv = dd + size
     cdef double *work = eigv + size
 
-    cdef CBLAS_INT *iwork = <CBLAS_INT *>(work + lwork)
-    cdef CBLAS_INT *isuppz = iwork + liwork
+    cdef blas_int *iwork = <blas_int *>(work + lwork)
+    cdef blas_int *isuppz = iwork + liwork
 
     if t == 'K':
         for j in range(0, r + 1):
@@ -162,8 +156,8 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
     for i in range(0, size-1):
         dd[i] = g[i]*ss[i]/ss[i+1]
 
-    c_dstevr("V", "I", &size, d, dd, &vl, &vu, &tp, &tp, &tol, &c, w, eigv,
-             &size, isuppz, work, &lwork, iwork, &liwork, &info)
+    dstevr("V", "I", &size, d, dd, &vl, &vu, &tp, &tp, &tol, &c, w, eigv,
+           &size, isuppz, work, &lwork, iwork, &liwork, &info)
 
     if info != 0:
         sf_error.error("ellip_harm", sf_error.MEMORY, "failed to allocate memory")

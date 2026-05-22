@@ -338,15 +338,9 @@ class TestSlicingAndFancy1D:
 
     def test_bad_index(self, spcreator):
         A = spcreator(np.zeros(5))
-        with pytest.raises(
-            (IndexError, ValueError, TypeError),
-            match='Index dimension must be 1 or 2|only integers',
-        ):
+        with pytest.raises(IndexError, match='Index dimension must be 1 or 2'):
             A.__getitem__("foo")
-        with pytest.raises(
-            (IndexError, ValueError, TypeError),
-            match='tuple index out of range|only integers',
-        ):
+        with pytest.raises(IndexError, match='tuple index out of range'):
             A.__getitem__((2, "foo"))
 
     def test_fancy_indexing_2darray(self, spcreator):

@@ -498,16 +498,19 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if (self.ndim == 2 and not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
-            res_dtype = get_sum_dtype(self.dtype)
-            ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
-
-            major_index, value = self._minor_reduce(np.add)
+            
+            res_dtype = get_sum_dtype(self.dtype) if dtype is None else dtype
+            self_to_reduce = self.astype(res_dtype, copy=False)
+            
+            # Fast path: reduce along minor axis
+            ret = np.zeros(len(self_to_reduce.indptr) - 1, dtype=res_dtype)
+            major_index, value = self_to_reduce._minor_reduce(np.add)
             ret[major_index] = value
-            ret = self._ascontainer(ret)
+            ret = self_to_reduce._ascontainer(ret)
             if axis % 2 == 1:
                 ret = ret.T
 
-            return ret.sum(axis=(), dtype=dtype, out=out)
+            return ret.sum(axis=(), dtype=res_dtype, out=out)
         else:
             return _spbase.sum(self, axis=axis, dtype=dtype, out=out)
 
@@ -925,7 +928,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # Update index data type
         idx_dtype = self._get_index_dtype((self.indices, self.indptr),
-                                    maxval=(self.indptr[-1] + x.size))
+                                    maxval=(self.indptr[-1].item() + x.size))
         self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
         self.indices = np.asarray(self.indices, dtype=idx_dtype)
         i = np.asarray(i, dtype=idx_dtype)
@@ -934,8 +937,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Collate old and new in chunks by major index
         indices_parts = []
         data_parts = []
-        ui, ui_indptr = np.unique(i, return_index=True)
-        ui_indptr = np.append(ui_indptr, len(j))
+
+        # TODO: explore creating a native sparsetools version of:
+        # ui, ui_indptr = np.unique(i, return_index=True)
+        # These 2 lines are equiv to np.unique but avoid big memory use. See gh-24951
+        ui_indptr = np.diff(np.concatenate(([-1], i))).nonzero()[0]
+        ui = i[ui_indptr]
+
+        ui_indptr = np.concatenate((ui_indptr, [len(j)]))
         new_nnzs = np.diff(ui_indptr)
         prev = 0
         for c, (ii, js, je) in enumerate(zip(ui, ui_indptr, ui_indptr[1:])):
@@ -1023,7 +1032,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     ##############################################################
 
     def eliminate_zeros(self):
-        """Remove zero entries from the array/matrix
+        """Remove zero entries from the array/matrix.
 
         This is an *in place* operation.
         """
@@ -1061,7 +1070,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.has_sorted_indices = True
 
     def sum_duplicates(self):
-        """Eliminate duplicate entries by adding them together
+        """Eliminate duplicate entries by adding them together.
 
         This is an *in place* operation.
         """
@@ -1097,7 +1106,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
 
     def sorted_indices(self):
-        """Return a copy of this array/matrix with sorted indices
+        """Return a copy of this array/matrix with sorted indices.
+
+        Returns
+        -------
+        sparse array/matrix
+            A copy of this array/matrix with sorted indices.
         """
         A = self.copy()
         A.sort_indices()
@@ -1108,7 +1122,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # return self.toother().toother()
 
     def sort_indices(self):
-        """Sort the indices of this array/matrix *in place*
+        """Sort the indices of this array/matrix *in place*.
         """
         if not self.has_sorted_indices:
             M = len(self.indptr) - 1

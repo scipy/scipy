@@ -1,4 +1,13 @@
 # cython: language_level=3, boundscheck=False
+# This Cython module is a replacement for the original C extension
+# `moduleTNC.c`, which was converted to Cython in gh-14882.
+#
+# The old C source file (`moduleTNC.c.old`) was kept temporarily during
+# development but has since been removed (see gh-24572).
+#
+# The current implementation preserves the structure and behavior of the
+# original C module while providing improved maintainability.
+
 
 from libc.string cimport memcpy
 import numpy as np

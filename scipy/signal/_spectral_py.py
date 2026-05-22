@@ -22,7 +22,7 @@ def lombscargle(
     y: npt.ArrayLike,
     freqs: npt.ArrayLike,
     *,
-    precenter: bool = _NoValue,
+    precenter: bool = _NoValue,  # type:ignore[assignment]
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     weights: npt.NDArray | None = None,
     floating_mean: bool = False,
@@ -272,7 +272,7 @@ def lombscargle(
     freqs = freqs.reshape(1, -1)
     # column vectors
     x = x.reshape(-1, 1)
-    y = y.reshape(-1, 1)
+    y = y.reshape(-1, 1)  # type:ignore[union-attr]
     weights = weights.reshape(-1, 1)
 
     # store frequent intermediates
@@ -317,7 +317,7 @@ def lombscargle(
     # to prevent division by zero errors with a and b, as well as correcting for
     # numerical precision errors that lead to CC or SS being approximately -0.0,
     # make sure CC and SS are both > 0
-    epsneg = np.finfo(dtype=y.dtype).epsneg
+    epsneg = np.finfo(dtype=y.dtype).epsneg  # type:ignore[union-attr]
     CC[CC < epsneg] = epsneg
     SS[SS < epsneg] = epsneg
 
@@ -713,7 +713,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // 2``. Defaults to `None` and may
         not be greater than `nperseg`.
@@ -1494,7 +1494,7 @@ def stft(x, fs=1.0, window='hann_periodic', nperseg=256, noverlap=None, nfft=Non
     axis : int, optional
         Axis along which the STFT is computed; the default is over the
         last axis (i.e. ``axis=-1``).
-    scaling: {'spectrum', 'psd'}
+    scaling : {'spectrum', 'psd'}
         The default 'spectrum' scaling allows each frequency line of `Zxx` to
         be interpreted as a magnitude spectrum. The 'psd' option scales each
         line to a power spectral density - it allows to calculate the signal's
@@ -1684,7 +1684,7 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
     freq_axis : int, optional
         Where the frequency axis of the STFT is located; the default is
         the penultimate axis (i.e. ``axis=-2``).
-    scaling: {'spectrum', 'psd'}
+    scaling : {'spectrum', 'psd'}
         The default 'spectrum' scaling allows each frequency line of `Zxx` to
         be interpreted as a magnitude spectrum. The 'psd' option scales each
         line to a power spectral density - it allows to calculate the signal's
@@ -1951,7 +1951,7 @@ def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // 2``. Defaults to `None`.
     nfft : int, optional
@@ -2409,7 +2409,7 @@ def _triage_segments(window, nperseg, input_length):
 
     Parameters
     ----------
-    window : string, tuple, or ndarray
+    window : str, tuple, or ndarray
         If window is specified by a string or tuple and nperseg is not
         specified, nperseg is set to the default of 256 and returns a window of
         that length.

@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "xsf_wrappers.h"
 #include <xsf/airy.h>
 #include <xsf/amos.h>
@@ -641,6 +643,29 @@ double xsf_log_ndtr(double x) { return xsf::log_ndtr(x); }
 npy_cdouble xsf_clog_ndtr(npy_cdouble x) { return to_ccomplex(xsf::log_ndtr(to_complex(x))); }
 
 double xsf_ndtri(double x) { return xsf::ndtri(x); }
+
+double special_nrdtrimn(double p, double std, double x) { 
+    if (std::isnan(std) || std <= 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (std::isnan(p) || p <= 0 || p >= 1) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (std::isnan(x)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return x - std * xsf::ndtri(p);
+}
+
+double special_nrdtrisd(double mean, double p, double x) { 
+    if (std::isnan(mean) || std::isnan(p) || std::isnan(x)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (p <= 0 || p >= 1) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return (x - mean) / xsf::ndtri(p);
+}
 
 double xsf_owens_t(double h, double a) { return xsf::owens_t(h, a); }
 

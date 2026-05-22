@@ -15,7 +15,7 @@
     .. [3] P. Dierckx, "An algorithm for smoothing, differentiation and integration
          of experimental data using spline functions",
          Journal of Computational and Applied Mathematics, vol. I, no 3, p. 165 (1975).
-         https://doi.org/10.1016/0771-050X(75)90034-0
+         :doi:`10.1016/0771-050X(75)90034-0`.
 """
 import warnings
 import operator
@@ -480,7 +480,7 @@ def disc(t, k):
            :doi:`10.1016/0146-664X(82)90043-0`
 
     .. [2] Tom Lyche and Knut Morken, Spline methods,
-        http://www.uio.no/studier/emner/matnat/ifi/INF-MAT5340/v05/undervisningsmateriale/
+        https://web.archive.org/web/20221205112612/https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/hele.pdf
 
     """
     n = t.shape[0]
@@ -531,7 +531,7 @@ class F:
     ----------
     [1] P. Dierckx, Algorithms for Smoothing Data with Periodic and Parametric Splines,
         COMPUTER GRAPHICS AND IMAGE PROCESSING vol. 20, pp 171-184 (1982.)
-        https://doi.org/10.1016/0146-664X(82)90043-0
+        :doi:`10.1016/0146-664X(82)90043-0`.
 
     """
     def __init__(self, x, y, t, k, s, w=None, *, R=None, Y=None):
@@ -822,7 +822,7 @@ condition abs(fp-s)/s < tol.
 }
 
 
-def root_rati(f, p0, bracket, acc):
+def root_rati(f, p0, bracket, acc, maxit=MAXIT):
     """Solve `f(p) = 0` using a rational function approximation.
 
     In a nutshell, since the function f(p) is known to be monotonically decreasing, we
@@ -855,7 +855,7 @@ def root_rati(f, p0, bracket, acc):
     (p1, f1), (p3, f3)  = bracket
     p = p0
 
-    for it in range(MAXIT):
+    for it in range(maxit):
         p2, f2 = p, f(p)
 
         # c  test whether the approximation sp(x) is an acceptable solution.
@@ -871,7 +871,7 @@ def root_rati(f, p0, bracket, acc):
                 f3 = f2
                 p = p*con4
                 if p <= p1:
-                     p = p1*con9 + p2*con1
+                    p = p1*con9 + p2*con1
                 continue
             else:
                 if f2 < 0:
@@ -884,7 +884,7 @@ def root_rati(f, p0, bracket, acc):
                 f1 = f2
                 p = p/con4
                 if p3 != np.inf and p <= p3:
-                     p = p2*con1 + p3*con9
+                    p = p2*con1 + p3*con9
                 continue
             else:
                 if f2 > 0:
@@ -1059,11 +1059,6 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         The actual number of knots returned by this routine may be slightly
         larger than `nest`.
         Default is None (no limit, add up to ``m + k + 1`` knots).
-    periodic : bool, optional
-        If True, data points are considered periodic with period ``x[m-1]`` -
-        ``x[0]`` and a smooth periodic spline approximation is returned. Values of
-        ``y[m-1]`` and ``w[m-1]`` are not used.
-        The default is False, corresponding to boundary condition 'not-a-knot'.
     bc_type : str, optional
         Boundary conditions.
         Default is `"not-a-knot"`.

@@ -1,19 +1,21 @@
+_parameters_pxi = fs.copyfile('parameters.pxi')
+
 pyx_files_for_c = [
   ['_flow', '_flow.pyx'],
   ['_matching', '_matching.pyx'],
   ['_min_spanning_tree', '_min_spanning_tree.pyx'],
   ['_reordering', '_reordering.pyx'],
   ['_tools', '_tools.pyx'],
-  ['_traversal', '_traversal.pyx']
 ]
 pyx_files_for_cpp = [
   ['_shortest_path', '_shortest_path.pyx'],
+  ['_traversal', '_traversal.pyx'],
 ]
 
 cython_gen_csgraph_for_c = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, fs.copyfile('parameters.pxi')],
+  depends : [_cython_tree, _parameters_pxi],
 )
 
 foreach pyx_file: pyx_files_for_c
@@ -30,7 +32,7 @@ endforeach
 cython_gen_csgraph_for_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree],
+  depends : [_cython_tree, _parameters_pxi],
 )
 
 foreach pyx_file: pyx_files_for_cpp

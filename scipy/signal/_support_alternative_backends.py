@@ -22,7 +22,8 @@ JAX_SIGNAL_FUNCS = [
 
 # some cupyx.scipy.signal functions are incompatible with their scipy counterparts
 CUPY_BLACKLIST = [
-    'lfilter_zi', 'sosfilt_zi', 'get_window', 'besselap', 'envelope', 'remez', 'bessel'
+    'abcd_normalize', 'bessel', 'besselap', 'envelope', 'get_window', 'lfilter_zi',
+    'sosfilt_zi', 'remez',
 ]
 
 # freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
@@ -74,10 +75,12 @@ untested = {
     "argrelmax",
     "argrelmin",
     "band_stop_obj",
+    "bode",
     "check_NOLA",
     "chirp",
     "coherence",
     "csd",
+    "czt",
     "czt_points",
     "dbode",
     "dfreqresp",
@@ -85,19 +88,19 @@ untested = {
     "dstep",
     "find_peaks",
     "find_peaks_cwt",
-    "findfreqs",
     "freqresp",
     "gausspulse",
+    "iirdesign", # There's no reason this shouldn't work. It just needs tests.
+    "istft",
     "lombscargle",
     "lsim",
     "max_len_seq",
     "peak_prominences",
     "peak_widths",
     "periodogram",
-    "place_pols",
+    "place_poles",
     "sawtooth",
     "sepfir2d",
-    "square",
     "ss2tf",
     "ss2zpk",
     "step",
@@ -155,7 +158,14 @@ zpk2tf_extra_note = \
 
     """
 
+abcd_normalize_extra_note = \
+    """The result dtype when all array inputs are of integer dtype is the
+    backend's current default floating point dtype.
+
+    """
+
 capabilities_overrides = {
+    "abcd_normalize": xp_capabilities(extra_note=abcd_normalize_extra_note),
     "bessel": xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True),
     "bilinear": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True,
@@ -163,7 +173,7 @@ capabilities_overrides = {
                                 extra_note=bilinear_extra_note),
     "bilinear_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                     jax_jit=False, allow_dask_compute=True),
-    "butter": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False, 
+    "butter": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
     "buttord": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                jax_jit=False, allow_dask_compute=True,
@@ -199,22 +209,22 @@ capabilities_overrides = {
                                       jax_jit=False, allow_dask_compute=True),
     "cspline2d": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                  jax_jit=False, allow_dask_compute=True),
-    "czt": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "deconvolve": xp_capabilities(cpu_only=True, exceptions=["cupy"],
-                                  allow_dask_compute=True,
-                                  skip_backends=[("jax.numpy", "item assignment")]),
+                                  jax_jit=False, allow_dask_compute=True),
     "decimate": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "detrend": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
                                allow_dask_compute=True),
     "dimpulse": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "dlti": xp_capabilities(np_only=True,
                             reason="works in CuPy but delegation isn't set up yet"),
-    "ellip": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False, 
+    "ellip": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                              allow_dask_compute=True,
                              reason="scipy.special.ellipk"),
     "ellipord": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True,
                                 reason="scipy.special.ellipk"),
+    "findfreqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
+                                 jax_jit=False, allow_dask_compute=True),
     "firls": xp_capabilities(cpu_only=True, allow_dask_compute=True, jax_jit=False,
                              reason="lstsq"),
     "firwin": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
@@ -222,7 +232,8 @@ capabilities_overrides = {
     "firwin2": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                jax_jit=False, allow_dask_compute=True,
                                reason="firwin uses np.interp"),
-    "fftconvolve": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"]),
+    "fftconvolve": xp_capabilities(cpu_only=True,
+                                   exceptions=["cupy", "jax.numpy", "torch"]),
     "freqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                              jax_jit=False, allow_dask_compute=True),
     "freqs_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
@@ -233,14 +244,6 @@ capabilities_overrides = {
                                  jax_jit=False, allow_dask_compute=True),
     "group_delay": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                    jax_jit=False, allow_dask_compute=True),
-    "hilbert": xp_capabilities(
-        cpu_only=True, exceptions=["cupy", "torch"],
-        skip_backends=[("jax.numpy", "item assignment")],
-    ),
-    "hilbert2": xp_capabilities(
-        cpu_only=True, exceptions=["cupy", "torch"],
-        skip_backends=[("jax.numpy", "item assignment")],
-    ),
     "invres": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "invresz": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "iircomb": xp_capabilities(xfail_backends=[("jax.numpy", "inaccurate")]),
@@ -258,13 +261,11 @@ capabilities_overrides = {
     "lfiltic": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                allow_dask_compute=True),
     "lp2bp": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
-                             allow_dask_compute=True,
-                             skip_backends=[("jax.numpy", "in-place item assignment")]),
+                             allow_dask_compute=True, jax_jit=False),
     "lp2bp_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  allow_dask_compute=True, jax_jit=False),
     "lp2bs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
-                             allow_dask_compute=True,
-                             skip_backends=[("jax.numpy", "in-place item assignment")]),
+                             allow_dask_compute=True, jax_jit=False),
     "lp2bs_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  allow_dask_compute=True, jax_jit=False),
     "lp2lp": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
@@ -272,8 +273,7 @@ capabilities_overrides = {
     "lp2lp_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  allow_dask_compute=True, jax_jit=False),
     "lp2hp": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
-                             allow_dask_compute=True,
-                             skip_backends=[("jax.numpy", "in-place item assignment")]),
+                             allow_dask_compute=True, jax_jit=False),
     "lp2hp_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  allow_dask_compute=True, jax_jit=False),
     "lti": xp_capabilities(np_only=True,
@@ -290,7 +290,6 @@ capabilities_overrides = {
                                  jax_jit=False, allow_dask_compute=True),
     "oaconvolve": xp_capabilities(
         cpu_only=True, exceptions=["cupy", "torch"],
-        skip_backends=[("jax.numpy", "fails all around")],
         xfail_backends=[("dask.array", "wrong answer")],
     ),
     "order_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
@@ -319,13 +318,17 @@ capabilities_overrides = {
     "savgol_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                      jax_jit=False,
                                      reason="convolve1d is cpu-only"),
+    "sawtooth": xp_capabilities(jax_jit=False,
+                                skip_backends=[("dask.array", "dask tests fail")]),
     "sepfir2d": xp_capabilities(np_only=True),
     "sos2zpk": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
     "sos2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
-    "sosfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+    "sosfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
+    "sosfilt_zi": xp_capabilities(cpu_only=True, allow_dask_compute=True,
+                                  jax_jit=False),
     "sosfiltfilt": xp_capabilities(
         cpu_only=True, exceptions=["cupy"],
         skip_backends=[
@@ -382,7 +385,7 @@ for obj_name in _signal_api.__all__:
         capabilities = capabilities_overrides.get(
             obj_name, get_default_capabilities(obj_name, delegator)
         )
-        f = capabilities(f)
+        f = capabilities(f)  # pyrefly:ignore[not-callable]
 
     # add the decorated function to the namespace, to be imported in __init__.py
     vars()[obj_name] = f

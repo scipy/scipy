@@ -2,7 +2,6 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
-import warnings
 import threading
 import types
 import numpy as np
@@ -11,9 +10,9 @@ from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
 from scipy import special
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._util import check_random_state
-from scipy.linalg.blas import drot, get_blas_funcs
+from scipy.linalg.blas import get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
 from . import _covariance, _rcont
@@ -296,7 +295,7 @@ class multi_rv_frozen:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     @property
     def random_state(self):
@@ -344,10 +343,16 @@ mvn_docdict_noparams = {
 
 
 class multivariate_normal_gen(multi_rv_generic):
-    r"""A multivariate normal random variable.
+    r"""
+    A multivariate normal random variable.
 
     The `mean` keyword specifies the mean. The `cov` keyword specifies the
     covariance matrix.
+
+    Parameters
+    ----------
+    %(_mvn_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -367,11 +372,6 @@ class multivariate_normal_gen(multi_rv_generic):
         Return a marginal multivariate normal distribution.
     fit(x, fix_mean=None, fix_cov=None)
         Fit a multivariate normal distribution to data.
-
-    Parameters
-    ----------
-    %(_mvn_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -441,7 +441,6 @@ class multivariate_normal_gen(multi_rv_generic):
     >>> fig2 = plt.figure()
     >>> ax2 = fig2.add_subplot(111)
     >>> ax2.contourf(x, y, rv.pdf(pos))
-
     """  # noqa: E501
 
     def __init__(self, seed=None):
@@ -658,7 +657,7 @@ class multivariate_normal_gen(multi_rv_generic):
             Mean of the distribution
         cov : array_like
             Covariance matrix of the distribution
-        maxpts : integer
+        maxpts : int
             The maximum number of points to use for integration
         abseps : float
             Absolute error tolerance
@@ -715,7 +714,7 @@ class multivariate_normal_gen(multi_rv_generic):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
         %(_mvn_doc_default_callparams)s
-        maxpts : integer, optional
+        maxpts : int, optional
             The maximum number of points to use for integration
             (default ``1000000*dim``)
         abseps : float, optional
@@ -765,7 +764,7 @@ class multivariate_normal_gen(multi_rv_generic):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
         %(_mvn_doc_default_callparams)s
-        maxpts : integer, optional
+        maxpts : int, optional
             The maximum number of points to use for integration
             (default ``1000000*dim``)
         abseps : float, optional
@@ -807,7 +806,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Parameters
         ----------
         %(_mvn_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -956,7 +955,7 @@ multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, mean=None, cov=1, allow_singular=False, seed=None,
                  maxpts=None, abseps=1e-5, releps=1e-5):
@@ -978,7 +977,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             seeded with `seed`.
             If `seed` is already a ``Generator`` or ``RandomState`` instance
             then that instance is used.
-        maxpts : integer, optional
+        maxpts : int, optional
             The maximum number of points to use for integration of the
             cumulative distribution function (default ``1000000*dim``)
         abseps : float, optional
@@ -1111,11 +1110,17 @@ matnorm_docdict_noparams = {
 
 
 class matrix_normal_gen(multi_rv_generic):
-    r"""A matrix normal random variable.
+    r"""
+    A matrix normal random variable.
 
     The `mean` keyword specifies the mean. The `rowcov` keyword specifies the
     among-row covariance matrix. The 'colcov' keyword specifies the
     among-column covariance matrix.
+
+    Parameters
+    ----------
+    %(_matnorm_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -1127,11 +1132,6 @@ class matrix_normal_gen(multi_rv_generic):
         Draw random samples.
     entropy(rowcol=1, colcov=1)
         Differential entropy.
-
-    Parameters
-    ----------
-    %(_matnorm_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -1168,6 +1168,11 @@ class matrix_normal_gen(multi_rv_generic):
     making this equivalent form algorithmically inefficient.
 
     .. versionadded:: 0.17.0
+
+    References
+    ----------
+    .. [1] "Matrix normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Matrix_normal_distribution
 
     Examples
     --------
@@ -1208,7 +1213,6 @@ class matrix_normal_gen(multi_rv_generic):
     >>> rv = matrix_normal(mean=None, rowcov=1, colcov=1)
     >>> # Frozen object with the same methods but holding the given
     >>> # mean and covariance fixed.
-
     """
 
     def __init__(self, seed=None):
@@ -1395,7 +1399,7 @@ class matrix_normal_gen(multi_rv_generic):
         Parameters
         ----------
         %(_matnorm_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -1498,7 +1502,7 @@ class matrix_normal_frozen(multi_rv_frozen):
     >>> distn.logpdf(X)
     -10.590229595124615
     """
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
         self._dist = matrix_normal_gen(seed)
@@ -1577,11 +1581,17 @@ matrix_t_docdict_noparams = {
 
 
 class matrix_t_gen(multi_rv_generic):
-    r"""A matrix t-random variable.
+    r"""
+    A matrix t-random variable.
 
     The `mean` keyword specifies the mean.
     The `row_spread` keyword specifies the row-wise spread matrix.
     The `col_spread` keyword specifies the column-wise spread matrix.
+
+    Parameters
+    ----------
+    %(_matt_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -1591,11 +1601,6 @@ class matrix_t_gen(multi_rv_generic):
         Log of the probability density function.
     rvs(mean=None, row_spread=1, col_spread=1, df=1, size=1, random_state=None)
         Draw random samples.
-
-    Parameters
-    ----------
-    %(_matt_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -2023,7 +2028,7 @@ class matrix_t_gen(multi_rv_generic):
         Parameters
         ----------
         %(_matt_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -2258,12 +2263,18 @@ def _lnB(alpha):
 
 
 class dirichlet_gen(multi_rv_generic):
-    r"""A Dirichlet random variable.
+    r"""
+    A Dirichlet random variable.
 
     The ``alpha`` keyword specifies the concentration parameters of the
     distribution.
 
     .. versionadded:: 0.15.0
+
+    Parameters
+    ----------
+    %(_dirichlet_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -2281,11 +2292,6 @@ class dirichlet_gen(multi_rv_generic):
         The covariance of the Dirichlet distribution
     entropy(alpha)
         Compute the differential entropy of the Dirichlet distribution.
-
-    Parameters
-    ----------
-    %(_dirichlet_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -2362,7 +2368,6 @@ class dirichlet_gen(multi_rv_generic):
     >>> rv = dirichlet(alpha)
     >>> # Frozen object with the same methods but holding the given
     >>> # concentration parameters fixed.
-
     """
 
     def __init__(self, seed=None):
@@ -2543,7 +2548,7 @@ dirichlet = dirichlet_gen()
 
 
 class dirichlet_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
@@ -2610,7 +2615,8 @@ wishart_docdict_noparams = {
 
 
 class wishart_gen(multi_rv_generic):
-    r"""A Wishart random variable.
+    r"""
+    A Wishart random variable.
 
     The `df` keyword specifies the degrees of freedom. The `scale` keyword
     specifies the scale matrix, which must be symmetric and positive definite.
@@ -2619,6 +2625,11 @@ class wishart_gen(multi_rv_generic):
     matrix). These arguments must satisfy the relationship
     ``df > scale.ndim - 1``, but see notes on using the `rvs` method with
     ``df < scale.ndim``.
+
+    Parameters
+    ----------
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -2630,11 +2641,6 @@ class wishart_gen(multi_rv_generic):
         Draw random samples from a Wishart distribution.
     entropy()
         Compute the differential entropy of the Wishart distribution.
-
-    Parameters
-    ----------
-    %(_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Raises
     ------
@@ -2718,7 +2724,6 @@ class wishart_gen(multi_rv_generic):
     >>> rv = wishart(df=1, scale=1)
     >>> # Frozen object with the same methods but holding the given
     >>> # degrees of freedom and scale fixed.
-
     """
 
     def __init__(self, seed=None):
@@ -3022,7 +3027,7 @@ class wishart_gen(multi_rv_generic):
         """
         Parameters
         ----------
-        n : integer
+        n : int
             Number of variates to generate
         shape : iterable
             Shape of the variates to generate
@@ -3075,7 +3080,7 @@ class wishart_gen(multi_rv_generic):
 
         Parameters
         ----------
-        n : integer
+        n : int
             Number of variates to generate
         shape : iterable
             Shape of the variates to generate
@@ -3121,7 +3126,7 @@ class wishart_gen(multi_rv_generic):
         Parameters
         ----------
         %(_doc_default_callparams)s
-        size : integer or iterable of integers, optional
+        size : int or iterable of integers, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -3242,7 +3247,7 @@ class wishart_frozen(multi_rv_frozen):
         that instance is used.
 
     """
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, df, scale, seed=None):
         self._dist = wishart_gen(seed)
@@ -3293,12 +3298,18 @@ for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs', 'entropy']:
 
 
 class invwishart_gen(wishart_gen):
-    r"""An inverse Wishart random variable.
+    r"""
+    An inverse Wishart random variable.
 
     The `df` keyword specifies the degrees of freedom. The `scale` keyword
     specifies the scale matrix, which must be symmetric and positive definite.
     In this context, the scale matrix is often interpreted in terms of a
     multivariate normal covariance matrix.
+
+    Parameters
+    ----------
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -3310,11 +3321,6 @@ class invwishart_gen(wishart_gen):
         Draw random samples from an inverse Wishart distribution.
     entropy(df, scale)
         Differential entropy of the distribution.
-
-    Parameters
-    ----------
-    %(_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Raises
     ------
@@ -3405,7 +3411,6 @@ class invwishart_gen(wishart_gen):
     >>> rv = invwishart(df=1, scale=1)
     >>> # Frozen object with the same methods but holding the given
     >>> # degrees of freedom and scale fixed.
-
     """
 
     def __init__(self, seed=None):
@@ -3633,7 +3638,7 @@ class invwishart_gen(wishart_gen):
         """
         Parameters
         ----------
-        n : integer
+        n : int
             Number of variates to generate
         shape : iterable
             Shape of the variates to generate
@@ -3688,7 +3693,7 @@ class invwishart_gen(wishart_gen):
 
         Parameters
         ----------
-        n : integer
+        n : int
             Number of variates to generate
         shape : iterable
             Shape of the variates to generate
@@ -3732,7 +3737,7 @@ class invwishart_gen(wishart_gen):
         Parameters
         ----------
         %(_doc_default_callparams)s
-        size : integer or iterable of integers, optional
+        size : int or iterable of integers, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -3776,7 +3781,7 @@ invwishart = invwishart_gen()
 
 
 class invwishart_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, df, scale, seed=None):
         """Create a frozen inverse Wishart distribution.
@@ -3879,7 +3884,13 @@ multinomial_docdict_noparams = {
 
 
 class multinomial_gen(multi_rv_generic):
-    r"""A multinomial random variable.
+    r"""
+    A multinomial random variable.
+
+    Parameters
+    ----------
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -3894,10 +3905,12 @@ class multinomial_gen(multi_rv_generic):
     cov(n, p)
         Compute the covariance matrix of the multinomial distribution.
 
-    Parameters
-    ----------
-    %(_doc_default_callparams)s
-    %(_doc_random_state)s
+    See Also
+    --------
+    scipy.stats.binom : The binomial distribution.
+    numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
+    scipy.stats.multivariate_hypergeom :
+        The multivariate hypergeometric distribution.
 
     Notes
     -----
@@ -3974,13 +3987,6 @@ class multinomial_gen(multi_rv_generic):
     >>> rv = multinomial(n=7, p=[.3, .7])
     >>> # Frozen object with the same methods but holding the given
     >>> # degrees of freedom and scale fixed.
-
-    See also
-    --------
-    scipy.stats.binom : The binomial distribution.
-    numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
-    scipy.stats.multivariate_hypergeom :
-        The multivariate hypergeometric distribution.
     """
 
     def __init__(self, seed=None):
@@ -4003,21 +4009,10 @@ class multinomial_gen(multi_rv_generic):
         """
         eps = np.finfo(np.result_type(np.asarray(p), np.float32)).eps * 10
         p = np.array(p, dtype=np.float64, copy=True)
-        p_adjusted = 1. - p[..., :-1].sum(axis=-1)
-        # only make adjustment when it's significant
-        i_adjusted = np.abs(1 - p.sum(axis=-1)) > eps
-        p[i_adjusted, -1] = p_adjusted[i_adjusted]
-
-        if np.any(i_adjusted):
-            message = ("Some rows of `p` do not sum to 1.0 within tolerance of "
-                       f"{eps=}. Currently, the last element of these rows is adjusted "
-                       "to compensate, but this condition will produce NaNs "
-                       "beginning in SciPy 1.18.0. Please ensure that rows of `p` sum "
-                       "to 1.0 to avoid futher disruption.")
-            warnings.warn(message, FutureWarning, stacklevel=3)
 
         # true for bad p
-        pcond = np.any(p < 0, axis=-1)
+        pcond = np.abs(1 - p.sum(axis=-1)) > eps
+        pcond |= np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
         n = np.array(n, dtype=int, copy=True)
@@ -4201,7 +4196,7 @@ class multinomial_gen(multi_rv_generic):
         Parameters
         ----------
         %(_doc_default_callparams)s
-        size : integer or iterable of integers, optional
+        size : int or iterable of integers, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -4215,6 +4210,10 @@ class multinomial_gen(multi_rv_generic):
         %(_doc_callparams_note)s
         """
         n, p, npcond = self._process_parameters(n, p)
+        if np.any(npcond):
+            message = ("`multinomial.rvs` requires `n > 0`, `(p > 0).all()`, and"
+                       "`p.sum() == 1`.")
+            raise ValueError(message)
         random_state = self._get_random_state(random_state)
         return random_state.multinomial(n, p, size)
 
@@ -4280,17 +4279,13 @@ for name in ['logpmf', 'pmf', 'mean', 'cov', 'rvs']:
 
 
 class special_ortho_group_gen(multi_rv_generic):
-    r"""A Special Orthogonal matrix (SO(N)) random variable.
+    r"""
+    A Special Orthogonal matrix (SO(N)) random variable.
 
     Return a random rotation matrix, drawn from the Haar distribution
     (the only uniform distribution on SO(N)) with a determinant of +1.
 
     The `dim` keyword specifies the dimension N.
-
-    Methods
-    -------
-    rvs(dim=None, size=1, random_state=None)
-        Draw random samples from SO(N).
 
     Parameters
     ----------
@@ -4304,6 +4299,15 @@ class special_ortho_group_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random samples from SO(N).
+
+    See Also
+    --------
+    ortho_group, scipy.spatial.transform.Rotation.random
 
     Notes
     -----
@@ -4339,11 +4343,6 @@ class special_ortho_group_gen(multi_rv_generic):
     >>> rv = special_ortho_group(5)
     >>> # Frozen object with the same methods but holding the
     >>> # dimension parameter fixed.
-
-    See Also
-    --------
-    ortho_group, scipy.spatial.transform.Rotation.random
-
     """
 
     def __init__(self, seed=None):
@@ -4370,9 +4369,9 @@ class special_ortho_group_gen(multi_rv_generic):
 
         Parameters
         ----------
-        dim : integer
+        dim : int
             Dimension of rotation space (N).
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
 
         Returns
@@ -4393,7 +4392,7 @@ special_ortho_group = special_ortho_group_gen()
 
 
 class special_ortho_group_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, dim=None, seed=None):
         """Create a frozen SO(N) distribution.
@@ -4425,17 +4424,13 @@ class special_ortho_group_frozen(multi_rv_frozen):
 
 
 class ortho_group_gen(multi_rv_generic):
-    r"""An Orthogonal matrix (O(N)) random variable.
+    r"""
+    An Orthogonal matrix (O(N)) random variable.
 
     Return a random orthogonal matrix, drawn from the O(N) Haar
     distribution (the only uniform distribution on O(N)).
 
     The `dim` keyword specifies the dimension N.
-
-    Methods
-    -------
-    rvs(dim=None, size=1, random_state=None)
-        Draw random samples from O(N).
 
     Parameters
     ----------
@@ -4449,6 +4444,15 @@ class ortho_group_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random samples from O(N).
+
+    See Also
+    --------
+    special_ortho_group
 
     Notes
     -----
@@ -4485,10 +4489,6 @@ class ortho_group_gen(multi_rv_generic):
     >>> rv = ortho_group(5)
     >>> # Frozen object with the same methods but holding the
     >>> # dimension parameter fixed.
-
-    See Also
-    --------
-    special_ortho_group
     """
 
     def __init__(self, seed=None):
@@ -4515,9 +4515,9 @@ class ortho_group_gen(multi_rv_generic):
 
         Parameters
         ----------
-        dim : integer
+        dim : int
             Dimension of rotation space (N).
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
 
         Returns
@@ -4548,7 +4548,7 @@ ortho_group = ortho_group_gen()
 
 
 class ortho_group_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, dim=None, seed=None):
         """Create a frozen O(N) distribution.
@@ -4580,18 +4580,14 @@ class ortho_group_frozen(multi_rv_frozen):
 
 
 class random_correlation_gen(multi_rv_generic):
-    r"""A random correlation matrix.
+    r"""
+    A random correlation matrix.
 
     Return a random correlation matrix, given a vector of eigenvalues.
     The returned matrix is symmetric positive semidefinite with unit diagonal.
 
     The `eigs` keyword specifies the eigenvalues of the correlation matrix,
     and implies the dimension.
-
-    Methods
-    -------
-    rvs(eigs=None, random_state=None)
-        Draw random correlation matrices, all with eigenvalues eigs.
 
     Parameters
     ----------
@@ -4611,17 +4607,22 @@ class random_correlation_gen(multi_rv_generic):
         Tolerance for deviation of the diagonal of the resulting
         matrix. Default: 1e-7
 
-    Raises
-    ------
-    RuntimeError
-        Floating point error prevented generating a valid correlation
-        matrix.
+    Methods
+    -------
+    rvs(eigs=None, random_state=None)
+        Draw random correlation matrices, all with eigenvalues eigs.
 
     Returns
     -------
     rvs : ndarray or scalar
         Random size N-dimensional matrices, dimension (size, dim, dim),
         each having eigenvalues eigs.
+
+    Raises
+    ------
+    RuntimeError
+        Floating point error prevented generating a valid correlation
+        matrix.
 
     Notes
     -----
@@ -4654,7 +4655,6 @@ class random_correlation_gen(multi_rv_generic):
     >>> e, v = scipy.linalg.eigh(x)
     >>> e
     array([ 0.5,  0.8,  1.2,  1.5])
-
     """
 
     def __init__(self, seed=None):
@@ -4729,6 +4729,8 @@ class random_correlation_gen(multi_rv_generic):
         if not (m.flags.c_contiguous and m.dtype == np.float64 and
                 m.shape[0] == m.shape[1]):
             raise ValueError()
+
+        drot = get_blas_funcs('rot', dtype=np.float64, ilp64='preferred')
 
         d = m.shape[0]
         for i in range(d-1):
@@ -4805,7 +4807,7 @@ random_correlation = random_correlation_gen()
 
 
 class random_correlation_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, eigs, seed=None, tol=1e-13, diag_tol=1e-7):
         """Create a frozen random correlation matrix distribution.
@@ -4851,16 +4853,12 @@ class random_correlation_frozen(multi_rv_frozen):
 
 
 class unitary_group_gen(multi_rv_generic):
-    r"""A matrix-valued U(N) random variable.
+    r"""
+    A matrix-valued U(N) random variable.
 
     Return a random unitary matrix.
 
     The `dim` keyword specifies the dimension N.
-
-    Methods
-    -------
-    rvs(dim=None, size=1, random_state=None)
-        Draw random samples from U(N).
 
     Parameters
     ----------
@@ -4874,6 +4872,15 @@ class unitary_group_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random samples from U(N).
+
+    See Also
+    --------
+    ortho_group
 
     Notes
     -----
@@ -4902,11 +4909,6 @@ class unitary_group_gen(multi_rv_generic):
     parameter, return a "frozen" unitary_group random variable:
 
     >>> rv = unitary_group(5)
-
-    See Also
-    --------
-    ortho_group
-
     """
 
     def __init__(self, seed=None):
@@ -4933,9 +4935,9 @@ class unitary_group_gen(multi_rv_generic):
 
         Parameters
         ----------
-        dim : integer
+        dim : int
             Dimension of space (N).
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
 
         Returns
@@ -4967,7 +4969,7 @@ unitary_group = unitary_group_gen()
 
 
 class unitary_group_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, dim=None, seed=None):
         """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
@@ -5034,7 +5036,8 @@ mvt_docdict_noparams = {
 
 
 class multivariate_t_gen(multi_rv_generic):
-    r"""A multivariate t-distributed random variable.
+    r"""
+    A multivariate t-distributed random variable.
 
     The `loc` parameter specifies the location. The `shape` parameter specifies
     the positive semidefinite shape matrix. The `df` parameter specifies the
@@ -5043,6 +5046,11 @@ class multivariate_t_gen(multi_rv_generic):
     In addition to calling the methods below, the object itself may be called
     as a function to fix the location, shape matrix, and degrees of freedom
     parameters, returning a "frozen" multivariate t-distribution random.
+
+    Parameters
+    ----------
+    %(_mvt_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -5059,11 +5067,6 @@ class multivariate_t_gen(multi_rv_generic):
         Differential entropy of a multivariate t-distribution.
     marginal(dimensions, loc=None, shape=1, df=1, allow_singular=False)
         Return a marginal multivariate t-distribution.
-
-    Parameters
-    ----------
-    %(_mvt_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -5115,7 +5118,6 @@ class multivariate_t_gen(multi_rv_generic):
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.set_aspect('equal')
     >>> plt.contourf(x, y, rv.pdf(pos))
-
     """
 
     def __init__(self, seed=None):
@@ -5389,7 +5391,7 @@ class multivariate_t_gen(multi_rv_generic):
         Parameters
         ----------
         %(_mvt_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -5535,7 +5537,7 @@ class multivariate_t_gen(multi_rv_generic):
 
 
 class multivariate_t_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
@@ -5645,7 +5647,13 @@ mhg_docdict_noparams = {
 
 
 class multivariate_hypergeom_gen(multi_rv_generic):
-    r"""A multivariate hypergeometric random variable.
+    r"""
+    A multivariate hypergeometric random variable.
+
+    Parameters
+    ----------
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -5664,10 +5672,10 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         Compute the covariance matrix of the multivariate
         hypergeometric distribution.
 
-    Parameters
-    ----------
-    %(_doc_default_callparams)s
-    %(_doc_random_state)s
+    See Also
+    --------
+    scipy.stats.hypergeom : The hypergeometric distribution.
+    scipy.stats.multinomial : The multinomial distribution.
 
     Notes
     -----
@@ -5688,6 +5696,14 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     from the population.
 
     .. versionadded:: 1.6.0
+
+    References
+    ----------
+    .. [1] The Multivariate Hypergeometric Distribution,
+           http://www.randomservices.org/random/urn/MultiHypergeometric.html
+    .. [2] Thomas J. Sargent and John Stachurski, 2020,
+           Multivariate Hypergeometric Distribution
+           https://python.quantecon.org/multi_hyper.html
 
     Examples
     --------
@@ -5743,19 +5759,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     >>> rv = multivariate_hypergeom(m=[10, 20], n=12)
     >>> rv.pmf(x=[8, 4])
     0.0025207176631464523
-
-    See Also
-    --------
-    scipy.stats.hypergeom : The hypergeometric distribution.
-    scipy.stats.multinomial : The multinomial distribution.
-
-    References
-    ----------
-    .. [1] The Multivariate Hypergeometric Distribution,
-           http://www.randomservices.org/random/urn/MultiHypergeometric.html
-    .. [2] Thomas J. Sargent and John Stachurski, 2020,
-           Multivariate Hypergeometric Distribution
-           https://python.quantecon.org/multi_hyper.html
     """
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -6001,7 +6004,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         Parameters
         ----------
         %(_doc_default_callparams)s
-        size : integer or iterable of integers, optional
+        size : int or iterable of integers, optional
             Number of samples to draw. Default is ``None``, in which case a
             single variate is returned as an array with shape ``m.shape``.
         %(_doc_random_state)s
@@ -6098,7 +6101,8 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
 
 
 class random_table_gen(multi_rv_generic):
-    r"""Contingency tables from independent samples with fixed marginal sums.
+    r"""
+    Contingency tables from independent samples with fixed marginal sums.
 
     This is the distribution of random tables with given row and column vector
     sums. This distribution represents the set of random tables under the null
@@ -6108,6 +6112,11 @@ class random_table_gen(multi_rv_generic):
     Because of assumed independence, the expected frequency of each table
     element can be computed from the row and column sums, so that the
     distribution is completely determined by these two vectors.
+
+    Parameters
+    ----------
+    %(_doc_row_col)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -6119,11 +6128,6 @@ class random_table_gen(multi_rv_generic):
         Mean table.
     rvs(row, col, size=None, method=None, random_state=None)
         Draw random tables with given row and column vector sums.
-
-    Parameters
-    ----------
-    %(_doc_row_col)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -6139,6 +6143,11 @@ class random_table_gen(multi_rv_generic):
     Allowed values are "boyett" and "patefield".
 
     .. versionadded:: 1.10.0
+
+    References
+    ----------
+    .. [1] J. Boyett, AS 144 Appl. Statist. 28 (1979) 329-332
+    .. [2] W.M. Patefield, AS 159 Appl. Statist. 30 (1981) 91-97
 
     Examples
     --------
@@ -6157,11 +6166,6 @@ class random_table_gen(multi_rv_generic):
     >>> dist.rvs(random_state=123)
     array([[1, 0, 0],
            [1, 3, 1]])
-
-    References
-    ----------
-    .. [1] J. Boyett, AS 144 Appl. Statist. 28 (1979) 329-332
-    .. [2] W.M. Patefield, AS 159 Appl. Statist. 30 (1981) 91-97
     """
 
     def __init__(self, seed=None):
@@ -6329,7 +6333,7 @@ class random_table_gen(multi_rv_generic):
         Parameters
         ----------
         %(_doc_row_col)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         method : str, optional
             Which method to use, "boyett" or "patefield". If None (default),
@@ -6453,7 +6457,7 @@ random_table = random_table_gen()
 
 
 class random_table_frozen(multi_rv_frozen):
-    __class_getitem__ = None
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, row, col, *, seed=None):
         self._dist = random_table_gen(seed)
@@ -6535,15 +6539,11 @@ for name in ['logpmf', 'pmf', 'mean', 'rvs']:
 
 
 class uniform_direction_gen(multi_rv_generic):
-    r"""A vector-valued uniform direction.
+    r"""
+    A vector-valued uniform direction.
 
     Return a random direction (unit vector). The `dim` keyword specifies
     the dimensionality of the space.
-
-    Methods
-    -------
-    rvs(dim=None, size=1, random_state=None)
-        Draw random directions.
 
     Parameters
     ----------
@@ -6559,6 +6559,11 @@ class uniform_direction_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random directions.
 
     Notes
     -----
@@ -6624,7 +6629,7 @@ class uniform_direction_gen(multi_rv_generic):
 
         Parameters
         ----------
-        dim : integer
+        dim : int
             Dimension of space (N).
         size : int or tuple of ints, optional
             Given a shape of, for example, (m,n,k), m*n*k samples are
@@ -6767,12 +6772,18 @@ def _dirichlet_multinomial_check_parameters(alpha, n, x=None):
 
 
 class dirichlet_multinomial_gen(multi_rv_generic):
-    r"""A Dirichlet multinomial random variable.
+    r"""
+    A Dirichlet multinomial random variable.
 
     The Dirichlet multinomial distribution is a compound probability
     distribution: it is the multinomial distribution with number of trials
     `n` and class probabilities ``p`` randomly sampled from a Dirichlet
     distribution with concentration parameters ``alpha``.
+
+    Parameters
+    ----------
+    %(_dirichlet_mn_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -6786,11 +6797,6 @@ class dirichlet_multinomial_gen(multi_rv_generic):
         Variance of the Dirichlet multinomial distribution.
     cov(alpha, n):
         The covariance of the Dirichlet multinomial distribution.
-
-    Parameters
-    ----------
-    %(_dirichlet_mn_doc_default_callparams)s
-    %(_doc_random_state)s
 
     See Also
     --------
@@ -6871,7 +6877,6 @@ class dirichlet_multinomial_gen(multi_rv_generic):
     >>> n = [[6], [7], [8]]
     >>> dirichlet_multinomial.mean(alpha, n).shape
     (3, 4, 2)
-
     """
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -7023,23 +7028,11 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov']:
 
 
 class vonmises_fisher_gen(multi_rv_generic):
-    r"""A von Mises-Fisher variable.
+    r"""
+    A von Mises-Fisher variable.
 
     The `mu` keyword specifies the mean direction vector. The `kappa` keyword
     specifies the concentration parameter.
-
-    Methods
-    -------
-    pdf(x, mu=None, kappa=1)
-        Probability density function.
-    logpdf(x, mu=None, kappa=1)
-        Log of the probability density function.
-    rvs(mu=None, kappa=1, size=1, random_state=None)
-        Draw random samples from a von Mises-Fisher distribution.
-    entropy(mu=None, kappa=1)
-        Compute the differential entropy of the von Mises-Fisher distribution.
-    fit(data)
-        Fit a von Mises-Fisher distribution to data.
 
     Parameters
     ----------
@@ -7056,6 +7049,19 @@ class vonmises_fisher_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    pdf(x, mu=None, kappa=1)
+        Probability density function.
+    logpdf(x, mu=None, kappa=1)
+        Log of the probability density function.
+    rvs(mu=None, kappa=1, size=1, random_state=None)
+        Draw random samples from a von Mises-Fisher distribution.
+    entropy(mu=None, kappa=1)
+        Compute the differential entropy of the von Mises-Fisher distribution.
+    fit(data)
+        Fit a von Mises-Fisher distribution to data.
 
     See Also
     --------
@@ -7112,7 +7118,7 @@ class vonmises_fisher_gen(multi_rv_generic):
            https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
     .. [4] Wood, A. Simulation of the von mises fisher distribution.
            Communications in statistics-simulation and computation 23,
-           1 (1994), 157-164. https://doi.org/10.1080/03610919408813161
+           1 (1994), 157-164. :doi:`10.1080/03610919408813161`.
     .. [5] geomstats, Github. MIT License. Accessed: 06.01.2023.
            https://github.com/geomstats/geomstats
     .. [6] Miolane, N. et al. Geomstats:  A Python Package for Riemannian
@@ -7231,7 +7237,6 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     We see that the estimated parameters `mu_fit` and `kappa_fit` are
     very close to the ground truth parameters.
-
     """
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -7399,7 +7404,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         Generate samples from an n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
-        Reference: https://doi.org/10.1080/03610919408813161
+        Reference: :doi:`10.1080/03610919408813161`.
         """
         dim_minus_one = dim - 1
         # calculate number of requested samples
@@ -7730,10 +7735,24 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
 
 class normal_inverse_gamma_gen(multi_rv_generic):
-    r"""Normal-inverse-gamma distribution.
+    r"""
+    Normal-inverse-gamma distribution.
 
     The normal-inverse-gamma distribution is the conjugate prior of a normal
     distribution with unknown mean and variance.
+
+    Parameters
+    ----------
+    mu, lmbda, a, b : array_like
+        Shape parameters of the distribution. See notes.
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
 
     Methods
     -------
@@ -7747,19 +7766,6 @@ class normal_inverse_gamma_gen(multi_rv_generic):
         Distribution variance.
     rvs(mu=0, lmbda=1, a=1, b=1, size=None, random_state=None)
         Draw random samples.
-
-    Parameters
-    ----------
-    mu, lmbda, a, b  : array_like
-        Shape parameters of the distribution. See notes.
-    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
-        Used for drawing random variates.
-        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with seed.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance,
-        then that object is used.
-        Default is `None`.
 
     See Also
     --------
@@ -7844,7 +7850,6 @@ class normal_inverse_gamma_gen(multi_rv_generic):
     (np.float64(1.0546150578185023), np.float64(0.061829865266330754))
     >>> norm_inv_gamma.var()
     (np.float64(1.0526315789473684), np.float64(0.061557402277623886))
-
     """
     def rvs(self, mu=0, lmbda=1, a=1, b=1, size=None, random_state=None):
         """Draw random samples from the distribution.

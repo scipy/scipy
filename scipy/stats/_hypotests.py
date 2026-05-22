@@ -10,8 +10,10 @@ from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
-                                   xp_promote, xp_result_type, xp_copy, is_numpy)
-import scipy._lib.array_api_extra as xpx
+                                   xp_promote, xp_result_type, xp_copy, is_numpy,
+                                   is_lazy_array, _count_nonmasked, is_marray,
+                                   _masked_apply)
+import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
@@ -29,8 +31,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy"),
-                                ("jax.numpy", "lazy -> no _axis_nan_policy")])
+@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy")])
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """Compute the Epps-Singleton (ES) test statistic.
@@ -103,6 +104,27 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
        - the Epps-Singleton two-sample test using the empirical characteristic
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
+    Examples
+    --------
+    Generate random samples ``x`` and ``y``.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(66326777)
+    >>> x = rng.normal(0, 1, size=100)
+    >>> y = rng.normal(5, 3, size=100)
+
+    Test the null hypothesis that ``x`` and ``y`` are sampled from the same
+    distribution.
+
+    >>> res = stats.epps_singleton_2samp(x, y)
+    >>> res.statistic
+    np.float64(316.6441136688085)
+    >>> res.pvalue
+    np.float64(2.778946959815902e-67)
+    
+    The large value of the statistic and small p-value may be taken as evidence that
+    ``x`` and ``y`` were not sampled from the same distribution. 
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
@@ -119,7 +141,9 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     # check if t is valid
     if t.ndim > 1:
         raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
-    if xp.any(t <= 0):
+    if is_lazy_array(t):
+        t = xpx.at(t)[t <= 0].set(xp.nan)
+    elif xp.any(t <= 0):
         raise ValueError('t must contain positive elements only.')
 
     # Previously, non-finite input caused an error in linalg functions.
@@ -149,7 +173,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     est_cov = (n/nx)*cov_x + (n/ny)*cov_y
     est_cov_inv = xp.linalg.pinv(est_cov)
     r = xp.asarray(xp.linalg.matrix_rank(est_cov_inv), dtype=est_cov_inv.dtype)
-    if xp.any(r < 2*xp_size(t)):
+    if not is_lazy_array(r) and xp.any(r < 2*xp_size(t)):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
                       'test might not be consistent.', # see p. 183 in [1]_
@@ -189,7 +213,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     ----------
     k1 : int
         Number of events observed from distribution 1.
-    n1: float
+    n1 : float
         Size of sample from distribution 1.
     k2 : int
         Number of events observed from distribution 2.
@@ -202,12 +226,12 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided': the difference between distribution means is not
-            equal to `diff`
-          * 'less': the difference between distribution means is less than
-            `diff`
-          * 'greater': the difference between distribution means is greater
-            than `diff`
+        * 'two-sided': the difference between distribution means is not
+          equal to `diff`
+        * 'less': the difference between distribution means is less than
+          `diff`
+        * 'greater': the difference between distribution means is greater
+          than `diff`
 
     Returns
     -------
@@ -530,7 +554,9 @@ def _cvm_result_to_tuple(res, _):
 
 
 @xp_capabilities(cpu_only=True,  # needs special function `kv`
-                 skip_backends=[('dask.array', 'typical dask issues')], jax_jit=False)
+                 skip_backends=[('dask.array', 'typical dask issues')],
+                 jax_jit=False,  # array boolean indices must be concrete
+                 marray=True)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=(), *, axis=0):
@@ -650,19 +676,20 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
         message = "`cdf` must be a callable if `rvs` is a non-NumPy array."
         raise ValueError(message)
 
-    n = rvs.shape[-1]
-    if n <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
+    n_length = rvs.shape[-1]
+    if n_length <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
         raise ValueError('The sample must contain at least two observations.')
 
-    rvs, n = xp_promote(rvs, n, force_floating=True, xp=xp)
+    rvs = xp_promote(rvs, force_floating=True, xp=xp)
     vals = xp.sort(rvs, axis=-1)
-    cdfvals = cdf(vals, *args)
+    cdfvals = _masked_apply(cdf, args=(vals, *args), xp=xp)
+    n_count = xp.asarray(_count_nonmasked(rvs, axis=-1, xp=xp), dtype=rvs.dtype)
 
-    u = (2*xp.arange(1, n+1, dtype=n.dtype) - 1)/(2*n)
-    w = 1/(12*n) + xp.sum((u - cdfvals)**2, axis=-1)
+    u = (2*xp.arange(1, n_length+1, dtype=rvs.dtype) - 1)/(2*n_count[..., xp.newaxis])
+    w = 1/(12*n_count) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
-    p = xp.clip(1. - _cdf_cvm(w, n), 0., None)
+    p = xp.clip(1. - _masked_apply(_cdf_cvm, args=(w, n_count), xp=xp), 0., None)
 
     return CramerVonMisesResult(statistic=w, pvalue=p)
 
@@ -814,6 +841,7 @@ def somersd(x, y=None, alternative='two-sided'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
+
         * 'two-sided': the rank correlation is nonzero
         * 'less': the rank correlation is negative (less than zero)
         * 'greater':  the rank correlation is positive (greater than zero)
@@ -823,15 +851,15 @@ def somersd(x, y=None, alternative='two-sided'):
     res : SomersDResult
         A `SomersDResult` object with the following fields:
 
-            statistic : float
-               The Somers' :math:`D` statistic.
-            pvalue : float
-               The p-value for a hypothesis test whose null
-               hypothesis is an absence of association, :math:`D=0`.
-               See notes for more information.
-            table : 2D array
-               The contingency table formed from rankings `x` and `y` (or the
-               provided contingency table, if `x` is a 2D array)
+        statistic : float
+           The Somers' :math:`D` statistic.
+        pvalue : float
+           The p-value for a hypothesis test whose null
+           hypothesis is an absence of association, :math:`D=0`.
+           See notes for more information.
+        table : 2D array
+           The contingency table formed from rankings `x` and `y` (or the
+           provided contingency table, if `x` is a 2D array)
 
     See Also
     --------
@@ -1030,7 +1058,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         contingency table.
     fisher_exact : Fisher exact test on a 2x2 contingency table.
     boschloo_exact : Boschloo's exact test on a 2x2 contingency table,
-        which is an uniformly more powerful alternative to Fisher's exact test.
+        which is a uniformly more powerful alternative to Fisher's exact test.
 
     Notes
     -----
@@ -1099,9 +1127,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             (1 - \pi)^{t - x_{11} - x_{12}}
 
     where the sum is over all  2x2 contingency tables :math:`X` such that:
+
     * :math:`T(X) \leq T(X_0)` when `alternative` = "less",
     * :math:`T(X) \geq T(X_0)` when `alternative` = "greater", or
     * :math:`T(X) \geq |T(X_0)|` when `alternative` = "two-sided".
+
     Above, :math:`c_1, c_2` are the sum of the columns 1 and 2,
     and :math:`t` the total (sum of the 4 sample's element).
 
@@ -1114,7 +1144,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     References
     ----------
     .. [1] Barnard, G. A. "Significance Tests for 2x2 Tables". *Biometrika*.
-           34.1/2 (1947): 123-138. :doi:`dpgkg3`
+           34.1/2 (1947): 123-138. :doi:`10.2307/2332517`.
 
     .. [2] Mehta, Cyrus R., and Pralay Senchaudhuri. "Conditional versus
            unconditional exact tests for comparing two binomials."
@@ -1573,6 +1603,7 @@ def _pval_cvm_2samp_exact(s, m, n):
     """
 
     # [1, p. 3]
+    m, n = int(m), int(n)
     lcm = np.lcm(m, n)
     # [1, p. 4], below eq. 3
     a = lcm // m
@@ -1613,12 +1644,13 @@ def _pval_cvm_2samp_exact(s, m, n):
 
 def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     # compute expected value and variance of T (eq. 11 and 14 in [2])
+    nx, ny = xp.asarray(nx, dtype=t.dtype), xp.asarray(ny, dtype=t.dtype)
     et = (1 + 1 / N) / 6
     vt = (N + 1) * (4 * k * N - 3 * (nx ** 2 + ny ** 2) - 2 * k)
     vt = vt / (45 * N ** 2 * 4 * k)
 
     # computed the normalized statistic (eq. 15 in [2])
-    tn = 1 / 6 + (t - et) / math.sqrt(45 * vt)
+    tn = 1 / 6 + (t - et) / xp.sqrt(45 * vt)
 
     # approximate distribution of tn with limiting distribution
     # of the one-sample test statistic
@@ -1630,9 +1662,10 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     return p
 
 
-@xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
-                                ('dask.array', 'needs rankdata')],
-                 cpu_only=True, jax_jit=False)
+@xp_capabilities(skip_backends=[('dask.array', 'needs rankdata')],
+                 cpu_only=True, jax_jit=False,  # due to p-value calculation
+                 marray=True,
+                 extra_note="Only `method='exact'` is compatible with MArray input.")
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
@@ -1754,16 +1787,22 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
 
     """
     xp = array_namespace(x, y)
-    nx = x.shape[-1]
-    ny = y.shape[-1]
+    length_x = x.shape[-1]
+    length_y = y.shape[-1]
+    count_x = _count_nonmasked(x, axis=-1, xp=xp)
+    count_y = _count_nonmasked(y, axis=-1, xp=xp)
 
-    if nx <= 1 or ny <= 1:  # only needed for testing / `test_axis_nan_policy`
+    if length_x <= 1 or length_y <= 1:  # only needed for `test_axis_nan_policy`
         raise ValueError('x and y must contain at least two observations.')
     if method not in ['auto', 'exact', 'asymptotic']:
         raise ValueError('method must be either auto, exact or asymptotic.')
 
+    if is_marray(xp) and method in {'auto', 'asymptotic'}:
+        message = "Only `method='exact'` is compatible with MArray."
+        raise ValueError(message)
+
     if method == 'auto':
-        if max(nx, ny) > 20:
+        if max(count_x, count_y) > 20:
             method = 'asymptotic'
         else:
             method = 'exact'
@@ -1777,22 +1816,24 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     # in case of ties, use midrank (see [1])
     r = scipy.stats.rankdata(z, method='average', axis=-1)
     dtype = xp_result_type(x, y, force_floating=True, xp=xp)
-    r = xp.astype(r, dtype, copy=False)
-    rx = r[..., :nx]
-    ry = r[..., nx:]
+    rx = r[..., :length_x]
+    ry = r[..., length_x:]
 
     # compute U (eq. 10 in [2])
-    u = (nx * xp.sum((rx - xp.arange(1, nx+1, dtype=dtype))**2, axis=-1)
-         + ny * xp.sum((ry - xp.arange(1, ny+1, dtype=dtype))**2, axis=-1))
+    u = (count_x * xp.sum((rx - xp.arange(1, length_x+1, dtype=dtype))**2, axis=-1)
+         + count_y * xp.sum((ry - xp.arange(1, length_y+1, dtype=dtype))**2, axis=-1))
 
     # compute T (eq. 9 in [2])
-    k, N = nx*ny, nx + ny
+    k, N = count_x*count_y, count_x + count_y
     t = u / (k*N) - (4*k - 1)/(6*N)
 
     if method == 'exact':
-        p = xp.asarray(_pval_cvm_2samp_exact(np.asarray(u), nx, ny), dtype=dtype)
+        if is_marray(xp):
+            u, count_x, count_y = u.data, count_x.data, count_y.data
+        p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
+        p = xp.asarray(p, dtype=dtype)
     else:
-        p = _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, xp=xp)
+        p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
 
     t = t[()] if t.ndim == 0 else t
     p = p[()] if p.ndim == 0 else p
@@ -1828,7 +1869,7 @@ class TukeyHSDResult:
     .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
            with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
            Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-           doi: https://doi.org/10.3102/10769986001002113.
+           :doi:`10.3102/10769986001002113`.
     """
 
     def __init__(self, statistic, pvalue, _ntreatments, _df, _stand_err):
@@ -1883,7 +1924,7 @@ class TukeyHSDResult:
         .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
                with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
                Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-               doi: https://doi.org/10.3102/10769986001002113.
+               :doi:`10.3102/10769986001002113`.
 
         Examples
         --------
@@ -1947,7 +1988,7 @@ def _tukey_hsd_iv(args, equal_var):
 
 
 @xp_capabilities(np_only=True)
-def tukey_hsd(*args, equal_var=True):
+def tukey_hsd(*samples, equal_var=True):
     """Perform Tukey's HSD test for equality of means over multiple treatments.
 
     Tukey's honestly significant difference (HSD) test performs pairwise
@@ -1967,10 +2008,10 @@ def tukey_hsd(*args, equal_var=True):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The sample measurements for each group. There must be at least
         two arguments.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If True (default) and equal sample size, perform Tukey-HSD test [6].
         If True and unequal sample size, perform Tukey-Kramer test [4]_.
         If False, perform Games-Howell test [7]_, which does not assume equal variances.
@@ -2022,22 +2063,22 @@ def tukey_hsd(*args, equal_var=True):
            Difference (HSD) Test."
            https://personal.utdallas.edu/~herve/abdi-HSD2010-pretty.pdf
     .. [3] "One-Way ANOVA Using SAS PROC ANOVA & PROC GLM." SAS
-           Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
+           Tutorials, 2007.
+           https://www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm
     .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
            Means with Unequal Numbers of Replications." Biometrics, vol. 12,
-           no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
-           Accessed 25 May 2021.
+           no. 3, 1956, pp. 307-310. https://www.jstor.org/stable/3001469
     .. [5] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.3.3.
            The ANOVA table and tests of hypotheses about means"
            https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.htm,
            2 June 2021.
     .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
-           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
-           www.jstor.org/stable/3001913. Accessed 14 June 2021.
+           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114.
+           https://www.jstor.org/stable/3001913
     .. [7] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
            with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
-           Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-           doi: https://doi.org/10.3102/10769986001002113.
+           Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976.
+           :doi:`10.3102/10769986001002113`.
 
 
     Examples
@@ -2104,7 +2145,7 @@ def tukey_hsd(*args, equal_var=True):
     (2 - 0) -4.620  5.140
     (2 - 1) -9.220  0.540
     """
-    args = _tukey_hsd_iv(args, equal_var)
+    args = _tukey_hsd_iv(samples, equal_var)
     ntreatments = len(args)
     means = np.asarray([np.mean(arg) for arg in args])
     nsamples_treatments = np.asarray([a.size for a in args])

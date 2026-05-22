@@ -82,7 +82,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-    See also
+    See Also
     --------
     show_options : Additional options accepted by the solvers
 

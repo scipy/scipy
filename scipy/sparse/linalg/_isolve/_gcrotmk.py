@@ -3,9 +3,11 @@
 
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
+# pyrefly:ignore[missing-module-attribute]
+from scipy.linalg import get_blas_funcs, qr, solve, svd, qr_insert, lstsq
 from .iterative import _get_atol_rtol
 from scipy.sparse.linalg._isolve.utils import make_system
+from scipy._lib._array_api import xp_capabilities
 
 
 __all__ = ['gcrotmk']
@@ -181,6 +183,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     return Q, R, B, vs, zs, y, res
 
 
+@xp_capabilities(np_only=True)
 def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=None,
             m=20, k=None, CU=None, discard_C=False, truncate='oldest'):
     """

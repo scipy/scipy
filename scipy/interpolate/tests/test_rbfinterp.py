@@ -515,8 +515,23 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
 
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
+    def test_singular(self):
+        # regression test for https://github.com/scipy/scipy/issues/23761
+        # The input is singular in floating-point, make sure the singularity is detected
+        points = np.array(
+            [[2.0, 0.0],
+             [0.0, 0.0],
+             [0.0, 1.0735703551645039e-302],
+             [0.5, 3.0]]
+        )
+        values = np.array([0.0, 0.0, 0.0, 1.0])
+
+        with pytest.raises(LinAlgError, match="Singular matrix"):
+            RBFInterpolator(points, values.reshape(-1, 1))
+
 
 @skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
+@make_xp_test_case(RBFInterpolator)
 class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
     # RBFInterpolator using 20 nearest neighbors.
     def build(self, *args, **kwargs):

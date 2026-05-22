@@ -2015,4 +2015,4 @@ References
 
 .. [5] T. Briand and P. Monasse, "Theory and Practice of Image B-Spline
        Interpolation", Image Processing On Line, 8, pp. 99–141, 2018.
-       https://doi.org/10.5201/ipol.2018.221
+       :doi:`10.5201/ipol.2018.221`.

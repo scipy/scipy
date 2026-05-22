@@ -274,14 +274,18 @@ class TestMMIOSparseCSR(TestMMIOArray):
         info = (2, 2, 3, 'coordinate', 'pattern', 'general')
         mmwrite(self.fn, a, field='pattern')
         assert_equal(mminfo(self.fn), info)
+
         b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(p, b.toarray())
-        assert not scipy.sparse.isspmatrix(b)
+        assert isinstance(b, scipy.sparse.sparray)
 
         b = mmread(self.fn, spmatrix=True)
-        assert scipy.sparse.isspmatrix(b)
-        b = mmread(self.fn)  # chk default
-        assert scipy.sparse.isspmatrix(b)
+        assert_array_almost_equal(p, b.toarray())
+        assert isinstance(b, scipy.sparse.spmatrix)
+
+        with pytest.deprecated_call(match="The default value"):
+            b = mmread(self.fn)  # chk default
+            assert not isinstance(b, scipy.sparse.sparray)
 
     def test_gh13634_non_skew_symmetric_int(self):
         a = scipy.sparse.csr_array([[1, 2], [-2, 99]], dtype=np.int32)
@@ -806,7 +810,7 @@ def test_mtx_append(tmp_path):
     mmread(test_readfile, spmatrix=False)
 
 
-def test_threadpoolctl():
+def check_threadpoolctl():
     try:
         import threadpoolctl
         if not hasattr(threadpoolctl, "register"):
@@ -816,11 +820,34 @@ def test_threadpoolctl():
         pytest.skip("no threadpoolctl")
         return
 
+
+def test_threadpoolctl():
+    check_threadpoolctl()
+
+    import threadpoolctl
+
+    # Ensure the extension module _fmm_core is loaded.
+    from scipy.io._fast_matrix_market import _fmm_core  # noqa: F401
+
     with threadpoolctl.threadpool_limits(limits=4):
         assert_equal(fmm.PARALLELISM, 4)
 
     with threadpoolctl.threadpool_limits(limits=2, user_api='scipy'):
         assert_equal(fmm.PARALLELISM, 2)
+
+
+def test_scipy_threadpoolctl_version():
+    check_threadpoolctl()
+
+    import threadpoolctl
+
+    # Ensure the extension module _fmm_core is loaded.
+    from scipy.io._fast_matrix_market import _fmm_core
+    with threadpoolctl.threadpool_limits(limits=4, user_api='scipy'):
+        ctls = threadpoolctl.threadpool_info()
+        for ctl in ctls:
+            if ctl['user_api'] == 'scipy' and ctl['internal_api'] == 'scipy_mmio':
+                assert ctl['version'] == _fmm_core.__version__
 
 
 def test_gh21999_file_not_exist():

@@ -354,9 +354,9 @@ class TestC2D:
         xp_assert_close(den, den1, rtol=1e-13)
         xp_assert_close(den, den2, rtol=1e-13)
 
-@skip_xp_backends(np_only=True, reason="lti currently not supported")
+
 class TestC2dLti:
-    def test_c2d_ss(self, xp):
+    def test_c2d_ss(self):
         # StateSpace
         A = np.array([[-0.3, 0.1], [0.2, -0.7]])
         B = np.array([[0], [1]])
@@ -367,23 +367,24 @@ class TestC2dLti:
         A_res = np.array([[0.985136404135682, 0.004876671474795],
                           [0.009753342949590, 0.965629718236502]])
         B_res = np.array([[0.000122937599964], [0.049135527547844]])
+        C_res = np.astype(C, np.float64)
 
         sys_ssc = lti(A, B, C, D)
         sys_ssd = sys_ssc.to_discrete(dt=dt)
 
         xp_assert_close(sys_ssd.A, A_res)
         xp_assert_close(sys_ssd.B, B_res)
-        xp_assert_close(sys_ssd.C, C)
+        xp_assert_close(sys_ssd.C, C_res)
         xp_assert_close(sys_ssd.D, np.zeros_like(sys_ssd.D))
 
         sys_ssd2 = c2d(sys_ssc, dt=dt)
 
         xp_assert_close(sys_ssd2.A, A_res)
         xp_assert_close(sys_ssd2.B, B_res)
-        xp_assert_close(sys_ssd2.C, C)
-        xp_assert_close(sys_ssd2.D, np.zeros_like(sys_ssd2.D))
+        xp_assert_close(sys_ssd2.C, C_res)
+        xp_assert_close(sys_ssd2.D, np.zeros_like(sys_ssd.D))
 
-    def test_c2d_tf(self, xp):
+    def test_c2d_tf(self):
 
         sys = lti([0.5, 0.3], [1.0, 0.4])
         sys = sys.to_discrete(0.005)

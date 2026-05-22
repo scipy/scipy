@@ -6,8 +6,8 @@ py3 = import('python').find_installation(pure: false)
 
 cy = meson.get_compiler('cython')
 
-if not cy.version().version_compare('>=3.0.8')
-  error('tests requires Cython >= 3.0.8')
+if not cy.version().version_compare('>=3.2.0')
+  error('tests requires Cython >= 3.2.0')
 endif
 
 cython_args = []

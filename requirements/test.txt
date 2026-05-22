@@ -15,3 +15,4 @@ array-api-strict>=2.3.1
 Cython
 meson
 ninja; sys_platform != "emscripten"
+scipy-doctest>=2.0.0
