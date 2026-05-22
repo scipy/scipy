@@ -4158,35 +4158,31 @@ def vectorstrength(events, period):
 
     Examples
     --------
-    Five events occurring at the same phase of each period are perfectly
-    phase-locked, so the vector strength is 1. The returned phase tells you
-    where on the cycle the events cluster -- here, a quarter-period offset
-    gives phase = pi/2.
+    In this example, five events occur exactly 1 second apart, starting
+    at 0.25 s. The vector strength is 1 for ``period=1`` because all
+    events fall at the same phase of every cycle, and the returned phase
+    is ``pi/2``, a quarter of the way through the period.
 
     >>> import numpy as np
     >>> from scipy.signal import vectorstrength
     >>> events = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
-    >>> strength, phase = vectorstrength(events, period=1.0)
-    >>> float(np.round(strength, 8))
-    1.0
-    >>> float(np.round(phase, 8))
-    1.57079633
+    >>> vectorstrength(events, period=1.0)
+    (np.float64(1.0), np.float64(1.5707963267948968))  # may vary
 
-    1000 events spaced evenly across one period give a vector strength near
-    zero, indicating no phase synchronization.
+    ``period`` can also be an array of candidate periods. With the same
+    events as above, the strength stays at 1 at the true period of 1 s
+    and at the sub-multiple period 0.5 s (a form of aliasing), and drops
+    to 0 at ``period=5`` where the events span a single period at
+    evenly-spaced phases:
 
-    >>> events = np.linspace(0.0, 1.0, 1000, endpoint=False)
-    >>> strength, _ = vectorstrength(events, period=1.0)
-    >>> float(np.round(strength, 8))
-    0.0
-
-    ``period`` can be an array to evaluate the resonating vector strength
-    against several candidate periods at once.
-
-    >>> events = np.arange(0.0, 10.0, 0.5)
-    >>> strengths, _ = vectorstrength(events, period=[0.5, 1.0])
-    >>> np.round(strengths, 8)
-    array([1., 0.])
+    >>> periods = [1, 5, 0.5]
+    >>> strengths, phases = vectorstrength(events, periods)
+    >>> for p_, s_, ph_ in zip(periods, strengths, phases):
+    ...     print(f"period = {p_:.1f}: strength = {s_:.2f}, "
+    ...           f"phase = {np.rad2deg(ph_):.1f} deg")
+    period = 1.0: strength = 1.00, phase = 90.0 deg
+    period = 5.0: strength = 0.00, phase = 153.4 deg
+    period = 0.5: strength = 1.00, phase = -180.0 deg
 
     The following example depicts the vector strength and its phase for
     100 samples with a constant period of 10 s. The maximum strength of 1
