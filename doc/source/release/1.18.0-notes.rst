@@ -44,8 +44,13 @@ New features
 
 ``scipy.fft`` improvements
 ==============================
-- The built-in FFT library has been switched from ``pocketfft`` to its
-  successor, ``ducc.fft``.
+- SciPy's internal FFT backend has switched from ``pocketfft`` to its
+  successor package ``ducc0.fft``, which features several incremental
+  improvements. The most significant of those from SciPy's perspective is
+  probably that storage requirements for internally cached plans have been
+  significantly reduced for most long 1D transforms. Plans that require more
+  storage than 1MB will no longer be cached; this mainly affects huge 1D
+  transforms of prime and near-prime sizes.
 
 
 ``scipy.interpolate`` improvements
@@ -70,8 +75,6 @@ New features
 - Machinery is now provided for downstream ``cython_lapack`` users to gracefully
   handle LP64/ILP64 backend builds. Worked examples, including build system
   details, have been included in this release.
-- ``scipy.linalg.{get_lapack_funcs, get_blas_funcs}`` have a new (optional)
-  ``ilp64`` keyword parameter.
 - An ``overwrite_b`` keyword argument was added to ``eigvals``, for consistency
   with other similar ``linalg`` functions.
 - ``linalg.cholesky`` now leverages symmetry properties for performance
@@ -174,9 +177,9 @@ New features
   population L-moments.
 
 
-************************
-Python Array API Support
-************************
+*********************************
+Python Array API Standard Support
+*********************************
 - Support has been added for CuPy delegation for: ``interpolate.PPoly``,
   ``interpolate.BPoly``, and ``interpolate.BSpline``.
 - CuPy support has been added for `scipy.stats.rankdata`.
@@ -283,8 +286,8 @@ Backwards incompatible changes
 Other changes
 *************
 - The vendored ``Boost.Math`` was updated from ``1.89.0`` to ``1.91.0``.
-- SciPy now has a pixi package definition, allowing developers to build
-  SciPy from source via ``pixi build``.
+- SciPy now has a Pixi package definition, allowing developers to easily build
+  SciPy from source inside Pixi workspaces.
 - Developers may be interested in the private build option ``_without-fortran``,
   which allows building SciPy from source in the absence of a Fortran compiler.
   This is an early prototype of the planned capability of a Fortran-free
