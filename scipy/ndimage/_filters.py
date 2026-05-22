@@ -41,6 +41,7 @@ from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
 from . import _rank_filter_1d
+from . import _hampel_1d
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -49,7 +50,8 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
-           'generic_filter1d', 'generic_filter', 'vectorized_filter']
+           'generic_filter1d', 'generic_filter', 'vectorized_filter',
+           'hampel_filter']
 
 
 def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
@@ -2183,6 +2185,136 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     """
     return _rank_filter(input, percentile, size, footprint, output, mode,
                         cval, origin, 'percentile', axes=axes)
+
+
+def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
+                  return_median=False, return_indices=False):
+    """Apply a 1-D Hampel filter for outlier detection and replacement.
+
+    Each sample is compared against the local median of a centred window of
+    length ``size``. The local median absolute deviation (MAD) is computed
+    over the same window. Samples for which
+    ``abs(input[i] - median[i]) > threshold * MAD[i]`` are classified as
+    outliers and replaced by the local median; all other samples pass
+    through unchanged.
+
+    The local median is computed with `median_filter` (which uses the fast
+    1-D rank filter) and the MAD is computed in ``O(log size)`` per sample
+    by a C extension that consumes both the original signal and the
+    pre-computed median.
+
+    Parameters
+    ----------
+    input : array_like
+        Input 1-D array.
+    size : int
+        Window length. Should be a positive odd integer; even values are
+        accepted and use a centred window with the same convention as
+        `median_filter`.
+    threshold : float, optional
+        Outlier threshold expressed in units of MAD. Default is ``3.0``.
+    mode : str, optional
+        Boundary handling for both the median and the MAD computations.
+        Same modes as `median_filter` (default ``"reflect"``).
+    cval : scalar, optional
+        Constant fill value used when ``mode='constant'``. Default ``0.0``.
+    return_median : bool, optional
+        If True, also return the local-median signal. Default is False.
+    return_indices : bool, optional
+        If True, also return the sorted integer indices of replaced samples.
+        Default is False.
+
+    Returns
+    -------
+    filtered : ndarray
+        Signal with detected outliers replaced by the local median.
+    median : ndarray, optional
+        Local median signal (output of `median_filter`).
+        Returned only when ``return_median`` is True.
+    changed_indices : ndarray, optional
+        Sorted array of integer indices into ``input`` whose values were
+        replaced. Returned only when ``return_indices`` is True.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import ndimage
+    >>> x = np.array([1.0, 2.0, 1.5, 2.5, 50.0, 2.0, 1.0, 2.5])
+    >>> filt = ndimage.hampel_filter(x, size=5)
+    >>> filt[4]
+    np.float64(2.0)
+
+    Request the indices of replaced samples in addition to the filtered
+    signal:
+
+    >>> filt, idx = ndimage.hampel_filter(x, size=5, return_indices=True)
+    >>> idx
+    array([4])
+    """
+    input_arr = np.asarray(input)
+    if input_arr.ndim != 1:
+        raise ValueError("hampel_filter supports 1-D arrays only")
+    size = operator.index(size)
+    if size <= 0:
+        raise ValueError("size must be a positive integer")
+    threshold = float(threshold)
+    if threshold < 0.0 or not np.isfinite(threshold):
+        raise ValueError("threshold must be a non-negative finite number")
+
+    if input_arr.dtype == np.float32:
+        x = np.ascontiguousarray(input_arr)
+    else:
+        x = np.ascontiguousarray(input_arr, dtype=np.float64)
+
+    # Degenerate inputs: no filtering possible. Warn and pass the signal
+    # through unchanged (with the same return-tuple shape the caller asked
+    # for). Cases covered:
+    #   - empty input
+    #   - size == 1 (window of one element: MAD is always 0, nothing changes)
+    #   - size larger than the input length
+    degenerate_reason = None
+    if x.size == 0:
+        degenerate_reason = "input is empty"
+    elif size == 1:
+        degenerate_reason = "size == 1, no neighbours to compute MAD"
+    elif size > x.size:
+        degenerate_reason = (f"size ({size}) is larger than input length "
+                             f"({x.size})")
+    if degenerate_reason is not None:
+        warnings.warn(
+            f"hampel_filter: {degenerate_reason}; returning input unchanged.",
+            UserWarning, stacklevel=2,
+        )
+        filtered = x.copy()
+        median = x.copy()
+        changed_mask = np.zeros(x.shape, dtype=bool)
+        if not return_median and not return_indices:
+            return filtered
+        result = [filtered]
+        if return_median:
+            result.append(median)
+        if return_indices:
+            result.append(np.flatnonzero(changed_mask))
+        return tuple(result)
+
+    median = median_filter(x, size=size, mode=mode, cval=cval)
+    median = np.ascontiguousarray(median, dtype=x.dtype)
+
+    filtered = np.empty_like(x)
+    changed_mask = np.zeros(x.shape, dtype=bool)
+    mode_code = _ni_support._extend_mode_to_code(mode, is_filter=True)
+    cval_cast = x.dtype.type(cval)
+    _hampel_1d.hampel(x, median, int(size), float(threshold),
+                      int(mode_code), cval_cast, filtered, changed_mask)
+
+    if not return_median and not return_indices:
+        return filtered
+    result = [filtered]
+    if return_median:
+        result.append(median)
+    if return_indices:
+        result.append(np.flatnonzero(changed_mask))
+    return tuple(result)
 
 
 @_ni_docstrings.docfiller

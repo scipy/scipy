@@ -3379,3 +3379,139 @@ def test_median_filter_lim2():
     expected = np.ones(8)
     filtered_samples = ndimage.median_filter(sample_array, size=19, mode="reflect")
     xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
+
+
+# ---------------------------------------------------------------------------
+# Hampel filter tests
+# ---------------------------------------------------------------------------
+
+def _hampel_reference(signal, size, threshold=3.0, mode="reflect", cval=0.0):
+    """Brute-force Hampel reference: median_filter for the median, per-window
+    sort for the MAD. Used to validate the O(log W) C extension."""
+    signal = np.asarray(signal, dtype=np.float64)
+    Z = size // 2
+    pad_mode_map = {
+        "reflect": "symmetric",
+        "mirror": "reflect",
+        "nearest": "edge",
+        "wrap": "wrap",
+        "constant": "constant",
+    }
+    if mode == "constant":
+        padded = np.pad(signal, Z, mode="constant", constant_values=cval)
+    else:
+        padded = np.pad(signal, Z, mode=pad_mode_map[mode])
+    median = ndimage.median_filter(signal, size=size, mode=mode, cval=cval)
+    filtered = signal.copy()
+    changed = np.zeros(signal.shape, dtype=bool)
+    for i in range(signal.size):
+        window = padded[i:i + size]
+        mad = float(np.median(np.abs(window - median[i])))
+        if abs(signal[i] - median[i]) > threshold * mad:
+            filtered[i] = median[i]
+            changed[i] = True
+    return filtered, median, np.flatnonzero(changed)
+
+
+@pytest.mark.parametrize("size", [3, 5, 7, 11])
+@pytest.mark.parametrize("mode", ["reflect", "nearest", "mirror", "wrap"])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hampel_against_reference(size, mode, dtype):
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal(200).astype(dtype)
+    # Inject a few outliers.
+    x[[3, 50, 120, 199]] += 50.0
+    filt, med, idx = ndimage.hampel_filter(
+        x, size=size, mode=mode, return_median=True, return_indices=True
+    )
+    ref_filt, ref_med, ref_idx = _hampel_reference(
+        x.astype(np.float64), size=size, mode=mode
+    )
+    assert_array_equal(idx, ref_idx)
+    assert_allclose(med, ref_med.astype(filt.dtype), atol=0, rtol=0)
+    assert_allclose(filt, ref_filt.astype(filt.dtype), atol=0, rtol=0)
+
+
+def test_hampel_constant_mode():
+    x = np.asarray([1.0, 1.0, 1.0, 100.0, 1.0, 1.0, 1.0])
+    filt, idx = ndimage.hampel_filter(
+        x, size=5, mode="constant", cval=0.0, return_indices=True
+    )
+    ref_filt, ref_med, ref_idx = _hampel_reference(
+        x, size=5, mode="constant", cval=0.0
+    )
+    assert_array_equal(idx, ref_idx)
+    assert_allclose(filt, ref_filt)
+
+
+def test_hampel_no_outliers_passes_through():
+    # Smooth deterministic signal: every window has a well-defined MAD that
+    # is comparable to the local deviations, so even a modest threshold leaves
+    # the signal untouched.
+    x = np.sin(np.linspace(0.0, 2.0 * np.pi, 100))
+    filt, idx = ndimage.hampel_filter(x, size=7, threshold=3.0,
+                                      return_indices=True)
+    assert idx.size == 0
+    assert_allclose(filt, x)
+
+
+def test_hampel_returns_median_signal():
+    rng = np.random.default_rng(2)
+    x = rng.standard_normal(50)
+    filt, med = ndimage.hampel_filter(x, size=5, return_median=True)
+    expected_med = ndimage.median_filter(x, size=5)
+    assert_allclose(med, expected_med)
+
+
+def test_hampel_default_returns_filtered_only():
+    rng = np.random.default_rng(3)
+    x = rng.standard_normal(20)
+    out = ndimage.hampel_filter(x, size=5)
+    assert isinstance(out, np.ndarray)
+    assert out.shape == x.shape
+
+
+def test_hampel_rejects_2d():
+    with pytest.raises(ValueError):
+        ndimage.hampel_filter(np.ones((4, 4)), size=3)
+
+
+def test_hampel_size_validation():
+    with pytest.raises(ValueError):
+        ndimage.hampel_filter(np.ones(10), size=0)
+
+
+def test_hampel_threshold_validation():
+    with pytest.raises(ValueError):
+        ndimage.hampel_filter(np.ones(10), size=5, threshold=-1.0)
+    with pytest.raises(ValueError):
+        ndimage.hampel_filter(np.ones(10), size=5, threshold=np.inf)
+
+
+def test_hampel_empty_input_warns_and_passes_through():
+    x = np.asarray([], dtype=np.float64)
+    with pytest.warns(UserWarning, match="empty"):
+        out, idx = ndimage.hampel_filter(x, size=5, return_indices=True)
+    assert out.shape == (0,)
+    assert idx.shape == (0,)
+
+
+def test_hampel_size_one_warns_and_passes_through():
+    rng = np.random.default_rng(4)
+    x = rng.standard_normal(20)
+    with pytest.warns(UserWarning, match="size == 1"):
+        out, idx = ndimage.hampel_filter(x, size=1, return_indices=True)
+    assert_allclose(out, x)
+    assert idx.size == 0
+
+
+def test_hampel_size_larger_than_input_warns_and_passes_through():
+    rng = np.random.default_rng(5)
+    x = rng.standard_normal(7)
+    with pytest.warns(UserWarning, match="larger than input length"):
+        out, med, idx = ndimage.hampel_filter(
+            x, size=11, return_median=True, return_indices=True,
+        )
+    assert_allclose(out, x)
+    assert_allclose(med, x)
+    assert idx.size == 0

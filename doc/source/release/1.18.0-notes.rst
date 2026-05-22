@@ -43,6 +43,13 @@ New features
 
 ``scipy.ndimage`` improvements
 ==============================
+- The new `~scipy.ndimage.hampel_filter` implements a 1-D Hampel filter for
+  outlier detection and replacement, using the local median and median
+  absolute deviation (MAD). The local median is computed with the existing
+  fast 1-D rank filter; the MAD and replacement step are computed in
+  ``O(log W)`` per sample by a dedicated C++ extension. Optional
+  ``return_median`` and ``return_indices`` flags expose the median signal
+  and the indices of replaced samples.
 
 
 ``scipy.optimize`` improvements
