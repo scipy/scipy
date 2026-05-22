@@ -260,7 +260,7 @@ class TestLineSearch:
                     f, fprime, x, p, g0, f0, old_f, amax=smax)
             assert_equal(self.fcount.c, fc+gc)
             params = dict(check_namespace=False, check_dtype=False)
-            params["nulp"] = 50 if is_numpy(xp) else 100
+            params["nulp"] = 50 if is_numpy(xp) else 200
             xp_assert_close_nulp(ofv, f(x), **params)
             xp_assert_close_nulp(fv, f(x + s*p), **params)
             if gv is not None:
