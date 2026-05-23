@@ -130,7 +130,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     >>> F = fft.fht(f, dln, mu=ord)
 
     Calculate the evaluation points for the transformed data ``F``.
-    ``fht`` calculates evaluation points ``k`` such that ``kr`` is
+    ``fht`` calculates evaluation points ``k`` such that ``k * r`` is
     constant for each ``r`` and then returns the transformed data in
     ascending order of evaluation points. To calculate the evaluation
     points in ascending order, flip the order of ``r`` in the equation
