@@ -1645,6 +1645,19 @@ def medfilt(volume, kernel_size=None):
     --------
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
+    
+    Examples
+    --------
+    Apply a 1-D median filter to an array containing noise spikes.
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> x = np.array([1, 2, 100, 2, 1, 1, 10, 1, 1])
+
+    Apply a filter with a kernel size of 3:
+
+    >>> signal.medfilt(x, kernel_size=3)
+    Output - array([1, 2, 2, 2, 1, 1, 1, 1, 1])
 
     """
     xp = array_namespace(volume)
