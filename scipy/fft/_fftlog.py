@@ -284,7 +284,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     >>> a = fft.ifht(A, dln, mu=2)
 
     Calculate the evaluation points for the transformed data ``a``.
-    ``ifht`` calculates evaluation points ``r`` such that ``kr`` is
+    ``ifht`` calculates evaluation points ``r`` such that ``k * r`` is
     constant for each ``k`` and then returns the transformed data in
     ascending order of evaluation points. To calculate the evaluation
     points in ascending order, flip the order of ``k`` in the equation
