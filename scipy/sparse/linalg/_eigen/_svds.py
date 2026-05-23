@@ -91,9 +91,11 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
         raise ValueError(f"`return_singular_vectors` must be in {rs_options}.")
 
     if isinstance(rng, numbers.Integral | np.integer):
-        rng = np.random.default_rng(np.random.RandomState(rng))
-    elif isinstance(rng, np.random.RandomState):
         rng = np.random.default_rng(rng)
+    elif isinstance(rng, np.random.RandomState):
+        # default_rng did not accept RandomState before numpy 2.2;
+        # seed a Generator from the RandomState
+        rng = np.random.default_rng(rng.randint(1, 2**31 - 1, dtype=np.int64))
     elif rng is None:
         rng = np.random.default_rng()
     elif isinstance(rng, np.random.Generator):

@@ -296,7 +296,16 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
             elif as_new_kwarg:  # no warnings; this is the preferred use
                 # After the removal of the decorator, normalization with
                 # np.random.default_rng will be done inside the decorated function
-                kwargs[NEW_NAME] = np.random.default_rng(kwargs[NEW_NAME])
+                rng = kwargs[NEW_NAME]
+                if isinstance(rng, np.random.RandomState):
+                    # default_rng did not accept RandomState before numpy 2.2
+                    # and it's not guaranteed on all numpy versions; seed a
+                    # Generator from the RandomState to be forward-compatible
+                    kwargs[NEW_NAME] = np.random.default_rng(
+                        rng.randint(1, 2**31 - 1, dtype=np.int64)
+                    )
+                else:
+                    kwargs[NEW_NAME] = np.random.default_rng(rng)
 
             elif global_seed_set and emit_warning:
                 # Emit FutureWarning if `np.random.seed` was used and no PRNG was passed

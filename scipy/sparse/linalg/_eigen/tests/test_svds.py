@@ -423,6 +423,19 @@ class SVDSCommonTests:
             assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
+    def test_svd_rng_RandomState(self):
+        # gh-25069: svds must accept np.random.RandomState as rng argument,
+        # even on numpy < 2.2 where default_rng did not accept RandomState.
+        n = 50
+        k = 1
+
+        rng = np.random.default_rng(0)
+        A = rng.random((n, n))
+
+        # RandomState as rng should not raise
+        res = svds(A, k, solver=self.solver, rng=np.random.RandomState(0))
+        _check_svds(A, k, *res)
+
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
     def test_svd_rng_3(self):
