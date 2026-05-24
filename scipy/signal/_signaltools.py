@@ -1646,6 +1646,29 @@ def medfilt(volume, kernel_size=None):
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
 
+    Examples
+    --------
+    Apply a median filter to a 1-D array to smooth out a spike:
+
+    >>> import numpy as np
+    >>> from scipy.signal import medfilt
+    >>> x = np.array([1., 2., 3., 100., 5., 6., 7.])
+    >>> medfilt(x, kernel_size=3)
+    array([1., 2., 3., 5., 6., 6., 6.])
+
+    A larger kernel size increases smoothing:
+
+    >>> medfilt(x, kernel_size=5)
+    array([1., 2., 3., 5., 6., 6., 5.])
+
+    Apply a median filter to a 2-D array using the default kernel size of 3:
+
+    >>> x2d = np.array([[1., 2., 3.], [4., 50., 6.], [7., 8., 9.]])
+    >>> medfilt(x2d, kernel_size=3)
+    array([[0., 2., 0.],
+           [2., 6., 3.],
+           [0., 6., 0.]])
+
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
