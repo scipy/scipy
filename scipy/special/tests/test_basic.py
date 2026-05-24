@@ -3645,6 +3645,16 @@ class TestBessel:
         ozr = special.yn(0,.1)
         assert_allclose(oz, ozr, atol=1.5e-8, rtol=0)
 
+    def test_y0_tiny_x(self):
+        # Regression test for gh-25199: y0(1e-200) should not emit a
+        # spurious overflow warning.
+        x = 1e-200
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            result = special.y0(x)
+        # Expected: -293.2480438468798 (matches mpmath with high precision)
+        assert_allclose(result, -293.2480438468798, rtol=1e-12)
+
     def test_y1(self):
         o1 = special.y1(.1)
         o1r = special.yn(1,.1)
