@@ -390,6 +390,29 @@ class TestCorr:
         attributes = ('correlation', 'pvalue')
         check_named_results(result, attributes, ma=True)
 
+    def test_overflow_gh6061(self):
+        # Regression test for GitHub issue #6061 - Overflow on Windows
+        x = np.arange(2000, dtype=float)
+        x = np.ma.masked_greater(x, 1995)
+        y = np.arange(2000, dtype=float)
+        y = np.concatenate((y[1000:], y[:1000]))
+        assert_(np.isfinite(stats.mstats.kendalltau(x,y)[1]))
+
+    def test_kendalltau_vs_mstats_basic(self):
+        rng = np.random.RandomState(42)
+        for s in range(3, 10):
+            a = []
+            # Generate rankings with ties
+            for i in range(s):
+                a += [i]*i
+            b = list(a)
+            rng.shuffle(a)
+            rng.shuffle(b)
+            expected = mstats.kendalltau(a, b)
+            actual = stats.kendalltau(a, b)
+            assert_almost_equal(actual[0], expected[0])
+            assert_almost_equal(actual[1], expected[1])
+
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
     @pytest.mark.slow
@@ -1941,7 +1964,7 @@ class TestCompareWithStats:
     def test_obrientransform(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
-            r = stats.obrientransform(x)
+            r = np.stack(stats.obrientransform(x))
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T, rm[0:len(x)])
 

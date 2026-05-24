@@ -26,9 +26,9 @@
  * @param in_lwrk   size of work array
  * @param iwork     integer workspace array
  */
-void sritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, float* restrict U, const int ldu,
-              float* restrict V, const int ldv, float* restrict work, const int in_lwrk, int* restrict iwork);
+void sritzvec(const int which, const int jobu, const int jobv, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT k, CBLAS_INT dim,
+              float* restrict D, float* restrict E, float* restrict U, const CBLAS_INT ldu,
+              float* restrict V, const CBLAS_INT ldv, float* restrict work, const CBLAS_INT in_lwrk, CBLAS_INT* restrict iwork);
 
 
 /**
@@ -55,9 +55,9 @@ void sritzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param in_lwrk   size of work array
  * @param iwork     integer workspace array
  */
-void dritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, double* restrict U, const int ldu,
-              double* restrict V, const int ldv, double* restrict work, const int in_lwrk, int* restrict iwork);
+void dritzvec(const int which, const int jobu, const int jobv, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT k, CBLAS_INT dim,
+              double* restrict D, double* restrict E, double* restrict U, const CBLAS_INT ldu,
+              double* restrict V, const CBLAS_INT ldv, double* restrict work, const CBLAS_INT in_lwrk, CBLAS_INT* restrict iwork);
 
 
 /**
@@ -86,10 +86,10 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param lcwrk     size of complex workspace array
  * @param iwork     integer workspace array
  */
-void critzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, PROPACK_CPLXF_TYPE* restrict U, const int ldu,
-              PROPACK_CPLXF_TYPE* restrict V, const int ldv, float* restrict work, const int in_lwrk,
-              PROPACK_CPLXF_TYPE* restrict cwork, const int lcwrk, int* restrict iwork);
+void critzvec(const int which, const int jobu, const int jobv, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT k, CBLAS_INT dim,
+              float* restrict D, float* restrict E, PROPACK_CPLXF_TYPE* restrict U, const CBLAS_INT ldu,
+              PROPACK_CPLXF_TYPE* restrict V, const CBLAS_INT ldv, float* restrict work, const CBLAS_INT in_lwrk,
+              PROPACK_CPLXF_TYPE* restrict cwork, const CBLAS_INT lcwrk, CBLAS_INT* restrict iwork);
 
 
 /**
@@ -118,7 +118,7 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param lzwrk     size of complex workspace array
  * @param iwork     integer workspace array
  */
-void zritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, PROPACK_CPLX_TYPE* restrict U, const int ldu,
-              PROPACK_CPLX_TYPE* restrict V, const int ldv, double* restrict work, const int in_lwrk,
-              PROPACK_CPLX_TYPE* restrict zwork, const int lzwrk, int* restrict iwork);
+void zritzvec(const int which, const int jobu, const int jobv, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT k, CBLAS_INT dim,
+              double* restrict D, double* restrict E, PROPACK_CPLX_TYPE* restrict U, const CBLAS_INT ldu,
+              PROPACK_CPLX_TYPE* restrict V, const CBLAS_INT ldv, double* restrict work, const CBLAS_INT in_lwrk,
+              PROPACK_CPLX_TYPE* restrict zwork, const CBLAS_INT lzwrk, CBLAS_INT* restrict iwork);

@@ -14,7 +14,7 @@ try:
 except ImportError:
     _has_uarray = False
 else:
-    from scipy._lib._pep440 import Version as _Version
+    from scipy._external.packaging_version.version import Version as _Version
 
     _has_uarray = _Version(_uarray.__version__) >= _Version("0.8")
     del _uarray

@@ -1,12 +1,12 @@
 #include "nnls.h"
 
 void
-__nnls(const int m, const int n, double* restrict a, double* restrict b,
+__nnls(const CBLAS_INT m, const CBLAS_INT n, double* restrict a, double* restrict b,
        double* restrict x, double* restrict w, double* restrict zz,
-       int* restrict indices, const int maxiter, double* rnorm, int* info)
+       CBLAS_INT* restrict indices, const int64_t maxiter, double* rnorm, int64_t* info)
 {
-    int i = 0, ii = 0, ip = 0, indz = 0, iteration = 0, iz = 0, izmax = 0;
-    int j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
+    CBLAS_INT i = 0, ii = 0, ip = 0, indz = 0, iteration = 0, iz = 0, izmax = 0;
+    CBLAS_INT j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
     double tau = 0.0, unorm = 0.0, ztest, alpha, cc, ss, wmax, T, tmp_work;
     double pivot = 1.0, pivot2 = 0.0, tmp = 0.0, spacing = 0.0;
     *info = 1;
@@ -30,7 +30,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
         {
             j = indices[i];
             tmpint = m - indz;
-            w[j] = ddot_(&tmpint, &a[indz + j*m], &one, &b[indz], &one);
+            w[j] = BLAS_FUNC(ddot)(&tmpint, &a[indz + j*m], &one, &b[indz], &one);
         }
 
         // Find the next linearly independent column that corresponds to the
@@ -56,10 +56,10 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
             // dependence.
             pivot = a[indz + j*m];
             tmpint = m - indz;
-            dlarfgp_(&tmpint, &pivot, &a[indz + 1 + j*m], &one, &tau);
+            BLAS_FUNC(dlarfgp)(&tmpint, &pivot, &a[indz + 1 + j*m], &one, &tau);
 
             // Compute the norm of a[0:indz, j] to check for linear dependence.
-            unorm = (indz > 0 ? dnrm2_(&indz, &a[j*m], &one) : 0.0);
+            unorm = (indz > 0 ? BLAS_FUNC(dnrm2)(&indz, &a[j*m], &one) : 0.0);
             // unorm is nonnegative
             spacing = (unorm > 0.0 ? nextafter(unorm, 2*unorm) - unorm : 0.0);
 
@@ -72,7 +72,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                 tmpint = m - indz;
                 pivot2 = a[indz + j*m];
                 a[indz + j*m] = 1.0;
-                dlarf_("L", &tmpint, &one, &a[indz + j*m], &one, &tau, &zz[indz], &tmpint, &tmp_work);
+                BLAS_FUNC(dlarf)("L", &tmpint, &one, &a[indz + j*m], &one, &tau, &zz[indz], &tmpint, &tmp_work);
                 // See if ztest is positive. This is from the original F77 code.
                 // Probably better to use a sign test instead of a division.
                 ztest = zz[indz] / pivot;
@@ -104,7 +104,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
             for (k = indz; k < n; k++)
             {
                 jj = indices[k];
-                dlarf_("L", &tmpint, &one, &a[indz - 1 + j*m], &one, &tau, &a[indz - 1 + jj*m], &tmpint, &tmp_work);
+                BLAS_FUNC(dlarf)("L", &tmpint, &one, &a[indz - 1 + j*m], &one, &tau, &a[indz - 1 + jj*m], &tmpint, &tmp_work);
             }
         }
         // Restore the pivot element into a, zero the subdiagonal elements in col j
@@ -176,7 +176,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                     {
                         ii = indices[j];
                         indices[j-1] = ii;
-                        dlartgp_(&a[j-1 + ii*m], &a[j + ii*m], &cc, &ss, &a[j-1 + ii*m]);
+                        BLAS_FUNC(dlartgp)(&a[j-1 + ii*m], &a[j + ii*m], &cc, &ss, &a[j-1 + ii*m]);
                         a[j + ii*m] = 0.0;
                         // Apply the Givens rotation to all columns except ii.
                         // Because the columns are not ordered we do it manually.
@@ -244,7 +244,7 @@ END:
     if (indz < m)
     {
         tmpint = m - indz;
-        *rnorm = dnrm2_(&tmpint, &b[indz], &one);
+        *rnorm = BLAS_FUNC(dnrm2)(&tmpint, &b[indz], &one);
     } else {
         for (i = 0; i < n; i++) { w[i] = 0.0; }
         *rnorm = 0.0;

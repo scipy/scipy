@@ -1,11 +1,10 @@
 import logging
-import sys
 import warnings
 
 import numpy as np
 import time
 from multiprocessing import Pool
-from numpy.testing import assert_allclose, IS_PYPY
+from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
 from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
@@ -745,8 +744,6 @@ class TestShgoArguments:
         """Test single function constraint passing"""
         SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
 
-    @pytest.mark.xfail(IS_PYPY and sys.platform == 'win32',
-            reason="Failing and fix in PyPy not planned (see gh-18632)")
     def test_10_finite_time(self):
         """Test single function constraint passing"""
         options = {'maxtime': 1e-15}

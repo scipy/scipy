@@ -6,8 +6,9 @@ import numpy as np
 import pytest
 
 from scipy._lib._testutils import IS_EDITABLE, _test_cython_extension, cython
-from scipy.linalg.blas import cdotu  # type: ignore[attr-defined]
-from scipy.linalg.lapack import dgtsv  # type: ignore[attr-defined]
+from scipy.linalg.blas import get_blas_funcs
+from scipy.linalg.lapack import get_lapack_funcs
+import scipy.linalg.cython_blas as cython_blas
 
 
 @pytest.mark.parallel_threads_limit(4)  # 0.35 GiB per thread RAM usage
@@ -29,6 +30,7 @@ def test_cython(tmp_path):
     b = np.ones(9)
     c = np.ones(8) * 4
     x = np.ones(9)
+    dgtsv = get_lapack_funcs('gtsv', dtype=np.float64, ilp64="preferred")
     _, _, _, x, _ = dgtsv(a, b, c, x)
     a = np.ones(8) * 3
     b = np.ones(9)
@@ -43,5 +45,11 @@ def test_cython(tmp_path):
     np.testing.assert_array_equal(x, x_cpp)
     cx = np.array([1-1j, 2+2j, 3-3j], dtype=np.complex64)
     cy = np.array([4+4j, 5-5j, 6+6j], dtype=np.complex64)
+    cdotu = get_blas_funcs('dotu', dtype=np.complex64, ilp64="preferred")
     np.testing.assert_array_equal(cdotu(cx, cy), extensions.complex_dot(cx, cy))
     np.testing.assert_array_equal(cdotu(cx, cy), extensions_cpp.complex_dot(cx, cy))
+
+    # Verify blas_int size consistency between installed and JIT-compiled modules
+    expected_size = cython_blas._blas_int_size()
+    assert extensions.get_blas_int_size() == expected_size
+    assert extensions_cpp.get_blas_int_size() == expected_size

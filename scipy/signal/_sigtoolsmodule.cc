@@ -1016,35 +1016,43 @@ static struct PyMethodDef toolbox_module_methods[] = {
 	{NULL, NULL, 0, NULL}		/* sentinel */
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_sigtools",
-    NULL,
-    -1,
-    toolbox_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+static int module_exec(PyObject *module) {
+    (void)module;  /* unused */
+
+    if (_import_array() < 0) { return -1; }
+
+    scipy_signal__sigtools_linear_filter_module_init();
+
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot sigtools_slots[] = {
+    {Py_mod_exec, (void *)module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    /* signal that this module supports running without an active GIL */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
 };
+
+
+static struct PyModuleDef moduledef = {
+    /* m_base     */ PyModuleDef_HEAD_INIT,
+    /* m_name     */ "_sigtools",
+    /* m_doc      */ NULL,
+    /* m_size     */ 0,
+    /* m_methods  */ toolbox_module_methods,
+    /* m_slots    */ sigtools_slots,
+    /* m_traverse */ NULL,
+    /* m_clear    */ NULL,
+    /* m_free     */ NULL
+};
+
 
 PyMODINIT_FUNC
 PyInit__sigtools(void)
 {
-    PyObject *module;
-
-    import_array();
-
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    scipy_signal__sigtools_linear_filter_module_init();
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }

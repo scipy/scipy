@@ -34,9 +34,9 @@ double dqselect(int n, double A[], int k)
 	p = j; val = A[p];
 	while (i < j)
 	{
-	    for (; A[i] >= val && i < p; i++);
+	    for (; i < p && A[i] >= val; i++);
 	    if (A[i] < val) { A[p] = A[i]; p = i; }
-	    for (; A[j] <= val && j > p; j--);
+	    for (; j > p && A[j] <= val; j--);
 	    if (A[j] > val) { A[p] = A[j]; p = j; }
 	}
 	A[p] = val;
@@ -65,9 +65,9 @@ float sqselect(int n, float A[], int k)
 	p = j; val = A[p];
 	while (i < j)
 	{
-	    for (; A[i] >= val && i < p; i++);
+	    for (; i < p && A[i] >= val; i++);
 	    if (A[i] < val) { A[p] = A[i]; p = i; }
-	    for (; A[j] <= val && j > p; j--);
+	    for (; j > p && A[j] <= val; j--);
 	    if (A[j] > val) { A[p] = A[j]; p = j; }
 	}
 	A[p] = val;

@@ -491,6 +491,7 @@ class TestSqrtM:
         M = np.array([[2, 4], [0, -2]], dtype=np.int64)
         assert sqrtm(M).dtype == np.complex128
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_float_in_float_out(self):
         M = np.eye(10, dtype=np.float16)
         assert sqrtm(M).dtype == np.float32
@@ -502,6 +503,7 @@ class TestSqrtM:
             M = np.eye(10, dtype=np.float128)
             assert sqrtm(M).dtype == np.float64
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_float_in_comp_out(self):
         M = np.array([[2, 4], [0, -2]], dtype=np.float16)
         assert sqrtm(M).dtype == np.complex64
@@ -513,6 +515,7 @@ class TestSqrtM:
             M = np.array([[2, 4], [0, -2]], dtype=np.float128)
             assert sqrtm(M).dtype == np.complex128
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_comp_in_comp_out(self):
         M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
         assert sqrtm(M).dtype == np.complex64
@@ -564,6 +567,16 @@ class TestSqrtM:
         A_negpos_orig = A[:, ::-1, :]
         A_negpos_copy = A[:, ::-1, :].copy()
         assert_allclose(sqrtm(A_negpos_orig), sqrtm(A_negpos_copy))
+
+    @pytest.mark.parametrize('dtyp', [np.float32, np.float64,
+                                      np.complex64, np.complex128])
+    def test_gh24508(self, dtyp):
+        # Check that sqrtm raises a warning when the input is singular
+        # And for this example, the top row is filled with infs.
+        a = np.array([[0, 2, 2], [0, 0, 0], [0, 0, 0]], dtype=dtyp)
+        with pytest.warns(LinAlgWarning, match="Matrix is singular."):
+            res = sqrtm(a)
+            assert np.isinf(res[0, 1:]).all()
 
 
 class TestFractionalMatrixPower:
@@ -1103,13 +1116,3 @@ class TestKhatriRao:
         b = np.empty((5, 0))
         res = khatri_rao(a, b)
         assert_allclose(res, np.empty((15, 0)))
-
-@pytest.mark.parametrize('func',
-                         [logm, sqrtm, signm])
-def test_disp_dep(func):
-    with pytest.deprecated_call():
-        func(np.eye(2), disp=False)
-
-def test_blocksize_dep():
-    with pytest.deprecated_call():
-        sqrtm(np.eye(2), blocksize=10)

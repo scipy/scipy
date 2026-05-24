@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
+from scipy.linalg.lapack import get_lapack_funcs
 from ._rbfinterp_common import _monomial_powers_impl
 
 from ._rbfinterp_pythran import (
@@ -8,6 +8,9 @@ from ._rbfinterp_pythran import (
     _build_evaluation_coefficients as _pythran_build_evaluation_coefficients,
     _polynomial_matrix as _pythran_polynomial_matrix
 )
+
+
+dsysv = get_lapack_funcs('sysv', dtype=np.float64, ilp64="preferred")
 
 
 # trampolines for pythran-compiled functions to drop the `xp` argument
@@ -65,7 +68,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
     lhs, rhs, shift, scale = _build_system(
         y, d, smoothing, kernel, epsilon, powers, xp
         )
-    _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
+    _, _, coeffs, info = dsysv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
         raise ValueError(f"The {-info}-th argument had an illegal value.")
     elif info > 0:

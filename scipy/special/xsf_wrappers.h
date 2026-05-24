@@ -352,6 +352,8 @@ npy_cdouble xsf_cndtr(npy_cdouble x);
 double xsf_log_ndtr(double x);
 npy_cdouble xsf_clog_ndtr(npy_cdouble x);
 double xsf_ndtri(double x);
+double special_nrdtrimn(double p, double std, double x);
+double special_nrdtrisd(double mean, double p, double x);
 double xsf_owens_t(double h, double a);
 double xsf_pdtr(double k, double m);
 double xsf_pdtrc(double k, double m);

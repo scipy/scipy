@@ -3638,7 +3638,7 @@ void qrfac(const int m, const int n, double* a, const int lda, const int pivot,
                 rdiag[k] *= sqrt(fmax(0.0, 1.0 - temp*temp));
                 if (0.05*pow(rdiag[k]/wa[k], 2.0) <= epsmch)
                 {
-                    rdiag[k] = enorm(m-j, &a[(j+1) + lda*k]);
+                    rdiag[k] = enorm(m-j-1, &a[(j+1) + lda*k]);
                     wa[k] = rdiag[k];
                 }
             }

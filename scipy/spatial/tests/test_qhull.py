@@ -191,7 +191,8 @@ class TestUtilities:
                   (0.3, 0.2, 1)]:
             i = tri.find_simplex(p[:2])
             assert_equal(i, p[2], err_msg=f'{p!r}')
-            j = qhull.tsearch(tri, p[:2])
+            with pytest.warns(DeprecationWarning, match="`tsearch` is deprecated"):
+                j = qhull.tsearch(tri, p[:2])
             assert_equal(i, j)
 
     def test_plane_distance(self):
@@ -356,7 +357,7 @@ class TestUtilities:
         npoints = {2: 70, 3: 11, 4: 5, 5: 3}
 
         for ndim in range(2, 6):
-            # Generate an uniform grid in n-d unit cube
+            # Generate a uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
             grid = np.c_[
                 list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))

@@ -407,7 +407,7 @@ def _mgc_stat(distx, disty):
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
 
-    n, m = stat_mgc_map.shape
+    m, n = stat_mgc_map.shape
     if m == 1 or n == 1:
         # the global scale at is the statistic calculated at maximal nearest
         # neighbors. There is not enough local scale to search over, so

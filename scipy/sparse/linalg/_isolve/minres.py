@@ -1,27 +1,32 @@
-from numpy import inner, zeros, inf, finfo
+from numpy import inner, vdot, iscomplexobj, zeros, inf, finfo
 from numpy.linalg import norm
 from math import sqrt
+
+from scipy._lib._array_api import xp_capabilities
 
 from .utils import make_system
 
 __all__ = ['minres']
 
 
+@xp_capabilities(np_only=True)
 def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
-    Solve ``Ax = b`` with the MINimum RESidual method, for a symmetric `A`.
+    Solve ``Ax = b`` with the MINimum RESidual method,
+    for a real symmetric or complex hermitian matrix `A`.
 
-    MINRES minimizes norm(Ax - b) for a real symmetric matrix A.  Unlike
-    the Conjugate Gradient method, A can be indefinite or singular.
+    MINRES minimizes ``norm(Ax - b)`` for a real symmetric or complex hermitian
+    matrix `A`. Unlike the Conjugate Gradient method, `A` can be indefinite
+    or singular.
 
-    If shift != 0 then the method solves (A - shift*I)x = b
+    If ``shift != 0`` then the method solves ``(A - shift*I)x = b``.
 
     Parameters
     ----------
     A : {sparse array, ndarray, LinearOperator}
-        The real symmetric N-by-N matrix of the linear system
-        Alternatively, ``A`` can be a linear operator which can
+        The real symmetric or complex hermitian N-by-N matrix of the
+        linear system. Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -31,7 +36,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
@@ -41,28 +46,40 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     ----------------
     x0 : ndarray
         Starting guess for the solution.
-    shift : float
-        Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
     rtol : float
         Tolerance to achieve. The algorithm terminates when the relative
         residual is below ``rtol``.
-    maxiter : integer
+    shift : float
+        Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse array, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        Preconditioner for `A`.  The preconditioner should approximate the
+        inverse of `A`.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
     show : bool
         If ``True``, print out a summary and metrics related to the solution
         during iterations. Default is ``False``.
     check : bool
         If ``True``, run additional input validation to check that `A` and
         `M` (if specified) are symmetric. Default is ``False``.
+
+    Notes
+    -----
+    This file is a translation of the MATLAB implementation [2]_.
+
+    References
+    ----------
+    .. [1] Solution of sparse indefinite systems of linear equations,
+          C. C. Paige and M. A. Saunders (1975),
+          SIAM J. Numer. Anal. 12(4), pp. 617-629.
+          https://web.stanford.edu/group/SOL/software/minres/
+    .. [2] https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
 
     Examples
     --------
@@ -77,20 +94,10 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     0
     >>> np.allclose(A.dot(x), b)
     True
-
-    References
-    ----------
-    Solution of sparse indefinite systems of linear equations,
-        C. C. Paige and M. A. Saunders (1975),
-        SIAM J. Numer. Anal. 12(4), pp. 617-629.
-        https://web.stanford.edu/group/SOL/software/minres/
-
-    This file is a translation of the following MATLAB implementation:
-        https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
-
     """
     A, M, x, b = make_system(A, M, x0, b)
 
+    dotprod = vdot if iscomplexobj(A) else inner
     matvec = A.matvec
     psolve = M.matvec
 
@@ -141,7 +148,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         r1 = b - A@x
     y = psolve(r1)
 
-    beta1 = inner(r1, y)
+    beta1 = dotprod(r1, y)
 
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
@@ -153,7 +160,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         x = b
         return (x, 0)
 
-    beta1 = sqrt(beta1)
+    beta1 = sqrt(beta1.real)
 
     if check:
         # are these too strict?
@@ -161,8 +168,8 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         # see if A is symmetric
         w = matvec(y)
         r2 = matvec(w)
-        s = inner(w,w)
-        t = inner(y,r2)
+        s = dotprod(w,w)
+        t = dotprod(y,r2)
         z = abs(s - t)
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
@@ -170,8 +177,8 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
         # see if M is symmetric
         r2 = psolve(y)
-        s = inner(y,y)
-        t = inner(r1,r2)
+        s = dotprod(y,y)
+        t = dotprod(r1,r2)
         z = abs(s - t)
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
@@ -212,16 +219,16 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         if itn >= 2:
             y = y - (beta/oldb)*r1
 
-        alfa = inner(v,y)
+        alfa = dotprod(v,y)
         y = y - (alfa/beta)*r2
         r1 = r2
         r2 = y
         y = psolve(r2)
         oldb = beta
-        beta = inner(r2,y)
+        beta = dotprod(r2,y)
         if beta < 0:
             raise ValueError('non-symmetric matrix')
-        beta = sqrt(beta)
+        beta = sqrt(beta.real)
         tnorm2 += alfa**2 + oldb**2 + beta**2
 
         if itn == 1:
@@ -242,7 +249,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
         # Compute the next plane rotation Qk
 
-        gamma = norm([gbar, beta])       # gammak
+        gamma = norm([gbar, beta]).astype(xtype)  # gammak
         gamma = max(gamma, eps)
         cs = gbar / gamma             # ck
         sn = beta / gamma             # sk
@@ -267,7 +274,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
         # Estimate various norms and test for convergence.
 
-        Anorm = sqrt(tnorm2)
+        Anorm = sqrt(tnorm2.real)
         ynorm = norm(x)
         epsa = Anorm * eps
         epsx = Anorm * ynorm * eps

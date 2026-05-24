@@ -55,7 +55,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     PyGILState_STATE save;
     PyObject *scipy_special = NULL;
     char msg[2048], info[1024];
-    static PyObject *py_SpecialFunctionWarning = NULL;
+    PyObject *warning_or_error_class = NULL;
     sf_action_t action;
 
     if ((int) code < 0 || (int) code >= SF_ERROR__LAST) {
@@ -90,32 +90,33 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     }
 
     if (action == SF_ERROR_WARN) {
-        py_SpecialFunctionWarning = PyObject_GetAttrString(scipy_special, "SpecialFunctionWarning");
+        warning_or_error_class = PyObject_GetAttrString(scipy_special, "SpecialFunctionWarning");
     } else if (action == SF_ERROR_RAISE) {
-        py_SpecialFunctionWarning = PyObject_GetAttrString(scipy_special, "SpecialFunctionError");
+        warning_or_error_class = PyObject_GetAttrString(scipy_special, "SpecialFunctionError");
     } else {
         /* Sentinel, should never get here */
-        py_SpecialFunctionWarning = NULL;
+        warning_or_error_class = NULL;
     }
     /* Done with scipy_special */
     Py_DECREF(scipy_special);
 
-    if (py_SpecialFunctionWarning == NULL) {
+    if (warning_or_error_class == NULL) {
         PyErr_Clear();
         goto skip_warn;
     }
 
     if (action == SF_ERROR_WARN) {
-        PyErr_WarnEx(py_SpecialFunctionWarning, msg, 1);
+        PyErr_WarnEx(warning_or_error_class, msg, 1);
         /*
          * For ufuncs the return value is ignored! We rely on the fact
          * that the Ufunc loop will call PyErr_Occurred() later on.
          */
     } else if (action == SF_ERROR_RAISE) {
-        PyErr_SetString(py_SpecialFunctionWarning, msg);
+        PyErr_SetString(warning_or_error_class, msg);
     } else {
         goto skip_warn;
     }
+    Py_DECREF(warning_or_error_class);
 
 skip_warn:
     PyGILState_Release(save);

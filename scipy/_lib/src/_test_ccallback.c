@@ -387,33 +387,28 @@ static PyMethodDef test_ccallback_methods[] = {
 };
 
 
+static struct PyModuleDef_Slot test_ccallback_slots[] = {
+    // signal that this module can be imported in isolated subinterpreters
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
 static struct PyModuleDef test_ccallback_module = {
-    PyModuleDef_HEAD_INIT,
-    "_test_ccallback",
-    NULL,
-    -1,
-    test_ccallback_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_test_ccallback",
+    .m_size = 0,
+    .m_methods = test_ccallback_methods,
+    .m_slots = test_ccallback_slots,
 };
 
 
 PyMODINIT_FUNC
 PyInit__test_ccallback(void)
 {
-    PyObject *module;
-
-    module = PyModule_Create(&test_ccallback_module);
-    if (module == NULL) {
-        return module;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
-
+    return PyModuleDef_Init(&test_ccallback_module);
 }

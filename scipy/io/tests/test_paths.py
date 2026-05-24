@@ -2,12 +2,12 @@
 Ensure that we can use pathlib.Path objects in all relevant IO functions.
 """
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import numpy as np
 
 import scipy.io
 import scipy.io.wavfile
-from scipy._lib._tmpdirs import tempdir
 import scipy.sparse
 
 
@@ -15,14 +15,14 @@ class TestPaths:
     data = np.arange(5).astype(np.int64)
 
     def test_savemat(self):
-        with tempdir() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / 'data.mat'
             scipy.io.savemat(path, {'data': self.data})
             assert path.is_file()
 
     def test_loadmat(self):
         # Save data with string path, load with pathlib.Path
-        with tempdir() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / 'data.mat'
             scipy.io.savemat(str(path), {'data': self.data})
 
@@ -31,7 +31,7 @@ class TestPaths:
 
     def test_whosmat(self):
         # Save data with string path, load with pathlib.Path
-        with tempdir() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / 'data.mat'
             scipy.io.savemat(str(path), {'data': self.data})
 
@@ -44,7 +44,7 @@ class TestPaths:
 
     def test_hb_read(self):
         # Save data with string path, load with pathlib.Path
-        with tempdir() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             data = scipy.sparse.eye_array(3, format='csr')
             path = Path(temp_dir) / 'data.hb'
             scipy.io.hb_write(str(path), data)
@@ -53,7 +53,7 @@ class TestPaths:
             assert (data_new != data).nnz == 0
 
     def test_hb_write(self):
-        with tempdir() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             data = scipy.sparse.eye_array(3, format='csr')
             path = Path(temp_dir) / 'data.hb'
             scipy.io.hb_write(path, data)
@@ -61,7 +61,7 @@ class TestPaths:
 
     def test_mmio_read(self):
         # Save data with string path, load with pathlib.Path
-        with tempdir() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             data = scipy.sparse.eye_array(3, format='csr')
             path = Path(temp_dir) / 'data.mtx'
             scipy.io.mmwrite(str(path), data)
@@ -70,7 +70,7 @@ class TestPaths:
             assert (data_new != data).nnz == 0
 
     def test_mmio_write(self):
-        with tempdir() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             data = scipy.sparse.eye_array(3, format='csr')
             path = Path(temp_dir) / 'data.mtx'
             scipy.io.mmwrite(path, data)
@@ -88,6 +88,6 @@ class TestPaths:
         input_path = Path(__file__).parent / 'data/test-8000Hz-le-2ch-1byteu.wav'
         rate, data = scipy.io.wavfile.read(str(input_path))
 
-        with tempdir() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             output_path = Path(temp_dir) / input_path.name
             scipy.io.wavfile.write(output_path, rate, data)

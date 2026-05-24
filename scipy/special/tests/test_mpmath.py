@@ -8,7 +8,7 @@ from numpy import pi
 import pytest
 import itertools
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 import scipy.special as sc
 from scipy.special._testutils import (
@@ -246,6 +246,7 @@ def test_hyp2f1_real_random():
 # erf (complex)
 # ------------------------------------------------------------------------------
 
+@pytest.mark.slow()
 @check_version(mpmath, '0.14')
 def test_erf_complex():
     # need to increase mpmath precision for this test
@@ -1375,7 +1376,7 @@ class TestSystematic:
             # Deal with n=0, n=1 correctly; mpmath 0.17 doesn't do these
             # always correctly
             if n == 0:
-                r = 1.0
+                r = 0.0 if a == 0.0 else 1.0
             elif n == 1:
                 r = 2*a*x
             else:
@@ -1403,7 +1404,7 @@ class TestSystematic:
             sc_gegenbauer,
             exception_to_nan(gegenbauer),
             [IntArg(0, 100), Arg(-1e9, 1e9), Arg()],
-            n=40000, dps=100, ignore_inf_sign=True, rtol=1e-6,
+            dps=100, ignore_inf_sign=True, rtol=1e-6,
         )
 
         # Check the small-x expansion
@@ -1812,7 +1813,7 @@ class TestSystematic:
                                "systems and gh-8095 for another bad "
                                "point"))
     def test_rf(self):
-        if _pep440.parse(mpmath.__version__) >= _pep440.Version("1.0.0"):
+        if version.parse(mpmath.__version__) >= version.Version("1.0.0"):
             # no workarounds needed
             mppoch = mpmath.rf
         else:
