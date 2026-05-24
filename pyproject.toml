@@ -21,19 +21,12 @@ requires = [
     "Cython>=3.2.0",        # when updating version, also update check in meson.build
     "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.18.1",      # when updating version, also update check in meson.build
-
-    # numpy requirement for wheel builds for distribution on PyPI - building
-    # against 2.x yields wheels that are also compatible with numpy 1.x at
-    # runtime.
-    # Note that building against numpy 1.x works fine too - users and
-    # redistributors can do this by installing the numpy version they like and
-    # disabling build isolation.
     "numpy>=2.0.0",
 ]
 
 [project]
 name = "scipy"
-version = "1.18.0.dev0"
+version = "1.19.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
