@@ -693,7 +693,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     return w, h
 
 
-def group_delay(system, w=512, whole=False, fs=2*pi, method='convolve'):
+def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
     r"""Compute the group delay of a digital filter.
 
     The group delay measures by how many samples amplitude envelopes of
@@ -724,13 +724,15 @@ def group_delay(system, w=512, whole=False, fs=2*pi, method='convolve'):
 
         .. versionadded:: 1.2.0
 
-    method: str, optional
+    method : str, optional
         Numerical method used to compute the group delay. Must be one of:
 
-        - 'convolve' (default) = utilize the ratio of convoluted polynomials as described
-          in Reference [2] (similar to the algorithm implemented in Matlab)
-        - 'unwrap' = compute the system frequency response using `freqz`, unwrap the
-          phase, and then directly compute the finite difference derivative versus frequency.
+        ``"convolve"`` (default)
+            Utilize the ratio of convoluted polynomials as described
+            in Reference [2]_ (similar to the algorithm implemented in Matlab).
+        ``"unwrap"``
+            Compute the system frequency response using `freqz`, unwrap the
+            phase, and then directly compute the finite difference derivative versus frequency.
 
         .. versionadded:: 1.18.0
 
@@ -805,7 +807,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi, method='convolve'):
 
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    >>> fig, axes = plt.subplots(3, 2)
+    >>> fig, axes = plt.subplots(3, 2, layout="constrained")
     >>> axes[0, 0].semilogy(wf1, np.abs(h1))
     >>> axes[1, 0].plot(wf1, np.angle(h1))
     >>> axes[2, 0].plot(w1_c, gd1_c, label="convolve")
@@ -827,7 +829,6 @@ def group_delay(system, w=512, whole=False, fs=2*pi, method='convolve'):
     >>> for ax in axes[:, 1]:
     >>>     ax.set_xlim((0., 15.))
     >>> axes[2, 1].set_ylim((-50., 400.))
-    >>> fig.tight_layout()
     >>> plt.show()
 
     """
@@ -877,7 +878,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi, method='convolve'):
         gd = -np.gradient(np.unwrap(np.angle(H)), w)
 
     else:
-        raise ValueError("group delay method must be one of {'convolve', 'unwrap'}")
+        raise ValueError(f"group delay method must be one of ('convolve', 'unwrap'), got {method=!r}")
 
     # check for singularities
     singular = ~np.isfinite(gd)

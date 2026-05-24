@@ -1,5 +1,6 @@
 import math
 import cmath
+import contextlib
 import warnings
 import os
 
@@ -4971,7 +4972,7 @@ class TestGroupDelay:
                                 0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
 
-    def test_iir_unwrap_method(self, xp, method='unwrap'):
+    def test_iir_unwrap_method(self, xp):
         # Test this same filter against points from matlab using the unwrap method
         b, a = butter(4, 0.1)
         b, a = map(xp.asarray, (b, a))
@@ -5184,27 +5185,23 @@ class TestGroupDelay:
                 filt[i_nyquist-1:i_nyquist+2] = False
             xp_assert_close(gc[filt], gu[filt], atol=1e-3, rtol=5e-3)
 
-    @pytest.mark.xfail(reason="https://github.com/scipy/scipy/issues/9310")
-    def test_narrow_band(self):
+    @pytest.mark.parametrize("method", [
+        "unwrap",   # works
+        pytest.param("convolve", marks=pytest.mark.xfail(reason="known issue: https://github.com/scipy/scipy/issues/9310"))
+    ])
+    def test_narrow_band(self, method):
         fs = 1280
         b, a = ellip(7, 0.02, 60.0, 10.0, fs=1280)
 
         # filter out warning which cause test to fail, but are not relevant to whether well behaved portions (frequency
         # ranges) of thefilter produce reasonable values
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            w, gd = group_delay((b, a), w=2048, fs=fs)
-
-        # check ~linear phase portion of filter for reasonable values
-        low_freq = w < 5.
-        approx_value = 2. / (5 / fs * (2. * np.pi))
-        xp_assert_close(gd[low_freq], approx_value * np.ones(gd[low_freq].shape), atol=10., rtol=0.1)
-
-    def test_narrow_band_with_unwrap(self):
-        fs = 1280
-        b, a = ellip(7, 0.02, 60.0, 10.0, fs=1280)
-
-        w, gd = group_delay((b, a), w=2048, fs=fs, method='unwrap')
+        if method == "convolve":
+            ctx = pytest.warns(UserWarning, match=".*singular")
+        else:
+            assert method == "unwrap"
+            ctx = contextlib.nullcontext()
+        with ctx:
+            w, gd = group_delay((b, a), w=2048, fs=fs, method=method)
 
         # check ~linear phase portion of filter for reasonable values
         low_freq = w < 5.
