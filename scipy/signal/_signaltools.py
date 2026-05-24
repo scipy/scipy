@@ -2310,6 +2310,35 @@ def lfiltic(b, a, y, x=None):
     See Also
     --------
     lfilter, lfilter_zi
+    
+    Examples
+    --------
+    Construct initial conditions for a filter given past output and input
+    samples:
+
+    >>> import numpy as np
+    >>> from scipy.signal import lfiltic
+    >>> b = np.array([1.0, 2.0])
+    >>> a = np.array([1.0, -0.5])
+    >>> y = np.array([1.0, 2.0])
+    >>> x = np.array([3.0, 4.0])
+    >>> lfiltic(b, a, y, x)
+    array([6.5])
+
+    When past input samples are not available, omit the `x` argument:
+
+    >>> lfiltic(b, a, y)
+    array([0.5])
+
+    Use the initial conditions with `lfilter` to avoid a transient at the
+    start of filtering:
+
+    >>> from scipy.signal import lfilter
+    >>> y0 = np.array([1.0])
+    >>> zi = lfiltic(b, a, y0)
+    >>> signal = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    >>> lfilter(b, a, signal, zi=zi)
+    (array([ 1.5    ,  4.75   ,  9.375  , 14.6875 , 20.34375]), array([29.171875]))
 
     """
     xp = array_namespace(a, b, y, x)
