@@ -177,131 +177,161 @@ if not PARALLEL_RUN_AVAILABLE:
 # Array API backend handling
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
                      'dask.array'}
-xp_available_backends = [
-    pytest.param(np, id='numpy', marks=pytest.mark.array_api_backends)
-]
-xp_skip_cpu_only_backends = set()
-xp_skip_eager_only_backends = set()
+_xp_available_backends = None
+_xp_skip_cpu_only_backends = None
+_xp_skip_eager_only_backends = None
 
-if SCIPY_ARRAY_API:
-    # fill the dict of backends with available libraries
-    try:
-        import array_api_strict
-        xp_available_backends.append(
-            pytest.param(array_api_strict, id='array_api_strict',
-                         marks=pytest.mark.array_api_backends))
-        if version.parse(array_api_strict.__version__) < version.Version('2.3'):
-            raise ImportError("array-api-strict must be >= version 2.3")
-        array_api_strict.set_array_api_strict_flags(
-            api_version='2025.12'
-        )
-    except ImportError:
-        pass
+def _get_xp_backends():
+    global _xp_available_backends, _xp_skip_cpu_only_backends, _xp_skip_eager_only_backends
+    if _xp_available_backends is not None:
+        return _xp_available_backends, _xp_skip_cpu_only_backends, _xp_skip_eager_only_backends
 
-    try:
-        import torch  # type: ignore[import-not-found]
-        xp_available_backends.append(
-            pytest.param(torch, id='torch',
-            marks=pytest.mark.array_api_backends))
-        torch.set_default_device(SCIPY_DEVICE)
-        if SCIPY_DEVICE != "cpu":
-            xp_skip_cpu_only_backends.add('torch')
+    xp_skip_cpu_only_backends = set()
+    xp_skip_eager_only_backends = set()
 
-        # default to float64 unless explicitly requested
-        default = os.getenv('SCIPY_DEFAULT_DTYPE', default='float64')
-        if default == 'float64':
-            torch.set_default_dtype(torch.float64)
-        elif default != "float32":
-            raise ValueError(
-                "SCIPY_DEFAULT_DTYPE env var, if set, can only be either 'float64' "
-               f"or 'float32'. Got '{default}' instead."
+    xp_available_backends = [
+        pytest.param(np, id='numpy', marks=pytest.mark.array_api_backends)
+    ]
+
+    if SCIPY_ARRAY_API:
+        # fill the dict of backends with available libraries
+        try:
+            import array_api_strict
+            xp_available_backends.append(
+                pytest.param(array_api_strict, id='array_api_strict',
+                             marks=pytest.mark.array_api_backends))
+            if version.parse(array_api_strict.__version__) < version.Version('2.3'):
+                raise ImportError("array-api-strict must be >= version 2.3")
+            array_api_strict.set_array_api_strict_flags(
+                api_version='2025.12'
             )
-    except ImportError:
-        pass
+        except ImportError:
+            pass
 
-    try:
-        import cupy  # type: ignore[import-not-found]
-        # Note: cupy disregards SCIPY_DEVICE and always runs on cuda.
-        # It will fail to import if you don't have CUDA hardware and drivers.
-        xp_available_backends.append(
-            pytest.param(cupy, id='cupy',
-            marks=pytest.mark.array_api_backends))
-        xp_skip_cpu_only_backends.add('cupy')
+        try:
+            import torch  # type: ignore[import-not-found]
+            xp_available_backends.append(
+                pytest.param(torch, id='torch',
+                marks=pytest.mark.array_api_backends))
+            torch.set_default_device(SCIPY_DEVICE)
+            if SCIPY_DEVICE != "cpu":
+                xp_skip_cpu_only_backends.add('torch')
 
-        # this is annoying in CuPy 13.x
-        warnings.filterwarnings(
-            'ignore', 'cupyx.jit.rawkernel is experimental', category=FutureWarning
-        )
-        from cupyx.scipy import signal
-        del signal
-    except ImportError:
-        pass
+            # default to float64 unless explicitly requested
+            default = os.getenv('SCIPY_DEFAULT_DTYPE', default='float64')
+            if default == 'float64':
+                torch.set_default_dtype(torch.float64)
+            elif default != "float32":
+                raise ValueError(
+                    "SCIPY_DEFAULT_DTYPE env var, if set, can only be either 'float64' "
+                   f"or 'float32'. Got '{default}' instead."
+                )
+        except ImportError:
+            pass
 
-    try:
-        import jax.numpy  # type: ignore[import-not-found]
-        
-        xp_available_backends.append(
-            pytest.param(jax.numpy, id='jax.numpy',
-            marks=[pytest.mark.array_api_backends,
-                   # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
-                   pytest.mark.thread_unsafe]))
+        try:
+            import cupy  # type: ignore[import-not-found]
+            # Note: cupy disregards SCIPY_DEVICE and always runs on cuda.
+            # It will fail to import if you don't have CUDA hardware and drivers.
+            xp_available_backends.append(
+                pytest.param(cupy, id='cupy',
+                marks=pytest.mark.array_api_backends))
+            xp_skip_cpu_only_backends.add('cupy')
 
-        jax.config.update("jax_enable_x64", True)
-        # Make sure JAX won't default to less accurate TensorFloat32 precision
-        # in matmuls with float32 inputs on GPUs that support this floating
-        # point format.
-        jax.config.update("jax_default_matmul_precision", "float32")
-        jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
-        if SCIPY_DEVICE != "cpu":
-            xp_skip_cpu_only_backends.add('jax.numpy')
-        # JAX can be eager or lazy (when wrapped in jax.jit). However it is
-        # recommended by upstream devs to assume it's always lazy.
-        xp_skip_eager_only_backends.add('jax.numpy')
-    except ImportError:
-        pass
+            # this is annoying in CuPy 13.x
+            warnings.filterwarnings(
+                'ignore', 'cupyx.jit.rawkernel is experimental', category=FutureWarning
+            )
+            from cupyx.scipy import signal
+            del signal
+        except ImportError:
+            pass
 
-    try:
-        import dask.array as da
+        try:
+            import jax.numpy  # type: ignore[import-not-found]
+            
+            xp_available_backends.append(
+                pytest.param(jax.numpy, id='jax.numpy',
+                marks=[pytest.mark.array_api_backends,
+                       # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
+                       pytest.mark.thread_unsafe]))
 
-        xp_available_backends.append(
-            pytest.param(da, id='dask.array',
-            marks=[pytest.mark.array_api_backends,
-                   # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
-                   pytest.mark.thread_unsafe]))
+            jax.config.update("jax_enable_x64", True)
+            # Make sure JAX won't default to less accurate TensorFloat32 precision
+            # in matmuls with float32 inputs on GPUs that support this floating
+            # point format.
+            jax.config.update("jax_default_matmul_precision", "float32")
+            jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
+            if SCIPY_DEVICE != "cpu":
+                xp_skip_cpu_only_backends.add('jax.numpy')
+            # JAX can be eager or lazy (when wrapped in jax.jit). However it is
+            # recommended by upstream devs to assume it's always lazy.
+            xp_skip_eager_only_backends.add('jax.numpy')
+        except ImportError:
+            pass
 
-        # Dask can wrap around cupy. However, this is untested in scipy
-        # (and will almost surely not work as delegation will misbehave).
+        try:
+            import dask.array as da
 
-        # Dask, strictly speaking, can be eager, in the sense that
-        # __array__, __bool__ etc. are implemented and do not raise.
-        # However, calling them triggers an extra computation of the whole graph
-        # until that point, which is highly destructive for performance.
-        xp_skip_eager_only_backends.add('dask.array')
-    except ImportError:
-        pass
+            xp_available_backends.append(
+                pytest.param(da, id='dask.array',
+                marks=[pytest.mark.array_api_backends,
+                       # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
+                       pytest.mark.thread_unsafe]))
 
-    xp_available_backend_ids = {p.id for p in xp_available_backends}
-    assert not xp_available_backend_ids - xp_known_backends
+            # Dask can wrap around cupy. However, this is untested in scipy
+            # (and will almost surely not work as delegation will misbehave).
 
-    # by default, use all available backends
-    if (
-        isinstance(SCIPY_ARRAY_API, str)
-        and SCIPY_ARRAY_API.lower() not in ("1", "true", "all")
-    ):
-        SCIPY_ARRAY_API_ = set(json.loads(SCIPY_ARRAY_API))
-        if SCIPY_ARRAY_API_ != {'all'}:
-            if SCIPY_ARRAY_API_ - xp_available_backend_ids:
-                msg = ("'--array-api-backend' must be in "
-                       f"{xp_available_backend_ids}; got {SCIPY_ARRAY_API_}")
-                raise ValueError(msg)
-            # Only select a subset of backends
-            xp_available_backends = [
-                param for param in xp_available_backends
-                if param.id in SCIPY_ARRAY_API_
-            ]
+            # Dask, strictly speaking, can be eager, in the sense that
+            # __array__, __bool__ etc. are implemented and do not raise.
+            # However, calling them triggers an extra computation of the whole graph
+            # until that point, which is highly destructive for performance.
+            xp_skip_eager_only_backends.add('dask.array')
+        except ImportError:
+            pass
+
+        xp_available_backend_ids = {p.id for p in xp_available_backends}
+        assert not xp_available_backend_ids - xp_known_backends
+
+        # by default, use all available backends
+        if (
+            isinstance(SCIPY_ARRAY_API, str)
+            and SCIPY_ARRAY_API.lower() not in ("1", "true", "all")
+        ):
+            SCIPY_ARRAY_API_ = set(json.loads(SCIPY_ARRAY_API))
+            if SCIPY_ARRAY_API_ != {'all'}:
+                if SCIPY_ARRAY_API_ - xp_available_backend_ids:
+                    msg = ("'--array-api-backend' must be in "
+                           f"{xp_available_backend_ids}; got {SCIPY_ARRAY_API_}")
+                    raise ValueError(msg)
+                # Only select a subset of backends
+                xp_available_backends = [
+                    param for param in xp_available_backends
+                    if param.id in SCIPY_ARRAY_API_
+                ]
+
+    _xp_available_backends = xp_available_backends
+    _xp_skip_cpu_only_backends = xp_skip_cpu_only_backends
+    _xp_skip_eager_only_backends = xp_skip_eager_only_backends
+    return _xp_available_backends, _xp_skip_cpu_only_backends, _xp_skip_eager_only_backends
+
+def __getattr__(name):
+    if name == 'xp_available_backends':
+        return _get_xp_backends()[0]
+    if name == 'xp_skip_cpu_only_backends':
+        return _get_xp_backends()[1]
+    if name == 'xp_skip_eager_only_backends':
+        return _get_xp_backends()[2]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-@pytest.fixture(params=xp_available_backends)
+def pytest_generate_tests(metafunc):
+    if 'xp' in metafunc.fixturenames:
+        backends, _, _ = _get_xp_backends()
+        metafunc.parametrize("xp", backends, indirect=True)
+
+
+@pytest.fixture
 def xp(request):
     """Run the test that uses this fixture on each available array API library.
 
@@ -362,6 +392,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
     Return dict of {backend to skip/xfail: top reason to skip/xfail it}
     """
+    _, xp_skip_cpu_only_backends, xp_skip_eager_only_backends = _get_xp_backends()
+    
     markers = list(request.node.iter_markers(f'{skip_or_xfail}_xp_backends'))
     reasons = {backend: [] for backend in xp_known_backends}
 
