@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cfenv>
 
 #include "xsf_wrappers.h"
 #include <xsf/airy.h>
@@ -464,9 +465,17 @@ double xsf_i1e(double x) { return xsf::cyl_bessel_i1e(x); }
 
 double xsf_iv(double v, double x) { return xsf::cyl_bessel_i(v, x); }
 
-double xsf_j0(double x) { return xsf::cyl_bessel_j0(x); }
+double xsf_j0(double x) {
+    double result = xsf::cyl_bessel_j0(x);
+    std::feclearexcept(FE_ALL_EXCEPT);
+    return result;
+}
 
-double xsf_j1(double x) { return xsf::cyl_bessel_j1(x); }
+double xsf_j1(double x) {
+    double result = xsf::cyl_bessel_j1(x);
+    std::feclearexcept(FE_ALL_EXCEPT);
+    return result;
+}
 
 double xsf_k0(double x) { return xsf::cyl_bessel_k0(x); }
 
@@ -476,9 +485,17 @@ double xsf_k1(double x) { return xsf::cyl_bessel_k1(x); }
 
 double xsf_k1e(double x) { return xsf::cyl_bessel_k1e(x); }
 
-double xsf_y0(double x) { return xsf::cyl_bessel_y0(x); }
+double xsf_y0(double x) {
+    double result = xsf::cyl_bessel_y0(x);
+    std::feclearexcept(FE_ALL_EXCEPT);
+    return result;
+}
 
-double xsf_y1(double x) { return xsf::cyl_bessel_y1(x); }
+double xsf_y1(double x) {
+    double result = xsf::cyl_bessel_y1(x);
+    std::feclearexcept(FE_ALL_EXCEPT);
+    return result;
+}
 
 double cephes_yn(int n, double x) { return xsf::cephes::yn(n, x); }
 
