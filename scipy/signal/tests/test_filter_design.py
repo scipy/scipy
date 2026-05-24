@@ -5,7 +5,6 @@ import warnings
 import os
 
 from itertools import product
-from scipy.interpolate import interp1d
 
 from scipy._external.packaging_version import version
 import numpy as np
@@ -4978,7 +4977,7 @@ class TestGroupDelay:
         b, a = map(xp.asarray, (b, a))
         w = xp.linspace(0, xp.pi, num=10, endpoint=False)
         wd, gd = group_delay((b, a), w=4096, method='unwrap')
-        gd_at_matlab_points = interp1d(wd, gd)(w)
+        gd_at_matlab_points = np.interp(w, wd, gd)
         matlab_gd = xp.asarray([8.249313898506037, 11.958947880907104,
                                 2.452325615326005, 1.048918665702008,
                                 0.611382575635897, 0.418293269460578,
@@ -5034,7 +5033,7 @@ class TestGroupDelay:
         b, a = map(xp.asarray, (b, a))
         wd, gd = group_delay((b, a), w=4096, fs=96000, method='unwrap')
         w = xp.linspace(0, 96000 / 2, num=10, endpoint=False)
-        gd_at_check_points = interp1d(wd, gd)(w)
+        gd_at_check_points = np.interp(w, wd, gd)
         norm_gd = xp.asarray([8.249313898506037, 11.958947880907104,
                               2.452325615326005, 1.048918665702008,
                               0.611382575635897, 0.418293269460578,
@@ -5140,7 +5139,7 @@ class TestGroupDelay:
         high = wd >= pi
         wd = np.hstack([wd[high] - 2.*pi, wd[~high]])       # redistribute to [-pi, pi)
         gd = np.hstack([gd[high], gd[~high]])
-        gdtest = interp1d(wd, gd)(wref)
+        gdtest = np.interp(wref, wd, gd)
         delta = gdtest - gdref
         xp_assert_close(gdtest, gdref, atol=1e-3, rtol=1e-4)
 
