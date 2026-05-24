@@ -3634,7 +3634,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         ``T * n_x / num``.
     t_r : ndarray, optional
         The `num` equidistant timestamps of `x_r`.
-        This is only returned if paramater `t` is not ``None``.
+        This is only returned if parameter `t` is not ``None``.
 
     See Also
     --------
