@@ -1657,7 +1657,7 @@ def medfilt(volume, kernel_size=None):
     Apply a filter with a kernel size of 3:
 
     >>> signal.medfilt(x, kernel_size=3)
-    Output - array([1, 2, 2, 2, 1, 1, 1, 1, 1])
+    array([1, 2, 2, 2, 1, 1, 1, 1, 1])
 
     """
     xp = array_namespace(volume)
