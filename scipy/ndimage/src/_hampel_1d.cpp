@@ -274,80 +274,82 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
     int k_L = Z / 2;
     int k_U = Z - k_L;
 
-    RankTracker<T> upper_tracker((int)padded_N, M_rank + k_U);
-    RankTracker<T> lower_tracker((int)padded_N, M_rank - k_L - 1);
-
+    // All allocations beyond this point can throw bad_alloc; wrap the
+    // whole kernel body so std::bad_alloc never escapes into the Python
+    // C API (which would be undefined behaviour).
     try {
+        RankTracker<T> upper_tracker((int)padded_N, M_rank + k_U);
+        RankTracker<T> lower_tracker((int)padded_N, M_rank - k_L - 1);
+
         // Initial window: padded[0 .. W-1].
         for (int j = 0; j < W; ++j) {
             upper_tracker.insert(padded[j], j);
             lower_tracker.insert(padded[j], j);
         }
-    } catch (std::bad_alloc&) {
-        return -1;
-    }
 
-    const T INF = std::numeric_limits<T>::infinity();
+        const T INF = std::numeric_limits<T>::infinity();
 
-    // Window i covers padded[i .. i+W-1]; its centre maps to signal[i].
-    for (npy_intp i = 0; i < N; ++i) {
-        if (i > 0) {
-            int old_idx = (int)(i - 1);
-            int new_idx = (int)(i + W - 1);
-            T new_val = padded[new_idx];
-            upper_tracker.remove(old_idx);
-            lower_tracker.remove(old_idx);
-            try {
+        // Window i covers padded[i .. i+W-1]; its centre maps to signal[i].
+        for (npy_intp i = 0; i < N; ++i) {
+            if (i > 0) {
+                int old_idx = (int)(i - 1);
+                int new_idx = (int)(i + W - 1);
+                T new_val = padded[new_idx];
+                upper_tracker.remove(old_idx);
+                lower_tracker.remove(old_idx);
                 upper_tracker.insert(new_val, new_idx);
                 lower_tracker.insert(new_val, new_idx);
-            } catch (std::bad_alloc&) {
-                return -1;
             }
-        }
 
-        T M = median_in[i];
+            T M = median_in[i];
 
-        // Re-balance k_U / k_L until the (k_U)th value above M and the
-        // (k_L)th value below M jointly bracket the same rank distance.
-        while (true) {
-            T X_upper_k = upper_tracker.get_kth_value();
-            T X_upper_next = upper_tracker.get_kplus1_value();
+            // Re-balance k_U / k_L until the (k_U)th value above M and the
+            // (k_L)th value below M jointly bracket the same rank distance.
+            // Worst case O(Z) iterations per sample (k_U + k_L stays = Z),
+            // each costing O(log W); amortised typically O(log W) when
+            // consecutive medians don't move far.
+            while (true) {
+                T X_upper_k = upper_tracker.get_kth_value();
+                T X_upper_next = upper_tracker.get_kplus1_value();
 
-            T X_lower_k = lower_tracker.get_kplus1_value();
-            T X_lower_prev = lower_tracker.get_kth_value();
+                T X_lower_k = lower_tracker.get_kplus1_value();
+                T X_lower_prev = lower_tracker.get_kth_value();
 
-            T A_km1 = (k_U > 0) ? (X_upper_k - M) : -INF;
-            T A_k   = ((M_rank + k_U) < W) ? (X_upper_next - M) : INF;
-            T B_km1 = (k_L > 0) ? (M - X_lower_k) : -INF;
-            T B_k   = ((M_rank - k_L - 1) > 0) ? (M - X_lower_prev) : INF;
+                T A_km1 = (k_U > 0) ? (X_upper_k - M) : -INF;
+                T A_k   = ((M_rank + k_U) < W) ? (X_upper_next - M) : INF;
+                T B_km1 = (k_L > 0) ? (M - X_lower_k) : -INF;
+                T B_k   = ((M_rank - k_L - 1) > 0) ? (M - X_lower_prev) : INF;
 
-            if (k_U > 0 && A_km1 > B_k) {
-                k_U--;
-                k_L++;
-                upper_tracker.set_rank(M_rank + k_U);
-                lower_tracker.set_rank(M_rank - k_L - 1);
-            } else if (k_L > 0 && B_km1 > A_k) {
-                k_L--;
-                k_U++;
-                upper_tracker.set_rank(M_rank + k_U);
-                lower_tracker.set_rank(M_rank - k_L - 1);
+                if (k_U > 0 && A_km1 > B_k) {
+                    k_U--;
+                    k_L++;
+                    upper_tracker.set_rank(M_rank + k_U);
+                    lower_tracker.set_rank(M_rank - k_L - 1);
+                } else if (k_L > 0 && B_km1 > A_k) {
+                    k_L--;
+                    k_U++;
+                    upper_tracker.set_rank(M_rank + k_U);
+                    lower_tracker.set_rank(M_rank - k_L - 1);
+                } else {
+                    break;
+                }
+            }
+
+            T cand_A = (k_U > 0) ? (upper_tracker.get_kth_value() - M) : (T)0;
+            T cand_B = (k_L > 0) ? (M - lower_tracker.get_kplus1_value()) : (T)0;
+            T mad = std::max({cand_A, cand_B, (T)0});
+
+            T abs_dev = std::fabs(signal[i] - M);
+            if (abs_dev > (T)threshold * mad) {
+                filtered[i] = M;
+                changed[i] = 1;
             } else {
-                break;
+                filtered[i] = signal[i];
+                changed[i] = 0;
             }
         }
-
-        T cand_A = (k_U > 0) ? (upper_tracker.get_kth_value() - M) : (T)0;
-        T cand_B = (k_L > 0) ? (M - lower_tracker.get_kplus1_value()) : (T)0;
-        T mad = std::max({cand_A, cand_B, (T)0});
-
-        T abs_dev = std::fabs(signal[i] - M);
-        if (abs_dev > (T)threshold * mad) {
-            filtered[i] = M;
-            changed[i] = 1;
-        } else {
-            filtered[i] = signal[i];
-            changed[i] = 0;
-        }
+    } catch (std::bad_alloc&) {
+        return -1;
     }
     return 0;
 }

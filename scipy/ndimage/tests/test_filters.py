@@ -3481,6 +3481,11 @@ def test_hampel_size_validation():
         ndimage.hampel_filter(np.ones(10), size=0)
 
 
+def test_hampel_rejects_even_size():
+    with pytest.raises(ValueError, match="odd"):
+        ndimage.hampel_filter(np.ones(10), size=4)
+
+
 def test_hampel_threshold_validation():
     with pytest.raises(ValueError):
         ndimage.hampel_filter(np.ones(10), size=5, threshold=-1.0)

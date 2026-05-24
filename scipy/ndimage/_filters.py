@@ -2208,9 +2208,9 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
     input : array_like
         Input 1-D array.
     size : int
-        Window length. Should be a positive odd integer; even values are
-        accepted and use a centred window with the same convention as
-        `median_filter`.
+        Window length. Must be a positive odd integer. The window is
+        centred on each sample, so it covers ``size // 2`` neighbours on
+        each side.
     threshold : float, optional
         Outlier threshold expressed in units of MAD. Default is ``3.0``.
     mode : str, optional
@@ -2257,6 +2257,11 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
     size = operator.index(size)
     if size <= 0:
         raise ValueError("size must be a positive integer")
+    if size % 2 == 0:
+        raise ValueError(
+            "size must be odd; the Hampel filter is defined for "
+            "centred windows of odd length"
+        )
     threshold = float(threshold)
     if threshold < 0.0 or not np.isfinite(threshold):
         raise ValueError("threshold must be a non-negative finite number")
