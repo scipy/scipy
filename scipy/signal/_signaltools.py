@@ -4161,10 +4161,11 @@ def vectorstrength(events, period):
     In this example, five events occur exactly 1 second apart, starting
     at 0.25 s. The vector strength is 1 for ``period=1`` because all
     events fall at the same phase of every cycle, and the returned phase
-    is ``pi/2``, a quarter of the way through the period.
+    is π/2, a quarter of the way through the period.
 
     >>> import numpy as np
     >>> from scipy.signal import vectorstrength
+    ...
     >>> events = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
     >>> vectorstrength(events, period=1.0)
     (np.float64(1.0), np.float64(1.5707963267948968))  # may vary
@@ -4177,6 +4178,7 @@ def vectorstrength(events, period):
 
     >>> periods = [1, 5, 0.5]
     >>> strengths, phases = vectorstrength(events, periods)
+    ...
     >>> for p_, s_, ph_ in zip(periods, strengths, phases):
     ...     print(f"period = {p_:.1f}: strength = {s_:.2f}, "
     ...           f"phase = {np.rad2deg(ph_):.1f} deg")
@@ -4189,14 +4191,18 @@ def vectorstrength(events, period):
     occurs at 10 s with phase 0 rad. Due to the finite number of samples,
     the strength does not drop to zero away from 10 s but exhibits
     secondary maxima similar to those of an FFT sidelobe pattern. The
-    phase decreases roughly linearly with jumps of pi rad at each
+    phase decreases roughly linearly with jumps of π rad at each
     sidelobe minimum, consistent with an underlying sinc-like function.
 
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    ...
     >>> N, T = 100, 10  # samples and sampling interval in seconds
     >>> events = np.arange(N) * T
     >>> periods = np.linspace(9.5, 10.5, 101)
     >>> strength, phase = vectorstrength(events, periods)
+    ...
     >>> fig, (ax_strength, ax_phase) = plt.subplots(
     ...     2, 1, sharex=True, tight_layout=True)
     >>> ax_strength.set_title(
