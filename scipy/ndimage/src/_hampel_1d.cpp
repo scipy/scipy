@@ -6,8 +6,13 @@
 // The local median is supplied by the caller (typically computed by
 // scipy.ndimage.median_filter, which itself uses the O(log W) 1-D rank
 // filter), so this module only contributes the MAD computation and outlier
-// replacement, in O(log W) per sample, using two indexed heaps with an
+// replacement in O(log W) per sample, using two indexed heaps with an
 // equilibrium loop.
+//
+// Memory footprint per kernel invocation is O(W) (not O(N + W)): the heaps
+// and per-slot index maps are W-sized circular structures keyed by
+// window-slot in [0, W), and the boundary-extended signal is read on the
+// fly rather than materialised.
 
 #include "Python.h"
 #include "numpy/arrayobject.h"
@@ -15,7 +20,6 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <memory>
 #include <new>
 #include <vector>
 
@@ -29,14 +33,66 @@ typedef enum {
     CONSTANT = 4,
 } Mode;
 
-// Indexed binary heap with O(log W) eager deletion by external index.
+// Read padded signal element at absolute padded position j in [0, N + 2Z).
+// Position j corresponds to logical signal index (j - Z). Boundary handling
+// matches scipy.ndimage's mode codes exactly (same conventions used by the
+// caller's median_filter() so that the supplied median trace lines up).
+template <typename T>
+static inline T read_padded(const T *signal, npy_intp N, npy_intp j, int Z,
+                            int mode, T cval) {
+    npy_intp idx = j - Z;
+    if (idx >= 0 && idx < N) return signal[idx];
+    if (idx < 0) {
+        npy_intp k;
+        switch (mode) {
+        case REFLECT:
+            // ... d c b a | a b c d | d c b a ...
+            k = -idx - 1;
+            return signal[(k < N) ? k : (N - 1)];
+        case MIRROR:
+            // ... d c b | a b c d | c b a ...
+            k = -idx;
+            return signal[(k < N) ? k : (N - 1)];
+        case NEAREST:
+            return signal[0];
+        case WRAP:
+            return signal[((idx % N) + N) % N];
+        case CONSTANT:
+            return cval;
+        default:
+            return signal[0];
+        }
+    } else {
+        npy_intp r = idx - N;
+        npy_intp k;
+        switch (mode) {
+        case REFLECT:
+            k = N - 1 - r;
+            return signal[(k >= 0) ? k : 0];
+        case MIRROR:
+            k = N - 2 - r;
+            return signal[(k >= 0) ? k : 0];
+        case NEAREST:
+            return signal[N - 1];
+        case WRAP:
+            return signal[idx % N];
+        case CONSTANT:
+            return cval;
+        default:
+            return signal[N - 1];
+        }
+    }
+}
+
+// Indexed binary heap with O(log W) eager deletion and O(log W) in-place
+// update by external window-slot id in [0, W).
 template <typename T>
 class IndexedHeap {
 public:
-    struct Node { T value; int w_idx; };
+    struct Node { T value; int slot; };
 
     std::vector<Node> heap;
-    std::vector<int>& pos_map;
+    std::vector<int>& pos_map;   // pos_map[slot] = heap index, or -1
     bool is_max_heap;
 
     IndexedHeap(std::vector<int>& p_map, bool max_h)
@@ -46,10 +102,10 @@ public:
         return is_max_heap ? (a > b) : (a < b);
     }
 
-    void swap_nodes(int i, int j) {
+    inline void swap_nodes(int i, int j) {
         std::swap(heap[i], heap[j]);
-        pos_map[heap[i].w_idx] = i;
-        pos_map[heap[j].w_idx] = j;
+        pos_map[heap[i].slot] = i;
+        pos_map[heap[j].slot] = j;
     }
 
     void shift_up(int i) {
@@ -82,74 +138,97 @@ public:
         }
     }
 
-    void push(T val, int w_idx) {
-        heap.push_back({val, w_idx});
+    void push(T val, int slot) {
+        heap.push_back({val, slot});
         int idx = (int)heap.size() - 1;
-        pos_map[w_idx] = idx;
+        pos_map[slot] = idx;
         shift_up(idx);
     }
 
-    void erase(int w_idx) {
-        if (w_idx < 0 || w_idx >= (int)pos_map.size() || pos_map[w_idx] == -1) {
-            return;
-        }
-        int idx = pos_map[w_idx];
+    void erase(int slot) {
+        int idx = pos_map[slot];
+        if (idx < 0) return;
         int n = (int)heap.size();
         if (idx == n - 1) {
             heap.pop_back();
-            pos_map[w_idx] = -1;
+            pos_map[slot] = -1;
             return;
         }
         swap_nodes(idx, n - 1);
         heap.pop_back();
-        pos_map[w_idx] = -1;
+        pos_map[slot] = -1;
         if (idx < (int)heap.size()) {
             shift_up(idx);
             shift_down(idx);
         }
     }
 
-    T peek() const {
+    // Overwrite the value held at `slot` and re-establish heap order. The
+    // caller guarantees `slot` is currently in this heap. The value moves
+    // either up or down (not both): if the new value is "better" for this
+    // heap (larger for a max-heap, smaller for a min-heap) it sifts up,
+    // otherwise it sifts down.
+    void update(int slot, T new_val) {
+        int idx = pos_map[slot];
+        T old_val = heap[idx].value;
+        heap[idx].value = new_val;
+        if (compare(new_val, old_val)) {
+            shift_up(idx);
+        } else {
+            shift_down(idx);
+        }
+    }
+
+    inline T peek() const {
         if (!heap.empty()) return heap[0].value;
         return is_max_heap ? -std::numeric_limits<T>::infinity()
                            :  std::numeric_limits<T>::infinity();
     }
 
-    int size() const { return (int)heap.size(); }
+    inline int size() const { return (int)heap.size(); }
 };
 
-// Tracks the kth-smallest value of a sliding set using two heaps, with
-// O(log W) target-rank changes.
+// Tracks the kth-smallest value of a sliding W-element multiset using two
+// W-slot indexed heaps. Supports O(log W) target-rank changes and O(log W)
+// in-place value updates at a known slot.
 template <typename T>
 class RankTracker {
 public:
-    std::vector<int> pos_max;
-    std::vector<int> pos_min;
+    std::vector<int> pos_max;   // sized W
+    std::vector<int> pos_min;   // sized W
     IndexedHeap<T> max_heap;
     IndexedHeap<T> min_heap;
     int target_k;
 
-    RankTracker(int universe_size, int target_k_init)
-        : pos_max(universe_size, -1), pos_min(universe_size, -1),
+    RankTracker(int W, int target_k_init)
+        : pos_max(W, -1), pos_min(W, -1),
           max_heap(pos_max, true), min_heap(pos_min, false),
           target_k(target_k_init) {}
 
-    void insert(T val, int w_idx) {
+    void insert(T val, int slot) {
         if (max_heap.size() == 0 || val <= max_heap.peek()) {
-            max_heap.push(val, w_idx);
+            max_heap.push(val, slot);
         } else {
-            min_heap.push(val, w_idx);
+            min_heap.push(val, slot);
         }
         balance();
     }
 
-    void remove(int w_idx) {
-        if (w_idx >= 0 && w_idx < (int)pos_max.size() && pos_max[w_idx] != -1) {
-            max_heap.erase(w_idx);
-        } else if (w_idx >= 0 && w_idx < (int)pos_min.size() && pos_min[w_idx] != -1) {
-            min_heap.erase(w_idx);
+    // Replace the value at `slot` (currently in one of the two heaps) with
+    // `new_val`. Sizes are unchanged; only values shift. A single
+    // boundary-swap of the heap roots restores the cross-heap invariant in
+    // the worst case (only one slot's value changed, so at most one
+    // element can cross the boundary).
+    void replace(int slot, T new_val) {
+        if (pos_max[slot] >= 0) {
+            max_heap.update(slot, new_val);
+        } else {
+            min_heap.update(slot, new_val);
         }
-        balance();
+        if (max_heap.size() > 0 && min_heap.size() > 0 &&
+            max_heap.peek() > min_heap.peek()) {
+            swap_tops();
+        }
     }
 
     void set_rank(int new_k) {
@@ -160,87 +239,46 @@ public:
     void balance() {
         while (max_heap.size() > target_k && max_heap.size() > 0) {
             auto node = max_heap.heap[0];
-            max_heap.erase(node.w_idx);
-            min_heap.push(node.value, node.w_idx);
+            max_heap.erase(node.slot);
+            min_heap.push(node.value, node.slot);
         }
         while (max_heap.size() < target_k && min_heap.size() > 0) {
             auto node = min_heap.heap[0];
-            min_heap.erase(node.w_idx);
-            max_heap.push(node.value, node.w_idx);
+            min_heap.erase(node.slot);
+            max_heap.push(node.value, node.slot);
         }
     }
 
-    T get_kth_value() const { return max_heap.peek(); }
-    T get_kplus1_value() const { return min_heap.peek(); }
+    inline T get_kth_value() const { return max_heap.peek(); }
+    inline T get_kplus1_value() const { return min_heap.peek(); }
+
+private:
+    // Swap the roots of max_heap and min_heap (one element migrates each
+    // way) and re-heap from the new tops. O(log W).
+    void swap_tops() {
+        int s_max = max_heap.heap[0].slot;
+        int s_min = min_heap.heap[0].slot;
+        T v_max = max_heap.heap[0].value;
+        T v_min = min_heap.heap[0].value;
+        max_heap.heap[0] = {v_min, s_min};
+        min_heap.heap[0] = {v_max, s_max};
+        pos_max[s_max] = -1;
+        pos_max[s_min] = 0;
+        pos_min[s_max] = 0;
+        pos_min[s_min] = -1;
+        max_heap.shift_down(0);
+        min_heap.shift_down(0);
+    }
 };
-
-// Build a padded copy of the signal of length N + 2*Z so that the centred
-// window of width W = 2*Z (+1) fits at every output position. Boundary
-// extension follows scipy.ndimage's mode codes, matching what the caller's
-// median_filter() used to produce the input median signal.
-template <typename T>
-void pad_signal(const T *signal, npy_intp N, int Z, T *padded,
-                int mode, T cval)
-{
-    // Centre copy.
-    for (npy_intp i = 0; i < N; ++i) {
-        padded[Z + i] = signal[i];
-    }
-    if (N == 0) {
-        for (int i = 0; i < 2 * Z; ++i) {
-            padded[i] = (mode == CONSTANT) ? cval : (T)0;
-        }
-        return;
-    }
-    for (int i = 0; i < Z; ++i) {
-        npy_intp li, ri;
-        switch (mode) {
-        case REFLECT:
-            // ... d c b a | a b c d | d c b a ...
-            li = (i < N) ? i : (N - 1);
-            ri = (N - 1 - i >= 0) ? (N - 1 - i) : 0;
-            padded[Z - 1 - i] = signal[li];
-            padded[Z + N + i] = signal[ri];
-            break;
-        case MIRROR:
-            // ... d c b | a b c d | c b a ...
-            li = (i + 1 < N) ? (i + 1) : (N - 1);
-            ri = (N - 2 - i >= 0) ? (N - 2 - i) : 0;
-            padded[Z - 1 - i] = signal[li];
-            padded[Z + N + i] = signal[ri];
-            break;
-        case NEAREST:
-            padded[Z - 1 - i] = signal[0];
-            padded[Z + N + i] = signal[N - 1];
-            break;
-        case WRAP: {
-            // periodic
-            npy_intp lp = ((-(i + 1)) % N + N) % N;
-            npy_intp rp = i % N;
-            padded[Z - 1 - i] = signal[lp];
-            padded[Z + N + i] = signal[rp];
-            break;
-        }
-        case CONSTANT:
-            padded[Z - 1 - i] = cval;
-            padded[Z + N + i] = cval;
-            break;
-        default:
-            padded[Z - 1 - i] = signal[0];
-            padded[Z + N + i] = signal[N - 1];
-            break;
-        }
-    }
-}
 
 // Core Hampel kernel. Returns 0 on success, -1 on memory failure.
 //
 // For every position i in [0, N) the local median M = median_in[i] is
-// already known. We slide a window of width W centred on i (over a
-// boundary-padded copy of the signal) and use the equilibrium loop from the
-// attached algorithm to extract MAD(i) in O(log W). If
-// |signal[i] - M| > threshold * MAD(i) the sample is flagged as an outlier
-// and replaced by M in `filtered`; otherwise the original value is kept.
+// already known. We slide a window of width W centred on i (over the
+// boundary-extended signal, read on the fly) and use the equilibrium loop
+// to extract MAD(i) in O(log W). If |signal[i] - M| > threshold * MAD(i)
+// the sample is flagged as an outlier and replaced by M in `filtered`;
+// otherwise the original value is kept.
 template <typename T>
 int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
                double threshold, int mode, T cval,
@@ -250,8 +288,8 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
     int W = win_len;
     int Z = W / 2;
 
-    // Trivial pass-through for degenerate windows.
-    if (W <= 1) {
+    // Trivial pass-through for degenerate windows or empty input.
+    if (W <= 1 || N == 0) {
         for (npy_intp i = 0; i < N; ++i) {
             filtered[i] = signal[i];
             changed[i] = 0;
@@ -259,55 +297,41 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
         return 0;
     }
 
-    npy_intp padded_N = N + 2 * Z;
-    std::unique_ptr<T[]> padded;
-    try {
-        padded = std::unique_ptr<T[]>(new T[padded_N]);
-    } catch (std::bad_alloc&) {
-        return -1;
-    }
-    pad_signal(signal, N, Z, padded.get(), mode, cval);
-
-    // Equilibrium-loop parameters following the attached design.
-    // Internal "median rank" in 1-based form: M_rank = Z + 1.
+    // Equilibrium-loop parameters: 1-based internal "median rank".
     int M_rank = Z + 1;
     int k_L = Z / 2;
     int k_U = Z - k_L;
 
-    // All allocations beyond this point can throw bad_alloc; wrap the
-    // whole kernel body so std::bad_alloc never escapes into the Python
-    // C API (which would be undefined behaviour).
     try {
-        RankTracker<T> upper_tracker((int)padded_N, M_rank + k_U);
-        RankTracker<T> lower_tracker((int)padded_N, M_rank - k_L - 1);
+        RankTracker<T> upper_tracker(W, M_rank + k_U);
+        RankTracker<T> lower_tracker(W, M_rank - k_L - 1);
 
-        // Initial window: padded[0 .. W-1].
+        // Initial window covers padded positions [0, W). Each one lives at
+        // slot (j % W) == j.
         for (int j = 0; j < W; ++j) {
-            upper_tracker.insert(padded[j], j);
-            lower_tracker.insert(padded[j], j);
+            T val = read_padded(signal, N, (npy_intp)j, Z, mode, cval);
+            upper_tracker.insert(val, j);
+            lower_tracker.insert(val, j);
         }
 
         const T INF = std::numeric_limits<T>::infinity();
 
         // Window i covers padded[i .. i+W-1]; its centre maps to signal[i].
+        // Per slide (i >= 1) one value is replaced in-place at slot
+        // ((i - 1) % W) == ((i + W - 1) % W): padded[i-1] leaves,
+        // padded[i+W-1] enters.
         for (npy_intp i = 0; i < N; ++i) {
             if (i > 0) {
-                int old_idx = (int)(i - 1);
-                int new_idx = (int)(i + W - 1);
-                T new_val = padded[new_idx];
-                upper_tracker.remove(old_idx);
-                lower_tracker.remove(old_idx);
-                upper_tracker.insert(new_val, new_idx);
-                lower_tracker.insert(new_val, new_idx);
+                int slot = (int)((i - 1) % W);
+                T new_val = read_padded(signal, N, i + W - 1, Z, mode, cval);
+                upper_tracker.replace(slot, new_val);
+                lower_tracker.replace(slot, new_val);
             }
 
             T M = median_in[i];
 
             // Re-balance k_U / k_L until the (k_U)th value above M and the
             // (k_L)th value below M jointly bracket the same rank distance.
-            // Worst case O(Z) iterations per sample (k_U + k_L stays = Z),
-            // each costing O(log W); amortised typically O(log W) when
-            // consecutive medians don't move far.
             while (true) {
                 T X_upper_k = upper_tracker.get_kth_value();
                 T X_upper_next = upper_tracker.get_kplus1_value();
