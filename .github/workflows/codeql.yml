@@ -48,12 +48,6 @@ jobs:
         # CodeQL supports the following values keywords for 'language': 'actions',
         # 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript',
         # 'python', 'ruby', 'rust', 'swift'
-        # Use `c-cpp` to analyze code written in C, C++ or both
-        # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
-        # Use 'javascript-typescript' to analyze code written in JavaScript,
-        # TypeScript or both
-        # To learn more about changing the languages that are analyzed or
-        # customizing the build mode for your analysis,
     steps:
     - name: Checkout repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -64,7 +58,6 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
       with:
-        debug: true
         trap-caching: false
         languages: ${{ matrix.language }}
         config-file: .github/codeql/codeql-config.yml
