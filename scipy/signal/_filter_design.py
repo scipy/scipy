@@ -797,7 +797,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
 
     >>> import warnings
     >>> b2, a2 = signal.ellip(7, 0.02, 60.0, 10.0, fs=1280)
-    >>> with warnings.catch_warnings(action='ignore'):      # ignore warnings for example plotting
+    >>> with warnings.catch_warnings(action='ignore'):
     >>>     w2_c, gd2_c = signal.group_delay((b2, a2), w=2048, fs=1280)
     >>> w2_u, gd2_u = signal.group_delay((b2, a2), w=2048, fs=1280, method='unwrap')
     >>> wf2, h2 = signal.freqz(b2, a2, 2048, fs=1280)
