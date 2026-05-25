@@ -1659,7 +1659,8 @@ def medfilt(volume, kernel_size=None):
     >>> signal.medfilt(x, kernel_size=3)
     array([ 1,  2,  2,  2,  1,  1, 30, 30,  1])
 
-    The size 3 kernel is not big enough to eliminate the 2-wide spike near the end of the array.
+    The size 3 kernel is not big enough to eliminate the 
+    2-wide spike near the end of the array.
     A larger size 5 kernel successfully eliminates the 2-wide spike.
 
     >>> signal.medfilt(x, kernel_size=5)
