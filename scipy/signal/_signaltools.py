@@ -1652,13 +1652,24 @@ def medfilt(volume, kernel_size=None):
 
     >>> import numpy as np
     >>> from scipy import signal
-    >>> x = np.array([1, 2, 100, 2, 1, 1, 10, 1, 1])
+    >>> x = np.array([1, 2, 100, 2, 1, 1, 35, 30, 1])
 
     Apply a filter with a kernel size of 3:
 
     >>> signal.medfilt(x, kernel_size=3)
-    array([1, 2, 2, 2, 1, 1, 1, 1, 1])
+    array([ 1,  2,  2,  2,  1,  1, 30, 30,  1])
 
+    The size 3 kernel is not big enough to eliminate the 2-wide spike near the end of the array.
+    A larger size 5 kernel successfully eliminates the 2-wide spike.
+
+    >>> signal.medfilt(x, kernel_size=5)
+    array([1, 2, 2, 2, 2, 2, 1, 1, 1])
+
+    Kernel size 1 acts as an identity operator.
+    
+    >>> signal.medfilt(x, kernel_size=1)
+    array([  1,   2, 100,   2,   1,   1,  35,  30,   1])
+    
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
