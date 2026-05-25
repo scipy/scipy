@@ -33,6 +33,36 @@ typedef enum {
     CONSTANT = 4,
 } Mode;
 
+// Per-dtype sentinel values used as +/- "infinity" in the equilibrium loop
+// and as the value reported when peeking into an empty heap. For floats we
+// use IEEE infinities; for int64 we fall back to numeric_limits::max/lowest,
+// which are safe because the loop only compares them, never arithmetics on
+// them.
+template <typename T>
+struct Sentinel {
+    static inline T pos() { return std::numeric_limits<T>::max(); }
+    static inline T neg() { return std::numeric_limits<T>::lowest(); }
+};
+template <>
+struct Sentinel<float> {
+    static inline float pos() { return  std::numeric_limits<float>::infinity(); }
+    static inline float neg() { return -std::numeric_limits<float>::infinity(); }
+};
+template <>
+struct Sentinel<double> {
+    static inline double pos() { return  std::numeric_limits<double>::infinity(); }
+    static inline double neg() { return -std::numeric_limits<double>::infinity(); }
+};
+
+// |a - b| computed without intermediate signed overflow. For int64 a direct
+// `std::fabs(a - b)` is wrong on two counts (no float promotion, and the
+// subtraction may overflow); doing the comparison first keeps everything in
+// the non-negative range.
+template <typename T>
+inline T abs_diff(T a, T b) {
+    return (a >= b) ? (T)(a - b) : (T)(b - a);
+}
+
 // Read padded signal element at absolute padded position j in [0, N + 2Z).
 // Position j corresponds to logical signal index (j - Z). Boundary handling
 // matches scipy.ndimage's mode codes exactly (same conventions used by the
@@ -181,8 +211,7 @@ public:
 
     inline T peek() const {
         if (!heap.empty()) return heap[0].value;
-        return is_max_heap ? -std::numeric_limits<T>::infinity()
-                           :  std::numeric_limits<T>::infinity();
+        return is_max_heap ? Sentinel<T>::neg() : Sentinel<T>::pos();
     }
 
     inline int size() const { return (int)heap.size(); }
@@ -314,7 +343,8 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
             lower_tracker.insert(val, j);
         }
 
-        const T INF = std::numeric_limits<T>::infinity();
+        const T NEG_INF = Sentinel<T>::neg();
+        const T POS_INF = Sentinel<T>::pos();
 
         // Window i covers padded[i .. i+W-1]; its centre maps to signal[i].
         // Per slide (i >= 1) one value is replaced in-place at slot
@@ -339,10 +369,10 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
                 T X_lower_k = lower_tracker.get_kplus1_value();
                 T X_lower_prev = lower_tracker.get_kth_value();
 
-                T A_km1 = (k_U > 0) ? (X_upper_k - M) : -INF;
-                T A_k   = ((M_rank + k_U) < W) ? (X_upper_next - M) : INF;
-                T B_km1 = (k_L > 0) ? (M - X_lower_k) : -INF;
-                T B_k   = ((M_rank - k_L - 1) > 0) ? (M - X_lower_prev) : INF;
+                T A_km1 = (k_U > 0) ? (T)(X_upper_k - M) : NEG_INF;
+                T A_k   = ((M_rank + k_U) < W) ? (T)(X_upper_next - M) : POS_INF;
+                T B_km1 = (k_L > 0) ? (T)(M - X_lower_k) : NEG_INF;
+                T B_k   = ((M_rank - k_L - 1) > 0) ? (T)(M - X_lower_prev) : POS_INF;
 
                 if (k_U > 0 && A_km1 > B_k) {
                     k_U--;
@@ -359,12 +389,16 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
                 }
             }
 
-            T cand_A = (k_U > 0) ? (upper_tracker.get_kth_value() - M) : (T)0;
-            T cand_B = (k_L > 0) ? (M - lower_tracker.get_kplus1_value()) : (T)0;
+            T cand_A = (k_U > 0) ? (T)(upper_tracker.get_kth_value() - M) : (T)0;
+            T cand_B = (k_L > 0) ? (T)(M - lower_tracker.get_kplus1_value()) : (T)0;
             T mad = std::max({cand_A, cand_B, (T)0});
 
-            T abs_dev = std::fabs(signal[i] - M);
-            if (abs_dev > (T)threshold * mad) {
+            T abs_dev = abs_diff(signal[i], M);
+            // Threshold comparison is done in double to avoid (a) integer
+            // overflow on `threshold * mad` for int64 inputs and (b) needing
+            // a fabs that varies by dtype. The right-hand side stays
+            // non-negative, so a direct double comparison is well-defined.
+            if ((double)abs_dev > threshold * (double)mad) {
                 filtered[i] = M;
                 changed[i] = 1;
             } else {
@@ -381,7 +415,8 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
 // Python entry point:
 //     hampel(signal, median, win_len, threshold, mode, cval,
 //            filtered_out, changed_out)
-// - signal, median, filtered_out: same length, same dtype (float32/float64).
+// - signal, median, filtered_out: same length, same dtype
+//   (float32 / float64 / int64).
 // - changed_out: bool array, same length.
 static PyObject *hampel(PyObject *self, PyObject *args)
 {
@@ -452,9 +487,24 @@ static PyObject *hampel(PyObject *self, PyObject *args)
                                     mode, cval, f, c_chg);
         break;
     }
+    case NPY_INT64: {
+        npy_int64 *s = (npy_int64 *)PyArray_DATA(signal);
+        npy_int64 *m = (npy_int64 *)PyArray_DATA(median);
+        npy_int64 *f = (npy_int64 *)PyArray_DATA(filt);
+        npy_int64 cval = (npy_int64)PyLong_AsLongLong(cval_obj);
+        if (cval == -1 && PyErr_Occurred()) {
+            Py_DECREF(signal); Py_DECREF(median);
+            Py_DECREF(filt); Py_DECREF(chg);
+            return NULL;
+        }
+        status = _hampel_1d<npy_int64>(s, m, N, win_len, threshold,
+                                       mode, cval, f, c_chg);
+        break;
+    }
     default:
         PyErr_SetString(PyExc_TypeError,
-                        "hampel filter only supports float32 and float64");
+                        "hampel filter only supports float32, float64, "
+                        "and int64");
         break;
     }
 

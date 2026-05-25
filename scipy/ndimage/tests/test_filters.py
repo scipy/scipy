@@ -3520,3 +3520,71 @@ def test_hampel_size_larger_than_input_warns_and_passes_through():
     assert_allclose(out, x)
     assert_allclose(med, x)
     assert idx.size == 0
+
+
+# Dtype coverage mirrors `median_filter` / `_rank_filter`: float32, float64,
+# and int64 run natively in the C kernel; other integer / unsigned / bool /
+# float16 types are cast to the appropriate native dtype and copied back.
+@pytest.mark.parametrize("dtype", [
+    np.float16, np.float32, np.float64,
+    np.int8, np.int16, np.int32, np.int64,
+    np.uint8, np.uint16, np.uint32, np.uint64,
+    bool,
+])
+def test_hampel_dtype_coverage(dtype):
+    rng = np.random.default_rng(7)
+    # Use a benign signal that fits every dtype we care about, then inject
+    # one outlier to make sure detection still runs.
+    base = rng.integers(0, 10, size=64)
+    base[10] = 0  # ensure outlier is reachable for unsigned dtypes
+    x = base.astype(dtype, copy=True)
+    if dtype is bool:
+        # bool can only hold {0, 1}; the algorithm should still run and the
+        # output is bool with the same shape, unchanged for a benign window.
+        out = ndimage.hampel_filter(x, size=5)
+        assert out.dtype == np.dtype(bool)
+        assert out.shape == x.shape
+        return
+    # Plant an outlier compatible with both signed and unsigned ranges.
+    x[10] = np.array(9, dtype=dtype)
+    x[32] = np.array(8, dtype=dtype)
+
+    out, med, idx = ndimage.hampel_filter(
+        x, size=5, return_median=True, return_indices=True,
+    )
+
+    # Output dtype must match the input dtype (parity with median_filter).
+    assert out.dtype == np.dtype(dtype)
+    assert med.dtype == np.dtype(dtype)
+
+    # Behavior must match running the filter in float64 and casting back,
+    # i.e. the kernel choice does not change which samples are flagged.
+    ref_out, ref_med, ref_idx = ndimage.hampel_filter(
+        x.astype(np.float64), size=5,
+        return_median=True, return_indices=True,
+    )
+    assert_array_equal(idx, ref_idx)
+    expected_out = np.empty_like(x)
+    np.copyto(expected_out, ref_out, casting='unsafe')
+    expected_med = np.empty_like(x)
+    np.copyto(expected_med, ref_med, casting='unsafe')
+    assert_array_equal(out, expected_out)
+    assert_array_equal(med, expected_med)
+
+
+def test_hampel_int64_large_values_no_overflow():
+    # Values near int64 max would overflow if `threshold * mad` were
+    # computed in int64. The kernel performs that comparison in double, so
+    # the filter must still produce a sensible result here.
+    big = np.iinfo(np.int64).max // 4
+    x = np.full(32, big, dtype=np.int64)
+    x[15] = 0  # planted outlier (very different from the surrounding median)
+    out, idx = ndimage.hampel_filter(x, size=5, return_indices=True)
+    assert out.dtype == np.int64
+    assert 15 in idx
+    assert out[15] == big
+
+
+def test_hampel_rejects_complex():
+    with pytest.raises(TypeError, match="[Cc]omplex"):
+        ndimage.hampel_filter(np.ones(10, dtype=np.complex128), size=5)

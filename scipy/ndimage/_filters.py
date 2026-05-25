@@ -2254,6 +2254,8 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
     input_arr = np.asarray(input)
     if input_arr.ndim != 1:
         raise ValueError("hampel_filter supports 1-D arrays only")
+    if np.iscomplexobj(input_arr):
+        raise TypeError("Complex type not supported")
     size = operator.index(size)
     if size <= 0:
         raise ValueError("size must be a positive integer")
@@ -2266,10 +2268,24 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
     if threshold < 0.0 or not np.isfinite(threshold):
         raise ValueError("threshold must be a non-negative finite number")
 
-    if input_arr.dtype == np.float32:
-        x = np.ascontiguousarray(input_arr)
+    # Pick the kernel dtype the same way `_rank_filter` does, so dtype
+    # coverage matches `median_filter` exactly. The output is cast back to
+    # the caller's dtype on the way out (`casting='unsafe'` for the int
+    # path, matching `_rank_filter`).
+    in_dtype = input_arr.dtype
+    if in_dtype in (np.int64, np.float64, np.float32):
+        kernel_dtype = in_dtype
+    elif in_dtype == np.float16:
+        kernel_dtype = np.dtype(np.float32)
+    elif np.result_type(in_dtype, np.int64) == np.int64:
+        kernel_dtype = np.dtype(np.int64)
+    elif in_dtype.kind in 'biu':
+        # any remaining bool / integer / unsigned type
+        kernel_dtype = np.dtype(np.int64)
     else:
-        x = np.ascontiguousarray(input_arr, dtype=np.float64)
+        raise RuntimeError('Unsupported array type')
+
+    x = np.ascontiguousarray(input_arr, dtype=kernel_dtype)
 
     # Degenerate inputs: no filtering possible. Warn and pass the signal
     # through unchanged (with the same return-tuple shape the caller asked
@@ -2290,8 +2306,9 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
             f"hampel_filter: {degenerate_reason}; returning input unchanged.",
             UserWarning, stacklevel=2,
         )
-        filtered = x.copy()
-        median = x.copy()
+        filtered = np.empty(x.shape, dtype=in_dtype)
+        np.copyto(filtered, x, casting='unsafe')
+        median = filtered.copy()
         changed_mask = np.zeros(x.shape, dtype=bool)
         if not return_median and not return_indices:
             return filtered
@@ -2305,12 +2322,21 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
     median = median_filter(x, size=size, mode=mode, cval=cval)
     median = np.ascontiguousarray(median, dtype=x.dtype)
 
-    filtered = np.empty_like(x)
+    kernel_out = np.empty_like(x)
     changed_mask = np.zeros(x.shape, dtype=bool)
     mode_code = _ni_support._extend_mode_to_code(mode, is_filter=True)
     cval_cast = x.dtype.type(cval)
     _hampel_1d.hampel(x, median, int(size), float(threshold),
-                      int(mode_code), cval_cast, filtered, changed_mask)
+                      int(mode_code), cval_cast, kernel_out, changed_mask)
+
+    if kernel_dtype == in_dtype:
+        filtered = kernel_out
+    else:
+        filtered = np.empty(x.shape, dtype=in_dtype)
+        np.copyto(filtered, kernel_out, casting='unsafe')
+        median_out = np.empty(x.shape, dtype=in_dtype)
+        np.copyto(median_out, median, casting='unsafe')
+        median = median_out
 
     if not return_median and not return_indices:
         return filtered
