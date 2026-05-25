@@ -869,8 +869,8 @@ def _dirty_git_working_dir():
     )
 )
 @click.option(
-    '--dry-run', '-n', is_flag=True, default=True,
-    help="Run benchmarks without saving results to disk (default: True). "
+    '--dry-run/--no-dry-run', '-n', default=True,
+    help="Run benchmarks without saving results to disk. "
 )
 @meson.build_option
 @meson.build_dir_option
