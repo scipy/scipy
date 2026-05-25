@@ -6,7 +6,7 @@ import sys
 import warnings
 import tempfile
 from contextlib import contextmanager
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 import pytest
@@ -181,10 +181,16 @@ _xp_available_backends = None
 _xp_skip_cpu_only_backends = None
 _xp_skip_eager_only_backends = None
 
-def _get_xp_backends():
-    global _xp_available_backends, _xp_skip_cpu_only_backends, _xp_skip_eager_only_backends
+def _get_xp_backends() -> tuple:
+    global _xp_available_backends
+    global _xp_skip_cpu_only_backends
+    global _xp_skip_eager_only_backends
     if _xp_available_backends is not None:
-        return _xp_available_backends, _xp_skip_cpu_only_backends, _xp_skip_eager_only_backends
+        return (
+            _xp_available_backends,
+            _xp_skip_cpu_only_backends,
+            _xp_skip_eager_only_backends,
+        )
 
     xp_skip_cpu_only_backends = set()
     xp_skip_eager_only_backends = set()
@@ -313,9 +319,13 @@ def _get_xp_backends():
     _xp_available_backends = xp_available_backends
     _xp_skip_cpu_only_backends = xp_skip_cpu_only_backends
     _xp_skip_eager_only_backends = xp_skip_eager_only_backends
-    return _xp_available_backends, _xp_skip_cpu_only_backends, _xp_skip_eager_only_backends
+    return (
+        _xp_available_backends,
+        _xp_skip_cpu_only_backends,
+        _xp_skip_eager_only_backends,
+    )
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     if name == 'xp_available_backends':
         return _get_xp_backends()[0]
     if name == 'xp_skip_cpu_only_backends':
