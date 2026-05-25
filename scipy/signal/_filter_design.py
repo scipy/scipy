@@ -734,7 +734,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
             Compute the system frequency response using `freqz`, unwrap the
             phase, and then directly compute the finite difference derivative versus frequency.
 
-        .. versionadded:: 1.18.0
+        .. versionadded:: 1.19.0
 
     Returns
     -------
