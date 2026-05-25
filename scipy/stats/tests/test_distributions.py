@@ -33,7 +33,7 @@ import scipy.stats.distributions
 from scipy.special import xlogy, polygamma, entr
 from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
-from scipy.stats._continuous_distns import FitDataError, _argus_phi
+from scipy.stats._continuous_distns import FitDataError, _argus_phi, _pearson_classifier
 from scipy.optimize import root, fmin, differential_evolution
 from itertools import product
 
@@ -2890,6 +2890,27 @@ class TestGenpareto:
         # Regression test for gh-11168.
         v = stats.genpareto.var(1e-8)
         assert_allclose(v, 1.000000040000001, rtol=1e-13)
+
+
+class TestPearson:
+    @pytest.mark.parametrize(
+        "skewness, kurtosis, expected",
+        [(0.0, 0.0, "normal"),
+         (1.0, 0.0, "type1"),
+         (0.0, -1.0, "type2"),
+         (1.0, 1.5, "type3"),
+         (1.0, 2.0, "type4"),
+         # Chosen so that kappa == 1, the Type V boundary.
+         (np.sqrt(5), 12.0, "type5"),
+         (2.0, 7.0, "type6"),
+         (0.0, 4.0, "type7")])
+    def test_pearson_types(self, skewness, kurtosis, expected):
+        result = _pearson_classifier(skewness, kurtosis)
+        assert result == expected
+
+    def test_invalid_skewness_kurtosis(self):
+        with pytest.raises(ValueError, match="Invalid skewness and kurtosis"):
+            _pearson_classifier(1.761, 1.0)
 
 
 class TestPearson3:

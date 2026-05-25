@@ -8428,6 +8428,70 @@ class lomax_gen(rv_continuous):
 
 lomax = lomax_gen(a=0.0, name="lomax")
 
+def _pearson_classifier(skewness, kurtosis):
+    tol = 1e-12
+
+    beta1 = skewness**2
+    beta2 = kurtosis + 3.0
+
+    if beta2 < beta1 + 1 - tol:
+        raise ValueError("Invalid skewness and kurtosis values "
+        "for Pearson distribution classification.")
+
+    is_symmetric = np.isclose(skewness, 0, atol=tol, rtol=0)
+    is_normal = is_symmetric and np.isclose(kurtosis, 0, atol=tol, rtol=0)
+
+    if is_normal:
+        return "normal"
+
+    if is_symmetric:
+        if kurtosis < 0:
+            return "type2"
+        return "type7"
+
+    delta = 2*beta2 - 3*beta1 - 6
+
+    if np.isclose(delta, 0, atol=tol, rtol=0):
+        return "type3"
+
+    epsilon = 4*beta2 - 3*beta1
+    kappa = (beta1*(beta2 + 3)**2) / (4 * epsilon * delta)
+
+    # Type V is the kappa == 1 boundary between Types IV and VI.
+    if np.isclose(kappa, 1, atol=tol, rtol=0):
+        return "type5"
+
+    if kappa < 0:
+        return "type1"
+
+    if 0 < kappa < 1:
+        return "type4"
+
+    if kappa > 1:
+        return "type6"
+
+    raise ValueError(
+        "Unable to classify the distribution based on skewness and kurtosis."
+    )
+
+
+def _pearson_type1_params(mean, variance, skewness, kurtosis):
+    beta1 = skewness**2
+    n = (6 + 3*kurtosis - 3*beta1) / (1.5*beta1 - kurtosis)
+    r = beta1 * (n + 2)**2 / (4 * (n + 1))
+    q = np.sqrt(r / (r + 4))
+    # beta1 loses the skewness sign. Restore it when setting b - a.
+    d = np.sign(skewness) * n * q
+
+    a = (n - d) / 2
+    b = (n + d) / 2
+    base_mean = a / (a + b)
+    base_var = a*b / ((a + b)**2 * (a + b + 1))
+    scale = np.sqrt(variance / base_var)
+    loc = mean - scale*base_mean
+
+    return a, b, loc, scale
+
 
 class pearson3_gen(rv_continuous):
     r"""
@@ -8626,6 +8690,26 @@ class pearson3_gen(rv_continuous):
 
 
 pearson3 = pearson3_gen(name="pearson3")
+
+
+def pearson(mean, variance, skewness, kurtosis):
+    pearson_type = _pearson_classifier(skewness, kurtosis)
+
+    if pearson_type == "normal":
+        return norm(loc=mean, scale=np.sqrt(variance))
+
+    if pearson_type == "type1":
+        a, b, loc, scale = _pearson_type1_params(
+            mean, variance, skewness, kurtosis
+        )
+        return beta(a, b, loc=loc, scale=scale)
+
+    if pearson_type == "type3":
+        return pearson3(skewness, loc=mean, scale=np.sqrt(variance))
+
+    raise NotImplementedError(
+        f"Pearson {pearson_type} dispatch is not implemented."
+    )
 
 
 class powerlaw_gen(rv_continuous):
