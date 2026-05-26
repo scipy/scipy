@@ -1024,7 +1024,7 @@ def fiedler(a):
     a = xpx.atleast_nd(xp.asarray(a), ndim=1)
 
     if xp_size(a) == 0:
-        return xp.asarray([], dtype=xp.float64)
+        return xp.empty((0, 0), dtype=xp.float64)
     elif xp_size(a) == 1:
         return xp.asarray([[0.]])
     else:
