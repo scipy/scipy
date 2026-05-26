@@ -7,7 +7,6 @@ import operator
 import numpy as np
 from math import prod
 import scipy.sparse as sp
-from scipy._lib._util import np_long, np_ulong
 
 
 __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
@@ -15,7 +14,7 @@ __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'broadcast_shapes']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
-                    np.uintc, np_long, np_ulong, np.longlong, np.ulonglong,
+                    np.uintc, np.long, np.ulong, np.longlong, np.ulonglong,
                     np.float32, np.float64, np.longdouble,
                     np.complex64, np.complex128, np.clongdouble]
 
