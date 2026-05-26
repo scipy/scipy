@@ -21,6 +21,19 @@ xfail_xp_backends = pytest.mark.xfail_xp_backends
 lazy_xp_modules = [windows]
 
 
+def _assert_psll_bw(win_func, xp, expected_psll, expected_bw):
+    M_win = 1024
+    N_fft = 131072
+    w = win_func(M_win, sym=False, xp=xp)
+    f_np = fft(_xp_copy_to_numpy(w), N_fft)
+    spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
+    first_zero = np.argmax(np.diff(spec) > 0)
+    PSLL = np.max(spec[first_zero:-first_zero])
+    BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
+    assert math.isclose(PSLL, expected_psll, abs_tol=1)
+    assert math.isclose(BW_3dB, expected_bw, abs_tol=0.1)
+
+
 window_funcs = [
     ('boxcar', ()),
     ('triang', ()),
@@ -73,16 +86,7 @@ class TestBartHann:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.barthann(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -35.9, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.41, abs_tol=0.1)
+        _assert_psll_bw(windows.barthann, xp, -35.9, 1.41)
 
 
 @make_xp_test_case(windows.bartlett)
@@ -106,16 +110,7 @@ class TestBartlett:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.bartlett(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -26.5, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.27, abs_tol=0.1)
+        _assert_psll_bw(windows.bartlett, xp, -26.5, 1.27)
 
 
 @make_xp_test_case(windows.blackman)
@@ -150,16 +145,7 @@ class TestBlackman:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.blackman(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -58.0, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.68, abs_tol=0.1)
+        _assert_psll_bw(windows.blackman, xp, -58.0, 1.68)
 
 
 @make_xp_test_case(windows.blackmanharris)
@@ -192,16 +178,7 @@ class TestBlackmanHarris:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.blackmanharris(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -92.0, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.90, abs_tol=0.1)
+        _assert_psll_bw(windows.blackmanharris, xp, -92.0, 1.90)
 
 
 @make_xp_test_case(windows.taylor)
@@ -309,16 +286,7 @@ class TestBohman:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.bohman(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -46.0, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.71, abs_tol=0.1)
+        _assert_psll_bw(windows.bohman, xp, -46.0, 1.71)
 
 
 @make_xp_test_case(windows.boxcar)
@@ -342,16 +310,7 @@ class TestBoxcar:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.boxcar(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -13.3, abs_tol=1)
-        assert math.isclose(BW_3dB, 0.88, abs_tol=0.1)
+        _assert_psll_bw(windows.boxcar, xp, -13.3, 0.88)
 
 
 cheb_odd_true = [0.200938, 0.107729, 0.134941, 0.165348,
@@ -600,16 +559,7 @@ class TestHamming:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.hamming(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -42.7, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.30, abs_tol=0.1)
+        _assert_psll_bw(windows.hamming, xp, -42.7, 1.30)
 
 
 @make_xp_test_case(windows.hann)
@@ -645,16 +595,7 @@ class TestHann:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.hann(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -31.5, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.44, abs_tol=0.1)
+        _assert_psll_bw(windows.hann, xp, -31.5, 1.44)
 
 
 @make_xp_test_case(windows.kaiser)
@@ -768,16 +709,7 @@ class TestNuttall:
                flat-top windows," 2002.
                https://holometer.fnal.gov/GH_FFT.pdf
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.nuttall(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -98.1, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.88, abs_tol=0.1)
+        _assert_psll_bw(windows.nuttall, xp, -98.1, 1.88)
 
 
 @make_xp_test_case(windows.parzen)
@@ -808,16 +740,7 @@ class TestParzen:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.parzen(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -53.0, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.82, abs_tol=0.1)
+        _assert_psll_bw(windows.parzen, xp, -53.0, 1.82)
 
 
 @make_xp_test_case(windows.triang)
@@ -1267,16 +1190,7 @@ class TestCosine:
                vol. 66, no. 1, pp. 51-83, Jan. 1978.
                :doi:`10.1109/PROC.1978.10837`
         """
-        M_win = 1024
-        N_fft = 131072
-        w = windows.cosine(M_win, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
-        spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
-        first_zero = np.argmax(np.diff(spec) > 0)
-        PSLL = np.max(spec[first_zero:-first_zero])
-        BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        assert math.isclose(PSLL, -23.0, abs_tol=1)
-        assert math.isclose(BW_3dB, 1.20, abs_tol=0.1)
+        _assert_psll_bw(windows.cosine, xp, -23.0, 1.20)
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")
