@@ -827,7 +827,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
     >>> axes[0, 1].set_title("Narrowband elliptical filter")
     >>> axes[2, 1].set_xlabel("Frequency [Hz]")
     >>> for ax in axes[:, 1]:
-    >>>     ax.set_xlim((0., 15.))
+    ...     ax.set_xlim((0., 15.))
     >>> axes[2, 1].set_ylim((-50., 400.))
     >>> plt.show()
 
