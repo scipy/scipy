@@ -515,6 +515,7 @@ def test_dft():
 def test_fiedler(xp):
     f = fiedler(xp.asarray([]))
     assert xp_size(f) == 0
+    assert f.shape == (0, 0)
 
     f = fiedler(xp.asarray([123.]))
     xp_assert_equal(f, xp.asarray([[0.]]))
