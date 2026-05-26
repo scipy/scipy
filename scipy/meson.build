@@ -126,6 +126,16 @@ else
   pythran_dep = []
 endif
 
+host_python_path = meson.get_external_property('host-python-path', 'not-given')
+if host_python_path == 'not-given'
+  host_python_path = py3.full_path()
+endif
+
+host_python_version = meson.get_external_property('host-python-version', 'not-given')
+if host_python_version == 'not-given'
+  host_python_version = py3.language_version()
+endif
+
 # Note: warning flags are added to this further down
 cpp_args_pythran = [
   '-DENABLE_PYTHON_MODULE',
@@ -755,8 +765,8 @@ endforeach
 conf_data.set('CROSS_COMPILED', meson.is_cross_build().to_string())
 
 # Python information
-conf_data.set('PYTHON_PATH', py3.full_path().replace('\\', '/'))
-conf_data.set('PYTHON_VERSION', py3.language_version())
+conf_data.set('HOST_PYTHON_PATH', host_python_path)
+conf_data.set('HOST_PYTHON_VERSION', host_python_version)
 
 # Information on dependencies, to store in `scipy/__config__.py`
 dependency_map = {
