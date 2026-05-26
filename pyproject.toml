@@ -162,7 +162,7 @@ test-command = 'python -c "import sys; import scipy; sys.exit(not scipy.test())"
 
 [tool.cibuildwheel.android.environment]
 PKG_CONFIG_PATH = "$(pwd)/.openblas/lib/pkgconfig"
-LD_LIBRARY_PATH = "$(pwd)/.openblas/lib"
+AUDITWHEEL_LD_LIBRARY_PATH = "$(pwd)/.openblas/lib"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
