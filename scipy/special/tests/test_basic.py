@@ -37,7 +37,6 @@ from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import softplus
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
-from scipy._lib._util import np_long, np_ulong
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
 
 from scipy.special._basic import (
@@ -2959,7 +2958,7 @@ class TestFactorialFunctions:
         kw = {"k": k, "exact": exact, "extend": extend}
         if exact and k in _FACTORIALK_LIMITS_64BITS.keys():
             n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
-            assert_equal(special.factorialk(n, **kw).dtype, np_long)
+            assert_equal(special.factorialk(n, **kw).dtype, np.long)
             assert_equal(special.factorialk(n + 1, **kw).dtype, np.int64)
             # assert maximality of limits for given dtype
             assert special.factorialk(n + 1, **kw) > np.iinfo(np.int32).max
@@ -4837,8 +4836,8 @@ class TestStirling2:
     def test_numpy_array_unsigned_int_dtype(self, is_exact, comp, kwargs):
         # numpy unsigned integers are allowed as dtype in numpy arrays
         ans = asarray(self.table[4][1:])
-        n = asarray([4, 4, 4, 4], dtype=np_ulong)
-        k = asarray([1, 2, 3, 4], dtype=np_ulong)
+        n = asarray([4, 4, 4, 4], dtype=np.ulong)
+        k = asarray([1, 2, 3, 4], dtype=np.ulong)
         comp(stirling2(n, k, exact=False), ans, **kwargs)
 
     @pytest.mark.parametrize("is_exact, comp, kwargs", [

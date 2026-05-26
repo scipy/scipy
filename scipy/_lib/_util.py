@@ -22,9 +22,6 @@ from scipy._lib._sparse import issparse
 from numpy.exceptions import AxisError
 
 
-np_long = np.long
-np_ulong = np.ulong
-
 type IntNumber = int | np.integer
 type DecimalNumber = float | np.floating | np.integer
 
