@@ -191,8 +191,9 @@ inline void invert_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = maxa * maxinva > 1./ detail::numeric_limits<real_type>::eps;
-    status.rcond = maxa * maxinva;
+    double rcond = (double)maxa * (double)maxinva;
+    status.is_ill_conditioned = rcond > 1./ detail::numeric_limits<real_type>::eps;
+    status.rcond = rcond;
 }
 
 
