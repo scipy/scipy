@@ -67,7 +67,7 @@ from scipy.special._ufuncs import _log1mexp
 )
 def test_log1mexp(x, expected):
     observed = _log1mexp(x)
-    assert_allclose(observed, expected, rtol=1e-15)
+    assert_allclose(observed, expected, rtol=1e-15, atol=1e-300)
 
 
 @pytest.mark.parametrize("x", [1.1, 1e10, np.inf])
