@@ -32,7 +32,6 @@ ignore-missing-imports = [
     "scipy.linalg._flapack_64",
     "scipy.linalg._internal_matfuncs",
     "scipy.linalg.blas.dtrsm",
-    "scipy.odr.__odrpack",
     "scipy.optimize._highspy._core",
     "scipy.optimize._lbfgsb",
     "scipy.optimize._lsap",

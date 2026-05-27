@@ -61,7 +61,6 @@ PUBLIC_SUBMODULES = [
     'linalg.lapack',
     'linalg.interpolative',
     'ndimage',
-    'odr',
     'optimize',
     'signal',
     'signal.windows',

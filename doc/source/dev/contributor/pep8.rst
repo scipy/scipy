@@ -43,7 +43,7 @@ compliance before pushing your code:
 
    You can also run the linter on specific files, using the ``--files`` option::
 
-      python tools/lint.py --files scipy/odr/models.py scipy/ndimage
+      python tools/lint.py --files scipy/ndimage
 
 -  If you have existing code with a lot of PEP8 issues, consider using
    |autopep8|_ to automatically fix them before incorporating the code into

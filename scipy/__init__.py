@@ -20,7 +20,6 @@ Subpackages
  io                           --- Data input and output
  linalg                       --- Linear algebra routines
  ndimage                      --- N-D image package
- odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
  sparse                       --- Sparse Matrices
@@ -105,7 +104,6 @@ submodules = [
     'io',
     'linalg',
     'ndimage',
-    'odr',
     'optimize',
     'signal',
     'sparse',
@@ -113,12 +111,6 @@ submodules = [
     'special',
     'stats'
 ]
-
-# Handle `_without-fortran` build option
-import os
-if not os.path.exists('odr'):
-    submodules.remove('odr')
-del os
 
 __all__ = submodules + [
     'LowLevelCallable',

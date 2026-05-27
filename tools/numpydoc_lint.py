@@ -593,7 +593,6 @@ false_positives = ["scipy.stats.Uniform",
                    "scipy.stats.Logistic"]
 
 skip_modules = [
-    "scipy.odr",
     "scipy.fftpack",
     "scipy.stats.mstats",
     "scipy.linalg.cython_lapack",

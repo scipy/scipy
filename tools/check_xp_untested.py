@@ -41,8 +41,6 @@ if __name__ == "__main__":
     # `xp_capabilities_table` is populated lazily, so need to import
     # everything to make sure all entries are there.
     for module_name in PUBLIC_MODULES:
-        if module_name == "scipy.odr":
-            continue
         importlib.import_module(module_name)
 
     tested_functions = set()
