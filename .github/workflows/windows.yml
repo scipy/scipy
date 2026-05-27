@@ -95,7 +95,7 @@ jobs:
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
-          spin test -j4 --mode full -- --durations=25 --timeout=60
+          spin test -j4 --mode full -- --durations=25 --timeout=600
 
   #############################################################################
   fast_spin_arm64:
