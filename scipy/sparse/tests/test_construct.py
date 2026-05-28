@@ -227,8 +227,6 @@ class TestConstructUtils:
         for d, o, shape in cases:
             assert_raises(ValueError, construct.diags, d, offsets=o, shape=shape)
 
-        assert_raises(TypeError, construct.diags, [[None]], offsets=[0])
-
     def test_diags_vs_diag(self):
         # Check that
         #
@@ -923,25 +921,8 @@ def test_diags_array():
 def test_diags_int(func):
     d = [[3], [1, 2], [4]]
     offsets = [-1, 0, 1]
-    # Until the deprecation period is over, `dtype=None` must be given
-    # explicitly to avoid the warning and the cast to an inexact type
-    # in diags_array() (gh-23102).
-    arr = func(d, offsets=offsets, dtype=None)
+    arr = func(d, offsets=offsets)
     expected = np.array([[1, 4], [3, 2]])
-    assert_array_equal(arr.toarray(), expected, strict=True)
-
-
-@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
-def test_diags_int_to_float64(func):
-    d = [[3], [1, 2], [4]]
-    offsets = [-1, 0, 1]
-    # Until the deprecation period is over, diags and diag_array will cast
-    # integer inputs to float64 by default.  A warning will be generated
-    # that indicates this behavior is deprecated.
-    # See gh-23102.
-    with pytest.warns(FutureWarning, match="output has been cast to"):
-        arr = func(d, offsets=offsets)
-    expected = np.array([[1.0, 4.0], [3.0, 2.0]])
     assert_array_equal(arr.toarray(), expected, strict=True)
 
 
