@@ -295,11 +295,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     (1.0, 2, 1, 1.1300000000000001, 6.13, [1.6, 1.4])
 
     """
-    array_namespace(xk, pk, gfk)
+    xp = array_namespace(xk, pk, gfk)
     if old_fval is not None:
-        old_fval = float(old_fval)
+        old_fval = old_fval
     if old_old_fval is not None:
-        old_old_fval = float(old_old_fval)
+        old_old_fval = old_old_fval
     fc = [0]
     gc = [0]
     gval = [None]
@@ -307,7 +307,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     def phi(alpha):
         fc[0] += 1
-        return float(f(xk + alpha * pk, *args))
+        return f(xk + alpha * pk, *args)
 
     fprime = myfprime
 
@@ -315,11 +315,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gc[0] += 1
         gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
         gval_alpha[0] = alpha
-        return float(gval[0] @ pk)
+        return gval[0] @ pk
 
     if gfk is None:
         gfk = fprime(xk, *args)
-    derphi0 = float(gfk @ pk)
+    derphi0 = gfk @ pk
 
     if extra_condition is not None:
         # Add the current gradient as argument, to avoid needless
@@ -334,7 +334,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     alpha_star, phi_star, old_fval, derphi_star = scalar_search_wolfe2(
             phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax,
-            extra_condition2, maxiter=maxiter)
+            extra_condition2, maxiter=maxiter, xp=xp)
 
     if derphi_star is None:
         warn('The line search algorithm did not converge',
@@ -352,7 +352,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 def scalar_search_wolfe2(phi, derphi, phi0=None,
                          old_phi0=None, derphi0=None,
                          c1=1e-4, c2=0.9, amax=None,
-                         extra_condition=None, maxiter=10):
+                         extra_condition=None, maxiter=10, xp=np):
     """Find alpha that satisfies strong Wolfe conditions.
 
     alpha > 0 is assumed to be a descent direction.
@@ -385,6 +385,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         the strong Wolfe conditions.
     maxiter : int, optional
         Maximum number of iterations to perform.
+    xp : array API namespace
 
     Returns
     -------
@@ -413,14 +414,23 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     if derphi0 is None:
         derphi0 = derphi(0.)
 
+    xp_zero = xp.asarray(0.0)  # scalar zero
+    xp_one = xp.asarray(1.0)  # scalar one
     alpha0 = 0
-    if old_phi0 is not None and derphi0 != 0:
-        alpha1 = min(1.0, 1.01*2*(phi0 - old_phi0)/derphi0)
+    # if old_phi0 is not None and derphi0 != 0:
+    #     alpha1 = min(1.0, 1.01*2*(phi0 - old_phi0)/derphi0)
+    # But jax does not like derphi0 != 0, therefore:
+    if old_phi0 is not None:
+        alpha1 = xp.where(
+            derphi0 == xp_zero, xp_one, min(1.0, 1.01 * 2 * (phi0 - old_phi0) / derphi0)
+        )
     else:
         alpha1 = 1.0
 
-    if alpha1 < 0:
-        alpha1 = 1.0
+    # if alpha1 < 0:
+    #     alpha1 = 1.0
+    # Again, jax doesn't like that, therefore
+    alpha1 = xp.where(alpha1 < xp_zero, xp_one, alpha1)
 
     if amax is not None:
         alpha1 = min(alpha1, amax)
@@ -459,7 +469,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition)
+                              phi0, derphi0, c1, c2, extra_condition, xp=xp)
             break
 
         derphi_a1 = derphi(alpha1)
@@ -474,7 +484,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition)
+                              phi0, derphi0, c1, c2, extra_condition, xp=xp)
             break
 
         alpha2 = 2 * alpha1  # increase by factor of two on each iteration
@@ -497,7 +507,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     return alpha_star, phi_star, phi0, derphi_star
 
 
-def _cubicmin(a, fa, fpa, b, fb, c, fc):
+def _cubicmin(a, fa, fpa, b, fb, c, fc, xp):
     """
     Finds the minimizer for a cubic polynomial that goes through the
     points (a,fa), (b,fb), and (c,fc) with derivative at a of fpa.
@@ -513,24 +523,27 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             db = b - a
             dc = c - a
             denom = (db * dc) ** 2 * (db - dc)
-            d1 = np.empty((2, 2))
+            d1 = xp.empty((2, 2))
             d1[0, 0] = dc ** 2
             d1[0, 1] = -db ** 2
             d1[1, 0] = -dc ** 3
             d1[1, 1] = db ** 3
-            [A, B] = d1 @ np.asarray([fb - fa - C * db, fc - fa - C * dc])
-            A /= denom
-            B /= denom
+            vec = xp.empty(2)            
+            vec[0] = fb - fa - C * db
+            vec[1] = fc - fa - C * dc
+            A_and_B = (d1 @ vec) / denom
+            A = A_and_B[0]
+            B = A_and_B[1]
             radical = B * B - 3 * A * C
-            xmin = a + (-B + np.sqrt(radical)) / (3 * A)
+            xmin = a + (-B + xp.sqrt(radical)) / (3 * A)
         except ArithmeticError:
             return None
-    if not np.isfinite(xmin):
+    if not xp.isfinite(xmin):
         return None
-    return float(xmin)
+    return xmin
 
 
-def _quadmin(a, fa, fpa, b, fb):
+def _quadmin(a, fa, fpa, b, fb, xp):
     """
     Finds the minimizer for a quadratic polynomial that goes through
     the points (a,fa), (b,fb) with derivative at a of fpa.
@@ -546,13 +559,13 @@ def _quadmin(a, fa, fpa, b, fb):
             xmin = a - C / (2.0 * B)
         except ArithmeticError:
             return None
-    if not np.isfinite(xmin):
+    if not xp.isfinite(xmin):
         return None
     return xmin
 
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
-          phi, derphi, phi0, derphi0, c1, c2, extra_condition):
+          phi, derphi, phi0, derphi0, c1, c2, extra_condition, xp=np):
     """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
 
     Part of the optimization algorithm in `scalar_search_wolfe2`.
@@ -595,10 +608,10 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         if (i > 0):
             cchk = delta1 * dalpha
             a_j = _cubicmin(a_lo, phi_lo, derphi_lo, a_hi, phi_hi,
-                            a_rec, phi_rec)
+                            a_rec, phi_rec, xp)
         if (i == 0) or (a_j is None) or (a_j > b - cchk) or (a_j < a + cchk):
             qchk = delta2 * dalpha
-            a_j = _quadmin(a_lo, phi_lo, derphi_lo, a_hi, phi_hi)
+            a_j = _quadmin(a_lo, phi_lo, derphi_lo, a_hi, phi_hi, xp)
             if (a_j is None) or (a_j > b-qchk) or (a_j < a+qchk):
                 a_j = a_lo + 0.5*dalpha
 
