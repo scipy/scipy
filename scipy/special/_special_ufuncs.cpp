@@ -11,7 +11,7 @@
 #include <xsf/beta.h>
 #include <xsf/binom.h>
 #include <xsf/digamma.h>
-#include <xsf/digamma_inv.h>
+#include <xsf/digammainv.h>
 #include <xsf/ellip.h>
 #include <xsf/erf.h>
 #include <xsf/exp.h>
@@ -985,7 +985,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "psi", psi);
 
     PyObject *digammainv = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::f_f>(xsf::digamma_inv), static_cast<xsf::numpy::d_d>(xsf::digamma_inv)},
+        {static_cast<xsf::numpy::f_f>(xsf::digammainv), static_cast<xsf::numpy::d_d>(xsf::digammainv)},
         "digammainv", digammainv_doc);
     PyModule_AddObjectRef(module, "digammainv", digammainv);
 
