@@ -303,7 +303,7 @@ def _convert_scalar_to_array(x, xp):
 
 
 def xp_assert_equal(actual, desired, *, check_dtype=True,
-                    check_shape=True, check_0d=False, err_msg='', xp=None):
+                    check_shape=True, check_0d=True, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
 
     xp = _xp_or_default(xp, desired)
