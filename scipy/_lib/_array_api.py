@@ -148,48 +148,7 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
         xp = array_namespace(x)
 
     return _asarray(x, copy=True, xp=xp)
-
-
-def _xp_copy_to_numpy(x: Array) -> np.ndarray:
-    """Copies a possibly on device array to a NumPy array.
-
-    This function is intended only for converting alternative backend
-    arrays to numpy arrays within test code, to make it easier for use
-    of the alternative backend to be isolated only to the function being
-    tested. `_xp_copy_to_numpy` should NEVER be used except in test code
-    for the specific purpose mentioned above. In production code, attempts
-    to copy device arrays to NumPy arrays should fail, or else functions
-    may appear to be working on the GPU when they actually aren't.
-
-    Parameters
-    ----------
-    x : array
-
-    Returns
-    -------
-    ndarray
-    """
-    xp = array_namespace(x)
-    if is_numpy(xp):
-        # Just return x if it is a Python scalar without a copy attribute.
-        return x.copy() if hasattr(x, "copy") else x
-    if is_cupy(xp):
-        return x.get()
-    if is_torch(xp):
-        return x.cpu().numpy()
-    if is_array_api_strict(xp):
-        # array api strict supports multiple devices, so need to
-        # ensure x is on the cpu before copying to NumPy.
-        return np.asarray(
-            xp.asarray(x, device=xp.Device("CPU_DEVICE")), copy=True
-        )
-    # Fall back to np.asarray. This works for dask.array. It
-    # currently works for jax.numpy, but hopefully JAX will make
-    # the transfer guard workable enough for use in scipy tests, in
-    # which case, JAX will have to be handled explicitly.
-    # If new backends are added, they may require explicit handling as
-    # well.
-    return np.asarray(x, copy=True)
+ 
 
 
 _default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
@@ -233,60 +192,6 @@ def _xp_or_default(xp, desired):
         except LookupError:
             xp = array_namespace(desired)
     return xp
-
-
-def _strict_check(actual, desired, xp, *,
-                  check_namespace=True, check_dtype=True, check_shape=True,
-                  check_0d=True):
-    __tracebackhide__ = True  # Hide traceback for py.test
-
-    xp = _xp_or_default(xp, desired)
-
-    if check_namespace:
-        _assert_matching_namespace(actual, desired, xp)
-
-    # only NumPy distinguishes between scalars and arrays; we do if check_0d=True.
-    # do this first so we can then cast to array (and thus use the array API) below.
-    if is_numpy(xp) and check_0d:
-        _msg = ("Array-ness does not match:\n Actual: "
-                f"{type(actual)}\n Desired: {type(desired)}")
-        assert ((xp.isscalar(actual) and xp.isscalar(desired))
-                or (not xp.isscalar(actual) and not xp.isscalar(desired))), _msg
-
-    actual = xp.asarray(actual)
-    desired = xp.asarray(desired)
-
-    if check_dtype:
-        _msg = f"dtypes do not match.\nActual: {actual.dtype}\nDesired: {desired.dtype}"
-        assert actual.dtype == desired.dtype, _msg
-
-    if check_shape:
-        if is_dask(xp):
-            actual.compute_chunk_sizes()
-            desired.compute_chunk_sizes()
-        _msg = f"Shapes do not match.\nActual: {actual.shape}\nDesired: {desired.shape}"
-        assert actual.shape == desired.shape, _msg
-
-    desired = xp.broadcast_to(desired, actual.shape)
-    return actual, desired, xp
-
-
-def _assert_matching_namespace(actual, desired, xp):
-    __tracebackhide__ = True  # Hide traceback for py.test
-
-    desired_arr_space = array_namespace(desired)
-    _msg = ("Namespace of desired array does not match expectations "
-            "set by the `default_xp` context manager or by the `xp`"
-            "pytest fixture.\n"
-            f"Desired array's space: {desired_arr_space.__name__}\n"
-            f"Expected namespace: {xp.__name__}")
-    assert desired_arr_space == xp, _msg
-
-    actual_arr_space = array_namespace(actual)
-    _msg = ("Namespace of actual and desired arrays do not match.\n"
-            f"Actual: {actual_arr_space.__name__}\n"
-            f"Desired: {xp.__name__}")
-    assert actual_arr_space == xp, _msg
 
 
 def _convert_scalar_to_array(x, xp):
