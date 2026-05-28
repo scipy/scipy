@@ -327,20 +327,19 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_dtype=True,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
 
-def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
+def xp_assert_close_nulp(actual, desired, *, nulp=1,
                          check_dtype=True, check_shape=True, check_0d=True,
-                         err_msg='', xp=None):
+                         xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
 
-    actual, desired, xp = _strict_check(
-        actual, desired, xp,
-        check_namespace=check_namespace, check_dtype=check_dtype,
-        check_shape=check_shape, check_0d=check_0d
-    )
 
-    actual, desired = map(_xp_copy_to_numpy, (actual, desired))
-    return np.testing.assert_array_almost_equal_nulp(actual, desired, nulp=nulp)
+    xp = _xp_or_default(xp, desired)
+    actual = _convert_scalar_to_array(actual, xp)
+    desired = _convert_scalar_to_array(desired, xp)
 
+    return xpt.assert_close_nulp(actual, desired, nulp=nulp, 
+                            check_dtype=check_dtype, 
+                            check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
 def _assert_less(
     actual, desired, *, check_dtype, check_shape, check_0d,
