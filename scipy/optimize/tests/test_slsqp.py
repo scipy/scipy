@@ -524,9 +524,6 @@ class TestSLSQP:
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
-    @pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name']
-                       == "intel-llvm",
-                       reason="Runtime warning due to floating point issues, not logic")
     def test_inconsistent_inequalities(self):
         # gh-7618
 
