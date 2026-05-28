@@ -2235,6 +2235,14 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
         Sorted array of integer indices into ``input`` whose values were
         replaced. Returned only when ``return_indices`` is True.
 
+    Notes
+    -----
+    NaN and Inf values in ``input`` produce undefined results.  Both the
+    underlying `median_filter` and the MAD computation use heap-based
+    comparisons where IEEE NaN has no well-defined ordering, so the
+    local median and MAD near such samples may be incorrect.  Callers
+    should replace or remove non-finite values before filtering.
+
     Examples
     --------
     >>> import numpy as np

@@ -54,13 +54,18 @@ struct Sentinel<double> {
     static inline double neg() { return -std::numeric_limits<double>::infinity(); }
 };
 
-// |a - b| computed without intermediate signed overflow. For int64 a direct
-// `std::fabs(a - b)` is wrong on two counts (no float promotion, and the
-// subtraction may overflow); doing the comparison first keeps everything in
-// the non-negative range.
+// |a - b| as a non-negative double. For int64 a direct subtraction may
+// overflow; promoting to double first avoids UB and preserves enough
+// precision for the subsequent threshold comparison.
 template <typename T>
-inline T abs_diff(T a, T b) {
-    return (a >= b) ? (T)(a - b) : (T)(b - a);
+inline double abs_diff(T a, T b) {
+    return std::fabs((double)a - (double)b);
+}
+
+// Signed distance (a - b) computed in double to avoid int64 overflow.
+template <typename T>
+inline double signed_dist(T a, T b) {
+    return (double)a - (double)b;
 }
 
 // Read padded signal element at absolute padded position j in [0, N + 2Z).
@@ -343,8 +348,8 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
             lower_tracker.insert(val, j);
         }
 
-        const T NEG_INF = Sentinel<T>::neg();
-        const T POS_INF = Sentinel<T>::pos();
+        const double D_NEG_INF = -std::numeric_limits<double>::infinity();
+        const double D_POS_INF =  std::numeric_limits<double>::infinity();
 
         // Window i covers padded[i .. i+W-1]; its centre maps to signal[i].
         // Per slide (i >= 1) one value is replaced in-place at slot
@@ -362,6 +367,7 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
 
             // Re-balance k_U / k_L until the (k_U)th value above M and the
             // (k_L)th value below M jointly bracket the same rank distance.
+            // All distances are computed in double to avoid int64 overflow.
             while (true) {
                 T X_upper_k = upper_tracker.get_kth_value();
                 T X_upper_next = upper_tracker.get_kplus1_value();
@@ -369,10 +375,10 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
                 T X_lower_k = lower_tracker.get_kplus1_value();
                 T X_lower_prev = lower_tracker.get_kth_value();
 
-                T A_km1 = (k_U > 0) ? (T)(X_upper_k - M) : NEG_INF;
-                T A_k   = ((M_rank + k_U) < W) ? (T)(X_upper_next - M) : POS_INF;
-                T B_km1 = (k_L > 0) ? (T)(M - X_lower_k) : NEG_INF;
-                T B_k   = ((M_rank - k_L - 1) > 0) ? (T)(M - X_lower_prev) : POS_INF;
+                double A_km1 = (k_U > 0) ? signed_dist(X_upper_k, M) : D_NEG_INF;
+                double A_k   = ((M_rank + k_U) < W) ? signed_dist(X_upper_next, M) : D_POS_INF;
+                double B_km1 = (k_L > 0) ? signed_dist(M, X_lower_k) : D_NEG_INF;
+                double B_k   = ((M_rank - k_L - 1) > 0) ? signed_dist(M, X_lower_prev) : D_POS_INF;
 
                 if (k_U > 0 && A_km1 > B_k) {
                     k_U--;
@@ -389,16 +395,14 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
                 }
             }
 
-            T cand_A = (k_U > 0) ? (T)(upper_tracker.get_kth_value() - M) : (T)0;
-            T cand_B = (k_L > 0) ? (T)(M - lower_tracker.get_kplus1_value()) : (T)0;
-            T mad = std::max({cand_A, cand_B, (T)0});
+            double cand_A = (k_U > 0) ? signed_dist(upper_tracker.get_kth_value(), M) : 0.0;
+            double cand_B = (k_L > 0) ? signed_dist(M, lower_tracker.get_kplus1_value()) : 0.0;
+            double mad = std::max({cand_A, cand_B, 0.0});
 
-            T abs_dev = abs_diff(signal[i], M);
-            // Threshold comparison is done in double to avoid (a) integer
-            // overflow on `threshold * mad` for int64 inputs and (b) needing
-            // a fabs that varies by dtype. The right-hand side stays
-            // non-negative, so a direct double comparison is well-defined.
-            if ((double)abs_dev > threshold * (double)mad) {
+            double abs_dev = abs_diff(signal[i], M);
+            // All operands are double, avoiding int64 overflow on
+            // threshold * mad and giving a dtype-agnostic comparison.
+            if (abs_dev > threshold * mad) {
                 filtered[i] = M;
                 changed[i] = 1;
             } else {
@@ -449,6 +453,8 @@ static PyObject *hampel(PyObject *self, PyObject *args)
 
     if (PyArray_TYPE(signal) != PyArray_TYPE(median) ||
         PyArray_TYPE(signal) != PyArray_TYPE(filt)) {
+        PyArray_DiscardWritebackIfCopy(filt);
+        PyArray_DiscardWritebackIfCopy(chg);
         Py_DECREF(signal); Py_DECREF(median);
         Py_DECREF(filt); Py_DECREF(chg);
         PyErr_SetString(PyExc_TypeError,
@@ -459,6 +465,8 @@ static PyObject *hampel(PyObject *self, PyObject *args)
     npy_intp N = PyArray_SIZE(signal);
     if (PyArray_SIZE(median) != N || PyArray_SIZE(filt) != N ||
         PyArray_SIZE(chg) != N) {
+        PyArray_DiscardWritebackIfCopy(filt);
+        PyArray_DiscardWritebackIfCopy(chg);
         Py_DECREF(signal); Py_DECREF(median);
         Py_DECREF(filt); Py_DECREF(chg);
         PyErr_SetString(PyExc_ValueError,
@@ -473,9 +481,19 @@ static PyObject *hampel(PyObject *self, PyObject *args)
         float *s = (float *)PyArray_DATA(signal);
         float *m = (float *)PyArray_DATA(median);
         float *f = (float *)PyArray_DATA(filt);
-        float cval = (float)PyFloat_AsDouble(cval_obj);
+        double cval_d = PyFloat_AsDouble(cval_obj);
+        if (cval_d == -1.0 && PyErr_Occurred()) {
+            PyArray_DiscardWritebackIfCopy(filt);
+            PyArray_DiscardWritebackIfCopy(chg);
+            Py_DECREF(signal); Py_DECREF(median);
+            Py_DECREF(filt); Py_DECREF(chg);
+            return NULL;
+        }
+        float cval = (float)cval_d;
+        Py_BEGIN_ALLOW_THREADS
         status = _hampel_1d<float>(s, m, N, win_len, threshold,
                                    mode, cval, f, c_chg);
+        Py_END_ALLOW_THREADS
         break;
     }
     case NPY_DOUBLE: {
@@ -483,8 +501,17 @@ static PyObject *hampel(PyObject *self, PyObject *args)
         double *m = (double *)PyArray_DATA(median);
         double *f = (double *)PyArray_DATA(filt);
         double cval = PyFloat_AsDouble(cval_obj);
+        if (cval == -1.0 && PyErr_Occurred()) {
+            PyArray_DiscardWritebackIfCopy(filt);
+            PyArray_DiscardWritebackIfCopy(chg);
+            Py_DECREF(signal); Py_DECREF(median);
+            Py_DECREF(filt); Py_DECREF(chg);
+            return NULL;
+        }
+        Py_BEGIN_ALLOW_THREADS
         status = _hampel_1d<double>(s, m, N, win_len, threshold,
                                     mode, cval, f, c_chg);
+        Py_END_ALLOW_THREADS
         break;
     }
     case NPY_INT64: {
@@ -493,12 +520,16 @@ static PyObject *hampel(PyObject *self, PyObject *args)
         npy_int64 *f = (npy_int64 *)PyArray_DATA(filt);
         npy_int64 cval = (npy_int64)PyLong_AsLongLong(cval_obj);
         if (cval == -1 && PyErr_Occurred()) {
+            PyArray_DiscardWritebackIfCopy(filt);
+            PyArray_DiscardWritebackIfCopy(chg);
             Py_DECREF(signal); Py_DECREF(median);
             Py_DECREF(filt); Py_DECREF(chg);
             return NULL;
         }
+        Py_BEGIN_ALLOW_THREADS
         status = _hampel_1d<npy_int64>(s, m, N, win_len, threshold,
                                        mode, cval, f, c_chg);
+        Py_END_ALLOW_THREADS
         break;
     }
     default:
@@ -513,6 +544,13 @@ static PyObject *hampel(PyObject *self, PyObject *args)
                         "failed to allocate memory for hampel filter");
     }
 
+    if (PyErr_Occurred()) {
+        PyArray_DiscardWritebackIfCopy(filt);
+        PyArray_DiscardWritebackIfCopy(chg);
+    } else {
+        PyArray_ResolveWritebackIfCopy(filt);
+        PyArray_ResolveWritebackIfCopy(chg);
+    }
     Py_DECREF(signal); Py_DECREF(median);
     Py_DECREF(filt); Py_DECREF(chg);
     if (PyErr_Occurred()) return NULL;
