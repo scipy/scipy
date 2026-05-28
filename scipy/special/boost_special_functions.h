@@ -1883,7 +1883,7 @@ nbinom_cdf_wrap(const Real x, const Real r, const Real p)
     }
     if (std::isfinite(x)) {
         return boost::math::cdf(
-            boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+            boost::math::negative_binomial_distribution<Real, SpecialPolicy>(r, p), x);
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
