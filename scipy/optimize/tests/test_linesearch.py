@@ -14,7 +14,6 @@ from scipy._lib._array_api import (
     make_xp_test_case,
     xp_assert_close,
     xp_assert_close_nulp,
-    _xp_copy_to_numpy,
 )
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import line_search_wolfe2
