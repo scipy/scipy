@@ -2692,6 +2692,13 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
         in the stop band. (dB)
     btype : {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         The type of filter.  Default is 'bandpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3403,6 +3410,13 @@ def butter(N, Wn, btype='lowpass', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3530,6 +3544,13 @@ def cheby1(N, rp, Wn, btype='lowpass', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3652,6 +3673,13 @@ def cheby2(N, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3771,6 +3799,13 @@ def ellip(N, rp, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter. Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3893,6 +3928,13 @@ def bessel(N, Wn, btype='lowpass', analog=False, output='ba', norm='phase',
         half-cycles / sample.)
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned. (See Notes.)

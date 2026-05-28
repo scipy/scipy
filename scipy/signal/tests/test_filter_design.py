@@ -1117,7 +1117,7 @@ class TestFreqz:
                               (False, True, 257),
                               (True, False, 257),
                               (True, True, 257)])
-    
+
     @xfail_xp_backends("cupy", reason="XXX: CuPy's version suspect")
     def test_17289(self, whole, nyquist, worN, xp):
         d = xp.asarray([0.0, 1.0])
@@ -4896,7 +4896,8 @@ class TestIIRFilter:
     def test_analog_sos(self, xp):
         # first order Butterworth filter with Wn = 1 has tf 1/(s+1)
         sos = xp.asarray([[0., 0., 1., 0., 1., 1.]])
-        sos2 = iirfilter(N=1, Wn=xp.asarray(1), btype='lowpass', analog=True, output='sos')
+        sos2 = iirfilter(N=1, Wn=xp.asarray(1), btype='lowpass', analog=True,
+                         output='sos')
         assert_array_almost_equal(sos, sos2)
 
     def test_wn1_ge_wn0(self):
