@@ -276,8 +276,8 @@ class TestLineSearch:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert c > 3  # check that the iterator really works...
-        self.A = self.A_orig  # Revert the hack.
-        del(self.A_orig)
+        # Revert the hack, deleting the attribute conflicts with free-threading.
+        self.A = self.A_orig
 
     def test_line_search_wolfe2_bounds(self):
         # See gh-7475
