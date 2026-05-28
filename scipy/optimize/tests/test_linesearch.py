@@ -1,6 +1,7 @@
 """
 Tests for line search routines
 """
+import os
 import threading
 import warnings
 
@@ -18,6 +19,9 @@ from scipy._lib._array_api import (
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import line_search_wolfe2
 from scipy.optimize._linesearch import LineSearchWarning
+
+
+DEFAULT_DTYPE = os.getenv("SCIPY_DEFAULT_DTYPE", default="float64")
 
 
 def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
@@ -140,12 +144,13 @@ class TestLineSearch:
 
     def line_iter(self, xp=None):
         xp = np if xp is None else xp
+        dtype = getattr(xp, DEFAULT_DTYPE)
         rng = np.random.default_rng(2231892908)
         for name, f, fprime in self.line_funcs:
             k = 0
             while k < 9:
-                x = xp.asarray(rng.standard_normal(self.N))
-                p = xp.asarray(rng.standard_normal(self.N))
+                x = xp.asarray(rng.standard_normal(self.N), dtype=dtype)
+                p = xp.asarray(rng.standard_normal(self.N), dtype=dtype)
                 if p @ fprime(x) >= 0:
                     # always pick a descent direction
                     continue
@@ -240,10 +245,13 @@ class TestLineSearch:
 
     @make_xp_test_case(line_search_wolfe2)
     def test_line_search_wolfe2(self, xp):
+        dtype = getattr(xp, DEFAULT_DTYPE)
         c = 0
         smax = 512
+        # Dealing with self.A is a hack!
+        self.A_orig = self.A
+        self.A = xp.asarray(self.A, dtype=dtype, copy=True)
         for name, f, fprime, x, p, old_f in self.line_iter(xp=xp):
-            self.A = xp.asarray(self.A)  # This is a hack.
             f0 = f(x)
             g0 = fprime(x)
             self.fcount.c = 0
@@ -260,7 +268,7 @@ class TestLineSearch:
                     f, fprime, x, p, g0, f0, old_f, amax=smax)
             assert_equal(self.fcount.c, fc+gc)
             params = dict(check_namespace=False, check_dtype=False)
-            params["nulp"] = 50 if is_numpy(xp) else 200
+            params["nulp"] = 50 if is_numpy(xp) else 100
             xp_assert_close_nulp(ofv, f(x), **params)
             xp_assert_close_nulp(fv, f(x + s*p), **params)
             if gv is not None:
@@ -269,7 +277,8 @@ class TestLineSearch:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert c > 3  # check that the iterator really works...
-        self.A = _xp_copy_to_numpy(self.A)  # Revert the hack.
+        self.A = self.A_orig  # Revert the hack.
+        del(self.A_orig)
 
     def test_line_search_wolfe2_bounds(self):
         # See gh-7475
