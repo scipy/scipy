@@ -191,7 +191,14 @@ line_search = line_search_wolfe1
 # Note: `line_search_wolfe2` is the public `scipy.optimize.line_search`
 
 @xp_capabilities(
-    skip_backends=[("dask.array", "would need lazy_xp_function to avoid dask.compute")]
+    skip_backends=[
+        ("dask.array", "would need lazy_xp_function to avoid dask.compute"),
+        (
+            "jax.numpy",
+            "would need to convert Python float to sclar arrays and jax control flow "
+            "logic (if -> xp.where)"
+        ),
+    ]
 )
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
