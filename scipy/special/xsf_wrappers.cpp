@@ -628,8 +628,6 @@ double xsf_kolmogci(double x) { return xsf::kolmogci(x); }
 
 double xsf_kolmogp(double x) { return xsf::kolmogp(x); }
 
-double xsf_nbdtr(int k, int n, double p) { return xsf::nbdtr(k, n, p); }
-
 double xsf_nbdtrc(int k, int n, double p) { return xsf::nbdtrc(k, n, p); }
 
 double xsf_nbdtri(int k, int n, double p) { return xsf::nbdtri(k, n, p); }
@@ -692,10 +690,6 @@ double cephes_bdtr_wrap(double k, Py_ssize_t n, double p) { return xsf::bdtr(k, 
 double cephes_bdtri_wrap(double k, Py_ssize_t n, double y) { return xsf::bdtri(k, static_cast<int>(n), y); }
 
 double cephes_bdtrc_wrap(double k, Py_ssize_t n, double p) { return xsf::bdtrc(k, static_cast<int>(n), p); }
-
-double cephes_nbdtr_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
-    return xsf::cephes::nbdtr(static_cast<int>(k), static_cast<int>(n), p);
-}
 
 double cephes_nbdtrc_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
     return xsf::cephes::nbdtrc(static_cast<int>(k), static_cast<int>(n), p);

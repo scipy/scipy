@@ -18,7 +18,6 @@ cdef extern from "xsf_wrappers.h" nogil:
     double cephes_bdtri_wrap(double k, int n, double y)
     double cephes_expn_wrap(int n, double x)
     double cephes_nbdtrc_wrap(int k, int n, double p)
-    double cephes_nbdtr_wrap(int k, int n, double p)
     double cephes_nbdtri_wrap(int k, int n, double p)
     double cephes_pdtri_wrap(int k, double y)
     double cephes_yn_wrap(int n, double x)
