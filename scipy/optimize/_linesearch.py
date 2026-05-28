@@ -548,7 +548,7 @@ def _quadmin(a, fa, fpa, b, fb):
             return None
     if not np.isfinite(xmin):
         return None
-    return float(xmin)
+    return xmin
 
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
