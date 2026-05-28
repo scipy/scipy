@@ -56,7 +56,7 @@ _NO_CACHE = "no_cache"
 #    shape parameters - e.g. t distribution with df = np.inf delegates to normal)
 #  Add array API support
 #  Investigate use `median` information throughout, e.g. to improve integration of
-#    CDF or to provide initial bracket for ICDF. (Only if `_median_formula` is
+#    CDF or to provide initial bracket for ICDF. (Only if `_median_formula` is 
 #    provided.)
 #  Document user tips for faster execution:
 #  - pass NumPy arrays
@@ -5290,7 +5290,7 @@ class Mixture(_ProbabilityDistribution):
             out += moment * weight
         return out[()]
 
-    def lmoment(self, order=1, *, standardize=False, method=None):
+    def lmoment(self, order=1, *, standardize=True, method=None):
         message = "L-moments are not currently available for mixture distributions."
         raise NotImplementedError(message)
 
