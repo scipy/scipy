@@ -1892,7 +1892,7 @@ nbinom_cdf_wrap(const Real x, const Real r, const Real p)
             y = NAN;
         }
         if ((y < 0) || (y > 1)) {
-            sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
+            sf_error("nbdtr", SF_ERROR_NO_RESULT, NULL);
             y = NAN;
         }
         return y;

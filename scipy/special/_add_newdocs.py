@@ -4909,7 +4909,6 @@ add_newdoc("nbdtr",
     -----
     If floating point values are passed for `k` or `n`, they will be truncated
     to integers.
-
     The terms are not summed directly; instead the regularized incomplete beta
     function is employed, according to the formula,
 
