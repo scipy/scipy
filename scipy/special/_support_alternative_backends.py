@@ -753,7 +753,7 @@ _special_funcs = (
         _ufuncs.nbdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
+            jax_jit=True, extra_note="``cupy`` only supports integer `k` and `n`."
         ),
         int_only=(True, True, False), positive_only=True,
         torch_native=False,
