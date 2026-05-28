@@ -4885,9 +4885,9 @@ add_newdoc("nbdtr",
     Parameters
     ----------
     k : array_like
-        The maximum number of allowed failures (nonnegative int).
+        The maximum number of allowed failures (nonnegative).
     n : array_like
-        The target number of successes (positive int).
+        The target number of successes (positive).
     p : array_like
         Probability of success in a single event (float).
     out : ndarray, optional
@@ -4916,7 +4916,7 @@ add_newdoc("nbdtr",
     .. math::
         \mathrm{nbdtr}(k, n, p) = I_{p}(n, k + 1).
 
-    Wrapper for the Cephes [1]_ routine `nbdtr`.
+    Wrapper for a routine from the Boost Math C++ library [1]_.
 
     The negative binomial distribution is also available as
     `scipy.stats.nbinom`. Using `nbdtr` directly can improve performance
@@ -4924,8 +4924,7 @@ add_newdoc("nbdtr",
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           https://netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
