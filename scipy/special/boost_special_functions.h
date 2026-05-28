@@ -1879,7 +1879,7 @@ nbinom_cdf_wrap(const Real x, const Real r, const Real p)
     }
     if ((p < 0.0) || (p > 1.0) || (x < 0)) {
         sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
-        return (std::numeric_limits<double>::quiet_NaN());
+        return NAN;
     }
     if (std::isfinite(x)) {
         return boost::math::cdf(
