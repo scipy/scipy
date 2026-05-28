@@ -5289,7 +5289,7 @@ class Mixture(_ProbabilityDistribution):
             out += moment * weight
         return out[()]
 
-    def lmoment(self, order=1, *, standardize=False, method=None):
+    def lmoment(self, order=1, *, standardize=True, method=None):
         message = "L-moments are not currently available for mixture distributions."
         raise NotImplementedError(message)
 
