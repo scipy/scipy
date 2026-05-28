@@ -2,6 +2,10 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_bivariate_normal_cdf_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *_gen_harmonic_doc = R"(
     _gen_harmonic(n, a)
 
