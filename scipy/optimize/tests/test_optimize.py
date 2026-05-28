@@ -22,7 +22,6 @@ from numpy.testing import (assert_allclose, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 
-import scipy
 from scipy._lib._gcutils import assert_deallocated
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
