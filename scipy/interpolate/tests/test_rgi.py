@@ -6,9 +6,10 @@ import numpy as np
 from numpy.exceptions import ComplexWarning
 
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_array_almost_equal,
-    make_xp_test_case
+    xp_assert_equal, assert_array_almost_equal, make_xp_test_case
 )
+from scipy._lib._array_api_no_0d import xp_assert_close
+
 from scipy.conftest import skip_xp_invalid_arg
 
 from pytest import raises as assert_raises
@@ -446,7 +447,7 @@ class TestRegularGridInterpolator:
         # check exrapolation w/ fill_value
         xp_assert_close(interp(np.array([1.1, 2.4])),
                         interp.fill_value,
-                        check_dtype=False, check_shape=False, check_0d=False,
+                        check_dtype=False, check_shape=False, check_0d=True,
                         atol=1e-14)
 
         # check extrapolation: linear along the `y` axis, const along `x`

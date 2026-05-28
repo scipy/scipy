@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case, xp_default_dtype
+    xp_assert_equal, _xp_copy_to_numpy, make_xp_test_case, xp_default_dtype
 )
+from scipy._lib._array_api_no_0d import assert_almost_equal, xp_assert_close
 
 import scipy.signal._waveforms as waveforms
 from scipy.signal import square, sawtooth  # type:ignore[attr-defined]

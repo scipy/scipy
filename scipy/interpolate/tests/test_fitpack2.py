@@ -90,7 +90,7 @@ class TestUnivariateSpline:
         x = [1, 3, 5, 7, 9]
         y = [0, 4, 9, 12, 21]
         spl = UnivariateSpline(x, y, k=3)
-        assert_almost_equal(spl.roots()[0], 1.050290639101332)
+        assert np.isclose(spl.roots()[0], 1.050290639101332)
 
     def test_roots_length(self): # for gh18335
         x = np.linspace(0, 50 * np.pi, 1000)
@@ -196,7 +196,7 @@ class TestUnivariateSpline:
         xp_assert_close(spl(0.3), spl2(0.3))
 
         spl2 = spl.antiderivative(1)
-        xp_assert_close(spl2(0.6) - spl2(0.2),
+        xp_assert_close(np.asarray(spl2(0.6) - spl2(0.2)),
                         spl.integral(0.2, 0.6))
 
     def test_derivative_extrapolation(self):
