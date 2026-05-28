@@ -130,7 +130,7 @@ jobs:
       run: |
         python -m build -wnx \
           -Csetup-args=-Dblas=mkl-dynamic-ilp64-seq \
-          -Csetup-args=-Duse-ilp64=true \
+          -Csetup-args=-Duse-ilp64=true
         pip install dist/scipy*.whl
 
     - name: Test SciPy

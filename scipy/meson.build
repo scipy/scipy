@@ -653,7 +653,6 @@ compilers = {
   'CPP': cpp,
   'CYTHON': meson.get_compiler('cython'),
 }
-compilers += {'FORTRAN': meson.get_compiler('c')}
 
 machines = {
   'HOST': host_machine,
@@ -725,7 +724,7 @@ configure_file(
 # subdirs with the most heavy builds should come first (that parallelizes a
 # little better).
 #
-subdir('_build_utils')  
+subdir('_build_utils')
 subdir('_external')
 subdir('_lib')
 subdir('linalg')
