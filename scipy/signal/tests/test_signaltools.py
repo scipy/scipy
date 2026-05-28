@@ -26,7 +26,7 @@ from scipy.signal.windows import hann
 from scipy.signal._signaltools import _filtfilt_gust, _compute_factors, _group_poles
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
-
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
@@ -3458,7 +3458,7 @@ class TestHilbert2:
     def test_quadrant_values(self, shape, xp):
         """Compare desired and calculated values in Fourier space. """
         x_f = xp.ones(shape, dtype=xp.complex128)  # FFT of input signal
-        x_f[0 , 0] += 7
+        x_f = xpx.at(x_f)[0, 0].add(7)
         x = xp.real(sp_fft.ifft2(x_f))  # x.imag is zero
 
         x_as = hilbert2(x)
@@ -3484,8 +3484,8 @@ class TestHilbert2:
         c0 = shape[0] // 2
         c1 = shape[1] // 2
         x_f = xp.zeros(shape)
-        x_f[c0 - 1, c1 + 1] = 1.0
-        x_f[c0 + 1, c1 - 1] = 1.0
+        x_f = xpx.at(x_f)[c0 - 1, c1 + 1].set(1.0)
+        x_f = xpx.at(x_f)[c0 + 1, c1 - 1].set(1.0)
         x_f = sp_fft.ifftshift(x_f)
         x = xp.real(sp_fft.ifft2(x_f))
         assert xp.sum(abs(x)) > 0.0

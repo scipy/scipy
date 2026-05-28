@@ -2129,13 +2129,13 @@ def lp2hp(b, a, wo=1.0):
     if d >= n:
         outa = xp.flip(a) * pwo
         outb = _resize(b, (d,), xp=xp)
-        outb[n:] = 0.0
-        outb[:n] = xp.flip(b) * pwo[:n]
+        outb = xpx.at(outb)[n:].set(0.0)
+        outb = xpx.at(outb)[:n].set(xp.flip(b) * pwo[:n])
     else:
         outb = xp.flip(b) * pwo
         outa = _resize(a, (n,), xp=xp)
-        outa[d:] = 0.0
-        outa[:d] = xp.flip(a) * pwo[:d]
+        outa = xpx.at(outa)[d:].set(0.0)
+        outa = xpx.at(outa)[:d].set(xp.flip(a) * pwo[:d])
 
     return normalize(outb, outa)
 
@@ -2221,14 +2221,14 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
                     val += comb(i, k) * b[N - i] * (wosq) ** (i - k) / bw ** i
-        bprime[Np - j] = val
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
                     val += comb(i, k) * a[D - i] * (wosq) ** (i - k) / bw ** i
-        aprime[Dp - j] = val
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2314,7 +2314,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
                 if i + 2 * k == j:
                     val += (comb(M - i, k) * b[N - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        bprime[Np - j] = val
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
@@ -2322,7 +2322,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
                 if i + 2 * k == j:
                     val += (comb(M - i, k) * a[D - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        aprime[Dp - j] = val
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2510,7 +2510,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         Note, that for bandpass and bandstop filters passband must lie strictly
         inside stopband or vice versa. Also note that the cutoff at the band edges
         for IIR filters is defined as half-power, so -3dB, not half-amplitude (-6dB)
-        like for `scipy.signal.fiwin`.
+        like for `scipy.signal.firwin`.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float

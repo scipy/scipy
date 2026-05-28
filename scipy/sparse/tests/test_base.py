@@ -2054,6 +2054,7 @@ class _TestCommon:
             assert_equal(result.shape, (4,2))
             assert_equal(result, dot(a,b))
 
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_sparse_format_conversions(self):
         A = sparse.kron([[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]])
         D = A.toarray()

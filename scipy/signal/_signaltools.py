@@ -1048,9 +1048,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         ret, overpart = _split(ret, [-overlap], ax_fft, xp=xp)
         overpart = _split(overpart, [-1], ax_split, xp=xp)[0]
 
-        ret_overpart = _split(ret, [overlap], ax_fft, xp=xp)[0]
-        ret_overpart = _split(ret_overpart, [1], ax_split, xp)[1]
-        ret_overpart += overpart
+        overlap_slice = [slice(None)] * ret.ndim
+        overlap_slice[ax_fft] = slice(0, overlap)
+        overlap_slice[ax_split] = slice(1, None)
+        ret = xpx.at(ret)[tuple(overlap_slice)].add(overpart)
 
     # Reshape back to the correct dimensionality.
     shape_ret = [ret.shape[i] if i not in fft_axes else
@@ -1644,7 +1645,32 @@ def medfilt(volume, kernel_size=None):
     --------
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
+    
+    Examples
+    --------
+    Apply a 1-D median filter to an array containing noise spikes.
 
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> x = np.array([1, 2, 100, 2, 1, 1, 35, 30, 1])
+
+    Apply a filter with a kernel size of 3:
+
+    >>> signal.medfilt(x, kernel_size=3)
+    array([ 1,  2,  2,  2,  1,  1, 30, 30,  1])
+
+    The size 3 kernel is not big enough to eliminate the 
+    2-wide spike near the end of the array.
+    A larger size 5 kernel successfully eliminates the 2-wide spike.
+
+    >>> signal.medfilt(x, kernel_size=5)
+    array([1, 2, 2, 2, 2, 2, 1, 1, 1])
+
+    Kernel size 1 acts as an identity operator.
+    
+    >>> signal.medfilt(x, kernel_size=1)
+    array([  1,   2, 100,   2,   1,   1,  35,  30,   1])
+    
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
@@ -2424,7 +2450,7 @@ def deconvolve(signal, divisor):
         rem = num
     else:
         input = xp.zeros(N - D + 1, dtype=xp.float64)
-        input[0] = 1
+        input = xpx.at(input)[0].set(1)
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
@@ -2542,11 +2568,11 @@ def hilbert(x, N=None, axis=-1):
     Xf = sp_fft.fft(x, N, axis=axis)
     Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        Xf[..., 1: N // 2] *= 2.0
-        Xf[..., N // 2 + 1:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: N // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., N // 2 + 1:N].set(0.0)
     else:
-        Xf[..., 1:(N + 1) // 2] *= 2.0
-        Xf[..., (N + 1) // 2:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: (N + 1) // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., (N + 1) // 2:N].set(0.0)
 
     Xf = xp.moveaxis(Xf, -1, axis)
     x = sp_fft.ifft(Xf, axis=axis)
@@ -2724,11 +2750,11 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
     if k0 > 1:  # condition k0 > 1 needed for Dask backend
-        Xf[..., 1:k0, :] *= 2.0
+        Xf = xpx.at(Xf)[..., 1:k0, :].multiply(2.0)
     if k1 > 1:  # condition k1 > 1 needed for Dask backend
-        Xf[..., :, 1:k1] *= 2.0
-    Xf[..., k0:, :] = 0.0
-    Xf[..., :, k1:] = 0.0
+        Xf = xpx.at(Xf)[..., :, 1:k1].multiply(2.0)
+    Xf = xpx.at(Xf)[..., k0:, :].set(0.0)
+    Xf = xpx.at(Xf)[..., :, k1:].set(0.0)
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)
@@ -3633,7 +3659,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         ``T * n_x / num``.
     t_r : ndarray, optional
         The `num` equidistant timestamps of `x_r`.
-        This is only returned if paramater `t` is not ``None``.
+        This is only returned if parameter `t` is not ``None``.
 
     See Also
     --------
@@ -4143,17 +4169,74 @@ def vectorstrength(events, period):
 
     References
     ----------
-    van Hemmen, JL, Longtin, A, and Vollmayr, AN. Testing resonating vector
-        strength: Auditory system, electric fish, and noise.
-        Chaos 21, 047508 (2011);
-        :doi:`10.1063/1.3670512`.
-    van Hemmen, JL.  Vector strength after Goldberg, Brown, and von Mises:
-        biological and mathematical perspectives.  Biol Cybern.
-        2013 Aug;107(4):385-96. :doi:`10.1007/s00422-013-0561-7`.
-    van Hemmen, JL and Vollmayr, AN.  Resonating vector strength: what happens
-        when we vary the "probing" frequency while keeping the spike times
-        fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
-        :doi:`10.1007/s00422-013-0560-8`.
+    .. [1] Van Hemmen, JL, Longtin, A, and Vollmayr, AN. "Testing resonating vector
+           strength: Auditory system, electric fish, and noise."
+           Chaos 21, 047508 (2011), :doi:`10.1063/1.3670512`.
+    .. [2] Van Hemmen, JL. "Vector strength after Goldberg, Brown, and von Mises:
+           biological and mathematical perspectives."
+           Biol Cybern. 2013 Aug; 107(4): 385-96. :doi:`10.1007/s00422-013-0561-7`.
+    .. [3] Van Hemmen, JL and Vollmayr, AN. "Resonating vector strength: what happens
+           when we vary the 'probing' frequency while keeping the spike times fixed."
+           Biol Cybern. 2013 Aug; 107(4): 491-94. :doi:`10.1007/s00422-013-0560-8`.
+
+    Examples
+    --------
+    In this example, five events occur exactly 1 second apart, starting
+    at 0.25 s. The vector strength is 1 for ``period=1`` because all
+    events fall at the same phase of every cycle, and the returned phase
+    is π/2, a quarter of the way through the period.
+
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    ...
+    >>> events = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
+    >>> vectorstrength(events, period=1.0)
+    (np.float64(1.0), np.float64(1.5707963267948968))  # may vary
+
+    ``period`` can also be an array of candidate periods. With the same
+    events as above, the strength stays at 1 at the true period of 1 s
+    and at the sub-multiple period 0.5 s (a form of aliasing), and drops
+    to 0 at ``period=5`` where the events span a single period at
+    evenly-spaced phases:
+
+    >>> periods = [1, 5, 0.5]
+    >>> strengths, phases = vectorstrength(events, periods)
+    ...
+    >>> for p_, s_, ph_ in zip(periods, strengths, phases):
+    ...     print(f"period = {p_:.1f}: strength = {s_:.2f}, "
+    ...           f"phase = {np.rad2deg(ph_):.1f} deg")
+    period = 1.0: strength = 1.00, phase = 90.0 deg
+    period = 5.0: strength = 0.00, phase = 153.4 deg
+    period = 0.5: strength = 1.00, phase = -180.0 deg
+
+    The following example depicts the vector strength and its phase for
+    100 samples with a constant period of 10 s. The maximum strength of 1
+    occurs at 10 s with phase 0 rad. Due to the finite number of samples,
+    the strength does not drop to zero away from 10 s but exhibits
+    secondary maxima similar to those of an FFT sidelobe pattern. The
+    phase decreases roughly linearly with jumps of π rad at each
+    sidelobe minimum, consistent with an underlying sinc-like function.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    ...
+    >>> N, T = 100, 10  # samples and sampling interval in seconds
+    >>> events = np.arange(N) * T
+    >>> periods = np.linspace(9.5, 10.5, 101)
+    >>> strength, phase = vectorstrength(events, periods)
+    ...
+    >>> fig, (ax_strength, ax_phase) = plt.subplots(
+    ...     2, 1, sharex=True, tight_layout=True)
+    >>> ax_strength.set_title(
+    ...     f"Vector strength of {N} samples at {T} s spacing")
+    >>> ax_strength.set(ylabel="Strength", xlim=(periods[0], periods[-1]))
+    >>> ax_strength.grid(True)
+    >>> ax_phase.set(xlabel="Period (s)", ylabel="Phase (rad)")
+    >>> ax_phase.grid(True)
+    >>> ax_strength.plot(periods, strength, 'C0.-')
+    >>> ax_phase.plot(periods, phase, 'C1.-')
+    >>> plt.show()
     '''
     xp = array_namespace(events, period)
 

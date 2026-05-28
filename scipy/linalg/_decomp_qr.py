@@ -1,7 +1,7 @@
 """QR decomposition functions."""
 import numpy as np
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from scipy._lib.deprecation import _NoValue
 
 import warnings
@@ -159,6 +159,8 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
         a1 = np.asarray_chkfinite(a)
     else:
         a1 = np.asarray(a)
+
+    _deprecate_dtypes("linalg.qr", a1)
 
     if a1.ndim < 2:
         raise ValueError("Expected at least a 2-D array")

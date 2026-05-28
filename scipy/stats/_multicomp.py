@@ -54,6 +54,7 @@ class DunnettResult:
     _ci_cl: DecimalNumber | None = field(default=None, repr=False)
 
     # generic type compatibility with scipy-stubs
+    # pyrefly:ignore[bad-class-definition]
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __str__(self):
