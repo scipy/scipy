@@ -24,7 +24,7 @@ test_data = [
     (scu._binom_cdf, (1, 3, 0.5), 0.5),
     (scu._binom_pmf, (1, 4, 0.5), 0.25),
     (scu._hypergeom_cdf, (2, 3, 5, 6), 0.5),
-    (scu._nbinom_cdf, (1, 4, 0.25), 0.015625),
+    (scu.nbdtr, (1, 4, 0.25), 0.015625),
     (scu._ncf_mean, (10, 12, 2.5), 1.5),
 ]
 

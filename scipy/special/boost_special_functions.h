@@ -1740,7 +1740,7 @@ bdtrik_double(double x, double n, double p)
     return bdtrik_wrap(x, n, p, SpecialPolicy());
 }
 
-float 
+float
 binom_ppf_float(float x, float n, float p)
 {
     return bdtrik_wrap(x, n, p, StatsPolicy());
@@ -1874,6 +1874,13 @@ template<typename Real>
 Real
 nbinom_cdf_wrap(const Real x, const Real r, const Real p)
 {
+    if (std::isnan(x) || std::isnan(r) || std::isnan(p)) {
+        return NAN;
+    }
+    if ((p < 0.0) || (p > 1.0) || (x < 0)) {
+        sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
+        return (std::numeric_limits<double>::quiet_NaN());
+    }
     if (std::isfinite(x)) {
         return boost::math::cdf(
             boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
@@ -1944,7 +1951,7 @@ nbdtrik_double(double x, double n, double p)
     return nbdtrik_wrap(x, n, p, SpecialPolicy());
 }
 
-float 
+float
 nbinom_ppf_float(float x, float n, float p)
 {
     return nbdtrik_wrap(x, n, p, StatsPolicy());

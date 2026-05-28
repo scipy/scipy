@@ -3,7 +3,7 @@ import numpy as np
 from scipy.special._ufuncs import (
     _smirnovc, _smirnovci, _smirnovp,
     _struve_asymp_large_z, _struve_bessel_series, _struve_power_series,
-    bdtr, bdtrc, bdtri, expn, kn, nbdtr, nbdtrc, nbdtri, pdtri,
+    bdtr, bdtrc, bdtri, expn, kn, nbdtrc, nbdtri, pdtri,
     smirnov, smirnovi, yn
 )
 
@@ -18,7 +18,7 @@ from scipy.special._ufuncs import (
     'ufunc',
     [_smirnovc, _smirnovci, _smirnovp,
      _struve_asymp_large_z, _struve_bessel_series, _struve_power_series,
-     bdtr, bdtrc, bdtri, expn, kn, nbdtr, nbdtrc, nbdtri, pdtri,
+     bdtr, bdtrc, bdtri, expn, kn, nbdtrc, nbdtri, pdtri,
      smirnov, smirnovi, yn],
 )
 def test_intp_safe_cast(ufunc):

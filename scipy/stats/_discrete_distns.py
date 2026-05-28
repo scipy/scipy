@@ -356,7 +356,7 @@ class nbinom_gen(rv_discrete):
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return scu._nbinom_cdf(k, n, p)
+        return scu.nbdtr(k, n, p)
 
     def _logcdf(self, x, n, p):
         k = floor(x)

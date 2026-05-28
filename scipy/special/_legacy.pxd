@@ -89,12 +89,6 @@ cdef inline double nbdtrc_unsafe(double k, double n, double p) noexcept nogil:
     _legacy_cast_check("nbdtrc", k, n)
     return cephes_nbdtrc_wrap(<int>k, <int>n, p)
 
-cdef inline double nbdtr_unsafe(double k, double n, double p) noexcept nogil:
-    if isnan(k) or isnan(n):
-        return NAN
-    _legacy_cast_check("nbdtr", k, n)
-    return cephes_nbdtr_wrap(<int>k, <int>n, p)
-
 cdef inline double nbdtri_unsafe(double k, double n, double p) noexcept nogil:
     if isnan(k) or isnan(n):
         return NAN
