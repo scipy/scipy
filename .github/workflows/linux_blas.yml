@@ -182,7 +182,7 @@ jobs:
         python -m build -wnx \
           -Csetup-args=-Dblas=scipy-openblas \
           -Csetup-args=-Duse-ilp64=true \
-          -Csetup-args=-Dblas-symbol-suffix=64_ \
+          -Csetup-args=-Dblas-symbol-suffix=64_
         pip install dist/scipy*.whl
 
     - name: Test SciPy

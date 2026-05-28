@@ -243,13 +243,12 @@ def test(*, parent_callback, pytest_args, tests, coverage,
                     compilers_config = config['Compilers']
                     cpp = compilers_config['c++']['name']
                     c = compilers_config['c']['name']
-                    fortran = compilers_config['fortran']['name']
-                    if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
+                    if not (c == 'gcc' and cpp == 'gcc'):
                         print("SciPy was built with --gcov flag which requires "
                             "LCOV while running tests.\nFurther, LCOV usage "
-                            "requires GCC for C, C++ and Fortran codes in SciPy.\n"
+                            "requires GCC for C and C++ codes in SciPy.\n"
                             "Compilers used currently are:\n"
-                            f"  C: {c}\n  C++: {cpp}\n  Fortran: {fortran}\n"
+                            f"  C: {c}\n  C++: {cpp}\n"
                             "Therefore, exiting without running tests.")
                         exit(1) # Exit because tests will give missing symbol error
 
