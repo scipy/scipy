@@ -74,7 +74,7 @@ def test_digammainv_special_values():
 
 def test_digammainv_nonfinite():
     res = sc.digammainv([np.nan, np.inf, -np.inf])
-    assert_(np.isnan(res[0]))
+    assert np.isnan(res[0])
     assert_equal(res[1:], [np.inf, 0.0])
 
 
@@ -82,7 +82,7 @@ def test_digammainv_ufunc():
     y = np.array([sc.digamma(0.5), 0.0, sc.digamma(10.0)])
     out = np.empty_like(y)
     res = sc.digammainv(y, out=out)
-    assert_(res is out)
+    assert res is out
     assert_allclose(out, [0.5, 1.4616321449683623, 10.0], rtol=1e-14)
 
     y32 = y.astype(np.float32)
