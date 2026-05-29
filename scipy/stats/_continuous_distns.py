@@ -8429,45 +8429,65 @@ class lomax_gen(rv_continuous):
 lomax = lomax_gen(a=0.0, name="lomax")
 
 def _pearson_classifier(skewness, kurtosis):
-    tol = 1e-12
+    # Use a small tolerance to absorb float64 roundoff near the Pearson
+    # classification boundaries, especially Type III and Type V.
+    boundary_tol = 1e-13
 
     beta1 = skewness**2
     beta2 = kurtosis + 3.0
 
-    if beta2 < beta1 + 1 - tol:
-        raise ValueError("Invalid skewness and kurtosis values "
-        "for Pearson distribution classification.")
+    lower_bound = beta1 + 1.0
+    # Use absolute tolerance only for the moment validity boundary, so
+    # large invalid moment tuples are not accepted because of relative error.
+    if beta2 < lower_bound and not np.isclose(
+            beta2, lower_bound, atol=boundary_tol, rtol=0.0):
+        raise ValueError("`skewness` and `kurtosis` must satisfy "
+                         "`kurtosis + 3 >= skewness**2 + 1`.")
 
-    is_symmetric = np.isclose(skewness, 0, atol=tol, rtol=0)
-    is_normal = is_symmetric and np.isclose(kurtosis, 0, atol=tol, rtol=0)
+    is_symmetric = np.isclose(skewness, 0.0, atol=boundary_tol, rtol=0.0)
+    is_normal = (
+        is_symmetric
+        and np.isclose(kurtosis, 0.0, atol=boundary_tol, rtol=0.0)
+    )
 
     if is_normal:
         return "normal"
 
     if is_symmetric:
-        if kurtosis < 0:
+        if kurtosis < 0.0:
             return "type2"
-        return "type7"
+        if kurtosis > 0.0:
+            return "type7"
 
-    delta = 2*beta2 - 3*beta1 - 6
+    delta_left = 2.0 * beta2
+    delta_right = 3.0 * beta1 + 6.0
 
-    if np.isclose(delta, 0, atol=tol, rtol=0):
+    # Type III boundary is mathematically defined where delta = 0.
+    # To avoid cancellation when subtracting large moments,
+    # we compare the left and right terms directly using relative tolerance.
+    if np.isclose(delta_left, delta_right, atol=boundary_tol, rtol=boundary_tol):
         return "type3"
 
-    epsilon = 4*beta2 - 3*beta1
-    kappa = (beta1*(beta2 + 3)**2) / (4 * epsilon * delta)
+    delta = delta_left - delta_right
 
-    # Type V is the kappa == 1 boundary between Types IV and VI.
-    if np.isclose(kappa, 1, atol=tol, rtol=0):
+    epsilon = 4.0 * beta2 - 3.0 * beta1
+
+    kappa_num = beta1 * (beta2 + 3.0)**2
+    kappa_den = 4.0 * epsilon * delta
+
+    # Type V is the kappa == 1 boundary. Compare numerator and
+    # denominator directly so the boundary check is scale-aware.
+    if np.isclose(kappa_num, kappa_den, atol=boundary_tol, rtol=boundary_tol):
         return "type5"
 
-    if kappa < 0:
+    kappa = kappa_num / kappa_den
+    if kappa < 0.0:
         return "type1"
 
-    if 0 < kappa < 1:
+    if 0.0 < kappa < 1.0:
         return "type4"
 
-    if kappa > 1:
+    if kappa > 1.0:
         return "type6"
 
     raise ValueError(
@@ -8476,21 +8496,125 @@ def _pearson_classifier(skewness, kurtosis):
 
 
 def _pearson_type1_params(mean, variance, skewness, kurtosis):
+    # Solve the beta skewness/kurtosis equations in terms of n = a + b,
+    # r = (b - a)**2/(a*b), and q = abs(b - a)/n.
     beta1 = skewness**2
-    n = (6 + 3*kurtosis - 3*beta1) / (1.5*beta1 - kurtosis)
-    r = beta1 * (n + 2)**2 / (4 * (n + 1))
-    q = np.sqrt(r / (r + 4))
-    # beta1 loses the skewness sign. Restore it when setting b - a.
+    n = (6.0 + 3.0 * kurtosis - 3.0 * beta1) / (1.5 * beta1 - kurtosis)
+    r = beta1 * (n + 2.0)**2 / (4.0 * (n + 1.0))
+    q = np.sqrt(r / (r + 4.0))
+    # Squared skewness loses the sign. Restore it when setting d = b - a.
     d = np.sign(skewness) * n * q
 
-    a = (n - d) / 2
-    b = (n + d) / 2
-    base_mean = a / (a + b)
-    base_var = a*b / ((a + b)**2 * (a + b + 1))
-    scale = np.sqrt(variance / base_var)
-    loc = mean - scale*base_mean
+    a = (n - d) / 2.0
+    b = (n + d) / 2.0
+    if not (np.isfinite(a) and np.isfinite(b) and a > 0.0 and b > 0.0):
+        raise ValueError("Pearson Type I distribution requires positive beta "
+                         "parameters.")
+
+    beta_mean = a / (a + b)
+    beta_var = a * b / ((a + b)**2 * (a + b + 1.0))
+    scale = np.sqrt(variance / beta_var)
+    if not np.isfinite(scale) or scale <= 0.0:
+        raise ValueError("Pearson Type I distribution requires positive scale.")
+
+    loc = mean - scale*beta_mean
 
     return a, b, loc, scale
+
+
+def _pearson_type2_params(mean, variance, kurtosis):
+    c = -6.0 / kurtosis - 3.0
+    if c <= 0.0:
+        raise ValueError("Pearson Type II distribution "
+                         "requires -2 < kurtosis < 0.")
+    # rdist bounded to [-1, 1] implies rdist_mean = 0, so loc = mean.
+    loc = mean
+    # If B ~ Beta(c/2, c/2), then X = 2*B - 1 has Var(X) = 1/(c + 1).
+    scale = np.sqrt(variance / (1.0/(c + 1.0)))
+
+    return c, loc, scale
+
+
+def _pearson_type5_params(mean, variance, skewness):
+    if skewness <= 0.0:
+        raise NotImplementedError(
+            "Pearson Type V dispatch is only implemented for positive skewness."
+        )
+
+    # Solve the inverse-gamma skewness equation in terms of u = sqrt(a - 2).
+    u = (2.0 + np.sqrt(4.0 + skewness**2)) / skewness
+    a = u**2 + 2.0
+    if not np.isfinite(a) or a <= 4.0:
+        raise ValueError("Pearson Type V distribution requires shape "
+                         "parameter greater than 4.")
+
+    invgamma_mean = 1.0 / (a - 1.0)
+    invgamma_var = 1.0 / ((a - 1.0)**2 * (a - 2.0))
+    scale = np.sqrt(variance / invgamma_var)
+    loc = mean - scale*invgamma_mean
+
+    return a, loc, scale
+
+
+def _pearson_type6_params(mean, variance, skewness, kurtosis):
+    if skewness <= 0.0:
+        raise NotImplementedError("Pearson Type VI dispatch is only "
+                                  "implemented for positive skewness.")
+
+    beta1 = skewness**2
+    beta2 = kurtosis + 3.0
+    # Coefficients follow the standardized Pearson system notation
+    # (see pearson docstring References [1]).
+    # For Type VI, D(x) has two real roots and q'(x)/q(x) = -C(x)/D(x),
+    # where C(x) = d1 + c2*x and D(x) = d0 + d1*x + d2*x**2.
+    epsilon4 = beta2 + 3.0
+    epsilon6 = 3.0 * beta2 - 3.0 * beta1 - 3.0
+
+    d2 = epsilon6 - epsilon4
+    d1 = skewness * epsilon4
+    d0 = epsilon6 + epsilon4
+
+    c2 = 2.0 * (2.0 * epsilon6 - epsilon4)
+
+    b2 = d2 / c2
+    b1 = d1 / c2  # The mode is at -b1.
+
+    discriminant = d1**2 - 4.0 * d2 * d0
+    if discriminant <= 0.0:
+        raise ValueError("Discriminant must be positive for Pearson Type VI.")
+
+    r1 = (-d1 + np.sqrt(discriminant)) / (2.0 * d2)
+    r2 = (-d1 - np.sqrt(discriminant)) / (2.0 * d2)
+
+    if r1 > r2:
+        r1, r2 = r2, r1
+
+    m1 = -(r1 + b1) / (b2 * (r1 - r2))
+    m2 = -(r2 + b1) / (b2 * (r2 - r1))
+
+    a = m2 + 1.0
+    b = -m2 - m1 - 1.0
+    if not (np.isfinite(a) and np.isfinite(b) and a > 0.0 and b > 4.0):
+        raise ValueError("Pearson Type VI distribution requires a > 0 and "
+                         "b > 4.")
+
+    scale = np.sqrt(variance) * (r2 - r1)
+    if not np.isfinite(scale) or scale <= 0.0:
+        raise ValueError("Pearson Type VI distribution requires positive "
+                         "scale.")
+
+    loc = mean + np.sqrt(variance) * r2
+
+    return a, b, loc, scale
+
+
+def _pearson_type7_params(mean, variance, kurtosis):
+    df = 6.0 / kurtosis + 4.0
+    t_var = df / (df - 2.0)
+    loc = mean
+    scale = np.sqrt(variance / t_var)
+
+    return df, loc, scale
 
 
 class pearson3_gen(rv_continuous):
@@ -8693,6 +8817,134 @@ pearson3 = pearson3_gen(name="pearson3")
 
 
 def pearson(mean, variance, skewness, kurtosis):
+    r"""Construct a Pearson system distribution from moments.
+
+    The distribution is selected from the Pearson system using the specified
+    mean, variance, skewness, and excess kurtosis, and returned as a frozen
+    continuous random variable.
+
+    Parameters
+    ----------
+    mean : float
+        Mean of the distribution.
+    variance : float
+        Variance of the distribution. Must be positive.
+    skewness : float
+        Skewness of the distribution.
+    kurtosis : float
+        Excess kurtosis of the distribution. This is Fisher's definition of
+        kurtosis, so the normal distribution has kurtosis equal to zero.
+
+    Returns
+    -------
+    dist : rv_frozen
+        Frozen continuous random variable whose first four moments match the
+        specified mean, variance, skewness, and excess kurtosis.
+
+    Raises
+    ------
+    ValueError
+        If any moment is not a finite scalar, if ``variance`` is not positive,
+        or if ``skewness`` and ``kurtosis`` do not satisfy the Pearson moment
+        validity condition.
+    NotImplementedError
+        If the moments correspond to Pearson Type IV, or to Pearson Type V or
+        Type VI with negative skewness.
+
+    Notes
+    -----
+
+    The Pearson type is determined from the standardized moment ratios
+
+    .. math::
+
+        \beta_1 = \mathrm{skewness}^2,
+        \qquad
+        \beta_2 = \mathrm{kurtosis} + 3.
+
+    The valid Pearson moment region satisfies
+
+    .. math::
+
+        \beta_2 \geq \beta_1 + 1.
+
+    For non-symmetric distributions, the classifier also uses
+
+    .. math::
+
+        \delta = 2\beta_2 - 3\beta_1 - 6
+
+    and
+
+    .. math::
+
+        \kappa =
+        \frac{\beta_1(\beta_2 + 3)^2}
+             {4(4\beta_2 - 3\beta_1)(2\beta_2 - 3\beta_1 - 6)}.
+
+    The mean and variance are used as location and scale parameters after
+    the Pearson type and shape parameters have been determined from
+    ``skewness`` and ``kurtosis``.
+
+    The currently supported cases are dispatched to existing SciPy
+    distributions:
+
+    =============  ===========================
+    Pearson type   SciPy distribution
+    =============  ===========================
+    Normal         `norm`
+    Type I         `beta`
+    Type II        `rdist`
+    Type III       `pearson3`
+    Type V         `invgamma`
+    Type VI        `betaprime`
+    Type VII       `t`
+    =============  ===========================
+
+    Pearson Type IV is identified but not implemented. Passing moments that
+    correspond to Pearson Type V or Type VI with negative skewness currently
+    raises `NotImplementedError`.
+
+    .. versionadded:: 1.18.0
+
+    References
+    ----------
+    .. [1] "Pearson distribution", Wikipedia,
+          https://en.wikipedia.org/wiki/Pearson_distribution
+    .. [2] Johnson, Kotz, and Balakrishnan, "Continuous Univariate
+          Distributions, Volume 1", Second Edition, John Wiley and Sons,
+          Chapter 12.1, Section 4.1 (1994).
+
+    Examples
+    --------
+    Construct the standard normal distribution from its first four moments:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.pearson(mean=0.0, variance=1.0,
+    ...                   skewness=0.0, kurtosis=0.0)
+    >>> np.allclose(X.pdf(0.0), 1/np.sqrt(2*np.pi))
+    True
+
+    The returned object is a frozen distribution:
+
+    >>> np.allclose(X.cdf(0.0), 0.5)
+    True
+    >>> np.allclose(X.stats(moments="mvsk"), [0.0, 1.0, 0.0, 0.0])
+    True
+    """
+    if any(np.ndim(moment) != 0
+           for moment in (mean, variance, skewness, kurtosis)):
+        raise ValueError("Pearson dispatcher only supports scalar moments.")
+
+    moments = np.asarray([mean, variance, skewness, kurtosis], dtype=float)
+    if not np.all(np.isfinite(moments)):
+        raise ValueError("All moments must be finite real numbers.")
+    mean, variance, skewness, kurtosis = moments
+
+    if variance <= 0:
+        raise ValueError("`variance` must be positive.")
+
     pearson_type = _pearson_classifier(skewness, kurtosis)
 
     if pearson_type == "normal":
@@ -8704,8 +8956,29 @@ def pearson(mean, variance, skewness, kurtosis):
         )
         return beta(a, b, loc=loc, scale=scale)
 
+    if pearson_type == "type2":
+        c, loc, scale = _pearson_type2_params(mean, variance, kurtosis)
+        return rdist(c, loc=loc, scale=scale)
+
     if pearson_type == "type3":
         return pearson3(skewness, loc=mean, scale=np.sqrt(variance))
+
+    if pearson_type == "type4":
+        raise NotImplementedError("Pearson Type IV dispatch is not implemented.")
+
+    if pearson_type == "type5":
+        a, loc, scale = _pearson_type5_params(mean, variance, skewness)
+        return invgamma(a, loc=loc, scale=scale)
+
+    if pearson_type == "type6":
+        a, b, loc, scale = _pearson_type6_params(
+            mean, variance, skewness, kurtosis
+        )
+        return betaprime(a, b, loc=loc, scale=scale)
+
+    if pearson_type == "type7":
+        df, loc, scale = _pearson_type7_params(mean, variance, kurtosis)
+        return t(df, loc=loc, scale=scale)
 
     raise NotImplementedError(
         f"Pearson {pearson_type} dispatch is not implemented."

@@ -33,7 +33,9 @@ import scipy.stats.distributions
 from scipy.special import xlogy, polygamma, entr
 from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
-from scipy.stats._continuous_distns import FitDataError, _argus_phi, _pearson_classifier
+from scipy.stats._continuous_distns import (
+    FitDataError, _argus_phi, _pearson_classifier
+)
 from scipy.optimize import root, fmin, differential_evolution
 from itertools import product
 
@@ -2909,8 +2911,114 @@ class TestPearson:
         assert result == expected
 
     def test_invalid_skewness_kurtosis(self):
-        with pytest.raises(ValueError, match="Invalid skewness and kurtosis"):
+        with pytest.raises(ValueError, match="must satisfy"):
             _pearson_classifier(1.761, 1.0)
+
+    def test_pearson_type3_float_drift(self):
+        _, _, skewness, kurtosis = stats.gamma.stats(0.05, moments="mvsk")
+        assert _pearson_classifier(skewness, kurtosis) == "type3"
+
+    def test_pearson_type5_float_drift(self):
+        _, _, skewness, kurtosis = stats.invgamma.stats(10000.0, moments="mvsk")
+        assert _pearson_classifier(skewness, kurtosis) == "type5"
+
+    @pytest.mark.parametrize(
+        "dist, shape",
+        [(stats.gamma, 0.05),
+         (stats.invgamma, 10000.0)])
+    def test_pearson_boundary_float_drift_moments(self, dist, shape):
+        _, _, skewness, kurtosis = dist.stats(shape, moments="mvsk")
+        X = stats.pearson(0.0, 1.0, skewness, kurtosis)
+        result = X.stats(moments="mvsk")
+        assert_allclose(result, [0.0, 1.0, skewness, kurtosis])
+
+    def test_pearson_type5_near_finite_kurtosis_boundary(self):
+        _, _, skewness, kurtosis = stats.invgamma.stats(4.01, moments="mvsk")
+        dist = stats.pearson(0.0, 1.0, skewness, kurtosis)
+        result = dist.stats(moments="mvsk")
+        assert_allclose(result, [0.0, 1.0, skewness, kurtosis])
+
+    def test_pearson_type6_near_finite_kurtosis_boundary(self):
+        _, _, skewness, kurtosis = stats.betaprime.stats(
+            2.0, 4.01, moments="mvsk"
+        )
+        dist = stats.pearson(0.0, 1.0, skewness, kurtosis)
+        result = dist.stats(moments="mvsk")
+        assert_allclose(result, [0.0, 1.0, skewness, kurtosis])
+
+    @pytest.mark.parametrize(
+        "mean, variance, skewness, kurtosis",
+        [(2.0, 3.0, 0.0, 0.0),
+         (2.0, 3.0, 1.0, 0.0),
+         (2.0, 3.0, -1.0, 0.0),
+         (2.0, 3.0, 0.0, -1.0),
+         (2.0, 3.0, 1.0, 1.5),
+         (2.0, 3.0, -1.0, 1.5),
+         (2.0, 3.0, np.sqrt(5), 12.0),
+         (2.0, 3.0, 2.0, 7.0),
+         (2.0, 3.0, 0.0, 4.0)])
+    def test_pearson_moments(self, mean, variance, skewness, kurtosis):
+        dist = stats.pearson(mean, variance, skewness, kurtosis)
+        result = dist.stats(moments="mvsk")
+        assert_allclose(result, [mean, variance, skewness, kurtosis])
+
+    def test_pearson_distribution_pdf_cdf_and_rvs(self):
+        dist = stats.pearson(0.0, 1.0, 0.0, 0.0)
+        assert_allclose(dist.pdf(0.0), 1.0 / np.sqrt(2.0 * np.pi))
+        assert_allclose(dist.cdf(0.0), 0.5)
+
+        rvs = dist.rvs(size=3, random_state=123)
+        assert rvs.shape == (3,)
+        assert np.all(np.isfinite(rvs))
+
+    def test_pearson_type4_not_implemented(self):
+        with pytest.raises(NotImplementedError, match="Pearson Type IV"):
+            stats.pearson(0.0, 1.0, 1.0, 2.0)
+
+    def test_pearson_invalid_skewness_kurtosis(self):
+        with pytest.raises(ValueError, match="must satisfy"):
+            stats.pearson(0.0, 1.0, 1.761, 1.0)
+
+    def test_pearson_invalid_type1_boundary(self):
+        with pytest.raises(ValueError, match="positive beta parameters"):
+            stats.pearson(0.0, 1.0, 1.0, -1.0)
+
+    def test_pearson_invalid_type2_boundary(self):
+        with pytest.raises(ValueError, match="-2 < kurtosis < 0"):
+            stats.pearson(0.0, 1.0, 0.0, -2.0)
+
+    def test_pearson_negative_type5_not_implemented(self):
+        with pytest.raises(NotImplementedError, match="Pearson Type V"):
+            stats.pearson(0.0, 1.0, -np.sqrt(5), 12.0)
+
+    def test_pearson_negative_type6_not_implemented(self):
+        with pytest.raises(NotImplementedError, match="Pearson Type VI"):
+            stats.pearson(0.0, 1.0, -2.0, 7.0)
+
+    @pytest.mark.parametrize("variance", [0.0, -1.0])
+    def test_pearson_invalid_variance(self, variance):
+        with pytest.raises(ValueError, match="variance"):
+            stats.pearson(0.0, variance, 0.0, 0.0)
+
+    @pytest.mark.parametrize(
+        "moments",
+        [(np.nan, 1.0, 0.0, 0.0),
+         (0.0, np.inf, 0.0, 0.0),
+         (0.0, 1.0, np.nan, 0.0),
+         (0.0, 1.0, 0.0, -np.inf)])
+    def test_pearson_nonfinite_moments(self, moments):
+        with pytest.raises(ValueError, match="finite"):
+            stats.pearson(*moments)
+
+    @pytest.mark.parametrize(
+        "moments",
+        [([0.0, 1.0], 1.0, 0.0, 0.0),
+         (0.0, [1.0, 2.0], 0.0, 0.0),
+         (0.0, 1.0, [0.0, 1.0], 0.0),
+         (0.0, 1.0, 0.0, [0.0, 1.0])])
+    def test_pearson_array_like_moments(self, moments):
+        with pytest.raises(ValueError, match="scalar"):
+            stats.pearson(*moments)
 
 
 class TestPearson3:
