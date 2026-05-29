@@ -422,10 +422,12 @@ class TestWelch:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
-                r"nperseg\s*=?\s*256 is greater than (?:input_length|signal).*",
-                UserWarning)
-            f, p = welch(x, window='hann')  # default nperseg
-            f1, p1 = welch(x, window='hann', nperseg=256)  # user-specified nperseg
+                r"nperseg\s*=?\s*256 is greater than "
+                r"(?:input_length|input length|signal).*",
+                UserWarning,
+            )
+            f, p = welch(x, window="hann")  # default nperseg
+            f1, p1 = welch(x, window="hann", nperseg=256)  # user-specified nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
         xp_assert_close(f, f2)
         xp_assert_close(p, p2)
