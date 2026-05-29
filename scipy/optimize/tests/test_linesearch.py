@@ -244,7 +244,8 @@ class TestLineSearch:
         dtype = xpx.default_dtype(xp=xp)
         c = 0
         smax = 512
-        # Dealing with self.A is a hack!
+        # TODO: Revert to just using self.A once the test class is adjusted to use xp
+        # throughout.
         self.A_orig = self.A
         self.A = xp.asarray(self.A, dtype=dtype, copy=True)
         for name, f, fprime, x, p, old_f in self.line_iter(xp=xp):
@@ -273,7 +274,7 @@ class TestLineSearch:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert c > 3  # check that the iterator really works...
-        # Revert the hack, deleting the attribute conflicts with free-threading.
+        # TODO: See above.
         self.A = self.A_orig
 
     def test_line_search_wolfe2_bounds(self):
