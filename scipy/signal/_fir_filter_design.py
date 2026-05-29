@@ -735,8 +735,8 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
         eps = xp.finfo(xp_default_dtype(xp)).eps * nyq
         for k in range(freq.shape[0] - 1):
             if freq[k] == freq[k + 1]:
-                freq[k] = freq[k] - eps
-                freq[k + 1] = freq[k + 1] + eps
+                freq = xpx.at(freq)[k].set(freq[k] - eps)
+                freq = xpx.at(freq)[k + 1].set(freq[k + 1] + eps)
         # Check if freq is strictly increasing after tweak
         d = freq[1:] - freq[:-1]
         if xp.any(d <= 0):
@@ -772,7 +772,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     out = out_full[:numtaps] * wind
 
     if ftype == 3:
-        out[xp_size(out) // 2] = 0.0
+        out = xpx.at(out)[xp_size(out) // 2].set(0.0)
 
     return out
 
