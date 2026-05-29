@@ -330,7 +330,7 @@ capabilities_overrides = {
     "sosfilt_zi": xp_capabilities(cpu_only=True, allow_dask_compute=True,
                                   jax_jit=False),
     "sosfiltfilt": xp_capabilities(
-        cpu_only=True, exceptions=["cupy"],
+        cpu_only=True, exceptions=["cupy"], jax_jit=False,
         skip_backends=[
             (
                 "dask.array",
@@ -338,7 +338,6 @@ capabilities_overrides = {
                 " which dask doesn't like"
             ),
             ("torch", "negative strides"),
-            ("jax.numpy", "sosfilt works in-place"),
         ],
     ),
     "sosfreqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
