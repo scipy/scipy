@@ -756,7 +756,7 @@ _special_funcs = (
             jax_jit=True, extra_note="``cupy`` only supports integer `k` and `n`."
         ),
         int_only=(True, True, False), positive_only=True,
-        torch_native=False,
+        torch_native=False, test_large_ints=False  # CuPy return NaN for large ints
     ),
     _FuncInfo(
         _ufuncs.nbdtrc, 3,
