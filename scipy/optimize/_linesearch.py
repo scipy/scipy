@@ -11,6 +11,7 @@ Functions
     scalar_search_wolfe2
 
 """
+import math
 from warnings import warn
 
 import numpy as np
@@ -304,9 +305,9 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     """
     array_namespace(xk, pk, gfk)
     if old_fval is not None:
-        old_fval = float(old_fval)
+        old_fval = old_fval
     if old_old_fval is not None:
-        old_old_fval = float(old_old_fval)
+        old_old_fval = old_old_fval
     fc = [0]
     gc = [0]
     gval = [None]
@@ -314,7 +315,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     def phi(alpha):
         fc[0] += 1
-        return float(f(xk + alpha * pk, *args))
+        return f(xk + alpha * pk, *args)
 
     fprime = myfprime
 
@@ -322,11 +323,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gc[0] += 1
         gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
         gval_alpha[0] = alpha
-        return float(gval[0] @ pk)
+        return gval[0] @ pk
 
     if gfk is None:
         gfk = fprime(xk, *args)
-    derphi0 = float(gfk @ pk)
+    derphi0 = gfk @ pk
 
     if extra_condition is not None:
         # Add the current gradient as argument, to avoid needless
@@ -529,12 +530,12 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             A /= denom
             B /= denom
             radical = B * B - 3 * A * C
-            xmin = a + (-B + np.sqrt(radical)) / (3 * A)
+            xmin = a + (-B + math.sqrt(radical)) / (3 * A)
         except ArithmeticError:
             return None
-    if not np.isfinite(xmin):
+    if not math.isfinite(xmin):
         return None
-    return float(xmin)
+    return xmin
 
 
 def _quadmin(a, fa, fpa, b, fb):
@@ -553,7 +554,7 @@ def _quadmin(a, fa, fpa, b, fb):
             xmin = a - C / (2.0 * B)
         except ArithmeticError:
             return None
-    if not np.isfinite(xmin):
+    if not math.isfinite(xmin):
         return None
     return xmin
 
