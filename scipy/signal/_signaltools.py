@@ -2338,7 +2338,7 @@ def lfiltic(b, a, y, x=None):
     >>> zi = lfiltic(b, a, y0)
     >>> signal = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     >>> lfilter(b, a, signal, zi=zi)
-    (array([ 1.5    ,  4.75   ,  9.375  , 14.6875 , 20.34375]), array([29.171875]))
+    (array([ 1.5    ,  4.75   ,  9.375  , 14.6875 , 20.34375]), array([20.171875]))
 
     """
     xp = array_namespace(a, b, y, x)
