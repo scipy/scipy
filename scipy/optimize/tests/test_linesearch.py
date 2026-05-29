@@ -139,8 +139,11 @@ class TestLineSearch:
                 yield name, phi, derphi, old_phi0
 
     def line_iter(self, xp=None):
-        xp = np if xp is None else xp
-        dtype = xpx.default_dtype(xp=xp)
+        if xp is None:
+            xp = np
+            dtype = None
+        else:
+            dtype = xpx.default_dtype(xp=xp)
         rng = np.random.default_rng(2231892908)
         for name, f, fprime in self.line_funcs:
             k = 0
