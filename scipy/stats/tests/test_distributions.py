@@ -6089,7 +6089,7 @@ class TestLevyStable:
         ]
     )
     def test_cdf_nolan_samples(
-            self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
+            self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range, levy_stable_lock
     ):
         """ Test cdf values against Nolan's stablec.exe output."""
         data = nolan_cdf_sample_data
@@ -6172,7 +6172,6 @@ class TestLevyStable:
         ]
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
-            stats.levy_stable.cdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
             with warnings.catch_warnings():
@@ -6181,13 +6180,15 @@ class TestLevyStable:
                     ('Cumulative density calculations experimental for FFT'
                      ' method. Use piecewise method instead.'),
                     RuntimeWarning)
-                p = stats.levy_stable.cdf(
-                    subdata['x'],
-                    subdata['alpha'],
-                    subdata['beta'],
-                    scale=1,
-                    loc=0
-                )
+                with levy_stable_lock:
+                    stats.levy_stable.cdf_default_method = default_method
+                    p = stats.levy_stable.cdf(
+                        subdata['x'],
+                        subdata['alpha'],
+                        subdata['beta'],
+                        scale=1,
+                        loc=0
+                    )
                 with np.errstate(over="ignore"):
                     subdata2 = rec_append_fields(
                         subdata,
