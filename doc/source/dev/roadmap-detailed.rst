@@ -81,7 +81,7 @@ happen it must be clear that the maintenance burden is low enough.
 Use of Fortran libraries
 ````````````````````````
 SciPy owes a lot of its success to relying on wrapping well established
-Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). The Fortran 77
+Fortran libraries (QUADPACK, FITPACK, ODEPACK etc). The Fortran 77
 that these libraries are written in is quite hard to maintain, and the use
 of Fortran is problematic for many reasons; e.g., it makes our wheel builds
 much harder to maintain, it has repeatedly been problematic for supporting
@@ -292,12 +292,6 @@ The morphology interface needs to be standardized:
   optional, whereas it's mandatory for grey.  Grey morphology operations
   should get the same default.
 - other filters should also take that default value where possible.
-
-
-odr
-```
-This module is in reasonable shape, although it could use a bit more
-maintenance.  No major plans or wishes here.
 
 
 optimize
