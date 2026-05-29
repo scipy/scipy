@@ -1945,13 +1945,13 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
 
     Fm = xp.empty(nbar - 1, dtype=xp.float64, device=device)
     signs = xp.empty_like(ma)
-    signs[::2] = 1
-    signs[1::2] = -1
+    signs = xpx.at(signs)[::2].set(1)
+    signs = xpx.at(signs)[1::2].set(-1)
     m2 = ma*ma
     for mi, m in enumerate(ma):
         numer = signs[mi] * xp.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
         denom = 2 * xp.prod(1 - m2[mi]/m2[:mi]) * xp.prod(1 - m2[mi]/m2[mi+1:])
-        Fm[mi] = numer / denom
+        Fm = xpx.at(Fm)[mi].set(numer / denom)
 
     def W(n):
         return 1 + 2*xp.matmul(Fm, xp.cos(
