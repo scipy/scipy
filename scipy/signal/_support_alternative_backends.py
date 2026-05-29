@@ -223,6 +223,8 @@ capabilities_overrides = {
     "ellipord": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True,
                                 reason="scipy.special.ellipk"),
+    "filtfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                                allow_dask_compute=True, jax_jit=False),
     "findfreqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
     "firls": xp_capabilities(cpu_only=True, allow_dask_compute=True, jax_jit=False,
