@@ -3,6 +3,7 @@ import math
 import numpy as np
 import pytest
 from scipy._lib._array_api import is_cupy, xp_assert_close, xp_default_dtype, concat_1d
+import scipy._external.array_api_extra as xpx
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
@@ -96,7 +97,6 @@ class TestSymIIR:
         cpu_only=True, exceptions=["cupy"], reason="internals are numpy-only"
     )
     @xfail_xp_backends("cupy", reason="sum did not converge")
-    @skip_xp_backends("jax.numpy", reason="item assignment in tests")
     @pytest.mark.parametrize(
         'dtype', ['float32', 'float64', 'complex64', 'complex128'])
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
@@ -140,11 +140,11 @@ class TestSymIIR:
 
         # -z1 / (1 - z1) * z1**(k - 1) * u[k - 1]
         comp2 = xp.zeros(n, dtype=dtype)
-        comp2[1:] = -z1 / (1 - z1) * z1**pos[:-1]
+        comp2 = xpx.at(comp2)[1:].set(-z1 / (1 - z1) * z1**pos[:-1])
 
         # 1 / (1 - z1) * u[k - 1]
         comp3 = xp.zeros(n, dtype=dtype)
-        comp3[1:] = 1 / (1 - z1)
+        comp3 = xpx.at(comp3)[1:].set(1 / (1 - z1))
 
         expected_fwd = comp1 + comp2 + comp3
 
@@ -158,10 +158,12 @@ class TestSymIIR:
         # Computing a closed form for the complete expression is difficult
         # The result will be computed iteratively from the difference equation
         exp_out = xp.zeros(n, dtype=dtype)
-        exp_out[0] = sym_cond
+        exp_out = xpx.at(exp_out)[0].set(sym_cond)
 
         for i in range(1, n):
-            exp_out[i] = c0 * expected_fwd[n - 1 - i] + z1 * exp_out[i - 1]
+            exp_out = xpx.at(exp_out)[i].set(
+                c0 * expected_fwd[n - 1 - i] + z1 * exp_out[i - 1]
+            )
 
         exp_out = xp.flip(exp_out)
 
@@ -320,7 +322,6 @@ class TestSymIIR:
         xp_assert_close(out_ic, ic2, atol=4e-6, rtol=6e-7)
 
     @skip_xp_backends(cpu_only=True, reason="internals are numpy-only")
-    @skip_xp_backends("jax.numpy", reason="item assignment in tests")
     @pytest.mark.parametrize(
         'dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
@@ -341,11 +342,13 @@ class TestSymIIR:
         ic = symiirorder2_ic_fwd(signal_np, r, omega, precision)
         ic = xp.asarray(ic)
         out1 = xp.zeros(n + 2, dtype=dtype)
-        out1[:2] = ic[0, :]
+        out1 = xpx.at(out1)[:2].set(ic[0, :])
 
         # Apply the forward system cs / (1 - a2 * z^-1 - a3 * z^-2))
         for i in range(2, n + 2):
-            out1[i] = cs * signal[i - 2] + a2 * out1[i - 1] + a3 * out1[i - 2]
+            out1 = xpx.at(out1)[i].set(
+                cs * signal[i - 2] + a2 * out1[i - 1] + a3 * out1[i - 2]
+            )
 
         # Find the backward initial conditions
         ic2 = symiirorder2_ic_bwd(np.asarray(out1), r, omega, precision)[0]
@@ -354,10 +357,10 @@ class TestSymIIR:
         # Apply the system cs / (1 - a2 * z - a3 * z^2)) in backwards
         exp = xp.empty(n, dtype=dtype)
 
-        exp[-2:] = xp.flip(ic2)
+        exp = xpx.at(exp)[-2:].set(xp.flip(ic2))
 
         for i in range(n - 3, -1, -1):
-            exp[i] = cs * out1[i] + a2 * exp[i + 1] + a3 * exp[i + 2]
+            exp = xpx.at(exp)[i].set(cs * out1[i] + a2 * exp[i + 1] + a3 * exp[i + 2])
 
         out = symiirorder2(signal, r, omega, precision)
         xp_assert_close(out, exp, atol=4e-6, rtol=6e-7)
