@@ -4552,7 +4552,7 @@ class TestSOSFilt:
         zi = xp.empty((4, 3, 3, 2))  # Correct shape is (4, 3, 2, 3)
         with pytest.raises(ValueError, match='should be all ones'):
             sosfilt(sos, x, zi=zi, axis=1)
-        sos[:, 3] = 1.
+        sos = xpx.at(sos)[:, 3].set(1.)
         with pytest.raises(ValueError, match='Invalid zi shape'):
             sosfilt(sos, x, zi=zi, axis=1)
 
