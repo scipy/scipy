@@ -312,10 +312,9 @@ capabilities_overrides = {
     "qspline2d": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "remez": xp_capabilities(cpu_only=True, allow_dask_compute=True, jax_jit=False),
     "resample": xp_capabilities(
-        cpu_only=True, exceptions=["cupy"],
+        cpu_only=True, exceptions=["cupy"], jax_jit=False,
         skip_backends=[
             ("dask.array", "XXX something in dask"),
-            ("jax.numpy", "XXX: immutable arrays"),
         ]
     ),
     "resample_poly": xp_capabilities(
