@@ -231,7 +231,7 @@ capabilities_overrides = {
                               jax_jit=False, allow_dask_compute=True),
     "firwin2": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                jax_jit=False, allow_dask_compute=True,
-                               reason="firwin uses np.interp"),
+                               reason="firwin2 uses np.interp"),
     "fftconvolve": xp_capabilities(cpu_only=True,
                                    exceptions=["cupy", "jax.numpy", "torch"]),
     "freqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
