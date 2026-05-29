@@ -4398,12 +4398,14 @@ class TestSOSFilt:
         sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=0)
-        assert_array_almost_equal(y_r2_a0, y)
+        # JAX complex64 needs slightly relaxed tolerance here.
+        dec = {'decimal': 5} if dt == xp.complex64 and is_jax(xp) else {}
+        assert_array_almost_equal(y_r2_a0, y, **dec)
 
         sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=1)
-        assert_array_almost_equal(y_r2_a1, y)
+        assert_array_almost_equal(y_r2_a1, y, **dec)
 
     def test_rank3(self, dt, xp):
         dt = getattr(xp, dt)
