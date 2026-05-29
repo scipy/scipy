@@ -2243,6 +2243,21 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
     local median and MAD near such samples may be incorrect.  Callers
     should replace or remove non-finite values before filtering.
 
+    References
+    ----------
+    .. [1] F. R. Hampel, "The influence curve and its role in robust
+       estimation," *Journal of the American Statistical Association*,
+       vol. 69, no. 346, pp. 383-393, 1974.
+       :doi:`10.1080/01621459.1974.10482962`
+    .. [2] H. Liu, S. Shah and W. Jiang, "On-line outlier detection and
+       data cleaning," *Computers & Chemical Engineering*, vol. 28,
+       no. 9, pp. 1635-1647, 2004.
+       :doi:`10.1016/j.compchemeng.2004.01.009`
+    .. [3] R. K. Pearson, Y. Neuvo, J. Astola and M. Gabbouj,
+       "Generalized Hampel Filters," *EURASIP Journal on Advances in
+       Signal Processing*, 2016:87, 2016.
+       :doi:`10.1186/s13634-016-0383-6`
+
     Examples
     --------
     >>> import numpy as np
