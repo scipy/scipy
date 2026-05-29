@@ -23,7 +23,9 @@ from scipy.signal import (
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
-from scipy.signal._signaltools import _filtfilt_gust, _compute_factors, _group_poles
+from scipy.signal._signaltools import (
+    _filtfilt_gust, _compute_factors, _group_poles, filtfilt as _filtfilt
+)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
 import scipy._external.array_api_extra as xpx
@@ -2821,7 +2823,7 @@ class TestFiltFilt:
         if self.filtfilt_kind == 'tf':
             b, a = zpk2tf(*zpk)
             b, a = xp.asarray(b), xp.asarray(a)
-            return filtfilt(b, a, x, axis, padtype, padlen, method, irlen)
+            return _filtfilt(b, a, x, axis, padtype, padlen, method, irlen)
         elif self.filtfilt_kind == 'sos':
             sos = zpk2sos(*zpk)
             sos = xp.asarray(sos)
@@ -2954,7 +2956,7 @@ class TestSOSFiltFilt(TestFiltFilt):
             sos = zpk2sos(*zpk)
 
             b, a, sos = map(xp.asarray, (b, a, sos))
-            y = filtfilt(b, a, x)
+            y = _filtfilt(b, a, x)
             y_sos = sosfiltfilt(sos, x)
             xp_assert_close(y, y_sos, atol=1e-12, err_msg=f'order={order}')
 
