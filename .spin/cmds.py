@@ -1072,6 +1072,69 @@ def _cpu_count_user(os_cpu_count):
 
     return min(cpu_count_affinity, cpu_count_cgroup, cpu_count_loky)
 
+def _count_physical_cores_linux():
+    try:
+        cpu_info = subprocess.run(
+            "lscpu --parse=core".split(), capture_output=True, text=True
+        )
+        cpu_info = cpu_info.stdout.splitlines()
+        cpu_info = {line for line in cpu_info if not line.startswith("#")}
+        return len(cpu_info)
+    except Exception:
+        pass  # fallback to /proc/cpuinfo
+
+    cpu_info = subprocess.run(
+        "cat /proc/cpuinfo".split(), capture_output=True, text=True
+    )
+    cpu_info = cpu_info.stdout.splitlines()
+    cpu_info = {line for line in cpu_info if line.startswith("core id")}
+    return len(cpu_info)
+
+
+def _count_physical_cores_win32():
+    try:
+        cmd = "-Command (Get-CimInstance -ClassName Win32_Processor).NumberOfCores"
+        cpu_info = subprocess.run(
+            f"powershell.exe {cmd}".split(),
+            capture_output=True,
+            text=True,
+        )
+        cpu_info = cpu_info.stdout.splitlines()
+        return int(cpu_info[0])
+    except Exception:
+        pass  # fallback to wmic (older Windows versions; deprecated now)
+
+    cpu_info = subprocess.run(
+        "wmic CPU Get NumberOfCores /Format:csv".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout.splitlines()
+    cpu_info = [
+        l.split(",")[1] for l in cpu_info if (l and l != "Node,NumberOfCores")
+    ]
+    return sum(map(int, cpu_info))
+
+
+def _count_physical_cores_darwin():
+    cpu_info = subprocess.run(
+        "sysctl -n hw.physicalcpu".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout
+    return int(cpu_info)
+
+
+def _count_physical_cores_freebsd():
+    cpu_info = subprocess.run(
+        "sysctl -n kern.smp.cores".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout
+    return int(cpu_info)
+
 def _count_physical_cores():
     """Return a tuple (number of physical cores, exception)
 
@@ -1090,33 +1153,13 @@ def _count_physical_cores():
     # Not cached yet, find it
     try:
         if sys.platform == "linux":
-            cpu_info = subprocess.run(
-                "lscpu --parse=core".split(), capture_output=True, text=True
-            )
-            cpu_info = cpu_info.stdout.splitlines()
-            cpu_info = {line for line in cpu_info if not line.startswith("#")}
-            cpu_count_physical = len(cpu_info)
+            cpu_count_physical = _count_physical_cores_linux()
         elif sys.platform == "win32":
-            cpu_info = subprocess.run(
-                "wmic CPU Get NumberOfCores /Format:csv".split(),
-                capture_output=True,
-                text=True,
-            )
-            cpu_info = cpu_info.stdout.splitlines()
-            cpu_info = [
-                l.split(",")[1]
-                for l in cpu_info
-                if (l and l != "Node,NumberOfCores")
-            ]
-            cpu_count_physical = sum(map(int, cpu_info))
+            cpu_count_physical = _count_physical_cores_win32()
         elif sys.platform == "darwin":
-            cpu_info = subprocess.run(
-                "sysctl -n hw.physicalcpu".split(),
-                capture_output=True,
-                text=True,
-            )
-            cpu_info = cpu_info.stdout
-            cpu_count_physical = int(cpu_info)
+            cpu_count_physical = _count_physical_cores_darwin()
+        elif sys.platform.startswith("freebsd"):
+            cpu_count_physical = _count_physical_cores_freebsd()
         else:
             raise NotImplementedError(f"unsupported platform: {sys.platform}")
 
