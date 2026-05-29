@@ -4612,7 +4612,7 @@ def sosfilt_zi(sos):
     for section in range(n_sections):
         b = sos[section, :3]
         a = sos[section, 3:]
-        zi[section, ...] = scale * lfilter_zi(b, a)
+        zi = xpx.at(zi)[section, ...].set(scale * lfilter_zi(b, a))
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
