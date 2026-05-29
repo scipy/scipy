@@ -4346,7 +4346,6 @@ class TestVectorstrength:
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank1(self, dt, xp):
         dt = getattr(xp, dt)
         x = xp.linspace(0, 5, 6, dtype=dt)
@@ -4379,7 +4378,6 @@ class TestSOSFilt:
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
 
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank2(self, dt, xp):
         dt = getattr(xp, dt)
         shape = (4, 3)
@@ -4407,7 +4405,6 @@ class TestSOSFilt:
         y = sosfilt(sos, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank3(self, dt, xp):
         dt = getattr(xp, dt)
         shape = (4, 3, 2)
@@ -4438,7 +4435,6 @@ class TestSOSFilt:
         a, b, sos = map(xp.asarray, (a, b, sos))
         return a, b, sos
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions(self, dt, xp):
         a, b, sos = self._get_ab_sos(xp)
@@ -4465,7 +4461,6 @@ class TestSOSFilt:
         xp_assert_close(y, xp.ones(8), check_dtype=False)
         xp_assert_close(zf, zi, check_dtype=False)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
     @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_2(self, dt, xp):
@@ -4490,7 +4485,6 @@ class TestSOSFilt:
         xp_assert_close(y[0, 0], xp.ones(8), check_dtype=False)
         xp_assert_close(zf[:, 0, 0, :], zi, check_dtype=False)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_3d_axis1(self, dt, xp):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
@@ -4558,7 +4552,6 @@ class TestSOSFilt:
         with pytest.raises(ValueError, match='Invalid zi shape'):
             sosfilt(sos, x, zi=zi, axis=1)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi(self, dt, xp):
         dt = getattr(xp, dt)
