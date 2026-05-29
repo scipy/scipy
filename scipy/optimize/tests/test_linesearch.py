@@ -1,7 +1,6 @@
 """
 Tests for line search routines
 """
-import os
 import threading
 import warnings
 
@@ -15,12 +14,10 @@ from scipy._lib._array_api import (
     xp_assert_close,
     xp_assert_close_nulp,
 )
+from scipy._external import array_api_extra as xpx
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import line_search_wolfe2
 from scipy.optimize._linesearch import LineSearchWarning
-
-
-DEFAULT_DTYPE = os.getenv("SCIPY_DEFAULT_DTYPE", default="float64")
 
 
 def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
@@ -143,7 +140,7 @@ class TestLineSearch:
 
     def line_iter(self, xp=None):
         xp = np if xp is None else xp
-        dtype = getattr(xp, DEFAULT_DTYPE)
+        dtype = xpx.default_dtype(xp=xp)
         rng = np.random.default_rng(2231892908)
         for name, f, fprime in self.line_funcs:
             k = 0
@@ -244,7 +241,7 @@ class TestLineSearch:
 
     @make_xp_test_case(line_search_wolfe2)
     def test_line_search_wolfe2(self, xp):
-        dtype = getattr(xp, DEFAULT_DTYPE)
+        dtype = xpx.default_dtype(xp=xp)
         c = 0
         smax = 512
         # Dealing with self.A is a hack!
