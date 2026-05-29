@@ -1556,8 +1556,7 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
 
 
 # `chebwin` contributed by Kumar Appaiah.
-@xp_capabilities(skip_backends=(("jax.numpy", "item assignment"),
-                                ("dask.array", "data-dependent output shapes")))
+@xp_capabilities(skip_backends=(("dask.array", "data-dependent output shapes"),))
 def chebwin(M, at, sym=True, *, xp=None, device=None):
     r"""Return a Dolph-Chebyshev window.
 
