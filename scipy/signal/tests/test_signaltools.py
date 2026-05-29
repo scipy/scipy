@@ -2831,9 +2831,6 @@ class TestFiltFilt:
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_basic(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         zpk = tf2zpk(xp.asarray([1., 2, 3]), xp.asarray([1., 2, 3]))
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
         atol= 4e-9 if is_cupy(xp) else 5.28e-11
@@ -2841,9 +2838,6 @@ class TestFiltFilt:
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_sine(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         rate = 2000
         t = xp.linspace(0, 1.0, rate + 1)
         # A signal with low frequency and a high frequency.
@@ -2879,9 +2873,6 @@ class TestFiltFilt:
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_axis(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
         x = xp.asarray(x)
@@ -2944,7 +2935,6 @@ class TestFiltFilt:
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
 
-    @skip_xp_backends('jax.numpy', reason='sosfilt works in-place')
     @skip_xp_backends('torch', reason='negative strides')
     def test_equivalence(self, xp):
         """Test equivalence between sosfiltfilt and filtfilt"""
@@ -4542,7 +4532,6 @@ class TestSOSFilt:
         xp_assert_close(y, y_tf, rtol=1e-10, atol=1e-13)
 
     @skip_xp_backends('torch', reason='issues a RuntimeWarning')
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_bad_zi_shape(self, dt, xp):
         dt = getattr(xp, dt)
         # The shape of zi is checked before using any values in the
