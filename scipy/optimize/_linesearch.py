@@ -521,14 +521,15 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             db = b - a
             dc = c - a
             denom = (db * dc) ** 2 * (db - dc)
-            d1 = np.empty((2, 2))
-            d1[0, 0] = dc ** 2
-            d1[0, 1] = -db ** 2
-            d1[1, 0] = -dc ** 3
-            d1[1, 1] = db ** 3
-            [A, B] = d1 @ np.asarray([fb - fa - C * db, fc - fa - C * dc])
-            A /= denom
-            B /= denom
+            D_00 = dc ** 2
+            D_01 = -db ** 2
+            D_10 = -dc ** 3
+            D_11 = db ** 3
+            v_0 = fb - fa - C * db
+            v_1 = fc - fa - C * dc
+            # [A, B] = (D @ v) / denom
+            A = (D_00 * v_0 + D_01 * v_1) / denom
+            B = (D_10 * v_0 + D_11 * v_1) / denom
             radical = B * B - 3 * A * C
             xmin = a + (-B + math.sqrt(radical)) / (3 * A)
         except ArithmeticError:
