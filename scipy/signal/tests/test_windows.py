@@ -1057,8 +1057,6 @@ class TestCosine:
 )
 def test_windowfunc_basics(window, window_name, params, xp):
     window = getattr(windows, window_name)
-    if is_jax(xp) and window_name in ['chebwin']:
-        pytest.skip(reason=f'{window_name = }: item assignment')
     if window_name in ['dpss']:
         if is_cupy(xp):
             pytest.skip(reason='dpss window is not implemented for cupy')
