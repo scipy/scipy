@@ -395,7 +395,6 @@ class TestFirwin2:
             xp.asarray([1.0, 1.0, 1.0, 1.0 - width, 0.5, width]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test02(self, xp):
         width = 0.04
         beta = 12.0
@@ -413,7 +412,6 @@ class TestFirwin2:
             xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test03(self, xp):
         width = 0.02
         ntaps, beta = kaiserord(120, width)
@@ -430,7 +428,6 @@ class TestFirwin2:
             xp.asarray([1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test04(self, xp):
         """Test firwin2 when window=None."""
         ntaps = 5
@@ -460,7 +457,6 @@ class TestFirwin2:
         freqs, response = map(xp.asarray, (freqs, response))
         assert_array_almost_equal(xp.abs(response), freqs / xp.pi, decimal=4)
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test06(self, xp):
         """Test firwin2 for calculating Type III filters"""
         ntaps = 1501
@@ -493,7 +489,6 @@ class TestFirwin2:
         taps2 = firwin2(150, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
         assert_array_almost_equal(taps1, taps2)
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test_input_modyfication(self, xp):
         freq1 = xp.asarray([0.0, 0.5, 0.5, 1.0])
         freq2 = xp.asarray(freq1)
