@@ -1668,10 +1668,16 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
     # from scipy.special. Using the expansion in scipy.special leads to errors.
-    p = xp.zeros_like(x)
-    p[x > 1] = xp.cosh(order * xp.acosh(x[x > 1]))
-    p[x < -1] = (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(-x[x < -1]))
-    p[abs(x) <= 1] = xp.cos(order * xp.acos(x[abs(x) <= 1]))
+    one = xp.asarray(1, dtype=x.dtype, device=device)
+    p = xp.where(
+        x > 1,
+        xp.cosh(order * xp.acosh(xp.maximum(x, one))),
+        xp.where(
+            x < -1,
+            (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(xp.maximum(-x, one))),
+            xp.cos(order * xp.acos(xp.clip(x, -1, 1)))
+        )
+    )
 
     # Appropriate IDFT and filling up
     # depending on even/odd M
