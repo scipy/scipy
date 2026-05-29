@@ -1847,7 +1847,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
-@xp_capabilities(skip_backends=[("jax.numpy", "item assignment")])
+@xp_capabilities()
 def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     """
     Return a Taylor window.
