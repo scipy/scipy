@@ -132,7 +132,7 @@ jobs:
           else
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=PKG_CONFIG_PATH=$PWD/.openblas \
               MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET}" \
-              SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+              SDKROOT=$(xcrun --sdk macosx --show-sdk-path)"
           fi
           echo "$CIBW_ENV" >> "$GITHUB_ENV"
 
