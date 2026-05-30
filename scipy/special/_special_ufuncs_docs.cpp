@@ -41,6 +41,15 @@ const char *_normalized_gen_harmonic_doc = R"(
     This function is used in scipy.stats.zipfian.
     )";
 
+const char *_von_mises_cdf_doc = R"(
+    _von_mises_cdf(kappa, x, out=None)
+
+    Internal private function.
+
+    Compute the CDF of the von Mises distribution with concentration
+    ``kappa``, extended periodically over ``x``.
+    )";
+
 const char *besselpoly_doc = R"(
     besselpoly(a, lmb, nu, out=None)
 
