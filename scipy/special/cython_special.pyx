@@ -915,6 +915,11 @@ Available functions
         double complex psi(double complex)
         double psi(double)
 
+- :py:func:`~scipy.special.digammainv`::
+
+        float digammainv(float)
+        double digammainv(double)
+
 - :py:func:`~scipy.special.radian`::
 
         double radian(double, double, double)
@@ -1178,6 +1183,8 @@ cdef extern from r"xsf_wrappers.h":
 
     npy_double special_digamma(npy_double) nogil
     npy_cdouble special_cdigamma(npy_cdouble) nogil
+    npy_float special_digammainvf(npy_float) nogil
+    npy_double special_digammainv(npy_double) nogil
 
     npy_double special_cyl_bessel_j(npy_double, npy_double) nogil
     npy_cdouble special_ccyl_bessel_j(npy_double, npy_cdouble) nogil
@@ -3394,6 +3401,15 @@ cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
             return NAN
         else:
             return NAN
+
+cpdef df_number_t digammainv(df_number_t x0) noexcept nogil:
+    """See the documentation for scipy.special.digammainv"""
+    if df_number_t is float:
+        return special_digammainvf(x0)
+    elif df_number_t is double:
+        return special_digammainv(x0)
+    else:
+        return NAN
 
 cpdef double radian(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.radian"""

@@ -8,6 +8,7 @@
 #include <xsf/binom.h>
 #include <xsf/cdflib.h>
 #include <xsf/digamma.h>
+#include <xsf/digammainv.h>
 #include <xsf/ellip.h>
 #include <xsf/erf.h>
 #include <xsf/exp.h>
@@ -259,6 +260,10 @@ double xsf_binom(double n, double k) { return xsf::binom(n, k); }
 double special_digamma(double z) { return xsf::digamma(z); }
 
 npy_cdouble special_cdigamma(npy_cdouble z) { return to_ccomplex(xsf::digamma(to_complex(z))); }
+
+float special_digammainvf(float y) { return xsf::digammainv(y); }
+
+double special_digammainv(double y) { return xsf::digammainv(y); }
 
 double special_rgamma(double x) { return xsf::rgamma(x); }
 

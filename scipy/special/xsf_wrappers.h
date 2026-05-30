@@ -99,6 +99,8 @@ double xsf_binom(double n, double k);
 
 double special_digamma(double z);
 npy_cdouble special_cdigamma(npy_cdouble z);
+float special_digammainvf(float y);
+double special_digammainv(double y);
 
 float special_expitf(float x);
 double special_expit(double x);

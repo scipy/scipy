@@ -43,6 +43,7 @@ __all__ = [
     'cosm1',
     'cotdg',
     'dawsn',
+    'digammainv',
     'ellipe',
     'ellipeinc',
     'ellipj',
@@ -326,6 +327,7 @@ cosdg: np.ufunc
 cosm1: np.ufunc
 cotdg: np.ufunc
 dawsn: np.ufunc
+digammainv: np.ufunc
 ellipe: np.ufunc
 ellipeinc: np.ufunc
 ellipj: np.ufunc
