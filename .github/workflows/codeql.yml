@@ -74,11 +74,6 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
-
-        # If you wish to specify custom queries, you can do so here or in a config file.
-        # By default, queries listed here will override any specified in a config file.
-        # Prefix the list here with "+" to use these queries and those in the config file.
-
         # queries: security-extended,security-and-quality
 
     # NOTE: submodules might be c/c++ or they might be python so we need this
@@ -120,7 +115,6 @@ jobs:
         output: sarif-results/cpp.sarif
 
     - name: Upload SARIF
-      if: matrix.language == 'c-cpp'
       uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4
       with:
-        sarif_file: sarif-results/cpp.sarif
+        sarif_file: sarif-results
