@@ -1944,65 +1944,6 @@ struct TupleDID cdftnc_which3(double p, double q, double t, double pnonc)
 }
 
 
-struct TupleDID cdftnc_which4(double p, double q, double t, double df)
-{
-
-    double tol = 1e-8;
-    double atol = 1e-50;
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-    struct TupleDD tncret;
-    struct TupleDID ret = {0};
-
-    DS.small = -1.e6;
-    DS.big = 1.e6;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = 5.;
-
-    if (!((0 <= p) && (p <= (1. - 1e-16)))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : (1. - 1e-16));
-        return ret;
-    }
-    if (!(t == t)) {
-        ret.i1 = -3;
-        return ret;
-    }
-    if (!(df > 0.)) {
-        ret.i1 = -4;
-        return ret;
-    }
-    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
-        ret.i1 = 3;
-        ret.d2 = (p+q < 0 ? 0.0 : 1.0);
-        return ret;
-    }
-
-    t = fmax(fmin(t, spmpar[2]), -spmpar[2]);
-    df = fmin(df, 1.e10);
-
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        tncret = cumtnc(t, df, DS.x);
-        DS.fx = tncret.d1 - p;
-        dinvr(&DS, &DZ);
-    }
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? 0 : 1e6);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
 struct TupleDD cumbet(double x, double y, double a, double b)
 {
     //              Double precision cUMulative incomplete BETa distribution
