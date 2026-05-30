@@ -199,3 +199,8 @@ Name: packaging.version
 Files: scipy/_external/packaging_version/*
 License: BSD-3-Clause
   For details, see scipy/_external/src/LICENSE.BSD
+
+Name: loky
+Files: .spin/cmds.py
+License: BSD-3-Clause
+  For details, see .spin/LICENSE_loky.txt

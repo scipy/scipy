@@ -702,15 +702,6 @@ def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     return alpha, fc[0], phi1
 
 
-def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
-    """
-    Compatibility wrapper for `line_search_armijo`
-    """
-    r = line_search_armijo(f, xk, pk, gfk, old_fval, args=args, c1=c1,
-                           alpha0=alpha0)
-    return r[0], r[1], 0, r[2]
-
-
 def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
     """Minimize over alpha, the function ``phi(alpha)``.
 
