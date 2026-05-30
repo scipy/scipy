@@ -47,7 +47,7 @@ def cwt_matrix(n_rows, n_columns, rng=None):
     --------
     >>> import numpy as np
     >>> from scipy.linalg import cwt_matrix
-    >>> rng = np.random.default_rng(seed=42)
+    >>> rng = np.random.default_rng()
     >>> S = cwt_matrix(3, 6, rng=rng)
     >>> S.toarray()
     array([[ 1,  0,  0,  0,  0,  0],
