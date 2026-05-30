@@ -468,6 +468,22 @@ def idealfourths(data, axis=None):
         using the ideal fourths algorithm either along the flattened array
         (if `axis` is None) or along `axis` of `data`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats.mstats import idealfourths
+    >>> data = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    >>> idealfourths(data)
+    [2.9166666666666665, 8.083333333333334]
+
+    The function also supports masked arrays, ignoring masked values:
+
+    >>> import numpy.ma as ma
+    >>> data_masked = ma.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    ...                        mask=[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+    >>> idealfourths(data_masked)
+    [2.6666666666666665, 7.333333333333334]
+
     """
     def _idf(data):
         x = data.compressed()
