@@ -2887,11 +2887,11 @@ class _TestFiltFilt:
 class TestFiltFilt(_TestFiltFilt):
     filtfilt_kind = 'tf'
 
-    def test_gust_scalars(self):  # python scalars in array_namespace are np-only
+    def test_gust_scalars(self, xp):
         # The filter coefficients are both scalars, so the filter simply
         # multiplies its input by b/a.  When it is used in filtfilt, the
         # factor is (b/a)**2.
-        x = np.arange(12)
+        x = xp.arange(12, dtype=xp.float64)
         b = 3.0
         a = 2.0
         y = filtfilt(b, a, x, method="gust")
@@ -2912,12 +2912,12 @@ class TestFiltFilt(_TestFiltFilt):
                                     0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
         )
 
-    def test_acoeff(self):  # python scalars in array_namespace are np-only
+    def test_acoeff(self, xp):
         # test for 'a' coefficient as single number
         out = signal.filtfilt(
-            np.asarray([.5, .5]), 1, np.arange(10, dtype=np.float64)
+            xp.asarray([.5, .5]), 1, xp.arange(10, dtype=xp.float64)
         )
-        xp_assert_close(out, np.arange(10, dtype=np.float64), rtol=1e-14, atol=1e-14)
+        xp_assert_close(out, xp.arange(10, dtype=xp.float64), rtol=1e-14, atol=1e-14)
 
 
 @make_xp_test_case(sosfiltfilt)
