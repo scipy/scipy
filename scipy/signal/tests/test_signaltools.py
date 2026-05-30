@@ -2812,10 +2812,7 @@ class TestLFilterZI:
         assert signal.lfilter_zi(b, a).dtype == dtype
 
 
-@make_xp_test_case(filtfilt, sosfiltfilt)
-class TestFiltFilt:
-    filtfilt_kind = 'tf'
-
+class _TestFiltFilt:
     def filtfilt(self, zpk, x, axis=-1, padtype='odd', padlen=None,
                  method='pad', irlen=None, xp=None):
         if self.filtfilt_kind == 'tf':
@@ -2885,18 +2882,23 @@ class TestFiltFilt:
         )
         xp_assert_equal(y0, xp.asarray(np.swapaxes(y2, 0, 2)))
 
-    def test_acoeff(self):  # python scalars in array_namespace are np-only
-        if self.filtfilt_kind != 'tf':
-            return  # only necessary for TF
-        # test for 'a' coefficient as single number
-        out = signal.filtfilt(
-            np.asarray([.5, .5]), 1, np.arange(10, dtype=np.float64)
-        )
-        xp_assert_close(out, np.arange(10, dtype=np.float64), rtol=1e-14, atol=1e-14)
+
+@make_xp_test_case(filtfilt)
+class TestFiltFilt(_TestFiltFilt):
+    filtfilt_kind = 'tf'
+
+    def test_gust_scalars(self):  # python scalars in array_namespace are np-only
+        # The filter coefficients are both scalars, so the filter simply
+        # multiplies its input by b/a.  When it is used in filtfilt, the
+        # factor is (b/a)**2.
+        x = np.arange(12)
+        b = 3.0
+        a = 2.0
+        y = filtfilt(b, a, x, method="gust")
+        expected = (b/a)**2 * x
+        xp_assert_close(y, expected)
 
     def test_gust_simple(self):  # _filtfilt_gust is np-only
-        if self.filtfilt_kind != 'tf':
-            pytest.skip('gust only implemented for TF systems')
         # The input array has length 2.  The exact solution for this case
         # was computed "by hand".
         x = np.asarray([1.0, 2.0])
@@ -2910,36 +2912,30 @@ class TestFiltFilt:
                                     0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
         )
 
-    def test_gust_scalars(self):  # python scalars in array_namespace are np-only
-        if self.filtfilt_kind != 'tf':
-            pytest.skip('gust only implemented for TF systems')
-        # The filter coefficients are both scalars, so the filter simply
-        # multiplies its input by b/a.  When it is used in filtfilt, the
-        # factor is (b/a)**2.
-        x = np.arange(12)
-        b = 3.0
-        a = 2.0
-        y = filtfilt(b, a, x, method="gust")
-        expected = (b/a)**2 * x
-        xp_assert_close(y, expected)
+    def test_acoeff(self):  # python scalars in array_namespace are np-only
+        # test for 'a' coefficient as single number
+        out = signal.filtfilt(
+            np.asarray([.5, .5]), 1, np.arange(10, dtype=np.float64)
+        )
+        xp_assert_close(out, np.arange(10, dtype=np.float64), rtol=1e-14, atol=1e-14)
 
 
-@make_xp_test_case(sosfiltfilt, filtfilt)
-class TestSOSFiltFilt(TestFiltFilt):
+@make_xp_test_case(sosfiltfilt)
+class TestSOSFiltFilt(_TestFiltFilt):
     filtfilt_kind = 'sos'
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_equivalence(self, xp):
         """Test equivalence between sosfiltfilt and filtfilt"""
-        x = np.random.RandomState(0).randn(1000)
-        x = xp.asarray(x)
+        x_np = np.random.RandomState(0).randn(1000)
+        x = xp.asarray(x_np)
         for order in range(1, 6):
             zpk = signal.butter(order, 0.35, output='zpk')
             b, a = zpk2tf(*zpk)
             sos = zpk2sos(*zpk)
 
-            b, a, sos = map(xp.asarray, (b, a, sos))
-            y = filtfilt(b, a, x)
+            y = filtfilt(b, a, x_np)
+            b, a, sos, y = map(xp.asarray, (b, a, sos, y))
             y_sos = sosfiltfilt(sos, x)
             xp_assert_close(y, y_sos, atol=1e-12, err_msg=f'order={order}')
 
