@@ -4612,7 +4612,7 @@ def sosfilt_zi(sos):
     for section in range(n_sections):
         b = sos[section, :3]
         a = sos[section, 3:]
-        zi[section, ...] = scale * lfilter_zi(b, a)
+        zi = xpx.at(zi)[section, ...].set(scale * lfilter_zi(b, a))
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
@@ -5156,8 +5156,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x_shape, zi_shape = x.shape, zi.shape
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
-    zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
-    sos = sos.astype(dtype, copy=False)
+    # _sosfilt requires writable, C-contiguous NumPy arrays.
+    zi = np.array(np.reshape(zi, (-1, n_sections, 2)), dtype=dtype,
+                  order='C', copy=True)
+    sos = np.array(sos, dtype=dtype, order='C', copy=True)
     _sosfilt(sos, x, zi)
     x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)

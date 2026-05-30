@@ -2812,10 +2812,7 @@ class TestLFilterZI:
         assert signal.lfilter_zi(b, a).dtype == dtype
 
 
-@make_xp_test_case(filtfilt, sosfiltfilt)
-class TestFiltFilt:
-    filtfilt_kind = 'tf'
-
+class _TestFiltFilt:
     def filtfilt(self, zpk, x, axis=-1, padtype='odd', padlen=None,
                  method='pad', irlen=None, xp=None):
         if self.filtfilt_kind == 'tf':
@@ -2829,9 +2826,6 @@ class TestFiltFilt:
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_basic(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         zpk = tf2zpk(xp.asarray([1., 2, 3]), xp.asarray([1., 2, 3]))
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
         atol= 4e-9 if is_cupy(xp) else 5.28e-11
@@ -2839,9 +2833,6 @@ class TestFiltFilt:
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_sine(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         rate = 2000
         t = xp.linspace(0, 1.0, rate + 1)
         # A signal with low frequency and a high frequency.
@@ -2877,9 +2868,6 @@ class TestFiltFilt:
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_axis(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
         x = xp.asarray(x)
@@ -2894,67 +2882,60 @@ class TestFiltFilt:
         )
         xp_assert_equal(y0, xp.asarray(np.swapaxes(y2, 0, 2)))
 
-    @skip_xp_backends(np_only=True,
-                      reason='python scalars in array_namespace are np-only')
-    def test_acoeff(self, xp):
-        if self.filtfilt_kind != 'tf':
-            return  # only necessary for TF
-        # test for 'a' coefficient as single number
-        out = signal.filtfilt(
-            xp.asarray([.5, .5]), 1, xp.arange(10, dtype=xp.float64)
-        )
-        xp_assert_close(out, xp.arange(10, dtype=xp.float64), rtol=1e-14, atol=1e-14)
 
-    @skip_xp_backends(np_only=True, reason='_filtfilt_gust is np-only')
-    def test_gust_simple(self, xp):
-        if self.filtfilt_kind != 'tf':
-            pytest.skip('gust only implemented for TF systems')
-        # The input array has length 2.  The exact solution for this case
-        # was computed "by hand".
-        x = xp.asarray([1.0, 2.0])
-        b = xp.asarray([0.5])
-        a = xp.asarray([1.0, -0.5])
-        y, z1, z2 = _filtfilt_gust(b, a, x)
-        xp_assert_close(z1[0], 0.3*x[0] + 0.2*x[1])
-        xp_assert_close(z2[0], 0.2*x[0] + 0.3*x[1])
-        xp_assert_close(y,
-                        xp.asarray([z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
-                                    0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
-        )
+@make_xp_test_case(filtfilt)
+class TestFiltFilt(_TestFiltFilt):
+    filtfilt_kind = 'tf'
 
-    @skip_xp_backends(np_only=True,
-                      reason='python scalars in array_namespace are np-only')
     def test_gust_scalars(self, xp):
-        if self.filtfilt_kind != 'tf':
-            pytest.skip('gust only implemented for TF systems')
         # The filter coefficients are both scalars, so the filter simply
         # multiplies its input by b/a.  When it is used in filtfilt, the
         # factor is (b/a)**2.
-        x = xp.arange(12)
+        x = xp.arange(12, dtype=xp.float64)
         b = 3.0
         a = 2.0
         y = filtfilt(b, a, x, method="gust")
         expected = (b/a)**2 * x
         xp_assert_close(y, expected)
 
+    def test_gust_simple(self):  # _filtfilt_gust is np-only
+        # The input array has length 2.  The exact solution for this case
+        # was computed "by hand".
+        x = np.asarray([1.0, 2.0])
+        b = np.asarray([0.5])
+        a = np.asarray([1.0, -0.5])
+        y, z1, z2 = _filtfilt_gust(b, a, x)
+        xp_assert_close(z1[0], 0.3*x[0] + 0.2*x[1])
+        xp_assert_close(z2[0], 0.2*x[0] + 0.3*x[1])
+        xp_assert_close(y,
+                        np.asarray([z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
+                                    0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
+        )
 
-@make_xp_test_case(sosfiltfilt, filtfilt)
-class TestSOSFiltFilt(TestFiltFilt):
+    def test_acoeff(self, xp):
+        # test for 'a' coefficient as single number
+        out = signal.filtfilt(
+            xp.asarray([.5, .5]), 1, xp.arange(10, dtype=xp.float64)
+        )
+        xp_assert_close(out, xp.arange(10, dtype=xp.float64), rtol=1e-14, atol=1e-14)
+
+
+@make_xp_test_case(sosfiltfilt)
+class TestSOSFiltFilt(_TestFiltFilt):
     filtfilt_kind = 'sos'
 
-    @skip_xp_backends('jax.numpy', reason='sosfilt works in-place')
     @skip_xp_backends('torch', reason='negative strides')
     def test_equivalence(self, xp):
         """Test equivalence between sosfiltfilt and filtfilt"""
-        x = np.random.RandomState(0).randn(1000)
-        x = xp.asarray(x)
+        x_np = np.random.RandomState(0).randn(1000)
+        x = xp.asarray(x_np)
         for order in range(1, 6):
             zpk = signal.butter(order, 0.35, output='zpk')
             b, a = zpk2tf(*zpk)
             sos = zpk2sos(*zpk)
 
-            b, a, sos = map(xp.asarray, (b, a, sos))
-            y = filtfilt(b, a, x)
+            y = filtfilt(b, a, x_np)
+            b, a, sos, y = map(xp.asarray, (b, a, sos, y))
             y_sos = sosfiltfilt(sos, x)
             xp_assert_close(y, y_sos, atol=1e-12, err_msg=f'order={order}')
 
@@ -4346,7 +4327,6 @@ class TestVectorstrength:
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank1(self, dt, xp):
         dt = getattr(xp, dt)
         x = xp.linspace(0, 5, 6, dtype=dt)
@@ -4379,7 +4359,6 @@ class TestSOSFilt:
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
 
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank2(self, dt, xp):
         dt = getattr(xp, dt)
         shape = (4, 3)
@@ -4400,14 +4379,15 @@ class TestSOSFilt:
         sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=0)
-        assert_array_almost_equal(y_r2_a0, y)
+        # JAX complex64 needs slightly relaxed tolerance here.
+        dec = {'decimal': 5} if dt == xp.complex64 and is_jax(xp) else {}
+        assert_array_almost_equal(y_r2_a0, y, **dec)
 
         sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=1)
-        assert_array_almost_equal(y_r2_a1, y)
+        assert_array_almost_equal(y_r2_a1, y, **dec)
 
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank3(self, dt, xp):
         dt = getattr(xp, dt)
         shape = (4, 3, 2)
@@ -4438,7 +4418,6 @@ class TestSOSFilt:
         a, b, sos = map(xp.asarray, (a, b, sos))
         return a, b, sos
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions(self, dt, xp):
         a, b, sos = self._get_ab_sos(xp)
@@ -4465,7 +4444,6 @@ class TestSOSFilt:
         xp_assert_close(y, xp.ones(8), check_dtype=False)
         xp_assert_close(zf, zi, check_dtype=False)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
     @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_2(self, dt, xp):
@@ -4490,7 +4468,6 @@ class TestSOSFilt:
         xp_assert_close(y[0, 0], xp.ones(8), check_dtype=False)
         xp_assert_close(zf[:, 0, 0, :], zi, check_dtype=False)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_3d_axis1(self, dt, xp):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
@@ -4544,7 +4521,6 @@ class TestSOSFilt:
         xp_assert_close(y, y_tf, rtol=1e-10, atol=1e-13)
 
     @skip_xp_backends('torch', reason='issues a RuntimeWarning')
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_bad_zi_shape(self, dt, xp):
         dt = getattr(xp, dt)
         # The shape of zi is checked before using any values in the
@@ -4554,11 +4530,10 @@ class TestSOSFilt:
         zi = xp.empty((4, 3, 3, 2))  # Correct shape is (4, 3, 2, 3)
         with pytest.raises(ValueError, match='should be all ones'):
             sosfilt(sos, x, zi=zi, axis=1)
-        sos[:, 3] = 1.
+        sos = xpx.at(sos)[:, 3].set(1.)
         with pytest.raises(ValueError, match='Invalid zi shape'):
             sosfilt(sos, x, zi=zi, axis=1)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi(self, dt, xp):
         dt = getattr(xp, dt)
