@@ -2885,43 +2885,38 @@ class TestFiltFilt:
         )
         xp_assert_equal(y0, xp.asarray(np.swapaxes(y2, 0, 2)))
 
-    @skip_xp_backends(np_only=True,
-                      reason='python scalars in array_namespace are np-only')
-    def test_acoeff(self, xp):
+    def test_acoeff(self):  # python scalars in array_namespace are np-only
         if self.filtfilt_kind != 'tf':
             return  # only necessary for TF
         # test for 'a' coefficient as single number
         out = signal.filtfilt(
-            xp.asarray([.5, .5]), 1, xp.arange(10, dtype=xp.float64)
+            np.asarray([.5, .5]), 1, np.arange(10, dtype=np.float64)
         )
-        xp_assert_close(out, xp.arange(10, dtype=xp.float64), rtol=1e-14, atol=1e-14)
+        xp_assert_close(out, np.arange(10, dtype=np.float64), rtol=1e-14, atol=1e-14)
 
-    @skip_xp_backends(np_only=True, reason='_filtfilt_gust is np-only')
-    def test_gust_simple(self, xp):
+    def test_gust_simple(self):  # _filtfilt_gust is np-only
         if self.filtfilt_kind != 'tf':
             pytest.skip('gust only implemented for TF systems')
         # The input array has length 2.  The exact solution for this case
         # was computed "by hand".
-        x = xp.asarray([1.0, 2.0])
-        b = xp.asarray([0.5])
-        a = xp.asarray([1.0, -0.5])
+        x = np.asarray([1.0, 2.0])
+        b = np.asarray([0.5])
+        a = np.asarray([1.0, -0.5])
         y, z1, z2 = _filtfilt_gust(b, a, x)
         xp_assert_close(z1[0], 0.3*x[0] + 0.2*x[1])
         xp_assert_close(z2[0], 0.2*x[0] + 0.3*x[1])
         xp_assert_close(y,
-                        xp.asarray([z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
+                        np.asarray([z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
                                     0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
         )
 
-    @skip_xp_backends(np_only=True,
-                      reason='python scalars in array_namespace are np-only')
-    def test_gust_scalars(self, xp):
+    def test_gust_scalars(self):  # python scalars in array_namespace are np-only
         if self.filtfilt_kind != 'tf':
             pytest.skip('gust only implemented for TF systems')
         # The filter coefficients are both scalars, so the filter simply
         # multiplies its input by b/a.  When it is used in filtfilt, the
         # factor is (b/a)**2.
-        x = xp.arange(12)
+        x = np.arange(12)
         b = 3.0
         a = 2.0
         y = filtfilt(b, a, x, method="gust")
