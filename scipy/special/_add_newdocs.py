@@ -5829,8 +5829,8 @@ add_newdoc("nctdtrinc",
 
     Notes
     -----
-    This function calculates the non-centrality parameter of the 
-    non-central t distribution given a probability, quantile and 
+    This function calculates the non-centrality parameter of the
+    non-central t distribution given a probability, quantile and
     degrees of freedom using the Boost Math C++ library [1]_.
 
     References
