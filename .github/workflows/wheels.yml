@@ -136,6 +136,7 @@ jobs:
           fi
           echo "$CIBW_ENV" >> "$GITHUB_ENV"
 
+          PREFIX=DYLD_LIBRARY_PATH="\$(dirname \$(gcc --print-file-name libgcc_s.1.1.dylib))"
           CIBW="$PREFIX delocate-wheel -v $EXCLUDE --require-archs {delocate_archs} -w {dest_dir} {wheel}"
           echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
 
