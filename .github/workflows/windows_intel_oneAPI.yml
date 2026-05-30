@@ -104,7 +104,6 @@ jobs:
         shell: cmd /C call {0}  # need to use `cmd` for batch scripts
         run: |
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-          set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           spin build -S-Duse-pythran=false -S--vsenv
 
