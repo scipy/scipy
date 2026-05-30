@@ -10,6 +10,7 @@
  *       exceptions
  *       external/cwe/cwe-401
  */
+// Reference: based on the upstream CodeQL query for cpp/catch-missing-free.
 
 import cpp
 

@@ -60,6 +60,7 @@ jobs:
       with:
         trap-caching: false
         languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
         config-file: .github/codeql/codeql-config.yml
 
         # If you wish to specify custom queries, you can do so here or in a config file.
