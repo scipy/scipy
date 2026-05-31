@@ -53,6 +53,7 @@ extern const char *_gen_harmonic_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
 extern const char *_normalized_gen_harmonic_doc;
+extern const char *_von_mises_cdf_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bei_doc;
@@ -262,6 +263,11 @@ _special_ufuncs_module_exec(PyObject *module)
 	{static_cast<xsf::numpy::f_f>(xsf::scaled_exp1), static_cast<xsf::numpy::d_d>(xsf::scaled_exp1)},
         "_scaled_exp1", scaled_exp1_doc);
     PyModule_AddObjectRef(module, "_scaled_exp1", _scaled_exp1);
+
+    PyObject *_von_mises_cdf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::von_mises_cdf), static_cast<xsf::numpy::dd_d>(xsf::von_mises_cdf)},
+        "_von_mises_cdf", _von_mises_cdf_doc);
+    PyModule_AddObjectRef(module, "_von_mises_cdf", _von_mises_cdf);
 
     PyObject *_sinpi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::sinpi), static_cast<xsf::numpy::d_d>(xsf::sinpi),
