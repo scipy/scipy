@@ -3547,7 +3547,6 @@ class TestEnvelope:
             # noinspection PyTypeChecker
             envelope(xp.ones(4), residual='undefined')
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_parameters(self, xp):
         """Ensure that the various parametrizations produce compatible results. """
         dt_r = xp_default_dtype(xp)
@@ -3596,7 +3595,7 @@ class TestEnvelope:
 
         # compare complex analytic signal to real version
         Z_a = xp.asarray(Z, copy=True)
-        Z_a[1:] *= 2
+        Z_a = xpx.at(Z_a)[1:].multiply(2)
         z_a = sp_fft.ifft(Z_a, n=n)  # analytic signal of Z
         self.assert_close(xp.real(z_a), z,
                           msg="Reference analytic signal error", xp=xp)
@@ -3606,7 +3605,6 @@ class TestEnvelope:
         self.assert_close(sp_fft.fft(zr_a), xp.asarray(Zr_a, dtype=dt_c),
                           msg="Complex residual calculation error", xp=xp)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize(
         "               Z,        bp_in,     Ze2_desired,      Zr_desired",
         [([1, 0, 2, 2, 0],    (1, None), [4, 2, 0, 0, 0], [1, 0, 0, 0, 0]),
@@ -3643,13 +3641,12 @@ class TestEnvelope:
                           msg="Residual calculation error (residual='all')", xp=xp)
 
         if bp_in[1] is not None:
-            Zr_desired[bp_in[1]:] = 0
+            Zr_desired = xpx.at(Zr_desired)[bp_in[1]:].set(0)
         self.assert_close(Ze2_lp, Ze2_desired,
                           msg="Envelope calculation error (residual='lowpass')", xp=xp)
         self.assert_close(Zr_lp, Zr_desired,
                           msg="Residual calculation error (residual='lowpass')", xp=xp)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize(
         "               Z,        bp_in,         Ze2_desired,         Zr_desired",
         [([0, 5, 0, 5, 0], (None, None),    [5, 0, 10, 0, 5],    [0, 0, 0, 0, 0]),
@@ -3675,7 +3672,6 @@ class TestEnvelope:
         self.assert_close(Zr, Zr_desired,
                           msg="Residual calculation error", xp=xp)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_axis_parameter(self, xp):
         """Test for multi-channel envelope calculations. """
         dt_r = xp_default_dtype(xp)
@@ -3699,7 +3695,6 @@ class TestEnvelope:
             Yr, Zr_desired, msg="Transposed 2d residual calc. error", xp=xp
         )
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_axis_parameter_complex(self, xp):
         """Test for multi-channel envelope calculations with complex values. """
         dt_r = xp_default_dtype(xp)
@@ -3722,7 +3717,6 @@ class TestEnvelope:
         )
         self.assert_close(Yr, Zr_des,  msg="Transposed 2d residual calc. error", xp=xp)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize('X', [[4, 0, 0, 1, 2], [4, 0, 0, 2, 1, 2]])
     def test_compare_envelope_hilbert(self, X, xp):
         """Compare output of `envelope()` and `hilbert()`. """
