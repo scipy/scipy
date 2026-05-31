@@ -558,8 +558,10 @@
             "ncfdtridfn": "dddd->d"        }
     },
     "ncfdtrinc": {
-        "_cdflib_wrappers.pxd": {
-            "ncfdtrinc": "dddd->d"        }
+        "boost_special_functions.h++": {
+            "ncf_find_non_centrality_float": "ffff->f",
+            "ncf_find_non_centrality_double": "dddd->d"
+        }
     },
     "nctdtr": {
         "boost_special_functions.h++": {
