@@ -98,11 +98,15 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate scipy-dev
-          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pythran pytest pytest-xdist pytest-timeout pooch hypothesis spin "click<8.3.0"
+          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin "click<8.3.0"
 
       - name: Initialise Intel oneAPI and Build SciPy
         shell: bash -l {0}
         run: |
+          # Note that we have to install Pythran from PyPI to avoid pulling in compilers
+          # from conda-forge (those may break Intel compilers, which rely on system GCC/Clang,
+          # xref https://github.com/conda-forge/pythran-feedstock/issues/77).
+          pip install pythran
           . /opt/intel/oneapi/setvars.sh --force
           conda activate scipy-dev
           CC=icx CXX=icpx spin build -- -Dblas=mkl-dynamic-lp64-iomp -Dlapack=mkl-dynamic-lp64-iomp
