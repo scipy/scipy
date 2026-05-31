@@ -22,7 +22,7 @@ import sys
 import warnings
 
 import numpy as np
-from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
+from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, exp,
         log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, double,
         array_equal)
 
@@ -33,10 +33,9 @@ from numpy.testing import (assert_equal, assert_array_equal, assert_,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipe, ellipk, ellipkm1
-from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
-from scipy.special import softplus
-from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
+from scipy.special import (ellipe, ellipk, ellipkm1 ,elliprc, elliprd, elliprf, elliprg,
+                           elliprj, softplus, mathieu_odd_coef, mathieu_even_coef,
+                           stirling2, cosdg, sindg, tandg, cotdg)
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
 
 from scipy.special._basic import (
@@ -184,9 +183,6 @@ class TestCephes:
 
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
-
-    def test_cosdg(self):
-        assert_equal(cephes.cosdg(0),1.0)
 
     def test_cosm1(self):
         assert_equal(cephes.cosm1(0),0.0)
@@ -869,9 +865,6 @@ class TestCephes:
         s, c = cephes.sici(-np.inf)
         assert_allclose(s, -np.pi * 0.5, atol=1.5e-7, rtol=0)
         assert_(np.isnan(c), "cosine integral(-inf) is not nan")
-
-    def test_sindg(self):
-        assert_equal(cephes.sindg(90),1.0)
 
     def test_smirnov(self):
         assert_equal(cephes.smirnov(1,.1),0.9)
@@ -1632,91 +1625,65 @@ class TestTrigonometric:
         cbrl1 = 27.9**(1.0/3.0)
         assert_allclose(cb1, cbrl1, atol=1.5e-8, rtol=0)
 
-    def test_cosdg(self):
-        cdg = special.cosdg(90)
-        cdgrl = cos(pi/2.0)
-        assert_allclose(cdg, cdgrl, atol=1.5e-8, rtol=0)
+    def test_cosdg_exact(self):
+        angles = np.asarray([90, 0., -0.])
+        expected = np.asarray([0, 1, 1])
+        assert_equal(cosdg(angles), expected)
 
-    def test_cosdgmore(self):
-        cdgm = special.cosdg(30)
-        cdgmrl = cos(pi/6.0)
-        assert_allclose(cdgm, cdgmrl, atol=1.5e-8, rtol=0)
+    def test_cosdg_inexact(self):
+        angles = np.asarray([30, 45])
+        expected = np.asarray([np.sqrt(3)/2, 1/np.sqrt(2)])
+        assert_allclose(cosdg(angles), expected, atol=1.5e-8, rtol=0)
 
     def test_cosm1(self):
         cs = (special.cosm1(0),special.cosm1(.3),special.cosm1(pi/10))
         csrl = (cos(0)-1,cos(.3)-1,cos(pi/10)-1)
         assert_allclose(cs, csrl, atol=1.5e-8, rtol=0)
 
-    def test_cotdg(self):
-        ct = special.cotdg(30)
-        ctrl = tan(pi/6.0)**(-1)
-        assert_allclose(ct, ctrl, atol=1.5e-8, rtol=0)
+    def test_cotdg_exact(self):
+        angles = np.asarray([45, -45, 135, -135, 225, -225, 315, -315,
+                             0.0, 90, 180, 270, 360, -0., -90, -180, -270, -360])
+        expected = np.asarray([1, -1, -1, 1, 1, -1, -1, 1, np.inf, 0., -np.inf, 0.,
+                               np.inf, -np.inf, 0., np.inf, -0., -np.inf])
+        assert_equal(cotdg(angles), expected)
 
-    def test_cotdgmore(self):
-        ct1 = special.cotdg(45)
-        ctrl1 = tan(pi/4.0)**(-1)
-        assert_allclose(ct1, ctrl1, atol=1.5e-8, rtol=0)
+    def test_cotdg_inexact(self):
+        angles = np.asarray([30])
+        expected = np.asarray([np.sqrt(3)])
+        assert_allclose(cotdg(angles), expected, atol=1.5e-8, rtol=0)
 
     def test_specialpoints(self):
-        assert_allclose(special.cotdg(45), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(-45), -1.0, atol=1.5e-14, rtol=0)
         assert_allclose(special.cotdg(90), 0.0, atol=1.5e-14, rtol=0)
         assert_allclose(special.cotdg(-90), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(135), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(-135), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(225), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(-225), -1.0, atol=1.5e-14, rtol=0)
         assert_allclose(special.cotdg(270), 0.0, atol=1.5e-14, rtol=0)
         assert_allclose(special.cotdg(-270), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(315), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(-315), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(765), 1.0, atol=1.5e-14, rtol=0)
 
     def test_sinc(self):
         # the sinc implementation and more extensive sinc tests are in numpy
         assert_array_equal(special.sinc([0]), 1)
         assert_equal(special.sinc(0.0), 1.0)
 
-    def test_sindg(self):
-        sn = special.sindg(90)
-        assert_equal(sn,1.0)
+    def test_sindg_exact(self):
+        angles = np.asarray([90, 0., -0.])
+        expected = np.asarray([1, 0., -0.])
+        assert_equal(sindg(angles), expected)
 
-    def test_sindgmore(self):
-        snm = special.sindg(30)
-        snmrl = sin(pi/6.0)
-        assert_allclose(snm, snmrl, atol=1.5e-8, rtol=0)
-        snm1 = special.sindg(45)
-        snmrl1 = sin(pi/4.0)
-        assert_allclose(snm1, snmrl1, atol=1.5e-8, rtol=0)
+    def test_sindg_inexact(self):
+        angles = np.asarray([30, 45])
+        expected = np.asarray([0.5, 1/np.sqrt(2)])
+        assert_allclose(sindg(angles), expected, atol=1.5e-8, rtol=0)
 
+    def test_tandg_exact(self):
+        angles = np.asarray([0., -0., 45, -45, 135, -135, 90, 180, 270, 360,
+                             -90, -180, -270, -360])
+        expected = np.asarray([0., -0., 1, -1, -1, 1, np.inf, -0., -np.inf, 0,
+                               -np.inf, -0., np.inf, 0])
+        assert_equal(tandg(angles), expected)
 
-class TestTandg:
-
-    def test_tandg(self):
-        tn = special.tandg(30)
-        tnrl = tan(pi/6.0)
-        assert_allclose(tn, tnrl, atol=1.5e-8, rtol=0)
-
-    def test_tandgmore(self):
-        tnm = special.tandg(45)
-        tnmrl = tan(pi/4.0)
-        assert_allclose(tnm, tnmrl, atol=1.5e-8, rtol=0)
-        tnm1 = special.tandg(60)
-        tnmrl1 = tan(pi/3.0)
-        assert_allclose(tnm1, tnmrl1, atol=1.5e-8, rtol=0)
-
-    def test_specialpoints(self):
-        assert_allclose(special.tandg(0), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(45), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-45), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(135), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-135), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(180), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-180), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(225), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-225), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(315), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-315), 1.0, atol=1.5e-14, rtol=0)
+    def test_tandg_inexact(self):
+        angle = np.asarray([30, 60])
+        expected = np.asarray([1/np.sqrt(3), np.sqrt(3)])
+        assert_allclose(tandg(angle), expected, atol=1.5e-8, rtol=0)
 
 
 class TestEllip:
