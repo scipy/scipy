@@ -106,8 +106,8 @@ jobs:
           # Note that we have to install Pythran from PyPI to avoid pulling in compilers
           # from conda-forge (those may break Intel compilers, which rely on system GCC/Clang,
           # xref https://github.com/conda-forge/pythran-feedstock/issues/77).
-          pip install pythran
           . /opt/intel/oneapi/setvars.sh --force
+          pip install pythran
           conda activate scipy-dev
           CC=icx CXX=icpx spin build -- -Dblas=mkl-dynamic-lp64-iomp -Dlapack=mkl-dynamic-lp64-iomp
 
