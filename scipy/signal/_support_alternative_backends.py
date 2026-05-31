@@ -269,7 +269,7 @@ capabilities_overrides = {
     "lfilter_zi": xp_capabilities(cpu_only=True, allow_dask_compute=True,
                                   jax_jit=False),
     "lfiltic": xp_capabilities(cpu_only=True, exceptions=["cupy"],
-                               allow_dask_compute=True),
+                               allow_dask_compute=True, jax_jit=False),
     "lp2bp": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                              allow_dask_compute=True, jax_jit=False),
     "lp2bp_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
