@@ -7662,13 +7662,13 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
     ones = ones[()] if ones.ndim == 0 else ones
 
-    def _ksone_asymp(d, n):
-        return np.exp(-2 * n * d**2)
-
     if alternative == 'greater':
         Dplus, d_location = _compute_d(cdfvals, x, +1)
         if mode == 'asymp':
-            pvalue = _masked_apply(_ksone_asymp, args=(Dplus, N), xp=xp)
+            # one-sided asymptotic p-value: exp(-2 n D^2). Computed with `xp`
+            # so it stays in the array's own namespace (a bare np.exp on a
+            # non-NumPy array dispatches through __array_wrap__).
+            pvalue = xp.exp(-2 * N * Dplus**2)
         else:  # 'auto', 'exact', or 'approx' - use exact one-sided distribution
             pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
         pvalue = xp.clip(xp.asarray(pvalue, dtype=x.dtype), 0., 1.)
@@ -7681,7 +7681,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if alternative == 'less':
         Dminus, d_location = _compute_d(cdfvals, x, -1)
         if mode == 'asymp':
-            pvalue = _masked_apply(_ksone_asymp, args=(Dminus, N), xp=xp)
+            pvalue = xp.exp(-2 * N * Dminus**2)
         else:  # 'auto', 'exact', or 'approx' - use exact one-sided distribution
             pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
         pvalue = xp.clip(xp.asarray(pvalue, dtype=x.dtype), 0., 1.)
