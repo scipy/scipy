@@ -2181,7 +2181,6 @@ class _TestLinearFilter:
                             else self.dtype)
         assert xp_size(zf) == 0
 
-    @skip_xp_backends('jax.numpy', reason='jax does not support inplace ops')
     @pytest.mark.parametrize('a', (1, [1], [1, .5, 1.5], 2, [2], [2, 1, 3]),
                              ids=str)
     @make_xp_test_case(lfiltic)
