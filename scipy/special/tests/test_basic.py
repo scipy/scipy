@@ -3948,6 +3948,22 @@ class TestBessel:
         x = special.ivp(1,2)
         assert_allclose(x, y, atol=1.5e-10, rtol=0)
 
+    def test_gh_22706_j1_tiny_inputs(self):
+        # for tiny inputs, j1(x)=x/2 in double precision
+        # reference values can also be confirmed with mpmath (see below test)
+        x = np.array([-1e-300, 1e-200, -1e-100])
+        assert_allclose(special.j1(x), x/2, atol=1.5e-8, rtol=0)
+
+    def test_gh_22706_j1_large_inputs(self):
+        # reference values computed with mpmath
+        # from mpmath import mp
+        # mp.dps = 1000
+        # float(mp.besselj(1, x))
+        x = np.array([1e20, 1.438449888287654e+17])
+        reference = np.array([-7.95068198242545e-11, -1.968878305887983e-09])
+        assert_allclose(special.j1(x), reference, rtol=1e-15)
+
+
     @pytest.mark.parametrize("x, expected",
         [(1e15, 6.156638646885021e-09),  # 1/sqrt(eps) < x < 1/eps
          (1e30, -5.589003016686147e-16)  # x > 1/eps
