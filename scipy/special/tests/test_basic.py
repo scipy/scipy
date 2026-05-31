@@ -3960,6 +3960,12 @@ class TestBessel:
         assert_allclose(special.j0(x), expected, rtol=5e-15)
 
 
+    def test_gh25199(self):
+        # regression test that tiny inputs in j0 don't cause overflow
+        with special.errstate(overflow="raise"):
+            assert_allclose(special.j0(1e-200), 1.0, atol=0, rtol=0)
+
+
 class TestLaguerre:
     def test_laguerre(self):
         lag0 = special.laguerre(0)
