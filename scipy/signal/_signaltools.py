@@ -2378,15 +2378,15 @@ def lfiltic(b, a, y, x=None):
         y = xp.concat((y, xp.zeros(N - L)))
 
     for m in range(M):
-        zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
+        zi = xpx.at(zi)[m].set(xp.sum(b[m + 1:] * x[:M - m], axis=0))
 
     for m in range(N):
-        zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
+        zi = xpx.at(zi)[m].set(zi[m] - xp.sum(a[m + 1:] * y[:N - m], axis=0))
 
     if a[0] != 1.:
         if a[0] == 0.:
             raise ValueError("First `a` filter coefficient must be non-zero.")
-        zi /= a[0]
+        zi = zi / a[0]
 
     return zi
 
