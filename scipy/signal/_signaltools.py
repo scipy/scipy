@@ -2748,13 +2748,16 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     Xf = sp_fft.fft2(x, N, axes=axes)
     Xf = xp.moveaxis(Xf, axes, (-2, -1))
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
+    # for even length keep the unpaired Nyquist bin (factor 1), as in `hilbert`
+    z0 = N[0] // 2 + 1 if N[0] % 2 == 0 else k0
+    z1 = N[1] // 2 + 1 if N[1] % 2 == 0 else k1
 
     if k0 > 1:  # condition k0 > 1 needed for Dask backend
         Xf = xpx.at(Xf)[..., 1:k0, :].multiply(2.0)
     if k1 > 1:  # condition k1 > 1 needed for Dask backend
         Xf = xpx.at(Xf)[..., :, 1:k1].multiply(2.0)
-    Xf = xpx.at(Xf)[..., k0:, :].set(0.0)
-    Xf = xpx.at(Xf)[..., :, k1:].set(0.0)
+    Xf = xpx.at(Xf)[..., z0:, :].set(0.0)
+    Xf = xpx.at(Xf)[..., :, z1:].set(0.0)
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)
