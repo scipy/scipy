@@ -5876,7 +5876,8 @@ class TestLevyStable:
         ]
     )
     def test_pdf_nolan_samples(
-            self, nolan_pdf_sample_data, pct_range, alpha_range, beta_range
+        self, nolan_pdf_sample_data, pct_range,
+        alpha_range, beta_range, levy_stable_lock
     ):
         """Test pdf values against Nolan's stablec.exe output"""
         data = nolan_pdf_sample_data
@@ -6027,20 +6028,21 @@ class TestLevyStable:
         # fmt: on
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
-            stats.levy_stable.pdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
             msg = "Density calculations experimental for FFT method"
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", msg, RuntimeWarning)
                 # occurs in FFT methods only
-                p = stats.levy_stable.pdf(
-                    subdata['x'],
-                    subdata['alpha'],
-                    subdata['beta'],
-                    scale=1,
-                    loc=0
-                )
+                with levy_stable_lock:
+                    stats.levy_stable.pdf_default_method = default_method
+                    p = stats.levy_stable.pdf(
+                        subdata['x'],
+                        subdata['alpha'],
+                        subdata['beta'],
+                        scale=1,
+                        loc=0
+                    )
                 with np.errstate(over="ignore"):
                     subdata2 = rec_append_fields(
                         subdata,
