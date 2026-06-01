@@ -915,6 +915,11 @@ Available functions
         double complex psi(double complex)
         double psi(double)
 
+- :py:func:`~scipy.special.digammainv`::
+
+        float digammainv(float)
+        double digammainv(double)
+
 - :py:func:`~scipy.special.radian`::
 
         double radian(double, double, double)
@@ -1178,6 +1183,8 @@ cdef extern from r"xsf_wrappers.h":
 
     npy_double special_digamma(npy_double) nogil
     npy_cdouble special_cdigamma(npy_cdouble) nogil
+    npy_float special_digammainvf(npy_float) nogil
+    npy_double special_digammainv(npy_double) nogil
 
     npy_double special_cyl_bessel_j(npy_double, npy_double) nogil
     npy_cdouble special_ccyl_bessel_j(npy_double, npy_cdouble) nogil
@@ -1703,17 +1710,9 @@ from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
 ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
 
-from ._cdflib_wrappers cimport ncfdtrinc as _func_ncfdtrinc
-ctypedef double _proto_ncfdtrinc_t(double, double, double, double) noexcept nogil
-cdef _proto_ncfdtrinc_t *_proto_ncfdtrinc_t_var = &_func_ncfdtrinc
-
 from ._cdflib_wrappers cimport nctdtridf as _func_nctdtridf
 ctypedef double _proto_nctdtridf_t(double, double, double) noexcept nogil
 cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
-
-from ._cdflib_wrappers cimport nctdtrinc as _func_nctdtrinc
-ctypedef double _proto_nctdtrinc_t(double, double, double) noexcept nogil
-cdef _proto_nctdtrinc_t *_proto_nctdtrinc_t_var = &_func_nctdtrinc
 
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
@@ -3125,7 +3124,7 @@ cpdef double ncfdtridfn(double x0, double x1, double x2, double x3) noexcept nog
 
 cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtrinc"""
-    return _func_ncfdtrinc(x0, x1, x2, x3)
+    return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_find_non_centrality_double)(x0, x1, x2, x3)
 
 cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtr"""
@@ -3142,7 +3141,7 @@ cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrinc"""
-    return _func_nctdtrinc(x0, x1, x2)
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_find_non_centrality_double)(x0, x1, x2)
 
 cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrit"""
@@ -3398,6 +3397,15 @@ cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
             return NAN
         else:
             return NAN
+
+cpdef df_number_t digammainv(df_number_t x0) noexcept nogil:
+    """See the documentation for scipy.special.digammainv"""
+    if df_number_t is float:
+        return special_digammainvf(x0)
+    elif df_number_t is double:
+        return special_digammainv(x0)
+    else:
+        return NAN
 
 cpdef double radian(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.radian"""

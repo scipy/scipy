@@ -41,6 +41,15 @@ const char *_normalized_gen_harmonic_doc = R"(
     This function is used in scipy.stats.zipfian.
     )";
 
+const char *_von_mises_cdf_doc = R"(
+    _von_mises_cdf(kappa, x, out=None)
+
+    Internal private function.
+
+    Compute the CDF of the von Mises distribution with concentration
+    ``kappa``, extended periodically over ``x``.
+    )";
+
 const char *besselpoly_doc = R"(
     besselpoly(a, lmb, nu, out=None)
 
@@ -6380,6 +6389,8 @@ const char *psi_doc = R"(
 
     The logarithmic derivative of the gamma function evaluated at ``z``.
 
+    .. math:: \psi(z) = \frac{d}{dz}\log\Gamma(z) = \frac{\Gamma'(z)}{\Gamma(z)}
+
     Parameters
     ----------
     z : array_like
@@ -6427,6 +6438,55 @@ const char *psi_doc = R"(
 
     >>> psi(z + 1) - 1/z
     (1.55035981733341+1.0105022091860445j)
+    )";
+
+const char *digammainv_doc = R"(
+    digammainv(y, out=None)
+
+    Inverse of the digamma function.
+
+    Parameters
+    ----------
+    y : array_like of float
+        Real-valued argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Positive real solution of :math:`\psi(x) = y`.
+
+    See Also
+    --------
+    psi : The digamma function.
+    digamma : Alias for `psi`.
+
+    Notes
+    -----
+    .. versionadded:: 1.19.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import digamma, digammainv
+    >>> x = np.logspace(-2, 2, 5)
+    >>> np.allclose(digammainv(digamma(x)), x)
+    True
+
+    Plot the digamma function and its inverse:
+
+    >>> x = np.linspace(0.3, 5, 200)
+    >>> y = digamma(x)
+    >>> t = np.linspace(-3, 4, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y, label=r"$\psi(x)$")
+    >>> ax.plot(y, digammainv(y), label=r"$\psi^{-1}(y)$")
+    >>> ax.plot(t, t, "--", label=r"$y = x$")
+    >>> ax.set_xlabel("input")
+    >>> ax.legend()
+    >>> plt.show()
     )";
 
 const char *radian_doc = R"(

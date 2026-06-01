@@ -78,7 +78,7 @@ import textwrap
 
 special_ufuncs = [
     '_bivariate_normal_cdf', '_cospi', '_gen_harmonic', '_lambertw',
-    '_normalized_gen_harmonic', '_scaled_exp1', '_sinpi',
+    '_normalized_gen_harmonic', '_scaled_exp1', '_sinpi', '_von_mises_cdf',
     '_spherical_jn', '_spherical_jn_d', '_spherical_yn', '_spherical_yn_d',
     '_spherical_in', '_spherical_in_d', '_spherical_kn', '_spherical_kn_d',
     'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
@@ -92,8 +92,8 @@ special_ufuncs = [
     'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
     'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv', 'pbwa',
     'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv', 'pro_rad2',
-    'pro_rad2_cv', 'psi', 'rgamma', 'wright_bessel', 'yv', 'yve', 'zetac',
-    '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
+    'pro_rad2_cv', 'psi', 'digammainv', 'rgamma', 'wright_bessel', 'yv', 'yve',
+    'zetac', '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
     'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1', 'struve', 'modstruve',
     'beta', 'betaln', 'besselpoly', 'gammaln', 'gammasgn', 'cbrt', 'radian', 'cosm1',
     'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel', 'ellipe',

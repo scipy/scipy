@@ -628,7 +628,6 @@ jobs:
           scipy.linalg
           scipy.misc
           scipy.ndimage
-          scipy.odr
           scipy.optimize
           scipy.signal
           scipy.sparse
@@ -722,43 +721,3 @@ jobs:
         spin test -- --durations=0 --durations-min=0.5 --fail-slow=1.0
 
   #################################################################################
-  test_without_fortran:
-    name: No Fortran, fast, py3.14/npAny, spin
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          submodules: recursive
-          persist-credentials: false
-
-      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
-        with:
-          pixi-version: v0.68.0
-          cache: false
-
-      - name: Install Ubuntu dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ccache
-
-      - name: Set up ccache
-        uses: ./.github/ccache
-        with:
-          workflow_name: ${{ github.workflow }}
-          job_name: ${{ github.job }}
-
-      - name: Build SciPy
-        run: pixi run build --setup-args=-D_without-fortran=true
-
-      - name: Test SciPy
-        run: pixi run test
-
-      - name: Ccache performance
-        shell: bash -l {0}
-        run: |
-          ccache --evict-older-than 1d
-          ccache -s

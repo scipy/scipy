@@ -43,6 +43,7 @@ __all__ = [
     'cosm1',
     'cotdg',
     'dawsn',
+    'digammainv',
     'ellipe',
     'ellipeinc',
     'ellipj',
@@ -284,6 +285,7 @@ _spherical_kn: np.ufunc
 _spherical_kn_d: np.ufunc
 _spherical_yn: np.ufunc
 _spherical_yn_d: np.ufunc
+_von_mises_cdf: np.ufunc
 _stirling2_inexact: np.ufunc
 _struve_asymp_large_z: np.ufunc
 _struve_bessel_series: np.ufunc
@@ -326,6 +328,7 @@ cosdg: np.ufunc
 cosm1: np.ufunc
 cotdg: np.ufunc
 dawsn: np.ufunc
+digammainv: np.ufunc
 ellipe: np.ufunc
 ellipeinc: np.ufunc
 ellipj: np.ufunc

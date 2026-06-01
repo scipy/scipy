@@ -11,7 +11,7 @@ import os
 import sys
 import textwrap
 from types import ModuleType
-from typing import Literal, TypeVar
+from typing import Literal
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
@@ -21,9 +21,6 @@ from scipy._lib._sparse import issparse
 
 from numpy.exceptions import AxisError
 
-
-np_long = np.long
-np_ulong = np.ulong
 
 type IntNumber = int | np.integer
 type DecimalNumber = float | np.floating | np.integer
@@ -52,8 +49,6 @@ else:
 
 type _RNG = np.random.Generator | np.random.RandomState
 type SeedType = IntNumber | _RNG | None
-
-GeneratorType = TypeVar("GeneratorType", bound=_RNG)
 
 
 def _lazyselect(condlist, choicelist, arrays, default=0):

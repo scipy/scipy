@@ -1211,6 +1211,53 @@ ncf_isf_double(double x, double v1, double v2, double l)
     return ncf_isf_wrap(x, v1, v2, l);
 }
 
+// Wrapper for Boost noncentral F find_non_centrality
+template<typename Real>
+Real
+ncf_find_non_centrality_wrap(const Real dfn, const Real dfd, const Real p, const Real f)
+{
+    if (std::isnan(dfn) || std::isnan(dfd) || std::isnan(p) || std::isnan(f)) {
+        return NAN;
+    }
+    if (dfn <= 0 || dfd <= 0 || p < 0 || p > 1 || f < 0) {
+        sf_error("ncfdtrinc", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_f_distribution<Real, SpecialPolicy>::find_non_centrality(f, dfn, dfd, p);
+    } catch (const std::domain_error& e) {
+        sf_error("ncfdtrinc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::underflow_error& e) {
+        sf_error("ncfdtrinc", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (const std::overflow_error& e) {
+        sf_error("ncfdtrinc", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (...) {
+        sf_error("ncfdtrinc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("ncfdtrinc", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ncf_find_non_centrality_float(float dfn, float dfd, float p, float f)
+{
+    return ncf_find_non_centrality_wrap(dfn, dfd, p, f);
+}
+
+double
+ncf_find_non_centrality_double(double dfn, double dfd, double p, double f)
+{
+    return ncf_find_non_centrality_wrap(dfn, dfd, p, f);
+}
+
 #define RETURN_NAN(v, c) if( v <= c ) { \
         return NAN; \
     } \
@@ -1422,6 +1469,44 @@ double
 nct_isf_double(double x, double v, double l)
 {
     return nct_isf_wrap(x, v, l);
+}
+
+// Wrapper for Boost noncentral T find_non_centrality
+template<typename Real>
+Real
+nct_find_non_centrality_wrap(const Real v, const Real p, const Real x)
+{
+    if (std::isnan(v) || std::isnan(x) || std::isnan(p)) {
+        return NAN;
+    }
+    if (v <= 0 || p < 0 || p > 1) {
+        sf_error("nctdtrinc", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_t_distribution<Real, SpecialPolicy>::find_non_centrality(v, x, p);
+    } catch (const std::domain_error& e) {
+        sf_error("nctdtrinc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::underflow_error& e) {
+        sf_error("nctdtrinc", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("nctdtrinc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float nct_find_non_centrality_float(float v, float p, float x)
+{
+    return nct_find_non_centrality_wrap(v, p, x);
+}
+
+double nct_find_non_centrality_double(double v, double p, double x)
+{
+    return nct_find_non_centrality_wrap(v, p, x);
 }
 
 float

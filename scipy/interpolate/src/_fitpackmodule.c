@@ -1970,7 +1970,7 @@ fitpack_spgrid(PyObject* Py_UNUSED(dummy), PyObject *args)
     if (ap_tu == NULL) {
         Py_DECREF(ap_tu_full);
         Py_DECREF(ap_tv_full);
-        Py_DECREF(ap_c);
+        Py_DECREF(ap_c_full);
         return NULL;
     }
     memcpy(PyArray_DATA(ap_tu), PyArray_DATA(ap_tu_full), (size_t)nu * sizeof(double));

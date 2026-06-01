@@ -243,13 +243,12 @@ def test(*, parent_callback, pytest_args, tests, coverage,
                     compilers_config = config['Compilers']
                     cpp = compilers_config['c++']['name']
                     c = compilers_config['c']['name']
-                    fortran = compilers_config['fortran']['name']
-                    if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
+                    if not (c == 'gcc' and cpp == 'gcc'):
                         print("SciPy was built with --gcov flag which requires "
                             "LCOV while running tests.\nFurther, LCOV usage "
-                            "requires GCC for C, C++ and Fortran codes in SciPy.\n"
+                            "requires GCC for C and C++ codes in SciPy.\n"
                             "Compilers used currently are:\n"
-                            f"  C: {c}\n  C++: {cpp}\n  Fortran: {fortran}\n"
+                            f"  C: {c}\n  C++: {cpp}\n"
                             "Therefore, exiting without running tests.")
                         exit(1) # Exit because tests will give missing symbol error
 
@@ -868,11 +867,15 @@ def _dirty_git_working_dir():
         "'jax.numpy', 'dask.array')."
     )
 )
+@click.option(
+    '--dry-run/--no-dry-run', '-n', default=True,
+    help="Run benchmarks without saving results to disk. "
+)
 @meson.build_option
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, build, build_dir, *args, **kwargs):
+          commits, array_api_backend, dry_run, build, build_dir, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -908,6 +911,9 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if quick:
         bench_args = ['--quick'] + bench_args
 
+    if dry_run:
+        bench_args = ['--dry-run'] + bench_args
+
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 
@@ -936,7 +942,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        cmd = ['asv', 'run', '--dry-run', '--show-stderr', '--python=same'] + bench_args
+        cmd = ['asv', 'run', '--show-stderr', '--python=same'] + bench_args
         _run_asv(cmd)
     else:
         # Ensure that we don't have uncommited changes
@@ -1066,6 +1072,69 @@ def _cpu_count_user(os_cpu_count):
 
     return min(cpu_count_affinity, cpu_count_cgroup, cpu_count_loky)
 
+def _count_physical_cores_linux():
+    try:
+        cpu_info = subprocess.run(
+            "lscpu --parse=core".split(), capture_output=True, text=True
+        )
+        cpu_info = cpu_info.stdout.splitlines()
+        cpu_info = {line for line in cpu_info if not line.startswith("#")}
+        return len(cpu_info)
+    except Exception:
+        pass  # fallback to /proc/cpuinfo
+
+    cpu_info = subprocess.run(
+        "cat /proc/cpuinfo".split(), capture_output=True, text=True
+    )
+    cpu_info = cpu_info.stdout.splitlines()
+    cpu_info = {line for line in cpu_info if line.startswith("core id")}
+    return len(cpu_info)
+
+
+def _count_physical_cores_win32():
+    try:
+        cmd = "-Command (Get-CimInstance -ClassName Win32_Processor).NumberOfCores"
+        cpu_info = subprocess.run(
+            f"powershell.exe {cmd}".split(),
+            capture_output=True,
+            text=True,
+        )
+        cpu_info = cpu_info.stdout.splitlines()
+        return int(cpu_info[0])
+    except Exception:
+        pass  # fallback to wmic (older Windows versions; deprecated now)
+
+    cpu_info = subprocess.run(
+        "wmic CPU Get NumberOfCores /Format:csv".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout.splitlines()
+    cpu_info = [
+        l.split(",")[1] for l in cpu_info if (l and l != "Node,NumberOfCores")
+    ]
+    return sum(map(int, cpu_info))
+
+
+def _count_physical_cores_darwin():
+    cpu_info = subprocess.run(
+        "sysctl -n hw.physicalcpu".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout
+    return int(cpu_info)
+
+
+def _count_physical_cores_freebsd():
+    cpu_info = subprocess.run(
+        "sysctl -n kern.smp.cores".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout
+    return int(cpu_info)
+
 def _count_physical_cores():
     """Return a tuple (number of physical cores, exception)
 
@@ -1084,33 +1153,13 @@ def _count_physical_cores():
     # Not cached yet, find it
     try:
         if sys.platform == "linux":
-            cpu_info = subprocess.run(
-                "lscpu --parse=core".split(), capture_output=True, text=True
-            )
-            cpu_info = cpu_info.stdout.splitlines()
-            cpu_info = {line for line in cpu_info if not line.startswith("#")}
-            cpu_count_physical = len(cpu_info)
+            cpu_count_physical = _count_physical_cores_linux()
         elif sys.platform == "win32":
-            cpu_info = subprocess.run(
-                "wmic CPU Get NumberOfCores /Format:csv".split(),
-                capture_output=True,
-                text=True,
-            )
-            cpu_info = cpu_info.stdout.splitlines()
-            cpu_info = [
-                l.split(",")[1]
-                for l in cpu_info
-                if (l and l != "Node,NumberOfCores")
-            ]
-            cpu_count_physical = sum(map(int, cpu_info))
+            cpu_count_physical = _count_physical_cores_win32()
         elif sys.platform == "darwin":
-            cpu_info = subprocess.run(
-                "sysctl -n hw.physicalcpu".split(),
-                capture_output=True,
-                text=True,
-            )
-            cpu_info = cpu_info.stdout
-            cpu_count_physical = int(cpu_info)
+            cpu_count_physical = _count_physical_cores_darwin()
+        elif sys.platform.startswith("freebsd"):
+            cpu_count_physical = _count_physical_cores_freebsd()
         else:
             raise NotImplementedError(f"unsupported platform: {sys.platform}")
 
