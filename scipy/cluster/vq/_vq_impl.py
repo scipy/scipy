@@ -154,7 +154,7 @@ def vq(obs, code_book, check_finite=True):
         c_code_book = np.asarray(c_code_book)
         result = _vq.vq(c_obs, c_code_book)
         return xp.asarray(result[0]), xp.asarray(result[1])
-    return py_vq(obs, code_book, check_finite=False)
+    return _py_vq(obs, code_book, check_finite=False)
 
 
 def _py_vq(obs, code_book, check_finite=True):
