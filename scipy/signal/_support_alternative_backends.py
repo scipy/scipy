@@ -99,7 +99,6 @@ untested = {
     "peak_widths",
     "periodogram",
     "place_poles",
-    "sawtooth",
     "sepfir2d",
     "ss2tf",
     "ss2zpk",
