@@ -107,8 +107,8 @@ jobs:
           # from conda-forge (those may break Intel compilers, which rely on system GCC/Clang,
           # xref https://github.com/conda-forge/pythran-feedstock/issues/77).
           . /opt/intel/oneapi/setvars.sh --force
-          pip install pythran
           conda activate scipy-dev
+          pip install pythran
           CC=icx CXX=icpx spin build -- -Dblas=mkl-dynamic-lp64-iomp -Dlapack=mkl-dynamic-lp64-iomp
 
       - name: Test scipy
