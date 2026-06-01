@@ -585,6 +585,22 @@ if hypothesis_available:
     hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
 
 
+def pytest_collection_modifyitems(config, items):
+    # Modify the timeout marker of the interpolate test 'test_spline_large_2d[...]',
+    # but only if timeout is being used AND we're on Windows.
+    # We do this to avoid occasional anomalous long durations of this specific
+    # test; see gh-25142.  Once that issue is resolved, this use of
+    # pytest_collection_modifyitems() can be removed.
+
+    cli_timeout = config.getoption("timeout", None)
+    if cli_timeout is None or sys.platform != 'win32':
+        return
+
+    for item in items:
+        if 'test_spline_large_2d[' in item.name:
+            item.add_marker(pytest.mark.timeout(600))
+
+
 ############################################################################
 # doctesting stuff
 
