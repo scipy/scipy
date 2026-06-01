@@ -54,7 +54,6 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get update
 
         pip install -r requirements/build.txt
         pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
@@ -88,7 +87,6 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get update
 
         pip install -r requirements/build.txt
         pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
