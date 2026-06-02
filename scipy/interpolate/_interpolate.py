@@ -562,7 +562,7 @@ class interp1d(_Interpolator1D):
         # 1. Handle values in x_new that are outside of x. Throw error,
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
-        x_new = asarray(x_new, dtype=np.float64)
+        x_new = asarray(x_new)
         y_new = self._call(self, x_new)
         if not self._extrapolate:
             below_bounds, above_bounds = self._check_bounds(x_new)
@@ -614,7 +614,6 @@ class _PPolyBase:
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None, axis=0):
-        self._asarray  = array_namespace(c, x).asarray
 
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
@@ -738,11 +737,11 @@ class _PPolyBase:
         if action == 'append':
             c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
             c2[k2-c.shape[0]:, self.c.shape[1]:] = c
-            self.x = np.r_[self.x, x].astype(np.float64)
+            self.x = np.r_[self.x, x].astype(np.float64, copy=False)
         elif action == 'prepend':
             c2[k2-self.c.shape[0]:, :c.shape[1]] = c
             c2[k2-c.shape[0]:, c.shape[1]:] = self.c
-            self.x = np.r_[x, self.x].astype(np.float64)
+            self.x = np.r_[x, self.x].astype(np.float64, copy=False)
         self.c = c2
 
     def __call__(self, x, nu=0, extrapolate=None):

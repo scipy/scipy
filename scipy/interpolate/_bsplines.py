@@ -20,9 +20,11 @@ from scipy._lib._array_api import (
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
-           "make_smoothing_spline", "supported_dtypes"]
+           "make_smoothing_spline"]
 
 supported_dtypes = np.typecodes['AllInteger'] + 'efdFD'
+real_dtypes = np.typecodes['AllInteger'] + 'efd'
+x_dtypes = np.typecodes['Integer'] + 'efd'
 
 def _deprecate_dtypes(*args):
     """
@@ -31,8 +33,8 @@ def _deprecate_dtypes(*args):
     for dtype in args:
         if dtype.char not in supported_dtypes:
             msg = (f"Interpolations with arguments of dtype={dtype} "
-                   f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
-                    "removed in SciPy 1.20.0. Please cast inputs to one of "
+                   f"({dtype.char = }) are deprecated in SciPy 1.19.0 and will be "
+                    "removed in SciPy 1.21.0. Please cast inputs to one of "
                     "np.float{32,64} or np.complex{64,128} manually."
                    )
             import warnings

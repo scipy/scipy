@@ -14,12 +14,17 @@ from scipy.interpolate import (
     BarycentricInterpolator, barycentric_interpolate,
     approximate_taylor_polynomial, CubicHermiteSpline, pchip,
     PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
-    make_interp_spline, supported_dtypes)
+    make_interp_spline)
+from scipy.interpolate._bsplines import supported_dtypes, real_dtypes, x_dtypes
 from scipy._lib._testutils import _run_concurrent_barrier
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
+
+# check that, for a given interpolator, when constructed with data x and y and
+# evaluated with data xi, it produces a (numerically accurate) value yi of the
+# expected dtype, i.e. complex128 if y was complex, or float64 if not
 def check_dtype(interpolator_cls, x_dtype, y_dtype, xi_dtype, deriv_shape=None,
                 extra_args=None):
 
@@ -40,18 +45,11 @@ def check_dtype(interpolator_cls, x_dtype, y_dtype, xi_dtype, deriv_shape=None,
     else:
         x = np.array([-1, 0, 1, 2, 3, 4], dtype=x_dtype)
 
-    # if y is an integer type, scale values up to more "integer-y" data
-    if np.issubdtype(y_dtype, np.integer):
-        y = (rng.rand(*((6,) + y_shape)) * 1e3).astype(y_dtype).transpose(s)
-    else:
-        y = rng.rand(*((6,) + y_shape)).astype(y_dtype).transpose(s)
+    y = (rng.rand(*((6,) + y_shape)) * 1e3).astype(y_dtype).transpose(s)
 
     xi = np.zeros(x_shape, dtype=xi_dtype)
     if interpolator_cls is CubicHermiteSpline:
-        if np.issubdtype(y_dtype, np.integer):
-            dydx = (rng.rand(*((6,) + y_shape)) * 1e3).astype(y_dtype).transpose(s)
-        else:
-            dydx = rng.rand(*((6,) + y_shape)).astype(y_dtype).transpose(s)
+        dydx = (rng.rand(*((6,) + y_shape)) * 1e3).astype(y_dtype).transpose(s)
         yi = interpolator_cls(x, y, dydx, axis=axis, **extra_args)(xi)
     else:
         yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
@@ -81,10 +79,6 @@ def check_dtype(interpolator_cls, x_dtype, y_dtype, xi_dtype, deriv_shape=None,
         yi, y = np.broadcast_arrays(yi, yv)
         xp_assert_close(yi, y)
 
-real_dtypes = "".join(["" if np.issubdtype(c, np.complexfloating)
-                       else c for c in supported_dtypes])
-x_dtypes = "".join(["" if np.issubdtype(c, np.unsignedinteger)
-                       else c for c in real_dtypes])
 
 def test_dtypes():
 
