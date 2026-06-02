@@ -10,6 +10,7 @@
 #include <xsf/bessel.h>
 #include <xsf/beta.h>
 #include <xsf/binom.h>
+#include <xsf/cdflib.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
@@ -95,6 +96,8 @@ extern const char *gammaincc_doc;
 extern const char *gammainccinv_doc;
 extern const char *gammaln_doc;
 extern const char *gammasgn_doc;
+extern const char *gdtria_doc;
+extern const char *gdtrix_doc;
 extern const char *it2i0k0_doc;
 extern const char *it2j0y0_doc;
 extern const char *it2struve0_doc;
@@ -149,6 +152,8 @@ extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *ndtr_doc;
+extern const char *nrdtrimn_doc;
+extern const char *nrdtrisd_doc;
 extern const char *obl_ang1_doc;
 extern const char *obl_ang1_cv_doc;
 extern const char *obl_cv_doc;
@@ -254,6 +259,16 @@ _special_ufuncs_module_exec(PyObject *module)
                           "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_normalized_gen_harmonic", _normalized_gen_harmonic);
 
+    PyObject *gdtria = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::gdtria), static_cast<xsf::numpy::ddd_d>(xsf::gdtria)},
+        "gdtria", gdtria_doc);
+    PyModule_AddObjectRef(module, "gdtria", gdtria);
+
+    PyObject *gdtrix = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::gdtrix), static_cast<xsf::numpy::ddd_d>(xsf::gdtrix)},
+        "gdtrix", gdtrix_doc);
+    PyModule_AddObjectRef(module, "gdtrix", gdtrix);
+
     PyObject *_lambertw = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::Dld_D>(xsf::lambertw), static_cast<xsf::numpy::Flf_F>(xsf::lambertw)}, "_lambertw",
         lambertw_doc);
@@ -268,6 +283,16 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::von_mises_cdf), static_cast<xsf::numpy::dd_d>(xsf::von_mises_cdf)},
         "_von_mises_cdf", _von_mises_cdf_doc);
     PyModule_AddObjectRef(module, "_von_mises_cdf", _von_mises_cdf);
+
+    PyObject *nrdtrimn = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::nrdtrimn), static_cast<xsf::numpy::ddd_d>(xsf::nrdtrimn)},
+        "nrdtrimn", nrdtrimn_doc);
+    PyModule_AddObjectRef(module, "nrdtrimn", nrdtrimn);
+
+    PyObject *nrdtrisd = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::nrdtrisd), static_cast<xsf::numpy::ddd_d>(xsf::nrdtrisd)},
+        "nrdtrisd", nrdtrisd_doc);
+    PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
 
     PyObject *_sinpi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::sinpi), static_cast<xsf::numpy::d_d>(xsf::sinpi),

@@ -378,19 +378,9 @@
             "xsf_gdtrc": "ddd->d"
         }
     },
-    "gdtria": {
-        "xsf_wrappers.h": {
-            "special_gdtria": "ddd->d"
-        }
-    },
     "gdtrib": {
         "xsf_wrappers.h": {
             "xsf_gdtrib": "ddd->d"
-        }
-    },
-    "gdtrix": {
-        "xsf_wrappers.h": {
-            "special_gdtrix": "ddd->d"
         }
     },
     "huber": {
@@ -588,16 +578,6 @@
     "ndtri": {
         "xsf_wrappers.h": {
             "xsf_ndtri": "d->d"
-        }
-    },
-    "nrdtrimn": {
-        "xsf_wrappers.h": {
-            "special_nrdtrimn": "ddd->d"
-        }
-    },
-    "nrdtrisd": {
-        "xsf_wrappers.h": {
-            "special_nrdtrisd": "ddd->d"
         }
     },
     "owens_t": {

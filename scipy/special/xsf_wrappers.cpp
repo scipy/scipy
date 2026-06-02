@@ -597,31 +597,11 @@ double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
 
 double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }
 
-double special_gdtria(double p, double b, double x) { 
-    if (x == 0) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    if ((b == 0) & (p == 0)) {
-        if (std::isinf(x) && (x > 0)) {
-            return std::numeric_limits<double>::quiet_NaN();
-        }
-        return 0.0;
-    }
-    return xsf::gammaincinv(b, p) / x;
-}
-
-double special_gdtrix(double a, double b, double p) { 
-    if ((a == 0) && (b == 0)) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    // if a or b is positive infinite, return NaN
-    if ((std::isinf(a) || std::isinf(b)) && (a >= 0 && b >= 0)) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    return xsf::gammaincinv(b, p) / a;
-}
+double xsf_gdtria(double p, double b, double x) { return xsf::gdtria(p, b, x); }
 
 double xsf_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }
+
+double xsf_gdtrix(double a, double b, double p) { return xsf::gdtrix(a, b, p); }
 
 double xsf_kolmogorov(double x) { return xsf::kolmogorov(x); }
 
@@ -649,28 +629,9 @@ npy_cdouble xsf_clog_ndtr(npy_cdouble x) { return to_ccomplex(xsf::log_ndtr(to_c
 
 double xsf_ndtri(double x) { return xsf::ndtri(x); }
 
-double special_nrdtrimn(double p, double std, double x) { 
-    if (std::isnan(std) || std <= 0) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    if (std::isnan(p) || p <= 0 || p >= 1) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    if (std::isnan(x)) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    return x - std * xsf::ndtri(p);
-}
+double xsf_nrdtrimn(double p, double std, double x) { return xsf::nrdtrimn(p, std, x); }
 
-double special_nrdtrisd(double mean, double p, double x) { 
-    if (std::isnan(mean) || std::isnan(p) || std::isnan(x)) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    if (p <= 0 || p >= 1) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    return (x - mean) / xsf::ndtri(p);
-}
+double xsf_nrdtrisd(double mean, double p, double x) { return xsf::nrdtrisd(mean, p, x); }
 
 double xsf_owens_t(double h, double a) { return xsf::owens_t(h, a); }
 
