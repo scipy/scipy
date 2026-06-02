@@ -7,7 +7,6 @@ is granted under the SciPy License.
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #include "numpy/ndarrayobject.h"
-#include "npy_2_compat.h"
 
 #include "_sigtools.hh"
 #include <stdlib.h>
