@@ -5,7 +5,7 @@ cython_c_args = ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
 if is_mingw
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']
-  add_project_link_arguments(gcc_link_args, language: ['c', 'cpp', 'fortran'])
+  add_project_link_arguments(gcc_link_args, language: ['c', 'cpp'])
   # Force gcc to float64 long doubles for compatibility with MSVC
   # builds, for C only.
   add_project_arguments('-mlong-double-64', language: 'c')
@@ -15,11 +15,6 @@ if is_mingw
   # https://github.com/rgommers/scipy/issues/118.
   # Use as c_args for extensions containing Cython code
   cython_c_args += ['-Wno-format-extra-args', '-Wno-format']
-  # Flag needed to work around BLAS and LAPACK Gfortran dependence on
-  # undocumented C feature when passing single character string arguments. See:
-  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90329
-  #   https://github.com/wch/r-source/blob/838f9d5a7be08f2a8c08e47bcd28756f5d0aac90/src/gnuwin32/MkRules.rules#L121
-  add_project_arguments('-fno-optimize-sibling-calls', language: ['fortran'])
 endif
 
 thread_dep = dependency('threads', required: false)
@@ -533,7 +528,6 @@ endif
 # The standard convention used here is:
 #   - for C, drop the leading dash and turn remaining dashes into underscores
 #   - for C++, prepend `_cpp` and turn remaining dashes into underscores
-#   - for Fortran, prepend `_fflags` and turn remaining dashes into underscores
 
 # C warning flags
 Wno_maybe_uninitialized = cc.get_supported_arguments('-Wno-maybe-uninitialized')
@@ -667,8 +661,6 @@ foreach name, compiler : compilers
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
-  conf_data.set('FORTRAN_COMP_ARGS', 'n/a')
-  conf_data.set('FORTRAN_COMP_LINK_ARGS', 'n/a')
 endforeach
 # Add `pythran` information if present
 if use_pythran
