@@ -199,14 +199,7 @@ class LinearConstraint:
 
     def __init__(self, A, lb=-np.inf, ub=np.inf, keep_feasible=False):
         if not issparse(A):
-            # In some cases, if the constraint is not valid, this emits a
-            # VisibleDeprecationWarning about ragged nested sequences
-            # before eventually causing an error. `scipy.optimize.milp` would
-            # prefer that this just error out immediately so it can handle it
-            # rather than concerning the user.
-            with catch_warnings():
-                simplefilter("error")
-                self.A = np.atleast_2d(A).astype(np.float64)
+            self.A = np.atleast_2d(A).astype(np.float64)
         else:
             self.A = A
         if issparse(lb) or issparse(ub):
