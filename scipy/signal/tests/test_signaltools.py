@@ -3482,7 +3482,8 @@ class TestHilbert2:
             if n % 2 == 0:
                 f = xpx.at(f)[n // 2].set(1.0)
             return f
-        h = xp.reshape(_factor(shape[0]), (-1, 1)) * xp.reshape(_factor(shape[1]), (1, -1))
+        h = (xp.reshape(_factor(shape[0]), (-1, 1))
+             * xp.reshape(_factor(shape[1]), (1, -1)))
         xp_assert_close(x_as_f, x_f * h, atol=1e-12)  # for x of dtype complex128
 
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
