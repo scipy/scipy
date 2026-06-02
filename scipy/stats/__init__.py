@@ -472,6 +472,7 @@ Random Variables
    Logistic
    Uniform
    Binomial
+   VonMises
    Mixture
    order_statistic
    truncate
@@ -625,7 +626,7 @@ from ._survival import *
 from ._distribution_infrastructure import (
     make_distribution, Mixture, order_statistic, truncate, exp, log, abs
 )
-from ._new_distributions import Normal, Logistic, Uniform, Binomial
+from ._new_distributions import Normal, Logistic, Uniform, Binomial, VonMises
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
 from ._quantile import quantile, estimated_cdf
