@@ -1,0 +1,6 @@
+recursive-include src *.c
+recursive-include tests test_*.py
+recursive-include dfftpack *.f doc doc.double
+include NOTES.txt
+include *.pyf
+recursive-include djbfft-0.76 *

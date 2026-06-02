@@ -1,0 +1,76 @@
+==========================
+SciPy 1.11.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.11.3 is a bug-fix release with no new features
+compared to 1.11.2.
+
+
+
+Authors
+=======
+* Name (commits)
+* Jake Bowhay (2)
+* CJ Carey (1)
+* Colin Carroll (1) +
+* Anirudh Dagar (2)
+* drestebon (1) +
+* Ralf Gommers (5)
+* Matt Haberland (2)
+* Julien Jerphanion (1)
+* Uwe L. Korn (1) +
+* Ellie Litwack (2)
+* Andrew Nelson (5)
+* Bharat Raghunathan (1)
+* Tyler Reddy (37)
+* Søren Fuglede Jørgensen (2)
+* Hielke Walinga (1) +
+* Warren Weckesser (1)
+* Bernhard M. Wiedemann (1)
+
+A total of 17 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.11.3
+------------------------
+
+* `#15093 <https://github.com/scipy/scipy/issues/15093>`__: BUG: scipy.optimize's trust-constr algorithm hangs when keep-feasible...
+* `#15273 <https://github.com/scipy/scipy/issues/15273>`__: freqz: suboptimal performance for worN=2\*\*n+1, include_nyquist=True...
+* `#17269 <https://github.com/scipy/scipy/issues/17269>`__: Bug in scipy.sparse.csgraph.min_weight_full_bipartite_matching
+* `#17289 <https://github.com/scipy/scipy/issues/17289>`__: BUG: Different results between numpy.fft.rfft and scipy.signal.freqz
+* `#18716 <https://github.com/scipy/scipy/issues/18716>`__: Buffer dtype mismatch, expected 'ITYPE_t' but got 'long'
+* `#18782 <https://github.com/scipy/scipy/issues/18782>`__: BUG: johnsonsu distribution no longer accepts integer \`b\` parameter
+* `#18922 <https://github.com/scipy/scipy/issues/18922>`__: BUG: dev.py has \`distutils\` usage
+* `#19101 <https://github.com/scipy/scipy/issues/19101>`__: BUG: mesonpy embeds random path in .pyx files
+* `#19103 <https://github.com/scipy/scipy/issues/19103>`__: BUG: Regression in 1.11.2: optimize.least_squares with method='trf'...
+* `#19132 <https://github.com/scipy/scipy/issues/19132>`__: BUG: Build fails on latest commit
+* `#19149 <https://github.com/scipy/scipy/issues/19149>`__: BUG: scipy.sparse.csgraph.laplacian raises AttributeError on...
+* `#19197 <https://github.com/scipy/scipy/issues/19197>`__: BUG: Incorrect sampling from zero rank covariance
+
+
+Pull requests for 1.11.3
+------------------------
+
+* `#17633 <https://github.com/scipy/scipy/pull/17633>`__: BUG: add infeasibility checks to min_weight_full_bipartite_matching
+* `#18784 <https://github.com/scipy/scipy/pull/18784>`__: BUG: Allow johnsonsu parameters to be floats
+* `#18913 <https://github.com/scipy/scipy/pull/18913>`__: BUG: sparse.csgraph: Support int64 indices in traversal.pyx
+* `#18924 <https://github.com/scipy/scipy/pull/18924>`__: BUG: Fix python3.12 distutils dev.py build
+* `#18956 <https://github.com/scipy/scipy/pull/18956>`__: BUG: trust-constr Bounds exclusive
+* `#19076 <https://github.com/scipy/scipy/pull/19076>`__: MAINT: should not be using np.float64() on arrays
+* `#19084 <https://github.com/scipy/scipy/pull/19084>`__: REL, MAINT: prep for 1.11.3
+* `#19111 <https://github.com/scipy/scipy/pull/19111>`__: BUG: Fixes #19103 by adding back make_strictly_feasible to lsq...
+* `#19123 <https://github.com/scipy/scipy/pull/19123>`__: BLD: Avoid absolute pathnames in .pyx files
+* `#19135 <https://github.com/scipy/scipy/pull/19135>`__: MAINT: signal: Remove the cval parameter from the private function...
+* `#19139 <https://github.com/scipy/scipy/pull/19139>`__: BLD: revert to using published wheels [wheel build]
+* `#19156 <https://github.com/scipy/scipy/pull/19156>`__: BUG: Support sparse arrays in scipy.sparse.csgraph.laplacian
+* `#19199 <https://github.com/scipy/scipy/pull/19199>`__: MAINT: stats.CovViaEigendecomposition: fix \`_LA\` attribute...
+* `#19200 <https://github.com/scipy/scipy/pull/19200>`__: TST: fix \`TestODR.test_implicit\` test failure with tolerance...
+* `#19208 <https://github.com/scipy/scipy/pull/19208>`__: BUG: freqz rfft grid fix
+* `#19280 <https://github.com/scipy/scipy/pull/19280>`__: MAINT: newton, make sure x0 is an inexact type
+* `#19286 <https://github.com/scipy/scipy/pull/19286>`__: BUG: stats: fix build failure due to incorrect Boost policies...
+* `#19290 <https://github.com/scipy/scipy/pull/19290>`__: BLD: add float.h include to \`_fpumode.c\`, fixes Clang on Windows...
+* `#19299 <https://github.com/scipy/scipy/pull/19299>`__: MAINT: fix libquadmath licence

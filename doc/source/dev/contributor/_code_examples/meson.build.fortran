@@ -1,0 +1,8 @@
+project('repro_gh_11577', 'fortran')
+
+openblas_dep = dependency('openblas')
+
+executable('repro_f90',
+    'ggev_repro_gh_11577.f90',
+    dependencies: openblas_dep
+)

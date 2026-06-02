@@ -1,0 +1,12 @@
+==========================
+SciPy 0.15.1 Release Notes
+==========================
+
+SciPy 0.15.1 is a bug-fix release with no new features compared to 0.15.0.
+
+Issues fixed
+------------
+
+* `#4413 <https://github.com/scipy/scipy/pull/4413>`__: BUG: Tests too strict, f2py doesn't have to overwrite this array
+* `#4417 <https://github.com/scipy/scipy/pull/4417>`__: BLD: avoid using NPY_API_VERSION to check not using deprecated...
+* `#4418 <https://github.com/scipy/scipy/pull/4418>`__: Restore and deprecate scipy.linalg.calc_work

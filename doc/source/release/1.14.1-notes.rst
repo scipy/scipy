@@ -1,0 +1,89 @@
+==========================
+SciPy 1.14.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.14.1 adds support for Python 3.13, including binary
+wheels on PyPI. Apart from that, it is a bug-fix release with
+no new features compared to 1.14.0.
+
+
+
+Authors
+=======
+* Name (commits)
+* h-vetinari (1)
+* Evgeni Burovski (1)
+* CJ Carey (2)
+* Lucas Colley (3)
+* Ralf Gommers (3)
+* Melissa Weber Mendonça (1)
+* Andrew Nelson (3)
+* Nick ODell (1)
+* Tyler Reddy (36)
+* Daniel Schmitz (1)
+* Dan Schult (4)
+* Albert Steppi (2)
+* Ewout ter Hoeven (1)
+* Tibor Völcker (2) +
+* Adam Turner (1) +
+* Warren Weckesser (2)
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (1)
+
+A total of 17 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.14.1
+------------------------
+
+* `#19572 <https://github.com/scipy/scipy/issues/19572>`__: BUG: doccer: \`test_decorator\` fails with Python 3.13 due to...
+* `#19911 <https://github.com/scipy/scipy/issues/19911>`__: BUG: open_memstream unavailable with glibc >= 2.10 + C99
+* `#20992 <https://github.com/scipy/scipy/issues/20992>`__: ENH: 3.13 wheels
+* `#20993 <https://github.com/scipy/scipy/issues/20993>`__: BUG: spsolve prints "dgstrf info" to stdout on singular matrices
+* `#21058 <https://github.com/scipy/scipy/issues/21058>`__: BUG: \`special.pro_rad1\`: incorrect results
+* `#21064 <https://github.com/scipy/scipy/issues/21064>`__: BUG: sparse: \`hstack/vstack\` between a sparse and ndarray breaks...
+* `#21073 <https://github.com/scipy/scipy/issues/21073>`__: MAINT: \`cluster\`/\`stats\`: array API test failures in main
+* `#21079 <https://github.com/scipy/scipy/issues/21079>`__: BUG: unable to securely deploy app as scipy 1.14.0 requires write...
+* `#21142 <https://github.com/scipy/scipy/issues/21142>`__: BUG: signal: crash in \`signaltools\` on free-threaded Python,...
+* `#21195 <https://github.com/scipy/scipy/issues/21195>`__: CI: documentation build failing?
+* `#21207 <https://github.com/scipy/scipy/issues/21207>`__: BUG: \`fft.hfftn\` fails on list inputs
+* `#21234 <https://github.com/scipy/scipy/issues/21234>`__: BUG: Files in SuperLU under LGPL license
+* `#21238 <https://github.com/scipy/scipy/issues/21238>`__: BUG: io/scipy.sparse.csgraph: refguide check failure in main
+* `#21250 <https://github.com/scipy/scipy/issues/21250>`__: DOC: \`sampling_tdr.rst\` failing in CircleCI smoke-tutorials...
+* `#21272 <https://github.com/scipy/scipy/issues/21272>`__: BUG: dtype changed for argument to \`rv_discrete._pmf\`
+* `#21306 <https://github.com/scipy/scipy/issues/21306>`__: BUG: odr: pickling is not possible
+* `#21323 <https://github.com/scipy/scipy/issues/21323>`__: DOC: build failing in CI
+* `#21408 <https://github.com/scipy/scipy/issues/21408>`__: BLD, CI: Cirrus 3.13 wheels?
+
+
+Pull requests for 1.14.1
+------------------------
+
+* `#21000 <https://github.com/scipy/scipy/pull/21000>`__: BLD: make cp313 wheels [wheel build]
+* `#21038 <https://github.com/scipy/scipy/pull/21038>`__: REL, MAINT: prep for 1.14.1
+* `#21062 <https://github.com/scipy/scipy/pull/21062>`__: BUG: special: Fixes for pro_rad1
+* `#21067 <https://github.com/scipy/scipy/pull/21067>`__: BUG: special: remove type punning to avoid warnings in LTO builds
+* `#21069 <https://github.com/scipy/scipy/pull/21069>`__: MAINT: uarray: fix typo in \`small_dynamic_array.h\`
+* `#21074 <https://github.com/scipy/scipy/pull/21074>`__: MAINT: adapt to array-api-strict 2.0
+* `#21084 <https://github.com/scipy/scipy/pull/21084>`__: BLD: Enable \`open_memstream()\` on newer glibc
+* `#21104 <https://github.com/scipy/scipy/pull/21104>`__: MAINT: Unskip \`scipy.misc.test.test_decorator\` for Python 3.13+
+* `#21107 <https://github.com/scipy/scipy/pull/21107>`__: DOC: add release note for 1.14 sparse section about sparse array...
+* `#21108 <https://github.com/scipy/scipy/pull/21108>`__: BUG: sparse: fix 1D for vstack/hstack and Improve 1D error msgs...
+* `#21160 <https://github.com/scipy/scipy/pull/21160>`__: BUG: signal: fix crash under free-threaded CPython in medfilt2d
+* `#21172 <https://github.com/scipy/scipy/pull/21172>`__: BUG: sparse.linalg: Update \`SuperLU\` to fix unfilterable output...
+* `#21200 <https://github.com/scipy/scipy/pull/21200>`__: DOC: Fix type of \`\`html_sidebars\`\` value in \`\`conf.py\`\`
+* `#21209 <https://github.com/scipy/scipy/pull/21209>`__: BUG: fft: fix array-like input
+* `#21244 <https://github.com/scipy/scipy/pull/21244>`__: BUG: sparse: fix failing doctests in io and csgraph that print...
+* `#21271 <https://github.com/scipy/scipy/pull/21271>`__: DOC: stats: silence the doctest error
+* `#21274 <https://github.com/scipy/scipy/pull/21274>`__: MAINT: sparse.linalg: update \`SuperLU/colamd.c\` to fix license...
+* `#21283 <https://github.com/scipy/scipy/pull/21283>`__: BUG: stats: adapt to \`np.floor\` type promotion removal
+* `#21305 <https://github.com/scipy/scipy/pull/21305>`__: MAINT: \`stats.bartlett\`: ensure statistic is non-negative
+* `#21315 <https://github.com/scipy/scipy/pull/21315>`__: CI: Update to cibuildwheel 2.20.0
+* `#21320 <https://github.com/scipy/scipy/pull/21320>`__: BUG: odr: fix pickling
+* `#21324 <https://github.com/scipy/scipy/pull/21324>`__: DOC: Don't use Sphinx 8.0.0 until gh-21323 is resolved.
+* `#21400 <https://github.com/scipy/scipy/pull/21400>`__: BUG: sparse: Fix 1D specialty hstack codes
+* `#21401 <https://github.com/scipy/scipy/pull/21401>`__: MAINT: special: Accommodate changed integer handling in NumPy...
+* `#21409 <https://github.com/scipy/scipy/pull/21409>`__: BLD: cp313 wheels on \`manylinux_aarch64\`

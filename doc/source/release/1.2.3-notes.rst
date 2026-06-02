@@ -1,0 +1,63 @@
+==========================
+SciPy 1.2.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.2.3 is a bug-fix release with no new features compared to 1.2.2. It is
+part of the long-term support (LTS) release series for Python 2.7.
+
+Authors
+=======
+
+* Geordie McBain
+* Matt Haberland
+* David Hagen
+* Tyler Reddy
+* Pauli Virtanen
+* Eric Larson
+* Yu Feng
+* ananyashreyjain
+* Nikolay Mayorov
+* Evgeni Burovski 
+* Warren Weckesser
+
+Issues closed for 1.2.3
+-----------------------
+* `#4915 <https://github.com/scipy/scipy/issues/4915>`__: Bug in unique_roots in scipy.signal.signaltools.py for roots with same magnitude
+* `#5546 <https://github.com/scipy/scipy/issues/5546>`__: ValueError raised if scipy.sparse.linalg.expm recieves array larger than 200x200
+* `#7117 <https://github.com/scipy/scipy/issues/7117>`__: Warn users when using float32 input data to curve_fit and friends
+* `#7906 <https://github.com/scipy/scipy/issues/7906>`__: Wrong result from scipy.interpolate.UnivariateSpline.integral for out-of-bounds 
+* `#9581 <https://github.com/scipy/scipy/issues/9581>`__: Least-squares minimization fails silently when x and y data are different types
+* `#9901 <https://github.com/scipy/scipy/issues/9901>`__: lsoda fails to detect stiff problem when called from solve_ivp
+* `#9988 <https://github.com/scipy/scipy/issues/9988>`__: doc build broken with Sphinx 2.0.0
+* `#10303 <https://github.com/scipy/scipy/issues/10303>`__: BUG: optimize: `linprog` failing TestLinprogSimplexBland::test_unbounded_below_no_presolve_corrected 
+* `#10376 <https://github.com/scipy/scipy/issues/10376>`__: TST: Travis CI fails (with pytest 5.0 ?)
+* `#10384 <https://github.com/scipy/scipy/issues/10384>`__: CircleCI doc build failing on new warnings
+* `#10535 <https://github.com/scipy/scipy/issues/10535>`__: TST: master branch CI failures 
+* `#11121 <https://github.com/scipy/scipy/issues/11121>`__: Calls to `scipy.interpolate.splprep` increase RAM usage.
+* `#11198 <https://github.com/scipy/scipy/issues/11198>`__: BUG: sparse eigs (arpack) shift-invert drops the smallest eigenvalue for some k
+* `#11266 <https://github.com/scipy/scipy/issues/11266>`__: Sparse matrix constructor data type detection changes on Numpy 1.18.0
+
+Pull requests for 1.2.3
+-----------------------
+* `#9992 <https://github.com/scipy/scipy/pull/9992>`__: MAINT: Undo Sphinx pin 
+* `#10071 <https://github.com/scipy/scipy/pull/10071>`__: DOC: reconstruct SuperLU permutation matrices avoiding SparseEfficiencyWarning
+* `#10076 <https://github.com/scipy/scipy/pull/10076>`__: BUG: optimize: fix curve_fit for mixed float32/float64 input
+* `#10138 <https://github.com/scipy/scipy/pull/10138>`__: BUG: special: Invalid arguments to ellip_harm can crash Python.
+* `#10306 <https://github.com/scipy/scipy/pull/10306>`__: BUG: optimize: Fix for 10303
+* `#10309 <https://github.com/scipy/scipy/pull/10309>`__: BUG: Pass jac=None directly to lsoda
+* `#10377 <https://github.com/scipy/scipy/pull/10377>`__: TST, MAINT: adjustments for pytest 5.0
+* `#10379 <https://github.com/scipy/scipy/pull/10379>`__: BUG: sparse: set writeability to be forward-compatible with numpy>=1.17
+* `#10426 <https://github.com/scipy/scipy/pull/10426>`__: MAINT: Fix doc build bugs
+* `#10540 <https://github.com/scipy/scipy/pull/10540>`__: MAINT: Fix Travis and Circle 
+* `#10633 <https://github.com/scipy/scipy/pull/10633>`__: BUG: interpolate: integral(a, b) should be zero when both limits are outside of the interpolation range
+* `#10833 <https://github.com/scipy/scipy/pull/10833>`__: BUG: Fix subspace_angles for complex values
+* `#10882 <https://github.com/scipy/scipy/pull/10882>`__: BUG: sparse/arpack: fix incorrect code for complex hermitian M
+* `#10906 <https://github.com/scipy/scipy/pull/10906>`__: BUG: sparse/linalg: fix expm for np.matrix inputs
+* `#10961 <https://github.com/scipy/scipy/pull/10961>`__: BUG: Fix signal.unique_roots
+* `#11126 <https://github.com/scipy/scipy/pull/11126>`__: BUG: interpolate/fitpack: fix memory leak in splprep
+* `#11199 <https://github.com/scipy/scipy/pull/11199>`__: BUG: sparse.linalg: mistake in unsymm. real shift-invert ARPACK eigenvalue selection
+* `#11269 <https://github.com/scipy/scipy/pull/11269>`__: Fix: Sparse matrix constructor data type detection changes on Numpy 1.18.0
+
+

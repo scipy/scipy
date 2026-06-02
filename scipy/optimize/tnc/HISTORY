@@ -1,0 +1,30 @@
+# TNC Release History
+# $Jeannot: HISTORY,v 1.15 2005/01/28 18:27:31 js Exp $
+
+10/20/2021         : x is no longer unscaled/scaled when using the callback
+                     because doing so can change x, and alter the course of
+                     the minimization. The callback uses a temporary copy of
+                     an unscaled x. (contributed by Andrew Nelson)
+01/28/2005, V1.3   : Fix a bug in the anti-zigzaging mechanism (many thanks
+                     to S.G. NASH).
+                     Warning: API changes: refined stopping criterions (xtol,
+                     pgtol). ftol is no more relative to the value of f.
+                     new parameter offset to translate the coordinates
+04/18/2004, V1.2.5 : n==0 is now valid
+04/14/2004, V1.2.4 : Fix a potential bug in the Python interface (infinity==0)
+04/14/2004, V1.2.3 : Fix a bug in the Python interface (reference counting)
+04/13/2004, V1.2.2 : Fix a bug in the Python interface (memory allocation)
+04/13/2004, V1.2.1 : Fix a bug in the Python interface (scaling ignored)
+04/03/2004, V1.2   : Memory allocation checks
+04/02/2004, V1.1   : Setup script for the python module
+                     Ability to abort the minimization at any time
+                     Warning: API changes: the user supplied function must now
+                     return an int.
+03/22/2004, V1.0.5 : Python Module
+10/15/2003, V1.0.4 : Warning: API changes: TNC now returns the number of
+                     function evaluations.
+                     Return code messages strings. 
+01/25/2003, V1.0.3 : Default values to remove Visual C++ complaint.
+10/02/2002, V1.0.2 : Make g a facultative parameter.
+09/26/2002, V1.0.1 : Fix bug when |g| is exactly zero at the initial point.
+09/21/2002, V1.0   : First release.

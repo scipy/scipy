@@ -1,0 +1,43 @@
+==========================
+SciPy 1.15.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.15.1 is a bug-fix release with no new features
+compared to 1.15.0. Importantly, an issue with the
+import of `scipy.optimize` breaking other packages
+has been fixed.
+
+
+
+Authors
+=======
+* Name (commits)
+* Ralf Gommers (3)
+* Rohit Goswami (1)
+* Matt Haberland (2)
+* Tyler Reddy (7)
+* Daniel Schmitz (1)
+
+A total of 5 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.15.1
+------------------------
+
+* `#22257 <https://github.com/scipy/scipy/issues/22257>`__: BUG: Importing scipy.optimize break highspy
+* `#22297 <https://github.com/scipy/scipy/issues/22297>`__: TST: TestDistributions.test_funcs[logcdf-methods10-x-Normal]...
+
+
+Pull requests for 1.15.1
+------------------------
+
+* `#22235 <https://github.com/scipy/scipy/pull/22235>`__: REL, MAINT: prep for 1.15.1
+* `#22245 <https://github.com/scipy/scipy/pull/22245>`__: MAINT: fix url for array-api-extra git submodule
+* `#22270 <https://github.com/scipy/scipy/pull/22270>`__: BLD: fix some issues with undeclared internal build dependencies
+* `#22272 <https://github.com/scipy/scipy/pull/22272>`__: TST: fix thread safety issue in interpolate.bsplines memmap test
+* `#22276 <https://github.com/scipy/scipy/pull/22276>`__: TST: stats.Normal: bump tolerance on test of logcdf
+* `#22292 <https://github.com/scipy/scipy/pull/22292>`__: MAINT: Update highs subproject commit

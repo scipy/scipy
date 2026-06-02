@@ -1,0 +1,55 @@
+>>> np.info(optimize.fmin)
+ fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None,
+      full_output=0, disp=1, retall=0, callback=None)
+
+Minimize a function using the downhill simplex algorithm.
+
+Parameters
+----------
+func : callable func(x,*args)
+    The objective function to be minimized.
+x0 : ndarray
+    Initial guess.
+args : tuple
+    Extra arguments passed to func, i.e. ``f(x,*args)``.
+callback : callable
+    Called after each iteration, as callback(xk), where xk is the
+    current parameter vector.
+
+Returns
+-------
+xopt : ndarray
+    Parameter that minimizes function.
+fopt : float
+    Value of function at minimum: ``fopt = func(xopt)``.
+iter : int
+    Number of iterations performed.
+funcalls : int
+    Number of function calls made.
+warnflag : int
+    1 : Maximum number of function evaluations made.
+    2 : Maximum number of iterations reached.
+allvecs : list
+    Solution at each iteration.
+
+Other parameters
+----------------
+xtol : float
+    Relative error in xopt acceptable for convergence.
+ftol : number
+    Relative error in func(xopt) acceptable for convergence.
+maxiter : int
+    Maximum number of iterations to perform.
+maxfun : number
+    Maximum number of function evaluations to make.
+full_output : bool
+    Set to True if fopt and warnflag outputs are desired.
+disp : bool
+    Set to True to print convergence messages.
+retall : bool
+    Set to True to return list of solutions at each iteration.
+
+Notes
+-----
+Uses a Nelder-Mead simplex algorithm to find the minimum of function of
+one or more variables.

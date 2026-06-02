@@ -1,0 +1,71 @@
+==========================
+SciPy 1.9.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.9.2 is a bug-fix release with no new features
+compared to 1.9.1. It also provides wheel for Python 3.11
+on several platforms.
+
+Authors
+=======
+
+* Hood Chatham (1)
+* Thomas J. Fan (1)
+* Ralf Gommers (22)
+* Matt Haberland (5)
+* Julien Jerphanion (1)
+* Loïc Estève (1)
+* Nicholas McKibben (2)
+* Naoto Mizuno (1)
+* Andrew Nelson (3)
+* Tyler Reddy (28)
+* Pamphile Roy (1)
+* Ewout ter Hoeven (2)
+* Warren Weckesser (1)
+* Meekail Zain (1) +
+
+A total of 14 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.9.2
+-----------------------
+
+* `#16545 <https://github.com/scipy/scipy/issues/16545>`__: BUG: 1.9.0rc1: \`OptimizeResult\` not populated when \`optimize.milp\`...
+* `#16569 <https://github.com/scipy/scipy/issues/16569>`__: BUG: \`sparse.hstack\` returns incorrect result when the stack...
+* `#16898 <https://github.com/scipy/scipy/issues/16898>`__: BUG: optimize.minimize backwards compatability in scipy 1.9
+* `#16935 <https://github.com/scipy/scipy/issues/16935>`__: BUG: using msvc + meson to build scipy --> cl cannot be used...
+* `#16952 <https://github.com/scipy/scipy/issues/16952>`__: BUG: error from \`scipy.stats.mode\` with \`NaN\`s, \`axis !=...
+* `#16964 <https://github.com/scipy/scipy/issues/16964>`__: BUG: scipy 1.7.3 wheels on PyPI require numpy<1.23 in contradiction...
+* `#17026 <https://github.com/scipy/scipy/issues/17026>`__: BUG: ncf_gen::ppf(..) causes segfault
+* `#17050 <https://github.com/scipy/scipy/issues/17050>`__: Pearson3 PPF does not function properly with negative skew.
+* `#17124 <https://github.com/scipy/scipy/issues/17124>`__: BUG: OSX-64 Test failure test_ppf_against_tables getting NaN
+
+
+Pull requests for 1.9.2
+-----------------------
+
+* `#16628 <https://github.com/scipy/scipy/pull/16628>`__: FIX: Updated dtype resolution in \`_stack_along_minor_axis\`
+* `#16814 <https://github.com/scipy/scipy/pull/16814>`__: FIX: milp: return feasible solutions if available on time out
+* `#16842 <https://github.com/scipy/scipy/pull/16842>`__: ENH: cibuildwheel infrastructure
+* `#16909 <https://github.com/scipy/scipy/pull/16909>`__: MAINT: minimize, restore squeezed ((1.0)) addresses #16898
+* `#16911 <https://github.com/scipy/scipy/pull/16911>`__: REL: prep for SciPy 1.9.2
+* `#16922 <https://github.com/scipy/scipy/pull/16922>`__: DOC: update version switcher for 1.9.1 and pin theme to 0.9
+* `#16934 <https://github.com/scipy/scipy/pull/16934>`__: MAINT: cast \`linear_sum_assignment\` to PyCFunction
+* `#16943 <https://github.com/scipy/scipy/pull/16943>`__: BLD: use compiler flags in a more portable way
+* `#16954 <https://github.com/scipy/scipy/pull/16954>`__: MAINT: stats.mode: fix bug with \`axis!=1\`, \`nan_policy='omit'\`,...
+* `#16966 <https://github.com/scipy/scipy/pull/16966>`__: MAINT: fix NumPy upper bound
+* `#16969 <https://github.com/scipy/scipy/pull/16969>`__: BLD: fix usage of \`get_install_data\`, which defaults to purelib
+* `#16975 <https://github.com/scipy/scipy/pull/16975>`__: DOC: Update numpy supported versions for 1.9.2
+* `#16991 <https://github.com/scipy/scipy/pull/16991>`__: BLD: fixes for building with MSVC and Intel Fortran
+* `#17011 <https://github.com/scipy/scipy/pull/17011>`__: Rudimentary test for manylinux_aarch64 with cibuildwheel
+* `#17013 <https://github.com/scipy/scipy/pull/17013>`__: BLD: make MKL detection a little more robust, add notes on TODOs
+* `#17046 <https://github.com/scipy/scipy/pull/17046>`__: CI: Update cibuildwheel to 2.10.1
+* `#17055 <https://github.com/scipy/scipy/pull/17055>`__: MAINT: stats.pearson3: fix ppf for negative skew
+* `#17064 <https://github.com/scipy/scipy/pull/17064>`__: BUG: Fix numerical precision error of \`truncnorm.logcdf\` when...
+* `#17096 <https://github.com/scipy/scipy/pull/17096>`__: FIX: ensure a hold on GIL before raising warnings/errors
+* `#17127 <https://github.com/scipy/scipy/pull/17127>`__: TST: stats.studentized_range: fix incorrect test
+* `#17131 <https://github.com/scipy/scipy/pull/17131>`__: MAINT: pyproject.toml: Update build system requirements
+* `#17132 <https://github.com/scipy/scipy/pull/17132>`__: MAINT: 1.9.2 backports

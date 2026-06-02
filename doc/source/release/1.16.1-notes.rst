@@ -1,0 +1,68 @@
+==========================
+SciPy 1.16.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.16.1 is a bug-fix release that adds support for
+Python 3.14.0rc1, including PyPI wheels.
+
+
+
+Authors
+=======
+* Name (commits)
+* Evgeni Burovski (1)
+* Rob Falck (1)
+* Ralf Gommers (7)
+* Geoffrey Gunter (1) +
+* Matt Haberland (2)
+* Joren Hammudoglu (1)
+* Andrew Nelson (2)
+* newyork_loki (1) +
+* Ilhan Polat (1)
+* Tyler Reddy (25)
+* Daniel Schmitz (1)
+* Dan Schult (2)
+
+    A total of 12 people contributed to this release.
+    People with a "+" by their names contributed a patch for the first time.
+    This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.16.1
+------------------------
+
+* `#23075 <https://github.com/scipy/scipy/issues/23075>`__: BUG: ndimage.median_filter: always returns ``0`` on single element...
+* `#23158 <https://github.com/scipy/scipy/issues/23158>`__: BUG: optimize.shgo: unbounded cache in Complex.split_edge
+* `#23216 <https://github.com/scipy/scipy/issues/23216>`__: BUG: ``@_transition_to_rng`` leads to inconsistent function signatures
+* `#23217 <https://github.com/scipy/scipy/issues/23217>`__: BUG: stats.beta.entropy: doesn't work with array-valued a, b
+* `#23221 <https://github.com/scipy/scipy/issues/23221>`__: BUG: signal.tf2sos: ``ComplexWarning``
+* `#23277 <https://github.com/scipy/scipy/issues/23277>`__: BUG: signal.freqz: erroneously returns complex-valued frequencies
+* `#23278 <https://github.com/scipy/scipy/issues/23278>`__: BUG: linalg.sqrtm: incorrect results in 1.16.0 when at least...
+* `#23321 <https://github.com/scipy/scipy/issues/23321>`__: BUG: CSC matrix multiplication and indptrs
+* `#23329 <https://github.com/scipy/scipy/issues/23329>`__: BUG: Compilation failure in HiGHs with MSVC
+* `#23338 <https://github.com/scipy/scipy/issues/23338>`__: DOC: optimize.minimize: erroneously claims COBYLA doesn't support...
+
+
+Pull requests for 1.16.1
+------------------------
+
+* `#23167 <https://github.com/scipy/scipy/pull/23167>`__: BUG: optimize.shgo: Complex cache ``split_edge`` differently
+* `#23187 <https://github.com/scipy/scipy/pull/23187>`__: CI: add cp314/cp314t nighly wheel builds
+* `#23206 <https://github.com/scipy/scipy/pull/23206>`__: DOC: ndimage.vectorized_filter: correct ``output`` description
+* `#23214 <https://github.com/scipy/scipy/pull/23214>`__: REL, MAINT: prep for 1.16.1
+* `#23222 <https://github.com/scipy/scipy/pull/23222>`__: BUG: signal.tf2sos: fix a new ``ComplexWarning``
+* `#23266 <https://github.com/scipy/scipy/pull/23266>`__: BUG: signal.remez: fix handling of ``weight`` array
+* `#23276 <https://github.com/scipy/scipy/pull/23276>`__: BUG: fix signature of ``@_transition_to_rng`` functions (SPEC...
+* `#23279 <https://github.com/scipy/scipy/pull/23279>`__: BUG: linalg: Fix pointer casting order for sqrtm
+* `#23280 <https://github.com/scipy/scipy/pull/23280>`__: BUG: fix broadcasting in ``beta.entropy()`` with new infrastructure
+* `#23284 <https://github.com/scipy/scipy/pull/23284>`__: DOC: optimize.least_squares: minor nit
+* `#23293 <https://github.com/scipy/scipy/pull/23293>`__: BUG: ndimage.median_filter: single element array handling
+* `#23322 <https://github.com/scipy/scipy/pull/23322>`__: BUG: sparse: ``multiply()`` should produce CSC output for CSC...
+* `#23332 <https://github.com/scipy/scipy/pull/23332>`__: BLD: Add bigobj flag for MSVC to fix object file section limit
+* `#23339 <https://github.com/scipy/scipy/pull/23339>`__: DOC: optimize.minimize: remove outdated limitation for equality...
+* `#23348 <https://github.com/scipy/scipy/pull/23348>`__: MAINT: sparse: ``multiply()`` uses attribute presence instead...
+* `#23380 <https://github.com/scipy/scipy/pull/23380>`__: CI: bump to cibuildwheel 3.1.0 for 3.14.0rc1, add cp314t musllinux...
+* `#23384 <https://github.com/scipy/scipy/pull/23384>`__: CI: disable special-casing of 3.14-dev now that Python 3.14rc1...
+* `#23387 <https://github.com/scipy/scipy/pull/23387>`__: MAINT: Python 3.14 to classifiers

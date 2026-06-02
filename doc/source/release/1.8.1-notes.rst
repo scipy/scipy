@@ -1,0 +1,77 @@
+==========================
+SciPy 1.8.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.8.1 is a bug-fix release with no new features
+compared to 1.8.0. Notably, usage of Pythran has been
+restored for Windows builds/binaries.
+
+Authors
+=======
+
+* Henry Schreiner
+* Maximilian Nöthe
+* Sebastian Berg (1)
+* Sameer Deshmukh (1) +
+* Niels Doucet (1) +
+* DWesl (4)
+* Isuru Fernando (1)
+* Ralf Gommers (4)
+* Matt Haberland (1)
+* Andrew Nelson (1)
+* Dimitri Papadopoulos Orfanos (1) +
+* Tirth Patel (3)
+* Tyler Reddy (46)
+* Pamphile Roy (7)
+* Niyas Sait (1) +
+* H. Vetinari (2)
+* Warren Weckesser (1)
+
+A total of 17 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.8.1
+-----------------------
+
+* `#15258 <https://github.com/scipy/scipy/issues/15258>`__: BUG: sparse \`dot\` method should accept scalars
+* `#15433 <https://github.com/scipy/scipy/issues/15433>`__: BUG: optimize: minimize: \`ValueError\` when \`np.all(lb==ub)\`
+* `#15539 <https://github.com/scipy/scipy/issues/15539>`__: BUG: Questionable macOS wheel contents
+* `#15543 <https://github.com/scipy/scipy/issues/15543>`__: REL: list contributors using GitHub handles
+* `#15552 <https://github.com/scipy/scipy/issues/15552>`__: BUG: MacOS universal2 wheels have two gfortran shared libraries,...
+* `#15636 <https://github.com/scipy/scipy/issues/15636>`__: BUG: DOCS incorrect \`source\` link on docs
+* `#15678 <https://github.com/scipy/scipy/issues/15678>`__: BUG: scipy.stats.skew does not work with scipy.stats.bootstrap
+* `#16174 <https://github.com/scipy/scipy/issues/16174>`__: Failure of \`TestCorrelateComplex.test_rank0\` in CI with NumPy...
+
+
+Pull requests for 1.8.1
+-----------------------
+
+* `#15167 <https://github.com/scipy/scipy/pull/15167>`__: CI: make sure CI stays on VS2019 unless changed explicitly
+* `#15306 <https://github.com/scipy/scipy/pull/15306>`__: Revert "BLD Respect the --skip-build flag in setup.py"
+* `#15504 <https://github.com/scipy/scipy/pull/15504>`__: MAINT: np.all(lb == ub) for optimize.minimize
+* `#15530 <https://github.com/scipy/scipy/pull/15530>`__: REL: prep for SciPy 1.8.1
+* `#15531 <https://github.com/scipy/scipy/pull/15531>`__: [BUG] Fix importing scipy.lib._pep440
+* `#15558 <https://github.com/scipy/scipy/pull/15558>`__: CI: re-enable Pythran in Azure Windows CI jobs
+* `#15566 <https://github.com/scipy/scipy/pull/15566>`__: BUG: fix error message
+* `#15580 <https://github.com/scipy/scipy/pull/15580>`__: BUG: Avoid C Preprocessor symbol in _hypotests_pythran.py.
+* `#15614 <https://github.com/scipy/scipy/pull/15614>`__: REL: filter out @ in authors name and add count
+* `#15637 <https://github.com/scipy/scipy/pull/15637>`__: DOC, MAINT: fix links to wrapped functions and SciPy's distributions
+* `#15669 <https://github.com/scipy/scipy/pull/15669>`__: BUG: stats: fix a bug in UNU.RAN error handler
+* `#15691 <https://github.com/scipy/scipy/pull/15691>`__: MAINT: stats: bootstrap: fix bug with \`method="BCa"\` when \`statistic\`...
+* `#15798 <https://github.com/scipy/scipy/pull/15798>`__: MAINT,BUG: stats: update to UNU.RAN 1.9.0
+* `#15870 <https://github.com/scipy/scipy/pull/15870>`__: TST: signal: Convert a test with 'assert_array_less' to 'less...
+* `#15910 <https://github.com/scipy/scipy/pull/15910>`__: make sure CI stays on VS2019 unless changed explicitly
+* `#15926 <https://github.com/scipy/scipy/pull/15926>`__: MAINT: 1.8.1 backports/prep
+* `#16035 <https://github.com/scipy/scipy/pull/16035>`__: BUG: allow scalar input to the \`.dot\` method of sparse matrices
+* `#16041 <https://github.com/scipy/scipy/pull/16041>`__: MAINT: add include dir explicitly for PROPACK to build with classic...
+* `#16139 <https://github.com/scipy/scipy/pull/16139>`__: WIP, BLD, MAINT: git security/version shim
+* `#16152 <https://github.com/scipy/scipy/pull/16152>`__: TST: Fortify invalid-value warning filters to small changes in...
+* `#16155 <https://github.com/scipy/scipy/pull/16155>`__: MAINT: correct wrong license of Biasedurn
+* `#16158 <https://github.com/scipy/scipy/pull/16158>`__: MAINT: better UNU.RAN licensing information
+* `#16163 <https://github.com/scipy/scipy/pull/16163>`__: MAINT: update UNU.RAN copyright information
+* `#16172 <https://github.com/scipy/scipy/pull/16172>`__: CI: pin Pip to 22.0.4 to avoid issues with \`--no-build-isolation\`
+* `#16175 <https://github.com/scipy/scipy/pull/16175>`__: TST: fix test failure due to changes in numpy scalar behavior.
+

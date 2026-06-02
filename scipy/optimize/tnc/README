@@ -1,0 +1,67 @@
+# TNC : truncated newton bound constrained minimization in C
+# Version 1.3
+# Copyright J.S. Roy (js@jeannot.org), 2002-2005
+# See the LICENSE file for copyright information.
+# $Jeannot: README,v 1.32 2005/01/28 15:12:09 js Exp $
+
+This software is a C implementation of TNBC, a truncated newton minimization
+package originally developed by Stephen G. Nash in Fortran.
+
+The original source code can be found at :
+http://iris.gmu.edu/~snash/nash/software/software.html
+
+Copyright for the original TNBC Fortran routines:
+
+  TRUNCATED-NEWTON METHOD:  SUBROUTINES
+    WRITTEN BY:  STEPHEN G. NASH
+          SCHOOL OF INFORMATION TECHNOLOGY & ENGINEERING
+          GEORGE MASON UNIVERSITY
+          FAIRFAX, VA 22030
+
+This software aims at minimizing the value a of nonlinear function whose
+variables are subject to bound constraints. It requires to be able to evaluate
+the function and its gradient and is especially useful for solving large scale
+problems.
+
+This software has been rewritten from the Fortran into C and provides the
+following modifications :
+- reentrancy (no global variables) ;
+- ability to pass a pointer to the function to be optimized (to provide
+  access to constants) ;
+- ability to rescale the function and variables ;
+- better handling of constant (low == up) variables ;
+- a simpler convergence test ;
+- ability to end the minimization at any time ;
+And many other small changes.
+
+This software has been tested on a large number of platforms and should run
+on any POSIX platform with an ANSI C compiler.
+
+The last version (and other software) is avalaible at the URL :
+http://www.jeannot.org/~js/code/index.en.html
+
+A Python interface module is also provided.
+
+Contents :
+- tnc.c : Source
+- tnc.h : Header, and API documentation
+- LICENSE : License and copyright information
+- HISTORY : Release history
+- README : This file
+- example.c : A simple example
+- Makefile : Make file used to build the examples
+- moduleTNC.c : the source of the python module
+
+Use is described in tnc.h. For more information, see the example.
+The example can be built and executed by doing :
+  make test
+
+You may need to adjust the Makefile before building tnc.
+
+Thanks to eric jones <eric@enthought.com> for providing the setup script.
+
+If you make use of this software and observe incorrect behavior on some
+problems, or if you make modifications to it (for a specific platform for
+example), you are encouraged to send the sources involved to the author at
+the following email : js@jeannot.org
+Thanks !

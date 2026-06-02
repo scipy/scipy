@@ -1,0 +1,45 @@
+name: Skip tag checker
+
+on:
+  workflow_call:
+    outputs:
+      message:
+        description: "Skip tag checker"
+        value: ${{ jobs.check_skip_tags.outputs.message }}
+
+permissions:
+   contents: read
+
+jobs:
+  check_skip_tags:
+    name: Check for skips
+    runs-on: ubuntu-latest
+    outputs:
+      message: ${{ steps.skip_check.outputs.message }}
+    steps:
+      - name: Checkout scipy
+        if: ${{ !contains(github.actor, 'nektos/act') }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        # Gets the correct commit message for pull request
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          
+      - name: Check for skips
+        id: skip_check
+        # the lint workflow is not currently skipped with [docs only].
+        # this could be changed by adding a new job which uses this workflow to lint.yml
+        # and changing the output here based on the combination of tags (if desired).
+        run: |
+          set -xe
+          RUN="1"
+          # For running a job locally with Act (https://github.com/nektos/act),
+          # always run the job rather than skip based on commit message
+          if [[ $ACT != true ]]; then
+            COMMIT_MSG=$(git log --no-merges -1)
+            if [[ "$COMMIT_MSG" == *"[lint only]"* || "$COMMIT_MSG" == *"[docs only]"* ]]; then
+                RUN="0"
+            fi
+          fi
+          echo "message=$RUN" >> $GITHUB_OUTPUT
+          echo github.ref $GITHUB_REF

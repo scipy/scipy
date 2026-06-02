@@ -1,0 +1,39 @@
+==========================
+SciPy 1.2.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.2.2 is a bug-fix release with no new features compared to 1.2.1.
+Importantly, the SciPy 1.2.2 wheels are built with OpenBLAS 0.3.7.dev to
+alleviate issues with SkylakeX AVX512 kernels.
+
+Authors
+=======
+
+* CJ Carey
+* Tyler Dawson +
+* Ralf Gommers
+* Kai Striega
+* Andrew Nelson
+* Tyler Reddy
+* Kevin Sheppard +
+
+A total of 7 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.2.2
+-----------------------
+* `#9611 <https://github.com/scipy/scipy/issues/9611>`__: Overflow error with new way of p-value calculation in kendall tau correlation for perfectly monotonic vectors
+* `#9964 <https://github.com/scipy/scipy/issues/9964>`__: optimize.newton : overwrites x0 argument when it is a numpy array
+* `#9784 <https://github.com/scipy/scipy/issues/9784>`__: TST: Minimum NumPy version is not being CI tested
+* `#10132 <https://github.com/scipy/scipy/issues/10132>`__: Docs: Description of nnz attribute of sparse.csc_matrix misleading
+
+Pull requests for 1.2.2
+-----------------------
+* `#10056 <https://github.com/scipy/scipy/pull/10056>`__: BUG: Ensure factorial is not too large in kendaltau
+* `#9991 <https://github.com/scipy/scipy/pull/9991>`__: BUG: Avoid inplace modification of input array in newton
+* `#9788 <https://github.com/scipy/scipy/pull/9788>`__: TST, BUG: f2py-related issues with NumPy < 1.14.0
+* `#9749 <https://github.com/scipy/scipy/pull/9749>`__: BUG: MapWrapper.__exit__ should terminate
+* `#10141 <https://github.com/scipy/scipy/pull/10141>`__: Update description for nnz on csc.py 

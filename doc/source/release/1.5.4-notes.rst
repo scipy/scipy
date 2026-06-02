@@ -1,0 +1,52 @@
+==========================
+SciPy 1.5.4 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.5.4 is a bug-fix release with no new features
+compared to 1.5.3. Importantly, wheels are now available
+for Python 3.9 and a more complete fix has been applied for
+issues building with XCode 12.
+
+Authors
+=======
+
+* Peter Bell
+* CJ Carey
+* Andrew McCluskey +
+* Andrew Nelson
+* Tyler Reddy
+* Eli Rykoff +
+* Ian Thomas +
+
+A total of 7 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.5.4
+-----------------------
+
+* `#12763 <https://github.com/scipy/scipy/issues/12763>`__: ndimage.fourier_ellipsoid segmentation fault
+* `#12789 <https://github.com/scipy/scipy/issues/12789>`__: TestConvolve2d.test_large_array failing on Windows ILP64 CI job
+* `#12857 <https://github.com/scipy/scipy/issues/12857>`__: sparse A[0,:] = ndarray is ok, A[:,0] = ndarray ValueError from...
+* `#12860 <https://github.com/scipy/scipy/issues/12860>`__: BUG: Build failure with Xcode 12
+* `#12935 <https://github.com/scipy/scipy/issues/12935>`__: Failure to build with Python 3.9.0 on macOS
+* `#12966 <https://github.com/scipy/scipy/issues/12966>`__: MAINT: lint_diff.py on some backport PRs
+* `#12988 <https://github.com/scipy/scipy/issues/12988>`__: BUG: Highly multi-dimensional \`gaussian_kde\` giving \`-inf\`...
+
+Pull requests for 1.5.4
+-----------------------
+
+* `#12790 <https://github.com/scipy/scipy/pull/12790>`__: TST: Skip TestConvolve2d.test_large_array if not enough memory
+* `#12851 <https://github.com/scipy/scipy/pull/12851>`__: BUG: sparse: fix inner indexed assignment of a 1d array
+* `#12875 <https://github.com/scipy/scipy/pull/12875>`__: BUG: segfault in ndimage.fourier_ellipsoid with length-1 dims
+* `#12937 <https://github.com/scipy/scipy/pull/12937>`__: CI: macOS3.9 testing
+* `#12957 <https://github.com/scipy/scipy/pull/12957>`__: MAINT: fixes XCode 12/ python 3.9.0 build for 1.5.x maint branch
+* `#12959 <https://github.com/scipy/scipy/pull/12959>`__: CI: add Windows Python 3.9 to CI
+* `#12974 <https://github.com/scipy/scipy/pull/12974>`__: MAINT: Run lint_diff.py against the merge target and only for...
+* `#12978 <https://github.com/scipy/scipy/pull/12978>`__: DOC: next_fast_len output doesn't match docstring
+* `#12979 <https://github.com/scipy/scipy/pull/12979>`__: BUG: fft.next_fast_len should accept keyword arguments
+* `#12989 <https://github.com/scipy/scipy/pull/12989>`__: BUG: improved the stability of kde for highly (1000s) multi-dimension...
+* `#13017 <https://github.com/scipy/scipy/pull/13017>`__: BUG: Add explicit cast to _tmp sum.
+* `#13022 <https://github.com/scipy/scipy/pull/13022>`__: TST: xfail test_maxiter_worsening()

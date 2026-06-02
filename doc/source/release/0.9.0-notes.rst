@@ -1,0 +1,230 @@
+=========================
+SciPy 0.9.0 Release Notes
+=========================
+
+.. contents::
+
+SciPy 0.9.0 is the culmination of 6 months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a number of deprecations and
+API changes in this release, which are documented below.  All users
+are encouraged to upgrade to this release, as there are a large number
+of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.9.x branch, and on adding
+new features on the development trunk.
+
+This release requires Python 2.4 - 2.7 or 3.1 - and NumPy 1.5 or greater.
+
+Please note that SciPy is still considered to have "Beta" status, as
+we work toward a SciPy 1.0.0 release.  The 1.0.0 release will mark a
+major milestone in the development of SciPy, after which changing the
+package structure or API will be much more difficult.  Whilst these
+pre-1.0 releases are considered to have "Beta" status, we are
+committed to making them as bug-free as possible.
+
+However, until the 1.0 release, we are aggressively reviewing and
+refining the functionality, organization, and interface. This is being
+done in an effort to make the package as coherent, intuitive, and
+useful as possible.  To achieve this, we need help from the community
+of users.  Specifically, we need feedback regarding all aspects of the
+project - everything - from which algorithms we implement, to details
+about our function's call signatures.
+
+
+Python 3
+========
+
+Scipy 0.9.0 is the first SciPy release to support Python 3. The only module
+that is not yet ported is ``scipy.weave``.
+
+
+Scipy source code location to be changed
+========================================
+
+Soon after this release, Scipy will stop using SVN as the version control
+system, and move to Git. The development source code for Scipy can from then on
+be found at
+
+    https://github.com/scipy/scipy
+
+
+New features
+============
+
+Delaunay tessellations (``scipy.spatial``)
+------------------------------------------
+
+Scipy now includes routines for computing Delaunay tessellations in N
+dimensions, powered by the Qhull_ computational geometry library. Such
+calculations can now make use of the new ``scipy.spatial.Delaunay``
+interface.
+
+.. _Qhull: http://www.qhull.org/
+
+N-dimensional interpolation (``scipy.interpolate``)
+---------------------------------------------------
+
+Support for scattered data interpolation is now significantly
+improved.  This version includes a ``scipy.interpolate.griddata``
+function that can perform linear and nearest-neighbour interpolation
+for N-dimensional scattered data, in addition to cubic spline
+(C1-smooth) interpolation in 2D and 1D.  An object-oriented interface
+to each interpolator type is also available.
+
+Nonlinear equation solvers (``scipy.optimize``)
+-----------------------------------------------
+
+Scipy includes new routines for large-scale nonlinear equation solving
+in ``scipy.optimize``.  The following methods are implemented:
+
+* Newton-Krylov (``scipy.optimize.newton_krylov``)
+
+* (Generalized) secant methods:
+
+  - Limited-memory Broyden methods (``scipy.optimize.broyden1``,
+    ``scipy.optimize.broyden2``)
+
+  - Anderson method (``scipy.optimize.anderson``)
+
+* Simple iterations (``scipy.optimize.diagbroyden``,
+  ``scipy.optimize.excitingmixing``, ``scipy.optimize.linearmixing``)
+
+The ``scipy.optimize.nonlin`` module was completely rewritten, and
+some of the functions were deprecated (see above).
+
+
+New linear algebra routines (``scipy.linalg``)
+----------------------------------------------
+
+Scipy now contains routines for effectively solving triangular
+equation systems (``scipy.linalg.solve_triangular``).
+
+
+Improved FIR filter design functions (``scipy.signal``)
+-------------------------------------------------------
+
+The function ``scipy.signal.firwin`` was enhanced to allow the
+design of highpass, bandpass, bandstop and multi-band FIR filters.
+
+The function ``scipy.signal.firwin2`` was added.  This function
+uses the window method to create a linear phase FIR filter with
+an arbitrary frequency response.
+
+The functions ``scipy.signal.kaiser_atten`` and ``scipy.signal.kaiser_beta``
+were added.
+
+
+Improved statistical tests (``scipy.stats``)
+--------------------------------------------
+
+A new function ``scipy.stats.fisher_exact`` was added, that provides Fisher's
+exact test for 2x2 contingency tables.
+
+The function ``scipy.stats.kendalltau`` was rewritten to make it much faster
+(O(n log(n)) vs O(n^2)).
+
+
+Deprecated features
+===================
+
+Obsolete nonlinear solvers (in ``scipy.optimize``)
+--------------------------------------------------
+
+The following nonlinear solvers from ``scipy.optimize`` are
+deprecated:
+
+- ``broyden_modified`` (bad performance)
+- ``broyden1_modified`` (bad performance)
+- ``broyden_generalized`` (equivalent to ``anderson``)
+- ``anderson2`` (equivalent to ``anderson``)
+- ``broyden3`` (obsoleted by new limited-memory broyden methods)
+- ``vackar`` (renamed to ``diagbroyden``)
+
+
+Removed features
+================
+
+The deprecated modules ``helpmod``, ``pexec`` and ``ppimport`` were removed
+from ``scipy.misc``.
+
+The ``output_type`` keyword in many ``scipy.ndimage`` interpolation functions
+has been removed.
+
+The ``econ`` keyword in ``scipy.linalg.qr`` has been removed. The same
+functionality is still available by specifying ``mode='economic'``.
+
+
+Old correlate/convolve behavior (in ``scipy.signal``)
+-----------------------------------------------------
+
+The old behavior for ``scipy.signal.convolve``, ``scipy.signal.convolve2d``,
+``scipy.signal.correlate`` and ``scipy.signal.correlate2d`` was deprecated in
+0.8.0 and has now been removed.  Convolve and correlate used to swap their
+arguments if the second argument has dimensions larger than the first one, and
+the mode was relative to the input with the largest dimension. The current
+behavior is to never swap the inputs, which is what most people expect, and is
+how correlation is usually defined.
+
+
+``scipy.stats``
+---------------
+
+Many functions in ``scipy.stats`` that are either available from numpy or have
+been superseded, and have been deprecated since version 0.7, have been removed:
+`std`, `var`, `mean`, `median`, `cov`, `corrcoef`, `z`, `zs`, `stderr`,
+`samplestd`, `samplevar`, `pdfapprox`, `pdf_moments` and `erfc`.  These changes
+are mirrored in ``scipy.stats.mstats``.
+
+
+``scipy.sparse``
+----------------
+
+Several methods of the sparse matrix classes in ``scipy.sparse`` which had
+been deprecated since version 0.7 were removed: `save`, `rowcol`, `getdata`,
+`listprint`, `ensure_sorted_indices`, `matvec`, `matmat` and `rmatvec`.
+
+The functions ``spkron``, ``speye``, ``spidentity``, ``lil_eye`` and
+``lil_diags`` were removed from ``scipy.sparse``.  The first three functions
+are still available as ``scipy.sparse.kron``, ``scipy.sparse.eye`` and
+``scipy.sparse.identity``.
+
+The `dims` and `nzmax` keywords were removed from the sparse matrix
+constructor. The `colind` and `rowind` attributes were removed from CSR and CSC
+matrices respectively.
+
+``scipy.sparse.linalg.arpack.speigs``
+-------------------------------------
+
+A duplicated interface to the ARPACK library was removed.
+
+
+Other changes
+=============
+
+ARPACK interface changes
+------------------------
+
+The interface to the ARPACK eigenvalue routines in
+``scipy.sparse.linalg`` was changed for more robustness.
+
+The eigenvalue and SVD routines now raise ``ArpackNoConvergence`` if
+the eigenvalue iteration fails to converge. If partially converged results
+are desired, they can be accessed as follows::
+
+    import numpy as np
+    from scipy.sparse.linalg import eigs, ArpackNoConvergence
+
+    m = np.random.randn(30, 30)
+    try:
+        w, v = eigs(m, 6)
+    except ArpackNoConvergence, err:
+        partially_converged_w = err.eigenvalues
+        partially_converged_v = err.eigenvectors
+
+Several bugs were also fixed.
+
+The routines were moreover renamed as follows:
+
+    - eigen --> eigs
+    - eigen_symmetric --> eigsh
+    - svd --> svds

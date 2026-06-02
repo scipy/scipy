@@ -1,0 +1,373 @@
+==========================
+SciPy 0.13.0 Release Notes
+==========================
+
+.. contents::
+
+SciPy 0.13.0 is the culmination of 7 months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a number of deprecations and
+API changes in this release, which are documented below.  All users
+are encouraged to upgrade to this release, as there are a large number
+of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.13.x branch, and on adding
+new features on the master branch.
+
+This release requires Python 2.6, 2.7 or 3.1-3.3 and NumPy 1.5.1 or greater.
+Highlights of this release are:
+
+  - support for fancy indexing and boolean comparisons with sparse matrices
+  - interpolative decompositions and matrix functions in the linalg module
+  - two new trust-region solvers for unconstrained minimization
+
+
+New features
+============
+
+``scipy.integrate`` improvements
+--------------------------------
+
+N-dimensional numerical integration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new function `scipy.integrate.nquad`, which provides N-dimensional
+integration functionality with a more flexible interface than ``dblquad`` and
+``tplquad``, has been added.
+
+``dopri*`` improvements
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The intermediate results from the ``dopri`` family of ODE solvers can now be
+accessed by a *solout* callback function.
+
+
+``scipy.linalg`` improvements
+-----------------------------
+
+Interpolative decompositions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Scipy now includes a new module `scipy.linalg.interpolative`
+containing routines for computing interpolative matrix decompositions
+(ID). This feature is based on the ID software package by
+P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, and M. Tygert, previously
+adapted for Python in the PymatrixId package by K.L. Ho.
+
+Polar decomposition
+^^^^^^^^^^^^^^^^^^^
+
+A new function `scipy.linalg.polar`, to compute the polar decomposition
+of a matrix, was added.
+
+BLAS level 3 functions
+^^^^^^^^^^^^^^^^^^^^^^
+
+The BLAS functions ``symm``, ``syrk``, ``syr2k``, ``hemm``, ``herk`` and
+``her2k`` are now wrapped in `scipy.linalg`.
+
+Matrix functions
+^^^^^^^^^^^^^^^^
+
+Several matrix function algorithms have been implemented or updated following
+detailed descriptions in recent papers of Nick Higham and his co-authors.
+These include the matrix square root (``sqrtm``), the matrix logarithm
+(``logm``), the matrix exponential (``expm``) and its Frechet derivative
+(``expm_frechet``), and fractional matrix powers (``fractional_matrix_power``).
+
+
+``scipy.optimize`` improvements
+-------------------------------
+
+Trust-region unconstrained minimization algorithms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``minimize`` function gained two trust-region solvers for unconstrained
+minimization: ``dogleg`` and ``trust-ncg``.
+
+
+``scipy.sparse`` improvements
+-----------------------------
+
+Boolean comparisons and sparse matrices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All sparse matrix types now support boolean data, and boolean operations.  Two
+sparse matrices `A` and `B` can be compared in all the expected ways `A < B`,
+`A >= B`, `A != B`, producing similar results as dense Numpy arrays.
+Comparisons with dense matrices and scalars are also supported.
+
+CSR and CSC fancy indexing
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Compressed sparse row and column sparse matrix types now support fancy indexing
+with boolean matrices, slices, and lists. So where A is a (CSC or CSR) sparse
+matrix, you can do things like::
+
+    >>> A[A > 0.5] = 1  # since Boolean sparse matrices work
+    >>> A[:2, :3] = 2
+    >>> A[[1,2], 2] = 3
+
+
+``scipy.sparse.linalg`` improvements
+------------------------------------
+
+The new function ``onenormest`` provides a lower bound of the 1-norm of a
+linear operator and has been implemented according to Higham and Tisseur
+(2000).  This function is not only useful for sparse matrices, but can also be
+used to estimate the norm of products or powers of dense matrices without
+explicitly building the intermediate matrix.
+
+The multiplicative action of the matrix exponential of a linear operator
+(``expm_multiply``) has been implemented following the description in Al-Mohy
+and Higham (2011).
+
+Abstract linear operators (`scipy.sparse.linalg.LinearOperator`) can now be
+multiplied, added to each other, and exponentiated, producing new linear
+operators. This enables easier construction of composite linear operations.
+
+
+``scipy.spatial`` improvements
+------------------------------
+
+The vertices of a `ConvexHull` can now be accessed via the `vertices` attribute,
+which gives proper orientation in 2-D.
+
+
+``scipy.signal`` improvements
+-----------------------------
+
+The cosine window function ``scipy.signal.cosine`` was added.
+
+
+``scipy.special`` improvements
+------------------------------
+
+New functions `scipy.special.xlogy` and `scipy.special.xlog1py` were added.
+These functions can simplify and speed up code that has to calculate
+``x * log(y)`` and give 0 when ``x == 0``.
+
+
+``scipy.io`` improvements
+-------------------------
+
+Unformatted Fortran file reader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The new class `scipy.io.FortranFile` facilitates reading unformatted
+sequential files written by Fortran code.
+
+``scipy.io.wavfile`` enhancements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`scipy.io.wavfile.write` now accepts a file buffer. Previously it only
+accepted a filename.
+
+`scipy.io.wavfile.read` and `scipy.io.wavfile.write` can now handle floating
+point WAV files.
+
+
+``scipy.interpolate`` improvements
+----------------------------------
+
+B-spline derivatives and antiderivatives
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`scipy.interpolate.splder` and `scipy.interpolate.splantider` functions
+for computing B-splines that represent derivatives and antiderivatives
+of B-splines were added.  These functions are also available in the
+class-based FITPACK interface as ``UnivariateSpline.derivative`` and
+``UnivariateSpline.antiderivative``.
+
+
+``scipy.stats`` improvements
+----------------------------
+
+Distributions now allow using keyword parameters in addition to
+positional parameters in all methods.
+
+The function `scipy.stats.power_divergence` has been added for the
+Cressie-Read power divergence statistic and goodness of fit test.
+Included in this family of statistics is the "G-test"
+(https://en.wikipedia.org/wiki/G-test).
+
+`scipy.stats.mood` now accepts multidimensional input.
+
+An option was added to `scipy.stats.wilcoxon` for continuity correction.
+
+`scipy.stats.chisquare` now has an `axis` argument.
+
+`scipy.stats.mstats.chisquare` now has `axis` and `ddof` arguments.
+
+
+Deprecated features
+===================
+
+``expm2`` and ``expm3``
+-----------------------
+
+The matrix exponential functions `scipy.linalg.expm2` and `scipy.linalg.expm3`
+are deprecated. All users should use the numerically more robust
+`scipy.linalg.expm` function instead.
+
+``scipy.stats`` functions
+-------------------------
+
+`scipy.stats.oneway` is deprecated; `scipy.stats.f_oneway` should be used
+instead.
+
+`scipy.stats.glm` is deprecated.  `scipy.stats.ttest_ind` is an equivalent
+function; more full-featured general (and generalized) linear model
+implementations can be found in statsmodels.
+
+`scipy.stats.cmedian` is deprecated; ``numpy.median`` should be used instead.
+
+
+Backwards incompatible changes
+==============================
+
+LIL matrix assignment
+---------------------
+Assigning values to LIL matrices with two index arrays now works similarly as
+assigning into ndarrays::
+
+    >>> x = lil_matrix((3, 3))
+    >>> x[[0,1,2],[0,1,2]]=[0,1,2]
+    >>> x.todense()
+    matrix([[ 0.,  0.,  0.],
+            [ 0.,  1.,  0.],
+            [ 0.,  0.,  2.]])
+
+rather than giving the result::
+
+    >>> x.todense()
+    matrix([[ 0.,  1.,  2.],
+            [ 0.,  1.,  2.],
+            [ 0.,  1.,  2.]])
+
+Users relying on the previous behavior will need to revisit their code.
+The previous behavior is obtained by ``x[numpy.ix_([0,1,2],[0,1,2])] = ...``.
+
+
+Deprecated ``radon`` function removed
+-------------------------------------
+
+The ``misc.radon`` function, which was deprecated in scipy 0.11.0, has been
+removed.  Users can find a more full-featured ``radon`` function in
+scikit-image.
+
+
+Removed deprecated keywords ``xa`` and ``xb`` from ``stats.distributions``
+--------------------------------------------------------------------------
+
+The keywords ``xa`` and ``xb``, which were deprecated since 0.11.0, have
+been removed from the distributions in ``scipy.stats``.
+
+Changes to MATLAB file readers / writers
+----------------------------------------
+
+The major change is that 1D arrays in numpy now become row vectors (shape 1, N)
+when saved to a MATLAB 5 format file.  Previously 1D arrays saved as column
+vectors (N, 1).  This is to harmonize the behavior of writing MATLAB 4 and 5
+formats, and adapt to the defaults of numpy and MATLAB - for example
+``np.atleast_2d`` returns 1D arrays as row vectors.
+
+Trying to save arrays of greater than 2 dimensions in MATLAB 4 format now raises
+an error instead of silently reshaping the array as 2D.
+
+``scipy.io.loadmat('afile')`` used to look for `afile` on the Python system path
+(``sys.path``); now ``loadmat`` only looks in the current directory for a
+relative path filename.
+
+
+Other changes
+=============
+
+Security fix: ``scipy.weave`` previously used temporary directories in an
+insecure manner under certain circumstances.
+
+Cython is now required to build *unreleased* versions of scipy.
+The C files generated from Cython sources are not included in the git repo
+anymore.  They are however still shipped in source releases.
+
+The code base received a fairly large PEP8 cleanup.  A ``tox pep8``
+command has been added; new code should pass this test command.
+
+Scipy cannot be compiled with gfortran 4.1 anymore (at least on RH5), likely
+due to that compiler version not supporting entry constructs well.
+
+
+Authors
+=======
+
+This release contains work by the following people (contributed at least
+one patch to this release, names in alphabetical order):
+
+* Jorge Cañardo Alastuey +
+* Tom Aldcroft +
+* Max Bolingbroke +
+* Joseph Jon Booker +
+* François Boulogne
+* Matthew Brett
+* Christian Brodbeck +
+* Per Brodtkorb +
+* Christian Brueffer +
+* Lars Buitinck
+* Evgeni Burovski +
+* Tim Cera
+* Lawrence Chan +
+* David Cournapeau
+* Dražen Lučanin +
+* Alexander J. Dunlap +
+* endolith
+* André Gaul +
+* Christoph Gohlke
+* Ralf Gommers
+* Alex Griffing +
+* Blake Griffith +
+* Charles Harris
+* Bob Helmbold +
+* Andreas Hilboll
+* Kat Huang +
+* Oleksandr (Sasha) Huziy +
+* Gert-Ludwig Ingold +
+* Thouis (Ray) Jones
+* Juan Luis Cano Rodríguez +
+* Robert Kern
+* Andreas Kloeckner +
+* Sytse Knypstra +
+* Gustav Larsson +
+* Denis Laxalde
+* Christopher Lee
+* Tim Leslie
+* Wendy Liu +
+* Clemens Novak +
+* Takuya Oshima +
+* Josef Perktold
+* Illia Polosukhin +
+* Przemek Porebski +
+* Steve Richardson +
+* Branden Rolston +
+* Skipper Seabold
+* Fazlul Shahriar
+* Leo Singer +
+* Rohit Sivaprasad +
+* Daniel B. Smith +
+* Julian Taylor
+* Louis Thibault +
+* Tomas Tomecek +
+* John Travers
+* Richard Tsai +
+* Jacob Vanderplas
+* Patrick Varilly
+* Pauli Virtanen
+* Stefan van der Walt
+* Warren Weckesser
+* Pedro Werneck +
+* Nils Werner +
+* Michael Wimmer +
+* Nathan Woods +
+* Tony S. Yu +
+
+A total of 65 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+

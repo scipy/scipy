@@ -1,0 +1,11 @@
+python module _fblas_64
+    usercode '''
+#include "_blas64_defines.h"
+'''
+
+    interface
+       include 'fblas_l1.pyf.src'
+       include 'fblas_l2.pyf.src'
+       include 'fblas_l3.pyf.src'
+    end interface
+end python module _fblas_64

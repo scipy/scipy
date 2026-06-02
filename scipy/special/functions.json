@@ -1,0 +1,1034 @@
+{
+    "_cosine_cdf": {
+        "_cosine.h": {
+            "cosine_cdf": "d->d"
+        }
+    },
+    "_cosine_invcdf": {
+        "_cosine.h": {
+            "cosine_invcdf": "d->d"
+        }
+    },
+    "_ellip_harm": {
+        "_ellip_harm.pxd": {
+            "ellip_harmonic": "ddiiddd->d"
+        },
+        "_legacy.pxd": {
+            "ellip_harmonic_unsafe": "ddddddd->d"
+        }
+    },
+    "_igam_fac": {
+        "xsf_wrappers.h": {
+            "cephes_igam_fac": "dd->d"
+        }
+    },
+    "_lanczos_sum_expg_scaled": {
+        "xsf_wrappers.h": {
+            "cephes_lanczos_sum_expg_scaled": "d->d"
+        }
+    },
+    "_lgam1p": {
+        "xsf_wrappers.h": {
+            "cephes_lgam1p": "d->d"
+        }
+    },
+    "_sf_error_test_function": {
+        "sf_error.pxd": {
+            "_sf_error_test_function": "i->i"
+        }
+    },
+    "_struve_asymp_large_z": {
+        "xsf_wrappers.h": {
+            "cephes__struve_asymp_large_z": "ddp*d->d"
+        }
+    },
+    "_struve_bessel_series": {
+        "xsf_wrappers.h": {
+            "cephes__struve_bessel_series": "ddp*d->d"
+        }
+    },
+    "_struve_power_series": {
+        "xsf_wrappers.h": {
+            "cephes__struve_power_series": "ddp*d->d"
+        }
+    },
+    "agm": {
+        "_agm.pxd": {
+            "agm": "dd->d"
+        }
+    },
+    "bdtr": {
+        "_legacy.pxd": {
+            "bdtr_unsafe": "ddd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_bdtr_wrap": "dpd->d"
+        }
+    },
+    "bdtrc": {
+        "_legacy.pxd": {
+            "bdtrc_unsafe": "ddd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_bdtrc_wrap": "dpd->d"
+        }
+    },
+    "bdtri": {
+        "_legacy.pxd": {
+            "bdtri_unsafe": "ddd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_bdtri_wrap": "dpd->d"
+        }
+    },
+    "bdtrik": {
+        "boost_special_functions.h++": {
+            "bdtrik_double": "ddd->d",
+            "bdtrik_float": "fff->f"
+        }
+    },
+    "_binom_ppf": {
+        "boost_special_functions.h++": {
+            "binom_ppf_double": "ddd->d",
+            "binom_ppf_float": "fff->f"
+        }
+    },
+    "bdtrin": {
+        "boost_special_functions.h++": {
+            "bdtrin_double": "ddd->d",
+            "bdtrin_float": "fff->f"
+        }
+    },
+    "betainc": {
+        "boost_special_functions.h++": {
+            "ibeta_float": "fff->f",
+            "ibeta_double": "ddd->d"
+        }
+    },
+    "betaincc": {
+        "boost_special_functions.h++": {
+            "ibetac_float": "fff->f",
+            "ibetac_double": "ddd->d"
+        }
+    },
+    "betaincinv": {
+        "boost_special_functions.h++": {
+            "ibeta_inv_float": "fff->f",
+            "ibeta_inv_double": "ddd->d"
+        }
+    },
+    "betainccinv": {
+        "boost_special_functions.h++": {
+            "ibetac_inv_float": "fff->f",
+            "ibetac_inv_double": "ddd->d"
+        }
+    },
+    "boxcox": {
+        "_boxcox.pxd": {
+            "boxcox": "dd->d"
+        }
+    },
+    "boxcox1p": {
+        "_boxcox.pxd": {
+            "boxcox1p": "dd->d"
+        }
+    },
+    "btdtria": {
+        "boost_special_functions.h++": {
+            "ibeta_inva_float": "fff->f",
+            "ibeta_inva_double": "ddd->d"
+        }
+    },
+    "btdtrib": {
+        "boost_special_functions.h++": {
+            "ibeta_invb_float": "fff->f",
+            "ibeta_invb_double": "ddd->d"
+        }
+    },
+    "chdtr": {
+        "xsf_wrappers.h": {
+            "xsf_chdtr": "dd->d"
+        }
+    },
+    "chdtrc": {
+        "xsf_wrappers.h": {
+            "xsf_chdtrc": "dd->d"
+        }
+    },
+    "chdtri": {
+        "xsf_wrappers.h": {
+            "xsf_chdtri": "dd->d"
+        }
+    },
+    "chdtriv": {
+        "boost_special_functions.h++": {
+            "chdtriv_float": "ff->f",
+            "chdtriv_double": "dd->d"
+        }
+    },
+    "chndtr": {
+        "boost_special_functions.h++": {
+            "ncx2_cdf_float": "fff->f",
+            "ncx2_cdf_double": "ddd->d" }
+    },
+    "chndtridf": {
+        "boost_special_functions.h++": {
+            "ncx2_find_degrees_of_freedom_float": "fff->f",
+            "ncx2_find_degrees_of_freedom_double": "ddd->d" }
+    },
+    "chndtrinc": {
+        "boost_special_functions.h++": {
+            "ncx2_find_noncentrality_float": "fff->f",
+            "ncx2_find_noncentrality_double": "ddd->d" }
+    },
+    "chndtrix":{
+        "boost_special_functions.h++": {
+            "ncx2_ppf_float": "fff->f",
+            "ncx2_ppf_double": "ddd->d" }
+    },
+    "_factorial": {
+	"_factorial.pxd": {
+	    "_factorial": "d->d"
+	}
+    },
+    "elliprc": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RC": "dd->d",
+	    "cellint_RC": "DD->D"
+	}
+    },
+    "elliprd": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RD": "ddd->d",
+	    "cellint_RD": "DDD->D"
+	}
+    },
+    "elliprf": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RF": "ddd->d",
+	    "cellint_RF": "DDD->D"
+	}
+    },
+    "elliprg": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RG": "ddd->d",
+	    "cellint_RG": "DDD->D"
+	}
+    },
+    "elliprj": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RJ": "dddd->d",
+	    "cellint_RJ": "DDDD->D"
+	}
+    },
+    "entr": {
+        "_convex_analysis.pxd": {
+            "entr": "d->d"
+        }
+    },
+    "erfinv": {
+        "boost_special_functions.h++": {
+            "erfinv_float": "f->f",
+            "erfinv_double": "d->d"
+        }
+    },
+    "erfcinv": {
+        "xsf_wrappers.h": {
+            "cephes_erfcinv": "d->d"
+        }
+    },
+    "eval_chebyc": {
+        "orthogonal_eval.pxd": {
+            "eval_chebyc[double complex]": "dD->D",
+            "eval_chebyc[double]": "dd->d",
+            "eval_chebyc_l": "pd->d"
+        }
+    },
+    "eval_chebys": {
+        "orthogonal_eval.pxd": {
+            "eval_chebys[double complex]": "dD->D",
+            "eval_chebys[double]": "dd->d",
+            "eval_chebys_l": "pd->d"
+        }
+    },
+    "eval_chebyt": {
+        "orthogonal_eval.pxd": {
+            "eval_chebyt[double complex]": "dD->D",
+            "eval_chebyt[double]": "dd->d",
+            "eval_chebyt_l": "pd->d"
+        }
+    },
+    "eval_chebyu": {
+        "orthogonal_eval.pxd": {
+            "eval_chebyu[double complex]": "dD->D",
+            "eval_chebyu[double]": "dd->d",
+            "eval_chebyu_l": "pd->d"
+        }
+    },
+    "eval_gegenbauer": {
+        "orthogonal_eval.pxd": {
+            "eval_gegenbauer[double complex]": "ddD->D",
+            "eval_gegenbauer[double]": "ddd->d",
+            "eval_gegenbauer_l": "pdd->d"
+        }
+    },
+    "eval_genlaguerre": {
+        "orthogonal_eval.pxd": {
+            "eval_genlaguerre[double complex]": "ddD->D",
+            "eval_genlaguerre[double]": "ddd->d",
+            "eval_genlaguerre_l": "pdd->d"
+        }
+    },
+    "eval_hermite": {
+        "orthogonal_eval.pxd": {
+            "eval_hermite": "pd->d"
+        }
+    },
+    "eval_hermitenorm": {
+        "orthogonal_eval.pxd": {
+            "eval_hermitenorm": "pd->d"
+        }
+    },
+    "eval_jacobi": {
+        "orthogonal_eval.pxd": {
+            "eval_jacobi[double complex]": "dddD->D",
+            "eval_jacobi[double]": "dddd->d",
+            "eval_jacobi_l": "pddd->d"
+        }
+    },
+    "eval_laguerre": {
+        "orthogonal_eval.pxd": {
+            "eval_laguerre[double complex]": "dD->D",
+            "eval_laguerre[double]": "dd->d",
+            "eval_laguerre_l": "pd->d"
+        }
+    },
+    "eval_legendre": {
+        "orthogonal_eval.pxd": {
+            "eval_legendre[double complex]": "dD->D",
+            "eval_legendre[double]": "dd->d",
+            "eval_legendre_l": "pd->d"
+        }
+    },
+    "eval_sh_chebyt": {
+        "orthogonal_eval.pxd": {
+            "eval_sh_chebyt[double complex]": "dD->D",
+            "eval_sh_chebyt[double]": "dd->d",
+            "eval_sh_chebyt_l": "pd->d"
+        }
+    },
+    "eval_sh_chebyu": {
+        "orthogonal_eval.pxd": {
+            "eval_sh_chebyu[double complex]": "dD->D",
+            "eval_sh_chebyu[double]": "dd->d",
+            "eval_sh_chebyu_l": "pd->d"
+        }
+    },
+    "eval_sh_jacobi": {
+        "orthogonal_eval.pxd": {
+            "eval_sh_jacobi[double complex]": "dddD->D",
+            "eval_sh_jacobi[double]": "dddd->d",
+            "eval_sh_jacobi_l": "pddd->d"
+        }
+    },
+    "eval_sh_legendre": {
+        "orthogonal_eval.pxd": {
+            "eval_sh_legendre[double complex]": "dD->D",
+            "eval_sh_legendre[double]": "dd->d",
+            "eval_sh_legendre_l": "pd->d"
+        }
+    },
+    "expn": {
+        "_legacy.pxd": {
+            "expn_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_expn_wrap": "pd->d"
+        }
+    },
+    "fdtr": {
+        "boost_special_functions.h++": {
+            "f_cdf_float": "fff->f",
+            "f_cdf_double": "ddd->d"
+        }
+    },
+    "fdtrc": {
+        "boost_special_functions.h++": {
+            "f_sf_float": "fff->f",
+            "f_sf_double": "ddd->d"
+        }
+    },
+    "fdtri": {
+        "boost_special_functions.h++": {
+            "f_ppf_float": "fff->f",
+            "f_ppf_double": "ddd->d"
+        }
+    },
+    "fdtridfd": {
+        "_cdflib_wrappers.pxd": {
+            "fdtridfd": "ddd->d"        }
+    },
+    "gdtr": {
+        "xsf_wrappers.h": {
+            "xsf_gdtr": "ddd->d"
+        }
+    },
+    "gdtrc": {
+        "xsf_wrappers.h": {
+            "xsf_gdtrc": "ddd->d"
+        }
+    },
+    "gdtria": {
+        "xsf_wrappers.h": {
+            "special_gdtria": "ddd->d"
+        }
+    },
+    "gdtrib": {
+        "xsf_wrappers.h": {
+            "xsf_gdtrib": "ddd->d"
+        }
+    },
+    "gdtrix": {
+        "xsf_wrappers.h": {
+            "special_gdtrix": "ddd->d"
+        }
+    },
+    "huber": {
+        "_convex_analysis.pxd": {
+            "huber": "dd->d"
+        }
+    },
+    "hyp0f1": {
+        "_hyp0f1.pxd": {
+            "_hyp0f1_cmplx": "dD->D",
+            "_hyp0f1_real": "dd->d"
+        }
+    },
+    "hyp1f1": {
+        "boost_special_functions.h++": {
+            "hyp1f1_double": "ddd->d"
+	    },
+        "xsf_wrappers.h": {
+            "chyp1f1_wrap": "ddD->D"
+        }
+    },
+    "hyperu": {
+        "_hypergeometric.pxd": {
+            "hyperu": "ddd->d"
+        }
+    },
+    "inv_boxcox": {
+        "_boxcox.pxd": {
+            "inv_boxcox": "dd->d"
+        }
+    },
+    "inv_boxcox1p": {
+        "_boxcox.pxd": {
+            "inv_boxcox1p": "dd->d"
+        }
+    },
+    "kl_div": {
+        "_convex_analysis.pxd": {
+            "kl_div": "dd->d"
+        }
+    },
+    "kn": {
+        "_legacy.pxd": {
+            "kn_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "special_cyl_bessel_k_int": "pd->d"
+        }
+    },
+    "_kolmogc": {
+        "xsf_wrappers.h": {
+            "xsf_kolmogc": "d->d"
+        }
+    },
+    "_kolmogci": {
+        "xsf_wrappers.h": {
+            "xsf_kolmogci": "d->d"
+        }
+    },
+    "kolmogi": {
+        "xsf_wrappers.h": {
+            "xsf_kolmogi": "d->d"
+        }
+    },
+    "_kolmogp": {
+        "xsf_wrappers.h": {
+            "xsf_kolmogp": "d->d"
+        }
+    },
+    "kolmogorov": {
+        "xsf_wrappers.h": {
+            "xsf_kolmogorov": "d->d"
+        }
+    },
+    "_landau_pdf": {
+        "boost_special_functions.h++": {
+            "landau_pdf_float": "fff->f",
+            "landau_pdf_double": "ddd->d"
+        }
+    },
+    "_landau_cdf": {
+        "boost_special_functions.h++": {
+            "landau_cdf_float": "fff->f",
+            "landau_cdf_double": "ddd->d"
+        }
+    },
+    "_landau_sf": {
+        "boost_special_functions.h++": {
+            "landau_sf_float": "fff->f",
+            "landau_sf_double": "ddd->d"
+        }
+    },
+    "_landau_ppf": {
+        "boost_special_functions.h++": {
+            "landau_ppf_float": "fff->f",
+            "landau_ppf_double": "ddd->d"
+        }
+    },
+    "_landau_isf": {
+        "boost_special_functions.h++": {
+            "landau_isf_float": "fff->f",
+            "landau_isf_double": "ddd->d"
+        }
+    },
+    "lpmv": {
+        "xsf_wrappers.h": {
+            "pmv_wrap": "ddd->d"
+        }
+    },
+    "nbdtr": {
+        "_legacy.pxd": {
+            "nbdtr_unsafe": "ddd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_nbdtr_wrap": "ppd->d"
+        }
+    },
+    "nbdtrc": {
+        "_legacy.pxd": {
+            "nbdtrc_unsafe": "ddd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_nbdtrc_wrap": "ppd->d"
+        }
+    },
+    "nbdtri": {
+        "_legacy.pxd": {
+            "nbdtri_unsafe": "ddd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_nbdtri_wrap": "ppd->d"
+        }
+    },
+    "nbdtrik": {
+        "boost_special_functions.h++": {
+            "nbdtrik_float": "fff->f",
+            "nbdtrik_double": "ddd->d"
+        }
+    },
+    "nbdtrin": {
+        "boost_special_functions.h++": {
+            "nbinom_invn_float": "fff->f",
+            "nbinom_invn_double": "ddd->d"
+        }
+    },
+    "ncfdtr": {
+        "boost_special_functions.h++": {
+            "ncf_cdf_float": "ffff->f",
+            "ncf_cdf_double": "dddd->d"
+        }
+    },
+    "ncfdtri": {
+        "boost_special_functions.h++": {
+            "ncf_ppf_float": "ffff->f",
+            "ncf_ppf_double": "dddd->d"
+        }
+    },
+    "ncfdtridfd": {
+        "_cdflib_wrappers.pxd": {
+            "ncfdtridfd": "dddd->d"
+        }
+    },
+    "ncfdtridfn": {
+        "_cdflib_wrappers.pxd": {
+            "ncfdtridfn": "dddd->d"        }
+    },
+    "ncfdtrinc": {
+        "boost_special_functions.h++": {
+            "ncf_find_non_centrality_float": "ffff->f",
+            "ncf_find_non_centrality_double": "dddd->d"
+        }
+    },
+    "nctdtr": {
+        "boost_special_functions.h++": {
+            "nct_cdf_float": "fff->f",
+            "nct_cdf_double": "ddd->d"    }
+    },
+    "nctdtridf": {
+        "_cdflib_wrappers.pxd": {
+            "nctdtridf": "ddd->d"
+        }
+    },
+    "nctdtrinc": {
+        "boost_special_functions.h++": {
+            "nct_find_non_centrality_float": "fff->f",
+            "nct_find_non_centrality_double": "ddd->d"
+        }
+    },
+    "nctdtrit": {
+        "boost_special_functions.h++": {
+            "nct_ppf_float": "fff->f",
+            "nct_ppf_double": "ddd->d"
+        }
+    },
+    "ndtri": {
+        "xsf_wrappers.h": {
+            "xsf_ndtri": "d->d"
+        }
+    },
+    "nrdtrimn": {
+        "xsf_wrappers.h": {
+            "special_nrdtrimn": "ddd->d"
+        }
+    },
+    "nrdtrisd": {
+        "xsf_wrappers.h": {
+            "special_nrdtrisd": "ddd->d"
+        }
+    },
+    "owens_t": {
+        "xsf_wrappers.h": {
+            "xsf_owens_t": "dd->d"
+        }
+    },
+    "pdtr": {
+        "xsf_wrappers.h": {
+            "xsf_pdtr": "dd->d"
+        }
+    },
+    "pdtrc": {
+        "xsf_wrappers.h": {
+            "xsf_pdtrc": "dd->d"
+        }
+    },
+    "pdtri": {
+        "_legacy.pxd": {
+            "pdtri_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_pdtri_wrap": "pd->d"
+        }
+    },
+    "pdtrik": {
+        "boost_special_functions.h++": {
+            "pdtrik_float": "ff->f",
+            "pdtrik_double": "dd->d"
+        }
+    },
+    "poch": {
+        "xsf_wrappers.h": {
+            "cephes_poch": "dd->d"
+        }
+    },
+    "powm1": {
+        "boost_special_functions.h++": {
+            "powm1_float": "ff->f",
+            "powm1_double": "dd->d"
+        }
+    },
+    "pseudo_huber": {
+        "_convex_analysis.pxd": {
+            "pseudo_huber": "dd->d"
+        }
+    },
+    "rel_entr": {
+        "_convex_analysis.pxd": {
+            "rel_entr": "dd->d"
+        }
+    },
+    "round": {
+        "xsf_wrappers.h": {
+            "cephes_round": "d->d"
+        }
+    },
+    "shichi": {
+        "xsf_wrappers.h": {
+            "xsf_cshichi": "D*DD->*i",
+            "xsf_shichi": "d*dd->*i"
+        }
+    },
+    "sici": {
+        "xsf_wrappers.h": {
+            "xsf_csici": "D*DD->*i",
+            "xsf_sici": "d*dd->*i"
+        }
+    },
+    "smirnov": {
+        "_legacy.pxd": {
+            "smirnov_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_smirnov_wrap": "pd->d"
+        }
+    },
+    "_smirnovc": {
+        "_legacy.pxd": {
+            "smirnovc_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_smirnovc_wrap": "pd->d"
+        }
+    },
+    "_smirnovci": {
+        "_legacy.pxd": {
+            "smirnovci_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_smirnovci_wrap": "pd->d"
+        }
+    },
+    "smirnovi": {
+        "_legacy.pxd": {
+            "smirnovi_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_smirnovi_wrap": "pd->d"
+        }
+    },
+    "_smirnovp": {
+        "_legacy.pxd": {
+            "smirnovp_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_smirnovp_wrap": "pd->d"
+        }
+    },
+    "spence": {
+        "_spence.pxd": {
+            "cspence": "D-> D"
+        },
+        "xsf_wrappers.h": {
+            "cephes_spence": "d->d"
+        }
+    },
+    "stdtr": {
+        "boost_special_functions.h++": {
+            "t_cdf_float": "ff->f",
+            "t_cdf_double": "dd->d"
+        }
+    },
+    "stdtridf": {
+        "_cdflib_wrappers.pxd": {
+            "stdtridf": "dd->d"
+        }
+    },
+    "stdtrit":{
+        "boost_special_functions.h++": {
+            "t_ppf_float": "ff->f",
+            "t_ppf_double": "dd->d"
+        }
+    },
+    "_stirling2_inexact": {
+        "stirling2.h++": {
+            "_stirling2_inexact": "dd->d"
+        }
+    },
+    "tklmbda": {
+        "xsf_wrappers.h": {
+            "xsf_tukeylambdacdf": "dd->d"
+        }
+    },
+    "wrightomega": {
+        "_wright.h++": {
+            "wrightomega": "D->D",
+            "wrightomega_real": "d->d"
+        }
+    },
+    "yn": {
+        "_legacy.pxd": {
+            "yn_unsafe": "dd->d"
+        },
+        "xsf_wrappers.h": {
+            "cephes_yn_wrap": "pd->d"
+        }
+    },
+    "ndtri_exp": {
+        "_ndtri_exp.pxd": {
+            "ndtri_exp": "d->d"
+        }
+    },
+    "_beta_pdf": {
+        "boost_special_functions.h++": {
+            "beta_pdf_float": "fff->f",
+            "beta_pdf_double": "ddd->d"
+        }
+    },
+    "_beta_ppf": {
+        "boost_special_functions.h++": {
+            "beta_ppf_float": "fff->f",
+            "beta_ppf_double": "ddd->d"
+        }
+    },
+    "_invgauss_ppf": {
+        "boost_special_functions.h++": {
+            "invgauss_ppf_float": "fff->f",
+            "invgauss_ppf_double": "ddd->d"
+        }
+    },
+    "_invgauss_isf": {
+        "boost_special_functions.h++": {
+            "invgauss_isf_float": "fff->f",
+            "invgauss_isf_double": "ddd->d"
+        }
+    },
+    "_cauchy_ppf": {
+        "boost_special_functions.h++": {
+            "cauchy_ppf_float": "fff->f",
+            "cauchy_ppf_double": "ddd->d"
+        }
+    },
+    "_cauchy_isf": {
+        "boost_special_functions.h++": {
+            "cauchy_isf_float": "fff->f",
+            "cauchy_isf_double": "ddd->d"
+        }
+    },
+    "_ncx2_pdf": {
+        "boost_special_functions.h++": {
+            "ncx2_pdf_float": "fff->f",
+            "ncx2_pdf_double": "ddd->d"
+        }
+    },
+    "_ncx2_sf": {
+        "boost_special_functions.h++": {
+            "ncx2_sf_float": "fff->f",
+            "ncx2_sf_double": "ddd->d"
+        }
+    },
+    "_ncx2_isf": {
+        "boost_special_functions.h++": {
+            "ncx2_isf_float": "fff->f",
+            "ncx2_isf_double": "ddd->d"
+        }
+    },
+    "_ncf_pdf": {
+        "boost_special_functions.h++": {
+            "ncf_pdf_float": "ffff->f",
+            "ncf_pdf_double": "dddd->d"
+        }
+    },
+    "_ncf_sf": {
+        "boost_special_functions.h++": {
+            "ncf_sf_float": "ffff->f",
+            "ncf_sf_double": "dddd->d"
+        }
+    },
+    "_ncf_isf": {
+        "boost_special_functions.h++": {
+            "ncf_isf_float": "ffff->f",
+            "ncf_isf_double": "dddd->d"
+        }
+    },
+    "_ncf_mean": {
+        "boost_special_functions.h++": {
+            "ncf_mean_float": "fff->f",
+            "ncf_mean_double": "ddd->d"
+        }
+    },
+    "_ncf_variance": {
+        "boost_special_functions.h++": {
+            "ncf_variance_float": "fff->f",
+            "ncf_variance_double": "ddd->d"
+        }
+    },
+    "_ncf_skewness": {
+        "boost_special_functions.h++": {
+            "ncf_skewness_float": "fff->f",
+            "ncf_skewness_double": "ddd->d"
+        }
+    },
+    "_ncf_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "ncf_kurtosis_excess_float": "fff->f",
+            "ncf_kurtosis_excess_double": "ddd->d"
+        }
+    },
+    "_nct_pdf": {
+        "boost_special_functions.h++": {
+            "nct_pdf_float": "fff->f",
+            "nct_pdf_double": "ddd->d"
+        }
+    },
+    "_nct_sf": {
+        "boost_special_functions.h++": {
+            "nct_sf_float": "fff->f",
+            "nct_sf_double": "ddd->d"
+        }
+    },
+    "_nct_isf": {
+        "boost_special_functions.h++": {
+            "nct_isf_float": "fff->f",
+            "nct_isf_double": "ddd->d"
+        }
+    },
+    "_nct_mean": {
+        "boost_special_functions.h++": {
+            "nct_mean_float": "ff->f",
+            "nct_mean_double": "dd->d"
+        }
+    },
+    "_nct_variance": {
+        "boost_special_functions.h++": {
+            "nct_variance_float": "ff->f",
+            "nct_variance_double": "dd->d"
+        }
+    },
+    "_nct_skewness": {
+        "boost_special_functions.h++": {
+            "nct_skewness_float": "ff->f",
+            "nct_skewness_double": "dd->d"
+        }
+    },
+    "_nct_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "nct_kurtosis_excess_float": "ff->f",
+            "nct_kurtosis_excess_double": "dd->d"
+        }
+    },
+    "_skewnorm_cdf": {
+        "boost_special_functions.h++": {
+            "skewnorm_cdf_float": "ffff->f",
+            "skewnorm_cdf_double": "dddd->d"
+        }
+    },
+    "_skewnorm_ppf": {
+        "boost_special_functions.h++": {
+            "skewnorm_ppf_float": "ffff->f",
+            "skewnorm_ppf_double": "dddd->d"
+        }
+    },
+    "_skewnorm_isf": {
+        "boost_special_functions.h++": {
+            "skewnorm_isf_float": "ffff->f",
+            "skewnorm_isf_double": "dddd->d"
+        }
+    },
+    "_binom_pmf": {
+        "boost_special_functions.h++": {
+            "binom_pmf_float": "fff->f",
+            "binom_pmf_double": "ddd->d"
+        }
+    },
+    "_binom_cdf": {
+        "boost_special_functions.h++": {
+            "binom_cdf_float": "fff->f",
+            "binom_cdf_double": "ddd->d"
+        }
+    },
+    "_binom_sf": {
+        "boost_special_functions.h++": {
+            "binom_sf_float": "fff->f",
+            "binom_sf_double": "ddd->d"
+        }
+    },
+    "_binom_isf": {
+        "boost_special_functions.h++": {
+            "binom_isf_float": "fff->f",
+            "binom_isf_double": "ddd->d"
+        }
+    },
+    "_nbinom_pmf": {
+        "boost_special_functions.h++": {
+            "nbinom_pmf_float": "fff->f",
+            "nbinom_pmf_double": "ddd->d"
+        }
+    },
+    "_nbinom_cdf": {
+        "boost_special_functions.h++": {
+            "nbinom_cdf_float": "fff->f",
+            "nbinom_cdf_double": "ddd->d"
+        }
+    },
+    "_nbinom_ppf": {
+        "boost_special_functions.h++": {
+            "nbinom_ppf_float": "fff->f",
+            "nbinom_ppf_double": "ddd->d"
+        }
+    },
+    "_nbinom_sf": {
+        "boost_special_functions.h++": {
+            "nbinom_sf_float": "fff->f",
+            "nbinom_sf_double": "ddd->d"
+        }
+    },
+    "_nbinom_isf": {
+        "boost_special_functions.h++": {
+            "nbinom_isf_float": "fff->f",
+            "nbinom_isf_double": "ddd->d"
+        }
+    },
+    "_nbinom_mean": {
+        "boost_special_functions.h++": {
+            "nbinom_mean_float": "ff->f",
+            "nbinom_mean_double": "dd->d"
+        }
+    },
+    "_nbinom_variance": {
+        "boost_special_functions.h++": {
+            "nbinom_variance_float": "ff->f",
+            "nbinom_variance_double": "dd->d"
+        }
+    },
+    "_nbinom_skewness": {
+        "boost_special_functions.h++": {
+            "nbinom_skewness_float": "ff->f",
+            "nbinom_skewness_double": "dd->d"
+        }
+    },
+    "_nbinom_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "nbinom_kurtosis_excess_float": "ff->f",
+            "nbinom_kurtosis_excess_double": "dd->d"
+        }
+    },
+    "_hypergeom_pmf": {
+        "boost_special_functions.h++": {
+            "hypergeom_pmf_float": "ffff->f",
+            "hypergeom_pmf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_cdf": {
+        "boost_special_functions.h++": {
+            "hypergeom_cdf_float": "ffff->f",
+            "hypergeom_cdf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_sf": {
+        "boost_special_functions.h++": {
+            "hypergeom_sf_float": "ffff->f",
+            "hypergeom_sf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_mean": {
+        "boost_special_functions.h++": {
+            "hypergeom_mean_float": "fff->f",
+            "hypergeom_mean_double": "ddd->d"
+        }
+    },
+    "_hypergeom_variance": {
+        "boost_special_functions.h++": {
+            "hypergeom_variance_float": "fff->f",
+            "hypergeom_variance_double": "ddd->d"
+        }
+    },
+    "_hypergeom_skewness": {
+        "boost_special_functions.h++": {
+            "hypergeom_skewness_float": "fff->f",
+            "hypergeom_skewness_double": "ddd->d"
+        }
+    }
+}

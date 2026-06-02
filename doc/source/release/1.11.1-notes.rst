@@ -1,0 +1,43 @@
+==========================
+SciPy 1.11.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.11.1 is a bug-fix release with no new features
+compared to 1.11.0. In particular, a licensing issue
+discovered after the release of 1.11.0 has been addressed.
+
+
+Authors
+=======
+
+* Name (commits)
+* h-vetinari (1)
+* Robert Kern (1)
+* Ilhan Polat (4)
+* Tyler Reddy (8)
+
+A total of 4 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.11.1
+------------------------
+
+* `#18739 <https://github.com/scipy/scipy/issues/18739>`__: BUG: run method of scipy.odr.ODR class fails when delta0 parameter...
+* `#18751 <https://github.com/scipy/scipy/issues/18751>`__: BUG: segfault in \`scipy.linalg.lu\` on x86_64 windows and macos...
+* `#18753 <https://github.com/scipy/scipy/issues/18753>`__: BUG: factorial return type inconsistent for 0-dim arrays
+* `#18759 <https://github.com/scipy/scipy/issues/18759>`__: determinant of a 1x1 matrix returns an array, not a scalar
+* `#18765 <https://github.com/scipy/scipy/issues/18765>`__: Licensing concern
+
+
+Pull requests for 1.11.1
+------------------------
+
+* `#18741 <https://github.com/scipy/scipy/pull/18741>`__: BUG: Fix work array construction for various weight shapes.
+* `#18747 <https://github.com/scipy/scipy/pull/18747>`__: REL, MAINT: prep for 1.11.1
+* `#18754 <https://github.com/scipy/scipy/pull/18754>`__: BUG: fix handling for \`factorial(..., exact=False)\` for 0-dim...
+* `#18762 <https://github.com/scipy/scipy/pull/18762>`__: FIX:linalg.lu:Guard against permute_l out of bound behavior
+* `#18763 <https://github.com/scipy/scipy/pull/18763>`__: MAINT:linalg.det:Return scalars for singleton inputs
+* `#18778 <https://github.com/scipy/scipy/pull/18778>`__: MAINT: fix unuran licensing
