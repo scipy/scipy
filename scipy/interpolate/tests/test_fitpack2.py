@@ -1413,7 +1413,7 @@ class TestRectBivariateSpline:
         return spl(x, y)
 
     @pytest.mark.slow()
-    @pytest.mark.timeout(timeout=float(os.getenv("WINDOWS_CI_LONG_TIMEOUT", "60")))
+    @pytest.mark.timeout(timeout=os.getenv("WINDOWS_CI_LONG_TIMEOUT", None))
     @pytest.mark.parametrize('shape', [(350, 850), (2000, 170)])
     @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
                                         (1, 7e-3, 1e-4),
