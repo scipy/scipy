@@ -21,6 +21,19 @@ xfail_xp_backends = pytest.mark.xfail_xp_backends
 lazy_xp_modules = [windows]
 
 
+def _assert_psll_bw(win_func, xp, expected_psll, expected_bw):
+    M_win = 1024
+    N_fft = 131072
+    w = win_func(M_win, sym=False, xp=xp)
+    f_np = fft(_xp_copy_to_numpy(w), N_fft)
+    spec = 20 * np.log10(np.maximum(np.abs(f_np / np.max(f_np)), 1e-300))
+    first_zero = np.argmax(np.diff(spec) > 0)
+    PSLL = np.max(spec[first_zero:-first_zero])
+    BW_3dB = 2 * np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
+    assert math.isclose(PSLL, expected_psll, abs_tol=1)
+    assert math.isclose(BW_3dB, expected_bw, abs_tol=0.1)
+
+
 window_funcs = [
     ('boxcar', ()),
     ('triang', ()),
@@ -63,6 +76,18 @@ class TestBartHann:
                         xp.asarray([0, 0.27, 0.73, 1.0, 0.73, 0.27], dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
 
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Bartlett-Hann window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.barthann, xp, -35.9, 1.41)
+
 
 @make_xp_test_case(windows.bartlett)
 class TestBartlett:
@@ -74,6 +99,18 @@ class TestBartlett:
                         xp.asarray([0, 1/3, 2/3, 1.0, 2/3, 1/3, 0], dtype=xp.float64))
         xp_assert_close(windows.bartlett(6, False, xp=xp),
                         xp.asarray([0, 1/3, 2/3, 1.0, 2/3, 1/3], dtype=xp.float64))
+
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Bartlett (triangular) window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.bartlett, xp, -26.5, 1.27)
 
 
 @make_xp_test_case(windows.blackman)
@@ -98,6 +135,18 @@ class TestBlackman:
                         xp.asarray([0, 0.13, 0.63, 1.0, 0.63, 0.13, 0],
                         dtype=xp.float64), atol=1e-14)
 
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Blackman window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.blackman, xp, -58.0, 1.68)
+
 
 @make_xp_test_case(windows.blackmanharris)
 class TestBlackmanHarris:
@@ -118,6 +167,18 @@ class TestBlackmanHarris:
         xp_assert_close(windows.blackmanharris(7, sym=True, xp=xp),
                         xp.asarray([6.0e-05, 0.055645, 0.520575, 1.0, 0.520575,
                                     0.055645, 6.0e-05], dtype=xp.float64))
+
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Blackman-Harris window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.blackmanharris, xp, -92.0, 1.90)
 
 
 @make_xp_test_case(windows.taylor)
@@ -215,6 +276,18 @@ class TestBohman:
                                     0.6089977810442295, 0.1089977810442293],
                                     dtype=xp.float64))
 
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Bohman window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.bohman, xp, -46.0, 1.71)
+
 
 @make_xp_test_case(windows.boxcar)
 class TestBoxcar:
@@ -226,6 +299,18 @@ class TestBoxcar:
                         xp.asarray([1.0, 1, 1, 1, 1, 1, 1], dtype=xp.float64))
         xp_assert_close(windows.boxcar(6, False, xp=xp),
                         xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
+
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the rectangular (boxcar) window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.boxcar, xp, -13.3, 0.88)
 
 
 cheb_odd_true = [0.200938, 0.107729, 0.134941, 0.165348,
@@ -464,6 +549,18 @@ class TestHamming:
                         xp.asarray([0.08, 0.31, 0.77, 1.0, 0.77, 0.31, 0.08],
                                    dtype=xp.float64))
 
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Hamming window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.hamming, xp, -42.7, 1.30)
+
 
 @make_xp_test_case(windows.hann)
 class TestHann:
@@ -487,6 +584,18 @@ class TestHann:
                         xp.asarray([0, 0.25, 0.75, 1.0, 0.75, 0.25, 0],
                         dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
+
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Hann window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.hann, xp, -31.5, 1.44)
 
 
 @make_xp_test_case(windows.kaiser)
@@ -589,6 +698,19 @@ class TestNuttall:
                         xp.asarray([0.0003628, 0.0613345, 0.5292298, 1.0,
                                     0.5292298, 0.0613345, 0.0003628], dtype=xp.float64))
 
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Nuttall window.
+
+        References
+        ----------
+        .. [1] G. Heinzel, A. Rüdiger, R. Schilling, "Spectrum and spectral
+               density estimation by the Discrete Fourier transform (DFT),
+               including a comprehensive list of window functions and some new
+               flat-top windows," 2002.
+               https://holometer.fnal.gov/GH_FFT.pdf
+        """
+        _assert_psll_bw(windows.nuttall, xp, -98.1, 1.88)
+
 
 @make_xp_test_case(windows.parzen)
 class TestParzen:
@@ -607,6 +729,18 @@ class TestParzen:
                         xp.asarray([0.00583090379008747, 0.1574344023323616,
                                     0.6501457725947521, 1.0, 0.6501457725947521,
                                     0.1574344023323616], dtype=xp.float64))
+
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the Parzen (de la Vallée Poussin) window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.parzen, xp, -53.0, 1.82)
 
 
 @make_xp_test_case(windows.triang)
@@ -1045,6 +1179,18 @@ class TestCosine:
 
         with pytest.raises(ValueError):
             windows.cosine(-1, xp=xp) # negative values should return an error
+
+    def test_correctness(self, xp):
+        """Test PSLL and 3 dB bandwidth of the cosine window.
+
+        References
+        ----------
+        .. [1] F.J. Harris, "On the use of windows for harmonic analysis
+               with the discrete Fourier transform," Proceedings of the IEEE,
+               vol. 66, no. 1, pp. 51-83, Jan. 1978.
+               :doi:`10.1109/PROC.1978.10837`
+        """
+        _assert_psll_bw(windows.cosine, xp, -23.0, 1.20)
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")

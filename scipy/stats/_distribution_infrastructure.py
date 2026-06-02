@@ -2267,11 +2267,11 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # We have to consider this as a special case; there's no way to include
         # this logic in find_minimum; it has to treat the bracket as invalid.
         mode_at_boundary = res_b.status == -1
-        fl, fm, fr = res_b.bracket
+        fl, fm, fr = res_b.f_bracket
         mode_at_left = mode_at_boundary & (fl <= fm)
         mode_at_right = mode_at_boundary & (fr < fm)
-        mode[mode_at_left] = a[mode_at_left]
-        mode[mode_at_right] = b[mode_at_right]
+        mode = np.where(mode_at_left, a, mode)
+        mode = np.where(mode_at_right, b, mode)
         return mode[()]
 
     def mean(self, *, method=None):
