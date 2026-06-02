@@ -676,7 +676,7 @@ class LinearOperator:
     def rdot(self, x):
         """Multi-purpose multiplication method from the right.
 
-        .. note ::
+        .. note::
 
             This method returns ``x A``.
             To perform adjoint multiplication instead, use one of

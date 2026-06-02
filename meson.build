@@ -74,7 +74,7 @@ add_project_arguments(_global_c_args, language : 'c')
 
 # We need -lm for all C code (assuming it uses math functions, which is safe to
 # assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
-# guaranteed to depend on it. For Fortran code, Meson already adds `-lm`.
+# guaranteed to depend on it.
 m_dep = cc.find_library('m', required : false)
 if m_dep.found()
   add_project_link_arguments('-lm', language : 'c')
@@ -83,7 +83,7 @@ endif
 if host_machine.system() == 'os400'
   # IBM i system, needed to avoid build errors - see gh-17193
   add_project_arguments('-D__STDC_FORMAT_MACROS', language : 'cpp')
-  add_project_link_arguments('-Wl,-bnotextro', language : ['c', 'cpp', 'fortran'])
+  add_project_link_arguments('-Wl,-bnotextro', language : ['c', 'cpp'])
 endif
 
 if cc.get_id() == 'clang-cl'
@@ -100,7 +100,7 @@ endif
 if host_machine.system() == 'darwin'
   if cc.has_link_argument('-Wl,-dead_strip')
     # Allow linker to strip unused symbols
-    add_project_link_arguments('-Wl,-dead_strip', language : ['c', 'cpp', 'fortran'])
+    add_project_link_arguments('-Wl,-dead_strip', language : ['c', 'cpp'])
   endif
 endif
 

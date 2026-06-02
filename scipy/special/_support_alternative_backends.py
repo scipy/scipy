@@ -631,14 +631,12 @@ _special_funcs = (
         positive_only={"jax.numpy": True}, test_large_ints=False,
         torch_native=False,
     ),
-    # Comment out when jax>=0.6.1 is available in Conda for CI.
-    # (or add version requirements to xp_capabilities).
-    # _FuncInfo(
-    #     _ufuncs.hyp2f1, 4,
-    #     xp_capabilities(cpu_only=True, exceptions=["jax.numpy"]),
-    #     positive_only={"jax.numpy": True}, test_large_ints=False,
-    #     torch_native=False,
-    # ),
+    _FuncInfo(
+        _ufuncs.hyp2f1, 4,
+        xp_capabilities(cpu_only=True, exceptions=["jax.numpy"]),
+        positive_only={"jax.numpy": True}, test_large_ints=False,
+        torch_native=False,
+    ),
     _FuncInfo(
         _ufuncs.inv_boxcox, 2,
         xp_capabilities(

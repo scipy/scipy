@@ -2378,15 +2378,15 @@ def lfiltic(b, a, y, x=None):
         y = xp.concat((y, xp.zeros(N - L)))
 
     for m in range(M):
-        zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
+        zi = xpx.at(zi)[m].set(xp.sum(b[m + 1:] * x[:M - m], axis=0))
 
     for m in range(N):
-        zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
+        zi = xpx.at(zi)[m].set(zi[m] - xp.sum(a[m + 1:] * y[:N - m], axis=0))
 
     if a[0] != 1.:
         if a[0] == 0.:
             raise ValueError("First `a` filter coefficient must be non-zero.")
-        zi /= a[0]
+        zi = zi / a[0]
 
     return zi
 
@@ -3006,11 +3006,11 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     else:  # avoid calculating negative frequency bins for real signals:
         dt = sp_fft.rfft(z[..., :1]).dtype
         Z = xp.zeros_like(z, dtype=dt)
-        Z[..., :n//2 + 1] = sp_fft.rfft(z)
+        Z = xpx.at(Z)[..., :n//2 + 1].set(sp_fft.rfft(z))
         if bp.start > 0:  # make signal analytic within bp_in band:
-            Z[..., bp] *= 2
+            Z = xpx.at(Z)[..., bp].multiply(2)
         elif bp.stop > 0:
-            Z[..., 1:bp.stop] *= 2
+            Z = xpx.at(Z)[..., 1:bp.stop].multiply(2)
     if not (bp.start <= 0 < bp.stop):  # envelope is invariant to freq. shifts.
         z_bb = sp_fft.ifft(Z[..., bp], n=n_out) * fak  # baseband signal
     else:
@@ -3024,20 +3024,22 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     if residual is None:
         return z_env
     if not (bp.start <= 0 < bp.stop):
-        Z[..., bp] = 0
+        Z = xpx.at(Z)[..., bp].set(0)
     else:
-        Z[..., :bp.stop], Z[..., bp.start:] = 0, 0
+        Z = xpx.at(Z)[..., :bp.stop].set(0)
+        Z = xpx.at(Z)[..., bp.start:].set(0)
     if residual == 'lowpass':
         if bp.stop > 0:
-            Z[..., bp.stop:(n+1) // 2] = 0
+            Z = xpx.at(Z)[..., bp.stop:(n+1) // 2].set(0)
         else:
-            Z[..., bp.start:], Z[..., 0:(n + 1) // 2] = 0, 0
+            Z = xpx.at(Z)[..., bp.start:].set(0)
+            Z = xpx.at(Z)[..., 0:(n + 1) // 2].set(0)
 
     if xp.isdtype(z.dtype, 'complex floating'):  # resample accounts for unpaired bins:
         z_res = resample(Z, n_out, axis=-1, domain='freq')  # ifft() with corrections
     else:  # account for unpaired bin at m//2 before doing irfft():
         if n_out != n and (m := min(n, n_out)) % 2 == 0:
-            Z[..., m//2] *= 2 if n_out < n else 0.5
+            Z = xpx.at(Z)[..., m//2].set(Z[..., m//2] * (2 if n_out < n else 0.5))
         z_res = fak * sp_fft.irfft(Z, n=n_out)
     return xp.stack((z_env, xp.moveaxis(z_res, -1, axis)), axis=0)
 
@@ -3879,27 +3881,27 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         X = sp_fft.rfft(x)
         if W is not None:  # fold window, i.e., W1[l] = (W[l] + W[-l]) / 2 for l > 0
             n_X = X.shape[-1]
-            W[1:n_X] += xp.flip(W[-n_X+1:])  #W[:-n_X:-1]
-            W[1:n_X] /= 2
-            X *= W[:n_X]  # apply window
+            W = xpx.at(W)[1:n_X].add(xp.flip(W[-n_X+1:]))  #W[:-n_X:-1]
+            W = xpx.at(W)[1:n_X].multiply(0.5)
+            X = X * W[:n_X]  # apply window
         X = X[..., :m2]  # extract relevant data
         if m % 2 == 0 and num != n_x:  # Account for unpaired bin at m//2:
-            X[..., m//2] *= 2 if num < n_x else 0.5
+            X = xpx.at(X)[..., m//2].multiply(2 if num < n_x else 0.5)
         x_r = sp_fft.irfft(X / s_fac, n=num, overwrite_x=True)
     else:  # use standard two-sided FFT:
         X = sp_fft.fft(x) if domain == 'time' else x
         if W is not None:
             X = X * W  # writing X *= W could modify parameter x
         Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
-        Y[..., :m2] = X[..., :m2]  # copy part up to Nyquist frequency
+        Y = xpx.at(Y)[..., :m2].set(X[..., :m2])  # copy up to Nyquist
         if m2 < m:  # == m > 2
-            Y[..., m2-m:] = X[..., m2-m:]  # copy negative frequency part
+            Y = xpx.at(Y)[..., m2-m:].set(X[..., m2-m:])  # copy negative frequencies
         if m % 2 == 0:  # Account for unpaired bin at m//2:
             if num < n_x:  # down-sampling: unite bin pair into one unpaired bin
-                Y[..., -m//2] += X[..., -m//2]
+                Y = xpx.at(Y)[..., -m//2].add(X[..., -m//2])
             elif n_x < num:  # up-sampling: split unpaired bin into bin pair
-                Y[..., m//2] /= 2
-                Y[..., num-m//2] = Y[..., m//2]
+                Y = xpx.at(Y)[..., m//2].multiply(0.5)
+                Y = xpx.at(Y)[..., num-m//2].set(Y[..., m//2])
         x_r = sp_fft.ifft(Y / s_fac, n=num, overwrite_x=True)
 
     if x_r.ndim > 1:  # moving active axis back to original position:
@@ -4615,7 +4617,7 @@ def sosfilt_zi(sos):
     for section in range(n_sections):
         b = sos[section, :3]
         a = sos[section, 3:]
-        zi[section, ...] = scale * lfilter_zi(b, a)
+        zi = xpx.at(zi)[section, ...].set(scale * lfilter_zi(b, a))
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
@@ -5159,8 +5161,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x_shape, zi_shape = x.shape, zi.shape
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
-    zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
-    sos = sos.astype(dtype, copy=False)
+    # _sosfilt requires writable, C-contiguous NumPy arrays.
+    zi = np.array(np.reshape(zi, (-1, n_sections, 2)), dtype=dtype,
+                  order='C', copy=True)
+    sos = np.array(sos, dtype=dtype, order='C', copy=True)
     _sosfilt(sos, x, zi)
     x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)
