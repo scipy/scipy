@@ -1,4 +1,6 @@
 import pytest
+import threading
+import warnings
 import numpy as np
 from numpy.testing import TestCase, assert_array_equal
 import scipy.sparse as sps
@@ -263,9 +265,6 @@ class TestLinearConstraint:
     def test_linear_constraint_thread_safety(self):
         # Issue #25123: LinearConstraint context manager catches unrelated warnings
         # from other threads and converts them to errors, causing crashes.
-        import threading
-        import warnings
-        
         exceptions = []
 
         def create_constraints():
