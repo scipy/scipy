@@ -986,7 +986,12 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
     if find_median:
         order = np.lexsort((input.ravel(), labels.ravel()))
     else:
-        order = input.ravel().argsort()
+        # A stable sort keeps equal values in their original (flat-index)
+        # order. This makes the reported extremum position for a label depend
+        # only on that label's own pixels: with an unstable sort the tie-break
+        # among equal extrema could be reordered by values belonging to other
+        # labels, so the result changed when unrelated pixels changed (gh-25279).
+        order = input.ravel().argsort(kind='stable')
     input = input.ravel()[order]
     labels = labels.ravel()[order]
     if find_positions:

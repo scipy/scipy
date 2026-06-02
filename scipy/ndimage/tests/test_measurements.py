@@ -1219,6 +1219,32 @@ def test_maximum_position07(xp):
         assert output[1] == (0, 3)
 
 
+@make_xp_test_case(ndimage.maximum_position)
+def test_maximum_position_outside_label_invariance(xp):
+    # gh-25279: the reported maximum position of a label must depend only on
+    # that label's own pixels. An unstable sort used to let values belonging
+    # to other labels reorder the tie-break among equal maxima, so the result
+    # changed when unrelated pixels changed.
+    labels = xp.asarray([[0, 0, 0, 0],
+                         [0, 1, 1, 0],
+                         [0, 1, 1, 0],
+                         [0, 0, 0, 2]])
+    for type in types:
+        dtype = getattr(xp, type)
+        # label 1 is a plateau of equal maxima; only the label-2 pixel differs.
+        input_a = xp.asarray([[0, 0, 0, 0],
+                              [0, 1, 1, 0],
+                              [0, 1, 1, 0],
+                              [0, 0, 0, 0]], dtype=dtype)
+        input_b = xp.asarray([[0, 0, 0, 0],
+                              [0, 1, 1, 0],
+                              [0, 1, 1, 0],
+                              [0, 0, 0, 9]], dtype=dtype)
+        pos_a = ndimage.maximum_position(input_a, labels, xp.asarray([1]))
+        pos_b = ndimage.maximum_position(input_b, labels, xp.asarray([1]))
+        assert pos_a == pos_b
+
+
 @make_xp_test_case(ndimage.extrema, ndimage.minimum, ndimage.maximum,
                    ndimage.minimum_position, ndimage.maximum_position)
 def test_extrema01(xp):
