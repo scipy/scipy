@@ -653,10 +653,15 @@ def _solve_WH_sparse(y, lamb, order, weights=None):
     rhs = (weights_arr * y).ravel()
     x0 = y.ravel()  # start with a noisy signal
 
-    # CG is the solver used here as A is SPD
+    # CG is the solver used here as A is SPD.
+    # The scipy default rtol is too loose for this problem. CG stops when
+    # ||rhs - A @ x|| <= rtol * ||rhs||, so the solution still carries a 
+    # relative error of order cond(A) * rtol. Here cond(A) reaches into the
+    # thousands, leaving an error of ~1e-2 that also breaks the linearity of the
+    # smoother. Smaller rtol removes this error, because the Jacobi preconditioner 
+    # makes CG converge in only a handful of iterations.
     # TODO: expose CG solver parameters via whittaker_henderson once 2D API stabilizes
-    # scipy solver defaults may be too loose.
-    x, info = cg(A, rhs, x0=x0, M=M)
+    x, info = cg(A, rhs, x0=x0, M=M, rtol=1e-9, atol=0.0)
 
     # TODO: expose convergence info (iterations, residual) in a future PR
     if info != 0:

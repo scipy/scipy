@@ -143,8 +143,6 @@ def test_polynomial_fit(calc_logdet, lamb):
 @pytest.mark.parametrize(
         ["signal", "lamb", "order", "weights", "err", "msg"],
         [
-            ([[1, 2, 3] * 3], 1, 2, None, ValueError,
-             "Input array signal must be of shape \\(n,\\)"),
             (np.zeros(2), 1, 2, None, ValueError,
              "Input array signal must be at least of shape"),
             (np.arange(10), -0.9, 2, None, ValueError,
