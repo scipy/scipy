@@ -2683,12 +2683,9 @@ Real lgamma_p_wrap(Real a, Real z)
     } catch (const std::domain_error& e) {
         sf_error("log_gammainc", SF_ERROR_DOMAIN, NULL);
         y = NAN;
-    } catch (const std::overflow_error& e) {
-        sf_error("log_gammainc", SF_ERROR_OVERFLOW, NULL);
-        y = -INFINITY;
     } catch (const std::underflow_error& e) {
         sf_error("log_gammainc", SF_ERROR_UNDERFLOW, NULL);
-        y = 0;
+        y = -INFINITY;
     } catch (...) {
         sf_error("log_gammainc", SF_ERROR_OTHER, NULL);
         y = NAN;
@@ -2745,12 +2742,9 @@ Real lgamma_q_wrap(Real a, Real z)
     } catch (const std::domain_error& e) {
         sf_error("log_gammaincc", SF_ERROR_DOMAIN, NULL);
         y = NAN;
-    } catch (const std::overflow_error& e) {
-        sf_error("log_gammaincc", SF_ERROR_OVERFLOW, NULL);
-        y = -INFINITY;
     } catch (const std::underflow_error& e) {
         sf_error("log_gammaincc", SF_ERROR_UNDERFLOW, NULL);
-        y = 0;
+        y = -INFINITY;
     } catch (...) {
         sf_error("log_gammaincc", SF_ERROR_OTHER, NULL);
         y = NAN;

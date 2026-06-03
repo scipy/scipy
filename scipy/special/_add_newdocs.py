@@ -4712,7 +4712,7 @@ add_newdoc("log_gammainc",
 
     Examples
     --------
-    This function is useful when the naive computation ``log(gammainc(a, x))`` 
+    This function is useful when the naive computation ``log(gammainc(a, x))``
     underflows for small values.
 
     >>> import numpy as np
@@ -4748,7 +4748,7 @@ add_newdoc("log_gammaincc",
     a : array_like
         Positive real parameter.
     x : array_like
-        Nonneg real argument.
+        Nonnegative real argument.
     out : ndarray, optional
         Optional output array for the function values.
 
@@ -4781,7 +4781,7 @@ add_newdoc("log_gammaincc",
     underflows to ``-inf`` while ``log_gammaincc`` retains precision:
 
     >>> with np.errstate(divide='ignore'):
-    ...     np.log(gammaincc(10, 1000.0))
+    ...     print(np.log(gammaincc(10, 1000.0)))
     -inf
 
     >>> log_gammaincc(10, 1000.0)
