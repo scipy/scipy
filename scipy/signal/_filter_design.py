@@ -356,7 +356,11 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         Numerator of a linear filter. If `b` has dimension greater than 1,
         it is assumed that the coefficients are stored in the first dimension,
         and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
-        array must be compatible for broadcasting.
+        array must be compatible for broadcasting. For example, with a
+        one-dimensional frequency array, a coefficient array shaped
+        ``(n_coefficients, n_filters)`` should be expanded to
+        ``(n_coefficients, n_filters, 1)`` so that each filter broadcasts over
+        the frequencies.
     a : array_like
         Denominator of a linear filter. If `b` has dimension greater than 1,
         it is assumed that the coefficients are stored in the first dimension,
