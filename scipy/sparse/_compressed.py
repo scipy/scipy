@@ -17,7 +17,7 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_sum_duplicates, csr_has_sorted_indices, csr_sort_indices,
                            csr_matmat_maxnnz, csr_matmat)
 from ._index import IndexMixin
-from ._sputils import (upcast, upcast_char, to_native, isshape,
+from ._sputils import (upcast, upcast_char, to_native, isshape, getdata,
                        getdtype, isintlike, downcast_intp_index,
                        get_sum_dtype, check_shape, get_index_dtype, broadcast_shapes)
 
@@ -75,7 +75,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                         copy = copy_if_needed
                     self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
-                    self.data = np.array(data, copy=copy, dtype=dtype)
+                    self.data = getdata(data, copy=copy, dtype=dtype)
                 else:
                     raise ValueError(f"unrecognized {self.__class__.__name__} "
                                      f"constructor input: {arg1}")

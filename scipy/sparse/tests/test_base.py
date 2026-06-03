@@ -2317,11 +2317,11 @@ class _TestCommon:
 
     def test_dtype_check(self):
         a = np.array([[3.5, 0, 1.1], [0, 0, 0]], dtype=np.float16)
-        with assert_raises(ValueError, match="does not support dtype"):
+        with assert_raises(TypeError, match="does not support dtype"):
             self.spcreator(a)
 
         A32 = self.spcreator(a.astype(np.float32))
-        with assert_raises(ValueError, match="does not support dtype"):
+        with assert_raises(TypeError, match="does not support dtype"):
             self.spcreator(A32, dtype=np.float16)
 
     def test_pickle(self):

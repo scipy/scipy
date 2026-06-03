@@ -131,10 +131,10 @@ def getdtype(dtype, a=None, default=None):
     else:
         newdtype = np.dtype(dtype)
 
-    if newdtype not in supported_dtypes:
+    if newdtype.type not in supported_dtypes:
         supported_dtypes_fmt = ", ".join(t.__name__ for t in supported_dtypes)
-        raise ValueError(f"scipy.sparse does not support dtype {newdtype}. "
-                         f"The only supported types are: {supported_dtypes_fmt}.")
+        raise TypeError(f"scipy.sparse does not support dtype {newdtype}. "
+                        f"The only supported types are: {supported_dtypes_fmt}.")
     return newdtype
 
 

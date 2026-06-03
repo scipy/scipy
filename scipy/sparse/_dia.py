@@ -11,7 +11,7 @@ from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
 from ._sputils import (
-    isdense, isscalarlike, isshape, upcast_char, getdtype, get_sum_dtype,
+    isdense, isscalarlike, isshape, upcast_char, getdtype, get_sum_dtype, getdata,
     validateaxis, check_shape
 )
 from ._sparsetools import dia_matmat, dia_matvec, dia_matvecs, dia_tocsr
@@ -58,7 +58,7 @@ class _dia_base(_data_matrix):
                         raise ValueError('expected a shape argument')
                     if not copy:
                         copy = copy_if_needed
-                    self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
+                    self.data = np.atleast_2d(getdata(arg1[0], dtype=dtype, copy=copy))
                     offsets = np.array(arg1[1],
                                        dtype=self._get_index_dtype(maxval=max(shape)),
                                        copy=copy)

@@ -23,13 +23,13 @@ class TestSparseUtils:
         assert_equal(sputils.getdtype(None, a=A), np.int8)
 
         with assert_raises(
-            ValueError,
+            TypeError,
             match="scipy.sparse does not support dtype object. .*",
         ):
             sputils.getdtype("O")
 
         with assert_raises(
-            ValueError,
+            TypeError,
             match="scipy.sparse does not support dtype float16. .*",
         ):
             sputils.getdtype(None, default=np.float16)
