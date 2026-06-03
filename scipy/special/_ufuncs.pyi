@@ -255,7 +255,7 @@ class errstate:
 
 _cosine_cdf: np.ufunc
 _cosine_invcdf: np.ufunc
-_bivariate_normal_cdf: np.ufunc
+_bivariate_normal_sf: np.ufunc
 _cospi: np.ufunc
 _ellip_harm: np.ufunc
 _factorial: np.ufunc
