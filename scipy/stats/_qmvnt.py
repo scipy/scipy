@@ -490,7 +490,6 @@ def _bvn(a, b, A):
     s2 = math.sqrt(A[1, 1])
     s12 = A[0, 1]
     r = s12 / (s1 * s2)
-    # the x and y coordinates seem to be normalized by the standard devs
     xl, xu = a[0] / s1, b[0] / s1
     yl, yu = a[1] / s2, b[1] / s2
     p = _bvnu(xl, yl, r) - _bvnu(xu, yl, r) - _bvnu(xl, yu, r) + _bvnu(xu, yu, r)
