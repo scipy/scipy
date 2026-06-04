@@ -1261,9 +1261,13 @@ class TestFreqz_sos:
         w = w / xp.pi
 
         h014 = h[w <= 0.14]
-        xp_assert_close(h014, xp.zeros_like(h014), atol=1e-2, check_0d=True)  # <= -40 dB
+        xp_assert_close(h014, xp.zeros_like(h014),
+                        atol=1e-2,
+                        check_0d=True)  # <= -40 dB
         h06 = h[w >= 0.6]
-        xp_assert_close(h06, xp.zeros_like(h06), atol=1e-2, check_0d=True)  # <= -40 dB
+        xp_assert_close(h06, xp.zeros_like(h06),
+                        atol=1e-2,
+                        check_0d=True)  # <= -40 dB
         h0205 = 20 * xp.log10(h[(w >= 0.2) & (w <= 0.5)])
         xp_assert_close(h0205, xp.zeros_like(h0205), atol=3.01, check_0d=True)
 

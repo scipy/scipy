@@ -37,7 +37,7 @@ from scipy._external.array_api_compat import (
     is_cupy_namespace as is_cupy,
     is_torch_namespace as is_torch,
     is_jax_namespace as is_jax,
-    is_dask_namespace as is_dask,
+    is_dask_namespace as is_dask,  # noqa: F401
     is_array_api_strict_namespace as is_array_api_strict,
 )
 from scipy._external.array_api_compat.common._helpers import _compat_module_name
