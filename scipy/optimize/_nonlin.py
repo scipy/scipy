@@ -1283,7 +1283,26 @@ class LinearMixing(GenericBroyden):
     --------
     root : Interface to root finding algorithms for multivariate
            functions. See ``method='linearmixing'`` in particular.
+    
+    Examples
+    --------
+    The following function defines a system of nonlinear equations
 
+    >>> import numpy as np
+    >>> from numpy import diag
+    >>> def F(x):
+    ...     x = np.asarray(x)
+    ...     d = diag([3., 2.])
+    ...     c = 0.01
+    ...     return -d @ x - c * float(x @ x) * x
+
+    A solution can be obtained using fixed-point iterations (``iter``
+    controls the number of iterations explicitly):
+
+    >>> from scipy.optimize import linearmixing
+    >>> sol = linearmixing(F, [1, 1], iter=100, alpha=0.5)
+    >>> np.allclose(sol, [0, 0], atol=1e-4)
+    True
     """
 
     def __init__(self, alpha=None):
@@ -1334,6 +1353,26 @@ class ExcitingMixing(GenericBroyden):
     --------
     root : Interface to root finding algorithms for multivariate
            functions. See ``method='excitingmixing'`` in particular.
+
+    Examples
+    --------
+    The following defines a system of nonlinear equations whose only
+    real solution is the origin:
+
+    >>> import numpy as np
+    >>> def F(x):
+    ...     x = np.asarray(x)
+    ...     d = np.diag([3., 2.])
+    ...     c = 0.01
+    ...     return -d @ x - c * float(x @ x) * x
+
+    A solution can be found using :func:`excitingmixing` with a fixed
+    number of iterations:
+
+    >>> from scipy.optimize import excitingmixing
+    >>> sol = excitingmixing(F, [1, 1], iter=200, alpha=0.5, line_search=None)
+    >>> np.allclose(sol, [0, 0], atol=1e-4)
+    True
     """
 
     def __init__(self, alpha=None, alphamax=1.0):
