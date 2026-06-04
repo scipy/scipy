@@ -78,19 +78,6 @@ Pythran is still an optional build dependency, and can be disabled with
 happen it must be clear that the maintenance burden is low enough.
 
 
-Use of Fortran libraries
-````````````````````````
-SciPy owes a lot of its success to relying on wrapping well established
-Fortran libraries (QUADPACK, FITPACK, ODEPACK etc). The Fortran 77
-that these libraries are written in is quite hard to maintain, and the use
-of Fortran is problematic for many reasons; e.g., it makes our wheel builds
-much harder to maintain, it has repeatedly been problematic for supporting
-new platforms like macOS arm64 and Windows on Arm, and it is highly problematic
-for Pyodide's SciPy support. Our goal is to remove all Fortran code from SciPy
-by replacing the functionality with code written in other languages. Progress
-towards this goal is tracked in `gh-18566 <https://github.com/scipy/scipy/issues/18566>`__.
-
-
 Continuous integration
 ``````````````````````
 Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,
