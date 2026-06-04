@@ -186,11 +186,6 @@
             "ncx2_ppf_float": "fff->f",
             "ncx2_ppf_double": "ddd->d" }
     },
-    "_factorial": {
-	"_factorial.pxd": {
-	    "_factorial": "d->d"
-	}
-    },
     "elliprc": {
 	"ellint_carlson_wrap.hh++": {
 	    "fellint_RC": "dd->d",
