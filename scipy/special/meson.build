@@ -13,7 +13,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_hypergeometric.pxd'),
   fs.copyfile('_legacy.pxd'),
   fs.copyfile('_ndtri_exp.pxd'),
-  fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
