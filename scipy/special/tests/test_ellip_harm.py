@@ -143,13 +143,10 @@ def test_ellip_normal():
                    (2, 5): G25, (3, 1): G31, (3, 2): G32, (3, 3): G33,
                    (3, 4): G34, (3, 5): G35, (3, 6): G36, (3, 7): G37}
 
-    def _ellip_normal_known_formula(n, p, h2, k2):
+    def _ellip_normal_known_formula(h2, k2, n, p):
         func = known_funcs[n, p]
         return func(h2, k2)
-    _ellip_normal_known_formula = np.vectorize(_ellip_normal_known_formula)
-
-    def ellip_normal_known(h2, k2, n, p):
-        return _ellip_normal_known_formula(n, p, h2, k2)
+    ellip_normal_known = np.vectorize(_ellip_normal_known_formula)
 
     # generate both large and small h2 < k2 pairs
     np.random.seed(1234)
