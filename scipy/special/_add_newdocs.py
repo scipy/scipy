@@ -7527,11 +7527,6 @@ add_newdoc("owens_t",
     0.10877216734852274
     """)
 
-add_newdoc("_factorial",
-    """
-    Internal function, do not use.
-    """)
-
 add_newdoc("ndtri_exp",
     r"""
     ndtri_exp(y, out=None)
