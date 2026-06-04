@@ -480,6 +480,33 @@ def interp_decomp(A, eps_or_k, rand=True, rng=None):
         Column index array.
     proj : :class:`numpy.ndarray`
         Interpolation coefficients.
+
+    Examples
+    --------
+    Construct a rank-50 matrix and compute its ID to a relative precision of
+    ``1e-6``. The rank ``k`` discovered should equal the true rank.
+
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 50)) @ rng.standard_normal((50, 200))
+    >>> k, idx, proj = sli.interp_decomp(A, 1e-6, rng=0)
+    >>> k
+    50
+
+    Verify the reconstruction is accurate:
+
+    >>> B = A[:, idx[:k]]
+    >>> A_rec = np.hstack([B, B @ proj])[:, np.argsort(idx)]
+    >>> np.allclose(A, A_rec, atol=1e-6)
+    True
+
+    Alternatively, request a fixed rank (``eps_or_k >= 1``). This returns
+    ``idx`` and ``proj`` without a rank output:
+
+    >>> idx2, proj2 = sli.interp_decomp(A, 20, rng=0)
+    >>> idx2.shape, proj2.shape
+    ((200,), (20, 180))
     """  # numpy/numpydoc#87  # noqa: E501
     from scipy.sparse.linalg import LinearOperator
     rng = np.random.default_rng(rng)
@@ -562,6 +589,18 @@ def reconstruct_matrix_from_id(B, idx, proj):
     -------
     :class:`numpy.ndarray`
         Reconstructed matrix.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 50)) @ rng.standard_normal((50, 200))
+    >>> k, idx, proj = sli.interp_decomp(A, 1e-6, rng=0)
+    >>> B = sli.reconstruct_skel_matrix(A, k, idx)
+    >>> A_rec = sli.reconstruct_matrix_from_id(B, idx, proj)
+    >>> np.allclose(A, A_rec, atol=1e-6)
+    True
     """
     B = np.atleast_2d(_C_contiguous_copy(B))
     if _is_real(B):
@@ -600,6 +639,24 @@ def reconstruct_interp_matrix(idx, proj):
     -------
     :class:`numpy.ndarray`
         Interpolation matrix.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 50)) @ rng.standard_normal((50, 200))
+    >>> k, idx, proj = sli.interp_decomp(A, 1e-6, rng=0)
+    >>> P = sli.reconstruct_interp_matrix(idx, proj)
+    >>> P.shape
+    (50, 200)
+
+    The original matrix can be recovered as ``B @ P`` where ``B`` is the
+    skeleton matrix:
+
+    >>> B = sli.reconstruct_skel_matrix(A, k, idx)
+    >>> np.allclose(A, B @ P, atol=1e-6)
+    True
     """
     n, krank = len(idx), proj.shape[0]
     if _is_real(proj):
@@ -647,6 +704,22 @@ def reconstruct_skel_matrix(A, k, idx):
     -------
     :class:`numpy.ndarray`
         Skeleton matrix.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 50)) @ rng.standard_normal((50, 200))
+    >>> k, idx, proj = sli.interp_decomp(A, 1e-6, rng=0)
+    >>> B = sli.reconstruct_skel_matrix(A, k, idx)
+    >>> B.shape
+    (100, 50)
+
+    ``B`` contains exactly the ``k`` columns of ``A`` selected by the ID:
+
+    >>> np.array_equal(B, A[:, idx[:k]])
+    True
     """
     return A[:, idx[:k]]
 
@@ -684,6 +757,26 @@ def id_to_svd(B, idx, proj):
         Singular values.
     V : :class:`numpy.ndarray`
         Right singular vectors.
+
+    Examples
+    --------
+    Compute an ID and convert it to an SVD, then verify the reconstruction:
+
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 50)) @ rng.standard_normal((50, 200))
+    >>> k, idx, proj = sli.interp_decomp(A, 1e-6, rng=0)
+    >>> B = sli.reconstruct_skel_matrix(A, k, idx)
+    >>> U, S, V = sli.id_to_svd(B, idx, proj)
+    >>> A_rec = U @ np.diag(S) @ V.conj().T
+    >>> np.allclose(A, A_rec, atol=1e-6)
+    True
+
+    The singular values are non-negative and sorted in decreasing order:
+
+    >>> np.all(S >= 0) and np.all(np.diff(S) <= 0)
+    np.True_
     """
     B = _C_contiguous_copy(B)
     if _is_real(B):
@@ -720,6 +813,19 @@ def estimate_spectral_norm(A, its=20, rng=None):
     -------
     float
         Spectral norm estimate.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> from scipy.sparse.linalg import aslinearoperator
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 200))
+    >>> Aop = aslinearoperator(A)
+    >>> sn_est = sli.estimate_spectral_norm(Aop, rng=0)
+    >>> sn_true = np.linalg.norm(A, 2)
+    >>> abs(sn_est - sn_true) / sn_true < 0.05  # within 5% of true value
+    np.True_
     """
     from scipy.sparse.linalg import aslinearoperator
     rng = np.random.default_rng(rng)
@@ -761,6 +867,27 @@ def estimate_spectral_norm_diff(A, B, its=20, rng=None):
     -------
     float
         Spectral norm estimate of matrix difference.
+
+    Examples
+    --------
+    Estimate how much a small perturbation changes a matrix in spectral norm:
+
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> from scipy.sparse.linalg import aslinearoperator
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 200))
+    >>> B = A + rng.standard_normal((100, 200)) * 0.01
+    >>> Aop, Bop = aslinearoperator(A), aslinearoperator(B)
+    >>> diff_est = sli.estimate_spectral_norm_diff(Aop, Bop, rng=0)
+    >>> diff_true = np.linalg.norm(A - B, 2)
+    >>> abs(diff_est - diff_true) / diff_true < 0.1  # within 10% of true value
+    np.True_
+
+    Two identical matrices have zero spectral norm difference:
+
+    >>> sli.estimate_spectral_norm_diff(Aop, Aop, rng=0) == 0.0
+    True
     """
     from scipy.sparse.linalg import aslinearoperator
     rng = np.random.default_rng(rng)
@@ -825,6 +952,27 @@ def svd(A, eps_or_k, rand=True, rng=None):
         1D array of singular values.
     V : :class:`numpy.ndarray`
         2D array right singular vectors.
+
+    Examples
+    --------
+    Compute a low-rank SVD of a rank-50 matrix to a relative precision of
+    ``1e-6`` and verify the reconstruction error:
+
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 50)) @ rng.standard_normal((50, 200))
+    >>> U, S, V = sli.svd(A, 1e-6, rng=0)
+    >>> U.shape, S.shape, V.shape
+    ((100, 50), (50,), (200, 50))
+    >>> np.allclose(A, U @ np.diag(S) @ V.conj().T, atol=1e-6)
+    True
+
+    Alternatively, request a fixed rank directly:
+
+    >>> U2, S2, V2 = sli.svd(A, 20, rng=0)
+    >>> U2.shape, S2.shape, V2.shape
+    ((100, 20), (20,), (200, 20))
     """
     from scipy.sparse.linalg import LinearOperator
     rng = np.random.default_rng(rng)
@@ -916,6 +1064,26 @@ def estimate_rank(A, eps, rng=None):
     -------
     int
         Estimated matrix rank.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((100, 50)) @ rng.standard_normal((50, 200))
+    >>> sli.estimate_rank(A, 1e-6, rng=0)
+    57
+
+    Note that the estimated rank may be slightly higher than the true rank (50
+    in this case). This is expected behavior: when ``A`` is a
+    :class:`numpy.ndarray`, the output rank is typically about 8 higher than
+    the actual numerical rank.
+
+    For a full-rank matrix, the estimated rank equals the smaller dimension:
+
+    >>> B = rng.standard_normal((50, 200))
+    >>> sli.estimate_rank(B, 1e-6, rng=0) == min(B.shape)
+    True
     """
     from scipy.sparse.linalg import LinearOperator
 
