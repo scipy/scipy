@@ -426,7 +426,7 @@ class SVDSCommonTests:
     def test_svd_random_state(self):
         # the legacy `random_state` argument should work for now,
         # even with NumPy <2.2.
-        # Regression test for gh-250
+        # Regression test for gh-25069
         rng = np.random.default_rng(0)
         A = rng.random((5, 5))
         res = svds(A, 1, solver=self.solver, random_state=np.random.RandomState(0))
