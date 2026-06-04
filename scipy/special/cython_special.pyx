@@ -1453,10 +1453,6 @@ cdef extern from r"_ufuncs_defs.h":
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_ellik "ellik"(npy_double, npy_double)nogil
 
-from ._ellipk cimport ellipk as _func_ellipk
-ctypedef double _proto_ellipk_t(double) noexcept nogil
-cdef _proto_ellipk_t *_proto_ellipk_t_var = &_func_ellipk
-
 from ._convex_analysis cimport entr as _func_entr
 ctypedef double _proto_entr_t(double) noexcept nogil
 cdef _proto_entr_t *_proto_entr_t_var = &_func_entr
