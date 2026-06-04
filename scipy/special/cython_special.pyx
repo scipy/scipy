@@ -1784,13 +1784,6 @@ cdef void airy(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2
             y2[0] = NAN
             y3[0] = NAN
 
-def _airy_pywrap(Dd_number_t x0):
-    cdef Dd_number_t y0
-    cdef Dd_number_t y1
-    cdef Dd_number_t y2
-    cdef Dd_number_t y3
-    airy(x0, &y0, &y1, &y2, &y3)
-    return y0, y1, y2, y3
 
 cdef void airye(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) noexcept nogil:
     """See the documentation for scipy.special.airye"""
@@ -1818,13 +1811,6 @@ cdef void airye(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y
             y2[0] = NAN
             y3[0] = NAN
 
-def _airye_pywrap(Dd_number_t x0):
-    cdef Dd_number_t y0
-    cdef Dd_number_t y1
-    cdef Dd_number_t y2
-    cdef Dd_number_t y3
-    airye(x0, &y0, &y1, &y2, &y3)
-    return y0, y1, y2, y3
 
 cpdef double bdtr(double x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtr"""
@@ -2020,13 +2006,6 @@ cdef void ellipj(double x0, double x1, double *y0, double *y1, double *y2, doubl
     """See the documentation for scipy.special.ellipj"""
     _func_cephes_ellpj_wrap(x0, x1, y0, y1, y2, y3)
 
-def _ellipj_pywrap(double x0, double x1):
-    cdef double y0
-    cdef double y1
-    cdef double y2
-    cdef double y3
-    ellipj(x0, x1, &y0, &y1, &y2, &y3)
-    return y0, y1, y2, y3
 
 cpdef double ellipkinc(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.ellipkinc"""
@@ -2481,12 +2460,6 @@ cdef void fresnel(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nog
             y0[0] = NAN
             y1[0] = NAN
 
-def _fresnel_pywrap(Dd_number_t x0):
-    cdef Dd_number_t y0
-    cdef Dd_number_t y1
-    fresnel(x0, &y0, &y1)
-    return y0, y1
-
 cpdef Dd_number_t gamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.gamma"""
     if Dd_number_t is double_complex:
@@ -2631,21 +2604,10 @@ cdef void it2i0k0(double x0, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.it2i0k0"""
     _func_it2i0k0_wrap(x0, y0, y1)
 
-def _it2i0k0_pywrap(double x0):
-    cdef double y0
-    cdef double y1
-    it2i0k0(x0, &y0, &y1)
-    return y0, y1
 
 cdef void it2j0y0(double x0, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.it2j0y0"""
     _func_it2j0y0_wrap(x0, y0, y1)
-
-def _it2j0y0_pywrap(double x0):
-    cdef double y0
-    cdef double y1
-    it2j0y0(x0, &y0, &y1)
-    return y0, y1
 
 cpdef double it2struve0(double x0) noexcept nogil:
     """See the documentation for scipy.special.it2struve0"""
@@ -2655,33 +2617,16 @@ cdef void itairy(double x0, double *y0, double *y1, double *y2, double *y3) noex
     """See the documentation for scipy.special.itairy"""
     special_itairy(x0, y0, y1, y2, y3)
 
-def _itairy_pywrap(double x0):
-    cdef double y0
-    cdef double y1
-    cdef double y2
-    cdef double y3
-    itairy(x0, &y0, &y1, &y2, &y3)
-    return y0, y1, y2, y3
 
 cdef void iti0k0(double x0, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.iti0k0"""
     _func_it1i0k0_wrap(x0, y0, y1)
 
-def _iti0k0_pywrap(double x0):
-    cdef double y0
-    cdef double y1
-    iti0k0(x0, &y0, &y1)
-    return y0, y1
 
 cdef void itj0y0(double x0, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.itj0y0"""
     _func_it1j0y0_wrap(x0, y0, y1)
 
-def _itj0y0_pywrap(double x0):
-    cdef double y0
-    cdef double y1
-    itj0y0(x0, &y0, &y1)
-    return y0, y1
 
 cpdef double itmodstruve0(double x0) noexcept nogil:
     """See the documentation for scipy.special.itmodstruve0"""
@@ -2783,13 +2728,6 @@ cdef void kelvin(double x0, double complex *y0, double complex *y1, double compl
     y2[0] = _complexstuff.double_complex_from_npy_cdouble(tmp2)
     y3[0] = _complexstuff.double_complex_from_npy_cdouble(tmp3)
 
-def _kelvin_pywrap(double x0):
-    cdef double complex y0
-    cdef double complex y1
-    cdef double complex y2
-    cdef double complex y3
-    kelvin(x0, &y0, &y1, &y2, &y3)
-    return y0, y1, y2, y3
 
 cpdef double ker(double x0) noexcept nogil:
     """See the documentation for scipy.special.ker"""
@@ -2930,61 +2868,31 @@ cdef void mathieu_cem(double x0, double x1, double x2, double *y0, double *y1) n
     """See the documentation for scipy.special.mathieu_cem"""
     _func_cem_wrap(x0, x1, x2, y0, y1)
 
-def _mathieu_cem_pywrap(double x0, double x1, double x2):
-    cdef double y0
-    cdef double y1
-    mathieu_cem(x0, x1, x2, &y0, &y1)
-    return y0, y1
 
 cdef void mathieu_modcem1(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_modcem1"""
     _func_mcm1_wrap(x0, x1, x2, y0, y1)
 
-def _mathieu_modcem1_pywrap(double x0, double x1, double x2):
-    cdef double y0
-    cdef double y1
-    mathieu_modcem1(x0, x1, x2, &y0, &y1)
-    return y0, y1
 
 cdef void mathieu_modcem2(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_modcem2"""
     _func_mcm2_wrap(x0, x1, x2, y0, y1)
 
-def _mathieu_modcem2_pywrap(double x0, double x1, double x2):
-    cdef double y0
-    cdef double y1
-    mathieu_modcem2(x0, x1, x2, &y0, &y1)
-    return y0, y1
 
 cdef void mathieu_modsem1(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_modsem1"""
     _func_msm1_wrap(x0, x1, x2, y0, y1)
 
-def _mathieu_modsem1_pywrap(double x0, double x1, double x2):
-    cdef double y0
-    cdef double y1
-    mathieu_modsem1(x0, x1, x2, &y0, &y1)
-    return y0, y1
 
 cdef void mathieu_modsem2(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_modsem2"""
     _func_msm2_wrap(x0, x1, x2, y0, y1)
 
-def _mathieu_modsem2_pywrap(double x0, double x1, double x2):
-    cdef double y0
-    cdef double y1
-    mathieu_modsem2(x0, x1, x2, &y0, &y1)
-    return y0, y1
 
 cdef void mathieu_sem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_sem"""
     _func_sem_wrap(x0, x1, x2, y0, y1)
 
-def _mathieu_sem_pywrap(double x0, double x1, double x2):
-    cdef double y0
-    cdef double y1
-    mathieu_sem(x0, x1, x2, &y0, &y1)
-    return y0, y1
 
 cdef void modfresnelm(double x0, double complex *y0, double complex *y1) noexcept nogil:
     """See the documentation for scipy.special.modfresnelm"""
@@ -2994,11 +2902,6 @@ cdef void modfresnelm(double x0, double complex *y0, double complex *y1) noexcep
     y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
     y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
 
-def _modfresnelm_pywrap(double x0):
-    cdef double complex y0
-    cdef double complex y1
-    modfresnelm(x0, &y0, &y1)
-    return y0, y1
 
 cdef void modfresnelp(double x0, double complex *y0, double complex *y1) noexcept nogil:
     """See the documentation for scipy.special.modfresnelp"""
@@ -3008,11 +2911,6 @@ cdef void modfresnelp(double x0, double complex *y0, double complex *y1) noexcep
     y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
     y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
 
-def _modfresnelp_pywrap(double x0):
-    cdef double complex y0
-    cdef double complex y1
-    modfresnelp(x0, &y0, &y1)
-    return y0, y1
 
 cpdef double modstruve(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.modstruve"""
@@ -3180,21 +3078,11 @@ cdef void obl_ang1(double x0, double x1, double x2, double x3, double *y0, doubl
     """See the documentation for scipy.special.obl_ang1"""
     y0[0] = _func_oblate_aswfa_nocv_wrap(x0, x1, x2, x3, y1)
 
-def _obl_ang1_pywrap(double x0, double x1, double x2, double x3):
-    cdef double y0
-    cdef double y1
-    obl_ang1(x0, x1, x2, x3, &y0, &y1)
-    return y0, y1
 
 cdef void obl_ang1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.obl_ang1_cv"""
     _func_oblate_aswfa_wrap(x0, x1, x2, x3, x4, y0, y1)
 
-def _obl_ang1_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
-    cdef double y0
-    cdef double y1
-    obl_ang1_cv(x0, x1, x2, x3, x4, &y0, &y1)
-    return y0, y1
 
 cpdef double obl_cv(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.obl_cv"""
@@ -3204,41 +3092,21 @@ cdef void obl_rad1(double x0, double x1, double x2, double x3, double *y0, doubl
     """See the documentation for scipy.special.obl_rad1"""
     y0[0] = _func_oblate_radial1_nocv_wrap(x0, x1, x2, x3, y1)
 
-def _obl_rad1_pywrap(double x0, double x1, double x2, double x3):
-    cdef double y0
-    cdef double y1
-    obl_rad1(x0, x1, x2, x3, &y0, &y1)
-    return y0, y1
 
 cdef void obl_rad1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.obl_rad1_cv"""
     _func_oblate_radial1_wrap(x0, x1, x2, x3, x4, y0, y1)
 
-def _obl_rad1_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
-    cdef double y0
-    cdef double y1
-    obl_rad1_cv(x0, x1, x2, x3, x4, &y0, &y1)
-    return y0, y1
 
 cdef void obl_rad2(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.obl_rad2"""
     y0[0] = _func_oblate_radial2_nocv_wrap(x0, x1, x2, x3, y1)
 
-def _obl_rad2_pywrap(double x0, double x1, double x2, double x3):
-    cdef double y0
-    cdef double y1
-    obl_rad2(x0, x1, x2, x3, &y0, &y1)
-    return y0, y1
 
 cdef void obl_rad2_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.obl_rad2_cv"""
     _func_oblate_radial2_wrap(x0, x1, x2, x3, x4, y0, y1)
 
-def _obl_rad2_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
-    cdef double y0
-    cdef double y1
-    obl_rad2_cv(x0, x1, x2, x3, x4, &y0, &y1)
-    return y0, y1
 
 cpdef double owens_t(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.owens_t"""
@@ -3248,31 +3116,16 @@ cdef void pbdv(double x0, double x1, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pbdv"""
     _func_pbdv_wrap(x0, x1, y0, y1)
 
-def _pbdv_pywrap(double x0, double x1):
-    cdef double y0
-    cdef double y1
-    pbdv(x0, x1, &y0, &y1)
-    return y0, y1
 
 cdef void pbvv(double x0, double x1, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pbvv"""
     _func_pbvv_wrap(x0, x1, y0, y1)
 
-def _pbvv_pywrap(double x0, double x1):
-    cdef double y0
-    cdef double y1
-    pbvv(x0, x1, &y0, &y1)
-    return y0, y1
 
 cdef void pbwa(double x0, double x1, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pbwa"""
     _func_pbwa_wrap(x0, x1, y0, y1)
 
-def _pbwa_pywrap(double x0, double x1):
-    cdef double y0
-    cdef double y1
-    pbwa(x0, x1, &y0, &y1)
-    return y0, y1
 
 cpdef double pdtr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pdtr"""
@@ -3322,21 +3175,11 @@ cdef void pro_ang1(double x0, double x1, double x2, double x3, double *y0, doubl
     """See the documentation for scipy.special.pro_ang1"""
     y0[0] = _func_prolate_aswfa_nocv_wrap(x0, x1, x2, x3, y1)
 
-def _pro_ang1_pywrap(double x0, double x1, double x2, double x3):
-    cdef double y0
-    cdef double y1
-    pro_ang1(x0, x1, x2, x3, &y0, &y1)
-    return y0, y1
 
 cdef void pro_ang1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pro_ang1_cv"""
     _func_prolate_aswfa_wrap(x0, x1, x2, x3, x4, y0, y1)
 
-def _pro_ang1_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
-    cdef double y0
-    cdef double y1
-    pro_ang1_cv(x0, x1, x2, x3, x4, &y0, &y1)
-    return y0, y1
 
 cpdef double pro_cv(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.pro_cv"""
@@ -3346,41 +3189,21 @@ cdef void pro_rad1(double x0, double x1, double x2, double x3, double *y0, doubl
     """See the documentation for scipy.special.pro_rad1"""
     y0[0] = _func_prolate_radial1_nocv_wrap(x0, x1, x2, x3, y1)
 
-def _pro_rad1_pywrap(double x0, double x1, double x2, double x3):
-    cdef double y0
-    cdef double y1
-    pro_rad1(x0, x1, x2, x3, &y0, &y1)
-    return y0, y1
 
 cdef void pro_rad1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pro_rad1_cv"""
     _func_prolate_radial1_wrap(x0, x1, x2, x3, x4, y0, y1)
 
-def _pro_rad1_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
-    cdef double y0
-    cdef double y1
-    pro_rad1_cv(x0, x1, x2, x3, x4, &y0, &y1)
-    return y0, y1
 
 cdef void pro_rad2(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pro_rad2"""
     y0[0] = _func_prolate_radial2_nocv_wrap(x0, x1, x2, x3, y1)
 
-def _pro_rad2_pywrap(double x0, double x1, double x2, double x3):
-    cdef double y0
-    cdef double y1
-    pro_rad2(x0, x1, x2, x3, &y0, &y1)
-    return y0, y1
 
 cdef void pro_rad2_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pro_rad2_cv"""
     _func_prolate_radial2_wrap(x0, x1, x2, x3, x4, y0, y1)
 
-def _pro_rad2_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
-    cdef double y0
-    cdef double y1
-    pro_rad2_cv(x0, x1, x2, x3, x4, &y0, &y1)
-    return y0, y1
 
 cpdef double pseudo_huber(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pseudo_huber"""
@@ -3449,11 +3272,6 @@ cdef void shichi(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogi
             y0[0] = NAN
             y1[0] = NAN
 
-def _shichi_pywrap(Dd_number_t x0):
-    cdef Dd_number_t y0
-    cdef Dd_number_t y1
-    shichi(x0, &y0, &y1)
-    return y0, y1
 
 cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil:
     """See the documentation for scipy.special.sici"""
@@ -3473,11 +3291,6 @@ cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil:
             y0[0] = NAN
             y1[0] = NAN
 
-def _sici_pywrap(Dd_number_t x0):
-    cdef Dd_number_t y0
-    cdef Dd_number_t y1
-    sici(x0, &y0, &y1)
-    return y0, y1
 
 cpdef double sindg(double x0) noexcept nogil:
     """See the documentation for scipy.special.sindg"""
