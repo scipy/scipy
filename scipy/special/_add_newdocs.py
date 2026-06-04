@@ -77,11 +77,6 @@ add_newdoc("_ellip_harm",
     Internal function, use `ellip_harm` instead.
     """)
 
-add_newdoc("_ellip_norm",
-    """
-    Internal function, use `ellip_norm` instead.
-    """)
-
 add_newdoc("wrightomega",
     r"""
     wrightomega(z, out=None)
