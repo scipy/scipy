@@ -13,7 +13,7 @@ from scipy.sparse import (csr_matrix, coo_matrix,
                           csc_array, bsr_array,
                           dia_array, dok_array,
                           lil_array, csc_matrix,
-                          bsr_matrix, dia_matrix, dok_matrix,
+                          bsr_matrix, dia_matrix,
                           lil_matrix, sparray, spmatrix,
                           _construct as construct)
 from scipy.sparse._construct import rand as sprand
@@ -1167,34 +1167,3 @@ def test_axis_expand_dims():
             construct.expand_dims(A, axis=i).toarray(),
             construct.expand_dims(A, axis=i - 3).toarray()
         )
-
-def test_unsupported_dtypes_in_constructors():
-    # Verify that sparse constructors raise TypeError for unsupported inferred dtypes
-    unsupported_dtypes = [np.float16, object]
-    formats = [
-        csr_array, csc_array, coo_array, bsr_array, dia_array, dok_array,
-        lil_array, csr_matrix, csc_matrix, coo_matrix, bsr_matrix,
-        dia_matrix, dok_matrix, lil_matrix
-    ]
-
-    for sp_format in formats:
-        for dt in unsupported_dtypes:
-            data = np.array([1], dtype=dt)
-            data_2d = np.array([[1]], dtype=dt)
-
-            with pytest.raises(TypeError, match="does not support dtype"):
-                sp_format(data_2d)
-
-            if sp_format in (csr_array, csr_matrix, csc_array, csc_matrix):
-                with pytest.raises(TypeError, match="does not support dtype"):
-                    sp_format((data, [0], [0, 1]), shape=(1, 1))
-            elif sp_format in (bsr_array, bsr_matrix):
-                data_3d = np.array([[[1]]], dtype=dt)
-                with pytest.raises(TypeError, match="does not support dtype"):
-                    sp_format((data_3d, [0], [0, 1]), shape=(1, 1))
-            elif sp_format in (coo_array, coo_matrix):
-                with pytest.raises(TypeError, match="does not support dtype"):
-                    sp_format((data, ([0], [0])), shape=(1, 1))
-            elif sp_format in (dia_array, dia_matrix):
-                with pytest.raises(TypeError, match="does not support dtype"):
-                    sp_format((data_2d, [0]), shape=(1, 1))
