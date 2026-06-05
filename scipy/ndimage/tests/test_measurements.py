@@ -1220,29 +1220,57 @@ def test_maximum_position07(xp):
 
 
 @make_xp_test_case(ndimage.maximum_position)
-def test_maximum_position_outside_label_invariance(xp):
+@pytest.mark.parametrize("dtype_name", types)
+def test_maximum_position_outside_label_invariance(xp, dtype_name):
     # gh-25279: the reported maximum position of a label must depend only on
     # that label's own pixels. An unstable sort used to let values belonging
     # to other labels reorder the tie-break among equal maxima, so the result
     # changed when unrelated pixels changed.
+    dtype = getattr(xp, dtype_name)
     labels = xp.asarray([[0, 0, 0, 0],
                          [0, 1, 1, 0],
                          [0, 1, 1, 0],
                          [0, 0, 0, 2]])
-    for type in types:
-        dtype = getattr(xp, type)
-        # label 1 is a plateau of equal maxima; only the label-2 pixel differs.
-        input_a = xp.asarray([[0, 0, 0, 0],
-                              [0, 1, 1, 0],
-                              [0, 1, 1, 0],
-                              [0, 0, 0, 0]], dtype=dtype)
-        input_b = xp.asarray([[0, 0, 0, 0],
-                              [0, 1, 1, 0],
-                              [0, 1, 1, 0],
-                              [0, 0, 0, 9]], dtype=dtype)
-        pos_a = ndimage.maximum_position(input_a, labels, xp.asarray([1]))
-        pos_b = ndimage.maximum_position(input_b, labels, xp.asarray([1]))
-        assert pos_a == pos_b
+    # label 1 is a plateau of equal maxima; only the label-2 pixel differs.
+    input_a = xp.asarray([[0, 0, 0, 0],
+                          [0, 1, 1, 0],
+                          [0, 1, 1, 0],
+                          [0, 0, 0, 0]], dtype=dtype)
+    input_b = xp.asarray([[0, 0, 0, 0],
+                          [0, 1, 1, 0],
+                          [0, 1, 1, 0],
+                          [0, 0, 0, 9]], dtype=dtype)
+    # The tie is broken by the lexicographically-first position, which for
+    # label 1's plateau is (1, 1), independent of the label-2 pixel.
+    assert ndimage.maximum_position(input_a, labels, xp.asarray([1])) == [(1, 1)]
+    assert ndimage.maximum_position(input_b, labels, xp.asarray([1])) == [(1, 1)]
+
+
+@make_xp_test_case(ndimage.minimum_position, ndimage.maximum_position,
+                   ndimage.extrema)
+@pytest.mark.parametrize("dtype_name", types)
+def test_extremum_position_lexicographic_tiebreak(xp, dtype_name):
+    # gh-25279: when several pixels of a label share the extreme value, the
+    # returned position is the lexicographically-first (smallest flat index)
+    # one, consistently for scalar and list `index`, for minimum and maximum,
+    # and for the positions returned by `extrema`.
+    dtype = getattr(xp, dtype_name)
+    input = xp.asarray([[1, 1, 0, 0],
+                        [1, 1, 0, 0],
+                        [0, 0, 2, 2],
+                        [0, 0, 2, 2]], dtype=dtype)
+    labels = xp.asarray([[1, 1, 0, 0],
+                         [1, 1, 0, 0],
+                         [0, 0, 2, 2],
+                         [0, 0, 2, 2]])
+    # Each label is a plateau: label 1 -> first position (0, 0), label 2 -> (2, 2).
+    assert ndimage.maximum_position(input, labels, 1) == (0, 0)
+    assert ndimage.maximum_position(input, labels, [1, 2]) == [(0, 0), (2, 2)]
+    assert ndimage.minimum_position(input, labels, 1) == (0, 0)
+    assert ndimage.minimum_position(input, labels, [1, 2]) == [(0, 0), (2, 2)]
+    _, _, minpos, maxpos = ndimage.extrema(input, labels, [1, 2])
+    assert minpos == [(0, 0), (2, 2)]
+    assert maxpos == [(0, 0), (2, 2)]
 
 
 @make_xp_test_case(ndimage.extrema, ndimage.minimum, ndimage.maximum,
