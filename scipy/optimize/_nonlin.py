@@ -1294,7 +1294,7 @@ class LinearMixing(GenericBroyden):
     ...     x = np.asarray(x)
     ...     d = diag([3., 2.])
     ...     c = 0.01
-    ...     return -d @ x - c * float(x @ x) * x
+    ...     return -d @ x - c * (x @ x) * x
 
     A solution can be obtained using fixed-point iterations (``iter``
     controls the number of iterations explicitly):
@@ -1364,7 +1364,7 @@ class ExcitingMixing(GenericBroyden):
     ...     x = np.asarray(x)
     ...     d = np.diag([3., 2.])
     ...     c = 0.01
-    ...     return -d @ x - c * float(x @ x) * x
+    ...     return -d @ x - c * (x @ x) * x
 
     A solution can be found using :func:`excitingmixing` with a fixed
     number of iterations:
