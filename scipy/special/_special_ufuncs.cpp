@@ -227,14 +227,6 @@ static PyMethodDef _methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-
-static float
-bivariate_normal_sf_float(float dh, float dk, float r)
-{
-    return static_cast<float>(xsf::bivariate_normal_sf(dh, dk, r));
-}
-
-
 static int
 _special_ufuncs_module_exec(PyObject *module)
 {
@@ -242,7 +234,7 @@ _special_ufuncs_module_exec(PyObject *module)
     if (_import_umath() < 0) { return -1; }
 
     PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::fff_f>(bivariate_normal_sf_float),
+        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
          static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
         "_bivariate_normal_sf", _bivariate_normal_sf_doc);
     PyModule_AddObjectRef(module, "_bivariate_normal_sf", _bivariate_normal_sf);
