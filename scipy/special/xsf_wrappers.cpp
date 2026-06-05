@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include "xsf_wrappers.h"
+#include <xsf/agm.h>
 #include <xsf/airy.h>
 #include <xsf/amos.h>
 #include <xsf/bessel.h>
@@ -254,6 +255,8 @@ npy_cdouble special_ccyl_hankel_2(double v, npy_cdouble z) { return to_ccomplex(
 npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z) {
     return to_ccomplex(xsf::cyl_hankel_2e(v, to_complex(z)));
 }
+
+double special_agm(double a, double b) { return xsf::agm(a, b); }
 
 double xsf_binom(double n, double k) { return xsf::binom(n, k); }
 

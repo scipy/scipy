@@ -6,6 +6,65 @@ const char *_bivariate_normal_sf_doc = R"(
     Internal function, do not use.
     )";
 
+const char *agm_doc = R"(
+    agm(a, b, out=None)
+
+    Compute the arithmetic-geometric mean of `a` and `b`.
+
+    Start with :math:`a_0 = a` and :math:`b_0 = b` and iteratively compute
+
+    .. math::
+
+        a_{n+1} = \frac{a_n + b_n}{2}, \quad
+        b_{n+1} = \sqrt{a_n b_n}.
+
+    :math:`a_n` and :math:`b_n` converge to the same limit as :math:`n`
+    increases; their common limit is :math:`\operatorname{agm}(a, b)`.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real values only. If the values are both negative, the result
+        is negative. If one value is negative and the other is positive,
+        `nan` is returned.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        The arithmetic-geometric mean of :math:`a` and :math:`b`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import agm
+    >>> a, b = 24.0, 6.0
+    >>> agm(a, b)
+    13.458171481725614
+
+    Compare that result to the iteration:
+
+    >>> while a != b:
+    ...     a, b = (a + b)/2, np.sqrt(a*b)
+    ...     print("a = %19.16f  b=%19.16f" % (a, b))
+    ...
+    a = 15.0000000000000000  b=12.0000000000000000
+    a = 13.5000000000000000  b=13.4164078649987388
+    a = 13.4582039324993694  b=13.4581390309909850
+    a = 13.4581714817451772  b=13.4581714817060547
+    a = 13.4581714817256159  b=13.4581714817256159
+
+    When array-like arguments are given, broadcasting applies:
+
+    >>> a = np.array([[1.5], [3], [6]])  # a has shape (3, 1).
+    >>> b = np.array([6, 12, 24, 48])    # b has shape (4,).
+    >>> agm(a, b)
+    array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],
+           [  4.37037309,   6.72908574,  10.84726853,  18.11597502],
+           [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
+    )";
+
 const char *gdtria_doc = R"(
     gdtria(p, b, x, out=None)
 

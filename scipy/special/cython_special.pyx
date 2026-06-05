@@ -1177,6 +1177,7 @@ cdef extern from r"xsf_wrappers.h":
     npy_cdouble special_ccyl_hankel_2(npy_double, npy_cdouble) nogil
     npy_cdouble special_ccyl_hankel_2e(npy_double, npy_cdouble) nogil
 
+    npy_double special_agm(npy_double, npy_double) nogil
     npy_double xsf_binom(npy_double, npy_double) nogil
 
     npy_double special_digamma(npy_double) nogil
@@ -1377,10 +1378,6 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_smirnovci(int n, double x) nogil
     double xsf_smirnovp(int n, double x) nogil
     double xsf_tukeylambdacdf(double x, double lmbda) nogil
-
-from ._agm cimport agm as _func_agm
-ctypedef double _proto_agm_t(double, double) noexcept nogil
-cdef _proto_agm_t *_proto_agm_t_var = &_func_agm
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -1752,7 +1749,7 @@ cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double agm(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.agm"""
-    return _func_agm(x0, x1)
+    return special_agm(x0, x1)
 
 cdef void airy(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) noexcept nogil:
     """See the documentation for scipy.special.airy"""

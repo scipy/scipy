@@ -95,6 +95,7 @@ void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double sin_pi(double x);
 
+double special_agm(double a, double b);
 double xsf_binom(double n, double k);
 
 double special_digamma(double z);

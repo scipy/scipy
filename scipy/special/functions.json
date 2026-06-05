@@ -52,11 +52,6 @@
             "cephes__struve_power_series": "ddp*d->d"
         }
     },
-    "agm": {
-        "_agm.pxd": {
-            "agm": "dd->d"
-        }
-    },
     "bdtr": {
         "_legacy.pxd": {
             "bdtr_unsafe": "ddd->d"

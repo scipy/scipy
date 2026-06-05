@@ -4,6 +4,7 @@
 #include <complex>
 
 #include "sf_error.h"
+#include <xsf/agm.h>
 #include <xsf/airy.h>
 #include <xsf/alg.h>
 #include <xsf/amos.h>
@@ -55,6 +56,7 @@ extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
 extern const char *_normalized_gen_harmonic_doc;
 extern const char *_von_mises_cdf_doc;
+extern const char *agm_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bei_doc;
@@ -305,6 +307,11 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(xsf::zeta), static_cast<xsf::numpy::Dd_D>(xsf::zeta)},
                           "_zeta", _zeta_doc);
     PyModule_AddObjectRef(module, "_zeta", _zeta);
+
+    PyObject *agm = xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::agm),
+                                       static_cast<xsf::numpy::dd_d>(xsf::agm)},
+                                      "agm", agm_doc);
+    PyModule_AddObjectRef(module, "agm", agm);
 
     PyObject *airy =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ffff>(xsf::airy), static_cast<xsf::numpy::d_dddd>(xsf::airy),
