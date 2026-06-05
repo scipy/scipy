@@ -311,20 +311,28 @@ _special_ufuncs_module_exec(PyObject *module)
                                       "agm", agm_doc);
     PyModule_AddObjectRef(module, "agm", agm);
 
-    PyObject *entr = xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::entr)}, "entr", entr_doc);
+    PyObject *entr = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::entr), static_cast<xsf::numpy::d_d>(xsf::entr)}, "entr", entr_doc);
     PyModule_AddObjectRef(module, "entr", entr);
 
-    PyObject *huber = xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::huber)}, "huber", huber_doc);
+    PyObject *huber = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::huber), static_cast<xsf::numpy::dd_d>(xsf::huber)}, "huber", huber_doc);
     PyModule_AddObjectRef(module, "huber", huber);
 
-    PyObject *kl_div = xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::kl_div)}, "kl_div", kl_div_doc);
+    PyObject *kl_div = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::kl_div), static_cast<xsf::numpy::dd_d>(xsf::kl_div)}, "kl_div",
+        kl_div_doc);
     PyModule_AddObjectRef(module, "kl_div", kl_div);
 
     PyObject *pseudo_huber =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::pseudo_huber)}, "pseudo_huber", pseudo_huber_doc);
+        xsf::numpy::ufunc(
+            {static_cast<xsf::numpy::ff_f>(xsf::pseudo_huber), static_cast<xsf::numpy::dd_d>(xsf::pseudo_huber)},
+            "pseudo_huber", pseudo_huber_doc);
     PyModule_AddObjectRef(module, "pseudo_huber", pseudo_huber);
 
-    PyObject *rel_entr = xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::rel_entr)}, "rel_entr", rel_entr_doc);
+    PyObject *rel_entr = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::rel_entr), static_cast<xsf::numpy::dd_d>(xsf::rel_entr)}, "rel_entr",
+        rel_entr_doc);
     PyModule_AddObjectRef(module, "rel_entr", rel_entr);
 
     PyObject *airy =
