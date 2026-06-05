@@ -1178,6 +1178,11 @@ cdef extern from r"xsf_wrappers.h":
     npy_cdouble special_ccyl_hankel_2e(npy_double, npy_cdouble) nogil
 
     npy_double special_agm(npy_double, npy_double) nogil
+    npy_double special_entr(npy_double) nogil
+    npy_double special_huber(npy_double, npy_double) nogil
+    npy_double special_kl_div(npy_double, npy_double) nogil
+    npy_double special_pseudo_huber(npy_double, npy_double) nogil
+    npy_double special_rel_entr(npy_double, npy_double) nogil
     npy_double xsf_binom(npy_double, npy_double) nogil
 
     npy_double special_digamma(npy_double) nogil
@@ -1450,10 +1455,6 @@ cdef extern from r"_ufuncs_defs.h":
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_ellik "ellik"(npy_double, npy_double)nogil
 
-from ._convex_analysis cimport entr as _func_entr
-ctypedef double _proto_entr_t(double) noexcept nogil
-cdef _proto_entr_t *_proto_entr_t_var = &_func_entr
-
 from .orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
 ctypedef double complex _proto_eval_chebyc_double_complex__t(double, double complex) noexcept nogil
 cdef _proto_eval_chebyc_double_complex__t *_proto_eval_chebyc_double_complex__t_var = &_func_eval_chebyc[double_complex]
@@ -1632,10 +1633,6 @@ cdef _proto_fdtridfd_t *_proto_fdtridfd_t_var = &_func_fdtridfd
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
 
-from ._convex_analysis cimport huber as _func_huber
-ctypedef double _proto_huber_t(double, double) noexcept nogil
-cdef _proto_huber_t *_proto_huber_t_var = &_func_huber
-
 from ._hyp0f1 cimport _hyp0f1_cmplx as _func__hyp0f1_cmplx
 ctypedef double complex _proto__hyp0f1_cmplx_t(double, double complex) noexcept nogil
 cdef _proto__hyp0f1_cmplx_t *_proto__hyp0f1_cmplx_t_var = &_func__hyp0f1_cmplx
@@ -1672,10 +1669,6 @@ cdef extern from r"_ufuncs_defs.h":
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_k1e "k1e"(npy_double)nogil
 
-from ._convex_analysis cimport kl_div as _func_kl_div
-ctypedef double _proto_kl_div_t(double, double) noexcept nogil
-cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
-
 from ._legacy cimport kn_unsafe as _func_kn_unsafe
 ctypedef double _proto_kn_unsafe_t(double, double) noexcept nogil
 cdef _proto_kn_unsafe_t *_proto_kn_unsafe_t_var = &_func_kn_unsafe
@@ -1710,14 +1703,6 @@ cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
 cdef _proto_pdtri_unsafe_t *_proto_pdtri_unsafe_t_var = &_func_pdtri_unsafe
-
-from ._convex_analysis cimport pseudo_huber as _func_pseudo_huber
-ctypedef double _proto_pseudo_huber_t(double, double) noexcept nogil
-cdef _proto_pseudo_huber_t *_proto_pseudo_huber_t_var = &_func_pseudo_huber
-
-from ._convex_analysis cimport rel_entr as _func_rel_entr
-ctypedef double _proto_rel_entr_t(double, double) noexcept nogil
-cdef _proto_rel_entr_t *_proto_rel_entr_t_var = &_func_rel_entr
 
 from ._legacy cimport smirnov_unsafe as _func_smirnov_unsafe
 ctypedef double _proto_smirnov_unsafe_t(double, double) noexcept nogil
@@ -2095,7 +2080,7 @@ cpdef Dd_number_t elliprj(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2, Dd_num
 
 cpdef double entr(double x0) noexcept nogil:
     """See the documentation for scipy.special.entr"""
-    return _func_entr(x0)
+    return special_entr(x0)
 
 cpdef Dd_number_t erf(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erf"""
@@ -2554,7 +2539,7 @@ cpdef double complex hankel2e(double x0, double complex x1) noexcept nogil:
 
 cpdef double huber(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.huber"""
-    return _func_huber(x0, x1)
+    return special_huber(x0, x1)
 
 cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.hyp0f1"""
@@ -2794,7 +2779,7 @@ cpdef double kerp(double x0) noexcept nogil:
 
 cpdef double kl_div(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.kl_div"""
-    return _func_kl_div(x0, x1)
+    return special_kl_div(x0, x1)
 
 cpdef double kn(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.kn"""
@@ -3377,7 +3362,7 @@ def _pro_rad2_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
 
 cpdef double pseudo_huber(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pseudo_huber"""
-    return _func_pseudo_huber(x0, x1)
+    return special_pseudo_huber(x0, x1)
 
 cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.psi"""
@@ -3406,7 +3391,7 @@ cpdef double radian(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double rel_entr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.rel_entr"""
-    return _func_rel_entr(x0, x1)
+    return special_rel_entr(x0, x1)
 
 cpdef Dd_number_t rgamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.rgamma"""

@@ -3,7 +3,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_boxcox.pxd'),
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
-  fs.copyfile('_convex_analysis.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_hyp0f1.pxd'),

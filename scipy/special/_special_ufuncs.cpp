@@ -12,6 +12,7 @@
 #include <xsf/beta.h>
 #include <xsf/binom.h>
 #include <xsf/cdflib.h>
+#include <xsf/convex_analysis.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
@@ -57,6 +58,11 @@ extern const char *_log1pmx_doc;
 extern const char *_normalized_gen_harmonic_doc;
 extern const char *_von_mises_cdf_doc;
 extern const char *agm_doc;
+extern const char *entr_doc;
+extern const char *huber_doc;
+extern const char *kl_div_doc;
+extern const char *pseudo_huber_doc;
+extern const char *rel_entr_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bei_doc;
@@ -312,6 +318,22 @@ _special_ufuncs_module_exec(PyObject *module)
                                        static_cast<xsf::numpy::dd_d>(xsf::agm)},
                                       "agm", agm_doc);
     PyModule_AddObjectRef(module, "agm", agm);
+
+    PyObject *entr = xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::entr)}, "entr", entr_doc);
+    PyModule_AddObjectRef(module, "entr", entr);
+
+    PyObject *huber = xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::huber)}, "huber", huber_doc);
+    PyModule_AddObjectRef(module, "huber", huber);
+
+    PyObject *kl_div = xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::kl_div)}, "kl_div", kl_div_doc);
+    PyModule_AddObjectRef(module, "kl_div", kl_div);
+
+    PyObject *pseudo_huber =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::pseudo_huber)}, "pseudo_huber", pseudo_huber_doc);
+    PyModule_AddObjectRef(module, "pseudo_huber", pseudo_huber);
+
+    PyObject *rel_entr = xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::rel_entr)}, "rel_entr", rel_entr_doc);
+    PyModule_AddObjectRef(module, "rel_entr", rel_entr);
 
     PyObject *airy =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ffff>(xsf::airy), static_cast<xsf::numpy::d_dddd>(xsf::airy),

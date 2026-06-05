@@ -109,6 +109,12 @@ npy_longdouble special_expitl(npy_longdouble x);
 
 npy_double special_exprel(npy_double x);
 
+double special_entr(double x);
+double special_kl_div(double x, double y);
+double special_rel_entr(double x, double y);
+double special_huber(double delta, double r);
+double special_pseudo_huber(double delta, double r);
+
 float special_log_expitf(float x);
 double special_log_expit(double x);
 npy_longdouble special_log_expitl(npy_longdouble x);
