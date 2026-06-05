@@ -147,7 +147,7 @@ your system.
     1. Mingw-w64 compilers (``gcc``, ``g++``) - *recommended,
        because it's easiest to install and is what we use for SciPy's own CI
        and binaries*
-    2. MSVC
+    2. Clang-cl
     3. Intel compilers (``icc``)
 
     Compared to macOS and Linux, building SciPy on Windows is a little more
