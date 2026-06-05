@@ -4322,6 +4322,24 @@ add_newdoc("kl_div",
            Cambridge University Press, 2004.
            :doi:`10.1017/CBO9780511804441`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import kl_div, rel_entr
+
+    >>> x = np.array([1.0, 2.0, 3.0])
+    >>> y = np.array([1.5, 1.0, 4.0])
+    >>> kl_div(x, y)
+    array([0.09453489, 0.38629436, 0.13695378])
+
+    Unlike `rel_entr`, ``kl_div`` includes the additional ``-x + y`` terms,
+    so for the same inputs the two functions differ by ``y - x``:
+
+    >>> kl_div(x, y) - rel_entr(x, y)
+    array([ 0.5, -1. ,  1. ])
+    >>> y - x
+    array([ 0.5, -1. ,  1. ])
+
     """)
 
 add_newdoc("kn",
@@ -6430,6 +6448,22 @@ add_newdoc("rel_entr",
            :doi:`10.1017/CBO9780511804441`.
     .. [2] Kullback-Leibler divergence,
            https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import rel_entr
+
+    Compute the relative entropy elementwise, then sum it over a pair of
+    3-outcome probability distributions to obtain the Kullback-Leibler
+    divergence (in nats) of ``q`` from ``p``:
+
+    >>> p = np.array([0.2, 0.5, 0.3])
+    >>> q = np.array([0.1, 0.4, 0.5])
+    >>> rel_entr(p, q)
+    array([ 0.13862944,  0.11157178, -0.15324769])
+    >>> rel_entr(p, q).sum()
+    0.09695352463929671
 
     """)
 
