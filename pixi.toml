@@ -8,6 +8,7 @@ platforms = [
   "osx-arm64",
   "win-64",
   "linux-aarch64",
+  "win-arm64",
   { platform = "linux-64", cuda = "12.9" },
   { platform = "linux-64", cuda = "13.0" },
 ]
@@ -47,14 +48,18 @@ openblas = "*"
 ### Environments ###
 # We include one build task (and a corresponding environment) per solve group
 
+[environments.default]
+features = ["no-win-arm64"]
+solve-group = "default"
+
 [environments.build]
 # tasks: build
-features = ["build-deps", "build-task", "win-openblas"]
+features = ["build-deps", "build-task", "win-openblas", "no-win-arm64"]
 solve-group = "default"
 
 [environments.test]
 # tasks: test, test-coverage, test-xslow
-features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
+features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs", "no-win-arm64"]
 solve-group = "default"
 
 [environments.smoke-docs]
@@ -64,17 +69,17 @@ solve-group = "default"
 
 [environments.docs]
 # tasks: docs
-features = ["docs", "marray"]
+features = ["docs", "marray", "no-win-arm64"]
 solve-group = "default"
 
 [environments.test-fail-slow]
 # tasks: test-fail-slow
-features = ["run-deps", "test-deps", "fail-slow"]
+features = ["run-deps", "test-deps", "fail-slow", "no-win-arm64"]
 solve-group = "default"
 
 [environments.ipython]
 # tasks: ipython
-features = ["run-deps", "test-deps", "ipython-dep", "ipython-task"]
+features = ["run-deps", "test-deps", "ipython-dep", "ipython-task", "no-win-arm64"]
 solve-group = "default"
 
 [environments.bench]
@@ -241,6 +246,11 @@ features = ["build-deps", "run-deps", "test-deps", "scipy-openblas64", "default-
 [environments.build-clang-22]
 # tasks: build-clang-22
 features = ["build-deps", "build-clang-22"]
+
+[environments.win-arm64]
+# tasks: build-win-arm64, {test-tasks}
+features = ["win-arm64", "scipy-openblas32", "test-tasks"]
+no-default-feature = true
 
 [environments.gha-update]
 # tasks: gha-update
@@ -876,6 +886,9 @@ description = "Test SciPy (with pytest-run-parallel and freethreaded Python)"
 
 ### Alternative compiler versions ###
 
+[feature.build-clang-22]
+platforms = ["linux-aarch64"]
+
 [feature.build-clang-22.dependencies]
 python-build = "*"
 clang-22 = "*"
@@ -885,6 +898,50 @@ cmd = "python -m build -wnx -Csetup-args=--werror"
 env.CC = "clang-22"
 env.CXX= "clang++-22"
 description = "Build SciPy with clang-22 and -werror"
+
+
+### Alternative platforms ###
+
+[feature.no-win-arm64]
+platforms = [
+  "linux-64",
+  "osx-arm64",
+  "win-64",
+  "linux-aarch64",
+  "linux-64-cuda-12-9",
+  "linux-64-cuda-13-0",
+]
+
+[feature.win-arm64]
+platforms = ["win-arm64"]
+
+[feature.win-arm64.dependencies]
+# build
+ninja = "*"
+meson = "*"
+meson-python = "*"
+cython = "*"
+pybind11 = "*"
+# test
+pytest = "*"
+hypothesis = "*"
+pytest-timeout = "*"
+pytest-xdist = "*"
+threadpoolctl = "*"
+mpmath = "*"
+
+[feature.win-arm64.pypi-dependencies]
+numpy = "<2.4.3"  # np.linalg.solve crash, see gh-24774
+pkgconf = "*"
+pooch = "*"
+spin = "*"
+
+[feature.win-arm64.tasks.build-win-arm64]
+cmd = "spin build --with-scipy-openblas=32 --setup-args=-Duse-pythran=false"
+env.PATH = "C:\\Program Files\\LLVM\\bin;%PATH%"
+env.CC = "clang-cl"
+env.CXX = "clang-cl"
+description = "Build SciPy (default settings)"
 
 
 ### Maintenance tools ###
