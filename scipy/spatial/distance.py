@@ -497,7 +497,21 @@ def minkowski(u, v, p=2, w=None):
         else:
             root_w = np.power(w, 1/p)
         u_v = root_w * u_v
-    dist = norm(u_v, ord=p, axis=-1)
+    if p == 1:
+        dist = np.sum(np.abs(u_v), axis=-1)
+    elif p == 2:
+        dist = np.sqrt(np.sum(u_v * u_v, axis=-1))
+    elif p == np.inf:
+        dist = np.max(np.abs(u_v), axis=-1)
+    else:
+        # Avoid premature overflow for large p by scaling
+        abs_u_v = np.abs(u_v)
+        max_abs = np.max(abs_u_v, axis=-1, keepdims=True)
+        # Avoid division by zero when all elements are zero
+        max_abs = np.where(max_abs == 0, 1, max_abs)
+        scaled = abs_u_v / max_abs
+        sum_scaled = np.sum(np.power(scaled, p), axis=-1)
+        dist = max_abs[..., 0] * np.power(sum_scaled, 1.0 / p)
     return dist
 
 

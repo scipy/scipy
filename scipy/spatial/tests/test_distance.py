@@ -1498,6 +1498,16 @@ class TestSomeDistanceFunctions:
         assert_equal(minkowski(a, b),
                      minkowski(a.astype('uint16'), b.astype('uint16')))
 
+    def test_minkowski_large_p_no_overflow(self):
+        # Regression test for gh-21114
+        # Large p should not overflow prematurely.
+        a = np.array([10.0, 10.0])
+        b = np.array([0.0, 0.0])
+        # With p=1000, |10|^1000 overflows to inf in float64.
+        # The scaled computation should avoid this and return 10.
+        dist = minkowski(a, b, p=1000)
+        assert_allclose(dist, 10.0, rtol=1e-13)
+
     def test_euclidean(self):
         for x, y in self.cases:
             dist = weuclidean(x, y)
