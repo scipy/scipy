@@ -1048,7 +1048,6 @@ def _boxcox_llf(data, axis=0, *, lmb):
         logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
-    res = xp.astype(res, data.dtype)
     res = res[()] if res.ndim == 0 else res
     return res
 
