@@ -643,7 +643,7 @@ def factorized(A):
 
         def solve(b):
             with np.errstate(divide="ignore", invalid="ignore"):
-                # Ignoring warnings with numpy >= 1.23.0, see gh-16523
+                # Ignoring warnings, see gh-16523
                 result = umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True)
 
             return result

@@ -9,7 +9,6 @@ from warnings import warn
 
 import numpy as np
 
-from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
                            coo_matvec, coo_matvec_nd, coo_matmat_dense,
@@ -32,7 +31,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
         if not copy:
-            copy = copy_if_needed
+            copy = None
 
         if isinstance(arg1, tuple):
             if isshape(arg1, allow_nd=self._allow_nd):
