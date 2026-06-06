@@ -69,34 +69,32 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.12"
-
       - name: Set rtools location (mingw-w64)
         run: |
+          # scipy-openblas is built with Rtools' gfortran on Windows;
+          # its import libs (gfortran.lib, quadmath.lib) are needed
+          # to link against it with clang-cl/lld-link.
           echo "c:\rtools45\ucrt64\bin" >> $env:GITHUB_PATH
 
-      - name: pip-packages
-        run: |
-          # 2.0.0 is currently our oldest supported NumPy version
-          python -m pip install numpy==2.0.0 --group build --group dev-cli --group test-core --group openblas32
-          python -m pip install -r requirements/pkgconf.txt
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
+        with:
+          pixi-version: v0.77.1
+          cache: false
+          environments: >-
+            build-min-numpy-scipy-openblas
+            test-min-numpy-scipy-openblas
 
       - name: Build
-        run: |
-          $env:FORCE_PKGCONF_PYPI=1
-          spin build --with-scipy-openblas=32
+        run: pixi run --environment=build-min-numpy-scipy-openblas build-scipy-openblas32
 
       - name: Test
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
           # Avoid occasional anomalous long durations of a test in interpolate;
-          # see gh-25142.
+          # see scipy/scipy#25142.
           $env:WINDOWS_CI_LONG_TIMEOUT=600
-          spin test -j4 --mode full -- --durations=25 --timeout=60
+          pixi run --environment=test-min-numpy-scipy-openblas test-scipy-openblas32 -j4 --mode full -- --durations=25 --timeout=60
 
   #############################################################################
   fast_spin_arm64:
