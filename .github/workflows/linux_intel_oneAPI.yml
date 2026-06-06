@@ -37,7 +37,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   icx_icpx_ifx_mkl:
-    name: py3.12, spin
+    name: test
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -45,9 +45,6 @@ jobs:
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        python-version: ["3.12"]
 
     steps:
       - name: Checkout
@@ -71,49 +68,31 @@ jobs:
           path: |
               /opt/intel/oneapi/
           key: install-${{ env.LINUX_CPPKIT_URL }}-${{ env.LINUX_HPCKIT_URL }}-compiler
+
       - name: Install oneAPI CPP kit
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           printenv LINUX_CPPKIT_URL
           bash tools/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL "" a585655669cee57a0965eba46d96b1081d9ab86e3e4b421505ebec651b41564b  # 2025.0.1.27
+
       - name: Install oneAPI HPC kit
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           printenv LINUX_HPCKIT_URL
           bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL "" 941a4d4ccc05cfb60f5edbe7c2c5e34197cce561c12d565cd8c6fefe6b752fb6  # 2025.0.1.47
 
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          python-version: ${{ matrix.python-version }}
-          channels: conda-forge
-          channel-priority: true
-          activate-environment: scipy-dev
-          use-only-tar-bz2: false
-          miniforge-variant: Miniforge3
-          miniforge-version: latest
-          use-mamba: true
-
-      - name: Update Conda Environment
-        shell: bash -l {0}
-        run: |
-          conda activate scipy-dev
-          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin "click<8.3.0"
+          pixi-version: v0.70.1
+          cache: false
+          environments: >-
+            build-intel
+            test-intel
 
       - name: Initialise Intel oneAPI and Build SciPy
         shell: bash -l {0}
-        run: |
-          # Note that we have to install Pythran from PyPI to avoid pulling in compilers
-          # from conda-forge (those may break Intel compilers, which rely on system GCC/Clang,
-          # xref https://github.com/conda-forge/pythran-feedstock/issues/77).
-          . /opt/intel/oneapi/setvars.sh --force
-          conda activate scipy-dev
-          pip install pythran
-          CC=icx CXX=icpx spin build -- -Dblas=mkl-dynamic-lp64-iomp -Dlapack=mkl-dynamic-lp64-iomp
+        run: pixi run build-intel
 
       - name: Test scipy
         shell: bash -l {0}
-        run: |
-          . /opt/intel/oneapi/setvars.sh --force
-          conda activate scipy-dev
-          spin test
+        run: pixi run --skip-deps test-intel
