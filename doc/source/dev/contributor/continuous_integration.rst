@@ -150,7 +150,7 @@ are uploaded to the
 repository.
 
 It is not advised to use cibuildwheel to build scipy wheels on your own system
-as it will automatically install gfortran compilers and various other
+as it will automatically install various
 dependencies. Instead, one could use an isolated Docker container to build
 Linux wheels.
 

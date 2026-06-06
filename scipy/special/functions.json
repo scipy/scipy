@@ -52,11 +52,6 @@
             "cephes__struve_power_series": "ddp*d->d"
         }
     },
-    "agm": {
-        "_agm.pxd": {
-            "agm": "dd->d"
-        }
-    },
     "bdtr": {
         "_legacy.pxd": {
             "bdtr_unsafe": "ddd->d"
@@ -185,11 +180,6 @@
         "boost_special_functions.h++": {
             "ncx2_ppf_float": "fff->f",
             "ncx2_ppf_double": "ddd->d" }
-    },
-    "_factorial": {
-	"_factorial.pxd": {
-	    "_factorial": "d->d"
-	}
     },
     "elliprc": {
 	"ellint_carlson_wrap.hh++": {
@@ -378,19 +368,9 @@
             "xsf_gdtrc": "ddd->d"
         }
     },
-    "gdtria": {
-        "xsf_wrappers.h": {
-            "special_gdtria": "ddd->d"
-        }
-    },
     "gdtrib": {
         "xsf_wrappers.h": {
             "xsf_gdtrib": "ddd->d"
-        }
-    },
-    "gdtrix": {
-        "xsf_wrappers.h": {
-            "special_gdtrix": "ddd->d"
         }
     },
     "huber": {
@@ -588,16 +568,6 @@
     "ndtri": {
         "xsf_wrappers.h": {
             "xsf_ndtri": "d->d"
-        }
-    },
-    "nrdtrimn": {
-        "xsf_wrappers.h": {
-            "special_nrdtrimn": "ddd->d"
-        }
-    },
-    "nrdtrisd": {
-        "xsf_wrappers.h": {
-            "special_nrdtrisd": "ddd->d"
         }
     },
     "owens_t": {

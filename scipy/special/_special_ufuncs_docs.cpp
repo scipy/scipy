@@ -2,8 +2,283 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
-const char *_bivariate_normal_cdf_doc = R"(
+const char *_bivariate_normal_sf_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *agm_doc = R"(
+    agm(a, b, out=None)
+
+    Compute the arithmetic-geometric mean of `a` and `b`.
+
+    Start with :math:`a_0 = a` and :math:`b_0 = b` and iteratively compute
+
+    .. math::
+
+        a_{n+1} = \frac{a_n + b_n}{2}, \quad
+        b_{n+1} = \sqrt{a_n b_n}.
+
+    :math:`a_n` and :math:`b_n` converge to the same limit as :math:`n`
+    increases; their common limit is :math:`\operatorname{agm}(a, b)`.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real values only. If the values are both negative, the result
+        is negative. If one value is negative and the other is positive,
+        `nan` is returned.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        The arithmetic-geometric mean of :math:`a` and :math:`b`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import agm
+    >>> a, b = 24.0, 6.0
+    >>> agm(a, b)
+    13.458171481725614
+
+    Compare that result to the iteration:
+
+    >>> while a != b:
+    ...     a, b = (a + b)/2, np.sqrt(a*b)
+    ...     print("a = %19.16f  b=%19.16f" % (a, b))
+    ...
+    a = 15.0000000000000000  b=12.0000000000000000
+    a = 13.5000000000000000  b=13.4164078649987388
+    a = 13.4582039324993694  b=13.4581390309909850
+    a = 13.4581714817451772  b=13.4581714817060547
+    a = 13.4581714817256159  b=13.4581714817256159
+
+    When array-like arguments are given, broadcasting applies:
+
+    >>> a = np.array([[1.5], [3], [6]])  # a has shape (3, 1).
+    >>> b = np.array([6, 12, 24, 48])    # b has shape (4,).
+    >>> agm(a, b)
+    array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],
+           [  4.37037309,   6.72908574,  10.84726853,  18.11597502],
+           [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
+    )";
+
+const char *gdtria_doc = R"(
+    gdtria(p, b, x, out=None)
+
+    Inverse of `gdtr` vs a.
+
+    Returns the inverse with respect to the parameter `a` of ``p =
+    gdtr(a, b, x)``, the cumulative distribution function of the gamma
+    distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability values.
+    b : array_like
+        `b` parameter values of `gdtr(a, b, x)`. `b` is the "shape" parameter
+        of the gamma distribution.
+    x : array_like
+        Nonnegative real values, from the domain of the gamma distribution.
+    out : ndarray, optional
+        If a fourth argument is given, it must be a numpy.ndarray whose size
+        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        array returned by the function.
+
+    Returns
+    -------
+    a : scalar or ndarray
+        Values of the `a` parameter such that ``p = gdtr(a, b, x)`.  ``1/a``
+        is the "scale" parameter of the gamma distribution.
+
+    See Also
+    --------
+    gdtr : CDF of the gamma distribution.
+    gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
+    gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
+
+    Notes
+    -----
+    `gdtria` is implemented in terms of the incomplete gamma inverse as
+    ``gdtria(p, b, x) = gammaincinv(b, p)/x``.
+
+    Examples
+    --------
+    First evaluate `gdtr`.
+
+    >>> from scipy.special import gdtr, gdtria
+    >>> p = gdtr(1.2, 3.4, 5.6)
+    >>> print(p)
+    0.94378087442
+
+    Verify the inverse.
+
+    >>> gdtria(p, 3.4, 5.6)
+    1.2
+    )";
+
+const char *gdtrix_doc = R"(
+    gdtrix(a, b, p, out=None)
+
+    Inverse of `gdtr` vs x.
+
+    Returns the inverse with respect to the parameter `x` of ``p =
+    gdtr(a, b, x)``, the cumulative distribution function of the gamma
+    distribution. This is also known as the pth quantile of the
+    distribution.
+
+    Parameters
+    ----------
+    a : array_like
+        `a` parameter values of ``gdtr(a, b, x)``. ``1/a`` is the "scale"
+        parameter of the gamma distribution.
+    b : array_like
+        `b` parameter values of ``gdtr(a, b, x)``. `b` is the "shape" parameter
+        of the gamma distribution.
+    p : array_like
+        Probability values.
+    out : ndarray, optional
+        If a fourth argument is given, it must be a numpy.ndarray whose size
+        matches the broadcast result of `a`, `b` and `x`. `out` is then the
+        array returned by the function.
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Values of the `x` parameter such that `p = gdtr(a, b, x)`.
+
+    See Also
+    --------
+    gdtr : CDF of the gamma distribution.
+    gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
+    gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
+
+    Notes
+    -----
+    `gdtrix` is implemented in terms of the incomplete gamma inverse as
+    ``gdtrix(a, b, p) = gammaincinv(b, p)/a``.
+
+    Examples
+    --------
+    First evaluate `gdtr`.
+
+    >>> from scipy.special import gdtr, gdtrix
+    >>> p = gdtr(1.2, 3.4, 5.6)
+    >>> print(p)
+    0.94378087442
+
+    Verify the inverse.
+
+    >>> gdtrix(1.2, 3.4, p)
+    5.6
+    )";
+
+const char *nrdtrimn_doc = R"(
+    nrdtrimn(p, std, x, out=None)
+
+    Calculate mean of normal distribution given other params.
+
+    Parameters
+    ----------
+    p : array_like
+        CDF values, in range (0, 1].
+    std : array_like
+        Standard deviation.
+    x : array_like
+        Quantiles, i.e. the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    mn : scalar or ndarray
+        The mean of the normal distribution.
+
+    See Also
+    --------
+    scipy.stats.norm : Normal distribution
+    ndtr : Standard normal cumulative probability distribution
+    ndtri : Inverse of standard normal CDF with respect to quantile
+    nrdtrisd : Inverse of normal distribution CDF with respect to
+               standard deviation
+
+    Examples
+    --------
+    `nrdtrimn` can be used to recover the mean of a normal distribution
+    if we know the CDF value `p` for a given quantile `x` and the
+    standard deviation `std`. First, we calculate
+    the normal distribution CDF for an exemplary parameter set.
+
+    >>> from scipy.stats import norm
+    >>> mean = 3.
+    >>> std = 2.
+    >>> x = 6.
+    >>> p = norm.cdf(x, loc=mean, scale=std)
+    >>> p
+    0.9331927987311419
+
+    Verify that `nrdtrimn` returns the original value for `mean`.
+
+    >>> from scipy.special import nrdtrimn
+    >>> nrdtrimn(p, std, x)
+    3.0000000000000004
+    )";
+
+const char *nrdtrisd_doc = R"(
+    nrdtrisd(mn, p, x, out=None)
+
+    Calculate standard deviation of normal distribution given other params.
+
+    Parameters
+    ----------
+    mn : scalar or ndarray
+        The mean of the normal distribution.
+    p : array_like
+        CDF values, in range (0, 1].
+    x : array_like
+        Quantiles, i.e. the upper limit of integration.
+
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    std : scalar or ndarray
+        Standard deviation.
+
+    See Also
+    --------
+    scipy.stats.norm : Normal distribution
+    ndtr : Standard normal cumulative probability distribution
+    ndtri : Inverse of standard normal CDF with respect to quantile
+    nrdtrimn : Inverse of normal distribution CDF with respect to
+               mean
+
+    Examples
+    --------
+    `nrdtrisd` can be used to recover the standard deviation of a normal
+    distribution if we know the CDF value `p` for a given quantile `x` and
+    the mean `mn`. First, we calculate the normal distribution CDF for an
+    exemplary parameter set.
+
+    >>> from scipy.stats import norm
+    >>> mean = 3.
+    >>> std = 2.
+    >>> x = 6.
+    >>> p = norm.cdf(x, loc=mean, scale=std)
+    >>> p
+    0.9331927987311419
+
+    Verify that `nrdtrisd` returns the original value for `std`.
+
+    >>> from scipy.special import nrdtrisd
+    >>> nrdtrisd(mean, p, x)
+    2.0000000000000004
     )";
 
 const char *_gen_harmonic_doc = R"(

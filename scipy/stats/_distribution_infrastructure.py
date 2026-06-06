@@ -56,7 +56,7 @@ _NO_CACHE = "no_cache"
 #    shape parameters - e.g. t distribution with df = np.inf delegates to normal)
 #  Add array API support
 #  Investigate use `median` information throughout, e.g. to improve integration of
-#    CDF or to provide initial bracket for ICDF. (Only if `_median_formula` is 
+#    CDF or to provide initial bracket for ICDF. (Only if `_median_formula` is
 #    provided.)
 #  Document user tips for faster execution:
 #  - pass NumPy arrays
@@ -2266,8 +2266,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # bracket_minimum fails with status == -1 if the mode is at a boundary.
         # We have to consider this as a special case; there's no way to include
         # this logic in find_minimum; it has to treat the bracket as invalid.
-        mode_at_boundary = res_b.status == -1
-        fl, fm, fr = res_b.bracket
+        mode_at_boundary = res.status == -1
+        fl, fm, fr = res_b.f_bracket
         mode_at_left = mode_at_boundary & (fl <= fm)
         mode_at_right = mode_at_boundary & (fr < fm)
         mode[mode_at_left] = a[mode_at_left]
