@@ -42,7 +42,7 @@ openblas = "*"
 
 [environments.build]
 # tasks: build
-features = ["build-deps", "build-task", "win-openblas"]
+features = ["build-deps", "build-deps-compilers", "build-task", "win-openblas"]
 solve-group = "default"
 
 [environments.test]
@@ -67,12 +67,12 @@ solve-group = "default"
 
 [environments.bench]
 # tasks: bench
-features = ["run-deps", "build-deps", "bench-common", "bench"]
+features = ["build-deps", "build-deps-compilers", "run-deps", "bench-common", "bench"]
 solve-group = "default"
 
 [environments.build-debug]
 # tasks: build-debug
-features = ["build-deps", "build-debug"]
+features = ["build-deps", "build-deps-compilers", "build-debug"]
 solve-group = "debug"
 
 [environments.lldb]
@@ -94,7 +94,7 @@ features = ["lint"]
 # to more reliably test the very latest versions of core dependencies
 [environments.build-cpu]
 # tasks: build-cpu
-features = ["build-deps", "build-cpu"]
+features = ["build-deps", "build-deps-compilers", "build-cpu"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-strict]
@@ -125,7 +125,7 @@ solve-group = "array-api-cpu"
 [environments.build-cuda]
 # tasks: build-cuda
 # note: py-cuda feature aims to ensure compatibility with both cuda12 and cuda13 solve groups
-features = ["build-deps", "build-cuda", "py-cuda"]
+features = ["build-deps", "build-deps-compilers", "build-cuda", "py-cuda"]
 
 [environments.cupy]
 # tasks: test-cupy, bench-cupy
@@ -144,7 +144,7 @@ solve-group = "cuda12"
 
 [environments.build-accelerate-lp64]
 # tasks: build-accelerate-lp64
-features = ["build-deps", "accelerate", "build-accelerate-lp64"]
+features = ["build-deps", "build-deps-compilers", "accelerate", "build-accelerate-lp64"]
 solve-group = "accelerate-lp64"
 
 [environments.accelerate-lp64]
@@ -154,7 +154,7 @@ solve-group = "accelerate-lp64"
 
 [environments.build-accelerate-ilp64]
 # tasks: build-accelerate-ilp64
-features = ["build-deps", "accelerate", "build-accelerate-ilp64"]
+features = ["build-deps", "build-deps-compilers", "accelerate", "build-accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
 [environments.accelerate-ilp64]
@@ -163,7 +163,7 @@ features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
 [environments.build-mkl-lp64]
-features = ["build-deps", "mkl", "build-mkl-lp64"]
+features = ["build-deps", "build-deps-compilers", "mkl", "build-mkl-lp64"]
 solve-group = "mkl-lp64"
 
 [environments.mkl-lp64]
@@ -171,7 +171,7 @@ features = ["run-deps", "test-deps", "mkl", "mkl-lp64"]
 solve-group = "mkl-lp64"
 
 [environments.build-mkl-ilp64]
-features = ["build-deps", "mkl", "build-mkl-ilp64"]
+features = ["build-deps", "build-deps-compilers", "mkl", "build-mkl-ilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-ilp64]
@@ -179,7 +179,7 @@ features = ["run-deps", "test-deps", "mkl", "mkl-ilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.build-mkl-cyilp64]
-features = ["build-deps", "mkl", "build-mkl-cyilp64"]
+features = ["build-deps", "build-deps-compilers", "mkl", "build-mkl-cyilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-cyilp64]
@@ -188,15 +188,25 @@ solve-group = "mkl-ilp64"
 
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
+features = ["build-deps", "build-deps-compilers", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
 
 [environments.scipy-openblas]
 # tasks: build-scipy-openblas, test-scipy-openblas
-features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
+features = ["build-deps", "build-deps-compilers", "run-deps", "test-deps", "scipy-openblas"]
 
 [environments.scipy-openblas64]
 # tasks: build-scipy-openblas64, test-scipy-openblas64
-features = ["build-deps", "run-deps", "test-deps", "scipy-openblas64"]
+features = ["build-deps", "build-deps-compilers", "run-deps", "test-deps", "scipy-openblas64"]
+
+[environments.build-intel]
+# tasks: build-intel
+features = ["build-deps", "pythran-pypi", "intel", "build-intel"]
+solve-group = "default"
+
+[environments.test-intel]
+# tasks: test-intel
+features = ["run-deps", "test-deps", "intel", "test-intel"]
+solve-group = "default"
 
 [environments.gha-update]
 # tasks: gha-update
@@ -221,20 +231,24 @@ blas-devel = "*"
 ### Default building ###
 
 [feature.build-deps.dependencies]
-c-compiler = "*"
-cxx-compiler = "*"
 ccache = "*"
 pkg-config = "*"
 ninja = "*"
 meson = "*"
 meson-python = "*"
 cython = "*"
-pythran = "*"
 pybind11 = "*"
 # needed at build-time as well as run-time
 numpy = "*"
 blas-devel = "*"
 
+# these build deps pull in conda-forge compilers, which we sometimes
+# want to avoid, e.g. when using Intel oneAPI
+[feature.build-deps-compilers.dependencies]
+c-compiler = "*"
+cxx-compiler = "*"
+# https://github.com/conda-forge/pythran-feedstock/issues/77
+pythran = "*"
 
 [feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
@@ -752,6 +766,10 @@ sparse = "*"
 
 ### Optional dependencies ###
 
+[feature.pythran-pypi.pypi-dependencies]
+pythran = "*"
+
+
 [feature.scikit-sparse]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
@@ -789,6 +807,23 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.py312.dependencies]
 python = "3.12.*"
+
+
+### Alternative compilers ###
+
+[feature.intel]
+platforms = ["linux-64"]
+
+[feature.build-intel.tasks.build-intel]
+cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin build --build-dir=build-intel --setup-args=-Dblas=mkl-dynamic-lp64-iomp --setup-args=-Dlapack=mkl-dynamic-lp64-iomp'"
+env.CC = "icx"
+env.CXX = "icpx"
+description = "Build SciPy (Intel OneAPI compilers)"
+
+[feature.test-intel.tasks.test-intel]
+cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin test --build-dir=build-intel --no-build'"
+depends-on = "build-intel"
+description = "Test SciPy (Intel OneAPI compilers)"
 
 
 ### Maintenance tools ###
