@@ -9,7 +9,6 @@ import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
 
 import scipy.special as spec
-from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
 from scipy._lib._array_api import (
@@ -304,11 +303,9 @@ class interp1d(_Interpolator1D):
 
         self.bounds_error = bounds_error  # used by fill_value setter
 
-        # `copy` keyword semantics changed in NumPy 2.0, once that is
-        # the minimum version this can use `copy=None`.
         self.copy = copy
         if not copy:
-            self.copy = copy_if_needed
+            self.copy = None
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'zero': 0, 'slinear': 1,
@@ -939,10 +936,7 @@ class _PPoly(_PPolyBase):
             return r[0]
         else:
             r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
-            # this for-loop is equivalent to ``r2[...] = r``, but that's broken
-            # in NumPy 1.6.0
-            for ii, root in enumerate(r):
-                r2[ii] = root
+            r2[:] = r
 
             return r2.reshape(self.c.shape[2:])
 
@@ -2270,7 +2264,7 @@ class BPoly:
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
-        if isinstance(yi, (list, tuple)):
+        if isinstance(yi, list | tuple):
             # yi is documented as accepting arrays or lists of
             # arrays.  The following line with star unpacking will not
             # work for array ``yi`` for some backends because some are
@@ -2282,7 +2276,7 @@ class BPoly:
         yi_seq = yi if isinstance(yi, (list, tuple)) else (yi,)
         device = xp_result_device(xi, *yi_seq)
         xi = xp_internal.asarray(xi)
-        if isinstance(yi, (list, tuple)):
+        if isinstance(yi, list | tuple):
             # If yi is a ragged list or tuple of arrays, then need to apply
             # xp_internal.asarray separately over each element.
             yi = list(map(xp_internal.asarray, yi))
