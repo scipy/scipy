@@ -211,11 +211,6 @@
 	    "cellint_RJ": "DDDD->D"
 	}
     },
-    "entr": {
-        "_convex_analysis.pxd": {
-            "entr": "d->d"
-        }
-    },
     "erfinv": {
         "boost_special_functions.h++": {
             "erfinv_float": "f->f",
@@ -373,11 +368,6 @@
             "xsf_gdtrib": "ddd->d"
         }
     },
-    "huber": {
-        "_convex_analysis.pxd": {
-            "huber": "dd->d"
-        }
-    },
     "hyp0f1": {
         "_hyp0f1.pxd": {
             "_hyp0f1_cmplx": "dD->D",
@@ -405,11 +395,6 @@
     "inv_boxcox1p": {
         "_boxcox.pxd": {
             "inv_boxcox1p": "dd->d"
-        }
-    },
-    "kl_div": {
-        "_convex_analysis.pxd": {
-            "kl_div": "dd->d"
         }
     },
     "kn": {
@@ -608,16 +593,6 @@
         "boost_special_functions.h++": {
             "powm1_float": "ff->f",
             "powm1_double": "dd->d"
-        }
-    },
-    "pseudo_huber": {
-        "_convex_analysis.pxd": {
-            "pseudo_huber": "dd->d"
-        }
-    },
-    "rel_entr": {
-        "_convex_analysis.pxd": {
-            "rel_entr": "dd->d"
         }
     },
     "round": {
