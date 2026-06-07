@@ -2335,6 +2335,21 @@ def test_lfilter_notimplemented_input(xp):
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
+def test_lfilter_empty_input():
+    # gh-22571: empty x should return empty y and unchanged zi
+    b = np.array([1.0, 0.5])
+    a = np.array([1.0, -0.5])
+    x = np.array([])
+    zi = np.array([0.25])
+
+    y, zf = lfilter(b, a, x, zi=zi)
+    assert y.shape == (0,)
+    assert_array_equal(zf, zi)
+
+    y_no_zi = lfilter(b, a, x)
+    assert y_no_zi.shape == (0,)
+
+
 @pytest.mark.parametrize('dt', ["uint8", "int8", "uint16", "int16",
                                 "uint32", "int32",
                                 "uint64", "int64",

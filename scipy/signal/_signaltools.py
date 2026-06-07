@@ -2226,6 +2226,12 @@ def lfilter(b, a, x, axis=-1, zi=None):
     if not (a.ndim == 1 and xp_size(a) > 0):
         raise ValueError(f"Parameter a is not a non-empty 1d array, since {a.shape=}!")
 
+    if x.shape[axis] == 0:
+        if zi is None:
+            return xp.asarray(x)
+        else:
+            return xp.asarray(x), xp.asarray(zi.copy())
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
