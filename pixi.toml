@@ -264,6 +264,9 @@ threadpoolctl = "*"
 pooch = "*"
 mpmath = "*"
 gmpy2 = "*"
+meson = "*"
+cython = "*"
+ninja = "*"
 
 # XXX: when updating this task, remember to update other test tasks if appropriate
 [feature.test-tasks.tasks.test]
