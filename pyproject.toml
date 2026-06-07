@@ -106,7 +106,7 @@ doc = [
     "jupyterlite-sphinx>=0.19.1",
     "jupyterlite-pyodide-kernel",
     "linkify-it-py",
-    "tabulate"
+    "tabulate",
 ]
 
 dev = [

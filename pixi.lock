@@ -13269,6 +13269,7 @@ packages:
   - libgcc >=13
   license: GPL-3.0-or-later
   license_family: GPL
+  run_exports: {}
   size: 513088
   timestamp: 1727801714848
 - conda: https://prefix.dev/conda-forge/linux-64/markupsafe-3.0.3-py312h8a5da7c_0.conda
@@ -26036,6 +26037,7 @@ packages:
   - __osx >=11.0
   license: GPL-3.0-or-later
   license_family: GPL
+  run_exports: {}
   size: 274048
   timestamp: 1727801725384
 - conda: https://prefix.dev/conda-forge/osx-arm64/markupsafe-3.0.3-py313h7d74516_0.conda
@@ -29864,6 +29866,7 @@ packages:
   - ucrt >=10.0.20348.0
   license: GPL-3.0-or-later
   license_family: GPL
+  run_exports: {}
   size: 2176937
   timestamp: 1727802346950
 - conda: https://prefix.dev/conda-forge/win-64/markupsafe-3.0.3-py313hd650c13_0.conda
