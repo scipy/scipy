@@ -32,7 +32,7 @@ version = "1.19.0.dev0"
 license = { file = "LICENSE.txt" }
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
-    { name = "SciPy Developers", email = "scipy-dev@python.org" },
+    { name = "SciPy Developers", email = "scipy@discuss.scientific-python.org" },
 ]
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
@@ -61,6 +61,16 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
+
+[project.urls]
+homepage = "https://scipy.org/"
+documentation = "https://docs.scipy.org/doc/scipy/"
+source = "https://github.com/scipy/scipy"
+download = "https://github.com/scipy/scipy/releases"
+releasenotes = "https://docs.scipy.org/doc/scipy/release.html"
+tracker = "https://github.com/scipy/scipy/issues"
+developer-discussion = "https://discuss.scientific-python.org/c/contributor/scipy/"
+user-discussion = "https://discuss.scientific-python.org/c/user/scipy/"
 
 [project.optional-dependencies]
 test = [
@@ -111,13 +121,6 @@ dev = [
     "ruff>=0.12.0",
     "cython-lint>=0.12.2",
 ]
-
-[project.urls]
-homepage = "https://scipy.org/"
-documentation = "https://docs.scipy.org/doc/scipy/"
-source = "https://github.com/scipy/scipy"
-download = "https://github.com/scipy/scipy/releases"
-tracker = "https://github.com/scipy/scipy/issues"
 
 [tool.spin]
 package = 'scipy'
