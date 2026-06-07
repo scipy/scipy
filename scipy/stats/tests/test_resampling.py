@@ -12,13 +12,13 @@ from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_default_dtype
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._external import array_api_extra as xpx
 from scipy import stats, special
-from scipy.fft.tests.test_fftlog import skip_xp_backends
 from scipy.optimize import root
 
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
 import scipy.stats._resampling as _resampling
 
 
+skip_xp_backends = pytest.mark.skip_xp_backends
 lazy_xp_modules = [stats]
 
 
