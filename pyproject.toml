@@ -81,6 +81,7 @@ test = [
     "pytest-xdist",
     "asv",
     "mpmath",
+    # for PyPI: 'gmpy2; sys_platform != "win32" or platform_machine != "ARM64"'
     "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
