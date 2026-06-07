@@ -720,6 +720,24 @@ def estimate_spectral_norm(A, its=20, rng=None):
     -------
     float
         Spectral norm estimate.
+
+    Examples
+    --------
+    Estimate the spectral norm of a matrix:
+
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative
+    >>> rng = np.random.default_rng(0)
+    >>> A = np.array([[1., 2.], [3., 4.]])
+    >>> snorm = interpolative.estimate_spectral_norm(A, rng=rng)
+    >>> snorm  # doctest: +SKIP
+    5.464985704219043
+
+    This is close to the exact spectral norm (the largest singular value
+    of the matrix):
+
+    >>> np.linalg.norm(A, 2)
+    5.464985704219043
     """
     from scipy.sparse.linalg import aslinearoperator
     rng = np.random.default_rng(rng)
@@ -761,6 +779,24 @@ def estimate_spectral_norm_diff(A, B, its=20, rng=None):
     -------
     float
         Spectral norm estimate of matrix difference.
+
+    Examples
+    --------
+    Estimate the spectral norm of the difference between two matrices:
+
+    >>> import numpy as np
+    >>> from scipy.linalg import interpolative
+    >>> rng = np.random.default_rng(0)
+    >>> A = np.array([[1., 2.], [3., 4.]])
+    >>> B = np.array([[1., 2.], [3., 5.]])
+    >>> diff_norm = interpolative.estimate_spectral_norm_diff(A, B, rng=rng)
+    >>> diff_norm  # doctest: +SKIP
+    1.0000000000000004
+
+    This is close to the exact spectral norm of the difference:
+
+    >>> np.linalg.norm(A - B, 2)
+    1.0
     """
     from scipy.sparse.linalg import aslinearoperator
     rng = np.random.default_rng(rng)
