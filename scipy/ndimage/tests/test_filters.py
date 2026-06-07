@@ -1002,8 +1002,6 @@ class TestNdimageFilters:
         expected = filter_func(array, *extra_args, all_sizes)
         xp_assert_close(output, expected)
 
-    @skip_xp_backends("cupy",
-                      reason="these filters do not yet have axes support")
     @pytest.mark.parametrize(
         ('filter_func', 'kwargs'),
         [
@@ -1046,8 +1044,6 @@ class TestNdimageFilters:
         expected = xp.stack(expected, axis=0)
         xp_assert_close(output, expected)
 
-    @skip_xp_backends("cupy",
-                      reason="generic_filter does not yet have axes support")
     @pytest.mark.parametrize(
         'axes',
         tuple(itertools.combinations(range(-3, 3), 1))
@@ -1069,8 +1065,6 @@ class TestNdimageFilters:
         expected = ndimage.maximum_filter(array, size=size, axes=axes)
         xp_assert_close(output, expected)
 
-    @skip_xp_backends("cupy",
-                       reason="https://github.com/cupy/cupy/pull/8339")
     @pytest.mark.parametrize(
         'func',
         [

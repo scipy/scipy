@@ -20,7 +20,6 @@ from scipy._lib._array_api import (
 )
 
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 TESTDATA_2D = np.array([
     -2.2, 1.17, -1.63, 1.69, -2.04, 4.38, -3.09, 0.95, -1.7, 4.79, -1.68, 0.68,
