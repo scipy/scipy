@@ -109,6 +109,12 @@ def solve_sylvester(a, b, q):
 
     if info < 0:
         raise LinAlgError(f"Illegal value encountered in the {-info} term")
+    if info == 1:
+        warnings.warn(
+            "The Sylvester equation may be singular (A and B share a common "
+            "or close eigenvalue). The returned solution may be inaccurate.",
+            stacklevel=2,
+        )
 
     return np.dot(np.dot(u, y), v.conj().transpose())
 
