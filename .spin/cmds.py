@@ -964,7 +964,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
 def configure_scipy_openblas(blas_variant='32'):
     """Create scipy-openblas.pc and scipy/_distributor_init_local.py
 
-    Requires a pre-installed scipy-openblas32 wheel from PyPI.
+    Requires a pre-installed scipy-openblas{32,64} wheel from PyPI.
     """
     basedir = os.getcwd()
     pkg_config_fname = os.path.join(basedir, "scipy-openblas.pc")
