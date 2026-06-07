@@ -2474,7 +2474,8 @@ class TestLinprogHiGHSMIP:
         np.testing.assert_allclose(res.fun, 1854)
 
     @pytest.mark.xslow
-    def test_mip_rel_gap_passdown(self):
+    @pytest.mark.parametrize('mip_rel_gap', [0.5, 0.001])
+    def test_mip_rel_gap_passdown(self, mip_rel_gap):
         # MIP taken from test_mip6, solved with different values of mip_rel_gap
         # solve a larger MIP with only equality constraints
         # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
@@ -2487,29 +2488,24 @@ class TestLinprogHiGHSMIP:
 
         bounds = [(0, np.inf)]*8
         integrality = [1]*8
+        res = linprog(c=c, A_ub=None, b_ub=None, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method,
+                      integrality=integrality,
+                      options={"mip_rel_gap": mip_rel_gap})
+        final_mip_gap = res["mip_gap"]
+        # assert that the solution actually has mip_gap lower than the
+        # required mip_rel_gap supplied
+        assert final_mip_gap <= mip_rel_gap
 
-        mip_rel_gaps = [0.5, 0.25, 0.01, 0.001]
-        sol_mip_gaps = []
-        for mip_rel_gap in mip_rel_gaps:
-            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                          bounds=bounds, method=self.method,
-                          integrality=integrality,
-                          options={"mip_rel_gap": mip_rel_gap})
-            final_mip_gap = res["mip_gap"]
-            # assert that the solution actually has mip_gap lower than the
-            # required mip_rel_gap supplied
-            assert final_mip_gap <= mip_rel_gap
-            sol_mip_gaps.append(final_mip_gap)
-
-        # make sure that the mip_rel_gap parameter is actually doing something
-        # check that differences between solution gaps are declining
-        # monotonically with the mip_rel_gap parameter. np.diff does
-        # x[i+1] - x[i], so flip the array before differencing to get
-        # what should be a positive, monotone decreasing series of solution
-        # gaps
-        gap_diffs = np.diff(np.flip(sol_mip_gaps))
-        assert np.all(gap_diffs >= 0)
-        assert not np.all(gap_diffs == 0)
+        # Do it again, feeding a slight decreased final_mip_gap back as the
+        # mip_rel_gap option, to ensure that we see the effect of the option.
+        smaller_mip_rel_gap = 0.999 * final_mip_gap
+        res = linprog(c=c, A_ub=None, b_ub=None, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method,
+                      integrality=integrality,
+                      options={"mip_rel_gap": smaller_mip_rel_gap})
+        smaller_final_mip_gap = res["mip_gap"]
+        assert smaller_final_mip_gap <= smaller_mip_rel_gap
 
     def test_semi_continuous(self):
         # See issue #18106. This tests whether the solution is being
