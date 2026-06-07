@@ -32,9 +32,9 @@ def c2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
 
 
 fft = functools.partial(c2c, True)
-fft.__name__ = 'fft'
+fft.__name__ = 'fft'  # pyrefly:ignore[missing-attribute]
 ifft = functools.partial(c2c, False)
-ifft.__name__ = 'ifft'
+ifft.__name__ = 'ifft'  # pyrefly:ignore[missing-attribute]
 
 
 def r2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
@@ -62,9 +62,9 @@ def r2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
 
 
 rfft = functools.partial(r2c, True)
-rfft.__name__ = 'rfft'
+rfft.__name__ = 'rfft'  # pyrefly:ignore[missing-attribute]
 ihfft = functools.partial(r2c, False)
-ihfft.__name__ = 'ihfft'
+ihfft.__name__ = 'ihfft'  # pyrefly:ignore[missing-attribute]
 
 
 def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
@@ -96,9 +96,9 @@ def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
 
 
 hfft = functools.partial(c2r, True)
-hfft.__name__ = 'hfft'
+hfft.__name__ = 'hfft'  # pyrefly:ignore[missing-attribute]
 irfft = functools.partial(c2r, False)
-irfft.__name__ = 'irfft'
+irfft.__name__ = 'irfft'  # pyrefly:ignore[missing-attribute]
 
 
 def hfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
@@ -150,9 +150,9 @@ def c2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
 
 
 fftn = functools.partial(c2cn, True)
-fftn.__name__ = 'fftn'
+fftn.__name__ = 'fftn'  # pyrefly:ignore[missing-attribute]
 ifftn = functools.partial(c2cn, False)
-ifftn.__name__ = 'ifftn'
+ifftn.__name__ = 'ifftn'  # pyrefly:ignore[missing-attribute]
 
 def r2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None, *, plan=None):
@@ -178,9 +178,9 @@ def r2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
 
 
 rfftn = functools.partial(r2cn, True)
-rfftn.__name__ = 'rfftn'
+rfftn.__name__ = 'rfftn'  # pyrefly:ignore[missing-attribute]
 ihfftn = functools.partial(r2cn, False)
-ihfftn.__name__ = 'ihfftn'
+ihfftn.__name__ = 'ihfftn'  # pyrefly:ignore[missing-attribute]
 
 
 def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
@@ -219,9 +219,9 @@ def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
 
 
 hfftn = functools.partial(c2rn, True)
-hfftn.__name__ = 'hfftn'
+hfftn.__name__ = 'hfftn'  # pyrefly:ignore[missing-attribute]
 irfftn = functools.partial(c2rn, False)
-irfftn.__name__ = 'irfftn'
+irfftn.__name__ = 'irfftn'  # pyrefly:ignore[missing-attribute]
 
 
 def r2r_fftpack(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -246,6 +246,6 @@ def r2r_fftpack(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 rfft_fftpack = functools.partial(r2r_fftpack, True)
-rfft_fftpack.__name__ = 'rfft_fftpack'
+rfft_fftpack.__name__ = 'rfft_fftpack'  # pyrefly:ignore[missing-attribute]
 irfft_fftpack = functools.partial(r2r_fftpack, False)
-irfft_fftpack.__name__ = 'irfft_fftpack'
+irfft_fftpack.__name__ = 'irfft_fftpack'  # pyrefly:ignore[missing-attribute]

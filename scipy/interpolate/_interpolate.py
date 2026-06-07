@@ -557,6 +557,7 @@ class interp1d(_Interpolator1D):
         out[...] = np.nan
         return out
 
+    # pyrefly: ignore[bad-override-param-name]
     def _evaluate(self, x_new):
         # 1. Handle values in x_new that are outside of x. Throw error,
         #    or return a list of mask array indicating the outofbounds values.

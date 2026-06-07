@@ -1135,7 +1135,7 @@ class TestMakeDistribution:
     def test_rv_generic(self, i, distdata):
         distname = distdata[0]
 
-        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
+        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz',
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
                 'vonmises_line'}  # continuous
@@ -2319,3 +2319,10 @@ class Test_logexpxmexpy:
         # operations involving NaNs should not produce warnings
         x = np.asarray(np.nan)
         assert_equal(_logexpxmexpy(x, x), x)
+
+
+def test_gh_25180():
+    lu = _LogUniform(log_a=np.float64(-0.28915434544814245),
+                     log_b=np.float64(0.3085224670197856))
+    actual = lu.mode(method='optimization')
+    assert np.isfinite(actual)

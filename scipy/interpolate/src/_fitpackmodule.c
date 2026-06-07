@@ -972,7 +972,9 @@ fitpack_curfit(PyObject* Py_UNUSED(dummy), PyObject *args)
     Py_DECREF(ap_x);
     Py_DECREF(ap_y);
     Py_DECREF(ap_w);
-    /* Don't decref ap_t, ap_wrk, ap_iwrk - they are modified in-place */
+    Py_DECREF(ap_wrk);
+    Py_DECREF(ap_iwrk);
+    /* Don't decref ap_t - it will be returned */
 
     return Py_BuildValue(("iNNdi"),
                          n, PyArray_Return(ap_t), PyArray_Return(ap_c), fp, ier);
@@ -1076,7 +1078,9 @@ fitpack_percur(PyObject* Py_UNUSED(dummy), PyObject *args)
     Py_DECREF(ap_x);
     Py_DECREF(ap_y);
     Py_DECREF(ap_w);
-    /* Don't decref ap_t, ap_wrk, ap_iwrk - they are modified in-place */
+    Py_DECREF(ap_wrk);
+    Py_DECREF(ap_iwrk);
+    /* Don't decref ap_t - it will be returned */
 
     return Py_BuildValue(("iNNdi"),
                          n, PyArray_Return(ap_t), PyArray_Return(ap_c), fp, ier);
@@ -1970,7 +1974,7 @@ fitpack_spgrid(PyObject* Py_UNUSED(dummy), PyObject *args)
     if (ap_tu == NULL) {
         Py_DECREF(ap_tu_full);
         Py_DECREF(ap_tv_full);
-        Py_DECREF(ap_c);
+        Py_DECREF(ap_c_full);
         return NULL;
     }
     memcpy(PyArray_DATA(ap_tu), PyArray_DATA(ap_tu_full), (size_t)nu * sizeof(double));

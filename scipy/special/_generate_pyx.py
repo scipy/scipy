@@ -77,11 +77,12 @@ import re
 import textwrap
 
 special_ufuncs = [
-    '_cospi', '_gen_harmonic', '_lambertw', '_normalized_gen_harmonic',
-    '_scaled_exp1', '_sinpi',
+    '_bivariate_normal_sf', '_cospi', '_gen_harmonic', '_lambertw',
+    '_normalized_gen_harmonic', '_scaled_exp1', '_sinpi', '_von_mises_cdf',
     '_spherical_jn', '_spherical_jn_d', '_spherical_yn', '_spherical_yn_d',
     '_spherical_in', '_spherical_in_d', '_spherical_kn', '_spherical_kn_d',
-    'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
+    'agm', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
+    'entr', 'huber', 'kl_div', 'pseudo_huber', 'rel_entr',
     'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
     'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',
     'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',
@@ -92,13 +93,14 @@ special_ufuncs = [
     'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
     'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv', 'pbwa',
     'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv', 'pro_rad2',
-    'pro_rad2_cv', 'psi', 'rgamma', 'wright_bessel', 'yv', 'yve', 'zetac',
-    '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
+    'pro_rad2_cv', 'psi', 'digammainv', 'rgamma', 'wright_bessel', 'yv', 'yve',
+    'zetac', '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
     'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1', 'struve', 'modstruve',
     'beta', 'betaln', 'besselpoly', 'gammaln', 'gammasgn', 'cbrt', 'radian', 'cosm1',
-    'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel', 'ellipe',
-    'ellipeinc', 'ellipk', 'ellipkinc', 'ellipkm1', 'ellipj', '_riemann_zeta', 'erf',
-    'erfc', 'erfcx', 'erfi', 'voigt_profile', 'wofz', 'dawsn', 'ndtr', 'log_ndtr',
+    'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'gdtria', 'gdtrix',
+    'fresnel', 'ellipe', 'ellipeinc', 'ellipk', 'ellipkinc', 'ellipkm1', 'ellipj',
+    '_riemann_zeta', 'erf', 'erfc', 'erfcx', 'erfi', 'voigt_profile', 'wofz', 'dawsn',
+    'ndtr', 'nrdtrimn', 'nrdtrisd', 'log_ndtr',
     'exp2', 'exp10', 'expm1', 'log1p', 'xlogy', 'xlog1py', '_log1pmx', '_log1mexp'
 ]
 

@@ -33,7 +33,7 @@ commands:
           name: Install apt packages
           command: |
             sudo apt-get update
-            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
+            sudo apt-get install libopenblas-dev libgmp-dev libmpfr-dev ccache
 
   merge:
     steps:
@@ -53,6 +53,9 @@ jobs:
 # Build SciPy from source
   build_scipy:
     <<: *defaults
+    environment:
+      CCACHE_DIR: /home/circleci/.ccache
+      CCACHE_MAXSIZE: "250M"
     steps:
       - checkout
       - check-skip
@@ -68,8 +71,13 @@ jobs:
 
       - restore_cache:
           keys:
-              - deps_ccache-{{ .Branch }}
-              - deps_ccache
+              - pip-{{ .Branch }}
+              - pip
+
+      - restore_cache:
+          keys:
+              - ccache-{{ .Branch }}
+              - ccache
 
       - run:
           name: setup Python venv
@@ -82,20 +90,30 @@ jobs:
             pip install pyfftw cffi pytest
 
       - run:
+          name: clear ccache stats
+          command: |
+            ccache --zero-stats
+
+      - run:
           name: build SciPy
           command: |
             spin build -j2
 
-      - save_cache:
-          key: deps_ccache-{{ .Branch }}
-          paths:
-            - ~/.ccache
-            - ~/.cache/pip
-
       - run:
           name: ccache performance
           command: |
+            ccache --evict-older-than 1d
             ccache -s
+
+      - save_cache:
+          key: pip-{{ .Branch }}
+          paths:
+            - ~/.cache/pip
+
+      - save_cache:
+          key: ccache-{{ .Branch }}
+          paths:
+            - ~/.ccache
 
       - persist_to_workspace:
           root: ~/

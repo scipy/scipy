@@ -3528,50 +3528,6 @@ class genextreme_gen(rv_continuous):
 genextreme = genextreme_gen(name='genextreme')
 
 
-def _digammainv(y):
-    """Inverse of the digamma function (real positive arguments only).
-
-    This function is used in the `fit` method of `gamma_gen`.
-    The function uses either optimize.fsolve or optimize.newton
-    to solve `sc.digamma(x) - y = 0`.  There is probably room for
-    improvement, but currently it works over a wide range of y:
-
-    >>> import numpy as np
-    >>> rng = np.random.default_rng()
-    >>> y = 64*rng.standard_normal(1000000)
-    >>> y.min(), y.max()
-    (-311.43592651416662, 351.77388222276869)
-    >>> x = [_digammainv(t) for t in y]
-    >>> np.abs(sc.digamma(x) - y).max()
-    1.1368683772161603e-13
-
-    """
-    _em = 0.5772156649015328606065120
-
-    def func(x):
-        return sc.digamma(x) - y
-
-    if y > -0.125:
-        x0 = np.exp(y) + 0.5
-        if y < 10:
-            # Some experimentation shows that newton reliably converges
-            # must faster than fsolve in this y range.  For larger y,
-            # newton sometimes fails to converge.
-            value = optimize.newton(func, x0, tol=1e-10)
-            return value
-    elif y > -3:
-        x0 = np.exp(y/2.332) + 0.08661
-    else:
-        x0 = 1.0 / (-y - _em)
-
-    value, info, ier, mesg = optimize.fsolve(func, x0, xtol=1e-11,
-                                             full_output=True)
-    if ier != 1:
-        raise RuntimeError(f"_digammainv: fsolve failed, y = {y!r}")
-
-    return value[0]
-
-
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta=scale, a=alpha=shape) definition)
 
 ## gamma(a, loc, scale)  with a an integer is the Erlang distribution
@@ -3782,7 +3738,7 @@ class gamma_gen(rv_continuous):
             # The MLE for the shape parameter `a` is the solution to:
             # sc.digamma(a) - np.log(data).mean() + np.log(fscale) = 0
             c = np.log(data).mean() - np.log(fscale)
-            a = _digammainv(c)
+            a = sc.digammainv(c)
             scale = fscale
 
         return a, floc, scale
@@ -3856,11 +3812,11 @@ class gengamma_gen(rv_continuous):
 
     See Also
     --------
-    gamma, invgamma, weibull_min
+    gamma, halfgennorm, invgamma, weibull_min
 
     Notes
     -----
-    The probability density function for `gengamma` is ([1]_):
+    The probability density function for `gengamma` is ([1]_, [2]_):
 
     .. math::
 
@@ -3871,12 +3827,17 @@ class gengamma_gen(rv_continuous):
 
     `gengamma` takes :math:`a` and :math:`c` as shape parameters.
 
+    The SciPy distribution `halfgennorm` is a special case of
+    `gengamma`: ``halfgennorm(beta) = gengamma(a=1/beta, c=beta)``.
+
     %(after_notes)s
 
     References
     ----------
     .. [1] E.W. Stacy, "A Generalization of the Gamma Distribution",
-       Annals of Mathematical Statistics, Vol 33(3), pp. 1187--1192.
+           Annals of Mathematical Statistics, Vol 33(3), pp. 1187--1192.
+    .. [2] "Generalized gamma distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_gamma_distribution
 
     %(example)s
 
@@ -10926,11 +10887,27 @@ class FitUniformFixedScaleDataError(FitDataError):
 class uniform_gen(rv_continuous):
     r"""A uniform continuous random variable.
 
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `uniform` is:
+
+    .. math::
+
+        f(x) = \begin{cases}
+                 1  & \text{for } 0 \le x \le 1 \\
+                 0  & \text{otherwise}
+               \end{cases}
+
     In the standard form, the distribution is uniform on ``[0, 1]``. Using
     the parameters ``loc`` and ``scale``, one obtains the uniform distribution
     on ``[loc, loc + scale]``.
 
-    %(before_notes)s
+    References
+    ----------
+    .. [1] "Continuous uniform distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Continuous_uniform_distribution
 
     %(example)s
 
@@ -11143,6 +11120,13 @@ class vonmises_gen(rv_continuous):
     (circular mean). A ``scale`` parameter is accepted but does not have any
     effect.
 
+    References
+    ----------
+    .. [1] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
+           John Wiley & Sons, 1999, p. 36.
+    .. [2] "von Mises distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Von_Mises_distribution
+
     Examples
     --------
     Import the necessary modules.
@@ -11231,7 +11215,7 @@ class vonmises_gen(rv_continuous):
         return kappa * sc.cosm1(x) - np.log(2*np.pi) - np.log(sc.i0e(kappa))
 
     def _cdf(self, x, kappa):
-        return _stats.von_mises_cdf(kappa, x)
+        return scu._von_mises_cdf(kappa, x)
 
     def _stats_skip(self, kappa):
         return 0, None, 0, None
@@ -11599,6 +11583,7 @@ class halfgennorm_gen(rv_continuous):
 
     See Also
     --------
+    gengamma : generalized gamma distribution
     gennorm : generalized normal distribution
     expon : exponential distribution
     halfnorm : half normal distribution
@@ -11619,11 +11604,20 @@ class halfgennorm_gen(rv_continuous):
     For :math:`\beta = 2`, it is identical to a half normal distribution
     (with ``scale=1/sqrt(2)``).
 
+    `halfgennorm` is the upper half of a generalized normal continuous
+    random variable [1]_.
+
+    `halfgennorm` is a special case of the generalized gamma distribution [2]_,
+    which is implemented in SciPy as `gengamma`:
+    ``halfgennorm(beta) = gengamma(a=1/beta, c=beta)``.
+
     References
     ----------
 
-    .. [1] "Generalized normal distribution, Version 1",
+    .. [1] "Generalized normal distribution, Version 1",  Wikipedia,
            https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
+    .. [2] "Generalized gamma distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_gamma_distribution
 
     %(example)s
 
@@ -11651,6 +11645,9 @@ class halfgennorm_gen(rv_continuous):
 
     def _isf(self, x, beta):
         return sc.gammainccinv(1.0/beta, x)**(1.0/beta)
+
+    def _munp(self, n, beta):
+        return sc.poch(1/beta, n/beta)
 
     def _entropy(self, beta):
         return 1.0/beta - np.log(beta) + sc.gammaln(1.0/beta)

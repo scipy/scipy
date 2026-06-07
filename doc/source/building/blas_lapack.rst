@@ -104,13 +104,6 @@ user wants to override this autodetection mechanism for building against plain
 64-bit integer (ILP64) BLAS/LAPACK
 ----------------------------------
 
-Support for ILP64 BLAS and LAPACK, as of version 1.18.0, requires that also LP64
-symbols are available in the same library. Hence, ILP64 support is only available
-MKL and Accelerate. *Note: after the deprecated scipy.odr (the last Fortran
-module) is removed, this restriction will be removed and OpenBLAS and other
-libraries will also be supported.*
-
-
 To build SciPy from source with ILP64 support, use ``-Duse-ilp64=true``. E.g.,
 to use Accelerate on macOS::
 
@@ -216,10 +209,5 @@ Work-in-progress
 These options are planned to be fully supported, but currently not usable out
 of the box:
 
-- ILP64 (64-bit integer size) builds: making ``-Duse-ilp64=true`` work without
-  using another option to avoid issues with the deprecated ``scipy.odr``.
-  Those options are: ``-Dcython-blas-abi=lp64``, or
-  ``-D_without-fortran=true``. The latter is a temporary option that doesn't
-  use a Fortran compiler at all and doesn't install ``scipy.odr``.
 - Automatically selecting from multiple possible BLAS and LAPACK options, with
   a user-provided order of precedence

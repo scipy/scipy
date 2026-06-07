@@ -60,7 +60,7 @@ jobs:
       run: |
         # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
         sudo apt-get update
-        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
       if: matrix.python-version == '3.12'
@@ -125,6 +125,12 @@ jobs:
 
         spin mypy
 
+    - name: Pyrefly
+      if: matrix.python-version == '3.12'
+      run: |
+        python -m pip install -r requirements/dev.txt
+        pyrefly check --output-format=github
+
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
@@ -150,7 +156,7 @@ jobs:
         # into a venv is working, so leave out optional dependencies. That's
         # also why we can get away with an old version of OpenBLAS from Ubuntu
         sudo apt-get update
-        sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran \
+        sudo apt-get install -y python3-dev libopenblas-dev pkg-config \
           ccache
 
     - name: Set up ccache
@@ -221,7 +227,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev \
-            gfortran libgmp-dev libmpfr-dev libmpc-dev
+            libgmp-dev libmpfr-dev libmpc-dev
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
 
@@ -261,7 +267,7 @@ jobs:
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          sudo apt install -y g++-9 gcc-9 gfortran-9
+          sudo apt install -y g++-9 gcc-9
           sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
             libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev ccache
 
@@ -282,7 +288,7 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC="ccache gcc-9" CXX="ccache g++-9" FC="ccache gfortran-9" python -m pip install . -v \
+          CC="ccache gcc-9" CXX="ccache g++-9" python -m pip install . -v \
               --no-build-isolation -Cbuild-dir=build \
               -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
 
@@ -332,7 +338,7 @@ jobs:
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran \
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache \
           lcov ccache
 
     - name: Install Python packages
@@ -493,7 +499,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gfortran pkg-config libopenblas-dev liblapack-dev \
+          sudo apt-get install -y pkg-config libopenblas-dev liblapack-dev \
             ccache
 
       - name: Set up ccache
@@ -568,7 +574,7 @@ jobs:
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gfortran ccache
+        sudo apt-get install -y ccache
 
     - name: Set up ccache
       uses: ./.github/ccache
@@ -622,7 +628,6 @@ jobs:
           scipy.linalg
           scipy.misc
           scipy.ndimage
-          scipy.odr
           scipy.optimize
           scipy.signal
           scipy.sparse
@@ -671,11 +676,11 @@ jobs:
           # if clang-18 isn't installed this should fail
           clang-18 --version
           # specify which compilers to use using environment variables
-          CC=clang-18 CXX=clang++-18 FC=gfortran python -m build -wnx -Csetup-args=--werror
+          CC=clang-18 CXX=clang++-18 python -m build -wnx -Csetup-args=--werror
 
   #################################################################################
   test_aarch64:
-    name: aarch64, fast, fail slow, py3.12/npAny, pip+pytest
+    name: aarch64, fast, fail slow, py3.12/npAny, spin
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -696,64 +701,23 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev \
-          gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+          libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
       run: |
-        python -m pip install -r requirements/build.txt -r requirements/test.txt
+        python -m pip install -r requirements/build.txt -r requirements/test.txt -r requirements/dev.txt
         # We want to check for test timing only in a single job, on Linux, running the
         # fast test suite. This is that job. See gh-20806 for previous issues
         # after running this job on Windows and in multiple jobs.
         python -m pip install pytest-fail-slow
 
-    - name: Install SciPy
+    - name: Build SciPy
       run: |
-        python -m pip install . --no-build-isolation
+        spin build
 
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        cd ..
-        pytest --pyargs scipy -m 'not slow' --durations=0 --durations-min=0.5 --fail-slow=1.0
+        spin test -- --durations=0 --durations-min=0.5 --fail-slow=1.0
 
   #################################################################################
-  test_without_fortran:
-    name: No Fortran, fast, py3.14/npAny, spin
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          submodules: recursive
-          persist-credentials: false
-
-      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
-        with:
-          pixi-version: v0.63.2
-          cache: false
-
-      - name: Install Ubuntu dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ccache
-
-      - name: Set up ccache
-        uses: ./.github/ccache
-        with:
-          workflow_name: ${{ github.workflow }}
-          job_name: ${{ github.job }}
-
-      - name: Build SciPy
-        run: pixi run build --setup-args=-D_without-fortran=true
-
-      - name: Test SciPy
-        run: pixi run test
-
-      - name: Ccache performance
-        shell: bash -l {0}
-        run: |
-          ccache --evict-older-than 1d
-          ccache -s

@@ -341,7 +341,7 @@ class _ProbabilityDistribution(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def lmoment(self, order, kind, *, method):
+    def lmoment(self, order, *, standardize, method):
         r"""L-moment or L-moment ratio of positive integer order.
 
         The L-moment of order :math:`n` of a continuous random variable :math:`X` is:

@@ -120,6 +120,9 @@ class LinearOperator:
         and where ``V`` is a dense matrix with dimensions ``(..., M, K)``.
     dtype : dtype
         Data type of the matrix or matrices.
+    xp : array_namespace, optional
+        A namespace compatible with the array API standard for use in array operations.
+        Default: ``numpy``.
 
     Attributes
     ----------
@@ -272,7 +275,7 @@ class LinearOperator:
             else:
                 self.dtype = matvec_v.dtype
 
-    def _matmat(self, X):
+    def _matmat(self, X, /):
         """Default matrix-matrix multiplication handler.
 
         If ``self`` is a linear operator of shape ``(..., M, N)``,
@@ -515,7 +518,7 @@ class LinearOperator:
         """
         return self._shared_matmat(X, adjoint=True)
 
-    def _rmatmat(self, X):
+    def _rmatmat(self, X, /):
         """Default implementation of `_rmatmat`; defers to `rmatvec` or `adjoint`."""
         if type(self)._adjoint == LinearOperator._adjoint:
             xp = self._xp
@@ -673,7 +676,7 @@ class LinearOperator:
     def rdot(self, x):
         """Multi-purpose multiplication method from the right.
 
-        .. note ::
+        .. note::
 
             This method returns ``x A``.
             To perform adjoint multiplication instead, use one of

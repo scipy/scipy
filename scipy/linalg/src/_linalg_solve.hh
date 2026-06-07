@@ -273,8 +273,10 @@ inline void solve_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = maxa * maxinva > 1./ detail::numeric_limits<real_type>::eps;
-    status.rcond = maxa * maxinva;
+    double cond = (double)maxa * (double)maxinva;
+    double rcond = 1.0 / cond;
+    status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
+    status.rcond = rcond;
 }
 
 
