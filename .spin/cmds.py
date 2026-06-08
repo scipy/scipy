@@ -391,7 +391,7 @@ def mypy(ctx, build_dir):
     except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
-            "pip install -r requirements/dev.txt from the repo root"
+            "`pip install --group typecheck` from the repo root"
         ) from e
 
     build_dir = os.path.abspath(build_dir)

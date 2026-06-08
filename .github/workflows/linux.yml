@@ -121,17 +121,12 @@ jobs:
       - name: Mypy
         if: matrix.python-version == '3.12'
         run: |
-          # Packages that are only needed for their annotations
-          python -m pip install mypy==1.19.1 types-psutil typing_extensions
-          python -m pip install pybind11 sphinx
-
+          python -m pip install --group typecheck
           spin mypy
 
       - name: Pyrefly
         if: matrix.python-version == '3.12'
-        run: |
-          python -m pip install -r requirements/dev.txt
-          pyrefly check --output-format=github
+        run: pyrefly check --output-format=github
 
       - name: Test SciPy
         run: |
