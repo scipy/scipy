@@ -38,3 +38,7 @@ ceafa8e730887b81cf10d483ce375559ebd1de09
 d1b5af016e907e037136b7a38e485437165490f2
 # Style cleanup in `sparse.linalg._interface` (gh-23836)
 726243cb85d4368d58fb1f95dc1749fb3f3dbce8
+# Style cleanup for `linux.yml`
+06a8231667a412c8f24ebca057bce35ae6080265
+# Style cleanup for `linux_blas.yml`
+c7587c83744164f7b7c8e905de05b5955170acd4
