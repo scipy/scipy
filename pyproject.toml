@@ -81,6 +81,7 @@ test = [
     "pytest-xdist",
     "asv",
     "mpmath",
+    # for PyPI: 'gmpy2; sys_platform != "win32" or platform_machine != "ARM64"'
     "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
@@ -106,13 +107,10 @@ doc = [
     "jupyterlite-sphinx>=0.19.1",
     "jupyterlite-pyodide-kernel",
     "linkify-it-py",
-    "tabulate"
+    "tabulate",
 ]
 
-# click is a dependency of spin, and not a direct SciPy dependency,
-# but click 8.3.0 is apparently broken, so use an older version.
 dev = [
-    "click<8.3.0",
     "spin",
     "mypy==1.19.1",
     "pyrefly==0.63.0",
