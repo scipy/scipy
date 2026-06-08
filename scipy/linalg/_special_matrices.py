@@ -18,7 +18,7 @@ __all__ = ['toeplitz', 'circulant', 'hankel',
 # -----------------------------------------------------------------------------
 
 
-@xp_capabilities()
+@xp_capabilities(np_only=True)
 def toeplitz(c, r=None):
     r"""
     Construct a Toeplitz matrix.

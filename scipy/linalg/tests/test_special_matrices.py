@@ -600,7 +600,8 @@ class TestConvolutionMatrix:
                           make_xp_pytest_param(fiedler, ()),
                           make_xp_pytest_param(fiedler_companion, ()),
                           make_xp_pytest_param(hankel, (np.arange(9),)),
-                          make_xp_pytest_param(leslie, (np.arange(9),)),
+                          make_xp_pytest_param(leslie, (np.arange(9,
+                                                                  dtype=np.float64),)),
                           make_xp_pytest_param(toeplitz, (np.arange(9),)),])
 def test_batch(f, args, xp):
     rng = np.random.default_rng(283592436523456)
