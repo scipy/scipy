@@ -2519,11 +2519,7 @@ class TestVectorNorms:
 
     def test_stable(self):
         a = array([1e4] + [1] * 10000, dtype=float32)
-        # Reference value was computed with mpmath:
-        # from mpmath import mp
-        # mp.dps = 100
-        # expected = mp.norm(a) - mp.mpf("1e4")
-        expected = 0.49998750062496094
+        expected = np.float32(np.sqrt(100010000) - 1e4)
         # A small absolute tolerance allows for BLAS-dependent variation.
         assert_allclose(norm(a) - 1e4, expected, atol=1.6e-2, rtol=0)
 
