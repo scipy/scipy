@@ -147,7 +147,7 @@ New features
 ==============================
 - 3D area calculations are now faster in `scipy.spatial.SphericalVoronoi`.
 - N-dimensional input is now supported for `scipy.spatial.distance.minkowski`,
-  `scipy.spatial.distance.euclidean`, and `scipy.spatial.distance.seuclidean`.
+  `scipy.spatial.distance.euclidean`, and `scipy.spatial.distance.sqeuclidean`.
 - It is now possible to return sparse arrays rather than matrices from
   ``KDTree.sparse_distance_matrix``.
 - It is now possible to compose ``Rotation`` and ``RigidTransform`` directly,
@@ -236,7 +236,7 @@ Deprecated features and future changes
   functionality was rarely used; the function computes the optimal size of the
   work arrays automatically, therefore users should simply remove their uses
   of the ``lwork`` parameter.
-- The sparse construction functions ``kron``, ``kronsum`` and ``build_diag``
+- The sparse construction functions ``kron``, ``kronsum`` and ``block_diag``
   choose return type ``sparray`` or ``spmatrix`` depending on the type of the
   sparse input arrays. When no inputs are sparse, the output is chosen to be
   ``spmatrix``. That has been deprecated. The return type when no inputs are
@@ -344,7 +344,7 @@ Authors
 * Matthias Bussonnier (6)
 * CJ Carey (9)
 * Christine P. Chai (2)
-* Lucas Colley (89)
+* Lucas Colley (90)
 * Dan (3) +
 * devdanzin (2) +
 * Martin Diehl (4)
@@ -398,7 +398,7 @@ Authors
 * Ilhan Polat (190)
 * Adrian Raso (3)
 * Aditya Rawat (1) +
-* Tyler Reddy (83)
+* Tyler Reddy (86)
 * Martin Reinecke (1)
 * Lucas Roberts (6)
 * Pamphile Roy (1)
@@ -546,6 +546,7 @@ Issues closed for 1.18.0
 * `#24943 <https://github.com/scipy/scipy/issues/24943>`__: CI: linalg: dev deps failing due to NumPy deprecation of generic...
 * `#25056 <https://github.com/scipy/scipy/issues/25056>`__: DOC: ``scipy.interpolate.interpn`` with method='linear' accepts...
 * `#25066 <https://github.com/scipy/scipy/issues/25066>`__: DOC: replace broken UiO spline notes references in ``scipy.interpolate``
+* `#25069 <https://github.com/scipy/scipy/issues/25069>`__: BUG: ``scipy.sparse.linalg.svds`` rng argument issue when using...
 * `#25076 <https://github.com/scipy/scipy/issues/25076>`__: BUG: ``cython_lapack`` signatures: ``bint`` variables become...
 * `#25086 <https://github.com/scipy/scipy/issues/25086>`__: BUG: optimize.direct: interpreter crash on empty Bounds
 * `#25106 <https://github.com/scipy/scipy/issues/25106>`__: BUG: ``nct.cdf`` return ``nan``
@@ -1047,6 +1048,7 @@ Pull requests for 1.18.0
 * `#25193 <https://github.com/scipy/scipy/pull/25193>`__: DOC: stats: Note that halfgennorm is a special case of gengamma.
 * `#25194 <https://github.com/scipy/scipy/pull/25194>`__: interpolate: parametrize ``test_spline_large_2d*`` over ``spl_apis``\...
 * `#25197 <https://github.com/scipy/scipy/pull/25197>`__: MAINT: version pins/prep for 1.18.0rc1
+* `#25204 <https://github.com/scipy/scipy/pull/25204>`__: BUG: sparse.linalg.svds: fix ``random_state`` regression for...
 * `#25210 <https://github.com/scipy/scipy/pull/25210>`__: BUG: ``UnivariateDistribution`` mode calculation
 * `#25224 <https://github.com/scipy/scipy/pull/25224>`__: REL: set 1.18.0rc2 unreleased
 * `#25226 <https://github.com/scipy/scipy/pull/25226>`__: MAINT: ``_lib._util``\ : remove trivial ``np_[u]long`` aliases
