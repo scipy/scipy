@@ -10,7 +10,8 @@ name: BLAS tests (Linux)
 #         2 ways: both LP64 and ILP64 via pkg-config.
 #
 #    - scipy-openblas64:
-#         Tests ILP64-enabled build with scipy-openblas32 and scipy-openblas64.
+#         Tests ILP64-enabled build with scipy-openblas64.
+#         Note that scipy-openblas32 is tested in other workflows.
 #
 
 on:
