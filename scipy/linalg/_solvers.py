@@ -8,6 +8,7 @@
 # Modified: Ilhan Polat <ilhanpolat@gmail.com>
 # September 13, 2016
 
+import os
 import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
@@ -113,7 +114,7 @@ def solve_sylvester(a, b, q):
         warnings.warn(
             "The Sylvester equation may be singular (A and B share a common "
             "or close eigenvalue). The returned solution may be inaccurate.",
-            stacklevel=2,
+            skip_file_prefixes=(os.path.dirname(__file__),),
         )
 
     return np.dot(np.dot(u, y), v.conj().transpose())
