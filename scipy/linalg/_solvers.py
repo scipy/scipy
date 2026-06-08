@@ -214,7 +214,8 @@ def solve_continuous_lyapunov(a, q):
         warnings.warn('Input "a" has an eigenvalue pair whose sum is '
                       'very close to or exactly zero. The solution is '
                       'obtained via perturbing the coefficients.',
-                      RuntimeWarning, stacklevel=2)
+                      RuntimeWarning,
+                      skip_file_prefixes=(os.path.dirname(__file__),))
     y *= scale
 
     return u.dot(y).dot(u.conj().T)
