@@ -1024,7 +1024,7 @@ def fiedler(a):
     a = xpx.atleast_nd(xp.asarray(a), ndim=1)
 
     if xp_size(a) == 0:
-        return xp.asarray([], dtype=xp.float64)
+        return xp.empty((0, 0), dtype=xp.float64)
     elif xp_size(a) == 1:
         return xp.asarray([[0.]])
     else:
@@ -1099,6 +1099,8 @@ def fiedler_companion(a):
     if a.size <= 2:
         if a.size == 2:
             return np.array([[-(a/a[0])[-1]]])
+        if a.size == 1:
+            return np.empty((0, 0), dtype=a.dtype)
         return np.array([], dtype=a.dtype)
 
     if a[0] == 0.:
