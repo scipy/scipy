@@ -14,7 +14,7 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           convolution_matrix)
 from numpy.linalg import cond
 from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
-                                   xp_default_dtype)
+                                   xp_default_dtype, make_xp_pytest_param)
 
 
 class TestToeplitz:
@@ -98,19 +98,21 @@ class TestHadamard:
         assert_raises(ValueError, hadamard, 5)
 
 
+@make_xp_test_case(leslie)
 class TestLeslie:
+    @pytest.mark.parametrize("f, s, msg", [([[1, 1], [2, 2]], [3, 4, 5], "f and s"),
+                                           ([1, 2], [1, 2], "f and s"),
+                                           ([1.], [], "s must be at least 1.")])
+    def test_bad_shapes(self, f, s, msg, xp):
+        with assert_raises(ValueError, match=msg):
+            leslie(xp.asarray(f), xp.asarray(s))
 
-    def test_bad_shapes(self):
-        assert_raises(ValueError, leslie, [[1, 1], [2, 2]], [3, 4, 5])
-        assert_raises(ValueError, leslie, [1, 2], [1, 2])
-        assert_raises(ValueError, leslie, [1], [])
-
-    def test_basic(self):
-        a = leslie([1, 2, 3], [0.25, 0.5])
-        expected = array([[1.0, 2.0, 3.0],
-                          [0.25, 0.0, 0.0],
-                          [0.0, 0.5, 0.0]])
-        assert_array_equal(a, expected)
+    def test_basic(self, xp):
+        a = leslie(xp.asarray([1., 2., 3.]), xp.asarray([0.25, 0.5]))
+        expected = xp.asarray([[1.0, 2.0, 3.0],
+                               [0.25, 0.0, 0.0],
+                               [0.0, 0.5, 0.0]])
+        xp_assert_equal(a, expected)
 
 
 class TestCompanion:
@@ -591,23 +593,22 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
-@pytest.mark.fail_slow(5)  # `leslie` has an import in the function
-@pytest.mark.parametrize('f, args', [(circulant, ()),
-                                     (companion, ()),
-                                     (convolution_matrix, (5, 'same')),
-                                     (fiedler, ()),
-                                     (fiedler_companion, ()),
-                                     (hankel, (np.arange(9),)),
-                                     (leslie, (np.arange(9),)),
-                                     (toeplitz, (np.arange(9),)),
-                                     ])
-def test_batch(f, args):
+@pytest.mark.parametrize('f, args',
+                         [make_xp_pytest_param(circulant, ()),
+                          make_xp_pytest_param(companion, ()),
+                          make_xp_pytest_param(convolution_matrix, (5, 'same')),
+                          make_xp_pytest_param(fiedler, ()),
+                          make_xp_pytest_param(fiedler_companion, ()),
+                          make_xp_pytest_param(hankel, (np.arange(9),)),
+                          make_xp_pytest_param(leslie, (np.arange(9),)),
+                          make_xp_pytest_param(toeplitz, (np.arange(9),)),])
+def test_batch(f, args, xp):
     rng = np.random.default_rng(283592436523456)
     batch_shape = (2, 3)
     m = 10
     A = rng.random(batch_shape + (m,))
 
-    res = f(A, *args)
+    res = f(xp.asarray(A), *list(map(xp.asarray, args)))
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
-    ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
+    ref = xp.asarray(ref.reshape(A.shape[:-1] + ref.shape[-2:]))
     assert_allclose(res, ref)
