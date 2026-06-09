@@ -460,6 +460,18 @@
             "landau_isf_double": "ddd->d"
         }
     },
+    "log_gammainc": {
+        "boost_special_functions.h++": {
+            "lgamma_p_float": "ff->f",
+            "lgamma_p_double": "dd->d"
+        }
+    },
+    "log_gammaincc": {
+        "boost_special_functions.h++": {
+            "lgamma_q_float": "ff->f",
+            "lgamma_q_double": "dd->d"
+        }
+    },
     "lpmv": {
         "xsf_wrappers.h": {
             "pmv_wrap": "ddd->d"
