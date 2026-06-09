@@ -580,11 +580,14 @@ class MapWrapper:
             self.pool = pool
             self._mapfunc = self.pool
         else:
-            from multiprocessing import get_context, get_start_method
+            from multiprocessing import (
+                get_all_start_methods, get_context, get_start_method
+            )
 
             method = get_start_method(allow_none=True)
 
-            if method is None and os.name=='posix' and sys.version_info < (3, 14):
+            if (method is None and sys.version_info < (3, 14)
+                    and 'forkserver' in get_all_start_methods()):
                 # Python 3.13 and older used "fork" on posix, which can lead to
                 # deadlocks. This backports that fix to older Python versions.
                 method = 'forkserver'
