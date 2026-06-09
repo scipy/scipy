@@ -120,6 +120,9 @@ class LinearOperator:
         and where ``V`` is a dense matrix with dimensions ``(..., M, K)``.
     dtype : dtype
         Data type of the matrix or matrices.
+    xp : array_namespace, optional
+        A namespace compatible with the array API standard for use in array operations.
+        Default: ``numpy``.
 
     Attributes
     ----------
@@ -673,7 +676,7 @@ class LinearOperator:
     def rdot(self, x):
         """Multi-purpose multiplication method from the right.
 
-        .. note ::
+        .. note::
 
             This method returns ``x A``.
             To perform adjoint multiplication instead, use one of

@@ -21,11 +21,10 @@ on:
 permissions:
    contents: read  # to fetch code (actions/checkout)
 
-# The environment variable WINDOWS_BASEKIT_URL and WINDOWS_HPC_URL
+# The environment variable WINDOWS_HPC_URL
 # store the URL for downloading Intel oneAPI.
 # Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
 env:
-  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0a91e6dc-9c09-4e0f-9113-1f28bf7e8be2/intel-fortran-essentials-2025.0.1.28_offline.exe
   WINDOWS_HPC_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/a37c30c3-a846-4371-a85d-603e9a9eb94c/intel-oneapi-hpc-toolkit-2025.0.1.48_offline.exe
 
 concurrency:
@@ -64,13 +63,7 @@ jobs:
               C:\Program Files (x86)\Intel\oneAPI\compiler
               C:\Program Files (x86)\Intel\oneAPI\setvars.bat
               C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
-          key: install-${{ env.WINDOWS_HPC_URL }}-${{ env.WINDOWS_BASEKIT_URL }}-compiler
-      - name: Install oneAPI Base kit
-        if: steps.cache-install.outputs.cache-hit != 'true'
-        shell: cmd /C call {0}  # need to use `cmd` for batch scripts
-        run: |
-          echo %WINDOWS_BASEKIT_URL%
-          tools\install_intel_oneAPI_windows.bat "%WINDOWS_BASEKIT_URL%" "" "491dbc593cbcf02570b2ccc1f31656e2aa6fd195bd3191e5d111b1dafb35a45c"  &REM 2025.0.1.28
+          key: install-${{ env.WINDOWS_HPC_URL }}-compiler
       - name: Install oneAPI HPC kit
         if: steps.cache-install.outputs.cache-hit != 'true'
         shell: cmd /C call {0}  # need to use `cmd` for batch scripts
@@ -104,7 +97,6 @@ jobs:
         shell: cmd /C call {0}  # need to use `cmd` for batch scripts
         run: |
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-          set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           spin build -S-Duse-pythran=false -S--vsenv
 

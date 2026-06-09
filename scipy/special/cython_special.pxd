@@ -64,6 +64,7 @@ cpdef double cosdg(double x0) noexcept nogil
 cpdef double cosm1(double x0) noexcept nogil
 cpdef double cotdg(double x0) noexcept nogil
 cpdef Dd_number_t dawsn(Dd_number_t x0) noexcept nogil
+cpdef df_number_t digammainv(df_number_t x0) noexcept nogil
 cpdef double ellipe(double x0) noexcept nogil
 cpdef double ellipeinc(double x0, double x1) noexcept nogil
 cdef void ellipj(double x0, double x1, double *y0, double *y1, double *y2, double *y3) noexcept nogil

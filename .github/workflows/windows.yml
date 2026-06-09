@@ -95,6 +95,9 @@ jobs:
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
+          # Avoid occasional anomalous long durations of a test in interpolate;
+          # see gh-25142.
+          $env:WINDOWS_CI_LONG_TIMEOUT=600
           spin test -j4 --mode full -- --durations=25 --timeout=60
 
   #############################################################################
@@ -130,7 +133,6 @@ jobs:
           $env:Path = "C:\Program Files\LLVM\bin;" + $env:Path
           $env:cc = "clang-cl"
           $env:cxx = "clang-cl"
-          $env:fc = "flang"
           spin build --with-scipy-openblas=32 --setup-args="-Duse-pythran=false"
 
       - name: Test

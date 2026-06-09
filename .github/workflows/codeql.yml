@@ -89,7 +89,7 @@ jobs:
       run: |
         git submodule update --init
         sudo apt update
-        sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
+        sudo apt install -y gcc g++ libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
         python -m pip install -r requirements/build.txt -r requirements/dev.txt
         spin build
 

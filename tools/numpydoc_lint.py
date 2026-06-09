@@ -57,6 +57,7 @@ compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
     "scipy.special.chndtridf" : ['PR02', 'PR01'],
     "scipy.special.chndtrinc" : ['PR02', 'PR01'],
     "scipy.special.chndtrix" : ['PR02', 'PR01'],
+    "scipy.special.digammainv" : ['PR02', 'PR01'],
     "scipy.special.elliprc" : ['PR02', 'PR01'],
     "scipy.special.elliprd" : ['PR02', 'PR01'],
     "scipy.special.elliprf" : ['PR02', 'PR01'],
@@ -593,7 +594,6 @@ false_positives = ["scipy.stats.Uniform",
                    "scipy.stats.Logistic"]
 
 skip_modules = [
-    "scipy.odr",
     "scipy.fftpack",
     "scipy.stats.mstats",
     "scipy.linalg.cython_lapack",

@@ -77,11 +77,6 @@ add_newdoc("_ellip_harm",
     Internal function, use `ellip_harm` instead.
     """)
 
-add_newdoc("_ellip_norm",
-    """
-    Internal function, use `ellip_norm` instead.
-    """)
-
 add_newdoc("wrightomega",
     r"""
     wrightomega(z, out=None)
@@ -166,65 +161,6 @@ add_newdoc("wrightomega",
     (-0.3362123489037213+2.282986001579032j)
     >>> lambertw(np.exp(z), k=1)
     (-0.33621234890372115+2.282986001579032j)
-    """)
-
-
-add_newdoc("agm",
-    """
-    agm(a, b, out=None)
-
-    Compute the arithmetic-geometric mean of `a` and `b`.
-
-    Start with a_0 = a and b_0 = b and iteratively compute::
-
-        a_{n+1} = (a_n + b_n)/2
-        b_{n+1} = sqrt(a_n*b_n)
-
-    a_n and b_n converge to the same limit as n increases; their common
-    limit is agm(a, b).
-
-    Parameters
-    ----------
-    a, b : array_like
-        Real values only. If the values are both negative, the result
-        is negative. If one value is negative and the other is positive,
-        `nan` is returned.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        The arithmetic-geometric mean of `a` and `b`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import agm
-    >>> a, b = 24.0, 6.0
-    >>> agm(a, b)
-    13.458171481725614
-
-    Compare that result to the iteration:
-
-    >>> while a != b:
-    ...     a, b = (a + b)/2, np.sqrt(a*b)
-    ...     print("a = %19.16f  b=%19.16f" % (a, b))
-    ...
-    a = 15.0000000000000000  b=12.0000000000000000
-    a = 13.5000000000000000  b=13.4164078649987388
-    a = 13.4582039324993694  b=13.4581390309909850
-    a = 13.4581714817451772  b=13.4581714817060547
-    a = 13.4581714817256159  b=13.4581714817256159
-
-    When array-like arguments are given, broadcasting applies:
-
-    >>> a = np.array([[1.5], [3], [6]])  # a has shape (3, 1).
-    >>> b = np.array([6, 12, 24, 48])    # b has shape (4,).
-    >>> agm(a, b)
-    array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],
-           [  4.37037309,   6.72908574,  10.84726853,  18.11597502],
-           [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
     """)
 
 add_newdoc("bdtr",
@@ -932,32 +868,41 @@ add_newdoc(
     """)
 
 add_newdoc("boxcox",
-    """
+    r"""
     boxcox(x, lmbda, out=None)
 
     Compute the Box-Cox transformation.
 
-    The Box-Cox transformation is::
+    The Box-Cox transformation is
 
-        y = (x**lmbda - 1) / lmbda  if lmbda != 0
-            log(x)                  if lmbda == 0
+    .. math::
 
-    Returns `nan` if ``x < 0``.
-    Returns `-inf` if ``x == 0`` and ``lmbda < 0``.
+        y = \begin{cases}
+            (x^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(x) & \text{if } \lambda = 0
+        \end{cases}
+
+    Returns ``nan`` if :math:`x < 0`.
+    Returns ``-inf`` if :math:`x = 0` and :math:`\lambda \leq 0`.
 
     Parameters
     ----------
     x : array_like
         Data to be transformed.
     lmbda : array_like
-        Power parameter of the Box-Cox transform.
+        Power parameter :math:`\lambda` of the Box-Cox transform.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     y : scalar or ndarray
         Transformed data.
+
+    See Also
+    --------
+    boxcox1p : Box-Cox transformation of ``1 + x``.
+    inv_boxcox : Inverse of the Box-Cox transformation.
 
     Notes
     -----
@@ -974,32 +919,41 @@ add_newdoc("boxcox",
     """)
 
 add_newdoc("boxcox1p",
-    """
+    r"""
     boxcox1p(x, lmbda, out=None)
 
-    Compute the Box-Cox transformation of 1 + `x`.
+    Compute the Box-Cox transformation of :math:`1 + x`.
 
-    The Box-Cox transformation computed by `boxcox1p` is::
+    The Box-Cox transformation computed by `boxcox1p` is
 
-        y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0
-            log(1+x)                    if lmbda == 0
+    .. math::
 
-    Returns `nan` if ``x < -1``.
-    Returns `-inf` if ``x == -1`` and ``lmbda < 0``.
+        y = \begin{cases}
+            ((1+x)^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(1+x) & \text{if } \lambda = 0
+        \end{cases}
+
+    Returns ``nan`` if :math:`x < -1`.
+    Returns ``-inf`` if :math:`x = -1` and :math:`\lambda \leq 0`.
 
     Parameters
     ----------
     x : array_like
         Data to be transformed.
     lmbda : array_like
-        Power parameter of the Box-Cox transform.
+        Power parameter :math:`\lambda` of the Box-Cox transform.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     y : scalar or ndarray
         Transformed data.
+
+    See Also
+    --------
+    boxcox : Box-Cox transformation.
+    inv_boxcox1p : Inverse of the Box-Cox transformation of ``1 + x``.
 
     Notes
     -----
@@ -1016,29 +970,38 @@ add_newdoc("boxcox1p",
     """)
 
 add_newdoc("inv_boxcox",
-    """
+    r"""
     inv_boxcox(y, lmbda, out=None)
 
     Compute the inverse of the Box-Cox transformation.
 
-    Find ``x`` such that::
+    Find :math:`x` such that
 
-        y = (x**lmbda - 1) / lmbda  if lmbda != 0
-            log(x)                  if lmbda == 0
+    .. math::
+
+        y = \begin{cases}
+            (x^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(x) & \text{if } \lambda = 0
+        \end{cases}
 
     Parameters
     ----------
     y : array_like
-        Data to be transformed.
+        Transformed data (input to the inverse transform).
     lmbda : array_like
-        Power parameter of the Box-Cox transform.
+        Power parameter :math:`\lambda` of the Box-Cox transform.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     x : scalar or ndarray
-        Transformed data.
+        Original data (inverse Box-Cox transform of `y`).
+
+    See Also
+    --------
+    boxcox : Box-Cox transformation.
+    inv_boxcox1p : Inverse of the Box-Cox transformation of ``1 + x``.
 
     Notes
     -----
@@ -1054,29 +1017,38 @@ add_newdoc("inv_boxcox",
     """)
 
 add_newdoc("inv_boxcox1p",
-    """
+    r"""
     inv_boxcox1p(y, lmbda, out=None)
 
-    Compute the inverse of the Box-Cox transformation.
+    Compute the inverse of the Box-Cox transformation of :math:`1 + x`.
 
-    Find ``x`` such that::
+    Find :math:`x` such that
 
-        y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0
-            log(1+x)                    if lmbda == 0
+    .. math::
+
+        y = \begin{cases}
+            ((1+x)^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(1+x) & \text{if } \lambda = 0
+        \end{cases}
 
     Parameters
     ----------
     y : array_like
-        Data to be transformed.
+        Transformed data (input to the inverse transform).
     lmbda : array_like
-        Power parameter of the Box-Cox transform.
+        Power parameter :math:`\lambda` of the Box-Cox transform.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     x : scalar or ndarray
-        Transformed data.
+        Original data (inverse Box-Cox transform of `y`).
+
+    See Also
+    --------
+    boxcox1p : Box-Cox transformation of ``1 + x``.
+    inv_boxcox : Inverse of the Box-Cox transformation.
 
     Notes
     -----
@@ -2103,68 +2075,6 @@ add_newdoc(
 
     >>> np.power(x, -1.5)
     (-0.03986825876151894-0.14051741840449583j)
-
-    """)
-
-add_newdoc("entr",
-    r"""
-    entr(x, out=None)
-
-    Elementwise function for computing entropy.
-
-    .. math:: \text{entr}(x) = \begin{cases} - x \log(x) & x > 0  \\ 0 & x = 0
-              \\ -\infty & \text{otherwise} \end{cases}
-
-    Parameters
-    ----------
-    x : ndarray
-        Input array.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    res : scalar or ndarray
-        The value of the elementwise entropy function at the given points `x`.
-
-    See Also
-    --------
-    kl_div, rel_entr, scipy.stats.entropy
-
-    Notes
-    -----
-    .. versionadded:: 0.15.0
-
-    This function is concave.
-
-    The origin of this function is in convex programming; see [1]_.
-    Given a probability distribution :math:`p_1, \ldots, p_n`,
-    the definition of entropy in the context of *information theory* is
-
-    .. math::
-
-        \sum_{i = 1}^n \mathrm{entr}(p_i).
-
-    To compute the latter quantity, use `scipy.stats.entropy`.
-
-    References
-    ----------
-    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
-           Cambridge University Press, 2004.
-           :doi:`10.1017/CBO9780511804441`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import entr
-
-    Calculate the entropy (in nats) of a 3-outcome probability distribution
-
-    >>> p = np.array([0.2, 0.5, 0.3])
-    >>> entr(p)
-    array([0.32188758, 0.34657359, 0.36119184])
-    >>> entr(p).sum()
-    1.0296530140645737
 
     """)
 
@@ -3840,63 +3750,6 @@ add_newdoc("gdtrc",
     True
     """)
 
-add_newdoc("gdtria",
-    """
-    gdtria(p, b, x, out=None)
-
-    Inverse of `gdtr` vs a.
-
-    Returns the inverse with respect to the parameter `a` of ``p =
-    gdtr(a, b, x)``, the cumulative distribution function of the gamma
-    distribution.
-
-    Parameters
-    ----------
-    p : array_like
-        Probability values.
-    b : array_like
-        `b` parameter values of `gdtr(a, b, x)`. `b` is the "shape" parameter
-        of the gamma distribution.
-    x : array_like
-        Nonnegative real values, from the domain of the gamma distribution.
-    out : ndarray, optional
-        If a fourth argument is given, it must be a numpy.ndarray whose size
-        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
-        array returned by the function.
-
-    Returns
-    -------
-    a : scalar or ndarray
-        Values of the `a` parameter such that ``p = gdtr(a, b, x)`.  ``1/a``
-        is the "scale" parameter of the gamma distribution.
-
-    See Also
-    --------
-    gdtr : CDF of the gamma distribution.
-    gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
-    gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
-    gammaincinv : Inverse of the incomplete regularized gamma function.
-
-    Notes
-    -----
-    `gdtria` is implemented in terms of the incomplete gamma inverse as
-    ``gdtria(p, b, x) = gammaincinv(b, p)/x``.
-
-    Examples
-    --------
-    First evaluate `gdtr`.
-
-    >>> from scipy.special import gdtr, gdtria
-    >>> p = gdtr(1.2, 3.4, 5.6)
-    >>> print(p)
-    0.94378087442
-
-    Verify the inverse.
-
-    >>> gdtria(p, 3.4, 5.6)
-    1.2
-    """)
-
 add_newdoc("gdtrib",
     """
     gdtrib(a, p, x, out=None)
@@ -3971,174 +3824,6 @@ add_newdoc("gdtrib",
 
     >>> gdtrib(1.2, p, 5.6)
     3.3999999999999995
-    """)
-
-add_newdoc("gdtrix",
-    """
-    gdtrix(a, b, p, out=None)
-
-    Inverse of `gdtr` vs x.
-
-    Returns the inverse with respect to the parameter `x` of ``p =
-    gdtr(a, b, x)``, the cumulative distribution function of the gamma
-    distribution. This is also known as the pth quantile of the
-    distribution.
-
-    Parameters
-    ----------
-    a : array_like
-        `a` parameter values of ``gdtr(a, b, x)``. ``1/a`` is the "scale"
-        parameter of the gamma distribution.
-    b : array_like
-        `b` parameter values of ``gdtr(a, b, x)``. `b` is the "shape" parameter
-        of the gamma distribution.
-    p : array_like
-        Probability values.
-    out : ndarray, optional
-        If a fourth argument is given, it must be a numpy.ndarray whose size
-        matches the broadcast result of `a`, `b` and `x`. `out` is then the
-        array returned by the function.
-
-    Returns
-    -------
-    x : scalar or ndarray
-        Values of the `x` parameter such that `p = gdtr(a, b, x)`.
-
-    See Also
-    --------
-    gdtr : CDF of the gamma distribution.
-    gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
-    gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
-    gammaincinv : Inverse of the incomplete regularized gamma function.
-
-    Notes
-    -----
-    `gdtrix` is implemented in terms of the incomplete gamma inverse as
-    ``gdtrix(a, b, p) = gammaincinv(b, p)/a``.
-
-    Examples
-    --------
-    First evaluate `gdtr`.
-
-    >>> from scipy.special import gdtr, gdtrix
-    >>> p = gdtr(1.2, 3.4, 5.6)
-    >>> print(p)
-    0.94378087442
-
-    Verify the inverse.
-
-    >>> gdtrix(1.2, 3.4, p)
-    5.6
-    """)
-
-
-
-add_newdoc("huber",
-    r"""
-    huber(delta, r, out=None)
-
-    Huber loss function.
-
-    .. math:: \text{huber}(\delta, r) = \begin{cases} \infty & \delta < 0  \\
-              \frac{1}{2}r^2 & 0 \le \delta, | r | \le \delta \\
-              \delta ( |r| - \frac{1}{2}\delta ) & \text{otherwise} \end{cases}
-
-    Parameters
-    ----------
-    delta : ndarray
-        Input array, indicating the quadratic vs. linear loss changepoint.
-    r : ndarray
-        Input array, possibly representing residuals.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        The computed Huber loss function values.
-
-    See Also
-    --------
-    pseudo_huber : smooth approximation of this function
-
-    Notes
-    -----
-    `huber` is useful as a loss function in robust statistics or machine
-    learning to reduce the influence of outliers as compared to the common
-    squared error loss, residuals with a magnitude higher than `delta` are
-    not squared [1]_.
-
-    Typically, `r` represents residuals, the difference
-    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
-    `huber` resembles the squared error and for :math:`|r|>\delta` the
-    absolute error. This way, the Huber loss often achieves
-    a fast convergence in model fitting for small residuals like the squared
-    error loss function and still reduces the influence of outliers
-    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
-    the cutoff between squared and absolute error regimes, it has
-    to be tuned carefully for each problem. `huber` is also
-    convex, making it suitable for gradient based optimization.
-
-    .. versionadded:: 0.15.0
-
-    References
-    ----------
-    .. [1] Peter Huber. "Robust Estimation of a Location Parameter",
-           1964. Annals of Statistics. 53 (1): 73 - 101.
-
-    Examples
-    --------
-    Import all necessary modules.
-
-    >>> import numpy as np
-    >>> from scipy.special import huber
-    >>> import matplotlib.pyplot as plt
-
-    Compute the function for ``delta=1`` at ``r=2``
-
-    >>> huber(1., 2.)
-    1.5
-
-    Compute the function for different `delta` by providing a NumPy array or
-    list for `delta`.
-
-    >>> huber([1., 3., 5.], 4.)
-    array([3.5, 7.5, 8. ])
-
-    Compute the function at different points by providing a NumPy array or
-    list for `r`.
-
-    >>> huber(2., np.array([1., 1.5, 3.]))
-    array([0.5  , 1.125, 4.   ])
-
-    The function can be calculated for different `delta` and `r` by
-    providing arrays for both with compatible shapes for broadcasting.
-
-    >>> r = np.array([1., 2.5, 8., 10.])
-    >>> deltas = np.array([[1.], [5.], [9.]])
-    >>> print(r.shape, deltas.shape)
-    (4,) (3, 1)
-
-    >>> huber(deltas, r)
-    array([[ 0.5  ,  2.   ,  7.5  ,  9.5  ],
-           [ 0.5  ,  3.125, 27.5  , 37.5  ],
-           [ 0.5  ,  3.125, 32.   , 49.5  ]])
-
-    Plot the function for different `delta`.
-
-    >>> x = np.linspace(-4, 4, 500)
-    >>> deltas = [1, 2, 3]
-    >>> linestyles = ["dashed", "dotted", "dashdot"]
-    >>> fig, ax = plt.subplots()
-    >>> combined_plot_parameters = list(zip(deltas, linestyles))
-    >>> for delta, style in combined_plot_parameters:
-    ...     ax.plot(x, huber(delta, x), label=fr"$\delta={delta}$", ls=style)
-    >>> ax.legend(loc="upper center")
-    >>> ax.set_xlabel("$x$")
-    >>> ax.set_title(r"Huber loss function $h_{\delta}(x)$")
-    >>> ax.set_xlim(-4, 4)
-    >>> ax.set_ylim(0, 8)
-    >>> plt.show()
     """)
 
 add_newdoc("hyp0f1",
@@ -4357,57 +4042,6 @@ add_newdoc("hyperu",
 add_newdoc("_igam_fac",
     """
     Internal function, do not use.
-    """)
-
-add_newdoc("kl_div",
-    r"""
-    kl_div(x, y, out=None)
-
-    Elementwise function for computing Kullback-Leibler divergence.
-
-    .. math::
-
-        \mathrm{kl\_div}(x, y) =
-          \begin{cases}
-            x \log(x / y) - x + y & x > 0, y > 0 \\
-            y & x = 0, y \ge 0 \\
-            \infty & \text{otherwise}
-          \end{cases}
-
-    Parameters
-    ----------
-    x, y : array_like
-        Real arguments
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the Kullback-Liebler divergence.
-
-    See Also
-    --------
-    entr, rel_entr, scipy.stats.entropy
-
-    Notes
-    -----
-    .. versionadded:: 0.15.0
-
-    This function is non-negative and is jointly convex in `x` and `y`.
-
-    The origin of this function is in convex programming; see [1]_ for
-    details. This is why the function contains the extra :math:`-x
-    + y` terms over what might be expected from the Kullback-Leibler
-    divergence. For a version of the function without the extra terms,
-    see `rel_entr`.
-
-    References
-    ----------
-    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
-           Cambridge University Press, 2004.
-           :doi:`10.1017/CBO9780511804441`.
-
     """)
 
 add_newdoc("kn",
@@ -5665,6 +5299,16 @@ add_newdoc("ncfdtrinc",
     ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
     ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
 
+    Notes
+    -----
+    This function calculates the non-centrality parameter of the
+    non-central F distribution given a probability, quantile, and degrees
+    of freedom using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     Examples
     --------
     >>> from scipy.special import ncfdtr, ncfdtrinc
@@ -5827,6 +5471,16 @@ add_newdoc("nctdtrinc",
     nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
     nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
 
+    Notes
+    -----
+    This function calculates the non-centrality parameter of the
+    non-central t distribution given a probability, quantile and
+    degrees of freedom using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     Examples
     --------
     >>> from scipy.special import nctdtr, nctdtrinc
@@ -5903,113 +5557,6 @@ add_newdoc("nctdtrit",
 
     >>> nctdtrit(3, 1, p)
     array([0.5, 1. , 1.5])
-
-    """)
-
-add_newdoc("nrdtrimn",
-    """
-    nrdtrimn(p, std, x, out=None)
-
-    Calculate mean of normal distribution given other params.
-
-    Parameters
-    ----------
-    p : array_like
-        CDF values, in range (0, 1].
-    std : array_like
-        Standard deviation.
-    x : array_like
-        Quantiles, i.e. the upper limit of integration.
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    mn : scalar or ndarray
-        The mean of the normal distribution.
-
-    See Also
-    --------
-    scipy.stats.norm : Normal distribution
-    ndtr : Standard normal cumulative probability distribution
-    ndtri : Inverse of standard normal CDF with respect to quantile
-    nrdtrisd : Inverse of normal distribution CDF with respect to
-               standard deviation
-
-    Examples
-    --------
-    `nrdtrimn` can be used to recover the mean of a normal distribution
-    if we know the CDF value `p` for a given quantile `x` and the
-    standard deviation `std`. First, we calculate
-    the normal distribution CDF for an exemplary parameter set.
-
-    >>> from scipy.stats import norm
-    >>> mean = 3.
-    >>> std = 2.
-    >>> x = 6.
-    >>> p = norm.cdf(x, loc=mean, scale=std)
-    >>> p
-    0.9331927987311419
-
-    Verify that `nrdtrimn` returns the original value for `mean`.
-
-    >>> from scipy.special import nrdtrimn
-    >>> nrdtrimn(p, std, x)
-    3.0000000000000004
-
-    """)
-
-add_newdoc("nrdtrisd",
-    """
-    nrdtrisd(mn, p, x, out=None)
-
-    Calculate standard deviation of normal distribution given other params.
-
-    Parameters
-    ----------
-    mn : scalar or ndarray
-        The mean of the normal distribution.
-    p : array_like
-        CDF values, in range (0, 1].
-    x : array_like
-        Quantiles, i.e. the upper limit of integration.
-
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    std : scalar or ndarray
-        Standard deviation.
-
-    See Also
-    --------
-    scipy.stats.norm : Normal distribution
-    ndtr : Standard normal cumulative probability distribution
-    ndtri : Inverse of standard normal CDF with respect to quantile
-    nrdtrimn : Inverse of normal distribution CDF with respect to
-               mean
-
-    Examples
-    --------
-    `nrdtrisd` can be used to recover the standard deviation of a normal
-    distribution if we know the CDF value `p` for a given quantile `x` and
-    the mean `mn`. First, we calculate the normal distribution CDF for an
-    exemplary parameter set.
-
-    >>> from scipy.stats import norm
-    >>> mean = 3.
-    >>> std = 2.
-    >>> x = 6.
-    >>> p = norm.cdf(x, loc=mean, scale=std)
-    >>> p
-    0.9331927987311419
-
-    Verify that `nrdtrisd` returns the original value for `std`.
-
-    >>> from scipy.special import nrdtrisd
-    >>> nrdtrisd(mean, p, x)
-    2.0000000000000004
 
     """)
 
@@ -6412,199 +5959,6 @@ add_newdoc("powm1", """
 
     """)
 
-
-add_newdoc("pseudo_huber",
-    r"""
-    pseudo_huber(delta, r, out=None)
-
-    Pseudo-Huber loss function.
-
-    .. math:: \mathrm{pseudo\_huber}(\delta, r) =
-              \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
-
-    Parameters
-    ----------
-    delta : array_like
-        Input array, indicating the soft quadratic vs. linear loss changepoint.
-    r : array_like
-        Input array, possibly representing residuals.
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    res : scalar or ndarray
-        The computed Pseudo-Huber loss function values.
-
-    See Also
-    --------
-    huber: Similar function which this function approximates
-
-    Notes
-    -----
-    Like `huber`, `pseudo_huber` often serves as a robust loss function
-    in statistics or machine learning to reduce the influence of outliers.
-    Unlike `huber`, `pseudo_huber` is smooth.
-
-    Typically, `r` represents residuals, the difference
-    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
-    `pseudo_huber` resembles the squared error and for :math:`|r|>\delta` the
-    absolute error. This way, the Pseudo-Huber loss often achieves
-    a fast convergence in model fitting for small residuals like the squared
-    error loss function and still reduces the influence of outliers
-    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
-    the cutoff between squared and absolute error regimes, it has
-    to be tuned carefully for each problem. `pseudo_huber` is also
-    convex, making it suitable for gradient based optimization. [1]_ [2]_
-
-    .. versionadded:: 0.15.0
-
-    References
-    ----------
-    .. [1] Hartley, Zisserman, "Multiple View Geometry in Computer Vision".
-           2003. Cambridge University Press. p. 619
-    .. [2] Charbonnier et al. "Deterministic edge-preserving regularization
-           in computed imaging". 1997. IEEE Trans. Image Processing.
-           6 (2): 298 - 311.
-
-    Examples
-    --------
-    Import all necessary modules.
-
-    >>> import numpy as np
-    >>> from scipy.special import pseudo_huber, huber
-    >>> import matplotlib.pyplot as plt
-
-    Calculate the function for ``delta=1`` at ``r=2``.
-
-    >>> pseudo_huber(1., 2.)
-    1.2360679774997898
-
-    Calculate the function at ``r=2`` for different `delta` by providing
-    a list or NumPy array for `delta`.
-
-    >>> pseudo_huber([1., 2., 4.], 3.)
-    array([2.16227766, 3.21110255, 4.        ])
-
-    Calculate the function for ``delta=1`` at several points by providing
-    a list or NumPy array for `r`.
-
-    >>> pseudo_huber(2., np.array([1., 1.5, 3., 4.]))
-    array([0.47213595, 1.        , 3.21110255, 4.94427191])
-
-    The function can be calculated for different `delta` and `r` by
-    providing arrays for both with compatible shapes for broadcasting.
-
-    >>> r = np.array([1., 2.5, 8., 10.])
-    >>> deltas = np.array([[1.], [5.], [9.]])
-    >>> print(r.shape, deltas.shape)
-    (4,) (3, 1)
-
-    >>> pseudo_huber(deltas, r)
-    array([[ 0.41421356,  1.6925824 ,  7.06225775,  9.04987562],
-           [ 0.49509757,  2.95084972, 22.16990566, 30.90169944],
-           [ 0.49846624,  3.06693762, 27.37435121, 40.08261642]])
-
-    Plot the function for different `delta`.
-
-    >>> x = np.linspace(-4, 4, 500)
-    >>> deltas = [1, 2, 3]
-    >>> linestyles = ["dashed", "dotted", "dashdot"]
-    >>> fig, ax = plt.subplots()
-    >>> combined_plot_parameters = list(zip(deltas, linestyles))
-    >>> for delta, style in combined_plot_parameters:
-    ...     ax.plot(x, pseudo_huber(delta, x), label=rf"$\delta={delta}$",
-    ...             ls=style)
-    >>> ax.legend(loc="upper center")
-    >>> ax.set_xlabel("$x$")
-    >>> ax.set_title(r"Pseudo-Huber loss function $h_{\delta}(x)$")
-    >>> ax.set_xlim(-4, 4)
-    >>> ax.set_ylim(0, 8)
-    >>> plt.show()
-
-    Finally, illustrate the difference between `huber` and `pseudo_huber` by
-    plotting them and their gradients with respect to `r`. The plot shows
-    that `pseudo_huber` is continuously differentiable while `huber` is not
-    at the points :math:`\pm\delta`.
-
-    >>> def huber_grad(delta, x):
-    ...     grad = np.copy(x)
-    ...     linear_area = np.argwhere(np.abs(x) > delta)
-    ...     grad[linear_area]=delta*np.sign(x[linear_area])
-    ...     return grad
-    >>> def pseudo_huber_grad(delta, x):
-    ...     return x* (1+(x/delta)**2)**(-0.5)
-    >>> x=np.linspace(-3, 3, 500)
-    >>> delta = 1.
-    >>> fig, ax = plt.subplots(figsize=(7, 7))
-    >>> ax.plot(x, huber(delta, x), label="Huber", ls="dashed")
-    >>> ax.plot(x, huber_grad(delta, x), label="Huber Gradient", ls="dashdot")
-    >>> ax.plot(x, pseudo_huber(delta, x), label="Pseudo-Huber", ls="dotted")
-    >>> ax.plot(x, pseudo_huber_grad(delta, x), label="Pseudo-Huber Gradient",
-    ...         ls="solid")
-    >>> ax.legend(loc="upper center")
-    >>> plt.show()
-    """)
-
-add_newdoc("rel_entr",
-    r"""
-    rel_entr(x, y, out=None)
-
-    Elementwise function for computing relative entropy.
-
-    .. math::
-
-        \mathrm{rel\_entr}(x, y) =
-            \begin{cases}
-                x \log(x / y) & x > 0, y > 0 \\
-                0 & x = 0, y \ge 0 \\
-                \infty & \text{otherwise}
-            \end{cases}
-
-    Parameters
-    ----------
-    x, y : array_like
-        Input arrays
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Relative entropy of the inputs
-
-    See Also
-    --------
-    entr, kl_div, scipy.stats.entropy
-
-    Notes
-    -----
-    .. versionadded:: 0.15.0
-
-    This function is jointly convex in x and y.
-
-    The origin of this function is in convex programming; see
-    [1]_. Given two discrete probability distributions :math:`p_1,
-    \ldots, p_n` and :math:`q_1, \ldots, q_n`, the definition of relative
-    entropy in the context of *information theory* is
-
-    .. math::
-
-        \sum_{i = 1}^n \mathrm{rel\_entr}(p_i, q_i).
-
-    To compute the latter quantity, use `scipy.stats.entropy`.
-
-    See [2]_ for details.
-
-    References
-    ----------
-    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
-           Cambridge University Press, 2004.
-           :doi:`10.1017/CBO9780511804441`.
-    .. [2] Kullback-Leibler divergence,
-           https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
-
-    """)
 
 add_newdoc("round",
     """
@@ -7656,46 +7010,6 @@ add_newdoc("_struve_bessel_series",
     v, err
     """)
 
-add_newdoc("_spherical_jn",
-    """
-    Internal function, use `spherical_jn` instead.
-    """)
-
-add_newdoc("_spherical_jn_d",
-    """
-    Internal function, use `spherical_jn` instead.
-    """)
-
-add_newdoc("_spherical_yn",
-    """
-    Internal function, use `spherical_yn` instead.
-    """)
-
-add_newdoc("_spherical_yn_d",
-    """
-    Internal function, use `spherical_yn` instead.
-    """)
-
-add_newdoc("_spherical_in",
-    """
-    Internal function, use `spherical_in` instead.
-    """)
-
-add_newdoc("_spherical_in_d",
-    """
-    Internal function, use `spherical_in` instead.
-    """)
-
-add_newdoc("_spherical_kn",
-    """
-    Internal function, use `spherical_kn` instead.
-    """)
-
-add_newdoc("_spherical_kn_d",
-    """
-    Internal function, use `spherical_kn` instead.
-    """)
-
 add_newdoc("owens_t",
     """
     owens_t(h, a, out=None)
@@ -7733,11 +7047,6 @@ add_newdoc("owens_t",
     >>> h = 0.78
     >>> special.owens_t(h, a)
     0.10877216734852274
-    """)
-
-add_newdoc("_factorial",
-    """
-    Internal function, do not use.
     """)
 
 add_newdoc("ndtri_exp",

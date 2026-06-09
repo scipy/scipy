@@ -915,6 +915,11 @@ Available functions
         double complex psi(double complex)
         double psi(double)
 
+- :py:func:`~scipy.special.digammainv`::
+
+        float digammainv(float)
+        double digammainv(double)
+
 - :py:func:`~scipy.special.radian`::
 
         double radian(double, double, double)
@@ -1116,8 +1121,6 @@ cdef extern from r"xsf_wrappers.h":
     double special_ber(double) nogil
     double special_berp(double) nogil
     double xsf_gdtrib(double, double, double) nogil
-    double special_gdtria(double, double, double) nogil
-    double special_gdtrix(double, double, double) nogil
     npy_double special_kei(npy_double) nogil
     npy_double special_keip(npy_double) nogil
     void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
@@ -1174,10 +1177,18 @@ cdef extern from r"xsf_wrappers.h":
     npy_cdouble special_ccyl_hankel_2(npy_double, npy_cdouble) nogil
     npy_cdouble special_ccyl_hankel_2e(npy_double, npy_cdouble) nogil
 
+    npy_double special_agm(npy_double, npy_double) nogil
+    npy_double special_entr(npy_double) nogil
+    npy_double special_huber(npy_double, npy_double) nogil
+    npy_double special_kl_div(npy_double, npy_double) nogil
+    npy_double special_pseudo_huber(npy_double, npy_double) nogil
+    npy_double special_rel_entr(npy_double, npy_double) nogil
     npy_double xsf_binom(npy_double, npy_double) nogil
 
     npy_double special_digamma(npy_double) nogil
     npy_cdouble special_cdigamma(npy_cdouble) nogil
+    npy_float special_digammainvf(npy_float) nogil
+    npy_double special_digammainv(npy_double) nogil
 
     npy_double special_cyl_bessel_j(npy_double, npy_double) nogil
     npy_cdouble special_ccyl_bessel_j(npy_double, npy_cdouble) nogil
@@ -1358,8 +1369,10 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_log_ndtr(double x) nogil
     npy_cdouble xsf_clog_ndtr(npy_cdouble x) nogil
     double xsf_ndtri(double x) nogil
-    double special_nrdtrimn(double p, double std, double x) nogil
-    double special_nrdtrisd(double mean, double p, double x) nogil
+    double xsf_gdtria(double p, double b, double x) nogil
+    double xsf_gdtrix(double a, double b, double p) nogil
+    double xsf_nrdtrimn(double p, double std, double x) nogil
+    double xsf_nrdtrisd(double mean, double p, double x) nogil
     double xsf_owens_t(double h, double a) nogil
     double xsf_pdtr(double k, double m) nogil
     double xsf_pdtrc(double k, double m) nogil
@@ -1370,10 +1383,6 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_smirnovci(int n, double x) nogil
     double xsf_smirnovp(int n, double x) nogil
     double xsf_tukeylambdacdf(double x, double lmbda) nogil
-
-from ._agm cimport agm as _func_agm
-ctypedef double _proto_agm_t(double, double) noexcept nogil
-cdef _proto_agm_t *_proto_agm_t_var = &_func_agm
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -1445,14 +1454,6 @@ cdef extern from r"_ufuncs_defs.h":
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_ellik "ellik"(npy_double, npy_double)nogil
-
-from ._ellipk cimport ellipk as _func_ellipk
-ctypedef double _proto_ellipk_t(double) noexcept nogil
-cdef _proto_ellipk_t *_proto_ellipk_t_var = &_func_ellipk
-
-from ._convex_analysis cimport entr as _func_entr
-ctypedef double _proto_entr_t(double) noexcept nogil
-cdef _proto_entr_t *_proto_entr_t_var = &_func_entr
 
 from .orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
 ctypedef double complex _proto_eval_chebyc_double_complex__t(double, double complex) noexcept nogil
@@ -1632,10 +1633,6 @@ cdef _proto_fdtridfd_t *_proto_fdtridfd_t_var = &_func_fdtridfd
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
 
-from ._convex_analysis cimport huber as _func_huber
-ctypedef double _proto_huber_t(double, double) noexcept nogil
-cdef _proto_huber_t *_proto_huber_t_var = &_func_huber
-
 from ._hyp0f1 cimport _hyp0f1_cmplx as _func__hyp0f1_cmplx
 ctypedef double complex _proto__hyp0f1_cmplx_t(double, double complex) noexcept nogil
 cdef _proto__hyp0f1_cmplx_t *_proto__hyp0f1_cmplx_t_var = &_func__hyp0f1_cmplx
@@ -1672,10 +1669,6 @@ cdef extern from r"_ufuncs_defs.h":
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_k1e "k1e"(npy_double)nogil
 
-from ._convex_analysis cimport kl_div as _func_kl_div
-ctypedef double _proto_kl_div_t(double, double) noexcept nogil
-cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
-
 from ._legacy cimport kn_unsafe as _func_kn_unsafe
 ctypedef double _proto_kn_unsafe_t(double, double) noexcept nogil
 cdef _proto_kn_unsafe_t *_proto_kn_unsafe_t_var = &_func_kn_unsafe
@@ -1703,29 +1696,13 @@ from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
 ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
 
-from ._cdflib_wrappers cimport ncfdtrinc as _func_ncfdtrinc
-ctypedef double _proto_ncfdtrinc_t(double, double, double, double) noexcept nogil
-cdef _proto_ncfdtrinc_t *_proto_ncfdtrinc_t_var = &_func_ncfdtrinc
-
 from ._cdflib_wrappers cimport nctdtridf as _func_nctdtridf
 ctypedef double _proto_nctdtridf_t(double, double, double) noexcept nogil
 cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 
-from ._cdflib_wrappers cimport nctdtrinc as _func_nctdtrinc
-ctypedef double _proto_nctdtrinc_t(double, double, double) noexcept nogil
-cdef _proto_nctdtrinc_t *_proto_nctdtrinc_t_var = &_func_nctdtrinc
-
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
 cdef _proto_pdtri_unsafe_t *_proto_pdtri_unsafe_t_var = &_func_pdtri_unsafe
-
-from ._convex_analysis cimport pseudo_huber as _func_pseudo_huber
-ctypedef double _proto_pseudo_huber_t(double, double) noexcept nogil
-cdef _proto_pseudo_huber_t *_proto_pseudo_huber_t_var = &_func_pseudo_huber
-
-from ._convex_analysis cimport rel_entr as _func_rel_entr
-ctypedef double _proto_rel_entr_t(double, double) noexcept nogil
-cdef _proto_rel_entr_t *_proto_rel_entr_t_var = &_func_rel_entr
 
 from ._legacy cimport smirnov_unsafe as _func_smirnov_unsafe
 ctypedef double _proto_smirnov_unsafe_t(double, double) noexcept nogil
@@ -1757,7 +1734,7 @@ cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double agm(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.agm"""
-    return _func_agm(x0, x1)
+    return special_agm(x0, x1)
 
 cdef void airy(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) noexcept nogil:
     """See the documentation for scipy.special.airy"""
@@ -2103,7 +2080,7 @@ cpdef Dd_number_t elliprj(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2, Dd_num
 
 cpdef double entr(double x0) noexcept nogil:
     """See the documentation for scipy.special.entr"""
-    return _func_entr(x0)
+    return special_entr(x0)
 
 cpdef Dd_number_t erf(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erf"""
@@ -2538,11 +2515,11 @@ cpdef double gdtrib(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double gdtria(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtria"""
-    return special_gdtria(x0, x1, x2)
+    return xsf_gdtria(x0, x1, x2)
 
 cpdef double gdtrix(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrix"""
-    return special_gdtrix(x0, x1, x2)
+    return xsf_gdtrix(x0, x1, x2)
 
 cpdef double complex hankel1(double x0, double complex x1) noexcept nogil:
     """See the documentation for scipy.special.hankel1"""
@@ -2562,7 +2539,7 @@ cpdef double complex hankel2e(double x0, double complex x1) noexcept nogil:
 
 cpdef double huber(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.huber"""
-    return _func_huber(x0, x1)
+    return special_huber(x0, x1)
 
 cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.hyp0f1"""
@@ -2802,7 +2779,7 @@ cpdef double kerp(double x0) noexcept nogil:
 
 cpdef double kl_div(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.kl_div"""
-    return _func_kl_div(x0, x1)
+    return special_kl_div(x0, x1)
 
 cpdef double kn(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.kn"""
@@ -3125,7 +3102,7 @@ cpdef double ncfdtridfn(double x0, double x1, double x2, double x3) noexcept nog
 
 cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtrinc"""
-    return _func_ncfdtrinc(x0, x1, x2, x3)
+    return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_find_non_centrality_double)(x0, x1, x2, x3)
 
 cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtr"""
@@ -3142,7 +3119,7 @@ cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrinc"""
-    return _func_nctdtrinc(x0, x1, x2)
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_find_non_centrality_double)(x0, x1, x2)
 
 cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrit"""
@@ -3171,11 +3148,11 @@ cpdef double ndtri(double x0) noexcept nogil:
 
 cpdef double nrdtrimn(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrimn"""
-    return special_nrdtrimn(x0, x1, x2)
+    return xsf_nrdtrimn(x0, x1, x2)
 
 cpdef double nrdtrisd(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrisd"""
-    return special_nrdtrisd(x0, x1, x2)
+    return xsf_nrdtrisd(x0, x1, x2)
 
 cdef void obl_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.obl_ang1"""
@@ -3385,7 +3362,7 @@ def _pro_rad2_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
 
 cpdef double pseudo_huber(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pseudo_huber"""
-    return _func_pseudo_huber(x0, x1)
+    return special_pseudo_huber(x0, x1)
 
 cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.psi"""
@@ -3399,13 +3376,22 @@ cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
         else:
             return NAN
 
+cpdef df_number_t digammainv(df_number_t x0) noexcept nogil:
+    """See the documentation for scipy.special.digammainv"""
+    if df_number_t is float:
+        return special_digammainvf(x0)
+    elif df_number_t is double:
+        return special_digammainv(x0)
+    else:
+        return NAN
+
 cpdef double radian(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.radian"""
     return xsf_radian(x0, x1, x2)
 
 cpdef double rel_entr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.rel_entr"""
-    return _func_rel_entr(x0, x1)
+    return special_rel_entr(x0, x1)
 
 cpdef Dd_number_t rgamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.rgamma"""

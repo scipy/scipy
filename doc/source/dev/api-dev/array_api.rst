@@ -651,17 +651,6 @@ being followed are to exclude:
 * functions which are too implementation specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
 * functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices.
 
-As an example, the contents of `scipy.odr` are considered out-of-scope for a
-combination of reasons 2 and 3 above. `scipy.odr` essentially provides a direct
-wrapper of the monolithic ODRPACK Fortran library, and its API is tied
-to the structure of this monolithic library. An efficient GPU
-accelerated implementation of nonlinear weighted orthogonal distance regression
-would benefit from not having to support an API so tightly coupled to ODRPACK
-but is also a challenging problem in its own right.
-
-(Since the previous paragraph was written `scipy.odr` has been slated for
-deprecation. Things that are deprecated are inherently out-of-scope).
-
 Considerations of what to consider in-scope are evolving, and something which is now
 considered out-of-scope may be decided to be in-scope in the future if sufficient user
 interest and feasability are demonstrated.
