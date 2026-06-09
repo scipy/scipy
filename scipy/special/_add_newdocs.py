@@ -4590,16 +4590,16 @@ add_newdoc("kolmogorov",
     >>> gaps = np.column_stack([cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
-    >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
-    Dn=0.043363, sqrt(n)*Dn=1.371265
+    >>> print(f'Dn={Dn:f}, sqrt(n)*Dn={Kn:f}')
+    Dn=0.049119, sqrt(n)*Dn=1.553274
     >>> print(chr(10).join(['For a Laplace sample tested against N(0, 1):',
-    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %
-    ...    (Kn, kolmogorov(Kn)),
-    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %
-    ...    (Kn, kstwobign.cdf(Kn))]))
+    ...   f' the approximate Kolmogorov probability that sqrt(n)*Dn>={Kn:f} '
+    ...   f'is {kolmogorov(Kn):f}',
+    ...   f' the approximate Kolmogorov probability that sqrt(n)*Dn<={Kn:f} '
+    ...   f'is {kstwobign.cdf(Kn):f}']))
     For a Laplace sample tested against N(0, 1):
-     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.371265 is 0.046533
-     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.371265 is 0.953467
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.553274 is 0.016048
+     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.553274 is 0.983952
 
     Plot the Empirical CDF against the target N(0, 1) CDF.
 
