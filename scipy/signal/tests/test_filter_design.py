@@ -4871,7 +4871,7 @@ class TestIIRFilter:
 
     def test_invalid_wn_range(self):
         # For digital filters, 0 <= Wn <= 1
-        assert_raises(ValueError, iirfilter, 1, 2, btype='lowspass')
+        assert_raises(ValueError, iirfilter, 1, 2, btype='lowpass')
         assert_raises(ValueError, iirfilter, 1, [0.5, 1], btype='bandstop')
         assert_raises(ValueError, iirfilter, 1, [0., 0.5], btype='bandstop')
         assert_raises(ValueError, iirfilter, 1, -1, btype='highpass')
