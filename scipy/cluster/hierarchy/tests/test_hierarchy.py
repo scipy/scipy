@@ -286,6 +286,18 @@ class TestMLabLinkageConversion:
         xp_assert_close(to_mlab_linkage(Z), xp.asarray(Zm, dtype=xp.float64),
                         rtol=1e-15)
 
+    @skip_xp_backends("jax.numpy", reason="Can't raise inside jax.pure_callback")
+    def test_mlab_linkage_conversion_bad_indices(self, xp):
+        # An index outside the 1..2N MATLAB range must be rejected instead of
+        # being fed to calculate_cluster_sizes, which indexes the size buffer
+        # with no bounds check.  A minimum index of 1 with an out-of-range
+        # maximum previously slipped past the format check.
+        Zm = xp.asarray([[1., 2., 0.5],
+                         [1., 100., 0.6],
+                         [1., 1., 0.7]])
+        with pytest.raises(ValueError, match="format of the indices"):
+            from_mlab_linkage(Zm)
+
 
 @make_xp_test_case(fclusterdata)
 class TestFclusterData:

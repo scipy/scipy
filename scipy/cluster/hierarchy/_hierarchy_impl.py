@@ -1784,7 +1784,7 @@ def from_mlab_linkage(Z):
 
     lazy = is_lazy_array(Z)
 
-    if not lazy and xp.min(Z[:, :2]) != 1.0 and xp.max(Z[:, :2]) != 2 * n:
+    if not lazy and (xp.min(Z[:, :2]) != 1.0 or xp.max(Z[:, :2]) != 2 * n):
         raise ValueError('The format of the indices is not 1..N')
 
     res = xp.empty((Z.shape[0], Z.shape[1] + 1), dtype=Z.dtype)
@@ -1793,7 +1793,7 @@ def from_mlab_linkage(Z):
 
     def cy_from_mlab_linkage(Zpart, validate):
         n = Zpart.shape[0]
-        if validate and np.min(Zpart[:, :2]) != 0.0 and np.max(Zpart[:, :2]) != 2 * n:
+        if validate and (np.min(Zpart[:, :2]) != 0.0 or np.max(Zpart[:, :2]) != 2 * n):
             raise ValueError('The format of the indices is not 1..N')
 
         if not Zpart.flags.writeable:
