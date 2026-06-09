@@ -16,6 +16,7 @@
 
 [build-system]
 build-backend = 'mesonpy'
+# NOTE: when updating this table, also update `dependency-groups.build`
 requires = [
     "meson-python>=0.15.0",
     "Cython>=3.2.0",        # when updating version, also update check in meson.build
@@ -92,6 +93,14 @@ optional-runtime-deps = [
     # "scikit-umfpack",  # optimize, sparse.linalg
 ]
 
+build = [
+    "meson-python>=0.15.0",
+    "Cython>=3.2.0",
+    "pybind11>=2.13.2",
+    "pythran>=0.18.1",
+    "numpy>=2.0.0",
+]
+
 test-core = [
     "pytest>=8.0.0",
     "hypothesis>=6.30",
@@ -164,7 +173,7 @@ doc = [
     "tabulate",
 ]
 
-cli = [
+dev-cli = [
     "spin",
 ]
 
@@ -186,10 +195,11 @@ lint = [
 ]
 
 dev = [
+    { include-group = "build" },
     { include-group = "test" },
     { include-group = "bench" },
     { include-group = "doc" },
-    { include-group = "cli" },
+    { include-group = "dev-cli" },
     { include-group = "typecheck" },
     { include-group = "lint" },
     "scipy-stubs",

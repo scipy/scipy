@@ -515,7 +515,7 @@ jobs:
 
       - name: Setup Python build/test deps
         run: |
-          python -m pip install -r requirements/build.txt
+          python -m pip install --group build
           python -m pip install -r requirements/openblas.txt
           python -m pip install build pytest hypothesis
           # Remove `meson` from environment
@@ -617,7 +617,7 @@ jobs:
 
       - name: Setup Python build deps
         run: |
-          pip install -r requirements/build.txt
+          pip install --group build
           pip install build
 
       - name: Build wheel, check for compiler warnings
