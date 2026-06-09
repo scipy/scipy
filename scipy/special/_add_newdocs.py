@@ -4490,11 +4490,11 @@ add_newdoc("kolmogi",
 
     Notes
     -----
-    `kolmogorov` is used by `stats.kstest` in the application of the
+    `kolmogorov` is used by ``stats.kstest`` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in ``scipy.special``, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distribution.
+    ``stats.kstwobign`` distribution.
 
     Examples
     --------
@@ -4529,12 +4529,10 @@ add_newdoc("kolmogorov",
     Parameters
     ----------
     x : array_like
-        Scaled test statistic from a Kolmogorov-Smirnov test, computed as
-        :math:`\sqrt{n} \max(|\mathrm{ECDF} - \mathrm{CDF}|)`, where `n` is
-        the sample size. Must be non-negative. Typical values range from 0
-        to approximately 2.
+        Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
+        multiplied by sqrt(n).
     out : ndarray, optional
-        Optional output array for the computed values.
+        Optional output array for the function results.
 
     Returns
     -------
@@ -4545,19 +4543,16 @@ add_newdoc("kolmogorov",
     See Also
     --------
     kolmogi : Inverse survival function of the Kolmogorov distribution.
-    scipy.stats.kstwobign : Recommended interface via a continuous distribution object.
-    smirnov, smirnovi : Functions for the one-sided Kolmogorov-Smirnov statistic.
+    scipy.stats.kstwobign : Provides the functionality as a continuous distribution.
+    smirnov, smirnovi : Functions for the one-sided distribution.
 
     Notes
     -----
-    `kolmogorov` is used by `scipy.stats.kstest` in its asymptotic approximation
-    for the Kolmogorov-Smirnov goodness-of-fit test. For historical reasons this
-    function is exposed in `scipy.special`, but the recommended approach for the
-    most accurate computations is the `scipy.stats.kstwobign` distribution object,
-    which provides CDF, SF, PDF, PPF, and ISF methods.
-
-    This function wraps the implementation from the XSF (extended special
-    functions) library.
+    `kolmogorov` is used by ``stats.kstest`` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
+    function is exposed in ``scipy.special``, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    ``stats.kstwobign`` distribution.
 
     References
     ----------
@@ -4568,7 +4563,7 @@ add_newdoc("kolmogorov",
 
     Examples
     --------
-    Compute the survival probability for a few values of the scaled statistic:
+    Show the probability of a gap at least as big as 0, 0.5 and 1.0.
 
     >>> import numpy as np
     >>> from scipy.special import kolmogorov
@@ -4576,51 +4571,48 @@ add_newdoc("kolmogorov",
     >>> kolmogorov([0, 0.5, 1.0])
     array([ 1.        ,  0.96394524,  0.26999967])
 
-    Compare a sample of size 1000 drawn from a Laplace(0, 1) distribution
-    against a Normal(0, 1) target distribution:
+    Compare a sample of size 1000 drawn from a Laplace(0, 1) distribution against
+    the target distribution, a Normal(0, 1) distribution.
 
     >>> from scipy.stats import norm, laplace
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(123456789)
     >>> n = 1000
-    >>> x = np.sort(laplace(0, 1).rvs(n, random_state=rng))
+    >>> lap01 = laplace(0, 1)
+    >>> x = np.sort(lap01.rvs(n, random_state=rng))
     >>> np.mean(x), np.std(x)
-    (-0.05841730131499543, 1.3968109101997568)
+    (np.float64(-0.0025731824244716677), np.float64(1.398518885254164))
 
-    Construct the ECDF and compute the K-S statistic:
+    Construct the Empirical CDF and the K-S statistic Dn.
 
-    >>> target = norm(0, 1)
+    >>> target = norm(0,1)  # Normal mean 0, stddev 1
     >>> cdfs = target.cdf(x)
-    >>> ecdfs = np.arange(n + 1, dtype=float) / n
+    >>> ecdfs = np.arange(n+1, dtype=float)/n
     >>> gaps = np.column_stack([cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
-    >>> print(f'Dn={Dn:.6f}, sqrt(n)*Dn={Kn:.6f}')
+    >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
     Dn=0.043363, sqrt(n)*Dn=1.371265
+    >>> print(chr(10).join(['For a Laplace sample tested against N(0, 1):',
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %
+    ...    (Kn, kolmogorov(Kn)),
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %
+    ...    (Kn, kstwobign.cdf(Kn))]))
+    For a Laplace sample tested against N(0, 1):
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.371265 is 0.046533
+     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.371265 is 0.953467
 
-    Report the Kolmogorov p-value and complementary probability:
-
-    >>> print(
-    ...     'For a sample of size n drawn from a N(0, 1) distribution:\\n'
-    ...     f'  P(sqrt(n)*Dn >= {Kn:.6f}) = {kolmogorov(Kn):.6f}  [kolmogorov SF]\\n'
-    ...     f'  P(sqrt(n)*Dn <= {Kn:.6f}) = {kstwobign.cdf(Kn):.6f}  [kstwobign CDF]'
-    ... )
-    For a sample of size n drawn from a N(0, 1) distribution:
-      P(sqrt(n)*Dn >= 1.371265) = 0.046533  [kolmogorov SF]
-      P(sqrt(n)*Dn <= 1.371265) = 0.953467  [kstwobign CDF]
-
-    Plot the empirical CDF against the N(0, 1) target CDF, with vertical lines
-    marking the locations of the maximum gap :math:`D_n`:
+    Plot the Empirical CDF against the target N(0, 1) CDF.
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post',
-    ...          label='Empirical CDF')
+    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
     >>> x3 = np.linspace(-3, 3, 100)
     >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
-    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend()
+    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
+    >>> # Add vertical lines marking Dn+ and Dn-
     >>> iminus, iplus = np.argmax(gaps, axis=0)
     >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus],
     ...            color='r', linestyle='dashed', lw=4)
-    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus + 1],
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1],
     ...            color='r', linestyle='dashed', lw=4)
     >>> plt.show()
     """)
