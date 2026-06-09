@@ -180,13 +180,7 @@ class TestArrayAPI:
             # as long as `actual` matches the expectation set by `default_xp`
             xp_assert_equal(x, y, **options)
             with pytest.raises(
-                AssertionError,
-                match="Namespace of desired array does not match",
-            ):
-                xp_assert_equal(x, y, **options)
-            with pytest.raises(
-                AssertionError,
-                match="Namespaces of actual and desired arrays do not match",
+                match="Namespace of actual array does not match the `xp` argument",
             ):
                 xp_assert_equal(y, x, **options)
 
