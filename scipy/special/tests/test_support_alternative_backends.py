@@ -384,6 +384,7 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
     assert y.dtype == np.float32
 
 
+@pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")
 @make_xp_test_case(special.chdtr)
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311
@@ -393,7 +394,7 @@ def test_chdtr_gh21311(xp):
     v = x.reshape(-1, 1)
     ref = special.chdtr(v, x)
     res = special.chdtr(xp.asarray(v), xp.asarray(x))
-    xp_assert_close(xp.asarray(ref), xp.broadcast_to(res, xp.asarray(ref).shape))
+    xp_assert_close(res, xp.asarray(ref))
 
 
 @make_xp_test_case(special.fdtrc)

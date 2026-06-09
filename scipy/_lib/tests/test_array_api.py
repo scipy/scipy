@@ -203,7 +203,7 @@ class TestArrayAPI:
         options = dict(zip(kwarg_names, [False, False, True]))
         if is_numpy(xp) and x.shape == y.shape:
             xp_assert_equal(x, y, **options)
-        elif is_numpy(xp): 
+        elif is_numpy(xp):
             with pytest.raises(AssertionError, match="array-ness does not match:*"):
                 xp_assert_equal(x, y, **options)
 
@@ -218,9 +218,9 @@ class TestArrayAPI:
         # Check default convention: 0d-arrays are distinguished from scalars
         message = "array-ness does not match:*"
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.asarray(0.), xp.float64(0), check_0d=True)
+            xp_assert_equal(xp.asarray(0.), xp.float64(0))
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.float64(0), xp.asarray(0.), check_0d=True)
+            xp_assert_equal(xp.float64(0), xp.asarray(0.))
         with pytest.raises(AssertionError, match=message):
             xp_assert_equal(xp.int64(42), xp.asarray(42), check_0d=True)
 
