@@ -14,7 +14,8 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           convolution_matrix)
 from numpy.linalg import cond
 from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
-                                   xp_default_dtype, make_xp_pytest_param)
+                                   xp_default_dtype, make_xp_pytest_param,
+                                   xp_assert_close)
 
 
 class TestToeplitz:
@@ -612,4 +613,4 @@ def test_batch(f, args, xp):
     res = f(xp.asarray(A), *list(map(xp.asarray, args)))
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
     ref = xp.asarray(ref.reshape(A.shape[:-1] + ref.shape[-2:]))
-    assert_allclose(res, ref)
+    xp_assert_close(res, ref)
