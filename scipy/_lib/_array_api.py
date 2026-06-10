@@ -37,7 +37,7 @@ from scipy._external.array_api_compat import (
     is_cupy_namespace as is_cupy,
     is_torch_namespace as is_torch,
     is_jax_namespace as is_jax,
-    is_dask_namespace as is_dask,  # noqa: F401
+    is_dask_namespace as is_dask,
     is_array_api_strict_namespace as is_array_api_strict,
 )
 from scipy._external.array_api_compat.common._helpers import _compat_module_name
@@ -54,7 +54,8 @@ import scipy._external.array_api_extra.testing as xpt
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
     'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray', 'is_pydata_sparse_array',
-    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch',
+    'is_array_api_strict', 'is_complex',
+    'is_cupy', 'is_dask', 'is_jax', 'is_numpy', 'is_torch',
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',

@@ -4404,6 +4404,7 @@ class TestPowerDivergence:
                f_obs_reshape, None, 0, None,
                "pearson", case0.chi2, xp=xp)
 
+    @pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")
     def test_ddof_broadcasting(self, xp):
         # Test that ddof broadcasts correctly.
         # ddof does not affect the test statistic.  It is broadcast
@@ -4436,7 +4437,7 @@ class TestPowerDivergence:
         _, p1 = stats.power_divergence(f_obs, f_exp, ddof=ddof[1, 0])
 
         expected_p = xp.concat((p0[xp.newaxis, :], p1[xp.newaxis, :]), axis=0)
-        xp_assert_close(expected_p, xp.broadcast_to(p, expected_p.shape))
+        xp_assert_close(p, expected_p)
 
     @pytest.mark.parametrize('case', power_div_empty_cases)
     @pytest.mark.parametrize('lambda_stat',

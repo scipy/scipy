@@ -203,7 +203,7 @@ class TestArrayAPI:
         options = dict(zip(kwarg_names, [False, False, True]))
         if is_numpy(xp) and x.shape == y.shape:
             xp_assert_equal(x, y, **options)
-        elif is_numpy(xp): 
+        elif is_numpy(xp):
             with pytest.raises(AssertionError, match="array-ness does not match:*"):
                 xp_assert_equal(x, y, **options)
 
