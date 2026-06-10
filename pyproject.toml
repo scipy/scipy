@@ -125,11 +125,14 @@ test-parallel = [
 test-docs = [
     { include-group = "test-core" },
     "scipy-doctest>=2.0.0",
+    "matplotlib",
 ]
 test-array-types = [
     { include-group = "test-core" },
     "array-api-strict>=2.3.1",
     "marray",
+    # for PyPI: 'sparse; sys_platform != "win32" or platform_machine != "ARM64"'
+    "sparse",
 ]
 test = [
     { include-group = "optional-runtime-deps" },
@@ -154,6 +157,8 @@ coverage = [
 bench = [
     # https://github.com/airspeed-velocity/asv/issues/1537
     "asv==0.6.4",
+    "pyfftw",
+    "cffi", 
 ]
 
 doc = [
