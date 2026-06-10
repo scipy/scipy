@@ -1264,11 +1264,12 @@ def test_extremum_position_lexicographic_tiebreak(xp, dtype_name):
                          [0, 0, 2, 2],
                          [0, 0, 2, 2]])
     # Each label is a plateau: label 1 -> first position (0, 0), label 2 -> (2, 2).
+    index = xp.asarray([1, 2])
     assert ndimage.maximum_position(input, labels, 1) == (0, 0)
-    assert ndimage.maximum_position(input, labels, [1, 2]) == [(0, 0), (2, 2)]
+    assert ndimage.maximum_position(input, labels, index) == [(0, 0), (2, 2)]
     assert ndimage.minimum_position(input, labels, 1) == (0, 0)
-    assert ndimage.minimum_position(input, labels, [1, 2]) == [(0, 0), (2, 2)]
-    _, _, minpos, maxpos = ndimage.extrema(input, labels, [1, 2])
+    assert ndimage.minimum_position(input, labels, index) == [(0, 0), (2, 2)]
+    _, _, minpos, maxpos = ndimage.extrema(input, labels, index)
     assert minpos == [(0, 0), (2, 2)]
     assert maxpos == [(0, 0), (2, 2)]
 
