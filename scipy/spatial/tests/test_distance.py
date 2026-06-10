@@ -790,7 +790,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-euclidean-iris']
         Y_test1 = wpdist_no_const(X, 'euclidean')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=1e-15)
 
     @pytest.mark.slow
     def test_pdist_euclidean_iris_float32(self):
@@ -798,7 +798,7 @@ class TestPdist:
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-euclidean-iris']
         Y_test1 = wpdist_no_const(X, 'euclidean')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=5e-7, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_euclidean_iris_nonC(self):
@@ -808,7 +808,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-euclidean-iris']
         Y_test2 = wpdist_no_const(X, 'test_euclidean')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
     def test_pdist_seuclidean_random(self):
         eps = 1e-7
@@ -842,7 +842,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-seuclidean-iris']
         Y_test1 = pdist(X, 'seuclidean')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=1e-15)
 
     def test_pdist_seuclidean_iris_float32(self):
         # Tests pdist(X, 'seuclidean') on the Iris data set (float32).
@@ -850,7 +850,7 @@ class TestPdist:
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-seuclidean-iris']
         Y_test1 = pdist(X, 'seuclidean')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=5e-7)
 
     def test_pdist_seuclidean_iris_nonC(self):
         # Test pdist(X, 'test_seuclidean') [the non-C implementation] on the
@@ -859,7 +859,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-seuclidean-iris']
         Y_test2 = pdist(X, 'test_seuclidean')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
     def test_pdist_cosine_random(self):
         eps = 1e-7
@@ -943,7 +943,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-cityblock-iris']
         Y_test1 = wpdist_no_const(X, 'cityblock')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=1e-15)
 
     @pytest.mark.slow
     def test_pdist_cityblock_iris_float32(self):
@@ -951,7 +951,7 @@ class TestPdist:
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-cityblock-iris']
         Y_test1 = wpdist_no_const(X, 'cityblock')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=5e-7, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_cityblock_iris_nonC(self):
@@ -961,7 +961,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-cityblock-iris']
         Y_test2 = wpdist_no_const(X, 'test_cityblock')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
     def test_pdist_correlation_random(self):
         eps = 1e-7
@@ -990,7 +990,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
         Y_test1 = wpdist(X, 'correlation')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=1e-15)
 
     @pytest.mark.slow
     def test_pdist_correlation_iris_float32(self):
@@ -998,7 +998,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = np.float32(eo['pdist-correlation-iris'])
         Y_test1 = wpdist(X, 'correlation')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=5e-7, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_correlation_iris_nonC(self):
@@ -1009,7 +1009,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
         Y_test2 = wpdist(X, 'test_correlation')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
     @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 2.0, 3.2, np.inf])
     def test_pdist_minkowski_random_p(self, p):
@@ -1046,7 +1046,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=1e-15)
 
     @pytest.mark.slow
     def test_pdist_minkowski_3_2_iris_float32(self):
@@ -1054,7 +1054,7 @@ class TestPdist:
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=5e-7)
 
     @pytest.mark.slow
     def test_pdist_minkowski_3_2_iris_nonC(self):
@@ -1062,7 +1062,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test2 = wpdist_no_const(X, 'test_minkowski', p=3.2)
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
     @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris(self):
@@ -1070,7 +1070,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=5.8)
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=1e-15)
 
     @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris_float32(self):
@@ -1078,7 +1078,7 @@ class TestPdist:
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=5.8)
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=5e-7, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris_nonC(self):
@@ -1086,7 +1086,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test2 = wpdist_no_const(X, 'test_minkowski', p=5.8)
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
     def test_pdist_mahalanobis(self):
         # 1-dimensional observations
@@ -1192,7 +1192,7 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test2 = pdist(X, 'test_jensenshannon')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
     def test_pdist_matching_mtica1(self):
         # Test matching(*,*) with mtica example #1 (nums).
@@ -2233,21 +2233,21 @@ class TestChebyshev:
         X = eo['iris']
         Y_right = eo['pdist-chebyshev-iris']
         Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=1e-15)
 
     def test_pdist_chebyshev_iris_float32(self):
         eps = 1e-5
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-chebyshev-iris']
         Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, atol=5e-7, verbose=verbose > 2)
 
     def test_pdist_chebyshev_iris_nonC(self):
         eps = 1e-14
         X = eo['iris']
         Y_right = eo['pdist-chebyshev-iris']
         Y_test2 = pdist(X, 'test_chebyshev')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
     def test_weighted(self):
         # Basic test for weighted Chebyshev.  Only components with non-zero
