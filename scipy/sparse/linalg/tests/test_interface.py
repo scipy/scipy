@@ -505,7 +505,7 @@ class TestDotTests:
         Tests batches of RHS via `args.batch_shape`.
         """
         def identity(x):
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(x, shape)
 
         shape = batch_shape + args.shape
@@ -543,7 +543,7 @@ class TestDotTests:
                 case -1:  # pad with zeros
                     x = pad_core_dim(x, target_size=M)
 
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(x, shape)
 
         def rmv(x):            
@@ -555,7 +555,7 @@ class TestDotTests:
                 case -1:  # crop x to size
                     x = x[..., :N]
 
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(x, shape)
 
         shape = batch_shape + args.shape
@@ -576,12 +576,12 @@ class TestDotTests:
         """
         def scale(x):
             scale = (3 + 2j) / abs(3 + 2j)
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(scale * x, shape)
 
         def r_scale(x):
             scale = (3 - 2j) / abs(3 - 2j)
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(scale * x, shape)
 
         shape = batch_shape + args.shape
@@ -612,7 +612,7 @@ class TestDotTests:
                     [np.sin(theta),  np.cos(theta)]
                 ])
                 B = R @ X
-                shape = xpx.broadcast_shapes(batch_shape, X.shape[:-2]) + X.shape[-2:]
+                shape = xp.broadcast_shapes(batch_shape, X.shape[:-2]) + X.shape[-2:]
                 return xp.broadcast_to(B, shape)
 
             def _adjoint(self):
