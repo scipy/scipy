@@ -3462,7 +3462,7 @@ class TestWorkers:
         res_default = optimize.minimize(
             rosen, self.x0, method=method, **kwds
         )
-        assert_allclose(res.x, res_default.x)
+        assert_allclose(res.x, res_default.x, rtol=1e-15)
         assert_equal(res.nfev, res_default.nfev)
 
     def test_equal_bounds(self, workers, method):
