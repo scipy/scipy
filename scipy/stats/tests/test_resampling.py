@@ -1247,7 +1247,7 @@ class TestPower:
         popmeans = xp.asarray([0, 0.2])
         def test(x, alternative, axis=-1):
             # ensure that popmeans axis is zeroth and orthogonal to the rest
-            popmeans_expanded = xpx.expand_dims(popmeans,
+            popmeans_expanded = xp.expand_dims(popmeans,
                                                 axis=tuple(range(1, x.ndim + 1)))
             alternative = alternatives[int(alternative)]
             return stats.ttest_1samp(x, popmeans_expanded, alternative=alternative,

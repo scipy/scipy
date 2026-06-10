@@ -10752,7 +10752,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
 
     n_moments = 4 if is_lazy_array(order) else int(xp.max(order))
     k = xp.arange(n_moments, dtype=sample.dtype)
-    prk = _prk(xpx.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
+    prk = _prk(xp.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k, xp=xp)
 
     n = sample.shape[-1]
