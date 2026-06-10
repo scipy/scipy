@@ -2113,9 +2113,11 @@ class TestRegression:
         # The program should inform you that ZERO has no variance or it should
         # go ahead and compute the regression and report a correlation and
         # total sum of squares of exactly 0.
-        result = stats.linregress(xp.asarray(X.tolist()), xp.asarray(ZERO.tolist()))
+        msg = "An input array..."
+        with eager_warns(stats.ConstantInputWarning, match=msg, xp=xp):
+            result = stats.linregress(xp.asarray(X.tolist()), xp.asarray(ZERO.tolist()))
         xp_assert_close(result.intercept, xp.asarray(0.0))
-        with eager_warns(stats.ConstantInputWarning, match="An input array...", xp=xp):
+        with eager_warns(stats.ConstantInputWarning, match=msg, xp=xp):
             ref_rvalue = stats.pearsonr(xp.asarray(X.tolist()),
                                         xp.asarray(ZERO.tolist())).statistic
         xp_assert_close(result.rvalue, ref_rvalue)
@@ -2248,7 +2250,8 @@ class TestRegression:
         # Regress a horizontal line formed by two points.
         x = xp.arange(2.)
         y = xp.ones(2)
-        result = stats.linregress(x, y)
+        with eager_warns(stats.ConstantInputWarning, match="An input array...", xp=xp):
+            result = stats.linregress(x, y)
 
         # Horizontal line
         xp_assert_close(result.slope, xp.asarray(0.0))
@@ -2350,7 +2353,8 @@ class TestRegression:
         rng = np.random.default_rng(7872425088)
         x = xp.zeros(10)
         y = xp.asarray(rng.random(10).tolist())
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid='ignore'), \
+                eager_warns(stats.ConstantInputWarning, match="An input array...", xp=xp):
             res = stats.linregress(x, y)
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.slope, NaN)
@@ -2359,6 +2363,71 @@ class TestRegression:
         xp_assert_equal(res.pvalue, NaN)
         xp_assert_equal(res.stderr, NaN)
         xp_assert_equal(res.intercept_stderr, NaN)
+
+    def test_constant_y_gh25339(self, xp):
+        # gh-25339: when `y` is constant, `ssym`/`ssxym` are zero only up to
+        # floating point error, so `r` and `pvalue` were finite but
+        # meaningless. `slope`/`intercept` are still well-defined for
+        # constant `y` and are left alone by this fix (see gh-24840 for the
+        # underlying floating-point precision issue), but `r`, `pvalue`,
+        # `stderr`, and `intercept_stderr` are not well-defined and should
+        # be NaN.
+        x = xp.asarray([1778328000. + 3600.*i for i in range(330)]
+                        + [1780716000. + 3600.*i for i in range(331)])
+        y = xp.full((661,), 66094598367756.)
+
+        with eager_warns(stats.ConstantInputWarning, match="An input array...", xp=xp):
+            res = stats.linregress(x, y)
+
+        # `slope`/`intercept` are unaffected by this fix and remain finite.
+        assert xp.isfinite(res.slope)
+        xp_assert_close(res.intercept, y[0], rtol=1e-10)
+
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.rvalue, NaN)
+        xp_assert_equal(res.pvalue, NaN)
+        xp_assert_equal(res.stderr, NaN)
+        xp_assert_equal(res.intercept_stderr, NaN)
+
+    def test_constant_x_nonzero(self, xp):
+        # Constant, nonzero `x` makes `slope`/`intercept` undefined
+        # (division by zero) just as constant `x = 0` does in
+        # `test_identical_x`, and should likewise warn.
+        rng = np.random.default_rng(2025_06_10)
+        x = xp.full((10,), 5.0)
+        y = xp.asarray(rng.random(10).tolist())
+        with np.errstate(invalid='ignore'), \
+                eager_warns(stats.ConstantInputWarning, match="An input array...", xp=xp):
+            res = stats.linregress(x, y)
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.slope, NaN)
+        xp_assert_equal(res.intercept, NaN)
+        xp_assert_equal(res.rvalue, NaN)
+        xp_assert_equal(res.pvalue, NaN)
+        xp_assert_equal(res.stderr, NaN)
+        xp_assert_equal(res.intercept_stderr, NaN)
+
+    def test_constant_input_vectorized(self, xp):
+        # Only the row with constant `y` should produce NaN `rvalue`/
+        # `pvalue`; the other row's statistics should be unaffected.
+        rng = np.random.default_rng(2025_06_10_1)
+        x = xp.asarray(rng.random((2, 10)).tolist())
+        y0 = xp.asarray(rng.random(10).tolist())
+        y1 = xp.ones(10)
+        y = xp.stack([y0, y1])
+
+        with eager_warns(stats.ConstantInputWarning, match="An input array...", xp=xp):
+            res = stats.linregress(x, y, axis=-1)
+
+        ref0 = stats.linregress(x[0, :], y0)
+
+        NaN = xp.asarray(xp.nan)
+        xp_assert_close(res.rvalue[0], ref0.rvalue)
+        xp_assert_close(res.pvalue[0], ref0.pvalue)
+        xp_assert_equal(res.rvalue[1], NaN)
+        xp_assert_equal(res.pvalue[1], NaN)
+        xp_assert_equal(res.stderr[1], NaN)
+        xp_assert_equal(res.intercept_stderr[1], NaN)
 
 
 class HistFunctionsTest:

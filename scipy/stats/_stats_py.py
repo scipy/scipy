@@ -10910,6 +10910,22 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     # _axis_nan_policy decorator ensures that `axis=-1`
     x, y = _share_masks(x, y, xp=xp)
+
+    # If an input is constant, the regression statistics are not meaningful;
+    # warn as `pearsonr` does rather than silently returning a slope/p-value
+    # that are nonzero only due to floating point error.
+    if is_marray(xp):
+        const_x = xp.all(x == xp.sort(x, axis=-1)[..., 0:1], axis=-1)
+        const_y = xp.all(y == xp.sort(y, axis=-1)[..., 0:1], axis=-1)
+    else:
+        const_x = xp.all(x == x[..., 0:1], axis=-1)
+        const_y = xp.all(y == y[..., 0:1], axis=-1)
+    const_xy = const_x | const_y
+    if not is_lazy_array(const_xy) and xp.any(const_xy):
+        msg = ("An input array is constant; the correlation coefficient "
+               "and the statistics that depend on it are not well-defined.")
+        warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
+
     n = _count_nonmasked(x, axis=-1, keepdims=False, xp=xp)
     xmean = xp.mean(x, axis=-1, keepdims=True)
     ymean = xp.mean(y, axis=-1, keepdims=True)
@@ -10936,6 +10952,9 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
         lambda ssxym, ssxm, ssym: xp.clip(ssxym / xp.sqrt(ssxm * ssym), -1.0, 1.0),
         lambda ssxym, ssxm, ssym: xp.where(ssxym==0, NaN, 0.0)
     )
+    # A constant `x` or `y` makes the correlation coefficient undefined, even
+    # if floating point error leaves `ssxm`/`ssym` just barely nonzero (gh-25339)
+    r = xp.where(const_x | const_y, NaN, r)
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
