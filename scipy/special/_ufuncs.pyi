@@ -149,6 +149,8 @@ __all__ = [
     'kve',
     'log1p',
     'log_expit',
+    'log_gammainc',
+    'log_gammaincc',
     'log_ndtr',
     'log_wright_bessel',
     'loggamma',
@@ -433,6 +435,8 @@ kv: np.ufunc
 kve: np.ufunc
 log1p: np.ufunc
 log_expit: np.ufunc
+log_gammainc: np.ufunc
+log_gammaincc: np.ufunc
 log_ndtr: np.ufunc
 log_wright_bessel: np.ufunc
 loggamma: np.ufunc

@@ -47,7 +47,7 @@ def _solveh_banded(ab, b, calc_logdet=False):
         # We assume lower=True and real arrays
         d = a1[0, :]
         e = a1[1, :-1]
-        # ptsv uses LDL', returnes d=diag(D), du=diag(L, -1)
+        # ptsv uses LDL', returns d=diag(D), du=diag(L, -1)
         d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
         if calc_logdet and info == 0:
             logdet = np.log(d).sum()
@@ -415,7 +415,7 @@ def _reml(lamb, y, order, weights=None):
     logdet_DtD = _logdet_difference_matrix(order=order, n=n)
     residual = y - x
     # Eq. 12 of Biessy gives the REML criterion:
-    # REML(lambda, sigma) = (log of restriced maximum likelihood)
+    # REML(lambda, sigma) = (log of restricted maximum likelihood)
     #     = -1/2 ((y - theta) W (y - theta) / sigma^2 + lambda theta D'D theta / sigma^2
     #             - log|lambda D'D| + log|(W + lambda D'D)| + (n - p) log(sigma^2)
     #             + const

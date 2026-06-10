@@ -96,7 +96,7 @@ class TestSingularLeadingSubmatrix:
         quadratic_term = np.dot(v, np.dot(A, v))
         assert_array_almost_equal(quadratic_term, 0)
 
-    def test_for_simetric_indefinite_matrix(self):
+    def test_for_symmetric_indefinite_matrix(self):
 
         # Define test matrix A.
         # Note that the leading 5x5 submatrix is indefinite.
