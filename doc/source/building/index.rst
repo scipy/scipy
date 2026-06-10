@@ -369,7 +369,7 @@ virtual environments:
        # development tasks:
 
        # Build and dev dependencies (for `spin {build, lint, mypy}`)
-       python -m pip install -r requirements/build.txt -r requirements/dev.txt
+       python -m pip install --group build --group dev
 
        # Doc dependencies (for `spin {doc, refguide-check}`)
        python -m pip install -r requirements/doc.txt
