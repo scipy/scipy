@@ -405,6 +405,17 @@ cdef class VarReader5:
                 self.cstream.seek(8 - mod8, 1)
         return 0
 
+    cdef inline cnp.dtype dtype_for_mdtype(self, cnp.uint32_t mdtype):
+        ''' Return numpy dtype for matlab data type code `mdtype`
+
+        `mdtype` is read straight from the file tag, so an unknown or
+        out-of-range code must be rejected rather than used to index past
+        the fixed-size ``dtypes`` pointer array.
+        '''
+        if mdtype >= _N_MIS or self.dtypes[mdtype] == NULL:
+            raise ValueError('Unknown matlab data type code %d' % mdtype)
+        return <cnp.dtype>self.dtypes[mdtype]
+
     cpdef cnp.ndarray read_numeric(self, int copy=True, size_t nnz=-1):
         ''' Read numeric data element into ndarray
 
@@ -444,7 +455,7 @@ cdef class VarReader5:
         cdef cnp.ndarray el
         cdef object data = self.read_element(
             &mdtype, &byte_count, <void **>&data_ptr, copy)
-        cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
+        cdef cnp.dtype dt = self.dtype_for_mdtype(mdtype)
         if dt.itemsize != 1 and nnz != -1 and byte_count == nnz:
             el_count = <cnp.npy_intp> nnz
             dt = BOOL_DTYPE
@@ -843,7 +854,7 @@ cdef class VarReader5:
         # specifically np.uint8, np.int8, np.uint16.  np.unit16 can have
         # a length 1 type encoding, like ascii, or length 2 type
         # encoding
-        dt = <cnp.dtype>self.dtypes[mdtype]
+        dt = self.dtype_for_mdtype(mdtype)
         if mdtype == miUINT16:
             codec = self.uint16_codec
             if self.codecs['uint16_len'] == 1: # need LSBs only
