@@ -411,21 +411,17 @@ class TestConstructUtils:
         assert_array_equal(result.toarray(), expected)
         assert isinstance(result, spmatrix)
 
-    def test_kron_zero_matrix_dtype(self):
-        # BSR fast path
-        A = csr_array([[0]], dtype=np.int64)
-        B = csr_array([[3]], dtype=np.int64)
+    @pytest.mark.parametrize(
+        "b",
+        [
+            csr_array([[3]], dtype=np.int64),        # BSR Path
+            csr_array([[3, 0, 0]], dtype=np.int64),  # COO Path
+        ],
+    )
+    def test_kron_zero_matrix_dtype(self, b):
+        a = csr_array([[0]], dtype=np.int64)
 
-        result = construct.kron(A, B)
-
-        assert result.dtype == np.int64
-        assert result.nnz == 0
-
-        # COO fast path
-        A = csr_array([[0]], dtype=np.int64)
-        B = csr_array([[3, 0, 0]], dtype=np.int64)
-
-        result = construct.kron(A, B)
+        result = construct.kron(a, b)
 
         assert result.dtype == np.int64
         assert result.nnz == 0
