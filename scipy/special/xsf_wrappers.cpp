@@ -8,6 +8,7 @@
 #include <xsf/beta.h>
 #include <xsf/binom.h>
 #include <xsf/cdflib.h>
+#include <xsf/cpu/stats.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
@@ -617,15 +618,15 @@ double xsf_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }
 
 double xsf_gdtrix(double a, double b, double p) { return xsf::gdtrix(a, b, p); }
 
-double xsf_kolmogorov(double x) { return xsf::kolmogorov(x); }
+double xsf_kolmogorov(double x) { return xsf::cpu::kolmogc(x); }
 
-double xsf_kolmogc(double x) { return xsf::kolmogc(x); }
+double xsf_kolmogc(double x) { return xsf::cpu::kolmogc(x); }
 
-double xsf_kolmogi(double x) { return xsf::kolmogi(x); }
+double xsf_kolmogi(double x) { return xsf::cpu::kolmogi(x); }
 
-double xsf_kolmogci(double x) { return xsf::kolmogci(x); }
+double xsf_kolmogci(double x) { return xsf::cpu::kolmogci(x); }
 
-double xsf_kolmogp(double x) { return xsf::kolmogp(x); }
+double xsf_kolmogp(double x) { return xsf::cpu::kolmogp(x); }
 
 double xsf_nbdtr(int k, int n, double p) { return xsf::nbdtr(k, n, p); }
 
@@ -655,15 +656,15 @@ double xsf_pdtrc(double k, double m) { return xsf::pdtrc(k, m); }
 
 double xsf_pdtri(int k, double y) { return xsf::pdtri(k, y); }
 
-double xsf_smirnov(int n, double x) { return xsf::smirnov(n, x); }
+double xsf_smirnov(int n, double x) { return xsf::cpu::smirnov(n, x); }
 
-double xsf_smirnovc(int n, double x) { return xsf::smirnovc(n, x); }
+double xsf_smirnovc(int n, double x) { return xsf::cpu::smirnovc(n, x); }
 
-double xsf_smirnovi(int n, double x) { return xsf::smirnovi(n, x); }
+double xsf_smirnovi(int n, double x) { return xsf::cpu::smirnovi(n, x); }
 
-double xsf_smirnovci(int n, double x) { return xsf::smirnovci(n, x); }
+double xsf_smirnovci(int n, double x) { return xsf::cpu::smirnovci(n, x); }
 
-double xsf_smirnovp(int n, double x) { return xsf::smirnovp(n, x); }
+double xsf_smirnovp(int n, double x) { return xsf::cpu::smirnovp(n, x); }
 
 double xsf_tukeylambdacdf(double x, double lmbda) { return xsf::tukeylambdacdf(x, lmbda); }
 
