@@ -9,8 +9,8 @@
 #include <xsf/binom.h>
 #include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
-#include <xsf/cpu/stats.h>
 #include <xsf/convex_analysis.h>
+#include <xsf/cpu/stats.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
