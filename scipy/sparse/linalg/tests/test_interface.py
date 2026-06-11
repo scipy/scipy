@@ -497,6 +497,9 @@ class TestDotTests:
 
     @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     @pytest.mark.parametrize("args", square_args_list)
+    @pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
     def test_identity_square(
         self, args: OperatorArgs, batch_shape: tuple[int, ...], xp
     ):
@@ -520,6 +523,9 @@ class TestDotTests:
 
     @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     @pytest.mark.parametrize("args", all_args_list)
+    @pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
     def test_identity_nonsquare(
         self, args: OperatorArgs, batch_shape: tuple[int, ...], xp
     ):
@@ -569,6 +575,9 @@ class TestDotTests:
 
     @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     @pytest.mark.parametrize("args", square_args_list)
+    @pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
     def test_scaling_square(self, args: OperatorArgs, batch_shape: tuple[int, ...], xp):
         """
         Simple (complex) scaling operator on square matrices.
@@ -593,6 +602,9 @@ class TestDotTests:
         self.check_matmat(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
 
     @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
+    @pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
     def test_subclass_matmat(self, batch_shape: tuple[int, ...], xp):
         """
         Simple rotation operator defined by `matmat` and `adjoint`,
