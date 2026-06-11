@@ -7,6 +7,7 @@
 #include <xsf/bessel.h>
 #include <xsf/beta.h>
 #include <xsf/binom.h>
+#include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
 #include <xsf/cpu/stats.h>
 #include <xsf/convex_analysis.h>
@@ -94,6 +95,14 @@ double special_rel_entr(double x, double y) { return xsf::rel_entr(x, y); }
 double special_huber(double delta, double r) { return xsf::huber(delta, r); }
 
 double special_pseudo_huber(double delta, double r) { return xsf::pseudo_huber(delta, r); }
+
+double special_boxcox(double x, double lmbda) { return xsf::boxcox(x, lmbda); }
+
+double special_boxcox1p(double x, double lmbda) { return xsf::boxcox1p(x, lmbda); }
+
+double special_inv_boxcox(double x, double lmbda) { return xsf::inv_boxcox(x, lmbda); }
+
+double special_inv_boxcox1p(double x, double lmbda) { return xsf::inv_boxcox1p(x, lmbda); }
 
 npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(xsf::cerf(to_complex(z))); }
 

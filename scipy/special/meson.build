@@ -1,6 +1,5 @@
 _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
-  fs.copyfile('_boxcox.pxd'),
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
