@@ -69,7 +69,6 @@ pytest.ini  @larsoner
 benchmarks/asv.conf.json  @larsoner
 
 # Doc
-requirements/doc.txt  @tupui
 doc/source/conf.py  @tupui
 doc/source/_static/  @tupui
 
