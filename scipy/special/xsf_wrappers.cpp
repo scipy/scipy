@@ -627,7 +627,7 @@ double xsf_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }
 
 double xsf_gdtrix(double a, double b, double p) { return xsf::gdtrix(a, b, p); }
 
-double xsf_kolmogorov(double x) { return xsf::cpu::kolmogc(x); }
+double xsf_kolmogorov(double x) { return xsf::cpu::kolmogorov(x); }
 
 double xsf_kolmogc(double x) { return xsf::cpu::kolmogc(x); }
 
