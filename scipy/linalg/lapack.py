@@ -27,7 +27,7 @@ This module contains low-level functions from the LAPACK library.
 .. warning::
 
    These functions do little to no error checking.
-   It is possible to cause crashes by mis-using them,
+   It is possible to cause crashes by misusing them,
    so prefer using the higher-level routines in `scipy.linalg`.
 
 .. note::

@@ -495,7 +495,7 @@ class interp1d(_Interpolator1D):
         x_new_indices = searchsorted(self.x, x_new)
 
         # 3. Clip x_new_indices so that they are within the range of
-        #    self.x indices and at least 1. Removes mis-interpolation
+        #    self.x indices and at least 1. Removes misinterpolation
         #    of x_new[n] = x[0]
         x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 

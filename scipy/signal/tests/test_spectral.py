@@ -1112,47 +1112,6 @@ class TestLombscargle:
         # numerical differences when data is removed)
         assert_allclose(pgram[f==w], ampl, rtol=5e-2)
 
-    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-    def test_precenter(self):
-        # Test if precenter gives the same result as manually precentering
-        # (for a very simple offset)
-
-        # Input parameters
-        ampl = 2.
-        w = 1.
-        phi = 0.5 * np.pi
-        nin = 100
-        nout = 1000
-        p = 0.7  # Fraction of points to select
-        offset = 0.15  # Offset to be subtracted in pre-centering
-
-        # Randomly select a fraction of an array with timesteps
-        rng = np.random.RandomState(2353425)
-        r = rng.rand(nin)
-        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
-
-        # Plot a sine wave for the selected times
-        y = ampl * np.sin(w*t + phi) + offset
-
-        # Define the array of frequencies for which to compute the periodogram
-        f = np.linspace(0.01, 10., nout)
-
-        # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, y, f, precenter=True)
-        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False)
-
-        # check if centering worked
-        assert_allclose(pgram, pgram2)
-
-        # do this again, but with floating_mean=True
-
-        # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, y, f, precenter=True, floating_mean=True)
-        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False, floating_mean=True)
-
-        # check if centering worked
-        assert_allclose(pgram, pgram2)
-
     def test_normalize(self):
         # Test normalize option of Lomb-Scarge.
 
@@ -1407,9 +1366,8 @@ class TestLombscargle:
         weights = -np.ones(1)
         assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
-    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_list_input(self):
-        # Test that input can be passsed in as lists and with a numerical issue
+        # Test that input can be passed in as lists and with a numerical issue
         # https://github.com/scipy/scipy/issues/8787
 
         t = [1.98201652e+09, 1.98201752e+09, 1.98201852e+09, 1.98201952e+09,
@@ -1478,7 +1436,7 @@ class TestLombscargle:
         periods = np.linspace(400, 120, 1000)
         angular_freq = 2 * np.pi / periods
 
-        lombscargle(t, y, angular_freq, precenter=True, normalize=True)
+        lombscargle(t, y, angular_freq, normalize=True)
 
     def test_zero_freq(self):
         # Verify that function works when freqs includes 0
@@ -1527,84 +1485,6 @@ class TestLombscargle:
         freqs = [np.pi/2.0] * 2  # must have 2+ elements
 
         lombscargle(t, y, freqs)
-
-    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-    def test_input_mutation(self):
-        # this tests for mutation of the input arrays
-        # https://github.com/scipy/scipy/issues/23474
-
-        # Input parameters
-        ampl = 2.
-        w = 1.
-        phi = 0.5 * np.pi
-        nin = 100
-        nout = 1000
-        p = 0.7  # Fraction of points to select
-
-        # Randomly select a fraction of an array with timesteps
-        rng = np.random.default_rng()
-        r = rng.random(nin)
-        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
-
-        # Plot a sine wave for the selected times
-        y = ampl * np.sin(w*t + phi)
-
-        # Define the array of frequencies for which to compute the periodogram
-        f = np.linspace(0.01, 10., nout)
-
-        weights = np.ones_like(y)
-
-        # create original copies before passing
-        t_org = t.copy()
-        y_org = y.copy()
-        f_org = f.copy()
-        weights_org = weights.copy()
-
-        lombscargle(t, y, f, precenter=True, weights=weights)
-
-        # check all 4 array inputs
-        assert_array_equal(t, t_org)
-        assert_array_equal(y, y_org)
-        assert_array_equal(f, f_org)
-        assert_array_equal(weights, weights_org)
-
-    def test_precenter_deprecation(self):
-        # test that precenter deprecation warning is raised
-
-        # Input parameters
-        ampl = 2.
-        w = 1.
-        phi = 0.5 * np.pi
-        nin = 100
-        nout = 1000
-        p = 0.7  # Fraction of points to select
-        offset = 0.15  # Offset to be subtracted in pre-centering
-
-        # Randomly select a fraction of an array with timesteps
-        rng = np.random.default_rng()
-        r = rng.random(nin)
-        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
-
-        # Plot a sine wave for the selected times
-        y = ampl * np.sin(w*t + phi) + offset
-
-        # Define the array of frequencies for which to compute the periodogram
-        f = np.linspace(0.01, 10., nout)
-
-        # Calculate Lomb-Scargle periodogram
-        with pytest.deprecated_call(match="leave 'precenter' unspecified"):
-            lombscargle(t, y, f, precenter=True)
-        # Should warn for explicit `False` too
-        with pytest.deprecated_call(match="leave 'precenter' unspecified"):
-            lombscargle(t, y, f, precenter=False)
-            
-    @pytest.mark.filterwarnings(
-        "ignore:.*leave 'precenter' unspecified.*:DeprecationWarning"
-    )
-    def test_positional_args_deprecation(self):
-        with pytest.deprecated_call(match="use keyword arguments"):
-            one = np.asarray([1.0])
-            lombscargle(one, one, one, False)
 
 
 class TestSTFT:

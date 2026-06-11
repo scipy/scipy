@@ -95,6 +95,7 @@ void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double sin_pi(double x);
 
+double special_agm(double a, double b);
 double xsf_binom(double n, double k);
 
 double special_digamma(double z);
@@ -107,6 +108,12 @@ double special_expit(double x);
 npy_longdouble special_expitl(npy_longdouble x);
 
 npy_double special_exprel(npy_double x);
+
+double special_entr(double x);
+double special_kl_div(double x, double y);
+double special_rel_entr(double x, double y);
+double special_huber(double delta, double r);
+double special_pseudo_huber(double delta, double r);
 
 float special_log_expitf(float x);
 double special_log_expit(double x);

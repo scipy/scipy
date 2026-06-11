@@ -151,7 +151,7 @@ if use_pythran
 endif
 
 # Subprojects
-if not fs.exists('subprojects/array_api_compat/array_api_compat/README.md')
+if not fs.exists('subprojects/array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('subprojects/array_api_extra/README.md')

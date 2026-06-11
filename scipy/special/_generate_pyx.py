@@ -77,11 +77,12 @@ import re
 import textwrap
 
 special_ufuncs = [
-    '_bivariate_normal_cdf', '_cospi', '_gen_harmonic', '_lambertw',
+    '_bivariate_normal_sf', '_cospi', '_gen_harmonic', '_lambertw',
     '_normalized_gen_harmonic', '_scaled_exp1', '_sinpi', '_von_mises_cdf',
     '_spherical_jn', '_spherical_jn_d', '_spherical_yn', '_spherical_yn_d',
     '_spherical_in', '_spherical_in_d', '_spherical_kn', '_spherical_kn_d',
-    'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
+    'agm', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
+    'entr', 'huber', 'kl_div', 'pseudo_huber', 'rel_entr',
     'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
     'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',
     'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',

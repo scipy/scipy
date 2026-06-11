@@ -423,6 +423,15 @@ class SVDSCommonTests:
             assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
+    def test_svd_random_state(self):
+        # the legacy `random_state` argument should work for now,
+        # even with NumPy <2.2.
+        # Regression test for gh-25069
+        rng = np.random.default_rng(0)
+        A = rng.random((5, 5))
+        res = svds(A, 1, solver=self.solver, random_state=np.random.RandomState(0))
+        _check_svds(A, 1, *res)
+
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
     def test_svd_rng_3(self):

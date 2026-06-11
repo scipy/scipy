@@ -77,11 +77,6 @@ add_newdoc("_ellip_harm",
     Internal function, use `ellip_harm` instead.
     """)
 
-add_newdoc("_ellip_norm",
-    """
-    Internal function, use `ellip_norm` instead.
-    """)
-
 add_newdoc("wrightomega",
     r"""
     wrightomega(z, out=None)
@@ -166,65 +161,6 @@ add_newdoc("wrightomega",
     (-0.3362123489037213+2.282986001579032j)
     >>> lambertw(np.exp(z), k=1)
     (-0.33621234890372115+2.282986001579032j)
-    """)
-
-
-add_newdoc("agm",
-    """
-    agm(a, b, out=None)
-
-    Compute the arithmetic-geometric mean of `a` and `b`.
-
-    Start with a_0 = a and b_0 = b and iteratively compute::
-
-        a_{n+1} = (a_n + b_n)/2
-        b_{n+1} = sqrt(a_n*b_n)
-
-    a_n and b_n converge to the same limit as n increases; their common
-    limit is agm(a, b).
-
-    Parameters
-    ----------
-    a, b : array_like
-        Real values only. If the values are both negative, the result
-        is negative. If one value is negative and the other is positive,
-        `nan` is returned.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        The arithmetic-geometric mean of `a` and `b`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import agm
-    >>> a, b = 24.0, 6.0
-    >>> agm(a, b)
-    13.458171481725614
-
-    Compare that result to the iteration:
-
-    >>> while a != b:
-    ...     a, b = (a + b)/2, np.sqrt(a*b)
-    ...     print("a = %19.16f  b=%19.16f" % (a, b))
-    ...
-    a = 15.0000000000000000  b=12.0000000000000000
-    a = 13.5000000000000000  b=13.4164078649987388
-    a = 13.4582039324993694  b=13.4581390309909850
-    a = 13.4581714817451772  b=13.4581714817060547
-    a = 13.4581714817256159  b=13.4581714817256159
-
-    When array-like arguments are given, broadcasting applies:
-
-    >>> a = np.array([[1.5], [3], [6]])  # a has shape (3, 1).
-    >>> b = np.array([6, 12, 24, 48])    # b has shape (4,).
-    >>> agm(a, b)
-    array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],
-           [  4.37037309,   6.72908574,  10.84726853,  18.11597502],
-           [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
     """)
 
 add_newdoc("bdtr",
@@ -2142,68 +2078,6 @@ add_newdoc(
 
     """)
 
-add_newdoc("entr",
-    r"""
-    entr(x, out=None)
-
-    Elementwise function for computing entropy.
-
-    .. math:: \text{entr}(x) = \begin{cases} - x \log(x) & x > 0  \\ 0 & x = 0
-              \\ -\infty & \text{otherwise} \end{cases}
-
-    Parameters
-    ----------
-    x : ndarray
-        Input array.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    res : scalar or ndarray
-        The value of the elementwise entropy function at the given points `x`.
-
-    See Also
-    --------
-    kl_div, rel_entr, scipy.stats.entropy
-
-    Notes
-    -----
-    .. versionadded:: 0.15.0
-
-    This function is concave.
-
-    The origin of this function is in convex programming; see [1]_.
-    Given a probability distribution :math:`p_1, \ldots, p_n`,
-    the definition of entropy in the context of *information theory* is
-
-    .. math::
-
-        \sum_{i = 1}^n \mathrm{entr}(p_i).
-
-    To compute the latter quantity, use `scipy.stats.entropy`.
-
-    References
-    ----------
-    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
-           Cambridge University Press, 2004.
-           :doi:`10.1017/CBO9780511804441`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import entr
-
-    Calculate the entropy (in nats) of a 3-outcome probability distribution
-
-    >>> p = np.array([0.2, 0.5, 0.3])
-    >>> entr(p)
-    array([0.32188758, 0.34657359, 0.36119184])
-    >>> entr(p).sum()
-    1.0296530140645737
-
-    """)
-
 add_newdoc(
     "erfinv",
     """
@@ -3952,114 +3826,6 @@ add_newdoc("gdtrib",
     3.3999999999999995
     """)
 
-add_newdoc("huber",
-    r"""
-    huber(delta, r, out=None)
-
-    Huber loss function.
-
-    .. math:: \text{huber}(\delta, r) = \begin{cases} \infty & \delta < 0  \\
-              \frac{1}{2}r^2 & 0 \le \delta, | r | \le \delta \\
-              \delta ( |r| - \frac{1}{2}\delta ) & \text{otherwise} \end{cases}
-
-    Parameters
-    ----------
-    delta : ndarray
-        Input array, indicating the quadratic vs. linear loss changepoint.
-    r : ndarray
-        Input array, possibly representing residuals.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        The computed Huber loss function values.
-
-    See Also
-    --------
-    pseudo_huber : smooth approximation of this function
-
-    Notes
-    -----
-    `huber` is useful as a loss function in robust statistics or machine
-    learning to reduce the influence of outliers as compared to the common
-    squared error loss, residuals with a magnitude higher than `delta` are
-    not squared [1]_.
-
-    Typically, `r` represents residuals, the difference
-    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
-    `huber` resembles the squared error and for :math:`|r|>\delta` the
-    absolute error. This way, the Huber loss often achieves
-    a fast convergence in model fitting for small residuals like the squared
-    error loss function and still reduces the influence of outliers
-    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
-    the cutoff between squared and absolute error regimes, it has
-    to be tuned carefully for each problem. `huber` is also
-    convex, making it suitable for gradient based optimization.
-
-    .. versionadded:: 0.15.0
-
-    References
-    ----------
-    .. [1] Peter Huber. "Robust Estimation of a Location Parameter",
-           1964. Annals of Statistics. 53 (1): 73 - 101.
-
-    Examples
-    --------
-    Import all necessary modules.
-
-    >>> import numpy as np
-    >>> from scipy.special import huber
-    >>> import matplotlib.pyplot as plt
-
-    Compute the function for ``delta=1`` at ``r=2``
-
-    >>> huber(1., 2.)
-    1.5
-
-    Compute the function for different `delta` by providing a NumPy array or
-    list for `delta`.
-
-    >>> huber([1., 3., 5.], 4.)
-    array([3.5, 7.5, 8. ])
-
-    Compute the function at different points by providing a NumPy array or
-    list for `r`.
-
-    >>> huber(2., np.array([1., 1.5, 3.]))
-    array([0.5  , 1.125, 4.   ])
-
-    The function can be calculated for different `delta` and `r` by
-    providing arrays for both with compatible shapes for broadcasting.
-
-    >>> r = np.array([1., 2.5, 8., 10.])
-    >>> deltas = np.array([[1.], [5.], [9.]])
-    >>> print(r.shape, deltas.shape)
-    (4,) (3, 1)
-
-    >>> huber(deltas, r)
-    array([[ 0.5  ,  2.   ,  7.5  ,  9.5  ],
-           [ 0.5  ,  3.125, 27.5  , 37.5  ],
-           [ 0.5  ,  3.125, 32.   , 49.5  ]])
-
-    Plot the function for different `delta`.
-
-    >>> x = np.linspace(-4, 4, 500)
-    >>> deltas = [1, 2, 3]
-    >>> linestyles = ["dashed", "dotted", "dashdot"]
-    >>> fig, ax = plt.subplots()
-    >>> combined_plot_parameters = list(zip(deltas, linestyles))
-    >>> for delta, style in combined_plot_parameters:
-    ...     ax.plot(x, huber(delta, x), label=fr"$\delta={delta}$", ls=style)
-    >>> ax.legend(loc="upper center")
-    >>> ax.set_xlabel("$x$")
-    >>> ax.set_title(r"Huber loss function $h_{\delta}(x)$")
-    >>> ax.set_xlim(-4, 4)
-    >>> ax.set_ylim(0, 8)
-    >>> plt.show()
-    """)
-
 add_newdoc("hyp0f1",
     r"""
     hyp0f1(v, z, out=None)
@@ -4276,57 +4042,6 @@ add_newdoc("hyperu",
 add_newdoc("_igam_fac",
     """
     Internal function, do not use.
-    """)
-
-add_newdoc("kl_div",
-    r"""
-    kl_div(x, y, out=None)
-
-    Elementwise function for computing Kullback-Leibler divergence.
-
-    .. math::
-
-        \mathrm{kl\_div}(x, y) =
-          \begin{cases}
-            x \log(x / y) - x + y & x > 0, y > 0 \\
-            y & x = 0, y \ge 0 \\
-            \infty & \text{otherwise}
-          \end{cases}
-
-    Parameters
-    ----------
-    x, y : array_like
-        Real arguments
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the Kullback-Liebler divergence.
-
-    See Also
-    --------
-    entr, rel_entr, scipy.stats.entropy
-
-    Notes
-    -----
-    .. versionadded:: 0.15.0
-
-    This function is non-negative and is jointly convex in `x` and `y`.
-
-    The origin of this function is in convex programming; see [1]_ for
-    details. This is why the function contains the extra :math:`-x
-    + y` terms over what might be expected from the Kullback-Leibler
-    divergence. For a version of the function without the extra terms,
-    see `rel_entr`.
-
-    References
-    ----------
-    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
-           Cambridge University Press, 2004.
-           :doi:`10.1017/CBO9780511804441`.
-
     """)
 
 add_newdoc("kn",
@@ -4664,6 +4379,129 @@ add_newdoc(
 add_newdoc("_lgam1p",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc("log_gammainc",
+    r"""
+    log_gammainc(a, x, out=None)
+
+    Logarithm of the regularized lower incomplete gamma function.
+
+    Defined as
+
+    .. math::
+
+        \log P(a, x) = \log \frac{1}{\Gamma(a)} \int_0^x t^{a-1} e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. This function is more accurate
+    than computing ``log(gammainc(a, x))`` directly.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive real parameter.
+    x : array_like
+        Nonneg real argument.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the log of the regularized lower incomplete gamma function.
+
+    See Also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincc : regularized upper incomplete gamma function
+    log_gammaincc : log of the regularized upper incomplete gamma function
+
+    Notes
+    -----
+    This function wraps the ``lgamma_p`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    This function is useful when the naive computation ``log(gammainc(a, x))``
+    underflows for small values.
+
+    >>> import numpy as np
+    >>> from scipy.special import log_gammainc, gammainc
+
+    >>> with np.errstate(divide='ignore'):
+    ...    print(np.log(gammainc(500, 30)))
+    -inf
+
+    >>> log_gammainc(500, 30)
+    -940.6700276993504
+
+    """)
+
+add_newdoc("log_gammaincc",
+    r"""
+    log_gammaincc(a, x, out=None)
+
+    Logarithm of the regularized upper incomplete gamma function.
+
+    Defined as
+
+    .. math::
+
+        \log Q(a, x) = \log \frac{1}{\Gamma(a)} \int_x^{\infty} t^{a-1} e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. This function is more accurate
+    than computing ``log(gammaincc(a, x))`` directly when the survival
+    function value is very small.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive real parameter.
+    x : array_like
+        Nonnegative real argument.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the log of the regularized upper incomplete gamma function.
+
+    See Also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincc : regularized upper incomplete gamma function
+    log_gammainc : log of the regularized lower incomplete gamma function
+
+    Notes
+    -----
+    This function wraps the ``lgamma_q`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import log_gammaincc, gammaincc
+
+    For very small survival function values, ``log(gammaincc(a, x))``
+    underflows to ``-inf`` while ``log_gammaincc`` retains precision:
+
+    >>> with np.errstate(divide='ignore'):
+    ...     print(np.log(gammaincc(10, 1000.0)))
+    -inf
+
+    >>> log_gammaincc(10, 1000.0)
+    -950.622998370156
+
     """)
 
 add_newdoc("lpmv",
@@ -6245,199 +6083,6 @@ add_newdoc("powm1", """
     """)
 
 
-add_newdoc("pseudo_huber",
-    r"""
-    pseudo_huber(delta, r, out=None)
-
-    Pseudo-Huber loss function.
-
-    .. math:: \mathrm{pseudo\_huber}(\delta, r) =
-              \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
-
-    Parameters
-    ----------
-    delta : array_like
-        Input array, indicating the soft quadratic vs. linear loss changepoint.
-    r : array_like
-        Input array, possibly representing residuals.
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    res : scalar or ndarray
-        The computed Pseudo-Huber loss function values.
-
-    See Also
-    --------
-    huber: Similar function which this function approximates
-
-    Notes
-    -----
-    Like `huber`, `pseudo_huber` often serves as a robust loss function
-    in statistics or machine learning to reduce the influence of outliers.
-    Unlike `huber`, `pseudo_huber` is smooth.
-
-    Typically, `r` represents residuals, the difference
-    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
-    `pseudo_huber` resembles the squared error and for :math:`|r|>\delta` the
-    absolute error. This way, the Pseudo-Huber loss often achieves
-    a fast convergence in model fitting for small residuals like the squared
-    error loss function and still reduces the influence of outliers
-    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
-    the cutoff between squared and absolute error regimes, it has
-    to be tuned carefully for each problem. `pseudo_huber` is also
-    convex, making it suitable for gradient based optimization. [1]_ [2]_
-
-    .. versionadded:: 0.15.0
-
-    References
-    ----------
-    .. [1] Hartley, Zisserman, "Multiple View Geometry in Computer Vision".
-           2003. Cambridge University Press. p. 619
-    .. [2] Charbonnier et al. "Deterministic edge-preserving regularization
-           in computed imaging". 1997. IEEE Trans. Image Processing.
-           6 (2): 298 - 311.
-
-    Examples
-    --------
-    Import all necessary modules.
-
-    >>> import numpy as np
-    >>> from scipy.special import pseudo_huber, huber
-    >>> import matplotlib.pyplot as plt
-
-    Calculate the function for ``delta=1`` at ``r=2``.
-
-    >>> pseudo_huber(1., 2.)
-    1.2360679774997898
-
-    Calculate the function at ``r=2`` for different `delta` by providing
-    a list or NumPy array for `delta`.
-
-    >>> pseudo_huber([1., 2., 4.], 3.)
-    array([2.16227766, 3.21110255, 4.        ])
-
-    Calculate the function for ``delta=1`` at several points by providing
-    a list or NumPy array for `r`.
-
-    >>> pseudo_huber(2., np.array([1., 1.5, 3., 4.]))
-    array([0.47213595, 1.        , 3.21110255, 4.94427191])
-
-    The function can be calculated for different `delta` and `r` by
-    providing arrays for both with compatible shapes for broadcasting.
-
-    >>> r = np.array([1., 2.5, 8., 10.])
-    >>> deltas = np.array([[1.], [5.], [9.]])
-    >>> print(r.shape, deltas.shape)
-    (4,) (3, 1)
-
-    >>> pseudo_huber(deltas, r)
-    array([[ 0.41421356,  1.6925824 ,  7.06225775,  9.04987562],
-           [ 0.49509757,  2.95084972, 22.16990566, 30.90169944],
-           [ 0.49846624,  3.06693762, 27.37435121, 40.08261642]])
-
-    Plot the function for different `delta`.
-
-    >>> x = np.linspace(-4, 4, 500)
-    >>> deltas = [1, 2, 3]
-    >>> linestyles = ["dashed", "dotted", "dashdot"]
-    >>> fig, ax = plt.subplots()
-    >>> combined_plot_parameters = list(zip(deltas, linestyles))
-    >>> for delta, style in combined_plot_parameters:
-    ...     ax.plot(x, pseudo_huber(delta, x), label=rf"$\delta={delta}$",
-    ...             ls=style)
-    >>> ax.legend(loc="upper center")
-    >>> ax.set_xlabel("$x$")
-    >>> ax.set_title(r"Pseudo-Huber loss function $h_{\delta}(x)$")
-    >>> ax.set_xlim(-4, 4)
-    >>> ax.set_ylim(0, 8)
-    >>> plt.show()
-
-    Finally, illustrate the difference between `huber` and `pseudo_huber` by
-    plotting them and their gradients with respect to `r`. The plot shows
-    that `pseudo_huber` is continuously differentiable while `huber` is not
-    at the points :math:`\pm\delta`.
-
-    >>> def huber_grad(delta, x):
-    ...     grad = np.copy(x)
-    ...     linear_area = np.argwhere(np.abs(x) > delta)
-    ...     grad[linear_area]=delta*np.sign(x[linear_area])
-    ...     return grad
-    >>> def pseudo_huber_grad(delta, x):
-    ...     return x* (1+(x/delta)**2)**(-0.5)
-    >>> x=np.linspace(-3, 3, 500)
-    >>> delta = 1.
-    >>> fig, ax = plt.subplots(figsize=(7, 7))
-    >>> ax.plot(x, huber(delta, x), label="Huber", ls="dashed")
-    >>> ax.plot(x, huber_grad(delta, x), label="Huber Gradient", ls="dashdot")
-    >>> ax.plot(x, pseudo_huber(delta, x), label="Pseudo-Huber", ls="dotted")
-    >>> ax.plot(x, pseudo_huber_grad(delta, x), label="Pseudo-Huber Gradient",
-    ...         ls="solid")
-    >>> ax.legend(loc="upper center")
-    >>> plt.show()
-    """)
-
-add_newdoc("rel_entr",
-    r"""
-    rel_entr(x, y, out=None)
-
-    Elementwise function for computing relative entropy.
-
-    .. math::
-
-        \mathrm{rel\_entr}(x, y) =
-            \begin{cases}
-                x \log(x / y) & x > 0, y > 0 \\
-                0 & x = 0, y \ge 0 \\
-                \infty & \text{otherwise}
-            \end{cases}
-
-    Parameters
-    ----------
-    x, y : array_like
-        Input arrays
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Relative entropy of the inputs
-
-    See Also
-    --------
-    entr, kl_div, scipy.stats.entropy
-
-    Notes
-    -----
-    .. versionadded:: 0.15.0
-
-    This function is jointly convex in x and y.
-
-    The origin of this function is in convex programming; see
-    [1]_. Given two discrete probability distributions :math:`p_1,
-    \ldots, p_n` and :math:`q_1, \ldots, q_n`, the definition of relative
-    entropy in the context of *information theory* is
-
-    .. math::
-
-        \sum_{i = 1}^n \mathrm{rel\_entr}(p_i, q_i).
-
-    To compute the latter quantity, use `scipy.stats.entropy`.
-
-    See [2]_ for details.
-
-    References
-    ----------
-    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
-           Cambridge University Press, 2004.
-           :doi:`10.1017/CBO9780511804441`.
-    .. [2] Kullback-Leibler divergence,
-           https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
-
-    """)
-
 add_newdoc("round",
     """
     round(x, out=None)
@@ -7525,11 +7170,6 @@ add_newdoc("owens_t",
     >>> h = 0.78
     >>> special.owens_t(h, a)
     0.10877216734852274
-    """)
-
-add_newdoc("_factorial",
-    """
-    Internal function, do not use.
     """)
 
 add_newdoc("ndtri_exp",

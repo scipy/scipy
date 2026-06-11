@@ -1002,7 +1002,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     The statistic matches exactly, but the p-value is estimated by forming
     a "Monte Carlo null distribution", that is, by explicitly drawing random
     samples from `scipy.stats.norm` with the provided parameters and
-    calculating the stastic for each. The fraction of these statistic values
+    calculating the statistic for each. The fraction of these statistic values
     at least as extreme as ``res.statistic`` approximates the exact p-value
     calculated by `scipy.stats.ks_1samp`.
 

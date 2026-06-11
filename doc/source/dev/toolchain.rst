@@ -149,10 +149,10 @@ Currently, SciPy wheels are being built as follows:
 =========================   ==============================   ====================================   =============================
  Linux x86                   ``ubuntu-22.04``                 GCC 10.2.1                             ``cibuildwheel``
  Linux arm                   ``docker-builder-arm64``         GCC 11.3.0                             ``cibuildwheel``
- OSX x86_64 (OpenBLAS)       ``macos-15-intel``               Apple clang 13.1.6/gfortran 15.2.0     ``cibuildwheel``
- OSX x86_64 (Accelerate)     ``macos-15-intel``               Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
- OSX arm64 (OpenBLAS)        ``macos-14``                     Apple clang 15.0.0/gfortran 12.1.0     ``cibuildwheel``
- OSX arm64 (Accelerate)      ``macos-14``                     Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
+ OSX x86_64 (OpenBLAS)       ``macos-15-intel``               Apple clang 13.1.6                     ``cibuildwheel``
+ OSX x86_64 (Accelerate)     ``macos-15-intel``               Apple clang 15.0.0                     ``cibuildwheel``
+ OSX arm64 (OpenBLAS)        ``macos-14``                     Apple clang 15.0.0                     ``cibuildwheel``
+ OSX arm64 (Accelerate)      ``macos-14``                     Apple clang 15.0.0                     ``cibuildwheel``
  Windows                     ``windows-2025``                 GCC 15.2.0 (`rtools`_)                 ``cibuildwheel``
 =========================   ==============================   ====================================   =============================
 
@@ -386,21 +386,6 @@ before we can start considering moving our baseline.
 Compiler support for C++23 and C++26 is still under heavy development [CPP]_.
 
 .. _while yet: https://discourse.llvm.org/t/rfc-clang-17-0-6-would-be-minimum-version-to-build-llvm-in-c-20/75345/8
-
-Fortran Compilers
-~~~~~~~~~~~~~~~~~
-
-Generally, any well-maintained compiler is likely suitable and can be
-used to build SciPy. That said, we do not test with old ``gfortran`` versions,
-which is why we are matching the lower bound with the one for GCC above.
-
-============= =====================================
- Tool          Version
-============= =====================================
-gfortran       >= 9.x
-ifort/ifx      A recent version (not tested in CI)
-flang (LLVM)   >= 17.x
-============= =====================================
 
 
 Cython & Pythran

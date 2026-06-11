@@ -167,7 +167,7 @@ class NDInterpolatorBase:
             Multiplier for the default tolerance QHull uses to assign
             a simplex to the xi in :meth:`scipy.spatial.Delaunay.find_simplex`.
             Default is 1.0.  Increase if there are difficulties assigning points
-            to simplexes; this is most reproducible with points exatly on the
+            to simplexes; this is most reproducible with points exactly on the
             border of a very oblique triangle.  Only relevant for linear and 2-D
             cubic interpolation.
 
@@ -887,7 +887,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     continuously differentiable.
 
     The gradients of the interpolant are chosen so that the curvature
-    of the interpolating surface is approximatively minimized. The
+    of the interpolating surface is approximately minimized. The
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
 

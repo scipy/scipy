@@ -1,12 +1,14 @@
 #include <cmath>
 
 #include "xsf_wrappers.h"
+#include <xsf/agm.h>
 #include <xsf/airy.h>
 #include <xsf/amos.h>
 #include <xsf/bessel.h>
 #include <xsf/beta.h>
 #include <xsf/binom.h>
 #include <xsf/cdflib.h>
+#include <xsf/convex_analysis.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
@@ -81,6 +83,16 @@ double xsf_expi(double x) { return xsf::expi(x); }
 npy_cdouble xsf_cexpi(npy_cdouble z) { return to_ccomplex(xsf::expi(to_complex(z))); }
 
 npy_double special_exprel(npy_double x) { return xsf::exprel(x); }
+
+double special_entr(double x) { return xsf::entr(x); }
+
+double special_kl_div(double x, double y) { return xsf::kl_div(x, y); }
+
+double special_rel_entr(double x, double y) { return xsf::rel_entr(x, y); }
+
+double special_huber(double delta, double r) { return xsf::huber(delta, r); }
+
+double special_pseudo_huber(double delta, double r) { return xsf::pseudo_huber(delta, r); }
 
 npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(xsf::cerf(to_complex(z))); }
 
@@ -254,6 +266,8 @@ npy_cdouble special_ccyl_hankel_2(double v, npy_cdouble z) { return to_ccomplex(
 npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z) {
     return to_ccomplex(xsf::cyl_hankel_2e(v, to_complex(z)));
 }
+
+double special_agm(double a, double b) { return xsf::agm(a, b); }
 
 double xsf_binom(double n, double k) { return xsf::binom(n, k); }
 

@@ -4,6 +4,7 @@
 #include <complex>
 
 #include "sf_error.h"
+#include <xsf/agm.h>
 #include <xsf/airy.h>
 #include <xsf/alg.h>
 #include <xsf/amos.h>
@@ -11,6 +12,7 @@
 #include <xsf/beta.h>
 #include <xsf/binom.h>
 #include <xsf/cdflib.h>
+#include <xsf/convex_analysis.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
@@ -48,13 +50,19 @@
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
 extern const char *_cospi_doc;
-extern const char *_bivariate_normal_cdf_doc;
+extern const char *_bivariate_normal_sf_doc;
 extern const char *_sinpi_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
 extern const char *_normalized_gen_harmonic_doc;
 extern const char *_von_mises_cdf_doc;
+extern const char *agm_doc;
+extern const char *entr_doc;
+extern const char *huber_doc;
+extern const char *kl_div_doc;
+extern const char *pseudo_huber_doc;
+extern const char *rel_entr_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bei_doc;
@@ -219,25 +227,17 @@ static PyMethodDef _methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-
-static float
-bivariate_normal_cdf_float(float dh, float dk, float r)
-{
-    return static_cast<float>(xsf::bivariate_normal_cdf(dh, dk, r));
-}
-
-
 static int
 _special_ufuncs_module_exec(PyObject *module)
 {
     if (_import_array() < 0) { return -1; }
     if (_import_umath() < 0) { return -1; }
 
-    PyObject *_bivariate_normal_cdf = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::fff_f>(bivariate_normal_cdf_float),
-         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_cdf)},
-        "_bivariate_normal_cdf", _bivariate_normal_cdf_doc);
-    PyModule_AddObjectRef(module, "_bivariate_normal_cdf", _bivariate_normal_cdf);
+    PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
+         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
+        "_bivariate_normal_sf", _bivariate_normal_sf_doc);
+    PyModule_AddObjectRef(module, "_bivariate_normal_sf", _bivariate_normal_sf);
 
     PyObject *_cospi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::cospi), static_cast<xsf::numpy::d_d>(xsf::cospi),
@@ -305,6 +305,35 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(xsf::zeta), static_cast<xsf::numpy::Dd_D>(xsf::zeta)},
                           "_zeta", _zeta_doc);
     PyModule_AddObjectRef(module, "_zeta", _zeta);
+
+    PyObject *agm = xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::agm),
+                                       static_cast<xsf::numpy::dd_d>(xsf::agm)},
+                                      "agm", agm_doc);
+    PyModule_AddObjectRef(module, "agm", agm);
+
+    PyObject *entr = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::entr), static_cast<xsf::numpy::d_d>(xsf::entr)}, "entr", entr_doc);
+    PyModule_AddObjectRef(module, "entr", entr);
+
+    PyObject *huber = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::huber), static_cast<xsf::numpy::dd_d>(xsf::huber)}, "huber", huber_doc);
+    PyModule_AddObjectRef(module, "huber", huber);
+
+    PyObject *kl_div = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::kl_div), static_cast<xsf::numpy::dd_d>(xsf::kl_div)}, "kl_div",
+        kl_div_doc);
+    PyModule_AddObjectRef(module, "kl_div", kl_div);
+
+    PyObject *pseudo_huber =
+        xsf::numpy::ufunc(
+            {static_cast<xsf::numpy::ff_f>(xsf::pseudo_huber), static_cast<xsf::numpy::dd_d>(xsf::pseudo_huber)},
+            "pseudo_huber", pseudo_huber_doc);
+    PyModule_AddObjectRef(module, "pseudo_huber", pseudo_huber);
+
+    PyObject *rel_entr = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::rel_entr), static_cast<xsf::numpy::dd_d>(xsf::rel_entr)}, "rel_entr",
+        rel_entr_doc);
+    PyModule_AddObjectRef(module, "rel_entr", rel_entr);
 
     PyObject *airy =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ffff>(xsf::airy), static_cast<xsf::numpy::d_dddd>(xsf::airy),

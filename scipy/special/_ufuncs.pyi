@@ -149,6 +149,8 @@ __all__ = [
     'kve',
     'log1p',
     'log_expit',
+    'log_gammainc',
+    'log_gammaincc',
     'log_ndtr',
     'log_wright_bessel',
     'loggamma',
@@ -255,10 +257,9 @@ class errstate:
 
 _cosine_cdf: np.ufunc
 _cosine_invcdf: np.ufunc
-_bivariate_normal_cdf: np.ufunc
+_bivariate_normal_sf: np.ufunc
 _cospi: np.ufunc
 _ellip_harm: np.ufunc
-_factorial: np.ufunc
 _gen_harmonic: np.ufunc
 _igam_fac: np.ufunc
 _kolmogc: np.ufunc
@@ -434,6 +435,8 @@ kv: np.ufunc
 kve: np.ufunc
 log1p: np.ufunc
 log_expit: np.ufunc
+log_gammainc: np.ufunc
+log_gammaincc: np.ufunc
 log_ndtr: np.ufunc
 log_wright_bessel: np.ufunc
 loggamma: np.ufunc
