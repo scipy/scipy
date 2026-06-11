@@ -5315,6 +5315,39 @@ def besselap(N, norm='phase', *, xp=None, device=None):
     calculate more accurate zeros, and these locations are then inverted about
     the unit circle.
 
+
+    Examples
+    --------
+    Compute the poles of a 4th-order Bessel filter prototype:
+
+    >>> from scipy.signal import besselap
+    >>> z, p, k = besselap(4)
+    >>> p
+    array([-0.65721117+0.83016144j, -0.9047588 +0.27091873j,
+           -0.9047588 -0.27091873j, -0.65721117-0.83016144j])
+
+    The poles are complex conjugate pairs sorted by descending imaginary part:
+
+    >>> p.imag
+    array([ 0.83016144,  0.27091873, -0.27091873, -0.83016144])
+
+    With ``norm='delay'`` the DC gain is unity and the passband group
+    delay is 1 second:
+
+    >>> z, p, k = besselap(3, norm='delay')
+    >>> k
+    1.0
+
+    With ``norm='mag'`` the gain is -3 dB at angular frequency 1:
+
+    >>> z, p, k = besselap(2, norm='mag')
+    >>> k  # doctest: +ELLIPSIS
+    1.6180339...
+
+    See Also
+    --------
+    bessel : Filter design function using this prototype
+
     References
     ----------
     .. [1] C.R. Bond, "Bessel Filter Constants",
