@@ -82,6 +82,7 @@ special_ufuncs = [
     '_spherical_jn', '_spherical_jn_d', '_spherical_yn', '_spherical_yn_d',
     '_spherical_in', '_spherical_in_d', '_spherical_kn', '_spherical_kn_d',
     'agm', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
+    'boxcox', 'boxcox1p', 'inv_boxcox', 'inv_boxcox1p',
     'entr', 'huber', 'kl_div', 'pseudo_huber', 'rel_entr',
     'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
     'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',

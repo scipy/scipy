@@ -1394,6 +1394,11 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_smirnovp(int n, double x) nogil
     double xsf_tukeylambdacdf(double x, double lmbda) nogil
 
+    double special_boxcox(double x, double lmbda) nogil
+    double special_boxcox1p(double x, double lmbda) nogil
+    double special_inv_boxcox(double x, double lmbda) nogil
+    double special_inv_boxcox1p(double x, double lmbda) nogil
+
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_bdtr_unsafe_t *_proto_bdtr_unsafe_t_var = &_func_bdtr_unsafe
@@ -1405,14 +1410,6 @@ cdef _proto_bdtrc_unsafe_t *_proto_bdtrc_unsafe_t_var = &_func_bdtrc_unsafe
 from ._legacy cimport bdtri_unsafe as _func_bdtri_unsafe
 ctypedef double _proto_bdtri_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_bdtri_unsafe_t *_proto_bdtri_unsafe_t_var = &_func_bdtri_unsafe
-
-from ._boxcox cimport boxcox as _func_boxcox
-ctypedef double _proto_boxcox_t(double, double) noexcept nogil
-cdef _proto_boxcox_t *_proto_boxcox_t_var = &_func_boxcox
-
-from ._boxcox cimport boxcox1p as _func_boxcox1p
-ctypedef double _proto_boxcox1p_t(double, double) noexcept nogil
-cdef _proto_boxcox1p_t *_proto_boxcox1p_t_var = &_func_boxcox1p
 
 cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.chdtriv"""
@@ -1657,14 +1654,6 @@ cdef extern from r"_ufuncs_defs.h":
 from ._hypergeometric cimport hyperu as _func_hyperu
 ctypedef double _proto_hyperu_t(double, double, double) noexcept nogil
 cdef _proto_hyperu_t *_proto_hyperu_t_var = &_func_hyperu
-
-from ._boxcox cimport inv_boxcox as _func_inv_boxcox
-ctypedef double _proto_inv_boxcox_t(double, double) noexcept nogil
-cdef _proto_inv_boxcox_t *_proto_inv_boxcox_t_var = &_func_inv_boxcox
-
-from ._boxcox cimport inv_boxcox1p as _func_inv_boxcox1p
-ctypedef double _proto_inv_boxcox1p_t(double, double) noexcept nogil
-cdef _proto_inv_boxcox1p_t *_proto_inv_boxcox1p_t_var = &_func_inv_boxcox1p
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j0 "j0"(npy_double)nogil
@@ -1950,11 +1939,11 @@ cpdef double binom(double x0, double x1) noexcept nogil:
 
 cpdef double boxcox(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.boxcox"""
-    return _func_boxcox(x0, x1)
+    return special_boxcox(x0, x1)
 
 cpdef double boxcox1p(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.boxcox1p"""
-    return _func_boxcox1p(x0, x1)
+    return special_boxcox1p(x0, x1)
 
 cpdef double cbrt(double x0) noexcept nogil:
     """See the documentation for scipy.special.cbrt"""
@@ -2609,11 +2598,11 @@ cpdef double i1e(double x0) noexcept nogil:
 
 cpdef double inv_boxcox(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.inv_boxcox"""
-    return _func_inv_boxcox(x0, x1)
+    return special_inv_boxcox(x0, x1)
 
 cpdef double inv_boxcox1p(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.inv_boxcox1p"""
-    return _func_inv_boxcox1p(x0, x1)
+    return special_inv_boxcox1p(x0, x1)
 
 cdef void it2i0k0(double x0, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.it2i0k0"""

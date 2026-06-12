@@ -118,16 +118,6 @@
             "ibetac_inv_double": "ddd->d"
         }
     },
-    "boxcox": {
-        "_boxcox.pxd": {
-            "boxcox": "dd->d"
-        }
-    },
-    "boxcox1p": {
-        "_boxcox.pxd": {
-            "boxcox1p": "dd->d"
-        }
-    },
     "btdtria": {
         "boost_special_functions.h++": {
             "ibeta_inva_float": "fff->f",
@@ -385,16 +375,6 @@
     "hyperu": {
         "_hypergeometric.pxd": {
             "hyperu": "ddd->d"
-        }
-    },
-    "inv_boxcox": {
-        "_boxcox.pxd": {
-            "inv_boxcox": "dd->d"
-        }
-    },
-    "inv_boxcox1p": {
-        "_boxcox.pxd": {
-            "inv_boxcox1p": "dd->d"
         }
     },
     "kn": {
