@@ -4575,12 +4575,12 @@ add_newdoc("kolmogorov",
     the target distribution, a Normal(0, 1) distribution.
 
     >>> from scipy.stats import norm, laplace
-    >>> rng = np.random.default_rng(123456789)
+    >>> rng = np.random.default_rng()
     >>> n = 1000
     >>> lap01 = laplace(0, 1)
     >>> x = np.sort(lap01.rvs(n, random_state=rng))
     >>> np.mean(x), np.std(x)
-    (np.float64(-0.0025731824244716677), np.float64(1.398518885254164))
+    (np.float64(-0.05841730131499543), np.float64(1.3968109101997568))
 
     Construct the Empirical CDF and the K-S statistic Dn.
 
@@ -4591,15 +4591,15 @@ add_newdoc("kolmogorov",
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
     >>> print(f'Dn={Dn:f}, sqrt(n)*Dn={Kn:f}')
-    Dn=0.049119, sqrt(n)*Dn=1.553274
+    Dn=0.043363, sqrt(n)*Dn=1.371265
     >>> print(chr(10).join(['For a Laplace sample tested against N(0, 1):',
     ...   f' the approximate Kolmogorov probability that sqrt(n)*Dn>={Kn:f} '
     ...   f'is {kolmogorov(Kn):f}',
     ...   f' the approximate Kolmogorov probability that sqrt(n)*Dn<={Kn:f} '
     ...   f'is {kstwobign.cdf(Kn):f}']))
     For a Laplace sample tested against N(0, 1):
-     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.553274 is 0.016048
-     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.553274 is 0.983952
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.371265 is 0.046533
+     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.371265 is 0.953467
 
     Plot the Empirical CDF against the target N(0, 1) CDF.
 
