@@ -1398,6 +1398,7 @@ cdef extern from r"xsf_wrappers.h":
     double special_boxcox1p(double x, double lmbda) nogil
     double special_inv_boxcox(double x, double lmbda) nogil
     double special_inv_boxcox1p(double x, double lmbda) nogil
+    double special_ndtri_exp(double x) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -1722,10 +1723,6 @@ cdef _proto_stdtridf_t *_proto_stdtridf_t_var = &_func_stdtridf
 from ._legacy cimport yn_unsafe as _func_yn_unsafe
 ctypedef double _proto_yn_unsafe_t(double, double) noexcept nogil
 cdef _proto_yn_unsafe_t *_proto_yn_unsafe_t_var = &_func_yn_unsafe
-
-from ._ndtri_exp cimport ndtri_exp as _func_ndtri_exp
-ctypedef double _proto_ndtri_exp_t(double) noexcept nogil
-cdef _proto_ndtri_exp_t *_proto_ndtri_exp_t_var = &_func_ndtri_exp
 
 cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.voigt_profile"""
@@ -3645,7 +3642,7 @@ cpdef double log_wright_bessel(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double ndtri_exp(double x0) noexcept nogil:
     """See the documentation for scipy.special.ndtri_exp"""
-    return _func_ndtri_exp(x0)
+    return special_ndtri_exp(x0)
 
 cpdef number_t spherical_jn(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
     """See the documentation for scipy.special.spherical_jn"""

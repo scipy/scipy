@@ -119,6 +119,7 @@ double special_boxcox(double x, double lmbda);
 double special_boxcox1p(double x, double lmbda);
 double special_inv_boxcox(double x, double lmbda);
 double special_inv_boxcox1p(double x, double lmbda);
+double special_ndtri_exp(double x);
 
 float special_log_expitf(float x);
 double special_log_expit(double x);
