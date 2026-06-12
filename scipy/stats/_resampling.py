@@ -1356,7 +1356,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     pvalues = xp.reshape(pvalues, shape + (-1,))
     if significance.ndim > 0:
         newdims = tuple(range(significance.ndim, pvalues.ndim + significance.ndim))
-        significance = xpx.expand_dims(significance, axis=newdims)
+        significance = xp.expand_dims(significance, axis=newdims)
 
     float_dtype = xp_result_type(significance, pvalues, xp=xp)
     powers = xp.mean(xp.astype(pvalues < significance, float_dtype), axis=-1)

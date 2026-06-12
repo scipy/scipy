@@ -352,7 +352,7 @@ class LinearOperator:
 
         y = self._rmatvec(x) if adjoint else self._matvec(x)
 
-        broadcasted_dims = xpx.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
+        broadcasted_dims = xp.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
         if row_vector:
             y = xp.reshape(y, (*broadcasted_dims, outer_dim))
         elif column_vector:
@@ -979,7 +979,7 @@ class _SumLinearOperator(LinearOperator):
         *B_broadcast_dims, B_M, B_N = B.shape
         if (A_M, A_N) != (B_M, B_N):
             raise ValueError(f"cannot add {A} and {B}: shape mismatch")
-        broadcasted_dims = xpx.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
+        broadcasted_dims = xp.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
         self.args = (A, B)
         super().__init__(_get_dtype([A, B], xp=xp), (*broadcasted_dims, A_M, A_N), xp)
 
