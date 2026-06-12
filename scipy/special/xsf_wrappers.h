@@ -115,6 +115,11 @@ double special_rel_entr(double x, double y);
 double special_huber(double delta, double r);
 double special_pseudo_huber(double delta, double r);
 
+double special_boxcox(double x, double lmbda);
+double special_boxcox1p(double x, double lmbda);
+double special_inv_boxcox(double x, double lmbda);
+double special_inv_boxcox1p(double x, double lmbda);
+
 float special_log_expitf(float x);
 double special_log_expit(double x);
 npy_longdouble special_log_expitl(npy_longdouble x);
