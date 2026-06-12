@@ -693,11 +693,6 @@
             "cephes_yn_wrap": "pd->d"
         }
     },
-    "ndtri_exp": {
-        "_ndtri_exp.pxd": {
-            "ndtri_exp": "d->d"
-        }
-    },
     "_beta_pdf": {
         "boost_special_functions.h++": {
             "beta_pdf_float": "fff->f",
