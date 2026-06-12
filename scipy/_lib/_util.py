@@ -1143,6 +1143,12 @@ def _apply_over_batch(*argdefs):
                 message = f'`{f.__name__}` does not support zero-size batches.'
                 raise ValueError(message)
 
+            if f.__name__ in {"eigh", "eigvalsh"} and kwargs.get("subset_by_value") is not None:
+                raise ValueError(
+                    f'`{f.__name__}` with `subset_by_value` does not support batched inputs '
+                    'because different slices can return different numbers of eigenvalues.'
+                )
+
             # Broadcast arrays to appropriate shape
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:
