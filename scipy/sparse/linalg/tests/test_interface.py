@@ -911,7 +911,9 @@ def test_identity(xp):
 
     assert_raises(ValueError, ident.matvec, xp.asarray([1, 2, 3, 4]))
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_attributes(xp):
     A = interface.aslinearoperator(xp.reshape(xp.arange(16, dtype=xp.float64), (4, 4)))
 
@@ -940,6 +942,9 @@ def matvec_for_pickle(x):
     "array_api_strict",
     reason="pickle-ability is not guaranteed by the standard"
 )
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_pickle(xp):
     import pickle
 
