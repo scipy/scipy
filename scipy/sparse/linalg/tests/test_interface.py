@@ -59,7 +59,9 @@ def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
     assert np.broadcast_shapes(*shapes) == batch_shape
     return [tuple(int(el) for el in shape) for shape in shapes]
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 class TestLinearOperator:
     def setup_method(self):
         self.A = np.array([[1,2,3],
@@ -847,6 +849,9 @@ class TestAsLinearOperator:
             assert_equal(A.dot(x1), A_array.dot(x1))
             assert_equal(A.dot(x2), A_array.dot(x2))
 
+    @pytest.mark.xfail_xp_backends('dask.array',
+                                    reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
     @pytest.mark.parametrize("dtype", ["int64", "float64", "complex128"])
     def test_xp(self, dtype, xp):
         if dtype == "int64" and is_torch(xp) and SCIPY_DEVICE != "cpu":
@@ -888,13 +893,17 @@ class TestAsLinearOperator:
 
             assert hasattr(A, 'args')
             
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_repr(xp):
     A = interface.LinearOperator(shape=(1, 1), matvec=lambda x: xp.asarray([1]), xp=xp)
     repr_A = repr(A)
     assert 'unspecified dtype' not in repr_A, repr_A
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_identity(xp):
     ident = interface.IdentityOperator((3, 3), xp=xp)
     xp_assert_equal(ident @ xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3]))
@@ -919,7 +928,9 @@ def test_attributes(xp):
         assert hasattr(op, "shape")
         assert hasattr(op, "_matvec")
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def matvec_for_pickle(x):
     """ Needed for test_pickle as local functions are not pickleable """
     return x
@@ -941,7 +952,9 @@ def test_pickle(xp):
         for k in A.__dict__:
             assert getattr(A, k) == getattr(B, k)
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_inheritance(xp):
     class Empty(interface.LinearOperator):
         pass
@@ -971,7 +984,9 @@ def test_inheritance(xp):
     mm = MatmatOnly(xp.asarray(np.random.randn(5, 3)))
     assert mm.matvec(xp.asarray(np.random.randn(3))).shape == (5,)
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_dtypes_of_operator_sum(xp):
     # gh-6078
 
@@ -987,7 +1002,9 @@ def test_dtypes_of_operator_sum(xp):
     assert sum_real.dtype == xp.float64
     assert sum_complex.dtype == xp.complex128
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_no_double_init(xp):
     call_count = [0]
 
@@ -1007,7 +1024,9 @@ COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 INEXACTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
 ALLDTYPES = INT_DTYPES + INEXACTDTYPES
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 @pytest.mark.parametrize("test_dtype", ALLDTYPES)
 def test_determine_lo_dtype_from_matvec(test_dtype, xp):
     if "longdouble" in test_dtype.__name__ and not is_numpy(xp):
@@ -1041,7 +1060,9 @@ def test_determine_lo_dtype_for_int(xp):
     lo = interface.LinearOperator((2, 2), matvec=mv, xp=xp)
     assert xp.isdtype(lo.dtype, "integral")
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_adjoint_conjugate(xp):
     X = xp.asarray([[1j]], dtype=xp.complex128)
     A = interface.aslinearoperator(X)
@@ -1061,7 +1082,9 @@ def test_ndim(xp):
     A = interface.aslinearoperator(X)
     assert A.ndim == 2
 
-
+@pytest.mark.xfail_xp_backends('dask.array',
+                                   reason="dask does not support broadcast_shapes()." \
+    " See: https://github.com/data-apis/array-api-compat/issues/439")
 def test_transpose_noconjugate(xp):
     X = xp.asarray([[1j]], dtype=xp.complex128)
     A = interface.aslinearoperator(X)
