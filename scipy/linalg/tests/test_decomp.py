@@ -1057,7 +1057,10 @@ class TestEigh:
 
         with pytest.raises(
             ValueError,
-            match="subset_by_value.*batched inputs.*different slices can return different numbers of eigenvalues",
+            match=(
+                "subset_by_value.*batched inputs.*different slices can return "
+                "different numbers of eigenvalues"
+            ),
         ):
             fun(aa, subset_by_value=[1.5, 2.5])
 
