@@ -121,7 +121,7 @@ add_function_parentheses = False
 # Ensure all our internal links work
 nitpicky = True
 nitpick_ignore = [
-    # This ignores errors for classes (OptimizeResults, sparse.dok_matrix)
+    # This ignores errors for classes (OptimizeResults, sparse.dok_array)
     # which inherit methods from `dict`. missing references to builtins get
     # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
     # but that fix doesn't work for inherited methods.
@@ -190,9 +190,6 @@ warnings.filterwarnings(
     message=r'.*py:obj reference target not found: scipy.misc.*',
     category=Warning,
 )
-
-warnings.filterwarnings("ignore", message="`scipy.odr` is deprecated",
-                        category=DeprecationWarning)
 
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
@@ -307,12 +304,11 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 autosummary_generate = True
 
 # maps functions with a name same as a class name that is indistinguishable
-# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Ex: scipy.signal.czt and scipy.signal.CZT
 # Otherwise, the stubs are overwritten when the name is same for
 # OS (like MacOS) which has a filesystem that ignores the case
 # See https://github.com/sphinx-doc/sphinx/pull/7927
 autosummary_filename_map = {
-    "scipy.odr.odr": "odr-function",
     "scipy.signal.czt": "czt-function",
     "scipy.signal.ShortTimeFFT.t": "scipy.signal.ShortTimeFFT.t.lower",
 }
@@ -353,10 +349,13 @@ plot_pre_code = """
 import warnings
 for key in (
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
-        'odr',
         'pade',
         'lagrange',
         'approximate_taylor_polynomial',
+        'tsearch',
+        'minkowski_distance_p',
+        'minkowski_distance',
+        'distance_matrix'
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

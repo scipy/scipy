@@ -52,6 +52,12 @@ class DunnettResult:
     _ci: ConfidenceInterval | None = field(default=None, repr=False)
     _ci_cl: DecimalNumber | None = field(default=None, repr=False)
 
+    @classmethod
+    def __class_getitem__(cls, arg, /):
+        # generic type compatibility with scipy-stubs
+        from types import GenericAlias
+        return GenericAlias(cls, arg)
+
     def __str__(self):
         # Note: `__str__` prints the confidence intervals from the most
         # recent call to `confidence_interval`. If it has not been called,

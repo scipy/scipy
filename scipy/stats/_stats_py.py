@@ -37,14 +37,14 @@ import numpy as np
 from numpy import array, asarray, ma
 
 from scipy import sparse
-from scipy.spatial import distance_matrix
+from scipy.spatial.distance import cdist
 
 from scipy.optimize import milp, LinearConstraint
 from scipy.optimize.elementwise import find_root
 from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan
 
 import scipy.special as special
-# Import unused here but needs to stay until end of deprecation periode
+# Import unused here but needs to stay until end of deprecation period
 # See https://github.com/scipy/scipy/issues/15765#issuecomment-1875564522
 from scipy import linalg  # noqa: F401
 from . import distributions
@@ -7870,8 +7870,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
-                                ('dask.array', 'no rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  jax_jit=False, cpu_only=True,  # null distribution is NumPy-only
                  marray=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
@@ -8217,8 +8216,7 @@ def _kstest_n_samples(kwargs):
     return 1 if (isinstance(cdf, str) or callable(cdf)) else 2
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
-                                ('dask.array', 'no rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  jax_jit=False, cpu_only=True,  # see ks_1samp/ks_2samp
                  marray=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
@@ -8573,7 +8571,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  marray=True)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
@@ -8684,7 +8682,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
+@xp_capabilities(skip_backends=[("dask.array", "no rankdata")],
                  marray=True)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
@@ -8788,8 +8786,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 
 @xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
                  marray=True,
-                 skip_backends=[('dask.array', 'needs rankdata'),
-                                ('cupy', 'needs rankdata')])
+                 skip_backends=[('dask.array', 'needs rankdata')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate', *, axis=0):
@@ -9898,14 +9895,13 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
         return np.nan
 
     # create constraints
-    A_upper_part = sparse.block_diag((np.ones((1, n)), ) * m)
-    A_lower_part = sparse.hstack((sparse.eye(n), ) * m)
+    A_upper_part = sparse.block_diag((sparse.coo_array(np.ones((1, n))), ) * m)
+    A_lower_part = sparse.hstack((sparse.eye_array(n), ) * m)
     # sparse constraint matrix of size (m + n)*(m * n)
     A = sparse.vstack((A_upper_part, A_lower_part))
-    A = sparse.coo_array(A)
 
     # get cost matrix
-    D = distance_matrix(u_values, v_values, p=2)
+    D = cdist(u_values, v_values)
     cost = D.ravel()
 
     # create the minimization target
@@ -10228,8 +10224,7 @@ def _validate_distribution(values, weights):
     return values, None
 
 
-@xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
-                                ("dask.array", "no `take_along_axis`")],
+@xp_capabilities(skip_backends=[("dask.array", "no `take_along_axis`")],
                  marray=True)
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
@@ -10429,7 +10424,18 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     elif method == 'dense':
         ranks = xp.cumulative_sum(xp.astype(i, dtype, copy=False), axis=-1)[i]
 
-    ranks = xp.reshape(xp.repeat(ranks, counts), shape)
+    if not is_cupy(xp):
+        ranks = xp.reshape(xp.repeat(ranks, counts), shape)
+    else:
+        # workaround for cupy.repeat not accepting arrays for repeats
+        # (ref https://github.com/cupy/cupy/issues/3849).
+        # The cumulative sum over i will
+        # increment every time a new unique rank appears, giving the correct
+        # indices to replicate xp.repeats.
+        ranks = xp.reshape(
+            ranks[xp.cumulative_sum(xp.astype(xp.reshape(i, (-1,)), xp.int64)) - 1],
+            shape,
+        )
     ranks = _order_ranks(ranks, j, xp=xp)
 
     t = None
@@ -10654,7 +10660,7 @@ def _br(x, *, r=0, xp):
 
 
 def _prk(r, k):
-    # Writen to match [1] Equation 27 closely to facilitate review.
+    # Written to match [1] Equation 27 closely to facilitate review.
     # This does not protect against overflow, so improvements to
     # robustness would be a welcome follow-up.
     binom_r_k = xpx.lazy_apply(special.binom, r, k)
@@ -10746,7 +10752,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
 
     n_moments = 4 if is_lazy_array(order) else int(xp.max(order))
     k = xp.arange(n_moments, dtype=sample.dtype)
-    prk = _prk(xpx.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
+    prk = _prk(xp.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k, xp=xp)
 
     n = sample.shape[-1]

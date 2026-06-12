@@ -411,6 +411,22 @@ class TestConstructUtils:
         assert_array_equal(result.toarray(), expected)
         assert isinstance(result, spmatrix)
 
+    @pytest.mark.parametrize(
+        "b",
+        [
+            csr_array([[3]], dtype=np.int64),        # BSR Path
+            csr_array([[3, 0, 0]], dtype=np.int64),  # COO Path
+        ],
+    )
+    def test_kron_zero_matrix_dtype(self, b):
+        a = csr_array([[0]], dtype=np.int64)
+
+        result = construct.kron(a, b)
+
+        assert result.dtype == np.int64
+        assert result.nnz == 0
+
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_kron_ndim_exceptions(self):
         # spmatrix is default, so exceptions with 3D unless sparse arrays are input
         with pytest.raises(TypeError, match='expected 2D array or matrix'):
@@ -460,6 +476,7 @@ class TestConstructUtils:
         result = construct.kronsum(csr_matrix(a), csr_matrix(b)).toarray()
         assert_array_equal(result, expected)
 
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_kronsum_ndim_exceptions(self):
         with pytest.raises(ValueError, match='requires 2D input'):
             construct.kronsum([[0], [1]], csr_array([0, 1]))
@@ -743,6 +760,7 @@ class TestConstructUtils:
         X.coords = tuple(co.astype(np.int64) for co in X.coords)
         assert construct.block_diag([X, X]).coords[0].dtype == np.int64
 
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
         # one 1d matrix and a scalar
@@ -754,6 +772,7 @@ class TestConstructUtils:
         assert_array_equal(construct.block_diag([A, B]).toarray(),
                            [[1, 0, 3, 0, 0], [0, 0, 0, 0, 4]])
 
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_block_diag_1(self):
         """ block_diag with one matrix """
         assert_equal(construct.block_diag([[1, 0]]).toarray(),
@@ -882,6 +901,17 @@ class TestConstructUtils:
         shape = (2**33, 2**33, 2**33)
         sparse_array = construct.random_array(shape, density=2.7105e-28)
         assert_equal(sparse_array.count_nonzero(),172)
+
+
+def test_deprecated_warnings_output_defaults_switch_from_spmatrix():
+    A = B = np.array([[1, 0], [1, 0]])
+    with pytest.deprecated_call(match=".*switching.*sparse array int"):
+        construct.kron(A, B)
+    with pytest.deprecated_call(match=".*switching.*sparse array int"):
+        construct.kronsum(A, B)
+    # Note: vstack hstack and bmat do not support all dense input. So no default.
+    with pytest.deprecated_call(match=".*switching.*sparse array int"):
+        construct.block_diag([A, B])
 
 
 def test_diags_array():
@@ -1031,7 +1061,7 @@ def test_3d_permute_dims():
 
 def test_canonical_format_permute_dims():
     A = coo_array([[2, 0, 1], [3, 5, 0]])
-    # identity axes keep has_canoncial_format True after permute_dims.
+    # identity axes keep has_canonical_format True after permute_dims.
     assert construct.permute_dims(A, axes=(0, 1)).has_canonical_format is True
     assert construct.permute_dims(A, axes=[0, 1]).has_canonical_format is True
     # order changes set has_canonical_format to False

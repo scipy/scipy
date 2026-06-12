@@ -267,8 +267,19 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         works = work, iwork
 
     # Generate the seed for the PROPACK random float generator.
-    rng_state = rng.integers(low=0, high=np.iinfo(np.int64).max,
-                             size=4, dtype=np.uint64)
+    # TODO: once `svds` drops legacy positional `random_state` support,
+    # or once `_lib._util.check_random_state` is adjusted to always
+    # coerce `RandomState` input to a `Generator` instance
+    # (possible from NumPy >=2.2),
+    # the legacy branch can be removed here.
+    if hasattr(rng, "integers"):
+        rng_state = rng.integers(
+            low=0, high=np.iinfo(np.int64).max, size=4, dtype=np.uint64
+        )
+    else:  # legacy np.random.RandomState
+        rng_state = rng.randint(
+            low=0, high=np.iinfo(np.int64).max, size=4, dtype=np.uint64
+        )
 
     if irl_mode:
         info = lansvd_irl(_which_converter[which], jobu,

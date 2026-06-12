@@ -971,7 +971,7 @@ class TestFisherExact:
         with pytest.raises(ValueError, match=message):
             stats.fisher_exact(np.zeros((0, 1)))
 
-        # Specical case: when there is only one table with given marginals, the
+        # Special case: when there is only one table with given marginals, the
         # PMF of that case is 1.0, so the p-value is 1.0
         np.testing.assert_equal(stats.fisher_exact([[1, 2, 3]]), (1, 1))
         np.testing.assert_equal(stats.fisher_exact([[1], [2], [3]]), (1, 1))
@@ -8135,6 +8135,7 @@ class TestKruskal:
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
     @skip_xp_backends('jax.numpy', reason='lazy -> reduced nan_policy capabilities')
+    @xfail_xp_backends('cupy', reason='cupy returns small but nonzero res.statistic')
     def test_nan_policy_omit_raise(self, xp):
         x = xp.arange(10.)
         x = xpx.at(x)[9].set(xp.nan)
@@ -8714,7 +8715,7 @@ class TestBrunnerMunzel:
 
     @pytest.mark.parametrize("kwarg_update", [{'y': []}, {'x': []},
                                               {'x': [], 'y': []}])
-    def test_brunnermunzel_empty_imput(self, kwarg_update, xp):
+    def test_brunnermunzel_empty_input(self, kwarg_update, xp):
         kwargs = {'x': self.X, 'y': self.Y}
         kwargs.update(kwarg_update)
         kwargs = {key:xp.asarray(val, dtype=xp_default_dtype(xp))

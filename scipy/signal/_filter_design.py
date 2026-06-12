@@ -1161,10 +1161,10 @@ def tf2zpk(b, a):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
 
     Returns
     -------
@@ -1318,10 +1318,10 @@ def tf2sos(b, a, pairing=None, *, analog=False):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     pairing : {None, 'nearest', 'keep_odd', 'minimal'}, optional
         The method to use to combine pairs of poles and zeros into sections.
         See `zpk2sos` for information and restrictions on `pairing` and
@@ -1962,10 +1962,10 @@ def lp2lp(b, a, wo=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired cutoff, as angular frequency (e.g. rad/s).
         Defaults to no change.
@@ -2061,10 +2061,10 @@ def lp2hp(b, a, wo=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired cutoff, as angular frequency (e.g., rad/s).
         Defaults to no change.
@@ -2129,13 +2129,13 @@ def lp2hp(b, a, wo=1.0):
     if d >= n:
         outa = xp.flip(a) * pwo
         outb = _resize(b, (d,), xp=xp)
-        outb[n:] = 0.0
-        outb[:n] = xp.flip(b) * pwo[:n]
+        outb = xpx.at(outb)[n:].set(0.0)
+        outb = xpx.at(outb)[:n].set(xp.flip(b) * pwo[:n])
     else:
         outb = xp.flip(b) * pwo
         outa = _resize(a, (n,), xp=xp)
-        outa[d:] = 0.0
-        outa[:d] = xp.flip(a) * pwo[:d]
+        outa = xpx.at(outa)[d:].set(0.0)
+        outa = xpx.at(outa)[:d].set(xp.flip(a) * pwo[:d])
 
     return normalize(outb, outa)
 
@@ -2150,10 +2150,10 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired passband center, as angular frequency (e.g., rad/s).
         Defaults to no change.
@@ -2221,14 +2221,14 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
                     val += comb(i, k) * b[N - i] * (wosq) ** (i - k) / bw ** i
-        bprime[Np - j] = val
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
                     val += comb(i, k) * a[D - i] * (wosq) ** (i - k) / bw ** i
-        aprime[Dp - j] = val
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2243,10 +2243,10 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired stopband center, as angular frequency (e.g., rad/s).
         Defaults to no change.
@@ -2314,7 +2314,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
                 if i + 2 * k == j:
                     val += (comb(M - i, k) * b[N - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        bprime[Np - j] = val
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
@@ -2322,7 +2322,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
                 if i + 2 * k == j:
                     val += (comb(M - i, k) * a[D - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        aprime[Dp - j] = val
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2413,7 +2413,7 @@ def bilinear(b, a, fs=1.0):
     Examples
     --------
     The following example shows the frequency response of an analog bandpass filter and
-    the corresponding digital filter derived by utilitzing the bilinear transform:
+    the corresponding digital filter derived by utilizing the bilinear transform:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2424,7 +2424,7 @@ def bilinear(b, a, fs=1.0):
     >>> bb_s, aa_s = signal.butter(4, om_c, btype='bandpass', analog=True, output='ba')
     >>> bb_z, aa_z = signal.bilinear(bb_s, aa_s, fs)
     ...
-    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digitial filter
+    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digital filter
     >>> w_s, H_s = signal.freqs(bb_s, aa_s, worN=w_z*fs)  # analog filter response
     ...
     >>> f_z, f_s = w_z * fs / (2*np.pi), w_s / (2*np.pi)
@@ -2510,7 +2510,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         Note, that for bandpass and bandstop filters passband must lie strictly
         inside stopband or vice versa. Also note that the cutoff at the band edges
         for IIR filters is defined as half-power, so -3dB, not half-amplitude (-6dB)
-        like for `scipy.signal.fiwin`.
+        like for `scipy.signal.firwin`.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float

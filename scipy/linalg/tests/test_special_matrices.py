@@ -515,6 +515,7 @@ def test_dft():
 def test_fiedler(xp):
     f = fiedler(xp.asarray([]))
     assert xp_size(f) == 0
+    assert f.shape == (0, 0)
 
     f = fiedler(xp.asarray([123.]))
     xp_assert_equal(f, xp.asarray([[0.]]))
@@ -534,6 +535,7 @@ def test_fiedler_companion():
     assert_equal(fc.size, 0)
     fc = fiedler_companion([1.])
     assert_equal(fc.size, 0)
+    assert_equal(fc.shape, (0, 0))
     fc = fiedler_companion([1., 2.])
     assert_array_equal(fc, np.array([[-2.]]))
     fc = fiedler_companion([1e-12, 2., 3.])
@@ -604,12 +606,6 @@ def test_batch(f, args):
     batch_shape = (2, 3)
     m = 10
     A = rng.random(batch_shape + (m,))
-
-    if f in {hankel}:
-        message = "Beginning in SciPy 1.19, multidimensional input will be..."
-        with pytest.warns(FutureWarning, match=message):
-            f(A, *args)
-        return
 
     res = f(A, *args)
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])

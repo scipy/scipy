@@ -35,10 +35,11 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.56.0
+          pixi-version: v0.68.0
           cache: false
           environments: >-
             build
@@ -66,6 +67,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -86,12 +88,16 @@ jobs:
 
       - name: Build
         run: |
-          spin build --with-scipy-openblas
+          $env:FORCE_PKGCONF_PYPI=1
+          spin build --with-scipy-openblas=32
 
       - name: Test
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
+          # Avoid occasional anomalous long durations of a test in interpolate;
+          # see gh-25142.
+          $env:WINDOWS_CI_LONG_TIMEOUT=600
           spin test -j4 --mode full -- --durations=25 --timeout=60
 
   #############################################################################
@@ -107,6 +113,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -114,21 +121,19 @@ jobs:
           python-version: "3.12"
           architecture: "arm64"
 
-      - name: Set up Flang and pkgconf for ARM64
-        uses: ./.github/windows_arm64_steps
-
       - name: pip-packages
         run: |
           # `numpy<2.4.3` pin is due to np.linalg.solve crash, see gh-24774
           pip install "numpy<2.4.3" cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
           python -m pip install -r requirements/openblas.txt
+          python -m pip install -r requirements/pkgconf.txt
 
       - name: Build
         run: |
+          $env:Path = "C:\Program Files\LLVM\bin;" + $env:Path
           $env:cc = "clang-cl"
           $env:cxx = "clang-cl"
-          $env:fc = "flang-new"
-          spin build --with-scipy-openblas --setup-args="-Duse-pythran=false"
+          spin build --with-scipy-openblas=32 --setup-args="-Duse-pythran=false"
 
       - name: Test
         run: |

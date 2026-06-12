@@ -233,7 +233,7 @@ def _strict_check(actual, desired, xp, *,
             xp = array_namespace(desired)
 
     if check_namespace:
-        _assert_matching_namespace(actual, desired, xp)
+        _assert_matching_namespace(actual, xp)
 
     # only NumPy distinguishes between scalars and arrays; we do if check_0d=True.
     # do this first so we can then cast to array (and thus use the array API) below.
@@ -261,19 +261,15 @@ def _strict_check(actual, desired, xp, *,
     return actual, desired, xp
 
 
-def _assert_matching_namespace(actual, desired, xp):
+def _assert_matching_namespace(actual, xp):
     __tracebackhide__ = True  # Hide traceback for py.test
 
-    desired_arr_space = array_namespace(desired)
-    _msg = ("Namespace of desired array does not match expectations "
-            "set by the `default_xp` context manager or by the `xp`"
-            "pytest fixture.\n"
-            f"Desired array's space: {desired_arr_space.__name__}\n"
-            f"Expected namespace: {xp.__name__}")
-    assert desired_arr_space == xp, _msg
-
     actual_arr_space = array_namespace(actual)
-    _msg = ("Namespace of actual and desired arrays do not match.\n"
+    # since the `default_xp` context manager is used for the entire
+    # test suite, `xp` can serve as the source of truth for the
+    # desired namespace. The `desired` array is coerced to that
+    # namespace in any case in `_strict_check`.
+    _msg = ("Input does not have the desired array namespace.\n"
             f"Actual: {actual_arr_space.__name__}\n"
             f"Desired: {xp.__name__}")
     assert actual_arr_space == xp, _msg
@@ -653,8 +649,8 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     """A replacement for `np.r_` as `xp.concat` does not accept python scalars
        or 0-D arrays.
     """
-    arys = [xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp) for a in arrays]
-    return xp.concat(arys)
+    arys = [xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp) for a in arrays]  # type:ignore[union-attr]
+    return xp.concat(arys)  # type:ignore[union-attr]
 
 
 ### MArray Helpers ###
@@ -927,9 +923,10 @@ def xp_capabilities(
         # Don't use a wrapper, as in some cases @xp_capabilities is
         # applied to a ufunc
         capabilities_table[f] = capabilities
-        note = _make_capabilities_note(f.__name__, sphinx_capabilities, extra_note)
         doc = FunctionDoc(f)
-        doc['Notes'].append(note)
+        if not np_only or out_of_scope:
+            note = _make_capabilities_note(f.__name__, sphinx_capabilities, extra_note)
+            doc['Notes'].append(note)
         doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         try:
             f.__doc__ = doc
@@ -1060,7 +1057,7 @@ def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=
         def test(func, verb, xp):
             # iterates on (func=f1, verb="hello")
             # and (func=f2, verb="world")
-    additional_marks : pytest.MarkDecorator | List[pytest.MarkDecorator]
+    additional_marks : pytest.MarkDecorator | list[pytest.MarkDecorator]
         Additional pytest marks to add to the parameter, e.g.
         ``pytest.mark.slow``.
 

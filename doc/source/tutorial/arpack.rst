@@ -86,7 +86,7 @@ Examples
 Imagine you'd like to find the smallest and largest eigenvalues and the
 corresponding eigenvectors for a large matrix. ARPACK can handle many
 forms of input: dense matrices ,such as `numpy.ndarray` instances, sparse
-matrices, such as :func:`scipy.sparse.csr_matrix`, or a general linear operator
+matrices, such as :func:`scipy.sparse.csr_array`, or a general linear operator
 derived from :func:`scipy.sparse.linalg.LinearOperator`. For this example, for
 simplicity, we'll construct a symmetric, positive-definite matrix.
 

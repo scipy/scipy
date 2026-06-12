@@ -57,6 +57,7 @@ compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
     "scipy.special.chndtridf" : ['PR02', 'PR01'],
     "scipy.special.chndtrinc" : ['PR02', 'PR01'],
     "scipy.special.chndtrix" : ['PR02', 'PR01'],
+    "scipy.special.digammainv" : ['PR02', 'PR01'],
     "scipy.special.elliprc" : ['PR02', 'PR01'],
     "scipy.special.elliprd" : ['PR02', 'PR01'],
     "scipy.special.elliprf" : ['PR02', 'PR01'],
@@ -100,6 +101,8 @@ compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
     "scipy.special.kn" : ['PR02', 'PR01'],
     "scipy.special.kolmogi" : ['PR02', 'PR01'],
     "scipy.special.kolmogorov" : ['PR02', 'PR01'],
+    "scipy.special.log_gammainc": ['PR02', 'PR01'],
+    "scipy.special.log_gammaincc": ['PR02', 'PR01'],
     "scipy.special.lpmv" : ['PR02', 'PR01'],
     "scipy.special.nbdtr" : ['PR02', 'PR01'],
     "scipy.special.nbdtrc" : ['PR02', 'PR01'],
@@ -267,14 +270,6 @@ compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
     "scipy.special.xlogy" : ['PR02', 'PR01'],
     "scipy.special.xlog1py" : ['PR02', 'PR01'],
     "scipy.special.digamma" : ['PR02', 'PR01'],
-    "scipy.special.assoc_legendre_p" : ['PR02', 'PR01'],
-    "scipy.special.legendre_p" : ['PR02', 'PR01'],
-    "scipy.special.sph_harm_y" : ['PR02', 'PR01'],
-    "scipy.special.sph_legendre_p" : ['PR02', 'PR01'],
-    "scipy.special.sph_legendre_p_all" : ["PR01"],
-    "scipy.special.sph_harm_y_all" : ["PR01"],
-    "scipy.special.legendre_p_all" : ["PR01"],
-    "scipy.special.assoc_legendre_p_all" : ["PR01"],
 }
 
 legacy_functions = [
@@ -601,7 +596,6 @@ false_positives = ["scipy.stats.Uniform",
                    "scipy.stats.Logistic"]
 
 skip_modules = [
-    "scipy.odr",
     "scipy.fftpack",
     "scipy.stats.mstats",
     "scipy.linalg.cython_lapack",

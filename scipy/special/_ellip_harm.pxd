@@ -61,7 +61,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
         sf_error.error("ellip_harm", sf_error.ARG, "invalid signm or signn")
         return NULL
 
-    cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
+    cdef double s2, alpha, beta, gamma, pp, psi, t1, tol, vl, vu
     cdef blas_int r, tp, j, size, i, info, lwork, liwork, c, iu
     cdef Py_UCS4 t
 

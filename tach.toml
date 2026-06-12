@@ -99,10 +99,6 @@ path = "scipy.ndimage"
 depends_on = ["scipy._lib", "scipy.special", "scipy._external"]
 
 [[modules]]
-path = "scipy.odr"
-depends_on = ["scipy._lib", "scipy.linalg"]
-
-[[modules]]
 path = "scipy.optimize"
 depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.blas", "scipy.linalg.interpolative", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.special", "scipy.stats.qmc", "scipy._external", "scipy.linalg.lapack"]
 
@@ -112,7 +108,7 @@ depends_on = ["scipy.optimize"]
 
 [[modules]]
 path = "scipy.signal"
-depends_on = ["scipy._lib", "scipy.fft", "scipy.interpolate", "scipy.linalg", "scipy.ndimage", "scipy.optimize", "scipy.signal.windows", "scipy.spatial", "scipy.special", "scipy.stats", "scipy._external"]
+depends_on = ["scipy._lib", "scipy.fft", "scipy.interpolate", "scipy.linalg", "scipy.linalg.lapack", "scipy.ndimage", "scipy.optimize", "scipy.signal.windows", "scipy.spatial", "scipy.special", "scipy.stats", "scipy._external"]
 
 [[modules]]
 path = "scipy.signal.windows"

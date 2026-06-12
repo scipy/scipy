@@ -24,7 +24,7 @@ from scipy.integrate._rules._base import _split_subregion
 
 __all__ = ['cubature']
 
-Array: type = Any  # To be changed to an array-api-typing Protocol later
+type Array = Any  # To be changed to an array-api-typing Protocol later
 
 
 @dataclass

@@ -201,8 +201,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         Defaults to None (no sorting).
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         Whether to overwrite data in b (may improve performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to
@@ -357,8 +359,10 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         Default is 'real'.
     overwrite_a : bool, optional
         If True, the contents of A are overwritten.
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         If True, the contents of B are overwritten.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to

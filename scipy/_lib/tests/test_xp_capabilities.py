@@ -5,11 +5,11 @@ from scipy._lib._array_api import (
     array_namespace, make_xp_pytest_param, xp_assert_close, xp_capabilities
 )
 
-local_capabilities_table = {}
+local_capabilities_table = {}  # type:ignore[var-annotated]
 
 # B is a child of A which inherits the method g which is array-agnostic
 # so long as the method f is supported. A.f does not support the JAX jit but
-# B.f does support the JAX jit. Test that this inheritence does not
+# B.f does support the JAX jit. Test that this inheritance does not
 # cause problems when testing with JAX jit.
 
 @xp_capabilities(

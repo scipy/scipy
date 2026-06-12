@@ -9,10 +9,7 @@ arnaud_sources = [
 
 arnaud_lib = static_library('arnaud',
   arnaud_sources,
-  include_directories: [
-    'arnaud/include',
-    '../../../../_build_utils/src',
-  ],
+  include_directories: ['arnaud/include'],
   dependencies: [m_dep, lapack_dep, np_dep, py3_dep],
   c_args: ['-DARNAUD_HAS_BLAS_CONFIG'],
 )

@@ -2054,6 +2054,7 @@ class _TestCommon:
             assert_equal(result.shape, (4,2))
             assert_equal(result, dot(a,b))
 
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_sparse_format_conversions(self):
         A = sparse.kron([[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]])
         D = A.toarray()
@@ -2273,7 +2274,7 @@ class _TestCommon:
         assert_raises(ValueError, dsp.dot, e)
         assert_raises(ValueError, asp.dot, d)
 
-        # elemente-wise multiplication
+        # element-wise multiplication
         assert_array_equal(asp.multiply(asp).toarray(), np.multiply(a, a))
         assert_array_equal(bsp.multiply(bsp).toarray(), np.multiply(b, b))
         assert_array_equal(dsp.multiply(dsp).toarray(), np.multiply(d, d))

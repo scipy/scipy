@@ -1,5 +1,4 @@
 import math
-import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
@@ -155,6 +154,7 @@ def circulant(c):
     return A.reshape(batch_shape + (N, N)).copy()
 
 
+@_apply_over_batch(("c", 1), ("r", 1))
 def hankel(c, r=None):
     r"""
     Construct a Hankel matrix.
@@ -174,12 +174,6 @@ def hankel(c, r=None):
         Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
         r[0] is ignored; the last row of the returned matrix is
         ``[c[-1], r[1:]]``.
-
-        .. warning::
-
-            Beginning in SciPy 1.19, multidimensional input will be treated as a batch,
-            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
-            before passing them to `toeplitz`.
 
     Returns
     -------
@@ -210,13 +204,6 @@ def hankel(c, r=None):
         r = np.zeros_like(c)
     else:
         r = np.asarray(r)
-
-    if c.ndim > 1 or r.ndim > 1:
-        msg = ("Beginning in SciPy 1.19, multidimensional input will be treated as a "
-               "batch, not `ravel`ed. To preserve the existing behavior and silence "
-               "this warning, `ravel` arguments before passing them to `hankel`.")
-        warnings.warn(msg, FutureWarning, stacklevel=2)
-        c, r = c.ravel(), r.ravel()
 
     # Form a 1-D array of values to be used in the matrix, containing `c`
     # followed by r[1:].
@@ -1024,7 +1011,7 @@ def fiedler(a):
     a = xpx.atleast_nd(xp.asarray(a), ndim=1)
 
     if xp_size(a) == 0:
-        return xp.asarray([], dtype=xp.float64)
+        return xp.empty((0, 0), dtype=xp.float64)
     elif xp_size(a) == 1:
         return xp.asarray([[0.]])
     else:
@@ -1099,6 +1086,8 @@ def fiedler_companion(a):
     if a.size <= 2:
         if a.size == 2:
             return np.array([[-(a/a[0])[-1]]])
+        if a.size == 1:
+            return np.empty((0, 0), dtype=a.dtype)
         return np.array([], dtype=a.dtype)
 
     if a[0] == 0.:

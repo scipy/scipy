@@ -412,9 +412,9 @@ MODEM1:
  * integers which is making things quite unreadable. Here we explicitly pass a
  * flag.
  *
- * Inconsistent linearization augments all arrays to accomodate for the dummy
+ * Inconsistent linearization augments all arrays to accommodate for the dummy
  * variable. The function is still called with the original sizes but the flag
- * allows for enlarging the problem and hence the supplied buffer should accomodate
+ * allows for enlarging the problem and hence the supplied buffer should accommodate
  * for this extra space.
  *
  * The required buffer size is given by:
@@ -854,7 +854,7 @@ lsi(CBLAS_INT ma, CBLAS_INT mg, CBLAS_INT n, double* restrict a, double* restric
  * buffer is at least (m+2)*(n+1) + 2*m
  * indices is int(n)
  * x is (n)
- * xnorm is the norm of the solution if succeded
+ * xnorm is the norm of the solution if succeeded
  * mode is the return code integer
  *
  * Mode return values

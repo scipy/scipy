@@ -88,8 +88,7 @@ def _unpack(res, _):
     return res.statistic, res.pvalue
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no take_along_axis'),
-                                ('cupy', 'no rankdata (xp.repeats limitation)')])
+@xp_capabilities(skip_backends=[('dask.array', 'no take_along_axis')])
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
 def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
@@ -388,8 +387,7 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
 
 
 @xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
-                                ("jax.numpy", "non-concrete boolean indexing"),
-                                ('cupy', 'no rankdata (xp.repeats limitation)')],
+                                ("jax.numpy", "non-concrete boolean indexing")],
                  marray=True)
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,

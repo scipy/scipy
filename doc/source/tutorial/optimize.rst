@@ -649,9 +649,9 @@ is defined using a :func:`NonlinearConstraint` object.
 Alternatively, it is also possible to define the Hessian :math:`H(x, v)`
 as a sparse matrix,
 
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> def cons_H_sparse(x, v):
-    ...     return v[0]*csc_matrix([[2, 0], [0, 0]]) + v[1]*csc_matrix([[2, 0], [0, 0]])
+    ...     return v[0]*csc_array([[2, 0], [0, 0]]) + v[1]*csc_array([[2, 0], [0, 0]])
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1,
     ...                                            jac=cons_J, hess=cons_H_sparse)
 

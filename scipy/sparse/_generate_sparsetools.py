@@ -93,7 +93,7 @@ csr_column_index1   v iIiiII*I*I
 csr_column_index2   v IIiIT*I*T
 csr_sample_values   v iiIITiII*T
 csr_count_blocks    i iiiiII
-csr_sample_offsets  i iiIIiII*I
+csr_sample_offsets  i iiIIlII*I
 csr_hstack          v iiIIIT*I*I*T
 expandptr           v iI*I
 test_throw_error    i

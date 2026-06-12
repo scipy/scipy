@@ -86,7 +86,7 @@ class NdBSpline:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, t, c, k, *, extrapolate=None):
         self._k, self._indices_k1d, (self._t, self._len_t) = _preprocess_inputs(k, t)
@@ -502,7 +502,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
 
     # Solve for the coefficients given `values`.
     # Trailing dimensions: first ndim dimensions are data, the rest are batch
-    # dimensions, so stack `values` into a 2D array for `spsolve` to undestand.
+    # dimensions, so stack `values` into a 2D array for `spsolve` to understand.
     v_shape = values.shape
     vals_shape = (prod(v_shape[:ndim]), prod(v_shape[ndim:]))
     vals = values.reshape(vals_shape)

@@ -480,6 +480,15 @@ def _invert_index(idx):
 def isspmatrix_dia(x):
     """Is `x` of dia_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -553,6 +562,28 @@ class dia_array(_dia_base, sparray):
     addition, subtraction, multiplication, division, and matrix power.
     Sparse arrays with DIAgonal storage do not support slicing.
 
+    **Format details**
+
+    The ``data`` array stores the diagonal elements. The alignment of these
+    elements within the rows of ``data`` depends on their position relative
+    to the main diagonal:
+
+    * **Main diagonal** (``offsets[i] == 0``): Elements start at column 0.
+    * **Super-diagonals** (``offsets[i] > 0``): Elements are right-aligned
+      (padded with zeros on the left).
+    * **Sub-diagonals** (``offsets[i] < 0``): Elements are left-aligned
+      (padded with zeros on the right).
+
+    Each column of ``data`` corresponds to a diagonal in the resulting matrix.
+
+    Mathematically, the element at row ``r`` and column ``c`` of the matrix is
+    stored in the ``data`` array at row ``i`` and column
+    ``c - max(0, -offsets[i])``, where ``i`` is the index of the diagonal
+    in ``offsets``.
+
+    Note that if ``offsets`` is provided in decreasing order, this format
+    matches the BLAS/LAPACK general band format (e.g., as used in ``dgbmv``).
+
     Examples
     --------
 
@@ -590,6 +621,15 @@ class dia_array(_dia_base, sparray):
 class dia_matrix(spmatrix, _dia_base):
     """
     Sparse matrix with DIAgonal storage.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         dia_matrix(D)
@@ -631,10 +671,31 @@ class dia_matrix(spmatrix, _dia_base):
 
     Notes
     -----
-
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
-    Sparse matrices with DIAgonal storage do not support slicing.
+    Sparse arrays with DIAgonal storage do not support slicing.
+
+    **Format details**
+
+    The ``data`` array stores the diagonal elements. The alignment of these
+    elements within the rows of ``data`` depends on their position relative
+    to the main diagonal:
+
+    * **Main diagonal** (``offsets[i] == 0``): Elements start at column 0.
+    * **Super-diagonals** (``offsets[i] > 0``): Elements are right-aligned
+      (padded with zeros on the left).
+    * **Sub-diagonals** (``offsets[i] < 0``): Elements are left-aligned
+      (padded with zeros on the right).
+
+    Each column of ``data`` corresponds to a diagonal in the resulting matrix.
+
+    Mathematically, the element at row ``r`` and column ``c`` of the matrix is
+    stored in the ``data`` array at row ``i`` and column
+    ``c - max(0, -offsets[i])``, where ``i`` is the index of the diagonal
+    in ``offsets``.
+
+    Note that if ``offsets`` is provided in decreasing order, this format
+    matches the BLAS/LAPACK general band format (e.g., as used in ``dgbmv``).
 
     Examples
     --------

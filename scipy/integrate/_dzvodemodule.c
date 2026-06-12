@@ -352,27 +352,9 @@ dvode_jacobian_thunk(int neq, double t, double* y, int ml, int mu,
         return;
     }
 
-    // Copy result to output array with proper layout handling
-
-    if ((current_dvode_callback->jac_type == 0) && PyArray_IS_C_CONTIGUOUS(result_array)) {
-        // Full Jacobian in C-contiguous format - can use memcpy
-        double *src_data = (double*)PyArray_DATA(result_array);
-        memcpy(pd, src_data, neq * nrowpd * sizeof(double));
-    } else {
-        // Use stride-aware copy for any other layout (F-contiguous, banded, etc.)
-        npy_intp m;
-
-        if (current_dvode_callback->jac_type == 3) {
-            // Banded Jacobian: user provides compressed format (ml + mu + 1 rows)
-            // DVODE expects it in work array with leading dimension nrowpd
-            m = ml + mu + 1;
-        } else {
-            // Full Jacobian
-            m = neq;
-        }
-
-        copy_array_to_fortran(pd, nrowpd, m, neq, result_array);
-    }
+    // Copy C-contiguous result into Fortran-ordered pd (DVODE expects column-major).
+    npy_intp m = (current_dvode_callback->jac_type == 3) ? (ml + mu + 1) : neq;
+    copy_array_to_fortran(pd, nrowpd, m, neq, result_array);
 
     Py_DECREF(result_array);
     Py_DECREF(result);

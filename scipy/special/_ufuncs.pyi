@@ -43,6 +43,7 @@ __all__ = [
     'cosm1',
     'cotdg',
     'dawsn',
+    'digammainv',
     'ellipe',
     'ellipeinc',
     'ellipj',
@@ -148,6 +149,8 @@ __all__ = [
     'kve',
     'log1p',
     'log_expit',
+    'log_gammainc',
+    'log_gammaincc',
     'log_ndtr',
     'log_wright_bessel',
     'loggamma',
@@ -254,9 +257,9 @@ class errstate:
 
 _cosine_cdf: np.ufunc
 _cosine_invcdf: np.ufunc
+_bivariate_normal_sf: np.ufunc
 _cospi: np.ufunc
 _ellip_harm: np.ufunc
-_factorial: np.ufunc
 _gen_harmonic: np.ufunc
 _igam_fac: np.ufunc
 _kolmogc: np.ufunc
@@ -283,6 +286,7 @@ _spherical_kn: np.ufunc
 _spherical_kn_d: np.ufunc
 _spherical_yn: np.ufunc
 _spherical_yn_d: np.ufunc
+_von_mises_cdf: np.ufunc
 _stirling2_inexact: np.ufunc
 _struve_asymp_large_z: np.ufunc
 _struve_bessel_series: np.ufunc
@@ -325,6 +329,7 @@ cosdg: np.ufunc
 cosm1: np.ufunc
 cotdg: np.ufunc
 dawsn: np.ufunc
+digammainv: np.ufunc
 ellipe: np.ufunc
 ellipeinc: np.ufunc
 ellipj: np.ufunc
@@ -430,6 +435,8 @@ kv: np.ufunc
 kve: np.ufunc
 log1p: np.ufunc
 log_expit: np.ufunc
+log_gammainc: np.ufunc
+log_gammaincc: np.ufunc
 log_ndtr: np.ufunc
 log_wright_bessel: np.ufunc
 loggamma: np.ufunc
@@ -519,4 +526,3 @@ yn: np.ufunc
 yv: np.ufunc
 yve: np.ufunc
 zetac: np.ufunc
-

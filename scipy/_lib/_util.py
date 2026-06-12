@@ -11,7 +11,7 @@ import os
 import sys
 import textwrap
 from types import ModuleType
-from typing import Literal, TypeVar
+from typing import Literal
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
@@ -22,24 +22,8 @@ from scipy._lib._sparse import issparse
 from numpy.exceptions import AxisError
 
 
-np_long: type
-np_ulong: type
-
-try:
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            r".*In the future `np\.long` will be defined as.*",
-            FutureWarning,
-        )
-        np_long = np.long  # type: ignore[attr-defined]
-        np_ulong = np.ulong  # type: ignore[attr-defined]
-except AttributeError:
-        np_long = np.int_
-        np_ulong = np.uint
-
-IntNumber = int | np.integer
-DecimalNumber = float | np.floating | np.integer
+type IntNumber = int | np.integer
+type DecimalNumber = float | np.floating | np.integer
 
 copy_if_needed: bool | None = None
 
@@ -47,7 +31,7 @@ copy_if_needed: bool | None = None
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
 # See gh-23913
 #
-# PEP 649/749 allows for underfined annotations at runtime, and added the
+# PEP 649/749 allows for undefined annotations at runtime, and added the
 # `annotation_format` parameter to handle these cases.
 # `annotationlib.Format.FORWARDREF` is the closest to previous behavior,
 # returning ForwardRef objects fornew undefined annotations cases.
@@ -63,10 +47,8 @@ else:
     wrapped_inspect_signature = inspect.signature
 
 
-_RNG: type = np.random.Generator | np.random.RandomState
-SeedType: type = IntNumber | _RNG | None
-
-GeneratorType = TypeVar("GeneratorType", bound=_RNG)
+type _RNG = np.random.Generator | np.random.RandomState
+type SeedType = IntNumber | _RNG | None
 
 
 def _lazyselect(condlist, choicelist, arrays, default=0):
@@ -1051,6 +1033,28 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     return s
 
 
+
+def _deprecate_dtypes(func_name, *arrays):
+    """
+    A temporary helper for deprecating non-LAPACK dtypes.
+    """
+    # XXX Once the deprecation expires, merge
+    # linalg/lapack.py::_normalize_lapack_dtype and _normalize_lapack_dtype1, and
+    # simplify _ensure_dtype_cdsz
+    for a in arrays:
+        if a is None:
+            continue
+        if a.dtype.char not in np.typecodes['AllInteger'] + 'fdFD':
+            msg = (f"Calling {func_name} with arguments of dtype={a.dtype} "
+                   f"({a.dtype.char = }) is deprecated in SciPy 1.18.0 and "
+                    "will be removed in SciPy 1.20.0. Please cast array inputs to "
+                    "one of np.float{32,64} or np.complex{64,128} manually."
+            )
+            import warnings
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+            return
+
+
 _batch_note = """
 The documentation is written assuming array arguments are of specified
 "core" shapes. However, array argument(s) of this function may have additional
@@ -1120,6 +1124,10 @@ def _apply_over_batch(*argdefs):
                 arrays[i] = array
                 batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
                 core_shapes.append(shape[-ndim:] if ndim > 0 else ())
+
+            # complain on dtypes
+            if is_numpy(xp):
+                _deprecate_dtypes(f.__name__, *arrays)
 
             # Early exit if call is not batched
             if not any(batch_shapes):

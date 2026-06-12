@@ -331,7 +331,7 @@ class ode:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     def __init__(self, f, jac=None):
         self.stiff = 0
@@ -775,7 +775,7 @@ class IntegratorBase:
     scalar = float
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     def acquire_new_handle(self):
         # Some of the integrators have internal state (ancient
@@ -802,12 +802,12 @@ class IntegratorBase:
         raise NotImplementedError('all integrators must define '
                                   'run(f, jac, t0, t1, y0, f_params, jac_params)')
 
-    def step(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def step(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Make one integration step and return (y1,t1)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support step() method')
 
-    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support run_relax() method')
@@ -1031,7 +1031,7 @@ class zvode(vode):
     supports_step = 1
     scalar = complex
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1122,7 +1122,7 @@ class dopri5(IntegratorBase):
                 -4: 'problem is probably stiff (interrupted)',
                 }
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self,
                  rtol=1e-6, atol=1e-12,
@@ -1250,7 +1250,7 @@ class lsoda(IntegratorBase):
         -7: "Internal workspace insufficient to finish (internal error)."
     }
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self,
                  with_jacobian=False,

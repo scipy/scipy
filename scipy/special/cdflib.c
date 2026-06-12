@@ -161,9 +161,7 @@ static struct TupleDD cumnor(double);
 static struct TupleDD cumt(double, double);
 static struct TupleDD cumtnc(double, double, double);
 static double devlpl(double *, int, double);
-static double dinvnr(double, double);
 static void dinvr(struct DinvrState *, struct DzrorState *);
-static double dt1(double, double, double);
 static void dzror(struct DzrorState *);
 static double cdflib_erf(double);
 static double erfc1(int, double);
@@ -183,7 +181,6 @@ static double rcomp(double, double);
 static double rexp(double);
 static double rlog(double);
 static double rlog1(double);
-static double stvaln(double);
 
 
 double algdiv(double a, double b)
@@ -1634,174 +1631,6 @@ struct TupleDID cdffnc_which4(double p, double q, double f, double dfn, double p
 }
 
 
-struct TupleDID cdffnc_which5(double p, double q, double f, double dfn, double dfd)
-{
-    double tol = 1e-10;
-    double atol = 1e-50;
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-
-    DS.small = 0.;
-    DS.big = 1e4;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = 5.;
-    struct TupleDDI fncret;
-    struct TupleDID ret = {0};
-
-    if (!((0 <= p) && (p <= (1. - 1e-16)))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : (1. - 1e-16));
-        return ret;
-    }
-    if (!(0 <= f)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -3};
-    }
-    if (!(0 < dfn)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -4};
-    }
-    if (!(0 < dfd)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -4};
-    }
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        fncret = cumfnc(f, dfn, dfd, DS.x);
-        DS.fx = fncret.d1 - p;
-        if (fncret.i1 != 0) {
-            return (struct TupleDID){.d1 = DS.x, .d2 = 0.0, .i1 = 10};
-        }
-        dinvr(&DS, &DZ);
-    }
-
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? 0 : 1e4);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
-    //               Cumulative Distribution Function
-    //               NORmal distribution
-    //
-    //
-    //                              Function
-    //
-    //
-    //     Calculates any one parameter of the normal
-    //     distribution given values for the others.
-    //
-    //
-    //                              Arguments
-    //
-    //
-    //     WHICH  --> Integer indicating  which of the  next  parameter
-    //     values is to be calculated using values  of the others.
-    //     Legal range: 1..4
-    //               iwhich = 1 : Calculate P and Q from X,MEAN and SD
-    //               iwhich = 2 : Calculate X from P,Q,MEAN and SD
-    //               iwhich = 3 : Calculate MEAN from P,Q,X and SD
-    //               iwhich = 4 : Calculate SD from P,Q,X and MEAN
-    //                    INTEGER WHICH
-    //
-    //     P <--> The integral from -infinity to X of the normal density.
-    //            Input range: (0,1].
-    //                    DOUBLE PRECISION P
-    //
-    //     Q <--> 1-P.
-    //            Input range: (0, 1].
-    //            P + Q = 1.0.
-    //                    DOUBLE PRECISION Q
-    //
-    //     X < --> Upper limit of integration of the normal-density.
-    //             Input range: ( -infinity, +infinity)
-    //                    DOUBLE PRECISION X
-    //
-    //     MEAN <--> The mean of the normal density.
-    //               Input range: (-infinity, +infinity)
-    //                    DOUBLE PRECISION MEAN
-    //
-    //     SD <--> Standard Deviation of the normal density.
-    //             Input range: (0, +infinity).
-    //                    DOUBLE PRECISION SD
-    //
-    //     STATUS <-- 0 if calculation completed correctly
-    //               -I if input parameter number I is out of range
-    //                1 if answer appears to be lower than lowest
-    //                  search bound
-    //                2 if answer appears to be higher than greatest
-    //                  search bound
-    //                3 if P + Q .ne. 1
-    //                    INTEGER STATUS
-    //
-    //     BOUND <-- Undefined if STATUS is 0
-    //
-    //               Bound exceeded by parameter number I if STATUS
-    //               is negative.
-    //
-    //               Lower search bound if STATUS is 1.
-    //
-    //               Upper search bound if STATUS is 2.
-    //
-    //
-    //                              Method
-    //
-    //
-    //
-    //
-    //     A slightly modified version of ANORM from
-    //
-    //     Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portabel FORTRAN
-    //     Package of Special Function Routines and Test Drivers"
-    //     acm Transactions on Mathematical Software. 19, 22-32.
-    //
-    //     is used to calculate the cumulative standard normal distribution.
-    //
-    //     The rational functions from pages  90-95  of Kennedy and Gentle,
-    //     Statistical  Computing,  Marcel  Dekker, NY,  1980 are  used  as
-    //     starting values to Newton's Iterations which compute the inverse
-    //     standard normal.  Therefore no  searches  are necessary for  any
-    //     parameter.
-    //
-    //     For X < -15, the asymptotic expansion for the normal is used  as
-    //     the starting value in finding the inverse standard normal.
-    //     This is formula 26.2.12 of Abramowitz and Stegun.
-    //
-    //
-    //                              Note
-    //
-    //
-    //      The normal density is proportional to
-    //      exp( - 0.5 * (( X - MEAN)/SD)**2)
-    //
-    //
-    //**********************************************************************
-
-
-struct TupleDID cdfnor_which3(double p, double q, double x, double sd)
-{
-    if (!(sd > 0.0)) {
-        return (struct TupleDID){.d1 = 0.0, .i1 = -4, .d2 = 0.0};
-    }
-    double z = dinvnr(p, q);
-    return (struct TupleDID){.d1 = x - sd*z, .i1 = 0, .d2 = 0.0};
-}
-
-
-struct TupleDID cdfnor_which4(double p, double q, double x, double mean)
-{
-    double z = dinvnr(p, q);
-    return (struct TupleDID){.d1 = (x - mean)/z, .i1 = 0, .d2 = 0.0};
-}
-
-
     //               Cumulative Distribution Function
     //                         T distribution
     //
@@ -1968,7 +1797,7 @@ struct TupleDID cdft_which3(double p, double q, double t)
     //                Search range: [1e-100, 1E10]
     //                    DOUBLE PRECISION DF
     //
-    //     PNONC <--> Noncentrality parameter of the noncentral t-distributio
+    //     PNONC <--> Noncentrality parameter of the noncentral t-distribution
     //                Input range: [-1e6, 1E6].
     //
     //     STATUS <-- 0 if calculation completed correctly
@@ -1991,8 +1820,8 @@ struct TupleDID cdft_which3(double p, double q, double t)
     //
     //                                Method
     //
-    //     Upper tail    of  the  cumulative  noncentral t is calculated usin
-    //     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Coninuou
+    //     Upper tail  of  the  cumulative  noncentral t is calculated using
+    //     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Continuous
     //     Univariate Distributions, Vol 2, 2nd Edition.  Wiley (1995)
     //
     //     Computation of other parameters involve a search for a value that
@@ -2061,65 +1890,6 @@ struct TupleDID cdftnc_which3(double p, double q, double t, double pnonc)
 }
 
 
-struct TupleDID cdftnc_which4(double p, double q, double t, double df)
-{
-
-    double tol = 1e-8;
-    double atol = 1e-50;
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-    struct TupleDD tncret;
-    struct TupleDID ret = {0};
-
-    DS.small = -1.e6;
-    DS.big = 1.e6;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = 5.;
-
-    if (!((0 <= p) && (p <= (1. - 1e-16)))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : (1. - 1e-16));
-        return ret;
-    }
-    if (!(t == t)) {
-        ret.i1 = -3;
-        return ret;
-    }
-    if (!(df > 0.)) {
-        ret.i1 = -4;
-        return ret;
-    }
-    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
-        ret.i1 = 3;
-        ret.d2 = (p+q < 0 ? 0.0 : 1.0);
-        return ret;
-    }
-
-    t = fmax(fmin(t, spmpar[2]), -spmpar[2]);
-    df = fmin(df, 1.e10);
-
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        tncret = cumtnc(t, df, DS.x);
-        DS.fx = tncret.d1 - p;
-        dinvr(&DS, &DZ);
-    }
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? 0 : 1e6);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
 struct TupleDD cumbet(double x, double y, double a, double b)
 {
     //              Double precision cUMulative incomplete BETa distribution
@@ -2162,7 +1932,7 @@ struct TupleDD cumbet(double x, double y, double a, double b)
     //
     //                                       References
     //
-    //         Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithim
+    //         Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithm
     //         708 Significant Digit Computation of the Incomplete Beta Function
     //         Ratios. ACM ToMS, Vol.18, No. 3, Sept. 1992, 360-373.
 
@@ -2474,7 +2244,7 @@ struct TupleDDI cumfnc(double f, double dfn, double dfd, double pnonc)
     //
     //    CUM <-- CUMULATIVE NONCENTRAL F DISTRIBUTION
     //
-    //    CCUM <-- COMPLIMENT OF CUMMULATIVE
+    //    CCUM <-- COMPLIMENT OF CUMULATIVE
     //
     //
     //                            Method
@@ -2628,7 +2398,7 @@ struct TupleDD cumgam(double x, double a)
     //                                    CUM is DOUBLE PRECISION
     //
     //    CCUM <-- Compliment of Cumulative incomplete gamma distribution.
-    //                                            CCUM is DOUBLE PRECISIO
+    //                                            CCUM is DOUBLE PRECISION
     //
     //
     //                            Method
@@ -2656,7 +2426,7 @@ struct TupleDD cumnor(double x)
     //        CCUM <-- Compliment of Cumulative normal distribution.
     //                                            CCUM is DOUBLE PRECISION
     //        Renaming of function ANORM from:
-    //        Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portabel FORTRAN
+    //        Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portable FORTRAN
     //        Package of Special Function Routines and Test Drivers"
     //        acm Transactions on Mathematical Software. 19, 22-32.
     //        with slight modifications to return ccum and to deal with
@@ -2791,13 +2561,13 @@ struct TupleDD cumt(double t, double df)
     //                                                T is DOUBLE PRECISION
     //
     //    DF --> Degrees of freedom of the t-distribution.
-    //                                                DF is DOUBLE PRECISIO
+    //                                                DF is DOUBLE PRECISION
     //
     //    CUM <-- Cumulative t-distribution.
-    //                                                CCUM is DOUBLE PRECIS
+    //                                                CCUM is DOUBLE PRECISION
     //
     //    CCUM <-- Compliment of Cumulative t-distribution.
-    //                                                CCUM is DOUBLE PRECIS
+    //                                                CCUM is DOUBLE PRECISION
     //
     //
     //                            Method
@@ -3022,63 +2792,6 @@ double devlpl(double *a, int n, double x)
 }
 
 
-double dinvnr(double p, double q)
-{
-    //    Double precision NoRmal distribution INVerse
-    //
-    //
-    //                            Function
-    //
-    //
-    //    Returns X  such that CUMNOR(X)  =   P,  i.e., the  integral from -
-    //    infinity to X of (1/SQRT(2*PI)) EXP(-U*U/2) dU is P
-    //
-    //
-    //                            Arguments
-    //
-    //
-    //    P --> The probability whose normal deviate is sought.
-    //                P is DOUBLE PRECISION
-    //
-    //    Q --> 1-P
-    //                P is DOUBLE PRECISION
-    //
-    //
-    //                            Method
-    //
-    //
-    //    The  rational   function   on  page 95    of Kennedy  and  Gentle,
-    //    Statistical Computing, Marcel Dekker, NY , 1980 is used as a start
-    //    value for the Newton method of finding roots.
-    //
-    //
-    //                            Note
-    //
-    //
-    //    If P or Q < machine EPS returns +/- DINVNR(EPS)
-
-    int i, maxit = 100;
-    double eps = 1e-13;
-    double r2pi = sqrt(1. / (2.*PI));
-    double strtx, xcur, cum, pp, dx;
-
-    pp = (p > q ? q : p);
-    strtx = stvaln(pp);
-    xcur = strtx;
-
-    for (i = 0; i < maxit; i++) {
-        struct TupleDD res = cumnor(xcur);
-        cum = res.d1;
-        dx = (cum - pp) / (r2pi * exp(-0.5*xcur*xcur));
-        xcur -= dx;
-        if (fabs(dx / xcur) < eps) {
-            return (p > q ? -xcur : xcur);
-        }
-    }
-    return (p > q ? -strtx : strtx);
-}
-
-
 void dinvr(DinvrState *S, DzrorState *DZ)
 {
     //        Double precision
@@ -3300,56 +3013,6 @@ void dinvr(DinvrState *S, DzrorState *DZ)
 }
 
 
-double dt1(double p, double q, double df)
-{
-    //    Double precision Initialize Approximation to
-    //        INVerse of the cumulative T distribution
-    //
-    //
-    //                            Function
-    //
-    //
-    //    Returns  the  inverse   of  the T   distribution   function, i.e.,
-    //    the integral from 0 to INVT of the T density is P. This is an
-    //    initial approximation
-    //
-    //
-    //                            Arguments
-    //
-    //
-    //    P --> The p-value whose inverse from the T distribution is
-    //        desired.
-    //                P is DOUBLE PRECISION
-    //
-    //    Q --> 1-P.
-    //                Q is DOUBLE PRECISION
-    //
-    //    DF --> Degrees of freedom of the T distribution.
-    //                DF is DOUBLE PRECISION
-
-    double ssum, term, x, xx;
-    double denpow = 1.0;
-    double coef[4][5] = {{1., 1., 0., 0., 0.},
-                              {3., 16., 5., 0., 0.},
-                              {-15., 17., 19., 3., 0.},
-                              {-945., -1920., 1482., 776., 79.}
-                             };
-    double denom[4] = {4., 96., 384.0, 92160.0};
-    int i, ideg[4] = {2, 3, 4, 5};
-
-    x = fabs(dinvnr(p, q));
-    xx = x*x;
-    ssum = x;
-    for (i = 0; i < 4; i++){
-        term = (devlpl(coef[i], ideg[i], xx))*x ;
-        denpow *= df;
-        ssum += term / (denpow*denom[i]);
-    }
-
-    return (p >= 0.5 ? ssum : -ssum);
-}
-
-
 void dzror(DzrorState *S)
 {
     //    Double precision ZeRo of a function -- Reverse Communication
@@ -3375,7 +3038,7 @@ void dzror(DzrorState *S)
     //                changing any of its other parameters.
     //
     //                When ZROR has finished without error, it will return
-    //                with STATUS 0.  In that case (XLO,XHI) bound the answe
+    //                with STATUS 0.  In that case (XLO,XHI) bound the answer.
     //
     //                If ZROR finds an error (which implies that F(XLO)-Y an
     //                F(XHI)-Y have the same sign, it returns STATUS -1.  In
@@ -3390,11 +3053,11 @@ void dzror(DzrorState *S)
     //                        DOUBLE PRECISION FX
     //
     //    XLO <-- When ZROR returns with STATUS = 0, XLO bounds the
-    //            inverval in X containing the solution below.
+    //            interval in X containing the solution below.
     //                        DOUBLE PRECISION XLO
     //
     //    XHI <-- When ZROR returns with STATUS = 0, XHI bounds the
-    //            inverval in X containing the solution above.
+    //            interval in X containing the solution above.
     //                        DOUBLE PRECISION XHI
     //
     //    QLEFT <-- .TRUE. if the stepping search terminated unsuccessfully
@@ -5260,36 +4923,4 @@ double rlog1(double x)
        return x - log((x + 0.5) + 0.5);
 
     }
-}
-
-
-double stvaln(double p)
-{
-    //                STarting VALue for Newton-Raphon
-    //            calculation of Normal distribution Inverse
-    //
-    //                          Function
-    //
-    // Returns X such that CUMNOR(X) = P,  i.e., the  integral from -
-    // infinity to X of (1/SQRT(2*PI)) EXP(-U*U/2) dU is P
-    //
-    //                          Arguments
-    //
-    // P --> The probability whose normal deviate is sought.
-    //                P is DOUBLE PRECISION
-    //
-    //                          Method
-    //
-    // The  rational   function   on  page 95    of Kennedy  and  Gentle,
-    // Statistical Computing, Marcel Dekker, NY , 1980.
-
-    double y, z;
-    double xnum[5] = {-0.322232431088, -1.000000000000, -0.342242088547,
-                      -0.204231210245e-1, -0.453642210148e-4};
-    double xden[5]  = {0.993484626060e-1, 0.588581570495, 0.531103462366,
-                       0.103537752850, 0.38560700634e-2};
-    z = (p > 0.5 ? 1.0 - p : p);
-    y = sqrt(-2.0 * log(z));
-    z = y + (devlpl(xnum, 5, y) / devlpl(xden, 5, y));
-    return (p > 0.5 ? z : -z);
 }

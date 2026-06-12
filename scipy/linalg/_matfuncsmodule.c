@@ -75,7 +75,7 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
     }
 
     // Create the output array with the same shape as the input with twice the
-    // number of entries to accomodate for potential complex-valued data from
+    // number of entries to accommodate for potential complex-valued data from
     // real data which will be cast to complex e.g., "ret.asview(complex128)"
     // Example, (3, 3) -> (18), (4, 5, 5) -> (4, 50)
     npy_intp ret_dims = 1;

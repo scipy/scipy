@@ -13,27 +13,13 @@
 #ifndef SCIPY_SPECIAL_COMPLEXSTUFF_H
 #define SCIPY_SPECIAL_COMPLEXSTUFF_H
 
-#include <complex.h>
 #include <numpy/npy_common.h>
+#include "scipy_complex_support.h"
 
 #if defined(_MSC_VER)
     typedef _Dcomplex _scipy_dz;
-    #ifndef CMPLX
-        #define CMPLX(x, y) _Cbuild(x, y)
-    #endif
 #else
     typedef double complex _scipy_dz;
-    #ifndef CMPLX
-        #if defined(__has_builtin)
-            #if __has_builtin(__builtin_complex)
-                #define CMPLX(x, y) __builtin_complex((double)(x), (double)(y))
-            #endif
-        #endif
-        #ifndef CMPLX
-            /* Last resort: type-pun via union to avoid real + imag*I pitfalls */
-            #define CMPLX(x, y) ((union { double a[2]; double complex z; }){{(x), (y)}}).z
-        #endif
-    #endif
 #endif
 
 #define _SCIPY_TO_DZ(z) CMPLX(((double *)&(z))[0], ((double *)&(z))[1])

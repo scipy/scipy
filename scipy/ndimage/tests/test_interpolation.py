@@ -31,6 +31,7 @@ ndimage_to_numpy_mode = {
     'grid-constant': 'constant',
 }
 
+# mypy: disable-error-code=attr-defined
 
 class TestBoundaries:
 

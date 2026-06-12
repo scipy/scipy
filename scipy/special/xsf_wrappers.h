@@ -95,16 +95,30 @@ void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double sin_pi(double x);
 
+double special_agm(double a, double b);
 double xsf_binom(double n, double k);
 
 double special_digamma(double z);
 npy_cdouble special_cdigamma(npy_cdouble z);
+float special_digammainvf(float y);
+double special_digammainv(double y);
 
 float special_expitf(float x);
 double special_expit(double x);
 npy_longdouble special_expitl(npy_longdouble x);
 
 npy_double special_exprel(npy_double x);
+
+double special_entr(double x);
+double special_kl_div(double x, double y);
+double special_rel_entr(double x, double y);
+double special_huber(double delta, double r);
+double special_pseudo_huber(double delta, double r);
+
+double special_boxcox(double x, double lmbda);
+double special_boxcox1p(double x, double lmbda);
+double special_inv_boxcox(double x, double lmbda);
+double special_inv_boxcox1p(double x, double lmbda);
 
 float special_log_expitf(float x);
 double special_log_expit(double x);
@@ -336,9 +350,9 @@ double xsf_chdtrc(double df, double x);
 double xsf_chdtri(double df, double y);
 double xsf_gdtr(double a, double b, double x);
 double xsf_gdtrc(double a, double b, double x);
-double special_gdtria(double p, double b, double x);
-double special_gdtrix(double a, double b, double p);
+double xsf_gdtria(double p, double b, double x);
 double xsf_gdtrib(double a, double p, double x);
+double xsf_gdtrix(double a, double b, double p);
 double xsf_kolmogorov(double x);
 double xsf_kolmogc(double x);
 double xsf_kolmogi(double x);
@@ -352,6 +366,8 @@ npy_cdouble xsf_cndtr(npy_cdouble x);
 double xsf_log_ndtr(double x);
 npy_cdouble xsf_clog_ndtr(npy_cdouble x);
 double xsf_ndtri(double x);
+double xsf_nrdtrimn(double p, double std, double x);
+double xsf_nrdtrisd(double mean, double p, double x);
 double xsf_owens_t(double h, double a);
 double xsf_pdtr(double k, double m);
 double xsf_pdtrc(double k, double m);
