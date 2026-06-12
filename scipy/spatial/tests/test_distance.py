@@ -1538,31 +1538,31 @@ class TestSquareForm:
     def check_squareform_matrix(self, dtype):
         A = np.zeros((0, 0), dtype=dtype)
         rA = squareform(A)
-        xp_assert_equal(rA.shape, (0,))
-        xp_assert_equal(rA.dtype, dtype)
+        assert rA.shape == (0,)
+        assert rA.dtype == dtype
 
         A = np.zeros((1, 1), dtype=dtype)
         rA = squareform(A)
-        xp_assert_equal(rA.shape, (0,))
-        xp_assert_equal(rA.dtype, dtype)
+        assert rA.shape == (0,)
+        assert rA.dtype == dtype
 
         A = np.array([[0, 4.2], [4.2, 0]], dtype=dtype)
         rA = squareform(A)
-        xp_assert_equal(rA.shape, (1,))
-        xp_assert_equal(rA.dtype, dtype)
+        assert rA.shape == (1,)
+        assert rA.dtype == dtype
         xp_assert_equal(rA, np.array([4.2], dtype=dtype))
 
     def check_squareform_vector(self, dtype):
         v = np.zeros((0,), dtype=dtype)
         rv = squareform(v)
-        xp_assert_equal(rv.shape, (1, 1))
-        xp_assert_equal(rv.dtype, dtype)
+        assert rv.shape == (1, 1)
+        assert rv.dtype == dtype
         xp_assert_equal(rv, np.asarray([[0]], dtype=dtype))
 
         v = np.array([8.3], dtype=dtype)
         rv = squareform(v)
-        xp_assert_equal(rv.shape, (2, 2))
-        xp_assert_equal(rv.dtype, dtype)
+        assert rv.shape == (2, 2)
+        assert rv.dtype == dtype
         xp_assert_equal(rv, np.array([[0, 8.3], [8.3, 0]], dtype=dtype))
 
     def test_squareform_multi_matrix(self):
@@ -1572,21 +1572,21 @@ class TestSquareForm:
     def check_squareform_multi_matrix(self, n):
         X = np.random.rand(n, 4)
         Y = wpdist_no_const(X)
-        xp_assert_equal(len(Y.shape), 1)
+        assert len(Y.shape) == 1
         A = squareform(Y)
         Yr = squareform(A)
         s = A.shape
         k = 0
-        xp_assert_equal(len(s), 2)
-        xp_assert_equal(len(Yr.shape), 1)
-        xp_assert_equal(s[0], s[1])
+        assert len(s) == 2
+        assert len(Yr.shape) == 1
+        assert s[0] == s[1]
         for i in range(0, s[0]):
             for j in range(i + 1, s[1]):
                 if i != j:
-                    xp_assert_equal(A[i, j], Y[k])
+                    assert A[i, j] == Y[k]
                     k += 1
                 else:
-                    xp_assert_equal(A[i, j], 0)
+                    assert A[i, j] == 0
 
 
 class TestNumObsY:
@@ -1595,7 +1595,7 @@ class TestNumObsY:
         for n in range(2, 10):
             X = np.random.rand(n, 4)
             Y = wpdist_no_const(X)
-            xp_assert_equal(num_obs_y(Y), n)
+            assert num_obs_y(Y) == n
 
     def test_num_obs_y_1(self):
         # Tests num_obs_y(y) on a condensed distance matrix over 1
@@ -1650,7 +1650,7 @@ class TestNumObsDM:
             X = np.random.rand(n, 4)
             Y = wpdist_no_const(X)
             A = squareform(Y)
-            xp_assert_equal(num_obs_dm(A), n)
+            assert num_obs_dm(A) == n
 
     def test_num_obs_dm_0(self):
         # Tests num_obs_dm(D) on a 0x0 distance matrix. Expecting exception.
@@ -1689,7 +1689,7 @@ class TestIsValidDM:
 
     def test_is_valid_dm_improper_shape_1D_F(self):
         D = np.zeros((5,), dtype=np.float64)
-        xp_assert_equal(is_valid_dm(D), False)
+        assert not is_valid_dm(D)
 
     def test_is_valid_dm_improper_shape_3D_E(self):
         D = np.zeros((3, 3, 3), dtype=np.float64)
@@ -1698,7 +1698,7 @@ class TestIsValidDM:
 
     def test_is_valid_dm_improper_shape_3D_F(self):
         D = np.zeros((3, 3, 3), dtype=np.float64)
-        xp_assert_equal(is_valid_dm(D), False)
+        assert not is_valid_dm(D)
 
     def test_is_valid_dm_nonzero_diagonal_E(self):
         y = np.random.rand(10)
@@ -1713,7 +1713,7 @@ class TestIsValidDM:
         D = squareform(y)
         for i in range(0, 5):
             D[i, i] = 2.0
-        xp_assert_equal(is_valid_dm(D), False)
+        assert not is_valid_dm(D)
 
     def test_is_valid_dm_asymmetric_E(self):
         y = np.random.rand(10)
@@ -1726,31 +1726,31 @@ class TestIsValidDM:
         y = np.random.rand(10)
         D = squareform(y)
         D[1, 3] = D[3, 1] + 1
-        xp_assert_equal(is_valid_dm(D), False)
+        assert not is_valid_dm(D)
 
     def test_is_valid_dm_correct_1_by_1(self):
         D = np.zeros((1, 1), dtype=np.float64)
-        xp_assert_equal(is_valid_dm(D), True)
+        assert is_valid_dm(D)
 
     def test_is_valid_dm_correct_2_by_2(self):
         y = np.random.rand(1)
         D = squareform(y)
-        xp_assert_equal(is_valid_dm(D), True)
+        assert is_valid_dm(D)
 
     def test_is_valid_dm_correct_3_by_3(self):
         y = np.random.rand(3)
         D = squareform(y)
-        xp_assert_equal(is_valid_dm(D), True)
+        assert is_valid_dm(D)
 
     def test_is_valid_dm_correct_4_by_4(self):
         y = np.random.rand(6)
         D = squareform(y)
-        xp_assert_equal(is_valid_dm(D), True)
+        assert is_valid_dm(D)
 
     def test_is_valid_dm_correct_5_by_5(self):
         y = np.random.rand(10)
         D = squareform(y)
-        xp_assert_equal(is_valid_dm(D), True)
+        assert is_valid_dm(D)
 
 
 def is_valid_y_throw(y):
@@ -1769,7 +1769,7 @@ class TestIsValidY:
 
     def test_is_valid_y_improper_shape_2D_F(self):
         y = np.zeros((3, 3,), dtype=np.float64)
-        xp_assert_equal(is_valid_y(y), False)
+        assert not is_valid_y(y)
 
     def test_is_valid_y_improper_shape_3D_E(self):
         y = np.zeros((3, 3, 3), dtype=np.float64)
@@ -1778,23 +1778,23 @@ class TestIsValidY:
 
     def test_is_valid_y_improper_shape_3D_F(self):
         y = np.zeros((3, 3, 3), dtype=np.float64)
-        xp_assert_equal(is_valid_y(y), False)
+        assert not is_valid_y(y)
 
     def test_is_valid_y_correct_2_by_2(self):
         y = self.correct_n_by_n(2)
-        xp_assert_equal(is_valid_y(y), True)
+        assert is_valid_y(y)
 
     def test_is_valid_y_correct_3_by_3(self):
         y = self.correct_n_by_n(3)
-        xp_assert_equal(is_valid_y(y), True)
+        assert is_valid_y(y)
 
     def test_is_valid_y_correct_4_by_4(self):
         y = self.correct_n_by_n(4)
-        xp_assert_equal(is_valid_y(y), True)
+        assert is_valid_y(y)
 
     def test_is_valid_y_correct_5_by_5(self):
         y = self.correct_n_by_n(5)
-        xp_assert_equal(is_valid_y(y), True)
+        assert is_valid_y(y)
 
     def test_is_valid_y_2_100(self):
         a = set()
@@ -1933,7 +1933,7 @@ def test_sqeuclidean_dtypes():
 
     for dtype in dtypes:
         d = wsqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        xp_assert_equal(d.dtype, dtype)
+        assert d.dtype == dtype
 
 
 def test_modifies_input(metric):
@@ -1998,11 +1998,11 @@ def test__validate_vector():
 
     y = _validate_vector(x, dtype=np.float64)
     xp_assert_equal(y, np.asarray(x, dtype=np.float64))
-    xp_assert_equal(y.dtype, np.float64)
+    assert y.dtype == np.float64
 
     x = [1]
     y = _validate_vector(x)
-    xp_assert_equal(y.ndim, 1)
+    assert y.ndim == 1
     xp_assert_equal(y, x)
 
     x = 1
