@@ -1516,6 +1516,198 @@ const char *binom_doc = R"(
     (0.037399983365134115, 0.0)
     )";
 
+const char *boxcox_doc = R"(
+    boxcox(x, lmbda, out=None)
+
+    Compute the Box-Cox transformation.
+
+    The Box-Cox transformation is
+
+    .. math::
+
+        y = \begin{cases}
+            (x^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(x) & \text{if } \lambda = 0
+        \end{cases}
+
+    Returns ``nan`` if :math:`x < 0`.
+    Returns ``-inf`` if :math:`x = 0` and :math:`\lambda \leq 0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Data to be transformed.
+    lmbda : array_like
+        Power parameter :math:`\lambda` of the Box-Cox transform.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    y : scalar or ndarray
+        Transformed data.
+
+    See Also
+    --------
+    boxcox1p : Box-Cox transformation of ``1 + x``.
+    inv_boxcox : Inverse of the Box-Cox transformation.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.14.0
+
+    Examples
+    --------
+    >>> from scipy.special import boxcox
+    >>> boxcox([1, 4, 10], 2.5)
+    array([   0.        ,   12.4       ,  126.09110641])
+    >>> boxcox(2, [0, 1, 2])
+    array([ 0.69314718,  1.        ,  1.5       ])
+    )";
+
+const char *boxcox1p_doc = R"(
+    boxcox1p(x, lmbda, out=None)
+
+    Compute the Box-Cox transformation of :math:`1 + x`.
+
+    The Box-Cox transformation computed by `boxcox1p` is
+
+    .. math::
+
+        y = \begin{cases}
+            ((1+x)^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(1+x) & \text{if } \lambda = 0
+        \end{cases}
+
+    Returns ``nan`` if :math:`x < -1`.
+    Returns ``-inf`` if :math:`x = -1` and :math:`\lambda \leq 0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Data to be transformed.
+    lmbda : array_like
+        Power parameter :math:`\lambda` of the Box-Cox transform.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    y : scalar or ndarray
+        Transformed data.
+
+    See Also
+    --------
+    boxcox : Box-Cox transformation.
+    inv_boxcox1p : Inverse of the Box-Cox transformation of ``1 + x``.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.14.0
+
+    Examples
+    --------
+    >>> from scipy.special import boxcox1p
+    >>> boxcox1p(1e-4, [0, 0.5, 1])
+    array([  9.99950003e-05,   9.99975001e-05,   1.00000000e-04])
+    >>> boxcox1p([0.01, 0.1], 0.25)
+    array([ 0.00996272,  0.09645476])
+    )";
+
+const char *inv_boxcox_doc = R"(
+    inv_boxcox(y, lmbda, out=None)
+
+    Compute the inverse of the Box-Cox transformation.
+
+    Find :math:`x` such that
+
+    .. math::
+
+        y = \begin{cases}
+            (x^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(x) & \text{if } \lambda = 0
+        \end{cases}
+
+    Parameters
+    ----------
+    y : array_like
+        Transformed data (input to the inverse transform).
+    lmbda : array_like
+        Power parameter :math:`\lambda` of the Box-Cox transform.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Original data (inverse Box-Cox transform of `y`).
+
+    See Also
+    --------
+    boxcox : Box-Cox transformation.
+    inv_boxcox1p : Inverse of the Box-Cox transformation of ``1 + x``.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    >>> from scipy.special import boxcox, inv_boxcox
+    >>> y = boxcox([1, 4, 10], 2.5)
+    >>> inv_boxcox(y, 2.5)
+    array([1., 4., 10.])
+    )";
+
+const char *inv_boxcox1p_doc = R"(
+    inv_boxcox1p(y, lmbda, out=None)
+
+    Compute the inverse of the Box-Cox transformation of :math:`1 + x`.
+
+    Find :math:`x` such that
+
+    .. math::
+
+        y = \begin{cases}
+            ((1+x)^\lambda - 1) / \lambda & \text{if } \lambda \neq 0 \\
+            \log(1+x) & \text{if } \lambda = 0
+        \end{cases}
+
+    Parameters
+    ----------
+    y : array_like
+        Transformed data (input to the inverse transform).
+    lmbda : array_like
+        Power parameter :math:`\lambda` of the Box-Cox transform.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Original data (inverse Box-Cox transform of `y`).
+
+    See Also
+    --------
+    boxcox1p : Box-Cox transformation of ``1 + x``.
+    inv_boxcox : Inverse of the Box-Cox transformation.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    >>> from scipy.special import boxcox1p, inv_boxcox1p
+    >>> y = boxcox1p([1, 4, 10], 2.5)
+    >>> inv_boxcox1p(y, 2.5)
+    array([1., 4., 10.])
+    )";
+
 const char *cotdg_doc = R"(
     cotdg(x, out=None)
 
