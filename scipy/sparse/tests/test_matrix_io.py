@@ -8,7 +8,7 @@ from numpy.testing import assert_equal, assert_
 
 from scipy.sparse import (sparray, csr_array, coo_array, save_npz, load_npz,
                           csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
-                          coo_matrix, dok_matrix)
+                          coo_matrix, dok_matrix, dok_array, lil_matrix, lil_array)
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -106,11 +106,15 @@ def test_malicious_load():
     finally:
         os.remove(tmpfile)
 
-def test_implemented_error():
+@pytest.mark.parametrize(
+    "container", [dok_matrix, dok_array, lil_matrix, lil_array]
+)
+def test_implemented_error(container):
     # Attempts to save an unsupported type and checks that an
     # NotImplementedError is raised.
 
-    x = dok_matrix((2,3))
+    x = container((2,3))
     x[0,1] = 1
 
-    assert_raises(NotImplementedError, save_npz, 'x.npz', x)
+    with pytest.raises(NotImplementedError, match="convert.*before saving"):
+        save_npz("x.npz", x)
