@@ -222,6 +222,8 @@ class TestArrayAPI:
         with pytest.raises(AssertionError, match=message):
             xp_assert_equal(xp.float64(0), xp.asarray(0.))
         with pytest.raises(AssertionError, match=message):
+            xp_assert_equal(xp.asarray(42), xp.int64(42))
+        with pytest.raises(AssertionError, match=message):
             xp_assert_equal(xp.int64(42), xp.asarray(42))
 
         # with `check_0d=False`, scalars-vs-0d passes (if values match)
