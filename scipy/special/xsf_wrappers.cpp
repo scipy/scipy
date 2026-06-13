@@ -26,6 +26,7 @@
 #include <xsf/log_exp.h>
 #include <xsf/loggamma.h>
 #include <xsf/mathieu.h>
+#include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/sici.h>
 #include <xsf/specfun.h>
@@ -103,6 +104,8 @@ double special_boxcox1p(double x, double lmbda) { return xsf::boxcox1p(x, lmbda)
 double special_inv_boxcox(double x, double lmbda) { return xsf::inv_boxcox(x, lmbda); }
 
 double special_inv_boxcox1p(double x, double lmbda) { return xsf::inv_boxcox1p(x, lmbda); }
+
+double special_ndtri_exp(double x) { return xsf::ndtri_exp(x); }
 
 npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(xsf::cerf(to_complex(z))); }
 

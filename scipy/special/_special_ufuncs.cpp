@@ -30,6 +30,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/mathieu.h>
+#include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/specfun.h>
 #include <xsf/sph_bessel.h>
@@ -165,6 +166,7 @@ extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *ndtr_doc;
+extern const char *ndtri_exp_doc;
 extern const char *nrdtrimn_doc;
 extern const char *nrdtrisd_doc;
 extern const char *obl_ang1_doc;
@@ -524,6 +526,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::F_F>(xsf::log_ndtr), static_cast<xsf::numpy::D_D>(xsf::log_ndtr)},
                           "log_ndtr", log_ndtr_doc);
     PyModule_AddObjectRef(module, "log_ndtr", log_ndtr);
+
+    PyObject *ndtri_exp =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ndtri_exp),
+                           static_cast<xsf::numpy::d_d>(xsf::ndtri_exp)},
+                          "ndtri_exp", ndtri_exp_doc);
+    PyModule_AddObjectRef(module, "ndtri_exp", ndtri_exp);
 
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ff>(xsf::fresnel), static_cast<xsf::numpy::d_dd>(xsf::fresnel),

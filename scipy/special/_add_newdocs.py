@@ -6976,62 +6976,6 @@ add_newdoc("owens_t",
     0.10877216734852274
     """)
 
-add_newdoc("ndtri_exp",
-    r"""
-    ndtri_exp(y, out=None)
-
-    Inverse of `log_ndtr` vs x. Allows for greater precision than
-    `ndtri` composed with `numpy.exp` for very small values of y and for
-    y close to 0.
-
-    Parameters
-    ----------
-    y : array_like of float
-        Function argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Inverse of the log CDF of the standard normal distribution, evaluated
-        at y.
-
-    See Also
-    --------
-    log_ndtr : log of the standard normal cumulative distribution function
-    ndtr : standard normal cumulative distribution function
-    ndtri : standard normal percentile function
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    `ndtri_exp` agrees with the naive implementation when the latter does
-    not suffer from underflow.
-
-    >>> sc.ndtri_exp(-1)
-    -0.33747496376420244
-    >>> sc.ndtri(np.exp(-1))
-    -0.33747496376420244
-
-    For extreme values of y, the naive approach fails
-
-    >>> sc.ndtri(np.exp(-800))
-    -inf
-    >>> sc.ndtri(np.exp(-1e-20))
-    inf
-
-    whereas `ndtri_exp` is still able to compute the result to high precision.
-
-    >>> sc.ndtri_exp(-800)
-    -39.88469483825668
-    >>> sc.ndtri_exp(-1e-20)
-    9.262340089798409
-    """)
-
-
 add_newdoc("_stirling2_inexact",
     r"""
     Internal function, do not use.
