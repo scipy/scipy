@@ -1,6 +1,5 @@
 _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
-  fs.copyfile('_boxcox.pxd'),
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
@@ -8,7 +7,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_hyp0f1.pxd'),
   fs.copyfile('_hypergeometric.pxd'),
   fs.copyfile('_legacy.pxd'),
-  fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_spence.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),

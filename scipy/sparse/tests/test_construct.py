@@ -411,6 +411,21 @@ class TestConstructUtils:
         assert_array_equal(result.toarray(), expected)
         assert isinstance(result, spmatrix)
 
+    @pytest.mark.parametrize(
+        "b",
+        [
+            csr_array([[3]], dtype=np.int64),        # BSR Path
+            csr_array([[3, 0, 0]], dtype=np.int64),  # COO Path
+        ],
+    )
+    def test_kron_zero_matrix_dtype(self, b):
+        a = csr_array([[0]], dtype=np.int64)
+
+        result = construct.kron(a, b)
+
+        assert result.dtype == np.int64
+        assert result.nnz == 0
+
     @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_kron_ndim_exceptions(self):
         # spmatrix is default, so exceptions with 3D unless sparse arrays are input
