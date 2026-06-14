@@ -10,7 +10,7 @@ from scipy.spatial import cKDTree
 
 
 TOL = 1E-12
-NS = range(1, 13)
+NS = list(range(1, 13))
 NAMES = ["I", "O", "T"] + [f"C{n}" for n in NS] + [f"D{n}" for n in NS]
 SIZES = [60, 24, 12] + list(NS) + [2 * n for n in NS]
 
