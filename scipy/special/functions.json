@@ -639,14 +639,6 @@
             "cephes_smirnovp_wrap": "pd->d"
         }
     },
-    "spence": {
-        "_spence.pxd": {
-            "cspence": "D-> D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_spence": "d->d"
-        }
-    },
     "stdtr": {
         "boost_special_functions.h++": {
             "t_cdf_float": "ff->f",

@@ -219,7 +219,8 @@ double cephes_erfcinv(double y);
 
 double cephes_round(double x);
 
-double cephes_spence(double x);
+double xsf_spence(double x);
+npy_cdouble xsf_cspence(npy_cdouble z);
 
 double xsf_struve_h(double v, double z);
 

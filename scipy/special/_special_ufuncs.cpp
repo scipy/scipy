@@ -33,6 +33,7 @@
 #include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/specfun.h>
+#include <xsf/spence.h>
 #include <xsf/sph_bessel.h>
 #include <xsf/sph_harm.h>
 #include <xsf/sphd_wave.h>
@@ -194,6 +195,7 @@ extern const char *rgamma_doc;
 extern const char *_riemann_zeta_doc;
 extern const char *scaled_exp1_doc;
 extern const char *sindg_doc;
+extern const char *spence_doc;
 extern const char *spherical_jn_doc;
 extern const char *spherical_jn_d_doc;
 extern const char *spherical_yn_doc;
@@ -1109,6 +1111,12 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *sindg = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::sindg), static_cast<xsf::numpy::d_d>(xsf::sindg)}, "sindg", sindg_doc);
     PyModule_AddObjectRef(module, "sindg", sindg);
+
+    PyObject *spence = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::spence), static_cast<xsf::numpy::d_d>(xsf::spence),
+         static_cast<xsf::numpy::F_F>(xsf::spence), static_cast<xsf::numpy::D_D>(xsf::spence)},
+        "spence", spence_doc);
+    PyModule_AddObjectRef(module, "spence", spence);
 
     PyObject *_spherical_jn = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_j), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_j),
