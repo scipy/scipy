@@ -1749,7 +1749,7 @@ Eq. :math:numref:`eq_STFT_istftM`, i.e.,
 .. math::
    :label: eq_STFT_WindDualCond0
 
-    \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
+   \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
                                                  \vb{F}\,\vb{W}_{\!p}\,\vb{x}
         = \left(\sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\vb{W}_{\!p}\right)\vb{x}\ ,
 
