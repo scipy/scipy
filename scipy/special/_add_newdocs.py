@@ -3843,11 +3843,6 @@ add_newdoc("hyperu",
 
     """)
 
-add_newdoc("_igam_fac",
-    """
-    Internal function, do not use.
-    """)
-
 add_newdoc("kn",
     r"""
     kn(n, x, out=None)

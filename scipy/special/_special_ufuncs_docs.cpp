@@ -6,6 +6,10 @@ const char *_bivariate_normal_sf_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_igam_fac_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *agm_doc = R"(
     agm(a, b, out=None)
 
