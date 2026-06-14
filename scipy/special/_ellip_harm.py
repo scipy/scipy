@@ -6,7 +6,7 @@ from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
 
 def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     r"""
-    Ellipsoidal harmonic functions :math:`E^p_n(l)`.
+    Ellipsoidal harmonic functions :math:`E^p_n(s)`.
 
     These are also known as Lamé functions of the first kind, and are
     solutions to the Lamé equation:
@@ -104,7 +104,7 @@ _ellip_harm_2_vec = np.vectorize(_ellipsoid, otypes='d')
 
 def ellip_harm_2(h2, k2, n, p, s):
     r"""
-    Ellipsoidal harmonic functions :math:`F^p_n(l)`.
+    Ellipsoidal harmonic functions :math:`F^p_n(s)`.
 
     These are also known as Lamé functions of the second kind, and are
     solutions to the Lamé equation:
