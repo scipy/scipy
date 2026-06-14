@@ -187,8 +187,6 @@ double cephes_igami(double a, double p);
 
 double cephes_igamci(double a, double p);
 
-double cephes_igam_fac(double a, double x);
-
 double cephes_lanczos_sum_expg_scaled(double x);
 
 double cephes_poch(double x, double m);

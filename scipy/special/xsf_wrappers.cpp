@@ -400,8 +400,6 @@ double cephes_igami(double a, double p) { return xsf::cephes::igami(a, p); }
 
 double cephes_igamci(double a, double p) { return xsf::cephes::igamci(a, p); }
 
-double cephes_igam_fac(double a, double x) { return xsf::cephes::detail::igam_fac(a, x); }
-
 double cephes_lanczos_sum_expg_scaled(double x) { return xsf::cephes::lanczos_sum_expg_scaled(x); }
 
 double cephes_poch(double x, double m) { return xsf::cephes::poch(x, m); }
