@@ -55,6 +55,7 @@ extern const char *_cospi_doc;
 extern const char *_bivariate_normal_sf_doc;
 extern const char *_sinpi_doc;
 extern const char *_gen_harmonic_doc;
+extern const char *_igam_fac_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
 extern const char *_normalized_gen_harmonic_doc;
@@ -564,6 +565,12 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::gammainccinv), static_cast<xsf::numpy::dd_d>(xsf::gammainccinv)},
         "gammainccinv", gammainccinv_doc);
     PyModule_AddObjectRef(module, "gammainccinv", gammainccinv);
+
+    PyObject *_igam_fac = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::cephes::detail::igam_fac),
+         static_cast<xsf::numpy::dd_d>(xsf::cephes::detail::igam_fac)},
+        "_igam_fac", _igam_fac_doc);
+    PyModule_AddObjectRef(module, "_igam_fac", _igam_fac);
 
     PyObject *gammaln =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::gammaln), static_cast<xsf::numpy::d_d>(xsf::gammaln)},

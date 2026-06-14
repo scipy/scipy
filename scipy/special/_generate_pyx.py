@@ -80,6 +80,7 @@ special_ufuncs = [
     "_bivariate_normal_sf",
     "_cospi",
     "_gen_harmonic",
+    "_igam_fac",
     "_iv_ratio",
     "_iv_ratio_c",
     "_lambertw",
