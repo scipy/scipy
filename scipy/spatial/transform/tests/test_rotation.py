@@ -932,7 +932,7 @@ def test_from_euler_scalar():
 
 
 @make_xp_test_case((Rotation, "from_euler"), (Rotation, "as_euler"))
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("seq_tuple", list(permutations("xyz")))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
     # helper function for mean error tests
@@ -963,7 +963,7 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
 
 
 @make_xp_test_case((Rotation, "from_euler"), (Rotation, "as_euler"))
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("seq_tuple", list(permutations("xyz")))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
     # helper function for mean error tests
@@ -1009,7 +1009,7 @@ def maybe_warn_gimbal_lock(should_warn, xp):
 @make_xp_test_case(
     (Rotation, "from_euler"), (Rotation, "as_matrix"), (Rotation, "as_euler")
 )
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("seq_tuple", list(permutations("xyz")))
 @pytest.mark.parametrize("intrinsic", (False, True))
 @pytest.mark.parametrize("suppress_warnings", (False, True))
 def test_as_euler_degenerate_asymmetric_axes(
@@ -1045,7 +1045,7 @@ def test_as_euler_degenerate_asymmetric_axes(
 @make_xp_test_case(
     (Rotation, "from_euler"), (Rotation, "as_matrix"), (Rotation, "as_euler")
 )
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("seq_tuple", list(permutations("xyz")))
 @pytest.mark.parametrize("intrinsic", (False, True))
 @pytest.mark.parametrize("suppress_warnings", (False, True))
 def test_as_euler_degenerate_symmetric_axes(
