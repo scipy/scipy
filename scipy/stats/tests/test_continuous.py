@@ -1131,7 +1131,7 @@ class TestAttributes:
 
 
 class TestMakeDistribution:
-    @pytest.mark.parametrize('i, distdata', enumerate(distcont + distdiscrete))
+    @pytest.mark.parametrize('i, distdata', list(enumerate(distcont + distdiscrete)))
     def test_rv_generic(self, i, distdata):
         distname = distdata[0]
 
@@ -1309,7 +1309,7 @@ class TestMakeDistribution:
                 assert_allclose(X.lmoment(order, standardize=standardize),
                                 Y.lmoment(order, standardize=standardize))
 
-        # Confirm that the `sample` and `moment` methods are overriden as expected
+        # Confirm that the `sample` and `moment` methods are overridden as expected
         sample_formula = X.sample(shape=10, rng=0, method='formula')
         sample_inverse = X.sample(shape=10, rng=0, method='inverse_transform')
         assert_allclose(sample_formula, sample_inverse)
@@ -2319,3 +2319,10 @@ class Test_logexpxmexpy:
         # operations involving NaNs should not produce warnings
         x = np.asarray(np.nan)
         assert_equal(_logexpxmexpy(x, x), x)
+
+
+def test_gh_25180():
+    lu = _LogUniform(log_a=np.float64(-0.28915434544814245),
+                     log_b=np.float64(0.3085224670197856))
+    actual = lu.mode(method='optimization')
+    assert np.isfinite(actual)

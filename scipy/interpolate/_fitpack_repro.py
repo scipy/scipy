@@ -161,7 +161,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def generate_knots(x, y, *, w=None, xb=None, xe=None,
                    k=3, s=0, nest=None, bc_type=None):
-    """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
+    """Generate knot vectors until the Least SQuares (LSQ) criterion is satisfied.
 
     Parameters
     ----------
@@ -822,7 +822,7 @@ condition abs(fp-s)/s < tol.
 }
 
 
-def root_rati(f, p0, bracket, acc):
+def root_rati(f, p0, bracket, acc, maxit=MAXIT):
     """Solve `f(p) = 0` using a rational function approximation.
 
     In a nutshell, since the function f(p) is known to be monotonically decreasing, we
@@ -838,7 +838,7 @@ def root_rati(f, p0, bracket, acc):
     https://github.com/scipy/scipy/blob/maintenance/1.11.x/scipy/interpolate/fitpack/fppara.f#L290
 
     Note that the latter is for parametric splines and the former is for 1D spline
-    functions. The minimization is indentical though [modulo a summation over the
+    functions. The minimization is identical though [modulo a summation over the
     dimensions in the computation of f(p)], so we reuse the minimizer for both
     d=1 and d>1.
     """
@@ -855,7 +855,7 @@ def root_rati(f, p0, bracket, acc):
     (p1, f1), (p3, f3)  = bracket
     p = p0
 
-    for it in range(MAXIT):
+    for it in range(maxit):
         p2, f2 = p, f(p)
 
         # c  test whether the approximation sp(x) is an acceptable solution.
@@ -871,7 +871,7 @@ def root_rati(f, p0, bracket, acc):
                 f3 = f2
                 p = p*con4
                 if p <= p1:
-                     p = p1*con9 + p2*con1
+                    p = p1*con9 + p2*con1
                 continue
             else:
                 if f2 < 0:
@@ -884,7 +884,7 @@ def root_rati(f, p0, bracket, acc):
                 f1 = f2
                 p = p/con4
                 if p3 != np.inf and p <= p3:
-                     p = p2*con1 + p3*con9
+                    p = p2*con1 + p3*con9
                 continue
             else:
                 if f2 > 0:

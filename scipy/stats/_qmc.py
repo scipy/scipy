@@ -16,7 +16,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from scipy._lib._util import DecimalNumber, GeneratorType, IntNumber, SeedType
+from scipy._lib._util import _RNG, DecimalNumber, IntNumber, SeedType
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -47,13 +47,9 @@ __all__ = ['scale', 'discrepancy', 'geometric_discrepancy', 'update_discrepancy'
 
 
 @overload
-def check_random_state(seed: IntNumber | None = ...) -> np.random.Generator:
-    ...
-
-
+def check_random_state(seed: IntNumber | None = None) -> np.random.Generator: ...
 @overload
-def check_random_state(seed: GeneratorType) -> GeneratorType:
-    ...
+def check_random_state[GeneratorT: _RNG](seed: GeneratorT) -> GeneratorT:...
 
 
 # Based on scipy._lib._util.check_random_state
@@ -2617,7 +2613,7 @@ def _select_optimizer(
 
 
 def _random_cd(
-    best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: GeneratorType,
+    best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: _RNG,
     **kwargs: dict
 ) -> np.ndarray:
     """Optimal LHS on CD.

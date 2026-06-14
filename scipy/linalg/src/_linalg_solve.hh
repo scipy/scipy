@@ -273,8 +273,10 @@ inline void solve_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = maxa * maxinva > 1./ detail::numeric_limits<real_type>::eps;
-    status.rcond = maxa * maxinva;
+    double cond = (double)maxa * (double)maxinva;
+    double rcond = 1.0 / cond;
+    status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
+    status.rcond = rcond;
 }
 
 
@@ -501,7 +503,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
      * ^          ^         ^          ^      ^
      * scratch    data      data_b     work2  work
      *
-     * - scrach & data are for A (lhs)
+     * - scratch & data are for A (lhs)
      * - data_b is for b (rhs)
      * - work2 is for the tridiag solver, trcon's work array
      * - work is for all other LAPACK functions

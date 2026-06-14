@@ -773,7 +773,7 @@ class RigidTransform:
             tau = [  0 -rz  ry vx]
                   [ rz   0 -rx vy]
                   [-ry  rx   0 vz]
-                  [  0   0   0  1]
+                  [  0   0   0  0]
 
         Parameters
         ----------

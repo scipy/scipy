@@ -56,6 +56,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers",
         "array_api_backends: test iterates on all array API backends")
     config.addinivalue_line("markers",
+        ("fail_asan: mark test as triggering the address sanitizer "
+         "(and not covered by the suppressions file)"))
+    config.addinivalue_line("markers",
         ("skip_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
          "eager_only=False, exceptions=None): mark the desired skip configuration " +
          "for the `skip_xp_backends` fixture"))
@@ -175,10 +178,20 @@ if not PARALLEL_RUN_AVAILABLE:
 
 
 # Array API backend handling
+# NOTE: conftest.py is imported before its own ``pytest_configure`` runs, and
+# an installed SciPy does not ship ``pytest.ini``. Accessing
+# ``pytest.mark.<name>`` at import time would therefore emit a spurious
+# ``PytestUnknownMarkWarning`` (gh-25208). Build the decorators once under
+# suppression and reuse them below; the marks are still registered in
+# ``pytest_configure`` and stay fully functional for ``-m`` selection.
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", pytest.PytestUnknownMarkWarning)
+    _array_api_backends = pytest.mark.array_api_backends
+    _thread_unsafe = pytest.mark.thread_unsafe
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
                      'dask.array'}
 xp_available_backends = [
-    pytest.param(np, id='numpy', marks=pytest.mark.array_api_backends)
+    pytest.param(np, id='numpy', marks=_array_api_backends)
 ]
 xp_skip_cpu_only_backends = set()
 xp_skip_eager_only_backends = set()
@@ -189,7 +202,7 @@ if SCIPY_ARRAY_API:
         import array_api_strict
         xp_available_backends.append(
             pytest.param(array_api_strict, id='array_api_strict',
-                         marks=pytest.mark.array_api_backends))
+                         marks=_array_api_backends))
         if version.parse(array_api_strict.__version__) < version.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
@@ -202,7 +215,7 @@ if SCIPY_ARRAY_API:
         import torch  # type: ignore[import-not-found]
         xp_available_backends.append(
             pytest.param(torch, id='torch',
-            marks=pytest.mark.array_api_backends))
+            marks=_array_api_backends))
         torch.set_default_device(SCIPY_DEVICE)
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('torch')
@@ -225,7 +238,7 @@ if SCIPY_ARRAY_API:
         # It will fail to import if you don't have CUDA hardware and drivers.
         xp_available_backends.append(
             pytest.param(cupy, id='cupy',
-            marks=pytest.mark.array_api_backends))
+            marks=_array_api_backends))
         xp_skip_cpu_only_backends.add('cupy')
 
         # this is annoying in CuPy 13.x
@@ -242,9 +255,9 @@ if SCIPY_ARRAY_API:
         
         xp_available_backends.append(
             pytest.param(jax.numpy, id='jax.numpy',
-            marks=[pytest.mark.array_api_backends,
+            marks=[_array_api_backends,
                    # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
-                   pytest.mark.thread_unsafe]))
+                   _thread_unsafe]))
 
         jax.config.update("jax_enable_x64", True)
         # Make sure JAX won't default to less accurate TensorFloat32 precision
@@ -265,9 +278,9 @@ if SCIPY_ARRAY_API:
 
         xp_available_backends.append(
             pytest.param(da, id='dask.array',
-            marks=[pytest.mark.array_api_backends,
+            marks=[_array_api_backends,
                    # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
-                   pytest.mark.thread_unsafe]))
+                   _thread_unsafe]))
 
         # Dask can wrap around cupy. However, this is untested in scipy
         # (and will almost surely not work as delegation will misbehave).
@@ -405,7 +418,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             reason = marker.kwargs.get("reason") or (
                 f"do not run with array API backend: {backend}")
             # reason overrides the ones from cpu_only, np_only, and eager_only.
-            # This is regardless of order of appearence of the markers.
+            # This is regardless of order of appearance of the markers.
             reasons[backend].insert(0, reason)
 
             for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
@@ -636,7 +649,7 @@ if HAVE_SCPDT:
 
         # XXX: this matches the refguide-check behavior, but is a tad strange:
         # makes sure that the seed the old-fashioned np.random* methods is
-        # *NOT* reproducible but the new-style `default_rng()` *IS* repoducible.
+        # *NOT* reproducible but the new-style `default_rng()` *IS* reproducible.
         # Should these two be either both repro or both not repro?
 
         from scipy._lib._util import _fixed_default_rng
@@ -651,7 +664,6 @@ if HAVE_SCPDT:
                     yield
                 else:
                     warnings.simplefilter('error', Warning)
-                    warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
     dt_config.user_context_mgr = warnings_errors_and_rng  # pyrefly:ignore[unbound-name]

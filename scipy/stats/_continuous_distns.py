@@ -993,7 +993,7 @@ class betaprime_gen(rv_continuous):
     then :math:`Y = X/(1-X)` has a beta prime distribution with
     parameters :math:`a, b` ([1]_).
 
-    The beta prime distribution is a reparametrized version of the
+    The beta prime distribution is a reparameterized version of the
     F distribution.  The beta prime distribution with shape parameters
     ``a`` and ``b`` and ``scale = s`` is equivalent to the F distribution
     with parameters ``d1 = 2*a``, ``d2 = 2*b`` and ``scale = (a/b)*s``.
@@ -1571,8 +1571,14 @@ class chi_gen(rv_continuous):
     def _cdf(self, x, df):
         return sc.gammainc(.5*df, .5*x**2)
 
+    def _logcdf(self, x, df):
+        return sc.log_gammainc(.5*df, .5*x**2)
+
     def _sf(self, x, df):
         return sc.gammaincc(.5*df, .5*x**2)
+
+    def _logsf(self, x, df):
+        return sc.log_gammaincc(.5*df, .5*x**2)
 
     def _ppf(self, q, df):
         return np.sqrt(2*sc.gammaincinv(.5*df, q))
@@ -3528,50 +3534,6 @@ class genextreme_gen(rv_continuous):
 genextreme = genextreme_gen(name='genextreme')
 
 
-def _digammainv(y):
-    """Inverse of the digamma function (real positive arguments only).
-
-    This function is used in the `fit` method of `gamma_gen`.
-    The function uses either optimize.fsolve or optimize.newton
-    to solve `sc.digamma(x) - y = 0`.  There is probably room for
-    improvement, but currently it works over a wide range of y:
-
-    >>> import numpy as np
-    >>> rng = np.random.default_rng()
-    >>> y = 64*rng.standard_normal(1000000)
-    >>> y.min(), y.max()
-    (-311.43592651416662, 351.77388222276869)
-    >>> x = [_digammainv(t) for t in y]
-    >>> np.abs(sc.digamma(x) - y).max()
-    1.1368683772161603e-13
-
-    """
-    _em = 0.5772156649015328606065120
-
-    def func(x):
-        return sc.digamma(x) - y
-
-    if y > -0.125:
-        x0 = np.exp(y) + 0.5
-        if y < 10:
-            # Some experimentation shows that newton reliably converges
-            # must faster than fsolve in this y range.  For larger y,
-            # newton sometimes fails to converge.
-            value = optimize.newton(func, x0, tol=1e-10)
-            return value
-    elif y > -3:
-        x0 = np.exp(y/2.332) + 0.08661
-    else:
-        x0 = 1.0 / (-y - _em)
-
-    value, info, ier, mesg = optimize.fsolve(func, x0, xtol=1e-11,
-                                             full_output=True)
-    if ier != 1:
-        raise RuntimeError(f"_digammainv: fsolve failed, y = {y!r}")
-
-    return value[0]
-
-
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta=scale, a=alpha=shape) definition)
 
 ## gamma(a, loc, scale)  with a an integer is the Erlang distribution
@@ -3635,8 +3597,14 @@ class gamma_gen(rv_continuous):
     def _cdf(self, x, a):
         return sc.gammainc(a, x)
 
+    def _logcdf(self, x, a):
+        return sc.log_gammainc(a, x)
+
     def _sf(self, x, a):
         return sc.gammaincc(a, x)
+
+    def _logsf(self, x, a):
+        return sc.log_gammaincc(a, x)
 
     def _ppf(self, q, a):
         return sc.gammaincinv(a, q)
@@ -3782,7 +3750,7 @@ class gamma_gen(rv_continuous):
             # The MLE for the shape parameter `a` is the solution to:
             # sc.digamma(a) - np.log(data).mean() + np.log(fscale) = 0
             c = np.log(data).mean() - np.log(fscale)
-            a = _digammainv(c)
+            a = sc.digammainv(c)
             scale = fscale
 
         return a, floc, scale
@@ -3856,11 +3824,11 @@ class gengamma_gen(rv_continuous):
 
     See Also
     --------
-    gamma, invgamma, weibull_min
+    gamma, halfgennorm, invgamma, weibull_min
 
     Notes
     -----
-    The probability density function for `gengamma` is ([1]_):
+    The probability density function for `gengamma` is ([1]_, [2]_):
 
     .. math::
 
@@ -3871,12 +3839,17 @@ class gengamma_gen(rv_continuous):
 
     `gengamma` takes :math:`a` and :math:`c` as shape parameters.
 
+    The SciPy distribution `halfgennorm` is a special case of
+    `gengamma`: ``halfgennorm(beta) = gengamma(a=1/beta, c=beta)``.
+
     %(after_notes)s
 
     References
     ----------
     .. [1] E.W. Stacy, "A Generalization of the Gamma Distribution",
-       Annals of Mathematical Statistics, Vol 33(3), pp. 1187--1192.
+           Annals of Mathematical Statistics, Vol 33(3), pp. 1187--1192.
+    .. [2] "Generalized gamma distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_gamma_distribution
 
     %(example)s
 
@@ -3901,9 +3874,17 @@ class gengamma_gen(rv_continuous):
 
     def _cdf(self, x, a, c):
         xc = x**c
-        val1 = sc.gammainc(a, xc)
-        val2 = sc.gammaincc(a, xc)
-        return np.where(c > 0, val1, val2)
+        return xpx.apply_where(
+            c > 0, (a, xc),
+            sc.gammainc,
+            sc.gammaincc)
+
+    def _logcdf(self, x, a, c):
+        xc = x**c
+        return xpx.apply_where(
+            c > 0, (a, xc),
+            sc.log_gammainc,
+            sc.log_gammaincc)
 
     def _rvs(self, a, c, size=None, random_state=None):
         r = random_state.standard_gamma(a, size=size)
@@ -3911,19 +3892,29 @@ class gengamma_gen(rv_continuous):
 
     def _sf(self, x, a, c):
         xc = x**c
-        val1 = sc.gammainc(a, xc)
-        val2 = sc.gammaincc(a, xc)
-        return np.where(c > 0, val2, val1)
+        return xpx.apply_where(
+            c > 0, (a, xc),
+            sc.gammaincc,
+            sc.gammainc)
+
+    def _logsf(self, x, a, c):
+        xc = x**c
+        return xpx.apply_where(
+            c > 0, (a, xc),
+            sc.log_gammaincc,
+            sc.log_gammainc)
 
     def _ppf(self, q, a, c):
-        val1 = sc.gammaincinv(a, q)
-        val2 = sc.gammainccinv(a, q)
-        return np.where(c > 0, val1, val2)**(1.0/c)
+        return xpx.apply_where(
+            c > 0, (a, q),
+            sc.gammaincinv,
+            sc.gammainccinv)**(1.0/c)
 
     def _isf(self, q, a, c):
-        val1 = sc.gammaincinv(a, q)
-        val2 = sc.gammainccinv(a, q)
-        return np.where(c > 0, val2, val1)**(1.0/c)
+        return xpx.apply_where(
+            c > 0, (a, q),
+            sc.gammainccinv,
+            sc.gammaincinv)**(1.0/c)
 
     def _munp(self, n, a, c):
         # Pochhammer symbol: sc.pocha,n) = gamma(a+n)/gamma(a)
@@ -4967,11 +4958,17 @@ class invgamma_gen(rv_continuous):
     def _cdf(self, x, a):
         return sc.gammaincc(a, 1.0 / x)
 
+    def _logcdf(self, x, a):
+        return sc.log_gammaincc(a, 1.0 / x)
+
     def _ppf(self, q, a):
         return 1.0 / sc.gammainccinv(a, q)
 
     def _sf(self, x, a):
         return sc.gammainc(a, 1.0 / x)
+
+    def _logsf(self, x, a):
+        return sc.log_gammainc(a, 1.0 / x)
 
     def _isf(self, q, a):
         return 1.0 / sc.gammaincinv(a, q)
@@ -6691,8 +6688,15 @@ class loggamma_gen(rv_continuous):
         #                          = exp(c*x - gammaln(c+1))
         return xpx.apply_where(
             x < _LOGXMIN, (x, c),
-            lambda x, c: np.exp(c*x - sc.gammaln(c+1)),
+            lambda x, c: np.exp(c*x - sc._ufuncs._lgam1p(c)),
             lambda x, c: sc.gammainc(c, np.exp(x)))
+
+    def _logcdf(self, x, c):
+        # see comments in _cdf() above
+        return xpx.apply_where(
+            x < _LOGXMIN, (x, c),
+            lambda x, c: c*x - sc._ufuncs._lgam1p(c),
+            lambda x, c: sc.log_gammainc(c, np.exp(x)))
 
     def _ppf(self, q, c):
         # The expression used when g < _XMIN inverts the one term expansion
@@ -6707,8 +6711,15 @@ class loggamma_gen(rv_continuous):
         # See the comments for _cdf() for how x < _LOGXMIN is handled.
         return xpx.apply_where(
             x < _LOGXMIN, (x, c),
-            lambda x, c: -np.expm1(c*x - sc.gammaln(c+1)),
+            lambda x, c: -np.expm1(c*x - sc._ufuncs._lgam1p(c)),
             lambda x, c: sc.gammaincc(c, np.exp(x)))
+
+    def _logsf(self, x, c):
+        # See the comments for _cdf() for how x < _LOGXMIN is handled.
+        return xpx.apply_where(
+            x < _LOGXMIN, (x, c),
+            lambda x, c: sc._ufuncs._log1mexp(c*x - sc._ufuncs._lgam1p(c)),
+            lambda x, c: sc.log_gammaincc(c, np.exp(x)))
 
     def _isf(self, q, c):
         # The expression used when g < _XMIN inverts the complement of
@@ -6716,7 +6727,7 @@ class loggamma_gen(rv_continuous):
         g = sc.gammainccinv(c, q)
         return xpx.apply_where(
             g < _XMIN, (g, q, c),
-            lambda g, q, c: (np.log1p(-q) + sc.gammaln(c+1))/c,
+            lambda g, q, c: (np.log1p(-q) + sc._ufuncs._lgam1p(c))/c,
             lambda g, q, c: np.log(g))
 
     def _stats(self, c):
@@ -7162,11 +7173,17 @@ class maxwell_gen(rv_continuous):
     def _cdf(self, x):
         return sc.gammainc(1.5, x*x/2.0)
 
+    def _logcdf(self, x):
+        return sc.log_gammainc(1.5, x*x/2.0)
+
     def _ppf(self, q):
         return np.sqrt(2*sc.gammaincinv(1.5, q))
 
     def _sf(self, x):
         return sc.gammaincc(1.5, x*x/2.0)
+
+    def _logsf(self, x):
+        return sc.log_gammaincc(1.5, x*x/2.0)
 
     def _isf(self, q):
         return np.sqrt(2*sc.gammainccinv(1.5, q))
@@ -7749,11 +7766,17 @@ class nakagami_gen(rv_continuous):
     def _cdf(self, x, nu):
         return sc.gammainc(nu, nu*x*x)
 
+    def _logcdf(self, x, nu):
+        return sc.log_gammainc(nu, nu*x*x)
+
     def _ppf(self, q, nu):
         return np.sqrt(1.0/nu*sc.gammaincinv(nu, q))
 
     def _sf(self, x, nu):
         return sc.gammaincc(nu, nu*x*x)
+
+    def _logsf(self, x, nu):
+        return sc.log_gammaincc(nu, nu*x*x)
 
     def _isf(self, p, nu):
         return np.sqrt(1/nu * sc.gammainccinv(nu, p))
@@ -10849,7 +10872,7 @@ truncpareto._support = (1.0, 'c')
 
 
 class tukeylambda_gen(rv_continuous):
-    r"""A Tukey-Lamdba continuous random variable.
+    r"""A Tukey-Lambda continuous random variable.
 
     %(before_notes)s
 
@@ -11254,7 +11277,7 @@ class vonmises_gen(rv_continuous):
         return kappa * sc.cosm1(x) - np.log(2*np.pi) - np.log(sc.i0e(kappa))
 
     def _cdf(self, x, kappa):
-        return _stats.von_mises_cdf(kappa, x)
+        return scu._von_mises_cdf(kappa, x)
 
     def _stats_skip(self, kappa):
         return 0, None, 0, None
@@ -11622,6 +11645,7 @@ class halfgennorm_gen(rv_continuous):
 
     See Also
     --------
+    gengamma : generalized gamma distribution
     gennorm : generalized normal distribution
     expon : exponential distribution
     halfnorm : half normal distribution
@@ -11642,11 +11666,20 @@ class halfgennorm_gen(rv_continuous):
     For :math:`\beta = 2`, it is identical to a half normal distribution
     (with ``scale=1/sqrt(2)``).
 
+    `halfgennorm` is the upper half of a generalized normal continuous
+    random variable [1]_.
+
+    `halfgennorm` is a special case of the generalized gamma distribution [2]_,
+    which is implemented in SciPy as `gengamma`:
+    ``halfgennorm(beta) = gengamma(a=1/beta, c=beta)``.
+
     References
     ----------
 
-    .. [1] "Generalized normal distribution, Version 1",
+    .. [1] "Generalized normal distribution, Version 1",  Wikipedia,
            https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
+    .. [2] "Generalized gamma distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_gamma_distribution
 
     %(example)s
 
@@ -11666,11 +11699,17 @@ class halfgennorm_gen(rv_continuous):
     def _cdf(self, x, beta):
         return sc.gammainc(1.0/beta, x**beta)
 
+    def _logcdf(self, x, beta):
+        return sc.log_gammainc(1.0/beta, x**beta)
+
     def _ppf(self, x, beta):
         return sc.gammaincinv(1.0/beta, x)**(1.0/beta)
 
     def _sf(self, x, beta):
         return sc.gammaincc(1.0/beta, x**beta)
+
+    def _logsf(self, x, beta):
+        return sc.log_gammaincc(1.0/beta, x**beta)
 
     def _isf(self, x, beta):
         return sc.gammainccinv(1.0/beta, x)**(1.0/beta)

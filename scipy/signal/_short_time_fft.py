@@ -248,7 +248,7 @@ class ShortTimeFFT:
 
     By default, the so-called canonical dual window is used. It is the window with
     minimal energy among all possible dual windows. `from_win_equals_dual` and
-    `~scipy.signal.closest_STFT_dual_window` provide means for utilizing alterantive
+    `~scipy.signal.closest_STFT_dual_window` provide means for utilizing alternative
     dual windows. Note that `win` is also always a dual window of `dual_win`.
 
     Due to the convention of time t = 0 being at the first sample of the input
@@ -296,7 +296,7 @@ class ShortTimeFFT:
     -----
     A typical STFT application is the creation of various types of time-frequency
     plots, often subsumed under the term "spectrogram". Note that this term is also
-    used to explecitly refer to the absolute square of a STFT [11]_, as done in
+    used to explicitly refer to the absolute square of a STFT [11]_, as done in
     :meth:`spectrogram`.
 
     The STFT can also be used for filtering and filter banks as discussed in [12]_.
@@ -629,7 +629,7 @@ class ShortTimeFFT:
         An instance is created were window and dual window are equal as well as being
         closest to the parameter `desired_win` in the least-squares sense, i.e.,
         minimizing ``abs(win-desired_win)**2``. Hence, `win` has the same length as
-        `desired_win`. Then a scaling factor is applied accoring to the `scale_to`
+        `desired_win`. Then a scaling factor is applied according to the `scale_to`
         parameter.
 
         All other parameters have the identical meaning as in the initializer.
@@ -688,7 +688,7 @@ class ShortTimeFFT:
         :math:`E_x=T\sum_k |x[k]|^2` of a signal is also preserved. This is also
         illustrated in the example below.
 
-        Thie reason of distinguishing between no scaling (i.e., parameter `scale_to` is
+        The reason of distinguishing between no scaling (i.e., parameter `scale_to` is
         ``None``) and unitary scaling (i.e., ``scale_to = 'unitary'``) is due to the
         utilized FFT function not being unitary (i.e., using the default value
         ``'backward'`` for the `~scipy.fft.fft` parameter `norm`).
@@ -1332,7 +1332,7 @@ class ShortTimeFFT:
         interpreted as a coherence spectrogram ``Cxy := abs(Sxy)**2 / (Sxx*Syy)``,
         which is the time-frequency analogon to `~coherence`.
 
-        If the STFT is parametrized to be a unitary transform, i.e., utilitzing
+        If the STFT is parametrized to be a unitary transform, i.e., utilizing
         `~from_win_equals_dual`, then the value of the scalar product, hence also the
         energy, is preserved.
 
@@ -2241,7 +2241,7 @@ class ShortTimeFFT:
         STFT.
         The left plot, where ``(t0, t1, f0, f1) = (0, 3, 0, 4)`` is passed as parameter
         ``extent`` to `~matplotlib.pyplot.imshow`, shows the standard behavior of the
-        time and frequency values being at the lower edge of the corrsponding bin.
+        time and frequency values being at the lower edge of the corresponding bin.
         The right plot, with ``(t0, t1, f0, f1) = (-0.5, 2.5, -0.5, 3.5)``, shows that
         the bins are centered over the respective values when passing
         ``center_bins=True``.

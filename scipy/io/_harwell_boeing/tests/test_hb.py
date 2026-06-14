@@ -70,3 +70,10 @@ class TestHBReadWrite:
         for format in ('coo', 'csc', 'csr', 'bsr', 'dia', 'dok', 'lil'):
             arr = random_arr.asformat(format, copy=False)
             self.check_save_load(arr)
+
+    @pytest.mark.parametrize("dtype", [np.float64, np.int64])
+    def test_empty_roundtrip(self, dtype):
+        # gh-24082: nnz == 0 used to crash in HBInfo.from_data; the integer
+        # variant additionally exercised a mxtype/format inconsistency.
+        m = csc_array(np.zeros((2, 2), dtype=dtype))
+        self.check_save_load(m)

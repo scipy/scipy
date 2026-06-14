@@ -68,7 +68,7 @@ try:
             PARALLELISM = num_threads
 
         def get_version(self):
-            return _fmm_version
+            return _fmm_version()
 
         def set_additional_attributes(self):
             pass

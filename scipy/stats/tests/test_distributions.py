@@ -3084,6 +3084,25 @@ class TestPoisson:
         expected = (mu, mu, [np.inf, 1, 1/np.sqrt(2)], [np.inf, 1, 0.5])
         assert_allclose(result, expected)
 
+    @pytest.mark.parametrize("k, mu, logcdf_reference, logsf_reference",
+        [(5, 1000, -970.243707846241, -0.0),
+         (50, 10, -3.620001580923151e-20, -44.765227397324225),
+         (1000, 10, -0.0, -3624.1392251073903),
+         (1, 300, -294.29288973525115, -1.5496082669460162e-128)])
+    def test_gh8424(self, k, mu, logcdf_reference, logsf_reference):
+        # test extreme cases where the naive log(cdf) and log(sf) would fail
+        # reference values were computed with mpmath with 1000 digits of precision 
+        # from mpmath import mp
+        # mp.dps = 1000
+        # logcdf_reference = float(mp.log(mp.gammainc(mp.mpf(k+1), a=mp.mpf(mu),
+        #                                             regularized=True)))
+        # logsf_reference = float(mp.log(mp.gammainc(mp.mpf(k+1), b=mp.mpf(mu),
+        #                                            regularized=True)))
+        assert_allclose(stats.poisson.logcdf(k, mu), logcdf_reference,
+                        rtol=1e-15, atol=1e-300)
+        assert_allclose(stats.poisson.logsf(k, mu), logsf_reference,
+                        rtol=1e-15, atol=1e-300)
+
 
 class TestKSTwo:
 
@@ -5876,7 +5895,8 @@ class TestLevyStable:
         ]
     )
     def test_pdf_nolan_samples(
-            self, nolan_pdf_sample_data, pct_range, alpha_range, beta_range
+        self, nolan_pdf_sample_data, pct_range,
+        alpha_range, beta_range, levy_stable_lock
     ):
         """Test pdf values against Nolan's stablec.exe output"""
         data = nolan_pdf_sample_data
@@ -6027,20 +6047,21 @@ class TestLevyStable:
         # fmt: on
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
-            stats.levy_stable.pdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
             msg = "Density calculations experimental for FFT method"
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", msg, RuntimeWarning)
                 # occurs in FFT methods only
-                p = stats.levy_stable.pdf(
-                    subdata['x'],
-                    subdata['alpha'],
-                    subdata['beta'],
-                    scale=1,
-                    loc=0
-                )
+                with levy_stable_lock:
+                    stats.levy_stable.pdf_default_method = default_method
+                    p = stats.levy_stable.pdf(
+                        subdata['x'],
+                        subdata['alpha'],
+                        subdata['beta'],
+                        scale=1,
+                        loc=0
+                    )
                 with np.errstate(over="ignore"):
                     subdata2 = rec_append_fields(
                         subdata,
@@ -6089,7 +6110,8 @@ class TestLevyStable:
         ]
     )
     def test_cdf_nolan_samples(
-            self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
+        self, nolan_cdf_sample_data, pct_range,
+        alpha_range, beta_range, levy_stable_lock
     ):
         """ Test cdf values against Nolan's stablec.exe output."""
         data = nolan_cdf_sample_data
@@ -6172,7 +6194,6 @@ class TestLevyStable:
         ]
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
-            stats.levy_stable.cdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
             with warnings.catch_warnings():
@@ -6181,13 +6202,15 @@ class TestLevyStable:
                     ('Cumulative density calculations experimental for FFT'
                      ' method. Use piecewise method instead.'),
                     RuntimeWarning)
-                p = stats.levy_stable.cdf(
-                    subdata['x'],
-                    subdata['alpha'],
-                    subdata['beta'],
-                    scale=1,
-                    loc=0
-                )
+                with levy_stable_lock:
+                    stats.levy_stable.cdf_default_method = default_method
+                    p = stats.levy_stable.cdf(
+                        subdata['x'],
+                        subdata['alpha'],
+                        subdata['beta'],
+                        scale=1,
+                        loc=0
+                    )
                 with np.errstate(over="ignore"):
                     subdata2 = rec_append_fields(
                         subdata,

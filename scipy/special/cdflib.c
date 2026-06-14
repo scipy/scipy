@@ -1631,60 +1631,6 @@ struct TupleDID cdffnc_which4(double p, double q, double f, double dfn, double p
 }
 
 
-struct TupleDID cdffnc_which5(double p, double q, double f, double dfn, double dfd)
-{
-    double tol = 1e-10;
-    double atol = 1e-50;
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-
-    DS.small = 0.;
-    DS.big = 1e4;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = 5.;
-    struct TupleDDI fncret;
-    struct TupleDID ret = {0};
-
-    if (!((0 <= p) && (p <= (1. - 1e-16)))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : (1. - 1e-16));
-        return ret;
-    }
-    if (!(0 <= f)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -3};
-    }
-    if (!(0 < dfn)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -4};
-    }
-    if (!(0 < dfd)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -4};
-    }
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        fncret = cumfnc(f, dfn, dfd, DS.x);
-        DS.fx = fncret.d1 - p;
-        if (fncret.i1 != 0) {
-            return (struct TupleDID){.d1 = DS.x, .d2 = 0.0, .i1 = 10};
-        }
-        dinvr(&DS, &DZ);
-    }
-
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? 0 : 1e4);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
     //               Cumulative Distribution Function
     //                         T distribution
     //
@@ -1851,7 +1797,7 @@ struct TupleDID cdft_which3(double p, double q, double t)
     //                Search range: [1e-100, 1E10]
     //                    DOUBLE PRECISION DF
     //
-    //     PNONC <--> Noncentrality parameter of the noncentral t-distributio
+    //     PNONC <--> Noncentrality parameter of the noncentral t-distribution
     //                Input range: [-1e6, 1E6].
     //
     //     STATUS <-- 0 if calculation completed correctly
@@ -1874,8 +1820,8 @@ struct TupleDID cdft_which3(double p, double q, double t)
     //
     //                                Method
     //
-    //     Upper tail    of  the  cumulative  noncentral t is calculated usin
-    //     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Coninuou
+    //     Upper tail  of  the  cumulative  noncentral t is calculated using
+    //     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Continuous
     //     Univariate Distributions, Vol 2, 2nd Edition.  Wiley (1995)
     //
     //     Computation of other parameters involve a search for a value that
@@ -1944,65 +1890,6 @@ struct TupleDID cdftnc_which3(double p, double q, double t, double pnonc)
 }
 
 
-struct TupleDID cdftnc_which4(double p, double q, double t, double df)
-{
-
-    double tol = 1e-8;
-    double atol = 1e-50;
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-    struct TupleDD tncret;
-    struct TupleDID ret = {0};
-
-    DS.small = -1.e6;
-    DS.big = 1.e6;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = 5.;
-
-    if (!((0 <= p) && (p <= (1. - 1e-16)))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : (1. - 1e-16));
-        return ret;
-    }
-    if (!(t == t)) {
-        ret.i1 = -3;
-        return ret;
-    }
-    if (!(df > 0.)) {
-        ret.i1 = -4;
-        return ret;
-    }
-    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
-        ret.i1 = 3;
-        ret.d2 = (p+q < 0 ? 0.0 : 1.0);
-        return ret;
-    }
-
-    t = fmax(fmin(t, spmpar[2]), -spmpar[2]);
-    df = fmin(df, 1.e10);
-
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        tncret = cumtnc(t, df, DS.x);
-        DS.fx = tncret.d1 - p;
-        dinvr(&DS, &DZ);
-    }
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? 0 : 1e6);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
 struct TupleDD cumbet(double x, double y, double a, double b)
 {
     //              Double precision cUMulative incomplete BETa distribution
@@ -2045,7 +1932,7 @@ struct TupleDD cumbet(double x, double y, double a, double b)
     //
     //                                       References
     //
-    //         Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithim
+    //         Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithm
     //         708 Significant Digit Computation of the Incomplete Beta Function
     //         Ratios. ACM ToMS, Vol.18, No. 3, Sept. 1992, 360-373.
 
@@ -2357,7 +2244,7 @@ struct TupleDDI cumfnc(double f, double dfn, double dfd, double pnonc)
     //
     //    CUM <-- CUMULATIVE NONCENTRAL F DISTRIBUTION
     //
-    //    CCUM <-- COMPLIMENT OF CUMMULATIVE
+    //    CCUM <-- COMPLIMENT OF CUMULATIVE
     //
     //
     //                            Method
@@ -2511,7 +2398,7 @@ struct TupleDD cumgam(double x, double a)
     //                                    CUM is DOUBLE PRECISION
     //
     //    CCUM <-- Compliment of Cumulative incomplete gamma distribution.
-    //                                            CCUM is DOUBLE PRECISIO
+    //                                            CCUM is DOUBLE PRECISION
     //
     //
     //                            Method
@@ -2539,7 +2426,7 @@ struct TupleDD cumnor(double x)
     //        CCUM <-- Compliment of Cumulative normal distribution.
     //                                            CCUM is DOUBLE PRECISION
     //        Renaming of function ANORM from:
-    //        Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portabel FORTRAN
+    //        Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portable FORTRAN
     //        Package of Special Function Routines and Test Drivers"
     //        acm Transactions on Mathematical Software. 19, 22-32.
     //        with slight modifications to return ccum and to deal with
@@ -2674,13 +2561,13 @@ struct TupleDD cumt(double t, double df)
     //                                                T is DOUBLE PRECISION
     //
     //    DF --> Degrees of freedom of the t-distribution.
-    //                                                DF is DOUBLE PRECISIO
+    //                                                DF is DOUBLE PRECISION
     //
     //    CUM <-- Cumulative t-distribution.
-    //                                                CCUM is DOUBLE PRECIS
+    //                                                CCUM is DOUBLE PRECISION
     //
     //    CCUM <-- Compliment of Cumulative t-distribution.
-    //                                                CCUM is DOUBLE PRECIS
+    //                                                CCUM is DOUBLE PRECISION
     //
     //
     //                            Method
@@ -3151,7 +3038,7 @@ void dzror(DzrorState *S)
     //                changing any of its other parameters.
     //
     //                When ZROR has finished without error, it will return
-    //                with STATUS 0.  In that case (XLO,XHI) bound the answe
+    //                with STATUS 0.  In that case (XLO,XHI) bound the answer.
     //
     //                If ZROR finds an error (which implies that F(XLO)-Y an
     //                F(XHI)-Y have the same sign, it returns STATUS -1.  In
@@ -3166,11 +3053,11 @@ void dzror(DzrorState *S)
     //                        DOUBLE PRECISION FX
     //
     //    XLO <-- When ZROR returns with STATUS = 0, XLO bounds the
-    //            inverval in X containing the solution below.
+    //            interval in X containing the solution below.
     //                        DOUBLE PRECISION XLO
     //
     //    XHI <-- When ZROR returns with STATUS = 0, XHI bounds the
-    //            inverval in X containing the solution above.
+    //            interval in X containing the solution above.
     //                        DOUBLE PRECISION XHI
     //
     //    QLEFT <-- .TRUE. if the stepping search terminated unsuccessfully

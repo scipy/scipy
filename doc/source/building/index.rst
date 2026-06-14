@@ -41,7 +41,7 @@ your system.
 
     If you want to use the system Python and ``pip``, you will need:
 
-    * C, C++, and Fortran compilers (typically ``gcc``, ``g++``, and ``gfortran``).
+    * C and C++ compilers (typically ``gcc``, ``g++``).
 
     * Python header files (typically a package named ``python3-dev`` or
       ``python3-devel``)
@@ -59,7 +59,7 @@ your system.
 
         To install SciPy build requirements, you can do::
 
-          sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
+          sudo apt install -y gcc g++ libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
 
         Alternatively, you can do::
 
@@ -73,7 +73,7 @@ your system.
 
         To install SciPy build requirements, you can do::
 
-          sudo dnf install gcc-gfortran python3-devel openblas-devel lapack-devel pkgconfig
+          sudo dnf install gcc python3-devel openblas-devel lapack-devel pkgconfig
 
         Alternatively, you can do::
 
@@ -87,7 +87,7 @@ your system.
 
         To install SciPy build requirements, you can do::
 
-          sudo yum install gcc-gfortran python3-devel openblas-devel lapack-devel pkgconfig
+          sudo yum install gcc python3-devel openblas-devel lapack-devel pkgconfig
 
         Alternatively, you can do::
 
@@ -101,7 +101,7 @@ your system.
 
         To install SciPy build requirements, you can do::
 
-          sudo pacman -S gcc-fortran openblas pkgconf
+          sudo pacman -S gcc openblas pkgconf
 
   .. tab-item:: macOS
     :sync: macos
@@ -119,11 +119,11 @@ your system.
     with `the python.org installer <https://www.python.org/downloads/>`__ or
     with a package manager like Homebrew, MacPorts or Fink.
 
-    The other system dependencies you need are a Fortran compiler, BLAS and
+    The other system dependencies you need are BLAS and
     LAPACK libraries, and pkg-config. They're easiest to install with
     `Homebrew <https://brew.sh/>`__::
 
-        brew install gfortran openblas pkg-config
+        brew install openblas pkg-config
 
     To allow the build tools to find OpenBLAS, you must run::
 
@@ -141,16 +141,14 @@ your system.
   .. tab-item:: Windows
     :sync: windows
 
-    A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
-    This is trickier on Windows than on other platforms, because MSVC does not
-    support Fortran, and gfortran and MSVC can't be used together. You will
-    need one of these sets of compilers:
+    A compatible set of C and C++ compilers is needed to build SciPy.
+    You will need one of these sets of compilers:
 
-    1. Mingw-w64 compilers (``gcc``, ``g++``, ``gfortran``) - *recommended,
+    1. Mingw-w64 compilers (``gcc``, ``g++``) - *recommended,
        because it's easiest to install and is what we use for SciPy's own CI
        and binaries*
-    2. MSVC + Intel Fortran (``ifort``)
-    3. Intel compilers (``icc``, ``ifort``)
+    2. Clang-cl
+    3. Intel compilers (``icc``)
 
     Compared to macOS and Linux, building SciPy on Windows is a little more
     difficult, due to the need to set up these compilers. It is not possible to
@@ -207,17 +205,7 @@ your system.
         can be found) in order to be found, with the exception of MSVC which
         will be found automatically if and only if there are no other compilers
         on the ``PATH``. You can use any shell (e.g., Powershell, ``cmd`` or
-        Git Bash) to invoke a build. To check that this is the case, try
-        invoking a Fortran compiler in the shell you use (e.g., ``gfortran
-        --version`` or ``ifort --version``).
-
-    .. warning::
-
-        When using a conda environment it is possible that the environment
-        creation will not work due to an outdated Fortran compiler. If that
-        happens, remove the ``compilers`` entry from ``environment.yml`` and
-        try again. The Fortran compiler should be installed as described in
-        this section.
+        Git Bash) to invoke a build.
 
 
 Building SciPy from source
@@ -381,7 +369,7 @@ virtual environments:
        # development tasks:
 
        # Build and dev dependencies (for `spin {build, lint, mypy}`)
-       python -m pip install -r requirements/build.txt -r requirements/dev.txt
+       python -m pip install --group build --group dev
 
        # Doc dependencies (for `spin {doc, refguide-check}`)
        python -m pip install -r requirements/doc.txt

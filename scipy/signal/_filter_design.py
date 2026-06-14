@@ -2135,13 +2135,13 @@ def lp2hp(b, a, wo=1.0):
     if d >= n:
         outa = xp.flip(a) * pwo
         outb = _resize(b, (d,), xp=xp)
-        outb[n:] = 0.0
-        outb[:n] = xp.flip(b) * pwo[:n]
+        outb = xpx.at(outb)[n:].set(0.0)
+        outb = xpx.at(outb)[:n].set(xp.flip(b) * pwo[:n])
     else:
         outb = xp.flip(b) * pwo
         outa = _resize(a, (n,), xp=xp)
-        outa[d:] = 0.0
-        outa[:d] = xp.flip(a) * pwo[:d]
+        outa = xpx.at(outa)[d:].set(0.0)
+        outa = xpx.at(outa)[:d].set(xp.flip(a) * pwo[:d])
 
     return normalize(outb, outa)
 
@@ -2227,14 +2227,14 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
                     val += comb(i, k) * b[N - i] * (wosq) ** (i - k) / bw ** i
-        bprime[Np - j] = val
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
                     val += comb(i, k) * a[D - i] * (wosq) ** (i - k) / bw ** i
-        aprime[Dp - j] = val
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2320,7 +2320,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
                 if i + 2 * k == j:
                     val += (comb(M - i, k) * b[N - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        bprime[Np - j] = val
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
@@ -2328,7 +2328,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
                 if i + 2 * k == j:
                     val += (comb(M - i, k) * a[D - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        aprime[Dp - j] = val
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2419,7 +2419,7 @@ def bilinear(b, a, fs=1.0):
     Examples
     --------
     The following example shows the frequency response of an analog bandpass filter and
-    the corresponding digital filter derived by utilitzing the bilinear transform:
+    the corresponding digital filter derived by utilizing the bilinear transform:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2430,7 +2430,7 @@ def bilinear(b, a, fs=1.0):
     >>> bb_s, aa_s = signal.butter(4, om_c, btype='bandpass', analog=True, output='ba')
     >>> bb_z, aa_z = signal.bilinear(bb_s, aa_s, fs)
     ...
-    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digitial filter
+    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digital filter
     >>> w_s, H_s = signal.freqs(bb_s, aa_s, worN=w_z*fs)  # analog filter response
     ...
     >>> f_z, f_s = w_z * fs / (2*np.pi), w_s / (2*np.pi)
@@ -2516,7 +2516,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         Note, that for bandpass and bandstop filters passband must lie strictly
         inside stopband or vice versa. Also note that the cutoff at the band edges
         for IIR filters is defined as half-power, so -3dB, not half-amplitude (-6dB)
-        like for `scipy.signal.fiwin`.
+        like for `scipy.signal.firwin`.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -2667,7 +2667,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                      ftype=ftype, output=output, fs=fs)
 
 
-def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
+def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
               ftype='butter', output='ba', fs=None):
     """
     IIR digital and analog filter design given order and critical points.
@@ -2698,6 +2698,13 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         in the stop band. (dB)
     btype : {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         The type of filter.  Default is 'bandpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -2773,7 +2780,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> import matplotlib.pyplot as plt
 
     >>> b, a = signal.iirfilter(17, [2*np.pi*50, 2*np.pi*200], rs=60,
-    ...                         btype='band', analog=True, ftype='cheby2')
+    ...                         btype='bandpass', analog=True, ftype='cheby2')
     >>> w, h = signal.freqs(b, a, 1000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(1, 1, 1)
@@ -2790,7 +2797,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     sections implementation is required to ensure stability of a filter of
     this order):
 
-    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
+    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='bandpass',
     ...                        analog=False, ftype='cheby2', fs=2000,
     ...                        output='sos')
     >>> w, h = signal.freqz_sos(sos, 2000, fs=2000)
@@ -3379,7 +3386,7 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     return z_bs, p_bs, k_bs
 
 
-def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
+def butter(N, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Butterworth digital and analog filter design.
 
@@ -3409,6 +3416,13 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3509,7 +3523,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='butter', fs=fs)
 
 
-def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
+def cheby1(N, rp, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Chebyshev type I digital and analog filter design.
 
@@ -3536,6 +3550,13 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3631,7 +3652,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby1', fs=fs)
 
 
-def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
+def cheby2(N, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Chebyshev type II digital and analog filter design.
 
@@ -3658,6 +3679,13 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3747,7 +3775,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby2', fs=fs)
 
 
-def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
+def ellip(N, rp, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Elliptic (Cauer) digital and analog filter design.
 
@@ -3777,6 +3805,13 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter. Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3876,7 +3911,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='elliptic', fs=fs)
 
 
-def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
+def bessel(N, Wn, btype='lowpass', analog=False, output='ba', norm='phase',
            fs=None):
     """
     Bessel/Thomson digital and analog filter design.
@@ -3899,6 +3934,13 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
         half-cycles / sample.)
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned. (See Notes.)

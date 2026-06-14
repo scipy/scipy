@@ -49,14 +49,6 @@ CONFIG = _cleanup(
                 "args": r"@CPP_COMP_ARGS@",
                 "linker args": r"@CPP_COMP_LINK_ARGS@",
             },
-            "fortran": {
-                "name": "@FORTRAN_COMP@",
-                "linker": r"@FORTRAN_COMP_LINKER_ID@",
-                "version": "@FORTRAN_COMP_VERSION@",
-                "commands": r"@FORTRAN_COMP_CMD_ARRAY@",
-                "args": r"@FORTRAN_COMP_ARGS@",
-                "linker args": r"@FORTRAN_COMP_LINK_ARGS@",
-            },
             "pythran": {
                 "version": r"@PYTHRAN_VERSION@",
                 "include directory": r"@PYTHRAN_INCDIR@"

@@ -1008,9 +1008,17 @@ class poisson_gen(rv_discrete):
         k = floor(x)
         return special.pdtr(k, mu)
 
+    def _logcdf(self, x, mu):
+        k = floor(x)
+        return special.log_gammaincc(k + 1, mu)
+
     def _sf(self, x, mu):
         k = floor(x)
         return special.pdtrc(k, mu)
+
+    def _logsf(self, x, mu):
+        k = floor(x)
+        return special.log_gammainc(k + 1, mu)
 
     def _ppf(self, q, mu):
         vals = ceil(special.pdtrik(q, mu))

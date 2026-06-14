@@ -1556,8 +1556,7 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
 
 
 # `chebwin` contributed by Kumar Appaiah.
-@xp_capabilities(skip_backends=(("jax.numpy", "item assignment"),
-                                ("dask.array", "data-dependent output shapes")))
+@xp_capabilities(skip_backends=(("dask.array", "data-dependent output shapes"),))
 def chebwin(M, at, sym=True, *, xp=None, device=None):
     r"""Return a Dolph-Chebyshev window.
 
@@ -1668,10 +1667,16 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
     # from scipy.special. Using the expansion in scipy.special leads to errors.
-    p = xp.zeros_like(x)
-    p[x > 1] = xp.cosh(order * xp.acosh(x[x > 1]))
-    p[x < -1] = (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(-x[x < -1]))
-    p[abs(x) <= 1] = xp.cos(order * xp.acos(x[abs(x) <= 1]))
+    one = xp.asarray(1, dtype=x.dtype, device=device)
+    p = xp.where(
+        x > 1,
+        xp.cosh(order * xp.acosh(xp.maximum(x, one))),
+        xp.where(
+            x < -1,
+            (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(xp.maximum(-x, one))),
+            xp.cos(order * xp.acos(xp.clip(x, -1, 1)))
+        )
+    )
 
     # Appropriate IDFT and filling up
     # depending on even/odd M
@@ -1847,7 +1852,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
-@xp_capabilities(skip_backends=[("jax.numpy", "item assignment")])
+@xp_capabilities()
 def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     """
     Return a Taylor window.
@@ -1945,13 +1950,13 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
 
     Fm = xp.empty(nbar - 1, dtype=xp.float64, device=device)
     signs = xp.empty_like(ma)
-    signs[::2] = 1
-    signs[1::2] = -1
+    signs = xpx.at(signs)[::2].set(1)
+    signs = xpx.at(signs)[1::2].set(-1)
     m2 = ma*ma
     for mi, m in enumerate(ma):
         numer = signs[mi] * xp.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
         denom = 2 * xp.prod(1 - m2[mi]/m2[:mi]) * xp.prod(1 - m2[mi]/m2[mi+1:])
-        Fm[mi] = numer / denom
+        Fm = xpx.at(Fm)[mi].set(numer / denom)
 
     def W(n):
         return 1 + 2*xp.matmul(Fm, xp.cos(
@@ -2395,7 +2400,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     ----------
     window : str | tuple | float
         Either a string with the window name or a tuple consisting of window name and
-        window parameters. If it is a float, a `~scipy.singal.kaiser` window is
+        window parameters. If it is a float, a `~scipy.signal.kaiser` window is
         created with `window` being the shape parameter. Consult the Notes below for
         more details.
     Nx : int
@@ -2466,7 +2471,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
         Generalized Gaussian with shape parameter ``p`` and standard deviation ``sig``
         (aliases: ``'general_gaussian', 'general gauss', 'general_gauss', 'ggs'``)
     `general_hamming` / ``('general hamming', alpha)``:
-        Generalized Hamming window with coefficent ``alpha``
+        Generalized Hamming window with coefficient ``alpha``
         (aliases: ``'general_hamming'``)
     `hamming` / ``'hamming'``:
         Hamming window (aliases: ``'hamm', 'ham'``)
@@ -2485,7 +2490,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     `parzen` / ``'parzen'``:
         Parzen window (aliases: ``'parz', 'par'``)
     `taylor` / ``'taylor'`` / (``'taylor', nbar, sll, norm)``:
-        Taylor window with ``nbar`` adjascent sidelobes (default: ``4``)), ``sll`` dB
+        Taylor window with ``nbar`` adjacent sidelobes (default: ``4``)), ``sll`` dB
         suppression level (default: ``30``) and boolean value ``norm``
         (default: ``True``) (aliases: ``taylorwin``)
     `triang`/ ``'triangle'``:

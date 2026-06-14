@@ -141,17 +141,11 @@ jobs:
       run: |
         pip install pybind11 pythran spin pooch hypothesis pytest pytest-timeout
 
-    - name: Make gfortran-13 on runner image usable
-      run: |
-        # Ensure we use gfortran-13 and that its runtime is on the library search path
-        FC=$(which gfortran-13)
-        GFORTRAN_LIB=$(dirname `$FC --print-file-name libgfortran.dylib`)
-        echo DYLD_LIBRARY_PATH=$GFORTRAN_LIB >> "$GITHUB_ENV"
-        echo FC=$FC >> "$GITHUB_ENV"
-
     - name: Build SciPy with ASan
       run: |
-        # Can't use Meson's `-Db_sanitize=address` because gfortran-13 will choke on it
+        # TODO
+        # - add --asan to spin build command
+        # - removmove -fsanitize=address from C{XX}FLAGS
         export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
         export CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
         spin build -S-Dblas=accelerate

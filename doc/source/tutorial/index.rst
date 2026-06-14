@@ -34,7 +34,6 @@ Subpackage            Description and User Guide
 ``io``                :doc:`./io`
 ``linalg``            :doc:`./linalg`
 ``ndimage``           :doc:`./ndimage`
-``odr``               Orthogonal distance regression
 ``optimize``          :doc:`./optimize`
 ``signal``            :doc:`./signal`
 ``sparse``            :doc:`./sparse`
