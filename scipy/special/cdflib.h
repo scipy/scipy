@@ -109,7 +109,6 @@ struct TupleDID cdff_which4(double, double, double, double);
 struct TupleDID cdffnc_which3(double, double, double, double, double);
 struct TupleDID cdffnc_which4(double, double, double, double, double);
 struct TupleDID cdft_which3(double, double, double);
-struct TupleDID cdftnc_which3(double, double, double, double);
 
 #ifdef __cplusplus
 }      /* extern "C" */

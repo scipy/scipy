@@ -1510,6 +1510,47 @@ double nct_find_non_centrality_double(double v, double p, double x)
     return nct_find_non_centrality_wrap(v, p, x);
 }
 
+// Wrapper for Boost noncentral T find_degrees_of_freedom
+template<typename Real>
+Real
+nct_find_degrees_of_freedom_wrap(const Real p, const Real nc, const Real t)
+{
+    if (std::isnan(p) || std::isnan(nc) || std::isnan(t)) {
+        return NAN;
+    }
+    if (p < 0 || p > 1) {
+        sf_error("nctdtridf", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        // Boost signature: find_degrees_of_freedom(delta, x, p)
+        y = boost::math::non_central_t_distribution<Real, SpecialPolicy>::find_degrees_of_freedom(nc, t, p);
+    } catch (const std::domain_error& e) {
+        sf_error("nctdtridf", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::underflow_error& e) {
+        sf_error("nctdtridf", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("nctdtridf", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+nct_find_degrees_of_freedom_float(float p, float nc, float t)
+{
+    return nct_find_degrees_of_freedom_wrap(p, nc, t);
+}
+
+double
+nct_find_degrees_of_freedom_double(double p, double nc, double t)
+{
+    return nct_find_degrees_of_freedom_wrap(p, nc, t);
+}
+
 float
 nct_mean_float(float v, float l)
 {
