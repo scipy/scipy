@@ -70,8 +70,6 @@ npy_cdouble to_ccomplex(complex<double> z) { return {z.real(), z.imag()}; }
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::hyp1f1(a, b, to_complex(z))); }
 
-double hypU_wrap(double a, double b, double x) { return xsf::hypu(a, b, x); }
-
 double hyp1f1_wrap(double a, double b, double x) { return xsf::hyp1f1(a, b, x); }
 
 double special_hyperu(double a, double b, double x) { return xsf::hyperu(a, b, x); }
@@ -446,8 +444,6 @@ double cephes_ellpk(double x) { return xsf::ellipkm1(x); }
 double cephes_ellie(double phi, double m) { return xsf::ellipeinc(phi, m); }
 
 double xsf_ellipkinc(double phi, double m) { return xsf::ellipkinc(phi, m); }
-
-double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
 
 double cephes_erfcinv(double y) { return xsf::cephes::erfcinv(y); }
 

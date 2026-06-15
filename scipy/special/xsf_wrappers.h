@@ -22,7 +22,6 @@ extern "C" {
 npy_cdouble clngamma_wrap(npy_cdouble z);
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 double hyp1f1_wrap(double a, double b, double x);
-double hypU_wrap(double a, double b, double x);
 double special_hyperu(double a, double b, double x);
 npy_cdouble cerf_wrap(npy_cdouble z);
 
@@ -151,7 +150,6 @@ double cephes_jv_wrap(double v, double x);
 double cephes_ellpk_wrap(double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
 int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
-double cephes_poch_wrap(double x, double m);
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err);
 double cephes__struve_bessel_series(double v, double z, Py_ssize_t is_h, double *err);
 double cephes__struve_power_series(double v, double z, Py_ssize_t is_h, double *err);
