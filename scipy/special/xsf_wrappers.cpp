@@ -108,8 +108,6 @@ double special_inv_boxcox1p(double x, double lmbda) { return xsf::inv_boxcox1p(x
 
 double special_ndtri_exp(double x) { return xsf::ndtri_exp(x); }
 
-npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(xsf::cerf(to_complex(z))); }
-
 double special_itstruve0(double x) { return xsf::itstruve0(x); }
 
 double special_it2struve0(double x) { return xsf::it2struve0(x); }
@@ -135,10 +133,6 @@ double special_keip(double x) { return xsf::keip(x); }
 void special_ckelvin(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
     xsf::kelvin(x, *reinterpret_cast<complex<double> *>(Be), *reinterpret_cast<complex<double> *>(Ke),
                 *reinterpret_cast<complex<double> *>(Bep), *reinterpret_cast<complex<double> *>(Kep));
-}
-
-npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble z) {
-    return to_ccomplex(xsf::hyp2f1(a, b, c, to_complex(z)));
 }
 
 void it1j0y0_wrap(double x, double *j0int, double *y0int) { xsf::it1j0y0(x, *j0int, *y0int); }
@@ -271,8 +265,6 @@ void special_cairye(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdoubl
                *reinterpret_cast<complex<double> *>(bi), *reinterpret_cast<complex<double> *>(bip));
 }
 
-double cephes_ellpk_wrap(double x) { return xsf::cephes::ellpk(x); }
-
 int cephes_fresnl_wrap(double xxa, double *ssa, double *cca) { return xsf::cephes::fresnl(xxa, ssa, cca); }
 
 npy_cdouble special_ccyl_hankel_2(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_hankel_2(v, to_complex(z))); }
@@ -323,11 +315,7 @@ npy_cdouble special_lambertw(npy_cdouble z, long k, double tol) {
     return to_ccomplex(xsf::lambertw(to_complex(z), k, tol));
 }
 
-double cephes_expm1_wrap(double x) { return xsf::cephes::expm1(x); }
-
 double cephes_expn_wrap(Py_ssize_t n, double x) { return xsf::cephes::expn(static_cast<int>(n), x); }
-
-double cephes_log1p_wrap(double x) { return xsf::cephes::log1p(x); }
 
 double cephes_jv_wrap(double v, double x) { return xsf::cephes::jv(v, x); }
 
@@ -364,12 +352,8 @@ double cephes_yn_wrap(Py_ssize_t n, double x) { return xsf::cephes::yn(static_ca
 
 double cephes_polevl_wrap(double x, const double coef[], int N) { return xsf::cephes::polevl(x, coef, N); }
 
-double cephes_p1evl_wrap(double x, const double coef[], int N) { return xsf::cephes::p1evl(x, coef, N); }
-
 double special_wright_bessel(double a, double b, double x) { return xsf::wright_bessel(a, b, x); }
 double special_log_wright_bessel(double a, double b, double x) { return xsf::log_wright_bessel(a, b, x); }
-
-double special_scaled_exp1(double x) { return xsf::scaled_exp1(x); }
 
 double special_ellipk(double m) { return xsf::ellipk(m); }
 
