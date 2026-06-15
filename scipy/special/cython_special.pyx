@@ -1396,9 +1396,9 @@ cdef extern from r"xsf_wrappers.h":
 
     double special_boxcox(double x, double lmbda) nogil
     double special_boxcox1p(double x, double lmbda) nogil
+    double special_hyperu(double a, double b, double x) nogil
     double special_inv_boxcox(double x, double lmbda) nogil
     double special_inv_boxcox1p(double x, double lmbda) nogil
-    double special_hyperu(double a, double b, double x) nogil
     double special_ndtri_exp(double x) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
