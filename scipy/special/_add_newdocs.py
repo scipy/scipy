@@ -3984,7 +3984,7 @@ add_newdoc("kolmogorov",
     ----------
     x : array_like
         Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
-        multiplied by sqrt(n).
+        multiplied by :math:`\sqrt{n}`.
     out : ndarray, optional
         Optional output array for the function results.
 
