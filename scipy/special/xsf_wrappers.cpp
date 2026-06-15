@@ -30,6 +30,7 @@
 #include <xsf/par_cyl.h>
 #include <xsf/sici.h>
 #include <xsf/specfun.h>
+#include <xsf/spence.h>
 #include <xsf/sph_bessel.h>
 #include <xsf/sph_harm.h>
 #include <xsf/sphd_wave.h>
@@ -52,7 +53,6 @@
 #include <xsf/cephes/rgamma.h>
 #include <xsf/cephes/round.h>
 #include <xsf/cephes/scipy_iv.h>
-#include <xsf/cephes/spence.h>
 #include <xsf/cephes/trig.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/cephes/yn.h>
@@ -450,7 +450,9 @@ double cephes_erfcinv(double y) { return xsf::cephes::erfcinv(y); }
 
 double cephes_round(double x) { return xsf::cephes::round(x); }
 
-double cephes_spence(double x) { return xsf::cephes::spence(x); }
+double xsf_spence(double x) { return xsf::spence(x); }
+
+npy_cdouble xsf_cspence(npy_cdouble z) { return to_ccomplex(xsf::spence(to_complex(z))); }
 
 double xsf_struve_h(double v, double z) { return xsf::struve_h(v, z); }
 

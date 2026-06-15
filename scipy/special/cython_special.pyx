@@ -1350,7 +1350,8 @@ cdef extern from r"xsf_wrappers.h":
     npy_int xsf_shichi(npy_double, npy_double *, npy_double *) nogil
 
     double cephes_round(double x) nogil
-    double cephes_spence(double x) nogil
+    double xsf_spence(double x) nogil
+    npy_cdouble xsf_cspence(npy_cdouble z) nogil
 
     double xsf_struve_h(double v, double z) nogil
     double xsf_struve_l(double v, double z) nogil
@@ -1710,10 +1711,6 @@ cdef _proto_smirnov_unsafe_t *_proto_smirnov_unsafe_t_var = &_func_smirnov_unsaf
 from ._legacy cimport smirnovi_unsafe as _func_smirnovi_unsafe
 ctypedef double _proto_smirnovi_unsafe_t(double, double) noexcept nogil
 cdef _proto_smirnovi_unsafe_t *_proto_smirnovi_unsafe_t_var = &_func_smirnovi_unsafe
-
-from ._spence cimport cspence as _func_cspence
-ctypedef double complex _proto_cspence_t(double complex) noexcept nogil
-cdef _proto_cspence_t *_proto_cspence_t_var = &_func_cspence
 
 from ._cdflib_wrappers cimport stdtridf as _func_stdtridf
 ctypedef double _proto_stdtridf_t(double, double) noexcept nogil
@@ -3499,14 +3496,13 @@ cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil:
 cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.spence"""
     if Dd_number_t is double_complex:
-        return _func_cspence(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_cspence(_complexstuff.npy_cdouble_from_double_complex(x0))
+        )
     elif Dd_number_t is double:
-        return cephes_spence(x0)
+        return xsf_spence(x0)
     else:
-        if Dd_number_t is double_complex:
-            return NAN
-        else:
-            return NAN
+        return NAN
 
 cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""

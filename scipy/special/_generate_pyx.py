@@ -229,6 +229,7 @@ special_ufuncs = [
     "rel_entr",
     "rgamma",
     "sindg",
+    "spence",
     "struve",
     "tandg",
     "voigt_profile",
