@@ -84,6 +84,7 @@ special_ufuncs = [
     "_iv_ratio",
     "_iv_ratio_c",
     "_lambertw",
+    "_lgam1p",
     "_log1mexp",
     "_log1pmx",
     "_normalized_gen_harmonic",
