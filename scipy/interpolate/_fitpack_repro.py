@@ -1143,6 +1143,9 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         t = xp.asarray(t)
     bc_type = _validate_bc_type(bc_type)
 
+    if k < 1:
+      raise ValueError(f"k must be >= 1, got k={k}")
+
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")

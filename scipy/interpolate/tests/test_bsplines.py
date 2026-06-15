@@ -3952,6 +3952,15 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         with assert_raises(ValueError):
             make_splrep(x, y, w=w, k=2, s=12)
 
+    def test_k0_raises(self):
+        # k=0 (piecewise constant) is not supported: FITPACK knot selection
+        # is undefined for degree 0, causing a cryptic RuntimeError deep in
+        # Fortran code. Should raise a clear ValueError instead. gh-25370
+        x = np.arange(10, dtype=float)
+        y = x**2
+        with pytest.raises(ValueError, match="k must be >= 1"):
+          make_splrep(x, y, s=1, k=0)
+
     def test_shape(self, xp):
         # make sure coefficients have the right shape (not extra dims)
         n, k = 10, 3
