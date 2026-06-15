@@ -555,13 +555,12 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(_sparsetools, m,
 #if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
-		py::mod_gil_not_used()
+PYBIND11_MODULE(_sparsetools, m, py::mod_gil_not_used())
 #else
-                py::multiple_interpreters::per_interpreter_gil()
+PYBIND11_MODULE(_sparsetools, m, py::multiple_interpreters::per_interpreter_gil())
 #endif
-) {
+{
     if (_import_array() != 0) {
       throw py::error_already_set();
     }
