@@ -23,6 +23,7 @@ npy_cdouble clngamma_wrap(npy_cdouble z);
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 double hyp1f1_wrap(double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
+double special_hyperu(double a, double b, double x);
 npy_cdouble cerf_wrap(npy_cdouble z);
 
 double xsf_exp1(double x);

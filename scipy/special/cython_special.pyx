@@ -1398,6 +1398,7 @@ cdef extern from r"xsf_wrappers.h":
     double special_boxcox1p(double x, double lmbda) nogil
     double special_inv_boxcox(double x, double lmbda) nogil
     double special_inv_boxcox1p(double x, double lmbda) nogil
+    double special_hyperu(double a, double b, double x) nogil
     double special_ndtri_exp(double x) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
@@ -1651,10 +1652,6 @@ cdef _proto__hyp0f1_real_t *_proto__hyp0f1_real_t_var = &_func__hyp0f1_real
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_cdouble _func_chyp1f1_wrap "chyp1f1_wrap"(npy_double, npy_double, npy_cdouble)nogil
-
-from ._hypergeometric cimport hyperu as _func_hyperu
-ctypedef double _proto_hyperu_t(double, double, double) noexcept nogil
-cdef _proto_hyperu_t *_proto_hyperu_t_var = &_func_hyperu
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j0 "j0"(npy_double)nogil
@@ -2571,7 +2568,7 @@ cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexce
 
 cpdef double hyperu(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.hyperu"""
-    return _func_hyperu(x0, x1, x2)
+    return special_hyperu(x0, x1, x2)
 
 cpdef double i0(double x0) noexcept nogil:
     """See the documentation for scipy.special.i0"""

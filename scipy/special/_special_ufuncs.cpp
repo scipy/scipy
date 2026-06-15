@@ -22,6 +22,7 @@
 #include <xsf/expint.h>
 #include <xsf/fresnel.h>
 #include <xsf/gamma.h>
+#include <xsf/hyperu.h>
 #include <xsf/hyp2f1.h>
 #include <xsf/iv_ratio.h>
 #include <xsf/kelvin.h>
@@ -125,6 +126,7 @@ extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
 extern const char *hyp2f1_doc;
+extern const char *hyperu_doc;
 extern const char *i0_doc;
 extern const char *i0e_doc;
 extern const char *i1_doc;
@@ -589,6 +591,11 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::fffF_F>(xsf::hyp2f1), static_cast<xsf::numpy::dddD_D>(xsf::hyp2f1)},
                           "hyp2f1", hyp2f1_doc);
     PyModule_AddObjectRef(module, "hyp2f1", hyp2f1);
+
+    PyObject *hyperu =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(xsf::hyperu), static_cast<xsf::numpy::ddd_d>(xsf::hyperu)}, 
+                          "hyperu", hyperu_doc);
+    PyModule_AddObjectRef(module, "hyperu", hyperu);
 
     PyObject *hankel1 = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fF_F>(xsf::cyl_hankel_1), static_cast<xsf::numpy::dD_D>(xsf::cyl_hankel_1)}, "hankel1",

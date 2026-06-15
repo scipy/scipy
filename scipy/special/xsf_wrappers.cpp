@@ -20,6 +20,7 @@
 #include <xsf/fresnel.h>
 #include <xsf/gamma.h>
 #include <xsf/hyp2f1.h>
+#include <xsf/hyperu.h>
 #include <xsf/kelvin.h>
 #include <xsf/lambertw.h>
 #include <xsf/log.h>
@@ -72,6 +73,8 @@ npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex
 double hypU_wrap(double a, double b, double x) { return xsf::hypu(a, b, x); }
 
 double hyp1f1_wrap(double a, double b, double x) { return xsf::hyp1f1(a, b, x); }
+
+double special_hyperu(double a, double b, double x) { return xsf::hyperu(a, b, x); }
 
 void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt) {
     xsf::itairy(x, *apt, *bpt, *ant, *bnt);

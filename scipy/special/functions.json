@@ -367,11 +367,6 @@
             "chyp1f1_wrap": "ddD->D"
         }
     },
-    "hyperu": {
-        "_hypergeometric.pxd": {
-            "hyperu": "ddd->d"
-        }
-    },
     "kn": {
         "_legacy.pxd": {
             "kn_unsafe": "dd->d"
