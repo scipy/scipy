@@ -127,7 +127,7 @@ def getdtype(dtype, a=None, default=None):
             if default is not None:
                 newdtype = np.dtype(default)
             else:
-                raise ValueError("could not interpret data type") from e
+                raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
 
