@@ -1411,7 +1411,7 @@ nct_ppf_wrap(const Real v, const Real l, const Real x)
         y = INFINITY;
     } catch (const std::underflow_error& e) {
         sf_error("nctdtrit", SF_ERROR_UNDERFLOW, NULL);
-        y = 0; 
+        y = 0;
     } catch (...) {
         /* Boost was unable to produce a result. */
         sf_error("nctdtrit", SF_ERROR_NO_RESULT, NULL);
@@ -1634,7 +1634,7 @@ t_ppf_wrap(const Real v, const Real x)
         y = INFINITY;
     } catch (const std::underflow_error& e) {
         sf_error("stdtrit", SF_ERROR_UNDERFLOW, NULL);
-        y = 0; 
+        y = 0;
     } catch (...) {
         /* Boost was unable to produce a result. */
         sf_error("stdtrit", SF_ERROR_NO_RESULT, NULL);
@@ -1802,7 +1802,7 @@ bdtrik_wrap(const Real x, const Real n, const Real p, const Policy& policy_)
         y = INFINITY;
     } catch (const std::underflow_error& e) {
         sf_error("bdtrik", SF_ERROR_UNDERFLOW, NULL);
-        y = 0; 
+        y = 0;
     } catch (...) {
         sf_error("bdtrik", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
@@ -1826,7 +1826,7 @@ bdtrik_double(double x, double n, double p)
     return bdtrik_wrap(x, n, p, SpecialPolicy());
 }
 
-float 
+float
 binom_ppf_float(float x, float n, float p)
 {
     return bdtrik_wrap(x, n, p, StatsPolicy());
@@ -1960,10 +1960,30 @@ template<typename Real>
 Real
 nbinom_cdf_wrap(const Real x, const Real r, const Real p)
 {
-    if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+    if (std::isnan(x) || std::isnan(r) || std::isnan(p)) {
+        return NAN;
     }
+    if ((p < 0.0) || (p > 1.0) || (r <= 0.0)) {
+        sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    if (std::isfinite(x)) {
+        Real y;
+        try {
+            y = boost::math::cdf(
+                boost::math::negative_binomial_distribution<Real, SpecialPolicy>(r, p), x);
+        } catch (...) {
+            /* Boost was unable to produce a result. */
+            sf_error("nbdtr", SF_ERROR_NO_RESULT, NULL);
+            y = NAN;
+        }
+        if ((y < 0) || (y > 1)) {
+            sf_error("nbdtr", SF_ERROR_NO_RESULT, NULL);
+            y = NAN;
+        }
+        return y;
+    }
+
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
 }
@@ -2006,7 +2026,7 @@ nbdtrik_wrap(const Real x, const Real n, const Real p, const Policy& policy_)
         y = INFINITY;
     } catch (const std::underflow_error& e) {
         sf_error("nbdtrik", SF_ERROR_UNDERFLOW, NULL);
-        y = 0; 
+        y = 0;
     } catch (...) {
         sf_error("nbdtrik", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
@@ -2030,7 +2050,7 @@ nbdtrik_double(double x, double n, double p)
     return nbdtrik_wrap(x, n, p, SpecialPolicy());
 }
 
-float 
+float
 nbinom_ppf_float(float x, float n, float p)
 {
     return nbdtrik_wrap(x, n, p, StatsPolicy());
@@ -2140,7 +2160,7 @@ Real nbinom_invn_wrap(Real k, Real y, Real p)
     if (std::isnan(k) || std::isnan(y) || std::isnan(p)) {
         return NAN;
     }
-    // The edge cases of p=0,1 is handled in boost 
+    // The edge cases of p=0,1 is handled in boost
     if ((k < 0) || (y <= 0) || (y >= 1) || (p < 0) || (p > 1)) {
         sf_error("nbdtrin", SF_ERROR_DOMAIN, NULL);
         return NAN;
@@ -2627,7 +2647,7 @@ poisson_ppf_wrap(const Real p, const Real n)
         return NAN;
     }
     // For small p, the direct formula yields values
-    // between -1 and 0. 
+    // between -1 and 0.
     // For the Poisson distribution though, the bottom limit is 0,
     // so we return 0 in that case.
     if (y < 0) {

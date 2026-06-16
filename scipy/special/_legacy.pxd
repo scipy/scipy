@@ -18,7 +18,6 @@ cdef extern from "xsf_wrappers.h" nogil:
     double cephes_bdtri_wrap(double k, int n, double y)
     double cephes_expn_wrap(int n, double x)
     double cephes_nbdtrc_wrap(int k, int n, double p)
-    double cephes_nbdtr_wrap(int k, int n, double p)
     double cephes_nbdtri_wrap(int k, int n, double p)
     double cephes_pdtri_wrap(int k, double y)
     double cephes_yn_wrap(int n, double x)
@@ -88,12 +87,6 @@ cdef inline double nbdtrc_unsafe(double k, double n, double p) noexcept nogil:
         return NAN
     _legacy_cast_check("nbdtrc", k, n)
     return cephes_nbdtrc_wrap(<int>k, <int>n, p)
-
-cdef inline double nbdtr_unsafe(double k, double n, double p) noexcept nogil:
-    if isnan(k) or isnan(n):
-        return NAN
-    _legacy_cast_check("nbdtr", k, n)
-    return cephes_nbdtr_wrap(<int>k, <int>n, p)
 
 cdef inline double nbdtri_unsafe(double k, double n, double p) noexcept nogil:
     if isnan(k) or isnan(n):

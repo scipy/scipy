@@ -443,11 +443,9 @@
         }
     },
     "nbdtr": {
-        "_legacy.pxd": {
-            "nbdtr_unsafe": "ddd->d"
-        },
-        "xsf_wrappers.h": {
-            "cephes_nbdtr_wrap": "ppd->d"
+        "boost_special_functions.h++": {
+            "nbinom_cdf_float": "fff->f",
+            "nbinom_cdf_double": "ddd->d"
         }
     },
     "nbdtrc": {
@@ -854,12 +852,6 @@
         "boost_special_functions.h++": {
             "nbinom_pmf_float": "fff->f",
             "nbinom_pmf_double": "ddd->d"
-        }
-    },
-    "_nbinom_cdf": {
-        "boost_special_functions.h++": {
-            "nbinom_cdf_float": "fff->f",
-            "nbinom_cdf_double": "ddd->d"
         }
     },
     "_nbinom_ppf": {

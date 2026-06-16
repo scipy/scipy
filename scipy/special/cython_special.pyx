@@ -1672,10 +1672,6 @@ cdef _proto_kn_unsafe_t *_proto_kn_unsafe_t_var = &_func_kn_unsafe
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_pmv_wrap "pmv_wrap"(npy_double, npy_double, npy_double)nogil
 
-from ._legacy cimport nbdtr_unsafe as _func_nbdtr_unsafe
-ctypedef double _proto_nbdtr_unsafe_t(double, double, double) noexcept nogil
-cdef _proto_nbdtr_unsafe_t *_proto_nbdtr_unsafe_t_var = &_func_nbdtr_unsafe
-
 from ._legacy cimport nbdtrc_unsafe as _func_nbdtrc_unsafe
 ctypedef double _proto_nbdtrc_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_nbdtrc_unsafe_t *_proto_nbdtrc_unsafe_t_var = &_func_nbdtrc_unsafe
@@ -3005,11 +3001,9 @@ cpdef double modstruve(double x0, double x1) noexcept nogil:
 cpdef double nbdtr(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtr"""
     if dlp_number_t is double:
-        return _func_nbdtr_unsafe(x0, x1, x2)
-    elif dlp_number_t is long:
-        return xsf_nbdtr(x0, x1, x2)
-    elif dlp_number_t is Py_ssize_t:
-        return xsf_nbdtr(x0, x1, x2)
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_cdf_double)(x0, x1, x2)
+    elif dlp_number_t is long or dlp_number_t is Py_ssize_t:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_cdf_double)(<double>x0, <double>x1, x2)
     else:
         return NAN
 
