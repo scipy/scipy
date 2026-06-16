@@ -1100,9 +1100,6 @@ optional Cython ``bint``, leading to the following signatures.
         double spherical_kn(Py_ssize_t, double, bint)
 
 """
-
-from libc.math cimport NAN
-
 from numpy cimport (npy_float, npy_double, npy_longdouble, npy_cdouble,
                     npy_int, npy_long)
 
@@ -1416,8 +1413,6 @@ cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil:
         return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_chdtriv_float)(x0, x1)
     elif df_number_t is double:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_chdtriv_double)(x0, x1)
-    else:
-        return NAN
 
 cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtr"""
@@ -1425,8 +1420,6 @@ cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcep
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_cdf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_cdf_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t chndtrix(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtrix"""
@@ -1434,8 +1427,6 @@ cpdef df_number_t chndtrix(df_number_t x0, df_number_t x1, df_number_t x2) noexc
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_ppf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_ppf_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtrinc"""
@@ -1443,8 +1434,6 @@ cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noex
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_noncentrality_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_noncentrality_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtridf"""
@@ -1452,8 +1441,6 @@ cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noex
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_degrees_of_freedom_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_degrees_of_freedom_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_ellpj_wrap "cephes_ellpj_wrap"(npy_double, npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
@@ -1736,11 +1723,6 @@ cdef void airy(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
         y2[0] = _complexstuff.double_complex_from_npy_cdouble(tmp2)
         y3[0] = _complexstuff.double_complex_from_npy_cdouble(tmp3)
-    else:
-        y0[0] = NAN
-        y1[0] = NAN
-        y2[0] = NAN
-        y3[0] = NAN
 
 def _airy_pywrap(Dd_number_t x0):
     cdef Dd_number_t y0
@@ -1764,11 +1746,6 @@ cdef void airye(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y
         y3[0] = _complexstuff.double_complex_from_npy_cdouble(tmp3)
     elif Dd_number_t is double:
         special_airye(x0, y0, y1, y2, y3)
-    else:
-        y0[0] = NAN
-        y1[0] = NAN
-        y2[0] = NAN
-        y3[0] = NAN
 
 def _airye_pywrap(Dd_number_t x0):
     cdef Dd_number_t y0
@@ -1786,8 +1763,6 @@ cpdef double bdtr(double x0, dlp_number_t x1, double x2) noexcept nogil:
         return xsf_bdtr(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_bdtr(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double bdtrc(double x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrc"""
@@ -1797,8 +1772,6 @@ cpdef double bdtrc(double x0, dlp_number_t x1, double x2) noexcept nogil:
         return xsf_bdtrc(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_bdtrc(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtri"""
@@ -1808,8 +1781,6 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
         return xsf_bdtri(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_bdtri(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
@@ -1844,8 +1815,6 @@ cpdef df_number_t betainc(df_number_t x0, df_number_t x1, df_number_t x2) noexce
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t betaincc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betaincc"""
@@ -1853,8 +1822,6 @@ cpdef df_number_t betaincc(df_number_t x0, df_number_t x1, df_number_t x2) noexc
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibetac_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibetac_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betaincinv"""
@@ -1862,8 +1829,6 @@ cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noe
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inv_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inv_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t btdtrib(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.btdtrib"""
@@ -1871,8 +1836,6 @@ cpdef df_number_t btdtrib(df_number_t x0, df_number_t x1, df_number_t x2) noexce
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_invb_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_invb_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.btdtria"""
@@ -1880,8 +1843,6 @@ cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexce
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betainccinv"""
@@ -1889,8 +1850,6 @@ cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) no
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibetac_inv_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibetac_inv_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double betaln(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.betaln"""
@@ -1942,8 +1901,6 @@ cpdef Dd_number_t dawsn(Dd_number_t x0) noexcept nogil:
         return xsf_dawsn(x0)
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cdawsn(_complexstuff.npy_cdouble_from_double_complex(x0)))
-    else:
-        return NAN
 
 cpdef double ellipe(double x0) noexcept nogil:
     """See the documentation for scipy.special.ellipe"""
@@ -1983,8 +1940,6 @@ cpdef Dd_number_t elliprc(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RC)(x0, x1)
     elif Dd_number_t is double_complex:
         return (<double complex(*)(double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RC)(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t elliprd(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.elliprd"""
@@ -1992,8 +1947,6 @@ cpdef Dd_number_t elliprd(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexce
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RD)(x0, x1, x2)
     elif Dd_number_t is double_complex:
         return (<double complex(*)(double complex, double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RD)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef Dd_number_t elliprf(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.elliprf"""
@@ -2001,8 +1954,6 @@ cpdef Dd_number_t elliprf(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexce
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RF)(x0, x1, x2)
     elif Dd_number_t is double_complex:
         return (<double complex(*)(double complex, double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RF)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef Dd_number_t elliprg(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.elliprg"""
@@ -2010,8 +1961,6 @@ cpdef Dd_number_t elliprg(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexce
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RG)(x0, x1, x2)
     elif Dd_number_t is double_complex:
         return (<double complex(*)(double complex, double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RG)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef Dd_number_t elliprj(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.elliprj"""
@@ -2019,8 +1968,6 @@ cpdef Dd_number_t elliprj(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2, Dd_num
         return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RJ)(x0, x1, x2, x3)
     elif Dd_number_t is double_complex:
         return (<double complex(*)(double complex, double complex, double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RJ)(x0, x1, x2, x3)
-    else:
-        return NAN
 
 cpdef double entr(double x0) noexcept nogil:
     """See the documentation for scipy.special.entr"""
@@ -2032,8 +1979,6 @@ cpdef Dd_number_t erf(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cerf(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_erf(x0)
-    else:
-        return NAN
 
 cpdef Dd_number_t erfc(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfc"""
@@ -2041,8 +1986,6 @@ cpdef Dd_number_t erfc(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cerfc(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_erfc(x0)
-    else:
-        return NAN
 
 cpdef Dd_number_t erfcx(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfcx"""
@@ -2050,8 +1993,6 @@ cpdef Dd_number_t erfcx(Dd_number_t x0) noexcept nogil:
         return xsf_erfcx(x0)
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cerfcx(_complexstuff.npy_cdouble_from_double_complex(x0)))
-    else:
-        return NAN
 
 cpdef Dd_number_t erfi(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfi"""
@@ -2059,8 +2000,6 @@ cpdef Dd_number_t erfi(Dd_number_t x0) noexcept nogil:
         return xsf_erfi(x0)
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cerfi(_complexstuff.npy_cdouble_from_double_complex(x0)))
-    else:
-        return NAN
 
 cpdef df_number_t erfinv(df_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfinv"""
@@ -2068,8 +2007,6 @@ cpdef df_number_t erfinv(df_number_t x0) noexcept nogil:
         return (<float(*)(float) noexcept nogil>scipy.special._ufuncs_cxx._export_erfinv_float)(x0)
     elif df_number_t is double:
         return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_erfinv_double)(x0)
-    else:
-        return NAN
 
 cpdef double erfcinv(double x0) noexcept nogil:
     """See the documentation for scipy.special.erfcinv"""
@@ -2085,8 +2022,6 @@ cpdef Dd_number_t eval_chebyc(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
         return _func_eval_chebyc_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_chebyc_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_chebys(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_chebys"""
@@ -2098,8 +2033,6 @@ cpdef Dd_number_t eval_chebys(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
         return _func_eval_chebys_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_chebys_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_chebyt(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_chebyt"""
@@ -2111,8 +2044,6 @@ cpdef Dd_number_t eval_chebyt(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
         return _func_eval_chebyt_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_chebyt_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_chebyu(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_chebyu"""
@@ -2124,8 +2055,6 @@ cpdef Dd_number_t eval_chebyu(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
         return _func_eval_chebyu_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_chebyu_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_gegenbauer(dlp_number_t x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.eval_gegenbauer"""
@@ -2137,8 +2066,6 @@ cpdef Dd_number_t eval_gegenbauer(dlp_number_t x0, double x1, Dd_number_t x2) no
         return _func_eval_gegenbauer_l(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_gegenbauer_l(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_genlaguerre(dlp_number_t x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.eval_genlaguerre"""
@@ -2150,8 +2077,6 @@ cpdef Dd_number_t eval_genlaguerre(dlp_number_t x0, double x1, Dd_number_t x2) n
         return _func_eval_genlaguerre_l(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_genlaguerre_l(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double eval_hermite(Py_ssize_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.eval_hermite"""
@@ -2171,8 +2096,6 @@ cpdef Dd_number_t eval_jacobi(dlp_number_t x0, double x1, double x2, Dd_number_t
         return _func_eval_jacobi_l(x0, x1, x2, x3)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_jacobi_l(x0, x1, x2, x3)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_laguerre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_laguerre"""
@@ -2184,8 +2107,6 @@ cpdef Dd_number_t eval_laguerre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
         return _func_eval_laguerre_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_laguerre_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_legendre"""
@@ -2197,8 +2118,6 @@ cpdef Dd_number_t eval_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
         return _func_eval_legendre_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_legendre_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_sh_chebyt(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_chebyt"""
@@ -2210,8 +2129,6 @@ cpdef Dd_number_t eval_sh_chebyt(dlp_number_t x0, Dd_number_t x1) noexcept nogil
         return _func_eval_sh_chebyt_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_sh_chebyt_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_sh_chebyu(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_chebyu"""
@@ -2223,8 +2140,6 @@ cpdef Dd_number_t eval_sh_chebyu(dlp_number_t x0, Dd_number_t x1) noexcept nogil
         return _func_eval_sh_chebyu_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_sh_chebyu_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_sh_jacobi(dlp_number_t x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_jacobi"""
@@ -2236,8 +2151,6 @@ cpdef Dd_number_t eval_sh_jacobi(dlp_number_t x0, double x1, double x2, Dd_numbe
         return _func_eval_sh_jacobi_l(x0, x1, x2, x3)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_sh_jacobi_l(x0, x1, x2, x3)
-    else:
-        return NAN
 
 cpdef Dd_number_t eval_sh_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_legendre"""
@@ -2249,8 +2162,6 @@ cpdef Dd_number_t eval_sh_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nog
         return _func_eval_sh_legendre_l(x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
         return _func_eval_sh_legendre_l(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t exp1(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.exp1"""
@@ -2258,8 +2169,6 @@ cpdef Dd_number_t exp1(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cexp1(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_exp1(x0)
-    else:
-        return NAN
 
 cpdef double exp10(double x0) noexcept nogil:
     """See the documentation for scipy.special.exp10"""
@@ -2275,8 +2184,6 @@ cpdef Dd_number_t expi(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cexpi(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_expi(x0)
-    else:
-        return NAN
 
 cpdef dfg_number_t expit(dfg_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.expit"""
@@ -2286,8 +2193,6 @@ cpdef dfg_number_t expit(dfg_number_t x0) noexcept nogil:
         return special_expitf(x0)
     elif dfg_number_t is long_double:
         return special_expitl(x0)
-    else:
-        return NAN
 
 cpdef Dd_number_t expm1(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.expm1"""
@@ -2295,8 +2200,6 @@ cpdef Dd_number_t expm1(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cexpm1(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_expm1(x0)
-    else:
-        return NAN
 
 cpdef double expn(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.expn"""
@@ -2306,8 +2209,6 @@ cpdef double expn(dlp_number_t x0, double x1) noexcept nogil:
         return cephes_expn(x0, x1)
     elif dlp_number_t is Py_ssize_t:
         return cephes_expn(x0, x1)
-    else:
-        return NAN
 
 cpdef double exprel(double x0) noexcept nogil:
     """See the documentation for scipy.special.exprel"""
@@ -2327,9 +2228,6 @@ cdef void fresnel(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nog
         xsf_cfresnel(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
         y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
-    else:
-        y0[0] = NAN
-        y1[0] = NAN
 
 def _fresnel_pywrap(Dd_number_t x0):
     cdef Dd_number_t y0
@@ -2343,8 +2241,6 @@ cpdef Dd_number_t gamma(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cgamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_gamma(x0)
-    else:
-        return NAN
 
 cpdef double gammainc(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.gammainc"""
@@ -2416,8 +2312,6 @@ cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) noexcept nogil:
         return _func__hyp0f1_cmplx(x0, x1)
     elif Dd_number_t is double:
         return _func__hyp0f1_real(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.hyp1f1"""
@@ -2425,8 +2319,6 @@ cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) noexcept nogil:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_hyp1f1_double)(x0, x1, x2)
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(_func_chyp1f1_wrap(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2)))
-    else:
-        return NAN
 
 cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.hyp2f1"""
@@ -2434,8 +2326,6 @@ cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexce
         return xsf_hyp2f1(x0, x1, x2, x3)
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_chyp2f1(x0, x1, x2, _complexstuff.npy_cdouble_from_double_complex(x3)))
-    else:
-        return NAN
 
 cpdef double hyperu(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.hyperu"""
@@ -2535,8 +2425,6 @@ cpdef Dd_number_t iv(double x0, Dd_number_t x1) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_i(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
         return special_cyl_bessel_i(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t ive(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.ive"""
@@ -2544,8 +2432,6 @@ cpdef Dd_number_t ive(double x0, Dd_number_t x1) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_ie(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
         return special_cyl_bessel_ie(x0, x1)
-    else:
-        return NAN
 
 cpdef double j0(double x0) noexcept nogil:
     """See the documentation for scipy.special.j0"""
@@ -2561,8 +2447,6 @@ cpdef Dd_number_t jv(double x0, Dd_number_t x1) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_j(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
         return special_cyl_bessel_j(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t jve(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.jve"""
@@ -2570,8 +2454,6 @@ cpdef Dd_number_t jve(double x0, Dd_number_t x1) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_je(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
         return special_cyl_bessel_je(x0, x1)
-    else:
-        return NAN
 
 cpdef double k0(double x0) noexcept nogil:
     """See the documentation for scipy.special.k0"""
@@ -2637,8 +2519,6 @@ cpdef double kn(dlp_number_t x0, double x1) noexcept nogil:
         return special_cyl_bessel_k_int(x0, x1)
     elif dlp_number_t is Py_ssize_t:
         return special_cyl_bessel_k_int(x0, x1)
-    else:
-        return NAN
 
 cpdef double kolmogi(double x0) noexcept nogil:
     """See the documentation for scipy.special.kolmogi"""
@@ -2654,8 +2534,6 @@ cpdef Dd_number_t kv(double x0, Dd_number_t x1) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_k(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
         return special_cyl_bessel_k(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t kve(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.kve"""
@@ -2663,8 +2541,6 @@ cpdef Dd_number_t kve(double x0, Dd_number_t x1) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_ke(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
         return special_cyl_bessel_ke(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t log1p(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.log1p"""
@@ -2672,8 +2548,6 @@ cpdef Dd_number_t log1p(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_clog1p(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_log1p(x0)
-    else:
-        return NAN
 
 cpdef dfg_number_t log_expit(dfg_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.log_expit"""
@@ -2683,8 +2557,6 @@ cpdef dfg_number_t log_expit(dfg_number_t x0) noexcept nogil:
         return special_log_expitf(x0)
     elif dfg_number_t is long_double:
         return special_log_expitl(x0)
-    else:
-        return NAN
 
 cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.log_ndtr"""
@@ -2692,8 +2564,6 @@ cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
         return xsf_log_ndtr(x0)
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_clog_ndtr(_complexstuff.npy_cdouble_from_double_complex(x0)))
-    else:
-        return NAN
 
 cpdef df_number_t log_gammainc(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.log_gammainc"""
@@ -2701,8 +2571,6 @@ cpdef df_number_t log_gammainc(df_number_t x0, df_number_t x1) noexcept nogil:
         return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_p_float)(x0, x1)
     elif df_number_t is double:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_p_double)(x0, x1)
-    else:
-        return NAN
 
 cpdef df_number_t log_gammaincc(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.log_gammaincc"""
@@ -2710,8 +2578,6 @@ cpdef df_number_t log_gammaincc(df_number_t x0, df_number_t x1) noexcept nogil:
         return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_q_float)(x0, x1)
     elif df_number_t is double:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_q_double)(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.loggamma"""
@@ -2719,8 +2585,6 @@ cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil:
         return special_loggamma(x0)
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(special_cloggamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
-    else:
-        return NAN
 
 cpdef dfg_number_t logit(dfg_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.logit"""
@@ -2730,8 +2594,6 @@ cpdef dfg_number_t logit(dfg_number_t x0) noexcept nogil:
         return special_logitf(x0)
     elif dfg_number_t is long_double:
         return special_logitl(x0)
-    else:
-        return NAN
 
 cpdef double lpmv(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.lpmv"""
@@ -2845,8 +2707,6 @@ cpdef double nbdtr(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
         return xsf_nbdtr(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_nbdtr(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double nbdtrc(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrc"""
@@ -2856,8 +2716,6 @@ cpdef double nbdtrc(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
         return xsf_nbdtrc(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_nbdtrc(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double nbdtri(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtri"""
@@ -2867,8 +2725,6 @@ cpdef double nbdtri(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
         return xsf_nbdtri(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
         return xsf_nbdtri(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double nbdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrin"""
@@ -2884,8 +2740,6 @@ cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_numb
         return (<float(*)(float, float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_cdf_float)(x0, x1, x2, x3)
     elif df_number_t is double:
         return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_cdf_double)(x0, x1, x2, x3)
-    else:
-        return NAN
 
 cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtr"""
@@ -2893,8 +2747,6 @@ cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept 
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_cdf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_cdf_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtrc"""
@@ -2902,8 +2754,6 @@ cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtri"""
@@ -2911,8 +2761,6 @@ cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrin"""
@@ -2924,8 +2772,6 @@ cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_num
         return (<float(*)(float, float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_ppf_float)(x0, x1, x2, x3)
     elif df_number_t is double:
         return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_ppf_double)(x0, x1, x2, x3)
-    else:
-        return NAN
 
 cpdef double ncfdtridfd(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtridfd"""
@@ -2945,8 +2791,6 @@ cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcep
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_cdf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_cdf_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtridf"""
@@ -2962,8 +2806,6 @@ cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexc
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_ppf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_ppf_double)(x0, x1, x2)
-    else:
-        return NAN
 
 cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.ndtr"""
@@ -2971,8 +2813,6 @@ cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cndtr(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_ndtr(x0)
-    else:
-        return NAN
 
 cpdef double ndtri(double x0) noexcept nogil:
     """See the documentation for scipy.special.ndtri"""
@@ -3100,8 +2940,6 @@ cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil:
         return xsf_pdtri(x0, x1)
     elif dlp_number_t is Py_ssize_t:
         return xsf_pdtri(x0, x1)
-    else:
-        return NAN
 
 cpdef df_number_t pdtrik(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.pdtrik"""
@@ -3109,8 +2947,6 @@ cpdef df_number_t pdtrik(df_number_t x0, df_number_t x1) noexcept nogil:
         return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_pdtrik_float)(x0, x1)
     elif df_number_t is double:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_pdtrik_double)(x0, x1)
-    else:
-        return NAN
 
 cpdef double poch(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.poch"""
@@ -3122,8 +2958,6 @@ cpdef df_number_t powm1(df_number_t x0, df_number_t x1) noexcept nogil:
         return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_powm1_float)(x0, x1)
     elif df_number_t is double:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_powm1_double)(x0, x1)
-    else:
-        return NAN
 
 cdef void pro_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pro_ang1"""
@@ -3199,8 +3033,6 @@ cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_cdigamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return special_digamma(x0)
-    else:
-        return NAN
 
 cpdef df_number_t digammainv(df_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.digammainv"""
@@ -3208,8 +3040,6 @@ cpdef df_number_t digammainv(df_number_t x0) noexcept nogil:
         return special_digammainvf(x0)
     elif df_number_t is double:
         return special_digammainv(x0)
-    else:
-        return NAN
 
 cpdef double radian(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.radian"""
@@ -3225,8 +3055,6 @@ cpdef Dd_number_t rgamma(Dd_number_t x0) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_crgamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return special_rgamma(x0)
-    else:
-        return NAN
 
 cpdef double round(double x0) noexcept nogil:
     """See the documentation for scipy.special.round"""
@@ -3242,9 +3070,6 @@ cdef void shichi(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogi
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     elif Dd_number_t is double:
         xsf_shichi(x0, y0, y1)
-    else:
-        y0[0] = NAN
-        y1[0] = NAN
 
 def _shichi_pywrap(Dd_number_t x0):
     cdef Dd_number_t y0
@@ -3262,9 +3087,6 @@ cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil:
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     elif Dd_number_t is double:
         xsf_sici(x0, y0, y1)
-    else:
-        y0[0] = NAN
-        y1[0] = NAN
 
 def _sici_pywrap(Dd_number_t x0):
     cdef Dd_number_t y0
@@ -3284,8 +3106,6 @@ cpdef double smirnov(dlp_number_t x0, double x1) noexcept nogil:
         return xsf_smirnov(x0, x1)
     elif dlp_number_t is Py_ssize_t:
         return xsf_smirnov(x0, x1)
-    else:
-        return NAN
 
 cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.smirnovi"""
@@ -3295,8 +3115,6 @@ cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil:
         return xsf_smirnovi(x0, x1)
     elif dlp_number_t is Py_ssize_t:
         return xsf_smirnovi(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.spence"""
@@ -3306,8 +3124,6 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
         )
     elif Dd_number_t is double:
         return xsf_spence(x0)
-    else:
-        return NAN
 
 cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""
@@ -3315,8 +3131,6 @@ cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
         return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_float)(x0, x1)
     elif df_number_t is double:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_double)(x0, x1)
-    else:
-        return NAN
 
 cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtrit"""
@@ -3324,8 +3138,6 @@ cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil:
         return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_ppf_float)(x0, x1)
     elif df_number_t is double:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_ppf_double)(x0, x1)
-    else:
-        return NAN
 
 cpdef double stdtridf(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.stdtridf"""
@@ -3353,8 +3165,6 @@ cpdef Dd_number_t wrightomega(Dd_number_t x0) noexcept nogil:
         return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_wrightomega)(x0)
     elif Dd_number_t is double:
         return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_wrightomega_real)(x0)
-    else:
-        return NAN
 
 cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.xlog1py"""
@@ -3363,8 +3173,6 @@ cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cxlog1py(_complexstuff.npy_cdouble_from_double_complex(x0),
             _complexstuff.npy_cdouble_from_double_complex(x1)))
-    else:
-        return NAN
 
 cpdef Dd_number_t xlogy(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.xlogy"""
@@ -3373,8 +3181,6 @@ cpdef Dd_number_t xlogy(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cxlogy(_complexstuff.npy_cdouble_from_double_complex(x0),
             _complexstuff.npy_cdouble_from_double_complex(x1)))
-    else:
-        return NAN
 
 cpdef double y0(double x0) noexcept nogil:
     """See the documentation for scipy.special.y0"""
@@ -3392,8 +3198,6 @@ cpdef double yn(dlp_number_t x0, double x1) noexcept nogil:
         return cephes_yn(x0, x1)
     elif dlp_number_t is Py_ssize_t:
         return cephes_yn(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t yv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.yv"""
@@ -3401,8 +3205,6 @@ cpdef Dd_number_t yv(double x0, Dd_number_t x1) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_y(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
         return special_cyl_bessel_y(x0, x1)
-    else:
-        return NAN
 
 cpdef Dd_number_t yve(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.yve"""
@@ -3410,8 +3212,6 @@ cpdef Dd_number_t yve(double x0, Dd_number_t x1) noexcept nogil:
         return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_ye(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
         return special_cyl_bessel_ye(x0, x1)
-    else:
-        return NAN
 
 cpdef double zetac(double x0) noexcept nogil:
     """See the documentation for scipy.special.zetac"""
