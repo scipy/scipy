@@ -409,8 +409,6 @@ double cephes_rgamma(double x) { return xsf::cephes::rgamma(x); }
 
 double xsf_zetac(double x) { return xsf::zetac(x); }
 
-double cephes_lgam1p(double x) { return xsf::cephes::lgam1p(x); }
-
 double cephes_expn(int n, double x) { return xsf::cephes::expn(n, x); }
 
 double xsf_ellipe(double x) { return xsf::ellipe(x); }

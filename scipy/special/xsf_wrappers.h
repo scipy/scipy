@@ -194,8 +194,6 @@ double cephes_rgamma(double x);
 
 double xsf_zetac(double x);
 
-double cephes_lgam1p(double x);
-
 double cephes_expn(int n, double x);
 
 double xsf_ellipe(double x);

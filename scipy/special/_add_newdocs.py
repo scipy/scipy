@@ -4109,11 +4109,6 @@ add_newdoc(
     scalar or ndarray
     """)
 
-add_newdoc("_lgam1p",
-    """
-    Internal function, do not use.
-    """)
-
 add_newdoc("log_gammainc",
     r"""
     log_gammainc(a, x, out=None)

@@ -1327,7 +1327,6 @@ cdef extern from r"xsf_wrappers.h":
     npy_cdouble xsf_cxlogy(npy_cdouble x, npy_cdouble y) nogil
     double xsf_xlog1py(double x, double y) nogil
     npy_cdouble xsf_cxlog1py(npy_cdouble x, npy_cdouble y) nogil
-    double cephes_lgam1p(double x) nogil
     double xsf_expm1(double x) nogil
     npy_cdouble xsf_cexpm1(npy_cdouble z) nogil
     double xsf_cosm1(double x) nogil

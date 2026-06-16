@@ -22,11 +22,6 @@
             "cephes_lanczos_sum_expg_scaled": "d->d"
         }
     },
-    "_lgam1p": {
-        "xsf_wrappers.h": {
-            "cephes_lgam1p": "d->d"
-        }
-    },
     "_sf_error_test_function": {
         "sf_error.pxd": {
             "_sf_error_test_function": "i->i"
