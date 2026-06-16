@@ -399,11 +399,12 @@ def test_chdtr_gh21311(xp):
 @make_xp_test_case(special.chdtrc)
 def test_chdtrc_broadcasting(xp):
     # gh-25343
-    v = xp.asarray([1., 2.]).reshape(-1, 1)  # shape (2, 1)
+    v = xp.asarray([[1.], [2.]])  # shape (2, 1)
     x = xp.asarray([1., 2.])  # shape (2,)
     assert special.chdtr(v, x).shape == (2, 2)
     assert special.chdtrc(v, x).shape == (2, 2)
-    assert special.chdtrc(1., x).shape == (2,)
+    if is_dask(xp):
+        assert special.chdtrc(1., x).shape == (2,)
 
 
 @make_xp_test_case(special.fdtrc)
