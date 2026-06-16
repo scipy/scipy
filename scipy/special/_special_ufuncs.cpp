@@ -13,6 +13,7 @@
 #include <xsf/binom.h>
 #include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
+#include <xsf/cephes/unity.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
@@ -22,6 +23,7 @@
 #include <xsf/expint.h>
 #include <xsf/fresnel.h>
 #include <xsf/gamma.h>
+#include <xsf/hyperu.h>
 #include <xsf/hyp2f1.h>
 #include <xsf/iv_ratio.h>
 #include <xsf/kelvin.h>
@@ -57,6 +59,7 @@ extern const char *_bivariate_normal_sf_doc;
 extern const char *_sinpi_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_igam_fac_doc;
+extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
 extern const char *_normalized_gen_harmonic_doc;
@@ -125,6 +128,7 @@ extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
 extern const char *hyp2f1_doc;
+extern const char *hyperu_doc;
 extern const char *i0_doc;
 extern const char *i0e_doc;
 extern const char *i1_doc;
@@ -573,6 +577,12 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::dd_d>(xsf::cephes::detail::igam_fac)},
         "_igam_fac", _igam_fac_doc);
     PyModule_AddObjectRef(module, "_igam_fac", _igam_fac);
+    
+    PyObject *_lgam1p =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::cephes::lgam1p),
+                           static_cast<xsf::numpy::d_d>(xsf::cephes::lgam1p)},
+                          "_lgam1p", _lgam1p_doc);
+    PyModule_AddObjectRef(module, "_lgam1p", _lgam1p);
 
     PyObject *gammaln =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::gammaln), static_cast<xsf::numpy::d_d>(xsf::gammaln)},
@@ -589,6 +599,11 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::fffF_F>(xsf::hyp2f1), static_cast<xsf::numpy::dddD_D>(xsf::hyp2f1)},
                           "hyp2f1", hyp2f1_doc);
     PyModule_AddObjectRef(module, "hyp2f1", hyp2f1);
+
+    PyObject *hyperu =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(xsf::hyperu), static_cast<xsf::numpy::ddd_d>(xsf::hyperu)}, 
+                          "hyperu", hyperu_doc);
+    PyModule_AddObjectRef(module, "hyperu", hyperu);
 
     PyObject *hankel1 = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fF_F>(xsf::cyl_hankel_1), static_cast<xsf::numpy::dD_D>(xsf::cyl_hankel_1)}, "hankel1",

@@ -3777,72 +3777,6 @@ add_newdoc("hyp1f1",
 
     """)
 
-add_newdoc("hyperu",
-    r"""
-    hyperu(a, b, x, out=None)
-
-    Confluent hypergeometric function U.
-
-    It is defined as the solution to the equation
-
-    .. math::
-
-       x \frac{d^2w}{dx^2} + (b - x) \frac{dw}{dx} - aw = 0
-
-    which satisfies the property
-
-    .. math::
-
-       U(a, b, x) \sim x^{-a}
-
-    as :math:`x \to \infty`. See [DLMF]_ for more details.
-
-    Parameters
-    ----------
-    a, b : array_like
-        Real-valued parameters
-    x : array_like
-        Real-valued argument
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of `U`
-
-    References
-    ----------
-    .. [DLMF] NIST Digital Library of Mathematics Functions
-              https://dlmf.nist.gov/13.2#E6
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    It has a branch cut along the negative `x` axis.
-
-    >>> x = np.linspace(-0.1, -10, 5)
-    >>> sc.hyperu(1, 1, x)
-    array([nan, nan, nan, nan, nan])
-
-    It approaches zero as `x` goes to infinity.
-
-    >>> x = np.array([1, 10, 100])
-    >>> sc.hyperu(1, 1, x)
-    array([0.59634736, 0.09156333, 0.00990194])
-
-    It satisfies Kummer's transformation.
-
-    >>> a, b, x = 2, 1, 1
-    >>> sc.hyperu(a, b, x)
-    0.1926947246463881
-    >>> x**(1 - b) * sc.hyperu(a - b + 1, 2 - b, x)
-    0.1926947246463881
-
-    """)
-
 add_newdoc("kn",
     r"""
     kn(n, x, out=None)
@@ -4065,11 +3999,6 @@ add_newdoc("_kolmogp",
     Internal function, do not use.
     """)
 
-add_newdoc("_lanczos_sum_expg_scaled",
-    """
-    Internal function, do not use.
-    """)
-
 add_newdoc(
     "_landau_pdf",
     """
@@ -4173,11 +4102,6 @@ add_newdoc(
     Returns
     -------
     scalar or ndarray
-    """)
-
-add_newdoc("_lgam1p",
-    """
-    Internal function, do not use.
     """)
 
 add_newdoc("log_gammainc",
@@ -6797,46 +6721,6 @@ add_newdoc("yn",
     >>> ax.set_ylim(-3, 1)
     >>> ax.legend()
     >>> plt.show()
-    """)
-
-
-add_newdoc("_struve_asymp_large_z",
-    """
-    _struve_asymp_large_z(v, z, is_h)
-
-    Internal function for testing `struve` & `modstruve`
-
-    Evaluates using asymptotic expansion
-
-    Returns
-    -------
-    v, err
-    """)
-
-add_newdoc("_struve_power_series",
-    """
-    _struve_power_series(v, z, is_h)
-
-    Internal function for testing `struve` & `modstruve`
-
-    Evaluates using power series
-
-    Returns
-    -------
-    v, err
-    """)
-
-add_newdoc("_struve_bessel_series",
-    """
-    _struve_bessel_series(v, z, is_h)
-
-    Internal function for testing `struve` & `modstruve`
-
-    Evaluates using Bessel function series
-
-    Returns
-    -------
-    v, err
     """)
 
 add_newdoc("owens_t",
