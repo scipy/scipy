@@ -1305,7 +1305,6 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_igamc(double a, double x) nogil
     double cephes_igami(double a, double p) nogil
     double cephes_igamci(double a, double p) nogil
-    double cephes_lanczos_sum_expg_scaled(double x) nogil
     npy_cdouble xsf_cwofz(npy_cdouble x) nogil
     double xsf_erf(double x) nogil
     npy_cdouble xsf_cerf(npy_cdouble x) nogil

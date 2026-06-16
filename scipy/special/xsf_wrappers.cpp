@@ -336,18 +336,6 @@ int xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
                        *reinterpret_cast<complex<double> *>(chi));
 }
 
-double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err) {
-    return xsf::cephes::detail::struve_asymp_large_z(v, z, static_cast<int>(is_h), err);
-}
-
-double cephes__struve_bessel_series(double v, double z, Py_ssize_t is_h, double *err) {
-    return xsf::cephes::detail::struve_bessel_series(v, z, static_cast<int>(is_h), err);
-}
-
-double cephes__struve_power_series(double v, double z, Py_ssize_t is_h, double *err) {
-    return xsf::cephes::detail::struve_power_series(v, z, static_cast<int>(is_h), err);
-}
-
 double cephes_yn_wrap(Py_ssize_t n, double x) { return xsf::cephes::yn(static_cast<int>(n), x); }
 
 double cephes_polevl_wrap(double x, const double coef[], int N) { return xsf::cephes::polevl(x, coef, N); }
@@ -384,8 +372,6 @@ double cephes_igamc(double a, double x) { return xsf::cephes::igamc(a, x); }
 double cephes_igami(double a, double p) { return xsf::cephes::igami(a, p); }
 
 double cephes_igamci(double a, double p) { return xsf::cephes::igamci(a, p); }
-
-double cephes_lanczos_sum_expg_scaled(double x) { return xsf::cephes::lanczos_sum_expg_scaled(x); }
 
 double cephes_poch(double x, double m) { return xsf::cephes::poch(x, m); }
 
