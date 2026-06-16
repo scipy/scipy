@@ -149,6 +149,7 @@ special_ufuncs = [
     "gdtr",
     "gdtrc",
     "gdtria",
+    "gdtrib",
     "gdtrix",
     "hankel1",
     "hankel1e",

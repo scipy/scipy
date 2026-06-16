@@ -116,6 +116,7 @@ extern const char *gammasgn_doc;
 extern const char *gdtr_doc;
 extern const char *gdtrc_doc;
 extern const char *gdtria_doc;
+extern const char *gdtrib_doc;
 extern const char *gdtrix_doc;
 extern const char *it2i0k0_doc;
 extern const char *it2j0y0_doc;
@@ -284,6 +285,11 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::gdtrc), static_cast<xsf::numpy::ddd_d>(xsf::gdtrc)},
         "gdtrc", gdtrc_doc);
     PyModule_AddObjectRef(module, "gdtrc", gdtrc);
+
+    PyObject *gdtrib = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::gdtrib), static_cast<xsf::numpy::ddd_d>(xsf::gdtrib)},
+        "gdtrib", gdtrib_doc);
+    PyModule_AddObjectRef(module, "gdtrib", gdtrib);
 
     PyObject *gdtria = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::gdtria), static_cast<xsf::numpy::ddd_d>(xsf::gdtria)},
