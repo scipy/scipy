@@ -19,11 +19,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
-npy_cdouble clngamma_wrap(npy_cdouble z);
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 double hyp1f1_wrap(double a, double b, double x);
 double special_hyperu(double a, double b, double x);
-npy_cdouble cerf_wrap(npy_cdouble z);
 
 double xsf_exp1(double x);
 npy_cdouble xsf_cexp1(npy_cdouble z);
@@ -92,7 +90,6 @@ void special_cairye(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdoubl
 
 void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt);
 
-npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double sin_pi(double x);
 
 double special_agm(double a, double b);
@@ -141,13 +138,9 @@ npy_cdouble special_crgamma(npy_cdouble z);
 
 double special_ellipk(double m);
 
-double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
-double cephes_expm1_wrap(double x);
 double cephes_expn_wrap(Py_ssize_t n, double x);
-double cephes_log1p_wrap(double x);
 double xsf_iv(double v, double x);
 double cephes_jv_wrap(double v, double x);
-double cephes_ellpk_wrap(double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
 int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err);
@@ -155,11 +148,8 @@ double cephes__struve_bessel_series(double v, double z, Py_ssize_t is_h, double 
 double cephes__struve_power_series(double v, double z, Py_ssize_t is_h, double *err);
 double cephes_yn_wrap(Py_ssize_t n, double x);
 double cephes_polevl_wrap(double x, const double coef[], int N);
-double cephes_p1evl_wrap(double x, const double coef[], int N);
 double special_wright_bessel(double a, double b, double x);
 double special_log_wright_bessel(double a, double b, double x);
-
-double special_scaled_exp1(double x);
 
 double xsf_beta(double a, double b);
 double xsf_betaln(double a, double b);
