@@ -143,6 +143,9 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
 
     k = operator.index(k)
 
+    if k < 1:
+        raise ValueError(f"k must be >= 1, got k={k}")
+
     if s < 0:
         raise ValueError(f"`s` must be non-negative. Got {s = }")
 
@@ -1142,9 +1145,6 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     if t is not None:
         t = xp.asarray(t)
     bc_type = _validate_bc_type(bc_type)
-
-    if k < 1:
-      raise ValueError(f"k must be >= 1, got k={k}")
 
     if s == 0:
         if t is not None or w is not None or nest is not None:
