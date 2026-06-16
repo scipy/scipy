@@ -1531,9 +1531,13 @@ nct_find_degrees_of_freedom_wrap(const Real p, const Real nc, const Real t)
         y = NAN;
     } catch (const std::underflow_error& e) {
         sf_error("nctdtridf", SF_ERROR_UNDERFLOW, NULL);
-        y = 0;
+        y = std::numeric_limits<Real>::min();
     } catch (...) {
         sf_error("nctdtridf", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y <= 0) {
+        sf_error("nctdtridf", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     return y;
