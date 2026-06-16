@@ -1118,7 +1118,6 @@ cdef public int wrap_PyUFunc_getfperr() noexcept nogil:
 
 from . cimport _complexstuff
 cimport scipy.special._ufuncs_cxx
-from scipy.special import _ufuncs
 
 ctypedef long double long_double
 ctypedef float complex float_complex
