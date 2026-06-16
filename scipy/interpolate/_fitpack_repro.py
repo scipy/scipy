@@ -179,7 +179,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
         The boundary of the approximation interval. If None (default),
         is set to ``x[-1]``.
     k : int, optional
-        The spline degree. Default is cubic, ``k = 3``.
+        The spline degree. Must be >= 1. Default is cubic, ``k = 3``.
     s : float, optional
         The smoothing factor. Default is ``s = 0``.
     nest : int, optional
@@ -1033,7 +1033,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         The interval to fit.  If None, these default to ``x[0]`` and ``x[-1]``,
         respectively.
     k : int, optional
-        The degree of the spline fit. It is recommended to use cubic splines,
+        The degree of the spline fit. Must be >= 1. It is recommended to use cubic splines,
         ``k=3``, which is the default. Even values of `k` should be avoided,
         especially with small `s` values.
     s : float, optional
@@ -1194,7 +1194,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     ub, ue : float, optional
         The end-points of the parameters interval. Default to ``u[0]`` and ``u[-1]``.
     k : int, optional
-        Degree of the spline. Cubic splines, ``k=3``, are recommended.
+        Degree of the spline. Must be >= 1. Cubic splines, ``k=3``, are recommended.
         Even values of `k` should be avoided especially with a small ``s`` value.
         Default is ``k=3``
     s : float, optional
