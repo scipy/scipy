@@ -113,6 +113,7 @@ extern const char *gammaincc_doc;
 extern const char *gammainccinv_doc;
 extern const char *gammaln_doc;
 extern const char *gammasgn_doc;
+extern const char *gdtr_doc;
 extern const char *gdtria_doc;
 extern const char *gdtrix_doc;
 extern const char *it2i0k0_doc;
@@ -272,6 +273,11 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dddd_d>(normalized_gen_harmonic)},
                           "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_normalized_gen_harmonic", _normalized_gen_harmonic);
+
+    PyObject *gdtr = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::gdtr), static_cast<xsf::numpy::ddd_d>(xsf::gdtr)},
+        "gdtr", gdtr_doc);
+    PyModule_AddObjectRef(module, "gdtr", gdtr);
 
     PyObject *gdtria = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::gdtria), static_cast<xsf::numpy::ddd_d>(xsf::gdtria)},

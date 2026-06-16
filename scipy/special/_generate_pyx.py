@@ -146,6 +146,7 @@ special_ufuncs = [
     "gammaincinv",
     "gammaln",
     "gammasgn",
+    "gdtr",
     "gdtria",
     "gdtrix",
     "hankel1",
