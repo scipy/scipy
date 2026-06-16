@@ -143,9 +143,6 @@ double xsf_iv(double v, double x);
 double cephes_jv_wrap(double v, double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
 int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
-double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err);
-double cephes__struve_bessel_series(double v, double z, Py_ssize_t is_h, double *err);
-double cephes__struve_power_series(double v, double z, Py_ssize_t is_h, double *err);
 double cephes_yn_wrap(Py_ssize_t n, double x);
 double cephes_polevl_wrap(double x, const double coef[], int N);
 double special_wright_bessel(double a, double b, double x);
@@ -175,8 +172,6 @@ double cephes_igamc(double a, double x);
 double cephes_igami(double a, double p);
 
 double cephes_igamci(double a, double p);
-
-double cephes_lanczos_sum_expg_scaled(double x);
 
 double cephes_poch(double x, double m);
 

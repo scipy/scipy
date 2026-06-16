@@ -3999,11 +3999,6 @@ add_newdoc("_kolmogp",
     Internal function, do not use.
     """)
 
-add_newdoc("_lanczos_sum_expg_scaled",
-    """
-    Internal function, do not use.
-    """)
-
 add_newdoc(
     "_landau_pdf",
     """
@@ -6726,46 +6721,6 @@ add_newdoc("yn",
     >>> ax.set_ylim(-3, 1)
     >>> ax.legend()
     >>> plt.show()
-    """)
-
-
-add_newdoc("_struve_asymp_large_z",
-    """
-    _struve_asymp_large_z(v, z, is_h)
-
-    Internal function for testing `struve` & `modstruve`
-
-    Evaluates using asymptotic expansion
-
-    Returns
-    -------
-    v, err
-    """)
-
-add_newdoc("_struve_power_series",
-    """
-    _struve_power_series(v, z, is_h)
-
-    Internal function for testing `struve` & `modstruve`
-
-    Evaluates using power series
-
-    Returns
-    -------
-    v, err
-    """)
-
-add_newdoc("_struve_bessel_series",
-    """
-    _struve_bessel_series(v, z, is_h)
-
-    Internal function for testing `struve` & `modstruve`
-
-    Evaluates using Bessel function series
-
-    Returns
-    -------
-    v, err
     """)
 
 add_newdoc("owens_t",
