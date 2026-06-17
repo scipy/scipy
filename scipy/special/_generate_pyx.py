@@ -197,6 +197,7 @@ special_ufuncs = [
     "log_wright_bessel",
     "loggamma",
     "logit",
+    "lpmv",
     "mathieu_a",
     "mathieu_b",
     "mathieu_cem",

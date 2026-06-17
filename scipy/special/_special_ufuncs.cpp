@@ -166,6 +166,7 @@ extern const char *loggamma_doc;
 extern const char *log_expit_doc;
 extern const char *log_ndtr_doc;
 extern const char *log_wright_bessel_doc;
+extern const char *lpmv_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -862,6 +863,10 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::g_g>(xsf::logit)},
                           "logit", logit_doc);
     PyModule_AddObjectRef(module, "logit", logit);
+
+    PyObject *lpmv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::pmv), static_cast<xsf::numpy::ddd_d>(xsf::pmv)}, "lpmv", lpmv_doc);
+    PyModule_AddObjectRef(module, "lpmv", lpmv);
 
     PyObject *loggamma =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::loggamma), static_cast<xsf::numpy::d_d>(xsf::loggamma),

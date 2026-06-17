@@ -397,11 +397,6 @@
             "lgamma_q_double": "dd->d"
         }
     },
-    "lpmv": {
-        "xsf_wrappers.h": {
-            "pmv_wrap": "ddd->d"
-        }
-    },
     "nbdtr": {
         "_legacy.pxd": {
             "nbdtr_unsafe": "ddd->d"
