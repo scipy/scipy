@@ -280,6 +280,16 @@ _special_ufuncs_module_exec(PyObject *module)
         "_kolmogc", _kolmogc_doc);
     PyModule_AddObjectRef(module, "_kolmogc", _kolmogc);
 
+    PyObject *_kolmogci = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogci), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogci)},
+        "_kolmogci", _kolmogci_doc);
+    PyModule_AddObjectRef(module, "_kolmogci", _kolmogci);
+
+    PyObject *_kolmogp = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogp), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogp)},
+        "_kolmogp", _kolmogp_doc);
+    PyModule_AddObjectRef(module, "_kolmogp", _kolmogp);
+
     PyObject *_normalized_gen_harmonic =
         xsf::numpy::ufunc({static_cast<xsf::numpy::llld_d>(normalized_gen_harmonic),
                            static_cast<xsf::numpy::qqqd_d>(normalized_gen_harmonic),
@@ -301,16 +311,6 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::gdtrib), static_cast<xsf::numpy::ddd_d>(xsf::gdtrib)},
         "gdtrib", gdtrib_doc);
     PyModule_AddObjectRef(module, "gdtrib", gdtrib);
-
-    PyObject *_kolmogci = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogci), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogci)},
-        "_kolmogci", _kolmogci_doc);
-    PyModule_AddObjectRef(module, "_kolmogci", _kolmogci);
-
-    PyObject *_kolmogp = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogp), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogp)},
-        "_kolmogp", _kolmogp_doc);
-    PyModule_AddObjectRef(module, "_kolmogp", _kolmogp);
 
     PyObject *gdtria = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::gdtria), static_cast<xsf::numpy::ddd_d>(xsf::gdtria)},
