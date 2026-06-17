@@ -1244,6 +1244,38 @@ const char *poch_doc = R"(
 
     )";
 
+const char *round_doc = R"(
+    round(x, out=None)
+
+    Round to the nearest integer.
+
+    Returns the nearest integer to `x`.  If `x` ends in 0.5 exactly,
+    the nearest even integer is chosen.
+
+    Parameters
+    ----------
+    x : array_like
+        Real valued input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The nearest integers to the elements of `x`. The result is of
+        floating type, not integer type.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It rounds to even.
+
+    >>> sc.round([0.5, 1.5])
+    array([0., 2.])
+
+    )";
+
 const char *gdtria_doc = R"(
     gdtria(p, b, x, out=None)
 

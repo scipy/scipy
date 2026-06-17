@@ -248,6 +248,7 @@ special_ufuncs = [
     "radian",
     "rel_entr",
     "rgamma",
+    "round",
     "sindg",
     "spence",
     "struve",

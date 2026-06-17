@@ -463,11 +463,6 @@
             "powm1_double": "dd->d"
         }
     },
-    "round": {
-        "xsf_wrappers.h": {
-            "cephes_round": "d->d"
-        }
-    },
     "shichi": {
         "xsf_wrappers.h": {
             "xsf_cshichi": "D*DD->*i",

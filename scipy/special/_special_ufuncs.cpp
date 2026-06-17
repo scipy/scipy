@@ -15,6 +15,7 @@
 #include <xsf/cdflib.h>
 #include <xsf/cephes/erfinv.h>
 #include <xsf/cephes/poch.h>
+#include <xsf/cephes/round.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/cpu/stats.h>
@@ -218,6 +219,7 @@ extern const char *psi_doc;
 extern const char *radian_doc;
 extern const char *rgamma_doc;
 extern const char *_riemann_zeta_doc;
+extern const char *round_doc;
 extern const char *scaled_exp1_doc;
 extern const char *sindg_doc;
 extern const char *spence_doc;
@@ -646,6 +648,11 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::cephes::poch), static_cast<xsf::numpy::dd_d>(xsf::cephes::poch)}, "poch",
         poch_doc);
     PyModule_AddObjectRef(module, "poch", poch);
+
+    PyObject *round = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cephes::round), static_cast<xsf::numpy::d_d>(xsf::cephes::round)}, "round",
+        round_doc);
+    PyModule_AddObjectRef(module, "round", round);
 
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ff>(xsf::fresnel), static_cast<xsf::numpy::d_dd>(xsf::fresnel),
