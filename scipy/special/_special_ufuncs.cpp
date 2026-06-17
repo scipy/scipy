@@ -158,6 +158,7 @@ extern const char *k1_doc;
 extern const char *k1e_doc;
 extern const char *kv_doc;
 extern const char *kve_doc;
+extern const char *kolmogi_doc;
 extern const char *kolmogorov_doc;
 extern const char *lambertw_doc;
 extern const char *log1p_doc;
@@ -363,6 +364,11 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogorov)},
         "kolmogorov", kolmogorov_doc);
     PyModule_AddObjectRef(module, "kolmogorov", kolmogorov);
+
+    PyObject *kolmogi = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogi), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogi)},
+        "kolmogi", kolmogi_doc);
+    PyModule_AddObjectRef(module, "kolmogi", kolmogi);
 
     PyObject *pseudo_huber =
         xsf::numpy::ufunc(
