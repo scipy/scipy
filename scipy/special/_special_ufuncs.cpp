@@ -62,6 +62,7 @@ extern const char *_gen_harmonic_doc;
 extern const char *_igam_fac_doc;
 extern const char *_kolmogc_doc;
 extern const char *_kolmogci_doc;
+extern const char *_kolmogp_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
@@ -305,6 +306,11 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogci), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogci)},
         "_kolmogci", _kolmogci_doc);
     PyModule_AddObjectRef(module, "_kolmogci", _kolmogci);
+
+    PyObject *_kolmogp = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogp), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogp)},
+        "_kolmogp", _kolmogp_doc);
+    PyModule_AddObjectRef(module, "_kolmogp", _kolmogp);
 
     PyObject *gdtria = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::gdtria), static_cast<xsf::numpy::ddd_d>(xsf::gdtria)},

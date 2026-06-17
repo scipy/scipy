@@ -3530,11 +3530,6 @@ add_newdoc("kn",
     array([   44.23241585,   360.9605896 ,  3653.83831186])
     """)
 
-add_newdoc("_kolmogp",
-    r"""
-    Internal function, do not use.
-    """)
-
 add_newdoc(
     "_landau_pdf",
     """

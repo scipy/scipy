@@ -85,6 +85,7 @@ special_ufuncs = [
     "_iv_ratio_c",
     "_kolmogc",
     "_kolmogci",
+    "_kolmogp",
     "_lambertw",
     "_lgam1p",
     "_log1mexp",
