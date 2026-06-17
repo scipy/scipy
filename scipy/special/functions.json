@@ -443,11 +443,6 @@
             "nct_ppf_double": "ddd->d"
         }
     },
-    "pdtr": {
-        "xsf_wrappers.h": {
-            "xsf_pdtr": "dd->d"
-        }
-    },
     "pdtrc": {
         "xsf_wrappers.h": {
             "xsf_pdtrc": "dd->d"

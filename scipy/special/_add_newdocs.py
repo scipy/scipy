@@ -4631,62 +4631,6 @@ add_newdoc("nctdtrit",
 
     """)
 
-add_newdoc("pdtr",
-    r"""
-    pdtr(k, m, out=None)
-
-    Poisson cumulative distribution function.
-
-    Defined as the probability that a Poisson-distributed random
-    variable with event rate :math:`m` is less than or equal to
-    :math:`k`. More concretely, this works out to be [1]_
-
-    .. math::
-
-       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{j!}.
-
-    Parameters
-    ----------
-    k : array_like
-        Number of occurrences (nonnegative, real)
-    m : array_like
-        Shape parameter (nonnegative, real)
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the Poisson cumulative distribution function
-
-    See Also
-    --------
-    pdtrc : Poisson survival function
-    pdtrik : inverse of `pdtr` with respect to `k`
-    pdtri : inverse of `pdtr` with respect to `m`
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Poisson_distribution
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    It is a cumulative distribution function, so it converges to 1
-    monotonically as `k` goes to infinity.
-
-    >>> sc.pdtr([1, 10, 100, np.inf], 1)
-    array([0.73575888, 0.99999999, 1.        , 1.        ])
-
-    It is discontinuous at integers and constant between integers.
-
-    >>> sc.pdtr([1, 1.5, 1.9, 2], 1)
-    array([0.73575888, 0.73575888, 0.73575888, 0.9196986 ])
-
-    """)
-
 add_newdoc("pdtrc",
     """
     pdtrc(k, m, out=None)
