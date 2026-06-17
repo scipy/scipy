@@ -15,6 +15,7 @@
 #include <xsf/cdflib.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/convex_analysis.h>
+#include <xsf/cpu/stats.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
@@ -157,6 +158,7 @@ extern const char *k1_doc;
 extern const char *k1e_doc;
 extern const char *kv_doc;
 extern const char *kve_doc;
+extern const char *kolmogorov_doc;
 extern const char *lambertw_doc;
 extern const char *log1p_doc;
 extern const char *logit_doc;
@@ -355,6 +357,12 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::kl_div), static_cast<xsf::numpy::dd_d>(xsf::kl_div)}, "kl_div",
         kl_div_doc);
     PyModule_AddObjectRef(module, "kl_div", kl_div);
+
+    PyObject *kolmogorov = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogorov),
+         static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogorov)},
+        "kolmogorov", kolmogorov_doc);
+    PyModule_AddObjectRef(module, "kolmogorov", kolmogorov);
 
     PyObject *pseudo_huber =
         xsf::numpy::ufunc(

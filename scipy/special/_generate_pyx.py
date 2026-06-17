@@ -188,6 +188,7 @@ special_ufuncs = [
     "ker",
     "kerp",
     "kl_div",
+    "kolmogorov",
     "kv",
     "kve",
     "log1p",

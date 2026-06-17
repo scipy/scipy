@@ -355,11 +355,6 @@
             "xsf_kolmogp": "d->d"
         }
     },
-    "kolmogorov": {
-        "xsf_wrappers.h": {
-            "xsf_kolmogorov": "d->d"
-        }
-    },
     "_landau_pdf": {
         "boost_special_functions.h++": {
             "landau_pdf_float": "fff->f",
