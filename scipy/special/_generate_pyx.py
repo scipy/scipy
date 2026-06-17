@@ -115,6 +115,7 @@ special_ufuncs = [
     "boxcox",
     "boxcox1p",
     "cbrt",
+    "chdtr",
     "cosdg",
     "cosm1",
     "cotdg",

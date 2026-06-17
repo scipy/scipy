@@ -100,11 +100,6 @@
             "ibeta_invb_double": "ddd->d"
         }
     },
-    "chdtr": {
-        "xsf_wrappers.h": {
-            "xsf_chdtr": "dd->d"
-        }
-    },
     "chdtrc": {
         "xsf_wrappers.h": {
             "xsf_chdtrc": "dd->d"

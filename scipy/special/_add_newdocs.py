@@ -867,64 +867,6 @@ add_newdoc(
 
     """)
 
-add_newdoc("chdtr",
-    r"""
-    chdtr(v, x, out=None)
-
-    Chi square cumulative distribution function.
-
-    Returns the area under the left tail (from 0 to `x`) of the Chi
-    square probability density function with `v` degrees of freedom:
-
-    .. math::
-
-        \frac{1}{2^{v/2} \Gamma(v/2)} \int_0^x t^{v/2 - 1} e^{-t/2} dt
-
-    Here :math:`\Gamma` is the Gamma function; see `gamma`. This
-    integral can be expressed in terms of the regularized lower
-    incomplete gamma function `gammainc` as
-    ``gammainc(v / 2, x / 2)``. [1]_
-
-    Parameters
-    ----------
-    v : array_like
-        Degrees of freedom.
-    x : array_like
-        Upper bound of the integral.
-    out : ndarray, optional
-        Optional output array for the function results.
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the cumulative distribution function.
-
-    See Also
-    --------
-    chdtrc, chdtri, chdtriv, gammainc
-
-    References
-    ----------
-    .. [1] Chi-Square distribution,
-        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    It can be expressed in terms of the regularized lower incomplete
-    gamma function.
-
-    >>> v = 1
-    >>> x = np.arange(4)
-    >>> sc.chdtr(v, x)
-    array([0.        , 0.68268949, 0.84270079, 0.91673548])
-    >>> sc.gammainc(v / 2, x / 2)
-    array([0.        , 0.68268949, 0.84270079, 0.91673548])
-
-    """)
-
 add_newdoc("chdtrc",
     r"""
     chdtrc(v, x, out=None)

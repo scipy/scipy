@@ -83,6 +83,7 @@ extern const char *binom_doc;
 extern const char *boxcox_doc;
 extern const char *boxcox1p_doc;
 extern const char *cbrt_doc;
+extern const char *chdtr_doc;
 extern const char *cosdg_doc;
 extern const char *cosm1_doc;
 extern const char *cotdg_doc;
@@ -407,6 +408,11 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *cbrt = xsf::numpy::ufunc(
 	{static_cast<xsf::numpy::f_f>(xsf::cbrt), static_cast<xsf::numpy::d_d>(xsf::cbrt)}, "cbrt", cbrt_doc);
     PyModule_AddObjectRef(module, "cbrt", cbrt);
+
+    PyObject *chdtr = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::chdtr), static_cast<xsf::numpy::dd_d>(xsf::chdtr)}, "chdtr",
+        chdtr_doc);
+    PyModule_AddObjectRef(module, "chdtr", chdtr);
 
     PyObject *cosdg = xsf::numpy::ufunc(
 	{static_cast<xsf::numpy::f_f>(xsf::cosdg), static_cast<xsf::numpy::d_d>(xsf::cosdg)}, "cosdg", cosdg_doc);
