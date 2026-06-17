@@ -170,7 +170,7 @@ static void dqcheb(const double*,double*,double*,double*);
 static void dqelg(int*,double*,double*,double*,double*,int*);
 static void dqk15(double(*)(double*),const double,const double,double*,double*,double*,double*);
 static void dqk15i(double(*)(double*),const double,const int,const double,const double,double*,double*,double*,double*);
-static void dqk15w(double(*)(double*),double(),const double,const double,
+static void dqk15w(double(*)(double*),quadpack_w_func,const double,const double,
                    const double,const double,const int,const double,const double,
                    double*,double*,double*,double*);
 static void dqk21(double(*)(double*),const double,const double,double*,double*,double*,double*);
