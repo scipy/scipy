@@ -867,65 +867,6 @@ add_newdoc(
 
     """)
 
-add_newdoc("chdtrc",
-    r"""
-    chdtrc(v, x, out=None)
-
-    Chi square survival function.
-
-    Returns the area under the right hand tail (from `x` to infinity)
-    of the Chi square probability density function with `v` degrees of
-    freedom:
-
-    .. math::
-
-        \frac{1}{2^{v/2} \Gamma(v/2)} \int_x^\infty t^{v/2 - 1} e^{-t/2} dt
-
-    Here :math:`\Gamma` is the Gamma function; see `gamma`. This
-    integral can be expressed in terms of the regularized upper
-    incomplete gamma function `gammaincc` as
-    ``gammaincc(v / 2, x / 2)``. [1]_
-
-    Parameters
-    ----------
-    v : array_like
-        Degrees of freedom.
-    x : array_like
-        Lower bound of the integral.
-    out : ndarray, optional
-        Optional output array for the function results.
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the survival function.
-
-    See Also
-    --------
-    chdtr, chdtri, chdtriv, gammaincc
-
-    References
-    ----------
-    .. [1] Chi-Square distribution,
-        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    It can be expressed in terms of the regularized upper incomplete
-    gamma function.
-
-    >>> v = 1
-    >>> x = np.arange(4)
-    >>> sc.chdtrc(v, x)
-    array([1.        , 0.31731051, 0.15729921, 0.08326452])
-    >>> sc.gammaincc(v / 2, x / 2)
-    array([1.        , 0.31731051, 0.15729921, 0.08326452])
-
-    """)
-
 add_newdoc("chdtri",
     """
     chdtri(v, p, out=None)
