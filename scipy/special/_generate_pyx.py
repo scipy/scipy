@@ -231,6 +231,7 @@ special_ufuncs = [
     "obl_rad2_cv",
     "owens_t",
     "pdtr",
+    "pdtrc",
     "pbdv",
     "pbvv",
     "pbwa",

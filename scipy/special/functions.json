@@ -443,11 +443,6 @@
             "nct_ppf_double": "ddd->d"
         }
     },
-    "pdtrc": {
-        "xsf_wrappers.h": {
-            "xsf_pdtrc": "dd->d"
-        }
-    },
     "pdtri": {
         "_legacy.pxd": {
             "pdtri_unsafe": "dd->d"

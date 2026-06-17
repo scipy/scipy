@@ -200,6 +200,7 @@ extern const char *obl_rad2_doc;
 extern const char *obl_rad2_cv_doc;
 extern const char *owens_t_doc;
 extern const char *pdtr_doc;
+extern const char *pdtrc_doc;
 extern const char *_zeta_doc;
 extern const char *pbdv_doc;
 extern const char *pbvv_doc;
@@ -633,6 +634,11 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *pdtr = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::pdtr), static_cast<xsf::numpy::dd_d>(xsf::pdtr)}, "pdtr", pdtr_doc);
     PyModule_AddObjectRef(module, "pdtr", pdtr);
+
+    PyObject *pdtrc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::pdtrc), static_cast<xsf::numpy::dd_d>(xsf::pdtrc)},
+                          "pdtrc", pdtrc_doc);
+    PyModule_AddObjectRef(module, "pdtrc", pdtrc);
 
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ff>(xsf::fresnel), static_cast<xsf::numpy::d_dd>(xsf::fresnel),

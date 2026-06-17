@@ -4631,56 +4631,6 @@ add_newdoc("nctdtrit",
 
     """)
 
-add_newdoc("pdtrc",
-    """
-    pdtrc(k, m, out=None)
-
-    Poisson survival function.
-
-    Returns the sum of the terms from k+1 to infinity of the Poisson
-    distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
-    k+1, m). Arguments must both be non-negative doubles.
-
-    Parameters
-    ----------
-    k : array_like
-        Number of occurrences (nonnegative, real)
-    m : array_like
-        Shape parameter (nonnegative, real)
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the Poisson survival function
-
-    See Also
-    --------
-    pdtr : Poisson cumulative distribution function
-    pdtrik : inverse of `pdtr` with respect to `k`
-    pdtri : inverse of `pdtr` with respect to `m`
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    It is a survival function, so it decreases to 0
-    monotonically as `k` goes to infinity.
-
-    >>> k = np.array([1, 10, 100, np.inf])
-    >>> sc.pdtrc(k, 1)
-    array([2.64241118e-001, 1.00477664e-008, 3.94147589e-161, 0.00000000e+000])
-
-    It can be expressed in terms of the lower incomplete gamma
-    function `gammainc`.
-
-    >>> sc.gammainc(k + 1, 1)
-    array([2.64241118e-001, 1.00477664e-008, 3.94147589e-161, 0.00000000e+000])
-
-    """)
-
 add_newdoc("pdtri",
     """
     pdtri(k, y, out=None)
