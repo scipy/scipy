@@ -443,11 +443,6 @@
             "nct_ppf_double": "ddd->d"
         }
     },
-    "owens_t": {
-        "xsf_wrappers.h": {
-            "xsf_owens_t": "dd->d"
-        }
-    },
     "pdtr": {
         "xsf_wrappers.h": {
             "xsf_pdtr": "dd->d"

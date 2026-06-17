@@ -229,6 +229,7 @@ special_ufuncs = [
     "obl_rad1_cv",
     "obl_rad2",
     "obl_rad2_cv",
+    "owens_t",
     "pbdv",
     "pbvv",
     "pbwa",
