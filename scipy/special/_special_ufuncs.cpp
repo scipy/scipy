@@ -13,6 +13,7 @@
 #include <xsf/binom.h>
 #include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
+#include <xsf/cephes/erfinv.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/digamma.h>
@@ -99,6 +100,7 @@ extern const char *ellipkm1_doc;
 extern const char *ellipkinc_doc;
 extern const char *erf_doc;
 extern const char *erfc_doc;
+extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *exp1_doc;
@@ -465,6 +467,12 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ellipkm1), static_cast<xsf::numpy::d_d>(xsf::ellipkm1)},
                           "ellipkm1", ellipkm1_doc);
     PyModule_AddObjectRef(module, "ellipkm1", ellipkm1);
+
+    PyObject *erfcinv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cephes::erfcinv),
+         static_cast<xsf::numpy::d_d>(xsf::cephes::erfcinv)},
+        "erfcinv", erfcinv_doc);
+    PyModule_AddObjectRef(module, "erfcinv", erfcinv);
 
     PyObject *exp1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::exp1), static_cast<xsf::numpy::d_d>(xsf::exp1),

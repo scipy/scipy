@@ -295,6 +295,74 @@ const char *chdtri_doc = R"(
 
     )";
 
+const char *erfcinv_doc = R"(
+    erfcinv(y, out=None)
+
+    Inverse of the complementary error function.
+
+    Computes the inverse of the complementary error function.
+
+    In the complex domain, there is no unique complex number :math:`w` satisfying
+    :math:`\\operatorname{erfc}(w) = z`. This indicates a true inverse function
+    would be multivalued.
+    When the domain restricts to the real interval :math:`0 < x < 2`, there is
+    a unique real number satisfying
+
+    .. math::
+
+        \\operatorname{erfc}(\\operatorname{erfcinv}(x)) = x
+
+    It is related to the inverse of the error function by
+
+    .. math::
+
+        \\operatorname{erfcinv}(1 - x) = \\operatorname{erfinv}(x)
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: :math:`[0, 2]`
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    erfcinv : scalar or ndarray
+        The inverse of :math:`\\operatorname{erfc}` of :math:`y`, element-wise
+
+    See Also
+    --------
+    erf : Error function
+    erfc : Complementary error function
+    erfinv : Inverse of the error function
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import erfcinv
+
+    >>> erfcinv(0.5)
+    0.4769362762044699
+
+    >>> y = np.linspace(0.0, 2.0, num=11)
+    >>> erfcinv(y)
+    array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
+           -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
+                  -inf])
+
+    Plot the function:
+
+    >>> y = np.linspace(0, 2, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(y, erfcinv(y))
+    >>> ax.grid(True)
+    >>> ax.set_xlabel('y')
+    >>> ax.set_title('erfcinv(y)')
+    >>> plt.show()
+
+    )";
+
 const char *huber_doc = R"(
     huber(delta, r, out=None)
 
