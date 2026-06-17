@@ -253,6 +253,7 @@ special_ufuncs = [
     "spence",
     "struve",
     "tandg",
+    "tklmbda",
     "voigt_profile",
     "wofz",
     "wright_bessel",

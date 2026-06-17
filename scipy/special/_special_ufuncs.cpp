@@ -234,6 +234,7 @@ extern const char *spherical_kn_d_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
 extern const char *tandg_doc;
+extern const char *tklmbda_doc;
 extern const char *voigt_profile_doc;
 extern const char *wofz_doc;
 extern const char *wright_bessel_doc;
@@ -1343,6 +1344,12 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *tandg = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::tandg), static_cast<xsf::numpy::d_d>(xsf::tandg)}, "tandg", tandg_doc);
     PyModule_AddObjectRef(module, "tandg", tandg);
+
+    PyObject *tklmbda = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::tukeylambdacdf),
+         static_cast<xsf::numpy::dd_d>(xsf::tukeylambdacdf)},
+        "tklmbda", tklmbda_doc);
+    PyModule_AddObjectRef(module, "tklmbda", tklmbda);
 
     PyObject *wright_bessel = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::wright_bessel), static_cast<xsf::numpy::ddd_d>(xsf::wright_bessel)},

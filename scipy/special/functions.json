@@ -537,11 +537,6 @@
             "_stirling2_inexact": "dd->d"
         }
     },
-    "tklmbda": {
-        "xsf_wrappers.h": {
-            "xsf_tukeylambdacdf": "dd->d"
-        }
-    },
     "wrightomega": {
         "_wright.h++": {
             "wrightomega": "D->D",
