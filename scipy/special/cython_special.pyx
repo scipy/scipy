@@ -1365,7 +1365,6 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_gdtrc(double a, double b, double x) nogil
     double xsf_kolmogorov(double x) nogil
     double xsf_kolmogi(double x) nogil
-    double xsf_kolmogci(double x) nogil
     double xsf_kolmogp(double x) nogil
     double xsf_nbdtr(int k, int n, double p) nogil
     double xsf_nbdtrc(int k, int n, double p) nogil

@@ -14,6 +14,10 @@ const char *_kolmogc_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_kolmogci_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *_lgam1p_doc = R"(
     Internal function, do not use.
     )";
