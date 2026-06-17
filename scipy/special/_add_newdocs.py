@@ -4631,60 +4631,6 @@ add_newdoc("nctdtrit",
 
     """)
 
-add_newdoc("ndtri",
-    """
-    ndtri(p, out=None)
-
-    Inverse of `ndtr`.
-
-    Returns the quantile `x` such that the cumulative distribution function of the
-    standard normal distribution evaluated at `x` equals `p`, that is, ``ndtr(x) == p``.
-
-    Parameters
-    ----------
-    p : array_like
-        Probability values.
-    out : ndarray, optional
-        Optional output array for the function results.
-
-    Returns
-    -------
-    x : scalar or ndarray
-        Quantile(s) corresponding to the probabilitie(s) in `p`.
-
-    See Also
-    --------
-    ndtr : Standard normal cumulative distribution function
-    ndtri_exp : Inverse of log_ndtr
-
-    Examples
-    --------
-    `ndtri` is the percentile (quantile) function of the standard normal distribution,
-    i.e., the inverse of the cumulative distribution function `ndtr`.
-
-    First, compute a cumulative distribution value:
-
-    >>> import numpy as np
-    >>> from scipy.special import ndtri, ndtr
-    >>> cdf_val = ndtr(2)
-    >>> cdf_val
-    0.9772498680518208
-
-    Verify that `ndtri` yields the original value for `x` up to floating point errors.
-
-    >>> ndtri(cdf_val)
-    2.0000000000000004
-
-    Plot the percentile function over a range of probabilities.
-
-    >>> import matplotlib.pyplot as plt
-    >>> p = np.linspace(1e-3, 1 - 1e-3, 201)
-    >>> fig, ax = plt.subplots()
-    >>> ax.plot(p, ndtri(p))
-    >>> ax.set_title("Standard normal percentile function")
-    >>> plt.show()
-    """)
-
 add_newdoc("pdtr",
     r"""
     pdtr(k, m, out=None)

@@ -187,6 +187,7 @@ extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *ndtr_doc;
+extern const char *ndtri_doc;
 extern const char *ndtri_exp_doc;
 extern const char *nrdtrimn_doc;
 extern const char *nrdtrisd_doc;
@@ -604,6 +605,11 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::F_F>(xsf::ndtr), static_cast<xsf::numpy::D_D>(xsf::ndtr)},
                           "ndtr", ndtr_doc);
     PyModule_AddObjectRef(module, "ndtr", ndtr);
+
+    PyObject *ndtri =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ndtri), static_cast<xsf::numpy::d_d>(xsf::ndtri)},
+                          "ndtri", ndtri_doc);
+    PyModule_AddObjectRef(module, "ndtri", ndtri);
 
     PyObject *log_ndtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::log_ndtr), static_cast<xsf::numpy::d_d>(xsf::log_ndtr),
