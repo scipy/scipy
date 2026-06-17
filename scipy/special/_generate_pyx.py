@@ -83,6 +83,7 @@ special_ufuncs = [
     "_igam_fac",
     "_iv_ratio",
     "_iv_ratio_c",
+    "_kolmogc",
     "_lambertw",
     "_lgam1p",
     "_log1mexp",

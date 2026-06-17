@@ -335,11 +335,6 @@
             "special_cyl_bessel_k_int": "pd->d"
         }
     },
-    "_kolmogc": {
-        "xsf_wrappers.h": {
-            "xsf_kolmogc": "d->d"
-        }
-    },
     "_kolmogci": {
         "xsf_wrappers.h": {
             "xsf_kolmogci": "d->d"

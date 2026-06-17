@@ -60,6 +60,7 @@ extern const char *_bivariate_normal_sf_doc;
 extern const char *_sinpi_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_igam_fac_doc;
+extern const char *_kolmogc_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
@@ -271,6 +272,11 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(gen_harmonic)},
                            "_gen_harmonic", _gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_gen_harmonic", _gen_harmonic);
+
+    PyObject *_kolmogc = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogc), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogc)},
+        "_kolmogc", _kolmogc_doc);
+    PyModule_AddObjectRef(module, "_kolmogc", _kolmogc);
 
     PyObject *_normalized_gen_harmonic =
         xsf::numpy::ufunc({static_cast<xsf::numpy::llld_d>(normalized_gen_harmonic),
