@@ -1182,6 +1182,68 @@ const char *pdtrc_doc = R"(
 
     )";
 
+const char *poch_doc = R"(
+    poch(z, m, out=None)
+
+    Pochhammer symbol.
+
+    The Pochhammer symbol (rising factorial) is defined as
+
+    .. math::
+
+        (z)_m = \frac{\Gamma(z + m)}{\Gamma(z)}
+
+    For positive integer `m` it reads
+
+    .. math::
+
+        (z)_m = z (z + 1) ... (z + m - 1)
+
+    See [DLMF]_ for more details.
+
+    Parameters
+    ----------
+    z, m : array_like
+        Real-valued arguments.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        The value of the function.
+
+    References
+    ----------
+    .. [DLMF] Nist, Digital Library of Mathematical Functions
+        https://dlmf.nist.gov/5.2#iii
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is 1 when m is 0.
+
+    >>> sc.poch([1, 2, 3, 4], 0)
+    array([1., 1., 1., 1.])
+
+    For z equal to 1 it reduces to the factorial function.
+
+    >>> sc.poch(1, 5)
+    120.0
+    >>> 1 * 2 * 3 * 4 * 5
+    120
+
+    It can be expressed in terms of the gamma function.
+
+    >>> z, m = 3.7, 2.1
+    >>> sc.poch(z, m)
+    20.529581933776953
+    >>> sc.gamma(z + m) / sc.gamma(z)
+    20.52958193377696
+
+    )";
+
 const char *gdtria_doc = R"(
     gdtria(p, b, x, out=None)
 

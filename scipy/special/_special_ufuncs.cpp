@@ -14,6 +14,7 @@
 #include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
 #include <xsf/cephes/erfinv.h>
+#include <xsf/cephes/poch.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/cpu/stats.h>
@@ -201,6 +202,7 @@ extern const char *obl_rad2_cv_doc;
 extern const char *owens_t_doc;
 extern const char *pdtr_doc;
 extern const char *pdtrc_doc;
+extern const char *poch_doc;
 extern const char *_zeta_doc;
 extern const char *pbdv_doc;
 extern const char *pbvv_doc;
@@ -639,6 +641,11 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::pdtrc), static_cast<xsf::numpy::dd_d>(xsf::pdtrc)},
                           "pdtrc", pdtrc_doc);
     PyModule_AddObjectRef(module, "pdtrc", pdtrc);
+
+    PyObject *poch = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::cephes::poch), static_cast<xsf::numpy::dd_d>(xsf::cephes::poch)}, "poch",
+        poch_doc);
+    PyModule_AddObjectRef(module, "poch", poch);
 
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ff>(xsf::fresnel), static_cast<xsf::numpy::d_dd>(xsf::fresnel),

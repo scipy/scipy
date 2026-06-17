@@ -457,11 +457,6 @@
             "pdtrik_double": "dd->d"
         }
     },
-    "poch": {
-        "xsf_wrappers.h": {
-            "cephes_poch": "dd->d"
-        }
-    },
     "powm1": {
         "boost_special_functions.h++": {
             "powm1_float": "ff->f",

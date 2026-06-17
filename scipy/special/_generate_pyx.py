@@ -235,6 +235,7 @@ special_ufuncs = [
     "pbdv",
     "pbvv",
     "pbwa",
+    "poch",
     "pro_ang1",
     "pro_ang1_cv",
     "pro_cv",
