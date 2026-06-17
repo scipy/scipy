@@ -313,21 +313,6 @@
         "_cdflib_wrappers.pxd": {
             "fdtridfd": "ddd->d"        }
     },
-    "gdtr": {
-        "xsf_wrappers.h": {
-            "xsf_gdtr": "ddd->d"
-        }
-    },
-    "gdtrc": {
-        "xsf_wrappers.h": {
-            "xsf_gdtrc": "ddd->d"
-        }
-    },
-    "gdtrib": {
-        "xsf_wrappers.h": {
-            "xsf_gdtrib": "ddd->d"
-        }
-    },
     "hyp0f1": {
         "_hyp0f1.pxd": {
             "_hyp0f1_cmplx": "dD->D",
