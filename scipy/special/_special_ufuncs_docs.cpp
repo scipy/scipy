@@ -249,6 +249,52 @@ const char *chdtrc_doc = R"(
 
     )";
 
+const char *chdtri_doc = R"(
+    chdtri(v, p, out=None)
+
+    Inverse to `chdtrc` with respect to `x`.
+
+    Returns `x` such that ``chdtrc(v, x) == p``.
+
+    Parameters
+    ----------
+    v : array_like
+        Degrees of freedom.
+    p : array_like
+        Probability.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Value so that the probability a Chi square random variable
+        with `v` degrees of freedom is greater than `x` equals `p`.
+
+    See Also
+    --------
+    chdtrc, chdtr, chdtriv
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It inverts `chdtrc`.
+
+    >>> v, p = 1, 0.3
+    >>> sc.chdtrc(v, sc.chdtri(v, p))
+    0.3
+    >>> x = 1
+    >>> sc.chdtri(v, sc.chdtrc(v, x))
+    1.0
+
+    )";
+
 const char *huber_doc = R"(
     huber(delta, r, out=None)
 

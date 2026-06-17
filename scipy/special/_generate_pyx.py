@@ -117,6 +117,7 @@ special_ufuncs = [
     "cbrt",
     "chdtr",
     "chdtrc",
+    "chdtri",
     "cosdg",
     "cosm1",
     "cotdg",

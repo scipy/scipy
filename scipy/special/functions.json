@@ -100,11 +100,6 @@
             "ibeta_invb_double": "ddd->d"
         }
     },
-    "chdtri": {
-        "xsf_wrappers.h": {
-            "xsf_chdtri": "dd->d"
-        }
-    },
     "chdtriv": {
         "boost_special_functions.h++": {
             "chdtriv_float": "ff->f",
