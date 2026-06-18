@@ -4,6 +4,7 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
+import math
 import numpy as np
 from numpy import asarray, zeros, pi, log, sqrt, cos, polyval, polyint
 
@@ -218,7 +219,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # fdel = fc*bw/2:  g(fdel) = ref --- solve this for a
     #
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
-    a = float(-(pi * fc * bw) ** 2 / (4.0 * log(ref)))
+    a = -(pi * fc * bw) ** 2 / (4.0 * math.log(ref))
 
     if isinstance(t, str):
         if t == 'cutoff':  # compute cut_off point
@@ -228,7 +229,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                 raise ValueError("Reference level for time cutoff must "
                                  "be < 0 dB")
             tref = pow(10.0, tpr / 20.0)
-            return sqrt(-log(tref) / a)
+            return sqrt(-math.log(tref) / a)
         else:
             raise ValueError("If `t` is a string, it must be 'cutoff'")
 
