@@ -181,13 +181,6 @@ py3.extension_module('cython_special',
   subdir: 'scipy/special',
 )
 
-py3.extension_module('_comb',
-  cython_gen.process('_comb.pyx'),
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/special'
-)
-
 py3.extension_module('_test_internal',
   [cython_gen.process('_test_internal.pyx'), 'dd_real_wrappers.cpp'],
   include_directories: ['../_lib', '../_build_utils/src'],
