@@ -1033,9 +1033,10 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         The interval to fit.  If None, these default to ``x[0]`` and ``x[-1]``,
         respectively.
     k : int, optional
-        The degree of the spline fit. Must be >= 1. It is recommended to use cubic splines,
-        ``k=3``, which is the default. Even values of `k` should be avoided,
-        especially with small `s` values.
+        The degree of the spline fit. Must be >= 1, except when ``s=0``,
+        in which case ``k=0`` is also supported. It is recommended to use
+        cubic splines, ``k=3``, which is the default. Even values of `k` 
+        should be avoided, especially with small `s` values.
     s : float, optional
         The smoothing condition. The amount of smoothness is determined by
         satisfying the LSQ (least-squares) constraint::
@@ -1194,9 +1195,11 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     ub, ue : float, optional
         The end-points of the parameters interval. Default to ``u[0]`` and ``u[-1]``.
     k : int, optional
-        Degree of the spline. Must be >= 1. Cubic splines, ``k=3``, are recommended.
-        Even values of `k` should be avoided especially with a small ``s`` value.
-        Default is ``k=3``
+         Degree of the spline. Must be >= 1, except when ``s=0``, in which
+         case ``k=0`` is also supported. Cubic splines, ``k=3``, are
+         recommended. Even values of `k` should be avoided especially with
+         a small ``s`` value. 
+         Default is ``k=3``
     s : float, optional
         A smoothing condition.  The amount of smoothness is determined by
         satisfying the conditions::
