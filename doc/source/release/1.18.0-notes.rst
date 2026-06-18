@@ -364,7 +364,7 @@ Authors
 * Ralf Gommers (173)
 * Mathieu Guay-Paquet (1) +
 * Matt Haberland (147)
-* Joren Hammudoglu (29)
+* Joren Hammudoglu (30)
 * Jacob Hass (4)
 * Maya Horii (1) +
 * Guido Imperiale (1)
@@ -397,7 +397,7 @@ Authors
 * Pradyot Ranjan (2) +
 * Adrian Raso (3)
 * Aditya Rawat (1) +
-* Tyler Reddy (98)
+* Tyler Reddy (99)
 * Martin Reinecke (1)
 * Lucas Roberts (6)
 * Pamphile Roy (1)
@@ -553,6 +553,7 @@ Issues closed for 1.18.0
 * `#25162 <https://github.com/scipy/scipy/issues/25162>`__: MAINT, TST: a few test failures against NumPy ``2.4.5``
 * `#25180 <https://github.com/scipy/scipy/issues/25180>`__: CI: stats: ``test_continuous.py::TestDistributions::test_funcs``...
 * `#25374 <https://github.com/scipy/scipy/issues/25374>`__: TST, CI: errors with ``pytest`` ``9.1.0`` release
+* `#25409 <https://github.com/scipy/scipy/issues/25409>`__: MAINT: mypy failing in CI
 
 ************************
 Pull requests for 1.18.0
@@ -1065,3 +1066,4 @@ Pull requests for 1.18.0
 * `#25347 <https://github.com/scipy/scipy/pull/25347>`__: REL: set version to ``1.18.0rc3`` unreleased
 * `#25376 <https://github.com/scipy/scipy/pull/25376>`__: TST, MAINT: modernize spatial tests for pytest 10
 * `#25378 <https://github.com/scipy/scipy/pull/25378>`__: MAINT: Bump ``pytest`` to v9.1.0
+* `#25410 <https://github.com/scipy/scipy/pull/25410>`__: TYP: Fix mypy errors with ``pytest==9.1.0``
