@@ -919,7 +919,7 @@ def test_diags_array():
         construct.diags(np.arange(1.0, 5.0), 5, shape=(4, 4))
 
 
-@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
+@pytest.mark.parametrize('func', (construct.diags_array, construct.diags))
 def test_diags_int(func):
     d = [[3], [1, 2], [4]]
     offsets = [-1, 0, 1]
