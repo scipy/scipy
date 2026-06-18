@@ -14,6 +14,8 @@
 #include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
 #include <xsf/cephes/erfinv.h>
+#include <xsf/cephes/poch.h>
+#include <xsf/cephes/round.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/cpu/stats.h>
@@ -187,6 +189,7 @@ extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *ndtr_doc;
+extern const char *ndtri_doc;
 extern const char *ndtri_exp_doc;
 extern const char *nrdtrimn_doc;
 extern const char *nrdtrisd_doc;
@@ -197,6 +200,10 @@ extern const char *obl_rad1_doc;
 extern const char *obl_rad1_cv_doc;
 extern const char *obl_rad2_doc;
 extern const char *obl_rad2_cv_doc;
+extern const char *owens_t_doc;
+extern const char *pdtr_doc;
+extern const char *pdtrc_doc;
+extern const char *poch_doc;
 extern const char *_zeta_doc;
 extern const char *pbdv_doc;
 extern const char *pbvv_doc;
@@ -212,6 +219,7 @@ extern const char *psi_doc;
 extern const char *radian_doc;
 extern const char *rgamma_doc;
 extern const char *_riemann_zeta_doc;
+extern const char *round_doc;
 extern const char *scaled_exp1_doc;
 extern const char *sindg_doc;
 extern const char *spence_doc;
@@ -226,6 +234,7 @@ extern const char *spherical_kn_d_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
 extern const char *tandg_doc;
+extern const char *tklmbda_doc;
 extern const char *voigt_profile_doc;
 extern const char *wofz_doc;
 extern const char *wright_bessel_doc;
@@ -605,6 +614,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "ndtr", ndtr_doc);
     PyModule_AddObjectRef(module, "ndtr", ndtr);
 
+    PyObject *ndtri =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ndtri), static_cast<xsf::numpy::d_d>(xsf::ndtri)},
+                          "ndtri", ndtri_doc);
+    PyModule_AddObjectRef(module, "ndtri", ndtri);
+
     PyObject *log_ndtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::log_ndtr), static_cast<xsf::numpy::d_d>(xsf::log_ndtr),
                            static_cast<xsf::numpy::F_F>(xsf::log_ndtr), static_cast<xsf::numpy::D_D>(xsf::log_ndtr)},
@@ -616,6 +630,30 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::d_d>(xsf::ndtri_exp)},
                           "ndtri_exp", ndtri_exp_doc);
     PyModule_AddObjectRef(module, "ndtri_exp", ndtri_exp);
+
+    PyObject *owens_t = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::owens_t), static_cast<xsf::numpy::dd_d>(xsf::owens_t)}, "owens_t",
+        owens_t_doc);
+    PyModule_AddObjectRef(module, "owens_t", owens_t);
+
+    PyObject *pdtr = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::pdtr), static_cast<xsf::numpy::dd_d>(xsf::pdtr)}, "pdtr", pdtr_doc);
+    PyModule_AddObjectRef(module, "pdtr", pdtr);
+
+    PyObject *pdtrc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::pdtrc), static_cast<xsf::numpy::dd_d>(xsf::pdtrc)},
+                          "pdtrc", pdtrc_doc);
+    PyModule_AddObjectRef(module, "pdtrc", pdtrc);
+
+    PyObject *poch = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::cephes::poch), static_cast<xsf::numpy::dd_d>(xsf::cephes::poch)}, "poch",
+        poch_doc);
+    PyModule_AddObjectRef(module, "poch", poch);
+
+    PyObject *round = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cephes::round), static_cast<xsf::numpy::d_d>(xsf::cephes::round)}, "round",
+        round_doc);
+    PyModule_AddObjectRef(module, "round", round);
 
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ff>(xsf::fresnel), static_cast<xsf::numpy::d_dd>(xsf::fresnel),
@@ -1306,6 +1344,12 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *tandg = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::tandg), static_cast<xsf::numpy::d_d>(xsf::tandg)}, "tandg", tandg_doc);
     PyModule_AddObjectRef(module, "tandg", tandg);
+
+    PyObject *tklmbda = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::tukeylambdacdf),
+         static_cast<xsf::numpy::dd_d>(xsf::tukeylambdacdf)},
+        "tklmbda", tklmbda_doc);
+    PyModule_AddObjectRef(module, "tklmbda", tklmbda);
 
     PyObject *wright_bessel = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::wright_bessel), static_cast<xsf::numpy::ddd_d>(xsf::wright_bessel)},

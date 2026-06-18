@@ -443,26 +443,6 @@
             "nct_ppf_double": "ddd->d"
         }
     },
-    "ndtri": {
-        "xsf_wrappers.h": {
-            "xsf_ndtri": "d->d"
-        }
-    },
-    "owens_t": {
-        "xsf_wrappers.h": {
-            "xsf_owens_t": "dd->d"
-        }
-    },
-    "pdtr": {
-        "xsf_wrappers.h": {
-            "xsf_pdtr": "dd->d"
-        }
-    },
-    "pdtrc": {
-        "xsf_wrappers.h": {
-            "xsf_pdtrc": "dd->d"
-        }
-    },
     "pdtri": {
         "_legacy.pxd": {
             "pdtri_unsafe": "dd->d"
@@ -477,20 +457,10 @@
             "pdtrik_double": "dd->d"
         }
     },
-    "poch": {
-        "xsf_wrappers.h": {
-            "cephes_poch": "dd->d"
-        }
-    },
     "powm1": {
         "boost_special_functions.h++": {
             "powm1_float": "ff->f",
             "powm1_double": "dd->d"
-        }
-    },
-    "round": {
-        "xsf_wrappers.h": {
-            "cephes_round": "d->d"
         }
     },
     "shichi": {
@@ -565,11 +535,6 @@
     "_stirling2_inexact": {
         "stirling2.h++": {
             "_stirling2_inexact": "dd->d"
-        }
-    },
-    "tklmbda": {
-        "xsf_wrappers.h": {
-            "xsf_tukeylambdacdf": "dd->d"
         }
     },
     "wrightomega": {

@@ -1040,6 +1040,242 @@ const char *gdtrc_doc = R"(
     True
     )";
 
+const char *owens_t_doc = R"(
+    owens_t(h, a, out=None)
+
+    Owen's T Function.
+
+    The function T(h, a) gives the probability of the event
+    (X > h and 0 < Y < a * X) where X and Y are independent
+    standard normal random variables.
+
+    Parameters
+    ----------
+    h : array_like
+        Input value.
+    a : array_like
+        Input value.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    t: scalar or ndarray
+        Probability of the event (X > h and 0 < Y < a * X),
+        where X and Y are independent standard normal random variables.
+
+    References
+    ----------
+    .. [1] M. Patefield and D. Tandy, "Fast and accurate calculation of
+           Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> a = 3.5
+    >>> h = 0.78
+    >>> special.owens_t(h, a)
+    0.10877216734852274
+    )";
+
+const char *pdtr_doc = R"(
+    pdtr(k, m, out=None)
+
+    Poisson cumulative distribution function.
+
+    Defined as the probability that a Poisson-distributed random
+    variable with event rate :math:`m` is less than or equal to
+    :math:`k`. More concretely, this works out to be [1]_
+
+    .. math::
+
+       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{j!}.
+
+    Parameters
+    ----------
+    k : array_like
+        Number of occurrences (nonnegative, real)
+    m : array_like
+        Shape parameter (nonnegative, real)
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson cumulative distribution function
+
+    See Also
+    --------
+    pdtrc : Poisson survival function
+    pdtrik : inverse of `pdtr` with respect to `k`
+    pdtri : inverse of `pdtr` with respect to `m`
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Poisson_distribution
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is a cumulative distribution function, so it converges to 1
+    monotonically as `k` goes to infinity.
+
+    >>> sc.pdtr([1, 10, 100, np.inf], 1)
+    array([0.73575888, 0.99999999, 1.        , 1.        ])
+
+    It is discontinuous at integers and constant between integers.
+
+    >>> sc.pdtr([1, 1.5, 1.9, 2], 1)
+    array([0.73575888, 0.73575888, 0.73575888, 0.9196986 ])
+
+    )";
+
+const char *pdtrc_doc = R"(
+    pdtrc(k, m, out=None)
+
+    Poisson survival function.
+
+    Returns the sum of the terms from k+1 to infinity of the Poisson
+    distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
+    k+1, m). Arguments must both be non-negative doubles.
+
+    Parameters
+    ----------
+    k : array_like
+        Number of occurrences (nonnegative, real)
+    m : array_like
+        Shape parameter (nonnegative, real)
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson survival function
+
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrik : inverse of `pdtr` with respect to `k`
+    pdtri : inverse of `pdtr` with respect to `m`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is a survival function, so it decreases to 0
+    monotonically as `k` goes to infinity.
+
+    >>> k = np.array([1, 10, 100, np.inf])
+    >>> sc.pdtrc(k, 1)
+    array([2.64241118e-001, 1.00477664e-008, 3.94147589e-161, 0.00000000e+000])
+
+    It can be expressed in terms of the lower incomplete gamma
+    function `gammainc`.
+
+    >>> sc.gammainc(k + 1, 1)
+    array([2.64241118e-001, 1.00477664e-008, 3.94147589e-161, 0.00000000e+000])
+
+    )";
+
+const char *poch_doc = R"(
+    poch(z, m, out=None)
+
+    Pochhammer symbol.
+
+    The Pochhammer symbol (rising factorial) is defined as
+
+    .. math::
+
+        (z)_m = \frac{\Gamma(z + m)}{\Gamma(z)}
+
+    For positive integer `m` it reads
+
+    .. math::
+
+        (z)_m = z (z + 1) ... (z + m - 1)
+
+    See [DLMF]_ for more details.
+
+    Parameters
+    ----------
+    z, m : array_like
+        Real-valued arguments.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        The value of the function.
+
+    References
+    ----------
+    .. [DLMF] Nist, Digital Library of Mathematical Functions
+        https://dlmf.nist.gov/5.2#iii
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is 1 when m is 0.
+
+    >>> sc.poch([1, 2, 3, 4], 0)
+    array([1., 1., 1., 1.])
+
+    For z equal to 1 it reduces to the factorial function.
+
+    >>> sc.poch(1, 5)
+    120.0
+    >>> 1 * 2 * 3 * 4 * 5
+    120
+
+    It can be expressed in terms of the gamma function.
+
+    >>> z, m = 3.7, 2.1
+    >>> sc.poch(z, m)
+    20.529581933776953
+    >>> sc.gamma(z + m) / sc.gamma(z)
+    20.52958193377696
+
+    )";
+
+const char *round_doc = R"(
+    round(x, out=None)
+
+    Round to the nearest integer.
+
+    Returns the nearest integer to `x`.  If `x` ends in 0.5 exactly,
+    the nearest even integer is chosen.
+
+    Parameters
+    ----------
+    x : array_like
+        Real valued input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The nearest integers to the elements of `x`. The result is of
+        floating type, not integer type.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It rounds to even.
+
+    >>> sc.round([0.5, 1.5])
+    array([0., 2.])
+
+    )";
+
 const char *gdtria_doc = R"(
     gdtria(p, b, x, out=None)
 
@@ -7083,6 +7319,59 @@ const char *log_ndtr_doc = R"(
             0.00000000e+00,  0.00000000e+00,  0.00000000e+00])
     )";
 
+const char *ndtri_doc = R"(
+    ndtri(p, out=None)
+
+    Inverse of `ndtr`.
+
+    Returns the quantile `x` such that the cumulative distribution function of the
+    standard normal distribution evaluated at `x` equals `p`, that is, ``ndtr(x) == p``.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability values.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Quantile(s) corresponding to the probabilitie(s) in `p`.
+
+    See Also
+    --------
+    ndtr : Standard normal cumulative distribution function
+    ndtri_exp : Inverse of log_ndtr
+
+    Examples
+    --------
+    `ndtri` is the percentile (quantile) function of the standard normal distribution,
+    i.e., the inverse of the cumulative distribution function `ndtr`.
+
+    First, compute a cumulative distribution value:
+
+    >>> import numpy as np
+    >>> from scipy.special import ndtri, ndtr
+    >>> cdf_val = ndtr(2)
+    >>> cdf_val
+    0.9772498680518208
+
+    Verify that `ndtri` yields the original value for `x` up to floating point errors.
+
+    >>> ndtri(cdf_val)
+    2.0000000000000004
+
+    Plot the percentile function over a range of probabilities.
+
+    >>> import matplotlib.pyplot as plt
+    >>> p = np.linspace(1e-3, 1 - 1e-3, 201)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(p, ndtri(p))
+    >>> ax.set_title("Standard normal percentile function")
+    >>> plt.show()
+    )";
+
 const char *ndtri_exp_doc = R"(
     ndtri_exp(y, out=None)
 
@@ -8483,6 +8772,122 @@ const char *tandg_doc = R"(
     array([0., 0., 0.])
     >>> np.tan(x * np.pi / 180)
     array([ 0.0000000e+00, -1.2246468e-16, -2.4492936e-16])
+    )";
+
+const char *tklmbda_doc = R"(
+    tklmbda(x, lmbda, out=None)
+
+    Cumulative distribution function of the Tukey lambda distribution.
+
+    Parameters
+    ----------
+    x, lmbda : array_like
+        Parameters
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    cdf : scalar or ndarray
+        Value of the Tukey lambda CDF
+
+    See Also
+    --------
+    scipy.stats.tukeylambda : Tukey lambda distribution
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import tklmbda, expit
+
+    Compute the cumulative distribution function (CDF) of the Tukey lambda
+    distribution at several ``x`` values for `lmbda` = -1.5.
+
+    >>> x = np.linspace(-2, 2, 9)
+    >>> x
+    array([-2. , -1.5, -1. , -0.5,  0. ,  0.5,  1. ,  1.5,  2. ])
+    >>> tklmbda(x, -1.5)
+    array([0.34688734, 0.3786554 , 0.41528805, 0.45629737, 0.5       ,
+           0.54370263, 0.58471195, 0.6213446 , 0.65311266])
+
+    When `lmbda` is 0, the function is the logistic sigmoid function,
+    which is implemented in `scipy.special` as `expit`.
+
+    >>> tklmbda(x, 0)
+    array([0.11920292, 0.18242552, 0.26894142, 0.37754067, 0.5       ,
+           0.62245933, 0.73105858, 0.81757448, 0.88079708])
+    >>> expit(x)
+    array([0.11920292, 0.18242552, 0.26894142, 0.37754067, 0.5       ,
+           0.62245933, 0.73105858, 0.81757448, 0.88079708])
+
+    When `lmbda` is 1, the Tukey lambda distribution is uniform on the
+    interval [-1, 1], so the CDF increases linearly.
+
+    >>> t = np.linspace(-1, 1, 9)
+    >>> tklmbda(t, 1)
+    array([0.   , 0.125, 0.25 , 0.375, 0.5  , 0.625, 0.75 , 0.875, 1.   ])
+
+    In the following, we generate plots for several values of `lmbda`.
+
+    The first figure shows graphs for `lmbda` <= 0.
+
+    >>> styles = ['-', '-.', '--', ':']
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-12, 12, 500)
+    >>> for k, lmbda in enumerate([-1.0, -0.5, 0.0]):
+    ...     y = tklmbda(x, lmbda)
+    ...     ax.plot(x, y, styles[k], label=rf'$\lambda$ = {lmbda:-4.1f}')
+
+    >>> ax.set_title(r'tklmbda(x, $\lambda$)')
+    >>> ax.set_label('x')
+    >>> ax.legend(framealpha=1, shadow=True)
+    >>> ax.grid(True)
+
+    The second figure shows graphs for `lmbda` > 0.  The dots in the
+    graphs show the bounds of the support of the distribution.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-4.2, 4.2, 500)
+    >>> lmbdas = [0.25, 0.5, 1.0, 1.5]
+    >>> for k, lmbda in enumerate(lmbdas):
+    ...     y = tklmbda(x, lmbda)
+    ...     ax.plot(x, y, styles[k], label=fr'$\lambda$ = {lmbda}')
+
+    >>> ax.set_prop_cycle(None)
+    >>> for lmbda in lmbdas:
+    ...     ax.plot([-1/lmbda, 1/lmbda], [0, 1], '.', ms=8)
+
+    >>> ax.set_title(r'tklmbda(x, $\lambda$)')
+    >>> ax.set_xlabel('x')
+    >>> ax.legend(framealpha=1, shadow=True)
+    >>> ax.grid(True)
+
+    >>> plt.tight_layout()
+    >>> plt.show()
+
+    The CDF of the Tukey lambda distribution is also implemented as the
+    ``cdf`` method of `scipy.stats.tukeylambda`.  In the following,
+    ``tukeylambda.cdf(x, -0.5)`` and ``tklmbda(x, -0.5)`` compute the
+    same values:
+
+    >>> from scipy.stats import tukeylambda
+    >>> x = np.linspace(-2, 2, 9)
+
+    >>> tukeylambda.cdf(x, -0.5)
+    array([0.21995157, 0.27093858, 0.33541677, 0.41328161, 0.5       ,
+           0.58671839, 0.66458323, 0.72906142, 0.78004843])
+
+    >>> tklmbda(x, -0.5)
+    array([0.21995157, 0.27093858, 0.33541677, 0.41328161, 0.5       ,
+           0.58671839, 0.66458323, 0.72906142, 0.78004843])
+
+    The implementation in ``tukeylambda`` also provides location and scale
+    parameters, and other methods such as ``pdf()`` (the probability
+    density function) and ``ppf()`` (the inverse of the CDF), so for
+    working with the Tukey lambda distribution, ``tukeylambda`` is more
+    generally useful.  The primary advantage of ``tklmbda`` is that it is
+    significantly faster than ``tukeylambda.cdf``.
     )";
 
 const char *spence_doc = R"(
