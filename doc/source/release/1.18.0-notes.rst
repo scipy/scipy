@@ -2,8 +2,6 @@
 SciPy 1.18.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.18.0 is not released yet!
-
 .. contents::
 
 SciPy 1.18.0 is the culmination of 6 months of hard work. It contains
@@ -363,10 +361,10 @@ Authors
 * Christoph Gohlke (1)
 * Nathan Goldbaum (20)
 * Ludmila Golomozin (11) +
-* Ralf Gommers (172)
+* Ralf Gommers (173)
 * Mathieu Guay-Paquet (1) +
 * Matt Haberland (147)
-* Joren Hammudoglu (29)
+* Joren Hammudoglu (30)
 * Jacob Hass (4)
 * Maya Horii (1) +
 * Guido Imperiale (1)
@@ -396,9 +394,10 @@ Authors
 * partev (1)
 * Matti Picus (7)
 * Ilhan Polat (190)
+* Pradyot Ranjan (2) +
 * Adrian Raso (3)
 * Aditya Rawat (1) +
-* Tyler Reddy (86)
+* Tyler Reddy (99)
 * Martin Reinecke (1)
 * Lucas Roberts (6)
 * Pamphile Roy (1)
@@ -430,7 +429,7 @@ Authors
 * Simon Zwieback (1) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (19)
 
-    A total of 102 people contributed to this release.
+    A total of 103 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
@@ -553,6 +552,8 @@ Issues closed for 1.18.0
 * `#25133 <https://github.com/scipy/scipy/issues/25133>`__: BUG: signal savgol_filter fails for large >20000 window_length...
 * `#25162 <https://github.com/scipy/scipy/issues/25162>`__: MAINT, TST: a few test failures against NumPy ``2.4.5``
 * `#25180 <https://github.com/scipy/scipy/issues/25180>`__: CI: stats: ``test_continuous.py::TestDistributions::test_funcs``...
+* `#25374 <https://github.com/scipy/scipy/issues/25374>`__: TST, CI: errors with ``pytest`` ``9.1.0`` release
+* `#25409 <https://github.com/scipy/scipy/issues/25409>`__: MAINT: mypy failing in CI
 
 ************************
 Pull requests for 1.18.0
@@ -1061,3 +1062,8 @@ Pull requests for 1.18.0
 * `#25243 <https://github.com/scipy/scipy/pull/25243>`__: BUG: ``stats``\ : fix new distribution ``lmoment`` method signatures
 * `#25275 <https://github.com/scipy/scipy/pull/25275>`__: BUG: interpolate: fix missing DECREF in curfit and percur
 * `#25281 <https://github.com/scipy/scipy/pull/25281>`__: BUG: cluster.vq: fix calling deprecated ``py_vq``
+* `#25297 <https://github.com/scipy/scipy/pull/25297>`__: MAINT: backports/preparation for SciPy ``1.18.0rc2``
+* `#25347 <https://github.com/scipy/scipy/pull/25347>`__: REL: set version to ``1.18.0rc3`` unreleased
+* `#25376 <https://github.com/scipy/scipy/pull/25376>`__: TST, MAINT: modernize spatial tests for pytest 10
+* `#25378 <https://github.com/scipy/scipy/pull/25378>`__: MAINT: Bump ``pytest`` to v9.1.0
+* `#25410 <https://github.com/scipy/scipy/pull/25410>`__: TYP: Fix mypy errors with ``pytest==9.1.0``
