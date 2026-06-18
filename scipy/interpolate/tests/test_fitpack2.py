@@ -1418,10 +1418,10 @@ class TestRectBivariateSpline:
     @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
                                         (1, 7e-3, 1e-4),
                                         (3, 2e-2, 1e-4)])
-    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline,
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
                                            _RectBivariateSplineEval),
                                           (_regrid,
-                                           _ndbspline_call_like_bivariate)])
+                                           _ndbspline_call_like_bivariate)))
     def test_spline_large_2d(self, shape, s_tols, spl_apis):
         # Reference - https://github.com/scipy/scipy/issues/17787
         #
@@ -1447,10 +1447,10 @@ class TestRectBivariateSpline:
     @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system "
                                                      "due to large input data")
     @pytest.mark.parametrize("k", [3, 4])
-    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline,
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
                                            _RectBivariateSplineEval),
                                           (_regrid,
-                                           _ndbspline_call_like_bivariate)])
+                                           _ndbspline_call_like_bivariate)))
     def test_spline_large_2d_maxit(self, k, spl_apis):
         # Reference - for https://github.com/scipy/scipy/issues/17787
         #
@@ -1472,10 +1472,10 @@ class TestRectBivariateSpline:
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
-    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline,
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
                                            _RectBivariateSplineEval),
                                           (_regrid,
-                                           _ndbspline_call_like_bivariate)])
+                                           _ndbspline_call_like_bivariate)))
     def test_spline_synthetic_data(self, spl_apis):
         """
         Test regrid with synthetic smooth data (mixed frequencies + noise).
