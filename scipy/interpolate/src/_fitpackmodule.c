@@ -1781,7 +1781,9 @@ fitpack_sphere(PyObject* Py_UNUSED(dummy), PyObject *args)
         // tt and tp are input arrays that will be modified in-place
         // Acquire pointers to the input arrays without copy
         ap_tt = tt;
+        Py_INCREF(ap_tt);
         ap_tp = tp;
+        Py_INCREF(ap_tp);
 
     } else if (iopt == 0) {
         // SMOOTH
@@ -1842,11 +1844,6 @@ fitpack_sphere(PyObject* Py_UNUSED(dummy), PyObject *args)
     Py_DECREF(ap_r);
     Py_DECREF(ap_w);
 
-    if (iopt == -1) {
-        // LSQ: tt and tp were borrowed, INCREF before returning.
-        Py_INCREF(ap_tt);
-        Py_INCREF(ap_tp);
-    }
     return Py_BuildValue(("iNiNNdi"),
                          nt, PyArray_Return(ap_tt), np, PyArray_Return(ap_tp),
                          PyArray_Return(ap_c), fp, ier);
