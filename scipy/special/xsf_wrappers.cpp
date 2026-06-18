@@ -599,13 +599,7 @@ double xsf_gdtrix(double a, double b, double p) { return xsf::gdtrix(a, b, p); }
 
 double xsf_kolmogorov(double x) { return xsf::cpu::kolmogorov(x); }
 
-double xsf_kolmogc(double x) { return xsf::cpu::kolmogc(x); }
-
 double xsf_kolmogi(double x) { return xsf::cpu::kolmogi(x); }
-
-double xsf_kolmogci(double x) { return xsf::cpu::kolmogci(x); }
-
-double xsf_kolmogp(double x) { return xsf::cpu::kolmogp(x); }
 
 double xsf_nbdtr(int k, int n, double p) { return xsf::nbdtr(k, n, p); }
 

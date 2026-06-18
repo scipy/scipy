@@ -15,6 +15,7 @@
 #include <xsf/cdflib.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/convex_analysis.h>
+#include <xsf/cpu/stats.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
@@ -59,6 +60,9 @@ extern const char *_bivariate_normal_sf_doc;
 extern const char *_sinpi_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_igam_fac_doc;
+extern const char *_kolmogc_doc;
+extern const char *_kolmogci_doc;
+extern const char *_kolmogp_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
@@ -157,6 +161,8 @@ extern const char *k1_doc;
 extern const char *k1e_doc;
 extern const char *kv_doc;
 extern const char *kve_doc;
+extern const char *kolmogi_doc;
+extern const char *kolmogorov_doc;
 extern const char *lambertw_doc;
 extern const char *log1p_doc;
 extern const char *logit_doc;
@@ -269,6 +275,21 @@ _special_ufuncs_module_exec(PyObject *module)
                            "_gen_harmonic", _gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_gen_harmonic", _gen_harmonic);
 
+    PyObject *_kolmogc = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogc), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogc)},
+        "_kolmogc", _kolmogc_doc);
+    PyModule_AddObjectRef(module, "_kolmogc", _kolmogc);
+
+    PyObject *_kolmogci = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogci), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogci)},
+        "_kolmogci", _kolmogci_doc);
+    PyModule_AddObjectRef(module, "_kolmogci", _kolmogci);
+
+    PyObject *_kolmogp = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogp), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogp)},
+        "_kolmogp", _kolmogp_doc);
+    PyModule_AddObjectRef(module, "_kolmogp", _kolmogp);
+
     PyObject *_normalized_gen_harmonic =
         xsf::numpy::ufunc({static_cast<xsf::numpy::llld_d>(normalized_gen_harmonic),
                            static_cast<xsf::numpy::qqqd_d>(normalized_gen_harmonic),
@@ -355,6 +376,17 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::kl_div), static_cast<xsf::numpy::dd_d>(xsf::kl_div)}, "kl_div",
         kl_div_doc);
     PyModule_AddObjectRef(module, "kl_div", kl_div);
+
+    PyObject *kolmogorov = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogorov),
+         static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogorov)},
+        "kolmogorov", kolmogorov_doc);
+    PyModule_AddObjectRef(module, "kolmogorov", kolmogorov);
+
+    PyObject *kolmogi = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogi), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogi)},
+        "kolmogi", kolmogi_doc);
+    PyModule_AddObjectRef(module, "kolmogi", kolmogi);
 
     PyObject *pseudo_huber =
         xsf::numpy::ufunc(
