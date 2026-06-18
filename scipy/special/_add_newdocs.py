@@ -4484,6 +4484,16 @@ add_newdoc("nctdtridf",
     nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
     nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
 
+    Notes
+    -----
+    This function calculates the degrees of freedom of the non-central t
+    distribution given a probability, quantile and non-centrality parameter
+    using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     Examples
     --------
     >>> from scipy.special import nctdtr, nctdtridf

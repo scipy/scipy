@@ -1687,9 +1687,6 @@ from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
 ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
 
-from ._cdflib_wrappers cimport nctdtridf as _func_nctdtridf
-ctypedef double _proto_nctdtridf_t(double, double, double) noexcept nogil
-cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
@@ -3116,7 +3113,7 @@ cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcep
 
 cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtridf"""
-    return _func_nctdtridf(x0, x1, x2)
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_find_degrees_of_freedom_double)(x0, x1, x2)
 
 cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrinc"""
