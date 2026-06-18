@@ -100,21 +100,6 @@
             "ibeta_invb_double": "ddd->d"
         }
     },
-    "chdtr": {
-        "xsf_wrappers.h": {
-            "xsf_chdtr": "dd->d"
-        }
-    },
-    "chdtrc": {
-        "xsf_wrappers.h": {
-            "xsf_chdtrc": "dd->d"
-        }
-    },
-    "chdtri": {
-        "xsf_wrappers.h": {
-            "xsf_chdtri": "dd->d"
-        }
-    },
     "chdtriv": {
         "boost_special_functions.h++": {
             "chdtriv_float": "ff->f",
@@ -175,11 +160,6 @@
         "boost_special_functions.h++": {
             "erfinv_float": "f->f",
             "erfinv_double": "d->d"
-        }
-    },
-    "erfcinv": {
-        "xsf_wrappers.h": {
-            "cephes_erfcinv": "d->d"
         }
     },
     "eval_chebyc": {
@@ -375,11 +355,6 @@
         "boost_special_functions.h++": {
             "lgamma_q_float": "ff->f",
             "lgamma_q_double": "dd->d"
-        }
-    },
-    "lpmv": {
-        "xsf_wrappers.h": {
-            "pmv_wrap": "ddd->d"
         }
     },
     "nbdtr": {

@@ -13,6 +13,7 @@
 #include <xsf/binom.h>
 #include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
+#include <xsf/cephes/erfinv.h>
 #include <xsf/cephes/unity.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/cpu/stats.h>
@@ -87,6 +88,9 @@ extern const char *binom_doc;
 extern const char *boxcox_doc;
 extern const char *boxcox1p_doc;
 extern const char *cbrt_doc;
+extern const char *chdtr_doc;
+extern const char *chdtrc_doc;
+extern const char *chdtri_doc;
 extern const char *cosdg_doc;
 extern const char *cosm1_doc;
 extern const char *cotdg_doc;
@@ -100,6 +104,7 @@ extern const char *ellipkm1_doc;
 extern const char *ellipkinc_doc;
 extern const char *erf_doc;
 extern const char *erfc_doc;
+extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *exp1_doc;
@@ -170,6 +175,7 @@ extern const char *loggamma_doc;
 extern const char *log_expit_doc;
 extern const char *log_ndtr_doc;
 extern const char *log_wright_bessel_doc;
+extern const char *lpmv_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -458,6 +464,21 @@ _special_ufuncs_module_exec(PyObject *module)
 	{static_cast<xsf::numpy::f_f>(xsf::cbrt), static_cast<xsf::numpy::d_d>(xsf::cbrt)}, "cbrt", cbrt_doc);
     PyModule_AddObjectRef(module, "cbrt", cbrt);
 
+    PyObject *chdtr = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::chdtr), static_cast<xsf::numpy::dd_d>(xsf::chdtr)}, "chdtr",
+        chdtr_doc);
+    PyModule_AddObjectRef(module, "chdtr", chdtr);
+
+    PyObject *chdtrc = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::chdtrc), static_cast<xsf::numpy::dd_d>(xsf::chdtrc)}, "chdtrc",
+        chdtrc_doc);
+    PyModule_AddObjectRef(module, "chdtrc", chdtrc);
+
+    PyObject *chdtri = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::chdtri), static_cast<xsf::numpy::dd_d>(xsf::chdtri)}, "chdtri",
+        chdtri_doc);
+    PyModule_AddObjectRef(module, "chdtri", chdtri);
+
     PyObject *cosdg = xsf::numpy::ufunc(
 	{static_cast<xsf::numpy::f_f>(xsf::cosdg), static_cast<xsf::numpy::d_d>(xsf::cosdg)}, "cosdg", cosdg_doc);
     PyModule_AddObjectRef(module, "cosdg", cosdg);
@@ -497,6 +518,12 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ellipkm1), static_cast<xsf::numpy::d_d>(xsf::ellipkm1)},
                           "ellipkm1", ellipkm1_doc);
     PyModule_AddObjectRef(module, "ellipkm1", ellipkm1);
+
+    PyObject *erfcinv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cephes::erfcinv),
+         static_cast<xsf::numpy::d_d>(xsf::cephes::erfcinv)},
+        "erfcinv", erfcinv_doc);
+    PyModule_AddObjectRef(module, "erfcinv", erfcinv);
 
     PyObject *exp1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::exp1), static_cast<xsf::numpy::d_d>(xsf::exp1),
@@ -886,6 +913,10 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::g_g>(xsf::logit)},
                           "logit", logit_doc);
     PyModule_AddObjectRef(module, "logit", logit);
+
+    PyObject *lpmv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::pmv), static_cast<xsf::numpy::ddd_d>(xsf::pmv)}, "lpmv", lpmv_doc);
+    PyModule_AddObjectRef(module, "lpmv", lpmv);
 
     PyObject *loggamma =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::loggamma), static_cast<xsf::numpy::d_d>(xsf::loggamma),
