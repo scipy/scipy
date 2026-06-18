@@ -931,7 +931,7 @@ def test_diags_int(func):
     assert_array_equal(arr.toarray(), expected, strict=True)
 
 
-@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
+@pytest.mark.parametrize('func', (construct.diags_array, construct.diags))
 def test_diags_int_to_float64(func):
     d = [[3], [1, 2], [4]]
     offsets = [-1, 0, 1]
