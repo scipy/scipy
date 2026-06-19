@@ -8,6 +8,7 @@ from scipy._lib._array_api import (
 from scipy import ndimage
 
 xfail_xp_backends = pytest.mark.xfail_xp_backends
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 def get_spline_knot_values(order):
@@ -83,3 +84,38 @@ def test_spline_filter_reflect_small_n(order, n, xp):
     filtered = ndimage.spline_filter1d(eye, axis=0, order=order, mode='reflect')
     matrix = make_spline_knot_matrix(xp, n, order, mode='reflect')
     xp_assert_close(filtered @ matrix, eye, atol=1e-12)
+
+
+@make_xp_test_case(ndimage.spline_filter1d)  # type:ignore[attr-defined]
+@skip_xp_backends(np_only=True,
+                  reason='contiguity-specific NumPy fast path')
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+@pytest.mark.parametrize('mode', ['mirror', 'reflect'])
+@pytest.mark.parametrize(
+    'shape, axis',
+    [((9,), 0),
+     ((8, 7), 0),
+     ((8, 7), 1),
+     ((6, 5, 4), 0),
+     ((6, 5, 4), 1),
+     ((6, 5, 4), 2)]
+)
+def test_spline_filter1d_order3_contiguous_matches_generic(dtype, mode,
+                                                           shape, axis, xp):
+    rng = np.random.default_rng(4321)
+    x = rng.random(shape, dtype=dtype)
+
+    work = np.empty((*shape, 2), dtype=dtype)
+    x_strided = work[..., 0]
+    x_strided[...] = x
+    assert x.flags.c_contiguous
+    assert not x_strided.flags.c_contiguous
+
+    fast = ndimage.spline_filter1d(x, order=3, axis=axis, output=np.float64,
+                                   mode=mode)
+    generic = ndimage.spline_filter1d(x_strided, order=3, axis=axis,
+                                      output=np.float64, mode=mode)
+
+    xp_assert_close(fast, generic,
+                    rtol=1e-6 if dtype == np.float32 else 1e-12,
+                    atol=1e-6 if dtype == np.float32 else 1e-12)

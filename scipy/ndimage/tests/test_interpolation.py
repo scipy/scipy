@@ -1337,6 +1337,71 @@ class TestZoom:
             xp.asarray(np.kron(x_np, np.ones(zoom)))
         )
 
+    @skip_xp_backends(np_only=True,
+                      reason='contiguity-specific NumPy fast path')
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    @pytest.mark.parametrize('mode', ['mirror', 'reflect'])
+    @pytest.mark.parametrize(
+        'shape, zoom',
+        [((9,), (1.7,)),
+         ((12, 10), (1.4, 0.6)),
+         ((7, 6, 5), (0.75, 1.25, 0.5))]
+    )
+    def test_zoom_order1_contiguous_matches_generic(self, dtype, mode,
+                                                    shape, zoom, xp):
+        rng = np.random.default_rng(1234)
+        x = rng.random(shape, dtype=dtype)
+
+        work = np.empty((*shape, 2), dtype=dtype)
+        x_strided = work[..., 0]
+        x_strided[...] = x
+        assert x.flags.c_contiguous
+        assert not x_strided.flags.c_contiguous
+
+        fast = ndimage.zoom(x, zoom, order=1, mode=mode, prefilter=False)
+        generic = ndimage.zoom(x_strided, zoom, order=1, mode=mode,
+                               prefilter=False)
+
+        xp_assert_close(fast, generic,
+                        rtol=1e-6 if dtype == np.float32 else 1e-12,
+                        atol=1e-6 if dtype == np.float32 else 1e-12)
+
+    @skip_xp_backends(np_only=True,
+                      reason='contiguity-specific NumPy fast path')
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    @pytest.mark.parametrize('mode', ['mirror', 'reflect'])
+    @pytest.mark.parametrize(
+        'shape, zoom',
+        [((9,), (1.7,)),
+         ((12, 10), (1.4, 0.6)),
+         ((7, 6, 5), (0.75, 1.25, 0.5))]
+    )
+    def test_zoom_order3_contiguous_matches_generic(self, dtype, mode,
+                                                    shape, zoom, xp):
+        rng = np.random.default_rng(5678)
+        x = rng.random(shape, dtype=dtype)
+        filtered = ndimage.spline_filter(x, order=3, output=np.float64,
+                                         mode=mode)
+
+        work = np.empty((*shape, 2), dtype=np.float64)
+        filtered_strided = work[..., 0]
+        filtered_strided[...] = filtered
+        assert filtered.flags.c_contiguous
+        assert not filtered_strided.flags.c_contiguous
+
+        output_shape = tuple(int(round(n * z)) for n, z in zip(shape, zoom))
+        fast_output = np.empty(output_shape, dtype=dtype)
+        generic_output = np.empty(output_shape, dtype=dtype)
+
+        fast = ndimage.zoom(filtered, zoom, output=fast_output, order=3,
+                            mode=mode, prefilter=False)
+        generic = ndimage.zoom(filtered_strided, zoom, output=generic_output,
+                               order=3, mode=mode, prefilter=False)
+
+        xp_assert_close(fast, generic,
+                        rtol=1e-5 if dtype == np.float32 else 1e-12,
+                        atol=1e-5 if dtype == np.float32 else 1e-12)
+
     @pytest.mark.parametrize('mode', ['constant', 'wrap'])
     def test_zoom_grid_mode_warnings(self, mode, xp):
         # Warn on use of non-grid modes when grid_mode is True

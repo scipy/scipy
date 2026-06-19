@@ -33,6 +33,7 @@
 #include "ni_interpolation.h"
 #include "ni_splines.h"
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 
@@ -141,11 +142,196 @@ map_coordinate(double in, npy_intp len, int mode)
 #define TOLERANCE 1e-15
 
 
+static void
+NI_CopyToDoubleLine(char *input_data, int input_type, npy_intp start,
+                    npy_intp stride, npy_intp len, double *line)
+{
+    npy_intp ii;
+
+    if (input_type == NPY_FLOAT) {
+        const npy_float *input = (const npy_float *)input_data;
+        for (ii = 0; ii < len; ii++) {
+            line[ii] = input[start + ii * stride];
+        }
+    } else {
+        const npy_double *input = (const npy_double *)input_data;
+        for (ii = 0; ii < len; ii++) {
+            line[ii] = input[start + ii * stride];
+        }
+    }
+}
+
+static void
+NI_CopyDoubleLineToOutput(double *output, npy_intp start, npy_intp stride,
+                          npy_intp len, const double *line)
+{
+    npy_intp ii;
+
+    for (ii = 0; ii < len; ii++) {
+        output[start + ii * stride] = line[ii];
+    }
+}
+
+static void
+NI_FilterContiguousDoubleLine(char *input_data, int input_type, double *output,
+                              npy_intp start, npy_intp len,
+                              const double *poles, int npoles,
+                              NI_ExtendMode mode)
+{
+    if (input_type == NPY_FLOAT) {
+        const npy_float *input = (const npy_float *)input_data;
+        npy_intp ii;
+        for (ii = 0; ii < len; ii++) {
+            output[start + ii] = input[start + ii];
+        }
+    } else {
+        const npy_double *input = (const npy_double *)input_data;
+        if (input != output) {
+            memcpy(output + start, input + start, len * sizeof(double));
+        }
+    }
+
+    if (len > 1) {
+        apply_filter(output + start, len, poles, npoles, mode);
+    }
+}
+
+static void
+NI_GetCContiguousLineGeometry(npy_intp *dims, int rank, int axis,
+                              npy_intp line_index, npy_intp *start,
+                              npy_intp *stride)
+{
+    if (rank == 1) {
+        *start = 0;
+        *stride = 1;
+    } else if (rank == 2) {
+        if (axis == 0) {
+            *start = line_index;
+            *stride = dims[1];
+        } else {
+            *start = line_index * dims[1];
+            *stride = 1;
+        }
+    } else {
+        if (axis == 0) {
+            *start = line_index;
+            *stride = dims[1] * dims[2];
+        } else if (axis == 1) {
+            const npy_intp ii = line_index / dims[2];
+            const npy_intp kk = line_index - ii * dims[2];
+            *start = ii * dims[1] * dims[2] + kk;
+            *stride = dims[2];
+        } else {
+            *start = line_index * dims[2];
+            *stride = 1;
+        }
+    }
+}
+
+static int
+NI_SplineFilter1DFastPath(PyArrayObject *input, int order, int axis,
+                          NI_ExtendMode mode, PyArrayObject *output,
+                          const double *poles, int npoles, int *handled)
+{
+    double *line = NULL;
+    char *input_data = NULL;
+    double *output_data = NULL;
+    npy_intp dims[NPY_MAXDIMS], ii, len, line_count, line_index, size;
+    int rank, input_type, jj;
+    NPY_BEGIN_THREADS_DEF;
+
+    *handled = 0;
+
+    if (order != 3 || (mode != NI_EXTEND_MIRROR &&
+            mode != NI_EXTEND_REFLECT)) {
+        return 1;
+    }
+
+    rank = PyArray_NDIM(input);
+    if (rank < 1 || rank > 3 || PyArray_NDIM(output) != rank) {
+        return 1;
+    }
+    if (!PyArray_IS_C_CONTIGUOUS(input) ||
+            !PyArray_IS_C_CONTIGUOUS(output)) {
+        return 1;
+    }
+
+    input_type = PyArray_TYPE(input);
+    if ((input_type != NPY_FLOAT && input_type != NPY_DOUBLE) ||
+            PyArray_TYPE(output) != NPY_DOUBLE) {
+        return 1;
+    }
+
+    for (jj = 0; jj < rank; jj++) {
+        dims[jj] = PyArray_DIM(input, jj);
+        if (dims[jj] != PyArray_DIM(output, jj)) {
+            return 1;
+        }
+    }
+
+    len = dims[axis];
+    size = PyArray_SIZE(input);
+    if (size == 0) {
+        *handled = 1;
+        return 1;
+    }
+    if (len <= 1) {
+        input_data = (char *)PyArray_DATA(input);
+        output_data = (double *)PyArray_DATA(output);
+        if (input_type == NPY_FLOAT) {
+            const npy_float *input_float = (const npy_float *)input_data;
+            for (ii = 0; ii < size; ii++) {
+                output_data[ii] = input_float[ii];
+            }
+        } else {
+            const npy_double *input_double = (const npy_double *)input_data;
+            if (input_double != output_data) {
+                memcpy(output_data, input_double, size * sizeof(double));
+            }
+        }
+        *handled = 1;
+        return 1;
+    }
+
+    line_count = size / len;
+    input_data = (char *)PyArray_DATA(input);
+    output_data = (double *)PyArray_DATA(output);
+
+    if (axis != rank - 1) {
+        line = malloc(len * sizeof(double));
+        if (NPY_UNLIKELY(!line)) {
+            PyErr_NoMemory();
+            return 0;
+        }
+    }
+
+    NPY_BEGIN_THREADS;
+    for (line_index = 0; line_index < line_count; line_index++) {
+        npy_intp start, stride;
+        NI_GetCContiguousLineGeometry(dims, rank, axis, line_index,
+                                      &start, &stride);
+        if (stride == 1) {
+            NI_FilterContiguousDoubleLine(input_data, input_type, output_data,
+                                          start, len, poles, npoles, mode);
+        } else {
+            NI_CopyToDoubleLine(input_data, input_type, start, stride, len,
+                                line);
+            apply_filter(line, len, poles, npoles, mode);
+            NI_CopyDoubleLineToOutput(output_data, start, stride, len, line);
+        }
+    }
+    NPY_END_THREADS;
+
+    free(line);
+    *handled = 1;
+    return 1;
+}
+
 /* one-dimensional spline filter: */
 int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
                       NI_ExtendMode mode, PyArrayObject *output)
 {
-    int npoles = 0, more;
+    int npoles = 0, more, fast_path_handled = 0;
     npy_intp kk, lines, len;
     double *buffer = NULL, poles[MAX_SPLINE_FILTER_POLES];
     NI_LineBuffer iline_buffer, oline_buffer;
@@ -157,6 +343,14 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
 
     /* these are used in the spline filter calculation below: */
     if (get_filter_poles(order, &npoles, poles)) {
+        goto exit;
+    }
+
+    if (!NI_SplineFilter1DFastPath(input, order, axis, mode, output,
+                                   poles, npoles, &fast_path_handled)) {
+        goto exit;
+    }
+    if (fast_path_handled) {
         goto exit;
     }
 
@@ -250,6 +444,463 @@ int _get_spline_boundary_mode(int mode)
         // mirror extension.
         return NI_EXTEND_MIRROR;
     return mode;
+}
+
+#define CASE_ZOOM_LINEAR_FAST(_TYPE, _type)                                \
+case _TYPE:                                                                \
+{                                                                          \
+    const _type *in = (const _type *)PyArray_DATA(input);                   \
+    _type *out = (_type *)PyArray_DATA(output);                             \
+    npy_intp ii, jj, kk;                                                    \
+                                                                           \
+    if (rank == 1) {                                                        \
+        for (ii = 0; ii < odimensions[0]; ii++) {                           \
+            double t = 0.0, coeff;                                          \
+            coeff = in[offset0[0][ii]];                                     \
+            coeff *= weight0[0][ii];                                        \
+            t += coeff;                                                     \
+            coeff = in[offset1[0][ii]];                                     \
+            coeff *= weight1[0][ii];                                        \
+            t += coeff;                                                     \
+            out[ii] = (_type)t;                                             \
+        }                                                                  \
+    } else if (rank == 2) {                                                 \
+        npy_intp oo = 0;                                                    \
+        for (ii = 0; ii < odimensions[0]; ii++) {                           \
+            const npy_intp off00 = offset0[0][ii];                          \
+            const npy_intp off01 = offset1[0][ii];                          \
+            const double w00 = weight0[0][ii];                              \
+            const double w01 = weight1[0][ii];                              \
+            for (jj = 0; jj < odimensions[1]; jj++, oo++) {                 \
+                double t = 0.0, coeff;                                      \
+                coeff = in[off00 + offset0[1][jj]];                         \
+                coeff *= w00;                                               \
+                coeff *= weight0[1][jj];                                    \
+                t += coeff;                                                 \
+                coeff = in[off00 + offset1[1][jj]];                         \
+                coeff *= w00;                                               \
+                coeff *= weight1[1][jj];                                    \
+                t += coeff;                                                 \
+                coeff = in[off01 + offset0[1][jj]];                         \
+                coeff *= w01;                                               \
+                coeff *= weight0[1][jj];                                    \
+                t += coeff;                                                 \
+                coeff = in[off01 + offset1[1][jj]];                         \
+                coeff *= w01;                                               \
+                coeff *= weight1[1][jj];                                    \
+                t += coeff;                                                 \
+                out[oo] = (_type)t;                                         \
+            }                                                              \
+        }                                                                  \
+    } else {                                                               \
+        npy_intp oo = 0;                                                    \
+        for (ii = 0; ii < odimensions[0]; ii++) {                           \
+            const npy_intp off00 = offset0[0][ii];                          \
+            const npy_intp off01 = offset1[0][ii];                          \
+            const double w00 = weight0[0][ii];                              \
+            const double w01 = weight1[0][ii];                              \
+            for (jj = 0; jj < odimensions[1]; jj++) {                       \
+                const npy_intp off10 = offset0[1][jj];                      \
+                const npy_intp off11 = offset1[1][jj];                      \
+                const double w10 = weight0[1][jj];                          \
+                const double w11 = weight1[1][jj];                          \
+                for (kk = 0; kk < odimensions[2]; kk++, oo++) {             \
+                    double t = 0.0, coeff;                                  \
+                    coeff = in[off00 + off10 + offset0[2][kk]];             \
+                    coeff *= w00;                                           \
+                    coeff *= w10;                                           \
+                    coeff *= weight0[2][kk];                                \
+                    t += coeff;                                             \
+                    coeff = in[off00 + off10 + offset1[2][kk]];             \
+                    coeff *= w00;                                           \
+                    coeff *= w10;                                           \
+                    coeff *= weight1[2][kk];                                \
+                    t += coeff;                                             \
+                    coeff = in[off00 + off11 + offset0[2][kk]];             \
+                    coeff *= w00;                                           \
+                    coeff *= w11;                                           \
+                    coeff *= weight0[2][kk];                                \
+                    t += coeff;                                             \
+                    coeff = in[off00 + off11 + offset1[2][kk]];             \
+                    coeff *= w00;                                           \
+                    coeff *= w11;                                           \
+                    coeff *= weight1[2][kk];                                \
+                    t += coeff;                                             \
+                    coeff = in[off01 + off10 + offset0[2][kk]];             \
+                    coeff *= w01;                                           \
+                    coeff *= w10;                                           \
+                    coeff *= weight0[2][kk];                                \
+                    t += coeff;                                             \
+                    coeff = in[off01 + off10 + offset1[2][kk]];             \
+                    coeff *= w01;                                           \
+                    coeff *= w10;                                           \
+                    coeff *= weight1[2][kk];                                \
+                    t += coeff;                                             \
+                    coeff = in[off01 + off11 + offset0[2][kk]];             \
+                    coeff *= w01;                                           \
+                    coeff *= w11;                                           \
+                    coeff *= weight0[2][kk];                                \
+                    t += coeff;                                             \
+                    coeff = in[off01 + off11 + offset1[2][kk]];             \
+                    coeff *= w01;                                           \
+                    coeff *= w11;                                           \
+                    coeff *= weight1[2][kk];                                \
+                    t += coeff;                                             \
+                    out[oo] = (_type)t;                                     \
+                }                                                          \
+            }                                                              \
+        }                                                                  \
+    }                                                                      \
+}                                                                          \
+break
+
+#define ZOOM_CUBIC_FAST(_in_type, _out_type)                               \
+do {                                                                       \
+    const _in_type *in = (const _in_type *)PyArray_DATA(input);             \
+    _out_type *out = (_out_type *)PyArray_DATA(output);                     \
+    npy_intp ii, jj, kk, ll, mm, nn;                                        \
+                                                                           \
+    if (rank == 1) {                                                        \
+        for (ii = 0; ii < odimensions[0]; ii++) {                           \
+            const npy_intp base0 = 4 * ii;                                  \
+            double t = 0.0;                                                 \
+            for (ll = 0; ll < 4; ll++) {                                    \
+                double coeff = in[offsets[0][base0 + ll]];                  \
+                coeff *= weights[0][base0 + ll];                            \
+                t += coeff;                                                 \
+            }                                                              \
+            out[ii] = (_out_type)t;                                         \
+        }                                                                  \
+    } else if (rank == 2) {                                                 \
+        npy_intp oo = 0;                                                    \
+        for (ii = 0; ii < odimensions[0]; ii++) {                           \
+            const npy_intp base0 = 4 * ii;                                  \
+            for (jj = 0; jj < odimensions[1]; jj++, oo++) {                 \
+                const npy_intp base1 = 4 * jj;                              \
+                double t = 0.0;                                             \
+                for (ll = 0; ll < 4; ll++) {                                \
+                    const npy_intp off0 = offsets[0][base0 + ll];           \
+                    const double w0 = weights[0][base0 + ll];               \
+                    double row = 0.0;                                       \
+                    for (mm = 0; mm < 4; mm++) {                            \
+                        double coeff = in[off0 + offsets[1][base1 + mm]];   \
+                        coeff *= weights[1][base1 + mm];                    \
+                        row += coeff;                                       \
+                    }                                                      \
+                    t += row * w0;                                          \
+                }                                                          \
+                out[oo] = (_out_type)t;                                     \
+            }                                                              \
+        }                                                                  \
+    } else {                                                               \
+        npy_intp oo = 0;                                                    \
+        for (ii = 0; ii < odimensions[0]; ii++) {                           \
+            const npy_intp base0 = 4 * ii;                                  \
+            for (jj = 0; jj < odimensions[1]; jj++) {                       \
+                const npy_intp base1 = 4 * jj;                              \
+                for (kk = 0; kk < odimensions[2]; kk++, oo++) {             \
+                    const npy_intp base2 = 4 * kk;                          \
+                    double t = 0.0;                                         \
+                    for (ll = 0; ll < 4; ll++) {                            \
+                        const npy_intp off0 = offsets[0][base0 + ll];       \
+                        const double w0 = weights[0][base0 + ll];           \
+                        double plane = 0.0;                                 \
+                        for (mm = 0; mm < 4; mm++) {                        \
+                            const npy_intp off1 = offsets[1][base1 + mm];   \
+                            const double w1 = weights[1][base1 + mm];       \
+                            double row = 0.0;                               \
+                            for (nn = 0; nn < 4; nn++) {                    \
+                                double coeff = in[off0 + off1 +             \
+                                                  offsets[2][base2 + nn]];  \
+                                coeff *= weights[2][base2 + nn];            \
+                                row += coeff;                               \
+                            }                                              \
+                            plane += row * w1;                              \
+                        }                                                  \
+                        t += plane * w0;                                    \
+                    }                                                      \
+                    out[oo] = (_out_type)t;                                 \
+                }                                                          \
+            }                                                              \
+        }                                                                  \
+    }                                                                      \
+} while (0)
+
+static void
+NI_FreeZoomLinearFastData(npy_intp **offset0, npy_intp **offset1,
+                          double **weight0, double **weight1, int rank)
+{
+    int ii;
+    for (ii = 0; ii < rank; ii++) {
+        free(offset0[ii]);
+        free(offset1[ii]);
+        free(weight0[ii]);
+        free(weight1[ii]);
+    }
+}
+
+static int
+NI_InitZoomLinearFastAxis(npy_intp odim, npy_intp idim, npy_intp stride,
+                          double zoom, int mode, npy_intp *offset0,
+                          npy_intp *offset1, double *weight0,
+                          double *weight1)
+{
+    const int spline_mode = _get_spline_boundary_mode(mode);
+    npy_intp kk;
+
+    for (kk = 0; kk < odim; kk++) {
+        double cc = (double)kk * zoom;
+        double cc_floor;
+        npy_intp start, idx0, idx1;
+
+        cc = map_coordinate(cc, idim, mode);
+        cc_floor = floor(cc);
+        start = (npy_intp)cc_floor;
+        idx0 = start;
+        idx1 = start + 1;
+
+        if (start < 0 || start + 1 >= idim) {
+            idx0 = (npy_intp)map_coordinate(idx0, idim, spline_mode);
+            idx1 = (npy_intp)map_coordinate(idx1, idim, spline_mode);
+        }
+
+        offset0[kk] = stride * idx0;
+        offset1[kk] = stride * idx1;
+        weight1[kk] = cc - cc_floor;
+        weight0[kk] = 1.0 - weight1[kk];
+    }
+
+    return 1;
+}
+
+static int
+NI_ZoomShiftLinearFastPath(PyArrayObject *input, PyArrayObject *zoom_ar,
+                           PyArrayObject *shift_ar, PyArrayObject *output,
+                           int order, int mode, int nprepad,
+                           int grid_mode, int *handled)
+{
+    npy_intp *offset0[NPY_MAXDIMS] = {NULL};
+    npy_intp *offset1[NPY_MAXDIMS] = {NULL};
+    double *weight0[NPY_MAXDIMS] = {NULL};
+    double *weight1[NPY_MAXDIMS] = {NULL};
+    npy_intp idimensions[NPY_MAXDIMS], odimensions[NPY_MAXDIMS];
+    npy_intp istrides[NPY_MAXDIMS];
+    npy_double *zooms = NULL;
+    int rank, type_num, jj;
+    NPY_BEGIN_THREADS_DEF;
+
+    *handled = 0;
+
+    if (order != 1 || zoom_ar == NULL || shift_ar != NULL || nprepad != 0 ||
+            grid_mode) {
+        return 1;
+    }
+    if (mode != NI_EXTEND_MIRROR && mode != NI_EXTEND_REFLECT) {
+        return 1;
+    }
+
+    rank = PyArray_NDIM(input);
+    if (rank < 1 || rank > 3 || PyArray_NDIM(output) != rank) {
+        return 1;
+    }
+
+    type_num = PyArray_TYPE(input);
+    if (type_num != PyArray_TYPE(output) ||
+            (type_num != NPY_FLOAT && type_num != NPY_DOUBLE)) {
+        return 1;
+    }
+    if (!PyArray_IS_C_CONTIGUOUS(input) ||
+            !PyArray_IS_C_CONTIGUOUS(output)) {
+        return 1;
+    }
+    if (PyArray_TYPE(zoom_ar) != NPY_DOUBLE ||
+            PyArray_SIZE(zoom_ar) != rank) {
+        return 1;
+    }
+
+    if (PyArray_SIZE(output) == 0) {
+        *handled = 1;
+        return 1;
+    }
+
+    for (jj = 0; jj < rank; jj++) {
+        idimensions[jj] = PyArray_DIM(input, jj);
+        odimensions[jj] = PyArray_DIM(output, jj);
+        istrides[jj] = PyArray_STRIDE(input, jj) / PyArray_ITEMSIZE(input);
+        if (idimensions[jj] < 1) {
+            return 1;
+        }
+    }
+
+    zooms = (npy_double *)PyArray_DATA(zoom_ar);
+    for (jj = 0; jj < rank; jj++) {
+        if (odimensions[jj] == 0) {
+            continue;
+        }
+        offset0[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
+        offset1[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
+        weight0[jj] = malloc(odimensions[jj] * sizeof(double));
+        weight1[jj] = malloc(odimensions[jj] * sizeof(double));
+        if (NPY_UNLIKELY(!offset0[jj] || !offset1[jj] ||
+                !weight0[jj] || !weight1[jj])) {
+            NI_FreeZoomLinearFastData(offset0, offset1, weight0, weight1,
+                                      rank);
+            PyErr_NoMemory();
+            return 0;
+        }
+        NI_InitZoomLinearFastAxis(odimensions[jj], idimensions[jj],
+                                  istrides[jj], zooms[jj], mode,
+                                  offset0[jj], offset1[jj],
+                                  weight0[jj], weight1[jj]);
+    }
+
+    NPY_BEGIN_THREADS;
+    switch (type_num) {
+        CASE_ZOOM_LINEAR_FAST(NPY_FLOAT, npy_float);
+        CASE_ZOOM_LINEAR_FAST(NPY_DOUBLE, npy_double);
+    default:
+        break;
+    }
+    NPY_END_THREADS;
+
+    NI_FreeZoomLinearFastData(offset0, offset1, weight0, weight1, rank);
+    *handled = 1;
+    return 1;
+}
+
+static void
+NI_FreeZoomCubicFastData(npy_intp **offsets, double **weights, int rank)
+{
+    int ii;
+    for (ii = 0; ii < rank; ii++) {
+        free(offsets[ii]);
+        free(weights[ii]);
+    }
+}
+
+static int
+NI_InitZoomCubicFastAxis(npy_intp odim, npy_intp idim, npy_intp stride,
+                         double zoom, int mode, npy_intp *offsets,
+                         double *weights)
+{
+    const int spline_mode = _get_spline_boundary_mode(mode);
+    npy_intp kk, hh;
+
+    for (kk = 0; kk < odim; kk++) {
+        double cc = (double)kk * zoom;
+        npy_intp start;
+        npy_intp base = 4 * kk;
+
+        cc = map_coordinate(cc, idim, mode);
+        start = (npy_intp)floor(cc) - 1;
+        get_spline_interpolation_weights(cc, 3, weights + base);
+
+        if (start < 0 || start + 3 >= idim) {
+            for (hh = 0; hh < 4; hh++) {
+                npy_intp idx = start + hh;
+                idx = (npy_intp)map_coordinate(idx, idim, spline_mode);
+                offsets[base + hh] = stride * idx;
+            }
+        } else {
+            for (hh = 0; hh < 4; hh++) {
+                offsets[base + hh] = stride * (start + hh);
+            }
+        }
+    }
+
+    return 1;
+}
+
+static int
+NI_ZoomShiftCubicFastPath(PyArrayObject *input, PyArrayObject *zoom_ar,
+                          PyArrayObject *shift_ar, PyArrayObject *output,
+                          int order, int mode, int nprepad,
+                          int grid_mode, int *handled)
+{
+    npy_intp *offsets[NPY_MAXDIMS] = {NULL};
+    double *weights[NPY_MAXDIMS] = {NULL};
+    npy_intp idimensions[NPY_MAXDIMS], odimensions[NPY_MAXDIMS];
+    npy_intp istrides[NPY_MAXDIMS];
+    npy_double *zooms = NULL;
+    int rank, input_type, output_type, jj;
+    NPY_BEGIN_THREADS_DEF;
+
+    *handled = 0;
+
+    if (order != 3 || zoom_ar == NULL || shift_ar != NULL || nprepad != 0 ||
+            grid_mode) {
+        return 1;
+    }
+    if (mode != NI_EXTEND_MIRROR && mode != NI_EXTEND_REFLECT) {
+        return 1;
+    }
+
+    rank = PyArray_NDIM(input);
+    if (rank < 1 || rank > 3 || PyArray_NDIM(output) != rank) {
+        return 1;
+    }
+
+    input_type = PyArray_TYPE(input);
+    output_type = PyArray_TYPE(output);
+    if ((input_type != NPY_FLOAT && input_type != NPY_DOUBLE) ||
+            (output_type != NPY_FLOAT && output_type != NPY_DOUBLE)) {
+        return 1;
+    }
+    if (!PyArray_IS_C_CONTIGUOUS(input) ||
+            !PyArray_IS_C_CONTIGUOUS(output)) {
+        return 1;
+    }
+    if (PyArray_TYPE(zoom_ar) != NPY_DOUBLE ||
+            PyArray_SIZE(zoom_ar) != rank) {
+        return 1;
+    }
+
+    if (PyArray_SIZE(output) == 0) {
+        *handled = 1;
+        return 1;
+    }
+
+    for (jj = 0; jj < rank; jj++) {
+        idimensions[jj] = PyArray_DIM(input, jj);
+        odimensions[jj] = PyArray_DIM(output, jj);
+        istrides[jj] = PyArray_STRIDE(input, jj) / PyArray_ITEMSIZE(input);
+        if (idimensions[jj] < 1) {
+            return 1;
+        }
+    }
+
+    zooms = (npy_double *)PyArray_DATA(zoom_ar);
+    for (jj = 0; jj < rank; jj++) {
+        if (odimensions[jj] == 0) {
+            continue;
+        }
+        offsets[jj] = malloc(4 * odimensions[jj] * sizeof(npy_intp));
+        weights[jj] = malloc(4 * odimensions[jj] * sizeof(double));
+        if (NPY_UNLIKELY(!offsets[jj] || !weights[jj])) {
+            NI_FreeZoomCubicFastData(offsets, weights, rank);
+            PyErr_NoMemory();
+            return 0;
+        }
+        NI_InitZoomCubicFastAxis(odimensions[jj], idimensions[jj],
+                                 istrides[jj], zooms[jj], mode,
+                                 offsets[jj], weights[jj]);
+    }
+
+    NPY_BEGIN_THREADS;
+    if (input_type == NPY_DOUBLE && output_type == NPY_DOUBLE) {
+        ZOOM_CUBIC_FAST(npy_double, npy_double);
+    } else if (input_type == NPY_DOUBLE && output_type == NPY_FLOAT) {
+        ZOOM_CUBIC_FAST(npy_double, npy_float);
+    } else if (input_type == NPY_FLOAT && output_type == NPY_FLOAT) {
+        ZOOM_CUBIC_FAST(npy_float, npy_float);
+    } else if (input_type == NPY_FLOAT && output_type == NPY_DOUBLE) {
+        ZOOM_CUBIC_FAST(npy_float, npy_double);
+    }
+    NPY_END_THREADS;
+
+    NI_FreeZoomCubicFastData(offsets, weights, rank);
+    *handled = 1;
+    return 1;
 }
 
 int
@@ -672,8 +1323,25 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     NI_Iterator io;
     npy_double *zooms = zoom_ar ? (npy_double*)PyArray_DATA(zoom_ar) : NULL;
     npy_double *shifts = shift_ar ? (npy_double*)PyArray_DATA(shift_ar) : NULL;
-    int rank = 0;
+    int rank = 0, fast_path_handled = 0;
     NPY_BEGIN_THREADS_DEF;
+
+    if (!NI_ZoomShiftLinearFastPath(input, zoom_ar, shift_ar, output,
+                                    order, mode, nprepad, grid_mode,
+                                    &fast_path_handled)) {
+        return 0;
+    }
+    if (fast_path_handled) {
+        return 1;
+    }
+    if (!NI_ZoomShiftCubicFastPath(input, zoom_ar, shift_ar, output,
+                                   order, mode, nprepad, grid_mode,
+                                   &fast_path_handled)) {
+        return 0;
+    }
+    if (fast_path_handled) {
+        return 1;
+    }
 
     NPY_BEGIN_THREADS;
 
