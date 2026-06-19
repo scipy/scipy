@@ -221,7 +221,6 @@ scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
-scipy/optimize/_group_columns.cpp
 scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
 scipy/optimize/tnc/moduleTNC.c
@@ -293,6 +292,5 @@ scipy/stats/_rcont/rcont.c
 scipy/stats/_stats_pythran.cpp
 scipy/version.py
 scipy/special/_exprel.c
-scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx

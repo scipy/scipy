@@ -61,6 +61,7 @@ ignore-missing-imports = [
     "scipy.version",
 ]
 replace-imports-with-any = [
+    "scipy.optimize._group_columns.*",
     "scipy.sparse.linalg._propack.*",
 ]
 

@@ -97,25 +97,14 @@ py3.extension_module('_pava_pybind',
   subdir: 'scipy/optimize'
 )
 
-if use_pythran
-  py3.extension_module('_group_columns',
-    pythran_gen.process('_group_columns.py'),
-    cpp_args: cpp_args_pythran,
-    dependencies: [pythran_dep, np_dep],
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/optimize'
-  )
-else
-  py3.extension_module('_group_columns',
-    cython_gen.process('_group_columns.pyx'),
-    c_args: cython_c_args,
-    dependencies: np_dep,
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/optimize'
-  )
-endif
+py3.extension_module('_group_columns',
+  ['_group_columns/group_columns_pybind.cpp'],
+  include_directories: '_group_columns',
+  dependencies: [np_dep, pybind11_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize'
+)
 
 _dummy_init_optimize = fs.copyfile('__init__.py')
 
