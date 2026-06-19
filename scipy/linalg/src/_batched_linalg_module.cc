@@ -991,8 +991,8 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!ap_perm) { PyErr_NoMemory(); goto fail; }
 
     // Allocate scratch buffers (reused across slices)
-    scratch = PyMem_Malloc(m * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc(minmn * sizeof(CBLAS_INT));
+    scratch = PyMem_Malloc((size_t)m * n * elem_size);
+    ipiv = (CBLAS_INT*)PyMem_Malloc((size_t)minmn * sizeof(CBLAS_INT));
     slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
     if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
 
@@ -1161,8 +1161,8 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!ap_det) { PyErr_NoMemory(); goto fail; }
 
     // Allocate scratch buffers
-    scratch = PyMem_Malloc(n * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc(n * sizeof(CBLAS_INT));
+    scratch = PyMem_Malloc((size_t)n * n * elem_size);
+    ipiv = (CBLAS_INT*)PyMem_Malloc((size_t)n * sizeof(CBLAS_INT));
     slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
     if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
 
