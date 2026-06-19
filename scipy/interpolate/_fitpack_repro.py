@@ -105,6 +105,15 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
         x = x.copy()
     if not y.flags.c_contiguous:
         y = y.copy()
+    
+    if x.ndim != 1 or (x[1:] < x[:-1]).any():
+        raise ValueError("Expect `x` to be an ordered 1D sequence.")
+
+    if x.shape[0] < k + 1:
+        raise ValueError(
+            f"Need at least k+1={k+1} data points for a degree-{k} spline, "
+            f"got {x.shape[0]}."
+        )
 
     if w is None:
         w = np.ones_like(x, dtype=float)
@@ -138,8 +147,6 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
 
     if x.shape[0] != y.shape[0]:
         raise ValueError(f"Data is incompatible: {x.shape = } and {y.shape = }.")
-    if x.ndim != 1 or (x[1:] < x[:-1]).any():
-        raise ValueError("Expect `x` to be an ordered 1D sequence.")
 
     k = operator.index(k)
 
@@ -153,11 +160,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
         xb = min(x)
     if xe is None:
         xe = max(x)
-
-    if periodic and not np.allclose(y[0], y[-1], atol=1e-15):
-        raise ValueError("First and last points does not match which is required "
-                         "for `bc_type='periodic'`.")
-
+    
     return x, y, w, k, s, xb, xe
 
 
