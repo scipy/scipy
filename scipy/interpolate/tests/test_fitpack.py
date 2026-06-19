@@ -97,9 +97,11 @@ class TestSmokeTests:
                         xp_assert_close(spl.t, tck[0], atol=1e-15)
                         xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
                 else:
-                    with assert_raises(ValueError):
-                        spl = make_splrep(x, v, k=k, s=s,
-                                          xb=xb, xe=xe, bc_type='periodic')
+                    # Periodic BC with s > 0 doesn't require v[0] == v[-1];
+                    # see gh-24693
+                    spl = make_splrep(x, v, k=k, s=s,
+                                        xb=xb, xe=xe, bc_type='periodic')
+                    xp_assert_close(spl(xb), spl(xe), atol=1e-5)
 
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi

@@ -4050,13 +4050,26 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
 
     def test_periodic_with_non_periodic_data(self):
+        # When s > 0, periodic BC applies to the spline, not the data;
+        # y[0] != y[-1] should be allowed. See gh-24693.
         N = 10
         a, b = 0, 2*np.pi
         x = np.linspace(a, b, N + 1)    # nodes
 
         y = np.exp(x)
-        with assert_raises(ValueError):
-            make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
+        spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
+        xp_assert_close(spl(x[0]), spl(x[-1]), atol=1e-5)
+
+    def test_periodic_smoothing_non_matching_endpoints(self):
+        # gh-24693: with s > 0, the periodic boundary condition applies to
+        # the spline, not the data; y[0] != y[-1] should be allowed.
+        rng = np.random.default_rng(1234)
+        sd = 0.5
+        x = np.arange(11, dtype=float)
+        y = np.sin(x * np.pi / 5) + rng.standard_normal(11) * sd
+        w = np.full(11, 1.0 / sd)
+        spl = make_splrep(x, y, w=w, s=10, bc_type='periodic')
+        xp_assert_close(spl(x[0]), spl(x[-1]), atol=1e-10)
 
     @pytest.mark.parametrize("s", [0, 1e-50])
     def test_make_splrep_periodic_m_eq_2_k_eq_1(self, s):
