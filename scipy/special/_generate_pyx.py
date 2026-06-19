@@ -114,6 +114,7 @@ special_ufuncs = [
     "besselpoly",
     "beta",
     "betaln",
+    "bdtrik",
     "binom",
     "boxcox",
     "boxcox1p",

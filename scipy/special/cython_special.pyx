@@ -1400,6 +1400,9 @@ cdef extern from r"xsf_wrappers.h":
     double special_inv_boxcox1p(double x, double lmbda) nogil
     double special_ndtri_exp(double x) nogil
 
+cdef extern from r"boost_special_wrappers.h":
+    double special_bdtrik(double y, double n, double p) nogil
+
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_bdtr_unsafe_t *_proto_bdtr_unsafe_t_var = &_func_bdtr_unsafe
@@ -1816,7 +1819,7 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrik_double)(x0, x1, x2)
+    return special_bdtrik(x0, x1, x2)
 
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""

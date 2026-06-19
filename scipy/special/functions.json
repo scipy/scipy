@@ -46,12 +46,6 @@
             "cephes_bdtri_wrap": "dpd->d"
         }
     },
-    "bdtrik": {
-        "boost_special_functions.h++": {
-            "bdtrik_double": "ddd->d",
-            "bdtrik_float": "fff->f"
-        }
-    },
     "_binom_ppf": {
         "boost_special_functions.h++": {
             "binom_ppf_double": "ddd->d",
