@@ -1,3 +1,5 @@
+import zlib
+
 import numpy as np
 
 from .common import Benchmark
@@ -66,3 +68,71 @@ class NdimageInterpolation(Benchmark):
 
     def peakmem_shift(self, shape, order, mode):
         shift(self.x, 3, order=order, mode=mode)
+
+
+_ZOOM_CASES = [
+    ('2d_cubic_up_sinusoid_f32',
+     (160, 192), (1.7, 1.25), 3, 'float32', 'sinusoid'),
+    ('2d_linear_aniso_random_f32',
+     (384, 320), (1.0, 0.37), 1, 'float32', 'random'),
+    ('3d_cubic_down_random_f32',
+     (64, 56, 24), (0.5, 0.5, 0.5), 3, 'float32', 'random'),
+    ('3d_linear_down_random_f32',
+     (80, 72, 28), (0.5, 0.5, 0.5), 1, 'float32', 'random'),
+    ('2d_linear_up_sinusoid_f64',
+     (192, 224), (1.25, 1.25), 1, 'float64', 'sinusoid'),
+    ('2d_linear_down_random_f32',
+     (192, 160), (0.5, 0.5), 1, 'float32', 'random'),
+    ('2d_cubic_down_random_f32',
+     (160, 192), (0.5, 0.5), 3, 'float32', 'random'),
+    ('2d_cubic_down_random_f64',
+     (256, 256), (0.37, 0.37), 3, 'float64', 'random'),
+]
+
+
+def _zoom_seed(name, shape, zoom_factor, order, dtype_name, pattern):
+    payload = f"{name}|{shape}|{zoom_factor}|{order}|{dtype_name}|{pattern}"
+    return zlib.crc32(payload.encode("utf-8")) & 0xFFFFFFFF
+
+
+def _make_zoom_input(name, shape, zoom_factor, order, dtype_name, pattern):
+    dtype = np.dtype(dtype_name)
+    rng = np.random.default_rng(
+        _zoom_seed(name, shape, zoom_factor, order, dtype_name, pattern)
+    )
+    if pattern == 'random':
+        return rng.random(shape, dtype=dtype)
+    if pattern == 'sinusoid':
+        grids = np.meshgrid(
+            *[np.arange(n, dtype=np.float64) for n in shape],
+            indexing='ij',
+        )
+        out = np.zeros(shape, dtype=np.float64)
+        for axis, grid in enumerate(grids):
+            out += np.sin(2.0 * np.pi * (0.07 + 0.05 * axis) * grid)
+        return (out / float(len(grids))).astype(dtype, copy=False)
+    raise NotImplementedError(pattern)
+
+
+class NdimageZoom(Benchmark):
+    param_names = ['case']
+    params = [_ZOOM_CASES]
+
+    def setup(self, case):
+        name, shape, zoom_factor, order, dtype_name, pattern = case
+        self.x = _make_zoom_input(
+            name, shape, zoom_factor, order, dtype_name, pattern
+        )
+        self.zoom_factor = zoom_factor
+        self.order = int(order)
+        self.prefilter = self.order > 1
+
+    def time_zoom_mirror_grid_false(self, case):
+        zoom(
+            self.x,
+            self.zoom_factor,
+            order=self.order,
+            mode='mirror',
+            prefilter=self.prefilter,
+            grid_mode=False,
+        )
