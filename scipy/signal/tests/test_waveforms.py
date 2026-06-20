@@ -2,12 +2,12 @@ import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case, xp_default_dtype
+    xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
+    make_xp_test_case, xp_default_dtype, xp_assert_less, array_namespace
 )
 
 import scipy.signal._waveforms as waveforms
-from scipy.signal import square, sawtooth  # type:ignore[attr-defined]
+from scipy.signal import chirp, square, sawtooth  # type:ignore[attr-defined]
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -40,145 +40,156 @@ def compute_frequency(t, theta):
     """
     Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t).
     """
-    # Assume theta and t are 1-D NumPy arrays.
+    xp = array_namespace(t, theta)
     # Assume that t is uniformly spaced.
     dt = t[1] - t[0]
-    f = np.diff(theta)/(2*np.pi) / dt
+    f = (theta[1:] - theta[:-1])/(2*xp.pi) / dt
     tf = 0.5*(t[1:] + t[:-1])
     return tf, f
 
 
+@make_xp_test_case(chirp)
 class TestChirp:
 
-    def test_linear_at_zero(self):
-        w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
-        assert_almost_equal(w, 1.0)
+    def test_linear_at_zero(self, xp):
+        w = chirp(t=xp.zeros(1), f0=1.0, f1=2.0, t1=1.0, method='linear')
+        xp_assert_close(w, xp.ones_like(w))
 
-    def test_linear_freq_01(self):
+    def test_linear_freq_01(self, xp):
         method = 'linear'
         f0 = 1.0
         f1 = 2.0
         t1 = 1.0
-        t = np.linspace(0, t1, 100)
+        t = xp.linspace(0, t1, 100)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = np.max(np.abs(f - chirp_linear(tf, f0, f1, t1)))
-        assert abserr < 1e-6
+        abserr = xp.max(xp.abs(f - chirp_linear(tf, f0, f1, t1)))
+        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
 
-    def test_linear_freq_02(self):
+    def test_linear_freq_02(self, xp):
         method = 'linear'
         f0 = 200.0
         f1 = 100.0
         t1 = 10.0
-        t = np.linspace(0, t1, 100)
+        t = xp.linspace(0, t1, 100)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = np.max(np.abs(f - chirp_linear(tf, f0, f1, t1)))
-        assert abserr < 1e-6
+        abserr = xp.max(xp.abs(f - chirp_linear(tf, f0, f1, t1)))
+        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
 
-    def test_linear_complex_power(self):
+    @pytest.mark.skip_xp_backends(
+        "cupy", reason="cupyx.scipy.signal.chirp does not have `complex` argument"
+    )
+    def test_linear_complex_power(self, xp):
         method = 'linear'
         f0 = 1.0
         f1 = 2.0
         t1 = 1.0
-        t = np.linspace(0, t1, 100)
-        w_real = waveforms.chirp(t, f0, t1, f1, method, complex=False)
-        w_complex = waveforms.chirp(t, f0, t1, f1, method, complex=True)
-        w_pwr_r = np.var(w_real)
-        w_pwr_c = np.var(w_complex)
+        t = xp.linspace(0, t1, 100)
+        w_real = chirp(t, f0, t1, f1, method, complex=False)
+        w_complex = chirp(t, f0, t1, f1, method, complex=True)
+        w_pwr_r = xp.var(w_real)
+        w_pwr_c = xp.var(xp.real(w_complex))
 
         # Making sure that power of the real part is not affected with
         # complex conversion operation
-        err = w_pwr_r - np.real(w_pwr_c)
+        err = w_pwr_r - w_pwr_c
 
-        assert(err < 1e-6)
+        xp_assert_less(xp.asarray(err), xp.asarray(1e-6, dtype=err.dtype))
 
-    def test_linear_complex_at_zero(self):
-        w = waveforms.chirp(t=0, f0=-10.0, f1=1.0, t1=1.0, method='linear',
-                            complex=True)
-        xp_assert_close(w, 1.0+0.0j)  # dtype must match
+    @pytest.mark.skip_xp_backends(
+        "cupy", reason="cupyx.scipy.signal.chirp does not have `complex` argument"
+    )
+    def test_linear_complex_at_zero(self, xp):
+        w = chirp(t=xp.zeros(1), f0=-10.0, f1=1.0, t1=1.0, method='linear',
+                  complex=True)
+        xp_assert_close(w, xp.ones_like(w), check_0d=False)
 
-    def test_quadratic_at_zero(self):
-        w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic')
-        assert_almost_equal(w, 1.0)
+    def test_quadratic_at_zero(self, xp):
+        w = chirp(t=xp.zeros(1), f0=1.0, f1=2.0, t1=1.0, method='quadratic')
+        xp_assert_close(w, xp.ones_like(w), check_0d=False)
 
-    def test_quadratic_at_zero2(self):
-        w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic',
-                            vertex_zero=False)
-        assert_almost_equal(w, 1.0)
+    def test_quadratic_at_zero2(self, xp):
+        w = chirp(t=xp.zeros(1), f0=1.0, f1=2.0, t1=1.0, method='quadratic',
+                  vertex_zero=False)
+        xp_assert_close(w, xp.ones_like(w), check_0d=False)
 
-    def test_quadratic_complex_at_zero(self):
-        w = waveforms.chirp(t=0, f0=-1.0, f1=2.0, t1=1.0, method='quadratic',
-                            complex=True)
-        xp_assert_close(w, 1.0+0j)
+    @pytest.mark.skip_xp_backends(
+        "cupy", reason="cupyx.scipy.signal.chirp does not have `complex` argument"
+    )
+    def test_quadratic_complex_at_zero(self, xp):
+        w = chirp(t=xp.zeros(1), f0=-1.0, f1=2.0, t1=1.0, method='quadratic',
+                  complex=True)
+        xp_assert_close(w, xp.ones_like(w))
 
-    def test_quadratic_freq_01(self):
+    def test_quadratic_freq_01(self, xp):
         method = 'quadratic'
         f0 = 1.0
         f1 = 2.0
         t1 = 1.0
-        t = np.linspace(0, t1, 2000)
+        t = xp.linspace(0, t1, 2000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = np.max(np.abs(f - chirp_quadratic(tf, f0, f1, t1)))
-        assert abserr < 1e-6
+        abserr = xp.max(xp.abs(f - chirp_quadratic(tf, f0, f1, t1)))
+        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
 
-    def test_quadratic_freq_02(self):
+    def test_quadratic_freq_02(self, xp):
         method = 'quadratic'
         f0 = 20.0
         f1 = 10.0
         t1 = 10.0
-        t = np.linspace(0, t1, 2000)
+        t = xp.linspace(0, t1, 2000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = np.max(np.abs(f - chirp_quadratic(tf, f0, f1, t1)))
-        assert abserr < 1e-6
+        abserr = xp.max(xp.abs(f - chirp_quadratic(tf, f0, f1, t1)))
+        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
 
-    def test_logarithmic_at_zero(self):
-        w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='logarithmic')
-        assert_almost_equal(w, 1.0)
+    def test_logarithmic_at_zero(self, xp):
+        w = chirp(t=xp.zeros(1), f0=1.0, f1=2.0, t1=1.0, method='logarithmic')
+        xp_assert_close(xp.asarray(w), xp.ones_like(w))
 
-    def test_logarithmic_freq_01(self):
+    def test_logarithmic_freq_01(self, xp):
         method = 'logarithmic'
         f0 = 1.0
         f1 = 2.0
         t1 = 1.0
-        t = np.linspace(0, t1, 10000)
+        t = xp.linspace(0, t1, 10000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = np.max(np.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        assert abserr < 1e-6
+        abserr = xp.max(xp.abs(f - chirp_geometric(tf, f0, f1, t1)))
+        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
 
-    def test_logarithmic_freq_02(self):
+    def test_logarithmic_freq_02(self, xp):
         method = 'logarithmic'
         f0 = 200.0
         f1 = 100.0
         t1 = 10.0
-        t = np.linspace(0, t1, 10000)
+        t = xp.linspace(0, t1, 10000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = np.max(np.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        assert abserr < 1e-6
+        abserr = xp.max(xp.abs(f - chirp_geometric(tf, f0, f1, t1)))
+        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
 
-    def test_logarithmic_freq_03(self):
+    def test_logarithmic_freq_03(self, xp):
         method = 'logarithmic'
         f0 = 100.0
         f1 = 100.0
         t1 = 10.0
-        t = np.linspace(0, t1, 10000)
+        t = xp.linspace(0, t1, 10000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = np.max(np.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        assert abserr < 1e-6
+        abserr = xp.max(xp.abs(f - chirp_geometric(tf, f0, f1, t1)))
+        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
 
-    def test_hyperbolic_at_zero(self):
-        w = waveforms.chirp(t=0, f0=10.0, f1=1.0, t1=1.0, method='hyperbolic')
-        assert_almost_equal(w, 1.0)
+    def test_hyperbolic_at_zero(self, xp):
+        w = chirp(t=xp.zeros(1), f0=10.0, f1=1.0, t1=1.0,
+                  method='hyperbolic')
+        xp_assert_close(xp.asarray(w), xp.ones_like(w))
 
-    def test_hyperbolic_freq_01(self):
+    def test_hyperbolic_freq_01(self, xp):
         method = 'hyperbolic'
         t1 = 1.0
-        t = np.linspace(0, t1, 10000)
+        t = xp.linspace(0, t1, 10000)
         #           f0     f1
         cases = [[10.0, 1.0],
                  [1.0, 10.0],
@@ -188,64 +199,64 @@ class TestChirp:
             phase = waveforms._chirp_phase(t, f0, t1, f1, method)
             tf, f = compute_frequency(t, phase)
             expected = chirp_hyperbolic(tf, f0, f1, t1)
-            xp_assert_close(f, expected, atol=1e-7)
+            xp_assert_close(xp.asarray(f), xp.asarray(expected), atol=1e-7)
 
-    def test_hyperbolic_zero_freq(self):
+    def test_hyperbolic_zero_freq(self, xp):
         # f0=0 or f1=0 must raise a ValueError.
         method = 'hyperbolic'
         t1 = 1.0
-        t = np.linspace(0, t1, 5)
-        assert_raises(ValueError, waveforms.chirp, t, 0, t1, 1, method)
-        assert_raises(ValueError, waveforms.chirp, t, 1, t1, 0, method)
+        t = xp.linspace(0, t1, 5)
+        assert_raises(ValueError, chirp, t, 0, t1, 1, method)
+        assert_raises(ValueError, chirp, t, 1, t1, 0, method)
 
-    def test_unknown_method(self):
+    def test_unknown_method(self, xp):
         method = "foo"
         f0 = 10.0
         f1 = 20.0
         t1 = 1.0
-        t = np.linspace(0, t1, 10)
-        assert_raises(ValueError, waveforms.chirp, t, f0, t1, f1, method)
+        t = xp.linspace(0, t1, 10)
+        assert_raises(ValueError, chirp, t, f0, t1, f1, method)
 
-    def test_integer_t1(self):
+    def test_integer_t1(self, xp):
         f0 = 10.0
         f1 = 20.0
-        t = np.linspace(-1, 1, 11)
+        t = xp.linspace(-1, 1, 11)
         t1 = 3.0
-        float_result = waveforms.chirp(t, f0, t1, f1)
+        float_result = chirp(t, f0, t1, f1)
         t1 = 3
-        int_result = waveforms.chirp(t, f0, t1, f1)
+        int_result = chirp(t, f0, t1, f1)
         err_msg = "Integer input 't1=3' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
-    def test_integer_f0(self):
+    def test_integer_f0(self, xp):
         f1 = 20.0
         t1 = 3.0
-        t = np.linspace(-1, 1, 11)
+        t = xp.linspace(-1, 1, 11)
         f0 = 10.0
-        float_result = waveforms.chirp(t, f0, t1, f1)
+        float_result = chirp(t, f0, t1, f1)
         f0 = 10
-        int_result = waveforms.chirp(t, f0, t1, f1)
+        int_result = chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f0=10' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
-    def test_integer_f1(self):
+    def test_integer_f1(self, xp):
         f0 = 10.0
         t1 = 3.0
-        t = np.linspace(-1, 1, 11)
+        t = xp.linspace(-1, 1, 11)
         f1 = 20.0
-        float_result = waveforms.chirp(t, f0, t1, f1)
+        float_result = chirp(t, f0, t1, f1)
         f1 = 20
-        int_result = waveforms.chirp(t, f0, t1, f1)
+        int_result = chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f1=20' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
-    def test_integer_all(self):
+    def test_integer_all(self, xp):
         f0 = 10
         t1 = 3
         f1 = 20
-        t = np.linspace(-1, 1, 11)
-        float_result = waveforms.chirp(t, float(f0), float(t1), float(f1))
-        int_result = waveforms.chirp(t, f0, t1, f1)
+        t = xp.linspace(-1, 1, 11)
+        float_result = chirp(t, float(f0), float(t1), float(f1))
+        int_result = chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f0=10, t1=3, f1=20' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
