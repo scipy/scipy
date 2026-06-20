@@ -228,6 +228,29 @@ class TestCOBYQA:
         assert not sol.success, sol.message
         assert sol.nit <= 2, sol
 
+    def test_minimize_callback_stop_iteration(self):
+        # A `callback` raising `StopIteration` should be reported as an
+        # unsuccessful termination, consistently with the other `minimize`
+        # methods (gh-23660).
+        def callback(x):
+            raise StopIteration
+
+        def callback_new_syntax(intermediate_result):
+            raise StopIteration
+
+        constraints = NonlinearConstraint(self.con, 0.0, 0.0)
+        for cb in (callback, callback_new_syntax):
+            sol = minimize(
+                self.fun,
+                self.x0,
+                method='cobyqa',
+                constraints=constraints,
+                callback=cb,
+                options=self.options,
+            )
+            assert not sol.success, sol.message
+            assert sol.status == 3, sol
+
     def test_minimize_f_target(self):
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
         sol_ref = minimize(
