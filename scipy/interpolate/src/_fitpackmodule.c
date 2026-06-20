@@ -1576,8 +1576,11 @@ fitpack_surfit(PyObject* Py_UNUSED(dummy), PyObject *args)
     memcpy(PyArray_DATA(ap_wrk_out), wrk1, (size_t)nc * sizeof(double));
 
     free(wrk1);
+    wrk1 = NULL;
     free(wrk2);
+    wrk2 = NULL;
     free(iwrk);
+    iwrk = NULL;
 
     /* Slice tx, ty to actual sizes nx, ny for return. */
     PyArrayObject *ap_tx_sliced = NULL;
