@@ -27,10 +27,6 @@ type ArrayLike = Array | npt.ArrayLike
 SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
 # To control the default device - for use in the test suite only
 SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
-if SCIPY_DEVICE not in ("cpu", "cuda"):
-    raise ValueError(
-        f'Unsupported {SCIPY_DEVICE=}; Supported values are "cpu" and "cuda".'
-    )
 
 
 class _ArrayClsInfo(enum.Enum):
