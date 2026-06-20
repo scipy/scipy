@@ -1976,8 +1976,6 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     Examples
     --------
-    Objective and gradient function are defined
-
     >>> import numpy as np
     >>> from scipy.optimize import fmin_ncg
     >>> args = (5, 4, 3, 2, 1, 8) # parameter values
