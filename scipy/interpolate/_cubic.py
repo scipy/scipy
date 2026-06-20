@@ -408,7 +408,6 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
 @xp_capabilities(cpu_only=True, jax_jit=False, xfail_backends=[
     ("dask.array", "lacks nd fancy indexing"),
-    ("array_api_strict", "fancy indexing __setitem__"),
 ])
 class Akima1DInterpolator(CubicHermiteSpline):
     r"""Akima "visually pleasing" interpolator (C1 smooth).
@@ -592,16 +591,13 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
             # These are the mask of where the slope at breakpoint is defined:
             mmax = xp.max(f12) if xp_size(f12) > 0 else -xp.inf
-            ind = xp.nonzero(f12 > break_mult * mmax)
-
-            x_ind, y_ind = ind[0], ind[1:]
+            ind = f12 > break_mult * mmax
             # Set the slope at breakpoint
-            t = xpx.at(t)[ind].set(
-                m[(x_ind + 1,) + y_ind]
-                + (
-                    (f2[ind] / f12[ind])
-                    * (m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind])
-                )
+            t = xp.where(
+                ind,
+                m[1:-2, ...]
+                + (f2 / xp.where(ind, f12, 1)) * (m[2:-1, ...] - m[1:-2, ...]),
+                t,
             )
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
