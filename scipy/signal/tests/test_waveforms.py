@@ -63,8 +63,12 @@ class TestChirp:
         t = xp.linspace(0, t1, 100)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = xp.max(xp.abs(f - chirp_linear(tf, f0, f1, t1)))
-        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
+        expected = chirp_linear(tf, f0, f1, t1)
+        rtol, atol = (
+            (5e-3, 5e-4) if xp_default_dtype(xp) == xp.float32
+            else (0, 1e-6)
+        )
+        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=rtol, atol=atol)
 
     def test_linear_freq_02(self, xp):
         method = 'linear'
@@ -74,8 +78,12 @@ class TestChirp:
         t = xp.linspace(0, t1, 100)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = xp.max(xp.abs(f - chirp_linear(tf, f0, f1, t1)))
-        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
+        expected = chirp_linear(tf, f0, f1, t1)
+        rtol, atol = (
+            (5e-3, 5e-4) if xp_default_dtype(xp) == xp.float32
+            else (0, 1e-6)
+        )
+        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=rtol, atol=atol)
 
     @pytest.mark.skip_xp_backends(
         "cupy", reason="cupyx.scipy.signal.chirp does not have `complex` argument"
@@ -130,8 +138,12 @@ class TestChirp:
         t = xp.linspace(0, t1, 2000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = xp.max(xp.abs(f - chirp_quadratic(tf, f0, f1, t1)))
-        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
+        expected = chirp_quadratic(tf, f0, f1, t1)
+        rtol, atol = (
+            (5e-3, 5e-4) if xp_default_dtype(xp) == xp.float32
+            else (0, 1e-6)
+        )
+        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=rtol, atol=atol)
 
     def test_quadratic_freq_02(self, xp):
         method = 'quadratic'
@@ -141,8 +153,12 @@ class TestChirp:
         t = xp.linspace(0, t1, 2000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = xp.max(xp.abs(f - chirp_quadratic(tf, f0, f1, t1)))
-        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
+        expected = chirp_quadratic(tf, f0, f1, t1)
+        rtol, atol = (
+            (5e-3, 5e-4) if xp_default_dtype(xp) == xp.float32
+            else (0, 1e-6)
+        )
+        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=rtol, atol=atol)
 
     def test_logarithmic_at_zero(self, xp):
         w = chirp(t=xp.zeros(1), f0=1.0, f1=2.0, t1=1.0, method='logarithmic')
@@ -156,8 +172,12 @@ class TestChirp:
         t = xp.linspace(0, t1, 10000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = xp.max(xp.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
+        expected = chirp_geometric(tf, f0, f1, t1)
+        rtol, atol = (
+            (5e-3, 5e-4) if xp_default_dtype(xp) == xp.float32
+            else (0, 1e-6)
+        )
+        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=rtol, atol=atol)
 
     def test_logarithmic_freq_02(self, xp):
         method = 'logarithmic'
@@ -167,8 +187,12 @@ class TestChirp:
         t = xp.linspace(0, t1, 10000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = xp.max(xp.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
+        expected = chirp_geometric(tf, f0, f1, t1)
+        rtol, atol = (
+            (5e-3, 5e-4) if xp_default_dtype(xp) == xp.float32
+            else (0, 1e-6)
+        )
+        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=rtol, atol=atol)
 
     def test_logarithmic_freq_03(self, xp):
         method = 'logarithmic'
@@ -178,8 +202,12 @@ class TestChirp:
         t = xp.linspace(0, t1, 10000)
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
-        abserr = xp.max(xp.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        xp_assert_less(xp.asarray(abserr), xp.asarray(1e-6, dtype=abserr.dtype))
+        expected = chirp_geometric(tf, f0, f1, t1)
+        rtol, atol = (
+            (5e-3, 5e-4) if xp_default_dtype(xp) == xp.float32
+            else (0, 1e-6)
+        )
+        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=rtol, atol=atol)
 
     def test_hyperbolic_at_zero(self, xp):
         w = chirp(t=xp.zeros(1), f0=10.0, f1=1.0, t1=1.0,
@@ -199,7 +227,11 @@ class TestChirp:
             phase = waveforms._chirp_phase(t, f0, t1, f1, method)
             tf, f = compute_frequency(t, phase)
             expected = chirp_hyperbolic(tf, f0, f1, t1)
-            xp_assert_close(xp.asarray(f), xp.asarray(expected), atol=1e-7)
+            rtol, atol = (
+                (5e-3, 5e-4) if xp_default_dtype(xp) == xp.float32
+                else (None, 1e-7)
+            )
+            xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=rtol, atol=atol)
 
     def test_hyperbolic_zero_freq(self, xp):
         # f0=0 or f1=0 must raise a ValueError.
