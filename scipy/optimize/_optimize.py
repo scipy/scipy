@@ -1974,6 +1974,45 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     ----------
     Wright & Nocedal, 'Numerical Optimization', 1999, p. 140.
 
+    Examples
+    --------
+    Objective and gradient function are defined
+
+    >>> import numpy as np
+    >>> from scipy.optimize import fmin_ncg
+    >>> args = (5, 4, 3, 2, 1, 8) # parameter values
+    >>> def func(x, *args):
+    ...     a, b, c, d, e, f = args
+    ...     return a*x[0]**2 + b*x[0]*x[1] + c*x[1]**2 + d*x[0] + e*x[1] + f
+    >>> def gradf(x, *args):
+    ...     a, b, c, d, e, f = args
+    ...     gx_0 = 2*a*x[0] + b*x[1] + d
+    ...     gx_1 = b*x[0] + 2*c*x[1] + e
+    ...     return np.asarray((gx_0, gx_1))
+    >>> x0 = np.asarray((0., 0.))
+    >>> res1 = fmin_ncg(func, x0, fprime=gradf, args=args)
+    Optimization terminated successfully.
+            Current function value: 7.795455
+            Iterations: 5
+            Function evaluations: 6
+            Gradient evaluations: 13
+            Hessian evaluations: 0
+
+    >>> res1
+    array([-0.18181818, -0.04545455])
+
+    >>> # Using second order information
+    >>> def hess(x, *args):
+    ...     a, b, c, d, e, f = args
+    ...     return np.asarray(((2*a, b), (b, 2*c)))
+    >>> res1 = fmin_ncg(func, x0, fprime=gradf, fhess=hess, args=args)
+    Optimization terminated successfully.
+            Current function value: 7.795455
+            Iterations: 5
+            Function evaluations: 5
+            Gradient evaluations: 5
+            Hessian evaluations: 5
+
     """
     opts = {'xtol': avextol,
             'eps': epsilon,
