@@ -8,7 +8,7 @@ import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray, is_jax_array,
     is_jax, xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name,
-    is_array_api_obj
+    is_array_api_obj, is_torch
 )
 import scipy._external.array_api_extra as xpx
 from . import _basic
@@ -108,7 +108,12 @@ class _FuncInfo:
             @functools.wraps(self.func)
             def wrapped(*args, **kwargs):
                 xp = array_namespace(*args)
-                return self._wrapper_for(xp)(*args, **kwargs)
+
+                func, is_native = self._wrapper_for(xp)
+                if is_native and is_torch(xp):
+                    # torch does not accept python scalars
+                    args = tuple(xp.asarray(a) for a in args)
+                return func(*args, **kwargs)
 
             # Allow pickling the function. Normally this is done by @wraps,
             # but in this case it doesn't work because self.func is a ufunc.
@@ -128,7 +133,7 @@ class _FuncInfo:
     @functools.lru_cache(1000)
     def _wrapper_for(self, xp):
         if is_numpy(xp):
-            return self.func
+            return self.func, True
 
         # If a native implementation is available, use that
         in_xp = get_native_namespace_name(xp) in self.backends_with_func_in_xp
@@ -137,7 +142,7 @@ class _FuncInfo:
             xp, namespace, self.name, alt_names_map=self.alt_names_map
         )
         if f is not None:
-            return f
+            return f, True
 
         if in_xp:
             # when namespace is passed to self.generic_impl below, we want to
@@ -153,7 +158,7 @@ class _FuncInfo:
         if self.generic_impl is not None:
             f = self.generic_impl(xp, namespace)
             if f is not None:
-                return f
+                return f, False
 
         if is_marray(xp):
             # Unwrap the array, apply the function on the wrapped namespace,
@@ -170,7 +175,7 @@ class _FuncInfo:
                                         (getattr(arg, 'mask', False) for arg in args))
                 return xp.asarray(out, mask=mask)
 
-            return f
+            return f, False
 
         if is_dask(xp):
             # Apply the function to each block of the Dask array.
