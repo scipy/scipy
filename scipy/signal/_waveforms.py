@@ -6,8 +6,7 @@
 #   Added sweep_poly()
 import math
 import numpy as np
-from numpy import asarray, zeros, pi, log, sqrt, \
-    exp, cos, sin, polyval, polyint
+from numpy import zeros, pi, log, sqrt, exp, cos, sin, polyval, polyint
 
 from scipy._lib._array_api import array_namespace, xp_promote
 import scipy._external.array_api_extra as xpx
