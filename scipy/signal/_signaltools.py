@@ -3363,6 +3363,34 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     .. [1] J. F. Mahoney, B. D. Sivazlian, "Partial fractions expansion: a
            review of computational methodology and efficiency", Journal of
            Computational and Applied Mathematics, Vol. 9, 1983.
+
+    Examples
+    --------
+    Compute the partial-fraction expansion of
+    :math:`(s + 3) / (s^2 + 3 s + 2) = 2 / (s + 1) - 1 / (s + 2)`:
+
+    >>> import numpy as np
+    >>> from scipy.signal import residue
+    >>> r, p, k = residue([1, 3], [1, 3, 2])
+    >>> r
+    array([ 2., -1.])
+    >>> p
+    array([-1., -2.])
+    >>> k
+    array([], dtype=float64)
+
+    Each residue in ``r`` corresponds to the pole at the same position in
+    ``p``.  The direct polynomial term ``k`` is empty here because the
+    numerator degree is lower than the denominator degree.  When that is not
+    the case, ``k`` is non-empty:
+
+    >>> r, p, k = residue([1, 2, 3, 4], [1, 3, 2])
+    >>> r
+    array([2., 2.])
+    >>> p
+    array([-1., -2.])
+    >>> k
+    array([ 1., -1.])
     """
     b = np.asarray(b)
     a = np.asarray(a)
