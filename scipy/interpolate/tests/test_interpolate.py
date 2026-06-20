@@ -1001,9 +1001,9 @@ class TestAkima1DInterpolator:
 
     def test_extrapolate_attr(self, xp):
         #
-        x = xp.linspace(-5, 5, 11)
+        x = xp.linspace(-5, 5, 11, dtype=xp.float64)
         y = x**2
-        x_ext = xp.linspace(-10, 10, 17)
+        x_ext = xp.linspace(-10, 10, 17, dtype=xp.float64)
         y_ext = x_ext**2
         # Testing all extrapolate cases.
         ak_true = Akima1DInterpolator(x, y, extrapolate=True)

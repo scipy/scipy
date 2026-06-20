@@ -556,7 +556,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
             t = xpx.at(t)[...].set(mk)
         else:
             # determine slopes between breakpoints
-            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:])
+            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:], dtype=x.dtype)
             dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
             m = xpx.at(m)[2:-2, ...].set(xp.diff(y, axis=0) / dx)
 
