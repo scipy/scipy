@@ -20,8 +20,7 @@ __all__ = ['fixed_quad', 'romb',
            'qmc_quad', 'cumulative_simpson']
 
 
-@xp_capabilities(skip_backends=[('jax.numpy',
-                                 "JAX arrays do not support item assignment")])
+@xp_capabilities()
 def trapezoid(y, x=None, dx=1.0, axis=-1):
     r"""
     Integrate along the given axis using the composite trapezoidal rule.
