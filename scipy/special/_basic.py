@@ -18,7 +18,6 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
-from ._comb import _comb_int
 
 
 __all__ = [
@@ -2666,8 +2665,12 @@ def comb(N, k, *, exact=False, repetition=False):
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
-            # _comb_int casts inputs to integers, which is safe & intended here
-            return _comb_int(N, k)
+            # cast inputs to integers, which is safe & intended here
+            N = int(N)
+            k = int(k)
+            if k > N or N < 0 or k < 0:
+                return 0
+            return math.comb(N, k)
         else:
             raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
                              "supported.")
@@ -2938,7 +2941,7 @@ def _is_subdtype(dtype, dtypes):
 
     Also allows specifying a list instead of just a single dtype.
 
-    Additionaly, the most important supertypes from
+    Additionally, the most important supertypes from
         https://numpy.org/doc/stable/reference/arrays.scalars.html
     can optionally be specified using abbreviations as follows:
         "i": np.integer

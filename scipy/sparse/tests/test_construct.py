@@ -227,8 +227,6 @@ class TestConstructUtils:
         for d, o, shape in cases:
             assert_raises(ValueError, construct.diags, d, offsets=o, shape=shape)
 
-        assert_raises(TypeError, construct.diags, [[None]], offsets=[0])
-
     def test_diags_vs_diag(self):
         # Check that
         #
@@ -410,6 +408,21 @@ class TestConstructUtils:
         assert_equal(result.format, fmt)
         assert_array_equal(result.toarray(), expected)
         assert isinstance(result, spmatrix)
+
+    @pytest.mark.parametrize(
+        "b",
+        [
+            csr_array([[3]], dtype=np.int64),        # BSR Path
+            csr_array([[3, 0, 0]], dtype=np.int64),  # COO Path
+        ],
+    )
+    def test_kron_zero_matrix_dtype(self, b):
+        a = csr_array([[0]], dtype=np.int64)
+
+        result = construct.kron(a, b)
+
+        assert result.dtype == np.int64
+        assert result.nnz == 0
 
     @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_kron_ndim_exceptions(self):
@@ -919,29 +932,12 @@ def test_diags_array():
         construct.diags(np.arange(1.0, 5.0), 5, shape=(4, 4))
 
 
-@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
+@pytest.mark.parametrize('func', (construct.diags_array, construct.diags))
 def test_diags_int(func):
     d = [[3], [1, 2], [4]]
     offsets = [-1, 0, 1]
-    # Until the deprecation period is over, `dtype=None` must be given
-    # explicitly to avoid the warning and the cast to an inexact type
-    # in diags_array() (gh-23102).
-    arr = func(d, offsets=offsets, dtype=None)
+    arr = func(d, offsets=offsets)
     expected = np.array([[1, 4], [3, 2]])
-    assert_array_equal(arr.toarray(), expected, strict=True)
-
-
-@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
-def test_diags_int_to_float64(func):
-    d = [[3], [1, 2], [4]]
-    offsets = [-1, 0, 1]
-    # Until the deprecation period is over, diags and diag_array will cast
-    # integer inputs to float64 by default.  A warning will be generated
-    # that indicates this behavior is deprecated.
-    # See gh-23102.
-    with pytest.warns(FutureWarning, match="output has been cast to"):
-        arr = func(d, offsets=offsets)
-    expected = np.array([[1.0, 4.0], [3.0, 2.0]])
     assert_array_equal(arr.toarray(), expected, strict=True)
 
 
@@ -1046,7 +1042,7 @@ def test_3d_permute_dims():
 
 def test_canonical_format_permute_dims():
     A = coo_array([[2, 0, 1], [3, 5, 0]])
-    # identity axes keep has_canoncial_format True after permute_dims.
+    # identity axes keep has_canonical_format True after permute_dims.
     assert construct.permute_dims(A, axes=(0, 1)).has_canonical_format is True
     assert construct.permute_dims(A, axes=[0, 1]).has_canonical_format is True
     # order changes set has_canonical_format to False

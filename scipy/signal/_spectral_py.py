@@ -4,7 +4,6 @@ import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
 from scipy._lib._array_api import array_namespace
-from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 from . import _signaltools
 from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
 from .windows import get_window
@@ -17,13 +16,11 @@ __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
 
 
-@_deprecate_positional_args(version="1.19.0")
 def lombscargle(
     x: npt.ArrayLike,
     y: npt.ArrayLike,
     freqs: npt.ArrayLike,
     *,
-    precenter: bool = _NoValue,  # type:ignore[assignment]
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     weights: npt.NDArray | None = None,
     floating_mean: bool = False,
@@ -67,14 +64,6 @@ def lombscargle(
         Angular frequencies (e.g., having unit rad/s=2π/s for `x` having unit s) for
         output periodogram. Frequencies are normally >= 0, as any peak at ``-freq`` will
         also exist at ``+freq``.
-    precenter : bool, optional
-        Pre-center measurement values by subtracting the mean, if True. This is
-        a legacy parameter and unnecessary if `floating_mean` is True.
-
-        .. deprecated:: 1.17.0
-            The `precenter` argument is deprecated and will be removed in SciPy 1.19.0.
-            The functionality can be substituted by passing ``y - y.mean()`` to `y`.
-
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
         Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or
@@ -256,17 +245,6 @@ def lombscargle(
 
     # weight vector must sum to 1
     weights = weights * (1.0 / weights.sum())
-
-    # if requested, perform precenter
-    if precenter is not _NoValue:
-        msg = ("Use of parameter 'precenter' is deprecated as of SciPy 1.17.0 and "
-               "will be removed in 1.19.0. Please leave 'precenter' unspecified. "
-               "Passing True to 'precenter' "
-               "can be exactly substituted by passing 'y = (y - y.mean())' into "
-               "the input. Consider setting `floating_mean` to True instead.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        if precenter:
-            y = y - y.mean()
 
     # transform arrays
     # row vector
@@ -1217,7 +1195,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     Notes
     -----
-    In order to invert a short-time Fourier transfrom (STFT) with the so-called
+    In order to invert a short-time Fourier transform (STFT) with the so-called
     "overlap-add method", the signal windowing must obey the constraint of
     "Constant OverLap Add" (COLA). This ensures that every point in the input
     data is equally weighted, thereby avoiding aliasing and allowing full
@@ -2058,7 +2036,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     .. legacy:: function
 
-        This function is soley used by the legacy functions `spectrogram` and `stft`
+        This function is solely used by the legacy functions `spectrogram` and `stft`
         (which are also in this same source file `scipy/signal/_spectral_py.py`).
 
     This is a helper function that implements the commonality between
@@ -2411,7 +2389,7 @@ def _triage_segments(window, nperseg, input_length):
 
     .. legacy:: function
 
-        This function is soley used by the legacy functions `spectrogram` and
+        This function is solely used by the legacy functions `spectrogram` and
         `_spectral_helper` (which are also in this file).
 
     Parameters

@@ -391,7 +391,7 @@ def mypy(ctx, build_dir):
     except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
-            "pip install -r requirements/dev.txt from the repo root"
+            "`pip install --group typecheck` from the repo root"
         ) from e
 
     build_dir = os.path.abspath(build_dir)
@@ -964,7 +964,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
 def configure_scipy_openblas(blas_variant='32'):
     """Create scipy-openblas.pc and scipy/_distributor_init_local.py
 
-    Requires a pre-installed scipy-openblas32 wheel from PyPI.
+    Requires a pre-installed scipy-openblas{32,64} wheel from PyPI.
     """
     basedir = os.getcwd()
     pkg_config_fname = os.path.join(basedir, "scipy-openblas.pc")

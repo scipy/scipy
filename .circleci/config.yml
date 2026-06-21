@@ -81,13 +81,7 @@ jobs:
 
       - run:
           name: setup Python venv
-          command: |
-            pip install numpy cython pybind11 pythran ninja meson
-            pip install -r requirements/doc.txt
-            # asv upper bound due to issue in gh-23611, remove when that is resolved
-            pip install mpmath gmpy2 "asv<0.6.5" pooch threadpoolctl spin marray
-            # extra benchmark deps
-            pip install pyfftw cffi pytest
+          command: pip install pytest --group build --group dev-cli --group doc --group bench --group test-mp --group optional-runtime-deps --group test-array-types
 
       - run:
           name: clear ccache stats
@@ -202,8 +196,7 @@ jobs:
           name: smoke-docs
           no_output_timeout: 35m
           command: |
-            pip install matplotlib hypothesis
-            pip install scipy-doctest
+            pip install --group test-docs
             spin smoke-docs
 
       - run:

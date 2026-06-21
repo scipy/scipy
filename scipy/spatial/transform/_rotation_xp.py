@@ -562,7 +562,7 @@ def reduce(
         return quat, None, None
     # DECISION: We cannot have variable number of return arguments for jit compiled
     # functions. We therefore always return the indices, and filter out later.
-    # TOOD: Properly support broadcasting.
+    # TODO: Properly support broadcasting.
     xp = array_namespace(quat)
     quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
     if left is None:
@@ -629,7 +629,6 @@ def reduce(
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
-    xp = array_namespace(quat)
     mat = as_matrix(quat)
     # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
     # dimension to the points array and remove it after the operation.
@@ -723,7 +722,7 @@ def align_vectors(
     # reasons:
     # 1. Computing both for eager execution models is expensive.
     # 2. Some operations will fail when running the unused branch because of numerical
-    # and algorithmical issues. Numpy e.g. will raise an exception when trying to
+    # and algorithmic issues. Numpy e.g. will raise an exception when trying to
     # compute the svd of a matrix with infinite weights. To prevent this, we only
     # compute the branch that is needed. Lazy backends however require us to take the
     # full compute graph. Therefore, we use xp.where for lazy backends and a branching

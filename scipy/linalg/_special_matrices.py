@@ -3,7 +3,7 @@ import math
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from scipy._lib._util import _apply_over_batch
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size, xp_promote
 import scipy._external.array_api_extra as xpx
 
 
@@ -18,6 +18,7 @@ __all__ = ['toeplitz', 'circulant', 'hankel',
 # -----------------------------------------------------------------------------
 
 
+@xp_capabilities(np_only=True)
 def toeplitz(c, r=None):
     r"""
     Construct a Toeplitz matrix.
@@ -89,6 +90,7 @@ def _toeplitz(c, r):
     return as_strided(vals[len(c)-1:], shape=out_shp, strides=(-n, n)).copy()
 
 
+@xp_capabilities(np_only=True)
 def circulant(c):
     """
     Construct a circulant matrix.
@@ -154,6 +156,7 @@ def circulant(c):
     return A.reshape(batch_shape + (N, N)).copy()
 
 
+@xp_capabilities(np_only=True)
 @_apply_over_batch(("c", 1), ("r", 1))
 def hankel(c, r=None):
     r"""
@@ -271,13 +274,14 @@ def hadamard(n, dtype=int):
     return H
 
 
+@xp_capabilities()
 @_apply_over_batch(("f", 1), ("s", 1))
 def leslie(f, s):
     """
     Create a Leslie matrix.
 
-    Given the length n array of fecundity coefficients `f` and the length
-    n-1 array of survival coefficients `s`, return the associated Leslie
+    Given the length ``n`` array of fecundity coefficients `f` and the length
+    ``n - 1`` array of survival coefficients `s`, return the associated Leslie
     matrix.
 
     The documentation is written assuming array arguments are of specified
@@ -304,10 +308,10 @@ def leslie(f, s):
     Notes
     -----
     The Leslie matrix is used to model discrete-time, age-structured
-    population growth [1]_ [2]_. In a population with `n` age classes, two sets
-    of parameters define a Leslie matrix: the `n` "fecundity coefficients",
+    population growth [1]_ [2]_. In a population with ``n`` age classes, two sets
+    of parameters define a Leslie matrix: the ``n`` "fecundity coefficients",
     which give the number of offspring per-capita produced by each age
-    class, and the `n` - 1 "survival coefficients", which give the
+    class, and the ``n - 1`` "survival coefficients", which give the
     per-capita survival rate of each age class.
 
     References
@@ -328,8 +332,10 @@ def leslie(f, s):
            [ 0. ,  0. ,  0.7,  0. ]])
 
     """
-    f = np.atleast_1d(f)
-    s = np.atleast_1d(s)
+    xp = array_namespace(f, s)
+    f, s = xp_promote(f, s, xp=xp)
+    f = xpx.atleast_nd(f, ndim=1, xp=xp)
+    s = xpx.atleast_nd(s, ndim=1, xp=xp)
 
     if f.shape[-1] != s.shape[-1] + 1:
         raise ValueError("Incorrect lengths for f and s. The length of s along "
@@ -338,10 +344,9 @@ def leslie(f, s):
         raise ValueError("The length of s must be at least 1.")
 
     n = f.shape[-1]
-    tmp = f[0] + s[0]
-    a = np.zeros((n, n), dtype=tmp.dtype)
-    a[0] = f
-    a[list(range(1, n)), list(range(0, n - 1))] = s
+    a = xp.zeros((n, n), dtype=f.dtype)
+    a = xpx.at(a)[0, :].set(f)
+    a += xpx.create_diagonal(s, offset=-1, xp=xp)
     return a
 
 
@@ -438,6 +443,7 @@ def block_diag(*arrs):
     return out
 
 
+@xp_capabilities(np_only=True)
 def companion(a):
     """
     Create a companion matrix.
@@ -1018,6 +1024,7 @@ def fiedler(a):
         return xp.abs(a[..., :, xp.newaxis] - a[..., xp.newaxis, :])
 
 
+@xp_capabilities(np_only=True)
 def fiedler_companion(a):
     """Returns a Fiedler companion matrix.
 
@@ -1107,6 +1114,7 @@ def fiedler_companion(a):
     return c
 
 
+@xp_capabilities(np_only=True)
 def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.

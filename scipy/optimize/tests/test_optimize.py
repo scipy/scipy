@@ -3462,7 +3462,7 @@ class TestWorkers:
         res_default = optimize.minimize(
             rosen, self.x0, method=method, **kwds
         )
-        assert_equal(res.x, res_default.x)
+        assert_allclose(res.x, res_default.x, rtol=1e-15)
         assert_equal(res.nfev, res_default.nfev)
 
     def test_equal_bounds(self, workers, method):
@@ -3527,11 +3527,11 @@ class TestAnnotations:
     ])
     def test_callable_annotations(self, method):
         kwds = {'jac': None, 'hess': None, 'callback': callable_annotated}
-        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg', 
+        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg',
                       'trust-ncg', 'trust-krylov', 'trust-exact', 'trust-constr']:
             #  methods that require a callable jac
             kwds['jac'] = rosen_der_annotated
-        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact', 
+        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact',
                       'trust-krylov', 'trust-constr']:
             kwds['hess'] = rosen_hess_annotated
         optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)

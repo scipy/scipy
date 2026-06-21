@@ -44,7 +44,7 @@ from scipy.optimize.elementwise import find_root
 from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan
 
 import scipy.special as special
-# Import unused here but needs to stay until end of deprecation periode
+# Import unused here but needs to stay until end of deprecation period
 # See https://github.com/scipy/scipy/issues/15765#issuecomment-1875564522
 from scipy import linalg  # noqa: F401
 from . import distributions
@@ -10660,7 +10660,7 @@ def _br(x, *, r=0, xp):
 
 
 def _prk(r, k):
-    # Writen to match [1] Equation 27 closely to facilitate review.
+    # Written to match [1] Equation 27 closely to facilitate review.
     # This does not protect against overflow, so improvements to
     # robustness would be a welcome follow-up.
     binom_r_k = xpx.lazy_apply(special.binom, r, k)
@@ -10752,7 +10752,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
 
     n_moments = 4 if is_lazy_array(order) else int(xp.max(order))
     k = xp.arange(n_moments, dtype=sample.dtype)
-    prk = _prk(xpx.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
+    prk = _prk(xp.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k, xp=xp)
 
     n = sample.shape[-1]

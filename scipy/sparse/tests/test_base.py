@@ -703,6 +703,13 @@ class _TestCommon:
         assert_raises(ValueError, self.spcreator, (3,-1))
         assert_raises(ValueError, self.spcreator, (-1,-1))
 
+    def test_unsupported_dtypes_in_constructors(self):
+        some_unsupported_dtypes = [np.float16, object]
+        for dt in some_unsupported_dtypes:
+            data = np.array([[1]], dtype=dt)
+            with assert_raises(ValueError, match="does not support dtype"):
+                self.spcreator(data)
+
     def test_repr(self):
         datsp = self.spcreator([[1, 0, 0], [0, 0, 0], [0, 0, -2]])
         extra = (
@@ -2274,7 +2281,7 @@ class _TestCommon:
         assert_raises(ValueError, dsp.dot, e)
         assert_raises(ValueError, asp.dot, d)
 
-        # elemente-wise multiplication
+        # element-wise multiplication
         assert_array_equal(asp.multiply(asp).toarray(), np.multiply(a, a))
         assert_array_equal(bsp.multiply(bsp).toarray(), np.multiply(b, b))
         assert_array_equal(dsp.multiply(dsp).toarray(), np.multiply(d, d))

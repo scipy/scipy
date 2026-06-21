@@ -1048,7 +1048,6 @@ def _boxcox_llf(data, axis=0, *, lmb):
         logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
-    res = xp.astype(res, data.dtype, copy=False)  # compensate for NumPy <2.0
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -4045,7 +4044,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     configuration options and other appropriate settings.
 
     The presence of ties and zeros affects the resolution of ``method='auto'``
-    accordingly: exhasutive permutations are performed when ``len(d) <= 13``,
+    accordingly: exhaustive permutations are performed when ``len(d) <= 13``,
     and the asymptotic method is used otherwise. Note that they asymptotic
     method may not be very accurate even for ``len(d) > 14``; the threshold
     was chosen as a compromise between execution time and accuracy under the
@@ -4148,7 +4147,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     WilcoxonResult(statistic=6.0, pvalue=0.5)
 
     """
-    # replace approx by asymptotic to ensure backwards compatability
+    # replace approx by asymptotic to ensure backwards compatibility
     if method == "approx":
         method = "asymptotic"
     return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative,
@@ -4328,13 +4327,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     if nan_policy == 'propagate' and contains_nan:
         return MedianTestResult(np.nan, np.nan, np.nan, None)
 
-    if contains_nan:
-        grand_median = np.median(cdata[~np.isnan(cdata)])
-    else:
-        grand_median = np.median(cdata)
-    # When the minimum version of numpy supported by scipy is 1.9.0,
-    # the above if/else statement can be replaced by the single line:
-    #     grand_median = np.nanmedian(cdata)
+    grand_median = np.nanmedian(cdata)
 
     # Create the contingency table.
     table = np.zeros((2, len(data)), dtype=np.int64)
@@ -4880,7 +4873,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
     Returns
     -------
-    ps_adusted : array_like
+    ps_adjusted : array_like
         The adjusted p-values. If the null hypothesis is rejected where these
         fall below a specified level, the false discovery rate is controlled
         at that level.
