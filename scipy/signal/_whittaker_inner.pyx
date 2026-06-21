@@ -3,13 +3,15 @@ import numpy as np
 
 def _solve_WH_order2(double[:] y, double lamb):
     """Solve Whittaker-Henderson smoothing of order 2 according to Weinert."""
-    n = y.shape[0]
-    lamb = 1.0 / lamb
+    cdef Py_ssize_t n = y.shape[0]
+    cdef double[:] b = np.empty(n)
+    cdef double[:] e = np.empty(n)
+    cdef double[:] f = np.empty(n)
+    cdef double[:] x = np.empty(n)
+    cdef double d, mu, mu_old
+    cdef Py_ssize_t i
 
-    b = np.empty(n)
-    e = np.empty(n)
-    f = np.empty(n)
-    x = np.empty(n)
+    lamb = 1.0 / lamb
 
     d = 1 + lamb
     f[0] = 1 / d
@@ -55,4 +57,4 @@ def _solve_WH_order2(double[:] y, double lamb):
     x[n-2] = b[n-2] + e[n-2] * x[n-1]
     for i in range(n - 3, -1, -1):
         x[i] = b[i] + e[i] * x[i+1] - f[i] * x[i+2]
-    return x
+    return np.asarray(x)
