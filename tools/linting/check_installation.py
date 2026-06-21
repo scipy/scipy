@@ -25,7 +25,7 @@ from get_submodule_paths import get_submodule_paths
 
 
 CUR_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-ROOT_DIR = os.path.dirname(CUR_DIR)
+ROOT_DIR = os.path.dirname(os.path.dirname(CUR_DIR))
 SCIPY_DIR = os.path.join(ROOT_DIR, 'scipy')
 
 
@@ -74,7 +74,7 @@ def main(install_dir, no_tests):
         if test_file not in installed_test_files.keys():
             raise Exception(f"{scipy_test_files[test_file]} is not installed; "
                             f"either install it or add `{test_file}` to the "
-                            "exception list in `tools/check_installation.py`")
+                            "exception list in `tools/linting/check_installation.py`")
 
     if no_tests:
         print("----------- No test files were installed --------------")

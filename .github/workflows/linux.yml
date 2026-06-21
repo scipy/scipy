@@ -105,7 +105,7 @@ jobs:
         run: |
           rm -r build-install
           spin build --tags=runtime,python-runtime,devel
-          python tools/check_installation.py build-install --no-tests
+          python tools/linting/check_installation.py build-install --no-tests
           rm -r build-install
           spin build --tags=runtime,python-runtime,devel,tests
           spin check --installed-files --no-build
