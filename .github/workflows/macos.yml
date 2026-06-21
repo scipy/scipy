@@ -139,7 +139,7 @@ jobs:
 
     - name: Install SciPy dependencies from PyPI
       run: |
-        pip install pybind11 pythran spin pooch hypothesis pytest pytest-timeout
+        pip install --group build --group dev-cli --group test-core
 
     - name: Build SciPy with ASan
       run: |
