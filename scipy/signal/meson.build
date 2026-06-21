@@ -36,7 +36,8 @@ endif
 pyx_files = [
   ['_peak_finding_utils', '_peak_finding_utils.pyx'],
   ['_sosfilt', '_sosfilt.pyx'],
-  ['_upfirdn_apply', '_upfirdn_apply.pyx']
+  ['_upfirdn_apply', '_upfirdn_apply.pyx'],
+  ['_whittaker_inner', '_whittaker_inner.pyx']
 ]
 
 foreach pyx_file: pyx_files
