@@ -65,7 +65,7 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
         elif lazy:
             matrix = xp.where(mask[..., None, None], xp.nan, matrix)
 
-        gramians = matrix @ xp.matrix_transpose(matrix)
+        gramians = matrix @ matrix.mT
         eye = xp.eye(3, dtype=matrix.dtype, device=device)
         is_orthogonal = xp.all(
             xpx.isclose(gramians, eye, atol=1e-12, xp=xp), axis=(-2, -1)
@@ -521,7 +521,7 @@ def mean(
     # Branching code is okay for checks that include meta info such as shapes and types
     quat_expand = quat[..., None, :]
     if weights is None:
-        K = xp.matrix_transpose(quat_expand) @ quat_expand
+        K = quat_expand.mT @ quat_expand
     else:
         weights = xp.asarray(weights, dtype=dtype, device=device)
         neg_weights = weights < 0
@@ -540,7 +540,7 @@ def mean(
 
         # Make sure we can transpose quat
         weighted_quat = weights[..., None, None] * quat_expand
-        K = xp.matrix_transpose(weighted_quat) @ quat_expand
+        K = weighted_quat.mT @ quat_expand
 
     # Move reduction axes to the end
     keep_axes = tuple(i for i in all_axes if i not in axis)

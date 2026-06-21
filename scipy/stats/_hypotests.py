@@ -181,7 +181,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
 
     # compute test statistic w distributed asympt. as chisquare with df=r
     g_diff = xp.mean(gx, axis=-1, keepdims=True) - xp.mean(gy, axis=-1, keepdims=True)
-    w = n*xp.matmul(xp.matrix_transpose(g_diff), xp.matmul(est_cov_inv, g_diff))
+    w = n*xp.matmul(g_diff.mT, xp.matmul(est_cov_inv, g_diff))
     w = w[..., 0, 0]
 
     # apply small-sample correction
