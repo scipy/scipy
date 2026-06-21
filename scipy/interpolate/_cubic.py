@@ -329,10 +329,10 @@ class PchipInterpolator(CubicHermiteSpline):
         with np.errstate(divide='ignore', invalid='ignore'):
             whmean = (w1/mk[:-1, ...] + w2/mk[1:, ...]) / (w1 + w2)
 
-        dk = xp.zeros_like(y)
-        dk = xpx.at(dk)[1:-1, ...].set(
-            xp.where(condition, xp.zeros_like(whmean), 1.0 / whmean)
-        )
+            dk = xp.zeros_like(y)
+            dk = xpx.at(dk)[1:-1, ...].set(
+                xp.where(condition, xp.zeros_like(whmean), 1.0 / whmean)
+            )
 
         # special case endpoints, as suggested in
         # Cleve Moler, Numerical Computing with MATLAB, Chap 3.6 (pchiptx.m)
