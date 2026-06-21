@@ -81,7 +81,7 @@ jobs:
 
       - run:
           name: setup Python venv
-          command: pip install pytest --group build --group dev-cli --group doc --group bench --group test-mp --group optional-runtime-deps 
+          command: pip install pytest --group build --group dev-cli --group doc --group bench --group test-mp --group optional-runtime-deps --group test-array-types
 
       - run:
           name: clear ccache stats
