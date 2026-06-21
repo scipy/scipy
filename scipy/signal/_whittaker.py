@@ -249,8 +249,16 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
         raise ValueError(msg)
     elif lamb == 0.0:
         x = np.asarray(signal).copy()
-    elif order == 2 and weights is None and lamb * np.finfo(np.float64).eps <= 8:
-        # use the fast order 2 solver here and fall back to banded for big lamb
+    elif (
+        order == 2
+        and weights is None
+        and lamb * np.finfo(np.float64).eps <= 8
+    ):
+        # Fast O(n) solver for the common unweighted order=2 case, see Weinert
+        # (2007). The threshold mirrors `_solve_WH_banded`: beyond it the matrix
+        # A = I + lamb * D'D is numerically indistinguishable from lamb * D'D, so
+        # the generic solver's polynomial fallback is used instead (handled by
+        # `_solve_WH_banded` below).
         x = _solve_WH_order2(np.ascontiguousarray(signal, dtype=np.float64), lamb)
     else:
         x, _ = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
