@@ -424,6 +424,8 @@ Gamma and related functions
    gammaincinv  -- Inverse to `gammainc`.
    gammaincc    -- Regularized upper incomplete gamma function.
    gammainccinv -- Inverse to `gammaincc`.
+   log_gammainc -- Log of the regularized lower incomplete gamma function.
+   log_gammaincc -- Log of the regularized upper incomplete gamma function.
    beta         -- Beta function.
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
@@ -499,8 +501,8 @@ Ellipsoidal harmonics
 .. autosummary::
    :toctree: generated/
 
-   ellip_harm   -- Ellipsoidal harmonic functions E^p_n(l).
-   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n(l).
+   ellip_harm   -- Ellipsoidal harmonic functions E^p_n.
+   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n.
    ellip_normal -- Ellipsoidal harmonic normalization constants gamma^p_n.
 
 Orthogonal polynomials

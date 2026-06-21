@@ -15,7 +15,6 @@ from warnings import warn
 import numpy as np
 
 from scipy._lib._util import check_random_state, rng_integers, _transition_to_rng
-from scipy._lib.deprecation import _NoValue
 from ._sputils import upcast, get_index_dtype, isscalarlike, isintlike
 
 from ._sparsetools import csr_hstack
@@ -316,7 +315,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
     return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 
-def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoValue):
+def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None):
     """
     Construct a sparse array from diagonals.
 
@@ -340,14 +339,6 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoVa
     dtype : dtype, optional
         Data type of the array.  If `dtype` is None, the output
         data type is determined by the data type of the input diagonals.
-
-        Up until SciPy 1.19, the default behavior will be to return an array
-        with an inexact (floating point) data type.  In particular, integer
-        input will be converted to double precision floating point.  This
-        behavior is deprecated, and in SciPy 1.19, the default behavior
-        will be changed to return an array with the same data type as the
-        input diagonals.  To adopt this behavior before version 1.19, use
-        ``dtype=None``.
 
     Returns
     -------
@@ -430,22 +421,6 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoVa
     # Determine data type, if omitted
     if dtype is None:
         dtype = np.result_type(*diagonals)
-    elif dtype is _NoValue:
-        # This is the old deprecated behavior that uses np.common_type().
-        # After the deprecation period, this elif branch can be removed,
-        # and the default for the `dtype` parameter changed back to `None`.
-        dtype = np.dtype(np.common_type(*diagonals))
-        future_dtype = np.result_type(*diagonals)
-        if (dtype != future_dtype):
-            warn(
-                f"Input has data type {future_dtype}, but the output has been cast "
-                f"to {dtype}.  In the future, the output data type will match the "
-                "input. To avoid this warning, set the `dtype` parameter to `None` "
-                "to have the output dtype match the input, or set it to the "
-                "desired output data type.",
-                FutureWarning,
-                skip_file_prefixes=(os.path.dirname(__file__),)
-            )
 
     # Construct data array
     m, n = shape
@@ -476,7 +451,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoVa
     return dia_array((data_arr, offsets), shape=(m, n)).asformat(format)
 
 
-def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
+def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     """
     Construct a sparse matrix from diagonals.
 
@@ -506,14 +481,6 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
     dtype : dtype, optional
         Data type of the matrix.  If `dtype` is None, the output
         data type is determined by the data type of the input diagonals.
-
-        Up until SciPy 1.19, the default behavior will be to return a matrix
-        with an inexact (floating point) data type.  In particular, integer
-        input will be converted to double precision floating point.  This
-        behavior is deprecated, and in SciPy 1.19, the default behavior
-        will be changed to return a matrix with the same data type as the
-        input diagonals.  To adopt this behavior before version 1.19, use
-        `dtype=None`.
 
     Returns
     -------
@@ -859,7 +826,8 @@ def kron(A, B, format=None):
 
             if A.nnz == 0 or B.nnz == 0:
                 # kronecker product is the zero matrix
-                return coo_sparse(output_shape).asformat(format)
+                dtype = upcast(A.dtype, B.dtype)
+                return coo_sparse(output_shape, dtype=dtype).asformat(format)
 
             B = B.toarray()
             data = A.data.repeat(B.size).reshape(-1, B.shape[0], B.shape[1])
@@ -881,7 +849,8 @@ def kron(A, B, format=None):
 
     if A.nnz == 0 or B.nnz == 0:
         # kronecker product is the zero matrix
-        return coo_sparse(output_shape).asformat(format)
+        dtype = upcast(A.dtype, B.dtype)
+        return coo_sparse(output_shape, dtype=dtype).asformat(format)
 
     # expand entries of a into blocks
     data = A.data.repeat(B.nnz)

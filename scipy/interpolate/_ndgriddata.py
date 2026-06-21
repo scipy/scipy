@@ -134,7 +134,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         # if distance_upper_bound is set to not be infinite,
         # then we need to consider the case where KDtree
         # does not find any points within distance_upper_bound to return.
-        # It marks those points as having infinte distance, which is what will be used
+        # It marks those points as having infinite distance, which is what will be used
         # below to mask the array and return only the points that were deemed
         # to have a close enough neighbor to return something useful.
         dist, i = self.tree.query(xi_flat, **query_options)
@@ -217,7 +217,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         Multiplier for the default tolerance QHull uses to assign
         a simplex to the xi.  Default is 1.0.  Increase if there are
         difficulties assigning points to simplexes; this is most
-        reproducible with points exatly on the border of a very
+        reproducible with points exactly on the border of a very
         oblique triangle.  Only relevant for linear and 2-D cubic
         interpolation.
 

@@ -53,7 +53,7 @@ mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
          mock_backend.fht, mock_backend.ifht)
 
 
-@pytest.mark.parametrize("func, np_func, mock", zip(funcs, np_funcs, mocks))
+@pytest.mark.parametrize("func, np_func, mock", list(zip(funcs, np_funcs, mocks)))
 def test_backend_call(func, np_func, mock):
     x = np.arange(20).reshape((10,2))
     answer = np_func(x.astype(np.float64))
@@ -83,7 +83,7 @@ plan_mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
               mock_backend.ihfft, mock_backend.ihfft2, mock_backend.ihfftn)
 
 
-@pytest.mark.parametrize("func, mock", zip(plan_funcs, plan_mocks))
+@pytest.mark.parametrize("func, mock", list(zip(plan_funcs, plan_mocks)))
 def test_backend_plan(func, mock):
     x = np.arange(20).reshape((10, 2))
 

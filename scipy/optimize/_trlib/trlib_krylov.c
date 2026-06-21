@@ -205,7 +205,7 @@ trlib_int_t trlib_krylov_min_internal(
                    offdiag(i) = sqrt( beta(i-1)/abs(alpha(i-1) )
                      terms with index i-1 have been computed in previous iteration, just add 1/alpha(i) to diag(i) */
                 delta[*ii] += (*p_Hp)/(*v_g); // delta(i) += (p,Hp)/(v,g)
-                // update if Hessian possitive definite in current Krylov subspace
+                // update if Hessian positive definite in current Krylov subspace
                 *pos_def = *pos_def && (alpha[*ii] > 0.0);
 
                 // update quantities needed to computed || s_trial ||_M and ratio between Lanczos vector q and pCG vector v

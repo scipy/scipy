@@ -57,7 +57,12 @@ solve-group = "default"
 
 [environments.docs]
 # tasks: docs
-features = ["docs"]
+features = ["docs", "marray"]
+solve-group = "default"
+
+[environments.test-fail-slow]
+# tasks: test-fail-slow
+features = ["run-deps", "test-deps", "fail-slow"]
 solve-group = "default"
 
 [environments.ipython]
@@ -74,6 +79,24 @@ solve-group = "default"
 # tasks: build-debug
 features = ["build-deps", "build-debug"]
 solve-group = "debug"
+
+[environments.build-freethreading]
+# tasks: build-freethreading
+features = ["py-freethreading", "build-deps", "build-freethreading"]
+no-default-feature = true # avoid python-gil
+solve-group = "freethreading"
+
+[environments.test-freethreading]
+# tasks: test-freethreading
+features = ["py-freethreading", "run-deps", "test-deps", "test-freethreading"]
+no-default-feature = true # avoid python-gil
+solve-group = "freethreading"
+
+[environments.test-parallel-freethreading]
+# tasks: test-parallel-freethreading
+features = ["py-freethreading", "run-deps", "test-deps", "test-parallel-freethreading"]
+no-default-feature = true # avoid python-gil
+solve-group = "freethreading"
 
 [environments.lldb]
 # tasks: lldb
@@ -163,26 +186,32 @@ features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
 [environments.build-mkl-lp64]
+# tasks: build-mkl-lp64
 features = ["build-deps", "mkl", "build-mkl-lp64"]
 solve-group = "mkl-lp64"
 
 [environments.mkl-lp64]
+# tasks: test-mkl-lp64, check-mkl-lp64-sharedlibs
 features = ["run-deps", "test-deps", "mkl", "mkl-lp64"]
 solve-group = "mkl-lp64"
 
 [environments.build-mkl-ilp64]
+# tasks: build-mkl-ilp64
 features = ["build-deps", "mkl", "build-mkl-ilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-ilp64]
+# tasks: test-mkl-ilp64, check-mkl-ilp64-sharedlibs
 features = ["run-deps", "test-deps", "mkl", "mkl-ilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.build-mkl-cyilp64]
+# tasks: build-mkl-cyilp64
 features = ["build-deps", "mkl", "build-mkl-cyilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-cyilp64]
+# tasks: test-mkl-cyilp64, check-mkl-cyilp64-sharedlibs
 features = ["run-deps", "test-deps", "mkl", "mkl-cyilp64"]
 solve-group = "mkl-ilp64"
 
@@ -190,9 +219,9 @@ solve-group = "mkl-ilp64"
 # tasks: build-system-libs, test-system-libs
 features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
 
-[environments.scipy-openblas]
-# tasks: build-scipy-openblas, test-scipy-openblas
-features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
+[environments.scipy-openblas32]
+# tasks: build-scipy-openblas32, test-scipy-openblas32
+features = ["build-deps", "run-deps", "test-deps", "scipy-openblas32"]
 
 [environments.scipy-openblas64]
 # tasks: build-scipy-openblas64, test-scipy-openblas64
@@ -204,11 +233,12 @@ features = ["gha-update"]
 no-default-feature = true
 
 
-### Default dependencies (included in all environments) ###
+### Default dependencies (included in all environments by default) ###
 
 [dependencies]
 spin = "*"
-python = "*"
+# TODO: revert to `python`, pending https://github.com/google/brotli/issues/1241#issuecomment-4359720657
+python-gil = "*"
 
 
 ### Default run dependencies (for environments which run SciPy itself) ###
@@ -264,6 +294,9 @@ threadpoolctl = "*"
 pooch = "*"
 mpmath = "*"
 gmpy2 = "*"
+meson = "*"
+cython = "*"
+ninja = "*"
 
 # XXX: when updating this task, remember to update other test tasks if appropriate
 [feature.test-tasks.tasks.test]
@@ -299,6 +332,15 @@ depends-on = "build"
 description = "Run doctests"
 
 
+[feature.fail-slow.dependencies]
+pytest-fail-slow = "*"
+
+[feature.fail-slow.tasks.test-fail-slow]
+cmd = "spin test --no-build -m 'not slow' -- --durations=0 --durations-min=0.5 --fail-slow=1.0"
+depends-on = "build"
+description = "Test SciPy with `fail-slow=1.0`"
+
+
 ### Type Stubs ###
 
 [feature.type-stubs.dependencies]
@@ -322,7 +364,7 @@ jupyterlite-sphinx = "*"
 jupyterlite-pyodide-kernel = "*"
 scipy-doctest = "*"
 linkify-it-py = "*"
-make = ">=4.4.1,<5"
+make = "*"
 
 
 [feature.docs.tasks.docs]
@@ -461,6 +503,7 @@ cmd = "spin test --no-build --build-dir=build-accelerate-ilp64"
 depends-on = "build-accelerate-ilp64"
 description = "Test SciPy with accelerate (ilp64)"
 
+
 [feature.build-mkl-lp64]
 platforms = ["linux-64"]
 
@@ -480,11 +523,13 @@ cmd = "spin check --no-build --build-dir=build-mkl-lp64 --loaded-sharedlibs"
 depends-on = "build-mkl-lp64"
 description = "Check loaded shared libraries with MKL (LP64)"
 
+
 [feature.build-mkl-ilp64]
 platforms = ["linux-64"]
 
 [feature.build-mkl-ilp64.tasks.build-mkl-ilp64]
-cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-Dcython-blas-abi=lp64"
+# we use mkl-dynamic-lp64-seq, not mkl-dynamic-ilp64-seq, due to cython-blas-abi=lp64
+cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-lp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-Dcython-blas-abi=lp64"
 env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with MKL (ILP64, cython-blas LP64)"
 
@@ -497,6 +542,7 @@ description = "Test SciPy with MKL (ILP64, cython-blas LP64)"
 cmd = "spin check --no-build --build-dir=build-mkl-ilp64 --loaded-sharedlibs"
 depends-on = "build-mkl-ilp64"
 description = "Check loaded shared libraries with MKL (ILP64, cython-blas LP64)"
+
 
 [feature.build-mkl-cyilp64]
 platforms = ["linux-64"]
@@ -517,20 +563,24 @@ depends-on = "build-mkl-cyilp64"
 description = "Check loaded shared libraries with MKL (ILP64, cython-blas ILP64)"
 
 
+[feature.scipy-openblas32]
+platforms = ["linux-64", "osx-arm64", "win-64"]
 
-
-[feature.scipy-openblas.pypi-dependencies]
+[feature.scipy-openblas32.pypi-dependencies]
 scipy-openblas32 = "==0.3.31.22.0"
 
-[feature.scipy-openblas.tasks.build-scipy-openblas]
-cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas=32"
+[feature.scipy-openblas32.tasks.build-scipy-openblas32]
+cmd = "spin build --build-dir=build-scipy-openblas32 --with-scipy-openblas=32"
 env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with scipy-openblas32"
 
-[feature.scipy-openblas.tasks.test-scipy-openblas]
-cmd = "spin test --no-build --build-dir=build-scipy-openblas"
-depends-on = "build-scipy-openblas"
+[feature.scipy-openblas32.tasks.test-scipy-openblas32]
+cmd = "spin test --no-build --build-dir=build-scipy-openblas32"
+depends-on = "build-scipy-openblas32"
 description = "Test SciPy with scipy-openblas32"
+
+[feature.scipy-openblas64]
+platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.scipy-openblas64.pypi-dependencies]
 scipy-openblas64 = "==0.3.31.22.0"
@@ -544,7 +594,6 @@ description = "Build SciPy with scipy-openblas64"
 cmd = "spin test --no-build --build-dir=build-scipy-openblas64"
 depends-on = "build-scipy-openblas64"
 description = "Test SciPy with scipy-openblas64"
-
 
 
 ### CPU/CUDA features ###
@@ -789,6 +838,40 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.py312.dependencies]
 python = "3.12.*"
+
+
+[feature.py-freethreading]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.py-freethreading.dependencies]
+python-freethreading = "*"
+spin = "*"
+
+[feature.py-freethreading.activation.env]
+# TODO: remove this, pending https://github.com/google/brotli/issues/1241#issuecomment-4359720657
+PYTHON_GIL = "0"
+
+[feature.build-freethreading.tasks.build-freethreading]
+cmd = "spin build --build-dir=build-freethreading --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+description = "Build SciPy (freethreaded Python)"
+
+[feature.test-freethreading.tasks.test-freethreading]
+cmd = "spin test --no-build --build-dir=build-freethreading"
+depends-on = "build-freethreading"
+description = "Test SciPy (freethreaded Python)"
+
+[feature.test-parallel-freethreading.dependencies]
+pytest-run-parallel = "*"
+psutil = "*"
+
+[feature.test-parallel-freethreading.tasks.test-parallel-freethreading]
+# Note: Only fast tests; full test suite is unlikely to uncover anything more,
+#       and it'll be quite slow with pytest-run-parallel. Also skip
+#       tests that won't run in parallel, those are covered by the
+#       parallel == 0 run.
+cmd = "spin test --no-build --build-dir=build-freethreading -- --parallel-threads=4 --skip-thread-unsafe=true"
+depends-on = "build-freethreading"
+description = "Test SciPy (with pytest-run-parallel and freethreaded Python)"
 
 
 ### Maintenance tools ###

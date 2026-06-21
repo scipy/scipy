@@ -3,6 +3,7 @@ import math
 import warnings
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import importlib
 from itertools import product
 from math import gcd
 
@@ -37,6 +38,11 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 lazy_xp_modules = [signal]
+
+try:
+    CUPY_VERSION = importlib.metadata.version('cupy')
+except ImportError:
+    CUPY_VERSION = None
 
 
 @make_xp_test_case(convolve)
@@ -1277,10 +1283,6 @@ class TestMedFilt:
         a = np.lib.stride_tricks.as_strided(a, strides=(16,))
         xp_assert_close(signal.medfilt(a, 1),  xp.asarray([5.]))
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reason="chunk assignment does not work on jax immutable arrays"
-    )
     @pytest.mark.parametrize("dtype", ["uint8", "float32", "float64"])
     @make_xp_test_case(signal.medfilt2d)
     def test_medfilt2d_parallel(self, dtype, xp):
@@ -1335,7 +1337,7 @@ class TestMedFilt:
             # Store each result in the output as it arrives.
             for future in as_completed(futures):
                 data, Mslice, Nslice = future.result()
-                output[Mslice, Nslice] = data
+                output = xpx.at(output)[Mslice, Nslice].set(data)
 
         xp_assert_equal(output, expected)
 
@@ -2188,7 +2190,7 @@ class _TestLinearFilter:
         # Test for #22470: lfiltic does not handle `a[0] != 1`
         # and, more in general, test that lfiltic behaves consistently with lfilter
         if is_cupy(xp) and isinstance(a, int | float):
-            pytest.skip('cupy does not supoprt scalar filter coefficients')
+            pytest.skip('cupy does not support scalar filter coefficients')
         x = self.generate(6, xp)  # arbitrary input
         b = self.convert_dtype([.5, 1., .2], xp)  # arbitrary b
         a = self.convert_dtype(a, xp)
@@ -2197,7 +2199,7 @@ class _TestLinearFilter:
         K = M + N if is_cupy(xp) else max(N, M)
         # compute reference initial conditions as final conditions of lfilter
         y1, zi_1 = lfilter(b, a, x, zi=self.generate(K, xp))
-        # copute initial conditions from lfiltic
+        # compute initial conditions from lfiltic
         zi_2 = lfiltic(b, a, xp.flip(y1), xp.flip(x))
         # compare lfiltic's output with reference
         assert_array_almost_equal(zi_1, zi_2)
@@ -3426,6 +3428,15 @@ class TestHilbert2:
         x1a = signal.hilbert2(xp.reshape(x, (1, 6)))
         xp_assert_close(x0a, x1a.T)
 
+    def test_even_length_nyquist(self, xp):
+        """gh-25176: for a separable signal `hilbert2` is the outer product of
+        the 1-D analytic signals (checks the even-length Nyquist bin). """
+        a = xp.asarray([1.0, 2.0, 3.0, 4.0])
+        b = xp.asarray([4.0, 3.0, 2.0, 1.0, 5.0, 2.0])
+        x = xp.reshape(a, (-1, 1)) * xp.reshape(b, (1, -1))
+        expected = xp.reshape(hilbert(a), (-1, 1)) * xp.reshape(hilbert(b), (1, -1))
+        xp_assert_close(hilbert2(x), expected)
+
     def test_parameter_N(self, xp):
         """Compare passing tuple to single int. """
         x = xp.zeros((5, 5))
@@ -3433,8 +3444,12 @@ class TestHilbert2:
         x1_a = hilbert2(x, N=(4, 4))
         xp_assert_equal(x1_a, x0_a)
 
+    @xfail_xp_backends(
+        "cupy",
+        CUPY_VERSION and CUPY_VERSION < "14",
+        reason="Bug in cupy implementation fixed in 14.0.0, see cupy#9396"
+    )
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    @skip_xp_backends("cupy", reason="Bug in cupy implementation, see cupy#9396")
     def test_quadrant_values(self, shape, xp):
         """Compare desired and calculated values in Fourier space. """
         x_f = xp.ones(shape, dtype=xp.complex128)  # FFT of input signal
@@ -3444,18 +3459,18 @@ class TestHilbert2:
         x_as = hilbert2(x)
         x_as_f = sp_fft.fft2(x_as)
 
-        # Create slices for bins with purely positive and purely negative frequencies
-        # (can be verified with `sp_fft.fftfreq()`):
-        f0_pos, f0_neg = slice(1, (shape[0] + 1) // 2), slice((shape[0] + 1) // 2, None)
-        f1_pos, f1_neg = slice(1, (shape[1] + 1) // 2), slice((shape[1] + 1) // 2, None)
-        # Verify all values:
-        atol = 1e-12  # for x of dtype complex128
-        xp_assert_close(x_as_f[f0_pos, f1_pos], x_f[f0_pos, f1_pos] * 4, atol=atol)
-        xp_assert_close(x_as_f[0, f1_pos], x_f[0, f1_pos] * 2, atol=atol)
-        xp_assert_close(x_as_f[f0_pos, 0], x_f[f0_pos, 0] * 2, atol=atol)
-        xp_assert_close(x_as_f[0, 0], x_f[0, 0], atol=atol)
-        zz_as_f = x_as_f[f0_neg, f1_neg]  # check for zeroed orthants
-        xp_assert_close(zz_as_f, xp.zeros_like(zz_as_f), atol=atol)
+        # per-axis 1-D Hilbert factor (DC 1, positive 2, even Nyquist 1,
+        # negative 0); the 2-D factor is the outer product
+        def _factor(n):
+            f = xp.zeros(n, dtype=xp.float64)
+            f = xpx.at(f)[0].set(1.0)
+            f = xpx.at(f)[1:(n + 1) // 2].set(2.0)
+            if n % 2 == 0:
+                f = xpx.at(f)[n // 2].set(1.0)
+            return f
+        h = (xp.reshape(_factor(shape[0]), (-1, 1))
+             * xp.reshape(_factor(shape[1]), (1, -1)))
+        xp_assert_close(x_as_f, x_f * h, atol=1e-12)  # for x of dtype complex128
 
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
     def test_zero_analytic_signal(self, shape, xp):
@@ -4589,7 +4604,7 @@ class TestDeconvolve:
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
     def test_divisor_greater_signal(self, xp):
-        """Return signal as `remainder` when ``len(divisior) > len(signal)``. """
+        """Return signal as `remainder` when ``len(divisor) > len(signal)``. """
         sig, div = xp.asarray([0, 1, 2]), xp.asarray([0, 1, 2, 4, 5])
         quotient, remainder = signal.deconvolve(sig, div)
         xp_assert_equal(remainder, sig)

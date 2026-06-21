@@ -149,6 +149,8 @@ __all__ = [
     'kve',
     'log1p',
     'log_expit',
+    'log_gammainc',
+    'log_gammaincc',
     'log_ndtr',
     'log_wright_bessel',
     'loggamma',
@@ -264,7 +266,6 @@ _kolmogc: np.ufunc
 _kolmogci: np.ufunc
 _kolmogp: np.ufunc
 _lambertw: np.ufunc
-_lanczos_sum_expg_scaled: np.ufunc
 _lgam1p: np.ufunc
 _log1mexp: np.ufunc
 _log1pmx: np.ufunc
@@ -286,9 +287,6 @@ _spherical_yn: np.ufunc
 _spherical_yn_d: np.ufunc
 _von_mises_cdf: np.ufunc
 _stirling2_inexact: np.ufunc
-_struve_asymp_large_z: np.ufunc
-_struve_bessel_series: np.ufunc
-_struve_power_series: np.ufunc
 _zeta: np.ufunc
 agm: np.ufunc
 airy: np.ufunc
@@ -433,6 +431,8 @@ kv: np.ufunc
 kve: np.ufunc
 log1p: np.ufunc
 log_expit: np.ufunc
+log_gammainc: np.ufunc
+log_gammaincc: np.ufunc
 log_ndtr: np.ufunc
 log_wright_bessel: np.ufunc
 loggamma: np.ufunc

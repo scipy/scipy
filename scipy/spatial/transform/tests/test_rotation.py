@@ -74,7 +74,7 @@ def test_generic_quat_matrix(xp):
     xp_assert_close(r.as_quat(), expected_quat)
 
 
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", list(range(1, 6)))
 def test_from_single_nd_quaternion(xp, ndim: int):
     x = xp.asarray([3.0, 4, 0, 0])
     x = xp.reshape(x, (1,) * (ndim - 1) + (4,))
@@ -248,7 +248,7 @@ def test_quat_double_cover(xp):
                     xp.asarray([0.0, 0, 0, -1]), atol=2e-16)
 
 
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", list(range(1, 6)))
 def test_from_quat_wrong_shape(xp, ndim: int):
     quat = xp.zeros((*((1,) * ndim), 5))
     with pytest.raises(ValueError, match="Expected `quat` to have shape"):
@@ -269,7 +269,7 @@ def test_zero_norms_from_quat(xp):
 
 
 @make_xp_test_case((Rotation, "as_matrix"))
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", list(range(1, 6)))
 def test_as_matrix_single_nd_quaternion(xp, ndim: int):
     quat = xp.asarray([0, 0, 1, 1])
     quat = xp.reshape(quat, (1,) * (ndim - 1) + (4,))
@@ -344,7 +344,7 @@ def test_as_matrix_from_generic_input(xp):
 
 
 @make_xp_test_case((Rotation, "from_matrix"))
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", list(range(1, 6)))
 def test_from_single_nd_matrix(xp, ndim: int):
     mat = xp.asarray([
             [0, 0, 1],
@@ -475,7 +475,7 @@ def test_from_matrix_int_dtype(xp):
 
 
 @make_xp_test_case((Rotation, "from_rotvec"))
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", list(range(1, 6)))
 def test_from_nd_single_rotvec(xp, ndim: int):
     atol = 1e-7
     rotvec = xp.asarray([1, 0, 0])
@@ -567,7 +567,7 @@ def test_malformed_1d_from_rotvec(xp):
 
 
 @make_xp_test_case((Rotation, "from_rotvec"))
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", list(range(1, 6)))
 def test_malformed_nd_from_rotvec(xp, ndim: int):
     shape = (1,) * (ndim - 1) + (2,)
     with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
@@ -593,7 +593,7 @@ def test_as_generic_rotvec(xp):
 
 
 @make_xp_test_case((Rotation, "as_rotvec"))
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_as_rotvec_single_nd_input(xp, ndim: int):
     quat = xp.asarray([1, 2, -3, 2])
     quat = xp.reshape(quat, (1,) * (ndim - 1) + (4,))
@@ -711,7 +711,7 @@ def test_past_180_degree_rotation(xp):
 
 
 @make_xp_test_case((Rotation, "as_mrp"))
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_as_mrp_single_nd_input(xp, ndim: int):
     quat = xp.asarray([1, 2, -3, 2])
     quat = xp.reshape(quat, (1,) * (ndim - 1) + (4,))
@@ -756,7 +756,7 @@ def test_from_euler_input_validation(xp):
 
 
 @make_xp_test_case((Rotation, "from_euler"))
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_from_euler_nd_rotation(xp, ndim: int):
     angles = xp.reshape(xp.asarray([0, 0, 90]), (1,) * (ndim - 1) + (3,))
     quat = Rotation.from_euler("xyz", angles, degrees=True).as_quat()
@@ -932,7 +932,7 @@ def test_from_euler_scalar():
 
 
 @make_xp_test_case((Rotation, "from_euler"), (Rotation, "as_euler"))
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("seq_tuple", list(permutations("xyz")))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
     # helper function for mean error tests
@@ -963,7 +963,7 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
 
 
 @make_xp_test_case((Rotation, "from_euler"), (Rotation, "as_euler"))
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("seq_tuple", list(permutations("xyz")))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
     # helper function for mean error tests
@@ -1009,7 +1009,7 @@ def maybe_warn_gimbal_lock(should_warn, xp):
 @make_xp_test_case(
     (Rotation, "from_euler"), (Rotation, "as_matrix"), (Rotation, "as_euler")
 )
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("seq_tuple", list(permutations("xyz")))
 @pytest.mark.parametrize("intrinsic", (False, True))
 @pytest.mark.parametrize("suppress_warnings", (False, True))
 def test_as_euler_degenerate_asymmetric_axes(
@@ -1045,7 +1045,7 @@ def test_as_euler_degenerate_asymmetric_axes(
 @make_xp_test_case(
     (Rotation, "from_euler"), (Rotation, "as_matrix"), (Rotation, "as_euler")
 )
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("seq_tuple", list(permutations("xyz")))
 @pytest.mark.parametrize("intrinsic", (False, True))
 @pytest.mark.parametrize("suppress_warnings", (False, True))
 def test_as_euler_degenerate_symmetric_axes(
@@ -1080,7 +1080,7 @@ def test_as_euler_degenerate_symmetric_axes(
 
 
 @make_xp_test_case((Rotation, "from_euler"), (Rotation, "as_euler"))
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_as_euler_nd_rotation(xp, ndim: int):
     mat = xp.asarray([
         [0.0, -1, 0],
@@ -1227,7 +1227,7 @@ def test_identity_shape():  # Not an xp test, identity is using numpy only for n
 
 
 @make_xp_test_case((Rotation, "magnitude"))
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_magnitude(xp, ndim: int):
     quat_shape = (1,) * (ndim - 1) + (4,)
     quat = xp.reshape(xp.eye(4), quat_shape + (4,))
@@ -1338,7 +1338,7 @@ def test_approx_equal_batched_input_validation(xp):
 @make_xp_test_case(
     (Rotation, "from_rotvec"), (Rotation, "mean"), (Rotation, "magnitude")
 )
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_mean(xp, ndim: int):
     axes = xp.concat((-xp.eye(3), xp.eye(3)))
     axes = xp.reshape(axes, (1,) * (ndim - 1) + (6, 3))
@@ -1354,7 +1354,7 @@ def test_mean(xp, ndim: int):
 @make_xp_test_case(
     (Rotation, "from_rotvec"), (Rotation, "mean"), (Rotation, "magnitude")
 )
-@pytest.mark.parametrize("ndim", range(1, 5))
+@pytest.mark.parametrize("ndim", list(range(1, 5)))
 def test_mean_axis(xp, ndim: int):
     axes = xp.tile(xp.concat((-xp.eye(3), xp.eye(3))), (3,) * (ndim - 1) + (1, 1))
     theta = xp.pi / 4
@@ -1403,7 +1403,7 @@ def test_mean_compare_axis(xp):
 
 @make_xp_test_case((Rotation, "from_rotvec"), (Rotation, "mean"), (Rotation, "inv"),
                    (Rotation, "magnitude"))
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_weighted_mean(xp, ndim: int):
     # test that doubling a weight is equivalent to including a rotation twice.
     thetas = xp.linspace(0, xp.pi / 2, 100)
@@ -1537,7 +1537,7 @@ def test_apply_single_rotation_single_point(xp):
 
 
 @make_xp_test_case((Rotation, "from_matrix"), (Rotation, "apply"))
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_apply_single_rotation_multiple_points(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     mat = xp.asarray([
@@ -1563,7 +1563,7 @@ def test_apply_single_rotation_multiple_points(xp, ndim: int):
 
 
 @make_xp_test_case((Rotation, "from_matrix"), (Rotation, "apply"))
-@pytest.mark.parametrize("ndim", range(1, 5))
+@pytest.mark.parametrize("ndim", list(range(1, 5)))
 def test_apply_multiple_rotations_single_point(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     mat = np.empty((2, 3, 3))
@@ -1599,7 +1599,7 @@ def test_apply_multiple_rotations_single_point(xp, ndim: int):
 
 
 @make_xp_test_case((Rotation, "from_matrix"), (Rotation, "apply"))
-@pytest.mark.parametrize("ndim", range(1, 5))
+@pytest.mark.parametrize("ndim", list(range(1, 5)))
 def test_apply_multiple_rotations_multiple_points(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     mat = np.empty((2, 3, 3))
@@ -1696,7 +1696,7 @@ def test_apply_input_validation(xp):
 @make_xp_test_case(
     (Rotation, "from_matrix"), (Rotation, "as_matrix"), (Rotation, "__getitem__")
 )
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_getitem(xp, ndim: int):
     rng = np.random.default_rng(0)
     quat = rng.normal(size=(2, ) + (ndim,) * (ndim - 1) + (4,))
@@ -2498,7 +2498,7 @@ def test_multiplication_stability(xp):
     (Rotation, "inv"), (Rotation, "__pow__"), (Rotation, "inv"),
     (Rotation, "magnitude"), (Rotation, "from_rotvec"), (Rotation, "as_rotvec")
 )
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_pow(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     atol = 1e-14 if dtype == xp.float64 else 1e-6
@@ -2738,7 +2738,7 @@ def test_from_davenport_one_or_two_axes(xp):
 
 
 @make_xp_test_case((Rotation, "from_davenport"))
-@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("ndim", list(range(1, 4)))
 def test_from_davenport_shapes(xp, ndim: int):
     # The shape rules for ND rotations are as follows:
     # axes.shape[-2] must be angles.shape[-1]
@@ -3074,7 +3074,7 @@ def test_zero_rotation_multiplication(xp):
 
 
 @make_xp_test_case((Rotation, "concatenate"))
-def test_zero_rotation_concatentation(xp):
+def test_zero_rotation_concatenation(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
 
     r0 = Rotation.concatenate([r, r])
@@ -3196,7 +3196,7 @@ def test_rotation_iter(xp):
             raise RuntimeError("Iteration exceeded length of rotations")
 
 
-@pytest.mark.parametrize("ndim", range(1, 5))
+@pytest.mark.parametrize("ndim", list(range(1, 5)))
 def test_rotation_shape(xp, ndim: int):
     shape = tuple(range(2, 2 + ndim)[:ndim - 1])
     quat = xp.ones(shape + (4,))

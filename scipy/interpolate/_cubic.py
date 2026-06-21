@@ -7,6 +7,7 @@ import numpy as np
 from scipy.linalg import solve, solve_banded
 from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
 from scipy._external.array_api_compat import numpy as np_compat
+import scipy._external.array_api_extra as xpx
 
 from . import PPoly
 from ._polyint import _isscalar
@@ -405,10 +406,8 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         return [P.derivative(nu)(x) for nu in der]
 
 
-@xp_capabilities(cpu_only=True, xfail_backends=[
+@xp_capabilities(cpu_only=True, jax_jit=False, xfail_backends=[
     ("dask.array", "lacks nd fancy indexing"),
-    ("jax.numpy", "immutable arrays"),
-    ("array_api_strict", "fancy indexing __setitem__"),
 ])
 class Akima1DInterpolator(CubicHermiteSpline):
     r"""Akima "visually pleasing" interpolator (C1 smooth).
@@ -553,19 +552,19 @@ class Akima1DInterpolator(CubicHermiteSpline):
             hk = xv[1:, ...] - xv[:-1, ...]
             mk = (y[1:, ...] - y[:-1, ...]) / hk
             t = xp.zeros_like(y)
-            t[...] = mk
+            t = xpx.at(t)[...].set(mk)
         else:
             # determine slopes between breakpoints
-            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:])
+            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:], dtype=x.dtype)
             dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
-            m[2:-2, ...] = xp.diff(y, axis=0) / dx
+            m = xpx.at(m)[2:-2, ...].set(xp.diff(y, axis=0) / dx)
 
             # add two additional points on the left ...
-            m[1, ...] = 2. * m[2, ...] - m[3, ...]
-            m[0, ...] = 2. * m[1, ...] - m[2, ...]
+            m = xpx.at(m)[1, ...].set(2. * m[2, ...] - m[3, ...])
+            m = xpx.at(m)[0, ...].set(2. * m[1, ...] - m[2, ...])
             # ... and on the right
-            m[-2, ...] = 2. * m[-3, ...] - m[-4, ...]
-            m[-1, ...] = 2. * m[-2, ...] - m[-3, ...]
+            m = xpx.at(m)[-2, ...].set(2. * m[-3, ...] - m[-4, ...])
+            m = xpx.at(m)[-1, ...].set(2. * m[-2, ...] - m[-3, ...])
 
             # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
             # defined. This is the fill value:
@@ -592,13 +591,13 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
             # These are the mask of where the slope at breakpoint is defined:
             mmax = xp.max(f12) if xp_size(f12) > 0 else -xp.inf
-            ind = xp.nonzero(f12 > break_mult * mmax)
-
-            x_ind, y_ind = ind[0], ind[1:]
+            ind = f12 > break_mult * mmax
             # Set the slope at breakpoint
-            t[ind] = m[(x_ind + 1,) + y_ind] + (
-                (f2[ind] / f12[ind])
-                * (m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind])
+            t = xp.where(
+                ind,
+                m[1:-2, ...]
+                + (f2 / xp.where(ind, f12, 1)) * (m[2:-1, ...] - m[1:-2, ...]),
+                t,
             )
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)

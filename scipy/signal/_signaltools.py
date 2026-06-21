@@ -2748,13 +2748,16 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     Xf = sp_fft.fft2(x, N, axes=axes)
     Xf = xp.moveaxis(Xf, axes, (-2, -1))
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
+    # For even lengths keep the unpaired Nyquist bin (factor 1), as in `hilbert`.
+    z0 = N[0] // 2 + 1
+    z1 = N[1] // 2 + 1
 
     if k0 > 1:  # condition k0 > 1 needed for Dask backend
         Xf = xpx.at(Xf)[..., 1:k0, :].multiply(2.0)
     if k1 > 1:  # condition k1 > 1 needed for Dask backend
         Xf = xpx.at(Xf)[..., :, 1:k1].multiply(2.0)
-    Xf = xpx.at(Xf)[..., k0:, :].set(0.0)
-    Xf = xpx.at(Xf)[..., :, k1:].set(0.0)
+    Xf = xpx.at(Xf)[..., z0:, :].set(0.0)
+    Xf = xpx.at(Xf)[..., :, z1:].set(0.0)
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)
@@ -2926,7 +2929,7 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     i.e., representing the absolute value of the instantaneous amplitude.
 
     The right plot shows the real part of that analytic signal being interpreted
-    as a complex-vauled signal, i.e., having zero imaginary part. There the resulting
+    as a complex-valued signal, i.e., having zero imaginary part. There the resulting
     envelope is not as smooth as in the analytic case and the instantaneous amplitude
     in the real plane is not recovered. If ``z_re`` had been passed as a real-valued
     signal, i.e., as ``z_re = z.real`` instead of ``z_re = z.real + 0j``, the result
@@ -3794,7 +3797,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     speed matters up, `resample_poly` is used to downsample first by a factor of ``n0
     // n1 = 155`` and then pass the result to `resample`. Two parameterization of
     `resample_poly` are used: Passing ``padtype='wrap'`` treats the input as being
-    periodic wheras the default parametrization performs zero-padding. The upper
+    periodic whereas the default parametrization performs zero-padding. The upper
     subplot shows the resulting signals over time whereas the lower subplot depicts the
     resulting one-sided magnitude spectra.
 
@@ -4476,7 +4479,7 @@ def lfilter_zi(b, a):
     The following code creates a lowpass Butterworth filter to filter a signal made up
     of ones. As expected of a lowpass filter, the output is also all ones. If the `zi`
     argument of `lfilter` had not been given, a transient signal would have been
-    produced. The second signal illustrates that using the parameter `zi` supresses
+    produced. The second signal illustrates that using the parameter `zi` suppresses
     transients at the beginning of the output signal:
 
     >>> import numpy as np
@@ -5302,7 +5305,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         The input signal made up of equidistant samples. If `x` is a multidimensional
         array, the parameter `axis` specifies the time axis.
     q : int
-        The downsampling factor, which is a postive integer. When using IIR
+        The downsampling factor, which is a positive integer. When using IIR
         downsampling, it is recommended to call `decimate` multiple times for
         downsampling factors higher than 13.
     n : int, optional

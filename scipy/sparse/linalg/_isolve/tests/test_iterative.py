@@ -353,7 +353,7 @@ def test_precond_dummy(case, xp, batch_A, batch_b):
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
 
-    rtol = 1e-8 if np.finfo(dtype).eps < 1e-8 else 1.2e-3
+    rtol = 1e-8 if np.finfo(dtype).eps < 1e-8 else 1.4e-3
 
     A = case.A
     

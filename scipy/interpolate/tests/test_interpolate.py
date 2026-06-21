@@ -903,29 +903,30 @@ class TestAkima1DInterpolator:
         yi = xp.stack((yi, 2. * yi), axis=1)
         xp_assert_close(ak(xi), yi)
 
-    def test_eval_3d(self):
-        x = np.arange(0., 11.)
-        y_ = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
-        y = np.empty((11, 2, 2))
-        y[:, 0, 0] = y_
-        y[:, 1, 0] = 2. * y_
-        y[:, 0, 1] = 3. * y_
-        y[:, 1, 1] = 4. * y_
+    def test_eval_3d(self, xp):
+        x = xp.arange(0., 11., dtype=xp.float64)
+        y_ = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.],
+                        dtype=xp.float64)
+        y = xp.empty((11, 2, 2), dtype=xp.float64)
+        y = xpx.at(y)[:, 0, 0].set(y_)
+        y = xpx.at(y)[:, 1, 0].set(2. * y_)
+        y = xpx.at(y)[:, 0, 1].set(3. * y_)
+        y = xpx.at(y)[:, 1, 1].set(4. * y_)
         ak = Akima1DInterpolator(x, y)
-        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
-                       8.6, 9.9, 10.])
-        yi = np.empty((13, 2, 2))
-        yi_ = np.array([0., 1.375, 2., 1.5, 1.953125, 2.484375,
-                        4.1363636363636366866103344,
-                        5.9803623910336236590978842,
-                        5.5067291516462386624652936,
-                        5.2031367459745245795943447,
-                        4.1796554159017080820603951,
-                        3.4110386597938129327189927, 3.])
-        yi[:, 0, 0] = yi_
-        yi[:, 1, 0] = 2. * yi_
-        yi[:, 0, 1] = 3. * yi_
-        yi[:, 1, 1] = 4. * yi_
+        xi = xp.asarray([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+                         8.6, 9.9, 10.], dtype=xp.float64)
+        yi = xp.empty((13, 2, 2), dtype=xp.float64)
+        yi_ = xp.asarray([0., 1.375, 2., 1.5, 1.953125, 2.484375,
+                          4.1363636363636366866103344,
+                          5.9803623910336236590978842,
+                          5.5067291516462386624652936,
+                          5.2031367459745245795943447,
+                          4.1796554159017080820603951,
+                          3.4110386597938129327189927, 3.], dtype=xp.float64)
+        yi = xpx.at(yi)[:, 0, 0].set(yi_)
+        yi = xpx.at(yi)[:, 1, 0].set(2. * yi_)
+        yi = xpx.at(yi)[:, 0, 1].set(3. * yi_)
+        yi = xpx.at(yi)[:, 1, 1].set(4. * yi_)
         xp_assert_close(ak(xi), yi)
 
     def test_linear_interpolant_edge_case_1d(self, xp):
@@ -948,29 +949,29 @@ class TestAkima1DInterpolator:
         ak = Akima1DInterpolator(x, y.T, axis=1)
         xp_assert_close(ak(xi), yi.T)
 
-    def test_linear_interpolant_edge_case_3d(self):
-        x = np.arange(0., 2.)
-        y_ = np.array([0., 1.])
-        y = np.empty((2, 2, 2))
-        y[:, 0, 0] = y_
-        y[:, 1, 0] = 2. * y_
-        y[:, 0, 1] = 3. * y_
-        y[:, 1, 1] = 4. * y_
+    def test_linear_interpolant_edge_case_3d(self, xp):
+        x = xp.arange(0., 2., dtype=xp.float64)
+        y_ = xp.asarray([0., 1.], dtype=xp.float64)
+        y = xp.empty((2, 2, 2), dtype=xp.float64)
+        y = xpx.at(y)[:, 0, 0].set(y_)
+        y = xpx.at(y)[:, 1, 0].set(2. * y_)
+        y = xpx.at(y)[:, 0, 1].set(3. * y_)
+        y = xpx.at(y)[:, 1, 1].set(4. * y_)
         ak = Akima1DInterpolator(x, y)
-        yi_ = np.array([0.5, 1.])
-        yi = np.empty((2, 2, 2))
-        yi[:, 0, 0] = yi_
-        yi[:, 1, 0] = 2. * yi_
-        yi[:, 0, 1] = 3. * yi_
-        yi[:, 1, 1] = 4. * yi_
+        yi_ = xp.asarray([0.5, 1.], dtype=xp.float64)
+        yi = xp.empty((2, 2, 2), dtype=xp.float64)
+        yi = xpx.at(yi)[:, 0, 0].set(yi_)
+        yi = xpx.at(yi)[:, 1, 0].set(2. * yi_)
+        yi = xpx.at(yi)[:, 0, 1].set(3. * yi_)
+        yi = xpx.at(yi)[:, 1, 1].set(4. * yi_)
         xi = yi_
         xp_assert_close(ak(xi), yi)
 
-        ak = Akima1DInterpolator(x, y.transpose(1, 0, 2), axis=1)
-        xp_assert_close(ak(xi), yi.transpose(1, 0, 2))
+        ak = Akima1DInterpolator(x, xp.permute_dims(y, (1, 0, 2)), axis=1)
+        xp_assert_close(ak(xi), xp.permute_dims(yi, (1, 0, 2)))
 
-        ak = Akima1DInterpolator(x, y.transpose(2, 1, 0), axis=2)
-        xp_assert_close(ak(xi), yi.transpose(2, 1, 0))
+        ak = Akima1DInterpolator(x, xp.permute_dims(y, (2, 1, 0)), axis=2)
+        xp_assert_close(ak(xi), xp.permute_dims(yi, (2, 1, 0)))
 
     def test_degenerate_case_multidimensional(self, xp):
         # This test is for issue #5683.
@@ -981,26 +982,28 @@ class TestAkima1DInterpolator:
         y_eval = ak(x_eval)
         xp_assert_close(y_eval, xp.stack((x_eval, x_eval**2)).T)
 
-    def test_extend(self):
-        x = np.arange(0., 11.)
-        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+    def test_extend(self, xp):
+        x = xp.arange(0., 11., dtype=xp.float64)
+        y = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.],
+                       dtype=xp.float64)
         ak = Akima1DInterpolator(x, y)
         match = "Extending a 1-D Akima interpolator is not yet implemented"
         with pytest.raises(NotImplementedError, match=match):
             ak.extend(None, None)
 
-    def test_mod_invalid_method(self):
-        x = np.arange(0., 11.)
-        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+    def test_mod_invalid_method(self, xp):
+        x = xp.arange(0., 11., dtype=xp.float64)
+        y = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.],
+                       dtype=xp.float64)
         match = "`method`=invalid is unsupported."
         with pytest.raises(NotImplementedError, match=match):
             Akima1DInterpolator(x, y, method="invalid")  # type: ignore
 
-    def test_extrapolate_attr(self):
+    def test_extrapolate_attr(self, xp):
         #
-        x = np.linspace(-5, 5, 11)
+        x = xp.linspace(-5, 5, 11, dtype=xp.float64)
         y = x**2
-        x_ext = np.linspace(-10, 10, 17)
+        x_ext = xp.linspace(-10, 10, 17, dtype=xp.float64)
         y_ext = x_ext**2
         # Testing all extrapolate cases.
         ak_true = Akima1DInterpolator(x, y, extrapolate=True)
@@ -1015,11 +1018,15 @@ class TestAkima1DInterpolator:
         # Testing extrapoation to actual function.
         xp_assert_close(y_ext, ak_true(x_ext), atol=1e-15)
 
-
-    def test_no_overflow(self):
+    def test_no_overflow(self, xp):
         # check a large jump does not cause a float overflow
-        x = np.arange(1, 10)
-        y = 1.e6*np.sqrt(np.finfo(float).max)*np.heaviside(x-4, 0.5)
+        x = xp.arange(1., 10., dtype=xp.float64)
+        scale = xp.sqrt(xp.asarray(xp.finfo(xp.float64).max, dtype=xp.float64))
+        y = 1.e6 * scale * xp.where(
+            x < 4,
+            xp.zeros_like(x),
+            xp.where(x == 4, 0.5 * xp.ones_like(x), xp.ones_like(x)),
+        )
 
         ak1 = Akima1DInterpolator(x, y, method='makima')
         ak2 = Akima1DInterpolator(x, y, method='akima')
@@ -1027,8 +1034,8 @@ class TestAkima1DInterpolator:
         y_eval1 = ak1(x)
         y_eval2 = ak2(x)
 
-        assert np.isfinite(y_eval1).all()
-        assert np.isfinite(y_eval2).all()
+        assert xp.all(xp.isfinite(y_eval1))
+        assert xp.all(xp.isfinite(y_eval2))
 
 
 @pytest.mark.parametrize("method", [Akima1DInterpolator, PchipInterpolator])

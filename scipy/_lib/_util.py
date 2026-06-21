@@ -31,7 +31,7 @@ copy_if_needed: bool | None = None
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
 # See gh-23913
 #
-# PEP 649/749 allows for underfined annotations at runtime, and added the
+# PEP 649/749 allows for undefined annotations at runtime, and added the
 # `annotation_format` parameter to handle these cases.
 # `annotationlib.Format.FORWARDREF` is the closest to previous behavior,
 # returning ForwardRef objects fornew undefined annotations cases.
@@ -1152,7 +1152,7 @@ def _apply_over_batch(*argdefs):
             # Main loop
             results = []
             for index in np.ndindex(batch_shape):
-                result = f(*((array[index] if array is not None else None)
+                result = f(*((array[*index, ...] if array is not None else None)
                              for array in arrays), *other_args, **kwargs)
                 # Assume `result` is either a tuple or single array. This is easily
                 # generalized by allowing the contributor to pass an `unpack_result`
