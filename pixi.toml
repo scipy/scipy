@@ -57,7 +57,7 @@ solve-group = "default"
 
 [environments.docs]
 # tasks: docs
-features = ["docs"]
+features = ["docs", "marray"]
 solve-group = "default"
 
 [environments.test-fail-slow]
