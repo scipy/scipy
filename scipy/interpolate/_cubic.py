@@ -171,17 +171,13 @@ class CubicHermiteSpline(PPoly):
         self.axis = axis
 
 
-# The commented out xp_capabilities below are probably right but since
-# this is untested, mark as np_only. TODO: convert the tests.
-#
-# @xp_capabilities(
-#     cpu_only=True, jax_jit=False,
-#     skip_backends=[
-#         ("dask.array",
-#          "https://github.com/data-apis/array-api-extra/issues/488")
-#     ]
-# )
-@xp_capabilities(np_only=True, reason="not tested")
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class PchipInterpolator(CubicHermiteSpline):
     r"""PCHIP shape-preserving interpolator (C1 smooth).
 
@@ -289,8 +285,8 @@ class PchipInterpolator(CubicHermiteSpline):
         mask2 = (xp.sign(m0) != xp.sign(m1)) & (xp.abs(d) > 3.*xp.abs(m0))
         mmm = (~mask) & mask2
 
-        d[mask] = 0.
-        d[mmm] = 3.*m0[mmm]
+        d = xpx.at(d)[mask].set(0.)
+        d = xpx.at(d)[mmm].set(3.*m0[mmm])
 
         return d
 
@@ -311,35 +307,45 @@ class PchipInterpolator(CubicHermiteSpline):
             x = x[:, None]
             y = y[:, None]
 
-        hk = x[1:] - x[:-1]
-        mk = (y[1:] - y[:-1]) / hk
+        hk = x[1:, ...] - x[:-1, ...]
+        mk = (y[1:, ...] - y[:-1, ...]) / hk
 
         if y.shape[0] == 2:
             # edge case: only have two points, use linear interpolation
             dk = xp.zeros_like(y)
-            dk[0] = mk
-            dk[1] = mk
+            dk = xpx.at(dk)[0, ...].set(mk[0, ...])
+            dk = xpx.at(dk)[1, ...].set(mk[0, ...])
             return xp.reshape(dk, y_shape)
 
         smk = xp.sign(mk)
-        condition = (smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0)
+        condition = ((smk[1:, ...] != smk[:-1, ...])
+                     | (mk[1:, ...] == 0) | (mk[:-1, ...] == 0))
 
-        w1 = 2*hk[1:] + hk[:-1]
-        w2 = hk[1:] + 2*hk[:-1]
+        w1 = 2*hk[1:, ...] + hk[:-1, ...]
+        w2 = hk[1:, ...] + 2*hk[:-1, ...]
 
         # values where division by zero occurs will be excluded
         # by 'condition' afterwards
         with np.errstate(divide='ignore', invalid='ignore'):
-            whmean = (w1/mk[:-1] + w2/mk[1:]) / (w1 + w2)
+            whmean = (w1/mk[:-1, ...] + w2/mk[1:, ...]) / (w1 + w2)
 
-        dk = np.zeros_like(y)
-        dk[1:-1][condition] = 0.0
-        dk[1:-1][~condition] = 1.0 / whmean[~condition]
+        dk = xp.zeros_like(y)
+        dk = xpx.at(dk)[1:-1, ...].set(
+            xp.where(condition, xp.zeros_like(whmean), 1.0 / whmean)
+        )
 
         # special case endpoints, as suggested in
         # Cleve Moler, Numerical Computing with MATLAB, Chap 3.6 (pchiptx.m)
-        dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1], xp=xp)
-        dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2], xp=xp)
+        dk = xpx.at(dk)[0, ...].set(
+            PchipInterpolator._edge_case(
+                hk[0, ...], hk[1, ...], mk[0, ...], mk[1, ...], xp=xp
+            )
+        )
+        dk = xpx.at(dk)[-1, ...].set(
+            PchipInterpolator._edge_case(
+                hk[-1, ...], hk[-2, ...], mk[-1, ...], mk[-2, ...], xp=xp
+            )
+        )
 
         return xp.reshape(dk, y_shape)
 
