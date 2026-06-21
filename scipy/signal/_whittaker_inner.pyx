@@ -16,8 +16,8 @@ def _solve_WH_order2(double[:] y, double lamb):
     d = 1 + lamb
     f[0] = 1 / d
     mu = 2
-    e[0] = mu / d
-    b[0] = lamb * y[0] / d
+    e[0] = mu * f[0]
+    b[0] = f[0] * lamb * y[0]
     mu_old = mu
 
     if n == 3:
@@ -27,16 +27,16 @@ def _solve_WH_order2(double[:] y, double lamb):
         d = 5 + lamb - mu_old * e[0]
         mu = 4 - e[0]
     f[1] = 1 / d
-    e[1] = mu / d
-    b[1] = (lamb * y[1] + mu_old * b[0]) / d
+    e[1] = mu * f[1]
+    b[1] = f[1] * (lamb * y[1] + mu_old * b[0])
     mu_old = mu
 
     for i in range(2, n - 2):
         d = 6 + lamb - mu_old * e[i-1] - f[i-2]
         f[i] = 1 / d
         mu = 4 - e[i-1]
-        e[i] = mu / d
-        b[i] = (lamb * y[i] + mu_old * b[i-1] - b[i-2]) / d
+        e[i] = mu * f[i]
+        b[i] = f[i] * (lamb * y[i] + mu_old * b[i-1] - b[i-2])
         mu_old = mu
 
     if n >= 4:
@@ -44,14 +44,14 @@ def _solve_WH_order2(double[:] y, double lamb):
         d = 5 + lamb - mu_old * e[i-1] - f[i-2]
         f[i] = 1 / d
         mu = 2 - e[i-1]
-        e[i] = mu / d
-        b[i] = (lamb * y[i] + mu_old * b[i-1] - b[i-2]) / d
+        e[i] = mu * f[i]
+        b[i] = f[i] * (lamb * y[i] + mu_old * b[i-1] - b[i-2])
         mu_old = mu
 
     i = n - 1
     d = 1 + lamb - mu_old * e[i-1] - f[i-2]
     f[i] = 1 / d
-    b[i] = (lamb * y[i] + mu_old * b[i-1] - b[i-2]) / d
+    b[i] = f[i] * (lamb * y[i] + mu_old * b[i-1] - b[i-2])
 
     x[n-1] = b[n-1]
     x[n-2] = b[n-2] + e[n-2] * x[n-1]
