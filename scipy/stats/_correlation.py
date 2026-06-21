@@ -719,6 +719,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     slopes = xp.sort(slopes, axis=-1)
     delta = xp.take_along_axis(slopes, R, axis=-1)
     i_nan = xp.broadcast_to(sigsq < 0, delta.shape)
+    i_nan = i_nan.data if is_marray(xp) else i_nan
     delta = xpx.at(delta)[i_nan].set(xp.nan)
 
     slope = medslope[()] if medslope.ndim == 0 else medslope
