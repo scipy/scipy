@@ -9410,7 +9410,7 @@ def quantile_test(x, *, q=0.0, p=0.5, alternative='two-sided', axis=0, keepdims=
         The object also has the following method:
 
         confidence_interval(confidence_level=0.95)
-            Computes a confidence interval around the the
+            Computes a confidence interval around the
             population quantile associated with the probability `p`. The
             confidence interval is returned in a ``namedtuple`` with
             fields `low` and `high`.  Values are `nan` when there are
