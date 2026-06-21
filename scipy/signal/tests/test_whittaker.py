@@ -5,6 +5,7 @@ from scipy.signal import whittaker_henderson  # type: ignore[attr-defined]
 from scipy.signal._whittaker import (
     _logdet_difference_matrix, _polynomial_fit, _reml, _solveh_banded, _solve_WH_banded,
 )
+from scipy.signal._whittaker_inner import _solve_WH_order2
 from scipy.stats import special_ortho_group
 
 
@@ -231,6 +232,17 @@ def test_whittaker_direct_vs_fast_order2(n):
 
     wh = whittaker_henderson(signal, lamb=1.23, order=2)
     assert_allclose(wh.x, x1, rtol=1e-11)
+
+
+@pytest.mark.parametrize("n", [3, 4, 5, 6, 20, 100])
+@pytest.mark.parametrize("lamb", [1e-3, 1.23, 1e3])
+def test_whittaker_compiled_order2_fast(n, lamb):
+    rng = np.random.default_rng(42)
+    signal = np.sin(2 * np.pi * np.linspace(0, 1, n)) + rng.standard_normal(n)
+    x_compiled = _solve_WH_order2(signal, lamb)
+    x_banded, _ = _solve_WH_banded(signal, lamb=lamb, order=2)
+    assert_allclose(x_compiled, x_banded, rtol=1e-9)
+    assert_allclose(whittaker_henderson(signal, lamb=lamb, order=2).x, x_compiled)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])

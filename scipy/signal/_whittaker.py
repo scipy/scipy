@@ -4,6 +4,7 @@ from scipy._lib._util import _RichResult, _validate_int
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
+from scipy.signal._whittaker_inner import _solve_WH_order2
 
 
 def _solveh_banded(ab, b, calc_logdet=False):
@@ -248,6 +249,9 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
         raise ValueError(msg)
     elif lamb == 0.0:
         x = np.asarray(signal).copy()
+    elif order == 2 and weights is None and lamb * np.finfo(np.float64).eps <= 8:
+        # use the fast order 2 solver here and fall back to banded for big lamb
+        x = _solve_WH_order2(np.asarray(signal, dtype=float), lamb)
     else:
         x, _ = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
     return _RichResult(x=x, lamb=lamb)
