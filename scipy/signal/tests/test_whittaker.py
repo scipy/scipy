@@ -235,14 +235,33 @@ def test_whittaker_direct_vs_fast_order2(n):
 
 
 @pytest.mark.parametrize("n", [3, 4, 5, 6, 20, 100])
-@pytest.mark.parametrize("lamb", [1e-3, 1.23, 1e3])
+@pytest.mark.parametrize("lamb", [1e-6, 1e-3, 1.23, 1e3, 1e6, 1e11])
 def test_whittaker_compiled_order2_fast(n, lamb):
+    """The compiled order=2 fast path reproduces the Python reference exactly."""
     rng = np.random.default_rng(42)
     signal = np.sin(2 * np.pi * np.linspace(0, 1, n)) + rng.standard_normal(n)
     x_compiled = _solve_WH_order2(signal, lamb)
-    x_banded, _ = _solve_WH_banded(signal, lamb=lamb, order=2)
-    assert_allclose(x_compiled, x_banded, rtol=1e-9)
+    x_reference = _solve_WH_order2_fast(signal, lamb)
+    assert_allclose(x_compiled, x_reference, rtol=1e-12)
     assert_allclose(whittaker_henderson(signal, lamb=lamb, order=2).x, x_compiled)
+    # The two solvers only agree while the penalty is well conditioned; at very
+    # large lamb both lose precision together (see test_whittaker_limit_infinity_penalty).
+    if lamb <= 1e3:
+        x_banded, _ = _solve_WH_banded(signal, lamb=lamb, order=2)
+        assert_allclose(x_compiled, x_banded, rtol=1e-9)
+
+
+def test_whittaker_compiled_order2_dtype():
+    """The fast path accepts non-contiguous and integer-typed input."""
+    signal = np.arange(0, 20, 2)  # integer dtype
+    wh = whittaker_henderson(signal, lamb=1.23, order=2)
+    x_banded, _ = _solve_WH_banded(signal.astype(float), lamb=1.23, order=2)
+    assert_allclose(wh.x, x_banded, rtol=1e-11)
+    # Non-contiguous view (every other element of a larger array).
+    base = np.sin(np.linspace(0, 1, 40))
+    wh = whittaker_henderson(base[::2], lamb=1.23, order=2)
+    x_banded, _ = _solve_WH_banded(np.ascontiguousarray(base[::2]), lamb=1.23, order=2)
+    assert_allclose(wh.x, x_banded, rtol=1e-11)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
