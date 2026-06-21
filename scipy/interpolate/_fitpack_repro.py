@@ -154,7 +154,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     if xe is None:
         xe = max(x)
     
-    if periodic and x.shape[0] - 1 < k:
+    if periodic and x.shape[0] < k + 1:
         raise ValueError(
             f"Need at least k+1={k+1} data points for a periodic degree-{k} spline, "
             f"got {x.shape[0]}."
