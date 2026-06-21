@@ -3,8 +3,7 @@ import io
 import numpy as np
 
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_array_almost_equal, assert_almost_equal,
-    make_xp_test_case
+    xp_assert_equal, xp_assert_close, assert_almost_equal, make_xp_test_case
 )
 from pytest import raises as assert_raises
 import pytest
@@ -540,48 +539,49 @@ class TestBarycentric:
         _run_concurrent_barrier(10, worker_fn, P)
 
 
+@make_xp_test_case(PchipInterpolator)
 class TestPCHIP:
-    def _make_random(self, npts=20):
+    def _make_random(self, xp, npts=20):
         rng = np.random.RandomState(1234)
-        xi = np.sort(rng.random(npts))
-        yi = rng.random(npts)
+        xi = xp.asarray(np.sort(rng.random(npts)))
+        yi = xp.asarray(rng.random(npts))
         return pchip(xi, yi), xi, yi
 
-    def test_overshoot(self):
+    def test_overshoot(self, xp):
         # PCHIP should not overshoot
-        p, xi, yi = self._make_random()
-        for i in range(len(xi)-1):
+        p, xi, yi = self._make_random(xp=xp)
+        for i in range(xi.shape[0]-1):
             x1, x2 = xi[i], xi[i+1]
             y1, y2 = yi[i], yi[i+1]
             if y1 > y2:
                 y1, y2 = y2, y1
-            xp = np.linspace(x1, x2, 10)
-            yp = p(xp)
-            assert ((y1 <= yp + 1e-15) & (yp <= y2 + 1e-15)).all()
+            x_eval = xp.linspace(x1, x2, 10, dtype=x1.dtype)
+            yp = p(x_eval)
+            assert xp.all((y1 <= yp + 1e-15) & (yp <= y2 + 1e-15))
 
-    def test_monotone(self):
+    def test_monotone(self, xp):
         # PCHIP should preserve monotonicty
-        p, xi, yi = self._make_random()
-        for i in range(len(xi)-1):
+        p, xi, yi = self._make_random(xp=xp)
+        for i in range(xi.shape[0]-1):
             x1, x2 = xi[i], xi[i+1]
             y1, y2 = yi[i], yi[i+1]
-            xp = np.linspace(x1, x2, 10)
-            yp = p(xp)
-            assert ((y2-y1) * (yp[1:] - yp[:1]) > 0).all()
+            x_eval = xp.linspace(x1, x2, 10)
+            yp = p(x_eval)
+            assert xp.all((y2-y1) * (yp[1:] - yp[:1]) > 0)
 
-    def test_cast(self):
+    def test_cast(self, xp):
         # regression test for integer input data, see gh-3453
-        data = np.array([[0, 4, 12, 27, 47, 60, 79, 87, 99, 100],
-                         [-33, -33, -19, -2, 12, 26, 38, 45, 53, 55]])
-        xx = np.arange(100)
-        curve = pchip(data[0], data[1])(xx)
+        data = xp.asarray([[0, 4, 12, 27, 47, 60, 79, 87, 99, 100],
+                           [-33, -33, -19, -2, 12, 26, 38, 45, 53, 55]])
+        xx = xp.arange(100)
+        curve = pchip(data[0, ...], data[1, ...])(xx)
 
-        data1 = data * 1.0
-        curve1 = pchip(data1[0], data1[1])(xx)
+        data1 = xp.astype(data, xp.float64)
+        curve1 = pchip(data1[0, ...], data1[1, ...])(xx)
 
         xp_assert_close(curve, curve1, atol=1e-14, rtol=1e-14)
 
-    def test_nag(self):
+    def test_nag(self, xp):
         # Example from NAG C implementation,
         # http://nag.com/numeric/cl/nagdoc_cl25/html/e01/e01bec.html
         # suggested in gh-5326 as a smoke test for the way the derivatives
@@ -597,7 +597,7 @@ class TestPCHIP:
          15.00   0.99992E+0
          20.00   0.99999E+0
         '''
-        data = np.loadtxt(io.StringIO(dataStr))
+        data = xp.asarray(np.loadtxt(io.StringIO(dataStr)))
         pch = pchip(data[:,0], data[:,1])
 
         resultStr = '''
@@ -613,58 +613,63 @@ class TestPCHIP:
           18.7990       1.0000
           20.0000       1.0000
         '''
-        result = np.loadtxt(io.StringIO(resultStr))
+        result = xp.asarray(np.loadtxt(io.StringIO(resultStr)))
         xp_assert_close(result[:,1], pch(result[:,0]), rtol=0., atol=5e-5)
 
-    def test_endslopes(self):
+    def test_endslopes(self, xp):
         # this is a smoke test for gh-3453: PCHIP interpolator should not
         # set edge slopes to zero if the data do not suggest zero edge derivatives
-        x = np.array([0.0, 0.1, 0.25, 0.35])
-        y1 = np.array([279.35, 0.5e3, 1.0e3, 2.5e3])
-        y2 = np.array([279.35, 2.5e3, 1.50e3, 1.0e3])
+        x = xp.asarray([0.0, 0.1, 0.25, 0.35])
+        y1 = xp.asarray([279.35, 0.5e3, 1.0e3, 2.5e3])
+        y2 = xp.asarray([279.35, 2.5e3, 1.50e3, 1.0e3])
         for pp in (pchip(x, y1), pchip(x, y2)):
             for t in (x[0], x[-1]):
                 assert pp(t, 1) != 0
 
-    def test_all_zeros(self):
-        x = np.arange(10)
-        y = np.zeros_like(x)
+    def test_all_zeros(self, xp):
+        x = xp.arange(10)
+        y = xp.zeros_like(x)
 
         # this should work and not generate any warnings
         with warnings.catch_warnings():
             warnings.filterwarnings('error')
             pch = pchip(x, y)
 
-        xx = np.linspace(0, 9, 101)
-        assert all(pch(xx) == 0.)
+        xx = xp.linspace(0, 9, 101)
+        xp_assert_equal(pch(xx), xp.zeros_like(xx, dtype=xp.float64))
 
-    def test_two_points(self):
+    def test_two_points(self, xp):
         # regression test for gh-6222: pchip([0, 1], [0, 1]) fails because
         # it tries to use a three-point scheme to estimate edge derivatives,
         # while there are only two points available.
         # Instead, it should construct a linear interpolator.
-        x = np.linspace(0, 1, 11)
-        p = pchip([0, 1], [0, 2])
-        xp_assert_close(p(x), 2*x, atol=1e-15)
+        x = xp.linspace(0, 1, 11)
+        p = pchip(xp.asarray([0, 1]), xp.asarray([0, 2]))
+        xp_assert_close(p(x), xp.astype(2*x, xp.float64), atol=1e-15)
 
-    def test_pchip_interpolate(self):
-        assert_array_almost_equal(
-            pchip_interpolate([1, 2, 3], [4, 5, 6], [0.5], der=1),
-            np.asarray([1.]))
+    def test_pchip_interpolate(self, xp):
+        xi = xp.asarray([1, 2, 3])
+        yi = xp.asarray([4, 5, 6])
+        x = xp.asarray([0.5])
 
-        assert_array_almost_equal(
-            pchip_interpolate([1, 2, 3], [4, 5, 6], [0.5], der=0),
-            np.asarray([3.5]))
+        xp_assert_close(
+            pchip_interpolate(xi, yi, x, der=1),
+            xp.asarray([1.], dtype=xp.float64)
+        )
+        xp_assert_close(
+            pchip_interpolate(xi, yi, x, der=0),
+            xp.asarray([3.5], dtype=xp.float64)
+        )
+        xp_assert_close(
+            xp.stack(pchip_interpolate(xi, yi, x, der=[0, 1])),
+            xp.asarray([[3.5], [1.]], dtype=xp.float64)
+        )
 
-        assert_array_almost_equal(
-            np.asarray(pchip_interpolate([1, 2, 3], [4, 5, 6], [0.5], der=[0, 1])),
-            np.asarray([[3.5], [1]]))
-
-    def test_roots(self):
+    def test_roots(self, xp):
         # regression test for gh-6357: .roots method should work
-        p = pchip([0, 1], [-1, 1])
+        p = pchip(xp.asarray([0, 1]), xp.asarray([-1, 1]))
         r = p.roots()
-        xp_assert_close(r, np.asarray([0.5]))
+        xp_assert_close(r, xp.asarray([0.5], dtype=xp.float64))
 
 
 @make_xp_test_case(CubicSpline)
