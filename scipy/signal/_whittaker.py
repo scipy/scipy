@@ -4,7 +4,7 @@ from scipy._lib._util import _RichResult, _validate_int
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
-from scipy.signal._whittaker_inner import _solve_WH_order2
+from ._whittaker_inner import _solve_WH_order2
 
 
 def _solveh_banded(ab, b, calc_logdet=False):
