@@ -3,7 +3,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case, xp_default_dtype
+    make_xp_test_case, xp_default_dtype, xp_result_type
 )
 
 import scipy.signal._waveforms as waveforms
@@ -345,10 +345,12 @@ class TestGaussPulse:
         err_msg = "Integer input 'tpr=-60' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
-    def test_dtype(self, xp):
-        t = xp.linspace(-1, 1, 11, dtype=xp.float32)
+    @pytest.mark.parametrize("t_dtype", ["float32", "float64", "int64"])
+    def test_dtype(self, t_dtype, xp):
+        t_dtype = getattr(xp, t_dtype)
+        t = xp.linspace(-1, 1, 11, dtype=t_dtype)
         y = gausspulse(t, fc=5)
-        assert y.dtype == xp.float32
+        assert y.dtype == xp_result_type(t, force_floating=True, xp=xp)
 
     @pytest.mark.parametrize("retquad, retenv, n_outputs", [
         (False, False, 1),
