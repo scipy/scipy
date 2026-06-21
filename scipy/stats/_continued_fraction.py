@@ -1,5 +1,6 @@
 import numpy as np
 
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     array_namespace, xp_ravel, xp_copy, xp_promote
 )
@@ -308,6 +309,8 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     if tiny is None:
         tiny = xp.finfo(dtype).eps**2 if not log else 2*np.log(xp.finfo(dtype).eps)
 
+    tiny = xp.asarray(tiny, dtype=dtype)
+
     # "Set f0 and C0 to the value b0 or to tiny if b0=0. Set D0 = 0.
     zero = -xp.inf if log else 0
     fn = xp.where(b0 == zero, tiny, b0)
@@ -334,14 +337,14 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
         # "Set D_n = 1/(b_n + a_n D_{n-1}) or 1/tiny, if the denominator vanishes"
         denominator = (bn + an*work.Dnm1 if not log
                        else _logaddexp(bn, an + work.Dnm1, xp=xp))
-        denominator[denominator == zero] = tiny
+        denominator = xpx.at(denominator)[denominator == zero].set(tiny)
         Dn = (1/denominator if not log
               else -denominator)
 
         # "Set C_n = b_n + a_n / C_{n-1} (or =tiny, if the expression vanishes)"
         Cn = (bn + an / work.Cnm1 if not log
               else _logaddexp(bn, an - work.Cnm1, xp=xp))
-        Cn[Cn == zero] = tiny
+        Cn = xpx.at(Cn)[Cn == zero].set(tiny)
 
         # "and set f_n = f_{n-1} C_n D_n"
         work.CnDn = (Cn * Dn if not log
@@ -361,14 +364,14 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
         residual = (xp.abs(work.CnDn - 1) if not log
                     else xp.real(_logaddexp(work.CnDn, pij, xp=xp)))
         i = residual < work.eps
-        work.status[i] = eim._ECONVERGED
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(eim._ECONVERGED)
+        stop = xpx.at(stop)[i].set(True)
 
         # If function value is NaN, report failure.
         i = (~xp.isfinite(work.fn) if not log
              else ~(xp.isfinite(work.fn) | (work.fn == -xp.inf)))
-        work.status[i] = eim._EVALUEERR
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(eim._EVALUEERR)
+        stop = xpx.at(stop)[i].set(True)
 
         return stop
 
