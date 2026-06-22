@@ -3422,6 +3422,15 @@ index 1afb1900f1..d817e51ad8 100644
         x = list(range(8))
         gen = generate_knots(x, x, s=0.1, k=1)
         next(gen)
+    
+    def test_large_s_no_internal_knots(self):
+        # test that no internal nodes for very large `s`.
+        x = np.arange(8, dtype=float)
+        y = np.sin(x * np.pi / 8)
+        k = 3
+        
+        knots = list(generate_knots(x, y, k=k, s=1e10))[-1]
+        assert len(knots) == 2 * (k + 1)
 
     def test_nest(self, xp):
         # test that nest < nmax stops the process early (and we get 10 knots not 12)
@@ -4001,6 +4010,22 @@ class TestMakeSplrep(_TestMakeSplrepBase):
 
         assert spl_0.t.shape[0] == n + k + 1
         assert spl_1.t.shape[0] == 2 * (k + 1)
+    
+    def test_small_s_fallback_not_a_knot(self):
+        s1 = 0
+        s2 = 1e-8
+        rng = np.random.default_rng(1234)
+        x = np.arange(11, dtype=float)
+        y = rng.random((11,))
+        spl1 = make_splrep(x, y, s=s1)
+        spl2 = make_splrep(x, y, s=s2)
+        spl_interp = make_interp_spline(x, y, bc_type="not-a-knot")
+        xs = np.linspace(x[0], x[-1], 100)
+        # Should fallback to not-a-knot, same as make_interp_spline
+        # since s=0.
+        xp_assert_close(spl1(xs), spl_interp(xs))
+        xp_assert_close(spl2(xs), spl_interp(xs), atol=1e-4)
+
 
 
 @make_xp_test_case(make_splrep)
@@ -4070,6 +4095,21 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         w = np.full(11, 1.0 / sd)
         spl = make_splrep(x, y, w=w, s=10, bc_type='periodic')
         xp_assert_close(spl(x[0]), spl(x[-1]), atol=1e-10)
+    
+    def test_small_s_fallback_interp(self):
+        s1 = 0
+        s2 = 1e-8
+        rng = np.random.default_rng(1234)
+        x = np.arange(11, dtype=float)
+        y = np.sin(x * np.pi / 5) + rng.standard_normal(11) * 0.5
+        y[0], y[-1] = 0, 0
+        spl1 = make_splrep(x, y, s=s1, bc_type="periodic")
+        spl2 = make_splrep(x, y, s=s2, bc_type="periodic")
+        spl_interp = make_interp_spline(x, y, bc_type="periodic")
+        xs = np.linspace(x[0], x[-1], 100)
+        # Should fallback to periodic interpolation.
+        xp_assert_close(spl1(xs), spl_interp(xs))
+        xp_assert_close(spl2(xs), spl_interp(xs), atol=1e-4)
 
     @pytest.mark.parametrize("s", [0, 1e-50])
     def test_make_splrep_periodic_m_eq_2_k_eq_1(self, s):
@@ -4289,7 +4329,7 @@ class TestMakeSplprepPeriodic:
 
         spl, u = make_splprep(y, bc_type="periodic")
         xp_assert_close(spl(u), xp.stack(y), atol=1e-15)
-
+    
     def test_s_zero_vs_near_zero(self, xp):
         # s=0 and s \approx 0 are consistent
         x, y, k = self._get_xyk(n=10, xp=xp)
