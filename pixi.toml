@@ -353,6 +353,7 @@ typing_extensions = "*"
 types-psutil = "*"
 pybind11 = "*"
 sphinx = "*"
+cython = "*"
 
 [feature.typecheck.tasks.mypy]
 cmd = "spin mypy --no-build"
