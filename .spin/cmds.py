@@ -369,8 +369,9 @@ def working_dir(new_dir):
 
 @click.command(context_settings={"ignore_unknown_options": True})
 @meson.build_dir_option
+@meson.build_option
 @click.pass_context
-def mypy(ctx, build_dir):
+def mypy(ctx, build_dir, build):
     """🦆 Run Mypy tests for SciPy
     """
     if is_editable_install():
@@ -380,11 +381,12 @@ def mypy(ctx, build_dir):
         )
         raise SystemExit(1)
     else:
-        click.secho(
-                "Invoking `build` prior to running mypy tests:",
-                bold=True, fg="bright_green"
-            )
-        ctx.invoke(build)
+        if build:
+            click.secho(
+                    "Invoking `build` prior to running mypy tests:",
+                    bold=True, fg="bright_green"
+                )
+            ctx.invoke(build_cmd, build_dir=build_dir)
 
     try:
         import mypy.api

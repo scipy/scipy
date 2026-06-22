@@ -112,6 +112,10 @@ solve-group = "debug"
 # tasks: lint, check-python-h, tach-check, tach-check-external
 features = ["lint"]
 
+[environments.typecheck]
+# tasks: mypy
+features = ["typecheck", "run-deps", "test-deps"]
+
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
 # and create a non-default solve group with minimal dependencies
 # to more reliably test the very latest versions of core dependencies
@@ -339,6 +343,20 @@ pytest-fail-slow = "*"
 cmd = "spin test --no-build -m 'not slow' -- --durations=0 --durations-min=0.5 --fail-slow=1.0"
 depends-on = "build"
 description = "Test SciPy with `fail-slow=1.0`"
+
+
+### Type Checking ###
+
+[feature.typecheck.dependencies]
+mypy = "==1.19.1"
+typing_extensions = "*"
+types-psutil = "*"
+pybind11 = "*"
+sphinx = "*"
+
+[feature.typecheck.tasks.mypy]
+cmd = "spin mypy --no-build"
+depends-on = "build"
 
 
 ### Type Stubs ###
