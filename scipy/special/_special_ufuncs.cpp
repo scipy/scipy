@@ -27,6 +27,7 @@
 #include <xsf/expint.h>
 #include <xsf/fresnel.h>
 #include <xsf/gamma.h>
+#include <xsf/hyp0f1.h>
 #include <xsf/hyperu.h>
 #include <xsf/hyp2f1.h>
 #include <xsf/iv_ratio.h>
@@ -141,6 +142,7 @@ extern const char *hankel1_doc;
 extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
+extern const char *hyp0f1_doc;
 extern const char *hyp2f1_doc;
 extern const char *hyperu_doc;
 extern const char *i0_doc;
@@ -708,6 +710,12 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::gammasgn), static_cast<xsf::numpy::d_d>(xsf::gammasgn)},
                           "gammasgn", gammasgn_doc);
     PyModule_AddObjectRef(module, "gammasgn", gammasgn);
+
+    PyObject *hyp0f1 =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::hyp0f1), static_cast<xsf::numpy::dd_d>(xsf::hyp0f1),
+                           static_cast<xsf::numpy::fF_F>(xsf::hyp0f1), static_cast<xsf::numpy::dD_D>(xsf::hyp0f1)},
+                          "hyp0f1", hyp0f1_doc);
+    PyModule_AddObjectRef(module, "hyp0f1", hyp0f1);
 
     PyObject *hyp2f1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(xsf::hyp2f1), static_cast<xsf::numpy::dddd_d>(xsf::hyp2f1),
