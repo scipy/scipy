@@ -133,7 +133,20 @@ class LSQMultivariateSpline:
         self._fit()
 
     def __call__(self, x, nu=None):
-        """Evaluate the spline or its derivatives at given positions."""
+        """Evaluate the spline or its derivatives at given positions.
+
+        Parameters
+        ----------
+        x : array_like
+            Points where the spline should be evaluated.
+        nu : int or sequence of int, optional
+            Derivative order for each input dimension.
+
+        Returns
+        -------
+        values : ndarray
+            Spline values at `x`.
+        """
         return self.ev(x, nu=nu)
 
     @classmethod
@@ -162,6 +175,11 @@ class LSQMultivariateSpline:
             Values on the tensor grid. Scalar-valued data should have shape
             ``(len(axis0), len(axis1), ...)``. Vector-valued data may either
             put the output dimension first or last.
+
+        Returns
+        -------
+        spl : LSQMultivariateSpline
+            Fitted spline object.
         """
         x, y, w = _grid_to_scattered(axes, y, w=w)
         return cls(
@@ -188,6 +206,12 @@ class LSQMultivariateSpline:
             Points where the spline should be evaluated.
         nu : int or sequence of int, optional
             Derivative order for each input dimension.
+
+        Returns
+        -------
+        values : ndarray
+            Spline values at `x`. If `x` is scalar for a 1-D spline, a scalar
+            value is returned.
         """
         ndim = self._input.x.shape[1]
         x, was_scalar = _validate_eval_input(x, ndim=ndim)
@@ -209,19 +233,45 @@ class LSQMultivariateSpline:
         return values
 
     def get_knots(self):
-        """Return the knot vectors for each input dimension."""
+        """Return the knot vectors for each input dimension.
+
+        Returns
+        -------
+        knots : tuple of ndarray
+            Full knot vector for each input dimension, including repeated
+            boundary knots.
+        """
         return self._basis
 
     def get_coeffs(self):
-        """Return the fitted spline coefficients."""
+        """Return the fitted spline coefficients.
+
+        Returns
+        -------
+        coeffs : ndarray
+            Flattened fitted spline coefficients.
+        """
         return self._coeffs.copy()
 
     def get_coeffs_tensor(self):
-        """Return fitted coefficients in tensor-product basis shape."""
+        """Return fitted coefficients in tensor-product basis shape.
+
+        Returns
+        -------
+        coeffs : ndarray
+            Fitted spline coefficients reshaped to the tensor-product basis
+            shape. For vector-valued data, the output dimension is last.
+        """
         return self._coeffs_tensor.copy()
 
     def get_residual(self):
-        """Return the weighted sum of squared residuals."""
+        """Return the weighted sum of squared residuals.
+
+        Returns
+        -------
+        residual : float
+            Weighted sum of squared residuals of the fitted spline.
+        """
         return self._residual
 
     def _fit(self):
