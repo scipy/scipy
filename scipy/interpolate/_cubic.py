@@ -172,7 +172,7 @@ class CubicHermiteSpline(PPoly):
 
 
 @xp_capabilities(
-    cpu_only=True, jax_jit=False,
+    cpu_only=True, jax_jit=False, exceptions=["cupy"],
     skip_backends=[
         ("dask.array",
          "https://github.com/data-apis/array-api-extra/issues/488")

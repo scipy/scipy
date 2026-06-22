@@ -665,6 +665,7 @@ class TestPCHIP:
             xp.asarray([[3.5], [1.]], dtype=xp.float64)
         )
 
+    @skip_xp_backends("cupy", reason="no CuPy implementation of 'solve'.")
     def test_roots(self, xp):
         # regression test for gh-6357: .roots method should work
         p = pchip(xp.asarray([0, 1]), xp.asarray([-1, 1]))
