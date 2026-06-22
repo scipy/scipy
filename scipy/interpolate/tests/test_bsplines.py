@@ -3963,7 +3963,10 @@ class TestMakeSplrep(_TestMakeSplrepBase):
 
         # s=0 with k=0 is fine: goes through make_interp_spline
         result = make_splrep(x, y, s=0, k=0)
-        assert result is not None
+        expected = make_interp_spline(x, y, k=0)
+        xp_assert_close(result.t, expected.t)
+        xp_assert_close(result.c, expected.c)
+        assert result.k == expected.k
 
     def test_shape(self, xp):
         # make sure coefficients have the right shape (not extra dims)
