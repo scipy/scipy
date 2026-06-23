@@ -198,9 +198,10 @@ def logm(A):
     F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     F = _maybe_real(A, F)
     errtol = 1000*eps
-    # TODO use a better error approximation
-    with np.errstate(divide='ignore', invalid='ignore'):
-        errest = norm(expm(F)-A, 1) / np.asarray(norm(A, 1), dtype=A.dtype).real[()]
+    A_norm = np.asarray(norm(A, 1), dtype=A.dtype).real[()]
+    with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+        errest = norm(expm_frechet(F, F, compute_expm=False, check_finite=False), 1)
+        errest *= eps / A_norm
     if not isfinite(errest) or errest >= errtol:
         message = f"logm result may be inaccurate, approximate err = {errest}"
         warnings.warn(message, RuntimeWarning, stacklevel=2)
