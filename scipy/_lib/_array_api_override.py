@@ -137,14 +137,17 @@ def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
         else:
             # list, tuple, or arbitrary object
             try:
-                array = np.asanyarray(array)
+                array_ = np.asanyarray(array)
             except TypeError:
                 raise TypeError("An argument is neither array API compatible nor "
                                 "coercible by NumPy.")
-            if array.dtype.kind not in 'iufcb':  # Numeric or bool
-                raise TypeError(f"An argument has dtype `{array.dtype!r}`; "
+            if array_.dtype.kind not in 'iufcb':  # Numeric or bool
+                raise TypeError(f"An argument has dtype `{array_.dtype!r}`; "
                                 "only boolean and numerical dtypes are supported.")
-            numpy_arrays.append(array)
+
+            # special case: lists/tuples follow other array arguments
+            if not isinstance(array, list | tuple):
+                numpy_arrays.append(array_)
 
     # When there are exclusively NumPy and ArrayLikes, skip calling
     # array_api_compat.array_namespace for performance.

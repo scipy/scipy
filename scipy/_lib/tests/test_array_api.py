@@ -83,12 +83,11 @@ class TestArrayAPI:
         assert array_namespace(x, 1) is xp
         assert array_namespace(1, x) is xp
         assert array_namespace(None, x) is xp
+        assert array_namespace(x, [1, 2]) is xp
 
         if is_numpy(xp):
             assert array_namespace(x, [1, 2]) is xp
         else:
-            with pytest.raises(TypeError, match="Multiple namespaces"):
-                array_namespace(x, [1, 2])
             with pytest.raises(TypeError, match="Multiple namespaces"):
                 array_namespace(x, np.int64(1))
             with pytest.raises(TypeError, match="Multiple namespaces"):
