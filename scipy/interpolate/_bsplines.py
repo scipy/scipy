@@ -20,7 +20,7 @@ from scipy._lib._array_api import (
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
-           "make_smoothing_spline"]
+           "make_smoothing_spline", "compute_gcv_parameter"]
 
 
 def _get_dtype(dtype):
@@ -2179,9 +2179,12 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False):
 #  Smoothing spline helpers #
 #############################
 
-def _compute_optimal_gcv_parameter(X, wE, y, w):
+def compute_gcv_parameter(X, wE, y, w):
     """
-    Returns an optimal regularization parameter from the GCV criteria [1].
+    Compute an optimal regularization parameter from the GCV criteria [1].
+
+    This function computes the optimal smoothing parameter for use with
+    smoothing splines via generalized cross-validation (GCV).
 
     Parameters
     ----------
@@ -2190,16 +2193,16 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     wE : array, shape (5, n)
         5 bands of the penalty matrix :math:`W^{-1} E` stored in LAPACK banded
         storage.
-    y : array, shape (n,)
-        Ordinates.
+    y : array, shape (n,) or (n, m)
+        Ordinates. If 2D, the function computes a parameter for each column.
     w : array, shape (n,)
         Vector of weights.
 
     Returns
     -------
-    lam : float
-        An optimal from the GCV criteria point of view regularization
-        parameter.
+    lam : float or ndarray
+        An optimal regularization parameter from the GCV criteria.
+        Returns a float if ``y`` is 1D, or an array of floats if ``y`` is 2D.
 
     Notes
     -----
@@ -2516,6 +2519,10 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
         as a solution of the problem of smoothing splines using
         the GCV criteria [1] in case ``lam`` is None, otherwise using the
         given parameter ``lam``.
+        
+        The ``lam`` attribute of the returned BSpline object contains the
+        regularization parameter used: either the GCV-computed value (when
+        ``lam=None``) or the user-provided value.
 
     Notes
     -----
@@ -2580,6 +2587,11 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     >>> plt.plot(grid, func(grid), label='Original function')
     >>> plt.legend(loc='best')
     >>> plt.show()
+
+    The GCV-computed lambda value is available as an attribute:
+
+    >>> spl.lam  
+    0.0222...
 
     """  # noqa:E501
     xp = array_namespace(x, y)
@@ -2654,7 +2666,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     wE *= 6
 
     if lam is None:
-        lam = _compute_optimal_gcv_parameter(X, wE, y, w)
+        lam = compute_gcv_parameter(X, wE, y, w)
     elif lam < 0.:
         raise ValueError('Regularization parameter should be non-negative')
 
@@ -2683,7 +2695,9 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
                cm0 * (2 * t[-4] - t[-5] - t[-6]) + cm1]
 
     t, c_ = xp.asarray(t), xp.asarray(c_)
-    return BSpline.construct_fast(t, c_, 3, axis=axis)
+    result = BSpline.construct_fast(t, c_, 3, axis=axis)
+    result.lam = lam
+    return result
 
 
 ########################
