@@ -617,6 +617,22 @@ class TestLSQBivariateSpline:
 
         assert_almost_equal(lut(x, y, grid=False), z)
 
+    def test_noncontiguous_input(self):
+        # Regression test: non-contiguous x/y/z (e.g. column views) must give
+        # the same fit as contiguous copies. The C surfit_lsq binding reads the
+        # buffers assuming C-contiguity, so strided views were misread.
+        rng = np.random.default_rng(0)
+        src = rng.uniform(-5, 5, (400, 2))          # (N, 2) C-contiguous
+        z = src[:, 0] ** 2 + src[:, 1]
+        tx = ty = np.linspace(-4, 4, 3)
+
+        x, y = src[:, 0], src[:, 1]
+        assert not x.flags['C_CONTIGUOUS']          # guard the precondition
+        strided = LSQBivariateSpline(x, y, z, tx, ty, kx=2, ky=2)
+        contig = LSQBivariateSpline(x.copy(), y.copy(), z, tx, ty, kx=2, ky=2)
+
+        xp_assert_close(strided(x, y, grid=False), contig(x, y, grid=False))
+
 
 class TestSmoothBivariateSpline:
     def test_linear_constant(self):
@@ -745,6 +761,21 @@ class TestSmoothBivariateSpline:
                                      bbox=bbox.tolist(), w=w.tolist(),
                                      kx=1, ky=1)
         xp_assert_close(spl1(0.1, 0.5), spl2(0.1, 0.5))
+
+    def test_noncontiguous_input(self):
+        # Regression test: non-contiguous x/y/z (e.g. column views) must give
+        # the same fit as contiguous copies. The C surfit_smth binding reads the
+        # buffers assuming C-contiguity, so strided views were misread.
+        rng = np.random.default_rng(0)
+        src = rng.uniform(-5, 5, (400, 2))
+        z = src[:, 0] ** 2 + src[:, 1]
+
+        x, y = src[:, 0], src[:, 1]
+        assert not x.flags['C_CONTIGUOUS']
+        strided = SmoothBivariateSpline(x, y, z, kx=2, ky=2)
+        contig = SmoothBivariateSpline(x.copy(), y.copy(), z, kx=2, ky=2)
+
+        xp_assert_close(strided(x, y, grid=False), contig(x, y, grid=False))
 
 
 class TestLSQSphereBivariateSpline:

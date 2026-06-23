@@ -132,16 +132,18 @@ def _surfit_smth(x, y, z, w, xb, xe, yb, ye, kx, ky, s, eps):
     Wrapper for surfit with iopt=0 (smoothing spline).
     Returns: nx, tx, ny, ty, c, fp, ier
     """
-    x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    z = np.asarray(z, dtype=np.float64)
+    # The C binding (_fitpack.surfit_smth) reads these buffers assuming
+    # C-contiguity; coerce strided views.
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    y = np.ascontiguousarray(y, dtype=np.float64)
+    z = np.ascontiguousarray(z, dtype=np.float64)
     m = len(x)
 
     # Handle None w value (default equal weights)
     if w is None:
         w = np.ones(m, dtype=np.float64)
     else:
-        w = np.asarray(w, dtype=np.float64)
+        w = np.ascontiguousarray(w, dtype=np.float64)
 
     # Handle None bbox values (matching f2py behavior: xb=dmin(x,m), etc.)
     if xb is None:
@@ -176,15 +178,17 @@ def _surfit_lsq(x, y, z, nx, tx, ny, ty, w, xb, xe, yb, ye, kx, ky, eps):
     Wrapper for surfit with iopt=-1 (least squares fit with fixed knots).
     Returns: tx, ty, c, fp, ier
     """
-    x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    z = np.asarray(z, dtype=np.float64)
+    # The C binding (_fitpack.surfit_lsq) reads these buffers assuming
+    # C-contiguity; coerce strided views.
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    y = np.ascontiguousarray(y, dtype=np.float64)
+    z = np.ascontiguousarray(z, dtype=np.float64)
     m = len(x)
 
     if w is None:
         w = np.ones(m, dtype=np.float64)
     else:
-        w = np.asarray(w, dtype=np.float64, copy=True)
+        w = np.ascontiguousarray(w, dtype=np.float64)
 
     tx = np.asarray(tx, dtype=np.float64, copy=True)
     ty = np.asarray(ty, dtype=np.float64, copy=True)
