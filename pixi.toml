@@ -269,6 +269,8 @@ pybind11 = "*"
 numpy = "*"
 blas-devel = "*"
 
+[feature.build-deps.target.win-64.dependencies]
+clang-cl_win-64 = "*"
 
 [feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
