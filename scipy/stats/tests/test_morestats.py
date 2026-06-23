@@ -40,7 +40,7 @@ from scipy._lib._array_api_no_0d import (
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-distcont = dict(distcont)  # type: ignore
+distcont = dict(distcont)  # type: ignore[assignment, arg-type]
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
