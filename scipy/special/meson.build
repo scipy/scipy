@@ -4,7 +4,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
-  fs.copyfile('_hyp0f1.pxd'),
   fs.copyfile('_legacy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),

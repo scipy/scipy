@@ -26,6 +26,72 @@ const char *_lgam1p_doc = R"(
     Internal function, do not use.
     )";
 
+const char *hyp0f1_doc = R"(
+    hyp0f1(v, z, out=None)
+
+    Confluent hypergeometric limit function 0F1.
+
+    Parameters
+    ----------
+    v : array_like
+        Real-valued parameter
+    z : array_like
+        Real- or complex-valued argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        The confluent hypergeometric limit function
+
+    Notes
+    -----
+    This function is defined as:
+
+    .. math:: _0F_1(v, z) = \sum_{k=0}^{\infty}\frac{z^k}{(v)_k k!}.
+
+    It's also the limit as :math:`q \to \infty` of :math:`_1F_1(q; v; z/q)`,
+    and satisfies the differential equation :math:`f''(z) + vf'(z) =
+    f(z)`. See [1]_ for more information.
+
+    References
+    ----------
+    .. [1] Wolfram MathWorld, "Confluent Hypergeometric Limit Function",
+           https://mathworld.wolfram.com/ConfluentHypergeometricLimitFunction.html
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is one when `z` is zero.
+
+    >>> sc.hyp0f1(1, 0)
+    1.0
+
+    It is the limit of the confluent hypergeometric function as `q`
+    goes to infinity.
+
+    >>> q = np.array([1, 10, 100, 1000])
+    >>> v = 1
+    >>> z = 1
+    >>> sc.hyp1f1(q, v, z / q)
+    array([2.71828183, 2.31481985, 2.28303778, 2.27992985])
+    >>> sc.hyp0f1(v, z)
+    2.2795853023360673
+
+    It is related to Bessel functions.
+
+    >>> n = 1
+    >>> x = np.linspace(0, 1, 5)
+    >>> sc.jv(n, x)
+    array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
+    >>> (0.5 * x)**n / sc.factorial(n) * sc.hyp0f1(n + 1, -0.25 * x**2)
+    array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
+
+    )";
+
 const char *agm_doc = R"(
     agm(a, b, out=None)
 

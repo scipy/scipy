@@ -163,6 +163,7 @@ special_ufuncs = [
     "hankel2",
     "hankel2e",
     "huber",
+    "hyp0f1",
     "hyp2f1",
     "hyperu",
     "i0",
