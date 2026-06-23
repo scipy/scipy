@@ -9919,7 +9919,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/openblas-0.3.33-pthreads_h6ec200e_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/openssl-3.6.3-h35e630c_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/psutil-7.2.2-py314h0f05182_0.conda
-      - conda: https://prefix.dev/conda-forge/linux-64/pyrefly-0.63.0-h2b88eb6_0.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/pyrefly-1.1.1-h2b88eb6_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/python-3.14.6-habeac84_100_cp314.conda
       - conda: https://prefix.dev/conda-forge/linux-64/python-librt-0.11.0-py314h0f05182_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/readline-8.3-h853b02a_0.conda
@@ -10025,7 +10025,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-aarch64/openblas-0.3.33-pthreads_h3a8cbd8_0.conda
       - conda: https://prefix.dev/conda-forge/linux-aarch64/openssl-3.6.3-h546c87b_0.conda
       - conda: https://prefix.dev/conda-forge/linux-aarch64/psutil-7.2.2-py314h2e8dab5_0.conda
-      - conda: https://prefix.dev/conda-forge/linux-aarch64/pyrefly-0.63.0-h7baeb35_0.conda
+      - conda: https://prefix.dev/conda-forge/linux-aarch64/pyrefly-1.1.1-h7baeb35_0.conda
       - conda: https://prefix.dev/conda-forge/linux-aarch64/python-3.14.6-hc679e19_100_cp314.conda
       - conda: https://prefix.dev/conda-forge/linux-aarch64/python-librt-0.11.0-py314h2e8dab5_0.conda
       - conda: https://prefix.dev/conda-forge/linux-aarch64/readline-8.3-hb682ff5_0.conda
@@ -10187,7 +10187,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/openblas-0.3.33-openmp_hea878ba_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/openssl-3.6.3-hd24854e_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/psutil-7.2.2-py314ha14b1ff_0.conda
-      - conda: https://prefix.dev/conda-forge/osx-arm64/pyrefly-0.63.0-h4dd0d4f_0.conda
+      - conda: https://prefix.dev/conda-forge/osx-arm64/pyrefly-1.1.1-h4dd0d4f_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/python-3.14.6-h156bc91_100_cp314.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/python-librt-0.11.0-py314ha14b1ff_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/readline-8.3-h46df422_0.conda
@@ -10293,7 +10293,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/win-64/onemkl-license-2026.0.0-h57928b3_908.conda
       - conda: https://prefix.dev/conda-forge/win-64/openssl-3.6.3-hf411b9b_0.conda
       - conda: https://prefix.dev/conda-forge/win-64/psutil-7.2.2-py314hc5dbbe4_0.conda
-      - conda: https://prefix.dev/conda-forge/win-64/pyrefly-0.63.0-hfe91638_0.conda
+      - conda: https://prefix.dev/conda-forge/win-64/pyrefly-1.1.1-hfe91638_0.conda
       - conda: https://prefix.dev/conda-forge/win-64/python-3.14.6-h4b44e0e_100_cp314.conda
       - conda: https://prefix.dev/conda-forge/win-64/python-librt-0.11.0-py314hc5dbbe4_0.conda
       - conda: https://prefix.dev/conda-forge/win-64/tbb-2023.0.0-hd3d4ead_2.conda
@@ -15158,9 +15158,9 @@ packages:
   license_family: MIT
   size: 90577
   timestamp: 1756812477850
-- conda: https://prefix.dev/conda-forge/linux-64/pyrefly-0.63.0-h2b88eb6_0.conda
-  sha256: 8d36e3a2f1ccd68d977452d9afe1d4410e19a9814f0793828612154507b2c56f
-  md5: d9789909224cae2406e523178cebfc32
+- conda: https://prefix.dev/conda-forge/linux-64/pyrefly-1.1.1-h2b88eb6_0.conda
+  sha256: 38999ccd08e0e91145cef6e9d2d5551e3608316dc88b8660e155223632d7b5aa
+  md5: a35501d0eb1ceb4048f636b4b0b964aa
   depends:
   - __glibc >=2.17,<3.0.a0
   - libgcc >=14
@@ -15169,8 +15169,8 @@ packages:
   license: MIT
   license_family: MIT
   run_exports: {}
-  size: 10872155
-  timestamp: 1777338047895
+  size: 11343372
+  timestamp: 1781854588319
 - conda: https://prefix.dev/conda-forge/linux-64/pyside6-6.9.3-py314hf36963e_1.conda
   sha256: 54051f72018c7a980578859e3340ba2e4d529f064e5850db4314995ca0d6fc56
   md5: 8d1ffa0a622e8dda170beeadd1795e88
@@ -18462,9 +18462,9 @@ packages:
   run_exports: {}
   size: 8342
   timestamp: 1726803319942
-- conda: https://prefix.dev/conda-forge/linux-aarch64/pyrefly-0.63.0-h7baeb35_0.conda
-  sha256: 03b80658fbd292922174e1f2a6f6782999f26e00c9460160dd813cc7af6dcbda
-  md5: b2782705c7221f859ed3fc8d5098db46
+- conda: https://prefix.dev/conda-forge/linux-aarch64/pyrefly-1.1.1-h7baeb35_0.conda
+  sha256: 1b0e4b317b26c54c6622862f45bbe634fc311411992d8d81e0cba66fe9957d86
+  md5: c6d175c739d77e5224367545faa82560
   depends:
   - libgcc >=14
   constrains:
@@ -18472,8 +18472,8 @@ packages:
   license: MIT
   license_family: MIT
   run_exports: {}
-  size: 10642198
-  timestamp: 1777338069522
+  size: 11101842
+  timestamp: 1781854603403
 - conda: https://prefix.dev/conda-forge/linux-aarch64/pyside6-6.11.1-py314ha37eecc_0.conda
   sha256: 74c0225bed2a586ea85535af580472d83ad87062b5f42cad1db1dced9ac35751
   md5: 5caa8cab3fb56bc57b1ff943eb5c76fb
@@ -27605,9 +27605,9 @@ packages:
   license_family: MIT
   size: 374792
   timestamp: 1763160601898
-- conda: https://prefix.dev/conda-forge/osx-arm64/pyrefly-0.63.0-h4dd0d4f_0.conda
-  sha256: fd37bbde553959b46bf0f64ee1bb6f892c95a0598c607a499d8ecb92ec9c2506
-  md5: 8cf02adc86b7ff58cdc1af940dfae880
+- conda: https://prefix.dev/conda-forge/osx-arm64/pyrefly-1.1.1-h4dd0d4f_0.conda
+  sha256: ba7a2bd4ee6e4249917db475bafc38e9c05496091e7a7f7630bdb6ba3ecd73ad
+  md5: ff25805fd978aa2da6295a5f45148c36
   depends:
   - __osx >=11.0
   constrains:
@@ -27615,8 +27615,8 @@ packages:
   license: MIT
   license_family: MIT
   run_exports: {}
-  size: 10210292
-  timestamp: 1777338117803
+  size: 10671233
+  timestamp: 1781854699919
 - conda: https://prefix.dev/conda-forge/osx-arm64/python-3.12.12-h18782d2_1_cpython.conda
   build_number: 1
   sha256: 626da9bb78459ce541407327d1e22ee673fd74e9103f1a0e0f4e3967ad0a23a7
@@ -31861,9 +31861,9 @@ packages:
   license_family: MIT
   size: 90737
   timestamp: 1756812441019
-- conda: https://prefix.dev/conda-forge/win-64/pyrefly-0.63.0-hfe91638_0.conda
-  sha256: 3dd84c660d130676dede501814462467f07e33199faf116f01e52ffde0b71f59
-  md5: 01c5884ac875d44a2a99763f62771b0e
+- conda: https://prefix.dev/conda-forge/win-64/pyrefly-1.1.1-hfe91638_0.conda
+  sha256: df4a51bfb9c99b00d8f7a1eb5b84302eb4c5ceccb4c9894d55ee7083f3233c1f
+  md5: 1f1d8589aac91541d4f32df37e8a8786
   depends:
   - vc >=14.3,<15
   - vc14_runtime >=14.44.35208
@@ -31871,8 +31871,8 @@ packages:
   license: MIT
   license_family: MIT
   run_exports: {}
-  size: 11175555
-  timestamp: 1777338076647
+  size: 11718247
+  timestamp: 1781854616568
 - conda: https://prefix.dev/conda-forge/win-64/pyside6-6.9.3-py314h2c9462b_1.conda
   sha256: dbd0e599d3155472c147e2fe75326f8379d6d6f1ac7905b5dc9d64e49c1242a8
   md5: ad4318d725ce9acbf8714ad3e9a2e0bf
