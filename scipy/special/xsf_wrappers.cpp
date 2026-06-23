@@ -40,6 +40,7 @@
 #include <xsf/struve.h>
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
+#include <xsf/wright.h>
 #include <xsf/zeta.h>
 
 #include <xsf/cephes/cbrt.h>
@@ -347,6 +348,10 @@ double cephes_polevl_wrap(double x, const double coef[], int N) { return xsf::ce
 
 double special_wright_bessel(double a, double b, double x) { return xsf::wright_bessel(a, b, x); }
 double special_log_wright_bessel(double a, double b, double x) { return xsf::log_wright_bessel(a, b, x); }
+
+double xsf_wrightomega(double z) { return xsf::wrightomega(z); }
+
+npy_cdouble xsf_cwrightomega(npy_cdouble z) { return to_ccomplex(xsf::wrightomega(to_complex(z))); }
 
 double special_ellipk(double m) { return xsf::ellipk(m); }
 

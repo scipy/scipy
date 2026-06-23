@@ -48,6 +48,7 @@
 #include <xsf/struve.h>
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
+#include <xsf/wright.h>
 #include <xsf/zeta.h>
 #include "gen_harmonic.h"
 
@@ -240,6 +241,7 @@ extern const char *tklmbda_doc;
 extern const char *voigt_profile_doc;
 extern const char *wofz_doc;
 extern const char *wright_bessel_doc;
+extern const char *wrightomega_doc;
 extern const char *xlogy_doc;
 extern const char *xlog1py_doc;
 extern const char *y0_doc;
@@ -1363,6 +1365,12 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::wright_bessel), static_cast<xsf::numpy::ddd_d>(xsf::wright_bessel)},
         "wright_bessel", wright_bessel_doc);
     PyModule_AddObjectRef(module, "wright_bessel", wright_bessel);
+
+    PyObject *wrightomega = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::wrightomega), static_cast<xsf::numpy::d_d>(xsf::wrightomega),
+         static_cast<xsf::numpy::F_F>(xsf::wrightomega), static_cast<xsf::numpy::D_D>(xsf::wrightomega)},
+        "wrightomega", wrightomega_doc);
+    PyModule_AddObjectRef(module, "wrightomega", wrightomega);
 
     PyObject *y0 = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_y0), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_y0)}, "y0",

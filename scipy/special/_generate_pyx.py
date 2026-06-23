@@ -258,6 +258,7 @@ special_ufuncs = [
     "voigt_profile",
     "wofz",
     "wright_bessel",
+    "wrightomega",
     "xlog1py",
     "xlogy",
     "y0",

@@ -531,12 +531,6 @@
             "_stirling2_inexact": "dd->d"
         }
     },
-    "wrightomega": {
-        "_wright.h++": {
-            "wrightomega": "D->D",
-            "wrightomega_real": "d->d"
-        }
-    },
     "yn": {
         "_legacy.pxd": {
             "yn_unsafe": "dd->d"
