@@ -1124,7 +1124,7 @@ ctypedef float complex float_complex
 ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
-cdef extern from r"xsf_wrappers.h":
+cdef extern from r"cython_special_wrappers.h":
     double special_bei(double) nogil
     double special_beip(double) nogil
     double special_ber(double) nogil
@@ -1400,8 +1400,7 @@ cdef extern from r"xsf_wrappers.h":
     double special_inv_boxcox1p(double x, double lmbda) nogil
     double special_ndtri_exp(double x) nogil
 
-cdef extern from r"boost_special_wrappers.h":
-    double special_bdtrik(double y, double n, double p) nogil
+    double boost_bdtrik(double y, double n, double p) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -1819,7 +1818,7 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
-    return special_bdtrik(x0, x1, x2)
+    return boost_bdtrik(x0, x1, x2)
 
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""

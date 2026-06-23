@@ -13,7 +13,7 @@ _ufuncs_pxi_pxd_sources = [
 
 ufuncs_sources = [
   '_cosine.c',
-  'xsf_wrappers.cpp',
+  'cython_special_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]
@@ -101,9 +101,10 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
+    boost_math_dep,
     xsf_dep,
     np_dep,
   ],
@@ -164,11 +165,9 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
-    'xsf_wrappers.cpp',
+    'cython_special_wrappers.cpp',
     'sf_error.cc',
-    'dd_real_wrappers.cpp',
-    'boost_special_wrappers.cpp'
-  ],
+    'dd_real_wrappers.cpp'],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
