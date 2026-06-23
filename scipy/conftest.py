@@ -197,7 +197,7 @@ xp_skip_cpu_only_backends = set()
 xp_skip_eager_only_backends = set()
 
 if SCIPY_ARRAY_API:
-    device_and_backend_compatible = True
+    device_and_backend_incompatible = None
 
     # fill the dict of backends with available libraries
     try:
@@ -223,7 +223,7 @@ if SCIPY_ARRAY_API:
             torch.empty(3)
         except AssertionError:
             # skip it if it's not usable.
-            device_and_backend_compatible = False
+            device_and_backend_incompatible = "torch"
         else:
             xp_available_backends.append(
                 pytest.param(torch, id='torch',
@@ -268,7 +268,7 @@ if SCIPY_ARRAY_API:
             jax_device = jax.devices(SCIPY_DEVICE)[0]
         except RuntimeError:
             # requested device is not supported by the importable JAX, skip it
-            device_and_backend_compatible = False
+            device_and_backend_incompatible = "jax.numpy"
         else:
             xp_available_backends.append(
                 pytest.param(jax.numpy, id='jax.numpy',
@@ -321,12 +321,12 @@ if SCIPY_ARRAY_API:
         SCIPY_ARRAY_API_ = set(json.loads(SCIPY_ARRAY_API))
         if SCIPY_ARRAY_API_ != {'all'}:
             if SCIPY_ARRAY_API_ - xp_available_backend_ids:
-                if device_and_backend_compatible:
+                if device_and_backend_incompatible is None:
                     msg = ("'--array-api-backend' must be in "
                            f"{xp_available_backend_ids}; got {SCIPY_ARRAY_API_}")
                 else:
-                    msg = (f"The requested backend, {SCIPY_ARRAY_API_}, is "
-                           f"incompatible with the requested {SCIPY_DEVICE=}")
+                    msg = (f"The requested backend, {device_and_backend_incompatible}, "
+                           f"is incompatible with the requested {SCIPY_DEVICE=}")
                 raise ValueError(msg)
             # Only select a subset of backends
             xp_available_backends = [
