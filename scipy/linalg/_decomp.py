@@ -295,9 +295,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     a_is_real = a1.dtype in (np.float32, np.float64)
     if a_is_real and (w.imag == 0).all():
         if left:
-            vl = vl.real
+            vl = np.asfortranarray(vl.real)
         if right:
-            vr = vr.real
+            vr = np.asfortranarray(vr.real)
 
     if not (left or right):
         return w
