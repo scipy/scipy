@@ -3,7 +3,8 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
-from types import MethodType
+from collections.abc import Callable
+from typing import Any
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
@@ -1609,9 +1610,9 @@ class poisson_binom_gen(rv_discrete):
 
     """  # noqa: E501
 
-    _parse_args_rvs: MethodType
-    _parse_args_stats: MethodType
-    _parse_args: MethodType
+    _parse_args_rvs: Callable[..., Any]
+    _parse_args_stats: Callable[..., Any]
+    _parse_args: Callable[..., Any]
 
     def _shape_info(self):
         # message = 'Fitting is not implemented for this distribution."

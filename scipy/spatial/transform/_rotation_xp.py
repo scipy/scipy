@@ -9,6 +9,7 @@ that work with any Array API-compatible backend.
 import re
 import warnings
 from types import EllipsisType
+from typing import cast
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -245,6 +246,8 @@ def from_davenport(
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
     angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
     num_axes = axes.shape[-2]
+    if num_axes is None:
+        raise ValueError(f"axes must have a known shape, got shape {axes.shape}")
     if num_axes < 1 or num_axes > 3:
         raise ValueError(f"Expected up to 3 axes, got {num_axes}")
 
@@ -270,7 +273,7 @@ def from_davenport(
         angles = _deg2rad(angles)
 
     if (
-        not broadcastable(axes.shape[:-1], angles.shape)
+        not broadcastable(axes.shape[:-1], cast(tuple[int, ...], angles.shape))
         or axes.shape[-2] != angles.shape[-1]
     ):
         raise ValueError(
