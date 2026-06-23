@@ -1024,8 +1024,7 @@ def test_permute_dims():
     sXXtransposed = sXX.transpose(axes=(0, 2, 1, 3))
     assert_equal(sXXtransposed.shape, (3, 2, 2, 3))
     assert_equal(sXXpermuted.toarray(), sXXtransposed.toarray())
-    # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
-    assert_equal(sXXpermuted.toarray(), np.transpose(npxx, axes=(0, 2, 1, 3)))
+    assert_equal(sXXpermuted.toarray(), np.permute_dims(npxx, axes=(0, 2, 1, 3)))
 
 
 def test_3d_permute_dims():
@@ -1036,8 +1035,7 @@ def test_3d_permute_dims():
     out = construct.permute_dims(A, axes=(2, 1, 0))
     assert_equal(out.shape, (2, 4, 1))
     assert_equal(out.toarray(), tgt)
-    # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
-    assert_equal(out.toarray(), np.transpose(x, axes=(2, 1, 0)))
+    assert_equal(out.toarray(), np.permute_dims(x, axes=(2, 1, 0)))
 
 
 def test_canonical_format_permute_dims():
@@ -1096,8 +1094,7 @@ def test_sparse_format_permute_dims(format):
     out = construct.permute_dims(SA, axes=(1, 0))
     assert out.format == "coo"
     assert out.shape == (3, 2)
-    # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
-    assert_equal(out.toarray(), np.transpose(A, axes=(1, 0)))
+    assert_equal(out.toarray(), np.permute_dims(A, axes=(1, 0)))
     assert not out.has_canonical_format
 
 

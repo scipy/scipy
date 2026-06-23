@@ -306,8 +306,7 @@ def test_upcast():
                 b = b0.copy().astype(b_dtype)
             else:
                 with np.errstate(invalid="ignore"):
-                    # Casting a large value (2**32) to int8 causes a warning in
-                    # numpy >1.23
+                    # Casting a large value (2**32) to int8 causes a warning
                     b = b0.real.copy().astype(b_dtype)
 
             if not (a_dtype == np.bool_ and b_dtype == np.bool_):

@@ -50,17 +50,8 @@ def have_fenv():
 
 
 def random_double(size, rng):
-    # This code is a little hacky to work around some issues:
-    # - randint doesn't have a dtype keyword until 1.11
-    #   and the default dtype of randint is np.dtype(int)
-    # - Something like
-    #   >>> low = np.iinfo(np.dtype(int)).min
-    #   >>> high = np.iinfo(np.dtype(int)).max + 1
-    #   >>> np.random.randint(low=low, high=high)
-    #   fails in NumPy 1.10.4 (note that the 'high' value in randint
-    #   is exclusive); this is fixed in 1.11.
-    x = rng.randint(low=0, high=2**16, size=4*size)
-    return x.astype(np.uint16).view(np.float64)
+    x = rng.randint(low=0, high=2**16, size=4*size, dtype=np.uint16)
+    return x.view(np.float64)
 
 
 def test_add_round(size, mode, rng):

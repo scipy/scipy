@@ -25,8 +25,6 @@ from numpy.exceptions import AxisError
 type IntNumber = int | np.integer
 type DecimalNumber = float | np.floating | np.integer
 
-copy_if_needed: bool | None = None
-
 
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
 # See gh-23913
