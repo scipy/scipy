@@ -244,7 +244,6 @@ python_sources = [
   '_mptestutils.py',
   '_multiufuncs.py',
   '_orthogonal.py',
-  '_orthogonal.pyi',
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',

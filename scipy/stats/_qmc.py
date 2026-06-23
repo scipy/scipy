@@ -47,7 +47,7 @@ __all__ = ['scale', 'discrepancy', 'geometric_discrepancy', 'update_discrepancy'
 
 
 @overload
-def check_random_state(seed: IntNumber | None = None) -> np.random.Generator: ...
+def check_random_state(seed: SeedType = None) -> np.random.Generator: ...
 @overload
 def check_random_state[GeneratorT: _RNG](seed: GeneratorT) -> GeneratorT:...
 
@@ -911,7 +911,7 @@ class QMCEngine(ABC):
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self,
-        d: IntNumber,
+        d: int,
         *,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
@@ -926,7 +926,7 @@ class QMCEngine(ABC):
     # `__init__` as `rng`, rejecting `RandomState` arguments.
     def _initialize(
         self,
-        d: IntNumber,
+        d: int,
         *,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
@@ -1219,7 +1219,7 @@ class Halton(QMCEngine):
     """
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *, scramble: bool = True,
+        self, d: int, *, scramble: bool = True,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
     ) -> None:
@@ -1509,7 +1509,7 @@ class LatinHypercube(QMCEngine):
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *,
+        self, d: int, *,
         scramble: bool = True,
         strength: int = 1,
         optimization: Literal["random-cd", "lloyd"] | None = None,
@@ -1755,7 +1755,7 @@ class Sobol(QMCEngine):
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *, scramble: bool = True,
+        self, d: int, *, scramble: bool = True,
         bits: IntNumber | None = None, rng: SeedType = None,
         optimization: Literal["random-cd", "lloyd"] | None = None
     ) -> None:
@@ -2082,7 +2082,7 @@ class PoissonDisk(QMCEngine):
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self,
-        d: IntNumber,
+        d: int,
         *,
         radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
@@ -2541,9 +2541,9 @@ class MultinomialQMC:
         rng: SeedType = None,
     ) -> None:
         self.pvals = np.atleast_1d(np.asarray(pvals))
-        if np.min(pvals) < 0:
+        if np.min(self.pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
-        if not np.isclose(np.sum(pvals), 1):
+        if not np.isclose(np.sum(self.pvals), 1):
             raise ValueError('Elements of pvals must sum to 1.')
         self.n_trials = n_trials
         if engine is None:
@@ -2667,7 +2667,7 @@ def _random_cd(
     return best_sample
 
 
-def _l1_norm(sample: np.ndarray) -> float:
+def _l1_norm(sample: np.ndarray) -> np.floating:
     return distance.pdist(sample, 'cityblock').min()
 
 
