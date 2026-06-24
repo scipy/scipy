@@ -2551,7 +2551,7 @@ const char *bdtrik_doc = R"(
     Computation of `k` involves a search for a value that produces the desired
     value of `y`. The search relies on the monotonicity of `y` with `k`.
 
-    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
+    Implemented using the Boost library.
 
     References
     ----------
@@ -2560,10 +2560,6 @@ const char *bdtrik_doc = R"(
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17.5#E5
-    .. [3] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-
     )";
 
 const char *binom_doc = R"(
