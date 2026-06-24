@@ -15,7 +15,7 @@ import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import (dia_array, SparseEfficiencyWarning, csc_array,
         csr_array, eye_array, issparse, dok_array, lil_array, bsr_array,
-        coo_array, random_array, kron)
+        coo_array, random_array, tril, triu, kron)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg._dsolve import (spsolve, splu, spilu,
         _superlu, spsolve_triangular, factorized,
