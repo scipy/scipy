@@ -1353,6 +1353,9 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_struve_h(double v, double z) nogil
     double xsf_struve_l(double v, double z) nogil
 
+    double xsf_wrightomega(double z) nogil
+    npy_cdouble xsf_cwrightomega(npy_cdouble z) nogil
+
     # Stats
 
     double xsf_bdtr(double k, int n, double p) nogil
@@ -3527,9 +3530,9 @@ cpdef double complex wofz(double complex x0) noexcept nogil:
 cpdef Dd_number_t wrightomega(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.wrightomega"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_wrightomega)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cwrightomega(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_wrightomega_real)(x0)
+        return xsf_wrightomega(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN

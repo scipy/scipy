@@ -19,10 +19,8 @@ ufuncs_sources = [
 ]
 
 ufuncs_cxx_sources = [
-  '_wright.cxx',
   'ellint_carlson_wrap.cxx',
   'sf_error.cc',
-  'wright.cc'
 ]
 
 cdflib_lib = static_library('cdflib',
