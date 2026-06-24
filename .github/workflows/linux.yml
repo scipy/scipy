@@ -588,10 +588,10 @@ jobs:
           pixi exec ccache -s
 
   #################################################################################
-  clang-18-build-only:
+  clang-22-build-only:
     # Purpose is to check for warnings in builds with latest clang.
     # We do not run the test suite here.
-    name: Clang-18 build-only (-Werror)
+    name: Clang-22 build-only (-Werror)
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -603,27 +603,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.12"
-
-      - name: Setup system dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt install -y libopenblas-dev liblapack-dev
-
-      - name: Setup Python build deps
-        run: |
-          pip install --group build
-          pip install build
+          pixi-version: v0.70.2
+          cache: false
 
       - name: Build wheel, check for compiler warnings
-        run: |
-          # if clang-18 isn't installed this should fail
-          clang-18 --version
-          # specify which compilers to use using environment variables
-          CC=clang-18 CXX=clang++-18 python -m build -wnx -Csetup-args=--werror
+        run: pixi run build-clang-22
 
   #################################################################################
   test_aarch64:
