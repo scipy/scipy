@@ -8,6 +8,7 @@ from scipy.sparse import (issparse, SparseEfficiencyWarning,
 from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
                                    safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
+from scipy._lib._util import _validate_int
 
 from . import _superlu
 
@@ -22,7 +23,7 @@ __all__ = ['spsolve', 'splu', 'spilu', 'factorized',
            'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
-def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_batch_size=10):
+def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_block_size=10):
     r"""Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
@@ -55,7 +56,7 @@ def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_batch_size=1
     use_umfpack : bool, optional
         If True, then use UMFPACK for the solution [3]_, [4]_, [5]_,
         [6]_ . This input is only valid if ``sksparse.umfpack`` is installed.
-    rhs_batch_size : int, optional
+    rhs_block_size : int, optional
         If ``b`` is a 2D sparse array, this parameter controls the number of
         columns to be solved simultaneously. A larger number will increase
         memory consumption by converting more columns at a time to dense
@@ -156,10 +157,12 @@ def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_batch_size=1
 
     use_umfpack = use_umfpack and has_umfpack  # only use it if available
 
+    _validate_int(rhs_block_size, "rhs_block_size", minimum=1)
+
     if use_umfpack:
         # sksparse.umfpack handles 1D and 2D, sparse or dense b
         try:
-            x = umfpack.umf_solve(A, b, trans=trans, rhs_batch_size=rhs_batch_size)
+            x = umfpack.umf_solve(A, b, trans=trans, rhs_batch_size=rhs_block_size)
         except umfpack.UMFPACKSingularMatrixError as e:
             raise LinAlgError("A is singular.") from e
     else:
@@ -184,19 +187,19 @@ def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_batch_size=1
                         SparseEfficiencyWarning, stacklevel=2)
                 b = csc_array(b)
 
-            # Solve in batches to reduce memory consumption
+            # Solve in blocks to reduce memory consumption
             K = b.shape[1]
             x_blocks = []
 
             # Pre-allocate arrays to avoid repeated allocations
-            b_batch = np.empty((N, min(rhs_batch_size, K)), dtype=b.dtype, order="F")
+            b_block = np.empty((N, min(rhs_block_size, K)), dtype=b.dtype, order="F")
 
-            for k in range(0, K, rhs_batch_size):
-                batch_end = min(k + rhs_batch_size, K)
-                width = batch_end - k
+            for k in range(0, K, rhs_block_size):
+                block_end = min(k + rhs_block_size, K)
+                width = block_end - k
                 # Convert sparse to dense in the buffer
-                b_view = b_batch[:, :width]
-                b[:, k:batch_end].toarray(out=b_view)
+                b_view = b_block[:, :width]
+                b[:, k:block_end].toarray(out=b_view)
                 # Solve the linear systems
                 x_dense = lu_solve(b_view)
                 x_blocks.append(csc_array(x_dense, dtype=b.dtype))
