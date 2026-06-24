@@ -366,13 +366,21 @@ description = "Test SciPy with `fail-slow=1.0`"
 ### Type Checking ###
 
 [feature.typecheck.dependencies]
+# type checkers
 mypy = "==2.1.0"
 pyrefly = "==1.1.1"
+# typing deps
 typing_extensions = "*"
+# stub deps
+types-cffi = "*"
 types-psutil = "*"
+# import deps
+array-api-strict = "*"
+cython = "*"
+dask = "*"
+matplotlib = "*"
 pybind11 = "*"
 sphinx = "*"
-cython = "*"
 
 [feature.typecheck.tasks.mypy]
 cmd = "spin mypy --no-build"
