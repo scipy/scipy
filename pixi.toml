@@ -42,7 +42,7 @@ openblas = "*"
 
 [environments.build]
 # tasks: build
-features = ["build-deps", "build-task", "win-openblas"]
+features = ["build-deps", "build-deps-non-pypi", "build-task", "win-openblas"]
 solve-group = "default"
 
 [environments.test]
@@ -72,17 +72,17 @@ solve-group = "default"
 
 [environments.bench]
 # tasks: bench
-features = ["run-deps", "build-deps", "bench-common", "bench"]
+features = ["run-deps", "build-deps", "build-deps-non-pypi", "bench-common", "bench"]
 solve-group = "default"
 
 [environments.build-debug]
 # tasks: build-debug
-features = ["build-deps", "build-debug"]
+features = ["build-deps", "build-deps-non-pypi", "build-debug"]
 solve-group = "debug"
 
 [environments.build-freethreading]
 # tasks: build-freethreading
-features = ["py-freethreading", "build-deps", "build-freethreading"]
+features = ["py-freethreading", "build-deps", "build-deps-non-pypi", "build-freethreading"]
 no-default-feature = true # avoid python-gil
 solve-group = "freethreading"
 
@@ -121,7 +121,7 @@ features = ["typecheck", "run-deps", "test-deps"]
 # to more reliably test the very latest versions of core dependencies
 [environments.build-cpu]
 # tasks: build-cpu
-features = ["build-deps", "build-cpu"]
+features = ["build-deps", "build-deps-non-pypi", "build-cpu"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-strict]
@@ -152,7 +152,7 @@ solve-group = "array-api-cpu"
 [environments.build-cuda]
 # tasks: build-cuda
 # note: py-cuda feature aims to ensure compatibility with both cuda12 and cuda13 solve groups
-features = ["build-deps", "build-cuda", "py-cuda"]
+features = ["build-deps", "build-deps-non-pypi", "build-cuda", "py-cuda"]
 
 [environments.cupy]
 # tasks: test-cupy, bench-cupy
@@ -171,7 +171,7 @@ solve-group = "cuda12"
 
 [environments.build-accelerate-lp64]
 # tasks: build-accelerate-lp64
-features = ["build-deps", "accelerate", "build-accelerate-lp64"]
+features = ["build-deps", "build-deps-non-pypi", "accelerate", "build-accelerate-lp64"]
 solve-group = "accelerate-lp64"
 
 [environments.accelerate-lp64]
@@ -181,7 +181,7 @@ solve-group = "accelerate-lp64"
 
 [environments.build-accelerate-ilp64]
 # tasks: build-accelerate-ilp64
-features = ["build-deps", "accelerate", "build-accelerate-ilp64"]
+features = ["build-deps", "build-deps-non-pypi", "accelerate", "build-accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
 [environments.accelerate-ilp64]
@@ -191,7 +191,7 @@ solve-group = "accelerate-ilp64"
 
 [environments.build-mkl-lp64]
 # tasks: build-mkl-lp64
-features = ["build-deps", "mkl", "build-mkl-lp64"]
+features = ["build-deps", "build-deps-non-pypi", "mkl", "build-mkl-lp64"]
 solve-group = "mkl-lp64"
 
 [environments.mkl-lp64]
@@ -201,7 +201,7 @@ solve-group = "mkl-lp64"
 
 [environments.build-mkl-ilp64]
 # tasks: build-mkl-ilp64
-features = ["build-deps", "mkl", "build-mkl-ilp64"]
+features = ["build-deps", "build-deps-non-pypi", "mkl", "build-mkl-ilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-ilp64]
@@ -211,7 +211,7 @@ solve-group = "mkl-ilp64"
 
 [environments.build-mkl-cyilp64]
 # tasks: build-mkl-cyilp64
-features = ["build-deps", "mkl", "build-mkl-cyilp64"]
+features = ["build-deps", "build-deps-non-pypi", "mkl", "build-mkl-cyilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-cyilp64]
@@ -221,7 +221,7 @@ solve-group = "mkl-ilp64"
 
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
+features = ["build-deps", "build-deps-non-pypi", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
 
 [environments.scipy-openblas32]
 # tasks: build-scipy-openblas32, test-scipy-openblas32
@@ -230,6 +230,16 @@ features = ["build-deps", "run-deps", "test-deps", "scipy-openblas32"]
 [environments.scipy-openblas64]
 # tasks: build-scipy-openblas64, test-scipy-openblas64
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas64"]
+
+[environments.build-min-numpy-scipy-openblas]
+# tasks: build-scipy-openblas32, test-scipy-openblas32
+features = ["build-deps", "min-numpy", "scipy-openblas32"]
+solve-group = "min-numpy"
+
+[environments.test-min-numpy-scipy-openblas]
+# tasks: build-scipy-openblas32, test-scipy-openblas32
+features = ["run-deps", "test-deps", "min-numpy", "scipy-openblas32"]
+solve-group = "min-numpy"
 
 [environments.gha-update]
 # tasks: gha-update
@@ -263,12 +273,19 @@ ninja = "*"
 meson = "*"
 meson-python = "*"
 cython = "*"
-pythran = "*"
 pybind11 = "*"
 # needed at build-time as well as run-time
 numpy = "*"
-blas-devel = "*"
 
+[feature.build-deps.target.win-64.dependencies]
+clang-cl_win-64 = "*"
+
+[feature.build-deps-non-pypi.dependencies]
+# some environments use pythran from pypi instead of conda-forge,
+# so we separate it out from the other build-deps.
+# Likewise for blas and scipy-openblas.
+pythran = "*"
+blas-devel = "*"
 
 [feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
@@ -594,22 +611,30 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.scipy-openblas32.pypi-dependencies]
 scipy-openblas32 = "==0.3.31.22.0"
+# scipy-openblas clashes with conda-forge pythran
+# ref. https://github.com/conda-forge/pythran-feedstock/issues/77
+pythran = "*"
 
 [feature.scipy-openblas32.tasks.build-scipy-openblas32]
 cmd = "spin build --build-dir=build-scipy-openblas32 --with-scipy-openblas=32"
 env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with scipy-openblas32"
+default-environment = "scipy-openblas32"
 
 [feature.scipy-openblas32.tasks.test-scipy-openblas32]
 cmd = "spin test --no-build --build-dir=build-scipy-openblas32"
 depends-on = "build-scipy-openblas32"
 description = "Test SciPy with scipy-openblas32"
+default-environment = "scipy-openblas32"
 
 [feature.scipy-openblas64]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.scipy-openblas64.pypi-dependencies]
 scipy-openblas64 = "==0.3.31.22.0"
+# scipy-openblas clashes with conda-forge pythran
+# ref. https://github.com/conda-forge/pythran-feedstock/issues/77
+pythran = "*"
 
 [feature.scipy-openblas64.tasks.build-scipy-openblas64]
 cmd = "spin build --build-dir=build-scipy-openblas64 --with-scipy-openblas=64 -S-Duse-ilp64=true -S-Dblas-symbol-suffix=64_"
@@ -864,6 +889,9 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.py312.dependencies]
 python = "3.12.*"
+
+[feature.min-numpy.dependencies]
+numpy = "==2.0.0"
 
 
 [feature.py-freethreading]
