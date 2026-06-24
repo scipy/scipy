@@ -2,6 +2,7 @@
 import math
 import numpy as np
 from scipy import special
+import scipy._external.array_api_extra as xpx
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
@@ -20,10 +21,13 @@ __all__ = ['nsum']
 #    eventually, but do we adjust the interface now?
 
 
-@xp_capabilities(skip_backends=[('array_api_strict', 'No fancy indexing.'),
-                                ('jax.numpy', 'No mutation.'),
-                                ('dask.array',
-                                 'Data-dependent shapes in boolean index assignment')])
+@xp_capabilities(
+    jax_jit=False,
+    skip_backends=[
+        ('array_api_strict', 'No fancy indexing.'),
+        ('dask.array', 'Data-dependent shapes in boolean index assignment'),
+    ],
+)
 def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minlevel=2,
              atol=None, rtol=None, preserve_shape=False, callback=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
@@ -339,9 +343,9 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         c = xp.reshape((xp_ravel(a) + xp_ravel(b))/2, a.shape)
         inf_a, inf_b = xp.isinf(a), xp.isinf(b)
-        c[inf_a] = b[inf_a] - 1.  # takes care of infinite a
-        c[inf_b] = a[inf_b] + 1.  # takes care of infinite b
-        c[inf_a & inf_b] = 0.  # takes care of infinite a and b
+        c = xpx.at(c)[inf_a].set(b[inf_a] - 1.)  # takes care of infinite a
+        c = xpx.at(c)[inf_b].set(a[inf_b] + 1.)  # takes care of infinite b
+        c = xpx.at(c)[inf_a & inf_b].set(0.)  # takes care of infinite a and b
         temp = eim._initialize(f, (c,), args, kwargs=kwargs, complex_ok=True,
                                preserve_shape=preserve_shape, xp=xp)
     f, xs, fs, args, shape, dtype, xp = temp
@@ -361,7 +365,7 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
         rtol = 0.75*math.log(eps) if log else eps**0.75
 
     Sn = xp_ravel(xp.full(shape, zero, dtype=dtype))  # latest integral estimate
-    Sn[xp.isnan(a) | xp.isnan(b) | xp.isnan(fs[0])] = xp.nan
+    Sn = xpx.at(Sn)[xp.isnan(a) | xp.isnan(b) | xp.isnan(fs[0])].set(xp.nan)
     Sk = xp.reshape(xp.empty_like(Sn), (-1, 1))[:, 0:0]  # all integral estimates
     aerr = xp_ravel(xp.full(shape, xp.nan, dtype=dtype))  # absolute error
     status = xp_ravel(xp.full(shape, eim._EINPROGRESS, dtype=xp.int32))
@@ -405,21 +409,28 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
 
         # Perform abscissae substitutions for infinite limits of integration
         xj = xp_copy(work.xj)
-        xj[work.abinf] = xj[work.abinf] / (1 - xp.real(xj[work.abinf])**2)
-        xj[work.binf] = 1/xj[work.binf] - 1 + work.a0[work.binf]
-        xj[work.ainf] *= -1
+        xj = xpx.at(xj)[work.abinf].set(
+            xj[work.abinf] / (1 - xp.real(xj[work.abinf])**2)
+        )
+        xj = xpx.at(xj)[work.binf].set(
+            1/xj[work.binf] - 1 + work.a0[work.binf]
+        )
+        xj = xpx.at(xj)[work.ainf].multiply(-1)
         return xj
 
     def post_func_eval(x, fj, work):
         # Weight integrand as required by substitutions for infinite limits
         if work.log:
-            fj[work.abinf] += (xp.log(1 + work.xj[work.abinf]**2)
-                               - 2*xp.log(1 - work.xj[work.abinf]**2))
-            fj[work.binf] -= 2 * xp.log(work.xj[work.binf])
+            fj = xpx.at(fj)[work.abinf].add(
+                xp.log(1 + work.xj[work.abinf]**2)
+                - 2*xp.log(1 - work.xj[work.abinf]**2)
+            )
+            fj = xpx.at(fj)[work.binf].subtract(2 * xp.log(work.xj[work.binf]))
         else:
-            fj[work.abinf] *= ((1 + work.xj[work.abinf]**2) /
-                               (1 - work.xj[work.abinf]**2)**2)
-            fj[work.binf] *= work.xj[work.binf]**-2.
+            fj = xpx.at(fj)[work.abinf].multiply(
+                (1 + work.xj[work.abinf]**2) / (1 - work.xj[work.abinf]**2)**2
+            )
+            fj = xpx.at(fj)[work.binf].multiply(work.xj[work.binf]**-2.)
 
         # Estimate integral with Euler-Maclaurin Sum
         fjwj, Sn = _euler_maclaurin_sum(fj, work, xp)
@@ -440,18 +451,18 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
             i = xp_ravel(work.a == work.b)  # ravel singleton dimension
             zero = xp.asarray(-xp.inf if log else 0.)
             zero = xp.full(work.Sn.shape, zero, dtype=Sn.dtype)
-            zero[xp.isnan(Sn)] = xp.nan
-            work.Sn[i] = zero[i]
-            work.aerr[i] = zero[i]
-            work.status[i] = eim._ECONVERGED
-            stop[i] = True
+            zero = xpx.at(zero)[xp.isnan(Sn)].set(xp.nan)
+            work.Sn = xpx.at(work.Sn)[i].set(zero[i])
+            work.aerr = xpx.at(work.aerr)[i].set(zero[i])
+            work.status = xpx.at(work.status)[i].set(eim._ECONVERGED)
+            stop = xpx.at(stop)[i].set(True)
         else:
             # Terminate if convergence criterion is met
             rerr, aerr = _estimate_error(work, xp)
             i = (rerr < rtol) | (aerr < atol)
             work.aerr =  xp.reshape(xp.astype(aerr, work.dtype), work.Sn.shape)
-            work.status[i] = eim._ECONVERGED
-            stop[i] = True
+            work.status = xpx.at(work.status)[i].set(eim._ECONVERGED)
+            stop = xpx.at(stop)[i].set(True)
 
         # Terminate if integral estimate becomes invalid
         if log:
@@ -460,8 +471,8 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
             i = (Sn_pos_inf | xp.isnan(work.Sn)) & ~stop
         else:
             i = ~xp.isfinite(work.Sn) & ~stop
-        work.status[i] = eim._EVALUEERR
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(eim._EVALUEERR)
+        stop = xpx.at(stop)[i].set(True)
 
         return stop
 
@@ -476,12 +487,12 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
         if log and xp.any(negative):
             res['integral'] = res['integral'] + negative * xp.pi * 1.0j
         else:
-            res['integral'][negative] *= -1
+            res['integral'] = xpx.at(res['integral'])[negative].multiply(-1)
 
         # For this algorithm, it seems more appropriate to report the maximum
         # level rather than the number of iterations in which it was performed.
         res['maxlevel'] = minlevel + res['nit'] - 1
-        res['maxlevel'][res['nit'] == 0] = -1
+        res['maxlevel'] = xpx.at(res['maxlevel'])[res['nit'] == 0].set(-1)
         del res['nit']
         return shape
 
@@ -550,7 +561,7 @@ def _compute_pair(k, h0, xp):
 
     # When level k == 0, the zeroth xj corresponds with xj = 0. To simplify
     # code, the function will be evaluated there twice; each gets half weight.
-    wj[0] = wj[0] / 2 if k == 0 else wj[0]
+    wj = xpx.at(wj)[0].set(wj[0] / 2 if k == 0 else wj[0])
 
     return xjc, wj  # store at full precision
 
@@ -615,7 +626,7 @@ def _transform_to_limits(xjc, wj, a, b, xp):
     # Note: values may have complex dtype, but have zero imaginary part
     xj_real, a_real, b_real = xp.real(xj), xp.real(a), xp.real(b)
     invalid = (xj_real <= a_real) | (xj_real >= b_real)
-    wj[invalid] = 0
+    wj = xpx.at(wj)[invalid].set(0)
     return xj, wj
 
 
@@ -643,7 +654,7 @@ def _euler_maclaurin_sum(fj, work, xp):
     invalid_l = ~xp.isfinite(fl) | (wl == 0)
 
     # integer index of the maximum abscissa at this level
-    xr[invalid_r] = -xp.inf
+    xr = xpx.at(xr)[invalid_r].set(-xp.inf)
     ir = xp.argmax(xp.real(xr), axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
     ### Not Array API Compatible... yet ###
@@ -655,12 +666,12 @@ def _euler_maclaurin_sum(fj, work, xp):
     # note: abscissa may have complex dtype, but will have zero imaginary part
     j = xp.real(xr_max) > xp.real(xr0)
     # Update record of the incumbent abscissa, function value, and weight
-    xr0[j] = xr_max[j]
-    fr0[j] = fr_max[j]
-    wr0[j] = wr_max[j]
+    xr0 = xpx.at(xr0)[j].set(xr_max[j])
+    fr0 = xpx.at(fr0)[j].set(fr_max[j])
+    wr0 = xpx.at(wr0)[j].set(wr_max[j])
 
     # integer index of the minimum abscissa at this level
-    xl[invalid_l] = xp.inf
+    xl = xpx.at(xl)[invalid_l].set(xp.inf)
     il = xp.argmin(xp.real(xl), axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
     xl_min = xp.take_along_axis(xl, il, axis=0)[0]
@@ -671,11 +682,9 @@ def _euler_maclaurin_sum(fj, work, xp):
     # note: abscissa may have complex dtype, but will have zero imaginary part
     j = xp.real(xl_min) < xp.real(xl0)
     # Update record of the incumbent abscissa, function value, and weight
-    xl0[j] = xl_min[j]
-    fl0[j] = fl_min[j]
-    wl0[j] = wl_min[j]
-    fj = fj.T
-
+    xl0 = xpx.at(xl0)[j].set(xl_min[j])
+    fl0 = xpx.at(fl0)[j].set(fl_min[j])
+    wl0 = xpx.at(wl0)[j].set(wl_min[j])
     # Compute the error estimate `d4` - the magnitude of the leftmost or
     # rightmost term, whichever is greater.
     flwl0 = fl0 + xp.log(wl0) if work.log else fl0 * wl0  # leftmost term
@@ -690,8 +699,9 @@ def _euler_maclaurin_sum(fj, work, xp):
     # information.
     fr0b = xp.broadcast_to(fr0[xp.newaxis, :], fr.shape)
     fl0b = xp.broadcast_to(fl0[xp.newaxis, :], fl.shape)
-    fr[invalid_r] = fr0b[invalid_r]
-    fl[invalid_l] = fl0b[invalid_l]
+    fr = xpx.at(fr)[invalid_r].set(fr0b[invalid_r])
+    fl = xpx.at(fl)[invalid_l].set(fl0b[invalid_l])
+    fj = xp.concat((fr, fl), axis=0).T
 
     # When wj is zero, log emits a warning
     # with np.errstate(divide='ignore'):
@@ -799,21 +809,28 @@ def _transform_integrals(a, b, xp):
     # For infinite limit on the left, we substitute x = -x and treat as above
     # For infinite limits, we substitute x = t / (1-t**2)
     ab_same = (a == b)
-    a[ab_same], b[ab_same] = 1, 1
+    a = xpx.at(a)[ab_same].set(1)
+    b = xpx.at(b)[ab_same].set(1)
 
     # `a, b` may have complex dtype but have zero imaginary part
     negative = xp.real(b) < xp.real(a)
-    a[negative], b[negative] = b[negative], a[negative]
+    a_old, b_old = xp_copy(a), xp_copy(b)
+    a = xpx.at(a)[negative].set(b_old[negative])
+    b = xpx.at(b)[negative].set(a_old[negative])
 
     abinf = xp.isinf(a) & xp.isinf(b)
-    a[abinf], b[abinf] = -1, 1
+    a = xpx.at(a)[abinf].set(-1)
+    b = xpx.at(b)[abinf].set(1)
 
     ainf = xp.isinf(a)
-    a[ainf], b[ainf] = -b[ainf], -a[ainf]
+    a_old, b_old = xp_copy(a), xp_copy(b)
+    a = xpx.at(a)[ainf].set(-b_old[ainf])
+    b = xpx.at(b)[ainf].set(-a_old[ainf])
 
     binf = xp.isinf(b)
     a0 = xp_copy(a)
-    a[binf], b[binf] = 0, 1
+    a = xpx.at(a)[binf].set(0)
+    b = xpx.at(b)[binf].set(1)
 
     return a, b, a0, negative, abinf, ainf, binf
 
@@ -953,11 +970,14 @@ def _nsum_iv(f, a, b, step, args, kwargs, log, maxterms, tolerances):
     return f, a, b, step, valid_abstep, args, kwargs, log, maxterms_int, atol, rtol, xp
 
 
-@xp_capabilities(skip_backends=[('torch', 'data-apis/array-api-compat#271'),
-                                ('array_api_strict', 'No fancy indexing.'),
-                                ('jax.numpy', 'No mutation.'),
-                                ('dask.array',
-                                 'Data-dependent shapes in boolean index assignment')])
+@xp_capabilities(
+    jax_jit=False,
+    skip_backends=[
+        ('torch', 'data-apis/array-api-compat#271'),
+        ('array_api_strict', 'No fancy indexing.'),
+        ('dask.array', 'Data-dependent shapes in boolean index assignment'),
+    ],
+)
 def nsum(f, a, b, *, step=1, args=(), kwargs=None,
          log=False, maxterms=int(2**20), tolerances=None):
     r"""Evaluate a convergent finite or infinite series.
@@ -1169,7 +1189,9 @@ def nsum(f, a, b, *, step=1, args=(), kwargs=None,
     valid_abstep = xp_ravel(xp.broadcast_to(valid_abstep, shape))
     nterms = xp.floor((b - a) / step)
     finite_terms = xp.isfinite(nterms)
-    b[finite_terms] = a[finite_terms] + nterms[finite_terms]*step[finite_terms]
+    b = xpx.at(b)[finite_terms].set(
+        a[finite_terms] + nterms[finite_terms]*step[finite_terms]
+    )
 
     # Define constants
     eps = xp.finfo(dtype).eps
@@ -1193,33 +1215,42 @@ def nsum(f, a, b, *, step=1, args=(), kwargs=None,
     i4 = ~i3 & ~i2 & ~i1 & ~i0             # infinite sum on both sides
 
     if xp.any(i0):
-        S[i0], E[i0] = xp.nan, xp.nan
-        status[i0] = -1
+        S = xpx.at(S)[i0].set(xp.nan)
+        E = xpx.at(E)[i0].set(xp.nan)
+        status = xpx.at(status)[i0].set(-1)
 
-        S[i0b], E[i0b] = zero, zero
-        status[i0b] = 0
+        S = xpx.at(S)[i0b].set(zero)
+        E = xpx.at(E)[i0b].set(zero)
+        status = xpx.at(status)[i0b].set(0)
 
     if xp.any(i1):
         args_direct = [arg[i1] for arg in args]
         tmp = _direct(f, a[i1], b[i1], step[i1], args_direct, constants, xp)
-        S[i1], E[i1] = tmp[:-1]
-        nfev[i1] += tmp[-1]
-        status[i1] = -3 * xp.asarray(~xp.isfinite(S[i1]), dtype=xp.int32)
+        S = xpx.at(S)[i1].set(tmp[0])
+        E = xpx.at(E)[i1].set(tmp[1])
+        nfev = xpx.at(nfev)[i1].add(xp.astype(tmp[2], nfev.dtype))
+        status = xpx.at(status)[i1].set(
+            -3 * xp.asarray(~xp.isfinite(S[i1]), dtype=xp.int32)
+        )
 
     if xp.any(i2):
         args_indirect = [arg[i2] for arg in args]
         tmp = _integral_bound(f, a[i2], b[i2], step[i2],
                               args_indirect, constants, xp)
-        S[i2], E[i2], status[i2] = tmp[:-1]
-        nfev[i2] += tmp[-1]
+        S = xpx.at(S)[i2].set(tmp[0])
+        E = xpx.at(E)[i2].set(tmp[1])
+        status = xpx.at(status)[i2].set(tmp[2])
+        nfev = xpx.at(nfev)[i2].add(xp.astype(tmp[-1], nfev.dtype))
 
     if xp.any(i3):
         args_indirect = [arg[i3] for arg in args]
         def _f(x, *args): return f(-x, *args)
         tmp = _integral_bound(_f, -b[i3], -a[i3], step[i3],
                               args_indirect, constants, xp)
-        S[i3], E[i3], status[i3] = tmp[:-1]
-        nfev[i3] += tmp[-1]
+        S = xpx.at(S)[i3].set(tmp[0])
+        E = xpx.at(E)[i3].set(tmp[1])
+        status = xpx.at(status)[i3].set(tmp[2])
+        nfev = xpx.at(nfev)[i3].add(xp.astype(tmp[-1], nfev.dtype))
 
     if xp.any(i4):
         args_indirect = [arg[i4] for arg in args]
@@ -1247,8 +1278,10 @@ def nsum(f, a, b, *, step=1, args=(), kwargs=None,
 
         zero = xp.zeros_like(a[i4])
         tmp = _integral_bound(_f, zero, b[i4], step[i4], args_indirect, constants, xp)
-        S[i4], E[i4], status[i4] = tmp[:-1]
-        nfev[i4] += 2*tmp[-1]
+        S = xpx.at(S)[i4].set(tmp[0])
+        E = xpx.at(E)[i4].set(tmp[1])
+        status = xpx.at(status)[i4].set(tmp[2])
+        nfev = xpx.at(nfev)[i4].add(xp.astype(2*tmp[-1], nfev.dtype))
 
     # Return results
     S, E = S.reshape(shape)[()], E.reshape(shape)[()]
@@ -1291,13 +1324,13 @@ def _direct(f, a, b, step, args, constants, xp, inclusive=True):
     args2 = [arg[:, xp.newaxis] for arg in args]
     ks = a2 + xp.arange(max_steps, dtype=dtype) * step2
     i_nan = ks >= (b2 + inclusive_adjustment*step2/2)
-    ks[i_nan] = xp.nan
+    ks = xpx.at(ks)[i_nan].set(xp.nan)
     fs = f(ks, *args2)
 
     # The function evaluated at NaN is NaN, and NaNs are zeroed in the sum.
     # In some cases it may be faster to loop over slices than to vectorize
     # like this. This is an optimization that can be added later.
-    fs[i_nan] = zero
+    fs = xpx.at(fs)[i_nan].set(zero)
     nfev = max_steps - i_nan.sum(axis=-1)
     S = special.logsumexp(fs, axis=-1) if log else xp.sum(fs, axis=-1)
     # Rough, non-conservative error estimate. See gh-19667 for improvement ideas.
@@ -1318,7 +1351,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
     else:
         tol = tol + rtol*lb.integral
     i_skip = lb.status == -3  # avoid unnecessary f_evals if integral is divergent
-    tol[i_skip] = xp.nan
+    tol = xpx.at(tol)[i_skip].set(xp.nan)
     status = lb.status
 
     # As in `_direct`, we'll need a temporary new axis for points
@@ -1353,8 +1386,8 @@ def _integral_bound(f, a, b, step, args, constants, xp):
                                           constants, xp, inclusive=False)
     left_is_pos_inf = xp.isinf(left) & (left > 0)
     i_skip |= left_is_pos_inf  # if sum is infinite, no sense in continuing
-    status[left_is_pos_inf] = -3
-    k[i_skip] = xp.nan
+    status = xpx.at(status)[left_is_pos_inf].set(-3)
+    k = xpx.at(k)[i_skip].set(xp.nan)
 
     # Use integration to estimate the remaining sum
     # Possible optimization for future work: if there were no terms less than
@@ -1373,7 +1406,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
     fb = xp.full_like(fk, -xp.inf) if log else xp.zeros_like(fk)
     i = xp.isfinite(b)
     if xp.any(i):  # better not call `f` with empty arrays
-        fb[i] = f(b[i], *[arg[i] for arg in args])
+        fb = xpx.at(fb)[i].set(f(b[i], *[arg[i] for arg in args]))
     nfev = nfev + xp.asarray(i, dtype=left_nfev.dtype)
 
     if log:
@@ -1385,7 +1418,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
     else:
         S = left + right.integral/step + fk/2 + fb/2
         E = left_error + right.error/step + fk/2 - fb/2
-    status[~i_skip] = right.status[~i_skip]
+    status = xpx.at(status)[~i_skip].set(right.status[~i_skip])
 
-    status[(status == 0) & i_fk_insufficient] = -4
+    status = xpx.at(status)[(status == 0) & i_fk_insufficient].set(-4)
     return S, E, status, left_nfev + right.nfev + nfev + lb.nfev
