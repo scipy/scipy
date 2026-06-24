@@ -178,22 +178,6 @@ py3.extension_module('cython_special',
   subdir: 'scipy/special',
 )
 
-py3.extension_module('_test_internal',
-  [cython_gen.process('_test_internal.pyx'), 'dd_real_wrappers.cpp'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep, np_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/special',
-  install_tag: 'tests'
-)
-
-py3.install_sources(
-  '_test_internal.pyi',
-  subdir: 'scipy/special',
-  install_tag: 'tests'
-)
-
 npz_files = [
   [
     '_data_boost',
