@@ -192,6 +192,7 @@ typecheck = [
     # stub deps
     "types-cffi",
     "types-psutil",
+    "types-pyyaml",
     # import deps
     "array_api_strict",
     "cython",

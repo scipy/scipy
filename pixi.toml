@@ -374,6 +374,7 @@ typing_extensions = "*"
 # stub deps
 types-cffi = "*"
 types-psutil = "*"
+types-pyyaml = "*"
 # import deps
 array-api-strict = "*"
 cython = "*"

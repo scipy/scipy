@@ -202,8 +202,8 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     outputlength = nperseg + (nseg-1)*nstep
     # *** End block of: Taken from _spectral_py.istft() ***
 
+    fft_mode = 'onesided' if input_onesided else 'twosided'
     # Using cast() to make mypy happy:
-    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if input_onesided else 'twosided')
     scale_to = cast(Literal['magnitude', 'psd'],
                     {'spectrum': 'magnitude', 'psd': 'psd'}[scaling])
 

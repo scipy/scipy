@@ -11726,6 +11726,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/toolz-1.1.0-pyhd8ed1ab_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-cffi-2.0.0.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-psutil-7.2.2.20260518-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/types-pyyaml-6.0.12.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-setuptools-82.0.0.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/tzdata-2025c-hc9c84f9_1.conda
@@ -11816,6 +11817,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/toolz-1.1.0-pyhd8ed1ab_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-cffi-2.0.0.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-psutil-7.2.2.20260518-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/types-pyyaml-6.0.12.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-setuptools-82.0.0.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/tzdata-2025c-hc9c84f9_1.conda
@@ -12051,6 +12053,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/toolz-1.1.0-pyhd8ed1ab_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-cffi-2.0.0.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-psutil-7.2.2.20260518-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/types-pyyaml-6.0.12.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/types-setuptools-82.0.0.20260518-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/tzdata-2025c-hc9c84f9_1.conda
@@ -28137,6 +28140,16 @@ packages:
   run_exports: {}
   size: 32892
   timestamp: 1779102286490
+- conda: https://prefix.dev/conda-forge/noarch/types-pyyaml-6.0.12.20260518-pyhcf101f3_0.conda
+  sha256: 58eb35e905356d7105db51e1cd7eb5a9f2029e0d0bb345215c0eb525babaffb4
+  md5: 8c9d908beae2f052bf188c41c85f0b80
+  depends:
+  - python >=3.10
+  - python
+  license: Apache-2.0 AND MIT
+  run_exports: {}
+  size: 26875
+  timestamp: 1779101988372
 - conda: https://prefix.dev/conda-forge/noarch/types-setuptools-82.0.0.20260518-pyhcf101f3_0.conda
   sha256: b6bf690a5515f7f47ee6980ef97fc98d045ecd3c60fbc08c9f696ae31c001dd6
   md5: 302ff1b1f1be49f08e22a6539ee3fad9
