@@ -409,7 +409,7 @@ class RK45(RungeKutta):
 
 
 class DOP853(RungeKutta):
-    """Explicit Runge-Kutta method of order 8.
+    r"""Explicit Runge-Kutta method of order 8.
 
     This is a Python implementation of "DOP853" algorithm originally written
     in Fortran [1]_, [2]_. Note that this is not a literal translation, but
@@ -484,6 +484,168 @@ class DOP853(RungeKutta):
         as it does not use the Jacobian.
     nlu : int
         Number of LU decompositions. Is always 0 for this solver.
+
+    Examples
+    --------
+    Compute one orbit of a satellite around earth using `Cowell's
+    method
+    <https://en.wikipedia.org/wiki/Orbit_modeling#Cowell's_method>`_
+    for orbit simulations.
+
+    >>> import numpy as np
+    >>> import scipy.integrate as itg
+    >>> import matplotlib.pyplot as plt
+
+    Import the Newtonian constant of gravitation and create variables
+    for earth's mass and radius, and satellite altitude. Calculate the
+    satellite's orbital velocity.
+
+    >>> from scipy.constants import G
+    >>> mass_earth = 5.9722E24
+    >>> radius_earth = 6.371E6
+    >>> satellite_altitude = 2E6
+    >>> v_orbit = np.sqrt((G*mass_earth)/(radius_earth+satellite_altitude))
+
+    Cowell's equations for simulating two interacting bodies is a
+    system of second-order ODEs.
+
+    .. math::
+
+        \begin{align*}
+            \ddot{r_1} &=\frac{Gm_2(r_2-r_1)}{d^3}\\
+            \ddot{r_2} &= \frac{Gm_1(r_1-r_2)}{d^3}
+        \end{align*}
+
+    Where :math:`r_1` and :math:`r_2` are the position vectors of the
+    two bodies, :math:`G` is the Newtonian constant of gravitation, and
+    :math:`m_1` and :math:`m_2` are the masses of the two bodies. The
+    distance between the two bodies is :math:`d = ||r_1 - r_2||`.
+
+    To convert Cowell's equations into a system of first-order ODEs,
+    introduce variables :math:`k_1` and :math:`k_2` for the velocity of
+    each body.
+
+    .. math::
+
+        \begin{align*}
+            \ddot{k_1} &=\frac{ Gm_2(r_2-r_1)}{d^3}\\
+            \ddot{k_2} &=\frac{Gm_2(r_1-r_2)}{d^3}\\
+            \dot{r_1} &= k_1\\
+            \dot{r_2} &= k_2
+        \end{align*}
+
+    Then, define a function that returns the right-hand side of the
+    expanded system.
+
+    >>> def cowell(t,r):
+    ...     # earth position and velocity
+    ...     r11,r12,r13 = r[0:3]
+    ...     k11,k12,k13 = r[3:6]
+    ...     # satellite position and velocity
+    ...     r21,r22,r23 = r[6:9]
+    ...     k21,k22,k23 = r[9:12]
+    ...     #   earth and satellite position vectors
+    ...     r1 = r[0:3]
+    ...     r2 = r[6:9]
+    ...     #   constants
+    ...     m1 = mass_earth
+    ...     m2 = 6E3
+    ...     #   distance from earth to satellite cubed
+    ...     dist_cubed = (np.linalg.norm(r1-r2))**3
+    ...     #   earth velocity equations
+    ...     r11_dot = k11
+    ...     r12_dot = k12
+    ...     r13_dot = k13
+    ...     #   earth acceleration equations
+    ...     k11_dot = (G*m2*(r21-r11))/dist_cubed
+    ...     k12_dot = (G*m2*(r22-r12))/dist_cubed
+    ...     k13_dot = (G*m2*(r23-r13))/dist_cubed
+    ...     #   satellite velocity equations
+    ...     r21_dot = k21
+    ...     r22_dot = k22
+    ...     r23_dot = k23
+    ...     #   satellite acceleration equations
+    ...     k21_dot = (G*m1*(r11-r21))/dist_cubed
+    ...     k22_dot = (G*m1*(r12-r22))/dist_cubed
+    ...     k23_dot = (G*m1*(r13-r23))/dist_cubed
+    ...     return [r11_dot,r12_dot,r13_dot,k11_dot,k12_dot,k13_dot,r21_dot,r22_dot,r23_dot,k21_dot,k22_dot,k23_dot]
+
+    ``cowell`` accepts a vector containing the coordinates for first
+    body's position and velocity followed by the coordinates for the
+    second body's position and velocity.
+
+    Set the earth's initial position and velocity to zero. Since the
+    satellites's altitude is ``2000`` meters, set its initial position
+    to be ``2000`` on the ``x``-axis and its initial velocity to be its
+    orbital velocity in the ``y``-direction. Combine the initial
+    conditions for both bodies in an initial conditions vector.
+
+    >>> init_earth = np.zeros(6)
+    >>> init_satellite = [2E6,0,0,0,v_orbit,0]
+    >>> inits = np.concatenate((init_earth,init_satellite))
+
+    Create a solver object using the initial conditions.
+
+    >>> solver = itg.DOP853(cowell,0,inits,1E6,max_step=0.5)
+
+    Create an array in which to store the estimated solution. To allow
+    for concatenation of future states, initialize the array by
+    reshaping the initial state.
+
+    >>> solr = solver.y.reshape(1,12)
+
+    Run the solver for ``750`` integration steps and then plot a
+    projection of the satellite's trajectory on the xy-plane.
+
+    >>> for i in range(750):
+    ...     solver.step()
+    ...     solrn = solver.y.reshape(1, 12)
+    ...     solr = np.concatenate((solr, solrn))
+
+    >>> x_satellite = solr[:,6]
+    >>> y_satellite = solr[:,7]
+
+    >>> plt.plot(x_satellite,y_satellite)
+    >>> plt.show()
+
+    The plot shows most of the satellite orbit with a small gap on the
+    right side. To calculate the rest of the orbit, run the solver for
+    another ``20`` integration steps.
+
+    >>> for i in range(20):
+    ...     solver.step()
+    ...     solrn = solver.y.reshape(1, 12)
+    ...     solr = np.concatenate((solr, solrn))
+
+    Plot the satellite's trajectory together with the earth's
+    trajectory.
+
+    >>> x_earth = solr[:,0]
+    >>> y_earth = solr[:,1]
+    >>> z_earth = solr[:,2]
+    >>> x_satellite = solr[:,6]
+    >>> y_satellite = solr[:,7]
+    >>> z_satellite = solr[:,8]
+
+    >>> fig = plt.figure(figsize=plt.figaspect(0.5))
+    >>> #    Projection onto xy-plane
+    >>> ax1 = fig.add_subplot(1,2,2,aspect="equal")
+    >>> ax1.plot(x_earth, y_earth, 'bo')
+    >>> ax1.plot(x_satellite, y_satellite, color='purple')
+    >>> ax1.ticklabel_format(style="sci",scilimits=(1000,0))
+    >>> ax1.set_title("Orbits projected onto xy-plane")
+    >>> ax1.update({'xlabel':'x', 'ylabel':'y'})
+    #3d plot
+    >>> ax2 = fig.add_subplot(1,2,1,projection="3d")
+    >>> ax2.plot(x_earth, y_earth, z_earth,'bo')
+    >>> ax2.plot(x_satellite, y_satellite, z_satellite, color='purple')
+    >>> ax2.ticklabel_format(style="sci",scilimits=(1000,0))
+    >>> ax2.set_title("Full phase space representation")
+    >>> ax2.update({'xlabel':'x','ylabel':'y','zlabel':'z'})
+
+    The figures show that the earth is approximately stationary and the
+    satellite orbits around it in an ellipse. The additional ``20``
+    integration steps close the gap in the orbit.
 
     References
     ----------
