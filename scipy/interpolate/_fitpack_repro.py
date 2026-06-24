@@ -161,10 +161,6 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     if xe is None:
         xe = max(x)
     
-    if periodic and s == 0 and not np.allclose(y[0], y[-1], atol=1e-15):
-        raise ValueError("First and last points does not match which is required "
-                         "for `bc_type='periodic'`.")
-
     return x, y, w, k, s, xb, xe
 
 
