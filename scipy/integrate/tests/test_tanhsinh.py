@@ -6,6 +6,7 @@ import math
 import numpy as np
 from numpy.testing import assert_allclose
 
+import scipy._external.array_api_extra as xpx
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
@@ -580,7 +581,7 @@ class TestTanhSinh:
     def test_improper_integrals(self, xp):
         # Test handling of infinite limits of integration (mixed with finite limits)
         def f(x):
-            x[xp.isinf(x)] = xp.nan
+            x = xpx.at(x)[xp.isinf(x)].set(xp.nan)
             return xp.exp(-x**2)
         a = xp.asarray([-xp.inf, 0, -xp.inf, xp.inf, -20, -xp.inf, -20])
         b = xp.asarray([xp.inf, xp.inf, 0, -xp.inf, 20, 20, xp.inf])
@@ -917,8 +918,8 @@ class TestNSum:
             ai, bi, stepi = float(a[i]), float(b[i]), float(step[i])
             if (bi - ai)/stepi + 1 <= maxterms:
                 direct = xp.sum(f(xp.arange(ai, bi+stepi, stepi, dtype=xp.float64)))
-                ref_sum[i] = direct
-                ref_err[i] = direct * xp.finfo(direct.dtype).eps
+                ref_sum = xpx.at(ref_sum)[i].set(direct)
+                ref_err = xpx.at(ref_err)[i].set(direct * xp.finfo(direct.dtype).eps)
 
         rtol = 1e-12
         res = nsum(f, a, b_original, step=step, maxterms=maxterms,
