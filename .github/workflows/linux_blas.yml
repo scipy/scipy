@@ -52,7 +52,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          pixi-version: v0.70.1
+          pixi-version: v0.71.0
           cache: false
 
       - name: Build with defaults (LP64)
@@ -80,7 +80,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          pixi-version: v0.70.1
+          pixi-version: v0.71.0
           cache: false
 
       - name: Build with ILP64, cython-blas LP64
@@ -111,7 +111,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          pixi-version: v0.70.1
+          pixi-version: v0.71.0
           cache: false
 
       - name: Build with ILP64, cython-blas ILP64
@@ -158,7 +158,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          pixi-version: v0.70.1
+          pixi-version: v0.71.0
           cache: false
 
       - name: Build with ILP64
