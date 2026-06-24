@@ -441,6 +441,120 @@ def _iter_solve(a, b, solver=ssl.gcrotmk, **solver_args):
         return res
 
 
+def _make_lsq_ndbspl(
+    x, y, t, k=3, *, w=None, solver=ssl.lsqr, **solver_args
+):
+    """Construct a least-squares ``NdBSpline`` from scattered data.
+
+    This is an internal construction helper. The knot vectors are expected to
+    be full knot vectors, including any repeated boundary knots.
+    """
+    x = np.asarray(x, dtype=float)
+    if x.ndim != 2:
+        raise ValueError("`x` must be a 2D array with shape (npts, ndim).")
+
+    npts, ndim = x.shape
+    if npts == 0:
+        raise ValueError("`x` must contain at least one data point.")
+
+    if not isinstance(t, tuple):
+        raise ValueError(
+            f"Expect `t` to be a tuple of array-likes. Got {t} instead."
+        )
+    if len(t) != ndim:
+        raise ValueError(
+            f"Data and knots are inconsistent: len(t) = {len(t)} for "
+            f"ndim = {ndim}."
+        )
+
+    y = np.asarray(y)
+    if y.ndim == 0 or y.shape[0] != npts:
+        raise ValueError("`y` must have shape (npts, ...) matching `x`.")
+
+    k, _, (_t, len_t) = _preprocess_inputs(k, t)
+    t = tuple(np.asarray(t[d], dtype=float) for d in range(ndim))
+    coeff_shape = tuple(len_t[d] - k[d] - 1 for d in range(ndim))
+    ncoeff = prod(coeff_shape)
+    if npts < ncoeff:
+        raise ValueError(
+            "There are fewer data points than spline coefficients; the "
+            "least-squares problem is underdetermined."
+        )
+
+    matr = NdBSpline.design_matrix(x, t, tuple(k), extrapolate=False)
+    matr.eliminate_zeros()
+    _check_lsq_design_matrix(matr, ncoeff)
+
+    y_shape = y.shape
+    rhs = y.reshape((npts, prod(y_shape[1:])))
+    if w is not None:
+        w = _validate_lsq_weights(w, npts)
+        matr = matr.multiply(w[:, None])
+        rhs = rhs * w[:, None]
+
+    if solver is ssl.lsqr or solver is ssl.lsmr:
+        solver_args.setdefault("atol", 1e-12)
+        solver_args.setdefault("btol", 1e-12)
+
+    coef = _lsq_iter_solve(matr, rhs, solver=solver, **solver_args)
+    if y.ndim == 1:
+        coef = coef[:, 0].reshape(coeff_shape)
+    else:
+        coef = coef.reshape(coeff_shape + y_shape[1:])
+
+    return NdBSpline(t, coef, tuple(k))
+
+
+def _validate_lsq_weights(w, npts):
+    """Validate least-squares weights."""
+    w = np.asarray(w, dtype=float)
+    if w.ndim != 1 or w.shape[0] != npts:
+        raise ValueError("`w` must be a 1D array with shape (npts,).")
+    if np.any(w <= 0):
+        raise ValueError("`w` must contain only positive values.")
+    if not np.isfinite(w).all():
+        raise ValueError("`w` must contain only finite values.")
+    return w
+
+
+def _check_lsq_design_matrix(matr, ncoeff):
+    """Check that every basis function is supported by the data."""
+    if matr.shape[1] != ncoeff:
+        raise ValueError(
+            "Data points do not support every tensor-product basis function."
+        )
+
+    supported = np.bincount(matr.indices, minlength=ncoeff) > 0
+    if not supported.all():
+        raise ValueError(
+            "Data points do not support every tensor-product basis function."
+        )
+
+
+def _lsq_iter_solve(a, b, solver=ssl.lsqr, **solver_args):
+    """Solve a sparse least-squares problem column by column."""
+    if np.issubdtype(b.dtype, np.complexfloating):
+        real = _lsq_iter_solve(a, b.real, solver=solver, **solver_args)
+        imag = _lsq_iter_solve(a, b.imag, solver=solver, **solver_args)
+        return real + 1j * imag
+
+    if b.ndim == 2 and b.shape[1] != 1:
+        dtype = _get_dtype(b.dtype)
+        res = np.empty((a.shape[1], b.shape[1]), dtype=dtype)
+        for j in range(b.shape[1]):
+            res[:, j] = _lsq_iter_solve(
+                a, b[:, j], solver=solver, **solver_args
+            )[:, 0]
+        return res
+
+    b = b.ravel()
+    result = solver(a, b, **solver_args)
+    coef, istop = result[0], result[1]
+    if istop not in {1, 2}:
+        raise ValueError(f"{solver = } returns {istop = }.")
+    return coef[:, None]
+
+
 def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     """Construct an interpolating NdBspline.
 

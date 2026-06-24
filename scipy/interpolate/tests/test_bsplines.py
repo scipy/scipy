@@ -37,7 +37,7 @@ from scipy._lib._util import AxisError
 from scipy._lib._testutils import _run_concurrent_barrier
 
 # XXX: move to the interpolate namespace
-from scipy.interpolate._ndbspline import make_ndbspl
+from scipy.interpolate._ndbspline import _make_lsq_ndbspl, make_ndbspl
 
 from scipy.interpolate import _fitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
@@ -2948,6 +2948,99 @@ class TestNdBSpline:
             spl(xi)
 
         _run_concurrent_barrier(10, worker_fn, spl)
+
+
+class TestMakeLSQNdBSpline:
+    def test_1d_matches_make_lsq_spline(self):
+        k = 3
+        x = np.linspace(0.0, 1.0, 40)
+        y = np.sin(2.0 * np.pi * x) + 0.25 * np.cos(4.0 * np.pi * x)
+        t = np.r_[
+            (x[0],) * (k + 1),
+            [0.25, 0.5, 0.75],
+            (x[-1],) * (k + 1),
+        ]
+
+        spl = _make_lsq_ndbspl(x[:, None], y, (t,), k=k)
+        ref = make_lsq_spline(x, y, t, k=k)
+
+        xp_assert_close(spl(x[:, None]), ref(x), atol=1e-11)
+        xp_assert_close(spl.c, ref.c, atol=1e-11)
+
+    def test_2d_scattered_linear_fit(self):
+        x0 = np.linspace(-1.0, 1.0, 5)
+        x1 = np.linspace(-2.0, 2.0, 6)
+        x0_grid, x1_grid = np.meshgrid(x0, x1, indexing="ij")
+        x = np.column_stack((x0_grid.ravel(), x1_grid.ravel()))
+        y = 1.0 + 2.0 * x[:, 0] - 0.5 * x[:, 1] + 0.25 * x[:, 0] * x[:, 1]
+        t = (
+            np.r_[-1.0, -1.0, 1.0, 1.0],
+            np.r_[-2.0, -2.0, 2.0, 2.0],
+        )
+
+        spl = _make_lsq_ndbspl(x, y, t, k=1)
+        x_eval = np.array([[-0.5, -1.0], [0.25, 0.5], [0.75, 1.5]])
+        expected = (
+            1.0
+            + 2.0 * x_eval[:, 0]
+            - 0.5 * x_eval[:, 1]
+            + 0.25 * x_eval[:, 0] * x_eval[:, 1]
+        )
+
+        xp_assert_close(spl(x_eval), expected, atol=1e-13)
+
+    def test_weights_match_dense_weighted_lstsq(self):
+        k = 1
+        x = np.linspace(0.0, 1.0, 8)
+        y = np.array([1.0, 1.1, 1.4, 1.9, 2.6, 3.4, 4.1, 5.0])
+        w = np.linspace(1.0, 2.0, x.size)
+        t = (np.r_[0.0, 0.0, 0.5, 1.0, 1.0],)
+
+        spl = _make_lsq_ndbspl(x[:, None], y, t, k=k, w=w)
+        matr = NdBSpline.design_matrix(x[:, None], t, k).toarray()
+        coeffs, *_ = np.linalg.lstsq(matr * w[:, None], y * w, rcond=None)
+
+        xp_assert_close(spl.c, coeffs, atol=1e-12)
+
+    def test_vector_valued_output(self):
+        x = np.linspace(0.0, 1.0, 20)
+        y = np.column_stack((2.0 * x + 1.0, -3.0 * x + 4.0))
+        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
+
+        spl = _make_lsq_ndbspl(x[:, None], y, t, k=1)
+        x_eval = np.array([[0.25], [0.75]])
+        expected = np.column_stack(
+            (2.0 * x_eval[:, 0] + 1.0, -3.0 * x_eval[:, 0] + 4.0)
+        )
+
+        assert spl.c.shape == (2, 2)
+        xp_assert_close(spl(x_eval), expected, atol=1e-13)
+
+    def test_too_few_points_raises(self):
+        x = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        t = (np.r_[0.0, 0.0, 0.5, 1.0, 1.0],)
+
+        with assert_raises(ValueError, match="fewer data points"):
+            _make_lsq_ndbspl(x, y, t, k=1)
+
+    def test_unsupported_basis_raises(self):
+        x = np.linspace(0.0, 0.4, 6)[:, None]
+        y = x[:, 0]
+        t = (np.r_[0.0, 0.0, 0.5, 1.0, 1.0],)
+
+        with assert_raises(ValueError, match="support every"):
+            _make_lsq_ndbspl(x, y, t, k=1)
+
+    def test_invalid_weights_raise(self):
+        x = np.linspace(0.0, 1.0, 5)[:, None]
+        y = x[:, 0]
+        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
+
+        with assert_raises(ValueError, match="positive"):
+            _make_lsq_ndbspl(
+                x, y, t, k=1, w=[1.0, 1.0, 0.0, 1.0, 1.0]
+            )
 
 
 class TestMakeND:
