@@ -37,7 +37,9 @@ from scipy._lib._util import AxisError
 from scipy._lib._testutils import _run_concurrent_barrier
 
 # XXX: move to the interpolate namespace
-from scipy.interpolate._ndbspline import _make_lsq_ndbspl, make_ndbspl
+from scipy.interpolate._ndbspline import (
+    _generate_lsq_knots, _generate_lsq_knots_1d, _make_lsq_ndbspl, make_ndbspl
+)
 
 from scipy.interpolate import _fitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
@@ -2948,6 +2950,106 @@ class TestNdBSpline:
             spl(xi)
 
         _run_concurrent_barrier(10, worker_fn, spl)
+
+
+class TestGenerateLSQKnots:
+    def test_1d_quantile_knots(self):
+        x = np.array([0.0, 0.1, 0.2, 0.6, 1.0])
+        t = _generate_lsq_knots_1d(
+            x, k=2, n_internal_knots=3, bbox=(0.0, 1.0)
+        )
+        expected = np.r_[
+            (0.0,) * 3,
+            np.quantile(x, [0.25, 0.5, 0.75]),
+            (1.0,) * 3,
+        ]
+
+        xp_assert_close(t, expected)
+
+    def test_1d_no_internal_knots_uses_data_bounds(self):
+        x = np.array([-2.0, -1.0, 1.0, 3.0])
+        t = _generate_lsq_knots_1d(x, k=1, n_internal_knots=0)
+
+        xp_assert_close(t, [-2.0, -2.0, 3.0, 3.0])
+
+    def test_nd_knots_are_generated_per_dimension(self):
+        x = np.array(
+            [
+                [0.0, -1.0],
+                [0.25, -0.5],
+                [0.5, 0.2],
+                [0.75, 0.5],
+                [1.0, 1.0],
+            ]
+        )
+        t = _generate_lsq_knots(
+            x,
+            k=(1, 2),
+            n_internal_knots=(1, 2),
+            bbox=((0.0, 1.0), (-1.0, 1.0)),
+        )
+
+        expected0 = np.r_[
+            0.0, 0.0, np.quantile(x[:, 0], 0.5), 1.0, 1.0
+        ]
+        expected1 = np.r_[
+            (-1.0,) * 3,
+            np.quantile(x[:, 1], [1.0 / 3.0, 2.0 / 3.0]),
+            (1.0,) * 3,
+        ]
+
+        xp_assert_close(t[0], expected0)
+        xp_assert_close(t[1], expected1)
+
+    def test_validation(self):
+        x = np.linspace(0.0, 1.0, 5)
+
+        with assert_raises(ValueError, match="1D array"):
+            _generate_lsq_knots_1d(x[:, None], k=1, n_internal_knots=0)
+
+        with assert_raises(ValueError, match="at least one data point"):
+            _generate_lsq_knots_1d([], k=1, n_internal_knots=0)
+
+        with assert_raises(ValueError, match="finite"):
+            _generate_lsq_knots_1d([0.0, np.nan], k=1, n_internal_knots=0)
+
+        with assert_raises(ValueError, match="negative"):
+            _generate_lsq_knots_1d(x, k=-1, n_internal_knots=0)
+
+        with assert_raises(ValueError, match="negative"):
+            _generate_lsq_knots_1d(x, k=1, n_internal_knots=-1)
+
+        with assert_raises(ValueError, match="shape"):
+            _generate_lsq_knots_1d(x, k=1, n_internal_knots=0, bbox=(0.0,))
+
+        with assert_raises(ValueError, match="less than"):
+            _generate_lsq_knots_1d(
+                x, k=1, n_internal_knots=0, bbox=(1.0, 0.0)
+            )
+
+        with assert_raises(ValueError, match="in `bbox`"):
+            _generate_lsq_knots_1d(
+                x, k=1, n_internal_knots=0, bbox=(2.0, 3.0)
+            )
+
+        with assert_raises(ValueError, match="distinct interior"):
+            _generate_lsq_knots_1d(
+                [0.0, 0.0, 1.0], k=1, n_internal_knots=2
+            )
+
+        with assert_raises(ValueError, match="Expected 2 knot counts"):
+            _generate_lsq_knots(
+                np.column_stack((x, x)), k=1, n_internal_knots=(0, 0, 0)
+            )
+
+    def test_generated_knots_fit_linear_data(self):
+        x = np.linspace(0.0, 1.0, 20)
+        y = 2.0 * x - 1.0
+        t = (_generate_lsq_knots_1d(x, k=1, n_internal_knots=3),)
+
+        spl = _make_lsq_ndbspl(x[:, None], y, t, k=1)
+
+        xp_assert_close(spl(x[:, None]), y, atol=1e-13)
 
 
 class TestMakeLSQNdBSpline:

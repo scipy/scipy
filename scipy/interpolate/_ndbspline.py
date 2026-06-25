@@ -441,6 +441,108 @@ def _iter_solve(a, b, solver=ssl.gcrotmk, **solver_args):
         return res
 
 
+def _generate_lsq_knots_1d(x, k=3, *, n_internal_knots, bbox=None):
+    """Generate a 1D clamped knot vector from sample quantiles."""
+    x = np.asarray(x, dtype=float)
+    if x.ndim != 1:
+        raise ValueError("`x` must be a 1D array.")
+    if x.size == 0:
+        raise ValueError("`x` must contain at least one data point.")
+    if not np.isfinite(x).all():
+        raise ValueError("`x` must contain only finite values.")
+
+    k = operator.index(k)
+    if k < 0:
+        raise ValueError("Spline degree cannot be negative.")
+
+    n_internal_knots = operator.index(n_internal_knots)
+    if n_internal_knots < 0:
+        raise ValueError("`n_internal_knots` cannot be negative.")
+
+    if bbox is None:
+        xb = np.min(x)
+        xe = np.max(x)
+    else:
+        bbox = np.asarray(bbox, dtype=float)
+        if bbox.shape != (2,):
+            raise ValueError("`bbox` must have shape (2,).")
+        if not np.isfinite(bbox).all():
+            raise ValueError("`bbox` must contain only finite values.")
+        xb, xe = bbox
+
+    if not xb < xe:
+        raise ValueError("The lower bound must be less than the upper bound.")
+
+    in_bounds = (xb <= x) & (x <= xe)
+    if not np.any(in_bounds):
+        raise ValueError("`x` must contain at least one point in `bbox`.")
+
+    if n_internal_knots == 0:
+        interior = np.empty(0, dtype=float)
+    else:
+        quantiles = np.linspace(
+            0.0, 1.0, n_internal_knots + 2, dtype=float
+        )[1:-1]
+        interior = np.quantile(x[in_bounds], quantiles)
+
+        if (
+            interior[0] <= xb
+            or interior[-1] >= xe
+            or np.any(np.diff(interior) <= 0)
+        ):
+            raise ValueError(
+                "Cannot place the requested number of distinct interior "
+                "knots inside `bbox`."
+            )
+
+    return np.r_[(xb,) * (k + 1), interior, (xe,) * (k + 1)]
+
+
+def _generate_lsq_knots(x, k=3, *, n_internal_knots, bbox=None):
+    """Generate clamped knot vectors for N-D least-squares splines."""
+    x = np.asarray(x, dtype=float)
+    if x.ndim != 2:
+        raise ValueError("`x` must be a 2D array with shape (npts, ndim).")
+    if x.shape[0] == 0:
+        raise ValueError("`x` must contain at least one data point.")
+
+    ndim = x.shape[1]
+    try:
+        len(k)
+    except TypeError:
+        k = (k,) * ndim
+    if len(k) != ndim:
+        raise ValueError(f"Expected {ndim} spline degrees, got {len(k)}.")
+
+    try:
+        len(n_internal_knots)
+    except TypeError:
+        n_internal_knots = (n_internal_knots,) * ndim
+    if len(n_internal_knots) != ndim:
+        raise ValueError(
+            f"Expected {ndim} knot counts, got {len(n_internal_knots)}."
+        )
+
+    if bbox is None:
+        bbox = (None,) * ndim
+    else:
+        bbox = np.asarray(bbox, dtype=float)
+        if bbox.shape == (2 * ndim,):
+            bbox = bbox.reshape((ndim, 2))
+        if bbox.shape != (ndim, 2):
+            raise ValueError("`bbox` must have shape (ndim, 2).")
+
+    return tuple(
+        _generate_lsq_knots_1d(
+            x[:, d],
+            k[d],
+            n_internal_knots=n_internal_knots[d],
+            bbox=bbox[d],
+        )
+        for d in range(ndim)
+    )
+
+
 def _make_lsq_ndbspl(
     x, y, t, k=3, *, w=None, solver=ssl.lsqr, **solver_args
 ):
