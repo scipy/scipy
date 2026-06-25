@@ -3016,6 +3016,44 @@ class TestMakeLSQNdBSpline:
         assert spl.c.shape == (2, 2)
         xp_assert_close(spl(x_eval), expected, atol=1e-13)
 
+    def test_trailing_dimensions_with_custom_solver(self):
+        x = np.linspace(0.0, 1.0, 6)
+        y = np.empty((x.size, 2, 2))
+        y[:, 0, 0] = 1.0 + x
+        y[:, 0, 1] = 2.0 - x
+        y[:, 1, 0] = -1.0 + 3.0 * x
+        y[:, 1, 1] = 0.5 - 2.0 * x
+        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
+        calls = []
+
+        def dense_solver(a, b):
+            calls.append((a.shape, b.shape))
+            coef, *_ = np.linalg.lstsq(a.toarray(), b, rcond=None)
+            return coef, 1
+
+        spl = _make_lsq_ndbspl(x[:, None], y, t, k=1, solver=dense_solver)
+        matr = NdBSpline.design_matrix(x[:, None], t, 1).toarray()
+        ref, *_ = np.linalg.lstsq(
+            matr, y.reshape((x.size, 4)), rcond=None
+        )
+        ref = ref.reshape((2, 2, 2))
+
+        assert calls == [((x.size, 2), (x.size,))] * 4
+        xp_assert_close(spl.c, ref, atol=1e-13)
+
+    def test_complex_valued_output(self):
+        x = np.linspace(0.0, 1.0, 12)
+        y = (2.0 * x + 1.0) + 1j * (-3.0 * x + 4.0)
+        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
+
+        spl = _make_lsq_ndbspl(x[:, None], y, t, k=1)
+        x_eval = np.array([[0.25], [0.75]])
+        expected = (2.0 * x_eval[:, 0] + 1.0) + 1j * (
+            -3.0 * x_eval[:, 0] + 4.0
+        )
+
+        xp_assert_close(spl(x_eval), expected, atol=1e-13)
+
     def test_too_few_points_raises(self):
         x = np.array([[0.0], [1.0]])
         y = np.array([0.0, 1.0])
@@ -3041,6 +3079,33 @@ class TestMakeLSQNdBSpline:
             _make_lsq_ndbspl(
                 x, y, t, k=1, w=[1.0, 1.0, 0.0, 1.0, 1.0]
             )
+
+    def test_invalid_input_validation(self):
+        x = np.linspace(0.0, 1.0, 5)[:, None]
+        y = x[:, 0]
+        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
+
+        with assert_raises(ValueError, match="2D array"):
+            _make_lsq_ndbspl(x[:, 0], y, t, k=1)
+
+        x_bad = x.copy()
+        x_bad[0, 0] = np.nan
+        with assert_raises(ValueError, match="finite values"):
+            _make_lsq_ndbspl(x_bad, y, t, k=1)
+
+        with assert_raises(ValueError, match="matching"):
+            _make_lsq_ndbspl(x, y[:-1], t, k=1)
+
+        y_bad = y.copy()
+        y_bad[0] = np.inf
+        with assert_raises(ValueError, match="finite values"):
+            _make_lsq_ndbspl(x, y_bad, t, k=1)
+
+        with assert_raises(ValueError, match="empty trailing"):
+            _make_lsq_ndbspl(x, np.empty((x.shape[0], 0)), t, k=1)
+
+        with assert_raises(ValueError, match="callable"):
+            _make_lsq_ndbspl(x, y, t, k=1, solver=None)
 
 
 class TestMakeND:
