@@ -1312,6 +1312,22 @@ def test_extrema04(xp):
         assert output1[3] == output5
 
 
+@make_xp_test_case(ndimage.minimum_position, ndimage.maximum_position,
+                   ndimage.extrema)
+def test_measurement_list_index_array_api(xp):
+    # gh-25357: a plain list `index` must not be treated as a separate
+    # (NumPy) array namespace from a non-NumPy `input`. The labeled
+    # measurement functions share `maximum_signature`, which previously
+    # passed `index` to `array_namespace` and raised for a list `index`.
+    input = xp.asarray([[1., 3., 0.], [0., 0., 2.]])
+    labels = xp.asarray([[1, 1, 0], [0, 0, 2]])
+    assert ndimage.maximum_position(input, labels, [1, 2]) == [(0, 1), (1, 2)]
+    assert ndimage.minimum_position(input, labels, [1, 2]) == [(0, 0), (1, 2)]
+    _, _, minpos, maxpos = ndimage.extrema(input, labels, [1, 2])
+    assert minpos == [(0, 0), (1, 2)]
+    assert maxpos == [(0, 1), (1, 2)]
+
+
 @make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass01(xp):
     expected = (0.0, 0.0)
