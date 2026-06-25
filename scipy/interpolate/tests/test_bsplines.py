@@ -37,7 +37,9 @@ from scipy._lib._util import AxisError
 from scipy._lib._testutils import _run_concurrent_barrier
 
 # XXX: move to the interpolate namespace
-from scipy.interpolate._ndbspline import _make_lsq_ndbspl, make_ndbspl
+from scipy.interpolate._ndbspline import (
+    _make_lsq_ndbspl, _make_lsq_ndbspl_from_grid, make_ndbspl
+)
 
 from scipy.interpolate import _fitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
@@ -3129,6 +3131,92 @@ class TestMakeLSQNdBSpline:
 
         with assert_raises(ValueError, match="callable"):
             _make_lsq_ndbspl(x, y, t, k=1, solver=None)
+
+
+class TestMakeLSQNdBSplineFromGrid:
+    def test_matches_scattered_input(self):
+        points = (
+            np.linspace(0.0, 1.0, 5),
+            np.linspace(-1.0, 1.0, 6),
+        )
+        x0, x1 = np.meshgrid(*points, indexing="ij")
+        values = 1.0 + 2.0 * x0 - x1 + 0.5 * x0 * x1
+        t = (
+            np.r_[0.0, 0.0, 1.0, 1.0],
+            np.r_[-1.0, -1.0, 1.0, 1.0],
+        )
+
+        spl = _make_lsq_ndbspl_from_grid(points, values, t, k=1)
+        x = np.column_stack((x0.ravel(), x1.ravel()))
+        ref = _make_lsq_ndbspl(x, values.ravel(), t, k=1)
+
+        xp_assert_close(spl.c, ref.c, atol=1e-12)
+
+    def test_trailing_dimensions(self):
+        points = (
+            np.linspace(0.0, 1.0, 5),
+            np.linspace(-1.0, 1.0, 6),
+        )
+        x0, x1 = np.meshgrid(*points, indexing="ij")
+        values = np.empty(x0.shape + (2,))
+        values[..., 0] = 1.0 + x0 - x1
+        values[..., 1] = -2.0 + 3.0 * x0 + 0.5 * x1
+        t = (
+            np.r_[0.0, 0.0, 1.0, 1.0],
+            np.r_[-1.0, -1.0, 1.0, 1.0],
+        )
+
+        spl = _make_lsq_ndbspl_from_grid(points, values, t, k=1)
+        x_eval = np.array([[0.25, -0.5], [0.75, 0.5]])
+        expected = np.column_stack(
+            (
+                1.0 + x_eval[:, 0] - x_eval[:, 1],
+                -2.0 + 3.0 * x_eval[:, 0] + 0.5 * x_eval[:, 1],
+            )
+        )
+
+        assert spl.c.shape == (2, 2, 2)
+        xp_assert_close(spl(x_eval), expected, atol=1e-12)
+
+    def test_weights_match_scattered_input(self):
+        points = (np.linspace(0.0, 1.0, 5),)
+        values = np.array([0.0, 0.2, 0.7, 1.1, 2.0])
+        w = np.linspace(1.0, 2.0, values.size)
+        t = (np.r_[0.0, 0.0, 0.5, 1.0, 1.0],)
+
+        spl = _make_lsq_ndbspl_from_grid(points, values, t, k=1, w=w)
+        ref = _make_lsq_ndbspl(
+            points[0][:, None], values, t, k=1, w=w
+        )
+
+        xp_assert_close(spl.c, ref.c, atol=1e-12)
+
+    def test_validation(self):
+        points = (np.linspace(0.0, 1.0, 5),)
+        values = np.linspace(0.0, 1.0, 5)
+        w = np.ones(values.size)
+        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
+
+        with assert_raises(ValueError, match="tuple"):
+            _make_lsq_ndbspl_from_grid(points[0], values, t, k=1)
+
+        with assert_raises(ValueError, match="at least one dimension"):
+            _make_lsq_ndbspl_from_grid((), values, t, k=1)
+
+        with assert_raises(ValueError, match="1D"):
+            _make_lsq_ndbspl_from_grid((points[0][:, None],), values, t, k=1)
+
+        with assert_raises(ValueError, match="must not be empty"):
+            _make_lsq_ndbspl_from_grid(([],), values[:0], t, k=1)
+
+        with assert_raises(ValueError, match="finite"):
+            _make_lsq_ndbspl_from_grid(([0.0, np.nan],), values[:2], t, k=1)
+
+        with assert_raises(ValueError, match="`values` must have shape"):
+            _make_lsq_ndbspl_from_grid(points, values[:-1], t, k=1)
+
+        with assert_raises(ValueError, match="`w` must have shape"):
+            _make_lsq_ndbspl_from_grid(points, values, t, k=1, w=w[:-1])
 
 
 class TestMakeND:

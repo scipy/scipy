@@ -555,6 +555,48 @@ def _make_lsq_ndbspl(
     return NdBSpline(t, coef, tuple(k))
 
 
+def _make_lsq_ndbspl_from_grid(
+    points, values, t, k=3, *, w=None, solver=ssl.lsqr, **solver_args
+):
+    """Construct a least-squares ``NdBSpline`` from gridded data."""
+    if not isinstance(points, tuple):
+        raise ValueError("`points` must be a tuple of 1D arrays.")
+    if len(points) == 0:
+        raise ValueError("`points` must contain at least one dimension.")
+
+    points = tuple(np.asarray(point, dtype=float) for point in points)
+    for d, point in enumerate(points):
+        if point.ndim != 1:
+            raise ValueError(f"`points[{d}]` must be 1D.")
+        if point.size == 0:
+            raise ValueError(f"`points[{d}]` must not be empty.")
+        if not np.isfinite(point).all():
+            raise ValueError(f"`points[{d}]` must contain only finite values.")
+
+    grid_shape = tuple(point.size for point in points)
+    values = np.asarray(values)
+    ndim = len(points)
+    if values.ndim < ndim or values.shape[:ndim] != grid_shape:
+        raise ValueError(
+            "`values` must have shape points[0].shape + ... + "
+            "points[-1].shape + trailing dimensions."
+        )
+
+    grids = np.meshgrid(*points, indexing="ij")
+    x = np.column_stack([grid.ravel() for grid in grids])
+    y = values.reshape((prod(grid_shape),) + values.shape[ndim:])
+
+    if w is not None:
+        w = np.asarray(w, dtype=float)
+        if w.shape != grid_shape:
+            raise ValueError("`w` must have shape matching the grid.")
+        w = w.ravel()
+
+    return _make_lsq_ndbspl(
+        x, y, t, k=k, w=w, solver=solver, **solver_args
+    )
+
+
 def _validate_lsq_weights(w, npts):
     """Validate least-squares weights."""
     w = np.asarray(w, dtype=float)
