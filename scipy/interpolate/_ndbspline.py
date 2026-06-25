@@ -571,12 +571,14 @@ def _validate_lsq_weights(w, npts):
 
 def _check_lsq_design_matrix(matr, ncoeff):
     """Check that every basis function is supported by the data."""
+    ncoeff = operator.index(ncoeff)
     if matr.shape[1] != ncoeff:
         raise ValueError(
             "Data points do not support every tensor-product basis function."
         )
 
-    supported = np.bincount(matr.indices, minlength=ncoeff) > 0
+    indices = np.asarray(matr.indices, dtype=np.intp)
+    supported = np.bincount(indices, minlength=ncoeff) > 0
     if not supported.all():
         raise ValueError(
             "Data points do not support every tensor-product basis function."
