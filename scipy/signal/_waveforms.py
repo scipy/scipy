@@ -426,7 +426,6 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True, *, xp=None):
 
     """
     xp = array_namespace(t) if xp is None else xp
-    t = xp_promote(t, xp=xp, force_floating=True)
     f0 = float(f0)
     t1 = float(t1)
     f1 = float(f1)
