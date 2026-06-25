@@ -2505,7 +2505,7 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False, ci=None, cf=None):
             R, H1, H2, offset, nc, y_w, k,
             len(t), False)         # modifies arguments in-place
         # Ref: https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpbacp.f
-        c, residuals, _ = _dierckx.fpbacp(A1, A2, Z, k, k, x, y, t, w)
+        c, residuals, _ = _dierckx.fpbacp(A1, A2, Z, k, k, x[:-1], y[:-1, :], t, w[:-1])
         return R, y_w, c, fp, residuals
 
 def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):

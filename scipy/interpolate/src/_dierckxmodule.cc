@@ -41,12 +41,14 @@ def _fpknot(const double[::1] x,
 static PyObject*
 py_fpknot(PyObject* self, PyObject *args)
 {
-    PyObject *py_x = NULL, *py_t = NULL, *py_residuals = NULL;
+    PyObject *py_x = NULL, *py_t = NULL, *py_residuals = NULL, *py_periodic = NULL;
     int k;
 
-    if(!PyArg_ParseTuple(args, "OOiO", &py_x, &py_t, &k, &py_residuals)) {
+    if(!PyArg_ParseTuple(args, "OOiOO", &py_x, &py_t, &k, &py_residuals, &py_periodic)) {
         return NULL;
     }
+
+    bool is_periodic = PyObject_IsTrue(py_periodic);
 
     if (!(check_array(py_x, 1, NPY_DOUBLE) &&
           check_array(py_t, 1, NPY_DOUBLE) &&
@@ -62,9 +64,17 @@ py_fpknot(PyObject* self, PyObject *args)
     npy_intp len_x = PyArray_DIM(a_x, 0);
     npy_intp len_r = PyArray_DIM(a_residuals, 0);
 
-    if (len_x != len_r) {
-        std::string msg = ("len(x) = " + std::to_string(len_x) + " != " +
-                          std::to_string(len_r) + " = len(residuals)");
+    bool error_condition_1 = (is_periodic && (len_x != len_r + 1));
+    bool error_condition_2 = (!is_periodic && (len_x != len_r));
+    if( error_condition_1 || error_condition_2 ) {
+        std::string msg;
+        if (error_condition_1) {
+            msg = ("len(x) = " + std::to_string(len_x) + " != " +
+                               std::to_string(len_r + 1) + " = len(residuals) + 1");
+        } else {
+            msg = ("len(x) = " + std::to_string(len_x) + " != " +
+                   std::to_string(len_r) + " = len(residuals)");
+        }
         PyErr_SetString(PyExc_ValueError, msg.c_str());
         return NULL;
     }
@@ -75,7 +85,8 @@ py_fpknot(PyObject* self, PyObject *args)
             static_cast<const double *>(PyArray_DATA(a_x)), PyArray_DIM(a_x, 0),
             static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
             k,
-            static_cast<const double *>(PyArray_DATA(a_residuals))
+            static_cast<const double *>(PyArray_DATA(a_residuals)),
+            is_periodic
         );
         return PyFloat_FromDouble(new_knot);
     }
