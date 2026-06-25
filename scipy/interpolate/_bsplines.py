@@ -2116,8 +2116,7 @@ clamp_values=None):
         if clamp_values is not None:
             # If the spline is clamped,
             # c[0] = lb, c[-1] = ub (Pinned Initial/Final)
-            pi = clamp_values[0]
-            pf = clamp_values[1]
+            pi, pf = clamp_values
 
             # `A.T @ A` should not have the first col and the last column and
             # the first and last row.
