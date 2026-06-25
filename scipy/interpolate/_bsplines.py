@@ -2120,7 +2120,7 @@ clamp_values=None):
 
             # `A.T @ A` should not have the first col and the last column and
             # the first and last row.
-            # Since, A.T @ A is always symmetric, in LAPACK sparse storage,
+            # Since, A.T @ A is always symmetric, in LAPACK banded storage,
             # dropping the first and last columns auto-drops the rows.
             ab_reduced = ab[:, 1:-1]
 
