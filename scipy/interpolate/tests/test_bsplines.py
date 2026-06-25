@@ -3075,10 +3075,33 @@ class TestMakeLSQNdBSpline:
         y = x[:, 0]
         t = (np.r_[0.0, 0.0, 1.0, 1.0],)
 
-        with assert_raises(ValueError, match="positive"):
+        with assert_raises(ValueError, match="non-negative"):
             _make_lsq_ndbspl(
-                x, y, t, k=1, w=[1.0, 1.0, 0.0, 1.0, 1.0]
+                x, y, t, k=1, w=[1.0, 1.0, -1.0, 1.0, 1.0]
             )
+
+    def test_zero_weights_are_allowed(self):
+        x = np.linspace(0.0, 1.0, 8)
+        y = np.array([1.0, 1.1, 1.4, 1.9, 2.6, 3.4, 4.1, 5.0])
+        w = np.ones_like(x)
+        w[2:4] = 0.0
+        t = (np.r_[0.0, 0.0, 0.5, 1.0, 1.0],)
+
+        spl = _make_lsq_ndbspl(x[:, None], y, t, k=1, w=w)
+        matr = NdBSpline.design_matrix(x[:, None], t, 1).toarray()
+        coeffs, *_ = np.linalg.lstsq(matr * w[:, None], y * w, rcond=None)
+
+        xp_assert_close(spl.c, coeffs, atol=1e-12)
+
+    def test_zero_weights_do_not_support_basis(self):
+        x = np.linspace(0.0, 1.0, 8)
+        y = x
+        w = np.ones_like(x)
+        w[x <= 0.5] = 0.0
+        t = (np.r_[0.0, 0.0, 0.5, 1.0, 1.0],)
+
+        with assert_raises(ValueError, match="support every"):
+            _make_lsq_ndbspl(x[:, None], y, t, k=1, w=w)
 
     def test_invalid_input_validation(self):
         x = np.linspace(0.0, 1.0, 5)[:, None]

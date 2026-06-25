@@ -457,11 +457,11 @@ def _make_lsq_ndbspl(
     t : tuple of array_like, shape (nt_i,)
         Full knot vectors for each dimension. Boundary knots must already be
         included.
-    k : int or tuple of int, optional
+    k : int or array_like, shape (ndim,), optional
         Spline degree for each dimension. A scalar value is applied to all
         dimensions. Default is cubic, ``k=3``.
     w : array_like, shape (npts,), optional
-        Positive weights for weighted least squares.
+        Non-negative weights for weighted least squares.
     solver : callable, optional
         Sparse least-squares solver. Default is `scipy.sparse.linalg.lsqr`.
         The solver is called as ``solver(A, b, **solver_args)``, where
@@ -529,7 +529,6 @@ def _make_lsq_ndbspl(
 
     matr = NdBSpline.design_matrix(x, t, tuple(k), extrapolate=False)
     matr.eliminate_zeros()
-    _check_lsq_design_matrix(matr, ncoeff)
 
     y_shape = y.shape
     y_trailing_shape = y_shape[1:]
@@ -537,11 +536,10 @@ def _make_lsq_ndbspl(
     if w is not None:
         w = _validate_lsq_weights(w, npts)
         matr = diags_array(w, format="csr") @ matr
+        matr.eliminate_zeros()
         rhs = rhs * w[:, None]
 
-    if solver is ssl.lsqr or solver is ssl.lsmr:
-        solver_args.setdefault("atol", 1e-12)
-        solver_args.setdefault("btol", 1e-12)
+    _check_lsq_design_matrix(matr, ncoeff)
 
     coef = []
     for j in range(rhs.shape[1]):
@@ -562,8 +560,8 @@ def _validate_lsq_weights(w, npts):
     w = np.asarray(w, dtype=float)
     if w.ndim != 1 or w.shape[0] != npts:
         raise ValueError("`w` must be a 1D array with shape (npts,).")
-    if np.any(w <= 0):
-        raise ValueError("`w` must contain only positive values.")
+    if np.any(w < 0):
+        raise ValueError("`w` must contain only non-negative values.")
     if not np.isfinite(w).all():
         raise ValueError("`w` must contain only finite values.")
     return w
