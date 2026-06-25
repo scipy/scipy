@@ -1834,6 +1834,18 @@ class TestLSQ:
         xp_assert_close(b.t, b_w.t, atol=1e-14)
         xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
+    
+    @parametrize_lsq_methods
+    def test_lsq_with_clamp_values(self, method, xp):
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        clamp_values = (5, 8)
+        
+        sp = make_lsq_spline(x, y, t, k, method="norm-eq", clamp_values=clamp_values)
+
+        assert sp(x[0]) == 5
+        assert sp(x[-1]) == 8
+        with assert_raises(NotImplementedError):
+            sp = make_lsq_spline(x, y, t, k, method="qr", clamp_values=clamp_values)
 
     def test_weights_same(self, xp):
         # both methods treat weights

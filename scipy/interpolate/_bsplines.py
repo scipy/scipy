@@ -2068,6 +2068,10 @@ clamp_values=None):
     if clamp_values is not None and len(clamp_values) != 2:
         raise ValueError(f"Expect clamp_values to be a tuple of length 2, \
         got {len(clamp_values)}")
+    if np.array(clamp_values).dtype.kind == "c":
+        raise ValueError(
+            "clamp_values should be of type float or int, got complex."
+        )
 
     # number of coefficients
     n = t.size - k - 1
@@ -2111,9 +2115,9 @@ clamp_values=None):
 
         if clamp_values is not None:
             # If the spline is clamped,
-            # c[0] = lb, c[-1] = ub
-            lb = clamp_values[0]
-            ub = clamp_values[1]
+            # c[0] = lb, c[-1] = ub (Pinned Initial/Final)
+            pi = clamp_values[0]
+            pf = clamp_values[1]
 
             # `A.T @ A` should not have the first col and the last column and
             # the first and last row.
@@ -2122,7 +2126,7 @@ clamp_values=None):
             ab_reduced = ab[:, 1:-1]
 
             # Similarly, RHS should be:
-            # A_reduce.T @ (y - A[:, 0] * lb - A[:, -1] * ub)
+            # A_reduce.T @ (y - A[:, 0] * pi - A[:, -1] * pf)
             
             # A_reduce.T @ y
             rhs = rhs[1: -1] # now shape `n - 2`
@@ -2134,13 +2138,13 @@ clamp_values=None):
             # and col `j` in both of them remain same.
             ab_col0 = np.zeros((n - 2,))
             ab_col0[:k] = ab[1: k + 1, 0]
-            ab_col0 = ab_col0 * lb
+            ab_col0 = ab_col0 * pi
 
             # Similarly, A_reduce.T @ A[:, -1]
             ab_col_last = np.zeros((n - 2,))
             sparse_idx = np.arange(1, k + 1)
             ab_col_last[-k:] = ab[sparse_idx, n - 1 - sparse_idx][::-1]
-            ab_col_last = ab_col_last * ub
+            ab_col_last = ab_col_last * pf
             
             # criterion!
             rhs = rhs - ab_col0 - ab_col_last
@@ -2157,17 +2161,17 @@ clamp_values=None):
             new_dims = list(c.shape)
             new_dims[0] += 2
             c_full = np.zeros(tuple(new_dims))
-            c_full[0] = lb
-            c_full[-1] = ub
+            c_full[0] = pi
+            c_full[-1] = pf
             c_full[1: -1] = c
             c = c_full
 
-        # Potential Concern: 
-        # What if `lb` and `ub` are complex, for eg, 1 + 2j
-        # c_full[0] = `lb` will assign `complex` to a float array.
-        # TODO
 
     elif method == "qr":
+        if clamp_values:
+            raise NotImplementedError(
+                "Currently, clamp_values requires method='norm-eq', got 'qr'"
+            )
         _, _, c, _, _ = _lsq_solve_qr(x, yy, t, k, w)
 
         if was_complex:
