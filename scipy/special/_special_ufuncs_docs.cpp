@@ -1531,43 +1531,59 @@ const char *gdtrix_doc = R"(
     )";
 
 const char *kolmogorov_doc = R"(
-    kolmogorov(y, out=None)
+    kolmogorov(x, out=None)
 
-    Complementary cumulative distribution (Survival Function) function of
-    Kolmogorov distribution.
+    Complementary cumulative distribution function of the Kolmogorov distribution.
 
-    Returns the complementary cumulative distribution function of
-    Kolmogorov's limiting distribution (``D_n*\sqrt(n)`` as n goes to infinity)
-    of a two-sided test for equality between an empirical and a theoretical
-    distribution. It is equal to the (limit as n->infinity of the)
-    probability that ``sqrt(n) * max absolute deviation > y``.
+    Returns the survival function of Kolmogorov's limiting distribution,
+    i.e., the distribution of :math:`\sqrt{n}\, D_n` as :math:`n \to \infty`,
+    where :math:`D_n` is the Kolmogorov--Smirnov statistic:
+
+    .. math::
+
+       D_n = \sup_x \left| F_n(x) - F(x) \right|
+
+    with :math:`F_n` the empirical cumulative distribution function (ECDF) and
+    :math:`F` the theoretical CDF. Specifically, this function computes:
+
+    .. math::
+
+       \mathbb{P}(\sqrt{n}\, D_n > x)
 
     Parameters
     ----------
-    y : float array_like
-      Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
-      multiplied by sqrt(n).
+    x : array_like
+        Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
+        multiplied by :math:`\sqrt{n}`.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
     scalar or ndarray
-        The value(s) of kolmogorov(y)
+        The probability that the test statistic exceeds `x`, in the range
+        :math:`[0, 1]`.
 
     See Also
     --------
-    kolmogi : The Inverse Survival Function for the distribution
-    scipy.stats.kstwobign : Provides the functionality as a continuous distribution
-    smirnov, smirnovi : Functions for the one-sided distribution
+    kolmogi : Inverse survival function of the Kolmogorov distribution.
+    scipy.stats.kstwobign : Provides the functionality as a continuous distribution.
+    smirnov, smirnovi : Functions for the one-sided distribution.
 
     Notes
     -----
-    `kolmogorov` is used by `stats.kstest` in the application of the
+    `kolmogorov` is used by ``stats.kstest`` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in ``scipy.special``, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distribution.
+    ``stats.kstwobign`` distribution.
+
+    References
+    ----------
+    .. [1] Marsaglia, G., Tsang, W. W., & Wang, J. (2003). "Evaluating
+       Kolmogorov's distribution." *Journal of Statistical Software*, 8(18), 1-4.
+    .. [2] "Kolmogorov-Smirnov test", Wikipedia,
+       https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
 
     Examples
     --------
@@ -1588,7 +1604,7 @@ const char *kolmogorov_doc = R"(
     >>> lap01 = laplace(0, 1)
     >>> x = np.sort(lap01.rvs(n, random_state=rng))
     >>> np.mean(x), np.std(x)
-    (-0.05841730131499543, 1.3968109101997568)
+    (np.float64(-0.05841730131499543), np.float64(1.3968109101997568))
 
     Construct the Empirical CDF and the K-S statistic Dn.
 
@@ -1598,14 +1614,14 @@ const char *kolmogorov_doc = R"(
     >>> gaps = np.column_stack([cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
-    >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
+    >>> print(f'Dn={Dn:f}, sqrt(n)*Dn={Kn:f}')
     Dn=0.043363, sqrt(n)*Dn=1.371265
-    >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
-    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %
-    ...    (Kn, kolmogorov(Kn)),
-    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %
-    ...    (Kn, kstwobign.cdf(Kn))]))
-    For a sample of size n drawn from a N(0, 1) distribution:
+    >>> print(chr(10).join(['For a Laplace sample tested against N(0, 1):',
+    ...   f' the approximate Kolmogorov probability that sqrt(n)*Dn>={Kn:f} '
+    ...   f'is {kolmogorov(Kn):f}',
+    ...   f' the approximate Kolmogorov probability that sqrt(n)*Dn<={Kn:f} '
+    ...   f'is {kstwobign.cdf(Kn):f}']))
+    For a Laplace sample tested against N(0, 1):
      the approximate Kolmogorov probability that sqrt(n)*Dn>=1.371265 is 0.046533
      the approximate Kolmogorov probability that sqrt(n)*Dn<=1.371265 is 0.953467
 
@@ -1653,11 +1669,11 @@ const char *kolmogi_doc = R"(
 
     Notes
     -----
-    `kolmogorov` is used by `stats.kstest` in the application of the
+    `kolmogorov` is used by ``stats.kstest`` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in ``scipy.special``, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distribution.
+    ``stats.kstwobign`` distribution.
 
     Examples
     --------

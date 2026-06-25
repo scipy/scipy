@@ -4926,7 +4926,7 @@ add_newdoc("smirnov",
     -----
     `smirnov` is used by `stats.kstest` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in `scipy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
@@ -5036,7 +5036,7 @@ add_newdoc("smirnovi",
     -----
     `smirnov` is used by `stats.kstest` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in `scipy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
