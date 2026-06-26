@@ -2830,7 +2830,7 @@ def test_pickleable_1D(interp):
     obj = interp(x, y)
     y1 = obj(x_eval)
     y2 = pickle.loads(pickle.dumps(obj))(x_eval)
-    np.testing.assert_allclose(y1, y2)
+    xp_assert_close(y1, y2, atol=1e-12)
 
 
 @pytest.mark.parametrize("interp", [LinearNDInterpolator,
@@ -2855,4 +2855,4 @@ def test_pickleable_2D(interp):
     eval_points = np.column_stack([X_eval.ravel(), Y_eval.ravel()])
     Z1 = obj(eval_points)
     Z2 = pickle.loads(pickle.dumps(obj))(eval_points)
-    np.testing.assert_allclose(Z1, Z2)
+    xp_assert_close(Z1, Z2, atol=1e-12)
