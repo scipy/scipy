@@ -1,3 +1,5 @@
+import pickle
+
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_almost_equal, assert_array_almost_equal,
     make_xp_test_case, is_cupy, _xp_copy_to_numpy
@@ -11,7 +13,10 @@ import numpy as np
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
         splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
-        NdPPoly, BSpline, PchipInterpolator)
+        NdPPoly, BSpline, PchipInterpolator, make_interp_spline, CubicSpline,
+        FloaterHormannInterpolator, BarycentricInterpolator, KroghInterpolator,
+        CubicHermiteSpline, LinearNDInterpolator, NearestNDInterpolator,
+        CloughTocher2DInterpolator, RBFInterpolator, RegularGridInterpolator)
 
 from scipy.special import poch, gamma
 
@@ -2807,3 +2812,47 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
         out[jout] = val
 
     return out
+
+@pytest.mark.parametrize("interp", [make_interp_spline,  # BSpline
+                                    CubicSpline,
+                                    PchipInterpolator,
+                                    Akima1DInterpolator,
+                                    FloaterHormannInterpolator,
+                                    BarycentricInterpolator,
+                                    KroghInterpolator,
+                                    lambda x, y: BPoly.from_derivatives(
+                                        x,[[yi, yi, yi] for yi in y]),
+                                    lambda x, y: CubicHermiteSpline(x, y, y)])  # PPoly
+def test_pickleable_1D(interp):
+    x = np.linspace(0, 1, 10)
+    y = np.exp(x)
+    x_eval = np.linspace(0, 1, 100)
+    obj = interp(x, y)
+    y1 = obj(x_eval)
+    y2 = pickle.loads(pickle.dumps(obj))(x_eval)
+    xp_assert_close(y1, y2, atol=1e-12)
+
+
+@pytest.mark.parametrize("interp", [LinearNDInterpolator,
+                                    NearestNDInterpolator,
+                                    CloughTocher2DInterpolator,
+                                    RBFInterpolator,
+                                    RegularGridInterpolator,])
+def test_pickleable_2D(interp):
+    # generate data on a regular grid
+    x = np.linspace(0, 1, 5)
+    y = np.linspace(0, 1, 5)
+    X, Y = np.meshgrid(x, y)
+    Z = np.exp(X + Y)
+    points = np.column_stack([X.ravel(), Y.ravel()])
+    if interp is RegularGridInterpolator:
+        obj = interp((x, y), Z)
+    else:
+        obj = interp(points, Z.ravel())
+    x_eval = np.linspace(0, 1, 10)
+    y_eval = np.linspace(0, 1, 10)
+    X_eval, Y_eval = np.meshgrid(x_eval, y_eval)
+    eval_points = np.column_stack([X_eval.ravel(), Y_eval.ravel()])
+    Z1 = obj(eval_points)
+    Z2 = pickle.loads(pickle.dumps(obj))(eval_points)
+    xp_assert_close(Z1, Z2, atol=1e-12)
