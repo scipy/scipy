@@ -486,6 +486,18 @@ def _make_lsq_ndbspl(
 
     where ``A`` is the sparse tensor-product B-spline design matrix built by
     `NdBSpline.design_matrix` and ``W`` is a diagonal matrix of weights.
+
+    The default solver is `scipy.sparse.linalg.lsqr`. The related
+    `scipy.sparse.linalg.lsmr` solver has the same basic interface and can be
+    useful as a comparison when convergence depends on the conditioning of the
+    least-squares problem or on the selected tolerances. Solver tolerances are
+    not modified by this helper; pass them explicitly through `solver_args` if
+    the solver defaults are not appropriate.
+
+    Other least-squares estimators can be used through a small wrapper, as long
+    as the wrapper accepts a sparse matrix ``A`` and a one-dimensional
+    right-hand side ``b`` and returns coefficients in ``result[0]`` and a
+    success status in ``result[1]``.
     """
     x = np.asarray(x, dtype=float)
     if x.ndim != 2:

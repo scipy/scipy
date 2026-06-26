@@ -2989,6 +2989,33 @@ class TestMakeLSQNdBSpline:
 
         xp_assert_close(spl(x_eval), expected, atol=1e-13)
 
+    def test_lsmr_solver_matches_default_solver(self):
+        x0 = np.linspace(-1.0, 1.0, 11)
+        x1 = np.linspace(-0.75, 0.75, 10)
+        x0_grid, x1_grid = np.meshgrid(x0, x1, indexing="ij")
+        x = np.column_stack((x0_grid.ravel(), x1_grid.ravel()))
+        y = (
+            np.sin(2.0 * x[:, 0])
+            + 0.5 * np.cos(3.0 * x[:, 1])
+            + x[:, 0] * x[:, 1]
+        )
+        w = 1.0 + 0.5 * (x[:, 0] > 0.0)
+        t = (
+            np.r_[[-1.0] * 3, [-0.5, 0.0, 0.5], [1.0] * 3],
+            np.r_[[-0.75] * 3, [-0.25, 0.25], [0.75] * 3],
+        )
+
+        spl = _make_lsq_ndbspl(x, y, t, k=(2, 2), w=w)
+        spl_lsmr = _make_lsq_ndbspl(
+            x, y, t, k=(2, 2), w=w, solver=ssl.lsmr
+        )
+        x_eval = np.array(
+            [[-0.8, -0.5], [-0.1, 0.2], [0.2, -0.3], [0.7, 0.6]]
+        )
+
+        xp_assert_close(spl_lsmr.c, spl.c, atol=5e-7)
+        xp_assert_close(spl_lsmr(x_eval), spl(x_eval), atol=5e-7)
+
     def test_weights_match_dense_weighted_lstsq(self):
         k = 1
         x = np.linspace(0.0, 1.0, 8)
@@ -3040,6 +3067,39 @@ class TestMakeLSQNdBSpline:
 
         assert calls == [((x.size, 2), (x.size,))] * 4
         xp_assert_close(spl.c, ref, atol=1e-13)
+
+    def test_sklearn_sgdregressor_solver_wrapper(self):
+        linear_model = pytest.importorskip("sklearn.linear_model")
+        from scipy import sparse
+
+        x = np.linspace(0.0, 1.0, 80)
+        y = 1.0 + 2.0 * x
+        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
+
+        def sgd_solver(a, b):
+            # scikit-learn currently expects sparse matrices with int32
+            # index arrays, so the wrapper adapts SciPy's sparse array.
+            a = sparse.csr_matrix(a)
+            a.indices = a.indices.astype(np.int32, copy=False)
+            a.indptr = a.indptr.astype(np.int32, copy=False)
+            reg = linear_model.SGDRegressor(
+                fit_intercept=False,
+                loss="squared_error",
+                penalty=None,
+                max_iter=20000,
+                tol=1e-12,
+                random_state=0,
+                learning_rate="adaptive",
+                eta0=0.01,
+            )
+            reg.fit(a, b)
+            return reg.coef_, 1
+
+        spl = _make_lsq_ndbspl(
+            x[:, None], y, t, k=1, solver=sgd_solver
+        )
+
+        xp_assert_close(spl(x[:, None]), y, atol=1e-5)
 
     def test_complex_valued_output(self):
         x = np.linspace(0.0, 1.0, 12)
