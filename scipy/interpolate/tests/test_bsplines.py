@@ -1828,7 +1828,7 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_weights(self, method, xp):
         # weights = 1 is same as None
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k  # type: ignore[misc]
         w = xp.ones_like(x)
 
         b = make_lsq_spline(x, y, t, k, method=method)
@@ -1840,7 +1840,7 @@ class TestLSQ:
 
     def test_weights_same(self, xp):
         # both methods treat weights
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k  # type: ignore[misc]
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
         w = xp.asarray(w)
 
@@ -1853,7 +1853,7 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
         y = xp.asarray(y)
@@ -1863,7 +1863,7 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs_2(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
         nrhs = 3
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
@@ -1877,7 +1877,7 @@ class TestLSQ:
         xp_assert_close(coefs, b.c, atol=1e-15)
 
     def test_multiple_rhs_3(self, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
         nrhs = 3
         y = np.random.random(size=(n, nrhs))
         y = xp.asarray(y)
@@ -1888,7 +1888,7 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_complex(self, method, xp):
         # cmplx-valued `y`
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k  # type: ignore[misc]
         yc = xp.asarray(self.y * (1. + 2.j))
 
         b = make_lsq_spline(x, yc, t, k, method=method)
@@ -1900,7 +1900,7 @@ class TestLSQ:
     def test_complex_2(self, xp):
         # test complex-valued y with y.ndim > 1
 
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k  # type: ignore[misc]
         yc = xp.asarray(self.y * (1. + 2.j))
         yc = xp.stack((yc, yc), axis=1)
 
@@ -3563,7 +3563,7 @@ class F_dense:
 
 class _TestMakeSplrepBase:
 
-    bc_type = None
+    bc_type: str | None = None
 
     def _get_xykt(self, xp=np):
         if self.bc_type == 'periodic':

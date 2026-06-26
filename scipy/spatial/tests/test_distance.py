@@ -115,7 +115,7 @@ _ytdist = squareform(_tdist)
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
 # Each test loads inputs and outputs from this dictionary.
-eo = {}
+eo: dict[str, np.generic] = {}
 
 
 def load_testing_files():
