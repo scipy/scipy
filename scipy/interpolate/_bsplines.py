@@ -2065,12 +2065,23 @@ clamp_values=None):
         raise ValueError("Expect x to be a 1D strictly increasing sequence.")
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
+    if clamp_values and method == "qr":
+        raise NotImplementedError(
+            "Currently, clamp_values requires method='norm-eq', got 'qr'"
+        )
     if clamp_values is not None and len(clamp_values) != 2:
         raise ValueError(f"Expect clamp_values to be a tuple of length 2, \
         got {len(clamp_values)}")
     if np.array(clamp_values).dtype.kind == "c":
         raise ValueError(
             "clamp_values should be of type float or int, got complex."
+        )
+    if clamp_values is not None and (
+            np.any(t[:k + 1] != t[0]) or np.any(t[-(k + 1):] != t[-1])
+        ):
+        raise ValueError(
+            f"""Invalid knot vector, t={t}, when clamp_values is passed, the first 
+            and last values of t should be repeated {k + 1} times for k={k}"""
         )
 
     # number of coefficients
@@ -2165,12 +2176,7 @@ clamp_values=None):
             c_full[1: -1] = c
             c = c_full
 
-
     elif method == "qr":
-        if clamp_values:
-            raise NotImplementedError(
-                "Currently, clamp_values requires method='norm-eq', got 'qr'"
-            )
         _, _, c, _, _ = _lsq_solve_qr(x, yy, t, k, w)
 
         if was_complex:

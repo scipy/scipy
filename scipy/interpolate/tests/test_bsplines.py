@@ -1837,6 +1837,8 @@ class TestLSQ:
     
     @parametrize_lsq_methods
     def test_lsq_with_clamp_values(self, method, xp):
+        # Test if `clamp_values` actually pivots the first and last
+        # values or not.
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         clamp_values = (5, 8)
         
@@ -1844,8 +1846,63 @@ class TestLSQ:
 
         assert sp(x[0]) == 5
         assert sp(x[-1]) == 8
+
         with assert_raises(NotImplementedError):
-            sp = make_lsq_spline(x, y, t, k, method="qr", clamp_values=clamp_values)
+            make_lsq_spline(
+                x, y, t, k, method="qr", clamp_values=clamp_values
+            )
+    
+    def test_clamp_values_matches_dense_reference(self, xp):
+        # Compare against a dense implementation 
+        # Inspired from the following stackoverflow answer.
+        # https://stackoverflow.com/questions/78482220/fixing-boundary-values-on-a-spline
+
+        x = np.linspace(0, 10, 30)
+        y = np.sin(x)
+        k = 3
+        t = np.r_[(x[0],) * (k+1), [3., 5., 7.], (x[-1],) * (k+1)]
+        y0, y1 = 0.5, -0.3
+        
+        # dense implementation
+        N = BSpline.design_matrix(x, t, k).toarray()
+        Q = y - N[:, 0] * y0 - N[:, -1] * y1
+        N_reduced = N[:, 1:-1]
+        c_free = np.linalg.solve(N_reduced.T @ N_reduced, N_reduced.T @ Q)
+        c_ref = np.concatenate([[y0], c_free, [y1]])
+        
+        spl = make_lsq_spline(x, y, t, k=k, method='norm-eq', clamp_values=(y0, y1))
+        
+        xp_assert_close(spl.c, c_ref, atol=1e-12)
+    
+    @parametrize_lsq_methods
+    def test_clamp_values_invalid(self, method, xp):
+        # test invalid arguments with clamp_values
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        clamp_values = (5, 8)
+
+        t[0: k + 1] = np.array([0.1] * (k + 1))
+        t[-(k + 1): ] = np.array([10] * (k + 1))
+        # Should work
+        make_lsq_spline(x, y, t, k, method="norm-eq", clamp_values=clamp_values)
+        
+        t[0] = 0
+        # Shouldn't work
+        with assert_raises(ValueError):
+            make_lsq_spline(
+                x, y, t, k, method="norm-eq", clamp_values=clamp_values
+            )
+        
+        clamp_values = (1 + 2j, 8)
+        with assert_raises(ValueError):
+            make_lsq_spline(
+                x, y, t, k, method="norm-eq", clamp_values=clamp_values
+            )
+        
+        clamp_values =(2,)
+        with assert_raises(ValueError):
+            make_lsq_spline(
+                x, y, t, k, method="norm-eq", clamp_values=clamp_values
+            )
 
     def test_weights_same(self, xp):
         # both methods treat weights
