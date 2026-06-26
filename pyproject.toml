@@ -184,10 +184,20 @@ dev-cli = [
 ]
 
 typecheck = [
+    # type checkers
     "mypy==2.1.0",
     "pyrefly==1.1.1",
+    # typing deps
     "typing_extensions",
+    # stub deps
+    "types-cffi",
     "types-psutil",
+    "types-pyyaml",
+    # import deps
+    "array_api_strict",
+    "cython",
+    "dask",
+    "matplotlib",
     "pybind11",
     "sphinx",
 ]

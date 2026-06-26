@@ -28,4 +28,4 @@ from ._whittaker import whittaker_henderson  # noqa: F401
 from .windows import get_window  # keep this one in signal namespace  # noqa: F401
 
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__: list[str] = [s for s in dir() if not s.startswith('_')]
