@@ -2070,8 +2070,8 @@ clamp_values=None):
             "Currently, clamp_values requires method='norm-eq', got 'qr'"
         )
     if clamp_values is not None and len(clamp_values) != 2:
-        raise ValueError(f"Expect clamp_values to be a tuple of length 2, \
-        got {len(clamp_values)}")
+        raise ValueError(f"""Expect clamp_values to be a tuple of length 2, 
+        got {len(clamp_values)}""")
     if np.array(clamp_values).dtype.kind == "c":
         raise ValueError(
             "clamp_values should be of type float or int, got complex."
