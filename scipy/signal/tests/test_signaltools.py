@@ -1283,10 +1283,6 @@ class TestMedFilt:
         a = np.lib.stride_tricks.as_strided(a, strides=(16,))
         xp_assert_close(signal.medfilt(a, 1),  xp.asarray([5.]))
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reason="chunk assignment does not work on jax immutable arrays"
-    )
     @pytest.mark.parametrize("dtype", ["uint8", "float32", "float64"])
     @make_xp_test_case(signal.medfilt2d)
     def test_medfilt2d_parallel(self, dtype, xp):
@@ -1341,7 +1337,7 @@ class TestMedFilt:
             # Store each result in the output as it arrives.
             for future in as_completed(futures):
                 data, Mslice, Nslice = future.result()
-                output[Mslice, Nslice] = data
+                output = xpx.at(output)[Mslice, Nslice].set(data)
 
         xp_assert_equal(output, expected)
 

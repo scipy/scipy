@@ -750,10 +750,12 @@ The SLSQP method deals with constrained minimization problems of the form:
 .. math::
    :nowrap:
 
-     \begin{eqnarray*} \min_x & f(x) \\
-          \text{subject to: } & c_j(x) =  0  ,  &j \in \mathcal{E}\\
-            & c_j(x) \geq 0  ,  &j \in \mathcal{I}\\
-           &  \text{lb}_i  \leq x_i \leq \text{ub}_i , &i = 1,...,N. \end{eqnarray*}
+   \begin{eqnarray*}
+                    \min_x & f(x) \\
+       \text{subject to: } & c_j(x) =  0    ,                          &j \in \mathcal{E}\\
+                           & c_j(x) \geq 0  ,                          &j \in \mathcal{I}\\
+                           &  \text{lb}_i  \leq x_i \leq \text{ub}_i , &i = 1,...,N.
+   \end{eqnarray*}
 
 Where :math:`\mathcal{E}` or :math:`\mathcal{I}` are sets of indices
 containing equality and inequality constraints.

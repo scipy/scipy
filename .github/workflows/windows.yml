@@ -39,7 +39,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.68.0
+          pixi-version: v0.71.0
           cache: false
           environments: >-
             build
@@ -83,8 +83,9 @@ jobs:
       - name: pip-packages
         run: |
           # 2.0.0 is currently our oldest supported NumPy version
-          python -m pip install numpy==2.0.0 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0" pkgconf
+          python -m pip install numpy==2.0.0 --group build --group dev-cli --group test-core
           python -m pip install -r requirements/openblas.txt
+          python -m pip install -r requirements/pkgconf.txt
 
       - name: Build
         run: |
@@ -124,7 +125,7 @@ jobs:
       - name: pip-packages
         run: |
           # `numpy<2.4.3` pin is due to np.linalg.solve crash, see gh-24774
-          pip install "numpy<2.4.3" cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
+          python -m pip install "numpy<2.4.3" --group build --group dev-cli --group test-core
           python -m pip install -r requirements/openblas.txt
           python -m pip install -r requirements/pkgconf.txt
 
