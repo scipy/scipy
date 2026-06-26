@@ -5,6 +5,7 @@ from scipy.signal import whittaker_henderson  # type: ignore[attr-defined]
 from scipy.signal._whittaker import (
     _logdet_difference_matrix, _polynomial_fit, _reml, _solveh_banded, _solve_WH_banded,
 )
+from scipy.signal._whittaker_inner import _solve_WH_order2
 from scipy.stats import special_ortho_group
 
 
@@ -231,6 +232,37 @@ def test_whittaker_direct_vs_fast_order2(n):
 
     wh = whittaker_henderson(signal, lamb=1.23, order=2)
     assert_allclose(wh.x, x1, rtol=1e-11)
+
+
+@pytest.mark.parametrize("n", [3, 4, 5, 6, 20, 100])
+@pytest.mark.parametrize("lamb", [1e-3, 1.23, 1e3])
+def test_whittaker_compiled_order2_fast(n, lamb):
+    """The compiled order=2 fast path agrees with the reference and banded solvers."""
+    rng = np.random.default_rng(42)
+    signal = np.sin(2 * np.pi * np.linspace(0, 1, n)) + rng.standard_normal(n)
+    x_compiled = _solve_WH_order2(signal, lamb)
+    x_reference = _solve_WH_order2_fast(signal, lamb)
+    x_banded, _ = _solve_WH_banded(signal, lamb=lamb, order=2)
+    # Same algorithm as the reference and the same solution as the banded solver.
+    # The tolerance is looser than machine precision so that 32-bit builds, where
+    # the compiled solver may use x87 extended-precision intermediates, still pass.
+    assert_allclose(x_compiled, x_reference, rtol=1e-9, atol=1e-12)
+    assert_allclose(x_compiled, x_banded, rtol=1e-9, atol=1e-12)
+    assert_allclose(whittaker_henderson(signal, lamb=lamb, order=2).x, x_compiled)
+
+
+def test_whittaker_compiled_order2_dtype():
+    """The fast path accepts integer and non-contiguous input."""
+    # Integer input is handled like its float cast (same code path, same result).
+    signal = np.arange(0, 20, 2)
+    wh_int = whittaker_henderson(signal, lamb=1.23, order=2)
+    wh_float = whittaker_henderson(signal.astype(float), lamb=1.23, order=2)
+    assert_allclose(wh_int.x, wh_float.x, rtol=1e-12)
+    # A non-contiguous view is handled like its contiguous copy.
+    base = np.sin(np.linspace(0, 1, 40))
+    wh_view = whittaker_henderson(base[::2], lamb=1.23, order=2)
+    wh_contig = whittaker_henderson(np.ascontiguousarray(base[::2]), lamb=1.23, order=2)
+    assert_allclose(wh_view.x, wh_contig.x, rtol=1e-12)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])

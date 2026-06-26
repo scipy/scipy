@@ -230,3 +230,19 @@ class FIRLS(Benchmark):
 
     def time_firls(self, n, edges):
         signal.firls(n, (0,) + edges + (1,), [1, 1, 0, 0])
+
+
+class WhittakerHenderson(Benchmark):
+    param_names = ['n', 'lamb']
+    params = [
+        [10, 100, 1000, 100000],
+        [1.0, 1e6],
+        ]
+
+    def setup(self, n, lamb):
+        rng = np.random.default_rng(1234)
+        x = np.linspace(0, 1, n)
+        self.y = np.sin(2 * np.pi * x) + rng.standard_normal(n)
+
+    def time_order2(self, n, lamb):
+        signal.whittaker_henderson(self.y, lamb=lamb, order=2)
