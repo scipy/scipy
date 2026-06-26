@@ -16,7 +16,7 @@ with safe_import():
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                dual_annealing, shgo, direct)
+                                dual_annealing, shgo, direct, biteopt)
     from scipy.optimize._minimize import MINIMIZE_METHODS
     from .cutest.calfun import calfun
     from .cutest.dfoxs import dfoxs
@@ -240,21 +240,38 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'DA')
 
+    def run_biteopt(self):
+        """
+        Do an optimization run for biteopt
+        """
+        self.function.nfev = 0
+
+        t0 = time.time()
+
+        res = biteopt(self.fun,
+                      self.bounds)
+
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'biteopt')
+
     def bench_run_global(self, numtrials=50, methods=None):
         """
         Run the optimization tests for the required minimizers.
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO']
+            methods = ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO', 'biteopt']
 
-        stochastic_methods = ['DE', 'basinh.', 'DA']
+        stochastic_methods = ['DE', 'basinh.', 'DA', 'biteopt']
 
         method_fun = {'DE': self.run_differentialevolution,
                       'basinh.': self.run_basinhopping,
                       'DA': self.run_dualannealing,
                       'DIRECT': self.run_direct,
-                      'SHGO': self.run_shgo, }
+                      'SHGO': self.run_shgo,
+                      'biteopt': self.run_biteopt, }
 
         for m in methods:
             if m in stochastic_methods:
@@ -509,7 +526,7 @@ class BenchGlobal(Benchmark):
     params = [
         _enabled_functions,
         ["success%", "<nfev>", "average time"],
-        ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
+        ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO', 'biteopt'],
     ]
     param_names = ["test function", "result type", "solver"]
 

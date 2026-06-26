@@ -240,4 +240,13 @@ else
   qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
 endif
 
+# biteopt is a header-only C++ library vendored as a git submodule.
+if not fs.exists('subprojects/biteopt/biteopt.h')
+  error('Missing the `biteopt` submodule! Run `git submodule update --init` ' +
+        'to fix this.')
+endif
+biteopt_dep = declare_dependency(
+  include_directories: include_directories('subprojects/biteopt')
+)
+
 subdir('scipy')

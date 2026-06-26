@@ -29,3 +29,6 @@
 [submodule "subprojects/xsf"]
 	path = subprojects/xsf
 	url = https://github.com/scipy/xsf.git
+[submodule "subprojects/biteopt"]
+	path = subprojects/biteopt
+	url = https://github.com/avaneev/biteopt.git

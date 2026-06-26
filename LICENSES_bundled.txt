@@ -5,6 +5,11 @@ The SciPy repository and source distributions bundle a number of libraries that
 are compatibly licensed.  We list these here.
 
 
+Name: biteopt
+Files: subprojects/biteopt/*
+License: MIT
+  For details, see subprojects/biteopt/LICENSE
+
 Name: fast_matrix_market
 Files: scipy/io/_fast_matrix_market/*
 License: BSD-2-Clause
