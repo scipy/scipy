@@ -568,7 +568,10 @@ class DOP853(RungeKutta):
     ...     k21_dot = (G*m1*(r11-r21))/dist_cubed
     ...     k22_dot = (G*m1*(r12-r22))/dist_cubed
     ...     k23_dot = (G*m1*(r13-r23))/dist_cubed
-    ...     return [r11_dot,r12_dot,r13_dot,k11_dot,k12_dot,k13_dot,r21_dot,r22_dot,r23_dot,k21_dot,k22_dot,k23_dot]
+    ...     return [r11_dot, r12_dot, r13_dot,
+    ...             k11_dot, k12_dot, k13_dot,
+    ...             r21_dot, r22_dot, r23_dot,
+    ...             k21_dot, k22_dot, k23_dot]
 
     ``cowell`` accepts a vector containing the coordinates for first
     body's position and velocity followed by the coordinates for the
