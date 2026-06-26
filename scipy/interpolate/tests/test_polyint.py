@@ -3,7 +3,8 @@ import io
 import numpy as np
 
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_almost_equal, make_xp_test_case
+    xp_assert_equal, xp_assert_close, assert_almost_equal, make_xp_test_case,
+    _xp_copy_to_numpy
 )
 from pytest import raises as assert_raises
 import pytest
@@ -795,11 +796,12 @@ class TestCubicSpline:
     def test_periodic_eval(self, xp):
         x = xp.linspace(0, 2 * xp.pi, 10, dtype=xp.float64)
         y = xp.cos(x)
-        S = CubicSpline(x, y, bc_type='periodic')
-        assert_almost_equal(S(1), S(1 + 2 * xp.pi), decimal=15)
+        x_np, y_np = map(_xp_copy_to_numpy, (x, y))
+        S = CubicSpline(x_np, y_np, bc_type='periodic')
+        assert_almost_equal(xp.asarray(S(1)), xp.asarray(S(1 + 2 * xp.pi)), decimal=15)
 
-        S = CubicSpline(x, y)
-        assert_almost_equal(S(x), xp.cos(x), decimal=15)
+        S = CubicSpline(x_np, y_np)
+        assert_almost_equal(xp.asarray(S(x_np)), y, decimal=15)
 
     def test_second_derivative_continuity_gh_11758(self):
         # gh-11758: C2 continuity fail
