@@ -477,7 +477,7 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     # Even though it's one line, it comes up so often that it's worth having
     # this function for readability
     xp = array_namespace(x) if xp is None else xp
-    return xp.reshape(x, (-1,))
+    return np.ravel(x) if isinstance(x, np.matrix) else xp.reshape(x, (-1,))
 
 
 def xp_swapaxes(a, axis1, axis2, xp=None):
