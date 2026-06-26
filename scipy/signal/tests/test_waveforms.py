@@ -1,9 +1,10 @@
+import math
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case, xp_default_dtype, xp_assert_less, array_namespace
+    make_xp_test_case, xp_default_dtype, xp_assert_less
 )
 
 import scipy.signal._waveforms as waveforms
@@ -40,10 +41,9 @@ def compute_frequency(t, theta):
     """
     Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t).
     """
-    xp = array_namespace(t, theta)
     # Assume that t is uniformly spaced.
     dt = t[1] - t[0]
-    f = (theta[1:] - theta[:-1])/(2*xp.pi) / dt
+    f = (theta[1:] - theta[:-1])/(2*math.pi) / dt
     tf = 0.5*(t[1:] + t[:-1])
     return tf, f
 
