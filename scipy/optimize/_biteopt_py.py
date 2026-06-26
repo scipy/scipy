@@ -6,6 +6,7 @@ import numpy as np
 from scipy.optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
 from ._biteopt import minimize as _minimize  # type: ignore
+from scipy._lib._util import _validate_int
 
 __all__ = ['biteopt']
 
@@ -73,6 +74,8 @@ def biteopt(
     stochastic, results depend on the random stream; pass `rng` for
     reproducible runs.
 
+    .. versionadded:: 1.19.0
+
     References
     ----------
     .. [1] Aleksey Vaneev. "BiteOpt - Derivative-Free Global Optimization
@@ -132,13 +135,12 @@ def biteopt(
     if np.any(np.isinf(lb)) or np.any(np.isinf(ub)):
         raise ValueError("Bounds must not be inf.")
 
-    if not isinstance(depth, (int, np.integer)) or depth < 1 or depth > 36:
+    depth = _validate_int(depth, "depth", minimum=1)
+    if depth > 36:
         raise ValueError("depth must be an integer in [1, 36].")
 
-    if maxfun is not None and (
-        not isinstance(maxfun, (int, np.integer)) or maxfun < 1
-    ):
-        raise ValueError("maxfun must be an integer >= 1.")
+    if maxfun is not None:
+        maxfun = _validate_int(maxfun, "maxfun", minimum=1)
 
     if f_min is not None:
         f_min = float(f_min)
@@ -149,7 +151,17 @@ def biteopt(
     generator = np.random.default_rng(rng)
 
     def func_wrap(x):
-        return np.asarray(func(x, *args)).item()
+        fx = func(x, *args)
+        if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.dtype(np.float64))
+            try:
+                fx = _dt.type(np.asarray(fx).item())
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    "The user-provided objective function "
+                    "must return a scalar value."
+                ) from e
+        return fx
 
     if maxfun is None:
         maxfun = 1000 * len(lb)
@@ -166,8 +178,12 @@ def biteopt(
     _iter = max(1, _iter)
 
     result = _minimize(
-        func_wrap, lb, ub,
-        _iter, int(depth), 1, # only one attempt, the best result is returned
+        func_wrap,
+        lb,
+        ub,
+        _iter,
+        int(depth),
+        1, # only one attempt, the best result is returned
         generator.bit_generator.capsule,
         f_min,
     )

@@ -66,20 +66,22 @@ class TestSolver:
         assert res.nfev == objective.nfev
 
     def test_biteopt_stays_within_bounds(self):
-        bounds = [(2.0, 3.0), (2.0, 3.0), (2.0, 3.0)]
-        res = biteopt(lambda x: np.square(x).sum(), bounds, rng=0)
-
-        lb = np.array([b[0] for b in bounds])
-        ub = np.array([b[1] for b in bounds])
-        assert np.all(res.x >= lb)
-        assert np.all(res.x <= ub)
-        assert_allclose(res.x, lb, rtol=1e-3, atol=1e-3)
+        lower_bound = 2
+        upper_bound = 3
+        def fun(x):
+            assert (x >= lower_bound).all()
+            assert (x <= upper_bound).all()
+            return np.square(x).sum()
+        bounds = [(lower_bound, upper_bound)] * 3
+        res = biteopt(fun, bounds, rng=0)
+        assert np.all(res.x >= lower_bound)
+        assert np.all(res.x <= upper_bound)
+        assert_allclose(res.x, lower_bound, rtol=1e-3, atol=1e-3)
 
     @pytest.mark.parametrize("depth", [1, 2, 4, 9])
     def test_depth(self, depth):
         bounds = [(-5.0, 5.0), (-5.0, 5.0)]
         res = biteopt(rosen, bounds, depth=depth, rng=0, maxfun=10000)
-
         assert_allclose(res.x, [1.0, 1.0], rtol=1e-3, atol=1e-3)
 
     @pytest.mark.parametrize("depth", [1, 2, 4, 9])
@@ -163,24 +165,38 @@ class TestInputValidation:
         with pytest.raises(ValueError, match="at least one"):
             biteopt(rosen, [])
 
-    @pytest.mark.parametrize("maxfun", [0, -1, 1.5])
-    def test_invalid_maxfun(self, maxfun):
-        with pytest.raises(ValueError, match="must be an integer >= 1"):
+    @pytest.mark.parametrize("maxfun, exc_type, msg", [
+        (0, ValueError, "must be an integer not less than 1"),
+        (-1, ValueError, "must be an integer not less than 1"),
+        (1.5, TypeError, "must be an integer"),
+    ])
+    def test_invalid_maxfun(self, maxfun, exc_type, msg):
+        with pytest.raises(exc_type, match=msg):
             biteopt(rosen, self.bounds, maxfun=maxfun)
 
-    @pytest.mark.parametrize("kwargs", [
-        {"depth": 0},
-        {"depth": -1},
-        {"depth": 37},
-        {"depth": 1.5},
+    @pytest.mark.parametrize("kwargs, exc_type, msg", [
+        ({"depth": 0}, ValueError, "must be an integer not less than 1"),
+        ({"depth": -1}, ValueError, "must be an integer not less than 1"),
+        ({"depth": 37}, ValueError, r"depth must be an integer in \[1, 36\]"),
+        ({"depth": 1.5}, TypeError, "must be an integer"),
     ])
-    def test_invalid_depth(self, kwargs):
-        with pytest.raises(ValueError, match=r"depth must be an integer in \[1, 36\]"):
+    def test_invalid_depth(self, kwargs, exc_type, msg):
+        with pytest.raises(exc_type, match=msg):
             biteopt(rosen, self.bounds, **kwargs)
 
     def test_f_min_not_float(self):
         with pytest.raises(ValueError, match="float"):
             biteopt(rosen, self.bounds, f_min="not a float")
+
+    def test_func_returns_non_scalar(self):
+        # The objective function must return a scalar; if it returns an array
+        # or other non-scalar that cannot be converted to a single value, 
+        # it must raise a ValueError.
+        def non_scalar(x):
+            return np.array([1.0, 2.0])
+
+        with pytest.raises(ValueError, match="must return a scalar value"):
+            biteopt(non_scalar, self.bounds, rng=0)
 
 
 class TestRNG:
