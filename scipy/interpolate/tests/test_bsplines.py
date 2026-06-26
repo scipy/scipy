@@ -1874,35 +1874,43 @@ class TestLSQ:
         
         xp_assert_close(spl.c, c_ref, atol=1e-12)
     
-    @parametrize_lsq_methods
-    def test_clamp_values_invalid(self, method, xp):
-        # test invalid arguments with clamp_values
+    @pytest.mark.parametrize("clamp_values,reason", [
+        ((1 + 2j, 8),           "complex"),
+        ((2,),                   "wrong length"),
+        (('a', 'b'),             "non-numeric"),
+        ((np.array([3]), np.array([5])), "tuple of arrays"),
+    ])
+    def test_clamp_values_invalid_input(self, clamp_values, reason, xp):
+        # clamp_values must be a 2-tuple of finite real numbers
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        clamp_values = (5, 8)
+        t = t.copy()
+        t[:k+1] = float(self.x[0])
+        t[-(k+1):] = float(self.x[-1])
+        
+        with assert_raises(ValueError):
+            make_lsq_spline(x, y, t, k, method="norm-eq", clamp_values=clamp_values)
 
-        t[0: k + 1] = np.array([0.1] * (k + 1))
-        t[-(k + 1): ] = np.array([10] * (k + 1))
-        # Should work
-        make_lsq_spline(x, y, t, k, method="norm-eq", clamp_values=clamp_values)
+
+    def test_clamp_values_invalid_knot_vector(self, xp):
+        # clamp_values requires a clamped knot vector
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        t = t.copy()
+        t[:k+1] = float(self.x[0])
+        t[-(k+1):] = float(self.x[-1])
+        t[0] = float(self.x[0]) - 1   # break the clamped property at the left
         
-        t[0] = 0
-        # Shouldn't work
         with assert_raises(ValueError):
-            make_lsq_spline(
-                x, y, t, k, method="norm-eq", clamp_values=clamp_values
-            )
+            make_lsq_spline(x, y, t, k, method="norm-eq", clamp_values=(5, 8))
+
+
+    def test_clamp_values_valid(self, xp):
+        # valid inputs work without error
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        t = t.copy()
+        t[:k+1] = float(self.x[0])
+        t[-(k+1):] = float(self.x[-1])
         
-        clamp_values = (1 + 2j, 8)
-        with assert_raises(ValueError):
-            make_lsq_spline(
-                x, y, t, k, method="norm-eq", clamp_values=clamp_values
-            )
-        
-        clamp_values =(2,)
-        with assert_raises(ValueError):
-            make_lsq_spline(
-                x, y, t, k, method="norm-eq", clamp_values=clamp_values
-            )
+        make_lsq_spline(x, y, t, k, method="norm-eq", clamp_values=(5, 8))
 
     def test_weights_same(self, xp):
         # both methods treat weights

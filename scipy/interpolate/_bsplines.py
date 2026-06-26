@@ -2065,24 +2065,24 @@ clamp_values=None):
         raise ValueError("Expect x to be a 1D strictly increasing sequence.")
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
-    if clamp_values and method == "qr":
-        raise NotImplementedError(
-            "Currently, clamp_values requires method='norm-eq', got 'qr'"
-        )
-    if clamp_values is not None and len(clamp_values) != 2:
-        raise ValueError(f"""Expect clamp_values to be a tuple of length 2, 
-        got {len(clamp_values)}""")
-    if np.array(clamp_values).dtype.kind == "c":
-        raise ValueError(
-            "clamp_values should be of type float or int, got complex."
-        )
-    if clamp_values is not None and (
-            np.any(t[:k + 1] != t[0]) or np.any(t[-(k + 1):] != t[-1])
-        ):
-        raise ValueError(
-            f"""Invalid knot vector, t={t}, when clamp_values is passed, the first 
-            and last values of t should be repeated {k + 1} times for k={k}"""
-        )
+    if clamp_values is not None:
+        if method == "qr":
+            raise NotImplementedError(
+                "Currently, clamp_values requires method='norm-eq', got 'qr'"
+            )
+        if len(clamp_values) != 2:
+            raise ValueError(f"""Expect clamp_values to be a tuple of length 2, 
+            got {len(clamp_values)}""")
+        if np.array(clamp_values).dtype.kind in ["c", "U"]:
+            raise ValueError(
+                f"""clamp_values should be of type float or int, got 
+                    {np.array(clamp_values).dtype}."""
+            )
+        if np.any(t[:k + 1] != t[0]) or np.any(t[-(k + 1):] != t[-1]):
+            raise ValueError(
+                f"""Invalid knot vector, {t}, when clamp_values is passed, the first 
+                and last values of t should be repeated {k + 1} times for k={k}"""
+            )
 
     # number of coefficients
     n = t.size - k - 1
@@ -2125,38 +2125,41 @@ clamp_values=None):
         rhs = rhs.reshape((n,) + y.shape[1:])
 
         if clamp_values is not None:
-            # If the spline is clamped,
-            # c[0] = pi, c[-1] = pf (Pinned Initial/Final)
-            pi, pf = clamp_values
+            # Clamped LSQ: pin spl(x[0]) = ci and spl(x[-1]) = cf.
+            #
+            # For a clamped knot vector, only B[0] is nonzero at x[0] and only
+            # B[nc-1] is nonzero at x[-1] (both with value 1). So spl(x[0]) = c[0]
+            # and spl(x[-1]) = c[nc-1], clamping the endpoint values reduces to
+            # pinning the first and last coefficients.
+            #
+            # The reduced LSQ solves for the (nc-2) free coefficients:
+            #   minimize || (y - ci*A[:, 0] - cf*A[:, -1]) - A_reduced @ c_free ||^2
+            # where A_reduced is A with the first and last columns dropped.
+            #
+            # In the LAPACK lower-banded storage of A.T @ A, dropping the first
+            # and last columns of the symmetric A.T @ A is equivalent to slicing
+            # ab[:, 1:-1].
+            #
+            # Reference: https://stackoverflow.com/questions/78482220
+            ci, cf = clamp_values
 
-            # `A.T @ A` should not have the first col and the last column and
-            # the first and last row.
-            # Since, A.T @ A is always symmetric, in LAPACK banded storage,
-            # dropping the first and last columns auto-drops the rows.
             ab_reduced = ab[:, 1:-1]
 
-            # Similarly, RHS should be:
-            # A_reduce.T @ (y - A[:, 0] * pi - A[:, -1] * pf)
-            
-            # A_reduce.T @ y
-            rhs = rhs[1: -1] # now shape `n - 2`
+            rhs = rhs[1: -1] 
 
-            # A_reduce.T @ A[:, 0] is
-            # col0 of A.T @ A without first and last entry.
-            # A.T @ A [:, 0]
-            # Since, sparse storage is: A[i, j] = a[i - j, j]
-            # and col `j` in both of them remain same.
+            # Subtract the contribution of clamped coefficients from the RHS:
+            # rhs_adjusted = A_reduced.T @ y - ci * A_reduced.T @ A[:, 0]
+            #                                 - cf * A_reduced.T @ A[:, -1]
+            # Column 0 of A.T @ A in banded storage: straight read down ab[:, 0]
             ab_col0 = np.zeros((n - 2,))
             ab_col0[:k] = ab[1: k + 1, 0]
-            ab_col0 = ab_col0 * pi
+            ab_col0 = ab_col0 * ci
 
-            # Similarly, A_reduce.T @ A[:, -1]
             ab_col_last = np.zeros((n - 2,))
-            sparse_idx = np.arange(1, k + 1)
-            ab_col_last[-k:] = ab[sparse_idx, n - 1 - sparse_idx][::-1]
-            ab_col_last = ab_col_last * pf
+            banded_idx_last_col = np.arange(1, k + 1)
+            ab_col_last[-k:] = ab[banded_idx_last_col, (n-1) -banded_idx_last_col][::-1]
+            ab_col_last = ab_col_last * cf
             
-            # criterion!
             rhs = rhs - ab_col0 - ab_col_last
             ab = ab_reduced
 
@@ -2171,8 +2174,8 @@ clamp_values=None):
             new_dims = list(c.shape)
             new_dims[0] += 2
             c_full = np.zeros(tuple(new_dims))
-            c_full[0] = pi
-            c_full[-1] = pf
+            c_full[0] = ci
+            c_full[-1] = cf
             c_full[1: -1] = c
             c = c_full
 
