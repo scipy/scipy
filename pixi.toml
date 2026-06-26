@@ -495,7 +495,7 @@ description = "Run main lint checks"
 
 [feature.lint.tasks.check-python-h]
 cmd = "python check_python_h_first.py"
-cwd = "tools"
+cwd = "tools/linting"
 description = "Check that `Python.h` is included before any stdlib headers"
 
 [feature.lint.tasks.tach-check]

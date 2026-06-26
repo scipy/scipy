@@ -5157,7 +5157,7 @@ class TestKSTwoSamples:
 class TestTTestRel:
     def test_ttest_rel_xp(self, xp):
         # stats.ttest_rel had no tests using the xp fixture. As a temporary
-        # measure to get tools/check_xp_untested.py to pass, a portion of
+        # measure to get tools/linting/check_xp_untested.py to pass, a portion of
         # test_ttest_rel has been converted. It might seem unnecessary to
         # require tests for a trivial wrapper of a well-tested function, but
         # this seems simpler than having a way to carve out exceptions to

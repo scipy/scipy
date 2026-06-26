@@ -498,7 +498,7 @@ def refguide_check(ctx, build_dir, *args, **kwargs):
     install_dir = meson._get_site_packages(build_dir)
 
     cmd = [f'{sys.executable}',
-            os.path.join(root, 'tools', 'refguide_check.py')]
+            os.path.join(root, 'tools', 'refguide', 'refguide_check.py')]
 
     if ctx.params["verbose"]:
         cmd += ['-vvv']
@@ -510,7 +510,7 @@ def refguide_check(ctx, build_dir, *args, **kwargs):
     util.run(cmd)
 
     cmd_numpydoc_lint =  [f'{sys.executable}',
-        os.path.join('tools', 'numpydoc_lint.py')
+        os.path.join('tools', 'linting', 'numpydoc_lint.py')
     ]
     util.run(cmd_numpydoc_lint)
 
@@ -588,7 +588,10 @@ def notes(ctx_obj, version_args):
         sys.argv = version_args
         log_start = sys.argv[0]
         log_end = sys.argv[1]
-    cmd = ["python", "tools/write_release_and_log.py", f"{log_start}", f"{log_end}"]
+    cmd = [
+        "python", "tools/release/write_release_and_log.py",
+        f"{log_start}", f"{log_end}"
+    ]
     click.secho(' '.join(cmd), bold=True, fg="bright_blue")
     util.run(cmd)
 
@@ -607,7 +610,7 @@ def authors(ctx_obj, revision_args):
         sys.argv = revision_args
         start_revision = sys.argv[0]
         end_revision = sys.argv[1]
-    cmd = ["python", "tools/authors.py", f"{start_revision}..{end_revision}"]
+    cmd = ["python", "tools/release/authors.py", f"{start_revision}..{end_revision}"]
     click.secho(' '.join(cmd), bold=True, fg="bright_blue")
     util.run(cmd)
 
@@ -633,7 +636,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
-        os.path.join('tools', 'lint.py'),
+        os.path.join('tools', 'linting', 'lint.py'),
         f'--diff-against={diff_against}'
     ]
     if files != "":
@@ -647,12 +650,12 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     util.run(cmd_lint)
 
     cmd_unicode = cmd_prefix + [
-        os.path.join('tools', 'check_unicode.py')
+        os.path.join('tools', 'linting', 'check_unicode.py')
     ]
     util.run(cmd_unicode)
 
     cmd_check_test_name = cmd_prefix + [
-        os.path.join('tools', 'check_test_name.py')
+        os.path.join('tools', 'linting', 'check_test_name.py')
     ]
     util.run(cmd_check_test_name)
 
@@ -746,16 +749,19 @@ def check(ctx, xp_markers, installed_files, symbol_hiding, loaded_sharedlibs, no
 
     if xp_markers:
         os.environ['SCIPY_ARRAY_API'] = '1'
-        cmd = [sys.executable, os.path.join('tools', 'check_xp_untested.py')]
+        cmd = [sys.executable, os.path.join('tools', 'linting', 'check_xp_untested.py')]
         util.run(cmd)
 
     if installed_files:
-        cmd = [sys.executable, os.path.join('tools', 'check_installation.py'),
-               install_dir]
+        cmd = [
+            sys.executable,
+            os.path.join('tools', 'linting', 'check_installation.py'),
+            install_dir,
+        ]
         util.run(cmd)
 
     if symbol_hiding:
-        script = os.path.join(os.path.abspath('tools'),
+        script = os.path.join(os.path.abspath('tools'), 'linting',
                               'check_pyext_symbol_hiding.sh')
         util.run([script, install_dir])
 
