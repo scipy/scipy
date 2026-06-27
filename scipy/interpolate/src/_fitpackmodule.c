@@ -2033,6 +2033,7 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
 {
     PyArrayObject *ap_u = NULL, *ap_x = NULL, *ap_w = NULL;
     PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_wrk = NULL, *ap_iwrk = NULL;
+    PyArrayObject *ap_t_pad = NULL, *ap_t_out = NULL, *ap_c_out = NULL;
     PyObject *u, *x, *w, *t_in, *wrk_in, *iwrk_in;
     int iopt, ipar, idim, m, mx, k, nest, n, nc, lwrk, ier, per;
     double ub, ue, s, fp;
@@ -2133,7 +2134,6 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
     nc = idim * nest;
 
     /* Pad t array to size nest */
-    PyArrayObject *ap_t_pad = NULL;
     dims[0] = nest;
     ap_t_pad = (PyArrayObject *)PyArray_ZEROS(1, dims, NPY_FLOAT64, 0);
     if (ap_t_pad == NULL) {
@@ -2149,7 +2149,6 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
     dims[0] = nc;
     ap_c = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
     if (ap_c == NULL) {
-        Py_DECREF(ap_t_pad);
         goto fail;
     }
 
@@ -2186,30 +2185,24 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
                (int *)PyArray_DATA(ap_iwrk), &ier);
     }
 
-    Py_DECREF(ap_x);
-    Py_DECREF(ap_w);
-    Py_DECREF(ap_t);
-    ap_t = NULL;  /* also in fail_after_call; NULL so the XDECREF there is a no-op */
+    Py_CLEAR(ap_x);
+    Py_CLEAR(ap_w);
+    Py_CLEAR(ap_t);
 
     /* Resize t and c to actual output size n */
-    PyArrayObject *ap_t_out = NULL;
-    PyArrayObject *ap_c_out = NULL;
     if (ier <= 3) {
         /* ier <= 0: normal return, ier=1,2,3: warnings but with valid output */
         dims[0] = n;
         ap_t_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
         if (ap_t_out == NULL) {
-            Py_DECREF(ap_t_pad);
-            goto fail_after_call;
+            goto fail;
         }
         memcpy(PyArray_DATA(ap_t_out), PyArray_DATA(ap_t_pad), n * sizeof(double));
 
         dims[0] = (npy_intp)idim * (n - k - 1);
         ap_c_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
         if (ap_c_out == NULL) {
-            Py_DECREF(ap_t_out);
-            Py_DECREF(ap_t_pad);
-            goto fail_after_call;
+            goto fail;
         }
         /* Copy coefficients dimension by dimension.
          * fpclos stores coefficients with spacing: c[n*(j-1) + i-1] for dimension j, coef i
@@ -2229,16 +2222,12 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
         ap_t_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
         ap_c_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
         if (ap_t_out == NULL || ap_c_out == NULL) {
-            Py_XDECREF(ap_t_out);
-            Py_XDECREF(ap_c_out);
-            Py_DECREF(ap_t_pad);
-            goto fail_after_call;
+            goto fail;
         }
     }
 
-    Py_DECREF(ap_t_pad);
-    Py_DECREF(ap_c);
-    ap_c = NULL;  /* also in fail_after_call; NULL so the XDECREF there is a no-op */
+    Py_CLEAR(ap_t_pad);
+    Py_CLEAR(ap_c);
 
     /* Build output dict o = {'u': u, 'ub': ub, 'ue': ue, 'wrk': wrk, 'iwrk': iwrk, 'ier': ier, 'fp': fp} */
     PyObject *o = Py_BuildValue("{s:O,s:d,s:d,s:O,s:O,s:i,s:d}",
@@ -2250,9 +2239,7 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
                                 "ier", ier,
                                 "fp", fp);
     if (o == NULL) {
-        Py_DECREF(ap_t_out);
-        Py_DECREF(ap_c_out);
-        goto fail_after_call;
+        goto fail;
     }
 
     Py_DECREF(ap_u);
@@ -2261,20 +2248,15 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
 
     return Py_BuildValue("NNN", PyArray_Return(ap_t_out), PyArray_Return(ap_c_out), o);
 
-fail_after_call:
-    Py_XDECREF(ap_u);
-    Py_XDECREF(ap_t);
-    Py_XDECREF(ap_c);
-    Py_XDECREF(ap_wrk);
-    Py_XDECREF(ap_iwrk);
-    return NULL;
-
 fail:
     Py_XDECREF(ap_u);
     Py_XDECREF(ap_x);
     Py_XDECREF(ap_w);
     Py_XDECREF(ap_t);
+    Py_XDECREF(ap_t_pad);
     Py_XDECREF(ap_c);
+    Py_XDECREF(ap_t_out);
+    Py_XDECREF(ap_c_out);
     Py_XDECREF(ap_wrk);
     Py_XDECREF(ap_iwrk);
     return NULL;
