@@ -2241,26 +2241,25 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
     ap_c = NULL;  /* also in fail_after_call; NULL so the XDECREF there is a no-op */
 
     /* Build output dict o = {'u': u, 'ub': ub, 'ue': ue, 'wrk': wrk, 'iwrk': iwrk, 'ier': ier, 'fp': fp} */
-    PyObject *o = PyDict_New();
+    PyObject *o = Py_BuildValue("{s:O,s:d,s:d,s:O,s:O,s:i,s:d}",
+                                "u", (PyObject *)ap_u,
+                                "ub", ub,
+                                "ue", ue,
+                                "wrk", (PyObject *)ap_wrk,
+                                "iwrk", (PyObject *)ap_iwrk,
+                                "ier", ier,
+                                "fp", fp);
     if (o == NULL) {
         Py_DECREF(ap_t_out);
         Py_DECREF(ap_c_out);
         goto fail_after_call;
     }
 
-    PyDict_SetItemString(o, "u", (PyObject *)ap_u);
-    PyDict_SetItemString(o, "ub", PyFloat_FromDouble(ub));
-    PyDict_SetItemString(o, "ue", PyFloat_FromDouble(ue));
-    PyDict_SetItemString(o, "wrk", (PyObject *)ap_wrk);
-    PyDict_SetItemString(o, "iwrk", (PyObject *)ap_iwrk);
-    PyDict_SetItemString(o, "ier", PyLong_FromLong(ier));
-    PyDict_SetItemString(o, "fp", PyFloat_FromDouble(fp));
-
     Py_DECREF(ap_u);
     Py_DECREF(ap_wrk);
     Py_DECREF(ap_iwrk);
 
-    return Py_BuildValue(("NNO"), PyArray_Return(ap_t_out), PyArray_Return(ap_c_out), o);
+    return Py_BuildValue("NNN", PyArray_Return(ap_t_out), PyArray_Return(ap_c_out), o);
 
 fail_after_call:
     Py_XDECREF(ap_u);
