@@ -197,7 +197,7 @@ fluid_ounce_imp = gallon_imp / 160
 kmh = 1e3 / hour
 mph = mile / hour
 # approx value of mach at 15 degrees in 1 atm. Is this a common value?
-mach = speed_of_sound = 340.5
+mach = speed_of_sound = 340.3
 knot = nautical_mile / hour
 
 # temperature in kelvin
