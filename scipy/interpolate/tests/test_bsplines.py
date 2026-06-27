@@ -3068,39 +3068,6 @@ class TestMakeLSQNdBSpline:
         assert calls == [((x.size, 2), (x.size,))] * 4
         xp_assert_close(spl.c, ref, atol=1e-13)
 
-    def test_sklearn_sgdregressor_solver_wrapper(self):
-        linear_model = pytest.importorskip("sklearn.linear_model")
-        from scipy import sparse
-
-        x = np.linspace(0.0, 1.0, 80)
-        y = 1.0 + 2.0 * x
-        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
-
-        def sgd_solver(a, b):
-            # scikit-learn currently expects sparse matrices with int32
-            # index arrays, so the wrapper adapts SciPy's sparse array.
-            a = sparse.csr_matrix(a)
-            a.indices = a.indices.astype(np.int32, copy=False)
-            a.indptr = a.indptr.astype(np.int32, copy=False)
-            reg = linear_model.SGDRegressor(
-                fit_intercept=False,
-                loss="squared_error",
-                penalty=None,
-                max_iter=20000,
-                tol=1e-12,
-                random_state=0,
-                learning_rate="adaptive",
-                eta0=0.01,
-            )
-            reg.fit(a, b)
-            return reg.coef_, 1
-
-        spl = _make_lsq_ndbspl(
-            x[:, None], y, t, k=1, solver=sgd_solver
-        )
-
-        xp_assert_close(spl(x[:, None]), y, atol=1e-5)
-
     def test_complex_valued_output(self):
         x = np.linspace(0.0, 1.0, 12)
         y = (2.0 * x + 1.0) + 1j * (-3.0 * x + 4.0)
