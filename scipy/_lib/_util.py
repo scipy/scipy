@@ -7,7 +7,6 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
-import os
 import sys
 import textwrap
 from types import ModuleType
