@@ -2,7 +2,6 @@ import numpy as np
 import math
 import warnings
 from collections import namedtuple
-from collections.abc import Callable
 
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
