@@ -343,7 +343,9 @@ class TestSparseUtils:
         (np.dtype('complex64'), np.dtype('complex64')),
     ])
     def test_get_sum_dtype(self, dtype, expected):
-        assert_equal(sputils.get_sum_dtype(dtype), expected)
+        result = sputils.get_sum_dtype(dtype)
+        assert isinstance(result, np.dtype)
+        assert_equal(result, expected)
 
     # tests public broadcast_shapes largely from
     # numpy/numpy/lib/tests/test_stride_tricks.py
