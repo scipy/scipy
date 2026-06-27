@@ -2189,6 +2189,7 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
     Py_DECREF(ap_x);
     Py_DECREF(ap_w);
     Py_DECREF(ap_t);
+    ap_t = NULL;  /* also in fail_after_call; NULL so the XDECREF there is a no-op */
 
     /* Resize t and c to actual output size n */
     PyArrayObject *ap_t_out = NULL;
@@ -2237,6 +2238,7 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
 
     Py_DECREF(ap_t_pad);
     Py_DECREF(ap_c);
+    ap_c = NULL;  /* also in fail_after_call; NULL so the XDECREF there is a no-op */
 
     /* Build output dict o = {'u': u, 'ub': ub, 'ue': ue, 'wrk': wrk, 'iwrk': iwrk, 'ier': ier, 'fp': fp} */
     PyObject *o = PyDict_New();
