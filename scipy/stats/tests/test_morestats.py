@@ -1151,7 +1151,7 @@ class TestBinomTest:
                               alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-12)
         xp_assert_equal(res.statistic, xp.asarray(0.2, dtype=dtype))
-        ci = res.proportion_ci(confidence_level=0.95)
+        ci = res.proportion_ci(confidence_level=xp.asarray(0.95, dtype=dtype))
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-12)
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-12)
 
@@ -1171,7 +1171,7 @@ class TestBinomTest:
                               alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
         xp_assert_equal(res.statistic, xp.asarray(0.06, dtype=dtype))
-        ci = res.proportion_ci(confidence_level=0.99)
+        ci = res.proportion_ci(confidence_level=xp.asarray(0.99, dtype=dtype))
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
 
@@ -1188,7 +1188,7 @@ class TestBinomTest:
         res = stats.binomtest(0, n=10, p=xp.asarray(0.25, dtype=dtype),
                               alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
-        ci = res.proportion_ci(confidence_level=0.95)
+        ci = res.proportion_ci(confidence_level=xp.asarray(0.95, dtype=dtype))
         xp_assert_equal(ci.low, xp.asarray(0.0, dtype=dtype))
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
 
@@ -1205,7 +1205,7 @@ class TestBinomTest:
         res = stats.binomtest(10, n=10, p=xp.asarray(0.25, dtype=dtype),
                               alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
-        ci = res.proportion_ci(confidence_level=0.95)
+        ci = res.proportion_ci(confidence_level=xp.asarray(0.95, dtype=dtype))
         xp_assert_equal(ci.high, xp.asarray(1.0, dtype=dtype))
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
 
@@ -1249,6 +1249,7 @@ class TestBinomTest:
             method = 'wilsoncc'
         else:
             method = 'wilson'
+        conf = xp.asarray(conf, dtype=dtype)
         ci = res.proportion_ci(confidence_level=conf, method=method)
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
@@ -1340,15 +1341,24 @@ class TestBinomTest:
 
         xp_assert_close(res.statistic, xp.asarray(float(ref.statistic), dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(float(ref.pvalue), dtype=dtype))
-        xp_assert_close(res.n, xp.asarray(float(ref.n), dtype=dtype))
-        xp_assert_close(res.k, xp.asarray(float(ref.k), dtype=dtype))
+
+        if res.statistic.ndim == 0:
+            if not is_lazy_array(res.n):
+                assert isinstance(res.n, int)
+                assert isinstance(res.k, int)
+            assert res.n == ref.n
+            assert res.k == ref.k
+        else:
+            xp_assert_close(res.n, xp.asarray(int(ref.n)))
+            xp_assert_close(res.k, xp.asarray(int(ref.k)))
 
         if (is_array_api_strict(xp) or is_jax(xp)) and method == 'exact':
             # array API strict and JAX don't support exact CI right now
             return
 
-        res = res.proportion_ci(method=method)
-        ref = ref.proportion_ci(method=method)
+        confidence_level = xp.asarray(0.95, dtype=dtype)
+        res = res.proportion_ci(method=method, confidence_level=confidence_level)
+        ref = ref.proportion_ci(method=method, confidence_level=0.95)
 
         xp_assert_close(res.low, xp.asarray(float(ref.low), dtype=dtype))
         xp_assert_close(res.high, xp.asarray(float(ref.high), dtype=dtype))
