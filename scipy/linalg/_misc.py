@@ -205,14 +205,14 @@ def bandwidth(a):
     Returns
     -------
     lower : int | ndarray
-        Lower bandwidth. a scalar ``np.int64`` is assigned per
+        Lower bandwidth. A scalar ``np.int64`` is assigned per
         2D slice of the input array of last two dimensions. A value of 0
         means the slice is upper triangular; ``N - 1`` means the lower part
-        is full. If the input array is 2D then a scalar int64 is returned.
+        is full. If the input array is 2D then an :class:`int` is returned.
     upper : int | ndarray
         Upper bandwidth. Same shape rules as `lower`. A value of 0
         means the slice is lower triangular; ``M - 1`` means the upper
-        part is full. If the input array is 2D then a scalar int64 is returned.
+        part is full. If the input array is 2D then a scalar :class:`int` is returned.
 
     Raises
     ------
