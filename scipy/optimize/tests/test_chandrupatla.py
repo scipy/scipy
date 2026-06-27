@@ -541,6 +541,23 @@ class TestChandrupatlaMinimize:
         assert res.xl < res.xm < res.xr
         assert f(res.xl) == f(res.xm) == f(res.xr)
 
+    @pytest.mark.parametrize('shape', [(4,), (4, 2), (4, 2, 3)])
+    def test_preserve_shape(self, xp, shape):
+        # Test `preserve_shape` option
+        def f(x, p):
+            assert x.shape[:-1] == p.shape[:-1] == shape
+            out = [-xp.cos(x[0]), (x[1] - 1)**2, (x[2] - 2)**2, (x[3] - 3)**2]
+            return xp.stack(out)
+
+        a = xp.full(shape, -8.)
+        c = xp.full(shape, -1.)
+        b = xp.full(shape, 8.)
+        ref = xp.stack([xp.full(shape[1:], 0.), xp.full(shape[1:], 1.),
+                        xp.full(shape[1:], 2.), xp.full(shape[1:], 3.)])
+        res = find_minimum(f, (a, c, b), args=(xp.asarray(2.),), preserve_shape=True)
+        atol = 1e-5 if ref.dtype == xp.float32 else 1e-8
+        xp_assert_close(res.x, ref, atol=atol)
+
 
 @make_xp_test_case(find_root)
 class TestFindRoot:
@@ -882,6 +899,10 @@ class TestFindRoot:
         with pytest.raises(ValueError, match=message):
             find_root(func, bracket, callback='shrubbery')
 
+        message = '`preserve_shape` must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            find_root(func, bracket, preserve_shape='a herring')
+
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
 
@@ -974,3 +995,18 @@ class TestFindRoot:
         # xm = np.nextafter(res.x, -np.inf)
         # assert np.abs(res.fun) < np.abs(f(xp))
         # assert np.abs(res.fun) < np.abs(f(xm))
+
+    @pytest.mark.parametrize('shape', [(4,), (4, 2), (4, 2, 3)])
+    def test_preserve_shape(self, xp, shape):
+        # Test `preserve_shape` option
+        def f(x, p):
+            assert x.shape[:-1] == p.shape[:-1] == shape
+            out = [x[0], x[1] - 1, x[2] - 2, (x[3] - 3)**3]
+            return xp.stack(out)
+
+        a = xp.full(shape, -1.)
+        b = xp.full(shape, 5.)
+        ref = xp.stack([xp.full(shape[1:], 0.), xp.full(shape[1:], 1.),
+                        xp.full(shape[1:], 2.), xp.full(shape[1:], 3.)])
+        res = find_root(f, (a, b), args=(xp.asarray(2.),), preserve_shape=True)
+        xp_assert_close(res.x, ref)
