@@ -113,7 +113,7 @@ try:
         blas_func = fblas.saxpy
         dtype = float32
 except AttributeError:
-    class TestSaxpy:
+    class TestSaxpy:  # type: ignore[no-redef]
         pass
 
 
@@ -127,7 +127,7 @@ try:
         blas_func = fblas.caxpy
         dtype = complex64
 except AttributeError:
-    class TestCaxpy:
+    class TestCaxpy:  # type: ignore[no-redef]
         pass
 
 
@@ -166,7 +166,7 @@ try:
         blas_func = fblas.sscal
         dtype = float32
 except AttributeError:
-    class TestSscal:
+    class TestSscal:  # type: ignore[no-redef]
         pass
 
 
@@ -180,7 +180,7 @@ try:
         blas_func = fblas.cscal
         dtype = complex64
 except AttributeError:
-    class TestCscal:
+    class TestCscal:  # type: ignore[no-redef]
         pass
 
 
@@ -244,7 +244,7 @@ try:
         blas_func = fblas.scopy
         dtype = float32
 except AttributeError:
-    class TestScopy:
+    class TestScopy:  # type: ignore[no-redef]
         pass
 
 
@@ -258,7 +258,7 @@ try:
         blas_func = fblas.ccopy
         dtype = complex64
 except AttributeError:
-    class TestCcopy:
+    class TestCcopy:  # type: ignore[no-redef]
         pass
 
 
@@ -327,7 +327,7 @@ try:
         blas_func = fblas.sswap
         dtype = float32
 except AttributeError:
-    class TestSswap:
+    class TestSswap:  # type: ignore[no-redef]
         pass
 
 
@@ -341,7 +341,7 @@ try:
         blas_func = fblas.cswap
         dtype = complex64
 except AttributeError:
-    class TestCswap:
+    class TestCswap:  # type: ignore[no-redef]
         pass
 
 
@@ -479,7 +479,7 @@ try:
                 assert_dot_close(A_f, X_f, desired)
 
 except AttributeError:
-    class TestSgemv:
+    class TestSgemv:  # type: ignore[no-redef]
         pass
 
 
@@ -493,7 +493,7 @@ try:
         blas_func = fblas.cgemv
         dtype = complex64
 except AttributeError:
-    class TestCgemv:
+    class TestCgemv:  # type: ignore[no-redef]
         pass
 
 

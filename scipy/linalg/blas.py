@@ -242,13 +242,15 @@ HAS_LP64 = not bool(CONFIG['Build Dependencies']['blas']['cython blas ilp64'])
 HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
 del CONFIG
 
-_fblas = None
 if HAS_LP64:
     from scipy.linalg import _fblas
+else:
+    _fblas = None
 
-_fblas_64 = None
 if HAS_ILP64:
     from scipy.linalg import _fblas_64
+else:
+    _fblas_64 = None
 
 if not (HAS_LP64 or HAS_ILP64):
     raise RuntimeError("SciPy needs either LP64 or ILP64 BLAS.")
