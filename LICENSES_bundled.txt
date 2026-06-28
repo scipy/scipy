@@ -6,9 +6,9 @@ are compatibly licensed.  We list these here.
 
 
 Name: biteopt
-Files: subprojects/biteopt/*
+Files: subprojects/biteopt/biteopt/*
 License: MIT
-  For details, see subprojects/biteopt/LICENSE
+  For details, see subprojects/biteopt/biteopt/LICENSE
 
 Name: fast_matrix_market
 Files: scipy/io/_fast_matrix_market/*

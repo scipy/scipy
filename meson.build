@@ -166,6 +166,10 @@ endif
 if not fs.exists('subprojects/xsf/README.md')
   error('Missing the `xsf` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('subprojects/biteopt/biteopt/README.md')
+  error('Missing the `biteopt` submodule! Run `git submodule update --init` ' +
+        'to fix this.')
+endif
 
 external_dir = 'scipy/_external'
 
@@ -200,6 +204,9 @@ unuran = subproject('unuran')
 
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
+
+biteopt = subproject('biteopt')
+biteopt_dep = biteopt.get_variable('biteopt_dep')
 
 # System libraries / subprojects
 
@@ -240,13 +247,5 @@ else
   qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
 endif
 
-# biteopt is a header-only C++ library vendored as a git submodule.
-if not fs.exists('subprojects/biteopt/biteopt.h')
-  error('Missing the `biteopt` submodule! Run `git submodule update --init` ' +
-        'to fix this.')
-endif
-biteopt_dep = declare_dependency(
-  include_directories: include_directories('subprojects/biteopt')
-)
 
 subdir('scipy')
