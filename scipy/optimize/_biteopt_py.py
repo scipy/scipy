@@ -141,6 +141,12 @@ def biteopt(
     if maxfun is not None:
         maxfun = _validate_int(maxfun, "maxfun", minimum=1)
 
+        # The iteration count is passed to the C++ layer as a C ``int``; reject
+        # oversized values here for a clear error instead of a pybind11 overflow.
+        _int_max = int(np.iinfo(np.intc).max)
+        if maxfun > _int_max:
+            raise ValueError(f"maxfun must not exceed {_int_max}.")
+
     if f_min is None:
         f_min = -np.inf
     f_min = float(f_min)

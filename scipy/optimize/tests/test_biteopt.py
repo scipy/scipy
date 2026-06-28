@@ -190,6 +190,13 @@ class TestInputValidation:
         with pytest.raises(ValueError, match="too small for depth"):
             biteopt(rosen, self.bounds, maxfun=5, depth=36)
 
+    def test_maxfun_too_large(self):
+        # maxfun is passed to the C++ layer as a C int; an oversized value must
+        # raise a clear error rather than a pybind11 overflow.
+        too_big = int(np.iinfo(np.intc).max) + 1
+        with pytest.raises(ValueError, match="maxfun must not exceed"):
+            biteopt(rosen, self.bounds, maxfun=too_big)
+
     def test_f_min_not_float(self):
         with pytest.raises(ValueError, match="float"):
             biteopt(rosen, self.bounds, f_min="not a float")
