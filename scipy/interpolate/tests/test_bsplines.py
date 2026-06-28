@@ -3422,6 +3422,19 @@ index 1afb1900f1..d817e51ad8 100644
         x = list(range(8))
         gen = generate_knots(x, x, s=0.1, k=1)
         next(gen)
+    
+    @pytest.mark.parametrize("bc_type", [None, "periodic"])
+    def test_large_s_no_internal_knots(self, bc_type):
+        # test that no internal knots for very large `s`,
+        # for both periodic and non-periodic cases
+        x = np.arange(8, dtype=float)
+        y = np.sin(x * np.pi / 8)
+        if bc_type == "periodic":
+            y[0] = y[-1] = 0   # make data periodic for valid input
+        k = 3
+        
+        knots = list(generate_knots(x, y, k=k, s=1e10, bc_type=bc_type))[-1]
+        assert len(knots) == 2 * (k + 1)
 
     def test_nest(self, xp):
         # test that nest < nmax stops the process early (and we get 10 knots not 12)
@@ -3835,7 +3848,26 @@ class _TestMakeSplrepBase:
         t, c, k = splrep(x, y, s=s, per=(self.bc_type == "periodic"))
         spl = make_splrep(x, y, s=s, bc_type=self.bc_type, t=t)
         xp_assert_close(spl.c, c[:-k - 1], atol=1e-15)
+    
+    @pytest.mark.parametrize("bc_type", [None, "periodic"])
+    @pytest.mark.parametrize("s", [0, 1e-8])
+    def test_small_s_fallback_interp(self, s, bc_type):
+        # Should fallback to make_interp_spline 
+        # for very small `s`.
+        x = np.arange(11, dtype=float)
+        y = np.sin(x * np.pi/5)
+        if bc_type == "periodic":
+            y[0], y[-1] = 0, 0
 
+        spl1 = make_splrep(x, y, s=s, bc_type=bc_type)
+        spl_interp = make_interp_spline(x, y, bc_type=bc_type)
+
+        xp_assert_close(spl1.t, spl_interp.t, atol=1e-14)
+        if s != 0:
+            # Observed drift is `2e-4`.
+            xp_assert_close(spl1.c, spl_interp.c, atol=1e-3)
+        else:
+            xp_assert_close(spl1.c, spl_interp.c, atol=1e-14)
 
 @make_xp_test_case(make_splrep)
 class TestMakeSplrep(_TestMakeSplrepBase):
@@ -4001,7 +4033,7 @@ class TestMakeSplrep(_TestMakeSplrepBase):
 
         assert spl_0.t.shape[0] == n + k + 1
         assert spl_1.t.shape[0] == 2 * (k + 1)
-
+    
 
 @make_xp_test_case(make_splrep)
 class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
@@ -4049,14 +4081,34 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
 
-    def test_periodic_with_non_periodic_data(self):
-        N = 10
-        a, b = 0, 2*np.pi
-        x = np.linspace(a, b, N + 1)    # nodes
+    @pytest.mark.parametrize("s", [0, 1e-8, 1, 42])
+    def test_periodic_smoothing_non_matching_endpoints(self, s):
+        # gh-24693: with s > 0, the periodic boundary condition applies to
+        # the spline, not the data; y[0] != y[-1] should be allowed.
+        x = np.linspace(0, 1, 11)
+        y = np.sin(2* x * np.pi)
+        y1 = y.copy()
+        y1[-1] = 1
+        k = 3
 
-        y = np.exp(x)
-        with assert_raises(ValueError):
-            make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
+        if s == 0:
+            with assert_raises(ValueError):
+                make_splrep(x, y1, s=s, bc_type='periodic')
+        else:
+            spl_periodic_endpoint = make_splrep(x, y, s=s, bc_type="periodic")
+            spl_non_periodic_endpoint = make_splrep(x, y1, s=s, bc_type="periodic")
+
+            # y[-1] should be ignored in both cases.
+            # Should return the same spline.
+            xp_assert_close(spl_periodic_endpoint.t, spl_non_periodic_endpoint.t,
+            atol=1e-14)
+            xp_assert_close(spl_periodic_endpoint.c, spl_non_periodic_endpoint.c,
+            atol=1e-14)
+
+            if s == 1:
+                assert len(spl_periodic_endpoint.t) > 2 * (k + 1)
+            elif s == 42:
+                assert len(spl_periodic_endpoint.t) == 2 * (k + 1)
 
     @pytest.mark.parametrize("s", [0, 1e-50])
     def test_make_splrep_periodic_m_eq_2_k_eq_1(self, s):
@@ -4276,7 +4328,7 @@ class TestMakeSplprepPeriodic:
 
         spl, u = make_splprep(y, bc_type="periodic")
         xp_assert_close(spl(u), xp.stack(y), atol=1e-15)
-
+    
     def test_s_zero_vs_near_zero(self, xp):
         # s=0 and s \approx 0 are consistent
         x, y, k = self._get_xyk(n=10, xp=xp)

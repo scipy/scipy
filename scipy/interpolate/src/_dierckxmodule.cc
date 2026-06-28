@@ -125,11 +125,6 @@ py_fpback(PyObject* self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, msg.c_str());
         return NULL;
     }
-    if (nc > m) {
-        std::string msg = "nc = " + std::to_string(nc) + " > m = " + std::to_string(m);
-        PyErr_SetString(PyExc_ValueError, msg.c_str());
-        return NULL;
-    }
 
     // allocate the output buffer
     npy_intp dims[2] = {nc, PyArray_DIM(a_yw, 1)};
