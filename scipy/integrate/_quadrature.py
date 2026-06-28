@@ -2,7 +2,6 @@ import numpy as np
 import math
 import warnings
 from collections import namedtuple
-from collections.abc import Callable
 
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
@@ -176,7 +175,7 @@ def _cached_roots_legendre(n):
     return _cached_roots_legendre.cache[n]
 
 
-_cached_roots_legendre.cache = dict()  # pyrefly:ignore[missing-attribute]
+_cached_roots_legendre.cache = dict()  # type:ignore[attr-defined]  # pyrefly:ignore[missing-attribute]
 
 
 @xp_capabilities()
@@ -527,12 +526,7 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
     return result
 
 
-def _cumulatively_sum_simpson_integrals(
-    y: np.ndarray,
-    dx: np.ndarray,
-    integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
-    xp
-) -> np.ndarray:
+def _cumulatively_sum_simpson_integrals(y, dx, integration_func, xp):
     """Calculate cumulative sum of Simpson integrals.
     Takes as input the integration function to be used.
     The integration_func is assumed to return the cumulative sum using
