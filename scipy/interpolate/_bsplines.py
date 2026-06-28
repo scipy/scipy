@@ -2070,6 +2070,10 @@ clamp_values=None):
             raise NotImplementedError(
                 "Currently, clamp_values requires method='norm-eq', got 'qr'"
             )
+        if isinstance(clamp_values, np.ndarray):
+            raise ValueError(
+                "clamp_values should be a tuple of a numeric type, got a `ndarray`."
+            )
         if len(clamp_values) != 2:
             raise ValueError(f"""Expect clamp_values to be a tuple of length 2, 
             got {len(clamp_values)}""")

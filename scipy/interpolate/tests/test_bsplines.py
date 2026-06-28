@@ -1878,6 +1878,7 @@ class TestLSQ:
         ((1 + 2j, 8),           "complex"),
         ((2,),                   "wrong length"),
         (('a', 'b'),             "non-numeric"),
+        (np.array([1, 2]),      "array"),
         ((np.array([3]), np.array([5])), "tuple of arrays"),
     ])
     def test_clamp_values_invalid_input(self, clamp_values, reason, xp):
