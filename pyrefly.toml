@@ -13,6 +13,7 @@ ignore-missing-imports = [
     "sksparse.*",
     # missing deps
     "cupyx.*",
+    "scikits.umfpack",
     # implicit relative imports
     "_wrappers_common",
     "convert",
@@ -51,6 +52,7 @@ ignore-missing-imports = [
     "scipy.sparse.linalg._eigen.arpack._arpacklib",
     "scipy.spatial._distance_pybind",
     "scipy.spatial._distance_wrap",
+    "scipy.spatial.cKDTree", # TODO(lucascolley): figure out why this is needed, I can't reproduce locally
     "scipy.special._gufuncs",
     "scipy.special._special_ufuncs",
 ]
