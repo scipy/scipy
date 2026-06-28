@@ -106,6 +106,11 @@ py::object minimize(
     // convergence criterion (stopc) is left disabled: on smooth problems
     // biteopt keeps making small improving steps that reset its plateau
     // counter, so it rarely fires and is not a reliable success signal.
+    // The GIL is intentionally *not* released here. biteopt's own per-iteration
+    // C++ work is only ~100 ns, so overlapping it across threads yields no
+    // measurable throughput on a GIL build (and adds per-callback acquire/release
+    // overhead). Real parallelism comes from a free-threaded interpreter or from
+    // objectives that release the GIL themselves; neither needs a release here.
     const int evals = biteopt_minimize(
         N, &trampoline, &ctx, lb.data(), ub.data(),
         x_out.mutable_data(), &best_f, iter, depth, attc,

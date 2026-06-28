@@ -190,16 +190,24 @@ def biteopt(
             f"at least {int(_sqrt)} for this depth."
         )
 
-    result = _minimize(
-        func_wrap,
-        lb,
-        ub,
-        _iter,
-        int(depth),
-        1, # only one attempt, the best result is returned
-        generator.bit_generator.capsule,
-        f_min,
-    )
+    # Hold the bit generator's lock for the whole optimization. The C extension
+    # draws from this bit generator through a lock-free adapter. On a default
+    # build the GIL already serializes those draws, but on a free-threaded build
+    # it does not, so taking the lock here prevents a data race if the *same*
+    # generator is used concurrently from another thread (NumPy's own Generator
+    # methods acquire this same lock). It is uncontended in the common case where
+    # ``generator`` was freshly created above.
+    with generator.bit_generator.lock:
+        result = _minimize(
+            func_wrap,
+            lb,
+            ub,
+            _iter,
+            int(depth),
+            1, # only one attempt, the best result is returned
+            generator.bit_generator.capsule,
+            f_min,
+        )
 
     # BiteOpt is a fixed-budget stochastic optimizer. Its only intrinsic success
     # criterion is the early-stop target `f_min`, which it reaches exactly when
