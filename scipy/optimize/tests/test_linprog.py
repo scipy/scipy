@@ -2497,6 +2497,16 @@ class TestLinprogHiGHSMIP:
         # required mip_rel_gap supplied
         assert final_mip_gap <= mip_rel_gap
 
+        msg = ("The second part of this test requires final_mip_gap > 0.  If "
+               "final_mip_gap == 0, we can't test that rerunning linprog() "
+               "with mip_rel_gap set to 0.999*final_mip_gap results in a smaller "
+               "computed mip_gap.  To fix this, a new test problem is needed for "
+               "which the computed mip_gap is not zero.  This test failuure does "
+               "not indicate that there is bug in HiGHS or in the SciPy wrapper. "
+               "It just means that the behavior of HiGHS on the test problem has "
+               "changed in a way that makes the second part of the test pointless.")
+        assert final_mip_gap > 0, msg
+
         # Do it again, feeding a slight decreased final_mip_gap back as the
         # mip_rel_gap option, to ensure that we see the effect of the option.
         smaller_mip_rel_gap = 0.999 * final_mip_gap
