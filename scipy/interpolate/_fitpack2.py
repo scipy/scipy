@@ -143,7 +143,7 @@ def _surfit_smth(x, y, z, w, xb, xe, yb, ye, kx, ky, s, eps):
     if w is None:
         w = np.ones(m, dtype=np.float64)
     else:
-        w = np.ascontiguousarray(w, dtype=np.float64)
+        w = np.asarray(w, dtype=np.float64, copy=True, order="C")
 
     # Handle None bbox values (matching f2py behavior: xb=dmin(x,m), etc.)
     if xb is None:
@@ -188,10 +188,10 @@ def _surfit_lsq(x, y, z, nx, tx, ny, ty, w, xb, xe, yb, ye, kx, ky, eps):
     if w is None:
         w = np.ones(m, dtype=np.float64)
     else:
-        w = np.ascontiguousarray(w, dtype=np.float64)
+        w = np.asarray(w, dtype=np.float64, copy=True, order="C")
 
-    tx = np.asarray(tx, dtype=np.float64, copy=True)
-    ty = np.asarray(ty, dtype=np.float64, copy=True)
+    tx = np.asarray(tx, dtype=np.float64, copy=True, order="C")
+    ty = np.asarray(ty, dtype=np.float64, copy=True, order="C")
 
     nxest = nx
     nyest = ny
@@ -299,8 +299,8 @@ def _spherfit_lsq(theta, phi, r, nt, tt, np_, tp, w, eps):
     theta = np.asarray(theta, dtype=np.float64)
     phi = np.asarray(phi, dtype=np.float64)
     r = np.asarray(r, dtype=np.float64)
-    tt = np.asarray(tt, dtype=np.float64, copy=True)
-    tp = np.asarray(tp, dtype=np.float64, copy=True)
+    tt = np.asarray(tt, dtype=np.float64, copy=True, order="C")
+    tp = np.asarray(tp, dtype=np.float64, copy=True, order="C")
     if w is None:
         w = np.ones(len(theta), dtype=np.float64)
     else:
