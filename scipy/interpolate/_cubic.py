@@ -5,7 +5,9 @@ from typing import Literal
 import numpy as np
 
 from scipy.linalg import solve, solve_banded
-from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
+from scipy._lib._array_api import (
+    array_namespace, xp_size, xp_capabilities, is_cupy, scipy_namespace_for
+)
 from scipy._external.array_api_compat import numpy as np_compat
 import scipy._external.array_api_extra as xpx
 
@@ -812,6 +814,16 @@ class CubicSpline(CubicHermiteSpline):
 
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
         xp = array_namespace(x, y)
+        if is_cupy(xp):
+            spx = scipy_namespace_for(xp)
+            xp_cubic_spline = spx.interpolate.CubicSpline(
+                x, y, axis=axis, bc_type=bc_type, extrapolate=extrapolate
+            )
+            self.__dict__.update(
+                PPoly._construct_from_xp(xp_cubic_spline, xp_external=xp).__dict__
+            )
+            return
+
         x, dx, y, axis, _ = prepare_input(x, y, axis, xp=np_compat)
         n = len(x)
 
