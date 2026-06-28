@@ -38,6 +38,11 @@ double trampoline(int N, const double* x, void* data) {
     auto* ctx = static_cast<CallbackContext*>(data);
 
     // Short-circuit once an error has been seen: do not re-enter Python.
+    // biteopt has no clean mid-run abort, so it keeps iterating to the end of
+    // its budget; every remaining call lands here and returns NaN cheaply
+    // (no Python), and the captured exception is re-raised once biteopt_minimize
+    // returns. For very large maxfun this delays the raise, but the wasted
+    // iterations do no real work.
     if (ctx->eptr) {
         return std::numeric_limits<double>::quiet_NaN();
     }
