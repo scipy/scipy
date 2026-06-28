@@ -18,7 +18,7 @@ supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
                     np.float32, np.float64, np.longdouble,
                     np.complex64, np.complex128, np.clongdouble]
 
-_upcast_memo = {}
+_upcast_memo: dict[int, np.dtype] = {}
 
 
 def upcast(*args):
