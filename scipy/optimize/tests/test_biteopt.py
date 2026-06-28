@@ -184,6 +184,12 @@ class TestInputValidation:
         with pytest.raises(exc_type, match=msg):
             biteopt(rosen, self.bounds, **kwargs)
 
+    def test_maxfun_too_small_for_depth(self):
+        # A single biteopt iteration costs int(sqrt(depth)) evaluations; if that
+        # already exceeds maxfun the call must refuse rather than overshoot.
+        with pytest.raises(ValueError, match="too small for depth"):
+            biteopt(rosen, self.bounds, maxfun=5, depth=36)
+
     def test_f_min_not_float(self):
         with pytest.raises(ValueError, match="float"):
             biteopt(rosen, self.bounds, f_min="not a float")

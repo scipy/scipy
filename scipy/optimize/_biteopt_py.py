@@ -175,7 +175,14 @@ def biteopt(
     _iter = int(maxfun / _sqrt)
     if int((_iter + 1) * _sqrt) <= maxfun:
         _iter += 1
-    _iter = max(1, _iter)
+    # Even a single iteration costs int(sqrt(depth)) evaluations. If that already
+    # exceeds maxfun, _iter is 0; clamping it up to 1 would overshoot the budget,
+    # so refuse instead of silently exceeding maxfun.
+    if _iter < 1:
+        raise ValueError(
+            f"maxfun={maxfun} is too small for depth={depth}; maxfun must be "
+            f"at least {int(_sqrt)} for this depth."
+        )
 
     result = _minimize(
         func_wrap,
