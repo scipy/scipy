@@ -1,24 +1,23 @@
-from typing import (  # noqa: UP035
-    Any, Callable, Iterable
-)
+from collections.abc import Callable, Iterable
+from typing import Concatenate
 
 import numpy as np
 from scipy.optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
-from ._biteopt import minimize as _minimize  # type: ignore
+from ._biteopt import minimize as _minimize  # type: ignore[import-not-found]
 from scipy._lib._util import _validate_int
 
 __all__ = ['biteopt']
 
 
 def biteopt(
-    func: Callable[[np.ndarray, Any], float],
+    func: Callable[Concatenate[np.ndarray, ...], float],
     bounds: Iterable | Bounds,
     *,
     args: tuple = (),
     maxfun: int | None = None,
     depth: int = 1,
-    f_min: float | None = None,
+    f_min: float = -np.inf,
     rng: int | np.random.Generator | None = None,
 ):
     """Find the global minimum of a function using the BiteOpt algorithm.
@@ -45,8 +44,8 @@ def biteopt(
     f_min : float, optional
         Target objective value. The optimization stops early once the best
         objective value found is less than or equal to `f_min`. By default
-        (`None`) this criterion is disabled and the full iteration budget is
-        used.
+        (-inf) this criterion is disabled and the full iteration budget is
+        used. None is also accepted and equivalent to the default.
     rng : {None, int, `numpy.random.Generator`}, optional
         Controls reproducibility. Passed to `numpy.random.default_rng` to
         derive the integer seed used by BiteOpt's internal PRNG.
@@ -59,10 +58,10 @@ def biteopt(
         of the objective at the solution, ``nfev`` the number of objective
         evaluations performed, ``success`` a boolean flag indicating whether
         the optimizer terminated successfully, and ``message`` describing the
-        cause of termination. When `f_min` is given, ``success`` is ``True``
-        only if that target was reached. Absent `f_min`, BiteOpt has no
-        reliable convergence test and runs its full iteration budget, so a
-        completed run reports ``success`` as ``True``.
+        cause of termination. When `f_min` is set to a value greater than
+        -inf, ``success`` is ``True`` only if that target was reached. If
+        `f_min` is -inf (the default), BiteOpt runs its full iteration
+        budget and a completed run reports ``success`` as ``True``.
 
     Notes
     -----
@@ -142,8 +141,9 @@ def biteopt(
     if maxfun is not None:
         maxfun = _validate_int(maxfun, "maxfun", minimum=1)
 
-    if f_min is not None:
-        f_min = float(f_min)
+    if f_min is None:
+        f_min = -np.inf
+    f_min = float(f_min)
 
     # BiteOpt's internal PRNG is driven by the NumPy Generator's bit
     # generator. Keep a reference to ``generator`` alive for the duration of
@@ -194,15 +194,16 @@ def biteopt(
     # reliable convergence test (biteopt typically keeps making small improving
     # steps until the iteration budget is exhausted), so a completed run is
     # reported as successful.
-    if f_min is None:
+    if f_min == -np.inf:
         success = True
         message = "Maximum number of iterations reached."
-    elif result["fun"] <= f_min:
-        success = True
-        message = "Optimization terminated successfully: f_min reached."
     else:
-        success = False
-        message = "Maximum number of iterations reached; f_min not reached."
+        if result["fun"] <= f_min:
+            success = True
+            message = "Optimization terminated successfully: f_min reached."
+        else:
+            success = False
+            message = "Maximum number of iterations reached; f_min not reached."
 
     return OptimizeResult(
         x=np.asarray(result["x"]),

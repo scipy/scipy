@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <limits>
+#include <cmath>
 
 #include <numpy/random/bitgen.h>
 
@@ -80,10 +81,9 @@ py::object minimize(
 
     // Optional early-stopping threshold: biteopt stops once the best objective
     // value reaches f_min. A null pointer disables the criterion.
-    double f_min_value = 0.0;
+    double f_min_value = f_min.cast<double>();
     double* f_minp = nullptr;
-    if (!f_min.is_none()) {
-        f_min_value = f_min.cast<double>();
+    if (std::isfinite(f_min_value)) {
         f_minp = &f_min_value;
     }
 
