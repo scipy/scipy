@@ -47,9 +47,9 @@ __all__ = ['scale', 'discrepancy', 'geometric_discrepancy', 'update_discrepancy'
 
 
 @overload
-def check_random_state(seed: SeedType = None) -> np.random.Generator: ...
-@overload
 def check_random_state[GeneratorT: _RNG](seed: GeneratorT) -> GeneratorT:...
+@overload
+def check_random_state(seed: IntNumber | None = None) -> np.random.Generator: ...
 
 
 # Based on scipy._lib._util.check_random_state
@@ -1769,12 +1769,9 @@ class Sobol(QMCEngine):
                 f"Maximum supported dimensionality is {self.MAXDIM}."
             )
 
-        self.bits = bits
+        self.bits = 30 if bits is None else bits
         self.dtype_i: type
         self.scramble = scramble
-
-        if self.bits is None:
-            self.bits = 30
 
         if self.bits <= 32:
             self.dtype_i = np.uint32
@@ -1811,7 +1808,6 @@ class Sobol(QMCEngine):
         self._shift = np.dot(
             rng_integers(self.rng, 2, size=(self.d, self.bits),
                          dtype=self.dtype_i),
-            # pyrefly:ignore[no-matching-overload]
             2 ** np.arange(self.bits, dtype=self.dtype_i),
         )
         # Generate lower triangular matrices (stacked across dimensions)

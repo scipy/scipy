@@ -4297,8 +4297,9 @@ def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative, axis):
 
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
-PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
-                                       ['statistic', 'pvalue'], [])
+PearsonRResultBase: type = _make_tuple_bunch(
+    'PearsonRResultBase', ['statistic', 'pvalue'], []
+)
 
 
 class PearsonRResult(PearsonRResultBase):
@@ -4730,17 +4731,17 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         y = xp.where(const_y[..., xp.newaxis], xp.nan, y)
 
     if isinstance(method, PermutationMethod):
-        def statistic(y, axis):
+        def statistic_y(y, axis):
             statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
-        res = permutation_test((y,), statistic, permutation_type='pairings',
+        res = permutation_test((y,), statistic_y, permutation_type='pairings',
                                axis=axis, alternative=alternative, **method._asdict())
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
                               alternative=alternative, x=x, y=y, axis=axis)
     elif isinstance(method, MonteCarloMethod):
-        def statistic(x, y, axis):
+        def statistic_x_y(x, y, axis):
             statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
@@ -4751,7 +4752,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
             rng = np.random.default_rng(rng)
             method['rvs'] = rng.normal, rng.normal
 
-        res = monte_carlo_test((x, y,), statistic=statistic, axis=axis,
+        res = monte_carlo_test((x, y,), statistic=statistic_x_y, axis=axis,
                                alternative=alternative, **method)
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
@@ -6023,8 +6024,9 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
-TtestResultBase = _make_tuple_bunch('TtestResultBase',
-                                    ['statistic', 'pvalue'], ['df'])
+TtestResultBase: type = _make_tuple_bunch(
+    'TtestResultBase', ['statistic', 'pvalue'], ['df']
+)
 
 
 class TtestResult(TtestResultBase):

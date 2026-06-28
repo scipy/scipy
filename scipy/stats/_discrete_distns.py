@@ -1869,7 +1869,7 @@ class _nchypergeom_gen(rv_discrete):
 
     """
 
-    rvs_name = None
+    rvs_name: str | None = None
     dist = None
 
     def _shape_info(self):
