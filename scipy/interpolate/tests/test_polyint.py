@@ -3,7 +3,7 @@ import io
 import numpy as np
 
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_almost_equal, make_xp_test_case,
+    xp_assert_equal, xp_assert_close, assert_almost_equal, make_xp_test_case
 )
 from pytest import raises as assert_raises
 import pytest
