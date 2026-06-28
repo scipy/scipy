@@ -4,6 +4,7 @@ Unit test for Linear Programming
 import sys
 import platform
 import warnings
+from typing import Any
 
 import numpy as np
 from numpy.exceptions import VisibleDeprecationWarning
@@ -2236,7 +2237,7 @@ class TestLinprogIPSpecific:
 
 
 class TestLinprogRSCommon(LinprogRSTests):
-    options = {}
+    options: dict[str, Any] = {}
 
     def test_cyclic_bland(self):
         pytest.skip("Intermittent failure acceptable.")
@@ -2312,7 +2313,7 @@ class TestLinprogRSBland(LinprogRSTests):
 
 class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
     method = "highs-ds"
-    options = {}
+    options: dict[str, Any] = {}
 
     def test_lad_regression(self):
         '''
@@ -2340,7 +2341,7 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
 
 class TestLinprogHiGHSIPM(LinprogHiGHSTests):
     method = "highs-ipm"
-    options = {}
+    options: dict[str, Any] = {}
 
 
 ###################################
@@ -2350,7 +2351,7 @@ class TestLinprogHiGHSIPM(LinprogHiGHSTests):
 
 class TestLinprogHiGHSMIP:
     method = "highs"
-    options = {}
+    options: dict[str, Any] = {}
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.xfail(condition=(sys.maxsize < 2 ** 32 and
