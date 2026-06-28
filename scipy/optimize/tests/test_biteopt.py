@@ -3,6 +3,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 from scipy.optimize import biteopt, rosen, Bounds, OptimizeResult
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 class TestSolver:
@@ -252,3 +253,26 @@ class TestRNG:
         # default_rng also accepts a bare BitGenerator.
         res = biteopt(rosen, self.bounds, rng=np.random.PCG64(0))
         assert_allclose(res.x, [1.0, 1.0], rtol=1e-3, atol=1e-3)
+
+
+class TestThreadSafety:
+    bounds = [(-5.0, 5.0), (-5.0, 5.0)]
+
+    def test_concurrent_shared_generator_is_safe(self):
+        # Sharing a single Generator across concurrent biteopt calls must not
+        # crash or corrupt state. The wrapper holds bit_generator.lock for the
+        # whole run, serializing the otherwise lock-free C-level PRNG draws
+        # against any concurrent use of the same generator. The interleave order
+        # is nondeterministic, so we can only assert that every run completes and
+        # returns a finite result (no segfault, no NaN from a torn read).
+        n_workers = 4
+        gen = np.random.default_rng(0)
+
+        def worker(i):
+            return biteopt(rosen, self.bounds, rng=gen, maxfun=200)
+
+        results = _run_concurrent_barrier(n_workers, worker)
+        for res in results:
+            assert isinstance(res, OptimizeResult)
+            assert np.all(np.isfinite(res.x))
+            assert np.isfinite(res.fun)
