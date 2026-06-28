@@ -649,6 +649,10 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
 def setitem(
     quat: Array, value: Array, indexer: int | slice | EllipsisType | None
 ) -> Array:
+    # The idx parameter of `xpx.at` is under-typed:
+    # https://github.com/data-apis/array-api-extra/blob/9a43ec3a309e752478f50f803b3f21c9610b9d66/src/array_api_extra/_lib/_utils/_typing.py#L8
+    # pyrefly (incorrectly) infers that it cannot take `None`
+    # pyrefly: ignore[bad-index]
     return xpx.at(quat)[indexer, ...].set(value)
 
 
@@ -680,7 +684,8 @@ def align_vectors(
             "Expected inputs `a` and `b` to have shape (3,) or (N, 3), got "
             f"{a_original.shape} and {b_original.shape} respectively."
         )
-    N = a.shape[0]
+    if (N := a.shape[0]) is None:
+        raise ValueError(f"Expected `a` to have a known shape, got {a_original.shape}")
 
     # Check weights
     if weights is None:

@@ -199,7 +199,11 @@ typecheck = [
     "dask",
     "matplotlib",
     "pybind11",
+    # circular dependency issues, https://github.com/scipy/scipy/issues/19783
+    # "scikit-umfpack",
     "sphinx",
+    "sympy",
+    "uarray",
 ]
 
 lint = [

@@ -381,7 +381,10 @@ cython = "*"
 dask = "*"
 matplotlib = "*"
 pybind11 = "*"
+scikit-umfpack = "*"
 sphinx = "*"
+sympy = "*"
+uarray = "*"
 
 [feature.typecheck.tasks.mypy]
 cmd = "spin mypy --no-build"
