@@ -1837,7 +1837,7 @@ class TestLSQ:
     
     @parametrize_lsq_methods
     def test_lsq_with_clamp_values(self, method, xp):
-        # Test if `clamp_values` actually pivots the first and last
+        # Test if `clamp_values` actually clamps the first and last
         # values or not.
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         clamp_values = (5, 8)
