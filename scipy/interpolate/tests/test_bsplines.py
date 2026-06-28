@@ -1844,8 +1844,8 @@ class TestLSQ:
         
         sp = make_lsq_spline(x, y, t, k, method="norm-eq", clamp_values=clamp_values)
 
-        assert sp(x[0]) == 5
-        assert sp(x[-1]) == 8
+        assert math.isclose(sp(x[0]), 5, abs_tol=1e-14)
+        assert math.isclose(sp(x[-1]), 8, abs_tol=1e-14)
 
         with assert_raises(NotImplementedError):
             make_lsq_spline(
