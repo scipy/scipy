@@ -319,6 +319,10 @@ Other changes
   interest. It provides an interface for 2-D smoothing B-spline fitting via
   separable 1-D FITPACK kernels. It is under consideraton for public exposure
   in some form in the future.
+- Previously, return values of `scipy.linalg.eig` were always Fortran-ordered, and in
+  SciPy 1.18.0 they may or may not be. If the ordering is important (for example,
+  when interfacing with compiled code which expects specific array strides), users
+  should ensure the desired ordering manually.
 
 
 *******
