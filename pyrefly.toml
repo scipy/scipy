@@ -2,6 +2,11 @@ project-includes = ["scipy"]
 project-excludes = ["scipy/*/tests/**"]
 
 ignore-missing-imports = [
+    # pyrefly can't find these on some machines
+    "scipy.__config__",
+    "scipy.version",
+    # vendoring
+    "scipy._external.*",
     # deps with no types
     "pytest_run_parallel",
     "scipy_doctest.*",
