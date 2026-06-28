@@ -796,10 +796,10 @@ class TestCubicSpline:
         x = xp.linspace(0, 2 * xp.pi, 10, dtype=xp.float64)
         y = xp.cos(x)
         S = CubicSpline(x, y, bc_type='periodic')
-        assert_almost_equal(S(1), S(1 + 2 * xp.pi), decimal=15)
+        xp_assert_close(S(1), S(1 + 2 * xp.pi), rtol=1e-15)
 
         S = CubicSpline(x, y)
-        assert_almost_equal(S(x), xp.cos(x), decimal=15)
+        xp_assert_close(S(x), xp.cos(x), rtol=1e-15)
 
     def test_second_derivative_continuity_gh_11758(self):
         # gh-11758: C2 continuity fail
