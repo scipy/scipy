@@ -48,9 +48,10 @@ double trampoline(int N, const double* x, void* data) {
     }
 
     try {
-        // Acquire the GIL for the duration of the Python call
-        py::gil_scoped_acquire gil;
-
+        // minimize() holds the GIL for the whole run, so it is already held
+        // here -- no acquire needed. (Re-acquire it here if a gil_scoped_release
+        // is ever added around biteopt_minimize.)
+        //
         // Hand the objective a fresh copy of the parameter vector so it cannot
         // corrupt biteopt's internal buffers. The cost is passed straight
         // through; biteopt sanitizes any NaN itself.
@@ -140,8 +141,10 @@ PYBIND11_MODULE(_biteopt, m, py::mod_gil_not_used()) {
         py::arg("iter"), py::arg("depth"), py::arg("attc"),
         py::arg("bit_generator"), py::arg("f_min")
     );
-    // GIL safety: the trampoline acquires the GIL (py::gil_scoped_acquire)
-    // before every Python call, so this module is safe to load without the
-    // GIL. The minimize() entry point is always called from Python and
-    // therefore has the GIL held by pybind11's normal dispatch mechanism.
+    // Free-threading: minimize() uses only per-call state and holds the bit
+    // generator's lock around the run (see _biteopt_py.py), so it carries no
+    // GIL-dependent shared state and is safe under py::mod_gil_not_used(). It is
+    // always entered from Python with an attached thread state that is held for
+    // the whole run (the GIL is never released), so the objective callback can
+    // call into Python directly.
 }
