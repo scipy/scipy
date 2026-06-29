@@ -165,7 +165,7 @@ class _BarycentricRational:
         if self._poles is None:
             xp = array_namespace(self._poles, self.weights)
             # Compute poles via generalized eigenvalue problem
-            m = self.weights.size
+            m = self.weights.shape[0]
             B = xp.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
 
@@ -223,7 +223,7 @@ class _BarycentricRational:
         if self._roots is None:
             xp = array_namespace(self._roots, self.weights)
             # Compute zeros via generalized eigenvalue problem
-            m = self.weights.size
+            m = self.weights.shape[0]
             B = xp.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
             E = xp.zeros_like(B, dtype=xp.result_type(self.weights,
