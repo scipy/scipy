@@ -3216,6 +3216,29 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     --------
     residue, invresz, unique_roots
 
+    Examples
+    --------
+    ``invres`` can reconstruct the numerator and denominator polynomial
+    coefficients from a partial fraction expansion.
+
+    >>> import numpy as np
+    >>> from scipy.signal import residue, invres
+    >>> b = [1, 6, 2]
+    >>> a = [1, 3, 2]
+    >>> r, p, k = residue(b, a)
+    >>> r
+    array([-3.,  6.])
+    >>> p
+    array([-1., -2.])
+    >>> k
+    array([1.])
+
+    >>> b_reconstructed, a_reconstructed = invres(r, p, k)
+    >>> np.allclose(b_reconstructed, b)
+    True
+    >>> np.allclose(a_reconstructed, a)
+    True
+
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
