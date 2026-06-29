@@ -84,8 +84,8 @@ class _BarycentricRational:
         if not y.ndim >= 1:
             raise ValueError("`y` must be at least 1-D.")
 
-        if x.size != y.shape[self._axis]:
-            msg = f"`x` be of size {y.shape[self._axis]} but got size {x.size}."
+        if x.shape[0] != y.shape[self._axis]:
+            msg = f"`x` be of size {y.shape[self._axis]} but got size {x.shape[0]}."
             raise ValueError(msg)
 
         if not np.all(np.isfinite(x)):
