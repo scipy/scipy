@@ -63,10 +63,11 @@ class _BarycentricRational:
         f = xp.take(f, idx, axis=0)
         z = xp.take(z, idx, axis=0)
         if is_torch(xp):
+            z_dtype = z.dtype
             z_np = np.asarray(z)
             z, uni = np.unique(z_np, return_index=True)
             order = np.argsort(uni)
-            z = xp.asarray(z[order])
+            z = xp.asarray(z[order], dtype=z_dtype)
             uni = xp.asarray(uni[order])
         else:
             res = xp.unique_all(z)
