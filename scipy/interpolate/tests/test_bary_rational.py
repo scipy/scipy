@@ -328,7 +328,7 @@ class TestFloaterHormann:
         x = xp.arange(11, dtype=xp.float64)
         r = FloaterHormannInterpolator(x, xp.zeros_like(x), d=d)
         xp_assert_close(
-            xp_ravel(r.weights) * self.scale(x.size, d, xp),
+            xp_ravel(r.weights) * self.scale(x.shape[0], d, xp),
             xp.asarray(expected, dtype=xp.float64),
             rtol=1e-15, atol=1e-15
         )
@@ -387,6 +387,7 @@ class TestFloaterHormann:
         assert rr.shape == xx.shape + y_shape
         xp_assert_close(rr, yy, rtol=1e-6)
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason="requires NumPy-only roots() support")
     @make_xp_test_case((FloaterHormannInterpolator, "roots"))
     def test_zeros(self, xp):
         x = xp.linspace(0, 10, num=100)
@@ -395,6 +396,7 @@ class TestFloaterHormann:
         err = xp.abs(xp.subtract(r.roots()[..., None], xp.arange(11))).min(axis=0)
         assert xp.all(err < 1e-5)
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason="requires NumPy-only poles() support")
     @make_xp_test_case((FloaterHormannInterpolator, "poles"))
     def test_no_poles(self, xp):
         x = xp.linspace(-1, 1, num=50)
