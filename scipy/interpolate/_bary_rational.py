@@ -30,7 +30,7 @@ from types import GenericAlias
 import numpy as np
 import scipy
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, xp_capabilities, xp_ravel, xp_fill_diagonal
+    array_namespace, is_numpy, xp_capabilities, xp_ravel, xp_fill_diagonal, is_torch,
 )
 
 __all__ = ["AAA", "FloaterHormannInterpolator"]
@@ -62,9 +62,15 @@ class _BarycentricRational:
         idx = xp.nonzero(to_keep)[0]    
         f = xp.take(f, idx, axis=0)
         z = xp.take(z, idx, axis=0)
-        res = xp.unique_all(z)
-
-        z, uni = res.values, res.indices
+        if is_torch(xp):
+            z_np = np.asarray(z)
+            z, uni = np.unique(z_np, return_index=True)
+            order = np.argsort(uni)
+            z = xp.asarray(z[order])
+            uni = xp.asarray(uni[order])
+        else:
+            res = xp.unique_all(z)
+            z, uni = res.values, res.indices
         f = xp.take(f, uni, axis=0)
 
         self._shape = f.shape[1:]
