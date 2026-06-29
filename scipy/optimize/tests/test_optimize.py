@@ -22,7 +22,6 @@ from numpy.testing import (assert_allclose, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 
-import scipy
 from scipy._lib._gcutils import assert_deallocated
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
@@ -3000,9 +2999,6 @@ eb_data = setup_test_equal_bounds()
 
 # This test is about handling fixed variables, not the accuracy of the solvers
 @pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
-@pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name'] ==
-                   "intel-llvm",
-                   reason="Failures due to floating point issues, not logic")
 @pytest.mark.parametrize('method', eb_data["methods"])
 @pytest.mark.parametrize('kwds', eb_data["kwds"])
 @pytest.mark.parametrize('bound_type', eb_data["bound_types"])
@@ -3466,7 +3462,7 @@ class TestWorkers:
         res_default = optimize.minimize(
             rosen, self.x0, method=method, **kwds
         )
-        assert_equal(res.x, res_default.x)
+        assert_allclose(res.x, res_default.x, rtol=1e-15)
         assert_equal(res.nfev, res_default.nfev)
 
     def test_equal_bounds(self, workers, method):
@@ -3531,11 +3527,11 @@ class TestAnnotations:
     ])
     def test_callable_annotations(self, method):
         kwds = {'jac': None, 'hess': None, 'callback': callable_annotated}
-        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg', 
+        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg',
                       'trust-ncg', 'trust-krylov', 'trust-exact', 'trust-constr']:
             #  methods that require a callable jac
             kwds['jac'] = rosen_der_annotated
-        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact', 
+        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact',
                       'trust-krylov', 'trust-constr']:
             kwds['hess'] = rosen_hess_annotated
         optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)

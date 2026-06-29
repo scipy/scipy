@@ -39,8 +39,7 @@ def cb(v):
         niter.n = [0]
     niter.n[0] += 1
 
-
-A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
+A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)  # type: ignore[call-arg]
 
 
 def do_solve(**kw):

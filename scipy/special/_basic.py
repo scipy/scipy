@@ -18,7 +18,6 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
-from ._comb import _comb_int
 
 
 __all__ = [
@@ -1506,10 +1505,23 @@ def fresnel_zeros(nt):
 
 
 def assoc_laguerre(x, n, k=0.0):
-    """Compute the generalized (associated) Laguerre polynomial of degree n and order k.
+    r"""Compute the generalized (associated) Laguerre polynomial of degree :math:`n`
+    and order :math:`k`.
 
-    The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
-    with weighting function ``exp(-x) * x**k`` with ``k > -1``.
+    This function evaluates the generalized Laguerre polynomial
+
+    .. math::
+
+        L^{(k)}_n(x).
+
+    The polynomial is orthogonal over :math:`[0, \infty)` with weight
+    function
+
+    .. math::
+
+        e^{-x}x^k
+
+    for :math:`k > -1`.
 
     Parameters
     ----------
@@ -1529,6 +1541,35 @@ def assoc_laguerre(x, n, k=0.0):
     -----
     `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
+
+    Examples
+    --------
+    Evaluate the associated Laguerre polynomial :math:`L_3^{(2)}` at
+    :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import assoc_laguerre, eval_genlaguerre
+    >>> np.isclose(assoc_laguerre(1, 3, 2), 7/3)
+    True
+
+    `assoc_laguerre` is equivalent to `eval_genlaguerre` with reversed
+    argument order:
+
+    >>> x = np.linspace(0, 5, 6)
+    >>> np.allclose(assoc_laguerre(x, 3, 2), eval_genlaguerre(3, 2, x))
+    True
+
+    Plot :math:`L_3^{(k)}` for several values of :math:`k`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 8, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for k in range(3):
+    ...     ax.plot(x, assoc_laguerre(x, 3, k), label=rf"$k={k}$")
+    >>> ax.set_title(r"Associated Laguerre polynomials $L_3^{(k)}$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
 
     """
     return _ufuncs.eval_genlaguerre(n, k, x)
@@ -2624,8 +2665,12 @@ def comb(N, k, *, exact=False, repetition=False):
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
-            # _comb_int casts inputs to integers, which is safe & intended here
-            return _comb_int(N, k)
+            # cast inputs to integers, which is safe & intended here
+            N = int(N)
+            k = int(k)
+            if k > N or N < 0 or k < 0:
+                return 0
+            return math.comb(N, k)
         else:
             raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
                              "supported.")
@@ -2896,7 +2941,7 @@ def _is_subdtype(dtype, dtypes):
 
     Also allows specifying a list instead of just a single dtype.
 
-    Additionaly, the most important supertypes from
+    Additionally, the most important supertypes from
         https://numpy.org/doc/stable/reference/arrays.scalars.html
     can optionally be specified using abbreviations as follows:
         "i": np.integer

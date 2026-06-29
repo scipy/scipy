@@ -61,7 +61,7 @@ xfail_fit_mle = {'ksone', 'kstwo', 'truncpareto', 'irwinhall'}
 skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 slow_fit_mm = {'chi2', 'expon', 'lognorm', 'loguniform', 'powerlaw', 'reciprocal'}
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
-                'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
+                'genhalflogistic', 'geninvgauss', 'gompertz',
                 'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'trapezoid',
                 'truncnorm', 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
@@ -100,12 +100,16 @@ slow_with_lists = {'studentized_range'}
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic
 # and cases_test_moments.
-histogram_test_instances = []
-case1 = {'a': [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
-               6, 6, 6, 7, 7, 7, 8, 8, 9], 'bins': 8}  # equal width bins
-case2 = {'a': [1, 1], 'bins': [0, 1, 10]}  # unequal width bins
-for case, density in itertools.product([case1, case2], [True, False]):
-    _hist = np.histogram(**case, density=density)
+histogram_test_instances: list[tuple[type, tuple]] = []
+case1 = (
+    [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
+     6, 6, 6, 7, 7, 7, 8, 8, 9],
+    8  # equal width bins
+)
+case2 = ([1, 1], [0, 1, 10])  # unequal width bins
+for (a, bins), density in itertools.product([case1, case2], [True, False]):
+    # mypy accepts `density={False,True}` here, but not `density=density`
+    _hist = np.histogram(a, bins=bins, density=density)  # type: ignore[call-overload]
     _rv_hist = stats.rv_histogram(_hist, density=density)
     histogram_test_instances.append((_rv_hist, tuple()))
 
@@ -122,7 +126,7 @@ def cases_test_cont_basic():
             yield distname, arg
 
 
-@pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
+@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic()))
 @pytest.mark.parametrize('sn', [500])
 def test_cont_basic(distname, arg, sn, num_parallel_threads):
     try:
@@ -260,7 +264,7 @@ def test_cont_basic_fit_cases():
 
 
 @pytest.mark.parametrize('distname, arg, method, fix_args',
-                         cases_test_cont_basic_fit())
+                         list(cases_test_cont_basic_fit()))
 @pytest.mark.parametrize('n_fit_samples', [200])
 def test_cont_basic_fit(distname, arg, n_fit_samples, method, fix_args):
     try:
@@ -275,7 +279,7 @@ def test_cont_basic_fit(distname, arg, n_fit_samples, method, fix_args):
     else:
         check_fit_args(distfn, arg, rvs, method)
 
-@pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
+@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic()))
 def test_rvs_scalar(distname, arg):
     # rvs should return a scalar when given scalar arguments (gh-12428)
     try:
@@ -337,7 +341,7 @@ def cases_test_moments():
 @pytest.mark.slow
 @pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,moment_ok,'
                          'is_xfailing',
-                         cases_test_moments())
+                         list(cases_test_moments()))
 def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
                  is_xfailing):
     try:
@@ -830,7 +834,7 @@ def cases_test_methods_with_lists():
 
 @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
                                     'sf', 'logsf', 'ppf', 'isf'])
-@pytest.mark.parametrize('distname, args', cases_test_methods_with_lists())
+@pytest.mark.parametrize('distname, args', list(cases_test_methods_with_lists()))
 def test_methods_with_lists(method, distname, args):
     # Test that the continuous distributions can accept Python lists
     # as arguments.

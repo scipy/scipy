@@ -6,7 +6,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include <numpy/ndarrayobject.h>
-#include "npy_2_compat.h"
 
 #include "_sigtools.hh"
 
@@ -474,7 +473,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
         PyArray_ITER_NEXT(itx);
         PyArray_ITER_NEXT(ity);
 
-        /* Copy tmp buffer fo final values back into zf output array */
+        /* Copy tmp buffer of final values back into zf output array */
         if (zi != NULL) {
             yoyo = itzf->dataptr;
             for (j = 0; j < nfilt - 1; ++j) {

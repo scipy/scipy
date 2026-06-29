@@ -82,9 +82,6 @@ def spline_filter(Iin, lmbda=5.0):
     return xp.asarray(out)
 
 
-_splinefunc_cache = {}
-
-
 def gauss_spline(x, n):
     r"""Gaussian approximation to B-spline basis function of order n.
 

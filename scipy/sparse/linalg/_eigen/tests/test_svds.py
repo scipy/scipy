@@ -306,8 +306,7 @@ class SVDSCommonTests:
             res = svds(A, k=k, which=which, solver=self.solver, rng=0)
         _check_svds(A, k, *res, which=which, atol=1e-9, rtol=2e-13)
 
-    @pytest.mark.filterwarnings("ignore:Exited",
-                                reason="Ignore LOBPCG early exit.")
+    @pytest.mark.filterwarnings("ignore:Exited") # Ignore LOBPCG early exit
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
         # check the effect of the `tol` parameter on solver accuracy by solving
@@ -423,8 +422,16 @@ class SVDSCommonTests:
             assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
-    @pytest.mark.filterwarnings("ignore:Exited",
-                                reason="Ignore LOBPCG early exit.")
+    def test_svd_random_state(self):
+        # the legacy `random_state` argument should work for now,
+        # even with NumPy <2.2.
+        # Regression test for gh-25069
+        rng = np.random.default_rng(0)
+        A = rng.random((5, 5))
+        res = svds(A, 1, solver=self.solver, random_state=np.random.RandomState(0))
+        _check_svds(A, 1, *res)
+
+    @pytest.mark.filterwarnings("ignore:Exited") # Ignore LOBPCG early exit
     def test_svd_rng_3(self):
         n = 100
         k = 5
@@ -547,8 +554,7 @@ class SVDSCommonTests:
     A1 = [[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]]
     A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
-    @pytest.mark.filterwarnings("ignore:k >= N - 1",
-                                reason="needed to demonstrate #16725")
+    @pytest.mark.filterwarnings("ignore:k >= N - 1") # needed to demonstrate #16725
     @pytest.mark.parametrize('A', (A1, A2))
     @pytest.mark.parametrize('k', range(1, 5))
     # PROPACK fails a lot if @pytest.mark.parametrize('which', ("SM", "LM"))
@@ -722,8 +728,7 @@ class SVDSCommonTests:
         z = np.ones_like(s)
         assert_allclose(s, z)
 
-    @pytest.mark.filterwarnings("ignore:k >= N - 1",
-                                reason="needed to demonstrate #16725")
+    @pytest.mark.filterwarnings("ignore:k >= N - 1") # needed to demonstrate #16725
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))
     @pytest.mark.parametrize("dtype", (float, complex))
     def test_zero_matrix(self, shape, dtype):
@@ -760,8 +765,7 @@ class SVDSCommonTests:
     @pytest.mark.parametrize("shape", ((20, 20), (20, 21), (21, 20)))
     @pytest.mark.parametrize("dtype", (np.float32, np.float64,
                                        np.complex64, np.complex128))
-    @pytest.mark.filterwarnings("ignore:Exited",
-                                reason="Ignore LOBPCG early exit.")
+    @pytest.mark.filterwarnings("ignore:Exited") # Ignore LOBPCG early exit
     def test_small_sigma(self, shape, dtype):
         rng = np.random.default_rng(179847540)
         A = rng.random(shape).astype(dtype)

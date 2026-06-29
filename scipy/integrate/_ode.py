@@ -768,11 +768,11 @@ class IntegratorBase:
     runner = None  # runner is None => integrator is not available
     success = None  # success==1 if integrator was called successfully
     istate = None  # istate > 0 means success, istate < 0 means failure
-    supports_run_relax = None
-    supports_step = None
+    supports_run_relax: int | None = None
+    supports_step: int | None = None
     supports_solout = False
-    integrator_classes = []
-    scalar = float
+    integrator_classes: list[type] = []
+    scalar: type = float
 
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(types.GenericAlias)
@@ -802,12 +802,12 @@ class IntegratorBase:
         raise NotImplementedError('all integrators must define '
                                   'run(f, jac, t0, t1, y0, f_params, jac_params)')
 
-    def step(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def step(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Make one integration step and return (y1,t1)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support step() method')
 
-    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support run_relax() method')

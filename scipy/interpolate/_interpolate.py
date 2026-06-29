@@ -495,7 +495,7 @@ class interp1d(_Interpolator1D):
         x_new_indices = searchsorted(self.x, x_new)
 
         # 3. Clip x_new_indices so that they are within the range of
-        #    self.x indices and at least 1. Removes mis-interpolation
+        #    self.x indices and at least 1. Removes misinterpolation
         #    of x_new[n] = x[0]
         x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 
@@ -514,7 +514,7 @@ class interp1d(_Interpolator1D):
             ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
             + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
             )
-        
+
         return y_new
 
     def _call_nearest(self, x_new):
@@ -557,6 +557,7 @@ class interp1d(_Interpolator1D):
         out[...] = np.nan
         return out
 
+    # pyrefly: ignore[bad-override-param-name]
     def _evaluate(self, x_new):
         # 1. Handle values in x_new that are outside of x. Throw error,
         #    or return a list of mask array indicating the outofbounds values.
@@ -1401,6 +1402,18 @@ class PPoly:
         self._xp = xp
         self._xp_internal = xp_internal
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        state.pop("_xp_internal")
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        _, xp_internal = _get_xp_ppoly_cls(self._xp)
+        self._xp_internal = xp_internal
+        self.__dict__.update(state)
+
     @classmethod
     def _construct_from_xp(cls, xp_ppoly, *, xp_external):
         self = object.__new__(cls)
@@ -1919,6 +1932,18 @@ class BPoly:
         self._delegate_to = xp_bpoly_cls(c, x, extrapolate=extrapolate, axis=axis)
         self._xp = xp
         self._xp_internal = xp_internal
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        state.pop("_xp_internal")
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        _, xp_internal = _get_xp_bpoly_cls(self._xp)
+        self._xp_internal = xp_internal
+        self.__dict__.update(state)
 
     @classmethod
     def _construct_from_xp(cls, xp_bpoly, *, xp_external):

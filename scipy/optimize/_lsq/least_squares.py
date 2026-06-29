@@ -500,7 +500,7 @@ def least_squares(
 
         The signature is ``callback(intermediate_result: OptimizeResult)``
 
-        `intermediate_result is a `scipy.optimize.OptimizeResult`
+        ``intermediate_result`` is a `scipy.optimize.OptimizeResult`
         which contains the intermediate results of the optimization at the
         current iteration.
 

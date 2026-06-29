@@ -16,7 +16,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from scipy._lib._util import DecimalNumber, GeneratorType, IntNumber, SeedType
+from scipy._lib._util import _RNG, DecimalNumber, IntNumber, SeedType
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -47,13 +47,9 @@ __all__ = ['scale', 'discrepancy', 'geometric_discrepancy', 'update_discrepancy'
 
 
 @overload
-def check_random_state(seed: IntNumber | None = ...) -> np.random.Generator:
-    ...
-
-
+def check_random_state[GeneratorT: _RNG](seed: GeneratorT) -> GeneratorT:...
 @overload
-def check_random_state(seed: GeneratorType) -> GeneratorType:
-    ...
+def check_random_state(seed: IntNumber | None = None) -> np.random.Generator: ...
 
 
 # Based on scipy._lib._util.check_random_state
@@ -644,7 +640,7 @@ def primes_from_2_to(n: int) -> np.ndarray:
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
-def n_primes(n: IntNumber) -> list[int]:
+def n_primes(n: IntNumber) -> list[int] | np.ndarray:
     """List of the n-first prime numbers.
 
     Parameters
@@ -915,7 +911,7 @@ class QMCEngine(ABC):
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self,
-        d: IntNumber,
+        d: int,
         *,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
@@ -930,7 +926,7 @@ class QMCEngine(ABC):
     # `__init__` as `rng`, rejecting `RandomState` arguments.
     def _initialize(
         self,
-        d: IntNumber,
+        d: int,
         *,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
@@ -1223,7 +1219,7 @@ class Halton(QMCEngine):
     """
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *, scramble: bool = True,
+        self, d: int, *, scramble: bool = True,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
     ) -> None:
@@ -1513,7 +1509,7 @@ class LatinHypercube(QMCEngine):
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *,
+        self, d: int, *,
         scramble: bool = True,
         strength: int = 1,
         optimization: Literal["random-cd", "lloyd"] | None = None,
@@ -1550,8 +1546,7 @@ class LatinHypercube(QMCEngine):
         else:
             samples = self.rng.uniform(size=(n, self.d))
 
-        perms = np.tile(np.arange(1, n + 1),
-                        (self.d, 1))  # type: ignore[arg-type]
+        perms = np.tile(np.arange(1, n + 1), (int(self.d), 1))
         for i in range(self.d):
             self.rng.shuffle(perms[i, :])
         perms = perms.T
@@ -1760,7 +1755,7 @@ class Sobol(QMCEngine):
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *, scramble: bool = True,
+        self, d: int, *, scramble: bool = True,
         bits: IntNumber | None = None, rng: SeedType = None,
         optimization: Literal["random-cd", "lloyd"] | None = None
     ) -> None:
@@ -1774,12 +1769,9 @@ class Sobol(QMCEngine):
                 f"Maximum supported dimensionality is {self.MAXDIM}."
             )
 
-        self.bits = bits
+        self.bits = 30 if bits is None else bits
         self.dtype_i: type
         self.scramble = scramble
-
-        if self.bits is None:
-            self.bits = 30
 
         if self.bits <= 32:
             self.dtype_i = np.uint32
@@ -2086,7 +2078,7 @@ class PoissonDisk(QMCEngine):
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self,
-        d: IntNumber,
+        d: int,
         *,
         radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
@@ -2292,9 +2284,7 @@ class PoissonDisk(QMCEngine):
         x = self.rng.standard_normal(size=(candidates, self.d))
         ssq = np.sum(x**2, axis=1)
         fr = radius * gammainc(self.d/2, ssq/2)**(1/self.d) / np.sqrt(ssq)
-        fr_tiled = np.tile(
-            fr.reshape(-1, 1), (1, self.d)  # type: ignore[arg-type]
-        )
+        fr_tiled = np.tile(fr.reshape(-1, 1), (1, int(self.d)))
         p = center + np.multiply(x, fr_tiled)
         return p
 
@@ -2407,9 +2397,9 @@ class MultivariateNormalQMC:
             # from being passed via `rng`.
             kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
             kwargs = {kwarg: rng}
-            self.engine = Sobol(
+            self.engine: QMCEngine = Sobol(
                 d=engine_dim, scramble=True, bits=30, **kwargs
-            )  # type: QMCEngine
+            )
         elif isinstance(engine, QMCEngine):
             if engine.d != engine_dim:
                 raise ValueError("Dimension of `engine` must be consistent"
@@ -2547,9 +2537,9 @@ class MultinomialQMC:
         rng: SeedType = None,
     ) -> None:
         self.pvals = np.atleast_1d(np.asarray(pvals))
-        if np.min(pvals) < 0:
+        if np.min(self.pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
-        if not np.isclose(np.sum(pvals), 1):
+        if not np.isclose(np.sum(self.pvals), 1):
             raise ValueError('Elements of pvals must sum to 1.')
         self.n_trials = n_trials
         if engine is None:
@@ -2557,9 +2547,7 @@ class MultinomialQMC:
             # from being passed via `rng`.
             kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
             kwargs = {kwarg: rng}
-            self.engine = Sobol(
-                d=1, scramble=True, bits=30, **kwargs
-            )  # type: QMCEngine
+            self.engine: QMCEngine = Sobol(d=1, scramble=True, bits=30, **kwargs)
         elif isinstance(engine, QMCEngine):
             if engine.d != 1:
                 raise ValueError("Dimension of `engine` must be 1.")
@@ -2605,8 +2593,7 @@ def _select_optimizer(
     optimizer: partial | None
     if optimization is not None:
         try:
-            optimization = optimization.lower()  # type: ignore[assignment]
-            optimizer_ = optimization_method[optimization]
+            optimizer_ = optimization_method[optimization.lower()]
         except KeyError as exc:
             message = (f"{optimization!r} is not a valid optimization"
                        f" method. It must be one of"
@@ -2622,7 +2609,7 @@ def _select_optimizer(
 
 
 def _random_cd(
-    best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: GeneratorType,
+    best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: _RNG,
     **kwargs: dict
 ) -> np.ndarray:
     """Optimal LHS on CD.
@@ -2676,7 +2663,7 @@ def _random_cd(
     return best_sample
 
 
-def _l1_norm(sample: np.ndarray) -> float:
+def _l1_norm(sample: np.ndarray) -> np.floating:
     return distance.pdist(sample, 'cityblock').min()
 
 
@@ -2926,7 +2913,7 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
 
 def _validate_bounds(
     l_bounds: "npt.ArrayLike", u_bounds: "npt.ArrayLike", d: int
-) -> "tuple[npt.NDArray[np.generic], npt.NDArray[np.generic]]":
+) -> tuple[np.ndarray, np.ndarray]:
     """Bounds input validation.
 
     Parameters

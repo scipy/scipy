@@ -16,7 +16,7 @@ from scipy.special import poch
 from itertools import combinations
 
 from scipy._lib._array_api import (
-    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy
+    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy, is_cupy
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
@@ -599,8 +599,8 @@ class BSpline:
 
     References
     ----------
-    .. [1] Tom Lyche and Knut Morken, Spline methods,
-        http://www.uio.no/studier/emner/matnat/ifi/INF-MAT5340/v05/undervisningsmateriale/
+    .. [1] Michael Floater, An introduction to spline theory, 2025,
+        https://www.uio.no/studier/emner/matnat/math/MAT4170/v25/undervisningsmateriale/spline_notes.pdf
     .. [2] Carl de Boor, A practical guide to splines, Springer, 2001.
 
     """
@@ -1104,7 +1104,8 @@ class BSpline:
 
         References
         ----------
-        .. [1] Tom Lyche and Knut Morken, Spline Methods, 2005, Section 3.1.2
+        .. [1] Michael Floater, An introduction to spline theory, 2025, Section 4.1
+            https://www.uio.no/studier/emner/matnat/math/MAT4170/v25/undervisningsmateriale/spline_notes.pdf
 
         """
         xp = array_namespace(pp.x, pp.c)
@@ -1632,7 +1633,12 @@ def _make_periodic_spline(x, y, t, k, axis, *, xp):
     return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(
+    cpu_only=True,
+    jax_jit=False,
+    allow_dask_compute=True,
+    exceptions=["cupy"]
+)
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
     """Create an interpolating B-spline with specified degree and boundary conditions.
@@ -1764,6 +1770,13 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     >>> plt.show()
 
     """
+    xp = array_namespace(x, y, t)
+    if is_cupy(xp):
+        # delegate to CuPy, *and* return a SciPy BSpline object
+        import cupyx.scipy.interpolate as csi
+        b = csi.make_interp_spline(x, y, k, t, bc_type, axis, check_finite)
+        return BSpline.construct_fast(b.t, b.c, b.k, b.extrapolate, b.axis)
+
     # convert string aliases for the boundary conditions
     if bc_type is None or bc_type == 'not-a-knot' or bc_type == 'periodic':
         deriv_l, deriv_r = None, None
@@ -1775,7 +1788,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         except TypeError as e:
             raise ValueError(f"Unknown boundary condition: {bc_type}") from e
 
-    xp = array_namespace(x, y, t)
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
 
@@ -2661,7 +2673,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     if np.ndim(lam) == 0:
         c = solve_banded((2, 2), X + lam * wE, y)
     elif np.ndim(lam) == 1:
-        # XXX: solve_banded does not suppport batched `ab` matrices; loop manually
+        # XXX: solve_banded does not support batched `ab` matrices; loop manually
         c = np.empty((n, lam.shape[0]))
         for i in range(lam.shape[0]):
             c[:, i] = solve_banded((2, 2), X + lam[i] * wE, y[:, i])

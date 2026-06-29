@@ -84,11 +84,11 @@ Specifying the Fortran ABI to use
 
 Some linear algebra libraries are built with the ``g77`` ABI (also known as
 "the ``f2c`` calling convention") and others with GFortran ABI, and these two
-ABIs are incompatible. Therefore, if you build SciPy with ``gfortran`` and link
-to a linear algebra library like MKL, which is built with a ``g77`` ABI,
-there'll be an exception or a segfault. SciPy fixes this by using ABI wrappers
-which rely on the CBLAS API for the few functions in the BLAS API that suffer
-from this issue.
+ABIs are incompatible. Therefore, if you build SciPy with its default choice
+(which is the ``gfortran`` one) and link to a linear algebra library like MKL,
+which is built with a ``g77`` ABI, there'll be an exception or a segfault.
+SciPy fixes this by using ABI wrappers which rely on the CBLAS API or a custom
+wrapper for the few functions in the BLAS API that suffer from this issue.
 
 Note that SciPy needs to know at build time what needs to be done.
 The build system will automatically check whether linear algebra
@@ -104,13 +104,6 @@ user wants to override this autodetection mechanism for building against plain
 64-bit integer (ILP64) BLAS/LAPACK
 ----------------------------------
 
-Support for ILP64 BLAS and LAPACK, as of version 1.18.0, requires that also LP64
-symbols are available in the same library. Hence, ILP64 support is only available
-MKL and Accelerate. *Note: after the deprecated scipy.odr (the last Fortran
-module) is removed, this restriction will be removed and OpenBLAS and other
-libraries will also be supported.*
-
-
 To build SciPy from source with ILP64 support, use ``-Duse-ilp64=true``. E.g.,
 to use Accelerate on macOS::
 
@@ -121,12 +114,6 @@ And to use MKL on x86-64::
     # Note the "lp64" in the `-Dblas=` argument is not a mistake; this is
     # necessary as long as the cython_blas ABI is set to "lp64" (see next section)
     $ python -m build --wheel -Csetup-args=-Dblas=mkl-dynamic-lp64-seq -C-Duse-ilp64=true -Dcython-blas-abi=lp64
-
-.. note::
-
-   These instructions will change for scipy>=1.19.0, when the
-   ``scipy.linalg.cython_blas`` ABI doesn't need to be forced to LP64 anymore.
-   Please see the next section for more details.
 
 Building with ``-Duse-ilp64=true`` by default flips the low-level Python and
 Cython APIs in ``scipy.linalg`` to ILP64 as well. This may require downstream usage
@@ -216,10 +203,5 @@ Work-in-progress
 These options are planned to be fully supported, but currently not usable out
 of the box:
 
-- ILP64 (64-bit integer size) builds: making ``-Duse-ilp64=true`` work without
-  using another option to avoid issues with the deprecated ``scipy.odr``.
-  Those options are: ``-Dcython-blas-abi=lp64``, or
-  ``-D_without-fortran=true``. The latter is a temporary option that doesn't
-  use a Fortran compiler at all and doesn't install ``scipy.odr``.
 - Automatically selecting from multiple possible BLAS and LAPACK options, with
   a user-provided order of precedence

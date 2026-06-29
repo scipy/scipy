@@ -579,7 +579,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     constraint is really the simple bound :math:`-3 \leq x_1 \leq \infty`.
     Finally, since there are no bounds on :math:`x_0`, we must explicitly
     specify the bounds :math:`-\infty \leq x_0 \leq \infty`, as the
-    default is for variables to be non-negative. After collecting coeffecients
+    default is for variables to be non-negative. After collecting coefficients
     into arrays and tuples, the input for this problem is:
 
     >>> from scipy.optimize import linprog

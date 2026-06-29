@@ -299,7 +299,7 @@ class gaussian_kde:
 
         Parameters
         ----------
-        mean : aray_like
+        mean : array_like
             A 1-D array, specifying the mean of the Gaussian.
         cov : array_like
             A 2-D array, specifying the covariance matrix of the Gaussian.

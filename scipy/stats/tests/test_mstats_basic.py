@@ -2133,7 +2133,7 @@ class TestBrunnerMunzel:
                       alternative,
                       distribution)
 
-    def test_brunnermunzel_empty_imput(self):
+    def test_brunnermunzel_empty_input(self):
         u1, p1 = mstats.brunnermunzel(self.X, [])
         u2, p2 = mstats.brunnermunzel([], self.Y)
         u3, p3 = mstats.brunnermunzel([], [])

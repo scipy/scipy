@@ -596,7 +596,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                 if min(wvar) < -1:
                     msg = "wvar parameters (alpha, beta) must both be >= -1."
                 if b < a:
-                    msg = "Integration limits a, b must satistfy a<b."
+                    msg = "Integration limits a, b must satisfy a<b."
 
             elif weight == 'cauchy' and wvar in (a, b):
                 msg = ("Parameter 'wvar' must not equal"
@@ -766,7 +766,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types. The integration is is performed using a 21-point Gauss-Kronrod 
+        several types. The integration is performed using a 21-point Gauss-Kronrod
         quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
@@ -900,7 +900,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types. The integration is is performed using a 21-point Gauss-Kronrod 
+        several types. The integration is performed using a 21-point Gauss-Kronrod
         quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is

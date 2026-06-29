@@ -181,7 +181,7 @@ def compose_transforms(tf_matrix: Array, other_tf_matrix: Array) -> Array:
 
 def inv(matrix: Array) -> Array:
     xp = array_namespace(matrix)
-    r_inv = xp.matrix_transpose(matrix[..., :3, :3])
+    r_inv = matrix[..., :3, :3].mT
     # Matrix multiplication of r_inv and translation vector
     t_inv = -(r_inv @ matrix[..., :3, 3][..., None])[..., 0]
     matrix = xp.zeros(
@@ -305,7 +305,7 @@ def mean(
     if weights is not None and lazy:
         # We cannot raise on negative weights because jit code needs to be
         # non-branching. We return NaN instead
-        mask = xp.where(any_neg_weights, xp.nan, 1.0)
+        mask = xp.where(any_neg_weights, xp.nan, 1.0)  # pyrefly:ignore[unbound-name]
         tf = mask * tf
     return tf
 

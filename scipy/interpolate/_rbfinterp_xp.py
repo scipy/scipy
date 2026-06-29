@@ -97,31 +97,32 @@ def linear(r, xp):
 
 def thin_plate_spline(r, xp):
     # NB: changed w.r.t. pythran, vectorized
-    return xp.where(r == 0, 0, r**2 * xp.log(r))
+    return xp.where(r == 0, 0, xp.square(r) * xp.log(r))
 
 
 def cubic(r, xp):
-    return r**3
+    # CuPy 14.0.1: r**2 is much slower than square(r)
+    return xp.square(r) * r
 
 
 def quintic(r, xp):
-    return -r**5
+    return -xp.square(xp.square(r)) * r
 
 
 def multiquadric(r, xp):
-    return -xp.sqrt(r**2 + 1)
+    return -xp.sqrt(xp.square(r) + 1)
 
 
 def inverse_multiquadric(r, xp):
-    return 1.0 / xp.sqrt(r**2 + 1.0)
+    return 1.0 / xp.sqrt(xp.square(r) + 1.0)
 
 
 def inverse_quadratic(r, xp):
-    return 1.0 / (r**2 + 1.0)
+    return 1.0 / (xp.square(r) + 1.0)
 
 
 def gaussian(r, xp):
-    return xp.exp(-r**2)
+    return xp.exp(-xp.square(r))
 
 
 NAME_TO_FUNC = {

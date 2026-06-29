@@ -13,7 +13,7 @@ import numpy as np
 from scipy._lib._testutils import _run_concurrent_barrier
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
-from scipy.spatial import minkowski_distance
+from scipy.spatial import minkowski_distance, minkowski_distance_p
 from scipy.spatial.distance import cdist, minkowski
 from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
 
@@ -597,22 +597,28 @@ class Test_rectangle:
 
 
 def test_distance_l2():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], 2), np.sqrt(2))
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_almost_equal(minkowski_distance([0, 0], [1, 1], 2), np.sqrt(2))
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_almost_equal(minkowski_distance_p([0, 0], [1, 1], 2), 2)
 
 
 def test_distance_l1():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], 1), 2)
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_almost_equal(minkowski_distance([0, 0], [1, 1], 1), 2)
 
 
 def test_distance_linf():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], np.inf), 1)
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_almost_equal(minkowski_distance([0, 0], [1, 1], np.inf), 1)
 
 
 def test_distance_vectorization():
     np.random.seed(1234)
     x = np.random.randn(10, 1, 3)
     y = np.random.randn(1, 7, 3)
-    assert_equal(minkowski_distance(x, y).shape, (10, 7))
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_equal(minkowski_distance(x, y).shape, (10, 7))
 
 
 class count_neighbors_consistency:
@@ -756,11 +762,13 @@ def test_distance_matrix():
     np.random.seed(1234)
     xs = np.random.randn(m, k)
     ys = np.random.randn(n, k)
-    ds = distance_matrix(xs, ys)
+    with pytest.deprecated_call(match="1.20.0"):
+        ds = distance_matrix(xs, ys)
     assert_equal(ds.shape, (m, n))
     for i in range(m):
         for j in range(n):
-            assert_almost_equal(minkowski_distance(xs[i], ys[j]), ds[i, j])
+            with pytest.deprecated_call(match="1.20.0"):
+                assert_almost_equal(minkowski_distance(xs[i], ys[j]), ds[i, j])
 
 
 def test_distance_matrix_looping():
@@ -770,8 +778,10 @@ def test_distance_matrix_looping():
     np.random.seed(1234)
     xs = np.random.randn(m, k)
     ys = np.random.randn(n, k)
-    ds = distance_matrix(xs, ys)
-    dsl = distance_matrix(xs, ys, threshold=1)
+    with pytest.deprecated_call(match="1.20.0"):
+        ds = distance_matrix(xs, ys)
+    with pytest.deprecated_call(match="1.20.0"):
+        dsl = distance_matrix(xs, ys, threshold=1)
     assert_equal(ds, dsl)
 
 
@@ -920,7 +930,7 @@ def test_kdtree_pickle_boxsize(kdtree_type):
 def test_kdtree_copy_data(kdtree_type):
     # check if copy_data=True makes the kd-tree
     # impervious to data corruption by modification of
-    # the data arrray
+    # the data array
     np.random.seed(0)
     n = 5000
     k = 4
@@ -1194,7 +1204,7 @@ def test_kdtree_weights(kdtree_type):
             tree2, np.linspace(0, 10, 100), weights=w1)
 
 @pytest.mark.fail_slow(10)
-def test_kdtree_count_neighbous_multiple_r(kdtree_type):
+def test_kdtree_count_neighbours_multiple_r(kdtree_type):
     n = 2000
     m = 2
     np.random.seed(1234)
@@ -1486,7 +1496,7 @@ def test_kdtree_tree_access():
 @pytest.mark.thread_unsafe(reason="Spawns worker threads")
 def test_multithreaded_tree_access():
     # Test that lazily generating KDTree.tree works when tree generation
-    # is reqested from multiple threads
+    # is requested from multiple threads
     rng = np.random.RandomState(3116978525)
     points = rng.rand(100, 4)
     t = KDTree(points)

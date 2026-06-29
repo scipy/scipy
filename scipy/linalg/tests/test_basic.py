@@ -1434,6 +1434,7 @@ class TestInv:
         assert (a == a0).all() != overwrite_a
         assert np.shares_memory(a, a_inv) == overwrite_a
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     @pytest.mark.parametrize(
         "dtyp", [np.float16, np.float32, np.longdouble, np.clongdouble]
     )
@@ -1518,7 +1519,7 @@ class TestInv:
         with assert_raises(LinAlgError):
             inv(np.ones((2, 2)))
 
-        # batched case: If all slices are singlar, raise
+        # batched case: If all slices are singular, raise
         with assert_raises(LinAlgError):
             inv(np.ones((3, 2, 2)))
 
@@ -1725,7 +1726,7 @@ class TestInv:
         y_inv_2_u = inv(y*mask, check_finite=False, assume_a='upper triangular')
         assert_allclose(y_inv_2_u @ np.triu(y), np.eye(5), atol=1e-15)
 
-        # repeat for the lower traingular matrix
+        # repeat for the lower triangular matrix
         y_inv_0_l = inv(np.tril(y))
         assert_allclose(y_inv_0_l @ np.tril(y), np.eye(5), atol=1e-15)
 
@@ -1838,12 +1839,14 @@ class TestDet:
     # g and G dtypes are handled differently in windows and other platforms
     @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
                                      if x not in 'gG'])
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_sample_compatible_dtype_input(self, typ):
         rng = np.random.default_rng(1680305949878959)
         n = 4
         a = rng.random([n, n]).astype(typ)  # value is not important
         assert isinstance(det(a), (np.float64 | np.complex128))
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_incompatible_dtype_input(self):
         # Double backslashes needed for escaping pytest regex.
         msg = 'cannot be cast to float\\(32, 64\\)'
@@ -1915,6 +1918,7 @@ def direct_lstsq(a, b, cmplx=0):
     return solve(a1, b1)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLstsq:
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
 
@@ -2612,6 +2616,7 @@ def test_auto_rcond(scale, pinv_):
 
 class TestVectorNorms:
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_types(self):
         for dtype in np.typecodes['AllFloat']:
             x = np.array([1, 2, 3], dtype=dtype)
@@ -2859,6 +2864,7 @@ class TestSolveCirculant:
 
 
 class TestMatrix_Balance:
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     @skip_xp_invalid_arg
     def test_string_arg(self):
         assert_raises(ValueError, matrix_balance, 'Some string for fail')
@@ -2945,6 +2951,7 @@ class TestMatrix_Balance:
         assert perm.dtype == perm_n.dtype
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDTypes:
     """Check backwards compatibility for dtypes vs scipy 1.16."""
 

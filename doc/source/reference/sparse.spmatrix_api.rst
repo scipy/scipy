@@ -67,12 +67,22 @@ Building sparse matrices
 
 Identifying sparse matrices
 ---------------------------
+.. The functions `issparse` and `isspmatrix` are already referenced in a toctree in the
+   file `scipy/sparse/__init__.py` via `doc/source/reference/sparse.rst`. To supress a
+   consistency check warning during build, those functions are placed in a table
+   instead of an `autosummary` block.
+
+.. list-table::
+   :header-rows: 0
+
+   * - `~scipy.sparse.issparse`\ (x)
+     - Check if the argument is a sparse object (array or matrix).
+   * - `~scipy.sparse.isspmatrix`\ (x)
+     - Check if the argument is an old style sparse matrix.
 
 .. autosummary::
    :toctree: generated/
 
-   issparse
-   isspmatrix
    isspmatrix_csc
    isspmatrix_csr
    isspmatrix_bsr

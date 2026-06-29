@@ -41,7 +41,6 @@ scipy/fftpack/  @peterbell10
 scipy/linalg/  @larsoner @ilayn
 scipy/integrate/  @steppi
 scipy/interpolate/  @ev-br
-scipy/odr/  @rkern
 scipy/optimize/  @andyfaff
 scipy/signal/  @larsoner @ilayn @DietBru
 scipy/sparse/  @perimosocordiae @dschult
@@ -70,7 +69,6 @@ pytest.ini  @larsoner
 benchmarks/asv.conf.json  @larsoner
 
 # Doc
-requirements/doc.txt  @tupui
 doc/source/conf.py  @tupui
 doc/source/_static/  @tupui
 

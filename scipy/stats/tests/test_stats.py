@@ -971,7 +971,7 @@ class TestFisherExact:
         with pytest.raises(ValueError, match=message):
             stats.fisher_exact(np.zeros((0, 1)))
 
-        # Specical case: when there is only one table with given marginals, the
+        # Special case: when there is only one table with given marginals, the
         # PMF of that case is 1.0, so the p-value is 1.0
         np.testing.assert_equal(stats.fisher_exact([[1, 2, 3]]), (1, 1))
         np.testing.assert_equal(stats.fisher_exact([[1], [2], [3]]), (1, 1))
@@ -3601,7 +3601,7 @@ class TestMoments:
     testcase_moment_accuracy = rng.random(42)
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
-    @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
+    @pytest.mark.parametrize('m, c', list(product((0, 1, 2, 3), (None, 0, 1))))
     def test_moment_center_scalar_moment(self, size, m, c, xp):
         rng = np.random.default_rng(6581432544381372042)
         x = xp.asarray(rng.random(size=size))
@@ -8715,7 +8715,7 @@ class TestBrunnerMunzel:
 
     @pytest.mark.parametrize("kwarg_update", [{'y': []}, {'x': []},
                                               {'x': [], 'y': []}])
-    def test_brunnermunzel_empty_imput(self, kwarg_update, xp):
+    def test_brunnermunzel_empty_input(self, kwarg_update, xp):
         kwargs = {'x': self.X, 'y': self.Y}
         kwargs.update(kwarg_update)
         kwargs = {key:xp.asarray(val, dtype=xp_default_dtype(xp))

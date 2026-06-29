@@ -120,6 +120,9 @@ class LinearOperator:
         and where ``V`` is a dense matrix with dimensions ``(..., M, K)``.
     dtype : dtype
         Data type of the matrix or matrices.
+    xp : array_namespace, optional
+        A namespace compatible with the array API standard for use in array operations.
+        Default: ``numpy``.
 
     Attributes
     ----------
@@ -272,7 +275,7 @@ class LinearOperator:
             else:
                 self.dtype = matvec_v.dtype
 
-    def _matmat(self, X):
+    def _matmat(self, X, /):
         """Default matrix-matrix multiplication handler.
 
         If ``self`` is a linear operator of shape ``(..., M, N)``,
@@ -349,7 +352,7 @@ class LinearOperator:
 
         y = self._rmatvec(x) if adjoint else self._matvec(x)
 
-        broadcasted_dims = xpx.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
+        broadcasted_dims = xp.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
         if row_vector:
             y = xp.reshape(y, (*broadcasted_dims, outer_dim))
         elif column_vector:
@@ -515,7 +518,7 @@ class LinearOperator:
         """
         return self._shared_matmat(X, adjoint=True)
 
-    def _rmatmat(self, X):
+    def _rmatmat(self, X, /):
         """Default implementation of `_rmatmat`; defers to `rmatvec` or `adjoint`."""
         if type(self)._adjoint == LinearOperator._adjoint:
             xp = self._xp
@@ -673,7 +676,7 @@ class LinearOperator:
     def rdot(self, x):
         """Multi-purpose multiplication method from the right.
 
-        .. note ::
+        .. note::
 
             This method returns ``x A``.
             To perform adjoint multiplication instead, use one of
@@ -976,7 +979,7 @@ class _SumLinearOperator(LinearOperator):
         *B_broadcast_dims, B_M, B_N = B.shape
         if (A_M, A_N) != (B_M, B_N):
             raise ValueError(f"cannot add {A} and {B}: shape mismatch")
-        broadcasted_dims = xpx.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
+        broadcasted_dims = xp.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
         self.args = (A, B)
         super().__init__(_get_dtype([A, B], xp=xp), (*broadcasted_dims, A_M, A_N), xp)
 

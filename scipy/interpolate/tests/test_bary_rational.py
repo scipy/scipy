@@ -270,7 +270,7 @@ class TestAAA:
         r = AAA(z, f)
 
         zz = np.logspace(-15, 0, 500)
-        assert_allclose(r(zz), np.sqrt(zz), rtol=9e-6)
+        assert_allclose(r(zz), np.sqrt(zz), rtol=1e-5)
 
 @xp_capabilities()
 class BatchFloaterHormann:

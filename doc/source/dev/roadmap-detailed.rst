@@ -78,19 +78,6 @@ Pythran is still an optional build dependency, and can be disabled with
 happen it must be clear that the maintenance burden is low enough.
 
 
-Use of Fortran libraries
-````````````````````````
-SciPy owes a lot of its success to relying on wrapping well established
-Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). The Fortran 77
-that these libraries are written in is quite hard to maintain, and the use
-of Fortran is problematic for many reasons; e.g., it makes our wheel builds
-much harder to maintain, it has repeatedly been problematic for supporting
-new platforms like macOS arm64 and Windows on Arm, and it is highly problematic
-for Pyodide's SciPy support. Our goal is to remove all Fortran code from SciPy
-by replacing the functionality with code written in other languages. Progress
-towards this goal is tracked in `gh-18566 <https://github.com/scipy/scipy/issues/18566>`__.
-
-
 Continuous integration
 ``````````````````````
 Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,
@@ -167,23 +154,27 @@ integrate
 interpolate
 ```````````
 
+``scipy.interpolate`` is in a good shape.
 
 *FITPACK replacements*
 
-We need to finish providing functional equivalents of the FITPACK Fortran library.
+We want to finish providing functional equivalents of the FITPACK library.
 The aim is to reimplement the algorithmic content of the FITPACK monolith in a
 modular fashion, to allow better user control and extensibility.
-To this end, we need
+For 1D splines, this has been done (``make_splrep`` and ``make_splprep`` are
+feature-complete analogs of ``splrep`` and ``splprep`` functions and the
+``*UnivariateSpline`` family).
+For 2D splines, `gh-23962 <https://github.com/scipy/scipy/pull/23962>`__ 
+started adding a ``RectBivariateSpline`` replacement.
+Needed:
 
-- 1D splines: add the periodic spline fitting to `make_splrep` function.
-- 2D splines: provide functional replacements of the `BivariateSpline` family
-  of classes for scattered and gridded data.  
+- 2D spline fitting for scattered data
+- 2D spline fitting for data in spherical coordinates (``*SphereBivariateSpline`` replacements)  
 
 Once we have a feature-complete set of replacements, we can gracefully sunset
 our use of FITPACK.
 
 *Ideas for new features*
-
 
 - add the ability to construct smoothing splines with variable number of knots
   to `make_smoothing_spline`. Currently, `make_smoothing_spline` always uses all
@@ -197,6 +188,8 @@ our use of FITPACK.
 - allow specifying the boundary conditions for spline fitting.
 - investigate constrained spline fitting problems which the FITPACK library was
   providing in Fortran, but were never exposed to the python interfaces
+- improve flexibility of ``RBFInterpolator`` with user-supplied kernels and norms
+  (cf gh-24893)
 - NURBS support can be added if there is sufficient user interest
 
 *Scalability and performance*
@@ -205,6 +198,12 @@ We need to check performance on large data sets and improve where lacking. This
 is relevant for both regular grid N-D interpolators and QHull-based scattered
 N-D interpolators. For the latter ones, we additionally need to investigate if
 we can improve on the 32-bit integer limitations of the QHull library.
+Several high-profile items:
+
+- improve ``LinearNDInterpolator`` threaded performance (`gh-23854 <https://github.com/scipy/scipy/issues/23854>`__)
+- investigate performance of ``NdBSpline`` vs ``RectBivariateSpline.__call__`` for
+  gridded data, unify the calling conventions (`gh-23783 <https://github.com/scipy/scipy/issues/23783>`__)
+- investigate performance of the regular grid linear mode (`gh-22291 <https://github.com/scipy/scipy/issues/22291>`__)
 
 
 io
@@ -226,7 +225,6 @@ linalg
 Needed:
 
 - Reduce duplication of functions with ``numpy.linalg``, make APIs consistent.
-- ``get_lapack_funcs`` should always use ``flapack``
 - Wrap more LAPACK functions
 - One too many funcs for LU decomposition, remove one
 
@@ -292,12 +290,6 @@ The morphology interface needs to be standardized:
   optional, whereas it's mandatory for grey.  Grey morphology operations
   should get the same default.
 - other filters should also take that default value where possible.
-
-
-odr
-```
-This module is in reasonable shape, although it could use a bit more
-maintenance.  No major plans or wishes here.
 
 
 optimize

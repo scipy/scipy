@@ -33,7 +33,7 @@ commands:
           name: Install apt packages
           command: |
             sudo apt-get update
-            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
+            sudo apt-get install libopenblas-dev libgmp-dev libmpfr-dev ccache
 
   merge:
     steps:
@@ -53,6 +53,9 @@ jobs:
 # Build SciPy from source
   build_scipy:
     <<: *defaults
+    environment:
+      CCACHE_DIR: /home/circleci/.ccache
+      CCACHE_MAXSIZE: "250M"
     steps:
       - checkout
       - check-skip
@@ -68,34 +71,43 @@ jobs:
 
       - restore_cache:
           keys:
-              - deps_ccache-{{ .Branch }}
-              - deps_ccache
+              - pip-{{ .Branch }}
+              - pip
+
+      - restore_cache:
+          keys:
+              - ccache-{{ .Branch }}
+              - ccache
 
       - run:
           name: setup Python venv
+          command: pip install pytest --group build --group dev-cli --group doc --group bench --group test-mp --group optional-runtime-deps --group test-array-types
+
+      - run:
+          name: clear ccache stats
           command: |
-            pip install numpy cython pybind11 pythran ninja meson
-            pip install -r requirements/doc.txt
-            # asv upper bound due to issue in gh-23611, remove when that is resolved
-            pip install mpmath gmpy2 "asv<0.6.5" pooch threadpoolctl spin marray
-            # extra benchmark deps
-            pip install pyfftw cffi pytest
+            ccache --zero-stats
 
       - run:
           name: build SciPy
           command: |
             spin build -j2
 
-      - save_cache:
-          key: deps_ccache-{{ .Branch }}
-          paths:
-            - ~/.ccache
-            - ~/.cache/pip
-
       - run:
           name: ccache performance
           command: |
+            ccache --evict-older-than 1d
             ccache -s
+
+      - save_cache:
+          key: pip-{{ .Branch }}
+          paths:
+            - ~/.cache/pip
+
+      - save_cache:
+          key: ccache-{{ .Branch }}
+          paths:
+            - ~/.ccache
 
       - persist_to_workspace:
           root: ~/
@@ -184,8 +196,7 @@ jobs:
           name: smoke-docs
           no_output_timeout: 35m
           command: |
-            pip install matplotlib hypothesis
-            pip install scipy-doctest
+            pip install --group test-docs
             spin smoke-docs
 
       - run:

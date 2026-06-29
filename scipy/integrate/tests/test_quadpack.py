@@ -197,7 +197,7 @@ class TestQuad:
                     pi/sqrt((1+2**(-a))**2 - 1))
 
     def test_cauchypv_weight(self):
-        # 7) Cauchy prinicpal value weighting w(x) = 1/(x-c)
+        # 7) Cauchy principal value weighting w(x) = 1/(x-c)
         def myfunc(x, a):
             return 2.0**(-a)/((x-1)**2+4.0**(-a))
 

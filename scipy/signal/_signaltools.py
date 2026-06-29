@@ -1048,9 +1048,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         ret, overpart = _split(ret, [-overlap], ax_fft, xp=xp)
         overpart = _split(overpart, [-1], ax_split, xp=xp)[0]
 
-        ret_overpart = _split(ret, [overlap], ax_fft, xp=xp)[0]
-        ret_overpart = _split(ret_overpart, [1], ax_split, xp)[1]
-        ret_overpart += overpart
+        overlap_slice = [slice(None)] * ret.ndim
+        overlap_slice[ax_fft] = slice(0, overlap)
+        overlap_slice[ax_split] = slice(1, None)
+        ret = xpx.at(ret)[tuple(overlap_slice)].add(overpart)
 
     # Reshape back to the correct dimensionality.
     shape_ret = [ret.shape[i] if i not in fft_axes else
@@ -1644,7 +1645,32 @@ def medfilt(volume, kernel_size=None):
     --------
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
+    
+    Examples
+    --------
+    Apply a 1-D median filter to an array containing noise spikes.
 
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> x = np.array([1, 2, 100, 2, 1, 1, 35, 30, 1])
+
+    Apply a filter with a kernel size of 3:
+
+    >>> signal.medfilt(x, kernel_size=3)
+    array([ 1,  2,  2,  2,  1,  1, 30, 30,  1])
+
+    The size 3 kernel is not big enough to eliminate the 
+    2-wide spike near the end of the array.
+    A larger size 5 kernel successfully eliminates the 2-wide spike.
+
+    >>> signal.medfilt(x, kernel_size=5)
+    array([1, 2, 2, 2, 2, 2, 1, 1, 1])
+
+    Kernel size 1 acts as an identity operator.
+    
+    >>> signal.medfilt(x, kernel_size=1)
+    array([  1,   2, 100,   2,   1,   1,  35,  30,   1])
+    
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
@@ -2352,15 +2378,15 @@ def lfiltic(b, a, y, x=None):
         y = xp.concat((y, xp.zeros(N - L)))
 
     for m in range(M):
-        zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
+        zi = xpx.at(zi)[m].set(xp.sum(b[m + 1:] * x[:M - m], axis=0))
 
     for m in range(N):
-        zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
+        zi = xpx.at(zi)[m].set(zi[m] - xp.sum(a[m + 1:] * y[:N - m], axis=0))
 
     if a[0] != 1.:
         if a[0] == 0.:
             raise ValueError("First `a` filter coefficient must be non-zero.")
-        zi /= a[0]
+        zi = zi / a[0]
 
     return zi
 
@@ -2424,7 +2450,7 @@ def deconvolve(signal, divisor):
         rem = num
     else:
         input = xp.zeros(N - D + 1, dtype=xp.float64)
-        input[0] = 1
+        input = xpx.at(input)[0].set(1)
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
@@ -2542,11 +2568,11 @@ def hilbert(x, N=None, axis=-1):
     Xf = sp_fft.fft(x, N, axis=axis)
     Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        Xf[..., 1: N // 2] *= 2.0
-        Xf[..., N // 2 + 1:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: N // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., N // 2 + 1:N].set(0.0)
     else:
-        Xf[..., 1:(N + 1) // 2] *= 2.0
-        Xf[..., (N + 1) // 2:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: (N + 1) // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., (N + 1) // 2:N].set(0.0)
 
     Xf = xp.moveaxis(Xf, -1, axis)
     x = sp_fft.ifft(Xf, axis=axis)
@@ -2722,13 +2748,16 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     Xf = sp_fft.fft2(x, N, axes=axes)
     Xf = xp.moveaxis(Xf, axes, (-2, -1))
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
+    # For even lengths keep the unpaired Nyquist bin (factor 1), as in `hilbert`.
+    z0 = N[0] // 2 + 1
+    z1 = N[1] // 2 + 1
 
     if k0 > 1:  # condition k0 > 1 needed for Dask backend
-        Xf[..., 1:k0, :] *= 2.0
+        Xf = xpx.at(Xf)[..., 1:k0, :].multiply(2.0)
     if k1 > 1:  # condition k1 > 1 needed for Dask backend
-        Xf[..., :, 1:k1] *= 2.0
-    Xf[..., k0:, :] = 0.0
-    Xf[..., :, k1:] = 0.0
+        Xf = xpx.at(Xf)[..., :, 1:k1].multiply(2.0)
+    Xf = xpx.at(Xf)[..., z0:, :].set(0.0)
+    Xf = xpx.at(Xf)[..., :, z1:].set(0.0)
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)
@@ -2900,7 +2929,7 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     i.e., representing the absolute value of the instantaneous amplitude.
 
     The right plot shows the real part of that analytic signal being interpreted
-    as a complex-vauled signal, i.e., having zero imaginary part. There the resulting
+    as a complex-valued signal, i.e., having zero imaginary part. There the resulting
     envelope is not as smooth as in the analytic case and the instantaneous amplitude
     in the real plane is not recovered. If ``z_re`` had been passed as a real-valued
     signal, i.e., as ``z_re = z.real`` instead of ``z_re = z.real + 0j``, the result
@@ -2977,11 +3006,11 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     else:  # avoid calculating negative frequency bins for real signals:
         dt = sp_fft.rfft(z[..., :1]).dtype
         Z = xp.zeros_like(z, dtype=dt)
-        Z[..., :n//2 + 1] = sp_fft.rfft(z)
+        Z = xpx.at(Z)[..., :n//2 + 1].set(sp_fft.rfft(z))
         if bp.start > 0:  # make signal analytic within bp_in band:
-            Z[..., bp] *= 2
+            Z = xpx.at(Z)[..., bp].multiply(2)
         elif bp.stop > 0:
-            Z[..., 1:bp.stop] *= 2
+            Z = xpx.at(Z)[..., 1:bp.stop].multiply(2)
     if not (bp.start <= 0 < bp.stop):  # envelope is invariant to freq. shifts.
         z_bb = sp_fft.ifft(Z[..., bp], n=n_out) * fak  # baseband signal
     else:
@@ -2995,20 +3024,22 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     if residual is None:
         return z_env
     if not (bp.start <= 0 < bp.stop):
-        Z[..., bp] = 0
+        Z = xpx.at(Z)[..., bp].set(0)
     else:
-        Z[..., :bp.stop], Z[..., bp.start:] = 0, 0
+        Z = xpx.at(Z)[..., :bp.stop].set(0)
+        Z = xpx.at(Z)[..., bp.start:].set(0)
     if residual == 'lowpass':
         if bp.stop > 0:
-            Z[..., bp.stop:(n+1) // 2] = 0
+            Z = xpx.at(Z)[..., bp.stop:(n+1) // 2].set(0)
         else:
-            Z[..., bp.start:], Z[..., 0:(n + 1) // 2] = 0, 0
+            Z = xpx.at(Z)[..., bp.start:].set(0)
+            Z = xpx.at(Z)[..., 0:(n + 1) // 2].set(0)
 
     if xp.isdtype(z.dtype, 'complex floating'):  # resample accounts for unpaired bins:
         z_res = resample(Z, n_out, axis=-1, domain='freq')  # ifft() with corrections
     else:  # account for unpaired bin at m//2 before doing irfft():
         if n_out != n and (m := min(n, n_out)) % 2 == 0:
-            Z[..., m//2] *= 2 if n_out < n else 0.5
+            Z = xpx.at(Z)[..., m//2].set(Z[..., m//2] * (2 if n_out < n else 0.5))
         z_res = fak * sp_fft.irfft(Z, n=n_out)
     return xp.stack((z_env, xp.moveaxis(z_res, -1, axis)), axis=0)
 
@@ -3633,7 +3664,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         ``T * n_x / num``.
     t_r : ndarray, optional
         The `num` equidistant timestamps of `x_r`.
-        This is only returned if paramater `t` is not ``None``.
+        This is only returned if parameter `t` is not ``None``.
 
     See Also
     --------
@@ -3766,7 +3797,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     speed matters up, `resample_poly` is used to downsample first by a factor of ``n0
     // n1 = 155`` and then pass the result to `resample`. Two parameterization of
     `resample_poly` are used: Passing ``padtype='wrap'`` treats the input as being
-    periodic wheras the default parametrization performs zero-padding. The upper
+    periodic whereas the default parametrization performs zero-padding. The upper
     subplot shows the resulting signals over time whereas the lower subplot depicts the
     resulting one-sided magnitude spectra.
 
@@ -3850,27 +3881,27 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         X = sp_fft.rfft(x)
         if W is not None:  # fold window, i.e., W1[l] = (W[l] + W[-l]) / 2 for l > 0
             n_X = X.shape[-1]
-            W[1:n_X] += xp.flip(W[-n_X+1:])  #W[:-n_X:-1]
-            W[1:n_X] /= 2
-            X *= W[:n_X]  # apply window
+            W = xpx.at(W)[1:n_X].add(xp.flip(W[-n_X+1:]))  #W[:-n_X:-1]
+            W = xpx.at(W)[1:n_X].multiply(0.5)
+            X = X * W[:n_X]  # apply window
         X = X[..., :m2]  # extract relevant data
         if m % 2 == 0 and num != n_x:  # Account for unpaired bin at m//2:
-            X[..., m//2] *= 2 if num < n_x else 0.5
+            X = xpx.at(X)[..., m//2].multiply(2 if num < n_x else 0.5)
         x_r = sp_fft.irfft(X / s_fac, n=num, overwrite_x=True)
     else:  # use standard two-sided FFT:
         X = sp_fft.fft(x) if domain == 'time' else x
         if W is not None:
             X = X * W  # writing X *= W could modify parameter x
         Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
-        Y[..., :m2] = X[..., :m2]  # copy part up to Nyquist frequency
+        Y = xpx.at(Y)[..., :m2].set(X[..., :m2])  # copy up to Nyquist
         if m2 < m:  # == m > 2
-            Y[..., m2-m:] = X[..., m2-m:]  # copy negative frequency part
+            Y = xpx.at(Y)[..., m2-m:].set(X[..., m2-m:])  # copy negative frequencies
         if m % 2 == 0:  # Account for unpaired bin at m//2:
             if num < n_x:  # down-sampling: unite bin pair into one unpaired bin
-                Y[..., -m//2] += X[..., -m//2]
+                Y = xpx.at(Y)[..., -m//2].add(X[..., -m//2])
             elif n_x < num:  # up-sampling: split unpaired bin into bin pair
-                Y[..., m//2] /= 2
-                Y[..., num-m//2] = Y[..., m//2]
+                Y = xpx.at(Y)[..., m//2].multiply(0.5)
+                Y = xpx.at(Y)[..., num-m//2].set(Y[..., m//2])
         x_r = sp_fft.ifft(Y / s_fac, n=num, overwrite_x=True)
 
     if x_r.ndim > 1:  # moving active axis back to original position:
@@ -4143,17 +4174,74 @@ def vectorstrength(events, period):
 
     References
     ----------
-    van Hemmen, JL, Longtin, A, and Vollmayr, AN. Testing resonating vector
-        strength: Auditory system, electric fish, and noise.
-        Chaos 21, 047508 (2011);
-        :doi:`10.1063/1.3670512`.
-    van Hemmen, JL.  Vector strength after Goldberg, Brown, and von Mises:
-        biological and mathematical perspectives.  Biol Cybern.
-        2013 Aug;107(4):385-96. :doi:`10.1007/s00422-013-0561-7`.
-    van Hemmen, JL and Vollmayr, AN.  Resonating vector strength: what happens
-        when we vary the "probing" frequency while keeping the spike times
-        fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
-        :doi:`10.1007/s00422-013-0560-8`.
+    .. [1] Van Hemmen, JL, Longtin, A, and Vollmayr, AN. "Testing resonating vector
+           strength: Auditory system, electric fish, and noise."
+           Chaos 21, 047508 (2011), :doi:`10.1063/1.3670512`.
+    .. [2] Van Hemmen, JL. "Vector strength after Goldberg, Brown, and von Mises:
+           biological and mathematical perspectives."
+           Biol Cybern. 2013 Aug; 107(4): 385-96. :doi:`10.1007/s00422-013-0561-7`.
+    .. [3] Van Hemmen, JL and Vollmayr, AN. "Resonating vector strength: what happens
+           when we vary the 'probing' frequency while keeping the spike times fixed."
+           Biol Cybern. 2013 Aug; 107(4): 491-94. :doi:`10.1007/s00422-013-0560-8`.
+
+    Examples
+    --------
+    In this example, five events occur exactly 1 second apart, starting
+    at 0.25 s. The vector strength is 1 for ``period=1`` because all
+    events fall at the same phase of every cycle, and the returned phase
+    is π/2, a quarter of the way through the period.
+
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    ...
+    >>> events = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
+    >>> vectorstrength(events, period=1.0)
+    (np.float64(1.0), np.float64(1.5707963267948968))  # may vary
+
+    ``period`` can also be an array of candidate periods. With the same
+    events as above, the strength stays at 1 at the true period of 1 s
+    and at the sub-multiple period 0.5 s (a form of aliasing), and drops
+    to 0 at ``period=5`` where the events span a single period at
+    evenly-spaced phases:
+
+    >>> periods = [1, 5, 0.5]
+    >>> strengths, phases = vectorstrength(events, periods)
+    ...
+    >>> for p_, s_, ph_ in zip(periods, strengths, phases):
+    ...     print(f"period = {p_:.1f}: strength = {s_:.2f}, "
+    ...           f"phase = {np.rad2deg(ph_):.1f} deg")
+    period = 1.0: strength = 1.00, phase = 90.0 deg
+    period = 5.0: strength = 0.00, phase = 153.4 deg
+    period = 0.5: strength = 1.00, phase = -180.0 deg
+
+    The following example depicts the vector strength and its phase for
+    100 samples with a constant period of 10 s. The maximum strength of 1
+    occurs at 10 s with phase 0 rad. Due to the finite number of samples,
+    the strength does not drop to zero away from 10 s but exhibits
+    secondary maxima similar to those of an FFT sidelobe pattern. The
+    phase decreases roughly linearly with jumps of π rad at each
+    sidelobe minimum, consistent with an underlying sinc-like function.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    ...
+    >>> N, T = 100, 10  # samples and sampling interval in seconds
+    >>> events = np.arange(N) * T
+    >>> periods = np.linspace(9.5, 10.5, 101)
+    >>> strength, phase = vectorstrength(events, periods)
+    ...
+    >>> fig, (ax_strength, ax_phase) = plt.subplots(
+    ...     2, 1, sharex=True, tight_layout=True)
+    >>> ax_strength.set_title(
+    ...     f"Vector strength of {N} samples at {T} s spacing")
+    >>> ax_strength.set(ylabel="Strength", xlim=(periods[0], periods[-1]))
+    >>> ax_strength.grid(True)
+    >>> ax_phase.set(xlabel="Period (s)", ylabel="Phase (rad)")
+    >>> ax_phase.grid(True)
+    >>> ax_strength.plot(periods, strength, 'C0.-')
+    >>> ax_phase.plot(periods, phase, 'C1.-')
+    >>> plt.show()
     '''
     xp = array_namespace(events, period)
 
@@ -4391,7 +4479,7 @@ def lfilter_zi(b, a):
     The following code creates a lowpass Butterworth filter to filter a signal made up
     of ones. As expected of a lowpass filter, the output is also all ones. If the `zi`
     argument of `lfilter` had not been given, a transient signal would have been
-    produced. The second signal illustrates that using the parameter `zi` supresses
+    produced. The second signal illustrates that using the parameter `zi` suppresses
     transients at the beginning of the output signal:
 
     >>> import numpy as np
@@ -4529,7 +4617,7 @@ def sosfilt_zi(sos):
     for section in range(n_sections):
         b = sos[section, :3]
         a = sos[section, 3:]
-        zi[section, ...] = scale * lfilter_zi(b, a)
+        zi = xpx.at(zi)[section, ...].set(scale * lfilter_zi(b, a))
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
@@ -5073,8 +5161,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x_shape, zi_shape = x.shape, zi.shape
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
-    zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
-    sos = sos.astype(dtype, copy=False)
+    # _sosfilt requires writable, C-contiguous NumPy arrays.
+    zi = np.array(np.reshape(zi, (-1, n_sections, 2)), dtype=dtype,
+                  order='C', copy=True)
+    sos = np.array(sos, dtype=dtype, order='C', copy=True)
     _sosfilt(sos, x, zi)
     x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)
@@ -5215,7 +5305,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         The input signal made up of equidistant samples. If `x` is a multidimensional
         array, the parameter `axis` specifies the time axis.
     q : int
-        The downsampling factor, which is a postive integer. When using IIR
+        The downsampling factor, which is a positive integer. When using IIR
         downsampling, it is recommended to call `decimate` multiple times for
         downsampling factors higher than 13.
     n : int, optional

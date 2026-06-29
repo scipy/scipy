@@ -251,7 +251,7 @@ def test_1d_resize(arg: int):
     assert_equal(res.toarray(), den)
 
 
-@pytest.mark.parametrize('arg', zip([1, 2, 3, 4], [1, 2, 3, 4]))
+@pytest.mark.parametrize('arg', list(zip([1, 2, 3, 4], [1, 2, 3, 4])))
 def test_1d_to_2d_resize(arg: tuple[int, int]):
     den = np.array([1, 0, 3])
     res = coo_array(den)

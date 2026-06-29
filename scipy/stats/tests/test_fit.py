@@ -77,7 +77,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
 
 # not sure if these fail, but they caused my patience to fail
 mm_XXslow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                  'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
+                  'genhalflogistic', 'gompertz', 'johnsonsb',
                   'kappa4', 'kstwobign', 'recipinvgauss',
                   'truncexpon', 'vonmises', 'vonmises_line']
 
@@ -106,7 +106,7 @@ def cases_test_cont_fit():
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
+@pytest.mark.parametrize('distname,arg', list(cases_test_cont_fit()))
 @pytest.mark.parametrize('method', ["MLE", "MM"])
 def test_cont_fit(distname, arg, method):
     run_xfail = int(os.getenv('SCIPY_XFAIL', default=False))
@@ -243,7 +243,7 @@ def cases_test_fit_mle():
                       'chi', 'crystalball', 'dweibull', 'erlang', 'exponnorm',
                       'exponpow', 'f', 'fatiguelife', 'fisk', 'foldcauchy', 'gamma',
                       'genexpon', 'genextreme', 'gennorm', 'genpareto',
-                      'gompertz', 'halfgennorm', 'invgamma', 'invgauss', 'invweibull',
+                      'gompertz', 'invgamma', 'invgauss', 'invweibull',
                       'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
                       'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
                       'nbinom', 'norminvgauss',
@@ -313,7 +313,7 @@ def cases_test_fit_mse():
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
                        'dgamma', 'dpareto_lognorm', 'f', 'gengamma', 'gennorm',
-                       'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t',
+                       'invgamma', 'invgauss', 'jf_skew_t',
                        'johnsonsb', 'kappa4', 'loguniform', 'mielke',
                        'nakagami', 'ncf', 'nchypergeom_fisher',
                        'nchypergeom_wallenius', 'nct', 'ncx2',
@@ -349,7 +349,7 @@ def cases_test_fitstart():
         yield distname, shapes
 
 
-@pytest.mark.parametrize('distname, shapes', cases_test_fitstart())
+@pytest.mark.parametrize('distname, shapes', list(cases_test_fitstart()))
 def test_fitstart(distname, shapes):
     dist = getattr(stats, distname)
     rng = np.random.default_rng(216342614)
@@ -534,11 +534,11 @@ class TestFit:
         assert_nlff_less_or_close(dist, data, res.params, ref, **self.tols,
                                   nlff_name=nlff_name)
 
-    @pytest.mark.parametrize("dist_name", cases_test_fit_mle())
+    @pytest.mark.parametrize("dist_name", list(cases_test_fit_mle()))
     def test_basic_fit_mle(self, dist_name):
         self.basic_fit_test(dist_name, "mle", rng=5)
 
-    @pytest.mark.parametrize("dist_name", cases_test_fit_mse())
+    @pytest.mark.parametrize("dist_name", list(cases_test_fit_mse()))
     def test_basic_fit_mse(self, dist_name):
         self.basic_fit_test(dist_name, "mse", rng=2)
 

@@ -16,30 +16,24 @@
 
 [build-system]
 build-backend = 'mesonpy'
+# NOTE: when updating this table, also update `dependency-groups.build`
 requires = [
     "meson-python>=0.15.0",
     "Cython>=3.2.0",        # when updating version, also update check in meson.build
     "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.18.1",      # when updating version, also update check in meson.build
-
-    # numpy requirement for wheel builds for distribution on PyPI - building
-    # against 2.x yields wheels that are also compatible with numpy 1.x at
-    # runtime.
-    # Note that building against numpy 1.x works fine too - users and
-    # redistributors can do this by installing the numpy version they like and
-    # disabling build isolation.
     "numpy>=2.0.0",
 ]
 
 [project]
 name = "scipy"
-version = "1.18.0.dev0"
+version = "1.19.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
-    { name = "SciPy Developers", email = "scipy-dev@python.org" },
+    { name = "SciPy Developers", email = "scipy@discuss.scientific-python.org" },
 ]
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
@@ -69,25 +63,105 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 
+[project.urls]
+homepage = "https://scipy.org/"
+documentation = "https://docs.scipy.org/doc/scipy/"
+source = "https://github.com/scipy/scipy"
+download = "https://pypi.org/project/scipy/"
+install = "https://scipy.org/install/"
+releasenotes = "https://docs.scipy.org/doc/scipy/release.html"
+tracker = "https://github.com/scipy/scipy/issues"
+developer-discussion = "https://discuss.scientific-python.org/c/contributor/scipy/"
+user-discussion = "https://discuss.scientific-python.org/c/user/scipy/"
+
+# NOTE: when updating this table, also update `dependency-groups.optional-runtime-deps`
 [project.optional-dependencies]
-test = [
+all = [
+    "pooch",  # datasets
+    "threadpoolctl",  # io.mm{...}
+    "matplotlib",  # cluster.hierarchy.dendrogram, stats.probplot
+    # circular dependency issues, https://github.com/scipy/scipy/issues/19783
+    # "scikit-umfpack",  # optimize, sparse.linalg
+]
+
+[dependency-groups]
+optional-runtime-deps = [
+    "pooch",  # datasets
+    "threadpoolctl",  # io.mm{...}
+    "matplotlib",  # cluster.hierarchy.dendrogram, stats.probplot
+    # circular dependency issues, https://github.com/scipy/scipy/issues/19783
+    # "scikit-umfpack",  # optimize, sparse.linalg
+]
+
+build = [
+    "meson-python>=0.15.0",
+    "Cython>=3.2.0",
+    "pybind11>=2.13.2",
+    "pythran>=0.18.1",
+    "numpy>=2.0.0",
+    "ninja>=1.8.2",
+]
+
+test-core = [
     "pytest>=8.0.0",
-    "pytest-cov",
-    "pytest-timeout",
-    "pytest-xdist",
-    "asv",
-    "mpmath",
-    "gmpy2",
-    "threadpoolctl",
-    "scikit-umfpack",
-    "pooch",
     "hypothesis>=6.30",
-    "array-api-strict>=2.3.1",
+    "pooch",
+    "pytest-xdist",  # not required, but used widely, belongs in -core
+    "pytest-timeout",  # not required, but used widely, belongs in -core
+]
+test-mp = [
+    "mpmath",
+    # for PyPI: 'gmpy2; sys_platform != "win32" or platform_machine != "ARM64"'
+    "gmpy2",
+]
+test-extending-cython = [  # {special, linalg, optimize}.tests.test_extending
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
-    "scipy-doctest>=2.0.0"
 ]
+test-parallel = [
+    { include-group = "test-core" },
+    "pytest-run-parallel",
+]
+test-docs = [
+    { include-group = "test-core" },
+    "scipy-doctest>=2.0.0",
+    "matplotlib",
+]
+test-array-types = [
+    { include-group = "test-core" },
+    "array-api-strict>=2.3.1",
+    "marray",
+    # for PyPI: 'sparse; sys_platform != "win32" or platform_machine != "ARM64"'
+    "sparse",
+]
+test = [
+    { include-group = "optional-runtime-deps" },
+    { include-group = "test-core" },
+    { include-group = "test-mp" },
+    { include-group = "test-extending-cython" },
+    { include-group = "test-parallel" },
+    { include-group = "test-docs" },
+    { include-group = "test-array-types" },
+    # useful but doesn't have its own group (rarely used, and has compiled wheels so can be hard to install)
+    "psutil",
+]
+test-fail-slow = [
+    { include-group = "test-core" },
+    "pytest-fail-slow",  # only one CI job; isolated so it doesn't cause failures for contributors randomly
+]
+coverage = [
+    { include-group = "test" },  # includes all optional test and runtime deps for maximum coverage
+    "pytest-cov",
+]
+
+bench = [
+    # https://github.com/airspeed-velocity/asv/issues/1537
+    "asv==0.6.4",
+    "pyfftw",
+    "cffi", 
+]
+
 doc = [
     "sphinx>=5.0.0,<8.2.0",
     "intersphinx_registry",
@@ -102,28 +176,50 @@ doc = [
     "jupyterlite-sphinx>=0.19.1",
     "jupyterlite-pyodide-kernel",
     "linkify-it-py",
-    "tabulate"
+    "tabulate",
 ]
 
-# click is a dependency of spin, and not a direct SciPy dependency,
-# but click 8.3.0 is apparently broken, so use an older version.
-dev = [
-    "click<8.3.0",
+dev-cli = [
     "spin",
-    "mypy==1.19.1",
+]
+
+typecheck = [
+    # type checkers
+    "mypy==2.1.0",
+    "pyrefly==1.1.1",
+    # typing deps
     "typing_extensions",
+    # stub deps
+    "types-cffi",
     "types-psutil",
-    "pycodestyle",
+    "types-pyyaml",
+    # import deps
+    "array_api_strict",
+    "cython",
+    "dask",
+    "matplotlib",
+    "pybind11",
+    "sphinx",
+]
+
+lint = [
     "ruff>=0.12.0",
     "cython-lint>=0.12.2",
+    "packaging",
+    "tach",
+    "zizmor",
 ]
 
-[project.urls]
-homepage = "https://scipy.org/"
-documentation = "https://docs.scipy.org/doc/scipy/"
-source = "https://github.com/scipy/scipy"
-download = "https://github.com/scipy/scipy/releases"
-tracker = "https://github.com/scipy/scipy/issues"
+dev = [
+    { include-group = "build" },
+    { include-group = "test" },
+    { include-group = "bench" },
+    { include-group = "doc" },
+    { include-group = "dev-cli" },
+    { include-group = "typecheck" },
+    { include-group = "lint" },
+    "scipy-stubs",
+]
 
 [tool.spin]
 package = 'scipy'

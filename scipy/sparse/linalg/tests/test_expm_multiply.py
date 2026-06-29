@@ -15,11 +15,10 @@ from scipy.sparse.linalg import expm as sp_expm
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
         _onenormest_matrix_power, expm_multiply, _expm_multiply_simple,
         _expm_multiply_interval)
-from scipy._lib._util import np_long
 
 
 IMPRECISE = {np.single, np.csingle}
-REAL_DTYPES = (np.intc, np_long, np.longlong,
+REAL_DTYPES = (np.intc, np.long, np.longlong,
                np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
@@ -326,6 +325,7 @@ class TestExpmActionInterval:
             raise Exception(msg)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.parametrize("dtype_a", DTYPES)
 @pytest.mark.parametrize("dtype_b", DTYPES)
 @pytest.mark.parametrize("b_is_matrix", [False, True])

@@ -3,8 +3,16 @@ name = "scipy"
 description = "Fundamental algorithms for scientific computing in Python."
 authors = ["SciPy Developers <scipy-dev@python.org>"]
 channels = ["https://prefix.dev/conda-forge"]
-platforms = ["linux-64", "osx-arm64", "win-64"]
+platforms = [
+  "linux-64",
+  "osx-arm64",
+  "win-64",
+  "linux-aarch64",
+  { platform = "linux-64", cuda = "12.9" },
+  { platform = "linux-64", cuda = "13.0" },
+]
 preview = ["pixi-build"]
+requires-pixi = ">=0.71.0"
 
 
 ### SciPy Package Definition ###
@@ -14,13 +22,11 @@ name = "pixi-build-python"
 version = "*"
 
 [package.build.config]
-compilers = ["c", "cxx", "fortran"]
+compilers = ["c", "cxx"]
 
 [workspace.target.win.build-variants]
 c_compiler = ["clang-cl"] 
 cxx_compiler = ["clang-cl"]
-fortran_compiler = ["flang"]
-fortran_compiler_version = ["22.*"]
 
 [package.host-dependencies]
 uv = "*"
@@ -34,7 +40,7 @@ pybind11 = "*"
 numpy = "*"
 blas-devel = "*"
 
-[package.target.win-64.host-dependencies]
+[package.host-dependencies."if(host_platform == 'win-64')"]
 openblas = "*"
 
 
@@ -53,12 +59,17 @@ solve-group = "default"
 
 [environments.smoke-docs]
 # tasks: smoke-docs
-features = ["run-deps", "test-deps", "smoke-docs"]
+features = ["run-deps", "test-deps", "smoke-docs", "default-platforms"]
 solve-group = "default"
 
 [environments.docs]
 # tasks: docs
-features = ["docs"]
+features = ["docs", "marray"]
+solve-group = "default"
+
+[environments.test-fail-slow]
+# tasks: test-fail-slow
+features = ["run-deps", "test-deps", "fail-slow"]
 solve-group = "default"
 
 [environments.ipython]
@@ -68,13 +79,31 @@ solve-group = "default"
 
 [environments.bench]
 # tasks: bench
-features = ["run-deps", "build-deps", "bench-common", "bench"]
+features = ["run-deps", "build-deps", "bench-common", "bench", "default-platforms"]
 solve-group = "default"
 
 [environments.build-debug]
 # tasks: build-debug
 features = ["build-deps", "build-debug"]
 solve-group = "debug"
+
+[environments.build-freethreading]
+# tasks: build-freethreading
+features = ["py-freethreading", "build-deps", "build-freethreading", "default-platforms"]
+no-default-feature = true # avoid python-gil
+solve-group = "freethreading"
+
+[environments.test-freethreading]
+# tasks: test-freethreading
+features = ["py-freethreading", "run-deps", "test-deps", "test-freethreading", "default-platforms"]
+no-default-feature = true # avoid python-gil
+solve-group = "freethreading"
+
+[environments.test-parallel-freethreading]
+# tasks: test-parallel-freethreading
+features = ["py-freethreading", "run-deps", "test-deps", "test-parallel-freethreading", "default-platforms"]
+no-default-feature = true # avoid python-gil
+solve-group = "freethreading"
 
 [environments.lldb]
 # tasks: lldb
@@ -88,24 +117,28 @@ solve-group = "debug"
 
 [environments.lint]
 # tasks: lint, check-python-h, tach-check, tach-check-external
-features = ["lint"]
+features = ["lint", "default-platforms"]
+
+[environments.typecheck]
+# tasks: mypy, pyrefly
+features = ["typecheck", "run-deps", "test-deps", "default-platforms"]
 
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
 # and create a non-default solve group with minimal dependencies
 # to more reliably test the very latest versions of core dependencies
 [environments.build-cpu]
 # tasks: build-cpu
-features = ["build-deps", "build-cpu"]
+features = ["build-deps", "build-cpu", "default-platforms"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-strict]
 # tasks: test-strict, bench-strict
-features = ["run-deps", "test-deps", "bench-common", "array_api_strict", "array_api_strict-tasks", "marray"]
+features = ["run-deps", "test-deps", "bench-common", "array_api_strict", "array_api_strict-tasks", "marray", "default-platforms"]
 solve-group = "array-api-cpu"
 
 [environments.dask-cpu]
 # tasks: test-dask, bench-dask
-features = ["run-deps", "test-deps", "bench-common", "dask", "dask-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "dask", "dask-tasks", "default-platforms"]
 solve-group = "array-api-cpu"
 
 [environments.jax-cpu]
@@ -115,12 +148,12 @@ solve-group = "array-api-cpu"
 
 [environments.torch-cpu]
 # tasks: test-torch, test-torch-float32, bench-torch
-features = ["run-deps", "test-deps", "bench-common", "mkl", "torch-cpu", "torch-cpu-tasks", "marray"]
+features = ["run-deps", "test-deps", "bench-common", "mkl", "torch-cpu", "torch-cpu-tasks", "marray", "default-platforms"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-cpu]
 # tasks: test-cpu, bench-cpu, ipython-cpu
-features = ["run-deps", "test-deps", "test-cpu", "bench-common", "mkl", "sparse", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu", "ipython-dep", "ipython-cpu-task"]
+features = ["run-deps", "test-deps", "test-cpu", "bench-common", "mkl", "sparse", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu", "ipython-dep", "ipython-cpu-task", "default-platforms"]
 solve-group = "array-api-cpu"
 
 [environments.build-cuda]
@@ -164,52 +197,70 @@ features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
 [environments.build-mkl-lp64]
+# tasks: build-mkl-lp64
 features = ["build-deps", "mkl", "build-mkl-lp64"]
 solve-group = "mkl-lp64"
 
 [environments.mkl-lp64]
-features = ["run-deps", "test-deps", "mkl", "mkl-lp64"]
+# tasks: test-mkl-lp64, check-mkl-lp64-sharedlibs
+features = ["run-deps", "test-deps", "mkl", "mkl-lp64", "default-platforms"]
 solve-group = "mkl-lp64"
 
 [environments.build-mkl-ilp64]
+# tasks: build-mkl-ilp64
 features = ["build-deps", "mkl", "build-mkl-ilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-ilp64]
-features = ["run-deps", "test-deps", "mkl", "mkl-ilp64"]
+# tasks: test-mkl-ilp64, check-mkl-ilp64-sharedlibs
+features = ["run-deps", "test-deps", "mkl", "mkl-ilp64", "default-platforms"]
 solve-group = "mkl-ilp64"
 
 [environments.build-mkl-cyilp64]
+# tasks: build-mkl-cyilp64
 features = ["build-deps", "mkl", "build-mkl-cyilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-cyilp64]
-features = ["run-deps", "test-deps", "mkl", "mkl-cyilp64"]
+# tasks: test-mkl-cyilp64, check-mkl-cyilp64-sharedlibs
+features = ["run-deps", "test-deps", "mkl", "mkl-cyilp64", "default-platforms"]
 solve-group = "mkl-ilp64"
 
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
+features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs", "default-platforms"]
 
-[environments.scipy-openblas]
-# tasks: build-scipy-openblas, test-scipy-openblas
-features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
+[environments.scipy-openblas32]
+# tasks: build-scipy-openblas32, test-scipy-openblas32
+features = ["build-deps", "run-deps", "test-deps", "scipy-openblas32", "default-platforms"]
 
 [environments.scipy-openblas64]
 # tasks: build-scipy-openblas64, test-scipy-openblas64
-features = ["build-deps", "run-deps", "test-deps", "scipy-openblas64"]
+features = ["build-deps", "run-deps", "test-deps", "scipy-openblas64", "default-platforms"]
+
+[environments.build-clang-22]
+# tasks: build-clang-22
+features = ["build-deps", "build-clang-22"]
 
 [environments.gha-update]
 # tasks: gha-update
-features = ["gha-update"]
+features = ["gha-update", "default-platforms"]
 no-default-feature = true
 
 
-### Default dependencies (included in all environments) ###
+### Default platforms ###
+
+[feature.default-platforms]
+# this feature can be included in any environment to exclude all other platforms
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+
+### Default dependencies (included in all environments by default) ###
 
 [dependencies]
 spin = "*"
-python = "*"
+# TODO: revert to `python`, pending https://github.com/google/brotli/issues/1241#issuecomment-4359720657
+python-gil = ">=3.12"
 
 
 ### Default run dependencies (for environments which run SciPy itself) ###
@@ -222,6 +273,8 @@ blas-devel = "*"
 ### Default building ###
 
 [feature.build-deps.dependencies]
+c-compiler = "*"
+cxx-compiler = "*"
 ccache = "*"
 pkg-config = "*"
 ninja = "*"
@@ -234,12 +287,6 @@ pybind11 = "*"
 numpy = "*"
 blas-devel = "*"
 
-[feature.build-deps.target.unix.dependencies]
-compilers = "*"
-
-[feature.build-deps.target.win-64.dependencies]
-# force flang 21 until https://github.com/conda-forge/compilers-feedstock/pull/76 is in
-flang_win-64 = "21.*"
 
 [feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
@@ -248,12 +295,12 @@ blas-devel = { version = "*", build = "*openblas" }
 # XXX: when updating this task, remember to update other build tasks if appropriate
 [feature.build-task.tasks.build]
 cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy (default settings)"
 
 [feature.build-task.target.win-64.tasks.build]
 cmd = "spin build --setup-args=-Dblas=openblas --setup-args=-Dlapack=openblas --setup-args=-Duse-g77-abi=true && cp .pixi/envs/build/Library/bin/openblas.dll build-install/Lib/site-packages/scipy/linalg/openblas.dll"
-env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC" }
+env = { CC = "ccache clang-cl", CXX = "ccache clang-cl" }
 description = "Build SciPy (default settings)"
 
 
@@ -269,6 +316,9 @@ threadpoolctl = "*"
 pooch = "*"
 mpmath = "*"
 gmpy2 = "*"
+meson = "*"
+cython = "*"
+ninja = "*"
 
 # XXX: when updating this task, remember to update other test tasks if appropriate
 [feature.test-tasks.tasks.test]
@@ -304,6 +354,46 @@ depends-on = "build"
 description = "Run doctests"
 
 
+[feature.fail-slow.dependencies]
+pytest-fail-slow = "*"
+
+[feature.fail-slow.tasks.test-fail-slow]
+cmd = "spin test --no-build -m 'not slow' -- --durations=0 --durations-min=0.5 --fail-slow=1.0"
+depends-on = "build"
+description = "Test SciPy with `fail-slow=1.0`"
+
+
+### Type Checking ###
+
+[feature.typecheck.dependencies]
+# type checkers
+mypy = "==2.1.0"
+pyrefly = "==1.1.1"
+# typing deps
+typing_extensions = "*"
+# stub deps
+types-cffi = "*"
+types-psutil = "*"
+types-pyyaml = "*"
+# import deps
+array-api-strict = "*"
+cython = "*"
+dask = "*"
+matplotlib = "*"
+pybind11 = "*"
+sphinx = "*"
+
+[feature.typecheck.tasks.mypy]
+cmd = "spin mypy --no-build"
+depends-on = "build"
+description = "Run mypy type checks"
+
+[feature.typecheck.tasks.pyrefly]
+cmd = "pyrefly check"
+depends-on = "build"
+description = "Run pyrefly type checks"
+
+
 ### Type Stubs ###
 
 [feature.type-stubs.dependencies]
@@ -327,7 +417,7 @@ jupyterlite-sphinx = "*"
 jupyterlite-pyodide-kernel = "*"
 scipy-doctest = "*"
 linkify-it-py = "*"
-make = ">=4.4.1,<5"
+make = "*"
 
 
 [feature.docs.tasks.docs]
@@ -401,9 +491,6 @@ description = "Debug with gdb"
 
 ### Linting ###
 
-[feature.lint]
-platforms = ["linux-64", "osx-arm64", "win-64"]
-
 [feature.lint.dependencies]
 ruff = "*"
 cython-lint = "*"
@@ -448,7 +535,7 @@ libblas = { version = "*", build = "*accelerate" }
 
 [feature.build-accelerate-lp64.tasks.build-accelerate-lp64]
 cmd = "spin build --build-dir=build-accelerate-lp64 --with-accelerate"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with accelerate (lp64)"
 
 [feature.accelerate-lp64.tasks.test-accelerate-lp64]
@@ -458,7 +545,7 @@ description = "Test SciPy with accelerate (lp64)"
 
 [feature.build-accelerate-ilp64.tasks.build-accelerate-ilp64]
 cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64' -S-Dcython-blas-abi=lp64"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with accelerate (ilp64)"
 
 [feature.accelerate-ilp64.tasks.test-accelerate-ilp64]
@@ -466,13 +553,14 @@ cmd = "spin test --no-build --build-dir=build-accelerate-ilp64"
 depends-on = "build-accelerate-ilp64"
 description = "Test SciPy with accelerate (ilp64)"
 
+
 [feature.build-mkl-lp64]
 platforms = ["linux-64"]
 
 # Note: we need BLAS support in Meson merged before we can simply use `-Dblas=mkl`
 [feature.build-mkl-lp64.tasks.build-mkl-lp64]
 cmd = "spin build --build-dir=build-mkl-lp64 --setup-args=-Dblas=mkl-dynamic-lp64-seq --setup-args=-Duse-g77-abi=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with MKL (LP64)"
 
 [feature.mkl-lp64.tasks.test-mkl-lp64]
@@ -485,12 +573,14 @@ cmd = "spin check --no-build --build-dir=build-mkl-lp64 --loaded-sharedlibs"
 depends-on = "build-mkl-lp64"
 description = "Check loaded shared libraries with MKL (LP64)"
 
+
 [feature.build-mkl-ilp64]
 platforms = ["linux-64"]
 
 [feature.build-mkl-ilp64.tasks.build-mkl-ilp64]
-cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-Dcython-blas-abi=lp64"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+# we use mkl-dynamic-lp64-seq, not mkl-dynamic-ilp64-seq, due to cython-blas-abi=lp64
+cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-lp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-Dcython-blas-abi=lp64"
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with MKL (ILP64, cython-blas LP64)"
 
 [feature.mkl-ilp64.tasks.test-mkl-ilp64]
@@ -503,12 +593,13 @@ cmd = "spin check --no-build --build-dir=build-mkl-ilp64 --loaded-sharedlibs"
 depends-on = "build-mkl-ilp64"
 description = "Check loaded shared libraries with MKL (ILP64, cython-blas LP64)"
 
+
 [feature.build-mkl-cyilp64]
 platforms = ["linux-64"]
 
 [feature.build-mkl-cyilp64.tasks.build-mkl-cyilp64]
-cmd = "spin build --build-dir=build-mkl-cyilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-D_without-fortran=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+cmd = "spin build --build-dir=build-mkl-cyilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with MKL (ILP64, cython-blas ILP64)"
 
 [feature.mkl-cyilp64.tasks.test-mkl-cyilp64]
@@ -522,26 +613,24 @@ depends-on = "build-mkl-cyilp64"
 description = "Check loaded shared libraries with MKL (ILP64, cython-blas ILP64)"
 
 
-
-
-[feature.scipy-openblas.pypi-dependencies]
+[feature.scipy-openblas32.pypi-dependencies]
 scipy-openblas32 = "==0.3.31.22.0"
 
-[feature.scipy-openblas.tasks.build-scipy-openblas]
-cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas=32"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+[feature.scipy-openblas32.tasks.build-scipy-openblas32]
+cmd = "spin build --build-dir=build-scipy-openblas32 --with-scipy-openblas=32"
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with scipy-openblas32"
 
-[feature.scipy-openblas.tasks.test-scipy-openblas]
-cmd = "spin test --no-build --build-dir=build-scipy-openblas"
-depends-on = "build-scipy-openblas"
+[feature.scipy-openblas32.tasks.test-scipy-openblas32]
+cmd = "spin test --no-build --build-dir=build-scipy-openblas32"
+depends-on = "build-scipy-openblas32"
 description = "Test SciPy with scipy-openblas32"
 
 [feature.scipy-openblas64.pypi-dependencies]
 scipy-openblas64 = "==0.3.31.22.0"
 
 [feature.scipy-openblas64.tasks.build-scipy-openblas64]
-cmd = "spin build --build-dir=build-scipy-openblas64 --with-scipy-openblas=64 -S-Duse-ilp64=true -S-Dblas-symbol-suffix=64_ -S-D_without-fortran=true"
+cmd = "spin build --build-dir=build-scipy-openblas64 --with-scipy-openblas=64 -S-Duse-ilp64=true -S-Dblas-symbol-suffix=64_"
 env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with scipy-openblas64"
 
@@ -551,25 +640,18 @@ depends-on = "build-scipy-openblas64"
 description = "Test SciPy with scipy-openblas64"
 
 
-
 ### CPU/CUDA features ###
-
-[feature.build-cpu]
-platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.build-cpu.tasks.build-cpu]
 cmd = "spin build --build-dir=build-cpu --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy (for CPU environments)"
 
 # XXX: workaround for meson mkl blas detection
 [feature.build-cpu.target.linux-64.tasks.build-cpu]
 cmd = "spin build --build-dir=build-cpu --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy (for CPU environments)"
-
-[feature.test-cpu]
-platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.test-cpu.tasks.test-cpu]
 cmd = "spin test --no-build --build-dir=build-cpu -b all -m 'array_api_backends and not slow'"
@@ -587,34 +669,29 @@ description = "Benchmark with all CPU array backends"
 python = "3.13.*"
 
 [feature.build-cuda]
-platforms = ["linux-64"]
+platforms = ["linux-64-cuda-12-9", "linux-64-cuda-13-0"]
 
 [feature.build-cuda.tasks.build-cuda]
 cmd = "spin build --build-dir=build-cuda --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy (for CUDA environments)"
 
 # JAX needs cuda 12 right now
 [feature.cuda12]
-platforms = ["linux-64"]
-system-requirements = { cuda = "12" }
+platforms = ["linux-64-cuda-12-9"]
 
 [feature.cuda12.dependencies]
-cuda-version = "12.*"
+cuda-version = "==12.9"
 
 # CuPy seems to need cuda13, possibly related to discussion in scipy/scipy#23458
 [feature.cuda13]
-platforms = ["linux-64"]
-system-requirements = { cuda = "13" }
+platforms = ["linux-64-cuda-13-0"]
 
 [feature.cuda13.dependencies]
-cuda-version = "13.*"
+cuda-version = "==13.0"
 
 
 ### Array libraries ###
-
-[feature.torch-cpu]
-platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.torch-cpu.dependencies]
 pytorch-cpu = "*"
@@ -654,6 +731,7 @@ description = "Benchmark with PyTorch on CPU and CUDA"
 
 [feature.cupy.dependencies]
 cupy = "*"
+numpy = "<2.5" # https://github.com/cupy/cupy/pull/10037
 
 [feature.cupy-tasks.tasks.test-cupy]
 cmd = "spin test --no-build --build-dir=build-cuda -b cupy -m 'array_api_backends and not slow'"
@@ -664,10 +742,6 @@ description = "Test with CuPy"
 cmd = "spin bench --no-build --build-dir=build-cuda -b cupy"
 depends-on = "build-cuda"
 description = "Benchmark with CuPy"
-
-[feature.jax-cpu]
-# include windows so the array-api env can use the jax-cpu feature
-platforms = ["linux-64", "osx-arm64", "win-64"]
 
 # Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
 [feature.jax-cpu.target.unix.dependencies]
@@ -689,7 +763,7 @@ depends-on = "build-cpu"
 description = "Benchmark with JAX on CPU"
 
 [feature.jax-cuda]
-platforms = ["linux-64"]
+platforms = ["linux-64-cuda-12-9"]
 
 [feature.jax-cuda.dependencies]
 # JAX 0.6.2 and 0.7.0 segfault on CUDA
@@ -710,9 +784,6 @@ env.SCIPY_DEVICE = "cuda"
 depends-on = "build-cuda"
 description = "Benchmark with JAX on CPU and CUDA"
 
-[feature.array_api_strict]
-platforms = ["linux-64", "osx-arm64", "win-64"]
-
 [feature.array_api_strict.dependencies]
 array-api-strict = "*"
 
@@ -729,9 +800,6 @@ cmd = "spin bench --no-build --build-dir=build-cpu -b array_api_strict"
 depends-on = "build-cpu"
 description = "Benchmark with array-api-strict"
 
-[feature.dask]
-platforms = ["linux-64", "osx-arm64", "win-64"]
-
 [feature.dask.dependencies]
 dask-core = "*" # Don't install distributed, tornado, etc.
 
@@ -745,9 +813,6 @@ cmd = "spin bench --no-build --build-dir=build-cpu -b dask.array"
 depends-on = "build-cpu"
 description = "Benchmark with Dask"
 
-[feature.marray]
-platforms = ["linux-64", "osx-arm64", "win-64"]
-
 [feature.marray.dependencies]
 marray-python = "*"
 
@@ -757,19 +822,13 @@ sparse = "*"
 
 ### Optional dependencies ###
 
-[feature.scikit-sparse]
-platforms = ["linux-64", "osx-arm64", "win-64"]
-
 [feature.scikit-sparse.dependencies]
 scikit-sparse = "*"
 
 
-[feature.system-libs]
-platforms = ["linux-64", "osx-arm64", "win-64"]
-
 [feature.system-libs.dependencies]
 # Pinned to match versions in `meson.build`
-libboost-headers = "==1.89.0"
+libboost-headers = "==1.91.0"
 qhull = "==2020.2"
 
 [feature.system-libs.activation.env]
@@ -778,7 +837,7 @@ BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/lib"
 
 [feature.system-libs.tasks.build-system-libs]
 cmd = "spin build --build-dir=build-system-libs --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy with system libs (e.g. boost, qhull)"
 
 [feature.system-libs.tasks.test-system-libs]
@@ -789,11 +848,52 @@ description = "Test SciPy with system libs"
 
 ### Alternative python versions ###
 
-[feature.py312]
-platforms = ["linux-64", "osx-arm64", "win-64"]
-
 [feature.py312.dependencies]
 python = "3.12.*"
+
+
+[feature.py-freethreading.dependencies]
+python-freethreading = "*"
+spin = "*"
+
+[feature.py-freethreading.activation.env]
+# TODO: remove this, pending https://github.com/google/brotli/issues/1241#issuecomment-4359720657
+PYTHON_GIL = "0"
+
+[feature.build-freethreading.tasks.build-freethreading]
+cmd = "spin build --build-dir=build-freethreading --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+description = "Build SciPy (freethreaded Python)"
+
+[feature.test-freethreading.tasks.test-freethreading]
+cmd = "spin test --no-build --build-dir=build-freethreading"
+depends-on = "build-freethreading"
+description = "Test SciPy (freethreaded Python)"
+
+[feature.test-parallel-freethreading.dependencies]
+pytest-run-parallel = "*"
+psutil = "*"
+
+[feature.test-parallel-freethreading.tasks.test-parallel-freethreading]
+# Note: Only fast tests; full test suite is unlikely to uncover anything more,
+#       and it'll be quite slow with pytest-run-parallel. Also skip
+#       tests that won't run in parallel, those are covered by the
+#       parallel == 0 run.
+cmd = "spin test --no-build --build-dir=build-freethreading -- --parallel-threads=4 --skip-thread-unsafe=true"
+depends-on = "build-freethreading"
+description = "Test SciPy (with pytest-run-parallel and freethreaded Python)"
+
+
+### Alternative compiler versions ###
+
+[feature.build-clang-22.dependencies]
+python-build = "*"
+clang-22 = "*"
+
+[feature.build-clang-22.tasks.build-clang-22]
+cmd = "python -m build -wnx -Csetup-args=--werror"
+env.CC = "clang-22"
+env.CXX= "clang++-22"
+description = "Build SciPy with clang-22 and -werror"
 
 
 ### Maintenance tools ###
