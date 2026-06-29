@@ -78,6 +78,7 @@ class _BarycentricRational:
         self._roots = None
 
     def _input_validation(self, x, y, **kwargs):
+        xp = array_namespace(x, y)
         if x.ndim != 1:
             raise ValueError("`x` must be 1-D.")
 
@@ -88,7 +89,7 @@ class _BarycentricRational:
             msg = f"`x` be of size {y.shape[self._axis]} but got size {x.shape[0]}."
             raise ValueError(msg)
 
-        if not np.all(np.isfinite(x)):
+        if not xp.all(xp.isfinite(x)):
             raise ValueError("`x` must be finite.")
 
     def _compute_weights(self, z, f, **kwargs):
