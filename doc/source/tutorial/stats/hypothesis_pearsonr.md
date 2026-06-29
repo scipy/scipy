@@ -45,7 +45,7 @@ ax.set_ylabel("free proline (μ mole/g)")
 plt.show()
 ```
 
-These data were analyzed in [^2] using Spearman’s correlation coefficient, a statistic sensitive to monotonic correlation between the samples. Here, we will analyze the data using Pearson's correlation coefficient (`{class}`scipy.stats.pearsonr`) which is sensitive to linear correlation.
+These data were analyzed in [^2] using Spearman’s correlation coefficient, a statistic sensitive to monotonic correlation between the samples. Here, we will analyze the data using Pearson's correlation coefficient ({class}`scipy.stats.pearsonr`), which is sensitive to linear correlation.
 
 ```{code-cell} ipython3
 from scipy import stats
