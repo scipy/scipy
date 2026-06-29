@@ -481,6 +481,7 @@ class TestFFTThreadSafe:
         self._test_mtsame(fft.ihfft, a, xp=xp)
 
 
+@pytest.mark.fail_slow(2)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)
