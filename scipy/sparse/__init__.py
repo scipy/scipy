@@ -104,18 +104,11 @@ Sparse tools
 Identifying sparse arrays
 -------------------------
 
-.. The functions `issparse` and `isspmatrix` are already referenced in a toctree in the
-   file `doc/source/reference/sparse.spmatrix_api.rst`. To supress a consistency check
-   warning during build, those functions are placed in a table instead of an
-   `autosummary` block.
+.. autosummary::
+   :toctree: generated/
 
-.. list-table::
-   :header-rows: 0
-
-   * - `~scipy.sparse.issparse`\ (x)
-     - Check if the argument is a sparse object (array or matrix).
-   * - `~scipy.sparse.isspmatrix`\ (x)
-     - Check if the argument is an old style sparse matrix.
+   issparse
+   isspmatrix
 
 
 Warnings
