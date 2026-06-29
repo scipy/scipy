@@ -793,7 +793,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
         # Floater and Hormann 2007 Eqn. (18) 3 equations later
         xp = array_namespace(z)
         w = xp.zeros_like(z, dtype=xp.result_type(z, 1.0))
-        n = w.size
+        n = w.shape[0]
         for k in range(n):
             for i in range(max(k-d, 0), min(k+1, n-d)):
                 diff = z[k] - z[i : i + d + 1]
