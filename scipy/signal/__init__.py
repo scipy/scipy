@@ -167,37 +167,46 @@ Matlab-style IIR filter design
    iirpeak       -- Design second-order IIR peak (resonant) digital filter.
    iircomb       -- Design IIR comb filter.
 
-Continuous-time linear systems
-==============================
+
+
+Linear Systems
+==============
+
+Continuous-time or discrete-time:
+
+.. autosummary::
+   :toctree: generated/
+
+   StateSpace       -- Linear time invariant system in state space form.
+   TransferFunction -- Linear time invariant system in transfer function form.
+   ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
+
+
+Continuous-time:
 
 .. autosummary::
    :toctree: generated/
 
    lti              -- Continuous-time linear time invariant system base class.
-   StateSpace       -- Linear time invariant system in state space form.
-   TransferFunction -- Linear time invariant system in transfer function form.
-   ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
    lsim             -- Continuous-time simulation of output to linear system.
    impulse          -- Impulse response of linear, time-invariant (LTI) system.
    step             -- Step response of continuous-time LTI system.
    freqresp         -- Frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
 
-Discrete-time linear systems
-============================
+
+Discrete-time:
 
 .. autosummary::
    :toctree: generated/
 
    dlti             -- Discrete-time linear time invariant system base class.
-   StateSpace       -- Linear time invariant system in state space form.
-   TransferFunction -- Linear time invariant system in transfer function form.
-   ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
    dlsim            -- Simulation of output to a discrete-time linear system.
    dimpulse         -- Impulse response of a discrete-time LTI system.
    dstep            -- Step response of a discrete-time LTI system.
    dfreqresp        -- Frequency response of a discrete-time LTI system.
    dbode            -- Bode magnitude and phase data (discrete-time LTI).
+
 
 LTI representations
 ===================

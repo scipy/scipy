@@ -1,4 +1,4 @@
-"""
+r"""
 ===================================
 Sparse arrays (:mod:`scipy.sparse`)
 ===================================
@@ -107,8 +107,8 @@ Identifying sparse arrays
 .. autosummary::
    :toctree: generated/
 
-   issparse - Check if the argument is a sparse object (array or matrix).
-   isspmatrix - Check if the argument is an old style sparse matrix.
+   issparse
+   isspmatrix
 
 
 Warnings

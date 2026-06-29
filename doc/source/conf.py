@@ -64,7 +64,7 @@ plt.ioff()
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 
 # The main toctree document.
 master_doc = 'index'
