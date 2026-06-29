@@ -184,6 +184,39 @@ def test_csr_hstack_int64():
     assert X_hs_32.indices.dtype == np.int32
     assert X_hs_32.indices.max() == max_int32 - 1
 
+
+def test_csr_todense():
+    A = csr_array([[1, 2, 0], [0, 3, 4]])
+    from scipy.sparse._sparsetools import csr_todense
+    array_out = np.zeros((2, 3), dtype=np.int64)
+    tup_out = np.zeros((2, 3), dtype=np.int64)
+    csr_todense(A, array_out)
+    csr_todense((A.shape[0], A.shape[1], A.indptr, A.indices, A.data), tup_out)
+    np.testing.assert_equal(array_out, tup_out)
+
+    # test that csr_todense adds the input to the output
+    array_out = np.eye(2, 3)
+    tup_out = np.eye(2, 3)
+    csr_todense(A, array_out)
+    csr_todense((A.shape[0], A.shape[1], A.indptr, A.indices, A.data), tup_out)
+    np.testing.assert_equal(array_out, tup_out)
+    np.testing.assert_equal(array_out, (np.eye(2, 3) + A))
+
+    # test input exceptions
+    with pytest.raises(ValueError, match=".*tuple must have 5 items"):
+        csr_todense((A.shape, A.indptr, A.indices, A.data), tup_out)
+    with pytest.raises(ValueError, match=".*is not a tuple or sparse array"):
+        csr_todense(A.toarray(), tup_out)
+    with pytest.raises(ValueError, match=".*has invalid shape tuple"):
+        B = A.copy()
+        B._shape = [2, 3]
+        csr_todense(B, tup_out)
+    with pytest.raises(ValueError, match=".*has invalid shape tuple"):
+        B = A.copy()
+        B._shape = (2, 3, 4)
+        csr_todense(B, tup_out)
+
+
 @pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
 def test_mixed_index_dtype_int_indexing(cls):
     # https://github.com/scipy/scipy/issues/20182
