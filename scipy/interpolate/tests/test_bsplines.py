@@ -1852,6 +1852,29 @@ class TestLSQ:
                 x, y, t, k, method="qr", clamp_values=clamp_values
             )
     
+    def test_clamp_values_multidim_y(self, xp):
+        # Parametric 2D y: each clamp value is a 2-vector
+        x = np.linspace(0, 10, 30)
+        y = np.column_stack([np.sin(x), np.cos(x)])
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        
+        clamp_values = ((0.5, -0.5), (-0.3, 0.7))
+        spl = make_lsq_spline(x, y, t, k=k, method='norm-eq', clamp_values=clamp_values)
+        
+        xp_assert_close(spl(x[0]), np.array([0.5, -0.5]), atol=1e-12)
+        xp_assert_close(spl(x[-1]), np.array([-0.3, 0.7]), atol=1e-12)
+    
+    def test_clamp_values_shape_mismatch(self, xp):
+        # scalar clamps when y is 2D should fail
+        x = np.linspace(0, 10, 30)
+        y = np.column_stack([np.sin(x), np.cos(x)])
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        
+        with assert_raises(ValueError, match="dimension"):
+            make_lsq_spline(x, y, t, k=k, method='norm-eq', clamp_values=(0.5, -0.3))
+    
     def test_clamp_values_matches_dense_reference(self, xp):
         # Compare against a dense implementation 
         # Inspired from the following stackoverflow answer.

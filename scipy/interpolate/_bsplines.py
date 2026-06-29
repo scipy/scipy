@@ -1956,7 +1956,7 @@ clamp_values=None):
         "qr" (Use the QR factorization of the design matrix).
         Default is "qr".
     clamp_values : tuple, optional
-        If `clamp_values` is supplied, it pins the splines first and last value to 
+        If `clamp_values` is supplied, it pins the splines values at x[0] and x[-1] to 
         `clamp_values[0]` and `clamp_values[1]` respectively.
         Default is None.
 
@@ -2074,32 +2074,35 @@ clamp_values=None):
             raise ValueError(
                 "clamp_values should be a tuple of a numeric type, got a `ndarray`."
             )
-        if len(clamp_values) != 2:
-            raise ValueError(f"""Expect clamp_values to be a tuple of length 2, 
-            got {len(clamp_values)}""")
-        if np.array(clamp_values).dtype.kind in ["c", "U"]:
+        
+        clamp_values = np.asarray(clamp_values)
+
+        if clamp_values.dtype.kind in ["c", "U"]:
             raise ValueError(
                 f"""clamp_values should be of type float or int, got 
-                    {np.array(clamp_values).dtype}."""
+                    {clamp_values.dtype}."""
             )
         if np.any(t[:k + 1] != t[0]) or np.any(t[-(k + 1):] != t[-1]):
             raise ValueError(
                 f"""Invalid knot vector, {t}, when clamp_values is passed, the first 
                 and last values of t should be repeated {k + 1} times for k={k}"""
             )
+        if clamp_values.shape[0] != 2:
+            raise ValueError(f"""Expect clamp_values to be a tuple of length 2, 
+            got {len(clamp_values)}""")
+        if clamp_values.shape[1:] != y.shape[1:]:
+            raise ValueError(
+                """There should be one clamp_value for each dimension of the output 
+                datapoints."""
+            )
+
+        ci, cf = clamp_values
+        ci = ci.reshape(-1)
+        cf = cf.reshape(-1)
+        # has shape (extradim, )
 
     # number of coefficients
     n = t.size - k - 1
-
-    # complex y: view as float, preserve the length
-    was_complex =  y.dtype.kind == 'c'
-    yy = y.view(float)
-    if was_complex and y.ndim == 1:
-        yy = yy.reshape(y.shape[0], 2)
-
-    # multiple r.h.s
-    extradim = prod(yy.shape[1:])
-    yy = yy.reshape(-1, extradim)
 
     # complex y: view as float, preserve the length
     was_complex =  y.dtype.kind == 'c'
@@ -2126,8 +2129,6 @@ clamp_values=None):
         if was_complex:
             rhs = rhs.view(complex)
 
-        rhs = rhs.reshape((n,) + y.shape[1:])
-
         if clamp_values is not None:
             # Clamped LSQ: pin spl(x[0]) = ci and spl(x[-1]) = cf.
             #
@@ -2145,7 +2146,6 @@ clamp_values=None):
             # ab[:, 1:-1].
             #
             # Reference: https://stackoverflow.com/questions/78482220
-            ci, cf = clamp_values
 
             ab_reduced = ab[:, 1:-1]
 
@@ -2155,13 +2155,14 @@ clamp_values=None):
             # rhs_adjusted = A_reduced.T @ y - ci * A_reduced.T @ A[:, 0]
             #                                 - cf * A_reduced.T @ A[:, -1]
             # Column 0 of A.T @ A in banded storage: straight read down ab[:, 0]
-            ab_col0 = np.zeros((n - 2,))
-            ab_col0[:k] = ab[1: k + 1, 0]
+            ab_col0 = np.zeros((n - 2, extradim))
+            ab_col0[:k] = ab[1: k + 1, 0: 1]
             ab_col0 = ab_col0 * ci
 
-            ab_col_last = np.zeros((n - 2,))
+            ab_col_last = np.zeros((n - 2, extradim))
             banded_idx_last_col = np.arange(1, k + 1)
-            ab_col_last[-k:] = ab[banded_idx_last_col, (n-1) -banded_idx_last_col][::-1]
+            ab_col_last[-k:] = ab[banded_idx_last_col, 
+                                (n-1) -banded_idx_last_col][::-1, None]
             ab_col_last = ab_col_last * cf
             
             rhs = rhs - ab_col0 - ab_col_last
@@ -2178,9 +2179,9 @@ clamp_values=None):
             new_dims = list(c.shape)
             new_dims[0] += 2
             c_full = np.zeros(tuple(new_dims))
-            c_full[0] = ci
-            c_full[-1] = cf
-            c_full[1: -1] = c
+            c_full[0, :] = ci
+            c_full[-1, :] = cf
+            c_full[1: -1, :] = c
             c = c_full
 
     elif method == "qr":
