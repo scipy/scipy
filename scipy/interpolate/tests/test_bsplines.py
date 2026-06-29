@@ -1835,18 +1835,20 @@ class TestLSQ:
         xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
     
+    @pytest.mark.parametrize("clamp_values", [(5, 8), (1.12, 3.14), (3.14, 22), 
+                                                                    (1, 1000)])
     @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     @parametrize_lsq_methods
-    def test_lsq_with_clamp_values(self, method, xp, solver):
+    def test_lsq_with_clamp_values(self, method, xp, solver, clamp_values):
         # Test if `clamp_values` actually clamps the first and last
         # values or not.
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        clamp_values = (5, 8)
+        clamp_values = clamp_values
         
         sp = make_lsq_spline(x, y, t, k, method=solver, clamp_values=clamp_values)
 
-        assert math.isclose(sp(x[0]), 5, abs_tol=1e-14)
-        assert math.isclose(sp(x[-1]), 8, abs_tol=1e-14)
+        assert math.isclose(sp(x[0]), clamp_values[0], abs_tol=1e-14)
+        assert math.isclose(sp(x[-1]), clamp_values[1], abs_tol=1e-14)
     
     @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     def test_clamp_values_multidim_y(self, xp, solver):

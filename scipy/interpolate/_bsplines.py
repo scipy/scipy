@@ -87,29 +87,33 @@ def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w):
     Also updates the offset array. This prepares the matrices for the 
     qr_reduce function in _lsq_solve_qr for the clamped case. 
     """
-    m = A_packed.shape[0]
+    # Drop boundary rows
+    A_kept = A_packed[1: -1]
+    offset_kept = offset[1: -1]
+    y_w = y_w[1: -1]
 
-    A_reduced = np.zeros((m - 2, k + 1))
-    offset_reduced = np.zeros(m - 2, dtype=np.int64)
+    # Identifying rows touching dropped columns
+    A_col0_mask = offset_kept == 0
+    A_col_last_mask = offset_kept + k == nc -1 
 
-    for i_new, i_old in enumerate(range(1, m - 1)):
-        mask_cells = np.ones(k + 1, dtype=bool)
-        if offset[i_old] == 0:
-            mask_cells[0] = False
-        
-        if offset[i_old] + k == nc - 1:
-            mask_cells[k] = False
+    A_reduced = np.zeros_like(A_kept) # (m - 2, k + 1) 
 
-        kept = A_packed[i_old][mask_cells]
-        A_reduced[i_new, :len(kept)] = kept
+    # Copy-as is (full `k + 1` width)
+    elements_undroped = ~A_col0_mask & ~A_col_last_mask
+    A_reduced[elements_undroped] = A_kept[elements_undroped]
 
-        if offset[i_old] == 0:
-            offset_reduced[i_new] = 0
-        else:
-            offset_reduced[i_new] = offset[i_old] - 1
+    # Touching Col0: Shift elements by left and copy
+    elements_col0_only = A_col0_mask & ~A_col_last_mask
+    A_reduced[elements_col0_only, :k] = A_kept[elements_col0_only, 1: k + 1]
 
-    y_w_reduced = y_w[1: -1].copy()
-    return A_reduced, offset_reduced, nc-2, y_w_reduced
+    # Touching Col last: Copy directly
+    elements_last_only = ~A_col0_mask & A_col_last_mask
+    A_reduced[elements_last_only, :k] = A_kept[elements_last_only, :k]
+
+    offset_reduced = offset_kept - 1
+    offset_reduced[A_col0_mask] = 0
+
+    return A_reduced, offset_reduced, nc - 2, y_w
 
 
 class _BSpline:
@@ -2242,6 +2246,39 @@ clamp_values=None):
 # LSQ spline helpers #
 ######################
 
+def _lsq_clamp_preprocess(A, offset, nc, k, y_w, ci, cf, x, y, w):
+    """
+    Apply the clamp preprocessing to packed matrix + RHS for the QR path.
+    
+    Adjusts y_w for the pinned coefficients, reduces (A, offset, nc) by
+    dropping boundary rows and dense columns 0 and nc-1, and returns
+    everything ready to feed into qr_reduce + fpback.
+    """
+    A_col0 = _get_fitpack_packed_column(A, offset, k, 0, y_w.shape[0])
+    A_col_last = _get_fitpack_packed_column(A, offset, k, nc - 1, y_w.shape[0])
+    
+    y_w = y_w - A_col0[:, None] * ci[None, :] - A_col_last[:, None] * cf[None, :]
+    
+    A, offset, nc, y_w = _reduce_packed_for_clamp(A, offset, nc, k, y_w)
+    
+    x_reduced = x[1:-1]
+    y_reduced = y[1:-1]
+    w_reduced = w[1:-1]
+    
+    return A, offset, nc, y_w, x_reduced, y_reduced, w_reduced
+
+
+def _lsq_clamp_postprocess(c_free, ci, cf, nc_full):
+    """
+    Reassemble the full coefficient vector after solving the reduced system.
+    """
+    extradim = c_free.shape[1] if c_free.ndim > 1 else 1
+    c_full = np.zeros((nc_full, extradim))
+    c_full[0, :] = ci
+    c_full[-1, :] = cf
+    c_full[1:-1, :] = c_free.reshape(nc_full - 2, extradim)
+    return c_full
+
 def _lsq_solve_qr_for_root_rati_periodic(x, y, t, k, w):
     """Solve for the LSQ spline coeffs given x, y and knots.
 
@@ -2277,32 +2314,17 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False, clamp_values=None):
             
             ci = clamp_values[0].reshape(-1)
             cf = clamp_values[1].reshape(-1)
+            nc_full = nc
 
-            A_col0 = _get_fitpack_packed_column(A, offset, k, 0, y_w.shape[0])
-            A_col_last = _get_fitpack_packed_column(A, offset, k, nc - 1, y_w.shape[0])
-            
-            y_w = y_w - (
-                A_col0[:, None] * ci[None, :] + A_col_last[:, None] * cf[None, :]
+            A, offset, nc, y_w, x, y, w = _lsq_clamp_preprocess(
+                A, offset, nc, k, y_w, ci, cf, x, y, w
             )
-
-            A, offset, nc, y_w = _reduce_packed_for_clamp(A, offset, nc, k, y_w)
-            
-            x_reduced = x[1:-1]
-            y_reduced = y[1:-1]
-            w_reduced = w[1:-1]
             
             _dierckx.qr_reduce(A, offset, nc, y_w)
+            c, residuals, fp = _dierckx.fpback(A, nc, x, y, t, k, w, y_w)   
+            
+            c = _lsq_clamp_postprocess(c, ci, cf, nc_full)
 
-            c, residuals, fp = _dierckx.fpback(A, nc, x_reduced, y_reduced, t, k,
-                                                                 w_reduced, y_w)
-            
-            extradim = c.shape[1] if c.ndim > 1 else 1
-            c_full = np.zeros((nc + 2, extradim))
-            c_full[0, :] = ci
-            c_full[-1, :] = cf
-            c_full[1:-1, :] = c.reshape(nc, extradim)
-            c = c_full
-            
             return A, y_w, c, fp, residuals
         
         else:
