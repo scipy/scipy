@@ -70,6 +70,47 @@ def _diff_dual_poly(j, k, y, d, t):
                         if (j + p) not in comb[i//d]])
     return res
 
+def _get_fitpack_packed_column(A_packed, offset, k, j, m):
+    """Extract conceptual dense column j from packed storage."""
+    p = j - offset
+    in_band = (p >= 0) & (p < k + 1)
+
+    col = np.zeros(m)
+    rows = np.where(in_band)[0]
+    col[rows] = A_packed[rows, p[rows]]
+    return col 
+
+def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w):
+    """
+    Builds a 2D mask to remove elements corresponding to Rows/Columns
+     0, -1 of the dense design matrix from the FITPACK packed matrix.
+    Also updates the offset array. This prepares the matrices for the 
+    qr_reduce function in _lsq_solve_qr for the clamped case. 
+    """
+    m = A_packed.shape[0]
+
+    A_reduced = np.zeros((m - 2, k + 1))
+    offset_reduced = np.zeros(m - 2, dtype=np.int64)
+
+    for i_new, i_old in enumerate(range(1, m - 1)):
+        mask_cells = np.ones(k + 1, dtype=bool)
+        if offset[i_old] == 0:
+            mask_cells[0] = False
+        
+        if offset[i_old] + k == nc - 1:
+            mask_cells[k] = False
+
+        kept = A_packed[i_old][mask_cells]
+        A_reduced[i_new, :len(kept)] = kept
+
+        if offset[i_old] == 0:
+            offset_reduced[i_new] = 0
+        else:
+            offset_reduced[i_new] = offset[i_old] - 1
+
+    y_w_reduced = y_w[1: -1].copy()
+    return A_reduced, offset_reduced, nc-2, y_w_reduced
+
 
 class _BSpline:
     """NumPy Backend for BSpline.
@@ -2066,10 +2107,6 @@ clamp_values=None):
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
     if clamp_values is not None:
-        if method == "qr":
-            raise NotImplementedError(
-                "Currently, clamp_values requires method='norm-eq', got 'qr'"
-            )
         if isinstance(clamp_values, np.ndarray):
             raise ValueError(
                 "clamp_values should be a tuple of a numeric type, got a `ndarray`."
@@ -2185,7 +2222,7 @@ clamp_values=None):
             c = c_full
 
     elif method == "qr":
-        _, _, c, _, _ = _lsq_solve_qr(x, yy, t, k, w)
+        _, _, c, _, _ = _lsq_solve_qr(x, yy, t, k, w, clamp_values=clamp_values)
 
         if was_complex:
             c = c.view(complex)
@@ -2225,7 +2262,7 @@ def _lsq_solve_qr_for_root_rati_periodic(x, y, t, k, w):
     return R, A1, A2, Z, y_w, c, p, residuals
 
 
-def _lsq_solve_qr(x, y, t, k, w, periodic=False):
+def _lsq_solve_qr(x, y, t, k, w, periodic=False, clamp_values=None):
     """Solve for the LSQ spline coeffs given x, y and knots.
 
     `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
@@ -2235,9 +2272,44 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False):
     y_w = y * w[:, None]
     if not periodic:
         A, offset, nc = _dierckx.data_matrix(x, t, k, w)
-        _dierckx.qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
-        c, residuals, fp = _dierckx.fpback(A, nc, x, y, t, k, w, y_w)
-        return A, y_w, c, fp, residuals
+
+        if clamp_values is not None:
+            
+            ci = clamp_values[0].reshape(-1)
+            cf = clamp_values[1].reshape(-1)
+
+            A_col0 = _get_fitpack_packed_column(A, offset, k, 0, y_w.shape[0])
+            A_col_last = _get_fitpack_packed_column(A, offset, k, nc - 1, y_w.shape[0])
+            
+            y_w = y_w - (
+                A_col0[:, None] * ci[None, :] + A_col_last[:, None] * cf[None, :]
+            )
+
+            A, offset, nc, y_w = _reduce_packed_for_clamp(A, offset, nc, k, y_w)
+            
+            x_reduced = x[1:-1]
+            y_reduced = y[1:-1]
+            w_reduced = w[1:-1]
+            
+            _dierckx.qr_reduce(A, offset, nc, y_w)
+
+            c, residuals, fp = _dierckx.fpback(A, nc, x_reduced, y_reduced, t, k,
+                                                                 w_reduced, y_w)
+            
+            extradim = c.shape[1] if c.ndim > 1 else 1
+            c_full = np.zeros((nc + 2, extradim))
+            c_full[0, :] = ci
+            c_full[-1, :] = cf
+            c_full[1:-1, :] = c.reshape(nc, extradim)
+            c = c_full
+            
+            return A, y_w, c, fp, residuals
+        
+        else:
+            _dierckx.qr_reduce(A, offset, nc, y_w)
+            c, residuals, fp = _dierckx.fpback(A, nc, x, y, t, k, w, y_w)
+            return A, y_w, c, fp, residuals
+    
     else:
         # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L221-L238
         R, H1, H2, offset, nc = _dierckx.data_matrix_periodic(x, t, k, w, False)
