@@ -3881,6 +3881,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(p, xp.asarray([-1.0, 2.0]))
         assert k.size == 0
 
+        # Round-trip through invres, matching the docstring Examples section.
         b, a = invres(r, p, k)
         assert_almost_equal(b, xp.asarray([4.0, 1.0]))
         assert_almost_equal(a, xp.asarray([1.0, -1.0, -2.0]))
