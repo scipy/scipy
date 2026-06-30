@@ -30,7 +30,8 @@ from types import GenericAlias
 import numpy as np
 import scipy
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, xp_capabilities, xp_ravel, xp_fill_diagonal, is_torch,
+    array_namespace, is_numpy, xp_capabilities, xp_ravel, xp_fill_diagonal,
+    is_torch, xp_result_type,
 )
 
 __all__ = ["AAA", "FloaterHormannInterpolator"]
@@ -126,6 +127,11 @@ class _BarycentricRational:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
             CC = xp.divide(1, xp.subtract(zv[..., None], self._support_points))
+            dtype = xp_result_type(CC, weights, support_values,
+                                   force_floating=True, xp=xp)
+            CC = xp.astype(CC, dtype)
+            weights = xp.astype(weights, dtype)
+            support_values = xp.astype(support_values, dtype)
             # Vector of values
             r = CC @ (weights * support_values) / (CC @ weights)
 
