@@ -8201,8 +8201,11 @@ def _parse_kstest_args(data1, data2, args, N):
         rvsfunc = data1
 
     if isinstance(data2, str):
-        special_distributions = {'norm': special.ndtr}
-        cdf = special_distributions.get(data2, getattr(distributions, data2).cdf)
+        # Resolve the distribution name to its `.cdf` method. This relies on
+        # NumPy-only machinery, so passing a distribution name is supported
+        # only for NumPy array input; for other array types, pass a `cdf`
+        # callable instead (gh-25448).
+        cdf = getattr(distributions, data2).cdf
         data2 = None
     elif callable(data2):
         cdf = data2
@@ -8218,9 +8221,17 @@ def _kstest_n_samples(kwargs):
     return 1 if (isinstance(cdf, str) or callable(cdf)) else 2
 
 
+_kstest_extra_note = """\
+Specifying a distribution by name (passing a string for ``rvs`` or ``cdf``)
+    relies on the distribution's NumPy-only methods, so it is supported only
+    for NumPy array input. For other array types, pass a callable ``cdf``
+    (and array data, for the two-sample test) instead.
+"""
+
+
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  jax_jit=False, cpu_only=True,  # see ks_1samp/ks_2samp
-                 marray=True)
+                 marray=True, extra_note=_kstest_extra_note)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")

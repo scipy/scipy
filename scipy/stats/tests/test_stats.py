@@ -4643,7 +4643,10 @@ class TestKSTest:
     """Tests kstest and ks_1samp agree with K-S various sizes, alternatives, modes."""
 
     def _test_kstest_and_ks1samp(self, x, alternative, mode='auto', decimal=14):
-        result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
+        # `special.ndtr` (a callable) is used instead of the 'norm' string
+        # because a distribution name resolves to NumPy-only methods, whereas
+        # this test also runs with non-NumPy array backends (gh-25448).
+        result = stats.kstest(x, special.ndtr, alternative=alternative, mode=mode)
         result_1samp = stats.ks_1samp(x, special.ndtr,
                                       alternative=alternative, mode=mode)
         xp_assert_close(result.statistic, result_1samp.statistic)
@@ -4703,7 +4706,38 @@ class TestKSTest:
         xp_assert_equal(res.statistic_location, ref.statistic_location)
         xp_assert_equal(res.statistic_sign, ref.statistic_sign)
 
-    # missing: no test that uses *args
+    def test_str_dist_with_args_numpy_gh25448(self):
+        # Specifying the distribution by name (a string) is NumPy-only, and
+        # distribution parameters may be passed via `args`. Regression test
+        # for gh-25448: `kstest(x, 'norm', args=(loc, scale))` erroneously
+        # raised a `TypeError` because the 'norm' name resolved to
+        # `special.ndtr`, which does not accept loc/scale. Results must match
+        # passing the corresponding CDF callable directly.
+        rng = np.random.default_rng(8945394895618)
+        x = rng.normal(loc=2.0, scale=3.0, size=100)
+        loc, scale = 2.0, 3.0
+
+        # string name without `args` (standard normal)
+        res0 = stats.kstest(x, 'norm')
+        ref0 = stats.kstest(x, special.ndtr)
+        np.testing.assert_allclose(res0.statistic, ref0.statistic)
+        np.testing.assert_allclose(res0.pvalue, ref0.pvalue)
+
+        # string name with loc/scale via `args`
+        ref = stats.kstest(x, stats.norm(loc=loc, scale=scale).cdf)
+        res = stats.kstest(x, 'norm', args=(loc, scale))
+        np.testing.assert_allclose(res.statistic, ref.statistic)
+        np.testing.assert_allclose(res.pvalue, ref.pvalue)
+
+        res1 = stats.ks_1samp(x, stats.norm.cdf, args=(loc, scale))
+        np.testing.assert_allclose(res1.statistic, ref.statistic)
+        np.testing.assert_allclose(res1.pvalue, ref.pvalue)
+
+        # `args` with loc only (scale defaults to 1) also works
+        res_loc = stats.kstest(x, 'norm', args=(loc,))
+        ref_loc = stats.kstest(x, stats.norm(loc=loc).cdf)
+        np.testing.assert_allclose(res_loc.statistic, ref_loc.statistic)
+        np.testing.assert_allclose(res_loc.pvalue, ref_loc.pvalue)
 
 
 @make_xp_test_case(stats.ks_1samp)
