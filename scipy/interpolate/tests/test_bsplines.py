@@ -1850,7 +1850,7 @@ class TestLSQ:
                 make_lsq_spline(x, y, t, k, method=solver, clamp_values=clamp_values)
         else:
             sp = make_lsq_spline(x, y, t, k, method=solver, clamp_values=clamp_values)
-    
+
             assert math.isclose(sp(x[0]), clamp_values[0], abs_tol=1e-14)
             assert math.isclose(sp(x[-1]), clamp_values[1], abs_tol=1e-14)
     
@@ -1861,12 +1861,14 @@ class TestLSQ:
         y = np.column_stack([np.sin(x), np.cos(x)])
         k = 3
         t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+
+        x, y, t = xp.asarray(x), xp.asarray(y), xp.asarray(t)
         
         clamp_values = ((0.5, -0.5), (-0.3, 0.7))
         spl = make_lsq_spline(x, y, t, k=k, method=solver, clamp_values=clamp_values)
         
-        xp_assert_close(spl(x[0]), np.array([0.5, -0.5]), atol=1e-12)
-        xp_assert_close(spl(x[-1]), np.array([-0.3, 0.7]), atol=1e-12)
+        xp_assert_close(spl(x[0]), xp.asarray([0.5, -0.5]), atol=1e-12)
+        xp_assert_close(spl(x[-1]), xp.asarray([-0.3, 0.7]), atol=1e-12)
     
     @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     def test_clamp_values_shape_mismatch(self, xp, solver):
@@ -1876,6 +1878,8 @@ class TestLSQ:
         k = 3
         t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
         
+        x, y, t = xp.asarray(x), xp.asarray(y), xp.asarray(t)
+
         with assert_raises(ValueError, match="dimension"):
             make_lsq_spline(x, y, t, k=k, method=solver, clamp_values=(0.5, -0.3))
     
@@ -1891,13 +1895,16 @@ class TestLSQ:
         t = np.r_[(x[0],) * (k+1), [3., 5., 7.], (x[-1],) * (k+1)]
         y0, y1 = 0.5, -0.3
         
+        x, y, t = xp.asarray(x), xp.asarray(y), xp.asarray(t)
+
         # dense implementation
         N = BSpline.design_matrix(x, t, k).toarray()
         Q = y - N[:, 0] * y0 - N[:, -1] * y1
         N_reduced = N[:, 1:-1]
         c_free = np.linalg.solve(N_reduced.T @ N_reduced, N_reduced.T @ Q)
         c_ref = np.concatenate([[y0], c_free, [y1]])
-        
+        c_ref = xp.asarray(c_ref)
+
         spl = make_lsq_spline(x, y, t, k=k, method=solver, clamp_values=(y0, y1))
         
         xp_assert_close(spl.c, c_ref, atol=1e-12)
@@ -1913,10 +1920,12 @@ class TestLSQ:
     def test_clamp_values_invalid_input(self, clamp_values, reason, xp, solver):
         # clamp_values must be a 2-tuple of finite real numbers
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        t = t.copy()
+        t = np.asarray(t.copy())
+
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
-        
+        t = xp.asarray(t)
+
         with assert_raises(ValueError):
             make_lsq_spline(x, y, t, k, method=solver, clamp_values=clamp_values)
 
@@ -1924,11 +1933,13 @@ class TestLSQ:
     def test_clamp_values_invalid_knot_vector(self, xp, solver):
         # clamp_values requires a clamped knot vector
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        t = t.copy()
+        t = np.asarray(t.copy())
+
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
         t[0] = float(self.x[0]) - 1   # break the clamped property at the left
-        
+        t = xp.asarray(t)
+
         with assert_raises(ValueError):
             make_lsq_spline(x, y, t, k, method=solver, clamp_values=(5, 8))
 
@@ -1936,9 +1947,11 @@ class TestLSQ:
     def test_clamp_values_valid(self, xp, solver):
         # valid inputs work without error
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        t = t.copy()
+        t = np.asarray(t.copy())
+
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
+        t = xp.asarray(t)
         
         make_lsq_spline(x, y, t, k, method=solver, clamp_values=(5, 8))
 
