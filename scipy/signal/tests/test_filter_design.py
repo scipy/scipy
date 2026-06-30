@@ -997,6 +997,50 @@ class TestFreqz:
                     xp_assert_close(ww, xp.asarray(w[k])[None])
                     xp_assert_close(hh, xp.asarray(h[k])[None])
 
+    def test_freqz_multidim_without_trailing_axis(self, xp):
+        # gh-17387: 2-D coefficients without a trailing length-1 axis
+        b = xp.zeros((128, 10))
+        w, h = freqz(b)
+        assert w.shape == (512,)
+        assert h.shape == (10, 512)
+        w2, h2 = freqz(b[:, 0])
+        xp_assert_close(w, w2)
+        xp_assert_close(h[0], h2)
+
+    def test_freqz_1d_regression_unchanged(self, xp):
+        # gh-17387: 1-D inputs must behave exactly as before the fix
+        b = xp.asarray([0.5, 0.5])
+        a = xp.asarray([1.0, -0.25])
+        w, h = freqz(b, a, worN=8)
+        w_ref, h_ref = freqz(xp.asarray([0.5, 0.5]), xp.asarray([1.0, -0.25]), worN=8)
+        xp_assert_close(w, w_ref, rtol=1e-7)
+        xp_assert_close(h, h_ref, rtol=1e-7)
+
+    def test_freqz_2d_slices_match_1d(self, xp):
+        # gh-17387: each 2-D slice must match the equivalent 1-D freqz call
+        rng = np.random.RandomState(42)
+        b = xp.asarray(rng.randn(4, 5))
+        w, h = freqz(b, worN=16)
+        assert w.shape == (16,)
+        assert h.shape == (5, 16)
+        for k in range(5):
+            w1, h1 = freqz(b[:, k], worN=16)
+            xp_assert_close(w, w1, rtol=1e-7)
+            xp_assert_close(h[k], h1, rtol=1e-7)
+
+    def test_freqz_3d_slices_match_1d(self, xp):
+        # gh-17387: 3-D coefficient arrays generalize via trailing-axis insertion
+        rng = np.random.RandomState(123)
+        b = xp.asarray(rng.randn(4, 3, 2))
+        w, h = freqz(b, worN=32)
+        assert w.shape == (32,)
+        assert h.shape == (3, 2, 32)
+        for i in range(3):
+            for j in range(2):
+                w1, h1 = freqz(b[:, i, j], worN=32)
+                xp_assert_close(w, w1, rtol=1e-7)
+                xp_assert_close(h[i, j], h1, rtol=1e-7)
+
     def test_broadcasting4(self, xp):
         # Test broadcasting with worN a 2-D array.
         np.random.seed(123)
