@@ -384,6 +384,15 @@ def test_negative_weights(method):
     assert_allclose(SP, directed_negative_weighted_SP, atol=1e-10)
 
 
+def test_dijkstra_negative_weights():
+    msg = "does not support negative edge weights"
+    with assert_raises(ValueError, match=msg):
+        dijkstra(directed_negative_weighted_G, directed=True)
+    with assert_raises(ValueError, match=msg):
+        shortest_path(directed_negative_weighted_G, method='D',
+                      directed=True)
+
+
 def test_masked_input():
     np.ma.masked_equal(directed_G, 0)
 
