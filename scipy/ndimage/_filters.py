@@ -41,6 +41,7 @@ from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
 from . import _rank_filter_1d
+from . import _hampel_1d
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -49,7 +50,8 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
-           'generic_filter1d', 'generic_filter', 'vectorized_filter']
+           'generic_filter1d', 'generic_filter', 'vectorized_filter',
+           'hampel_filter']
 
 
 def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
@@ -2183,6 +2185,190 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     """
     return _rank_filter(input, percentile, size, footprint, output, mode,
                         cval, origin, 'percentile', axes=axes)
+
+
+def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
+                  return_median=False, return_indices=False):
+    """Apply a 1-D Hampel filter for outlier detection and replacement.
+
+    Each sample is compared against the local median of a centred window of
+    length ``size``. The local median absolute deviation (MAD) is computed
+    over the same window. Samples for which
+    ``abs(input[i] - median[i]) > threshold * MAD[i]`` are classified as
+    outliers and replaced by the local median; all other samples pass
+    through unchanged.
+
+    The local median is computed with `median_filter` (which uses the fast
+    1-D rank filter) and the MAD is computed in ``O(log size)`` per sample
+    by a C extension that consumes both the original signal and the
+    pre-computed median.
+
+    Parameters
+    ----------
+    input : array_like
+        Input 1-D array.
+    size : int
+        Window length. Must be a positive odd integer. The window is
+        centred on each sample, so it covers ``size // 2`` neighbours on
+        each side.
+    threshold : float, optional
+        Outlier threshold expressed in units of MAD. Default is ``3.0``.
+    mode : str, optional
+        Boundary handling for both the median and the MAD computations.
+        Same modes as `median_filter` (default ``"reflect"``).
+    cval : scalar, optional
+        Constant fill value used when ``mode='constant'``. Default ``0.0``.
+    return_median : bool, optional
+        If True, also return the local-median signal. Default is False.
+    return_indices : bool, optional
+        If True, also return the sorted integer indices of replaced samples.
+        Default is False.
+
+    Returns
+    -------
+    filtered : ndarray
+        Signal with detected outliers replaced by the local median.
+    median : ndarray, optional
+        Local median signal (output of `median_filter`).
+        Returned only when ``return_median`` is True.
+    changed_indices : ndarray, optional
+        Sorted array of integer indices into ``input`` whose values were
+        replaced. Returned only when ``return_indices`` is True.
+
+    Notes
+    -----
+    NaN and Inf values in ``input`` produce undefined results.  Both the
+    underlying `median_filter` and the MAD computation use heap-based
+    comparisons where IEEE NaN has no well-defined ordering, so the
+    local median and MAD near such samples may be incorrect.  Callers
+    should replace or remove non-finite values before filtering.
+
+    References
+    ----------
+    .. [1] F. R. Hampel, "The influence curve and its role in robust
+       estimation," *Journal of the American Statistical Association*,
+       vol. 69, no. 346, pp. 383-393, 1974.
+       :doi:`10.1080/01621459.1974.10482962`
+    .. [2] H. Liu, S. Shah and W. Jiang, "On-line outlier detection and
+       data cleaning," *Computers & Chemical Engineering*, vol. 28,
+       no. 9, pp. 1635-1647, 2004.
+       :doi:`10.1016/j.compchemeng.2004.01.009`
+    .. [3] R. K. Pearson, Y. Neuvo, J. Astola and M. Gabbouj,
+       "Generalized Hampel Filters," *EURASIP Journal on Advances in
+       Signal Processing*, 2016:87, 2016.
+       :doi:`10.1186/s13634-016-0383-6`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import ndimage
+    >>> x = np.array([1.0, 2.0, 1.5, 2.5, 50.0, 2.0, 1.0, 2.5])
+    >>> filt = ndimage.hampel_filter(x, size=5)
+    >>> filt[4]
+    np.float64(2.0)
+
+    Request the indices of replaced samples in addition to the filtered
+    signal:
+
+    >>> filt, idx = ndimage.hampel_filter(x, size=5, return_indices=True)
+    >>> idx
+    array([4])
+    """
+    input_arr = np.asarray(input)
+    if input_arr.ndim != 1:
+        raise ValueError("hampel_filter supports 1-D arrays only")
+    if np.iscomplexobj(input_arr):
+        raise TypeError("Complex type not supported")
+    size = operator.index(size)
+    if size <= 0:
+        raise ValueError("size must be a positive integer")
+    if size % 2 == 0:
+        raise ValueError(
+            "size must be odd; the Hampel filter is defined for "
+            "centred windows of odd length"
+        )
+    threshold = float(threshold)
+    if threshold < 0.0 or not np.isfinite(threshold):
+        raise ValueError("threshold must be a non-negative finite number")
+
+    # Pick the kernel dtype the same way `_rank_filter` does, so dtype
+    # coverage matches `median_filter` exactly. The output is cast back to
+    # the caller's dtype on the way out (`casting='unsafe'` for the int
+    # path, matching `_rank_filter`).
+    in_dtype = input_arr.dtype
+    if in_dtype in (np.int64, np.float64, np.float32):
+        kernel_dtype = in_dtype
+    elif in_dtype == np.float16:
+        kernel_dtype = np.dtype(np.float32)
+    elif np.result_type(in_dtype, np.int64) == np.int64:
+        kernel_dtype = np.dtype(np.int64)
+    elif in_dtype.kind in 'biu':
+        # any remaining bool / integer / unsigned type
+        kernel_dtype = np.dtype(np.int64)
+    else:
+        raise RuntimeError('Unsupported array type')
+
+    x = np.ascontiguousarray(input_arr, dtype=kernel_dtype)
+
+    # Degenerate inputs: no filtering possible. Warn and pass the signal
+    # through unchanged (with the same return-tuple shape the caller asked
+    # for). Cases covered:
+    #   - empty input
+    #   - size == 1 (window of one element: MAD is always 0, nothing changes)
+    #   - size larger than the input length
+    degenerate_reason = None
+    if x.size == 0:
+        degenerate_reason = "input is empty"
+    elif size == 1:
+        degenerate_reason = "size == 1, no neighbours to compute MAD"
+    elif size > x.size:
+        degenerate_reason = (f"size ({size}) is larger than input length "
+                             f"({x.size})")
+    if degenerate_reason is not None:
+        warnings.warn(
+            f"hampel_filter: {degenerate_reason}; returning input unchanged.",
+            UserWarning, stacklevel=2,
+        )
+        filtered = np.empty(x.shape, dtype=in_dtype)
+        np.copyto(filtered, x, casting='unsafe')
+        median = filtered.copy()
+        changed_mask = np.zeros(x.shape, dtype=bool)
+        if not return_median and not return_indices:
+            return filtered
+        result = [filtered]
+        if return_median:
+            result.append(median)
+        if return_indices:
+            result.append(np.flatnonzero(changed_mask))
+        return tuple(result)
+
+    median = median_filter(x, size=size, mode=mode, cval=cval)
+    median = np.ascontiguousarray(median, dtype=x.dtype)
+
+    kernel_out = np.empty_like(x)
+    changed_mask = np.zeros(x.shape, dtype=bool)
+    mode_code = _ni_support._extend_mode_to_code(mode, is_filter=True)
+    cval_cast = x.dtype.type(cval)
+    _hampel_1d.hampel(x, median, int(size), float(threshold),
+                      int(mode_code), cval_cast, kernel_out, changed_mask)
+
+    if kernel_dtype == in_dtype:
+        filtered = kernel_out
+    else:
+        filtered = np.empty(x.shape, dtype=in_dtype)
+        np.copyto(filtered, kernel_out, casting='unsafe')
+        median_out = np.empty(x.shape, dtype=in_dtype)
+        np.copyto(median_out, median, casting='unsafe')
+        median = median_out
+
+    if not return_median and not return_indices:
+        return filtered
+    result = [filtered]
+    if return_median:
+        result.append(median)
+    if return_indices:
+        result.append(np.flatnonzero(changed_mask))
+    return tuple(result)
 
 
 @_ni_docstrings.docfiller
