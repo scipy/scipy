@@ -3873,6 +3873,18 @@ class TestPartialFractionExpansion:
                                     [1, 1 - 1j, 1 + 1j])
         assert k.size == 0
 
+    @make_xp_test_case(residue, invres)
+    def test_residue_docstring_example_matches_computation(self, xp):
+        """Sanity check for the Examples section in signal.residue (gh-7168)."""
+        r, p, k = residue(xp.asarray([4.0, 1.0]), xp.asarray([1.0, -1.0, -2.0]))
+        assert_almost_equal(r, xp.asarray([1.0, 3.0]))
+        assert_almost_equal(p, xp.asarray([-1.0, 2.0]))
+        assert k.size == 0
+
+        b, a = invres(r, p, k)
+        assert_almost_equal(b, xp.asarray([4.0, 1.0]))
+        assert_almost_equal(a, xp.asarray([1.0, -1.0, -2.0]))
+
     @make_xp_test_case(residue)
     def test_residue_leading_zeros(self, xp):
         # Leading zeros in numerator or denominator must not affect the answer.
