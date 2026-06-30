@@ -42,7 +42,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'aadya940/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
