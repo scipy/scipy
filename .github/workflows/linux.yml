@@ -29,7 +29,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: mypy (py3.12) & dev deps (py3.14), fast, spin
+    name: mypy (py3.12) & dev deps (py3.15), fast, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -39,12 +39,12 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.12", "3.14-dev"] # this run will use python dev versions when available
+        python-version: ["3.12", "3.15-dev"] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
           - maintenance-branch: true
-            python-version: "3.14-dev"
+            python-version: "3.15-dev"
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -70,7 +70,7 @@ jobs:
           python -m pip install --group build --group dev-cli --group test-core --group test-mp 
 
       - name: Install Python packages from repositories
-        if: matrix.python-version == '3.14-dev' # this run will use python dev versions when available
+        if: matrix.python-version == '3.15-dev' # this run will use python dev versions when available
         run: |
           python -m pip install --group build --group dev-cli --group test-core --group test-mp
           python -m pip install git+https://github.com/numpy/numpy.git
