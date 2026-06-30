@@ -82,10 +82,30 @@ def _get_fitpack_packed_column(A_packed, offset, k, j, m):
 
 def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w):
     """
-    Builds a 2D mask to remove elements corresponding to Rows/Columns
-     0, -1 of the dense design matrix from the FITPACK packed matrix.
-    Also updates the offset array. This prepares the matrices for the 
-    qr_reduce function in _lsq_solve_qr for the clamped case. 
+    Drop boundary rows and the first/last dense columns from a FITPACK
+    packed matrix, returning a smaller packed matrix ready for `qr_reduce`.
+
+    This is the preprocessing step for the clamped LSQ problem. After the
+    boundary coefficients are pinned (c[0] = ci, c[-1] = cf), the LSQ
+    system reduces to solving for the (nc - 2) free coefficients with the
+    first and last dense rows/columns removed.
+
+    The transformation in the packed format:
+
+    1. Boundary rows (row 0 and row m-1): contributed only to the pinned
+       coefficients, so we drop them outright.
+    2. Dense column 0: per the packing formula
+       `A_dense[i, j] = A_packed[i, j - offset[i]]`,
+       cell (i, 0) of the dense matrix sits at packed position 0 of any
+       row where `offset[i] == 0`. For those rows we shift the packed
+       entries left by one; the trailing slot becomes 0.
+    3. Dense column nc-1: similarly, cell (i, nc-1) sits at packed position
+       k of any row where `offset[i] + k == nc - 1`. For those rows we
+       copy only the first k packed entries; the trailing slot becomes 0.
+    4. Offsets: after dropping dense column 0, the column numbering shifts
+       left by one, so all offsets decrement by 1. The exception is rows
+       whose leftmost cell was the dropped one - their new leftmost cell
+       is at new column 0, so their offset stays 0.
     """
     # Drop boundary rows
     A_kept = A_packed[1: -1]
@@ -2123,6 +2143,8 @@ clamp_values=None):
                 f"""clamp_values should be of type float or int, got 
                     {clamp_values.dtype}."""
             )
+        if not np.all(np.isfinite(clamp_values)):
+            raise ValueError("clamp_values must contain only finite numbers")
         if np.any(t[:k + 1] != t[0]) or np.any(t[-(k + 1):] != t[-1]):
             raise ValueError(
                 f"""Invalid knot vector, {t}, when clamp_values is passed, the first 
