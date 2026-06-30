@@ -1065,7 +1065,7 @@ GEN_HEEVX(z, c128_t, double);
  */
 #define GEN_SYGV(PREFIX, TYPE, RTYPE) \
 inline void \
-call_sy_he_gv(int *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+call_sy_he_gv(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## sygv)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, info); \
 };
@@ -1076,7 +1076,7 @@ GEN_SYGV(d, double, double);
 
 #define GEN_HEGV(PREFIX, TYPE, RTYPE) \
 inline void \
-call_sy_he_gv(int *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+call_sy_he_gv(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## hegv)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, rwork, info); \
 };
@@ -1092,7 +1092,7 @@ GEN_HEGV(z, c128_t, double);
  */
 #define GEN_SYGVD(PREFIX, TYPE, RTYPE) \
 inline void \
-call_sy_he_gvd(int *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
+call_sy_he_gvd(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## sygvd)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, iwork, liwork, info); \
 };
@@ -1103,7 +1103,7 @@ GEN_SYGVD(d, double, double);
 
 #define GEN_HEGVD(PREFIX, TYPE, RTYPE) \
 inline void \
-call_sy_he_gvd(int *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
+call_sy_he_gvd(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## hegvd)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, rwork, lrwork, iwork, liwork, info); \
 };
@@ -1119,7 +1119,7 @@ GEN_HEGVD(z, c128_t, double);
  */
 #define GEN_SYGVX(PREFIX, TYPE, RTYPE) \
 inline void \
-call_sy_he_gvx(int *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info) \
+call_sy_he_gvx(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## sygvx)(itype, jobz, range, uplo, n, a, lda, b, ldb, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, iwork, ifail, info); \
 };
@@ -1130,7 +1130,7 @@ GEN_SYGVX(d, double, double)
 
 #define GEN_HEGVX(PREFIX, TYPE, RTYPE) \
 inline void \
-call_sy_he_gvx(int *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info) \
+call_sy_he_gvx(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## hegvx)(itype, jobz, range, uplo, n, a, lda, b, ldb, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, rwork, iwork, ifail, info); \
 };
