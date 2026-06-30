@@ -4715,6 +4715,26 @@ def buttap(N, *, xp=None, device=None):
     --------
     butter : Filter design function using this prototype
 
+    Examples
+    --------
+    Construct the analog prototype of a fourth-order Butterworth lowpass
+    filter and plot its frequency response, which has its cutoff at 1 rad/s:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> z, p, k = signal.buttap(4)
+    >>> b, a = signal.zpk2tf(z, p, k)
+    >>> w, h = signal.freqs(b, a, worN=np.logspace(-1, 1, 1000))
+    >>> plt.semilogx(w, 20 * np.log10(abs(h)))
+    >>> plt.axvline(1, color='green')  # cutoff frequency
+    >>> plt.title('Butterworth analog lowpass filter prototype')
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
+
     """
     if xp is None:
         xp = np_compat
@@ -4757,6 +4777,27 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     See Also
     --------
     cheby1 : Filter design function using this prototype
+
+    Examples
+    --------
+    Construct the analog prototype of a fourth-order Chebyshev type I lowpass
+    filter with 5 dB of passband ripple and plot its frequency response:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> z, p, k = signal.cheb1ap(4, 5)
+    >>> b, a = signal.zpk2tf(z, p, k)
+    >>> w, h = signal.freqs(b, a, worN=np.logspace(-1, 1, 1000))
+    >>> plt.semilogx(w, 20 * np.log10(abs(h)))
+    >>> plt.axhline(-5, color='red')  # passband ripple level (-rp dB)
+    >>> plt.axvline(1, color='green')  # cutoff frequency
+    >>> plt.title('Chebyshev type I analog lowpass filter prototype')
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
 
     """
     if xp is None:
@@ -4818,6 +4859,27 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     See Also
     --------
     cheby2 : Filter design function using this prototype
+
+    Examples
+    --------
+    Construct the analog prototype of a fourth-order Chebyshev type II lowpass
+    filter with 40 dB of stopband attenuation and plot its frequency response:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> z, p, k = signal.cheb2ap(4, 40)
+    >>> b, a = signal.zpk2tf(z, p, k)
+    >>> w, h = signal.freqs(b, a, worN=np.logspace(-1, 1, 1000))
+    >>> plt.semilogx(w, 20 * np.log10(abs(h)))
+    >>> plt.axhline(-40, color='red')  # stopband attenuation level (-rs dB)
+    >>> plt.axvline(1, color='green')  # cutoff frequency
+    >>> plt.title('Chebyshev type II analog lowpass filter prototype')
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
 
     """
     if xp is None:
@@ -5023,6 +5085,29 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
 
     .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",
            https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
+
+    Examples
+    --------
+    Construct the analog prototype of a fourth-order elliptic lowpass filter
+    with 5 dB of passband ripple and 40 dB of stopband attenuation, and plot
+    its frequency response:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> z, p, k = signal.ellipap(4, 5, 40)
+    >>> b, a = signal.zpk2tf(z, p, k)
+    >>> w, h = signal.freqs(b, a, worN=np.logspace(-1, 1, 1000))
+    >>> plt.semilogx(w, 20 * np.log10(abs(h)))
+    >>> plt.axhline(-5, color='red')  # passband ripple level (-rp dB)
+    >>> plt.axhline(-40, color='orange')  # stopband attenuation level (-rs dB)
+    >>> plt.axvline(1, color='green')  # cutoff frequency
+    >>> plt.title('Elliptic analog lowpass filter prototype')
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
 
     """
     if xp is None:
@@ -5375,6 +5460,26 @@ def besselap(N, norm='phase', *, xp=None, device=None):
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html
+
+    Examples
+    --------
+    Construct the analog prototype of a fourth-order Bessel lowpass filter
+    and plot its frequency response:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> z, p, k = signal.besselap(4)
+    >>> b, a = signal.zpk2tf(z, p, k)
+    >>> w, h = signal.freqs(b, a, worN=np.logspace(-1, 1, 1000))
+    >>> plt.semilogx(w, 20 * np.log10(abs(h)))
+    >>> plt.axvline(1, color='green')  # cutoff frequency
+    >>> plt.title('Bessel analog lowpass filter prototype')
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
 
     """
     if xp is None:
