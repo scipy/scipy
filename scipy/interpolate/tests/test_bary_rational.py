@@ -272,6 +272,7 @@ class TestAAA:
         zz = np.logspace(-15, 0, 500)
         assert_allclose(r(zz), np.sqrt(zz), rtol=1e-5)
 
+@pytest.mark.skip_xp_backends("torch", reason="torch backend is not implemented for barycentric rational interpolation")
 @xp_capabilities()
 class BatchFloaterHormann:
     # FloaterHormann class with reference batch behaviour
@@ -290,6 +291,7 @@ class BatchFloaterHormann:
         y = xp.reshape(y, self._batch_shape + x.shape)
         return xp.moveaxis(y, -1, self._axis) if x.shape else y
 
+@pytest.mark.skip_xp_backends("torch", reason="torch backend is not implemented for barycentric rational interpolation")
 @make_xp_test_case(FloaterHormannInterpolator)
 class TestFloaterHormann:
     def runge(self, z):
@@ -405,6 +407,7 @@ class TestFloaterHormann:
         mask = (p.real >= -1) & (p.real <= 1) & (xp.abs(p.imag) < 1.e-12)
         assert xp.sum(mask) == 0
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason="requires NumPy-only poles() support")
     @pytest.mark.parametrize('eval_shape', [(), (1,), (3,)])
     @pytest.mark.parametrize('axis', [-1, 0, 1])
     def test_batch(self, eval_shape, axis, xp):
