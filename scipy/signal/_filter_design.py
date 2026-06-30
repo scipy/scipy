@@ -4715,6 +4715,20 @@ def buttap(N, *, xp=None, device=None):
     --------
     butter : Filter design function using this prototype
 
+    Examples
+    --------
+    Design a 3rd-order Butterworth analog prototype and inspect its poles:
+
+    >>> from scipy.signal import buttap
+    >>> import numpy as np
+    >>> z, p, k = buttap(3)
+    >>> z
+    array([], dtype=float64)
+    >>> np.round(p, 4)
+    array([-0.5   +0.866j, -1.    +0.j   , -0.5   -0.866j])
+    >>> k
+    1.0
+
     """
     if xp is None:
         xp = np_compat
@@ -4757,6 +4771,20 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     See Also
     --------
     cheby1 : Filter design function using this prototype
+
+    Examples
+    --------
+    Design a 3rd-order Chebyshev type I prototype with 1 dB passband ripple:
+
+    >>> from scipy.signal import cheb1ap
+    >>> import numpy as np
+    >>> z, p, k = cheb1ap(3, 1)
+    >>> z
+    array([], dtype=float64)
+    >>> np.round(p, 4)
+    array([-0.2471+0.966j , -0.4942+0.j    , -0.2471-0.966j])
+    >>> round(k, 4)
+    0.4913
 
     """
     if xp is None:
@@ -4818,6 +4846,20 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     See Also
     --------
     cheby2 : Filter design function using this prototype
+
+    Examples
+    --------
+    Design a 3rd-order Chebyshev type II prototype with 40 dB stopband attenuation:
+
+    >>> from scipy.signal import cheb2ap
+    >>> import numpy as np
+    >>> z, p, k = cheb2ap(3, 40)
+    >>> np.round(z, 4)
+    array([ 0.    -1.1547j, -0.    +1.1547j])
+    >>> np.round(p, 4)
+    array([-0.1611-0.2959j, -0.3523+0.j    , -0.1611+0.2959j])
+    >>> round(k, 4)
+    0.03
 
     """
     if xp is None:
@@ -5375,6 +5417,20 @@ def besselap(N, norm='phase', *, xp=None, device=None):
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html
+
+    Examples
+    --------
+    Design a 3rd-order Bessel analog prototype with phase normalization:
+
+    >>> from scipy.signal import besselap
+    >>> import numpy as np
+    >>> z, p, k = besselap(3)
+    >>> z
+    array([], dtype=float64)
+    >>> np.round(p, 4)
+    array([-0.7456+0.7114j, -0.9416+0.j    , -0.7456-0.7114j])
+    >>> k
+    1.0
 
     """
     if xp is None:
