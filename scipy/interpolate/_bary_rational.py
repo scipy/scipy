@@ -64,7 +64,10 @@ class _BarycentricRational:
         f = xp.take(f, idx, axis=0)
         z = xp.take(z, idx, axis=0)
         if is_torch(xp):
-            raise NotImplementedError("torch backend is not implemented for barycentric rational interpolation")
+            raise NotImplementedError(
+                "torch backend is not implemented for barycentric rational" \
+                "interpolation"
+            )
 
         res = xp.unique_all(z)
         z, uni = res.values, res.indices
@@ -662,14 +665,46 @@ class AAA(_BarycentricRational):
     method_capabilities={
         "poles": dict(
             skip_backends=[
-                ('array_api_strict',
-                 '`scipy.linalg` does not support non-NumPy arrays.')
+                (
+                    "array_api_strict",
+                    "`scipy.linalg` does not support non-NumPy arrays.",
+                ),
+                (
+                    "jax.numpy",
+                    (
+                        "JAX arrays are immutable; "
+                        "this implementation uses in-place updates."
+                    ),
+                ),
+                (
+                    "dask.array",
+                    (
+                        "This implementation requires eager evaluation and "
+                        "is incompatible with lazy Dask arrays."
+                    ),
+                ),
             ],
         ),
         "roots": dict(
             skip_backends=[
-                ('array_api_strict',
-                 '`scipy.linalg` does not support non-NumPy arrays.')
+                (
+                    "array_api_strict",
+                    "`scipy.linalg` does not support non-NumPy arrays.",
+                ),
+                (
+                    "jax.numpy",
+                    (
+                        "JAX arrays are immutable; "
+                        "this implementation uses in-place updates."
+                    ),
+                ),
+                (
+                    "dask.array",
+                    (
+                        "This implementation requires eager evaluation and "
+                        "is incompatible with lazy Dask arrays."
+                    ),
+                ),
             ],
         ),
     },

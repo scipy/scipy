@@ -272,7 +272,10 @@ class TestAAA:
         zz = np.logspace(-15, 0, 500)
         assert_allclose(r(zz), np.sqrt(zz), rtol=1e-5)
 
-@pytest.mark.skip_xp_backends("torch", reason="torch backend is not implemented for barycentric rational interpolation")
+@pytest.mark.skip_xp_backends(
+    "torch",
+    reason="torch backend is not implemented for barycentric rational interpolation",
+)
 @xp_capabilities()
 class BatchFloaterHormann:
     # FloaterHormann class with reference batch behaviour
@@ -291,7 +294,10 @@ class BatchFloaterHormann:
         y = xp.reshape(y, self._batch_shape + x.shape)
         return xp.moveaxis(y, -1, self._axis) if x.shape else y
 
-@pytest.mark.skip_xp_backends("torch", reason="torch backend is not implemented for barycentric rational interpolation")
+@pytest.mark.skip_xp_backends(
+    "torch",
+    reason="torch backend is not implemented for barycentric rational interpolation",
+)
 @make_xp_test_case(FloaterHormannInterpolator)
 class TestFloaterHormann:
     def runge(self, z):
@@ -389,7 +395,10 @@ class TestFloaterHormann:
         assert rr.shape == xx.shape + y_shape
         xp_assert_close(rr, yy, rtol=1e-6)
 
-    @pytest.mark.skip_xp_backends(np_only=True, reason="requires NumPy-only roots() support")
+    @pytest.mark.skip_xp_backends(
+        np_only=True,
+        reason="requires NumPy-only roots() support",
+    )
     @make_xp_test_case((FloaterHormannInterpolator, "roots"))
     def test_zeros(self, xp):
         x = xp.linspace(0, 10, num=100)
@@ -398,7 +407,10 @@ class TestFloaterHormann:
         err = xp.abs(xp.subtract(r.roots()[..., None], xp.arange(11))).min(axis=0)
         assert xp.all(err < 1e-5)
 
-    @pytest.mark.skip_xp_backends(np_only=True, reason="requires NumPy-only poles() support")
+    @pytest.mark.skip_xp_backends(
+        np_only=True,
+        reason="requires NumPy-only poles() support",
+    )
     @make_xp_test_case((FloaterHormannInterpolator, "poles"))
     def test_no_poles(self, xp):
         x = xp.linspace(-1, 1, num=50)
@@ -407,7 +419,10 @@ class TestFloaterHormann:
         mask = (p.real >= -1) & (p.real <= 1) & (xp.abs(p.imag) < 1.e-12)
         assert xp.sum(mask) == 0
 
-    @pytest.mark.skip_xp_backends(np_only=True, reason="requires NumPy-only poles() support")
+    @pytest.mark.skip_xp_backends(
+        np_only=True,
+        reason="requires NumPy-only poles() support",
+    )
     @pytest.mark.parametrize('eval_shape', [(), (1,), (3,)])
     @pytest.mark.parametrize('axis', [-1, 0, 1])
     def test_batch(self, eval_shape, axis, xp):
