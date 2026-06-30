@@ -1175,7 +1175,10 @@ def _optimize_result_for_equal_bounds(
     message = 'All independent variables were fixed by bounds.'
 
     # bounds is new-style
-    x0 = bounds.lb
+    # Copy because bounds.lb may be a non-writable view (from broadcast_to
+    # in _validate_bounds), and user-provided callables must receive a
+    # writable array (e.g. PyTorch's torch.from_numpy rejects read-only input).
+    x0 = bounds.lb.copy()
 
     if constraints:
         message = ("All independent variables were fixed by bounds at values"
