@@ -3045,11 +3045,11 @@ class TestMakeLSQNdBSpline:
 
     def test_trailing_dimensions_with_custom_solver(self):
         x = np.linspace(0.0, 1.0, 6)
-        y = np.empty((x.size, 2, 2))
-        y[:, 0, 0] = 1.0 + x
-        y[:, 0, 1] = 2.0 - x
-        y[:, 1, 0] = -1.0 + 3.0 * x
-        y[:, 1, 1] = 0.5 - 2.0 * x
+        y = np.empty((x.size, 2, 3, 4))
+        for i in range(y.shape[1]):
+            for j in range(y.shape[2]):
+                for m in range(y.shape[3]):
+                    y[:, i, j, m] = i + 2 * j - m + (1 + i + j + m) * x
         t = (np.r_[0.0, 0.0, 1.0, 1.0],)
         calls = []
 
@@ -3061,11 +3061,13 @@ class TestMakeLSQNdBSpline:
         spl = _make_lsq_ndbspl(x[:, None], y, t, k=1, solver=dense_solver)
         matr = NdBSpline.design_matrix(x[:, None], t, 1).toarray()
         ref, *_ = np.linalg.lstsq(
-            matr, y.reshape((x.size, 4)), rcond=None
+            matr, y.reshape((x.size, 24)), rcond=None
         )
-        ref = ref.reshape((2, 2, 2))
+        ref = ref.reshape((2, 2, 3, 4))
 
-        assert calls == [((x.size, 2), (x.size,))] * 4
+        # The custom solver is called once for each trailing output
+        # component, always with the same matrix and a one-dimensional RHS.
+        assert calls == [((x.size, 2), (x.size,))] * 24
         xp_assert_close(spl.c, ref, atol=1e-13)
 
     def test_complex_valued_output(self):
@@ -3074,11 +3076,14 @@ class TestMakeLSQNdBSpline:
         t = (np.r_[0.0, 0.0, 1.0, 1.0],)
 
         spl = _make_lsq_ndbspl(x[:, None], y, t, k=1)
+        matr = NdBSpline.design_matrix(x[:, None], t, 1).toarray()
+        coeffs, *_ = np.linalg.lstsq(matr, y, rcond=None)
         x_eval = np.array([[0.25], [0.75]])
         expected = (2.0 * x_eval[:, 0] + 1.0) + 1j * (
             -3.0 * x_eval[:, 0] + 4.0
         )
 
+        xp_assert_close(spl.c, coeffs, atol=1e-13)
         xp_assert_close(spl(x_eval), expected, atol=1e-13)
 
     def test_too_few_points_raises(self):
@@ -3119,6 +3124,14 @@ class TestMakeLSQNdBSpline:
         coeffs, *_ = np.linalg.lstsq(matr * w[:, None], y * w, rcond=None)
 
         xp_assert_close(spl.c, coeffs, atol=1e-12)
+
+    def test_all_zero_weights_raise(self):
+        x = np.linspace(0.0, 1.0, 5)[:, None]
+        y = x[:, 0]
+        t = (np.r_[0.0, 0.0, 1.0, 1.0],)
+
+        with assert_raises(ValueError, match="one weight must be positive"):
+            _make_lsq_ndbspl(x, y, t, k=1, w=np.zeros(x.shape[0]))
 
     def test_zero_weights_do_not_support_basis(self):
         x = np.linspace(0.0, 1.0, 8)

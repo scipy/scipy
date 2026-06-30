@@ -470,6 +470,9 @@ def _make_lsq_ndbspl(
         the same result format as `scipy.sparse.linalg.lsqr` and
         `scipy.sparse.linalg.lsmr`: the fitted coefficients are read from
         ``result[0]`` and the convergence status from ``result[1]``.
+        Status values ``0``, ``1``, and ``2`` are treated as successful
+        termination, following the conventions of `~scipy.sparse.linalg.lsqr`
+        and `~scipy.sparse.linalg.lsmr`.
     **solver_args
         Additional keyword arguments passed to `solver`.
 
@@ -494,10 +497,11 @@ def _make_lsq_ndbspl(
     not modified by this helper; pass them explicitly through `solver_args` if
     the solver defaults are not appropriate.
 
-    Other least-squares estimators can be used through a small wrapper, as long
-    as the wrapper accepts a sparse matrix ``A`` and a one-dimensional
+    Other least-squares estimators can be used through a small wrapper, as
+    long as the wrapper accepts a sparse matrix ``A`` and a one-dimensional
     right-hand side ``b`` and returns coefficients in ``result[0]`` and a
-    success status in ``result[1]``.
+    status in ``result[1]``. Status values other than ``0``, ``1``, or ``2``
+    are treated as solver failures.
     """
     x = np.asarray(x, dtype=float)
     if x.ndim != 2:
@@ -557,7 +561,7 @@ def _make_lsq_ndbspl(
     for j in range(rhs.shape[1]):
         result = solver(matr, rhs[:, j], **solver_args)
         coef_j, istop = result[0], result[1]
-        if istop not in {1, 2}:
+        if istop not in {0, 1, 2}:
             raise ValueError(f"{solver = } returns {istop = }.")
         coef.append(coef_j)
 
@@ -576,23 +580,27 @@ def _validate_lsq_weights(w, npts):
         raise ValueError("`w` must contain only non-negative values.")
     if not np.isfinite(w).all():
         raise ValueError("`w` must contain only finite values.")
+    if not np.any(w > 0):
+        raise ValueError("At least one weight must be positive.")
     return w
 
 
 def _check_lsq_design_matrix(matr, ncoeff):
     """Check that every basis function is supported by the data."""
+    msg = (
+        "Data points do not support every tensor-product basis function. "
+        "At least one basis function is zero at all data points. Add data "
+        "points in the unsupported knot intervals, remove or move knots, "
+        "reduce the spline degree, or shrink the fitting domain."
+    )
     ncoeff = operator.index(ncoeff)
     if matr.shape[1] != ncoeff:
-        raise ValueError(
-            "Data points do not support every tensor-product basis function."
-        )
+        raise ValueError(msg)
 
     indices = np.asarray(matr.indices, dtype=np.intp)
     supported = np.bincount(indices, minlength=ncoeff) > 0
     if not supported.all():
-        raise ValueError(
-            "Data points do not support every tensor-product basis function."
-        )
+        raise ValueError(msg)
 
 
 def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
