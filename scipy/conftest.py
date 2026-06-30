@@ -198,6 +198,8 @@ xp_skip_cpu_only_backends = set()
 xp_skip_eager_only_backends = set()
 
 if SCIPY_ARRAY_API:
+    device_and_backend_incompatible = None
+
     # fill the dict of backends with available libraries
     try:
         import array_api_strict
@@ -214,22 +216,31 @@ if SCIPY_ARRAY_API:
 
     try:
         import torch  # type: ignore[import-not-found]
-        xp_available_backends.append(
-            pytest.param(torch, id='torch',
-            marks=_array_api_backends))
-        torch.set_default_device(SCIPY_DEVICE)
-        if SCIPY_DEVICE != "cpu":
-            xp_skip_cpu_only_backends.add('torch')
 
-        # default to float64 unless explicitly requested
-        default = os.getenv('SCIPY_DEFAULT_DTYPE', default='float64')
-        if default == 'float64':
-            torch.set_default_dtype(torch.float64)
-        elif default != "float32":
-            raise ValueError(
-                "SCIPY_DEFAULT_DTYPE env var, if set, can only be either 'float64' "
-               f"or 'float32'. Got '{default}' instead."
-            )
+        torch.set_default_device(SCIPY_DEVICE)
+        try:
+            # set_default_device above succeeds even if SCIPY_DEVICE=cuda but in fact
+            # CUDA is not available. In that case, it fails at runtime, like so: 
+            torch.empty(3)
+        except AssertionError:
+            # skip it if it's not usable.
+            device_and_backend_incompatible = "torch"
+        else:
+            xp_available_backends.append(
+                pytest.param(torch, id='torch',
+                marks=_array_api_backends))
+            if SCIPY_DEVICE != "cpu":
+                xp_skip_cpu_only_backends.add('torch')
+
+            # default to float64 unless explicitly requested
+            default = os.getenv('SCIPY_DEFAULT_DTYPE', default='float64')
+            if default == 'float64':
+                torch.set_default_dtype(torch.float64)
+            elif default != "float32":
+                raise ValueError(
+                    "SCIPY_DEFAULT_DTYPE env var, if set, can only be either 'float64' "
+                   f"or 'float32'. Got '{default}' instead."
+                )
     except ImportError:
         pass
 
@@ -253,24 +264,30 @@ if SCIPY_ARRAY_API:
 
     try:
         import jax.numpy  # type: ignore[import-not-found]
-        
-        xp_available_backends.append(
-            pytest.param(jax.numpy, id='jax.numpy',
-            marks=[_array_api_backends,
-                   # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
-                   _thread_unsafe]))
 
-        jax.config.update("jax_enable_x64", True)
-        # Make sure JAX won't default to less accurate TensorFloat32 precision
-        # in matmuls with float32 inputs on GPUs that support this floating
-        # point format.
-        jax.config.update("jax_default_matmul_precision", "float32")
-        jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
-        if SCIPY_DEVICE != "cpu":
-            xp_skip_cpu_only_backends.add('jax.numpy')
-        # JAX can be eager or lazy (when wrapped in jax.jit). However it is
-        # recommended by upstream devs to assume it's always lazy.
-        xp_skip_eager_only_backends.add('jax.numpy')
+        try:
+            jax_device = jax.devices(SCIPY_DEVICE)[0]
+        except RuntimeError:
+            # requested device is not supported by the importable JAX, skip it
+            device_and_backend_incompatible = "jax.numpy"
+        else:
+            xp_available_backends.append(
+                pytest.param(jax.numpy, id='jax.numpy',
+                marks=[_array_api_backends,
+                       # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
+                       _thread_unsafe]))
+
+            jax.config.update("jax_enable_x64", True)
+            # Make sure JAX won't default to less accurate TensorFloat32 precision
+            # in matmuls with float32 inputs on GPUs that support this floating
+            # point format.
+            jax.config.update("jax_default_matmul_precision", "float32")
+            jax.config.update("jax_default_device", jax_device)
+            if SCIPY_DEVICE != "cpu":
+                xp_skip_cpu_only_backends.add('jax.numpy')
+            # JAX can be eager or lazy (when wrapped in jax.jit). However it is
+            # recommended by upstream devs to assume it's always lazy.
+            xp_skip_eager_only_backends.add('jax.numpy')
     except ImportError:
         pass
 
@@ -305,8 +322,12 @@ if SCIPY_ARRAY_API:
         SCIPY_ARRAY_API_ = set(json.loads(SCIPY_ARRAY_API))
         if SCIPY_ARRAY_API_ != {'all'}:
             if SCIPY_ARRAY_API_ - xp_available_backend_ids:
-                msg = ("'--array-api-backend' must be in "
-                       f"{xp_available_backend_ids}; got {SCIPY_ARRAY_API_}")
+                if device_and_backend_incompatible is None:
+                    msg = ("'--array-api-backend' must be in "
+                           f"{xp_available_backend_ids}; got {SCIPY_ARRAY_API_}")
+                else:
+                    msg = (f"The requested backend, {device_and_backend_incompatible}, "
+                           f"is incompatible with the requested {SCIPY_DEVICE=}")
                 raise ValueError(msg)
             # Only select a subset of backends
             xp_available_backends = [
