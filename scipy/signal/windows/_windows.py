@@ -230,7 +230,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     >>> f_R = np.linspace(-((N + 2) // 2), (N + 1) // 2, 100, endpoint=True)
     >>> R = np.sinc(f_R)
     ...
-    >>> _, (ax0, ax1) = plt.subplots(2, 1, figsize=(5, 4.5), tight_layout=True)
+    >>> _, (ax0, ax1) = plt.subplots(2, 1, figsize=(5, 4.5), constrained_layout=True)
     >>> ax0.set_title(r"Boxcar window with corresponding rect function")
     >>> ax0.set(ylabel="Amplitude", xlim=(-0.5, 1.5),
     ...         xlabel=rf"Time $t$ in seconds (${N}$ samples with interval ${T=}\,$s)")
@@ -263,7 +263,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     >>> f_Y = np.linspace(.5, f[-1], 100)
     >>> Y_dB = 20*np.log10(1 / (np.pi*f_Y))
     ...
-    >>> _, ax0 = plt.subplots(tight_layout=True)
+    >>> _, ax0 = plt.subplots(constrained_layout=True)
     >>> ax0.set_title(r"Magnitude Spectrum of $w(t) = $rect$(t/\tau)$")
     >>> ax0.set(ylabel=r"Magnitude $20\,\log_{10} |W(l)|$ in dB", ylim=(-40, 1),
     ...         xlabel=r"Relative Frequency $l=f/\Delta f\ $ ($\Delta f = 1/\tau$)",
@@ -996,7 +996,8 @@ def hann(M, sym=True, *, xp=None, device=None):
     >>> H_dB = np.where(~np.logical_and(f_dB>=2, np.mod(f_dB, 1)==0),
     ...                 20*np.log10(H1), -1e250)
     ...
-    >>> ax0, ax1, ax2 = (plt.subplots(num=n_, tight_layout=True)[1] for n_ in range(3))
+    >>> ax0, ax1, ax2 = (plt.subplots(num=n_, constrained_layout=True)[1]
+    ...                   for n_ in range(3))
     >>> ax0.set_title(r"Periodic Hann window and Hann function of width $\tau=1\,$s")
     >>> ax0.set(ylabel="Amplitude", xlim=(t[0], t[-1]),
     ...         xlabel=rf"Time $t$ in seconds (${M}$ samples with interval ${T=}\,$s)")
@@ -1005,7 +1006,6 @@ def hann(M, sym=True, *, xp=None, device=None):
     >>> ax1.set_title(r"Magnitude Spectrum of Hann window and Hann function")
     >>> ax1.set(ylabel="Magnitude", xlim=(f_abs[0], f_abs[-1]),
     ...         xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f_W[1]:g}\,$Hz)")
-    ...
     >>> ax1.plot(f_abs, H_abs, 'C0-', label="$|H(f)|$")
     >>> ax1.plot(f_W, abs(W), 'C1o', label=r"$|W_p[l\Delta f]|$")
     >>> ax2.set_title(r"Magnitude Spectrum of Hann function")
@@ -1017,18 +1017,16 @@ def hann(M, sym=True, *, xp=None, device=None):
     >>> ax2a.set_ylabel("Magnitude $|H(f)|$", rotation=-90, labelpad=15)
     >>> ax2a.set(ylim=(1e-4, 10 ** (1 / 20)), yscale="log")
     >>> ax2.plot(f_dB, H_dB, 'C0-', label=r"$|H(l\Delta f)$|")
-    >>> ax2.plot(f_dB[f_dB>5], -60*np.log10(f_dB[f_dB>5]) - 20*np.log10(np.pi),
-    ...          'C2--', label=r"$\pi^{-1} (l\Delta f)^{-3}$")
+    >>> ax2.plot(f_dB[f_dB>0.5], -60*np.log10(f_dB[f_dB>0.5]) - 20*np.log10(np.pi),
+    ...          'C2--', alpha=0.5, label=r"$\pi^{-1} (l\Delta f)^{-3}$")
     >>> for ax_ in (ax0, ax1, ax2):
     ...     ax_.legend(loc='best')
     ...     ax_.grid(True)
     >>> plt.show()
 
     The plot of the logarithmically scaled magnitude spectrum illustrates that its
-    zeros are at integers with absolute value ≥ 2 and that the sidelobes deacrease on
+    zeros are at integers with absolute value ≥ 2 and that the sidelobes decrease on
     the order of :math:`O(|f|^{-3})`, which corresponds to -60 dB per frequency decade.
-
-
     """
     # Docstring adapted from NumPy's hanning function
     return general_hamming(M, 0.5, sym, xp=xp, device=device)
