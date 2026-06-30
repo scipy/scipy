@@ -485,6 +485,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     real_type r_vl = (real_type)vl, r_vu = (real_type)vu;
     CBLAS_INT int_il = il + 1; // Deal with Fortran being 1-indexed
     CBLAS_INT int_iu = iu + 1;
+    CBLAS_INT int_itype = (CBLAS_INT)itype;
     real_type abstol = detail::numeric_limits<real_type>::zero;
 
     T tmp_work = detail::numeric_limits<T>::zero;
@@ -515,17 +516,17 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
         }
 
         case Eigh_driver::GV : {
-            call_sy_he_gv(&itype, &jobz, &uplo, &intn, NULL, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &info);
+            call_sy_he_gv(&int_itype, &jobz, &uplo, &intn, NULL, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &info);
             break;
         }
 
         case Eigh_driver::GVD : {
-            call_sy_he_gvd(&itype, &jobz, &uplo, &intn, NULL, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &lrwork, &tmp_iwork, &liwork, &info);
+            call_sy_he_gvd(&int_itype, &jobz, &uplo, &intn, NULL, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &lrwork, &tmp_iwork, &liwork, &info);
             break;
         }
 
         case Eigh_driver::GVX : {
-            call_sy_he_gvx(&itype, &jobz, &range, &uplo, &intn, NULL, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, NULL, NULL, NULL, &intn, &tmp_work, &lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+            call_sy_he_gvx(&int_itype, &jobz, &range, &uplo, &intn, NULL, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, NULL, NULL, NULL, &intn, &tmp_work, &lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
             break;
         }
 
@@ -686,17 +687,17 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
             }
 
             case Eigh_driver::GV : {
-                call_sy_he_gv(&itype, &jobz, &uplo, &intn, buff_A, &intn, buff_B, &intn, lapack_w, work, &lwork, rwork, &info);
+                call_sy_he_gv(&int_itype, &jobz, &uplo, &intn, buff_A, &intn, buff_B, &intn, lapack_w, work, &lwork, rwork, &info);
                 break;
             }
 
             case Eigh_driver::GVD : {
-                call_sy_he_gvd(&itype, &jobz, &uplo, &intn, buff_A, &intn, buff_B, &intn, lapack_w, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
+                call_sy_he_gvd(&int_itype, &jobz, &uplo, &intn, buff_A, &intn, buff_B, &intn, lapack_w, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
                 break;
             }
 
             case Eigh_driver::GVX : {
-                call_sy_he_gvx(&itype, &jobz, &range, &uplo, &intn, buff_A, &intn, buff_B, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, lapack_w, buff_Z, &intn, work, &lwork, rwork, iwork, ifail, &info);
+                call_sy_he_gvx(&int_itype, &jobz, &range, &uplo, &intn, buff_A, &intn, buff_B, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, lapack_w, buff_Z, &intn, work, &lwork, rwork, iwork, ifail, &info);
                 break;
             }
 
