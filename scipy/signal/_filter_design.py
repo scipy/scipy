@@ -337,9 +337,10 @@ def freqs_zpk(z, p, k, worN=200):
 
 
 def _freqz_trailing_axis_matches_worN(arr, worN, *, xp):
-    """
-    True when the last axis of `arr` pairs with one frequency per entry
-    (i.e. the length of `worN` equals ``arr.shape[-1]``).
+    """Return whether ``arr.shape[-1]`` already pairs with ``worN``.
+
+    This is True for layouts such as ``test_broadcasting3`` where the trailing
+    axis length equals the number of frequency points in ``worN``.
     """
     if arr.ndim <= 1 or arr.shape[-1] == 1:
         return False
@@ -527,6 +528,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         # For backwards compatibility
         worN = 512
 
+    # gh-17387: arrays like ``(n_taps, n_filters)`` need a trailing axis so the
+    # last dimension is interpreted as batch rather than polynomial coefficients.
     if (b.ndim > 1 and b.shape[-1] != 1
             and not _freqz_trailing_axis_matches_worN(b, worN, xp=xp)
             and xp_size(a) == 1):
