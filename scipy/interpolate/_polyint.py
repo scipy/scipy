@@ -663,7 +663,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
                   (-1)^i   & \text{otherwise}
               \end{cases}.
 
-    See [2]_ for more infomation. Note that for large :math:`n`, computing the weights
+    See [2]_ for more information. Note that for large :math:`n`, computing the weights
     explicitly (see examples) will be faster than the generic formula.
 
     References

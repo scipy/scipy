@@ -993,7 +993,7 @@ class betaprime_gen(rv_continuous):
     then :math:`Y = X/(1-X)` has a beta prime distribution with
     parameters :math:`a, b` ([1]_).
 
-    The beta prime distribution is a reparametrized version of the
+    The beta prime distribution is a reparameterized version of the
     F distribution.  The beta prime distribution with shape parameters
     ``a`` and ``b`` and ``scale = s`` is equivalent to the F distribution
     with parameters ``d1 = 2*a``, ``d2 = 2*b`` and ``scale = (a/b)*s``.
@@ -1571,8 +1571,14 @@ class chi_gen(rv_continuous):
     def _cdf(self, x, df):
         return sc.gammainc(.5*df, .5*x**2)
 
+    def _logcdf(self, x, df):
+        return sc.log_gammainc(.5*df, .5*x**2)
+
     def _sf(self, x, df):
         return sc.gammaincc(.5*df, .5*x**2)
+
+    def _logsf(self, x, df):
+        return sc.log_gammaincc(.5*df, .5*x**2)
 
     def _ppf(self, q, df):
         return np.sqrt(2*sc.gammaincinv(.5*df, q))
@@ -3591,8 +3597,14 @@ class gamma_gen(rv_continuous):
     def _cdf(self, x, a):
         return sc.gammainc(a, x)
 
+    def _logcdf(self, x, a):
+        return sc.log_gammainc(a, x)
+
     def _sf(self, x, a):
         return sc.gammaincc(a, x)
+
+    def _logsf(self, x, a):
+        return sc.log_gammaincc(a, x)
 
     def _ppf(self, q, a):
         return sc.gammaincinv(a, q)
@@ -3862,9 +3874,17 @@ class gengamma_gen(rv_continuous):
 
     def _cdf(self, x, a, c):
         xc = x**c
-        val1 = sc.gammainc(a, xc)
-        val2 = sc.gammaincc(a, xc)
-        return np.where(c > 0, val1, val2)
+        return xpx.apply_where(
+            c > 0, (a, xc),
+            sc.gammainc,
+            sc.gammaincc)
+
+    def _logcdf(self, x, a, c):
+        xc = x**c
+        return xpx.apply_where(
+            c > 0, (a, xc),
+            sc.log_gammainc,
+            sc.log_gammaincc)
 
     def _rvs(self, a, c, size=None, random_state=None):
         r = random_state.standard_gamma(a, size=size)
@@ -3872,19 +3892,29 @@ class gengamma_gen(rv_continuous):
 
     def _sf(self, x, a, c):
         xc = x**c
-        val1 = sc.gammainc(a, xc)
-        val2 = sc.gammaincc(a, xc)
-        return np.where(c > 0, val2, val1)
+        return xpx.apply_where(
+            c > 0, (a, xc),
+            sc.gammaincc,
+            sc.gammainc)
+
+    def _logsf(self, x, a, c):
+        xc = x**c
+        return xpx.apply_where(
+            c > 0, (a, xc),
+            sc.log_gammaincc,
+            sc.log_gammainc)
 
     def _ppf(self, q, a, c):
-        val1 = sc.gammaincinv(a, q)
-        val2 = sc.gammainccinv(a, q)
-        return np.where(c > 0, val1, val2)**(1.0/c)
+        return xpx.apply_where(
+            c > 0, (a, q),
+            sc.gammaincinv,
+            sc.gammainccinv)**(1.0/c)
 
     def _isf(self, q, a, c):
-        val1 = sc.gammaincinv(a, q)
-        val2 = sc.gammainccinv(a, q)
-        return np.where(c > 0, val2, val1)**(1.0/c)
+        return xpx.apply_where(
+            c > 0, (a, q),
+            sc.gammainccinv,
+            sc.gammaincinv)**(1.0/c)
 
     def _munp(self, n, a, c):
         # Pochhammer symbol: sc.pocha,n) = gamma(a+n)/gamma(a)
@@ -4928,11 +4958,17 @@ class invgamma_gen(rv_continuous):
     def _cdf(self, x, a):
         return sc.gammaincc(a, 1.0 / x)
 
+    def _logcdf(self, x, a):
+        return sc.log_gammaincc(a, 1.0 / x)
+
     def _ppf(self, q, a):
         return 1.0 / sc.gammainccinv(a, q)
 
     def _sf(self, x, a):
         return sc.gammainc(a, 1.0 / x)
+
+    def _logsf(self, x, a):
+        return sc.log_gammainc(a, 1.0 / x)
 
     def _isf(self, q, a):
         return 1.0 / sc.gammaincinv(a, q)
@@ -6652,8 +6688,15 @@ class loggamma_gen(rv_continuous):
         #                          = exp(c*x - gammaln(c+1))
         return xpx.apply_where(
             x < _LOGXMIN, (x, c),
-            lambda x, c: np.exp(c*x - sc.gammaln(c+1)),
+            lambda x, c: np.exp(c*x - sc._ufuncs._lgam1p(c)),
             lambda x, c: sc.gammainc(c, np.exp(x)))
+
+    def _logcdf(self, x, c):
+        # see comments in _cdf() above
+        return xpx.apply_where(
+            x < _LOGXMIN, (x, c),
+            lambda x, c: c*x - sc._ufuncs._lgam1p(c),
+            lambda x, c: sc.log_gammainc(c, np.exp(x)))
 
     def _ppf(self, q, c):
         # The expression used when g < _XMIN inverts the one term expansion
@@ -6668,8 +6711,15 @@ class loggamma_gen(rv_continuous):
         # See the comments for _cdf() for how x < _LOGXMIN is handled.
         return xpx.apply_where(
             x < _LOGXMIN, (x, c),
-            lambda x, c: -np.expm1(c*x - sc.gammaln(c+1)),
+            lambda x, c: -np.expm1(c*x - sc._ufuncs._lgam1p(c)),
             lambda x, c: sc.gammaincc(c, np.exp(x)))
+
+    def _logsf(self, x, c):
+        # See the comments for _cdf() for how x < _LOGXMIN is handled.
+        return xpx.apply_where(
+            x < _LOGXMIN, (x, c),
+            lambda x, c: sc._ufuncs._log1mexp(c*x - sc._ufuncs._lgam1p(c)),
+            lambda x, c: sc.log_gammaincc(c, np.exp(x)))
 
     def _isf(self, q, c):
         # The expression used when g < _XMIN inverts the complement of
@@ -6677,7 +6727,7 @@ class loggamma_gen(rv_continuous):
         g = sc.gammainccinv(c, q)
         return xpx.apply_where(
             g < _XMIN, (g, q, c),
-            lambda g, q, c: (np.log1p(-q) + sc.gammaln(c+1))/c,
+            lambda g, q, c: (np.log1p(-q) + sc._ufuncs._lgam1p(c))/c,
             lambda g, q, c: np.log(g))
 
     def _stats(self, c):
@@ -7123,11 +7173,17 @@ class maxwell_gen(rv_continuous):
     def _cdf(self, x):
         return sc.gammainc(1.5, x*x/2.0)
 
+    def _logcdf(self, x):
+        return sc.log_gammainc(1.5, x*x/2.0)
+
     def _ppf(self, q):
         return np.sqrt(2*sc.gammaincinv(1.5, q))
 
     def _sf(self, x):
         return sc.gammaincc(1.5, x*x/2.0)
+
+    def _logsf(self, x):
+        return sc.log_gammaincc(1.5, x*x/2.0)
 
     def _isf(self, q):
         return np.sqrt(2*sc.gammainccinv(1.5, q))
@@ -7710,11 +7766,17 @@ class nakagami_gen(rv_continuous):
     def _cdf(self, x, nu):
         return sc.gammainc(nu, nu*x*x)
 
+    def _logcdf(self, x, nu):
+        return sc.log_gammainc(nu, nu*x*x)
+
     def _ppf(self, q, nu):
         return np.sqrt(1.0/nu*sc.gammaincinv(nu, q))
 
     def _sf(self, x, nu):
         return sc.gammaincc(nu, nu*x*x)
+
+    def _logsf(self, x, nu):
+        return sc.log_gammaincc(nu, nu*x*x)
 
     def _isf(self, p, nu):
         return np.sqrt(1/nu * sc.gammainccinv(nu, p))
@@ -10810,7 +10872,7 @@ truncpareto._support = (1.0, 'c')
 
 
 class tukeylambda_gen(rv_continuous):
-    r"""A Tukey-Lamdba continuous random variable.
+    r"""A Tukey-Lambda continuous random variable.
 
     %(before_notes)s
 
@@ -11637,11 +11699,17 @@ class halfgennorm_gen(rv_continuous):
     def _cdf(self, x, beta):
         return sc.gammainc(1.0/beta, x**beta)
 
+    def _logcdf(self, x, beta):
+        return sc.log_gammainc(1.0/beta, x**beta)
+
     def _ppf(self, x, beta):
         return sc.gammaincinv(1.0/beta, x)**(1.0/beta)
 
     def _sf(self, x, beta):
         return sc.gammaincc(1.0/beta, x**beta)
+
+    def _logsf(self, x, beta):
+        return sc.log_gammaincc(1.0/beta, x**beta)
 
     def _isf(self, x, beta):
         return sc.gammainccinv(1.0/beta, x)**(1.0/beta)
@@ -12579,6 +12647,7 @@ rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
 
 # Collect names of classes and objects in this module.
 pairs = list(globals().copy().items())
+_distn_names: list[str]
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']

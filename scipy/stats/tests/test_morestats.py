@@ -40,7 +40,7 @@ from scipy._lib._array_api_no_0d import (
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-distcont = dict(distcont)  # type: ignore
+distcont = dict(distcont)  # type: ignore[assignment, arg-type]
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -1634,7 +1634,7 @@ def mood_cases_with_ties():
 @make_xp_test_case(stats.mood)
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
-                             mood_cases_with_ties())
+                             list(mood_cases_with_ties()))
     def test_against_SAS(self, x, y, alternative, stat_expect, p_expect, xp):
         """
         Example code used to generate SAS output:

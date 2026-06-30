@@ -519,9 +519,9 @@ def test_integers_nd():
 class QMCEngineTests:
     """Generic tests for QMC engines."""
     qmce = NotImplemented
-    can_scramble = NotImplemented
-    unscramble_nd = NotImplemented
-    scramble_nd = NotImplemented
+    can_scramble: bool = NotImplemented
+    unscramble_nd: np.ndarray = NotImplemented
+    scramble_nd: np.ndarray = NotImplemented
 
     scramble = [True, False]
     ids = ["Scrambled", "Unscrambled"]

@@ -1129,7 +1129,7 @@ class TestNdimageFilters:
             make_xp_pytest_param(ndimage.percentile_filter, 1, 3, kwargs_rank),
         ]
     )
-    @pytest.mark.parametrize('axes', itertools.combinations(range(-3, 3), 2))
+    @pytest.mark.parametrize('axes', list(itertools.combinations(range(-3, 3), 2)))
     def test_filter_axes_kwargs(self, filter_func, size0, size, kwargs, axes, xp):
         array = xp.arange(6 * 8 * 12, dtype=xp.float64)
         array = xp.reshape(array, (6, 8, 12))
@@ -1299,7 +1299,7 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
     @pytest.mark.parametrize('n_mismatch', [1, 3])
     @pytest.mark.parametrize('filter_func, kwargs, key, val',
-                             _cases_axes_tuple_length_mismatch())
+                             list(_cases_axes_tuple_length_mismatch()))
     def test_filter_tuple_length_mismatch(self, n_mismatch, filter_func,
                                           kwargs, key, val, xp):
         # Test for the intended RuntimeError when a kwargs has an invalid size

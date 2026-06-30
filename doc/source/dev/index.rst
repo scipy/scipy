@@ -39,7 +39,6 @@ the organization section.
 .. toctree::
    :hidden:
 
-   contributor/development_workflow
    contributor/pep8
    contributor/rendering_documentation
    contributor/devpy_test

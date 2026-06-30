@@ -16,6 +16,7 @@
 
 [build-system]
 build-backend = 'mesonpy'
+# NOTE: when updating this table, also update `dependency-groups.build`
 requires = [
     "meson-python>=0.15.0",
     "Cython>=3.2.0",        # when updating version, also update check in meson.build
@@ -73,26 +74,94 @@ tracker = "https://github.com/scipy/scipy/issues"
 developer-discussion = "https://discuss.scientific-python.org/c/contributor/scipy/"
 user-discussion = "https://discuss.scientific-python.org/c/user/scipy/"
 
+# NOTE: when updating this table, also update `dependency-groups.optional-runtime-deps`
 [project.optional-dependencies]
-test = [
+all = [
+    "pooch",  # datasets
+    "threadpoolctl",  # io.mm{...}
+    "matplotlib",  # cluster.hierarchy.dendrogram, stats.probplot
+    # circular dependency issues, https://github.com/scipy/scipy/issues/19783
+    # "scikit-umfpack",  # optimize, sparse.linalg
+]
+
+[dependency-groups]
+optional-runtime-deps = [
+    "pooch",  # datasets
+    "threadpoolctl",  # io.mm{...}
+    "matplotlib",  # cluster.hierarchy.dendrogram, stats.probplot
+    # circular dependency issues, https://github.com/scipy/scipy/issues/19783
+    # "scikit-umfpack",  # optimize, sparse.linalg
+]
+
+build = [
+    "meson-python>=0.15.0",
+    "Cython>=3.2.0",
+    "pybind11>=2.13.2",
+    "pythran>=0.18.1",
+    "numpy>=2.0.0",
+    "ninja>=1.8.2",
+]
+
+test-core = [
     "pytest>=8.0.0",
-    "pytest-cov",
-    "pytest-timeout",
-    "pytest-xdist",
-    "asv",
+    "hypothesis>=6.30",
+    "pooch",
+    "pytest-xdist",  # not required, but used widely, belongs in -core
+    "pytest-timeout",  # not required, but used widely, belongs in -core
+]
+test-mp = [
     "mpmath",
     # for PyPI: 'gmpy2; sys_platform != "win32" or platform_machine != "ARM64"'
     "gmpy2",
-    "threadpoolctl",
-    "scikit-umfpack",
-    "pooch",
-    "hypothesis>=6.30",
-    "array-api-strict>=2.3.1",
+]
+test-extending-cython = [  # {special, linalg, optimize}.tests.test_extending
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
-    "scipy-doctest>=2.0.0"
 ]
+test-parallel = [
+    { include-group = "test-core" },
+    "pytest-run-parallel",
+]
+test-docs = [
+    { include-group = "test-core" },
+    "scipy-doctest>=2.0.0",
+    "matplotlib",
+]
+test-array-types = [
+    { include-group = "test-core" },
+    "array-api-strict>=2.3.1",
+    "marray",
+    # for PyPI: 'sparse; sys_platform != "win32" or platform_machine != "ARM64"'
+    "sparse",
+]
+test = [
+    { include-group = "optional-runtime-deps" },
+    { include-group = "test-core" },
+    { include-group = "test-mp" },
+    { include-group = "test-extending-cython" },
+    { include-group = "test-parallel" },
+    { include-group = "test-docs" },
+    { include-group = "test-array-types" },
+    # useful but doesn't have its own group (rarely used, and has compiled wheels so can be hard to install)
+    "psutil",
+]
+test-fail-slow = [
+    { include-group = "test-core" },
+    "pytest-fail-slow",  # only one CI job; isolated so it doesn't cause failures for contributors randomly
+]
+coverage = [
+    { include-group = "test" },  # includes all optional test and runtime deps for maximum coverage
+    "pytest-cov",
+]
+
+bench = [
+    # https://github.com/airspeed-velocity/asv/issues/1537
+    "asv==0.6.4",
+    "pyfftw",
+    "cffi", 
+]
+
 doc = [
     "sphinx>=5.0.0,<8.2.0",
     "intersphinx_registry",
@@ -110,14 +179,46 @@ doc = [
     "tabulate",
 ]
 
-dev = [
+dev-cli = [
     "spin",
-    "mypy==1.19.1",
-    "pyrefly==0.63.0",
+]
+
+typecheck = [
+    # type checkers
+    "mypy==2.1.0",
+    "pyrefly==1.1.1",
+    # typing deps
     "typing_extensions",
+    # stub deps
+    "types-cffi",
     "types-psutil",
+    "types-pyyaml",
+    # import deps
+    "array_api_strict",
+    "cython",
+    "dask",
+    "matplotlib",
+    "pybind11",
+    "sphinx",
+]
+
+lint = [
     "ruff>=0.12.0",
     "cython-lint>=0.12.2",
+    "packaging",
+    "tach",
+    "zizmor",
+]
+
+dev = [
+    { include-group = "build" },
+    { include-group = "test" },
+    { include-group = "bench" },
+    { include-group = "doc" },
+    { include-group = "dev-cli" },
+    { include-group = "typecheck" },
+    { include-group = "lint" },
+    "scipy-stubs",
 ]
 
 [tool.spin]

@@ -113,7 +113,7 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
     }
 
 
-    /* Seach for maximal absolute value in masked array. */
+    /* Search for maximal absolute value in masked array. */
     template<typename RT, std::size_t LEN>
     inline typing::real_only<RT, RT>
     vmax(const RT(& p)[LEN], const bool(& mask)[LEN])

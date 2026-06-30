@@ -143,6 +143,9 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
 
     k = operator.index(k)
 
+    if k < 1:
+        raise ValueError(f"k must be >= 1, got k={k}")
+
     if s < 0:
         raise ValueError(f"`s` must be non-negative. Got {s = }")
 
@@ -161,7 +164,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def generate_knots(x, y, *, w=None, xb=None, xe=None,
                    k=3, s=0, nest=None, bc_type=None):
-    """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
+    """Generate knot vectors until the Least SQuares (LSQ) criterion is satisfied.
 
     Parameters
     ----------
@@ -176,7 +179,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
         The boundary of the approximation interval. If None (default),
         is set to ``x[-1]``.
     k : int, optional
-        The spline degree. Default is cubic, ``k = 3``.
+        The spline degree. Must be >= 1. Default is cubic, ``k = 3``.
     s : float, optional
         The smoothing factor. Default is ``s = 0``.
     nest : int, optional
@@ -838,7 +841,7 @@ def root_rati(f, p0, bracket, acc, maxit=MAXIT):
     https://github.com/scipy/scipy/blob/maintenance/1.11.x/scipy/interpolate/fitpack/fppara.f#L290
 
     Note that the latter is for parametric splines and the former is for 1D spline
-    functions. The minimization is indentical though [modulo a summation over the
+    functions. The minimization is identical though [modulo a summation over the
     dimensions in the computation of f(p)], so we reuse the minimizer for both
     d=1 and d>1.
     """
@@ -1030,9 +1033,10 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         The interval to fit.  If None, these default to ``x[0]`` and ``x[-1]``,
         respectively.
     k : int, optional
-        The degree of the spline fit. It is recommended to use cubic splines,
-        ``k=3``, which is the default. Even values of `k` should be avoided,
-        especially with small `s` values.
+        The degree of the spline fit. Must be >= 1, except when ``s=0``,
+        in which case ``k=0`` is also supported. It is recommended to use
+        cubic splines, ``k=3``, which is the default. Even values of `k` 
+        should be avoided, especially with small `s` values.
     s : float, optional
         The smoothing condition. The amount of smoothness is determined by
         satisfying the LSQ (least-squares) constraint::
@@ -1191,9 +1195,11 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     ub, ue : float, optional
         The end-points of the parameters interval. Default to ``u[0]`` and ``u[-1]``.
     k : int, optional
-        Degree of the spline. Cubic splines, ``k=3``, are recommended.
-        Even values of `k` should be avoided especially with a small ``s`` value.
-        Default is ``k=3``
+         Degree of the spline. Must be >= 1, except when ``s=0``, in which
+         case ``k=0`` is also supported. Cubic splines, ``k=3``, are
+         recommended. Even values of `k` should be avoided especially with
+         a small ``s`` value. 
+         Default is ``k=3``
     s : float, optional
         A smoothing condition.  The amount of smoothness is determined by
         satisfying the conditions::

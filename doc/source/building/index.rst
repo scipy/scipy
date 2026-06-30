@@ -359,23 +359,13 @@ virtual environments:
           python -m venv venv
           venv\Scripts\Activate.ps1
 
-    Then install the Python-level dependencies (see ``pyproject.toml``) from
-    PyPI with::
+    Then install the Python-level dependencies from PyPI with::
 
-       # All dependencies
-       python -m pip install -r requirements/all.txt
+       python -m pip install --group dev
 
-       # Alternatively, you can install just the dependencies for certain
-       # development tasks:
-
-       # Build and dev dependencies (for `spin {build, lint, mypy}`)
-       python -m pip install -r requirements/build.txt -r requirements/dev.txt
-
-       # Doc dependencies (for `spin {doc, refguide-check}`)
-       python -m pip install -r requirements/doc.txt
-
-       # Test dependencies (for `spin {test, bench, refguide-check}`)
-       python -m pip install -r requirements/test.txt
+    If you want to install dependencies in a more granular fashion,
+    see the ``doc``, ``test``, and other groups under ``[dependency-groups]``
+    in ``pyproject.toml``.
 
 To build SciPy in an activated development environment, run::
 

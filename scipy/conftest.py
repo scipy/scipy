@@ -100,7 +100,8 @@ def pytest_configure(config):
             "iterations(n): run the given test function `n` times in each thread",
         )
 
-    if os.name == 'posix' and sys.version_info < (3, 14) and sys.platform != "cygwin":
+    if (sys.version_info < (3, 14)
+            and 'forkserver' in multiprocessing.get_all_start_methods()):
         # On POSIX, Python 3.13 and older uses the 'fork' context by
         # default. Calling fork() from multiple threads leads to
         # deadlocks. This has been changed in 3.14 to 'forkserver'.
@@ -418,7 +419,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             reason = marker.kwargs.get("reason") or (
                 f"do not run with array API backend: {backend}")
             # reason overrides the ones from cpu_only, np_only, and eager_only.
-            # This is regardless of order of appearence of the markers.
+            # This is regardless of order of appearance of the markers.
             reasons[backend].insert(0, reason)
 
             for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
@@ -649,7 +650,7 @@ if HAVE_SCPDT:
 
         # XXX: this matches the refguide-check behavior, but is a tad strange:
         # makes sure that the seed the old-fashioned np.random* methods is
-        # *NOT* reproducible but the new-style `default_rng()` *IS* repoducible.
+        # *NOT* reproducible but the new-style `default_rng()` *IS* reproducible.
         # Should these two be either both repro or both not repro?
 
         from scipy._lib._util import _fixed_default_rng

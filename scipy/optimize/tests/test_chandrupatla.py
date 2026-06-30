@@ -12,7 +12,7 @@ from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
 from scipy.optimize.elementwise import find_minimum, find_root
-from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS
+from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS_WITH_ID
 
 from itertools import permutations
 
@@ -787,7 +787,7 @@ class TestFindRoot:
             else:
                 xp_assert_equal(res2[key], res[key])
 
-    @pytest.mark.parametrize('case', _CHANDRUPATLA_TESTS)
+    @pytest.mark.parametrize('case', _CHANDRUPATLA_TESTS_WITH_ID)
     def test_nit_expected(self, case, xp):
         # Test that `_chandrupatla` implements Chandrupatla's algorithm:
         # in all 40 test cases, the number of iterations performed

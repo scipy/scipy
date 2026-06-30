@@ -11,7 +11,7 @@ import sys
 import numpy as np
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
-    xp_ravel, _xp_copy_to_numpy, array_namespace
+    xp_ravel, _xp_copy_to_numpy, array_namespace, is_cupy
 )
 import scipy._external.array_api_extra as xpx
 from pytest import raises as assert_raises
@@ -720,7 +720,7 @@ class TestBSpline:
         raises=AttributeError
     )
     def test_memmap(self, tmpdir):
-        # Make sure that memmaps can be used as t and c atrributes after the
+        # Make sure that memmaps can be used as t and c attributes after the
         # spline has been constructed. This is similar to what happens in a
         # scikit-learn context, where joblib can create read-only memmap to
         # share objects between workers. For more details, see
@@ -1304,11 +1304,13 @@ class TestInterp:
         with assert_raises(ValueError, match="Expect x to be a 1D strictly"):
             make_interp_spline(x, y, k=k)
 
-    def test_not_a_knot(self, xp):
+    @pytest.mark.parametrize('k', [2, 3, 4, 5, 6, 7])
+    def test_not_a_knot(self, k, xp):
+        if is_cupy(xp) and k % 2 == 0:
+            pytest.xfail(f"cupy only supports odd degrees, got {k=}.")
         xx, yy = self._get_xy(xp)
-        for k in [2, 3, 4, 5, 6, 7]:
-            b = make_interp_spline(xx, yy, k)
-            xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_periodic(self, xp):
         xx, yy = self._get_xy(xp)
@@ -1543,6 +1545,7 @@ class TestInterp:
         with assert_raises(ValueError):
             make_interp_spline(x, y, bc_type=(l, r))
 
+    @skip_xp_backends("cupy", reason="CuPy does not raise")
     def test_deriv_order_too_large(self, xp):
         x = xp.arange(7)
         y = x**2
@@ -1825,7 +1828,7 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_weights(self, method, xp):
         # weights = 1 is same as None
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k  # type: ignore[misc]
         w = xp.ones_like(x)
 
         b = make_lsq_spline(x, y, t, k, method=method)
@@ -1837,7 +1840,7 @@ class TestLSQ:
 
     def test_weights_same(self, xp):
         # both methods treat weights
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k  # type: ignore[misc]
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
         w = xp.asarray(w)
 
@@ -1850,7 +1853,7 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
         y = xp.asarray(y)
@@ -1860,7 +1863,7 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs_2(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
         nrhs = 3
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
@@ -1874,7 +1877,7 @@ class TestLSQ:
         xp_assert_close(coefs, b.c, atol=1e-15)
 
     def test_multiple_rhs_3(self, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
         nrhs = 3
         y = np.random.random(size=(n, nrhs))
         y = xp.asarray(y)
@@ -1885,7 +1888,7 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_complex(self, method, xp):
         # cmplx-valued `y`
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k  # type: ignore[misc]
         yc = xp.asarray(self.y * (1. + 2.j))
 
         b = make_lsq_spline(x, yc, t, k, method=method)
@@ -1897,7 +1900,7 @@ class TestLSQ:
     def test_complex_2(self, xp):
         # test complex-valued y with y.ndim > 1
 
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k  # type: ignore[misc]
         yc = xp.asarray(self.y * (1. + 2.j))
         yc = xp.stack((yc, yc), axis=1)
 
@@ -3450,7 +3453,7 @@ index 1afb1900f1..d817e51ad8 100644
     @pytest.mark.parametrize("npts", [30, 50, 100])
     @pytest.mark.parametrize("s", [0.1, 1e-2, 0])
     def test_vs_splrep(self, s, npts):
-        # XXX this test is brittle: differences start apearing for k=3 and s=1e-6,
+        # XXX this test is brittle: differences start appearing for k=3 and s=1e-6,
         # also for k != 3. Might be worth investigating at some point.
         # I think we do not really guarantee exact agreement with splrep. Instead,
         # we guarantee it is the same *in most cases*; otherwise slight differences
@@ -3487,7 +3490,7 @@ index 1afb1900f1..d817e51ad8 100644
 
 
 def disc_naive(t, k):
-    """Straitforward way to compute the discontinuity matrix. For testing ONLY.
+    """Straightforward way to compute the discontinuity matrix. For testing ONLY.
 
     This routine returns a dense matrix, while `_fitpack_repro.disc` returns
     a packed one.
@@ -3560,7 +3563,7 @@ class F_dense:
 
 class _TestMakeSplrepBase:
 
-    bc_type = None
+    bc_type: str | None = None
 
     def _get_xykt(self, xp=np):
         if self.bc_type == 'periodic':
@@ -3951,6 +3954,22 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         w = np.asarray([1.38723] * y.shape[0], dtype=np.float64)
         with assert_raises(ValueError):
             make_splrep(x, y, w=w, k=2, s=12)
+
+    def test_k0_raises(self):
+        # k=0 (piecewise constant) with s>0 is not supported: knot selection
+        # is undefined for degree 0, causing a cryptic RuntimeError.
+        # s=0 is fine as it bypasses _generate_knots. gh-25370
+        x = np.arange(10, dtype=float)
+        y = x**2
+        with pytest.raises(ValueError, match="k must be >= 1"):
+          make_splrep(x, y, s=1, k=0)
+
+        # s=0 with k=0 is fine: goes through make_interp_spline
+        result = make_splrep(x, y, s=0, k=0)
+        expected = make_interp_spline(x, y, k=0)
+        xp_assert_close(result.t, expected.t)
+        xp_assert_close(result.c, expected.c)
+        assert result.k == expected.k
 
     def test_shape(self, xp):
         # make sure coefficients have the right shape (not extra dims)

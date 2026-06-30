@@ -51,7 +51,7 @@ fitpack_bispeu(PyObject* Py_UNUSED(dummy), PyObject *args)
         PyErr_SetString(PyExc_ValueError, "x and y must have same length");
         goto fail;
     }
-    if (PyArray_DIMS(ap_c)[0] != (nx - kx - 1) * (ny - ky - 1)) {
+    if (PyArray_DIMS(ap_c)[0] != (npy_intp)(nx - kx - 1) * (ny - ky - 1)) {
         PyErr_SetString(PyExc_ValueError,
             "c must have length (nx-kx-1)*(ny-ky-1)");
         goto fail;
@@ -135,7 +135,7 @@ fitpack_bispev(PyObject* Py_UNUSED(dummy), PyObject *args)
     my = (int)PyArray_DIMS(ap_y)[0];
 
     /* Check dimensions match pyf specification */
-    if (PyArray_DIMS(ap_c)[0] != (nx - kx - 1) * (ny - ky - 1)) {
+    if (PyArray_DIMS(ap_c)[0] != (npy_intp)(nx - kx - 1) * (ny - ky - 1)) {
         PyErr_SetString(PyExc_ValueError,
             "c must have length (nx-kx-1)*(ny-ky-1)");
         goto fail;
@@ -601,7 +601,7 @@ fitpack_parder(PyObject* Py_UNUSED(dummy), PyObject *args)
     my = (int)PyArray_DIMS(ap_y)[0];
 
     /* Check dimensions match pyf specification */
-    if (PyArray_DIMS(ap_c)[0] != (nx - kx - 1) * (ny - ky - 1)) {
+    if (PyArray_DIMS(ap_c)[0] != (npy_intp)(nx - kx - 1) * (ny - ky - 1)) {
         PyErr_SetString(PyExc_ValueError,
             "c must have length (nx-kx-1)*(ny-ky-1)");
         goto fail;
@@ -701,14 +701,14 @@ fitpack_pardtc(PyObject* Py_UNUSED(dummy), PyObject *args)
     ny = (int)PyArray_DIMS(ap_ty)[0];
 
     /* Check dimensions match pyf specification */
-    if (PyArray_DIMS(ap_c)[0] != (nx - kx - 1) * (ny - ky - 1)) {
+    if (PyArray_DIMS(ap_c)[0] != (npy_intp)(nx - kx - 1) * (ny - ky - 1)) {
         PyErr_SetString(PyExc_ValueError,
             "c must have length (nx-kx-1)*(ny-ky-1)");
         goto fail;
     }
 
     /* Allocate output array newc - same size as c */
-    dims[0] = (nx - kx - 1) * (ny - ky - 1);
+    dims[0] = (npy_intp)(nx - kx - 1) * (ny - ky - 1);
     ap_newc = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
     if (ap_newc == NULL) {
         goto fail;
@@ -764,7 +764,7 @@ fitpack_pardeu(PyObject* Py_UNUSED(dummy), PyObject *args)
     m = PyArray_DIMS(ap_x)[0];
 
     /* Check c array dimensions */
-    if (PyArray_DIMS(ap_c)[0] != (nx - kx - 1) * (ny - ky - 1)) {
+    if (PyArray_DIMS(ap_c)[0] != (npy_intp)(nx - kx - 1) * (ny - ky - 1)) {
         PyErr_SetString(PyExc_ValueError, "Invalid c array dimensions");
         goto fail;
     }
@@ -850,7 +850,7 @@ fitpack_dblint(PyObject* Py_UNUSED(dummy), PyObject *args)
     ny = PyArray_DIMS(ap_ty)[0];
 
     /* Check c array dimensions */
-    if (PyArray_DIMS(ap_c)[0] != (nx - kx - 1) * (ny - ky - 1)) {
+    if (PyArray_DIMS(ap_c)[0] != (npy_intp)(nx - kx - 1) * (ny - ky - 1)) {
         PyErr_SetString(PyExc_ValueError, "Invalid c array dimensions");
         goto fail;
     }
@@ -1576,8 +1576,11 @@ fitpack_surfit(PyObject* Py_UNUSED(dummy), PyObject *args)
     memcpy(PyArray_DATA(ap_wrk_out), wrk1, (size_t)nc * sizeof(double));
 
     free(wrk1);
+    wrk1 = NULL;
     free(wrk2);
+    wrk2 = NULL;
     free(iwrk);
+    iwrk = NULL;
 
     /* Slice tx, ty to actual sizes nx, ny for return. */
     PyArrayObject *ap_tx_sliced = NULL;
@@ -1663,7 +1666,7 @@ fitpack_regrid(PyObject* Py_UNUSED(dummy), PyObject *args)
         PyErr_SetString(PyExc_ValueError, "my must be > ky");
         goto fail;
     }
-    if (PyArray_DIMS(ap_z)[0] != mx * my) {
+    if (PyArray_DIMS(ap_z)[0] != (npy_intp)mx * my) {
         PyErr_SetString(PyExc_ValueError, "z array length must equal mx*my");
         goto fail;
     }
@@ -1684,7 +1687,7 @@ fitpack_regrid(PyObject* Py_UNUSED(dummy), PyObject *args)
         goto fail;
     }
 
-    dims[0] = (nxest - kx - 1) * (nyest - ky - 1);
+    dims[0] = (npy_intp)(nxest - kx - 1) * (nyest - ky - 1);
     ap_c = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
     if (ap_c == NULL) {
         goto fail;
@@ -1817,7 +1820,7 @@ fitpack_sphere(PyObject* Py_UNUSED(dummy), PyObject *args)
     lwrk2 = PyArray_DIMS(wrk2)[0];
     kwrk = PyArray_DIMS(iwrk)[0];
 
-    dims[0] = (ntest - 4) * (npest - 4);
+    dims[0] = (npy_intp)(ntest - 4) * (npest - 4);
     ap_c = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
     if (ap_c == NULL) {
         goto fail;
@@ -1907,7 +1910,7 @@ fitpack_spgrid(PyObject* Py_UNUSED(dummy), PyObject *args)
         PyErr_SetString(PyExc_ValueError, "ider array must have length 4");
         goto fail;
     }
-    if (PyArray_DIMS(r)[0] != mu * mv) {
+    if (PyArray_DIMS(r)[0] != (npy_intp)mu * mv) {
         PyErr_SetString(PyExc_ValueError, "r array length must equal mu*mv");
         goto fail;
     }
@@ -1938,7 +1941,7 @@ fitpack_spgrid(PyObject* Py_UNUSED(dummy), PyObject *args)
         goto fail;
     }
 
-    dims[0] = (nuest - 4) * (nvest - 4);
+    dims[0] = (npy_intp)(nuest - 4) * (nvest - 4);
     ap_c_full = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
     if (ap_c_full == NULL) {
         goto fail;
@@ -2030,6 +2033,7 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
 {
     PyArrayObject *ap_u = NULL, *ap_x = NULL, *ap_w = NULL;
     PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_wrk = NULL, *ap_iwrk = NULL;
+    PyArrayObject *ap_t_pad = NULL, *ap_t_out = NULL, *ap_c_out = NULL;
     PyObject *u, *x, *w, *t_in, *wrk_in, *iwrk_in;
     int iopt, ipar, idim, m, mx, k, nest, n, nc, lwrk, ier, per;
     double ub, ue, s, fp;
@@ -2130,7 +2134,6 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
     nc = idim * nest;
 
     /* Pad t array to size nest */
-    PyArrayObject *ap_t_pad = NULL;
     dims[0] = nest;
     ap_t_pad = (PyArrayObject *)PyArray_ZEROS(1, dims, NPY_FLOAT64, 0);
     if (ap_t_pad == NULL) {
@@ -2146,7 +2149,6 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
     dims[0] = nc;
     ap_c = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
     if (ap_c == NULL) {
-        Py_DECREF(ap_t_pad);
         goto fail;
     }
 
@@ -2183,29 +2185,24 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
                (int *)PyArray_DATA(ap_iwrk), &ier);
     }
 
-    Py_DECREF(ap_x);
-    Py_DECREF(ap_w);
-    Py_DECREF(ap_t);
+    Py_CLEAR(ap_x);
+    Py_CLEAR(ap_w);
+    Py_CLEAR(ap_t);
 
     /* Resize t and c to actual output size n */
-    PyArrayObject *ap_t_out = NULL;
-    PyArrayObject *ap_c_out = NULL;
     if (ier <= 3) {
         /* ier <= 0: normal return, ier=1,2,3: warnings but with valid output */
         dims[0] = n;
         ap_t_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
         if (ap_t_out == NULL) {
-            Py_DECREF(ap_t_pad);
-            goto fail_after_call;
+            goto fail;
         }
         memcpy(PyArray_DATA(ap_t_out), PyArray_DATA(ap_t_pad), n * sizeof(double));
 
-        dims[0] = idim * (n - k - 1);
+        dims[0] = (npy_intp)idim * (n - k - 1);
         ap_c_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
         if (ap_c_out == NULL) {
-            Py_DECREF(ap_t_out);
-            Py_DECREF(ap_t_pad);
-            goto fail_after_call;
+            goto fail;
         }
         /* Copy coefficients dimension by dimension.
          * fpclos stores coefficients with spacing: c[n*(j-1) + i-1] for dimension j, coef i
@@ -2225,52 +2222,41 @@ fitpack_parcur(PyObject* Py_UNUSED(dummy), PyObject *args)
         ap_t_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
         ap_c_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_FLOAT64);
         if (ap_t_out == NULL || ap_c_out == NULL) {
-            Py_XDECREF(ap_t_out);
-            Py_XDECREF(ap_c_out);
-            Py_DECREF(ap_t_pad);
-            goto fail_after_call;
+            goto fail;
         }
     }
 
-    Py_DECREF(ap_t_pad);
-    Py_DECREF(ap_c);
+    Py_CLEAR(ap_t_pad);
+    Py_CLEAR(ap_c);
 
     /* Build output dict o = {'u': u, 'ub': ub, 'ue': ue, 'wrk': wrk, 'iwrk': iwrk, 'ier': ier, 'fp': fp} */
-    PyObject *o = PyDict_New();
+    PyObject *o = Py_BuildValue("{s:O,s:d,s:d,s:O,s:O,s:i,s:d}",
+                                "u", (PyObject *)ap_u,
+                                "ub", ub,
+                                "ue", ue,
+                                "wrk", (PyObject *)ap_wrk,
+                                "iwrk", (PyObject *)ap_iwrk,
+                                "ier", ier,
+                                "fp", fp);
     if (o == NULL) {
-        Py_DECREF(ap_t_out);
-        Py_DECREF(ap_c_out);
-        goto fail_after_call;
+        goto fail;
     }
-
-    PyDict_SetItemString(o, "u", (PyObject *)ap_u);
-    PyDict_SetItemString(o, "ub", PyFloat_FromDouble(ub));
-    PyDict_SetItemString(o, "ue", PyFloat_FromDouble(ue));
-    PyDict_SetItemString(o, "wrk", (PyObject *)ap_wrk);
-    PyDict_SetItemString(o, "iwrk", (PyObject *)ap_iwrk);
-    PyDict_SetItemString(o, "ier", PyLong_FromLong(ier));
-    PyDict_SetItemString(o, "fp", PyFloat_FromDouble(fp));
 
     Py_DECREF(ap_u);
     Py_DECREF(ap_wrk);
     Py_DECREF(ap_iwrk);
 
-    return Py_BuildValue(("NNO"), PyArray_Return(ap_t_out), PyArray_Return(ap_c_out), o);
-
-fail_after_call:
-    Py_XDECREF(ap_u);
-    Py_XDECREF(ap_t);
-    Py_XDECREF(ap_c);
-    Py_XDECREF(ap_wrk);
-    Py_XDECREF(ap_iwrk);
-    return NULL;
+    return Py_BuildValue("NNN", PyArray_Return(ap_t_out), PyArray_Return(ap_c_out), o);
 
 fail:
     Py_XDECREF(ap_u);
     Py_XDECREF(ap_x);
     Py_XDECREF(ap_w);
     Py_XDECREF(ap_t);
+    Py_XDECREF(ap_t_pad);
     Py_XDECREF(ap_c);
+    Py_XDECREF(ap_t_out);
+    Py_XDECREF(ap_c_out);
     Py_XDECREF(ap_wrk);
     Py_XDECREF(ap_iwrk);
     return NULL;

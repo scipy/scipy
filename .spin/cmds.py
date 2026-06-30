@@ -369,8 +369,9 @@ def working_dir(new_dir):
 
 @click.command(context_settings={"ignore_unknown_options": True})
 @meson.build_dir_option
+@meson.build_option
 @click.pass_context
-def mypy(ctx, build_dir):
+def mypy(ctx, build_dir, build):
     """🦆 Run Mypy tests for SciPy
     """
     if is_editable_install():
@@ -380,18 +381,19 @@ def mypy(ctx, build_dir):
         )
         raise SystemExit(1)
     else:
-        click.secho(
-                "Invoking `build` prior to running mypy tests:",
-                bold=True, fg="bright_green"
-            )
-        ctx.invoke(build)
+        if build:
+            click.secho(
+                    "Invoking `build` prior to running mypy tests:",
+                    bold=True, fg="bright_green"
+                )
+            ctx.invoke(build_cmd, build_dir=build_dir)
 
     try:
         import mypy.api
     except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
-            "pip install -r requirements/dev.txt from the repo root"
+            "`pip install --group typecheck` from the repo root"
         ) from e
 
     build_dir = os.path.abspath(build_dir)
@@ -945,7 +947,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
         cmd = ['asv', 'run', '--show-stderr', '--python=same'] + bench_args
         _run_asv(cmd)
     else:
-        # Ensure that we don't have uncommited changes
+        # Ensure that we don't have uncommitted changes
         commit_a, commit_b = [_commit_to_sha(c) for c in commits]
 
         if commit_b == 'HEAD' and _dirty_git_working_dir():

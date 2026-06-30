@@ -92,22 +92,12 @@ Compiled code
 .. toctree::
     :hidden:
 
-    development_workflow
-    pep8
     ../gitwash/gitwash
     reviewing_prs
-    ../triage
-    adding_new
-    ../core-dev/index
     ../missing-bits
     NumPy testing guidelines <https://numpy.org/devdocs/reference/testing.html>
     writing_test_tips
-    devpy_test
     debugging_linalg_issues
     How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>
-    rendering_documentation
     adding_notebooks
-    benchmarking
-    cython
     compiled_code
-    public_cython_api

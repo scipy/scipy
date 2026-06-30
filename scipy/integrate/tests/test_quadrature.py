@@ -395,7 +395,7 @@ class TestTrapezoid(CommonTrapezoidSimpsonTests):
         xm = np.ma.array(x, mask=mask)
         assert_allclose(trapezoid(y, xm), r)
 
-    def test_array_like(self):
+    def test_array_like(self):  # array_like is np only
         x = list(range(5))
         y = [t * t for t in x]
         xarr = np.asarray(x, dtype=np.float64)

@@ -39,6 +39,8 @@ Collections of test cases suitable for testing 1-D root-finders
 #      for finding the zero of a nonlinear function without using derivatives."
 #      Advances in Engineering Software 28.3 (1997): 145-149.
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from random import random
 
 import numpy as np
@@ -122,7 +124,7 @@ def f5(x):
 # f6(x) returns random value. Without memoization, calling twice with the
 # same x returns different values, hence a "random value", not a
 # "function with random values"
-_f6_cache = {}
+_f6_cache: dict[float, float] = {}
 def f6(x):
     v = _f6_cache.get(x, None)
     if v is None:
@@ -149,12 +151,12 @@ _ORIGINAL_TESTS_KEYS = [
     "f", "fprime", "fprime2", "args", "bracket", "smoothness", "x0", "root", "ID"
 ]
 _ORIGINAL_TESTS = [
-    [f1, f1_fp, f1_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.01.00"],
-    [f2, f2_fp, f2_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.02.00"],
-    [f3, f3_fp, f3_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.03.00"],
-    [f4, None, None, (), [0.5, np.sqrt(3)], -1, 0.6, 1.0, "original.04.00"],
-    [f5, None, None, (), [0.5, np.sqrt(3)], -1, 0.6, 1.0, "original.05.00"],
-    [f6, None, None, (), [0.5, np.sqrt(3)], -np.inf, 0.6, 1.0, "original.05.00"]
+    (f1, f1_fp, f1_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.01.00"),
+    (f2, f2_fp, f2_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.02.00"),
+    (f3, f3_fp, f3_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.03.00"),
+    (f4, None, None, (), [0.5, np.sqrt(3)], -1, 0.6, 1.0, "original.04.00"),
+    (f5, None, None, (), [0.5, np.sqrt(3)], -1, 0.6, 1.0, "original.05.00"),
+    (f6, None, None, (), [0.5, np.sqrt(3)], -np.inf, 0.6, 1.0, "original.05.00"),
 ]
 
 _ORIGINAL_TESTS_DICTS = [
@@ -857,53 +859,69 @@ fstrings = ['f2', 'f3', 'f4', 'f5', 'f6']
 #   "Chandrupatla" test cases
 #   Functions and test cases that appear in [2]
 
+@dataclass
+class FunctionWithRoot:
+    func: Callable[[float], float]
+    root: float
+
+    def __call__(self, x: float) -> float:
+        return self.func(x)
+
+    @property
+    def __name__(self):
+        return self.func.__name__
+
 def fun1(x):
     return x**3 - 2*x - 5
-fun1.root = 2.0945514815423265  # additional precision using mpmath.findroot
+
+fun1 = FunctionWithRoot(
+    fun1,
+    2.0945514815423265,  # additional precision using mpmath.findroot
+)
 
 
 def fun2(x):
     return 1 - 1/x**2
-fun2.root = 1
+fun2 = FunctionWithRoot(fun2, 1)
 
 
 def fun3(x):
     return (x-3)**3
-fun3.root = 3
+fun3 = FunctionWithRoot(fun3, 3)
 
 
 def fun4(x):
     return 6*(x-2)**5
-fun4.root = 2
+fun4 = FunctionWithRoot(fun4, 2)
 
 
 def fun5(x):
     return x**9
-fun5.root = 0
+fun5 = FunctionWithRoot(fun5, 0)
 
 
 def fun6(x):
     return x**19
-fun6.root = 0
+fun6 = FunctionWithRoot(fun6, 0)
 
 
 def fun7(x):
     xp = array_namespace(x)
     return 0 if xp.abs(x) < 3.8e-4 else x*xp.exp(-x**(-2))
-fun7.root = 0
+fun7 = FunctionWithRoot(fun7, 0)
 
 
 def fun8(x):
     xp = array_namespace(x)
     xi = 0.61489
     return -(3062*(1-xi)*xp.exp(-x))/(xi + (1-xi)*xp.exp(-x)) - 1013 + 1628/x
-fun8.root = 1.0375360332870405
+fun8 = FunctionWithRoot(fun8, 1.0375360332870405)
 
 
 def fun9(x):
     xp = array_namespace(x)
     return xp.exp(x) - 2 - 0.01/x**2 + .000002/x**3
-fun9.root = 0.7032048403631358
+fun9 = FunctionWithRoot(fun9, 0.7032048403631358)
 
 # Each "chandropatla" test case has
 # - a function,
@@ -918,55 +936,57 @@ fun9.root = 0.7032048403631358
 
 _CHANDRUPATLA_TESTS_KEYS = ["f", "bracket", "root", "nfeval", "ID"]
 _CHANDRUPATLA_TESTS = [
-    [fun1, [2, 3], fun1.root, 7],
-    [fun1, [1, 10], fun1.root, 11],
-    [fun1, [1, 100], fun1.root, 14],
-    [fun1, [-1e4, 1e4], fun1.root, 23],
-    [fun1, [-1e10, 1e10], fun1.root, 43],
-    [fun2, [0.5, 1.51], fun2.root, 8],
-    [fun2, [1e-4, 1e4], fun2.root, 22],
-    [fun2, [1e-6, 1e6], fun2.root, 28],
-    [fun2, [1e-10, 1e10], fun2.root, 41],
-    [fun2, [1e-12, 1e12], fun2.root, 48],
-    [fun3, [0, 5], fun3.root, 21],
-    [fun3, [-10, 10], fun3.root, 23],
-    [fun3, [-1e4, 1e4], fun3.root, 36],
-    [fun3, [-1e6, 1e6], fun3.root, 45],
-    [fun3, [-1e10, 1e10], fun3.root, 55],
-    [fun4, [0, 5], fun4.root, 21],
-    [fun4, [-10, 10], fun4.root, 23],
-    [fun4, [-1e4, 1e4], fun4.root, 33],
-    [fun4, [-1e6, 1e6], fun4.root, 43],
-    [fun4, [-1e10, 1e10], fun4.root, 54],
-    [fun5, [-1, 4], fun5.root, 21],
-    [fun5, [-2, 5], fun5.root, 22],
-    [fun5, [-1, 10], fun5.root, 23],
-    [fun5, [-5, 50], fun5.root, 25],
-    [fun5, [-10, 100], fun5.root, 26],
-    [fun6, [-1., 4.], fun6.root, 21],
-    [fun6, [-2., 5.], fun6.root, 22],
-    [fun6, [-1., 10.], fun6.root, 23],
-    [fun6, [-5., 50.], fun6.root, 25],
-    [fun6, [-10., 100.], fun6.root, 26],
-    [fun7, [-1, 4], fun7.root, 8],
-    [fun7, [-2, 5], fun7.root, 8],
-    [fun7, [-1, 10], fun7.root, 11],
-    [fun7, [-5, 50], fun7.root, 18],
-    [fun7, [-10, 100], fun7.root, 19],
-    [fun8, [2e-4, 2], fun8.root, 9],
-    [fun8, [2e-4, 3], fun8.root, 10],
-    [fun8, [2e-4, 9], fun8.root, 11],
-    [fun8, [2e-4, 27], fun8.root, 12],
-    [fun8, [2e-4, 81], fun8.root, 14],
-    [fun9, [2e-4, 1], fun9.root, 7],
-    [fun9, [2e-4, 3], fun9.root, 8],
-    [fun9, [2e-4, 9], fun9.root, 10],
-    [fun9, [2e-4, 27], fun9.root, 11],
-    [fun9, [2e-4, 81], fun9.root, 13],
+    (fun1, [2, 3], fun1.root, 7),
+    (fun1, [1, 10], fun1.root, 11),
+    (fun1, [1, 100], fun1.root, 14),
+    (fun1, [-1e4, 1e4], fun1.root, 23),
+    (fun1, [-1e10, 1e10], fun1.root, 43),
+    (fun2, [0.5, 1.51], fun2.root, 8),
+    (fun2, [1e-4, 1e4], fun2.root, 22),
+    (fun2, [1e-6, 1e6], fun2.root, 28),
+    (fun2, [1e-10, 1e10], fun2.root, 41),
+    (fun2, [1e-12, 1e12], fun2.root, 48),
+    (fun3, [0, 5], fun3.root, 21),
+    (fun3, [-10, 10], fun3.root, 23),
+    (fun3, [-1e4, 1e4], fun3.root, 36),
+    (fun3, [-1e6, 1e6], fun3.root, 45),
+    (fun3, [-1e10, 1e10], fun3.root, 55),
+    (fun4, [0, 5], fun4.root, 21),
+    (fun4, [-10, 10], fun4.root, 23),
+    (fun4, [-1e4, 1e4], fun4.root, 33),
+    (fun4, [-1e6, 1e6], fun4.root, 43),
+    (fun4, [-1e10, 1e10], fun4.root, 54),
+    (fun5, [-1, 4], fun5.root, 21),
+    (fun5, [-2, 5], fun5.root, 22),
+    (fun5, [-1, 10], fun5.root, 23),
+    (fun5, [-5, 50], fun5.root, 25),
+    (fun5, [-10, 100], fun5.root, 26),
+    (fun6, [-1., 4.], fun6.root, 21),
+    (fun6, [-2., 5.], fun6.root, 22),
+    (fun6, [-1., 10.], fun6.root, 23),
+    (fun6, [-5., 50.], fun6.root, 25),
+    (fun6, [-10., 100.], fun6.root, 26),
+    (fun7, [-1, 4], fun7.root, 8),
+    (fun7, [-2, 5], fun7.root, 8),
+    (fun7, [-1, 10], fun7.root, 11),
+    (fun7, [-5, 50], fun7.root, 18),
+    (fun7, [-10, 100], fun7.root, 19),
+    (fun8, [2e-4, 2], fun8.root, 9),
+    (fun8, [2e-4, 3], fun8.root, 10),
+    (fun8, [2e-4, 9], fun8.root, 11),
+    (fun8, [2e-4, 27], fun8.root, 12),
+    (fun8, [2e-4, 81], fun8.root, 14),
+    (fun9, [2e-4, 1], fun9.root, 7),
+    (fun9, [2e-4, 3], fun9.root, 8),
+    (fun9, [2e-4, 9], fun9.root, 10),
+    (fun9, [2e-4, 27], fun9.root, 11),
+    (fun9, [2e-4, 81], fun9.root, 13),
 ]
-_CHANDRUPATLA_TESTS = [test + [f'{test[0].__name__}.{i%5+1}']
-                       for i, test in enumerate(_CHANDRUPATLA_TESTS)]
+_CHANDRUPATLA_TESTS_WITH_ID = [
+    (*test, f'{test[0].__name__}.{i%5+1}')
+    for i, test in enumerate(_CHANDRUPATLA_TESTS)
+]
 
 _CHANDRUPATLA_TESTS_DICTS = [dict(zip(_CHANDRUPATLA_TESTS_KEYS, testcase))
-                             for testcase in _CHANDRUPATLA_TESTS]
+                             for testcase in _CHANDRUPATLA_TESTS_WITH_ID]
 _add_a_b(_CHANDRUPATLA_TESTS_DICTS)

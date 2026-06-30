@@ -44,7 +44,7 @@ from scipy.optimize.elementwise import find_root
 from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan
 
 import scipy.special as special
-# Import unused here but needs to stay until end of deprecation periode
+# Import unused here but needs to stay until end of deprecation period
 # See https://github.com/scipy/scipy/issues/15765#issuecomment-1875564522
 from scipy import linalg  # noqa: F401
 from . import distributions
@@ -4297,8 +4297,9 @@ def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative, axis):
 
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
-PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
-                                       ['statistic', 'pvalue'], [])
+PearsonRResultBase: type = _make_tuple_bunch(
+    'PearsonRResultBase', ['statistic', 'pvalue'], []
+)
 
 
 class PearsonRResult(PearsonRResultBase):
@@ -4730,17 +4731,17 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         y = xp.where(const_y[..., xp.newaxis], xp.nan, y)
 
     if isinstance(method, PermutationMethod):
-        def statistic(y, axis):
+        def statistic_y(y, axis):
             statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
-        res = permutation_test((y,), statistic, permutation_type='pairings',
+        res = permutation_test((y,), statistic_y, permutation_type='pairings',
                                axis=axis, alternative=alternative, **method._asdict())
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
                               alternative=alternative, x=x, y=y, axis=axis)
     elif isinstance(method, MonteCarloMethod):
-        def statistic(x, y, axis):
+        def statistic_x_y(x, y, axis):
             statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
@@ -4751,7 +4752,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
             rng = np.random.default_rng(rng)
             method['rvs'] = rng.normal, rng.normal
 
-        res = monte_carlo_test((x, y,), statistic=statistic, axis=axis,
+        res = monte_carlo_test((x, y,), statistic=statistic_x_y, axis=axis,
                                alternative=alternative, **method)
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
@@ -6023,8 +6024,9 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
-TtestResultBase = _make_tuple_bunch('TtestResultBase',
-                                    ['statistic', 'pvalue'], ['df'])
+TtestResultBase: type = _make_tuple_bunch(
+    'TtestResultBase', ['statistic', 'pvalue'], ['df']
+)
 
 
 class TtestResult(TtestResultBase):
@@ -9410,7 +9412,7 @@ def quantile_test(x, *, q=0.0, p=0.5, alternative='two-sided', axis=0, keepdims=
         The object also has the following method:
 
         confidence_interval(confidence_level=0.95)
-            Computes a confidence interval around the the
+            Computes a confidence interval around the
             population quantile associated with the probability `p`. The
             confidence interval is returned in a ``namedtuple`` with
             fields `low` and `high`.  Values are `nan` when there are
@@ -9996,9 +9998,18 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     Examples
     --------
     >>> from scipy.stats import wasserstein_distance
+
+    When no weights are provided, each value is treated as a single unit
+    of probability mass at that location:
+
     >>> wasserstein_distance([0, 1, 3], [5, 6, 8])
     5.0
-    >>> wasserstein_distance([0, 1], [0, 1], [3, 1], [2, 2])
+
+    When weights are provided, they represent the probability mass
+    (e.g. "shovelsful of dirt" in the Earth mover's distance analogy [2]_)
+    at each location. Weights are normalized internally to sum to 1:
+
+    >>> wasserstein_distance([0, 1], [0, 1], u_weights=[3, 1], v_weights=[2, 2])
     0.25
     >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
@@ -10660,7 +10671,7 @@ def _br(x, *, r=0, xp):
 
 
 def _prk(r, k):
-    # Writen to match [1] Equation 27 closely to facilitate review.
+    # Written to match [1] Equation 27 closely to facilitate review.
     # This does not protect against overflow, so improvements to
     # robustness would be a welcome follow-up.
     binom_r_k = xpx.lazy_apply(special.binom, r, k)
@@ -10752,7 +10763,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
 
     n_moments = 4 if is_lazy_array(order) else int(xp.max(order))
     k = xp.arange(n_moments, dtype=sample.dtype)
-    prk = _prk(xpx.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
+    prk = _prk(xp.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k, xp=xp)
 
     n = sample.shape[-1]

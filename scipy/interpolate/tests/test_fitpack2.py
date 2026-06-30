@@ -460,7 +460,7 @@ class TestUnivariateSpline:
         # than C-order which would give sorted x = [1,2,3,4,5,6]
 
         # The F-order flattened x is not monotonic, so FITPACK returns ier=10
-        # and emits a UserWarning about erronous input.
+        # and emits a UserWarning about erroneous input.
         with pytest.warns(UserWarning, match="x\\[0\\]<x\\[1\\]<"):
             InterpolatedUnivariateSpline(x_2d, y_2d)
 
@@ -745,6 +745,92 @@ class TestSmoothBivariateSpline:
                                      bbox=bbox.tolist(), w=w.tolist(),
                                      kx=1, ky=1)
         xp_assert_close(spl1(0.1, 0.5), spl2(0.1, 0.5))
+
+
+def _contiguous(a):
+    """C-contiguous reference layout."""
+    return np.ascontiguousarray(a, dtype=np.float64)
+
+
+def _strided(a):
+    """Return a non-contiguous view of `a`, interleaved with NaN. A read that
+    wrongly assumes C-contiguity picks up a NaN; a correct strided read does
+    not."""
+    a = np.asarray(a, dtype=np.float64)
+    v = np.stack([a, np.full_like(a, np.nan)], axis=-1)[..., 0]
+    assert not v.flags["C_CONTIGUOUS"]
+    return v
+
+
+# Builders for the non-contiguous-input sweep below. Each applies `prep` to
+# every array input and returns the fit evaluated at fixed points (flattened).
+# Data is regenerated identically per call (fixed seed) so the only difference
+# between two calls is `prep`.
+def _scattered_data():
+    rng = np.random.default_rng(0)
+    src = rng.uniform(-5, 5, (400, 2))
+    x, y = src[:, 0].copy(), src[:, 1].copy()
+    return x, y, x ** 2 + y
+
+
+def _sphere_scattered_data():
+    rng = np.random.default_rng(0)
+    theta = rng.uniform(0.1, np.pi - 0.1, 200)
+    phi = rng.uniform(0.1, 2 * np.pi - 0.1, 200)
+    return theta, phi, np.sin(theta) * np.cos(phi)
+
+
+def _fit_smooth_bivariate(prep):
+    x, y, z = _scattered_data()
+    return SmoothBivariateSpline(prep(x), prep(y), prep(z), kx=2, ky=2).ev(x, y)
+
+
+def _fit_lsq_bivariate(prep):
+    x, y, z = _scattered_data()
+    t = np.linspace(-4, 4, 3)
+    return LSQBivariateSpline(prep(x), prep(y), prep(z), prep(t), prep(t),
+                              kx=2, ky=2).ev(x, y)
+
+
+def _fit_rect_bivariate(prep):
+    gx, gy = np.linspace(0, 1, 12), np.linspace(0, 1, 14)
+    gz = np.sin(gx[:, None]) * np.cos(gy[None, :])
+    spl = RectBivariateSpline(prep(gx), prep(gy), prep(gz))
+    return spl(np.linspace(0.1, 0.9, 5), np.linspace(0.1, 0.9, 5)).ravel()
+
+
+def _fit_smooth_sphere(prep):
+    theta, phi, r = _sphere_scattered_data()
+    spl = SmoothSphereBivariateSpline(prep(theta), prep(phi), prep(r), s=2.0)
+    return spl.ev(theta, phi)
+
+
+def _fit_lsq_sphere(prep):
+    theta, phi, r = _sphere_scattered_data()
+    tt = np.linspace(0, np.pi, 5)[1:-1]
+    tp = np.linspace(0, 2 * np.pi, 5)[1:-1]
+    return LSQSphereBivariateSpline(prep(theta), prep(phi), prep(r),
+                                    prep(tt), prep(tp)).ev(theta, phi)
+
+
+def _fit_rect_sphere(prep):
+    u = np.linspace(0, np.pi, 14)[1:-1]
+    v = np.linspace(0, 2 * np.pi, 14, endpoint=False)
+    rg = np.sin(u[:, None]) * np.cos(v[None, :])
+    return RectSphereBivariateSpline(prep(u), prep(v), prep(rg))(u, v).ravel()
+
+
+@pytest.mark.parametrize("fit", [
+    pytest.param(_fit_smooth_bivariate, id="SmoothBivariateSpline"),
+    pytest.param(_fit_lsq_bivariate, id="LSQBivariateSpline"),
+    pytest.param(_fit_rect_bivariate, id="RectBivariateSpline"),
+    pytest.param(_fit_smooth_sphere, id="SmoothSphereBivariateSpline"),
+    pytest.param(_fit_lsq_sphere, id="LSQSphereBivariateSpline"),
+    pytest.param(_fit_rect_sphere, id="RectSphereBivariateSpline"),
+])
+def test_bivariate_spline_noncontiguous_input(fit):
+    # The FITPACK C bindings read x/y/z/w buffers assuming C-contiguity.
+    xp_assert_close(fit(_strided), fit(_contiguous))
 
 
 class TestLSQSphereBivariateSpline:
@@ -1418,10 +1504,10 @@ class TestRectBivariateSpline:
     @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
                                         (1, 7e-3, 1e-4),
                                         (3, 2e-2, 1e-4)])
-    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline,
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
                                            _RectBivariateSplineEval),
                                           (_regrid,
-                                           _ndbspline_call_like_bivariate)])
+                                           _ndbspline_call_like_bivariate)))
     def test_spline_large_2d(self, shape, s_tols, spl_apis):
         # Reference - https://github.com/scipy/scipy/issues/17787
         #
@@ -1447,10 +1533,10 @@ class TestRectBivariateSpline:
     @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system "
                                                      "due to large input data")
     @pytest.mark.parametrize("k", [3, 4])
-    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline,
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
                                            _RectBivariateSplineEval),
                                           (_regrid,
-                                           _ndbspline_call_like_bivariate)])
+                                           _ndbspline_call_like_bivariate)))
     def test_spline_large_2d_maxit(self, k, spl_apis):
         # Reference - for https://github.com/scipy/scipy/issues/17787
         #
@@ -1472,10 +1558,10 @@ class TestRectBivariateSpline:
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
-    @pytest.mark.parametrize("spl_apis", [(RectBivariateSpline,
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
                                            _RectBivariateSplineEval),
                                           (_regrid,
-                                           _ndbspline_call_like_bivariate)])
+                                           _ndbspline_call_like_bivariate)))
     def test_spline_synthetic_data(self, spl_apis):
         """
         Test regrid with synthetic smooth data (mixed frequencies + noise).
@@ -1689,7 +1775,7 @@ class TestRectSphereBivariateSpline:
 
     def test_pole_continuity_gh_14591(self):
         # regression test for https://github.com/scipy/scipy/issues/14591
-        # with pole_continuty=(True, True), the internal work array size
+        # with pole_continuity=(True, True), the internal work array size
         # was too small, leading to a FITPACK data validation error.
 
         # The reproducer in gh-14591 was using a NetCDF4 file with

@@ -1,15 +1,10 @@
 _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
-  fs.copyfile('_boxcox.pxd'),
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
-  fs.copyfile('_hyp0f1.pxd'),
-  fs.copyfile('_hypergeometric.pxd'),
   fs.copyfile('_legacy.pxd'),
-  fs.copyfile('_ndtri_exp.pxd'),
-  fs.copyfile('_spence.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
@@ -24,10 +19,8 @@ ufuncs_sources = [
 ]
 
 ufuncs_cxx_sources = [
-  '_wright.cxx',
   'ellint_carlson_wrap.cxx',
   'sf_error.cc',
-  'wright.cc'
 ]
 
 cdflib_lib = static_library('cdflib',
@@ -185,29 +178,6 @@ py3.extension_module('cython_special',
   subdir: 'scipy/special',
 )
 
-py3.extension_module('_comb',
-  cython_gen.process('_comb.pyx'),
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/special'
-)
-
-py3.extension_module('_test_internal',
-  [cython_gen.process('_test_internal.pyx'), 'dd_real_wrappers.cpp'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep, np_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/special',
-  install_tag: 'tests'
-)
-
-py3.install_sources(
-  '_test_internal.pyi',
-  subdir: 'scipy/special',
-  install_tag: 'tests'
-)
-
 npz_files = [
   [
     '_data_boost',
@@ -256,7 +226,6 @@ python_sources = [
   '_mptestutils.py',
   '_multiufuncs.py',
   '_orthogonal.py',
-  '_orthogonal.pyi',
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
