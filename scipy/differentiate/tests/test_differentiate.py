@@ -695,9 +695,7 @@ class TestHessian(JacobianHessianTest):
         # assert np.unique(res.nfev).size == 3
 
 
-    @pytest.mark.skip_xp_backends(np_only=True,
-                                  reason='Python list input uses NumPy backend')
-    def test_small_rtol_warning(self, xp):
+    def test_small_rtol_warning(self):  # array-like is np only
         message = 'The specified `rtol=1e-15`, but...'
         with pytest.warns(RuntimeWarning, match=message):
-            hessian(xp.sin, [1.], tolerances=dict(rtol=1e-15))
+            hessian(np.sin, [1.], tolerances=dict(rtol=1e-15))
