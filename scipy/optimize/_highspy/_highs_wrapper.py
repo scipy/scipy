@@ -1,8 +1,8 @@
 from warnings import warn
 
 import numpy as np
-import scipy.optimize._highspy._core as _h # type: ignore[import-not-found]
-from scipy.optimize._highspy import _highs_options as hopt  # type: ignore[attr-defined]
+import scipy.optimize._highspy._core as _h
+from scipy.optimize._highspy import _highs_options as hopt  # pyrefly: ignore[missing-module-attribute]
 from scipy.optimize import OptimizeWarning
 
 

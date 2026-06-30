@@ -1673,7 +1673,7 @@ class TestOptimizeSimple(CheckOptimize):
                     callback()
             callback_interface = Callback()
         else:
-            def callback_interface(xk, *args):  # type: ignore[misc]
+            def callback_interface(xk, *args):
                 callback()
 
         def callback():

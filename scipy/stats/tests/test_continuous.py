@@ -117,11 +117,11 @@ class Test_RealInterval:
     @pytest.mark.slow
     @given(a=strategies.one_of(
         strategies.decimals(allow_nan=False),
-        strategies.characters(whitelist_categories="L"),  # type: ignore[arg-type]
+        strategies.characters(whitelist_categories="L"),
         strategies.sampled_from(list(_Domain.symbols))),
            b=strategies.one_of(
         strategies.decimals(allow_nan=False),
-        strategies.characters(whitelist_categories="L"),  # type: ignore[arg-type]
+        strategies.characters(whitelist_categories="L"),
         strategies.sampled_from(list(_Domain.symbols))),
            inclusive_a=strategies.booleans(),
            inclusive_b=strategies.booleans(),

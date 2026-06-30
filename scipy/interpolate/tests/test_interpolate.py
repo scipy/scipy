@@ -1002,7 +1002,7 @@ class TestAkima1DInterpolator:
                        dtype=xp.float64)
         match = "`method`=invalid is unsupported."
         with pytest.raises(NotImplementedError, match=match):
-            Akima1DInterpolator(x, y, method="invalid")  # type: ignore
+            Akima1DInterpolator(x, y, method="invalid")
 
     def test_extrapolate_attr(self, xp):
         #

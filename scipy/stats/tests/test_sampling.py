@@ -63,7 +63,7 @@ bad_pdfs_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # noqa: F821, E501
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
@@ -82,7 +82,7 @@ bad_dpdf_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # noqa: F821, E501
     # signature of dPDF wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
@@ -93,7 +93,7 @@ bad_logpdfs_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # noqa: F821, E501
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
@@ -150,7 +150,7 @@ nan_domains = [
 # domains.
 @pytest.mark.parametrize("domain, err, msg",
                          bad_domains + bad_sized_domains +
-                         nan_domains)  # type: ignore[operator]
+                         nan_domains)
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_bad_domain(domain, err, msg, method, kwargs):
     Method = getattr(stats.sampling, method)
@@ -377,7 +377,7 @@ class TestQRVS:
     qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
     # `size=None` should not add anything to the shape, `size=1` should
     sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
-             ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
+             ((4,), (4,)), ((2, 4), (2, 4))]
     # Neither `d=None` nor `d=1` should add anything to the shape
     ds = [(None, tuple()), (1, tuple()), (3, (3,))]
 
@@ -522,7 +522,7 @@ class TestTransformedDensityRejection:
 
     # PDF 0 everywhere => bad construction points
     bad_pdfs = [(lambda x: 0, UNURANError, r"50 : bad construction points.")]
-    bad_pdfs += bad_pdfs_common  # type: ignore[arg-type]
+    bad_pdfs += bad_pdfs_common
 
     @pytest.mark.parametrize("pdf, err, msg", bad_pdfs)
     def test_bad_pdf(self, pdf, err, msg):
@@ -684,7 +684,7 @@ class TestDiscreteAliasUrn:
         (lambda x: 0.0, ValueError,
          r"must contain at least one non-zero value"),
         # Undefined name inside the function
-        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa: F821
+        (lambda x: foo, NameError,  # noqa: F821
          r"name 'foo' is not defined"),
         # Returning wrong type.
         (lambda x: [], ValueError,
@@ -1140,7 +1140,7 @@ class TestNumericalInverseHermite:
                                     u_resolution='ekki')
 
     rngs = [None, 0, np.random.RandomState(0)]
-    rngs.append(np.random.default_rng(0))  # type: ignore
+    rngs.append(np.random.default_rng(0))
     sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
 
     @pytest.mark.parametrize('rng', rngs)

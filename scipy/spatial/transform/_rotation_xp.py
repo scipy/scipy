@@ -27,9 +27,6 @@ from scipy._external.array_api_compat import device as xp_device
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
-# mypy: disable-error-code=index
-# mypy: disable-error-code=operator
-# mypy: disable-error-code=union-attr
 
 def from_quat(
     quat: Array,

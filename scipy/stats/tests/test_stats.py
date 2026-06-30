@@ -4266,7 +4266,7 @@ class TestPercentileOfScore:
             stats.percentileofscore(np.ones((3, 3)), 1)
 
 
-PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
+PowerDivCase = namedtuple('Case',
                           ['f_obs', 'f_exp', 'ddof', 'axis',
                            'chi2',     # Pearson's
                            'log',      # G-test (log-likelihood)
@@ -5662,9 +5662,9 @@ class TestTTestIndResampling:
     b3 = [3, 4]
 
     # data for bigger test
-    rvs1 = stats.norm.rvs(loc=5, scale=10,  # type: ignore
+    rvs1 = stats.norm.rvs(loc=5, scale=10,
                           size=500, random_state=rng).reshape(100, 5).T
-    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100, random_state=rng)  # type: ignore
+    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100, random_state=rng)
 
     p_d = [1/1001, (676+1)/1001]  # desired pvalues
     p_d_gen = [1/1001, (672 + 1)/1001]  # desired pvalues for Generator seed

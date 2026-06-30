@@ -81,7 +81,7 @@ def pytest_configure(config):
     try:
         # This is a more reliable test of whether pytest_fail_slow is installed
         # When I uninstalled it, `import pytest_fail_slow` didn't fail!
-        from pytest_fail_slow import parse_duration  # type: ignore[import-not-found] # noqa:F401,E501
+        from pytest_fail_slow import parse_duration  # noqa:F401,E501
     except Exception:
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
@@ -213,7 +213,7 @@ if SCIPY_ARRAY_API:
         pass
 
     try:
-        import torch  # type: ignore[import-not-found]
+        import torch  # pyrefly: ignore[missing-import]
         xp_available_backends.append(
             pytest.param(torch, id='torch',
             marks=_array_api_backends))
@@ -234,7 +234,7 @@ if SCIPY_ARRAY_API:
         pass
 
     try:
-        import cupy  # type: ignore[import-not-found]
+        import cupy  # pyrefly: ignore[missing-import]
         # Note: cupy disregards SCIPY_DEVICE and always runs on cuda.
         # It will fail to import if you don't have CUDA hardware and drivers.
         xp_available_backends.append(
@@ -252,7 +252,7 @@ if SCIPY_ARRAY_API:
         pass
 
     try:
-        import jax.numpy  # type: ignore[import-not-found]
+        import jax.numpy  # pyrefly: ignore[missing-import]
         
         xp_available_backends.append(
             pytest.param(jax.numpy, id='jax.numpy',

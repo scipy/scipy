@@ -4305,7 +4305,7 @@ class _CompressedMixin:
         return self._test_setdiag_sorted(D)
 
 
-class TestCSR(_CompressedMixin, sparse_test_class()):  # type: ignore[misc]
+class TestCSR(_CompressedMixin, sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
         with warnings.catch_warnings():
@@ -4619,7 +4619,7 @@ def test_spmatrix_subscriptable():
 TestCSRMatrix.init_class()
 
 
-class TestCSC(_CompressedMixin, sparse_test_class()):  # type: ignore[misc]
+class TestCSC(_CompressedMixin, sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
         with warnings.catch_warnings():
@@ -4780,7 +4780,7 @@ class TestCSCMatrix(_MatrixMixin, TestCSC):
 TestCSCMatrix.init_class()
 
 
-class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):  # type: ignore[misc]
+class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     spcreator: Callable[..., Any] = dok_array
     math_dtypes = [np.int_, np.float64, np.complex128]
 
@@ -4886,7 +4886,7 @@ TestDOK.init_class()
 TestDOKMatrix.init_class()
 
 
-class TestLIL(sparse_test_class(minmax=False)):  # type: ignore[misc]
+class TestLIL(sparse_test_class(minmax=False)):
     spcreator: Callable[..., Any] = lil_array
     math_dtypes = [np.int_, np.float64, np.complex128]
 
@@ -5186,14 +5186,14 @@ class BaseTestCOO:
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
     
 class TestCOO(BaseTestCOO,
-              sparse_test_class(getset=True,  # type: ignore[misc]
+              sparse_test_class(getset=True,
                                 slicing=True, slicing_assign=True,
                                 fancy_indexing=True, fancy_assign=True)):
     spcreator: Callable[..., Any] = coo_array
 
 class TestCOOMatrix(_MatrixMixin,
                     BaseTestCOO,
-                    sparse_test_class(getset=False,  # type: ignore[misc]
+                    sparse_test_class(getset=False,
                                       slicing=False, slicing_assign=False,
                                       fancy_indexing=False, fancy_assign=False)):
     spcreator: Callable[..., Any] = coo_matrix
@@ -5215,7 +5215,7 @@ def test_sparray_subscriptable():
     assert result.__args__ == (np.int8,)
 
 
-class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,  # type: ignore[misc]
+class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False, nnz_axis=False)):
     spcreator: Callable[..., Any] = dia_array
@@ -5439,7 +5439,7 @@ TestDIA.init_class()
 TestDIAMatrix.init_class()
 
 
-class TestBSR(sparse_test_class(getset=False,  # type: ignore[misc]
+class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
                                 nnz_axis=False)):

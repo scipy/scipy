@@ -212,8 +212,8 @@ def test_fit_error():
 
 
 @pytest.mark.parametrize("dist, params",
-                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined]
-                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined]
+                         [(stats.norm, (0.5, 2.5)),
+                          (stats.binom, (10, 0.3, 2))])
 def test_nnlf_and_related_methods(dist, params):
     rng = np.random.default_rng(983459824)
 
@@ -371,10 +371,10 @@ def assert_nlff_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0,
 
 
 class TestFit:
-    dist = stats.binom  # type: ignore[attr-defined]
+    dist = stats.binom
     seed = 654634816187
     rng = np.random.default_rng(seed)
-    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # type: ignore[attr-defined]  # noqa: E501
+    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # noqa: E501
     shape_bounds_a = [(1, 10), (0, 1)]
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
     atol = 5e-2

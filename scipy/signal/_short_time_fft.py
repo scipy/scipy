@@ -1096,7 +1096,7 @@ class ShortTimeFFT:
             'edge': dict(mode='edge'),
             'even': dict(mode='reflect', reflect_type='even'),
             'odd': dict(mode='reflect', reflect_type='odd'),
-           }  # typing of pad_kws is needed to make mypy happy
+        }  # typing of pad_kws is needed to make pyrefly happy
 
         n, n1 = x.shape[-1], (p1 - p0) * self.hop
         k0 = p0 * self.hop - self.m_num_mid + k_off  # start sample

@@ -6,7 +6,7 @@ import numpy as np
 from math import prod
 from types import GenericAlias
 
-from . import _dierckx  # type: ignore[attr-defined]
+from . import _dierckx
 
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
