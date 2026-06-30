@@ -1920,11 +1920,11 @@ class TestLSQ:
     def test_clamp_values_invalid_input(self, clamp_values, reason, xp, solver):
         # clamp_values must be a 2-tuple of finite real numbers
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        t = np.asarray(t.copy())
+        t = np.array(t)
 
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
-        t = xp.asarray(t)
+        t = xp.array(t)
 
         with assert_raises(ValueError):
             make_lsq_spline(x, y, t, k, method=solver, clamp_values=clamp_values)
@@ -1932,8 +1932,8 @@ class TestLSQ:
     @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     def test_clamp_values_invalid_knot_vector(self, xp, solver):
         # clamp_values requires a clamped knot vector
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        t = np.asarray(t.copy())
+        x, y, t, k = *map(xp.array, (self.x, self.y, self.t)), self.k
+        t = np.array(t)
 
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
@@ -1947,7 +1947,7 @@ class TestLSQ:
     def test_clamp_values_valid(self, xp, solver):
         # valid inputs work without error
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        t = np.asarray(t.copy())
+        t = np.array(t)
 
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
