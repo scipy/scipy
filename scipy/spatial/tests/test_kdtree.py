@@ -12,7 +12,7 @@ import pytest
 import numpy as np
 from scipy._lib._testutils import _run_concurrent_barrier
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
-from scipy.spatial._ckdtree import cKDTreeNode
+from scipy.spatial._ckdtree import cKDTreeNode, _test_nodeinfo_allocator
 from scipy.spatial import minkowski_distance, minkowski_distance_p
 from scipy.spatial.distance import cdist, minkowski
 from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
@@ -1607,6 +1607,13 @@ def test_gh_18800(incantation):
     tree.query(arr_like, 1)
     tree.query_ball_point(arr_like, 200)
 
+
+
+
+def test_nodeinfo_allocator():
+    # test memory alignment, gh-22928
+    for m in range(1,32):
+        _test_nodeinfo_allocator(m, 10)
 
 def test_immutable(kdtree_type):
     rng = np.random.RandomState(3965682946)

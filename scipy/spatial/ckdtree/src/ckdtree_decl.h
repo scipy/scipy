@@ -125,4 +125,10 @@ sparse_distance_matrix(const ckdtree *self,
                        std::vector<coo_entry> *results);
 
 
+// public function for regression testing nodeinfo_pool.allocate() in query_knn.cxx
+// returns -1 on error and 0 on success
+int
+test_nodeinfo_allocator(int m, int num_arenas);
+
+
 #endif
