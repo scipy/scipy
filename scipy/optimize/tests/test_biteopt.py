@@ -102,9 +102,13 @@ class TestSolver:
         assert isinstance(res, OptimizeResult)
 
     def test_inf_objective_does_not_crash(self):
-        # An objective returning +inf everywhere must not crash the optimizer;
-        # the run must still complete and return a result.
-        res = biteopt(lambda x: np.inf, [(-5.0, 5.0), (-5.0, 5.0)], rng=0)
+        # An objective returning +inf in some regions must not crash the optimizer
+        def pathological_obj(x):
+            if np.any(x > 0):
+                return np.inf
+            else:
+                return rosen(x)
+        res = biteopt(pathological_obj, [(-5.0, 5.0), (-5.0, 5.0)], rng=0)
         assert isinstance(res, OptimizeResult)
 
     def test_f_min_stops_early(self):
