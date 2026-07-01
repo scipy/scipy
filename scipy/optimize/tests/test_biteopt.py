@@ -7,9 +7,11 @@ from scipy._lib._testutils import _run_concurrent_barrier
 
 
 class TestSolver:
+    def setup_method(self):
+        self.default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
+
     def test_rosenbrock(self):
-        bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
-        res = biteopt(rosen, bounds, rng=1234)
+        res = biteopt(rosen, self.default_bounds, rng=1234)
 
         assert_allclose(res.x, [1.0, 1.0], rtol=1e-3, atol=1e-3)
         assert_allclose(res.fun, 0.0, atol=1e-6)
@@ -20,7 +22,7 @@ class TestSolver:
             return 0.5 * (x**4 - 16 * x**2 + 5 * x
                           + y**4 - 16 * y**2 + 5 * y)
 
-        bounds = [(-4.0, 4.0), (-4.0, 4.0)]
+        bounds = Bounds(lb=[-4.0, -4.0], ub=[4.0, 4.0])
         res = biteopt(styblinski_tang, bounds, rng=1234)
 
         assert_allclose(res.x, [-2.903534, -2.903534], rtol=1e-3, atol=1e-3)
@@ -29,6 +31,7 @@ class TestSolver:
     def test_args_are_passed(self):
         # Extra fixed parameters supplied via ``args`` must reach the
         # objective. Here they shift the location of the minimum.
+        # Also exercises the traditional list-of-tuples form for bounds.
         def shifted(x, center):
             return np.sum((x - center) ** 2)
 
@@ -45,15 +48,12 @@ class TestSolver:
         def rosen_f32(x):
             return np.float32(rosen(x))
 
-        bounds = [(-5.0, 5.0), (-5.0, 5.0)]
-        res = biteopt(rosen_f32, bounds, rng=1234)
+        res = biteopt(rosen_f32, self.default_bounds, rng=1234)
 
         assert_allclose(res.x, [1.0, 1.0], rtol=1e-2, atol=1e-2)
         assert np.isfinite(res.fun)
 
     def test_nfev_counts_objective_calls_correctly(self):
-        bounds = [(-5.0, 5.0), (-5.0, 5.0)]
-
         class CountingObjective:
             def __init__(self):
                 self.nfev = 0
@@ -63,7 +63,7 @@ class TestSolver:
                 return rosen(x)
 
         objective = CountingObjective()
-        res = biteopt(objective, bounds, maxfun=200, rng=0)
+        res = biteopt(objective, self.default_bounds, maxfun=200, rng=0)
         assert res.nfev == objective.nfev
 
     def test_biteopt_stays_within_bounds(self):
@@ -73,7 +73,8 @@ class TestSolver:
             assert (x >= lower_bound).all()
             assert (x <= upper_bound).all()
             return np.square(x).sum()
-        bounds = [(lower_bound, upper_bound)] * 3
+
+        bounds = Bounds(lb=[lower_bound] * 3, ub=[upper_bound] * 3)
         res = biteopt(fun, bounds, rng=0)
         assert np.all(res.x >= lower_bound)
         assert np.all(res.x <= upper_bound)
@@ -81,8 +82,7 @@ class TestSolver:
 
     @pytest.mark.parametrize("depth", [1, 2, 4, 9])
     def test_depth(self, depth):
-        bounds = [(-5.0, 5.0), (-5.0, 5.0)]
-        res = biteopt(rosen, bounds, depth=depth, rng=0, maxfun=10000)
+        res = biteopt(rosen, self.default_bounds, depth=depth, rng=0, maxfun=10000)
         assert_allclose(res.x, [1.0, 1.0], rtol=1e-3, atol=1e-3)
 
     @pytest.mark.parametrize("depth", [1, 2, 4, 9])
@@ -90,15 +90,14 @@ class TestSolver:
         # biteopt internally scales its iteration count by sqrt(depth);
         # the wrapper must pre-divide so nfev never exceeds the budget.
         maxfun = 500
-        bounds = [(-5.0, 5.0), (-5.0, 5.0)]
-        res = biteopt(rosen, bounds, maxfun=maxfun, depth=depth, rng=0)
+        res = biteopt(rosen, self.default_bounds, maxfun=maxfun, depth=depth, rng=0)
 
         assert res.nfev <= maxfun
 
     def test_nan_objective_does_not_crash(self):
         # A NaN return is sanitized to a large sentinel internally, so the
         # optimization must complete without raising.
-        res = biteopt(lambda x: np.nan, [(-5.0, 5.0), (-5.0, 5.0)], rng=0)
+        res = biteopt(lambda x: np.nan, self.default_bounds, rng=0)
         assert isinstance(res, OptimizeResult)
 
     def test_inf_objective_does_not_crash(self):
@@ -108,7 +107,7 @@ class TestSolver:
                 return np.inf
             else:
                 return rosen(x)
-        res = biteopt(pathological_obj, [(-5.0, 5.0), (-5.0, 5.0)], rng=0)
+        res = biteopt(pathological_obj, self.default_bounds, rng=0)
         assert isinstance(res, OptimizeResult)
 
     def test_f_min_stops_early(self):
@@ -116,9 +115,8 @@ class TestSolver:
         # exhausting its full iteration budget, using far fewer evaluations
         # than an unconstrained run.
         target = 1.0
-        bounds = [(-5.0, 5.0), (-5.0, 5.0)]
-        res_full = biteopt(rosen, bounds, rng=0)
-        res_early = biteopt(rosen, bounds, f_min=target, rng=0)
+        res_full = biteopt(rosen, self.default_bounds, rng=0)
+        res_early = biteopt(rosen, self.default_bounds, f_min=target, rng=0)
 
         assert res_early.fun <= target
         assert res_early.nfev < res_full.nfev
@@ -127,8 +125,7 @@ class TestSolver:
     def test_f_min_unreachable_reports_failure(self):
         # An unreachable f_min (below the global minimum of 0) can never be met,
         # so the run is reported as unsuccessful.
-        bounds = [(-5.0, 5.0), (-5.0, 5.0)]
-        res = biteopt(rosen, bounds, f_min=-1.0, rng=0)
+        res = biteopt(rosen, self.default_bounds, f_min=-1.0, rng=0)
 
         assert res.fun > -1.0
         assert res.success is False
@@ -140,19 +137,18 @@ class TestSolver:
         def objective(x):
             raise exc_type("Error")
 
-        bounds = [(-5.0, 5.0), (-5.0, 5.0)]
         with pytest.raises(exc_type, match="Error"):
-            biteopt(objective, bounds, rng=0)
+            biteopt(objective, self.default_bounds, rng=0)
 
 
 class TestInputValidation:
     def setup_method(self):
-        self.bounds = [(-5.0, 5.0), (-5.0, 5.0)]
+        self.default_bounds = [(-5.0, 5.0), (-5.0, 5.0)]
 
     @pytest.mark.parametrize("not_callable", [42, "func", None, [1, 2, 3]])
     def test_func_not_callable(self, not_callable):
         with pytest.raises(TypeError, match="func must be callable"):
-            biteopt(not_callable, self.bounds)
+            biteopt(not_callable, self.default_bounds)
 
     def test_bounds_invalid_type(self):
         with pytest.raises(ValueError, match="bounds must be a sequence"):
@@ -177,7 +173,7 @@ class TestInputValidation:
     ])
     def test_invalid_maxfun(self, maxfun, exc_type, msg):
         with pytest.raises(exc_type, match=msg):
-            biteopt(rosen, self.bounds, maxfun=maxfun)
+            biteopt(rosen, self.default_bounds, maxfun=maxfun)
 
     @pytest.mark.parametrize("kwargs, exc_type, msg", [
         ({"depth": 0}, ValueError, "must be an integer not less than 1"),
@@ -187,24 +183,24 @@ class TestInputValidation:
     ])
     def test_invalid_depth(self, kwargs, exc_type, msg):
         with pytest.raises(exc_type, match=msg):
-            biteopt(rosen, self.bounds, **kwargs)
+            biteopt(rosen, self.default_bounds, **kwargs)
 
     def test_maxfun_too_small_for_depth(self):
         # A single biteopt iteration costs int(sqrt(depth)) evaluations; if that
         # already exceeds maxfun the call must refuse rather than overshoot.
         with pytest.raises(ValueError, match="too small for depth"):
-            biteopt(rosen, self.bounds, maxfun=5, depth=36)
+            biteopt(rosen, self.default_bounds, maxfun=5, depth=36)
 
     def test_maxfun_too_large(self):
         # maxfun is passed to the C++ layer as a C int; an oversized value must
         # raise a clear error rather than a pybind11 overflow.
         too_big = int(np.iinfo(np.intc).max) + 1
         with pytest.raises(ValueError, match="maxfun must not exceed"):
-            biteopt(rosen, self.bounds, maxfun=too_big)
+            biteopt(rosen, self.default_bounds, maxfun=too_big)
 
     def test_f_min_not_float(self):
         with pytest.raises(ValueError, match="float"):
-            biteopt(rosen, self.bounds, f_min="not a float")
+            biteopt(rosen, self.default_bounds, f_min="not a float")
 
     def test_func_returns_non_scalar(self):
         # The objective function must return a scalar; if it returns an array
@@ -214,18 +210,18 @@ class TestInputValidation:
             return np.array([1.0, 2.0])
 
         with pytest.raises(ValueError, match="must return a scalar value"):
-            biteopt(non_scalar, self.bounds, rng=0)
+            biteopt(non_scalar, self.default_bounds, rng=0)
 
 
 class TestRNG:
     def setup_method(self):
-        self.bounds = [(-5.0, 5.0), (-5.0, 5.0)]
+        self.default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
 
     def test_reproducible(self):
         # Two generators seeded identically must yield bit-for-bit identical
         # results.
-        res1 = biteopt(rosen, self.bounds, rng=np.random.default_rng(42))
-        res2 = biteopt(rosen, self.bounds, rng=np.random.default_rng(42))
+        res1 = biteopt(rosen, self.default_bounds, rng=np.random.default_rng(42))
+        res2 = biteopt(rosen, self.default_bounds, rng=np.random.default_rng(42))
         assert_array_equal(res1.x, res2.x)
         assert res1.fun == res2.fun
         assert res1.nfev == res2.nfev
@@ -233,8 +229,8 @@ class TestRNG:
     def test_generator_equivalent_to_seed(self):
         # Passing a Generator must be accepted and must be equivalent to
         # passing the integer seed used to construct that Generator.
-        res_seed = biteopt(rosen, self.bounds, rng=7)
-        res_gen = biteopt(rosen, self.bounds, rng=np.random.default_rng(7))
+        res_seed = biteopt(rosen, self.default_bounds, rng=7)
+        res_gen = biteopt(rosen, self.default_bounds, rng=np.random.default_rng(7))
         assert_array_equal(res_seed.x, res_gen.x)
         assert res_seed.fun == res_gen.fun
 
@@ -242,25 +238,25 @@ class TestRNG:
         # Generators seeded differently drive different PRNG trajectories, so
         # the returned minimizers should not be identical. Use a small budget
         # so the runs do not both collapse onto the exact same float optimum.
-        res1 = biteopt(rosen, self.bounds, maxfun=50,
+        res1 = biteopt(rosen, self.default_bounds, maxfun=50,
                        rng=np.random.default_rng(1))
-        res2 = biteopt(rosen, self.bounds, maxfun=50,
+        res2 = biteopt(rosen, self.default_bounds, maxfun=50,
                        rng=np.random.default_rng(2))
         assert not np.array_equal(res1.x, res2.x)
 
     def test_rng_none_runs(self):
         # An unseeded run must still complete successfully.
-        res = biteopt(rosen, self.bounds, rng=None)
+        res = biteopt(rosen, self.default_bounds, rng=None)
         assert res.success is True
 
     def test_accepts_bit_generator(self):
         # default_rng also accepts a bare BitGenerator.
-        res = biteopt(rosen, self.bounds, rng=np.random.PCG64(0))
+        res = biteopt(rosen, self.default_bounds, rng=np.random.PCG64(0))
         assert_allclose(res.x, [1.0, 1.0], rtol=1e-3, atol=1e-3)
 
 
 class TestThreadSafety:
-    bounds = [(-5.0, 5.0), (-5.0, 5.0)]
+    default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
 
     def test_concurrent_shared_generator_is_safe(self):
         # Sharing a single Generator across concurrent biteopt calls must not
@@ -273,7 +269,7 @@ class TestThreadSafety:
         gen = np.random.default_rng(0)
 
         def worker(i):
-            return biteopt(rosen, self.bounds, rng=gen, maxfun=200)
+            return biteopt(rosen, self.default_bounds, rng=gen, maxfun=200)
 
         results = _run_concurrent_barrier(n_workers, worker)
         for res in results:
