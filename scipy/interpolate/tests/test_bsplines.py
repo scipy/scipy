@@ -1867,8 +1867,12 @@ class TestLSQ:
         clamp_values = ((0.5, -0.5), (-0.3, 0.7))
         spl = make_lsq_spline(x, y, t, k=k, method=solver, clamp_values=clamp_values)
         
-        xp_assert_close(spl(x[0]), xp.asarray([0.5, -0.5]), atol=1e-12)
-        xp_assert_close(spl(x[-1]), xp.asarray([-0.3, 0.7]), atol=1e-12)
+        xp_assert_close(
+            spl(x[0]), xp.asarray([0.5, -0.5], dtype=xp.float64), atol=1e-12
+        )
+        xp_assert_close(
+            spl(x[-1]), xp.asarray([-0.3, 0.7], dtype=xp.float64), atol=1e-12
+        )
     
     @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     def test_clamp_values_shape_mismatch(self, xp, solver):
