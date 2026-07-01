@@ -1895,8 +1895,6 @@ class TestLSQ:
         t = np.r_[(x[0],) * (k+1), [3., 5., 7.], (x[-1],) * (k+1)]
         y0, y1 = 0.5, -0.3
         
-        x, y, t = xp.asarray(x), xp.asarray(y), xp.asarray(t)
-
         # dense implementation
         N = BSpline.design_matrix(x, t, k).toarray()
         Q = y - N[:, 0] * y0 - N[:, -1] * y1
@@ -1904,6 +1902,10 @@ class TestLSQ:
         c_free = np.linalg.solve(N_reduced.T @ N_reduced, N_reduced.T @ Q)
         c_ref = np.concatenate([[y0], c_free, [y1]])
         c_ref = xp.asarray(c_ref)
+
+        x = xp.asarray(x)
+        y = xp.asarray(y)
+        t = xp.asarray(t)
 
         spl = make_lsq_spline(x, y, t, k=k, method=solver, clamp_values=(y0, y1))
         
@@ -1920,11 +1922,11 @@ class TestLSQ:
     def test_clamp_values_invalid_input(self, clamp_values, reason, xp, solver):
         # clamp_values must be a 2-tuple of finite real numbers
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        t = np.array(t)
+        t = np.asarray(t)
 
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
-        t = xp.array(t)
+        t = xp.asarray(t)
 
         with assert_raises(ValueError):
             make_lsq_spline(x, y, t, k, method=solver, clamp_values=clamp_values)
@@ -1932,8 +1934,8 @@ class TestLSQ:
     @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     def test_clamp_values_invalid_knot_vector(self, xp, solver):
         # clamp_values requires a clamped knot vector
-        x, y, t, k = *map(xp.array, (self.x, self.y, self.t)), self.k
-        t = np.array(t)
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        t = np.asarray(t)
 
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
@@ -1947,7 +1949,7 @@ class TestLSQ:
     def test_clamp_values_valid(self, xp, solver):
         # valid inputs work without error
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        t = np.array(t)
+        t = np.asarray(t)
 
         t[:k+1] = float(self.x[0])
         t[-(k+1):] = float(self.x[-1])
