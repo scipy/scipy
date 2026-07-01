@@ -56,7 +56,7 @@ __all__ = [
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
+    'xp_copy', 'xp_device', 'xp_ravel', 'xp_size', 'xp_fill_diagonal',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
     'xp_result_type', 'xp_promote',
     'make_xp_test_case', 'make_xp_pytest_marks', 'make_xp_pytest_param',
@@ -488,6 +488,11 @@ def xp_swapaxes(a, axis1, axis2, xp=None):
     a = xp.permute_dims(a, axes)
     return a
 
+def xp_fill_diagonal(a, val, xp=None):
+    # Workaround until `xp.fill_diagonal` is implemented in the extra module. See https://github.com/data-apis/array-api-extra/pull/500
+    xp = array_namespace(a) if xp is None else xp
+    i = xp.arange(a.shape[0])
+    return xp.where(i[:, None] == i[None, :], val, a)
 
 # utility to find common dtype with option to force floating
 def xp_result_type(*args, force_floating=False, xp):
