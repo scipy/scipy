@@ -36,7 +36,7 @@ from ._complexstuff cimport (
 from . cimport sf_error
 
 
-cdef extern from "xsf_wrappers.h" nogil:
+cdef extern from "cython_special_wrappers.h" nogil:
     npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble zp)
     double xsf_binom(double n, double k)
     double xsf_hyp2f1(double a, double b, double c, double x)

@@ -26,7 +26,7 @@
         "_legacy.pxd": {
             "bdtr_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_bdtr_wrap": "dpd->d"
         }
     },
@@ -34,7 +34,7 @@
         "_legacy.pxd": {
             "bdtrc_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_bdtrc_wrap": "dpd->d"
         }
     },
@@ -42,14 +42,8 @@
         "_legacy.pxd": {
             "bdtri_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_bdtri_wrap": "dpd->d"
-        }
-    },
-    "bdtrik": {
-        "boost_special_functions.h++": {
-            "bdtrik_double": "ddd->d",
-            "bdtrik_float": "fff->f"
         }
     },
     "_binom_ppf": {
@@ -267,7 +261,7 @@
         "_legacy.pxd": {
             "expn_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_expn_wrap": "pd->d"
         }
     },
@@ -297,7 +291,7 @@
         "boost_special_functions.h++": {
             "hyp1f1_double": "ddd->d"
 	    },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "chyp1f1_wrap": "ddD->D"
         }
     },
@@ -305,7 +299,7 @@
         "_legacy.pxd": {
             "kn_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "special_cyl_bessel_k_int": "pd->d"
         }
     },
@@ -355,7 +349,7 @@
         "_legacy.pxd": {
             "nbdtr_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_nbdtr_wrap": "ppd->d"
         }
     },
@@ -363,7 +357,7 @@
         "_legacy.pxd": {
             "nbdtrc_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_nbdtrc_wrap": "ppd->d"
         }
     },
@@ -371,7 +365,7 @@
         "_legacy.pxd": {
             "nbdtri_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_nbdtri_wrap": "ppd->d"
         }
     },
@@ -441,7 +435,7 @@
         "_legacy.pxd": {
             "pdtri_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_pdtri_wrap": "pd->d"
         }
     },
@@ -458,13 +452,13 @@
         }
     },
     "shichi": {
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "xsf_cshichi": "D*DD->*i",
             "xsf_shichi": "d*dd->*i"
         }
     },
     "sici": {
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "xsf_csici": "D*DD->*i",
             "xsf_sici": "d*dd->*i"
         }
@@ -473,7 +467,7 @@
         "_legacy.pxd": {
             "smirnov_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnov_wrap": "pd->d"
         }
     },
@@ -481,7 +475,7 @@
         "_legacy.pxd": {
             "smirnovc_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnovc_wrap": "pd->d"
         }
     },
@@ -489,7 +483,7 @@
         "_legacy.pxd": {
             "smirnovci_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnovci_wrap": "pd->d"
         }
     },
@@ -497,7 +491,7 @@
         "_legacy.pxd": {
             "smirnovi_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnovi_wrap": "pd->d"
         }
     },
@@ -505,7 +499,7 @@
         "_legacy.pxd": {
             "smirnovp_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnovp_wrap": "pd->d"
         }
     },
@@ -535,7 +529,7 @@
         "_legacy.pxd": {
             "yn_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_yn_wrap": "pd->d"
         }
     },
