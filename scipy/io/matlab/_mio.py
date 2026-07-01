@@ -303,9 +303,10 @@ def savemat(file_name, mdict,
     appendmat : bool, optional
         True (the default) to append the .mat extension to the end of the
         given filename, if not already present.
-        NOTE: This argument is currently broken and, if set to True, does NOT
-        append .mat to the filename. Refer to github pull request 10625 at
-        https://github.com/scipy/scipy/pull/10625 for more information.
+        .. note::
+            This argument is currently broken and, if set to True, does NOT
+            append .mat to the filename. Refer to `github pull request 10625
+            <https://github.com/scipy/scipy/pull/10625>`_for more information.
     format : {'5', '4'}, string, optional
         '5' (the default) for MATLAB 5 and up (to 7.2),
         '4' for MATLAB 4 .mat files.
