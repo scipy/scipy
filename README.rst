@@ -56,7 +56,8 @@ guide <https://scipy.org/install/>`__.
 Call for Contributions
 ----------------------
 
-We appreciate and welcome contributions. Small improvements or fixes are always appreciated; issues labeled as "good
+We appreciate and welcome contributions. Small improvements or fixes are always
+appreciated; issues labeled as "good
 first issue" may be a good starting point. Have a look at `our contributing
 guide <https://scipy.github.io/devdocs/dev/index.html>`__.
 
