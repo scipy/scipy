@@ -719,7 +719,6 @@ if HAVE_SCPDT:
         "scipy/linalg/_linalg_pythran.py",
         "scipy/linalg/_matfuncs_sqrtm_triu.py",
         "scipy/ndimage/utils/generate_label_testvectors.py",
-        "scipy/optimize/_group_columns.py",
         "scipy/optimize/_max_len_seq_inner.py",
         "scipy/signal/_max_len_seq_inner.py",
         "scipy/sparse/_generate_sparsetools.py",
