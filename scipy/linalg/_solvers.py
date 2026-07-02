@@ -8,6 +8,7 @@
 # Modified: Ilhan Polat <ilhanpolat@gmail.com>
 # September 13, 2016
 
+import os
 import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
@@ -109,6 +110,12 @@ def solve_sylvester(a, b, q):
 
     if info < 0:
         raise LinAlgError(f"Illegal value encountered in the {-info} term")
+    if info == 1:
+        warnings.warn(
+            "The Sylvester equation may be singular (A and B share a common "
+            "or close eigenvalue). The returned solution may be inaccurate.",
+            skip_file_prefixes=(os.path.dirname(__file__),),
+        )
 
     return np.dot(np.dot(u, y), v.conj().transpose())
 
@@ -207,7 +214,8 @@ def solve_continuous_lyapunov(a, q):
         warnings.warn('Input "a" has an eigenvalue pair whose sum is '
                       'very close to or exactly zero. The solution is '
                       'obtained via perturbing the coefficients.',
-                      RuntimeWarning, stacklevel=2)
+                      RuntimeWarning,
+                      skip_file_prefixes=(os.path.dirname(__file__),))
     y *= scale
 
     return u.dot(y).dot(u.conj().T)
