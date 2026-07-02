@@ -122,6 +122,35 @@ add_newdoc("bdtr",
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 16 times.  What is the probability that
+    the number of heads is less than or equal to 5?
+
+    Let X be the number of heads.  We want to find the probability that
+    X <= `k`, given `k` is 5, the total number of flips `n` is 16 and
+    the probability `p` of heads for a single flip is 0.525.
+    This is what ``bdtr(k, n, p)`` computes:
+
+    >>> from scipy.special import bdtr
+
+    >>> bdtr(5, 16, 0.525)
+    np.float64(0.07281293895810999)
+
+    The following plot shows the graph of ``bdtr(k, 16, 0.525)``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> n = 16
+    >>> p = 0.525
+    >>> k = np.arange(n + 1)
+    >>> plt.plot(k, bdtr(k, n, p), 'o')
+    >>> plt.grid(True)
+    >>> plt.xlabel('k')
+    >>> plt.title(f"bdtr(k, {n}, {p})")
+    >>> plt.show()
     """)
 
 add_newdoc("bdtrc",
@@ -174,6 +203,35 @@ add_newdoc("bdtrc",
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 16 times.  What is the probability that
+    the number of heads is greater than 10?
+
+    Let X be the number of heads.  We want to find the probability that
+    X > `k`, given `k` is 10, the total number of flips `n` is 16 and the
+    probability `p` of heads in a single flip is 0.525.  This is what
+    ``bdtrc(k, n, p)`` computes:
+
+    >>> from scipy.special import bdtrc
+
+    >>> bdtrc(10, 16, 0.525)
+    np.float64(0.14643065267555583)
+
+    The following plot shows the graph ``bdtrc(k, 16, 0.525)``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> n = 16
+    >>> p = 0.525
+    >>> k = np.arange(n + 1)
+    >>> plt.plot(k, bdtrc(k, n, p), 'o')
+    >>> plt.grid(True)
+    >>> plt.xlabel('k')
+    >>> plt.title(f"bdtrc(k, {n}, {p})")
+    >>> plt.show()
     """)
 
 add_newdoc("bdtri",
@@ -221,6 +279,28 @@ add_newdoc("bdtri",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
+
+    Examples
+    --------
+    An "unfair" coin is to be created that has probability `p` of showing
+    heads when flipped.  What is the value of `p` that will ensure that
+    the probability of getting heads at most once in 4 tosses is 0.5?
+
+    Let X be the number of heads. We want to find `p` such that the probability
+    that X <= `k` is `y`, where `k` is 1, the total number of flips `n` is 4,
+    and the cumulative probability `y` is 0.5. This is what ``bdtri(k, n, y)``
+    computes:
+
+    >>> from scipy.special import bdtri, bdtr
+
+    >>> p = bdtri(1, 4, 0.5)
+    >>> p
+    np.float64(0.3857275681323896)
+
+    Verify the result:
+
+    >>> bdtr(1, 4, p)  # Should be 0.5.
+    np.float64(0.5)
     """)
 
 add_newdoc("bdtrik",
@@ -275,6 +355,45 @@ add_newdoc("bdtrik",
            CDFLIB: Library of Fortran Routines for Cumulative Distribution
            Functions, Inverses, and Other Parameters.
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 8 times.  Find the largest value of `k`
+    such that the probability that X <= `k` is not greater than 0.2, where
+    X is the number of heads.
+
+    In fact, there is no integer value of `k` that will give a probability
+    of *exactly* 0.2, as this plot of the cumulative distribution function shows.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import bdtr, bdtrik
+
+    >>> n = 8
+    >>> p = 0.525
+    >>> k = np.arange(0, n + 1)
+    >>> plt.plot(k, bdtr(k, n, p), 'o')
+    >>> plt.grid(True, alpha=0.5)
+    >>> plt.xlabel('k')
+    >>> plt.axhline(0.2, linestyle='--', color='k', alpha=0.5)
+    >>> plt.title(f"bdtr(k, {n}, {p})")
+    >>> plt.show()
+
+    From the graph we can see that we would choose `k` = 2.  The function
+    ``bdtrik`` lets us find this value directly.
+
+    ``bdtrik`` returns a floating point value that is like a continuous
+    extension of `k`.  This computes `k` as a noninteger floating point value:
+
+    >>> bdtrik(0.2, n, p)
+    np.float64(2.508332751475262)
+
+    For our final answer we need an integer `k`, and since we want to ensure
+    that the probability at `k` does not exceed 0.2, we truncate the fractional
+    part of this value with ``np.floor``:
+
+    >>> np.floor(bdtrik(0.2, n, p))
+    np.float64(2.0)
     """)
 
 add_newdoc("bdtrin",
