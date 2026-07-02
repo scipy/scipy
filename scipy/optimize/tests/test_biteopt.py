@@ -178,7 +178,7 @@ class TestInputValidation:
     @pytest.mark.parametrize("kwargs, exc_type, msg", [
         ({"depth": 0}, ValueError, "must be an integer not less than 1"),
         ({"depth": -1}, ValueError, "must be an integer not less than 1"),
-        ({"depth": 37}, ValueError, r"depth must be an integer in \[1, 36\]"),
+        ({"depth": 37}, ValueError, "depth must be an integer not greater than 36"),
         ({"depth": 1.5}, TypeError, "must be an integer"),
     ])
     def test_invalid_depth(self, kwargs, exc_type, msg):
@@ -195,7 +195,7 @@ class TestInputValidation:
         # maxfun is passed to the C++ layer as a C int; an oversized value must
         # raise a clear error rather than a pybind11 overflow.
         too_big = int(np.iinfo(np.intc).max) + 1
-        with pytest.raises(ValueError, match="maxfun must not exceed"):
+        with pytest.raises(ValueError, match="maxfun must be an integer not greater"):
             biteopt(rosen, self.default_bounds, maxfun=too_big)
 
     def test_f_min_not_float(self):

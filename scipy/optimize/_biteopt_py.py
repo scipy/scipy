@@ -134,15 +134,15 @@ def biteopt(
     if np.any(np.isinf(lb)) or np.any(np.isinf(ub)):
         raise ValueError("Bounds must not be inf.")
 
-    depth = _validate_int(depth, "depth", minimum=1)
-    if depth > 36:
-        raise ValueError("depth must be an integer in [1, 36].")
+    depth = _validate_int(depth, "depth", minimum=1, maximum=36)
 
     if maxfun is not None:
-        maxfun = _validate_int(maxfun, "maxfun", minimum=1)
-
         # The iteration count is passed to the C++ layer as a C ``int``; reject
-        # oversized values here for a clear error instead of a pybind11 overflow.
+        # oversized values here for a clear error
+        max_allowed_int = np.iinfo(np.intc).max
+        maxfun = _validate_int(maxfun, "maxfun", minimum=1, maximum=max_allowed_int)
+
+
         _int_max = int(np.iinfo(np.intc).max)
         if maxfun > _int_max:
             raise ValueError(f"maxfun must not exceed {_int_max}.")
