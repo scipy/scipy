@@ -3363,6 +3363,28 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     .. [1] J. F. Mahoney, B. D. Sivazlian, "Partial fractions expansion: a
            review of computational methodology and efficiency", Journal of
            Computational and Applied Mathematics, Vol. 9, 1983.
+
+    Examples
+    --------
+    Decompose a rational function into partial fractions:
+
+    >>> from scipy import signal
+    >>> r, p, k = signal.residue([4, 1], [1, -1, -2])
+    >>> r
+    array([1., 3.])
+    >>> p
+    array([-1.,  2.])
+    >>> k
+    array([], dtype=float64)
+
+    Recombine the partial fractions with `invres` to recover the original
+    polynomials:
+
+    >>> b, a = signal.invres(r, p, k)
+    >>> b
+    array([4., 1.])
+    >>> a
+    array([ 1., -1., -2.])
     """
     b = np.asarray(b)
     a = np.asarray(a)
