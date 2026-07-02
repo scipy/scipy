@@ -382,6 +382,8 @@ dask = "*"
 matplotlib = "*"
 pybind11 = "*"
 sphinx = "*"
+sympy = "*"
+uarray = "*"
 
 [feature.typecheck.tasks.mypy]
 cmd = "spin mypy --no-build"
