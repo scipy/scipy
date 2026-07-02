@@ -1350,6 +1350,23 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     This is really `irfftn` with different defaults.
     For more details see `irfftn`.
 
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> import numpy as np
+    >>> x = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.]])
+    >>> np.allclose(scipy.fft.irfft2(scipy.fft.rfft2(x)), x)
+    True
+
+    >>> x = np.zeros((4, 5))
+    >>> x[0, 0] = 4 * 5
+    >>> scipy.fft.irfft2(x, s=x.shape)
+    array([[1., 1., 1., 1., 1.],
+           [1., 1., 1., 1., 1.],
+           [1., 1., 1., 1., 1.],
+           [1., 1., 1., 1., 1.]])
+
     """
     return (Dispatchable(x, np.ndarray),)
 
