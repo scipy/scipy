@@ -1341,6 +1341,16 @@ class TestMedFilt:
 
         xp_assert_equal(output, expected)
 
+    def test_medfilt_1d_longlong(self):
+        # Regression test for gh-22368: medfilt(1D longlong) was raising TypeError,
+        # while medfilt(2D longlong) was returning an int64 array
+        a = np.ones(12, dtype='q')   # np.longlong
+        b = signal.medfilt(a)
+        xp_assert_equal(b, np.ones(12, dtype=np.int64))
+
+        # 1D result dtype is consistent with the 2D result dtype
+        c = signal.medfilt(a.reshape(3, 4))
+        assert c.dtype == b.dtype
 
 @make_xp_test_case(signal.wiener)
 class TestWiener:
