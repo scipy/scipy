@@ -521,6 +521,10 @@ def xp_result_type(*args, force_floating=False, xp):
 
     try:  # follow library's preferred promotion rules
         return xp.result_type(*args_not_none)
+    except ValueError:  # all scalars; need at least one array/dtype
+        if not force_floating:
+            raise
+        return xp.result_type(*(args_not_none + [xp.asarray(1.0)]))
     except TypeError:  # mixed type promotion isn't defined
         if not force_floating:
             raise
