@@ -372,7 +372,9 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         If provided, this two-element iterable defines the half-open interval
         ``(a, b]`` that, if any, only the eigenvalues between these values
         are returned. Only available with "evr", "evx", and "gvx" drivers. Use
-        ``np.inf`` for the unconstrained ends.
+        ``np.inf`` for the unconstrained ends. Batched inputs are not supported
+        with `subset_by_value`, because different slices can select different
+        numbers of eigenvalues.
     driver : str, optional
         Defines which LAPACK driver should be used. Valid options are "ev",
         "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
@@ -1067,7 +1069,8 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     the option ``eigvals_only=True`` to get the eigenvalues and not the
     eigenvectors. Here it is kept as a legacy convenience. It might be
     beneficial to use the main function to have full control and to be a bit
-    more pythonic.
+    more pythonic. Batched calls with ``subset_by_value`` are not supported for
+    the same reason as in `eigh`.
 
     Examples
     --------

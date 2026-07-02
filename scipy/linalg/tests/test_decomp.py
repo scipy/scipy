@@ -1044,6 +1044,26 @@ class TestEigh:
             assert_equal(v.shape[1], len(w))
             assert all((w > -2) & (w < 2))
 
+    @pytest.mark.parametrize("fun", [eigh, eigvalsh])
+    def test_batched_value_subset_raises(self, fun):
+        a = np.diag(np.arange(3))
+        aa = np.stack((a, a * 2))
+
+        if fun is eigh:
+            w, _ = fun(a, subset_by_value=[1.5, 2.5])
+        else:
+            w = fun(a, subset_by_value=[1.5, 2.5])
+        assert_equal(w, np.array([2.0]))
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                "subset_by_value.*batched inputs.*different slices can return "
+                "different numbers of eigenvalues"
+            ),
+        ):
+            fun(aa, subset_by_value=[1.5, 2.5])
+
     def test_eigh_integer(self):
         a = array([[1, 2], [2, 7]])
         b = array([[3, 1], [1, 5]])
