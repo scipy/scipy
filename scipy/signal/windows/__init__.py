@@ -20,6 +20,7 @@ The suite of window functions for filtering and spectral estimation.
    chebwin                 -- Dolph-Chebyshev window
    cosine                  -- Cosine window
    dpss                    -- Discrete prolate spheroidal sequences
+   dpss_cola               -- COLA-compatible DPSS-convolved rect window
    exponential             -- Exponential window
    flattop                 -- Flat top window
    gaussian                -- Gaussian window
@@ -49,4 +50,4 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
            'general_gaussian', 'general_cosine', 'general_hamming',
            'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
-           'get_window', 'dpss', 'lanczos']
+           'get_window', 'dpss', 'dpss_cola', 'lanczos']
