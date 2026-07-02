@@ -746,6 +746,18 @@ class TestSmoothBivariateSpline:
                                      kx=1, ky=1)
         xp_assert_close(spl1(0.1, 0.5), spl2(0.1, 0.5))
 
+    def test_0d(self):
+        # regression test for https://github.com/scipy/scipy/issues/25471
+        # result shapes checked with SciPy 1.16.3 (pre FITPACK C port)
+        rng = np.random.default_rng(0)
+        xs, ys = rng.random(30), rng.random(30)
+        zs = xs * ys
+        s = SmoothBivariateSpline(xs, ys, zs)(0.4, 0.5, grid=False)
+        assert s.ndim == 0
+
+        s = SmoothBivariateSpline(xs, ys, zs)([0.4], 0.5, grid=False)
+        assert s.ndim == 1
+
 
 def _contiguous(a):
     """C-contiguous reference layout."""
@@ -1593,6 +1605,16 @@ class TestRectBivariateSpline:
         z_spl = spl_eval(spl, x, y)
         assert not np.isnan(z_spl).any()
         xp_assert_close(z_spl, z, atol=0.1, rtol=0.1)
+
+    def test_0d(self):
+        # regression test for https://github.com/scipy/scipy/issues/25471
+        # result shapes checked with SciPy 1.16.3 (pre FITPACK C port)
+        x = np.arange(6.0)
+        r = RectBivariateSpline(x, x, np.outer(x, x))(2.5, 3.5, grid=False)
+        assert r.ndim == 0
+
+        r = RectBivariateSpline(x, x, np.outer(x, x))([2.5], 3.5, grid=False)
+        assert r.ndim == 1
 
 
 class TestRectSphereBivariateSpline:
