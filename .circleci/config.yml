@@ -155,6 +155,22 @@ jobs:
           at: ~/
 
       - check-skip
+
+      - run:
+          name: Check-not-docs-only
+          command: |
+            # If the latest commit was tagged with [docs only], don't run
+            # the benchmarks.
+            # In the following, --skip=1 is needed to skip the merge commit
+            # that occurred in the build_scipy job.
+            export git_log=$(git log --skip=1 --max-count=1 --pretty=format:"%B" | tr "\n" " ")
+            echo "Got commit message:"
+            echo "${git_log}"
+            if [[ -v CIRCLE_PULL_REQUEST ]] && ([[ "$git_log" == *"[docs only]"* ]]); then
+              echo "[docs only] detected, so benchmarks skipped. Exiting job ${CIRCLE_JOB} for PR ${CIRCLE_PULL_REQUEST}."
+              circleci-agent step halt;
+            fi
+
       - apt-install
 
       - run:
