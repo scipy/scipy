@@ -10,7 +10,7 @@ from scipy._lib._array_api import(
 )
 
 from scipy.signal import (ss2tf, tf2ss, lti,
-                          dlti, bode, freqresp, lsim, impulse, step,
+                          dlti, bode,dbode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
 
@@ -1078,7 +1078,6 @@ class Test_abcd_normalize:
         A, B = xp.asarray(self.A), xp.asarray(self.B)
         assert_raises(ValueError, abcd_normalize, A=A, B=B)
 
-
     @pytest.mark.parametrize(
         "A_dtype",
         # A_dtype=None here means to pass None as the value for A
@@ -1099,7 +1098,7 @@ class Test_abcd_normalize:
     # Also check case where one input array has size zero.
     @pytest.mark.parametrize("D", [[[2.5]], [[]]])
     def test_dtypes(self, D, A_dtype, B_dtype, C_dtype, D_dtype, xp):
-       
+
         args = []
         for X, X_dtype in zip(
                 [self.A, self.B, self.C, D],
@@ -1114,6 +1113,35 @@ class Test_abcd_normalize:
         A, B, C, D = abcd_normalize(A=A, B=B, C=C, D=D)
         assert A.dtype == B.dtype == C.dtype == D.dtype == expected_dtype
 
+class Test_dbode:
+
+    def test_pole_zero_cancellation_nan(self):
+        
+        num=[0.25,0,0,0,-0.25]
+        den= [1,-1,0,0,0]
+        with np.errstate(invalid='ignore'):
+            w, mag, phase = dbode((num, den, 1.0), n=512)
+        #checking that there is no NaN
+        assert not np.any(np.isnan(phase)), "Phase contains NaN"
+        assert not np.any(np.isnan(mag)), "Magnitude contains NaN"
+        #checking the value is correct
+        assert_almost_equal(mag[0], 0.0, decimal=2)
+        assert_almost_equal(phase[0], 0.0, decimal=2)
+
+    def test_pole_zero_cancellation_matches_fir(self):
+        
+        num_fir = [0.25, 0.25, 0.25, 0.25]
+        den_fir = [1, 0, 0, 0]
+
+        num_cic = [0.25, 0, 0, 0, -0.25]
+        den_cic = [1, -1, 0, 0, 0]
+        w_custom = np.linspace(0, 1.2, 100)
+        with np.errstate(invalid='ignore'):
+            w_fir, mag_fir, phase_fir = dbode((num_fir, den_fir, 1.0), w_custom)
+            w_cic, mag_cic, phase_cic = dbode((num_cic, den_cic, 1.0), w_custom)
+
+        assert_almost_equal(mag_cic, mag_fir, decimal=1)
+        assert_almost_equal(phase_cic, phase_fir, decimal=1)
 
 class Test_bode:
 
@@ -1295,3 +1323,4 @@ class Test_freqresp:
 )
 def test_subscriptable_generic_types(cls):
     assert isinstance(cls[np.float64], GenericAlias)
+
