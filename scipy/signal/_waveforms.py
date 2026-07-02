@@ -4,9 +4,9 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
+import math
 import numpy as np
-from numpy import asarray, zeros, pi, log, sqrt, \
-    exp, cos, sin, polyval, polyint
+from numpy import zeros, pi, log, sqrt, exp, cos, sin, polyval, polyint
 
 from scipy._lib._array_api import array_namespace, xp_promote
 import scipy._external.array_api_extra as xpx
@@ -412,41 +412,43 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, *,
     magnitude of the real-valued cosine function is only 1/2.
     """
     # 'phase' is computed in _chirp_phase, to make testing easier.
-    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero) + np.deg2rad(phi)
-    return np.exp(1j*phase) if complex else np.cos(phase)
+    xp = array_namespace(t)
+    t = xp_promote(t, xp=xp, force_floating=True)
+    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero, xp=xp) + phi * xp.pi / 180
+    return xp.exp(1j*phase) if complex else xp.cos(phase)
 
 
-def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
+def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True, *, xp=None):
     """
     Calculate the phase used by `chirp` to generate its output.
 
     See `chirp` for a description of the arguments.
 
     """
-    t = asarray(t)
+    xp = array_namespace(t) if xp is None else xp
     f0 = float(f0)
     t1 = float(t1)
     f1 = float(f1)
     if method in ['linear', 'lin', 'li']:
         beta = (f1 - f0) / t1
-        phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
+        phase = 2 * xp.pi * (f0 * t + 0.5 * beta * t * t)
 
     elif method in ['quadratic', 'quad', 'q']:
         beta = (f1 - f0) / (t1 ** 2)
         if vertex_zero:
-            phase = 2 * pi * (f0 * t + beta * t ** 3 / 3)
+            phase = 2 * xp.pi * (f0 * t + beta * t ** 3 / 3)
         else:
-            phase = 2 * pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
+            phase = 2 * xp.pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
 
     elif method in ['logarithmic', 'log', 'lo']:
         if f0 * f1 <= 0.0:
             raise ValueError("For a logarithmic chirp, f0 and f1 must be "
                              "nonzero and have the same sign.")
         if f0 == f1:
-            phase = 2 * pi * f0 * t
+            phase = 2 * xp.pi * f0 * t
         else:
-            beta = t1 / log(f1 / f0)
-            phase = 2 * pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
+            beta = t1 / math.log(f1 / f0)
+            phase = 2 * xp.pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
 
     elif method in ['hyperbolic', 'hyp']:
         if f0 == 0 or f1 == 0:
@@ -454,12 +456,12 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
                              "nonzero.")
         if f0 == f1:
             # Degenerate case: constant frequency.
-            phase = 2 * pi * f0 * t
+            phase = 2 * xp.pi * f0 * t
         else:
             # Singular point: the instantaneous frequency blows up
             # when t == sing.
             sing = -f1 * t1 / (f0 - f1)
-            phase = 2 * pi * (-sing * f0) * log(np.abs(1 - t/sing))
+            phase = 2 * xp.pi * (-sing * f0) * xp.log(xp.abs(1 - t/sing))
 
     else:
         raise ValueError("method must be 'linear', 'quadratic', 'logarithmic', "

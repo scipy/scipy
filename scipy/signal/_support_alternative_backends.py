@@ -77,7 +77,6 @@ untested = {
     "band_stop_obj",
     "bode",
     "check_NOLA",
-    "chirp",
     "coherence",
     "csd",
     "czt",
@@ -162,6 +161,12 @@ abcd_normalize_extra_note = \
 
     """
 
+chirp_extra_note = \
+    """CuPy delegates to ``cupyx.scipy.signal.chirp``, which does not support
+    ``complex=True``.
+
+    """
+
 welch_extra_note = \
     """Support for CuPy and JAX is provided by delegation to
     ``cupyx.scipy.signal.welch`` and ``jax.scipy.signal.welch``.
@@ -196,6 +201,7 @@ capabilities_overrides = {
 
     "cheby2": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
+    "chirp": xp_capabilities(extra_note=chirp_extra_note),
     "cont2discrete": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "convolve": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
                                 allow_dask_compute=True,

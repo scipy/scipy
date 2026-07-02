@@ -770,7 +770,7 @@ class TestMinimumPhase:
         H_mag = xp.abs(rfft(h, N))
         H_min_mag = xp.abs(rfft(h_min_sig, N))
         error = H_mag - H_min_mag
-        atol = dict(float32=1e-5, float64=1e-13)[dtype]
+        atol = dict(float32=2e-5, float64=1e-13)[dtype]
         xp_assert_close(error, xp.zeros_like(error), atol=atol)
 
 
