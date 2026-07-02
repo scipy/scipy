@@ -1127,6 +1127,174 @@ class TestEigh:
         assert w.shape == (0,)
         assert w.dtype == w_n.dtype
 
+    @pytest.mark.parametrize("dtype", [
+        np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [5, 20])
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("driver", ["ev", "evd", "evr", "evx", "gv", "gvd", "gvx"])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_random(self, dtype, n, lower, driver, order):
+        rng = np.random.default_rng(seed=42)
+        atol = 6e-5 if dtype in [np.float32, np.complex64] else 1e-12
+
+        v_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            v_base = v_base + 1j * rng.normal(size=(n, n))
+        v_base = v_base.astype(dtype)
+        v, _ = qr(v_base, mode="full")
+
+        w = np.sort(rng.normal(size=(n,))).astype(dtype)
+        a = v @ np.diag(w) @ np.conj(v.T)
+
+        if order == "C":
+            a = np.asfortranarray(a)
+
+        if driver[0] == "g":
+            b = np.diag(1 + np.arange(n))
+            b = b.astype(dtype, order=order)
+        else:
+            b = None
+
+        w_n, v_n = eigh(a, b, lower=lower, driver=driver)
+        assert w_n.dtype == np.finfo(dtype).dtype
+        assert v_n.dtype == dtype
+
+        if b is None:
+            assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+        else:
+            assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("dtype", [
+        np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [5, 20])
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("driver", ["ev", "evd", "evr", "evx", "gv", "gvd", "gvx"])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_subset_by_value(self, dtype, n, lower, driver, order):
+        rng = np.random.default_rng(seed=42)
+        vl, vu = -2, 2
+        atol = 8e-5 if dtype in [np.float32, np.complex64] else 1e-12
+
+        v_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            v_base = v_base + 1j * rng.normal(size=(n, n))
+        v_base = v_base.astype(dtype)
+        v, _ = qr(v_base, mode="full")
+
+        w = np.sort(rng.uniform(vl, vu, size=(n,))).astype(dtype)
+        w[0] = 5 * -np.abs(vl)
+        w[-1] = 5 * np.abs(vu)
+
+        a = v @ np.diag(w) @ np.conj(v.T)
+
+        if order == "F":
+            a = np.asfortranarray(a)
+
+        if driver[0] == "g":
+            b = np.eye(n, order=order, dtype=dtype)
+        else:
+            b = None
+
+        if driver not in ["evr", "evx", "gvx"]:
+            with pytest.raises(ValueError, match=f'"{driver}" cannot compute subsets'):
+                eigh(a, b, lower=lower, subset_by_value=(vl, vu), driver=driver)
+        else:
+            w_n, v_n = eigh(a, b, lower=lower, subset_by_value=(vl, vu), driver=driver)
+
+            assert w_n.shape[0] == n-2
+            assert np.all(vl < w_n) and np.all(w_n < vu)
+            assert v_n.shape == (n, n-2)
+
+            if b is None:
+                assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+            else:
+                assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("shape", [(5, 5), (2, 5, 5)])
+    @pytest.mark.parametrize("driver", ["evr", "evx", "gvx"])
+    def test_subset_by_value_error(self, shape, driver):
+        rng = np.random.default_rng(seed=42)
+        vl, vu = -2, 2
+        atol = 1e-12
+        n = shape[-1]
+
+        v_base = rng.normal(size=shape)
+        v, _ = qr(v_base, mode="full")
+
+        w_diag = np.sort(rng.uniform(0, vu, size=shape[:-1]))
+        w_diag[..., 0] = -5 * np.abs(vu)
+        w_diag[..., -1] = 5 * np.abs(vu)
+        w = np.zeros(shape)
+        w[..., np.arange(n), np.arange(n)] = w_diag
+
+        a = v @ w @ np.conj(v.swapaxes(-2, -1))
+
+        if driver[0] == "g":
+            b = np.zeros(shape)
+            b[..., np.arange(n), np.arange(n)] = 1
+        else:
+            b = None
+
+        if len(shape) > 2:
+            with pytest.raises(ValueError, match='`subset_by_value` not supported'):
+                eigh(a, b, subset_by_value=(vl, vu), driver=driver)
+        else: # Still check for correctness of the result
+            w_n, v_n = eigh(a, b, subset_by_value=(vl, vu), driver=driver)
+
+            assert w_n.shape[0] == shape[-1] - 2
+            assert np.all(vl < w_n) and np.all(w_n < vu)
+            assert v_n.shape == (*shape[:-1], shape[-1] - 2)
+
+            if b is None:
+                assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+            else:
+                assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("dtype", [
+        np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [5, 20])
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("driver", ["ev", "evd", "evr", "evx", "gv", "gvd", "gvx"])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_subset_by_index(self, dtype, n, lower, driver, order):
+        rng = np.random.default_rng(seed=42)
+        il, iu = 1, 4
+        atol = 6e-5 if dtype in [np.float32, np.complex64] else 1e-12
+
+        v_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            v_base = v_base + 1j * rng.normal(size=(n, n))
+        v_base = v_base.astype(dtype)
+        v, _ = qr(v_base, mode="full")
+
+        w = np.sort(rng.uniform(-2, 2, size=(n,))).astype(dtype)
+        a = v @ np.diag(w) @ np.conj(v.T)
+
+        if order == "C":
+            a = np.asfortranarray(a)
+
+        if driver[0] == "g":
+            b = np.eye(n, order=order, dtype=dtype)
+        else:
+            b = None
+
+        if driver not in ["evr", "evx", "gvx"]:
+            with pytest.raises(ValueError, match=f'"{driver}" cannot compute subsets'):
+                eigh(a, b, lower=lower, subset_by_index=[il, iu], driver=driver)
+        else:
+            w_n, v_n = eigh(a, b, lower=lower, subset_by_index=[il, iu], driver=driver)
+
+            assert w_n.shape == (iu - il + 1,)
+            assert v_n.shape == (n, iu - il + 1)
+
+            if b is None:
+                assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+            else:
+                assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
 class TestSVD_GESDD:
     lapack_driver = 'gesdd'
 

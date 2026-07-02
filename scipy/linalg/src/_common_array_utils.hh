@@ -261,6 +261,48 @@ void BLAS_FUNC(dggev)(char *jobvl, char *jobvr, CBLAS_INT *n, double *a, CBLAS_I
 void BLAS_FUNC(cggev)(char *jobvl, char *jobvr, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, c64_t *b, CBLAS_INT *ldb, c64_t *alpha, c64_t *beta, c64_t *vl, CBLAS_INT *ldvl, c64_t *vr, CBLAS_INT *ldvr, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
 void BLAS_FUNC(zggev)(char *jobvl, char *jobvr, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *b, CBLAS_INT *ldb, c128_t *alpha, c128_t *beta, c128_t *vl, CBLAS_INT *ldvl, c128_t *vr, CBLAS_INT *ldvr, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
 
+/* ?SY/HEEV symmetric/hermitian eigenvalue problem */
+void BLAS_FUNC(ssyev)(char *jobz, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *w, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dsyev)(char *jobz, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *w, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(cheev)(char *jobz, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, float *w, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
+void BLAS_FUNC(zheev)(char *jobz, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, double *w, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
+
+/* ?SY/HEEVD symmetric/hermitian eigenvalue problem */
+void BLAS_FUNC(ssyevd)(char *jobz, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *w, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(dsyevd)(char *jobz, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *w, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(cheevd)(char *jobz, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, float *w, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(zheevd)(char *jobz, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, double *w, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+
+/* ?SY/HEEVR symmetric/hermitian eigenvalue problem */
+void BLAS_FUNC(ssyevr)(char *jobz, char *range, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, float *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(dsyevr)(char *jobz, char *range, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(cheevr)(char *jobz, char *range, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, c64_t *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(zheevr)(char *jobz, char *range, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, c128_t *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+
+/* ?SY/HEEVX symmetric/hermitian eigenvalue problem */
+void BLAS_FUNC(ssyevx)(char *jobz, char *range, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, float *z, CBLAS_INT *ldz, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
+void BLAS_FUNC(dsyevx)(char *jobz, char *range, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
+void BLAS_FUNC(cheevx)(char *jobz, char *range, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, c64_t *z, CBLAS_INT *ldz, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
+void BLAS_FUNC(zheevx)(char *jobz, char *range, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, c128_t *z, CBLAS_INT *ldz, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
+
+/* ?SY/HEGV symmetric/hermitian generalized eigenvalue problem */
+void BLAS_FUNC(ssygv)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *w, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dsygv)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *w, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(chegv)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, c64_t *b, CBLAS_INT *ldb, float *w, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
+void BLAS_FUNC(zhegv)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *b, CBLAS_INT *ldb, double *w, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
+
+/* ?SY/HEGVD symmetric/hermitian generalized eigenvalue problem */
+void BLAS_FUNC(ssygvd)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *w, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(dsygvd)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *w, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(chegvd)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, c64_t *b, CBLAS_INT *ldb, float *w, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+void BLAS_FUNC(zhegvd)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *b, CBLAS_INT *ldb, double *w, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
+
+/* ?SY/HEGVX symmetric/hermitian generalized eigenvalue problem */
+void BLAS_FUNC(ssygvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, float *z, CBLAS_INT *ldz, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
+void BLAS_FUNC(dsygvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
+void BLAS_FUNC(chegvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, c64_t *b, CBLAS_INT *ldb, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, c64_t *z, CBLAS_INT *ldz, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
+void BLAS_FUNC(zhegvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *b, CBLAS_INT *ldb, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, c128_t *z, CBLAS_INT *ldz, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
+
 
 } // extern "C"
 
@@ -908,6 +950,195 @@ GEN_GGEV_CZ(c, npy_complex64, float)
 GEN_GGEV_CZ(z, npy_complex128, double)
 
 
+/*
+ * Wrappers for ?SY/HEEVR
+ *
+ * Discriminate between real and complex cases; the latter receive `rwork`, the former gobble that input.
+ */
+#define GEN_SYEVR(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_evr(char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## syevr)(jobz, range, uplo, n, a, lda, vl, vu, il, iu, abstol, m, w, z, ldz, isuppz, work, lwork, iwork, liwork, info); \
+};
+
+GEN_SYEVR(s, float, float);
+GEN_SYEVR(d, double, double);
+
+
+#define GEN_HEEVR(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_evr(char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## heevr)(jobz, range, uplo, n, a, lda, vl, vu, il, iu, abstol, m, w, z, ldz, isuppz, work, lwork, rwork, lrwork, iwork, liwork, info); \
+};
+
+GEN_HEEVR(c, c64_t, float);
+GEN_HEEVR(z, c128_t, double);
+
+
+/*
+ * Wrappers for ?SY/HEEV
+ *
+ * Discrimate between real and complex cases; the latter receive `rwork`, the former gobble that input.
+ */
+#define GEN_SYEV(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_ev(char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## syev)(jobz, uplo, n, a, lda, w, work, lwork, info); \
+};
+
+GEN_SYEV(s, float, float);
+GEN_SYEV(d, double, double);
+
+
+#define GEN_HEEV(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_ev(char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## heev)(jobz, uplo, n, a, lda, w, work, lwork, rwork, info); \
+};
+
+GEN_HEEV(c, c64_t, float);
+GEN_HEEV(z, c128_t, double);
+
+
+/*
+ * Wrappers for ?SY/HEEVD
+ *
+ * Discriminate between real and complex cases; the latter receive `rwork`, the former gobble that input
+ */
+#define GEN_SYEVD(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_evd(char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## syevd)(jobz, uplo, n, a, lda, w, work, lwork, iwork, liwork, info); \
+};
+
+GEN_SYEVD(s, float, float);
+GEN_SYEVD(d, double, double);
+
+
+#define GEN_HEEVD(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_evd(char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## heevd)(jobz, uplo, n, a, lda, w, work, lwork, rwork, lrwork, iwork, liwork, info); \
+};
+
+GEN_HEEVD(c, c64_t, float);
+GEN_HEEVD(z, c128_t, double);
+
+
+/*
+ * Wrappers for ?SY/HEEVX
+ *
+ * Discriminate between real and complex cases; the latter receive `rwork`, the former gobble that input
+ */
+#define GEN_SYEVX(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_evx(char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## syevx)(jobz, range, uplo, n, a, lda, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, iwork, ifail, info); \
+};
+
+GEN_SYEVX(s, float, float);
+GEN_SYEVX(d, double, double);
+
+
+#define GEN_HEEVX(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_evx(char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## heevx)(jobz, range, uplo, n, a, lda, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, rwork, iwork, ifail, info); \
+};
+
+GEN_HEEVX(c, c64_t, float);
+GEN_HEEVX(z, c128_t, double);
+
+
+/*
+ * Wrappers for ?SY/HEGV
+ *
+ * Discriminate between real and complex cases due to `rwork`
+ */
+#define GEN_SYGV(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_gv(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## sygv)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, info); \
+};
+
+GEN_SYGV(s, float, float);
+GEN_SYGV(d, double, double);
+
+
+#define GEN_HEGV(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_gv(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## hegv)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, rwork, info); \
+};
+
+GEN_HEGV(c, c64_t, float);
+GEN_HEGV(z, c128_t, double);
+
+
+/*
+ * Wrappers for ?SY/HEGVD
+ *
+ * Discriminate between real and complex cases due to `rwork`
+ */
+#define GEN_SYGVD(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_gvd(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## sygvd)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, iwork, liwork, info); \
+};
+
+GEN_SYGVD(s, float, float);
+GEN_SYGVD(d, double, double);
+
+
+#define GEN_HEGVD(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_gvd(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *w, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## hegvd)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, rwork, lrwork, iwork, liwork, info); \
+};
+
+GEN_HEGVD(c, c64_t, float);
+GEN_HEGVD(z, c128_t, double);
+
+
+/*
+ * Wrappers for ?SY/HEGVX
+ *
+ * Disriminate between real and complex cases due to `rwork`
+ */
+#define GEN_SYGVX(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_gvx(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## sygvx)(itype, jobz, range, uplo, n, a, lda, b, ldb, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, iwork, ifail, info); \
+};
+
+GEN_SYGVX(s, float, float);
+GEN_SYGVX(d, double, double)
+
+
+#define GEN_HEGVX(PREFIX, TYPE, RTYPE) \
+inline void \
+call_sy_he_gvx(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *vl, RTYPE *vu, CBLAS_INT *il, CBLAS_INT *iu, RTYPE *abstol, CBLAS_INT *m, RTYPE *w, TYPE *z, CBLAS_INT *ldz, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## hegvx)(itype, jobz, range, uplo, n, a, lda, b, ldb, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, rwork, iwork, ifail, info); \
+};
+
+GEN_HEGVX(c, c64_t, float);
+GEN_HEGVX(z, c128_t, double);
+
+
 // Structure tags; python side maps assume_a strings to these values
 enum St : Py_ssize_t
 {
@@ -930,6 +1161,18 @@ enum QR_mode : Py_ssize_t
     R = 11,
     RAW_MODE = 21,
     ECONOMIC = 31
+};
+
+// Eigh driver tags; pythn side maps driver strings to these values
+enum Eigh_driver : Py_ssize_t
+{
+    EV = 1,
+    EVD = 2,
+    EVR = 3,
+    EVX = 4,
+    GV = 10,
+    GVD = 11,
+    GVX = 12
 };
 
 
@@ -1131,6 +1374,27 @@ void copy_triangle_to_C(T *dst, const T *src, const npy_intp m, const npy_intp n
             for (npy_intp j = i; j < n; j++) {
                 dst[i * n + j] = *(src + i * s0 + j * s1);
             }
+        }
+    }
+}
+
+
+/*
+ * Copy the eigenvectors computed by `evr` into a C-ordered return buffer
+ * taking into account `isuppz`.
+ *
+ * Shapes: both eigenvector buffers `n1 x n2`, with `m` returned by LAPACK `n`.
+ * `isuppz` is `2m`. This function internally accounts for the minimal value for
+ * an entry in `isuppz` is `1`.
+ */
+template<typename T>
+void copy_eigenvectors_isuppz(T *dst, const T *src, const CBLAS_INT *isuppz, const npy_intp n1, const npy_intp n2, const npy_intp m) {
+    for (int i = 0; i < m; i++) {
+        CBLAS_INT il = isuppz[2 * i] - 1; // NB. Fortran is 1-indexed
+        CBLAS_INT iu = isuppz[2 * i + 1];
+
+        for (int j = il; j < iu; j++) {
+            dst[i + j * n2] = src[i * n1 + j];
         }
     }
 }
