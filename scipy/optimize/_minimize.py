@@ -14,6 +14,7 @@ from warnings import warn
 
 import numpy as np
 from scipy._lib._util import wrapped_inspect_signature
+from scipy._lib._array_api import array_namespace, xp_copy
 
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
@@ -1175,7 +1176,8 @@ def _optimize_result_for_equal_bounds(
     message = 'All independent variables were fixed by bounds.'
 
     # bounds is new-style
-    x0 = bounds.lb
+    xp = array_namespace(bounds.lb)
+    x0 = xp_copy(bounds.lb, xp=xp)
 
     if constraints:
         message = ("All independent variables were fixed by bounds at values"
