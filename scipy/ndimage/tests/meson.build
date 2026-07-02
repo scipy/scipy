@@ -9,7 +9,8 @@ python_sources = [
   'test_measurements.py',
   'test_morphology.py',
   'test_ni_support.py',
-  'test_splines.py'
+  'test_splines.py',
+  'test_array_likes.py',
 ]
 
 py3.install_sources(
