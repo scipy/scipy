@@ -36,6 +36,10 @@ New features
 ``scipy.interpolate`` improvements
 ==================================
 
+- Added ``scipy.interpolate.LSQMultivariateSpline``, a tensor-product weighted
+  least-squares spline for scattered or gridded data in arbitrary input
+  dimensions.
+
 
 ``scipy.linalg`` improvements
 =============================
@@ -102,5 +106,3 @@ Issues closed for 1.19.0
 ************************
 Pull requests for 1.19.0
 ************************
-
-
