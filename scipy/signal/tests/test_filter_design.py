@@ -10,11 +10,12 @@ import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    xp_assert_close, xp_assert_equal, array_namespace,
+    xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
     _xp_copy_to_numpy, xp_assert_close_nulp
 )
+from scipy._lib._array_api_no_0d import xp_assert_close
 import scipy._external.array_api_extra as xpx
 
 from numpy import array, spacing, sin, pi
@@ -268,7 +269,7 @@ class TestZpk2Tf:
         b_np, a_np = map(_xp_copy_to_numpy, (b, a))
         z_np, p_np, k_np = tf2zpk(b_np, a_np)
         z, p, k = map(xp.asarray, (z_np, p_np, k_np))
-        xp_assert_close(k, xp.asarray(1j), check_0d=False)
+        xp_assert_close(k, xp.asarray(1j), check_0d=True)
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
@@ -1195,13 +1196,13 @@ class TestFreqz_sos:
         w = w / xp.pi
         xp_assert_close(20 * xp.log10(h[w <= 0.1]),
                         zero, atol=3.01,
-                        check_shape=False)
+                        check_shape=False, check_0d=True)
         xp_assert_close(20 * xp.log10(h[w >= 0.6]),
                         zero, atol=3.01,
-                        check_shape=False)
+                        check_shape=False, check_0d=True)
         xp_assert_close(h[(w >= 0.2) & (w <= 0.5)],
                         zero, atol=1e-3,
-                        check_shape=False)  # <= -60 dB
+                        check_shape=False, check_0d=True)  # <= -60 dB
 
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 150)
         sos = cheby2(N, 150, Wn, 'stop', output='sos')
@@ -1210,8 +1211,8 @@ class TestFreqz_sos:
         w, h = freqz_sos(sos)
         dB = 20*xp.log10(xp.abs(h))
         w = w / xp.pi
-        xp_assert_close(dB[w <= 0.1], zero, atol=3.01, check_shape=False)
-        xp_assert_close(dB[w >= 0.6], zero, atol=3.01, check_shape=False)
+        xp_assert_close(dB[w <= 0.1], zero, atol=3.01, check_shape=False, check_0d=True)
+        xp_assert_close(dB[w >= 0.6], zero, atol=3.01, check_shape=False, check_0d=True)
         assert xp.all(dB[(w >= 0.2) & (w <= 0.5)] < -149.9)
 
         # from cheb1ord
@@ -1223,9 +1224,9 @@ class TestFreqz_sos:
         h = xp.abs(h)
         w = w / xp.pi
         xp_assert_close(20 * xp.log10(h[w <= 0.2]), zero, atol=3.01,
-                        check_shape=False)
+                        check_shape=False, check_0d=True)
         xp_assert_close(h[w >= 0.3], zero, atol=1e-2,
-                        check_shape=False)  # <= -40 dB
+                        check_shape=False, check_0d=True)  # <= -40 dB
 
         N, Wn = cheb1ord(0.2, 0.3, 1, 150)
         sos = cheby1(N, 1, Wn, 'low', output='sos')
@@ -1234,7 +1235,7 @@ class TestFreqz_sos:
         w, h = freqz_sos(sos)
         dB = 20*xp.log10(xp.abs(h))
         w /= np.pi
-        xp_assert_close(dB[w <= 0.2], zero, atol=1.01, check_shape=False)
+        xp_assert_close(dB[w <= 0.2], zero, atol=1.01, check_shape=False, check_0d=True)
         assert xp.all(dB[w >= 0.3] < -149.9)
 
         # adapted from ellipord
@@ -1246,9 +1247,9 @@ class TestFreqz_sos:
         h = xp.abs(h)
         w = w / xp.pi
         xp_assert_close(20 * xp.log10(h[w >= 0.3]), zero, atol=3.01,
-                        check_shape=False)
+                        check_shape=False, check_0d=True)
         xp_assert_close(h[w <= 0.1], zero, atol=1.5e-3,
-                        check_shape=False)  # <= -60 dB (approx)
+                        check_shape=False, check_0d=True)  # <= -60 dB (approx)
 
         # adapted from buttord
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 40)
@@ -1260,11 +1261,15 @@ class TestFreqz_sos:
         w = w / xp.pi
 
         h014 = h[w <= 0.14]
-        xp_assert_close(h014, xp.zeros_like(h014), atol=1e-2)  # <= -40 dB
+        xp_assert_close(h014, xp.zeros_like(h014),
+                        atol=1e-2,
+                        check_0d=True)  # <= -40 dB
         h06 = h[w >= 0.6]
-        xp_assert_close(h06, xp.zeros_like(h06), atol=1e-2)  # <= -40 dB
+        xp_assert_close(h06, xp.zeros_like(h06),
+                        atol=1e-2,
+                        check_0d=True)  # <= -40 dB
         h0205 = 20 * xp.log10(h[(w >= 0.2) & (w <= 0.5)])
-        xp_assert_close(h0205, xp.zeros_like(h0205), atol=3.01)
+        xp_assert_close(h0205, xp.zeros_like(h0205), atol=3.01, check_0d=True)
 
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 100)
         sos = butter(N, Wn, 'band', output='sos')
@@ -1277,7 +1282,7 @@ class TestFreqz_sos:
         assert xp.all(dB[(w > 0) & (w <= 0.14)] < -99.9)
         assert xp.all(dB[w >= 0.6] < -99.9)
         db0205 = dB[(w >= 0.2) & (w <= 0.5)]
-        xp_assert_close(db0205, xp.zeros_like(db0205), atol=3.01)
+        xp_assert_close(db0205, xp.zeros_like(db0205), atol=3.01, check_0d=True)
 
     def test_freqz_sos_design_ellip(self, xp):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
@@ -5118,9 +5123,11 @@ class TestGammatone:
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
             xp_assert_close(response_max,
-                            xp.ones_like(response_max), rtol=1e-2, check_0d=False)
-            xp_assert_close(freq_hz,
-                            1000*xp.ones_like(freq_hz), rtol=1e-2, check_0d=False)
+                            xp.ones_like(response_max), rtol=1e-2, check_0d=True)
+            xp_assert_close(
+                freq_hz, xp.asarray(1000*xp.ones_like(freq_hz)),
+                rtol=1e-2, check_0d=True
+            )
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using

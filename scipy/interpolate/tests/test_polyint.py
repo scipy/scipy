@@ -336,9 +336,9 @@ class TestTaylor:
         with pytest.warns(DeprecationWarning, match="`approximate_taylor_polynomial`"):
             p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
         for i in range(degree+1):
-            assert_almost_equal(p(0),1)
+            assert np.isclose(p(0), 1, atol=0)
             p = p.deriv()
-        assert_almost_equal(p(0),0)
+        assert np.isclose(p(0), 0, atol=0)
 
 
 class TestBarycentric:

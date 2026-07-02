@@ -13,6 +13,7 @@ from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
     xp_ravel, _xp_copy_to_numpy, array_namespace, is_cupy
 )
+from scipy._lib._array_api_no_0d import xp_assert_close as xp_assert_close_no_0d
 import scipy._external.array_api_extra as xpx
 from pytest import raises as assert_raises
 import pytest
@@ -2573,11 +2574,15 @@ class TestNdBSpline:
 
         # now try the array xi : the output.shape is (3, 4) where 3
         # is the number of points in xi and 4 is the trailing dimension of c
-        assert bspl2_4(xi).shape == np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
-        xp_assert_close(bspl2_4(xi),
-                        xp.asarray(target, dtype=xp.float64)[:, None],
-                        check_shape=False,
-                        atol=5e-14)
+        expected_shape = np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
+        xp_assert_close(
+            bspl2_4(xi),
+            xp.broadcast_to(
+                xp.asarray(target, dtype=xp.float64)[:, None],
+                expected_shape
+            ),
+            atol=5e-14,
+        )
 
         # two trailing dimensions
         c2_22 = xp.reshape(c2_4, (6, 6, 2, 2))
@@ -2590,12 +2595,15 @@ class TestNdBSpline:
 
         # now try the array xi : the output shape is (3, 2, 2)
         # for 3 points in xi and c trailing dimensions being (2, 2)
-        assert (bspl2_22(xi).shape ==
-                np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:])
-        xp_assert_close(bspl2_22(xi),
-                        xp.asarray(target, dtype=xp.float64)[:, None, None],
-                        check_shape=False,
-                        atol=5e-14)
+        expected_shape = np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:]
+        xp_assert_close(
+            bspl2_22(xi),
+            xp.broadcast_to(
+                xp.asarray(target, dtype=xp.float64)[:, None, None],
+                expected_shape
+            ),
+            atol=5e-14,
+        )
 
     def test_2D_separable_2_complex(self, xp):
         # test `c` with c.dtype == complex, with and w/o trailing dims
@@ -3850,7 +3858,7 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         f = F(x, y[:, None], t, k, s)    # F expects y to be 2D
         f_d = F_dense(x, y, t, k, s)
         for p in [1, 10, 100]:
-            xp_assert_close(f(p), f_d(p), atol=1e-15)
+            xp_assert_close_no_0d(f(p), f_d(p), atol=1e-15)
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
     def test_fitpack_F_with_weights(self, k):
@@ -3866,7 +3874,7 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         f_d = F_dense(x, y, t, k, s)   # no weights
 
         for p in [1, 10, 100]:
-            xp_assert_close(fw(p), fw_d(p), atol=1e-15)
+            xp_assert_close_no_0d(fw(p), fw_d(p), atol=1e-15)
             assert not np.allclose(f_d(p), fw_d(p), atol=1e-15)
 
     def test_disc_matrix(self):

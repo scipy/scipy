@@ -29,11 +29,13 @@ from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
+    xp_assert_close, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, xp_default_dtype, array_namespace, make_xp_test_case,
     make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy
 )
+from scipy._lib._array_api_no_0d import xp_assert_equal
+
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
@@ -2690,11 +2692,11 @@ class TestCorrelateComplex:
         assert y.dtype == dt
 
         xp_assert_equal(correlate([1], [2j]), np.asarray(correlate(1, 2j)),
-                        check_shape=False)
+                        check_shape=False, check_0d=True)
         xp_assert_equal(correlate([2j], [3j]), np.asarray(correlate(2j, 3j)),
-                        check_shape=False)
+                        check_shape=False, check_0d=True)
         xp_assert_equal(correlate([3j], [4]), np.asarray(correlate(3j, 4)),
-                        check_shape=False)
+                        check_shape=False, check_0d=True)
 
 
 

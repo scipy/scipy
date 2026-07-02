@@ -24,7 +24,7 @@ from typing import cast, get_args, Literal
 
 import numpy as np
 import pytest
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy.fft import fftshift
 from scipy.stats import norm as normal_distribution  # type: ignore
 from scipy.signal import check_COLA, get_window, welch, stft, istft, spectrogram

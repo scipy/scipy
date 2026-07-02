@@ -1192,7 +1192,7 @@ class Test_bode:
         # Test that bode() return continuous phase, issues/2331.
         system = lti([], [-10, -30, -40, -60, -70], 1)
         w, mag, phase = system.bode(w=np.logspace(-3, 40, 100))
-        assert_almost_equal(min(phase), -450, decimal=15)
+        assert np.isclose(min(phase), -450, atol=1e-16, rtol=0)
 
     def test_from_state_space(self):
         # Ensure that bode works with a system that was created from the
