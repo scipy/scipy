@@ -874,6 +874,73 @@ void _compute_residuals(
     }
 }
 
+/*
+ * fpback analogue for the clamped LSQ problem. Back-substitutes on the reduced
+ * R (nc_reduced coefficients) directly into c[1 : nc_full-1], then fills c[0]
+ * and c[nc_full-1] from clamp_values so residual computation on the full-length
+ * c is consistent with (t, k). clamp_values has shape (2, ydim2): row 0 is ci, 
+ * row 1 is cf.
+ */
+void fpback_clamped( /* inputs */
+    const double *Rptr, int64_t m, int64_t nz,
+    int64_t nc_reduced,
+    const double *xptr, int64_t m_,
+    const double *tptr, int64_t len_t,
+    int k,
+    const double *wptr,
+    int extrapolate,
+    const double* ywptr,
+    const double *yptr, int64_t ydim2,
+    const double *clamp_values,           // clamp_values(2, ydim2)
+    /* outputs */
+    double *cptr,
+    double *fp,
+    double *residualsptr)
+{
+    int64_t nc_full = nc_reduced + 2;
+
+    auto R = ConstRealArray2D(Rptr, m, nz);
+    auto yw = ConstRealArray2D(ywptr, m, ydim2);
+    auto clamp = ConstRealArray2D(clamp_values, 2, ydim2);
+    auto c_red = RealArray2D(cptr + ydim2, nc_reduced, ydim2);
+
+    /* The loops remain same as fpback, they directly write to the
+    memory region starting from `cptr + ydim2` to `cptr + ydim2 + nc_reduced * ydim2`,
+    that is, `c[1: -1]`.
+    */
+
+    // c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
+    for (int64_t l=0; l < ydim2; ++l) {
+        c_red(nc_reduced - 1, l) = yw(nc_reduced - 1, l) / R(nc_reduced - 1, 0);
+    }
+
+    //for i in range(nc-2, -1, -1):
+    //    nel = min(nz, nc-i)
+    //    c[i, ...] = ( y[i] - (R[i, 1:nel, None] * c[i+1:i+nel, ...]).sum(axis=0) ) / R[i, 0]
+    for (int64_t i=nc_reduced-2; i >= 0; --i) {
+        int64_t nel = std::min(nz, nc_reduced - i);
+        for (int64_t l=0; l < ydim2; ++l){
+            double ssum = yw(i, l);
+            for (int64_t j=1; j < nel; ++j) {
+                ssum -= R(i, j) * c_red(i + j, l);
+            }
+            ssum /= R(i, 0);
+            c_red(i, l) = ssum;
+        }
+    }
+
+    /* Reassembly: add c[0] & c[-1] to c before computing residuals. */
+    auto c = RealArray2D(cptr, nc_full, ydim2);
+    for (int64_t l=0; l < ydim2; ++l) {
+        c(0, l) = clamp(0, l);
+        c(nc_full - 1, l) = clamp(1, l);
+    }
+
+    _compute_residuals(
+        xptr, m_, yptr, ydim2, tptr, len_t,
+        wptr, k, extrapolate, nc_full, cptr, fp, residualsptr
+    );
+}
 
 /*
  * Back substitution solve of `R @ c = y` with an upper triangular R.

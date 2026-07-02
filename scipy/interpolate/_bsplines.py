@@ -2336,17 +2336,19 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False, clamp_values=None):
             
             ci = clamp_values[0].reshape(-1)
             cf = clamp_values[1].reshape(-1)
-            nc_full = nc
+
+            clamp_arr = np.zeros((2, ci.shape[0]), dtype=np.float64)
+            clamp_arr[0], clamp_arr[1] = ci, cf
 
             A, offset, nc, y_w, x, y, w = _lsq_clamp_preprocess(
                 A, offset, nc, k, y_w, ci, cf, x, y, w
             )
             
             _dierckx.qr_reduce(A, offset, nc, y_w)
-            c, residuals, fp = _dierckx.fpback(A, nc, x, y, t, k, w, y_w)   
+            c, residuals, fp = _dierckx.fpback_clamped(
+                A, nc, x, y, t, k, w, y_w, clamp_arr
+            )   
             
-            c = _lsq_clamp_postprocess(c, ci, cf, nc_full)
-
             return A, y_w, c, fp, residuals
         
         else:
