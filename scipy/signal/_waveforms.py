@@ -4,9 +4,9 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
+import math
 import numpy as np
-from numpy import asarray, zeros, pi, log, sqrt, \
-    exp, cos, sin, polyval, polyint
+from numpy import asarray, zeros, pi, log, sqrt, cos, polyval, polyint
 
 from scipy._lib._array_api import array_namespace, xp_promote
 import scipy._external.array_api_extra as xpx
@@ -204,7 +204,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     >>> i, q, e = signal.gausspulse(t, fc=5, retquad=True, retenv=True)
     >>> plt.plot(t, i, t, q, t, e, '--')
 
-    """ 
+    """
     if fc < 0:
         raise ValueError(f"Center frequency (fc={fc:.2f}) must be >=0.")
     if bw <= 0:
@@ -219,7 +219,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # fdel = fc*bw/2:  g(fdel) = ref --- solve this for a
     #
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
-    a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
+    a = -(pi * fc * bw) ** 2 / (4.0 * math.log(ref))
 
     if isinstance(t, str):
         if t == 'cutoff':  # compute cut_off point
@@ -229,13 +229,16 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                 raise ValueError("Reference level for time cutoff must "
                                  "be < 0 dB")
             tref = pow(10.0, tpr / 20.0)
-            return sqrt(-log(tref) / a)
+            return sqrt(-math.log(tref) / a)
         else:
             raise ValueError("If `t` is a string, it must be 'cutoff'")
 
-    yenv = exp(-a * t * t)
-    yI = yenv * cos(2 * pi * fc * t)
-    yQ = yenv * sin(2 * pi * fc * t)
+    xp = array_namespace(t)
+    t = xp_promote(t, xp=xp, force_floating=True)
+
+    yenv = xp.exp(-a * t * t)
+    yI = yenv * xp.cos(2 * xp.pi * fc * t)
+    yQ = yenv * xp.sin(2 * xp.pi * fc * t)
     if not retquad and not retenv:
         return yI
     if not retquad and retenv:

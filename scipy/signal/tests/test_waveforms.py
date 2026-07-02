@@ -3,11 +3,11 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case, xp_default_dtype
+    make_xp_test_case, xp_default_dtype, xp_result_type
 )
 
 import scipy.signal._waveforms as waveforms
-from scipy.signal import square, sawtooth  # type:ignore[attr-defined]
+from scipy.signal import gausspulse, square, sawtooth  # type:ignore[attr-defined]
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -318,32 +318,74 @@ class TestSweepPoly:
         assert abserr < 1e-6
 
 
+@make_xp_test_case(gausspulse)
 class TestGaussPulse:
 
     def test_integer_fc(self):
-        float_result = waveforms.gausspulse('cutoff', fc=1000.0)
-        int_result = waveforms.gausspulse('cutoff', fc=1000)
+        float_result = gausspulse('cutoff', fc=1000.0)
+        int_result = gausspulse('cutoff', fc=1000)
         err_msg = "Integer input 'fc=1000' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_bw(self):
-        float_result = waveforms.gausspulse('cutoff', bw=1.0)
-        int_result = waveforms.gausspulse('cutoff', bw=1)
+        float_result = gausspulse('cutoff', bw=1.0)
+        int_result = gausspulse('cutoff', bw=1)
         err_msg = "Integer input 'bw=1' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_bwr(self):
-        float_result = waveforms.gausspulse('cutoff', bwr=-6.0)
-        int_result = waveforms.gausspulse('cutoff', bwr=-6)
+        float_result = gausspulse('cutoff', bwr=-6.0)
+        int_result = gausspulse('cutoff', bwr=-6)
         err_msg = "Integer input 'bwr=-6' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_tpr(self):
-        float_result = waveforms.gausspulse('cutoff', tpr=-60.0)
-        int_result = waveforms.gausspulse('cutoff', tpr=-60)
+        float_result = gausspulse('cutoff', tpr=-60.0)
+        int_result = gausspulse('cutoff', tpr=-60)
         err_msg = "Integer input 'tpr=-60' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
+    @pytest.mark.parametrize("t_dtype", ["float32", "float64", "int64"])
+    def test_dtype(self, t_dtype, xp):
+        t_dtype = getattr(xp, t_dtype)
+        t = xp.linspace(-1, 1, 11, dtype=t_dtype)
+        y = gausspulse(t, fc=5)
+        assert y.dtype == xp_result_type(t, force_floating=True, xp=xp)
+
+    @pytest.mark.parametrize("retquad, retenv, n_outputs", [
+        (False, False, 1),
+        (False, True, 2),
+        (True, False, 2),
+        (True, True, 3),
+    ])
+    def test_output_shapes(self, retquad, retenv, n_outputs, xp):
+        t = xp.linspace(-1, 1, 11)
+        y = gausspulse(t, fc=5, retquad=retquad, retenv=retenv)
+
+        ys = (y,) if n_outputs == 1 else y
+        assert len(ys) == n_outputs
+        for yi in ys:
+            assert yi.shape == t.shape
+
+    def test_scalar_array_input(self, xp):
+        t = xp.asarray(0.0)
+        y = gausspulse(t, fc=5)
+        xp_assert_close(y, xp.asarray(1.0), check_0d=False)
+
+    def test_known_values(self, xp):
+        t = xp.asarray([0.0, 0.25, 0.5], dtype=xp.float64)
+        actual = gausspulse(t, fc=5, retquad=True, retenv=True)
+        # For default bw=0.5 and bwr=-6:
+        # yenv = exp(-a*t**2), yI = yenv*cos(2*pi*fc*t),
+        # yQ = yenv*sin(2*pi*fc*t), a = -(pi*fc*bw)**2/(4*log(10**(bwr/20))).
+        expected = [
+            xp.asarray([1.0, 0.0, -0.0037682711177376835], dtype=xp.float64),
+            xp.asarray([0.0, 0.24776247887933997, 0.0], dtype=xp.float64),
+            xp.asarray([1.0, 0.24776247887933997, 0.0037682711177376835],
+                       dtype=xp.float64),
+        ]
+        for actual_i, expected_i in zip(actual, expected):
+            xp_assert_close(actual_i, expected_i, atol=1e-15)
 
 class TestUnitImpulse:
 
