@@ -307,7 +307,7 @@ add_newdoc("bdtrik",
     """
     bdtrik(y, n, p, out=None)
 
-    Inverse function to `bdtr` with respect to `k`.
+    Binomial distribution quantile.
 
     Finds the number of successes `k` such that the sum of the terms 0 through
     `k` of the Binomial probability density for `n` events with probability
@@ -332,17 +332,15 @@ add_newdoc("bdtrik",
 
     See Also
     --------
-    bdtr
+    bdtr : Binomial distribution cumulative distribution function
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
+    Formula 26.5.24 of [1]_ is used to reduce the binomial
     distribution to the cumulative incomplete beta distribution.
 
-    Computation of `k` involves a search for a value that produces the desired
-    value of `y`. The search relies on the monotonicity of `y` with `k`.
-
-    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
+    This function uses routines from the Boost.Math C++ library [3]_ which rely
+    on numerical inversion of the binomial distribution CDF [4]_.
 
     References
     ----------
@@ -351,9 +349,8 @@ add_newdoc("bdtrik",
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17.5#E5
-    .. [3] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [3] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [4] https://www.boost.org/doc/libs/latest/libs/math/doc/html/math_toolkit/dist_ref/dists/binomial_dist.html
 
     Examples
     --------
