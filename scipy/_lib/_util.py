@@ -414,7 +414,7 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
-def _validate_int(k, name, minimum=None):
+def _validate_int(k, name, minimum=None, maximum=None):
     """
     Validate a scalar integer.
 
@@ -431,6 +431,8 @@ def _validate_int(k, name, minimum=None):
         The name of the parameter.
     minimum : int, optional
         An optional lower bound.
+    maximum : int, optional
+        An optional upper bound.
     """
     try:
         k = operator.index(k)
@@ -439,6 +441,9 @@ def _validate_int(k, name, minimum=None):
     if minimum is not None and k < minimum:
         raise ValueError(f'{name} must be an integer not less '
                          f'than {minimum}') from None
+    if maximum is not None and k > maximum:
+        raise ValueError(f'{name} must be an integer not greater '
+                         f'than {maximum}') from None
     return k
 
 

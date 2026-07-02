@@ -97,6 +97,14 @@ py3.extension_module('_pava_pybind',
   subdir: 'scipy/optimize'
 )
 
+py3.extension_module('_biteopt',
+  ['_biteopt/_biteopt.cpp'],
+  dependencies: [np_dep, pybind11_dep, biteopt_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
 if use_pythran
   py3.extension_module('_group_columns',
     pythran_gen.process('_group_columns.py'),
@@ -164,6 +172,7 @@ py3.install_sources([
   '__init__.pxd',
   '_basinhopping.py',
   '_bracket.py',
+  '_biteopt_py.py',
   '_chandrupatla.py',
   '_cobyla_py.py',
   '_cobyqa_py.py',
