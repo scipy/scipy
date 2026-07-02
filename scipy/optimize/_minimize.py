@@ -39,6 +39,20 @@ from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            PreparedConstraint)
 from ._differentiable_functions import FD_METHODS
 
+
+def _keep_feasible_is_true(bounds):
+    if bounds is None:
+        return False
+    if isinstance(bounds, (Bounds, NonlinearConstraint)):
+        return np.any(bounds.keep_feasible)
+    try:
+        return any([_keep_feasible_is_true(b) for b in bounds])
+    except TypeError:
+        # This can occur, for example, when recursing one level with the
+        # original input bounds=(1, 2).
+        return False
+
+
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'cobyqa', 'slsqp',
                     'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact',
@@ -613,6 +627,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if options is None:
         options = {}
     # check if optional parameters are supported by the selected method
+    # - keep_feasible set to True (in Bounds or NonlinearConstraint)
+    if meth not in ['trust-constr', 'powell'] and _keep_feasible_is_true(bounds):
+        msg = ('A Bounds or NonlinearConstraint has set an element of '
+               f'`keep_feasible` to True, but method {method!r} does '
+               'not support this option.  This warning will be an error '
+               'in a future version of SciPy.')
+        warn(message=msg, category=DeprecationWarning, stacklevel=2)
     # - jac
     if meth in ('nelder-mead', 'powell', 'cobyla', 'cobyqa') and bool(jac):
         warn(f'Method {method} does not use gradient information (jac).',
