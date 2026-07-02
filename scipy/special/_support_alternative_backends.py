@@ -181,7 +181,10 @@ class _FuncInfo:
 
             _f = globals()[self.name]  # Allow nested wrapping
             def f(*args, _f=_f, xp=xp, **kwargs):
-                # Hide dtype kwarg from map_blocks
+                # Ensure Dask's lazy output shape follows NumPy broadcasting.
+                if all(is_array_api_obj(arg) for arg in args):
+                    args = xp.broadcast_arrays(*args)
+                 # Hide dtype kwarg from map_blocks
                 return xp.map_blocks(functools.partial(_f, **kwargs), *args)
 
             return f

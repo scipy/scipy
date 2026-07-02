@@ -396,6 +396,17 @@ def test_chdtr_gh21311(xp):
     xp_assert_close(res, xp.asarray(ref))
 
 
+@make_xp_test_case(special.chdtrc)
+def test_chdtrc_broadcasting(xp):
+    # gh-25343
+    v = xp.asarray([[1.], [2.]])  # shape (2, 1)
+    x = xp.asarray([1., 2.])  # shape (2,)
+    assert special.chdtr(v, x).shape == (2, 2)
+    assert special.chdtrc(v, x).shape == (2, 2)
+    if is_dask(xp):
+        assert special.chdtrc(1., x).shape == (2,)
+
+
 @make_xp_test_case(special.fdtrc)
 def test_mixed_arrays_and_python_scalars(xp):
     # Tests that the delegation infrastructure respects NEP50.
