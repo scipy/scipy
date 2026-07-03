@@ -388,6 +388,15 @@ class TestSos2Zpk:
         assert z.shape[0] == 24
         assert p.shape[0] == 24
 
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_device(self, xp, devices):
+        for d in devices:
+            sos = xp.asarray([[1.0, 0, 1, 1, 0, -0.81],
+                              [1.0, 0, 0, 1, 0, +0.49]], device=d)
+            z, p, k = sos2zpk(sos)
+            assert xp_device(z) == xp_device(sos)
+            assert xp_device(p) == xp_device(sos)
+
 
 @make_xp_test_case(sos2tf)
 class TestSos2Tf:
@@ -1537,6 +1546,14 @@ class TestFreqz_zpk:
         with pytest.raises(ValueError, match="Sampling.*be none."):
             freqz_zpk([1.0], [1.0], [1.0], fs=None)
 
+    def test_device(self, xp, devices):
+        for d in devices:
+            z = xp.asarray([0.5], device=d)
+            p = xp.asarray([0.5], device=d)
+            w, h = freqz_zpk(z, p, 1.0, worN=16)
+            assert xp_device(w) == xp_device(z)
+            assert xp_device(h) == xp_device(z)
+
 
 @make_xp_test_case(normalize)
 class TestNormalize:
@@ -1609,6 +1626,15 @@ class TestLp2lp:
         assert_array_almost_equal(b_lp, xp.asarray([0.1488]), decimal=4)
         assert_array_almost_equal(a_lp, xp.asarray([1, 0.5455, 0.1488]), decimal=4)
 
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_device(self, xp, devices):
+        for d in devices:
+            b = xp.asarray([1.0], device=d)
+            a = xp.asarray([1.0, math.sqrt(2), 1.0], device=d)
+            b_lp, a_lp = lp2lp(b, a, 0.38574256627112119)
+            assert xp_device(b_lp) == xp_device(b)
+            assert xp_device(a_lp) == xp_device(a)
+
 
 @make_xp_test_case(lp2hp)
 class TestLp2hp:
@@ -1630,6 +1656,15 @@ class TestLp2hp:
         b_hp, a_hp = lp2hp(b, a, 2.0)
         xp_assert_close(b_hp, xp.asarray([3.0, 4.0, 4.0]))
         xp_assert_close(a_hp, xp.asarray([1.0, 0.0, 0.0]))
+
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_device(self, xp, devices):
+        for d in devices:
+            b = xp.asarray([1.0, 2.0, 3.0], device=d)
+            a = xp.asarray([1.0], device=d)
+            b_hp, a_hp = lp2hp(b, a, 2.0)
+            assert xp_device(b_hp) == xp_device(b)
+            assert xp_device(a_hp) == xp_device(a)
 
 
 @make_xp_test_case(lp2bp)
@@ -1653,6 +1688,15 @@ class TestLp2bp:
         xp_assert_close(b_bp, xp.asarray([1/9, 2/3, 35/9, 8/3, 16/9]))
         xp_assert_close(a_bp, xp.asarray([1.0, 0.0, 0.0]))
 
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_device(self, xp, devices):
+        for d in devices:
+            b = xp.asarray([1.0], device=d)
+            a = xp.asarray([1.0, 2.0, 2.0, 1.0], device=d)
+            b_bp, a_bp = lp2bp(b, a, 2*math.pi*4000, 2*math.pi*2000)
+            assert xp_device(b_bp) == xp_device(b)
+            assert xp_device(a_bp) == xp_device(a)
+
 
 @make_xp_test_case(lp2bs)
 class TestLp2bs:
@@ -1670,6 +1714,15 @@ class TestLp2bs:
         b_bs, a_bs = lp2bs(b, a, 2.0, 3.0)
         xp_assert_close(b_bs, xp.asarray([3.0, 6.0, 33.0, 24.0, 48.0]))
         xp_assert_close(a_bs, xp.asarray([1.0, 0.0, 8.0, 0.0, 16.0]))
+
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_device(self, xp, devices):
+        for d in devices:
+            b = xp.asarray([1.0], device=d)
+            a = xp.asarray([1.0, 1.0], device=d)
+            b_bs, a_bs = lp2bs(b, a, 0.41722257286366754, 0.18460575326152251)
+            assert xp_device(b_bs) == xp_device(b)
+            assert xp_device(a_bs) == xp_device(a)
 
 
 @make_xp_test_case(bilinear)
@@ -1820,6 +1873,17 @@ class TestLp2lp_zpk:
         with pytest.raises(ValueError, match="Sampling.*be none"):
             bilinear_zpk(z, p, k, fs=None)
 
+    @xfail_xp_backends(
+        'dask.array', reason='https://github.com/dask/dask/issues/11883'
+    )
+    def test_device(self, xp, devices):
+        for d in devices:
+            z = xp.asarray([-2j, +2j], device=d)
+            p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j], device=d)
+            z_lp, p_lp, _ = lp2lp_zpk(z, p, 3, 20)
+            assert xp_device(z_lp) == xp_device(z)
+            assert xp_device(p_lp) == xp_device(p)
+
 
 @make_xp_test_case(lp2hp_zpk)
 class TestLp2hp_zpk:
@@ -1849,6 +1913,17 @@ class TestLp2hp_zpk:
         )
         assert k_hp == 32.0
 
+    @xfail_xp_backends(
+        'dask.array', reason='https://github.com/dask/dask/issues/11883'
+    )
+    def test_device(self, xp, devices):
+        for d in devices:
+            z = xp.asarray([-2j, +2j], device=d)
+            p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j], device=d)
+            z_hp, p_hp, _ = lp2hp_zpk(z, p, 3, 6)
+            assert xp_device(z_hp) == xp_device(z)
+            assert xp_device(p_hp) == xp_device(p)
+
 
 @make_xp_test_case(lp2bp_zpk)
 class TestLp2bp_zpk:
@@ -1875,6 +1950,17 @@ class TestLp2bp_zpk:
             ), check_dtype=False
         )
         assert math.isclose(k_bp, 24.0)
+
+    @xfail_xp_backends(
+        'dask.array', reason='https://github.com/dask/dask/issues/11883'
+    )
+    def test_device(self, xp, devices):
+        for d in devices:
+            z = xp.asarray([-2j, +2j], device=d)
+            p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j], device=d)
+            z_bp, p_bp, _ = lp2bp_zpk(z, p, 3, 15, 8)
+            assert xp_device(z_bp) == xp_device(z)
+            assert xp_device(p_bp) == xp_device(p)
 
 
 @make_xp_test_case(lp2bs_zpk)
@@ -1909,6 +1995,17 @@ class TestLp2bs_zpk:
             check_dtype=False
         )
         assert math.isclose(k_bs, 32.0)
+
+    @xfail_xp_backends(
+        'dask.array', reason='https://github.com/dask/dask/issues/11883'
+    )
+    def test_device(self, xp, devices):
+        for d in devices:
+            z = xp.asarray([-2j, +2j], device=d)
+            p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j], device=d)
+            z_bs, p_bs, _ = lp2bs_zpk(z, p, 3, 35, 12)
+            assert xp_device(z_bs) == xp_device(z)
+            assert xp_device(p_bs) == xp_device(p)
 
 
 @make_xp_test_case(bilinear_zpk)

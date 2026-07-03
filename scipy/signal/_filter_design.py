@@ -694,7 +694,8 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     zm1 = xp.exp(1j * w)
     func = _pu.npp_polyvalfromroots
-    h = xp.asarray(k, dtype=res_dtype) * func(zm1, z, xp=xp) / func(zm1, p, xp=xp)
+    h = (xp.asarray(k, dtype=res_dtype, device=xp_device(z))
+         * func(zm1, z, xp=xp) / func(zm1, p, xp=xp))
 
     w = w*(fs/(2*pi))
 
@@ -2229,14 +2230,14 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
         for i in range(0, N + 1):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
-                    val += comb(i, k) * b[N - i] * (wosq) ** (i - k) / bw ** i
+                    val += float(comb(i, k)) * b[N - i] * (wosq) ** (i - k) / bw ** i
         bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
-                    val += comb(i, k) * a[D - i] * (wosq) ** (i - k) / bw ** i
+                    val += float(comb(i, k)) * a[D - i] * (wosq) ** (i - k) / bw ** i
         aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
@@ -2321,7 +2322,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
         for i in range(0, N + 1):
             for k in range(0, M - i + 1):
                 if i + 2 * k == j:
-                    val += (comb(M - i, k) * b[N - i] *
+                    val += (float(comb(M - i, k)) * b[N - i] *
                             (wosq) ** (M - i - k) * bw ** i)
         bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
@@ -2329,7 +2330,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
         for i in range(0, D + 1):
             for k in range(0, M - i + 1):
                 if i + 2 * k == j:
-                    val += (comb(M - i, k) * a[D - i] *
+                    val += (float(comb(M - i, k)) * a[D - i] *
                             (wosq) ** (M - i - k) * bw ** i)
         aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 

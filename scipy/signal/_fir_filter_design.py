@@ -555,7 +555,8 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         h -= left * xpx.sinc(left * m, xp=xp)
 
     # Get and apply the window function.
-    win = get_window(window, numtaps, fftbins=False, xp=xp)
+    win = get_window(window, numtaps, fftbins=False, xp=xp,
+                     device=xp_device(cutoff))
     h *= win
 
     # Now handle scaling if desired.

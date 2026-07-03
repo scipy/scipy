@@ -2217,6 +2217,17 @@ class _TestLinearFilter:
         assert_array_almost_equal(zi_1, zi_2)
 
     @make_xp_test_case(lfiltic)
+    def test_device(self, xp, devices):
+        dtype = (getattr(xp, self.dtype)
+                 if isinstance(self.dtype, str) else self.dtype)
+        for d in devices:
+            b = xp.asarray([0.5, 1.0, 0.2], dtype=dtype, device=d)
+            a = xp.asarray([1.0, 0.5], dtype=dtype, device=d)
+            y = xp.asarray([1.0, 2.0, 3.0], dtype=dtype, device=d)
+            zi = lfiltic(b, a, y)
+            assert xp_device(zi) == xp_device(b)
+
+    @make_xp_test_case(lfiltic)
     def test_lfiltic_bad_coeffs(xp):
         # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
         assert_raises(ValueError, lfiltic, [1, 2], [], [0, 0], [0, 1])

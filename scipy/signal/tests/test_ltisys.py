@@ -6,7 +6,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
     assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case,
-    xp_result_type
+    xp_result_type, xp_device
 )
 
 from scipy.signal import (ss2tf, tf2ss, lti,
@@ -963,6 +963,20 @@ class Test_abcd_normalize:
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
         xp_assert_equal(D, D_)
+
+    def test_device(self, xp, devices):
+        for d in devices:
+            A_, B_, C_, D_ = (
+                xp.asarray(t, dtype=xp.float64, device=d)
+                for t in (self.A, self.B, self.C, self.D)
+            )
+            A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_)
+            for out in (A, B, C, D):
+                assert xp_device(out) == xp_device(A_)
+            # C missing -> constructed internally as zeros; must stay on device
+            A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
+            for out in (A, B, C, D):
+                assert xp_device(out) == xp_device(A_)
 
     def test_shapes(self):
         A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0)

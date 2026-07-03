@@ -8,7 +8,8 @@ import scipy._external.array_api_extra as xpx
 import scipy.signal as signal
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
-    array_namespace, xp_default_dtype, make_xp_test_case, _xp_copy_to_numpy
+    array_namespace, xp_default_dtype, make_xp_test_case, _xp_copy_to_numpy,
+    xp_device
 )
 from scipy.fft import fft, fft2, rfft
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
@@ -146,6 +147,12 @@ class TestFirwin:
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             firwin(51, .5, fs=np.array([10, 20]))
+
+    def test_device(self, xp, devices):
+        for d in devices:
+            cutoff = xp.asarray([0.2, 0.6], device=d)
+            h = firwin(11, cutoff, pass_zero=False)
+            assert xp_device(h) == xp_device(cutoff)
 
 
 @make_xp_test_case(firwin)
