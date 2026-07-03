@@ -26,6 +26,7 @@ In general, we would prefer less code duplication. The main blocker ATM is
 that pythran cannot compile functions with an xp= argument where xp is numpy.
 """
 from numpy.linalg import LinAlgError
+from scipy._lib._array_api import xp_device
 from ._rbfinterp_common import _monomial_powers_impl
 
 
@@ -202,11 +203,11 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
     lhs = xp.concat(
         [
          xp.concat((out_kernels, out_poly), axis=1),
-         xp.concat((out_poly.T, xp.zeros((r, r))), axis=1)
+         xp.concat((out_poly.T, xp.zeros((r, r), device=xp_device(y))), axis=1)
         ]
-    , axis=0) + xp.diag(xp.concat([smoothing, xp.zeros(r)]))
+    , axis=0) + xp.diag(xp.concat([smoothing, xp.zeros(r, device=xp_device(y))]))
 
-    rhs = xp.concat([d, xp.zeros((r, s))], axis=0)
+    rhs = xp.concat([d, xp.zeros((r, s), device=xp_device(d))], axis=0)
 
     return lhs, rhs, shift, scale
 

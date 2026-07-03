@@ -9,7 +9,7 @@ from . import _rbfinterp_np
 from . import _rbfinterp_xp
 
 from scipy._lib._array_api import (
-    _asarray, array_namespace, xp_size, is_numpy, xp_capabilities
+    _asarray, array_namespace, xp_size, is_numpy, xp_capabilities, xp_device
 )
 import scipy._external.array_api_extra as xpx
 
@@ -264,7 +264,8 @@ class RBFInterpolator:
         d = d.view(float)     # NB not Array API compliant (and jax copies)
 
         if isinstance(smoothing, int | float) or smoothing.shape == ():
-            smoothing = xp.full(ny, smoothing, dtype=xp.float64)
+            smoothing = xp.full(ny, smoothing, dtype=xp.float64,
+                                device=xp_device(y))
         else:
             smoothing = _asarray(smoothing, dtype=float, order="C", xp=xp)
             if smoothing.shape != (ny,):

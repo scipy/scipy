@@ -16,7 +16,8 @@ from scipy.special import poch
 from itertools import combinations
 
 from scipy._lib._array_api import (
-    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy, is_cupy
+    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy, is_cupy,
+    xp_device
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
@@ -924,7 +925,7 @@ class BSpline:
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:], device=xp_device(c)))
         tck = _fitpack_impl.splder((t, c, self.k), nu)
         return self.construct_fast(*tck, extrapolate=self.extrapolate, axis=self.axis)
 
@@ -969,7 +970,7 @@ class BSpline:
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:], device=xp_device(c)))
         tck = _fitpack_impl.splantider((t, c, self.k), nu)
 
         if self.extrapolate == 'periodic':

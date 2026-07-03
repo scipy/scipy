@@ -11,7 +11,7 @@ import sys
 import numpy as np
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
-    xp_ravel, _xp_copy_to_numpy, array_namespace, is_cupy
+    xp_ravel, _xp_copy_to_numpy, array_namespace, is_cupy, xp_device
 )
 import scipy._external.array_api_extra as xpx
 from pytest import raises as assert_raises
@@ -407,6 +407,22 @@ class TestBSpline:
         b = BSpline(t, c, k)
         xp_assert_close(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
+
+    def test_device(self, xp, devices):
+        # Input array device should propagate to the output; see gh-22680.
+        x_np = np.linspace(0, 4 * np.pi, 41)
+        tck_np = splrep(x_np, np.cos(x_np), k=3)
+        for d in devices:
+            t = xp.asarray(tck_np[0], device=d)
+            c = xp.asarray(tck_np[1], device=d)
+            k = int(tck_np[2])
+
+            # public splder/splantider operate on a (t, c, k) tuple
+            # (the BSpline class itself is NumPy-only, so it is not covered here)
+            _, c_der, _ = splder((t, c, k))
+            assert xp_device(c_der) == xp_device(t)
+            _, c_anti, _ = splantider((t, c, k))
+            assert xp_device(c_anti) == xp_device(t)
 
     def test_integral(self, xp):
         b = BSpline.basis_element(xp.asarray([0, 1, 2]))  # x for x < 1 else 2 - x
