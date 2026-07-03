@@ -513,7 +513,7 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     # output is that of `y`, broadcasting the batch dimensions with those of `x` if
     # necessary.
     xp = array_namespace(x, y) if xp is None else xp
-    xp_default_int = xp.asarray(1).dtype
+    xp_default_int = xp.asarray(1).dtype  # skip device check
     y_0d = xp.asarray(y).ndim == 0
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
     x_1d = x.ndim <= 1
@@ -790,7 +790,7 @@ _estimated_cdf_methods = (set(_estimated_cdf_continuous_methods).union(
 def _estimated_cdf_hf(x, y, n, method, xp):
     n_int = xp.astype(n, xp.int64)
     j_max = n_int - 1
-    j_min = xp.minimum(j_max, xp.asarray(1, dtype=j_max.dtype))
+    j_min = xp.minimum(j_max, xp.asarray(1, dtype=j_max.dtype, device=xp_device(j_max)))
     jp1 = _xp_searchsorted(x, y, side='right')
 
     if method in _estimated_cdf_discontinuous_methods:

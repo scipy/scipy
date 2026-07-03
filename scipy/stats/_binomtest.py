@@ -1,6 +1,7 @@
 import numpy as np
 import scipy._external.array_api_extra as xpx
-from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote, is_jax
+from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
+                                   is_jax, xp_device)
 from scipy.optimize.elementwise import find_root
 from scipy.special import ndtri
 from scipy.special import _ufuncs as scu
@@ -176,7 +177,8 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction, *, x
 
 @xp_capabilities(skip_backends=[('dask.array', "")], cpu_only=True,
                  reason="binomial distribution ufuncs only available for NumPy",
-                 extra_note="`alternative='two-sided'` is incompatible with JAX arrays.")
+                 extra_note="`alternative='two-sided'` is incompatible with JAX "
+                            "arrays.")
 def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -320,7 +322,8 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
 
         pval = xpx.apply_where(k < p*n, (d, k, p, n), k_lt_pn,  k_gte_pn)
         # xp.minimum(1.0, pval) but for data-apis/array-api-compat#271
-        pval = xp.minimum(xp.asarray(1.0, dtype=pval.dtype), pval)
+        pval = xp.minimum(xp.asarray(1.0, dtype=pval.dtype, device=xp_device(pval)),
+                          pval)
 
     statistic = xp.where(valid, k/n, xp.nan)
     pval = xp.where(valid, pval, xp.nan)

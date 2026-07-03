@@ -246,3 +246,39 @@ def test_combine_pvalues(method, dtype, xp, devices):
         assert xp_device(res.pvalue) == xp_device(pvalues)
         assert res.statistic.dtype == dtype
         assert res.pvalue.dtype == dtype
+
+
+@skip_xp_backends('dask.array', reason="can't compute chunk size")
+@skip_xp_backends('cupy', reason="data-apis/array-api-compat#312")
+@pytest.mark.parametrize('dtype', dtypes)
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
+def test_mode(dtype, xp, devices):
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        array = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
+        res = stats.mode(array)
+        assert xp_device(res.mode) == xp_device(array)
+        assert xp_device(res.count) == xp_device(array)
+
+
+@pytest.mark.parametrize('dtype', dtypes)
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
+def test_trim_mean(dtype, xp, devices):
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        array = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
+        res = stats.trim_mean(array, 0.1)
+        assert xp_device(res) == xp_device(array)
+        assert res.dtype == dtype
+
+
+@skip_xp_backends('dask.array', reason='no take_along_axis')
+@pytest.mark.parametrize('method', ['average', 'min', 'max', 'dense', 'ordinal'])
+@pytest.mark.parametrize('dtype', dtypes)
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
+def test_rankdata(method, dtype, xp, devices):
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        array = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
+        res = stats.rankdata(array, method=method)
+        assert xp_device(res) == xp_device(array)

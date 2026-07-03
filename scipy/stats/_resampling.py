@@ -227,7 +227,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             data = [_get_from_last_axis(sample, i, xp=xp) for sample in data]
             return unpaired_statistic(*data, axis=axis)
 
-        data_iv = [xp.arange(n)]
+        data_iv = [xp.arange(n, device=xp_device(data_iv[0]))]
 
     confidence_level_float = float(confidence_level)
 

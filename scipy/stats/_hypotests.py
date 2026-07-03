@@ -12,7 +12,7 @@ from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
                                    is_lazy_array, _count_nonmasked, is_marray,
-                                   _masked_apply)
+                                   _masked_apply, xp_device)
 import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
@@ -685,7 +685,8 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     cdfvals = _masked_apply(cdf, args=(vals, *args), xp=xp)
     n_count = xp.asarray(_count_nonmasked(rvs, axis=-1, xp=xp), dtype=rvs.dtype)
 
-    u = (2*xp.arange(1, n_length+1, dtype=rvs.dtype) - 1)/(2*n_count[..., xp.newaxis])
+    u = ((2*xp.arange(1, n_length+1, dtype=rvs.dtype, device=xp_device(rvs)) - 1)
+         / (2*n_count[..., xp.newaxis]))
     w = 1/(12*n_count) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
@@ -1820,8 +1821,12 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     ry = r[..., length_x:]
 
     # compute U (eq. 10 in [2])
-    u = (count_x * xp.sum((rx - xp.arange(1, length_x+1, dtype=dtype))**2, axis=-1)
-         + count_y * xp.sum((ry - xp.arange(1, length_y+1, dtype=dtype))**2, axis=-1))
+    u = (count_x * xp.sum(
+             (rx - xp.arange(1, length_x+1, dtype=dtype, device=xp_device(rx)))**2,
+             axis=-1)
+         + count_y * xp.sum(
+             (ry - xp.arange(1, length_y+1, dtype=dtype, device=xp_device(ry)))**2,
+             axis=-1))
 
     # compute T (eq. 9 in [2])
     k, N = count_x*count_y, count_x + count_y

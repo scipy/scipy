@@ -478,7 +478,8 @@ def _mode_result(mode, count):
     xp = array_namespace(mode, count)
     i = xp.isnan(count)
     if i.shape == ():
-        count = xp.asarray(0, dtype=count.dtype)[()] if i else count
+        count = (xp.asarray(0, dtype=count.dtype, device=xp_device(count))[()]
+                 if i else count)
     else:
         count = xpx.at(count)[i].set(0)
     if is_numpy(xp) and mode.ndim > 0:
@@ -487,7 +488,7 @@ def _mode_result(mode, count):
         # `np.apply_along_axis` to compute mode/count along each axis-slice separately.
         # The result is a single array with the result dtype of `mode` and `count`.
         # We need to change `count` back to an integer.
-        count = xp.astype(count, xp.asarray(0).dtype)
+        count = xp.astype(count, xp.asarray(0).dtype)  # skip device check
     return ModeResult(mode, count)
 
 
@@ -574,7 +575,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
 
     if xp_size(a) == 0:
         NaN = _get_nan(a, xp=xp)
-        return ModeResult(*xp.asarray([NaN, 0], dtype=NaN.dtype))
+        return ModeResult(*xp.asarray([NaN, 0], dtype=NaN.dtype, device=xp_device(a)))
 
     if a.ndim == 1 and not is_marray(xp):
         vals, cnts = xp.unique_counts(a)
@@ -584,7 +585,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         mask = xp.isnan(vals)
         cnts = xpx.at(cnts)[mask].set(xp.count_nonzero(mask))
         modes, counts = vals[xp.argmax(cnts)], xp.max(cnts)
-        default_int = xp.asarray(1).dtype  # fail slow CI job failed - incorrect dtype
+        default_int = xp.asarray(1).dtype  # skip device check
         counts = xp.astype(counts, default_int, copy=False)
         modes = modes[()] if modes.ndim == 0 else modes
         counts = counts[()] if counts.ndim == 0 else counts
@@ -601,15 +602,16 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         # - NaNs in the original data *will* be treated as distinct.
         y_data = xp_promote(y.data, force_floating=True, xp=y._xp)
         y_data = y._xp.where(y.mask, y._xp.nan, y_data)
-        i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
+        i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool, device=xp_device(y)),
                       (y_data[..., :-1] != y_data[..., 1:])], axis=-1)
     else:
-        i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
+        i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool, device=xp_device(y)),
                       (y[..., :-1] != y[..., 1:]) & ~xp.isnan(y[..., :-1])], axis=-1)
     # Get linear integer indices of these elements in a raveled array
     indices = xp.arange(xp_size(y), device=xp_device(y))[xp_ravel(i)]
     # The difference between integer indices is the number of repeats
-    append = xp.full(indices.shape[:-1] + (1,), xp_size(y), dtype=indices.dtype)
+    append = xp.full(indices.shape[:-1] + (1,), xp_size(y), dtype=indices.dtype,
+                     device=xp_device(indices))
     counts = xp.diff(indices, append=append)
     # Now we form an array of `counts` corresponding with each element of `y`...
     counts = xp.reshape(xp.repeat(counts, counts), y.shape)
@@ -2284,7 +2286,8 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, *,
     if defaultlimits is None:
         if xp_size(a) == 0:
             # handle empty arrays. Undetermined range, so use 0-1.
-            defaultlimits = xp.asarray(0., dtype=a.dtype), xp.asarray(1., dtype=a.dtype)
+            defaultlimits = (xp.asarray(0., dtype=a.dtype, device=xp_device(a)),
+                             xp.asarray(1., dtype=a.dtype, device=xp_device(a)))
         else:
             # no range given, so use values in `a`
             data_min = xp.min(a)
@@ -2306,7 +2309,8 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, *,
             message = 'All `weights` must be non-negative.'
             raise ValueError(message)
 
-    bin_edges = xp.linspace(*defaultlimits, numbins+1, dtype=a.dtype)
+    bin_edges = xp.linspace(*defaultlimits, numbins+1, dtype=a.dtype,
+                            device=xp_device(a))
     if weights is None:
         indices = xp.searchsorted(xp.sort(a), bin_edges, side='left')
         hist = xp.diff(indices)
@@ -3732,7 +3736,8 @@ def trim_mean(a, proportiontocut, axis=0):
             else xp.sort(a, axis=axis))
 
     if is_marray(xp):
-        indices = xp.arange(a.shape[-1])  # axis_nan_policy decorator -> axis=-1
+        # axis_nan_policy decorator -> axis=-1
+        indices = xp.arange(a.shape[-1], device=xp_device(a))
         mask = (indices < lowercut) | (indices >= (nobs - lowercut)) | atmp.mask
         trimmed = xp.asarray(atmp.data, mask=mask.data)
     else:
@@ -7483,8 +7488,10 @@ def _compute_d(cdfvals, x, sign, xp=None):
     xp = array_namespace(cdfvals, x) if xp is None else xp
     length = cdfvals.shape[-1]
     n = _count_nonmasked(cdfvals, axis=-1, keepdims=True)
-    D = (xp.arange(1.0, length + 1, dtype=x.dtype) / n - cdfvals if sign == +1
-         else (cdfvals - xp.arange(0.0, length, dtype=x.dtype) / n))
+    dev = xp_device(x)
+    D = (xp.arange(1.0, length + 1, dtype=x.dtype, device=dev) / n - cdfvals
+         if sign == +1
+         else (cdfvals - xp.arange(0.0, length, dtype=x.dtype, device=dev) / n))
     amax = xp.argmax(D, axis=-1, keepdims=True)
     loc_max = xp.squeeze(xp.take_along_axis(x, amax, axis=-1), axis=-1)
     D = xp.squeeze(xp.take_along_axis(D, amax, axis=-1), axis=-1)
@@ -7661,7 +7668,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     N = _count_nonmasked(x, axis=-1, xp=xp)
     cdfvals = _masked_apply(cdf, args=(x, *args), xp=xp)
 
-    ones = xp.ones(x.shape[:-1], dtype=xp.int8)
+    ones = xp.ones(x.shape[:-1], dtype=xp.int8, device=xp_device(x))
     ones = ones[()] if ones.ndim == 0 else ones
 
     if alternative == 'greater':
@@ -8079,16 +8086,18 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
         # We want the ECDF of each sample evaluated at *all* the points in the pooled
         # sample. The values each ECDF can assume are given by:
-        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1, dtype=dtype),
-                                    batch_shape + (n1 + 1,))
-        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1, dtype=dtype),
-                                    batch_shape + (n2 + 1,))
+        cdf1_vals = xp.broadcast_to(
+            xp.linspace(0, 1, n1 + 1, dtype=dtype, device=xp_device(data_all)),
+            batch_shape + (n1 + 1,))
+        cdf2_vals = xp.broadcast_to(
+            xp.linspace(0, 1, n2 + 1, dtype=dtype, device=xp_device(data_all)),
+            batch_shape + (n2 + 1,))
         # Now we "just" need to know how many times each of these values *will* be
         # assumed when we evaluate the ECDFs at all points in the pooled sample.
         # These counts are given by the differences between consecutive ("min" or "max")
         # ranks corresponding with the observations in the (sorted) samples.
         ranks, data_all, _ = _rankdata(data_all, method='min', return_sorted=True)
-        ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
+        ranks = xp.astype(ranks, xp.asarray(1).dtype)  # skip device check
         one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype,
                       device=xp_device(ranks))
         cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
@@ -8112,15 +8121,15 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     minS = xp.clip(minS, 0., 1.)
 
     if alternative == 'less':
-        selector = xp.ones(minS.shape, dtype=xp.bool)
+        selector = xp.ones(minS.shape, dtype=xp.bool, device=xp_device(minS))
     elif alternative == 'two-sided':
         selector = minS > maxS
     else:
-        selector = xp.zeros(minS.shape, dtype=xp.bool)
+        selector = xp.zeros(minS.shape, dtype=xp.bool, device=xp_device(minS))
 
     d = xp.where(selector, minS, maxS)
     d_location = xp.where(selector, loc_minS, loc_maxS)
-    one = xp.asarray(1, dtype=xp.int8)
+    one = xp.asarray(1, dtype=xp.int8, device=xp_device(minS))
     d_sign = xp.where(selector, -one, one)
 
     if is_marray(xp):
@@ -9200,11 +9209,11 @@ class QuantileTestResult:
             raise ValueError(message)
 
         if n == 0:
-            zeros = xp.zeros(p.shape, dtype=x.dtype)
+            zeros = xp.zeros(p.shape, dtype=x.dtype, device=xp_device(x))
             low, high = zeros, zeros
         elif alternative == 'less':
             p = 1 - confidence_level
-            low = xp.full(shape, -xp.inf)
+            low = xp.full(shape, -xp.inf, device=xp_device(x))
             high_index = xp.astype(bd.isf(p), xp.int64)
             valid_index = high_index < n
             high_index = xpx.at(high_index)[~valid_index].set(0)
@@ -9217,7 +9226,7 @@ class QuantileTestResult:
             low_index = xpx.at(low_index)[~valid_index].set(0)
             x_low = xp.take_along_axis(x, low_index, axis=-1)
             low = xp.where(valid_index, x_low, xp.nan)
-            high = xp.full(shape, xp.inf)
+            high = xp.full(shape, xp.inf, device=xp_device(x))
         elif alternative == 'two-sided':
             p = (1 - confidence_level) / 2
             low_index = xp.astype(bd.ppf(p), xp.int64) - 1
@@ -9638,7 +9647,7 @@ def quantile_test(x, *, q=0.0, p=0.5, alternative='two-sided', axis=0, keepdims=
         T1, T2 = xp.astype(T1, dtype), xp.astype(T2, dtype)
     else:
         nan_out = xp.ones_like(nan_out)
-        T = xp.zeros(x_star.shape, dtype=dtype)
+        T = xp.zeros(x_star.shape, dtype=dtype, device=xp_device(x_star))
         T1, T2 = T, T
 
     # "The null distribution of the test statistics T1 and T2 is "
@@ -10361,7 +10370,7 @@ def _order_ranks(ranks, j, *, xp):
     # Reorder ascending order `ranks` according to `j`
     xp = array_namespace(ranks) if xp is None else xp
     if is_numpy(xp) or is_cupy(xp):
-        ordered_ranks = xp.empty(j.shape, dtype=ranks.dtype)
+        ordered_ranks = xp.empty(j.shape, dtype=ranks.dtype, device=xp_device(ranks))
         xp.put_along_axis(ordered_ranks, j, ranks, axis=-1)
     else:
         # `put_along_axis` not in array API (data-apis/array-api#177)
@@ -10406,7 +10415,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
 
     # Get sort order
     j = xp.argsort(x, axis=-1, stable=True)
-    ordinal_ranks = xp.broadcast_to(xp.arange(1, shape[-1]+1, dtype=dtype), shape)
+    ordinal_ranks = xp.broadcast_to(
+        xp.arange(1, shape[-1]+1, dtype=dtype, device=xp_device(x)), shape)
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
@@ -10416,13 +10426,15 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     # Sort array
     y = xp.take_along_axis(x, j, axis=-1)
     # Logical indices of unique elements
-    i = xp.concat([xp.ones(shape[:-1] + (1,), dtype=xp.bool),
+    i = xp.concat([xp.ones(shape[:-1] + (1,), dtype=xp.bool, device=xp_device(x)),
                    y[..., :-1] != y[..., 1:]], axis=-1)
 
     # Integer indices of unique elements
-    indices = xp.arange(xp_size(y))[xp.reshape(i, (-1,))]  # i gets raveled
+    # `i` gets raveled
+    indices = xp.arange(xp_size(y), device=xp_device(y))[xp.reshape(i, (-1,))]
     # Counts of unique elements
-    counts = xp.diff(indices, append=xp.asarray([xp_size(y)], dtype=indices.dtype))
+    counts = xp.diff(indices, append=xp.asarray([xp_size(y)], dtype=indices.dtype,
+                                                device=xp_device(indices)))
 
     # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
     if method == 'min':
@@ -10467,7 +10479,7 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         #   sorted order, so this does not unnecessarily reorder them.
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
-        t = xp.zeros(shape, dtype=dtype)
+        t = xp.zeros(shape, dtype=dtype, device=xp_device(x))
         t = xpx.at(t)[i].set(xp.astype(counts, dtype, copy=False))
 
     return ranks, y, t
@@ -10613,7 +10625,7 @@ def expectile(a, alpha=0.5, *, weights=None, axis=None):
 
     # Note that the expectile is the unique solution, so no worries about
     # finding a wrong root.
-    i = xp.arange(a.shape[0])
+    i = xp.arange(a.shape[0], device=xp_device(a))
     res = find_root(first_order, (x0, x1), args=(i,))
     res = xp.reshape(res.x, shape[:-1])
     return res[()] if res.ndim == 0 else res
@@ -10628,7 +10640,8 @@ def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
         raise ValueError(message)
 
     message = "`order` must be a scalar or a non-empty array of positive integers."
-    order = xp.arange(1, 5) if order is None else xp.asarray(order)
+    order = (xp.arange(1, 5, device=xp_device(sample)) if order is None
+             else xp.asarray(order))
     if (not xp.isdtype(order.dtype, "integral") or order.size == 0 or order.ndim > 1
             or (not is_lazy_array(order) and xp.any(order <= 0))):
         raise ValueError(message)
@@ -10663,8 +10676,8 @@ def _br(x, *, r=0, xp):
     x = xp.expand_dims(x, axis=-2)
     x = xp.broadcast_to(x, x.shape[:-2] + (r.shape[0], n))
     x = xp.triu(x)
-    j = xp.arange(n, dtype=x.dtype)
-    n = xp.asarray(n, dtype=x.dtype)[()]
+    j = xp.arange(n, dtype=x.dtype, device=xp_device(x))
+    n = xp.asarray(n, dtype=x.dtype, device=xp_device(x))[()]
     binom_j_r = xpx.lazy_apply(special.binom, j, r[:, xp.newaxis])
     binom_nm1_r = xpx.lazy_apply(special.binom, n-1, r)
     return xp.vecdot(binom_j_r, x, axis=-1) / binom_nm1_r / n
@@ -10762,7 +10775,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     sample, order, axis, sorted, standardize = args
 
     n_moments = 4 if is_lazy_array(order) else int(xp.max(order))
-    k = xp.arange(n_moments, dtype=sample.dtype)
+    k = xp.arange(n_moments, dtype=sample.dtype, device=xp_device(sample))
     prk = _prk(xp.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k, xp=xp)
 
