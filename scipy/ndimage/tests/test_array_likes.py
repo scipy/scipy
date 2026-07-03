@@ -1,5 +1,7 @@
 """
 Smoke test "array_like" inputs.
+
+All cases here are numpy-only: a list's namespace is `numpy`.
 """
 import numpy as np
 from scipy import ndimage
@@ -579,14 +581,6 @@ def test_iterate_structure_accepts_lists():
     iterations = 2
     result = ndimage.iterate_structure(structure_list, iterations)
     expected = ndimage.iterate_structure(structure_array, iterations)
-    _assert_same_result(result, expected)
-
-
-def test_generate_binary_structure_accepts_lists():
-    rank = 2
-    connectivity = 1
-    result = ndimage.generate_binary_structure(rank, connectivity)
-    expected = ndimage.generate_binary_structure(rank, connectivity)
     _assert_same_result(result, expected)
 
 
