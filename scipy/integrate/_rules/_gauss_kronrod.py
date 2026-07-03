@@ -99,7 +99,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
     def nodes_and_weights(self):
         # These values are from QUADPACK's `dqk21.f` and `dqk15.f` (1983).
         if self.npoints == 21:
-            nodes = self.xp.asarray(
+            nodes = self.xp.asarray(  # skip device check (fixed-rule constants)
                 [
                     0.995657163025808080735527280689003,
                     0.973906528517171720077964012084452,
@@ -126,7 +126,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
                 dtype=self.xp.float64,
             )
 
-            weights = self.xp.asarray(
+            weights = self.xp.asarray(  # skip device check (fixed-rule constants)
                 [
                     0.011694638867371874278064396062192,
                     0.032558162307964727478818972459390,
@@ -153,7 +153,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
                 dtype=self.xp.float64,
             )
         elif self.npoints == 15:
-            nodes = self.xp.asarray(
+            nodes = self.xp.asarray(  # skip device check (fixed-rule constants)
                 [
                     0.991455371120812639206854697526329,
                     0.949107912342758524526189684047851,
@@ -174,7 +174,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
                 dtype=self.xp.float64,
             )
 
-            weights = self.xp.asarray(
+            weights = self.xp.asarray(  # skip device check (fixed-rule constants)
                 [
                     0.022935322010529224963732008058970,
                     0.063092092629978553290700663189204,
