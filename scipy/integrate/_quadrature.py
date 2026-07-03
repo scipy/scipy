@@ -8,7 +8,7 @@ from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
 from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type, xp_copy,
                                    xp_capabilities, xp_promote, xp_swapaxes, is_numpy,
-                                   xp_size,
+                                   xp_size, xp_device,
                                    is_lazy_array)
 import scipy._external.array_api_extra as xpx
 
@@ -347,7 +347,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = xp.concat((xp.full(tuple(shape), initial, dtype=res.dtype), res),
+        res = xp.concat((xp.full(tuple(shape), initial, dtype=res.dtype,
+                                 device=xp_device(res)), res),
                         axis=axis)
 
     return res
@@ -540,7 +541,7 @@ def _cumulatively_sum_simpson_integrals(y, dx, integration_func, xp):
 
     shape = list(sub_integrals_h1.shape)
     shape[-1] += 1
-    sub_integrals = xp.empty(shape, dtype=xp.result_type(y, dx))
+    sub_integrals = xp.empty(shape, dtype=xp.result_type(y, dx), device=xp_device(y))
     sub_integrals = xpx.at(sub_integrals)[..., :-1:2].set(sub_integrals_h1[..., ::2])
     sub_integrals = xpx.at(sub_integrals)[..., 1::2].set(sub_integrals_h2[..., ::2])
     # Integral over last subinterval can only be calculated from
@@ -1306,8 +1307,8 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         message = ("A lower limit was equal to an upper limit, so the value "
                    "of the integral is zero by definition.")
         warnings.warn(message, stacklevel=2)
-        zero = xp.asarray(-xp.inf if log else 0, dtype=a.dtype)
-        return QMCQuadResult(zero, xp.asarray(0., dtype=a.dtype))
+        zero = xp.asarray(-xp.inf if log else 0, dtype=a.dtype, device=xp_device(a))
+        return QMCQuadResult(zero, xp.asarray(0., dtype=a.dtype, device=xp_device(a)))
 
     i_swap = b < a
     sign = (-1)**(xp.count_nonzero(i_swap, axis=-1))  # odd # of swaps -> negative
@@ -1321,11 +1322,11 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     A = xp.prod(b - a)
     dA = A / n_points
 
-    estimates = xp.zeros(n_estimates, dtype=a.dtype)
+    estimates = xp.zeros(n_estimates, dtype=a.dtype, device=xp_device(a))
     rngs = _rng_spawn(qrng.rng, n_estimates)
     for i in range(n_estimates):
         # Generate integral estimate
-        sample = xp.asarray(qrng.random(n_points), dtype=a.dtype)
+        sample = xp.asarray(qrng.random(n_points), dtype=a.dtype, device=xp_device(a))
         # The rationale for transposing is that this allows users to easily
         # unpack `x` into separate variables, if desired. This is consistent
         # with the `xx` array passed into the `scipy.integrate.nquad` `func`.

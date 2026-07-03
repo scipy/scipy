@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
-                                   is_numpy, make_xp_test_case)
+                                   is_numpy, make_xp_test_case, xp_device)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
 from scipy.integrate._tanhsinh import _pair_cache
@@ -770,6 +770,17 @@ class TestTanhSinh:
         ref = b**(p+1) / (p+1) + c
         xp_assert_close(res.integral, ref)
 
+    def test_device(self, xp, devices):
+        def f(x):
+            return xp.exp(-x**2)
+
+        for d in devices:
+            a = xp.asarray(-1., device=d)
+            b = xp.asarray(1., device=d)
+            res = _tanhsinh(f, a, b)
+            assert xp_device(res.integral) == xp_device(a)
+            assert xp_device(res.error) == xp_device(a)
+
 
 @make_xp_test_case(nsum)
 class TestNSum:
@@ -1185,3 +1196,14 @@ class TestNSum:
         x = xp.arange(1, 11, dtype=xp.float32)
         ref = xp.sum(f(x, c[..., xp.newaxis], p=p[..., xp.newaxis]), axis=-1)
         xp_assert_close(res.sum, ref)
+
+    def test_device(self, xp, devices):
+        def f(k):
+            return 1 / k**2
+
+        for d in devices:
+            a = xp.asarray(1., device=d)
+            b = xp.asarray(xp.inf, device=d)
+            res = nsum(f, a, b)
+            assert xp_device(res.sum) == xp_device(a)
+            assert xp_device(res.error) == xp_device(a)

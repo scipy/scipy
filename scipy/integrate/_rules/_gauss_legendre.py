@@ -49,7 +49,7 @@ class GaussLegendreQuadrature(FixedRule):
         if xp is None:
             xp = np_compat
 
-        self.xp = array_namespace(xp.empty(0))
+        self.xp = array_namespace(xp.empty(0))  # skip device check
 
     @cached_property
     def nodes_and_weights(self):

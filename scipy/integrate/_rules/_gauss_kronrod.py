@@ -91,7 +91,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
         if xp is None:
             xp = np_compat
 
-        self.xp = array_namespace(xp.empty(0))
+        self.xp = array_namespace(xp.empty(0))  # skip device check
 
         self.gauss = GaussLegendreQuadrature(npoints//2, xp=self.xp)
 
