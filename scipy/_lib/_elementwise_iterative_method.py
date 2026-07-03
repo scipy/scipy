@@ -138,7 +138,8 @@ def _initialize(func, xs, args, kwargs=None,
 
 def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
           post_func_eval, check_termination, post_termination_check,
-          customize_result, res_work_pairs, xp, preserve_shape=False):
+          customize_result, res_work_pairs, xp, preserve_shape=False,
+          device=None):
     """Main loop of a vectorized scalar optimization algorithm
 
     Parameters
@@ -192,6 +193,10 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     preserve_shape : bool, default: False
         Whether to compress the attributes of `work` (to avoid unnecessary
         computation on elements that have already converged).
+    device : device, optional
+        The device on which to place the result and bookkeeping arrays, so that
+        it matches the device of the input arrays. Defaults to the backend's
+        default device.
 
     Returns
     -------
@@ -216,12 +221,14 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
 
     # Initialize the result object and active element index array
     n_elements = math.prod(shape)
-    active = xp.arange(n_elements)  # in-progress element indices
-    res_dict = {i: xp.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
-    res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool)
-    res_dict['status'] = xp.full(n_elements, xp.asarray(_EINPROGRESS), dtype=xp.int32)
-    res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32)
-    res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32)
+    active = xp.arange(n_elements, device=device)  # in-progress element indices
+    res_dict = {i: xp.zeros(n_elements, dtype=dtype, device=device)
+                for i, j in res_work_pairs}
+    res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool, device=device)
+    res_dict['status'] = xp.full(n_elements, _EINPROGRESS, dtype=xp.int32,
+                                 device=device)
+    res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32, device=device)
+    res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32, device=device)
     res = _RichResult(res_dict)
     work.args = args
 

@@ -111,7 +111,9 @@ def _asarray(
         try:
             array = xp.asarray(array, dtype=dtype, copy=copy)
         except TypeError:
-            coerced_xp = array_namespace(xp.asarray(3))
+            # `xp.asarray(3)` is a throwaway used only to obtain the coerced
+            # namespace; its device is irrelevant.
+            coerced_xp = array_namespace(xp.asarray(3))  # skip device check
             array = coerced_xp.asarray(array, dtype=dtype, copy=copy)
 
     if check_finite:
