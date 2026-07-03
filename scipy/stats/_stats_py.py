@@ -84,6 +84,7 @@ from scipy._lib._array_api import (
     _masked_apply,
     xp_swapaxes,
     xp_device,
+    concat_1d
 )
 import scipy._external.array_api_extra as xpx
 from scipy.stats._quantile import _xp_searchsorted
@@ -8416,7 +8417,10 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto', *,
                     axis=axis, _no_deco=True)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(
+    jax_jit=False,
+    xfail_backends=[("dask.array", "data-dependent shapes")]
+)
 def tiecorrect(rankvals):
     """Tie correction factor for Mann-Whitney U and Kruskal-Wallis H tests.
 
@@ -8454,12 +8458,18 @@ def tiecorrect(rankvals):
     0.9833333333333333
 
     """
-    arr = np.sort(rankvals)
-    idx = np.nonzero(np.r_[True, arr[1:] != arr[:-1], True])[0]
-    cnt = np.diff(idx).astype(np.float64)
+    xp = array_namespace(rankvals)
+    rankvals = xp.asarray(rankvals)
 
-    size = np.float64(arr.size)
-    return 1.0 if size < 2 else 1.0 - (cnt**3 - cnt).sum() / (size**3 - size)
+    if xp_size(rankvals) == 0:
+        return 1.0
+
+    arr = xp.sort(rankvals)
+    idx = xp.nonzero(concat_1d(xp, [True], arr[1:] != arr[:-1], [True]))[0]
+    cnt = xp.astype(xp.diff(idx), xp.float64)
+
+    size = xp_size(arr)
+    return 1.0 if size < 2 else 1.0 - xp.sum(cnt**3 - cnt) / (size**3 - size)
 
 
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))

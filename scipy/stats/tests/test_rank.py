@@ -10,70 +10,73 @@ from scipy._lib._array_api import (xp_assert_equal, make_xp_test_case, xp_result
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+
+@make_xp_test_case(stats.tiecorrect)
 class TestTieCorrect:
 
-    def test_empty(self):
+    def test_empty(self, xp):
         """An empty array requires no correction, should return 1.0."""
-        ranks = np.array([], dtype=np.float64)
+        ranks = xp.asarray([], dtype=xp.float64)
         c = tiecorrect(ranks)
-        assert_equal(c, 1.0)
+        assert c == 1.0
 
-    def test_one(self):
+    def test_one(self, xp):
         """A single element requires no correction, should return 1.0."""
-        ranks = np.array([1.0], dtype=np.float64)
+        ranks = xp.asarray([1.0], dtype=xp.float64)
         c = tiecorrect(ranks)
-        assert_equal(c, 1.0)
+        assert c == 1.0
 
-    def test_no_correction(self):
+    def test_no_correction(self, xp):
         """Arrays with no ties require no correction."""
-        ranks = np.arange(2.0)
+        ranks = xp.arange(2)
         c = tiecorrect(ranks)
-        assert_equal(c, 1.0)
-        ranks = np.arange(3.0)
-        c = tiecorrect(ranks)
-        assert_equal(c, 1.0)
+        assert c == 1.0
 
-    def test_basic(self):
+        ranks = xp.arange(3)
+        c = tiecorrect(ranks)
+        assert c == 1.0
+
+    def test_basic(self, xp):
         """Check a few basic examples of the tie correction factor."""
         # One tie of two elements
-        ranks = np.array([1.0, 2.5, 2.5])
+        ranks = xp.asarray([1.0, 2.5, 2.5])
         c = tiecorrect(ranks)
         T = 2.0
-        N = ranks.size
+        N = ranks.shape[0]
         expected = 1.0 - (T**3 - T) / (N**3 - N)
-        assert_equal(c, expected)
+        assert c == expected
 
         # One tie of two elements (same as above, but tie is not at the end)
-        ranks = np.array([1.5, 1.5, 3.0])
+        ranks = xp.asarray([1.5, 1.5, 3.0])
         c = tiecorrect(ranks)
         T = 2.0
-        N = ranks.size
+        N = ranks.shape[0]
         expected = 1.0 - (T**3 - T) / (N**3 - N)
-        assert_equal(c, expected)
+        assert c == expected
 
         # One tie of three elements
-        ranks = np.array([1.0, 3.0, 3.0, 3.0])
+        ranks = xp.asarray([1.0, 3.0, 3.0, 3.0])
         c = tiecorrect(ranks)
         T = 3.0
-        N = ranks.size
+        N = ranks.shape[0]
         expected = 1.0 - (T**3 - T) / (N**3 - N)
-        assert_equal(c, expected)
+        assert c == expected
 
         # Two ties, lengths 2 and 3.
-        ranks = np.array([1.5, 1.5, 4.0, 4.0, 4.0])
+        ranks = xp.asarray([1.5, 1.5, 4.0, 4.0, 4.0])
         c = tiecorrect(ranks)
         T1 = 2.0
         T2 = 3.0
-        N = ranks.size
+        N = ranks.shape[0]
         expected = 1.0 - ((T1**3 - T1) + (T2**3 - T2)) / (N**3 - N)
-        assert_equal(c, expected)
+        assert c == expected
 
-    def test_overflow(self):
+    def test_overflow(self, xp):
         ntie, k = 2000, 5
-        a = np.repeat(np.arange(k), ntie)
-        n = a.size  # ntie * k
+        a = xp.repeat(xp.arange(k), ntie)
+        n = a.shape[0]  # ntie * k
         out = tiecorrect(rankdata(a))
-        assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
+        assert out == 1.0 - k * (ntie**3 - ntie) / float(n**3 - n)
 
 
 @make_xp_test_case(stats.rankdata)
