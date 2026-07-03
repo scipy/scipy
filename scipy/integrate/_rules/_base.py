@@ -1,4 +1,4 @@
-from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib._array_api import array_namespace, xp_size, xp_device
 
 from functools import cached_property
 
@@ -474,10 +474,13 @@ def _split_subregion(a, b, xp, split_at=None):
 
 
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
-    # Downcast nodes and weights to common dtype of a and b
+    # Downcast nodes and weights to common dtype of a and b, and move them onto
+    # the input's device (the fixed-rule nodes/weights are built on the default
+    # device; see gh-22680), so the result lands on the input device.
     result_dtype = a.dtype
-    orig_nodes = xp.astype(orig_nodes, result_dtype)
-    orig_weights = xp.astype(orig_weights, result_dtype)
+    device = xp_device(a)
+    orig_nodes = xp.asarray(xp.astype(orig_nodes, result_dtype), device=device)
+    orig_weights = xp.asarray(xp.astype(orig_weights, result_dtype), device=device)
 
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)

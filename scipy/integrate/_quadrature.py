@@ -452,6 +452,9 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
     """
     xp = array_namespace(y, x, dx)
     y, x, dx = xp_promote(y, x, dx, xp=xp)
+    # `xp_promote` converts the scalar `dx` on the default device; move it onto
+    # the input's device so it does not clash with `y` later (see gh-22680).
+    dx = xp.asarray(dx, device=xp_device(y))
     nd = y.ndim
     N = y.shape[axis]
     last_dx = dx
@@ -745,7 +748,10 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         )
 
     else:
-        dx = xp_promote(xp.asarray(dx), force_floating=True, xp=xp)
+        # `dx` is a scalar on the default device; place it on the input's device
+        # so it does not clash with `y` downstream (see gh-22680).
+        dx = xp.asarray(dx, device=xp_device(y))
+        dx = xp_promote(dx, force_floating=True, xp=xp)
         final_dx_shape = tupleset(original_shape, axis, original_shape[axis] - 1)
         alt_input_dx_shape = tupleset(original_shape, axis, 1)
         message = ("If provided, `dx` must either be a scalar or have the same "

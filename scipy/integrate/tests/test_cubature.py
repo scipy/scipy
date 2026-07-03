@@ -7,6 +7,7 @@ import pytest
 from scipy._lib._array_api import (
     array_namespace,
     xp_assert_close,
+    xp_device,
     xp_size,
     np_compat,
     is_array_api_strict,
@@ -398,6 +399,26 @@ class TestCubature:
             rtol=1e-8,
             atol=0,
         )
+
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
+    def test_device(self, xp, devices):
+        # Input device should propagate to the output; see gh-22680. The
+        # fixed-rule nodes/weights are built on the default device and moved onto
+        # the input device in `_apply_fixed_rule`.
+        for d in devices:
+            n = xp.arange(5, dtype=xp.float64, device=d)
+            a = xp.asarray([0, 0], dtype=xp.float64, device=d)
+            b = xp.asarray([2, 2], dtype=xp.float64, device=d)
+            for rule in ("gauss-kronrod", "genz-malik"):
+                res = cubature(basic_nd_integrand, a, b, rule=rule, args=(n, xp))
+                assert xp_device(res.estimate) == xp_device(a)
+
+            # infinite limits exercise the `_InfiniteLimitsTransform` path
+            alphas = xp.asarray([[50.0]], dtype=xp.float64, device=d)
+            a_inf = xp.asarray([-xp.inf], dtype=xp.float64, device=d)
+            b_inf = xp.asarray([xp.inf], dtype=xp.float64, device=d)
+            res = cubature(f_gaussian, a_inf, b_inf, args=(alphas, xp))
+            assert xp_device(res.estimate) == xp_device(a_inf)
 
     def test_pass_array_like_not_array(self):
         n = np_compat.arange(5, dtype=np_compat.float64)

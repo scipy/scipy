@@ -118,6 +118,13 @@ class TestNewtonCotes:
 @make_xp_test_case(simpson)
 class TestSimpson:
 
+    def test_device(self, xp, devices):
+        for d in devices:
+            x = xp.linspace(0., 4., 17, device=d)
+            y = xp.asarray(x, copy=True)**2
+            assert xp_device(simpson(y, x=x)) == xp_device(x)
+            assert xp_device(simpson(y, dx=0.5)) == xp_device(y)
+
     def test_simpson(self, xp):
         y = xp.arange(17.)
         xp_assert_equal(simpson(y), xp.asarray(128.))
@@ -362,6 +369,13 @@ class TestTrapezoid(CommonTrapezoidSimpsonTests):
     def quadrature_func(self, *args, **kwargs):
         return trapezoid(*args, **kwargs)
 
+    def test_device(self, xp, devices):
+        for d in devices:
+            x = xp.linspace(0., 4., 17, device=d)
+            y = xp.asarray(x, copy=True)**2
+            assert xp_device(trapezoid(y, x=x)) == xp_device(x)
+            assert xp_device(trapezoid(y, dx=0.5)) == xp_device(y)
+
     def test_gh21908(self, xp):
         # extended testing for n-dim arrays
         x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
@@ -575,6 +589,13 @@ def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1
 class TestCumulativeSimpson:
     x0 = np.arange(4)
     y0 = x0**2
+
+    def test_device(self, xp, devices):
+        for d in devices:
+            x = xp.linspace(0., 4., 17, device=d)
+            y = xp.asarray(x, copy=True)**2
+            assert xp_device(cumulative_simpson(y, x=x)) == xp_device(x)
+            assert xp_device(cumulative_simpson(y, dx=0.5)) == xp_device(y)
 
     @pytest.mark.parametrize('use_dx', (False, True))
     @pytest.mark.parametrize('use_initial', (False, True))
