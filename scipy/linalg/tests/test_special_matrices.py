@@ -15,7 +15,7 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
 from numpy.linalg import cond
 from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
                                    xp_default_dtype, make_xp_pytest_param,
-                                   xp_assert_close)
+                                   xp_assert_close, xp_device)
 
 
 class TestToeplitz:
@@ -115,6 +115,13 @@ class TestLeslie:
                                [0.0, 0.5, 0.0]])
         xp_assert_equal(a, expected)
 
+    def test_device(self, xp, devices):
+        for d in devices:
+            f = xp.asarray([1., 2., 3.], device=d)
+            s = xp.asarray([0.25, 0.5], device=d)
+            a = leslie(f, s)
+            assert xp_device(a) == xp_device(f)
+
 
 class TestCompanion:
 
@@ -171,6 +178,12 @@ class TestBlockDiag:
         actual = block_diag(xp.asarray([[1.]]), xp.asarray([[1j]]))
         desired = xp.asarray([[1, 0], [0, 1j]])
         xp_assert_equal(actual, desired)
+
+    def test_device(self, xp, devices):
+        for d in devices:
+            x = xp.asarray([[1., 2.], [3., 4.]], device=d)
+            y = block_diag(x, x)
+            assert xp_device(y) == xp_device(x)
 
     def test_scalar_and_1d_args(self, xp):
         a = block_diag(xp.asarray(1))
@@ -531,6 +544,16 @@ def test_fiedler(xp):
                       [4, 3, 2, 1, 0, 1],
                       [5, 4, 3, 2, 1, 0]])
     xp_assert_equal(f, des)
+
+
+@make_xp_test_case(fiedler)
+def test_fiedler_device(xp, devices):
+    for d in devices:
+        # size 0, size 1, and general branches all propagate device
+        for data in ([], [123.], [1., 4., 12., 45.]):
+            a = xp.asarray(data, device=d)
+            f = fiedler(a)
+            assert xp_device(f) == xp_device(a)
 
 
 def test_fiedler_companion():
