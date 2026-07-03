@@ -13,7 +13,8 @@ python_sources = [
   'test_scipy_version.py',
   'test_warnings.py',
   'test_array_api.py',
-  'test_xp_capabilities.py'
+  'test_xp_capabilities.py',
+  'test_check_nondefault_device.py'
 ]
 
 py3.install_sources(
