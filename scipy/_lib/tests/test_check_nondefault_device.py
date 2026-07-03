@@ -37,6 +37,13 @@ def check_source(pytestconfig):
     "xp.fft.fftfreq(n)",
     # nested creation is still flagged
     "xp.reshape(xp.arange(k), shape)",
+    # attribute-chain namespaces (self._xp, self.xp, obj._xp)
+    "self._xp.zeros(n)",
+    "self.xp.empty(n)",
+    "self._xp.asarray([1, 2])",
+    "self._xp.full((n, m), 0)",
+    "self._xp.fft.rfftfreq(n)",
+    "obj._xp.arange(n)",
 ])
 def test_flagged(check_source, src):
     assert len(check_source(src)) == 1
@@ -57,12 +64,17 @@ def test_flagged(check_source, src):
     "xp.empty_like(x)",
     # **kwargs splat might supply device -> lenient, not flagged
     "xp.zeros(n, **kwargs)",
+    # attribute-chain namespaces infer the device from an array arg
+    "self._xp.asarray(x)",
+    "self._xp.zeros_like(x)",
+    "self._xp.zeros(n, device=xp_device(x))",
     # not the `xp` namespace
     "np.zeros(n)",
-    "self._xp.zeros(n)",
+    "self.data.zeros(n)",
     "mxp.zeros(n)",
     # not a creation function
     "xp.sum(x)",
+    "self._xp.sum(x)",
 ])
 def test_not_flagged(check_source, src):
     assert len(check_source(src)) == 0

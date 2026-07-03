@@ -11,11 +11,13 @@ device: ``xp.zeros(..., device=xp_device(x))`` (see ``special/_logsumexp.py`` an
 
 This checker flags a call when ALL of the following hold:
 
-1. It is ``xp.<fn>(...)`` where the receiver is the bare name ``xp`` and ``<fn>``
-   is a pure-creation function (``zeros``, ``ones``, ``empty``, ``full``,
-   ``arange``, ``eye``, ``linspace``), OR ``xp.fft.rfftfreq`` / ``xp.fft.fftfreq``,
-   OR ``xp.asarray(<literal>)`` where the first positional argument is a
-   scalar / list / tuple literal (from which no device can be inferred).
+1. It is ``<ns>.<fn>(...)`` where the receiver ``<ns>`` is the array namespace --
+   the bare name ``xp`` or an attribute ending in ``xp``/``_xp`` (e.g.
+   ``self._xp``, ``self.xp``) -- and ``<fn>`` is a pure-creation function
+   (``zeros``, ``ones``, ``empty``, ``full``, ``arange``, ``eye``, ``linspace``),
+   OR ``<ns>.fft.rfftfreq`` / ``<ns>.fft.fftfreq``, OR ``<ns>.asarray(<literal>)``
+   where the first positional argument is a scalar / list / tuple literal (from
+   which no device can be inferred).
 2. No ``device=`` keyword is present (and no ``**kwargs`` splat, which might
    supply one -- treated leniently to avoid false positives on wrappers).
 3. The line does not carry the ``# skip device check`` pragma.
@@ -27,8 +29,9 @@ The check is a *necessary* condition (a ``device=`` is present), not a
 *sufficient* one (that it is the *right* device and propagates end-to-end); pair
 it with the runtime ``devices``-fixture tests in the test suite.
 
-Only the bare namespace name ``xp`` is recognised.  Attribute-chain namespaces
-such as ``self._xp.`` or ``mxp.`` are not flagged (possible future work).
+The namespace is recognised as the bare name ``xp`` or as an attribute ending in
+``xp``/``_xp`` (``self._xp``, ``self.xp``).  Other aliases (e.g. a bare ``mxp``
+for a masked-array namespace) are not recognised.
 
 Usage::
 
@@ -42,8 +45,12 @@ import ast
 import sys
 from pathlib import Path
 
-NS = "xp"  # array namespace variable name
 PRAGMA = "# skip device check"
+
+# The array namespace is referenced either as the bare name ``xp`` or as an
+# attribute ending in ``xp``/``_xp`` (e.g. ``self._xp``, ``self.xp``).
+NS_NAMES = {"xp"}
+NS_ATTRS = {"xp", "_xp"}
 
 PURE_CREATION = {
     "zeros", "ones", "empty", "full", "arange", "eye", "linspace",
@@ -52,25 +59,32 @@ LIKE = {"zeros_like", "ones_like", "empty_like", "full_like"}
 FFT_FREQ = {"rfftfreq", "fftfreq"}
 
 
+def _is_ns(node):
+    """True if ``node`` refers to the array namespace (``xp``, ``self._xp``, ...)."""
+    if isinstance(node, ast.Name):
+        return node.id in NS_NAMES
+    if isinstance(node, ast.Attribute):
+        return node.attr in NS_ATTRS
+    return False
+
+
 def _is_ns_attr(node, attr_name):
-    """True if ``node`` is ``xp.<attr_name>``."""
+    """True if ``node`` is ``<ns>.<attr_name>`` (``xp.zeros``, ``self._xp.zeros``)."""
     return (
         isinstance(node, ast.Attribute)
-        and isinstance(node.value, ast.Name)
-        and node.value.id == NS
         and node.attr == attr_name
+        and _is_ns(node.value)
     )
 
 
 def _is_ns_fft(node):
-    """Return the freq fn name if ``node`` is ``xp.fft.rfftfreq``/``fftfreq``."""
+    """Return the freq fn name if ``node`` is ``<ns>.fft.rfftfreq``/``fftfreq``."""
     if (
         isinstance(node, ast.Attribute)
         and node.attr in FFT_FREQ
         and isinstance(node.value, ast.Attribute)
         and node.value.attr == "fft"
-        and isinstance(node.value.value, ast.Name)
-        and node.value.value.id == NS
+        and _is_ns(node.value.value)
     ):
         return node.attr
     return None
@@ -142,7 +156,7 @@ class DeviceVisitor(ast.NodeVisitor):
             return
         if self._allowed(node.lineno):
             return
-        self.violations.append((node.lineno, node.col_offset, f"{NS}.{name}"))
+        self.violations.append((node.lineno, node.col_offset, ast.unparse(func)))
 
 
 def check_source(source):
@@ -161,7 +175,21 @@ def check_source(source):
 
 def check_file(path):
     src = path.read_text(encoding="utf-8", errors="replace")
-    if f"{NS}." not in src:  # not array-API-aware; skip
+    if "xp." not in src:  # not array-API-aware; skip (matches xp. and self._xp.)
+        return []
+    try:
+        ast.parse(src)
+    except SyntaxError as exc:
+        # Warn rather than silently skip: usually the interpreter is older than
+        # the syntax used in the file (e.g. PEP 695 `type` aliases need 3.12+),
+        # which would otherwise hide real violations. Run under the project's
+        # minimum supported Python (as CI does).
+        print(
+            f"{path}:{exc.lineno}: warning: could not parse under Python "
+            f"{sys.version_info.major}.{sys.version_info.minor} "
+            f"({exc.msg}); file not checked",
+            file=sys.stderr,
+        )
         return []
     return check_source(src)
 
