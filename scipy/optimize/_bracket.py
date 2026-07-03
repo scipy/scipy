@@ -1,7 +1,7 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_ravel, xp_promote
+from scipy._lib._array_api import array_namespace, xp_device, xp_ravel, xp_promote
 
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
@@ -210,7 +210,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     factor = xp.astype(factor, dtype, copy=False)
     factor = xp.concat((factor, factor))
 
-    active = xp.arange(2*n)
+    active = xp.arange(2*n, device=xp_device(x))
     args = [xp.concat((arg, arg)) for arg in args]
 
     # This is needed due to inner workings of `eim._loop`.
@@ -413,7 +413,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp)
+                     xp, device=xp_device(x))
 
 
 def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter):
@@ -708,4 +708,5 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
                      maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval,
                      check_termination, post_termination_check,
-                     customize_result, res_work_pairs, xp)
+                     customize_result, res_work_pairs, xp,
+                     device=xp_device(xl0))
