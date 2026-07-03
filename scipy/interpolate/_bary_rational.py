@@ -662,6 +662,17 @@ class AAA(_BarycentricRational):
 
 @xp_capabilities(
     jax_jit=False,
+    skip_backends=[
+        (
+            "dask.array",
+            "FloaterHormannInterpolator does not support lazy array backends.",
+        ),
+        (
+            "jax.numpy",
+            "JAX arrays are immutable; "
+            "this implementation uses in-place updates."
+        ),
+    ],
     method_capabilities={
         "poles": dict(
             skip_backends=[
@@ -676,13 +687,6 @@ class AAA(_BarycentricRational):
                         "this implementation uses in-place updates."
                     ),
                 ),
-                (
-                    "dask.array",
-                    (
-                        "This implementation requires eager evaluation and "
-                        "is incompatible with lazy Dask arrays."
-                    ),
-                ),
             ],
         ),
         "roots": dict(
@@ -690,20 +694,6 @@ class AAA(_BarycentricRational):
                 (
                     "array_api_strict",
                     "`scipy.linalg` does not support non-NumPy arrays.",
-                ),
-                (
-                    "jax.numpy",
-                    (
-                        "JAX arrays are immutable; "
-                        "this implementation uses in-place updates."
-                    ),
-                ),
-                (
-                    "dask.array",
-                    (
-                        "This implementation requires eager evaluation and "
-                        "is incompatible with lazy Dask arrays."
-                    ),
                 ),
             ],
         ),
