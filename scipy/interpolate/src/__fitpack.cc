@@ -878,7 +878,7 @@ void _compute_residuals(
  * R has shape (m, nz), c_red has shape (nc_reduced, ydim2), yw has 
  * shape (m, ydim2). 
 */
-static void _back_substitute(
+static inline void _back_substitute(
     RealArray2D& c_red,
     ConstRealArray2D& R,
     ConstRealArray2D& yw,
