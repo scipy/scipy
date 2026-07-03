@@ -22,25 +22,16 @@ else
     fft_deps += [thread_dep]
   endif
 endif
-duccfft_args = duccfft_threads
-# Silence GCC -Wpsabi notes about the GCC 10.1 ABI change for passing
-# SIMD-backed structs by value (triggered heavily by ducc0/fft/fft1d_impl.h).
-# The note is informational; SciPy is built against a single compiler ABI.
-if meson.get_compiler('cpp').get_id() == 'gcc'
-  duccfft_args += ['-Wno-psabi']
-endif
-
 
 py3.extension_module(
     'pyduccfft',
     'pyduccfft.cxx',
-    cpp_args: duccfft_args,
+    cpp_args: duccfft_threads,
     dependencies: [fft_deps, pybind11_dep, duccfft_dep],
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/fft/_duccfft',
 )
-
 
 python_sources = [
   '__init__.py',
@@ -49,7 +40,6 @@ python_sources = [
   'LICENSE.md',
   'realtransforms.py'
 ]
-
 
 py3.install_sources(
   python_sources,

@@ -29,13 +29,7 @@ cdflib_lib = static_library('cdflib',
   gnu_symbol_visibility: 'hidden',
 )
 
-# The -Wno-psabi arg is used to silence a warning that the ABI of
-# passing structure with complex float member changed in GCC 4.4,
-# which is not relevant for scipy.special.
 ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
-if meson.get_compiler('cpp').get_id() == 'gcc'
-  ufuncs_cpp_args += ['-Wno-psabi']
-endif
 
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],

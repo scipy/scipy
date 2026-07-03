@@ -97,6 +97,15 @@ if cpp.get_id() == 'msvc'
   add_project_arguments('/bigobj', language: 'cpp')
 endif
 
+# Silence GCC -Wpsabi notes about ABI changes (e.g., the GCC 10.1 ABI changes
+# for passing parameter passing for argument of type ‘std::pair<double, double>`).
+# These notes are informational; SciPy is built against a single compiler ABI.
+if meson.get_compiler('cpp').get_id() == 'gcc'
+  # global rather than project-wide, because it silences a few warnings from
+  # within subprojects/highs as well
+  add_global_arguments('-Wno-psabi', language: 'cpp')
+endif
+
 if host_machine.system() == 'darwin'
   if cc.has_link_argument('-Wl,-dead_strip')
     # Allow linker to strip unused symbols
