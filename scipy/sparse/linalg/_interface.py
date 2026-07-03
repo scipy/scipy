@@ -232,7 +232,9 @@ class LinearOperator:
         """
         xp = np_compat if xp is None else xp
         if dtype is not None:
-            dtype = xp.empty(0, dtype=dtype).dtype
+            # throwaway 0-size array used only to canonicalize `dtype`; no
+            # input array is in scope and the array itself is discarded.
+            dtype = xp.empty(0, dtype=dtype).dtype  # skip device check
 
         shape = tuple(shape)
         if len(shape) < 2:
@@ -267,7 +269,10 @@ class LinearOperator:
         """
         if self.dtype is None:
             xp = self._xp
-            v = xp.zeros(self.shape[-1], dtype=xp.int8)
+            # throwaway probe vector used only to infer the output dtype via
+            # `matvec`; only called for `_CustomLinearOperator`, which is
+            # defined by user callables and carries no array/device to match.
+            v = xp.zeros(self.shape[-1], dtype=xp.int8)  # skip device check
             try:
                 matvec_v = xp.asarray(self.matvec(v))
             except (OverflowError, TypeError, RuntimeError):
