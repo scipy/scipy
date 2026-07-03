@@ -342,7 +342,7 @@ class _Interval(_Domain):
             - NaN ('nan').
         min, max : ndarray
             The endpoints of the domain.
-        squeezed_based_shape : tuple of ints
+        squeezed_base_shape : tuple of ints
             See _RealParameter.draw.
         rng : np.Generator
             The Generator used for drawing random values.
