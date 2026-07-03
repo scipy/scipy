@@ -563,7 +563,9 @@ class LinearOperator:
     def _check_matching_namespace(self, x):
         xp_x = getattr(x, "_xp", None)
         if xp_x is None:
-            xp_x = array_namespace(x, self._xp.empty(0), sparse_ok=True)
+            # `empty(0)` is a throwaway used only to resolve the namespace
+            xp_x = array_namespace(x, self._xp.empty(0),  # skip device check
+                                   sparse_ok=True)
         if xp_x != self._xp:
             msg = (
                 f"Mismatched array namespaces."
