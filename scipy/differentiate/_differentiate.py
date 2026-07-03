@@ -3,7 +3,8 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_copy, xp_promote, xp_capabilities
+from scipy._lib._array_api import (array_namespace, xp_copy, xp_promote,
+                                   xp_capabilities, xp_device)
 import scipy._external.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
@@ -474,18 +475,19 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
         # Note - no need to be careful about dtypes until we allocate `x_eval`
 
         if work.nit == 0:
-            hc = h / c**xp.arange(n, dtype=work.dtype)
+            hc = h / c**xp.arange(n, dtype=work.dtype, device=xp_device(work.x))
             hc = xp.concat((-xp.flip(hc, axis=-1), hc), axis=-1)
         else:
             hc = xp.concat((-h, h), axis=-1) / c**(n-1)
 
         if work.nit == 0:
-            hr = h / d**xp.arange(2*n, dtype=work.dtype)
+            hr = h / d**xp.arange(2*n, dtype=work.dtype, device=xp_device(work.x))
         else:
             hr = xp.concat((h, h/d), axis=-1) / c**(n-1)
 
         n_new = 2*n if work.nit == 0 else 2  # number of new abscissae
-        x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype)
+        x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype,
+                          device=xp_device(work.x))
         il, ic, ir = work.il, work.ic, work.ir
         x_eval = xpx.at(x_eval)[ir].set(work.x[ir][:, xp.newaxis] + hr[ir])
         x_eval = xpx.at(x_eval)[ic].set(work.x[ic][:, xp.newaxis] + hc[ic])
@@ -538,7 +540,8 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
         else:
             fo = xp.concat((work_fo[:, 0:1], work_fo[:, -2*n:]), axis=-1)
 
-        work.fs = xp.zeros((ic.shape[0], work.fs.shape[-1] + 2*n_new), dtype=work.dtype)
+        work.fs = xp.zeros((ic.shape[0], work.fs.shape[-1] + 2*n_new),
+                           dtype=work.dtype, device=xp_device(work.x))
         work.fs = xpx.at(work.fs)[ic].set(work_fc)
         work.fs = xpx.at(work.fs)[io].set(work_fo)
 
@@ -595,7 +598,7 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp, preserve_shape)
+                     xp, preserve_shape, device=xp_device(x))
 
 
 def _derivative_weights(work, n, xp):
@@ -926,7 +929,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
         raise ValueError(message)
 
     m = x0.shape[0]
-    i = xp.arange(m)
+    i = xp.arange(m, device=xp_device(x0))
 
     def wrapped(x):
         p = () if x.ndim == x0.ndim else (x.shape[-1],)  # number of abscissae
