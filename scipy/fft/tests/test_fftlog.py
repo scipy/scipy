@@ -8,7 +8,8 @@ from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 
 from scipy._lib._array_api import (
-    xp_assert_close, xp_assert_less, make_xp_test_case, make_xp_pytest_param
+    xp_assert_close, xp_assert_less, make_xp_test_case, make_xp_pytest_param,
+    xp_device
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -199,6 +200,19 @@ def test_array_like(xp, op):
          [[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]]]
     xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))
+
+@pytest.mark.parametrize('op', [fht, ifht])
+@make_xp_test_case(fht, ifht)
+def test_device(xp, op, devices):
+    rng = np.random.RandomState(3491349965)
+    dln = rng.uniform(-1, 1)
+    mu = rng.uniform(-2, 2)
+    # use a nonzero bias so the internal ``xp.arange`` is exercised
+    for d in devices:
+        a = xp.asarray(rng.standard_normal(64), device=d)
+        y = op(a, dln, mu, bias=0.1)
+        assert xp_device(y) == xp_device(a)
+
 
 @pytest.mark.parametrize('n', [128, 129])
 @make_xp_test_case(fhtoffset, fht)
