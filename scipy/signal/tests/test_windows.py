@@ -12,7 +12,7 @@ from scipy.signal.windows._windows import _WIN_FUNC_DATA, _WIN_FUNCS
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, SCIPY_DEVICE, is_numpy, make_xp_test_case,
-    make_xp_pytest_param, _xp_copy_to_numpy
+    make_xp_pytest_param, _xp_copy_to_numpy, xp_device
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -795,6 +795,15 @@ class TestLanczos:
         for n in [0, 10, 11]:
             assert windows.lanczos(n, sym=False, xp=xp).shape[0] == n
             assert windows.lanczos(n, sym=True, xp=xp).shape[0] == n
+
+    def test_device(self, xp, devices):
+        # `lanczos` takes a length `M` and a `device` keyword, so check the
+        # output lands on the requested device (both even and odd `M`).
+        for d in devices:
+            ref = xp.asarray(0.0, device=d)
+            for n in (6, 7):
+                w = windows.lanczos(n, xp=xp, device=d)
+                assert xp_device(w) == xp_device(ref)
 
 
 @make_xp_test_case(windows.get_window)

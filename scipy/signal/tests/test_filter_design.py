@@ -13,7 +13,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
-    _xp_copy_to_numpy, xp_assert_close_nulp
+    _xp_copy_to_numpy, xp_assert_close_nulp, xp_device
 )
 import scipy._external.array_api_extra as xpx
 
@@ -804,6 +804,13 @@ class TestFreqz:
         w, h = freqz(xp.asarray([1.]), worN=xp.asarray([0., 0.1]))
         xp_assert_equal(w, xp.asarray([0. , 0.1]))
         xp_assert_equal(h, xp.asarray([1.+0.j, 1.+0.j]))
+
+    def test_device(self, xp, devices):
+        for d in devices:
+            b = xp.asarray([1.0, 0.5], device=d)
+            w, h = freqz(b, worN=16)
+            assert xp_device(w) == xp_device(b)
+            assert xp_device(h) == xp_device(b)
 
     def test_basic(self, xp):
         w, h = freqz(xp.asarray([1.0]), worN=8)
@@ -1929,6 +1936,17 @@ class TestBilinear_zpk:
             )
         )
         assert math.isclose(k_d, 9696/69803, rel_tol=4e-7)
+
+    @xfail_xp_backends(
+        'dask.array', reason='https://github.com/dask/dask/issues/11883'
+    )
+    def test_device(self, xp, devices):
+        for d in devices:
+            z = xp.asarray([-2j, +2j], device=d)
+            p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j], device=d)
+            z_d, p_d, _ = bilinear_zpk(z, p, 3, 10)
+            assert xp_device(z_d) == xp_device(z)
+            assert xp_device(p_d) == xp_device(p)
 
 
 class TestPrototypeType:

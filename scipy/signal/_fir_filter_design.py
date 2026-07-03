@@ -12,7 +12,9 @@ from scipy.signal._arraytools import _validate_fs
 from .windows import get_window
 from . import _sigtools
 
-from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
+from scipy._lib._array_api import (
+    array_namespace, xp_size, xp_default_dtype, xp_device
+)
 import scipy._external.array_api_extra as xpx
 
 
@@ -534,7 +536,9 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     # Insert 0 and/or 1 at the ends of cutoff so that the length of cutoff
     # is even, and each pair in cutoff corresponds to passband.
-    cutoff = xp.concat((xp.zeros(int(pass_zero)), cutoff, xp.ones(int(pass_nyquist))))
+    cutoff = xp.concat((xp.zeros(int(pass_zero), device=xp_device(cutoff)),
+                        cutoff,
+                        xp.ones(int(pass_nyquist), device=xp_device(cutoff))))
 
 
     # `bands` is a 2-D array; each row gives the left and right edges of
@@ -543,7 +547,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     # Build up the coefficients.
     alpha = 0.5 * (numtaps - 1)
-    m = xp.arange(0, numtaps, dtype=cutoff.dtype) - alpha
+    m = xp.arange(0, numtaps, dtype=cutoff.dtype, device=xp_device(cutoff)) - alpha
     h = 0
     for j in range(bands.shape[0]):
         left, right = bands[j, 0], bands[j, 1]
@@ -1183,7 +1187,7 @@ def _dhtm(mag, xp):
     """
     # Adapted based on code by Niranjan Damera-Venkata,
     # Brian L. Evans and Shawn R. McCaslin (see refs for `minimum_phase`)
-    sig = xp.zeros(mag.shape[0])
+    sig = xp.zeros(mag.shape[0], device=xp_device(mag))
     # Leave Nyquist and DC at 0, knowing np.abs(fftfreq(N)[midpt]) == 0.5
     midpt = mag.shape[0] // 2
     sig = xpx.at(sig)[1:midpt].set(1.0)
@@ -1370,7 +1374,8 @@ def minimum_phase(h,
         raise ValueError(f'n_fft must be at least len(h)=={len(h)}')
 
     if method == 'hilbert':
-        w = xp.arange(n_fft, dtype=xp.float64) * (2 * xp.pi / n_fft * n_half)
+        w = (xp.arange(n_fft, dtype=xp.float64, device=xp_device(h))
+             * (2 * xp.pi / n_fft * n_half))
         H = xp.real(fft(h, n_fft) * xp.exp(1j * w))
         dp = max(H) - 1
         ds = 0 - min(H)
@@ -1394,7 +1399,7 @@ def minimum_phase(h,
         # lmin[n] = 2u[n] - d[n]
         # i.e., double the positive frequencies and zero out the negative ones;
         # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
-        win = xp.zeros(n_fft, dtype=h_temp.dtype)
+        win = xp.zeros(n_fft, dtype=h_temp.dtype, device=xp_device(h_temp))
         win = xpx.at(win)[0].set(1)
         stop = n_fft // 2
         win = xpx.at(win)[1:stop].set(2)

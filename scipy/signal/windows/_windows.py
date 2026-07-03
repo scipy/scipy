@@ -49,7 +49,9 @@ def _namespace(xp):
     Will be able to replace with `np_compat if xp is None else xp` when we drop
     support for numpy 1.x and cupy 13.x
     """
-    return np_compat if xp is None else array_namespace(xp.empty(0))
+    if xp is None:
+        return np_compat
+    return array_namespace(xp.empty(0))  # skip device check
 
 
 def _general_cosine_impl(M, a, xp, device, sym=True):
@@ -1398,7 +1400,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
             "shapes"
         )
     elif M < 1:
-        return xp.asarray([])
+        return xp.asarray([], device=device)
     elif M % 2:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for even number "
@@ -2152,11 +2154,12 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
         singleton = False
     if _len_guards(M):
         if not return_ratios:
-            return xp.ones(M, dtype=xp.float64)
+            return xp.ones(M, dtype=xp.float64, device=device)
         elif singleton:
-            return xp.ones(M, dtype=xp.float64), 1.
+            return xp.ones(M, dtype=xp.float64, device=device), 1.
         else:
-            return xp.ones(M, dtype=xp.float64), xp.ones(1, dtype=xp.float64)
+            return (xp.ones(M, dtype=xp.float64, device=device),
+                    xp.ones(1, dtype=xp.float64, device=device))
     Kmax = operator.index(Kmax)
     if not 0 < Kmax <= M:
         raise ValueError('Kmax must be greater than 0 and less than M')
@@ -2230,7 +2233,8 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
                 correction = M**2 / float(M**2 + NW)
             else:
                 s = sp_fft.rfft(windows[0])
-                shift = -(1 - 1./M) * xp.arange(1, M//2 + 1, dtype=xp.float64)
+                shift = -(1 - 1./M) * xp.arange(1, M//2 + 1, dtype=xp.float64,
+                                                device=device)
                 s[1:] *= 2 * xp.exp(-1j * xp.pi * shift)
                 correction = M / s.real.sum()
             windows *= correction
@@ -2333,14 +2337,16 @@ def lanczos(M, *, sym=True, xp=None, device=None):
     # half of the window and the flipped one which is the left hand half of
     # the window.
     def _calc_right_side_lanczos(n, m):
-        return xpx.sinc(2. * xp.arange(n, m, dtype=xp.float64) / (m - 1) - 1.0, xp=xp)
+        return xpx.sinc(
+            2. * xp.arange(n, m, dtype=xp.float64, device=device) / (m - 1) - 1.0, xp=xp
+        )
 
     if M % 2 == 0:
         wh = _calc_right_side_lanczos(M/2, M)
         w = xp.concat([xp.flip(wh), wh])
     else:
         wh = _calc_right_side_lanczos((M+1)/2, M)
-        w = xp.concat([xp.flip(wh), xp.ones(1), wh])
+        w = xp.concat([xp.flip(wh), xp.ones(1, device=device), wh])
 
     return _truncate(w, needs_trunc)
 

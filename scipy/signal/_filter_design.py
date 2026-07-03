@@ -20,7 +20,7 @@ from scipy.signal import _polyutils as _pu
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
-    xp_result_type,
+    xp_result_type, xp_device,
 )
 from scipy._external.array_api_compat import numpy as np_compat
 
@@ -74,7 +74,8 @@ def _real_dtype_for_complex(dtyp, *, xp):
 
 
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/_core/function_base.py#L195-L302
-def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
+def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp,
+              device=None):
     if not isinstance(base, float | int) and xp.asarray(base).ndim > 0:
         # If base is non-scalar, broadcast it with the others, since it
         # may influence how axis is interpreted.
@@ -90,7 +91,8 @@ def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
     except ValueError:
         # all of start, stop and base are python scalars
         result_dt = xp_default_dtype(xp)
-    y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt)
+    y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt,
+                    device=device)
 
     yp = xp.pow(base, y)
     if dtype is None:
@@ -149,7 +151,7 @@ def findfreqs(num, den, N, kind='ba'):
     tz = xp_float_to_complex(tz, xp=xp)
 
     if ep.shape[0] == 0:
-        ep = xp.asarray([-1000], dtype=ep.dtype)
+        ep = xp.asarray([-1000], dtype=ep.dtype, device=xp_device(ep))
 
     ez = xp.concat((
         ep[xp.imag(ep) >= 0],
@@ -168,7 +170,7 @@ def findfreqs(num, den, N, kind='ba'):
         xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge
     )
 
-    w = _logspace(lfreq, hfreq, N, xp=xp)
+    w = _logspace(lfreq, hfreq, N, xp=xp, device=xp_device(ez))
     return w
 
 
@@ -497,7 +499,10 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     """
     xp = array_namespace(b, a)
 
-    b, a = map(xp.asarray, (b, a))
+    # `a` is often the scalar default 1; place it on `b`'s device so a
+    # non-default-device `b` propagates through the division below.
+    b = xp.asarray(b)
+    a = xp.asarray(a, device=xp_device(b))
     if xp.isdtype(a.dtype, 'integral'):
         a = xp.astype(a, xp_default_dtype(xp))
     res_dtype = xp.result_type(b, a)
@@ -523,7 +528,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         # if include_nyquist is true and whole is false, w should
         # include end point
         w = xp.linspace(0, lastpoint, N,
-                        endpoint=include_nyquist and not whole, dtype=real_dtype)
+                        endpoint=include_nyquist and not whole, dtype=real_dtype,
+                        device=xp_device(b))
         n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
         if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
@@ -674,9 +680,11 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     if worN is None:
         # For backwards compatibility
-        w = xp.linspace(0, lastpoint, 512, endpoint=False, dtype=res_dtype)
+        w = xp.linspace(0, lastpoint, 512, endpoint=False, dtype=res_dtype,
+                        device=xp_device(z))
     elif _is_int_type(worN):
-        w = xp.linspace(0, lastpoint, worN, endpoint=False, dtype=res_dtype)
+        w = xp.linspace(0, lastpoint, worN, endpoint=False, dtype=res_dtype,
+                        device=xp_device(z))
     else:
         w = xp.asarray(worN)
         if xp.isdtype(w.dtype, 'integral'):
@@ -1292,7 +1300,8 @@ def zpk2tf(z, p, k):
     if z.ndim > 1:
         temp = _pu.poly(z[0, ...], xp=xp)
         result_dtype = xp_result_type(temp, k, force_floating=True, xp=xp)
-        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=result_dtype)
+        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=result_dtype,
+                     device=xp_device(z))
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
@@ -1410,8 +1419,8 @@ def sos2tf(sos):
     if xp.isdtype(result_type, 'integral'):
         result_type = xp_default_dtype(xp)
 
-    b = xp.asarray([1], dtype=result_type)
-    a = xp.asarray([1], dtype=result_type)
+    b = xp.asarray([1], dtype=result_type, device=xp_device(sos))
+    a = xp.asarray([1], dtype=result_type, device=xp_device(sos))
 
     n_sections = sos.shape[0]
     for section in range(n_sections):
@@ -1451,8 +1460,8 @@ def sos2zpk(sos):
     sos = xp.asarray(sos)
 
     n_sections = sos.shape[0]
-    z = xp.zeros(n_sections*2, dtype=xp.complex128)
-    p = xp.zeros(n_sections*2, dtype=xp.complex128)
+    z = xp.zeros(n_sections*2, dtype=xp.complex128, device=xp_device(sos))
+    p = xp.zeros(n_sections*2, dtype=xp.complex128, device=xp_device(sos))
     k = 1.
     for section in range(n_sections):
         zpk = tf2zpk(sos[section, :3], sos[section, 3:])
@@ -1835,7 +1844,7 @@ def _align_nums(nums, xp):
         max_width = max(xp_size(num) for num in nums)
 
         # pre-allocate
-        aligned_nums = xp.zeros((len(nums), max_width))
+        aligned_nums = xp.zeros((len(nums), max_width), device=xp_device(nums[0]))
 
         # Create numerators with padded zeros
         for index, num in enumerate(nums):
@@ -2021,7 +2030,7 @@ def lp2lp(b, a, wo=1.0):
     d = a.shape[0]
     n = b.shape[0]
     M = max((d, n))
-    pwo = wo ** xp.arange(M - 1, -1, -1, dtype=xp.float64)
+    pwo = wo ** xp.arange(M - 1, -1, -1, dtype=xp.float64, device=xp_device(b))
     start1 = max((n - d, 0))
     start2 = max((d - n, 0))
     b = b * pwo[start1] / pwo[start2:]
@@ -2123,9 +2132,9 @@ def lp2hp(b, a, wo=1.0):
     d = a.shape[0]
     n = b.shape[0]
     if wo != 1:
-        pwo = wo ** xp.arange(max((d, n)), dtype=b.dtype)
+        pwo = wo ** xp.arange(max((d, n)), dtype=b.dtype, device=xp_device(b))
     else:
-        pwo = xp.ones(max((d, n)), dtype=b.dtype)
+        pwo = xp.ones(max((d, n)), dtype=b.dtype, device=xp_device(b))
     if d >= n:
         outa = xp.flip(a) * pwo
         outb = _resize(b, (d,), xp=xp)
@@ -2212,8 +2221,8 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     ma = max([N, D])
     Np = N + ma
     Dp = D + ma
-    bprime = xp.empty(Np + 1, dtype=b.dtype)
-    aprime = xp.empty(Dp + 1, dtype=a.dtype)
+    bprime = xp.empty(Np + 1, dtype=b.dtype, device=xp_device(b))
+    aprime = xp.empty(Dp + 1, dtype=a.dtype, device=xp_device(a))
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
@@ -2304,8 +2313,8 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     M = max([N, D])
     Np = M + M
     Dp = M + M
-    bprime = xp.empty(Np + 1, dtype=b.dtype)
-    aprime = xp.empty(Dp + 1, dtype=a.dtype)
+    bprime = xp.empty(Np + 1, dtype=b.dtype, device=xp_device(b))
+    aprime = xp.empty(Dp + 1, dtype=a.dtype, device=xp_device(a))
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
@@ -3009,7 +3018,7 @@ def bilinear_zpk(z, p, k, fs):
     p_z = (fs2 + p) / (fs2 - p)
 
     # Any zeros that were at infinity get moved to the Nyquist frequency
-    z_z = xp.concat((z_z, -xp.ones(degree)))
+    z_z = xp.concat((z_z, -xp.ones(degree, device=xp_device(z))))
 
     # Compensate for gain change
     k_z = k * xp.real(xp.prod(fs2 - z) / xp.prod(fs2 - p))
@@ -3170,7 +3179,7 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     p_hp = wo / p
 
     # If lowpass had zeros at infinity, inverting moves them to origin.
-    z_hp = xp.concat((z_hp, xp.zeros(degree)))
+    z_hp = xp.concat((z_hp, xp.zeros(degree, device=xp_device(z))))
 
     # Cancel out gain change caused by inversion
     k_hp = k * xp.real(xp.prod(-z) / xp.prod(-p))
@@ -3271,7 +3280,7 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
                       p_lp - xp.sqrt(p_lp**2 - wo**2)))
 
     # Move degree zeros to origin, leaving degree zeros at infinity for BPF
-    z_bp = xp.concat((z_bp, xp.zeros(degree)))
+    z_bp = xp.concat((z_bp, xp.zeros(degree, device=xp_device(z))))
 
     # Cancel out gain change from frequency scaling
     k_bp = k * bw**degree
@@ -3371,8 +3380,8 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
                       p_hp - xp.sqrt(p_hp**2 - wo**2)))
 
     # Move any zeros that were at infinity to the center of the stopband
-    z_bs = xp.concat((z_bs, xp.full(degree, +1j*wo)))
-    z_bs = xp.concat((z_bs, xp.full(degree, -1j*wo)))
+    z_bs = xp.concat((z_bs, xp.full(degree, +1j*wo, device=xp_device(z))))
+    z_bs = xp.concat((z_bs, xp.full(degree, -1j*wo, device=xp_device(z))))
 
     # Cancel out gain change caused by inversion
     k_bs = k * xp.real(xp.prod(-z) / xp.prod(-p))
@@ -4353,11 +4362,11 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
                      4 * W0 ** 2 * passb[0] * passb[1])
         WN0 = ((passb[1] - passb[0]) + discr) / (2 * W0)
         WN1 = ((passb[1] - passb[0]) - discr) / (2 * W0)
-        WN = xp.asarray([float(WN0), float(WN1)])
+        WN = xp.asarray([float(WN0), float(WN1)], device=xp_device(passb))
         WN = xp.sort(xp.abs(WN))
 
     elif filter_type == 4:  # pass
-        W0 = xp.asarray([-W0, W0], dtype=xp.float64)
+        W0 = xp.asarray([-W0, W0], dtype=xp.float64, device=xp_device(passb))
         WN = (-W0 * (passb[1] - passb[0]) / 2.0 +
               xp.sqrt(W0 ** 2 / 4.0 * (passb[1] - passb[0]) ** 2 +
                    passb[0] * passb[1]))
@@ -4573,13 +4582,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
                   math.sqrt(new_freq ** 2 * (passb[1] - passb[0]) ** 2 / 4.0 +
                        passb[1] * passb[0]))
         nat1 = passb[1] * passb[0] / nat0
-        nat = xp.asarray([float(nat0), float(nat1)])
+        nat = xp.asarray([float(nat0), float(nat1)], device=xp_device(passb))
     elif filter_type == 4:
         nat0 = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
                   math.sqrt((passb[1] - passb[0]) ** 2 / (4.0 * new_freq ** 2) +
                        passb[1] * passb[0]))
         nat1 = passb[0] * passb[1] / nat0
-        nat = xp.asarray([float(nat0), float(nat1)])
+        nat = xp.asarray([float(nat0), float(nat1)], device=xp_device(passb))
 
     wn = _postprocess_wn(nat, analog, fs, xp=xp)
 

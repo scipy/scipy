@@ -127,7 +127,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
         raise ValueError("`use` must be 'conv' or 'dot'")
 
     # cf windows/_windows.py
-    xp = np_compat if xp is None else array_namespace(xp.empty(0))
+    xp = np_compat if xp is None else array_namespace(xp.empty(0))  # skip device check
 
     if deriv > polyorder:
         coeffs = xp.zeros(window_length, dtype=xp.float64, device=device)

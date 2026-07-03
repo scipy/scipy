@@ -32,7 +32,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, xp_default_dtype, array_namespace, make_xp_test_case,
-    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy
+    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy, xp_device
 )
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
@@ -1399,6 +1399,18 @@ class TestResample:
         x1 = signal.resample_poly(sig, 2, 1, padtype='constant', cval=0)
         xp_assert_equal(x1, x_ref)
         xp_assert_equal(x0, x_ref)
+
+    @make_xp_test_case(signal.resample)
+    def test_device(self, xp, devices):
+        for d in devices:
+            x = xp.arange(16, dtype=xp.float64, device=d)
+            y = signal.resample(x, 32)
+            assert xp_device(y) == xp_device(x)
+            # also exercise the `t is not None` return branch
+            t = xp.arange(16, dtype=xp.float64, device=d)
+            y, new_t = signal.resample(x, 32, t=t)
+            assert xp_device(y) == xp_device(x)
+            assert xp_device(new_t) == xp_device(x)
 
     @pytest.mark.parametrize('window', (None, 'hamming'))
     @pytest.mark.parametrize('N', (20, 19))
@@ -4567,6 +4579,14 @@ class TestSOSFilt:
 
         _, zf = sosfilt(sos, xp.ones(40, dtype=dt), zi=zi.tolist())
         xp_assert_close(zf, zi, rtol=1e-13, check_dtype=False)
+
+
+@make_xp_test_case(sosfilt_zi)
+def test_sosfilt_zi_device(xp, devices):
+    for d in devices:
+        sos = xp.asarray(signal.butter(6, 0.2, output='sos'), device=d)
+        zi = sosfilt_zi(sos)
+        assert xp_device(zi) == xp_device(sos)
 
 
 @make_xp_test_case(signal.deconvolve)
