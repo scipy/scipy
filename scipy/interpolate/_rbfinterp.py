@@ -419,7 +419,8 @@ class RBFInterpolator:
         # in each chunk we consume the same space we already occupy
         chunksize = memory_budget // (self.powers.shape[0] + nnei) + 1
         if chunksize <= nx:
-            out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64)
+            out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64,
+                                 device=xp_device(self.d))
             for i in range(0, nx, chunksize):
                 chunk = _backend.compute_interpolation(
                     x[i:i + chunksize, :],

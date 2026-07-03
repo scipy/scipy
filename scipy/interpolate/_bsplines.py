@@ -1194,7 +1194,8 @@ class BSpline:
     def __getstate__(self):
         # need custom __getstate__ and __setstate__ methods to allow pickling
         # while holding onto namespaces.
-        return (self._delegate_to, self._xp.empty(0))
+        # `empty(0)` is a pickling sentinel, never combined with input data
+        return (self._delegate_to, self._xp.empty(0))  # skip device check
 
     def __setstate__(self, state):
         self._delegate_to, sentinel_array = state
