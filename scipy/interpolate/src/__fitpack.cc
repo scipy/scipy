@@ -874,6 +874,36 @@ void _compute_residuals(
     }
 }
 
+/* Back-substitution for R (upper-triangular banded, packed) into c_red.
+ * R has shape (m, nz), c_red has shape (nc_reduced, ydim2), yw has 
+ * shape (m, ydim2). 
+*/
+static void _back_substitute(
+    RealArray2D& c_red,
+    ConstRealArray2D& R,
+    ConstRealArray2D& yw,
+    int64_t nz,
+    int64_t nc_reduced,
+    int64_t ydim2)
+{
+    // c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
+    for (int64_t l = 0; l < ydim2; ++l) {
+        c_red(nc_reduced - 1, l) = yw(nc_reduced - 1, l) / R(nc_reduced - 1, 0);
+    }
+
+    // for i in range(nc-2, -1, -1): c[i] = (y[i] - sum(R[i, j] * c[i+j])) / R[i, 0]
+    for (int64_t i = nc_reduced - 2; i >= 0; --i) {
+        int64_t nel = std::min(nz, nc_reduced - i);
+        for (int64_t l = 0; l < ydim2; ++l) {
+            double ssum = yw(i, l);
+            for (int64_t j = 1; j < nel; ++j) {
+                ssum -= R(i, j) * c_red(i + j, l);
+            }
+            c_red(i, l) = ssum / R(i, 0);
+        }
+    }
+}
+
 /*
  * fpback analogue for the clamped LSQ problem. Back-substitutes on the reduced
  * R (nc_reduced coefficients) directly into c[1 : nc_full-1], then fills c[0]
@@ -908,26 +938,7 @@ void fpback_clamped( /* inputs */
     memory region starting from `cptr + ydim2` to `cptr + ydim2 + nc_reduced * ydim2`,
     that is, `c[1: -1]`.
     */
-
-    // c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
-    for (int64_t l=0; l < ydim2; ++l) {
-        c_red(nc_reduced - 1, l) = yw(nc_reduced - 1, l) / R(nc_reduced - 1, 0);
-    }
-
-    //for i in range(nc-2, -1, -1):
-    //    nel = min(nz, nc-i)
-    //    c[i, ...] = ( y[i] - (R[i, 1:nel, None] * c[i+1:i+nel, ...]).sum(axis=0) ) / R[i, 0]
-    for (int64_t i=nc_reduced-2; i >= 0; --i) {
-        int64_t nel = std::min(nz, nc_reduced - i);
-        for (int64_t l=0; l < ydim2; ++l){
-            double ssum = yw(i, l);
-            for (int64_t j=1; j < nel; ++j) {
-                ssum -= R(i, j) * c_red(i + j, l);
-            }
-            ssum /= R(i, 0);
-            c_red(i, l) = ssum;
-        }
-    }
+    _back_substitute(c_red, R, yw, nz, nc_reduced, ydim2);
 
     /* Reassembly: add c[0] & c[-1] to c before computing residuals. */
     auto c = RealArray2D(cptr, nc_full, ydim2);
@@ -980,25 +991,7 @@ fpback( /* inputs*/
     auto yw = ConstRealArray2D(ywptr, m, ydim2);
     auto c = RealArray2D(cptr, nc, ydim2);
 
-    // c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
-    for (int64_t l=0; l < ydim2; ++l) {
-        c(nc - 1, l) = yw(nc - 1, l) / R(nc - 1, 0);
-    }
-
-    //for i in range(nc-2, -1, -1):
-    //    nel = min(nz, nc-i)
-    //    c[i, ...] = ( y[i] - (R[i, 1:nel, None] * c[i+1:i+nel, ...]).sum(axis=0) ) / R[i, 0]
-    for (int64_t i=nc-2; i >= 0; --i) {
-        int64_t nel = std::min(nz, nc - i);
-        for (int64_t l=0; l < ydim2; ++l){
-            double ssum = yw(i, l);
-            for (int64_t j=1; j < nel; ++j) {
-                ssum -= R(i, j) * c(i + j, l);
-            }
-            ssum /= R(i, 0);
-            c(i, l) = ssum;
-        }
-    }
+    _back_substitute(c, R, yw, nz, nc, ydim2);
 
     _compute_residuals(
         xptr, m_, yptr, ydim2, tptr, len_t,
