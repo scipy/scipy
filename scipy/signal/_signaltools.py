@@ -27,7 +27,7 @@ from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
-    xp_promote, xp_swapaxes,)
+    xp_promote, xp_swapaxes, xp_device,)
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
@@ -698,7 +698,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif xp_size(in1) == 0 or xp_size(in2) == 0:  # empty arrays
-        return xp.asarray([])
+        return xp.asarray([], device=xp_device(in1))
 
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=False)
@@ -945,7 +945,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
-        return xp.asarray([])
+        return xp.asarray([], device=xp_device(in1))
     elif in1.shape == in2.shape:  # Equivalent to fftconvolve
         return fftconvolve(in1, in2, mode=mode, axes=axes)
 
@@ -1762,12 +1762,13 @@ def wiener(im, mysize=None, noise=None):
 
     # Estimate the local mean
     size = math.prod(mysize)
-    lMean = correlate(im, xp.ones(mysize), 'same')
+    lMean = correlate(im, xp.ones(mysize, device=xp_device(im)), 'same')
     lsize = float(size)
     lMean = lMean / lsize
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, xp.ones(mysize), 'same') / lsize - lMean ** 2)
+    lVar = (correlate(im ** 2, xp.ones(mysize, device=xp_device(im)), 'same')
+            / lsize - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
@@ -2357,7 +2358,7 @@ def lfiltic(b, a, y, x=None):
         result_type = xp.result_type(b, a, y)
         if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
             result_type = xp.float64
-        x = xp.zeros(M, dtype=result_type)
+        x = xp.zeros(M, dtype=result_type, device=xp_device(b))
     else:
         x = xp.asarray(x)
 
@@ -2368,14 +2369,14 @@ def lfiltic(b, a, y, x=None):
 
         L = xp_size(x)
         if L < M:
-            x = xp.concat((x, xp.zeros(M - L)))
+            x = xp.concat((x, xp.zeros(M - L, device=xp_device(x))))
 
     y = xp.astype(y, result_type)
-    zi = xp.zeros(K, dtype=result_type)
+    zi = xp.zeros(K, dtype=result_type, device=xp_device(b))
 
     L = xp_size(y)
     if L < N:
-        y = xp.concat((y, xp.zeros(N - L)))
+        y = xp.concat((y, xp.zeros(N - L, device=xp_device(y))))
 
     for m in range(M):
         zi = xpx.at(zi)[m].set(xp.sum(b[m + 1:] * x[:M - m], axis=0))
@@ -2449,7 +2450,7 @@ def deconvolve(signal, divisor):
         quot = []
         rem = num
     else:
-        input = xp.zeros(N - D + 1, dtype=xp.float64)
+        input = xp.zeros(N - D + 1, dtype=xp.float64, device=xp_device(num))
         input = xpx.at(input)[0].set(1)
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
@@ -3892,7 +3893,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         X = sp_fft.fft(x) if domain == 'time' else x
         if W is not None:
             X = X * W  # writing X *= W could modify parameter x
-        Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
+        Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype, device=xp_device(X))
         Y = xpx.at(Y)[..., :m2].set(X[..., :m2])  # copy up to Nyquist
         if m2 < m:  # == m > 2
             Y = xpx.at(Y)[..., m2-m:].set(X[..., m2-m:])  # copy negative frequencies
@@ -3907,7 +3908,8 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if x_r.ndim > 1:  # moving active axis back to original position:
         x_r = xp.moveaxis(x_r, -1, axis)
     if t is not None:
-        return x_r, t[0] + (t[1] - t[0]) * s_fac * xp.arange(num)
+        new_t = xp.arange(num, dtype=xp.float64, device=xp_device(x))
+        return x_r, t[0] + (t[1] - t[0]) * s_fac * new_t
     return x_r
 
 
@@ -4089,8 +4091,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     while _output_len(h.shape[0] + n_pre_pad + n_post_pad, n_in,
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
-    h = xp.concat((xp.zeros(n_pre_pad, dtype=h.dtype), h,
-                   xp.zeros(n_post_pad, dtype=h.dtype)))
+    h = xp.concat((xp.zeros(n_pre_pad, dtype=h.dtype, device=xp_device(h)), h,
+                   xp.zeros(n_post_pad, dtype=h.dtype, device=xp_device(h))))
     n_pre_remove_end = n_pre_remove + n_out
 
     # XXX consider using stats.quantile, which is natively Array API compatible
@@ -4612,7 +4614,7 @@ def sosfilt_zi(sos):
         sos = xp.astype(sos, xp.float64)
 
     n_sections = sos.shape[0]
-    zi = xp.empty((n_sections, 2), dtype=sos.dtype)
+    zi = xp.empty((n_sections, 2), dtype=sos.dtype, device=xp_device(sos))
     scale = 1.0
     for section in range(n_sections):
         b = sos[section, :3]

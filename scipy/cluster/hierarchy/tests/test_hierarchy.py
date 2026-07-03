@@ -51,7 +51,8 @@ from scipy.cluster.hierarchy._hierarchy_impl import (
 from scipy.spatial.distance import pdist
 from scipy._lib._array_api import (eager_warns, make_xp_test_case,
                                    xp_assert_close, xp_assert_equal,
-                                   make_xp_pytest_param, _xp_copy_to_numpy)
+                                   make_xp_pytest_param, xp_device,
+                                   _xp_copy_to_numpy)
 import scipy._external.array_api_extra as xpx
 
 from threading import Lock
@@ -1208,6 +1209,18 @@ def test_cut_tree(xp):
                     cut_tree(Z, height=[5, 10]), rtol=1e-15)
     xp_assert_close(cutree[:, np.searchsorted(heights, [10, 5])],
                     cut_tree(Z, height=[10, 5]), rtol=1e-15)
+
+
+@make_xp_test_case(cut_tree)
+def test_cut_tree_device(xp, devices):
+    np.random.seed(23)
+    X = np.random.randn(20, 4)
+    Zref = ward(X)
+    for d in devices:
+        Z = xp.asarray(Zref, device=d)
+        assert xp_device(cut_tree(Z)) == xp_device(Z)
+        assert xp_device(cut_tree(Z, n_clusters=5)) == xp_device(Z)
+        assert xp_device(cut_tree(Z, height=5)) == xp_device(Z)
 
 
 @make_xp_test_case(optimal_leaf_ordering)
