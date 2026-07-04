@@ -253,7 +253,7 @@ if SCIPY_ARRAY_API:
 
     try:
         import jax.numpy  # type: ignore[import-not-found]
-        
+
         xp_available_backends.append(
             pytest.param(jax.numpy, id='jax.numpy',
             marks=[_array_api_backends,
@@ -315,6 +315,58 @@ if SCIPY_ARRAY_API:
             ]
 
 
+class ArrayAPIStrictNonDefaultDevice:
+    device =  array_api_strict.Device("device1")
+    def asarray(self, obj, /, *, dtype=None, copy=None):
+        return array_api_strict.asarray(obj, dtype=dtype, copy=copy, device=self.device)
+
+    def arange(self, start, /, stop=None, step=1, *, dtype=None):
+        return array_api_strict.arange(start, stop, step, dtype=dtype,
+                                       device=self.device)
+
+    def empty(self, shape, /, *, dtype=None):
+        return array_api_strict.empty(shape, dtype=dtype, device=self.device)
+
+    def empty_like(self, x, /, *, dtype=None):
+        return array_api_strict.empty_like(x, dtype=dtype, device=self.device)
+
+    def eye(self, n_rows, n_cols=None, /, *, k=0, dtype=None):
+        return array_api_strict.eye(n_rows, n_cols, k=k, dtype=dtype,
+                                    device=self.device)
+
+    def full(self, shape, fill_value, *, dtype=None):
+        return array_api_strict.full(shape, fill_value, dtype=dtype, device=self.device)
+
+    def full_like(self, x, /, fill_value, *, dtype=None):
+        return array_api_strict.full_like(x, fill_value, dtype=dtype,
+                                          device=self.device)
+
+    def linspace(self, start, stop, /, num, *, dtype=None, endpoint=True):
+        return array_api_strict.linspace(start, stop, num, dtype=dtype,
+                                         endpoint=endpoint, device=self.device)
+
+    def ones(self, shape, *, dtype=None):
+        return array_api_strict.ones(shape, dtype=dtype, device=self.device)
+
+    def ones_like(self, x, /, *, dtype=None):
+        return array_api_strict.ones_like(x, dtype=dtype, device=self.device)
+
+    def zeros(self, shape, *, dtype=None):
+        return array_api_strict.zeros(shape, dtype=dtype, device=self.device)
+
+    def zeros_like(self, x, /, *, dtype=None):
+        return array_api_strict.zeros_like(x, dtype=dtype, device=self.device)
+
+    def __getattr__(self, name):
+        return getattr(array_api_strict, name)
+
+    def __eq__(self, value):
+        return value is array_api_strict
+
+    def __hash__(self):
+        return hash(array_api_strict)
+
+
 @pytest.fixture(params=xp_available_backends)
 def xp(request):
     """Run the test that uses this fixture on each available array API library.
@@ -351,6 +403,9 @@ def xp(request):
     xp = request.param
     # Potentially wrap namespace with array_api_compat
     xp = array_namespace(xp.empty(0))
+
+    if xp is array_api_strict:
+        xp = ArrayAPIStrictNonDefaultDevice()
 
     if SCIPY_ARRAY_API:
         # If xp==jax.numpy, wrap tested functions in jax.jit

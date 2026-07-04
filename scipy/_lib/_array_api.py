@@ -223,7 +223,7 @@ def eager_warns(warning_type, *, match=None, xp):
 
 def _strict_check(actual, desired, xp, *,
                   check_namespace=True, check_dtype=True, check_shape=True,
-                  check_0d=True):
+                  check_0d=True, check_device=True):
     __tracebackhide__ = True  # Hide traceback for py.test
 
     if xp is None:
@@ -256,6 +256,10 @@ def _strict_check(actual, desired, xp, *,
             desired.compute_chunk_sizes()
         _msg = f"Shapes do not match.\nActual: {actual.shape}\nDesired: {desired.shape}"
         assert actual.shape == desired.shape, _msg
+
+    if check_device:
+        _msg = f"Devices do not match.\nActual: {actual.device}\nDesired: {desired.device}"
+        assert actual.device == desired.device, _msg
 
     desired = xp.broadcast_to(desired, actual.shape)
     return actual, desired, xp
@@ -293,6 +297,8 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
                                        check_dtype=False, msg=err_msg)
+    elif is_array_api_strict(xp):
+        actual, desired = map(_xp_copy_to_numpy, (actual, desired))
     # JAX uses `np.testing`
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
@@ -324,6 +330,8 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
                                        equal_nan=True, check_dtype=False, msg=err_msg)
+    elif is_array_api_strict(xp):
+        actual, desired = map(_xp_copy_to_numpy, (actual, desired))
     # JAX uses `np.testing`
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
@@ -353,6 +361,8 @@ def _assert_less(actual, desired, *, err_msg, verbose, xp):
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
+    elif is_array_api_strict(xp):
+        actual, desired = map(_xp_copy_to_numpy, (actual, desired))
     # JAX uses `np.testing`
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
