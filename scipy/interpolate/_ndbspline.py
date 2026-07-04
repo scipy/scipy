@@ -553,7 +553,7 @@ def _make_lsq_ndbspl(
         w = _validate_lsq_weights(w, npts)
         matr = diags_array(w, format="csr") @ matr
         matr.eliminate_zeros()
-        rhs = rhs * w[:, None]
+        rhs = rhs * w[:, np.newaxis]
 
     _check_lsq_design_matrix(matr, ncoeff)
 
