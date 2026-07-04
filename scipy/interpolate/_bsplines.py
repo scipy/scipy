@@ -2135,7 +2135,26 @@ clamp_values=None):
             raise ValueError(
                 "clamp_values should be a tuple of a numeric type, got a `ndarray`."
             )
-        
+
+        if len(clamp_values) != 2:
+            raise ValueError(
+                f"""Expect clamp_values to be a tuple of length 2, got 
+                {len(clamp_values)} instead"""
+            )
+
+        left_clamp_only = right_clamp_only = False
+        clamp_values = list(clamp_values)
+
+        if clamp_values[0] is None and clamp_values[1] is None:
+            raise ValueError("At least one clamp value must not be None")
+
+        if clamp_values[0] is None:
+            right_clamp_only = True
+            clamp_values[0] = 0
+        if clamp_values[1] is None:
+            left_clamp_only = True
+            clamp_values[1] = 0
+
         clamp_values = np.asarray(clamp_values)
 
         if clamp_values.dtype.kind in ["c", "U"]:
@@ -2145,14 +2164,11 @@ clamp_values=None):
             )
         if not np.all(np.isfinite(clamp_values)):
             raise ValueError("clamp_values must contain only finite numbers")
-        if np.any(t[:k + 1] != t[0]) or np.any(t[-(k + 1):] != t[-1]):
-            raise ValueError(
-                f"""Invalid knot vector, {t}, when clamp_values is passed, the first 
-                and last values of t should be repeated {k + 1} times for k={k}"""
-            )
-        if clamp_values.shape[0] != 2:
-            raise ValueError(f"""Expect clamp_values to be a tuple of length 2, 
-            got {len(clamp_values)}""")
+        if not right_clamp_only and np.any(t[:k+1] != t[0]):
+            raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
+        if not left_clamp_only and np.any(t[-(k+1):] != t[-1]):
+            raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
+
         if clamp_values.shape[1:] != y.shape[1:]:
             raise ValueError(
                 """There should be one clamp_value for each dimension of the output 
@@ -2210,19 +2226,31 @@ clamp_values=None):
             #
             # Reference: https://stackoverflow.com/questions/78482220
 
-            ab_reduced = ab[:, 1:-1]
-
-            rhs = rhs[1: -1] 
+            if left_clamp_only:
+                ab_reduced = ab[:, 1:]  # Drop first column
+                rhs = rhs[1:]           # Drop first row
+                ab_col0 = np.zeros((n - 1, extradim))
+                ab_col_last = np.zeros((n - 1, extradim))
+            elif right_clamp_only:
+                ab_reduced = ab[:, :-1] # Drop last column
+                rhs = rhs[:-1]          # Drop last row
+                ab_col0 = np.zeros((n - 1, extradim))
+                ab_col_last = np.zeros((n - 1, extradim))
+            else:
+                ab_reduced = ab[:, 1:-1]
+                rhs = rhs[1: -1] 
+                ab_col0 = np.zeros((n - 2, extradim))
+                ab_col_last = np.zeros((n - 2, extradim))
 
             # Subtract the contribution of clamped coefficients from the RHS:
             # rhs_adjusted = A_reduced.T @ y - ci * A_reduced.T @ A[:, 0]
             #                                 - cf * A_reduced.T @ A[:, -1]
             # Column 0 of A.T @ A in banded storage: straight read down ab[:, 0]
-            ab_col0 = np.zeros((n - 2, extradim))
+            # If one sided clamp only, that corresponding coefficient is zero
+            # hence, no contribution to rhs reduced.
             ab_col0[:k] = ab[1: k + 1, 0: 1]
             ab_col0 = ab_col0 * ci
 
-            ab_col_last = np.zeros((n - 2, extradim))
             banded_idx_last_col = np.arange(1, k + 1)
             ab_col_last[-k:] = ab[banded_idx_last_col, 
                                 (n-1) -banded_idx_last_col][::-1, None]
@@ -2240,11 +2268,21 @@ clamp_values=None):
 
         if clamp_values is not None:
             new_dims = list(c.shape)
-            new_dims[0] += 2
+            if left_clamp_only or right_clamp_only:
+                new_dims[0] += 1
+            else:
+                new_dims[0] += 2
             c_full = np.zeros(tuple(new_dims))
-            c_full[0, :] = ci
-            c_full[-1, :] = cf
-            c_full[1: -1, :] = c
+            if left_clamp_only:
+                c_full[0, :] = ci
+                c_full[1:] = c
+            elif right_clamp_only:
+                c_full[-1, :] = cf
+                c_full[: -1] = c
+            else:
+                c_full[0, :] = ci
+                c_full[-1, :] = cf
+                c_full[1: -1, :] = c
             c = c_full
 
     elif method == "qr":
