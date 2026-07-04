@@ -121,7 +121,7 @@ class TestSimpson:
     def test_device(self, xp, devices):
         for d in devices:
             x = xp.linspace(0., 4., 17, device=d)
-            y = xp.asarray(x, copy=True)**2
+            y = x**2
             assert xp_device(simpson(y, x=x)) == xp_device(x)
             assert xp_device(simpson(y, dx=0.5)) == xp_device(y)
 
@@ -372,7 +372,7 @@ class TestTrapezoid(CommonTrapezoidSimpsonTests):
     def test_device(self, xp, devices):
         for d in devices:
             x = xp.linspace(0., 4., 17, device=d)
-            y = xp.asarray(x, copy=True)**2
+            y = x**2
             assert xp_device(trapezoid(y, x=x)) == xp_device(x)
             assert xp_device(trapezoid(y, dx=0.5)) == xp_device(y)
 
@@ -593,9 +593,11 @@ class TestCumulativeSimpson:
     def test_device(self, xp, devices):
         for d in devices:
             x = xp.linspace(0., 4., 17, device=d)
-            y = xp.asarray(x, copy=True)**2
+            y = x**2
             assert xp_device(cumulative_simpson(y, x=x)) == xp_device(x)
             assert xp_device(cumulative_simpson(y, dx=0.5)) == xp_device(y)
+            res = cumulative_simpson(y, dx=0.5, initial=0.0)
+            assert xp_device(res) == xp_device(y)
 
     @pytest.mark.parametrize('use_dx', (False, True))
     @pytest.mark.parametrize('use_initial', (False, True))

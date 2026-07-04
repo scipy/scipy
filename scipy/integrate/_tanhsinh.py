@@ -354,33 +354,34 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
     # Define variables we'll need
     nit, nfev = 0, 1  # one function evaluation performed above
     zero = -xp.inf if log else 0
-    pi = xp.asarray(xp.pi, dtype=dtype)[()]
+    device = xp_device(a)
+    pi = xp.asarray(xp.pi, dtype=dtype, device=device)[()]
     maxiter = maxlevel - minlevel + 1
     eps = xp.finfo(dtype).eps
     if rtol is None:
         rtol = 0.75*math.log(eps) if log else eps**0.75
 
     # latest integral estimate
-    Sn = xp_ravel(xp.full(shape, zero, dtype=dtype, device=xp_device(a)))
+    Sn = xp_ravel(xp.full(shape, zero, dtype=dtype, device=device))
     Sn[xp.isnan(a) | xp.isnan(b) | xp.isnan(fs[0])] = xp.nan
     Sk = xp.reshape(xp.empty_like(Sn), (-1, 1))[:, 0:0]  # all integral estimates
     aerr = xp_ravel(xp.full(shape, xp.nan, dtype=dtype,  # absolute error
-                            device=xp_device(a)))
+                            device=device))
     status = xp_ravel(xp.full(shape, eim._EINPROGRESS, dtype=xp.int32,
-                              device=xp_device(a)))
-    h0 = _get_base_step(dtype, xp)
+                              device=device))
+    h0 = _get_base_step(dtype, xp, device=device)
     h0 = xp.real(h0) # base step
 
     # For term `d4` of error estimate ([1] Section 5), we need to keep the
     # most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
     # sum. Here, we initialize these variables.
-    xr0 = xp_ravel(xp.full(shape, -xp.inf, dtype=dtype, device=xp_device(a)))
-    fr0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype, device=xp_device(a)))
-    wr0 = xp_ravel(xp.zeros(shape, dtype=dtype, device=xp_device(a)))
-    xl0 = xp_ravel(xp.full(shape, xp.inf, dtype=dtype, device=xp_device(a)))
-    fl0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype, device=xp_device(a)))
-    wl0 = xp_ravel(xp.zeros(shape, dtype=dtype, device=xp_device(a)))
-    d4 = xp_ravel(xp.zeros(shape, dtype=dtype, device=xp_device(a)))
+    xr0 = xp_ravel(xp.full(shape, -xp.inf, dtype=dtype, device=device))
+    fr0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype, device=device))
+    wr0 = xp_ravel(xp.zeros(shape, dtype=dtype, device=device))
+    xl0 = xp_ravel(xp.full(shape, xp.inf, dtype=dtype, device=device))
+    fl0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype, device=device))
+    wl0 = xp_ravel(xp.zeros(shape, dtype=dtype, device=device))
+    d4 = xp_ravel(xp.zeros(shape, dtype=dtype, device=device))
 
     work = _RichResult(
         Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi, eps=eps,
@@ -497,7 +498,7 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
     return res
 
 
-def _get_base_step(dtype, xp):
+def _get_base_step(dtype, xp, device=None):
     # Compute the base step length for the provided dtype. Theoretically, the
     # Euler-Maclaurin sum is infinite, but it gets cut off when either the
     # weights underflow or the abscissae cannot be distinguished from the
@@ -516,7 +517,7 @@ def _get_base_step(dtype, xp):
     # results in a base step size close to `1`, which is what [1] uses (and I
     # used here until I found [2] and these ideas settled).
     h0 = tmax / _N_BASE_STEPS
-    return xp.asarray(h0, dtype=dtype)[()]
+    return xp.asarray(h0, dtype=dtype, device=device)[()]
 
 
 _N_BASE_STEPS = 8
@@ -538,8 +539,10 @@ def _compute_pair(k, h0, xp):
 
     # For iterations after the first, "....the integrand function needs to be
     # evaluated only at the odd-indexed abscissas at each level."
-    j = (xp.arange(max+1, device=xp_device(h0)) if k == 0
-         else xp.arange(1, max+1, 2, device=xp_device(h0)))
+    # Float `j` so that `j * h` is a legal promotion under the array API
+    # standard; the integer values are represented exactly.
+    j = (xp.arange(max+1, dtype=h.dtype, device=xp_device(h0)) if k == 0
+         else xp.arange(1, max+1, 2, dtype=h.dtype, device=xp_device(h0)))
     jh = j * h
 
     # "In this case... the weights wj = u1/cosh(u2)^2, where..."

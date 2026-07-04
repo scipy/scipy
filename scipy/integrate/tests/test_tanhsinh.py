@@ -782,6 +782,22 @@ class TestTanhSinh:
             assert xp_device(res.error) == xp_device(a)
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="tests private machinery")
+def test_pair_device(xp, devices):
+    # The abscissa-weight machinery must build its arrays on the input's
+    # device; they are anchored on `h0` from `_get_base_step` (see gh-22680).
+    # `TestTanhSinh.test_device` above cannot exercise this on the multi-device
+    # array-api-strict backend because `tanhsinh` is skipped there.
+    from scipy.integrate._tanhsinh import _compute_pair, _get_base_step
+    for d in devices:
+        ref = xp.asarray(1.0, device=d)
+        h0 = _get_base_step(xp.float64, xp, device=xp_device(ref))
+        assert xp_device(h0) == xp_device(ref)
+        xjc, wj = _compute_pair(0, h0, xp)
+        assert xp_device(xjc) == xp_device(ref)
+        assert xp_device(wj) == xp_device(ref)
+
+
 @make_xp_test_case(nsum)
 class TestNSum:
     rng = np.random.default_rng(5895448232066142650)

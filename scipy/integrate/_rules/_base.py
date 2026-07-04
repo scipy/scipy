@@ -239,6 +239,8 @@ class FixedRule(Rule):
         if self.xp is None:
             self.xp = array_namespace(nodes)
 
+        nodes, weights = _cached_cast(self, "_nw_cache", nodes, weights,
+                                      a.dtype, xp_device(a), self.xp)
         return _apply_fixed_rule(f, a, b, nodes, weights, args, self.xp)
 
 
@@ -343,6 +345,9 @@ class NestedFixedRule(FixedRule):
 
         error_nodes = self.xp.concat([nodes, lower_nodes], axis=0)
         error_weights = self.xp.concat([weights, -lower_weights], axis=0)
+        error_nodes, error_weights = _cached_cast(
+            self, "_error_nw_cache", error_nodes, error_weights,
+            a.dtype, xp_device(a), self.xp)
 
         return self.xp.abs(
             _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, self.xp)
@@ -473,14 +478,30 @@ def _split_subregion(a, b, xp, split_at=None):
         yield a_sub[i, ...], b_sub[i, ...]
 
 
+def _cached_cast(rule, attr, nodes, weights, dtype, device, xp):
+    # Cast the rule's nodes/weights to the target dtype and move them onto the
+    # target device once, memoizing the result on the rule so that the adaptive
+    # cubature loop does not re-cast (or re-transfer, for non-default devices)
+    # them for every subregion; see gh-22680.
+    cache = getattr(rule, attr, None)
+    if cache is None or cache[0] != dtype or cache[1] != device:
+        nodes = xp.asarray(nodes, dtype=dtype, device=device)
+        weights = xp.asarray(weights, dtype=dtype, device=device)
+        cache = (dtype, device, nodes, weights)
+        setattr(rule, attr, cache)
+    return cache[2], cache[3]
+
+
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
-    # Downcast nodes and weights to common dtype of a and b, and move them onto
-    # the input's device (the fixed-rule nodes/weights are built on the default
-    # device; see gh-22680), so the result lands on the input device.
+    # Cast nodes and weights to the dtype of a and b, and move them onto the
+    # input's device (the fixed-rule nodes/weights are built on the default
+    # device; see gh-22680), so the result lands on the input device. This is
+    # a no-op (no copy) when they are already converted, as when called via
+    # `FixedRule.estimate`/`NestedFixedRule.estimate_error`.
     result_dtype = a.dtype
     device = xp_device(a)
-    orig_nodes = xp.asarray(xp.astype(orig_nodes, result_dtype), device=device)
-    orig_weights = xp.asarray(xp.astype(orig_weights, result_dtype), device=device)
+    orig_nodes = xp.asarray(orig_nodes, dtype=result_dtype, device=device)
+    orig_weights = xp.asarray(orig_weights, dtype=result_dtype, device=device)
 
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)
