@@ -1176,8 +1176,7 @@ def _optimize_result_for_equal_bounds(
     message = 'All independent variables were fixed by bounds.'
 
     # bounds is new-style
-    xp = array_namespace(bounds.lb)
-    x0 = xp_copy(bounds.lb, xp=xp)
+    x0 = np.copy(bounds.lb)
 
     if constraints:
         message = ("All independent variables were fixed by bounds at values"
