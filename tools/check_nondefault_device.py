@@ -19,7 +19,7 @@ This checker flags a call when ALL of the following hold:
    which no device can be inferred).
 2. No ``device=`` keyword is present (and no ``**kwargs``, which might supply
    one -- treated leniently to avoid false positives on wrappers).
-3. The line does not carry the ``# skip device check`` pragma.
+3. No line spanned by the call carries the ``# skip device check`` pragma.
 
 Exempt: ``xp.asarray(<array-or-expr>)`` and ``xp.<...>_like(<array>)`` infer the
 device from their first argument, so they are fine.
@@ -118,9 +118,14 @@ class DeviceVisitor(ast.NodeVisitor):
         self.lines = source.splitlines()
         self.violations = []  # list of (lineno, col, what)
 
-    def _allowed(self, lineno):
-        line = self.lines[lineno - 1] if 0 < lineno <= len(self.lines) else ""
-        return PRAGMA in line
+    def _allowed(self, node):
+        """True if any line spanned by the call carries the pragma.
+
+        Checking the whole span (not just the first line) keeps the escape
+        hatch working when a formatter wraps a call over multiple lines.
+        """
+        end = getattr(node, "end_lineno", None) or node.lineno
+        return any(PRAGMA in line for line in self.lines[node.lineno - 1:end])
 
     def visit_Call(self, node):
         self.generic_visit(node)
@@ -161,7 +166,7 @@ class DeviceVisitor(ast.NodeVisitor):
             return
         if _has_device_kwarg(node):
             return
-        if self._allowed(node.lineno):
+        if self._allowed(node):
             return
         self.violations.append((node.lineno, node.col_offset, ast.unparse(func)))
 

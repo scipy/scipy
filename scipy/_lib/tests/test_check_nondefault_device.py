@@ -83,9 +83,20 @@ def test_not_flagged(check_source, src):
 @pytest.mark.parametrize("src", [
     "xp.zeros(n)  # skip device check",
     "xp.asarray([1, 2])  # skip device check",
+    # the pragma works on any line spanned by a multi-line call
+    "xp.zeros(  # skip device check\n    n,\n)",
+    "xp.zeros(\n    n,  # skip device check\n)",
+    "xp.zeros(\n    n,\n)  # skip device check",
 ])
 def test_pragma_suppresses(check_source, src):
     assert len(check_source(src)) == 0
+
+
+def test_pragma_does_not_leak_to_other_statements(check_source):
+    # a pragma on an adjacent line must not suppress a separate call
+    src = "a = xp.zeros(n)\nb = xp.ones(n)  # skip device check\n"
+    violations = check_source(src)
+    assert [lineno for lineno, _, _ in violations] == [1]
 
 
 def test_multiple_violations_reported(check_source):
