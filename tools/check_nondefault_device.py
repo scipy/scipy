@@ -171,18 +171,23 @@ class DeviceVisitor(ast.NodeVisitor):
         self.violations.append((node.lineno, node.col_offset, ast.unparse(func)))
 
 
+def check_tree(tree, source):
+    """Return a list of (lineno, col, what) violations for a parsed tree."""
+    visitor = DeviceVisitor(source)
+    visitor.visit(tree)
+    return visitor.violations
+
+
 def check_source(source):
     """Return a list of (lineno, col, what) violations for a source string.
 
-    Exposed for unit testing.
+    Unparseable source is silently ignored. Exposed for unit testing.
     """
     try:
         tree = ast.parse(source)
     except SyntaxError:
         return []
-    visitor = DeviceVisitor(source)
-    visitor.visit(tree)
-    return visitor.violations
+    return check_tree(tree, source)
 
 
 def check_file(path):
@@ -190,7 +195,7 @@ def check_file(path):
     if "xp." not in src:  # not array-API-aware; skip (matches xp. and self._xp.)
         return []
     try:
-        ast.parse(src)
+        tree = ast.parse(src)
     except SyntaxError as exc:
         # Warn rather than silently skip: usually the interpreter is older than
         # the syntax used in the file (e.g. PEP 695 `type` aliases need 3.12+),
@@ -203,7 +208,7 @@ def check_file(path):
             file=sys.stderr,
         )
         return []
-    return check_source(src)
+    return check_tree(tree, src)
 
 
 def iter_py(root, submodule_paths):

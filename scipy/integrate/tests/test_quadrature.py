@@ -118,13 +118,6 @@ class TestNewtonCotes:
 @make_xp_test_case(simpson)
 class TestSimpson:
 
-    def test_device(self, xp, devices):
-        for d in devices:
-            x = xp.linspace(0., 4., 17, device=d)
-            y = x**2
-            assert xp_device(simpson(y, x=x)) == xp_device(x)
-            assert xp_device(simpson(y, dx=0.5)) == xp_device(y)
-
     def test_simpson(self, xp):
         y = xp.arange(17.)
         xp_assert_equal(simpson(y), xp.asarray(128.))
@@ -369,13 +362,6 @@ class TestTrapezoid(CommonTrapezoidSimpsonTests):
     def quadrature_func(self, *args, **kwargs):
         return trapezoid(*args, **kwargs)
 
-    def test_device(self, xp, devices):
-        for d in devices:
-            x = xp.linspace(0., 4., 17, device=d)
-            y = x**2
-            assert xp_device(trapezoid(y, x=x)) == xp_device(x)
-            assert xp_device(trapezoid(y, dx=0.5)) == xp_device(y)
-
     def test_gh21908(self, xp):
         # extended testing for n-dim arrays
         x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
@@ -585,19 +571,24 @@ def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1
     return res
 
 
+@make_xp_test_case(simpson, trapezoid, cumulative_simpson)
+@pytest.mark.parametrize('func', [simpson, trapezoid, cumulative_simpson])
+def test_quadrature_device(func, xp, devices):
+    # Input array device should propagate to the output; see gh-22680.
+    for d in devices:
+        x = xp.linspace(0., 4., 17, device=d)
+        y = x**2
+        assert xp_device(func(y, x=x)) == xp_device(x)
+        assert xp_device(func(y, dx=0.5)) == xp_device(y)
+        if func is cumulative_simpson:
+            res = func(y, dx=0.5, initial=0.0)
+            assert xp_device(res) == xp_device(y)
+
+
 @make_xp_test_case(cumulative_simpson)
 class TestCumulativeSimpson:
     x0 = np.arange(4)
     y0 = x0**2
-
-    def test_device(self, xp, devices):
-        for d in devices:
-            x = xp.linspace(0., 4., 17, device=d)
-            y = x**2
-            assert xp_device(cumulative_simpson(y, x=x)) == xp_device(x)
-            assert xp_device(cumulative_simpson(y, dx=0.5)) == xp_device(y)
-            res = cumulative_simpson(y, dx=0.5, initial=0.0)
-            assert xp_device(res) == xp_device(y)
 
     @pytest.mark.parametrize('use_dx', (False, True))
     @pytest.mark.parametrize('use_initial', (False, True))

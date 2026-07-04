@@ -1329,11 +1329,12 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     A = xp.prod(b - a)
     dA = A / n_points
 
-    estimates = xp.zeros(n_estimates, dtype=a.dtype, device=xp_device(a))
+    device = xp_device(a)
+    estimates = xp.zeros(n_estimates, dtype=a.dtype, device=device)
     rngs = _rng_spawn(qrng.rng, n_estimates)
     for i in range(n_estimates):
         # Generate integral estimate
-        sample = xp.asarray(qrng.random(n_points), dtype=a.dtype, device=xp_device(a))
+        sample = xp.asarray(qrng.random(n_points), dtype=a.dtype, device=device)
         # The rationale for transposing is that this allows users to easily
         # unpack `x` into separate variables, if desired. This is consistent
         # with the `xx` array passed into the `scipy.integrate.nquad` `func`.

@@ -536,9 +536,10 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     # Insert 0 and/or 1 at the ends of cutoff so that the length of cutoff
     # is even, and each pair in cutoff corresponds to passband.
-    cutoff = xp.concat((xp.zeros(int(pass_zero), device=xp_device(cutoff)),
+    device = xp_device(cutoff)
+    cutoff = xp.concat((xp.zeros(int(pass_zero), device=device),
                         cutoff,
-                        xp.ones(int(pass_nyquist), device=xp_device(cutoff))))
+                        xp.ones(int(pass_nyquist), device=device)))
 
 
     # `bands` is a 2-D array; each row gives the left and right edges of
@@ -547,7 +548,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     # Build up the coefficients.
     alpha = 0.5 * (numtaps - 1)
-    m = xp.arange(0, numtaps, dtype=cutoff.dtype, device=xp_device(cutoff)) - alpha
+    m = xp.arange(0, numtaps, dtype=cutoff.dtype, device=device) - alpha
     h = 0
     for j in range(bands.shape[0]):
         left, right = bands[j, 0], bands[j, 1]
@@ -555,8 +556,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         h -= left * xpx.sinc(left * m, xp=xp)
 
     # Get and apply the window function.
-    win = get_window(window, numtaps, fftbins=False, xp=xp,
-                     device=xp_device(cutoff))
+    win = get_window(window, numtaps, fftbins=False, xp=xp, device=device)
     h *= win
 
     # Now handle scaling if desired.
