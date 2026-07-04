@@ -498,13 +498,13 @@ def _krandinit(data, k, rng, xp):
     if data.ndim == 1:
         _cov = xpx.cov(data, xp=xp)
         x = rng.standard_normal(size=k)
-        x = xp.asarray(x)
+        x = xp.asarray(x, device=xp_device(data))
         x *= xp.sqrt(_cov)
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
         _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
         x = rng.standard_normal(size=(k, xp_size(s)))
-        x = xp.asarray(x)
+        x = xp.asarray(x, device=xp_device(data))
         sVh = s[:, None] * vh / xp.sqrt(
             data.shape[0] - xp.asarray(1., device=xp_device(data)))
         x = x @ sVh
@@ -514,7 +514,7 @@ def _krandinit(data, k, rng, xp):
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
         x = rng.standard_normal(size=(k, xp_size(mu)))
-        x = xp.asarray(x)
+        x = xp.asarray(x, device=xp_device(data))
         x = x @ xp.linalg.cholesky(_cov).T
 
     x += mu
