@@ -820,6 +820,15 @@ class TestFreqz:
             w, h = freqz(b, worN=16)
             assert xp_device(w) == xp_device(b)
             assert xp_device(h) == xp_device(b)
+            # scalar `b` with only `a` an array: propagate `a`'s device
+            a = xp.asarray([1.0, -0.3], device=d)
+            w, h = freqz(1.0, a, worN=16)
+            assert xp_device(w) == xp_device(a)
+            assert xp_device(h) == xp_device(a)
+            # both arrays on the same device
+            w, h = freqz(b, a, worN=16)
+            assert xp_device(w) == xp_device(b)
+            assert xp_device(h) == xp_device(b)
 
     def test_basic(self, xp):
         w, h = freqz(xp.asarray([1.0]), worN=8)

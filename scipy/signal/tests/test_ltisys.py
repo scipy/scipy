@@ -977,6 +977,12 @@ class Test_abcd_normalize:
             A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
             for out in (A, B, C, D):
                 assert xp_device(out) == xp_device(A_)
+            # scalar input alongside device arrays: all outputs must share
+            # the device of the array inputs (gh-22680)
+            A, B, C, D = abcd_normalize(A=1.0, B=xp.asarray([[0.5]], device=d),
+                                        D=2.5)
+            for out in (A, B, C, D):
+                assert xp_device(out) == xp_device(B)
 
     def test_shapes(self):
         A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0)

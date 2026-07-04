@@ -3,7 +3,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case, xp_default_dtype
+    make_xp_test_case, xp_default_dtype, xp_device
 )
 
 import scipy.signal._waveforms as waveforms
@@ -395,6 +395,14 @@ class TestSawtoothWaveform:
             xp.asarray(1, dtype=t_dtype), width=xp.asarray(1, dtype=width_dtype)
         )
         assert waveform.dtype == xp.result_type(t_dtype, width_dtype)
+
+    def test_device(self, xp, devices):
+        # the scalar `width` default must ride along on `t`'s device
+        # (via the device inference in `xp_promote`; see gh-22680)
+        for d in devices:
+            t = xp.linspace(0., 2*xp.pi, 10, device=d)
+            assert xp_device(sawtooth(t)) == xp_device(t)
+            assert xp_device(sawtooth(t, width=0.4)) == xp_device(t)
 
     def test_periodic(self, xp):
         t = xp.linspace(0, 2*xp.pi, 100, dtype=xp.float64)

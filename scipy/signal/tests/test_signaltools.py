@@ -1412,6 +1412,15 @@ class TestResample:
             assert xp_device(y) == xp_device(x)
             assert xp_device(new_t) == xp_device(x)
 
+    @make_xp_test_case(signal.resample)
+    def test_t_dtype(self, xp):
+        # the returned time vector follows `t`'s precision
+        for dtype in (xp.float32, xp.float64):
+            x = xp.arange(16, dtype=dtype)
+            t = xp.arange(16, dtype=dtype)
+            _, new_t = signal.resample(x, 32, t=t)
+            assert new_t.dtype == dtype
+
     @pytest.mark.parametrize('window', (None, 'hamming'))
     @pytest.mark.parametrize('N', (20, 19))
     @pytest.mark.parametrize('num', (100, 101, 10, 11))

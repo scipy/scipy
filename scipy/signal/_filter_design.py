@@ -499,10 +499,16 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     """
     xp = array_namespace(b, a)
 
-    # `a` is often the scalar default 1; place it on `b`'s device so a
-    # non-default-device `b` propagates through the division below.
-    b = xp.asarray(b)
-    a = xp.asarray(a, device=xp_device(b))
+    # `b` or `a` may be python scalars or lists (e.g. the common default
+    # ``a=1``), which would land on the default device; create those on the
+    # device of the array input instead, so that a non-default-device input
+    # propagates through the division below. Actual array inputs keep their
+    # own device (mixing devices raises, as it should).
+    device = next((xp_device(arg) for arg in (b, a) if hasattr(arg, "device")),
+                  None)
+    b, a = (xp.asarray(arg) if hasattr(arg, "device")
+            else xp.asarray(arg, device=device)
+            for arg in (b, a))
     if xp.isdtype(a.dtype, 'integral'):
         a = xp.astype(a, xp_default_dtype(xp))
     res_dtype = xp.result_type(b, a)

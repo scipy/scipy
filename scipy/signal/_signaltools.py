@@ -27,7 +27,7 @@ from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
-    xp_promote, xp_swapaxes, xp_device,)
+    xp_promote, xp_result_type, xp_swapaxes, xp_device,)
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
@@ -3908,7 +3908,12 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if x_r.ndim > 1:  # moving active axis back to original position:
         x_r = xp.moveaxis(x_r, -1, axis)
     if t is not None:
-        new_t = xp.arange(num, dtype=xp.float64, device=xp_device(x))
+        # `new_t` must be floating-point for array API promotion with the
+        # python-float `s_fac`; follow `t`'s precision (or the default float
+        # dtype when `t` is a python sequence).
+        new_t_dtype = (xp_result_type(t, force_floating=True, xp=xp)
+                       if hasattr(t, "dtype") else xp_default_dtype(xp))
+        new_t = xp.arange(num, dtype=new_t_dtype, device=xp_device(x))
         return x_r, t[0] + (t[1] - t[0]) * s_fac * new_t
     return x_r
 

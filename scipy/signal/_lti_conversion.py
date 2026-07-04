@@ -198,14 +198,13 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
         raise ValueError("Dimension q is undefined for parameters C = D = None!")
 
     xp = array_namespace(A, B, C, D)
+    # `xp_promote` converts scalar inputs on the device of the first array
+    # argument, so all (promoted) non-None inputs share a common device;
+    # propagate it to the zero matrices created below. At least one of
+    # A, B, C is not None per the checks above.
     A, B, C, D = xp_promote(A, B, C, D, xp=xp, force_floating=True)
     dtype = xp_result_type(A, B, C, D, xp=xp)
-
-    # propagate the device of whichever input is provided as an array
-    # (``xp_promote`` leaves scalar inputs as Python scalars, which carry
-    # no device)
-    _arrays = [M_ for M_ in (A, B, C, D) if hasattr(M_, "device")]
-    device = xp_device(_arrays[0]) if _arrays else None
+    device = xp_device(next(M_ for M_ in (A, B, C, D) if M_ is not None))
 
     # convert inputs into 2d arrays (zero-size 2d array if None):
     A, B, C, D = (
