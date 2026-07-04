@@ -14,7 +14,7 @@ from warnings import warn
 
 import numpy as np
 from scipy._lib._util import wrapped_inspect_signature
-from scipy._lib._array_api import array_namespace, xp_copy
+from scipy._lib._array_api import array_namespace
 
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
