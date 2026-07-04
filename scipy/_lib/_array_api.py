@@ -243,7 +243,8 @@ def _strict_check(actual, desired, xp, *,
         assert ((xp.isscalar(actual) and xp.isscalar(desired))
                 or (not xp.isscalar(actual) and not xp.isscalar(desired))), _msg
 
-    actual = xp.asarray(actual)
+    if xp.isscalar(actual):
+        actual = xp.asarray(actual)
     desired = xp.asarray(desired)
 
     if check_dtype:
