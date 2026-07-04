@@ -413,7 +413,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp, device=xp_device(x))
+                     xp)
 
 
 def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter):
@@ -708,5 +708,4 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
                      maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval,
                      check_termination, post_termination_check,
-                     customize_result, res_work_pairs, xp,
-                     device=xp_device(xl0))
+                     customize_result, res_work_pairs, xp)

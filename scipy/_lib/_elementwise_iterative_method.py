@@ -15,7 +15,7 @@
 import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
-from ._array_api import array_namespace, xp_size, xp_result_type
+from ._array_api import array_namespace, xp_size, xp_result_type, xp_device
 import scipy._external.array_api_extra as xpx
 
 _ESIGNERR = -1
@@ -138,15 +138,16 @@ def _initialize(func, xs, args, kwargs=None,
 
 def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
           post_func_eval, check_termination, post_termination_check,
-          customize_result, res_work_pairs, xp, preserve_shape=False,
-          device=None):
+          customize_result, res_work_pairs, xp, preserve_shape=False):
     """Main loop of a vectorized scalar optimization algorithm
 
     Parameters
     ----------
     work : _RichResult
         All variables that need to be retained between iterations. Must
-        contain attributes `nit`, `nfev`, and `success`. All arrays are
+        contain attributes `nit`, `nfev`, `success`, and `status` (an array
+        on the device of the input arrays, which anchors the device of the
+        result and bookkeeping arrays). All arrays are
         subject to being "compressed" if `preserve_shape is False`; nest
         arrays that should not be compressed inside another object (e.g.
         `dict` or `_RichResult`).
@@ -193,11 +194,6 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     preserve_shape : bool, default: False
         Whether to compress the attributes of `work` (to avoid unnecessary
         computation on elements that have already converged).
-    device : device, optional
-        The device on which to place the result and bookkeeping arrays, so that
-        it matches the device of the input arrays. Defaults to the backend's
-        default device.
-
     Returns
     -------
     res : _RichResult
@@ -219,7 +215,11 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
 
     cb_terminate = False
 
-    # Initialize the result object and active element index array
+    # Initialize the result object and active element index array on the same
+    # device as the caller's arrays. Every caller stores `work.status` as an
+    # array on the device of its input arrays, so it anchors the device here;
+    # this way, callers cannot forget to propagate the device (see gh-22680).
+    device = xp_device(work.status)
     n_elements = math.prod(shape)
     active = xp.arange(n_elements, device=device)  # in-progress element indices
     res_dict = {i: xp.zeros(n_elements, dtype=dtype, device=device)

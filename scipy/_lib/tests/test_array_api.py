@@ -369,3 +369,36 @@ def test_xp_result_type_force_floating(x, y, xp):
 
     dtype_res = xp_result_type(x, y, force_floating=True, xp=xp)
     assert dtype_res == dtype_ref
+
+
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
+def test_xp_promote_device(xp, devices):
+    # Scalars and array-like iterables promoted alongside an array are
+    # created on that array's device; array arguments keep their own device.
+    # See gh-22680.
+    from scipy._lib._array_api import xp_promote, xp_device
+
+    for d in devices:
+        x = xp.asarray([1., 2., 3.], device=d)
+
+        # scalar rides along on the array's device
+        x2, scalar = xp_promote(x, 1.5, xp=xp)
+        assert xp_device(x2) == xp_device(x)
+        assert xp_device(scalar) == xp_device(x)
+
+        # so does a list, and broadcasting preserves the device
+        x2, lst = xp_promote(x, [1., 2., 3.], broadcast=True, xp=xp)
+        assert xp_device(lst) == xp_device(x)
+
+        # order does not matter: device comes from the (first) array argument
+        scalar, x2 = xp_promote(2, x, force_floating=True, xp=xp)
+        assert xp_device(scalar) == xp_device(x)
+
+        # None passes through; remaining args still promoted on device
+        x2, none, scalar = xp_promote(x, None, 0.5, xp=xp)
+        assert none is None
+        assert xp_device(scalar) == xp_device(x)
+
+        # an array argument keeps its own device
+        x2 = xp_promote(x, force_floating=True, xp=xp)
+        assert xp_device(x2) == xp_device(x)

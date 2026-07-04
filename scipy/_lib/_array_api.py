@@ -82,6 +82,7 @@ def _asarray(
         xp: ModuleType | None = None,
         check_finite: bool = False,
         subok: bool = False,
+        device: Any = None,
     ) -> Array:
     """SciPy-specific replacement for `np.asarray` with `order`, `check_finite`, and
     `subok`.
@@ -96,6 +97,9 @@ def _asarray(
 
     `subok` is included to allow this function to preserve the behaviour of
     `np.asanyarray` for NumPy based inputs.
+
+    `device` places the result on the given device. It is ignored for NumPy
+    based inputs, where the only device is the (default) CPU.
     """
     if xp is None:
         xp = array_namespace(array)
@@ -109,12 +113,12 @@ def _asarray(
             array = np.asarray(array, order=order, dtype=dtype)
     else:
         try:
-            array = xp.asarray(array, dtype=dtype, copy=copy)
+            array = xp.asarray(array, dtype=dtype, copy=copy, device=device)
         except TypeError:
             # `xp.asarray(3)` is a throwaway used only to obtain the coerced
             # namespace; its device is irrelevant.
             coerced_xp = array_namespace(xp.asarray(3))  # skip device check
-            array = coerced_xp.asarray(array, dtype=dtype, copy=copy)
+            array = coerced_xp.asarray(array, dtype=dtype, copy=copy, device=device)
 
     if check_finite:
         _check_finite(array, xp)
@@ -553,6 +557,11 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     to the namespace's arrays before result type calculation. Consequently, the
     result dtype may be different when an argument is `1.` vs `[1.]`.
 
+    Scalars and array-like iterables are converted onto the device of the first
+    array argument (if any), so that e.g. a scalar default promoted alongside a
+    non-default-device array does not land on the default device (see gh-22680).
+    Array arguments always keep their own device.
+
     See Also
     --------
     xp_result_type
@@ -560,16 +569,23 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     if not args:
         return args
 
+    # Infer the common device from the array arguments; `devices[i]` is the
+    # device to create argument `i` on (None to keep an array's own device).
+    device = next((xp_device(arg) for arg in args if hasattr(arg, "device")), None)
+    devices = [None if hasattr(arg, "device") else device for arg in args]
+
     # prevent double conversion of iterable to array
     # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
     # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
-    args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
-            else arg) for arg in args]
+    args = [(_asarray(arg, subok=True, xp=xp, device=d)
+             if is_torch_array(arg) or np.iterable(arg)
+             else arg) for arg, d in zip(args, devices)]
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
-    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp) if arg is not None else arg)
-            for arg in args]
+    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp, device=d)
+             if arg is not None else arg)
+            for arg, d in zip(args, devices)]
 
     if not broadcast:
         return args[0] if len(args)==1 else tuple(args)

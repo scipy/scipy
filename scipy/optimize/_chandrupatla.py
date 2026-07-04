@@ -2,7 +2,7 @@ import math
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import xp_copy, xp_device
+from scipy._lib._array_api import xp_copy
 
 
 def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
@@ -238,7 +238,7 @@ def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp=xp, device=xp_device(x1))
+                     xp=xp)
 
 
 def _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
@@ -548,4 +548,4 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp=xp, device=xp_device(x1))
+                     xp=xp)

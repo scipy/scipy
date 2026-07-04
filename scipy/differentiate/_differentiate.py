@@ -598,7 +598,7 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp, preserve_shape, device=xp_device(x))
+                     xp, preserve_shape)
 
 
 def _derivative_weights(work, n, xp):

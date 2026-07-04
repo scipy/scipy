@@ -493,8 +493,7 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         res = eim._loop(work, callback, shape, maxiter, f, args, dtype, pre_func_eval,
                         post_func_eval, check_termination, post_termination_check,
-                        customize_result, res_work_pairs, xp, preserve_shape,
-                        device=xp_device(a))
+                        customize_result, res_work_pairs, xp, preserve_shape)
     return res
 
 
