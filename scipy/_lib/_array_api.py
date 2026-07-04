@@ -56,7 +56,8 @@ __all__ = [
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
+    'xp_compat_namespace', 'xp_copy', 'xp_default_int_dtype', 'xp_device',
+    'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
     'xp_result_type', 'xp_promote',
     'make_xp_test_case', 'make_xp_pytest_marks', 'make_xp_pytest_param',
@@ -635,6 +636,30 @@ def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
         arr = xp.astype(arr, xp.complex128)
 
     return arr
+
+
+def xp_compat_namespace(xp: ModuleType | None) -> ModuleType:
+    """Return the array-api-compat(ible) namespace corresponding to `xp`.
+
+    A user-provided `xp` may be a "raw" namespace (e.g. bare `numpy` or
+    `torch`) that lacks features SciPy relies on (such as the `device`
+    keyword of creation functions on NumPy 1.x / CuPy 13.x); resolve it
+    through `array_namespace` with a throwaway array. `None` maps to the
+    compat NumPy namespace.
+    """
+    if xp is None:
+        return np_compat
+    # the probe array is a throwaway used only to resolve the namespace;
+    # its device is irrelevant
+    return array_namespace(xp.empty(0))  # skip device check
+
+
+def xp_default_int_dtype(xp):
+    """Query the namespace-dependent default integer dtype."""
+    # The default integer dtype is backend- and platform-dependent
+    # (e.g. int32 on JAX unless x64 is enabled), so probe it with a
+    # throwaway scalar conversion; the probe's device is irrelevant.
+    return xp.asarray(1).dtype  # skip device check
 
 
 def xp_default_dtype(xp):

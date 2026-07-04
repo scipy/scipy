@@ -2,7 +2,8 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
-                                   xp_capabilities, xp_copy, xp_device, xp_size)
+                                   xp_capabilities, xp_copy,
+                                   xp_default_int_dtype, xp_device, xp_size)
 from scipy._lib._util import (check_random_state, rng_integers,
                               _transition_to_rng)
 from scipy._lib.deprecation import _deprecated
@@ -464,7 +465,7 @@ def _kpoints(data, k, rng, xp):
     """
     idx = rng.choice(data.shape[0], size=int(k), replace=False)
     # convert to array with default integer dtype (avoids numpy#25607)
-    int_dtype = xp.asarray([1]).dtype  # skip device check
+    int_dtype = xp_default_int_dtype(xp)
     idx = xp.asarray(idx, dtype=int_dtype, device=xp_device(data))
     return xp.take(data, idx, axis=0)
 

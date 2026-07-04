@@ -3,7 +3,7 @@ import itertools
 
 from functools import cached_property
 
-from scipy._lib._array_api import array_namespace, np_compat
+from scipy._lib._array_api import xp_compat_namespace
 
 from scipy.integrate._rules import NestedFixedRule
 
@@ -68,10 +68,7 @@ class GenzMalikCubature(NestedFixedRule):
         self.degree = degree
         self.lower_degree = lower_degree
 
-        if xp is None:
-            xp = np_compat
-
-        self.xp = array_namespace(xp.empty(0))  # skip device check
+        self.xp = xp_compat_namespace(xp)
 
     @cached_property
     def nodes_and_weights(self):
