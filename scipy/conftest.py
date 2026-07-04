@@ -190,7 +190,7 @@ with warnings.catch_warnings():
     _array_api_backends = pytest.mark.array_api_backends
     _thread_unsafe = pytest.mark.thread_unsafe
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
-                     'dask.array'}
+                     'dask.array', 'array_api_strict_nondefault_device'}
 xp_available_backends = [
     pytest.param(np, id='numpy', marks=_array_api_backends)
 ]
@@ -204,6 +204,66 @@ if SCIPY_ARRAY_API:
         xp_available_backends.append(
             pytest.param(array_api_strict, id='array_api_strict',
                          marks=_array_api_backends))
+
+
+        class ArrayAPIStrictNonDefaultDevice:
+            device =  array_api_strict.Device("device1")
+            __name__ = "array_api_strict_nondefault_device"
+            def asarray(self, obj, /, *, dtype=None, copy=None):
+                return array_api_strict.asarray(obj, dtype=dtype, copy=copy, device=self.device)
+
+            def arange(self, start, /, stop=None, step=1, *, dtype=None):
+                return array_api_strict.arange(start, stop, step, dtype=dtype,
+                                            device=self.device)
+
+            def empty(self, shape, /, *, dtype=None):
+                return array_api_strict.empty(shape, dtype=dtype, device=self.device)
+
+            def empty_like(self, x, /, *, dtype=None):
+                return array_api_strict.empty_like(x, dtype=dtype, device=self.device)
+
+            def eye(self, n_rows, n_cols=None, /, *, k=0, dtype=None):
+                return array_api_strict.eye(n_rows, n_cols, k=k, dtype=dtype,
+                                            device=self.device)
+
+            def full(self, shape, fill_value, *, dtype=None):
+                return array_api_strict.full(shape, fill_value, dtype=dtype, device=self.device)
+
+            def full_like(self, x, /, fill_value, *, dtype=None):
+                return array_api_strict.full_like(x, fill_value, dtype=dtype,
+                                                device=self.device)
+
+            def linspace(self, start, stop, /, num, *, dtype=None, endpoint=True):
+                return array_api_strict.linspace(start, stop, num, dtype=dtype,
+                                                endpoint=endpoint, device=self.device)
+
+            def ones(self, shape, *, dtype=None):
+                return array_api_strict.ones(shape, dtype=dtype, device=self.device)
+
+            def ones_like(self, x, /, *, dtype=None):
+                return array_api_strict.ones_like(x, dtype=dtype, device=self.device)
+
+            def zeros(self, shape, *, dtype=None):
+                return array_api_strict.zeros(shape, dtype=dtype, device=self.device)
+
+            def zeros_like(self, x, /, *, dtype=None):
+                return array_api_strict.zeros_like(x, dtype=dtype, device=self.device)
+
+            def __getattr__(self, name):
+                return getattr(array_api_strict, name)
+
+            def __eq__(self, value):
+                return value is array_api_strict
+
+            def __hash__(self):
+                return hash(array_api_strict)
+
+        xp_available_backends.append(
+            pytest.param(ArrayAPIStrictNonDefaultDevice(),
+                         id='array_api_strict_nondefault_device',
+                         marks=_array_api_backends)
+        )
+        xp_skip_cpu_only_backends.add('array_api_strict_nondefault_device')
         if version.parse(array_api_strict.__version__) < version.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
@@ -315,56 +375,6 @@ if SCIPY_ARRAY_API:
             ]
 
 
-class ArrayAPIStrictNonDefaultDevice:
-    device =  array_api_strict.Device("device1")
-    def asarray(self, obj, /, *, dtype=None, copy=None):
-        return array_api_strict.asarray(obj, dtype=dtype, copy=copy, device=self.device)
-
-    def arange(self, start, /, stop=None, step=1, *, dtype=None):
-        return array_api_strict.arange(start, stop, step, dtype=dtype,
-                                       device=self.device)
-
-    def empty(self, shape, /, *, dtype=None):
-        return array_api_strict.empty(shape, dtype=dtype, device=self.device)
-
-    def empty_like(self, x, /, *, dtype=None):
-        return array_api_strict.empty_like(x, dtype=dtype, device=self.device)
-
-    def eye(self, n_rows, n_cols=None, /, *, k=0, dtype=None):
-        return array_api_strict.eye(n_rows, n_cols, k=k, dtype=dtype,
-                                    device=self.device)
-
-    def full(self, shape, fill_value, *, dtype=None):
-        return array_api_strict.full(shape, fill_value, dtype=dtype, device=self.device)
-
-    def full_like(self, x, /, fill_value, *, dtype=None):
-        return array_api_strict.full_like(x, fill_value, dtype=dtype,
-                                          device=self.device)
-
-    def linspace(self, start, stop, /, num, *, dtype=None, endpoint=True):
-        return array_api_strict.linspace(start, stop, num, dtype=dtype,
-                                         endpoint=endpoint, device=self.device)
-
-    def ones(self, shape, *, dtype=None):
-        return array_api_strict.ones(shape, dtype=dtype, device=self.device)
-
-    def ones_like(self, x, /, *, dtype=None):
-        return array_api_strict.ones_like(x, dtype=dtype, device=self.device)
-
-    def zeros(self, shape, *, dtype=None):
-        return array_api_strict.zeros(shape, dtype=dtype, device=self.device)
-
-    def zeros_like(self, x, /, *, dtype=None):
-        return array_api_strict.zeros_like(x, dtype=dtype, device=self.device)
-
-    def __getattr__(self, name):
-        return getattr(array_api_strict, name)
-
-    def __eq__(self, value):
-        return value is array_api_strict
-
-    def __hash__(self):
-        return hash(array_api_strict)
 
 
 @pytest.fixture(params=xp_available_backends)
@@ -402,10 +412,8 @@ def xp(request):
 
     xp = request.param
     # Potentially wrap namespace with array_api_compat
-    xp = array_namespace(xp.empty(0))
-
-    if xp is array_api_strict:
-        xp = ArrayAPIStrictNonDefaultDevice()
+    if not isinstance(xp, ArrayAPIStrictNonDefaultDevice):
+        xp = array_namespace(xp.empty(0))
 
     if SCIPY_ARRAY_API:
         # If xp==jax.numpy, wrap tested functions in jax.jit

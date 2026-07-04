@@ -344,7 +344,7 @@ def leslie(f, s):
         raise ValueError("The length of s must be at least 1.")
 
     n = f.shape[-1]
-    a = xp.zeros((n, n), dtype=f.dtype, device=f.device)
+    a = xp.zeros((n, n), dtype=f.dtype)
     a = xpx.at(a)[0, :].set(f)
     a += xpx.create_diagonal(s, offset=-1, xp=xp)
     return a
