@@ -210,7 +210,8 @@ if SCIPY_ARRAY_API:
             device =  array_api_strict.Device("device1")
             __name__ = "array_api_strict_nondefault_device"
             def asarray(self, obj, /, *, dtype=None, copy=None):
-                return array_api_strict.asarray(obj, dtype=dtype, copy=copy, device=self.device)
+                return array_api_strict.asarray(obj, dtype=dtype, copy=copy,
+                                                device=self.device)
 
             def arange(self, start, /, stop=None, step=1, *, dtype=None):
                 return array_api_strict.arange(start, stop, step, dtype=dtype,
@@ -227,7 +228,8 @@ if SCIPY_ARRAY_API:
                                             device=self.device)
 
             def full(self, shape, fill_value, *, dtype=None):
-                return array_api_strict.full(shape, fill_value, dtype=dtype, device=self.device)
+                return array_api_strict.full(shape, fill_value, dtype=dtype,
+                                             device=self.device)
 
             def full_like(self, x, /, fill_value, *, dtype=None):
                 return array_api_strict.full_like(x, fill_value, dtype=dtype,
@@ -412,7 +414,7 @@ def xp(request):
 
     xp = request.param
     # Potentially wrap namespace with array_api_compat
-    if not isinstance(xp, ArrayAPIStrictNonDefaultDevice):
+    if xp.__name__ != "array_api_strict_nondefault_device":
         xp = array_namespace(xp.empty(0))
 
     if SCIPY_ARRAY_API:

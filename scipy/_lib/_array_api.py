@@ -258,7 +258,8 @@ def _strict_check(actual, desired, xp, *,
         assert actual.shape == desired.shape, _msg
 
     if check_device:
-        _msg = f"Devices do not match.\nActual: {actual.device}\nDesired: {desired.device}"
+        _msg = (f"Devices do not match.\nActual: {actual.device}\n"
+                "Desired: {desired.device}")
         assert actual.device == desired.device, _msg
 
     desired = xp.broadcast_to(desired, actual.shape)
