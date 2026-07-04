@@ -8421,6 +8421,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto', *,
 def tiecorrect(rankvals):
     """Tie correction factor for Mann-Whitney U and Kruskal-Wallis H tests.
 
+    .. deprecated:: 2.0.0
+        This function is deprecated and will be removed in SciPy 2.2.0.
+
     Parameters
     ----------
     rankvals : array_like
@@ -8456,7 +8459,7 @@ def tiecorrect(rankvals):
 
     """
     _warn_skips = (os.path.dirname(__file__),)
-    msg = "`tiecorrect` is deprecated and will be removed in SciPy 1.21.0."
+    msg = "`tiecorrect` is deprecated and will be removed in SciPy 2.2.0."
     warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
 
     arr = np.sort(rankvals)
