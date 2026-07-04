@@ -6,8 +6,7 @@ Under the array API standard, array-*creation* functions (``xp.zeros``,
 the library's *default* device when ``device=`` is not passed.  If that array is
 later combined with an input array living on a *non-default* device, the
 operation raises a device-mismatch error.  The fix is to propagate the input's
-device: ``xp.zeros(..., device=xp_device(x))`` (see ``special/_logsumexp.py`` and
-``signal/_savitzky_golay.py`` for the reference pattern, and scipy/scipy#22680).
+device: ``xp.zeros(..., device=xp_device(x))``.
 
 This checker flags a call when ALL of the following hold:
 
@@ -18,23 +17,31 @@ This checker flags a call when ALL of the following hold:
    OR ``<ns>.fft.rfftfreq`` / ``<ns>.fft.fftfreq``, OR ``<ns>.asarray(<literal>)``
    where the first positional argument is a scalar / list / tuple literal (from
    which no device can be inferred).
-2. No ``device=`` keyword is present (and no ``**kwargs`` splat, which might
-   supply one -- treated leniently to avoid false positives on wrappers).
+2. No ``device=`` keyword is present (and no ``**kwargs``, which might supply
+   one -- treated leniently to avoid false positives on wrappers).
 3. The line does not carry the ``# skip device check`` pragma.
 
 Exempt: ``xp.asarray(<array-or-expr>)`` and ``xp.<...>_like(<array>)`` infer the
 device from their first argument, so they are fine.
 
-The check is a *necessary* condition (a ``device=`` is present), not a
-*sufficient* one (that it is the *right* device and propagates end-to-end); pair
-it with the runtime ``devices``-fixture tests in the test suite.
+The check is a necessary condition (a ``device=`` is present), not a
+sufficient one (that it is actually the right device and propagates end-to-end).
+Runtime testing is hence useful too, this is (at the time of writing) still in the
+works, with a fixture-based test (see ``devices`` in ``conftest.py``).
 
 The namespace is recognised as the bare name ``xp`` or as an attribute ending in
 ``xp``/``_xp`` (``self._xp``, ``self.xp``).  Other aliases (e.g. a bare ``mxp``
 for a masked-array namespace) are not recognised.
 
+See scipy/scipy#22680 for the canonical issue that motivated the creation of this
+linter.
+
 Usage::
 
+    # Integrated as part of the default linting task in spin:
+    spin lint
+
+    # Direct invocation of this checker:
     python tools/check_nondefault_device.py            # check the scipy/ tree
     python tools/check_nondefault_device.py scipy/stats/_stats_py.py  # subset
 
@@ -122,18 +129,18 @@ class DeviceVisitor(ast.NodeVisitor):
         first = node.args[0] if node.args else None
 
         # xp.<pure creation>(...)
-        for cand in PURE_CREATION:
-            if _is_ns_attr(func, cand):
-                name = cand
+        for candidate in PURE_CREATION:
+            if _is_ns_attr(func, candidate):
+                name = candidate
                 break
 
         # xp.<...>_like(<reference array>) infers the device -> OK
         if name is None:
-            for cand in LIKE:
-                if _is_ns_attr(func, cand):
+            for candidate in LIKE:
+                if _is_ns_attr(func, candidate):
                     if first is not None and not _is_literal(first):
                         return
-                    name = cand
+                    name = candidate
                     break
 
         # xp.fft.rfftfreq / fftfreq
