@@ -19,8 +19,8 @@ from scipy.signal import _polyutils as _pu
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
-    xp_result_type, xp_device,
+    _has_own_device, array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax,
+    xp_float_to_complex, xp_result_type, xp_device,
 )
 from scipy._external.array_api_compat import numpy as np_compat
 
@@ -318,7 +318,7 @@ def freqs_zpk(z, p, k, worN=200):
 
     # NB: k is documented to be a scalar; for backwards compat we keep allowing it
     # to be a size-1 array, but it does not influence the namespace calculation.
-    k = xp.asarray(k, dtype=xp_default_dtype(xp))
+    k = xp.asarray(k, dtype=xp_default_dtype(xp), device=xp_device(z))
     if xp_size(k) > 1:
         raise ValueError('k must be a single scalar gain')
 
@@ -504,9 +504,9 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     # device of the array input instead, so that a non-default-device input
     # propagates through the division below. Actual array inputs keep their
     # own device (mixing devices raises, as it should).
-    device = next((xp_device(arg) for arg in (b, a) if hasattr(arg, "device")),
+    device = next((xp_device(arg) for arg in (b, a) if _has_own_device(arg)),
                   None)
-    b, a = (xp.asarray(arg) if hasattr(arg, "device")
+    b, a = (xp.asarray(arg) if _has_own_device(arg)
             else xp.asarray(arg, device=device)
             for arg in (b, a))
     if xp.isdtype(a.dtype, 'integral'):
@@ -4197,6 +4197,12 @@ def _pre_warp(wp, ws, analog, *, xp):
 
 
 def _validate_wp_ws(wp, ws, fs, analog, *, xp):
+    # python sequences would land on the default device; create them on
+    # the device of the array argument (if any)
+    device = next((xp_device(arg) for arg in (wp, ws)
+                   if _has_own_device(arg)), None)
+    wp, ws = (arg if _has_own_device(arg)
+              else xp.asarray(arg, device=device) for arg in (wp, ws))
     wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
     ws = xpx.atleast_nd(ws, ndim=1, xp=xp)
     wp, ws = xp_promote(wp, ws, force_floating=True, xp=xp)

@@ -1487,7 +1487,7 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     for indices in _batch_generator(perm_generator, batch=batch):
         # Creating a tensor from a list of numpy.ndarrays is extremely slow...
         indices = np.asarray(indices)
-        indices = xp.asarray(indices)
+        indices = xp.asarray(indices, device=xp_device(data))
 
         # `indices` is 2D: each row is a permutation of the indices.
         # We use it to index `data` along its last axis, which corresponds
@@ -1542,7 +1542,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     null_distribution = []
 
     for indices in batched_perm_generator:
-        indices = xp.asarray(indices)
+        indices = xp.asarray(indices, device=xp_device(data[0]))
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
         # for samples, and the last is for observations. Swap the first two

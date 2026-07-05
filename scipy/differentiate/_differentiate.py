@@ -3,7 +3,8 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import (array_namespace, xp_copy, xp_promote,
+from scipy._lib._array_api import (_has_own_device, array_namespace,
+                                   xp_copy, xp_promote,
                                    xp_capabilities, xp_device)
 import scipy._external.array_api_extra as xpx
 
@@ -42,11 +43,12 @@ def _derivative_iv(f, x, args, kwargs, tolerances, maxiter, order, initial_step,
     if order_int != order or order <= 0:
         raise ValueError('`order` must be a positive integer.')
 
-    # scalar defaults would land on the default device; create them on the
-    # device of `x` instead (array arguments keep their own device)
-    device = xp_device(x) if hasattr(x, "device") else None
+    # scalar (and host NumPy) defaults would land on the default device;
+    # create them on the device of `x` instead (arrays that carry their own
+    # device keep it)
+    device = xp_device(x) if _has_own_device(x) else None
     step_direction, initial_step = (
-        xp.asarray(arg) if hasattr(arg, "device")
+        xp.asarray(arg) if _has_own_device(arg)
         else xp.asarray(arg, device=device)
         for arg in (step_direction, initial_step))
     temp = xp.broadcast_arrays(x, step_direction, initial_step)

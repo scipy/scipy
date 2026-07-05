@@ -4182,7 +4182,8 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # Special case: statistic is NaN when variance is zero
     eps = xp.finfo(standard_errors.dtype).eps
     zero = standard_errors <= xp.abs(eps * means)
-    NaN = xp.asarray(xp.nan, dtype=standard_errors.dtype)
+    NaN = xp.asarray(xp.nan, dtype=standard_errors.dtype,
+                     device=xp_device(standard_errors))
     standard_errors = xp.where(zero, NaN, standard_errors)
 
     # (2) define a weight for each sample
@@ -4200,7 +4201,8 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     if is_marray(xp):
         v = xp.stack(lengths) - 1
     else:
-        v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
+        v = xp.asarray(lengths, dtype=t_stats.dtype,
+                       device=xp_device(t_stats)) - 1
         # align along 0th axis, which corresponds with separate samples
         v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
     a = v - .5
@@ -4218,7 +4220,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
-    df = xp.asarray(len(samples) - 1, dtype=A.dtype)
+    df = xp.asarray(len(samples) - 1, dtype=A.dtype, device=xp_device(A))
     chi2 = _SimpleChi2(df)
     p = _get_pvalue(A, chi2, alternative='greater', symmetric=False, xp=xp)
     return AlexanderGovernResult(A, p)
@@ -8671,7 +8673,8 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     alldata = xp.concat(samples, axis=-1)
     ranked, _, t = _rankdata(alldata, method='average', return_ties=True)
-    counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype)
+    counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype,
+                         device=xp_device(t))
               for sample in samples]
     totaln = sum(counts)
     ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
@@ -8682,7 +8685,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
                for i in range(num_groups))
 
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
-    df = xp.asarray(num_groups - 1, dtype=h.dtype)
+    df = xp.asarray(num_groups - 1, dtype=h.dtype, device=xp_device(h))
     h /= ties
 
     chi2 = _SimpleChi2(df)
@@ -8781,13 +8784,14 @@ def friedmanchisquare(*samples, axis=0):
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
-    count = xp.asarray(_count_nonmasked(samples[0], axis=-1), dtype=ties.dtype)
+    count = xp.asarray(_count_nonmasked(samples[0], axis=-1), dtype=ties.dtype,
+                       device=xp_device(ties))
     c = 1 - ties / (k*(k*k - 1)*count)
 
     ssbn = xp.sum(xp.sum(data, axis=0)**2, axis=-1)
     statistic = (12.0 / (k*count*(k+1)) * ssbn - 3*count*(k+1)) / c
 
-    chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype))
+    chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype, device=xp_device(ties)))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FriedmanchisquareResult(statistic, pvalue)
 

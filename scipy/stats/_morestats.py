@@ -3684,7 +3684,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     V2 = xp.var(a_Ni, axis=-1, correction=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
 
-    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype, device=xp_device(statistic)))
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FlignerResult(statistic, pval)
 

@@ -3868,14 +3868,15 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if window is None: # Determine spectral windowing function:
         W = None
     elif callable(window):
-        W = window(sp_fft.fftfreq(n_x))
+        W = window(sp_fft.fftfreq(n_x, xp=xp, device=xp_device(x)))
     elif hasattr(window, 'shape'): # must be an array object
         if window.shape != (n_x,):
             raise ValueError(f"{window.shape=} != ({n_x},), i.e., window length " +
                              "is not equal to number of frequency bins!")
         W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
-        W = sp_fft.fftshift(get_window(window, n_x, xp=xp))
+        W = sp_fft.fftshift(get_window(window, n_x, xp=xp,
+                                       device=xp_device(x)))
         W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
 
     if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():

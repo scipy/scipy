@@ -259,7 +259,8 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
         if preserve_shape:
             x = xp.reshape(x, (shape + (-1,)))
         f = func(x, *work.args)
-        f = xp.asarray(f, dtype=dtype)
+        # `func` may return a python sequence; convert it on the loop's device
+        f = xp.asarray(f, dtype=dtype, device=device)
         if preserve_shape:
             x = xp.reshape(x, x_shape)
             f = xp.reshape(f, x_shape)
