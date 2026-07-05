@@ -30,9 +30,10 @@ from scipy._lib._array_api import xp_device
 from ._rbfinterp_common import _monomial_powers_impl
 
 
-def _monomial_powers(ndim, degree, xp):
+def _monomial_powers(ndim, degree, xp, device=None):
     out = _monomial_powers_impl(ndim, degree)
-    out = xp.asarray(out)
+    # `out` is a NumPy array; convert onto the data's device (gh-22680)
+    out = xp.asarray(out, device=device)
     if out.shape[0] == 0:
         out = xp.reshape(out, (0, ndim))
     return out

@@ -42,8 +42,13 @@ def _derivative_iv(f, x, args, kwargs, tolerances, maxiter, order, initial_step,
     if order_int != order or order <= 0:
         raise ValueError('`order` must be a positive integer.')
 
-    step_direction = xp.asarray(step_direction)
-    initial_step = xp.asarray(initial_step)
+    # scalar defaults would land on the default device; create them on the
+    # device of `x` instead (array arguments keep their own device)
+    device = xp_device(x) if hasattr(x, "device") else None
+    step_direction, initial_step = (
+        xp.asarray(arg) if hasattr(arg, "device")
+        else xp.asarray(arg, device=device)
+        for arg in (step_direction, initial_step))
     temp = xp.broadcast_arrays(x, step_direction, initial_step)
     x, step_direction, initial_step = temp
 
@@ -717,8 +722,10 @@ def _derivative_weights(work, n, xp):
 
         diff_state.right = weights
 
-    return (xp.asarray(diff_state.central, dtype=work.dtype),
-            xp.asarray(diff_state.right, dtype=work.dtype))
+    # the cached weights are NumPy arrays; convert onto the input's device
+    device = xp_device(work.x)
+    return (xp.asarray(diff_state.central, dtype=work.dtype, device=device),
+            xp.asarray(diff_state.right, dtype=work.dtype, device=device))
 
 
 @xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),

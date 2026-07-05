@@ -766,7 +766,8 @@ def _estimate_error(work, xp):
     Snm2 = work.Sk[..., -2]
     Snm1 = work.Sk[..., -1]
 
-    e1 = xp.asarray(work.eps)[()]
+    # `eps` is a python float; place it on the input's device
+    e1 = xp.asarray(work.eps, device=xp_device(work.Sn))[()]
 
     if work.log:
         log_e1 = xp.log(e1)
@@ -1315,11 +1316,12 @@ def _direct(f, a, b, step, args, constants, xp, inclusive=True):
 def _integral_bound(f, a, b, step, args, constants, xp):
     # Estimate the sum with integral approximation
     dtype, log, _, _, rtol, atol, maxterms = constants
-    log2 = xp.asarray(math.log(2), dtype=dtype)
+    device = xp_device(a)
+    log2 = xp.asarray(math.log(2), dtype=dtype, device=device)
 
     # Get a lower bound on the sum and compute effective absolute tolerance
     lb = tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
-    tol = xp.broadcast_to(xp.asarray(atol), lb.integral.shape)
+    tol = xp.broadcast_to(xp.asarray(atol, device=device), lb.integral.shape)
     if log:
         tol = special.logsumexp(xp.stack((tol, rtol + lb.integral)), axis=0)
     else:
