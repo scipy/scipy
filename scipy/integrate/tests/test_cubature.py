@@ -386,8 +386,6 @@ class TestCubature:
         "gk21",
         "gk15",
     ])
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_pass_str(self, rule_str, xp):
         n = xp.arange(5, dtype=xp.float64)
         a = xp.asarray([0, 0], dtype=xp.float64)
@@ -403,8 +401,6 @@ class TestCubature:
         )
 
     @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_device(self, xp, devices):
         # Input device should propagate to the output; see gh-22680. The
         # fixed-rule nodes/weights are built on the default device and moved onto
@@ -443,8 +439,6 @@ class TestCubature:
             atol=0,
         )
 
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_stops_after_max_subdivisions(self, xp):
         a = xp.asarray([0])
         b = xp.asarray([1])
@@ -476,8 +470,6 @@ class TestCubature:
         with pytest.raises(Exception, match="`a` and `b` must be nonempty"):
             cubature(basic_1d_integrand, a, b, args=(xp,))
 
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_zero_width_limits(self, xp):
         n = xp.arange(5, dtype=xp.float64)
 
@@ -498,8 +490,6 @@ class TestCubature:
             atol=0,
         )
 
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_limits_other_way_around(self, xp):
         n = xp.arange(5, dtype=xp.float64)
 
@@ -520,8 +510,6 @@ class TestCubature:
             atol=0,
         )
 
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_result_dtype_promoted_correctly(self, xp):
         result_dtype = cubature(
             basic_1d_integrand,
@@ -563,7 +551,6 @@ class TestCubature:
     "gk21",
     "genz-malik",
 ])
-@pytest.mark.skip_xp_meta(reason='rule constants are constructed on the default device')
 class TestCubatureProblems:
     """
     Tests that `cubature` gives the correct answer.
@@ -1246,8 +1233,6 @@ class TestRules:
             (2,),
         )
     ])
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_incompatible_dimension_raises_error(self, problem, xp):
         a, b, quadrature, quadrature_args = problem
         rule = quadrature(*quadrature_args, xp=xp)
@@ -1280,8 +1265,6 @@ class TestRulesQuadrature:
         (GaussKronrodQuadrature, (15,)),
         (GaussKronrodQuadrature, (21,)),
     ])
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_base_1d_quadratures_simple(self, rule, rule_args, xp):
         quadrature = rule(*rule_args, xp=xp)
 
@@ -1309,8 +1292,6 @@ class TestRulesQuadrature:
     @pytest.mark.parametrize(("rule_pair", "rule_pair_args"), [
         ((GaussLegendreQuadrature, GaussLegendreQuadrature), (10, 5)),
     ])
-    @pytest.mark.skip_xp_meta(
-        reason='rule constants are constructed on the default device')
     def test_base_1d_quadratures_error_from_difference(self, rule_pair, rule_pair_args,
                                                        xp):
         n = xp.arange(5, dtype=xp.float64)
@@ -1415,4 +1396,4 @@ class BadErrorRule(Rule):
 
     def estimate_error(self, f, a, b, args=()):
         xp = array_namespace(a, b)
-        return xp.asarray(1e6, dtype=xp.float64)
+        return xp.asarray(1e6, dtype=xp.float64, device=xp_device(a))

@@ -236,12 +236,16 @@ class FixedRule(Rule):
         """
         nodes, weights = self.nodes_and_weights
 
+        # The rule is applied in the namespace of the integration limits; the
+        # built-in rules keep their nodes/weights as NumPy (host) data, which
+        # `_cached_cast` converts onto `a`'s namespace and device.
+        xp = array_namespace(a)
         if self.xp is None:
-            self.xp = array_namespace(nodes)
+            self.xp = xp
 
         nodes, weights = _cached_cast(self, "_nw_cache", nodes, weights,
-                                      a.dtype, xp_device(a), self.xp)
-        return _apply_fixed_rule(f, a, b, nodes, weights, args, self.xp)
+                                      a.dtype, xp_device(a), xp)
+        return _apply_fixed_rule(f, a, b, nodes, weights, args, xp)
 
 
 class NestedFixedRule(FixedRule):
@@ -340,17 +344,22 @@ class NestedFixedRule(FixedRule):
         nodes, weights = self.nodes_and_weights
         lower_nodes, lower_weights = self.lower_nodes_and_weights
 
+        xp = array_namespace(a)
         if self.xp is None:
-            self.xp = array_namespace(nodes)
+            self.xp = xp
 
-        error_nodes = self.xp.concat([nodes, lower_nodes], axis=0)
-        error_weights = self.xp.concat([weights, -lower_weights], axis=0)
+        # Combine the constants in their own namespace (NumPy host data for
+        # the built-in rules); `_cached_cast` then converts the result onto
+        # `a`'s namespace and device.
+        nodes_xp = array_namespace(nodes)
+        error_nodes = nodes_xp.concat([nodes, lower_nodes], axis=0)
+        error_weights = nodes_xp.concat([weights, -lower_weights], axis=0)
         error_nodes, error_weights = _cached_cast(
             self, "_error_nw_cache", error_nodes, error_weights,
-            a.dtype, xp_device(a), self.xp)
+            a.dtype, xp_device(a), xp)
 
-        return self.xp.abs(
-            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, self.xp)
+        return xp.abs(
+            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, xp)
         )
 
 
@@ -484,12 +493,12 @@ def _cached_cast(rule, attr, nodes, weights, dtype, device, xp):
     # cubature loop does not re-cast (or re-transfer, for non-default devices)
     # them for every subregion; see gh-22680.
     cache = getattr(rule, attr, None)
-    if cache is None or cache[0] != dtype or cache[1] != device:
+    if cache is None or cache[:3] != (xp, dtype, device):
         nodes = xp.asarray(nodes, dtype=dtype, device=device)
         weights = xp.asarray(weights, dtype=dtype, device=device)
-        cache = (dtype, device, nodes, weights)
+        cache = (xp, dtype, device, nodes, weights)
         setattr(rule, attr, cache)
-    return cache[2], cache[3]
+    return cache[3], cache[4]
 
 
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
