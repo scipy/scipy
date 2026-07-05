@@ -965,9 +965,6 @@ def gen_oa_shapes_eq(sizes):
 
 
 @make_xp_test_case(oaconvolve)
-@pytest.mark.skip_xp_meta(
-    reason='internal host transfer (`xpx.pad` pad_width round-trip in oaconvolve; '
-               'fixed upstream in array-api-extra, remove after the next bump)')
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
