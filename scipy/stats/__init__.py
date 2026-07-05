@@ -614,6 +614,7 @@ from ._censored_data import CensoredData
 from ._resampling import (bootstrap, monte_carlo_test, permutation_test, power,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *
+from ._scoring import *
 from ._hypotests import *
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
