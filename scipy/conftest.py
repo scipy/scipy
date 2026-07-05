@@ -67,6 +67,11 @@ def pytest_configure(config):
          "eager_only=False, exceptions=None): mark the desired xfail configuration " +
          "for the `xfail_xp_backends` fixture"))
     config.addinivalue_line("markers",
+        ("skip_xp_meta(reason): skip this test in the torch meta-device "
+         "leak-check mode (SCIPY_DEVICE=meta); use for functions whose internals "
+         "perform device-to-host transfers (e.g. `.item()`) that are legal on "
+         "real devices but impossible on data-free meta tensors"))
+    config.addinivalue_line("markers",
                             ("uses_xp_capabilities(status, funcs=None, " +
                              "reason=None): mark " +
                             "whether pytest markers for array API backends are " +
@@ -218,6 +223,11 @@ if SCIPY_ARRAY_API:
             pytest.param(torch, id='torch',
             marks=_array_api_backends))
         torch.set_default_device(SCIPY_DEVICE)
+        # This also covers the meta leak-check mode (SCIPY_DEVICE=meta; see the
+        # `xp` fixture): `cpu_only` functions round-trip through NumPy and
+        # convert their result back onto the default device -- a working
+        # device-to-device copy on e.g. cuda, but impossible on the data-free
+        # meta device.
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('torch')
 
@@ -315,6 +325,67 @@ if SCIPY_ARRAY_API:
             ]
 
 
+class _CpuPinningNamespace:
+    """Test-facing namespace wrapper for the torch meta leak-check mode.
+
+    With ``SCIPY_DEVICE=meta``, the *default* torch device is the data-free
+    ``meta`` device, while tests must create real input arrays. This wrapper
+    delegates everything to the wrapped (compat) namespace, but pins array
+    creation to ``device='cpu'`` unless the caller passes an explicit device.
+
+    SciPy-internal code resolves the real namespace from its input arrays via
+    ``array_namespace`` (or normalizes an ``xp=`` argument through a probe
+    array) and is therefore *not* pinned: any internal creation that omits
+    ``device=`` lands on ``meta`` -- with no data -- and raises loudly at the
+    first combination with input data. This turns the whole torch test lane
+    into a device-propagation leak detector on ordinary CPU runners, mirroring
+    a GPU CI run with cpu-device inputs. See gh-22680.
+    """
+
+    # pure creation: no array argument to infer a device from -> always pin.
+    # `asarray` is special-cased below (an array argument keeps its device);
+    # the `*_like` functions always infer from their argument and are not
+    # wrapped at all.
+    _CREATION = frozenset({
+        "arange", "empty", "eye", "full", "linspace", "ones", "zeros",
+        # not in the array API standard, but provided by torch and used in tests
+        "geomspace", "logspace",
+    })
+
+    def __init__(self, xp, creation=None):
+        self._xp = xp
+        self._creation = self._CREATION if creation is None else creation
+
+    def __getattr__(self, name):
+        attr = getattr(self._xp, name)
+        if name in self._creation:
+            def _pin_cpu(*args, device=None, **kwargs):
+                device = "cpu" if device is None else device
+                return attr(*args, device=device, **kwargs)
+            return _pin_cpu
+        if name == "asarray":
+            def _asarray_pin_cpu(obj, *args, device=None, **kwargs):
+                # arrays keep their own device; device-less input (python
+                # scalars/sequences, NumPy host data) is created on cpu
+                from scipy._lib._array_api import _has_own_device
+                if device is None and not _has_own_device(obj):
+                    device = "cpu"
+                return attr(obj, *args, device=device, **kwargs)
+            return _asarray_pin_cpu
+        if name == "fft":
+            return _CpuPinningNamespace(
+                attr, creation=frozenset({"fftfreq", "rfftfreq"}))
+        return attr
+
+    # `array_namespace(actual) == xp` comparisons in the assertion helpers
+    # must treat the wrapper as equal to the namespace it wraps.
+    def __eq__(self, other):
+        return other is self._xp or other is self
+
+    def __hash__(self):
+        return hash(self._xp)
+
+
 @pytest.fixture(params=xp_available_backends)
 def xp(request):
     """Run the test that uses this fixture on each available array API library.
@@ -351,6 +422,17 @@ def xp(request):
     xp = request.param
     # Potentially wrap namespace with array_api_compat
     xp = array_namespace(xp.empty(0))
+
+    if SCIPY_DEVICE == "meta" and is_torch(xp):
+        # torch meta leak-check mode: the default device is the data-free
+        # `meta` device; skip tests that legitimately cannot run there, and
+        # hand the test a namespace that creates input arrays on cpu.
+        marker = request.node.get_closest_marker("skip_xp_meta")
+        if marker is not None:
+            reason = (marker.kwargs.get("reason")
+                      or (marker.args[0] if marker.args else "not meta-compatible"))
+            pytest.skip(reason=f"meta leak-check mode: {reason}")
+        xp = _CpuPinningNamespace(xp)
 
     if SCIPY_ARRAY_API:
         # If xp==jax.numpy, wrap tested functions in jax.jit

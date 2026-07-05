@@ -715,6 +715,12 @@ env.SCIPY_DEFAULT_DTYPE = "float32"
 depends-on = "build-cpu"
 description = "Test with PyTorch and `SCIPY_DEFAULT_DTYPE=float32` on CPU"
 
+[feature.torch-cpu-tasks.tasks.test-torch-meta]
+cmd = "spin test --no-build --build-dir=build-cpu -b torch -m 'array_api_backends and not slow'"
+env.SCIPY_DEVICE = "meta"
+depends-on = "build-cpu"
+description = "Test with PyTorch and a meta default device (device-propagation leak check)"
+
 [feature.torch-cpu-tasks.tasks.bench-torch]
 cmd = "spin bench --no-build --build-dir=build-cpu -b torch"
 depends-on = "build-cpu"

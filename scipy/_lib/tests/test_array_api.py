@@ -72,6 +72,8 @@ class TestArrayAPI:
         assert array_namespace(np.asarray([1, 2]), [3, 4]) is xp
         assert array_namespace(np.int64(1), [3, 4]) is xp
 
+    @pytest.mark.skip_xp_meta(
+        reason='meta-mode `xp` fixture is a cpu-pinning proxy (identity assertion)')
     def test_array_and_array_likes_mix(self, xp):
         """Test that if there is at least one Array API object among
         the parameters of array_namespace, and all other parameters
@@ -401,3 +403,44 @@ def test_xp_promote_device(xp, devices):
         # an array argument keeps its own device
         x2 = xp_promote(x, force_floating=True, xp=xp)
         assert xp_device(x2) == xp_device(x)
+
+        # NumPy scalars and arrays report device 'cpu' but are *host data*:
+        # they must ride along on the array argument's device like python
+        # scalars do (they land on the default device otherwise)
+        x2, np_scalar = xp_promote(x, np.float64(0.5), xp=xp)
+        assert xp_device(np_scalar) == xp_device(x)
+        x2, np_arr = xp_promote(x, np.asarray([1.0, 2.0, 3.0]), xp=xp)
+        assert xp_device(np_arr) == xp_device(x)
+
+
+@pytest.mark.uses_xp_capabilities(False, reason="tests conftest machinery")
+def test_cpu_pinning_namespace():
+    # The test-facing namespace wrapper of the torch meta leak-check mode
+    # (`pixi run test-torch-meta`): creation is pinned to cpu unless an
+    # explicit device is passed; everything else delegates. See gh-22680.
+    torch = pytest.importorskip("torch")
+    from scipy.conftest import _CpuPinningNamespace
+
+    real = array_namespace(torch.empty(0))
+    xp = _CpuPinningNamespace(real)
+    cpu = torch.device("cpu")
+
+    # equality with the wrapped namespace (both directions), as relied upon
+    # by `_assert_matching_namespace`
+    assert xp == real
+    assert real == xp
+    assert array_namespace(xp.asarray([1.0])) == xp
+
+    with torch.device("meta"):
+        # sanity: the raw namespace really creates on the context device
+        assert real.zeros(3).device.type == "meta"
+        # pinned creation lands on cpu, with data
+        assert xp.asarray([1.0, 2.0]).device == cpu
+        assert xp.zeros(3).device == cpu
+        assert xp.arange(4).device == cpu
+        assert xp.logspace(0.0, 1.0, 4).device == cpu
+        assert xp.fft.fftfreq(4).device == cpu
+        # an explicit device is honored
+        assert xp.zeros(3, device="meta").device.type == "meta"
+        # non-creation attributes delegate
+        assert float(xp.sum(xp.asarray([1.0, 2.0]))) == 3.0

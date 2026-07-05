@@ -544,6 +544,17 @@ def xp_result_type(*args, force_floating=False, xp):
         return xp.result_type(*float_args, xp_default_dtype(xp))
 
 
+def _has_own_device(arg):
+    """Whether `arg` is an array that carries its own device.
+
+    NumPy arrays and scalars report ``device='cpu'`` but are *host data*:
+    converting them to another namespace places them on that namespace's
+    *default* device, so for device propagation they must be treated like
+    python scalars and created on the inferred common device (see gh-22680).
+    """
+    return hasattr(arg, "device") and not isinstance(arg, (np.ndarray, np.generic))
+
+
 def xp_promote(*args, broadcast=False, force_floating=False, xp):
     """
     Promotes elements of *args to result dtype, ignoring `None`s.
@@ -572,8 +583,8 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
 
     # Infer the common device from the array arguments; `devices[i]` is the
     # device to create argument `i` on (None to keep an array's own device).
-    device = next((xp_device(arg) for arg in args if hasattr(arg, "device")), None)
-    devices = [None if hasattr(arg, "device") else device for arg in args]
+    device = next((xp_device(arg) for arg in args if _has_own_device(arg)), None)
+    devices = [None if _has_own_device(arg) else device for arg in args]
 
     # prevent double conversion of iterable to array
     # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
