@@ -845,7 +845,7 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyObject *ret_Z;
     PyObject *ret_lst;
 
-    if (!PyArg_ParseTuple(args, "O!ppppddiin|O!pi",
+    if (!PyArg_ParseTuple(args, "O!ppipddiin|O!pi",
         &PyArray_Type, (PyObject **)&ap_Am, &overwrite_a,
         &eigvals_only, &vals_range, &lower,
         &vl, &vu, &il, &iu, &lapack_driver,
@@ -856,7 +856,7 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Convert int input to char for LAPACK
     char jobz = eigvals_only ? 'N' : 'V';
-    char range = (vals_range == 0) ? 'A' : (vals_range == 1) ? 'V' : 'I'; // NB. for other drivers than `evr`, `range` is always set to `A`.
+    char range = (vals_range == 0) ? 'A' : (vals_range == 1) ? 'V' : 'I'; // NB. for drivers other than `evr`/`evx`/`gvx`, `range` is ignored.
     char uplo = lower ? 'L' : 'U';
 
     // Sanity check `a`
