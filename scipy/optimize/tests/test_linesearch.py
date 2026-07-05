@@ -218,10 +218,16 @@ class TestLineSearch:
 
     # -- Generic line searches
 
-    def test_line_search_wolfe1(self):
+    @make_xp_test_case(ls.line_search_wolfe1)
+    def test_line_search_wolfe1(self, xp):
+        dtype = xpx.default_dtype(xp=xp)
         c = 0
         smax = 100
-        for name, f, fprime, x, p, old_f in self.line_iter():
+        # TODO: Revert to just using self.A once the test class is adjusted to use xp
+        # throughout.
+        self.A_orig = self.A
+        self.A = xp.asarray(self.A, dtype=dtype, copy=True)
+        for name, f, fprime, x, p, old_f in self.line_iter(xp=xp):
             f0 = f(x)
             g0 = fprime(x)
             self.fcount.c = 0
@@ -229,16 +235,20 @@ class TestLineSearch:
                                                            g0, f0, old_f,
                                                            amax=smax)
             assert_equal(self.fcount.c, fc+gc)
-            assert_fp_equal(ofv, f(x))
+            params = dict(check_namespace=False, check_dtype=False)
+            params["nulp"] = 50 if is_numpy(xp) else 100
+            xp_assert_close_nulp(ofv, f(x), **params)
             if s is None:
                 continue
-            assert_fp_equal(fv, f(x + s*p))
+            xp_assert_close_nulp(fv, f(x + s*p), **params)
             assert_array_almost_equal(gv, fprime(x + s*p), decimal=14)
             if s < smax:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
 
         assert c > 3  # check that the iterator really works...
+        # TODO: See above.
+        self.A = self.A_orig
 
     @make_xp_test_case(line_search_wolfe2)
     def test_line_search_wolfe2(self, xp):

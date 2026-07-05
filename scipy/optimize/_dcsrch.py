@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 """
@@ -245,7 +246,7 @@ class DCSRCH:
                 alpha1, phi1, derphi1, task
             )
 
-            if not np.isfinite(stp):
+            if not math.isfinite(stp):
                 task = b"WARN"
                 stp = None
                 break
@@ -480,7 +481,7 @@ class DCSRCH:
             self.stmax = stp + xtrapu * (stp - self.stx)
 
         # Force the step to be within the bounds stpmax and stpmin.
-        stp = np.clip(stp, self.stpmin, self.stpmax)
+        stp = min(max(stp, self.stpmin), self.stpmax)
 
         # If further progress is not possible, let stp be the best
         # point obtained during the search.
@@ -591,11 +592,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
     Brett M. Averick and Jorge J. More'.
 
     """
-    sgn_dp = np.sign(dp)
-    sgn_dx = np.sign(dx)
-
-    # sgnd = dp * (dx / abs(dx))
-    sgnd = sgn_dp * sgn_dx
+    dp_dx = dp * dx  # only the sign matters
 
     # First case: A higher function value. The minimum is bracketed.
     # If the cubic step is closer to stx than the quadratic step, the
@@ -604,7 +601,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
     if fp > fx:
         theta = 3.0 * (fx - fp) / (stp - stx) + dx + dp
         s = max(abs(theta), abs(dx), abs(dp))
-        gamma = s * np.sqrt((theta / s) ** 2 - (dx / s) * (dp / s))
+        gamma = s * math.sqrt((theta / s) ** 2 - (dx / s) * (dp / s))
         if stp < stx:
             gamma *= -1
         p = (gamma - dx) + theta
@@ -617,14 +614,14 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
         else:
             stpf = stpc + (stpq - stpc) / 2.0
         brackt = True
-    elif sgnd < 0.0:
+    elif dp_dx < 0.0:
         # Second case: A lower function value and derivatives of opposite
         # sign. The minimum is bracketed. If the cubic step is farther from
         # stp than the secant step, the cubic step is taken, otherwise the
         # secant step is taken.
         theta = 3 * (fx - fp) / (stp - stx) + dx + dp
         s = max(abs(theta), abs(dx), abs(dp))
-        gamma = s * np.sqrt((theta / s) ** 2 - (dx / s) * (dp / s))
+        gamma = s * math.sqrt((theta / s) ** 2 - (dx / s) * (dp / s))
         if stp > stx:
             gamma *= -1
         p = (gamma - dp) + theta
@@ -650,7 +647,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
 
         # The case gamma = 0 only arises if the cubic does not tend
         # to infinity in the direction of the step.
-        gamma = s * np.sqrt(max(0, (theta / s) ** 2 - (dx / s) * (dp / s)))
+        gamma = s * math.sqrt(max(0, (theta / s) ** 2 - (dx / s) * (dp / s)))
         if stp > stx:
             gamma = -gamma
         p = (gamma - dp) + theta
@@ -685,7 +682,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
                 stpf = stpc
             else:
                 stpf = stpq
-            stpf = np.clip(stpf, stpmin, stpmax)
+            stpf = min(max(stpf, stpmin), stpmax)  # np.clip(stpf, stpmin, stpmax)
 
     else:
         # Fourth case: A lower function value, derivatives of the same sign,
@@ -695,7 +692,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
         if brackt:
             theta = 3.0 * (fp - fy) / (sty - stp) + dy + dp
             s = max(abs(theta), abs(dy), abs(dp))
-            gamma = s * np.sqrt((theta / s) ** 2 - (dy / s) * (dp / s))
+            gamma = s * math.sqrt((theta / s) ** 2 - (dy / s) * (dp / s))
             if stp > sty:
                 gamma = -gamma
             p = (gamma - dp) + theta
@@ -714,7 +711,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
         fy = fp
         dy = dp
     else:
-        if sgnd < 0:
+        if dp_dx < 0:
             sty = stx
             fy = fx
             dy = dx

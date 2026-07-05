@@ -20,6 +20,7 @@ class _ScalarGradWrapper:
     def __init__(
             self,
             grad,
+            x0=None,
             fun=None,
             args=None,
             finite_diff_options=None,
@@ -31,12 +32,16 @@ class _ScalarGradWrapper:
         self.ngev = 0
         # number of function evaluations consumed by finite difference
         self.nfev = 0
+        self.xp = array_namespace(x0)
 
     def __call__(self, x, f0=None, **kwds):
         # Send a copy because the user may overwrite it.
         # The user of this class might want `x` to remain unchanged.
         if callable(self.grad):
-            g = np.atleast_1d(self.grad(np.copy(x), *self.args))
+            g = xpx.atleast_nd(
+                self.grad(self.xp.asarray(x, copy=True), *self.args),
+                ndim=1, xp=self.xp,
+            )
         elif self.grad in FD_METHODS:
             g, dct = approx_derivative(
                 self.fun,
@@ -71,9 +76,10 @@ class _ScalarHessWrapper:
         self.nhev = 0
         self.H = None
         self._hess_func = None
+        self.xp = array_namespace(x0)
 
         if callable(hess):
-            self.H = hess(np.copy(x0), *args)
+            self.H = hess(self.xp.asarray(x0, copy=True), *args)
             self.nhev += 1
 
             if sps.issparse(self.H):
@@ -84,7 +90,7 @@ class _ScalarHessWrapper:
             else:
                 # dense
                 self._hess_func = "dense_callable"
-                self.H = np.atleast_2d(np.asarray(self.H))
+                self.H = xpx.atleast_nd(self.xp.asarray(self.H), ndim=2, xp=self.xp)
         elif hess in FD_METHODS:
                 self._hess_func = "fd_hess"
 
@@ -99,7 +105,7 @@ class _ScalarHessWrapper:
             case "fd_hess":
                 _h = self._fd_hess
 
-        return _h(np.copy(x), f0=f0)
+        return _h(self.xp.asarray(x, copy=True), f0=f0)
 
     def _fd_hess(self, x, f0=None, **kwds):
         self.H, dct = approx_derivative(
@@ -115,8 +121,8 @@ class _ScalarHessWrapper:
 
     def _dense_callable(self, x, **kwds):
         self.nhev += 1
-        self.H = np.atleast_2d(
-            np.asarray(self.hess(x, *self.args))
+        self.H = xpx.atleast_nd(
+            self.xp.asarray(self.hess(x, *self.args)), ndim=2, xp=self.xp
         )
         return self.H
 
@@ -286,6 +292,7 @@ class ScalarFunction:
         self._wrapped_grad = _ScalarGradWrapper(
             grad,
             fun=self._wrapped_fun,
+            x0=x0,
             args=args,
             finite_diff_options=finite_diff_options,
         )

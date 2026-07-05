@@ -539,11 +539,12 @@ class _ScalarFunctionWrapper:
     def __call__(self, x):
         # Send a copy because the user may overwrite it.
         # The user of this class might want `x` to remain unchanged.
-        fx = self.f(np.copy(x), *self.args)
+        xp = array_namespace(x)
+        fx = self.f(xp.asarray(x, copy=True), *self.args)
         self.nfev += 1
 
         # Make sure the function returns a true scalar
-        if not np.isscalar(fx):
+        if is_numpy(xp) and not np.isscalar(fx):
             _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
                 fx = _dt.type(np.asarray(fx).item())

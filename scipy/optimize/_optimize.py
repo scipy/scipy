@@ -28,7 +28,7 @@ __docformat__ = "restructuredtext en"
 import math
 import warnings
 import sys
-from numpy import eye, argmin, zeros, shape, asarray, sqrt
+from numpy import eye, argmin, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
 from scipy.sparse.linalg import LinearOperator
@@ -41,7 +41,7 @@ from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng,
                               wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote, xp_size
 from scipy._external import array_api_extra as xpx
 
 
@@ -2046,7 +2046,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     epsilon = eps
     retall = return_all
 
-    x0 = asarray(x0).flatten()
+    xp = array_namespace(x0)
+    x0 = xp.reshape(xp.asarray(x0), (-1,))  # reshape instead of flatten()
     # TODO: add hessp (callable or FD) to ScalarFunction?
     sf = _prepare_scalar_function(
         fun, x0, jac, args=args, epsilon=eps, hess=hess, workers=workers
@@ -2066,7 +2067,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         fhess = None
 
         def _hessp(x, p, *args):
-            return sf.hess(x).dot(p)
+            return sf.hess(x) @ p
 
         fhess_p = _hessp
 
@@ -2089,20 +2090,20 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     hcalls = 0
     if maxiter is None:
-        maxiter = len(x0)*200
-    cg_maxiter = 20*len(x0)
+        maxiter = xp_size(x0) * 200
+    cg_maxiter = 20 * xp_size(x0)
 
-    xtol = len(x0) * avextol
+    xtol = xp_size(x0) * avextol
     # Make sure we enter the while loop.
     update_l1norm = np.finfo(float).max
-    xk = np.copy(x0)
+    xk = xp.asarray(x0, copy=True)
     if retall:
         allvecs = [xk]
     k = 0
     gfk = None
     old_fval = f(x0)
     old_old_fval = None
-    float64eps = np.finfo(np.float64).eps
+    float64eps = xp.finfo(xp.float64).eps
     while update_l1norm > xtol:
         if k >= maxiter:
             msg = "Warning: " + _status_message['maxiter']
@@ -2110,21 +2111,21 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
-        maggrad = np.linalg.norm(b, ord=1)
+        maggrad = xp.linalg.vector_norm(b, ord=1)
         eta = min(0.5, math.sqrt(maggrad))
         termcond = eta * maggrad
-        xsupi = zeros(len(x0), dtype=x0.dtype)
+        xsupi = xp.zeros(x0.shape, dtype=x0.dtype)
         ri = -b
         psupi = -ri
         i = 0
-        dri0 = np.dot(ri, ri)
+        dri0 = ri @ ri
 
         if fhess is not None:             # you want to compute hessian once.
             A = sf.hess(xk)
             hcalls += 1
 
         for k2 in range(cg_maxiter):
-            if np.add.reduce(np.abs(ri)) <= termcond:
+            if xp.linalg.vector_norm(ri, ord=1) <= termcond:
                 break
             if fhess is None:
                 if fhess_p is None:
@@ -2135,10 +2136,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             else:
                 # hess was supplied as a callable or hessian update strategy, so
                 # A is a dense numpy array or sparse array
-                Ap = A.dot(psupi)
+                Ap = A @ psupi
             # check curvature
-            Ap = asarray(Ap).squeeze()  # get rid of matrices...
-            curv = np.dot(psupi, Ap)
+            # TODO: translate or remove
+            # Ap = asarray(Ap).squeeze()  # get rid of matrices...
+            curv = psupi @ Ap
             if 0 <= curv <= 3 * float64eps:
                 break
             elif curv < 0:
@@ -2151,7 +2153,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             alphai = dri0 / curv
             xsupi += alphai * psupi
             ri += alphai * Ap
-            dri1 = np.dot(ri, ri)
+            dri1 = ri @ ri
             betai = dri1 / dri0
             psupi = -ri + betai * psupi
             i += 1
@@ -2182,10 +2184,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         intermediate_result = OptimizeResult(x=xk, fun=old_fval)
         if _call_callback_maybe_halt(callback, intermediate_result):
             return terminate(5, "")
-        update_l1norm = np.linalg.norm(update, ord=1)
+        update_l1norm = xp.linalg.vector_norm(update, ord=1)
 
     else:
-        if np.isnan(old_fval) or np.isnan(update_l1norm):
+        if xp.isnan(old_fval) or xp.isnan(update_l1norm):
             return terminate(3, _status_message['nan'])
 
         msg = _status_message['success']

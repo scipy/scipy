@@ -13,6 +13,8 @@ __all__ = ['minimize', 'minimize_scalar']
 from warnings import warn
 
 import numpy as np
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import array_namespace, is_numpy, xp_capabilities
 from scipy._lib._util import wrapped_inspect_signature
 
 # unconstrained minimization
@@ -51,6 +53,19 @@ MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
+
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "would need lazy_xp_function to avoid dask.compute"),
+        (
+            "jax.numpy",
+            "would need to convert Python float to sclar arrays and jax control flow "
+            "logic (if -> xp.where)"
+        ),
+    ],
+    extra_note="Only method 'Newton-CG' supports Array API, only if either hess or "
+        "hessp is a callable.",
+)
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
@@ -585,13 +600,17 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     np.float64(0.008019998807885509)
 
     """
-    x0 = np.atleast_1d(np.asarray(x0))
+    xp = array_namespace(x0)
+    is_np = is_numpy(xp)
+    if method != "Newton-CG" and not is_np:
+        raise ValueError("Only method 'Newton-CG' supports Array API.")
+    x0 = xpx.atleast_nd(xp.asarray(x0), ndim=1, xp=xp)
 
     if x0.ndim != 1:
         raise ValueError("'x0' must only have one dimension.")
 
-    if x0.dtype.kind in np.typecodes["AllInteger"]:
-        x0 = np.asarray(x0, dtype=float)
+    if xp.isdtype(x0.dtype, kind="integral"):
+        x0 = xp.astype(x0, xp.float64)
 
     if not isinstance(args, tuple):
         args = (args,)

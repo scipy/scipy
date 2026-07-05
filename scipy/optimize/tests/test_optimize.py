@@ -41,7 +41,7 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
 from scipy._lib._array_api_no_0d import xp_assert_equal
-from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._array_api import array_namespace, make_xp_test_case, xp_assert_close
 from scipy._lib._util import MapWrapper
 
 lazy_xp_modules = [optimize]
@@ -2186,18 +2186,20 @@ def test_brent_negative_tolerance():
 
 
 class TestNewtonCg:
-    def test_rosenbrock(self):
-        x0 = np.array([-1.2, 1.0])
+    @make_xp_test_case(optimize.minimize)
+    def test_rosenbrock(self, xp):
+        x0 = xp.asarray([-1.2, 1.0])
         sol = optimize.minimize(optimize.rosen, x0,
                                 jac=optimize.rosen_der,
                                 hess=optimize.rosen_hess,
                                 tol=1e-5,
                                 method='Newton-CG')
         assert sol.success, sol.message
-        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
+        xp_assert_close(sol.x, xp.asarray([1., 1]), rtol=1e-4)
 
-    def test_himmelblau(self):
-        x0 = np.array(himmelblau_x0)
+    @make_xp_test_case(optimize.minimize)
+    def test_himmelblau(self, xp):
+        x0 = xp.asarray(himmelblau_x0)
         sol = optimize.minimize(himmelblau,
                                 x0,
                                 jac=himmelblau_grad,
@@ -2205,8 +2207,8 @@ class TestNewtonCg:
                                 method='Newton-CG',
                                 tol=1e-6)
         assert sol.success, sol.message
-        assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
-        assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
+        xp_assert_close(sol.x, himmelblau_xopt, rtol=1e-4, check_dtype=False)
+        xp_assert_close(sol.fun, himmelblau_min, atol=1e-4, check_dtype=False)
 
     def test_finite_difference(self):
         x0 = np.array([-1.2, 1.0])
@@ -2522,14 +2524,16 @@ def himmelblau(p):
 
 
 def himmelblau_grad(p):
-    x, y = p
-    return np.array([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
+    xp = array_namespace(p)
+    x, y = float(p[0]), float(p[1])
+    return xp.asarray([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
                      2*x**2 + 4*x*y + 4*y**3 - 26*y - 22])
 
 
 def himmelblau_hess(p):
-    x, y = p
-    return np.array([[12*x**2 + 4*y - 42, 4*x + 4*y],
+    xp = array_namespace(p)
+    x, y = float(p[0]), float(p[1])
+    return xp.asarray([[12*x**2 + 4*y - 42, 4*x + 4*y],
                      [4*x + 4*y, 4*x + 12*y**2 - 26]])
 
 
