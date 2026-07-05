@@ -1412,6 +1412,8 @@ class TestResample:
             assert xp_device(y) == xp_device(x)
             assert xp_device(new_t) == xp_device(x)
 
+    @skip_xp_backends("cupy",
+                      reason="delegated to cupyx, whose time vector is float64")
     @make_xp_test_case(signal.resample)
     def test_t_dtype(self, xp):
         # the returned time vector follows `t`'s precision
