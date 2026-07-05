@@ -17,7 +17,6 @@ as the existing one and delivers comparable results. Furthermore, the
 wrappers highlight the different philosophies of the implementations,
 especially in the border handling.
 """
-import platform
 from typing import cast, Literal
 
 import numpy as np
@@ -296,10 +295,11 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     atol = np.finfo(x.dtype).resolution*2  # instead of default atol = 0
     rtol = 1e-7  # default for np.allclose()
 
-    # Relax atol on 32-Bit platforms a bit to pass CI tests.
-    #  - Not clear why there are discrepancies (in the FFT maybe?)
-    #  - Not sure what changed on 'i686' since earlier on those test passed
-    if x.dtype == np.float32 and platform.machine() == 'i686':
+    # Relax tolerances for float32, which loses precision in the FFT
+    # roundtrip. Originally observed on i686; also seen on aarch64 and on
+    # builds using FMA contraction (gh-25488), so the drift is dtype-driven
+    # rather than platform-specific.
+    if x.dtype == np.float32:
         # float32 gets only used by TestSTFT.test_roundtrip_float32() so
         # we are using the tolerances from there to circumvent CI problems
         atol, rtol = 1e-4, 1e-5
