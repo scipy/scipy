@@ -602,7 +602,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     CBLAS_INT iwork_size = liwork;
     CBLAS_INT isuppz_size = (lapack_driver == Eigh_driver::EVR) ? 2 * M : 0;
     CBLAS_INT ifail_size = (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX) ? N : 0;
-    CBLAS_INT *ibuffer = (CBLAS_INT *)malloc((iwork_size + isuppz_size + ifail_size) * sizeof(T));
+    CBLAS_INT *ibuffer = (CBLAS_INT *)malloc((iwork_size + isuppz_size + ifail_size) * sizeof(CBLAS_INT));
     if (ibuffer == NULL) {
         free(buffer);
         info = -103;
