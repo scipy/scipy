@@ -644,6 +644,8 @@ class TestFindRoot:
                       xp.minimum(xp.abs(res.f_bracket[0][finite]),
                                  xp.abs(res.f_bracket[1][finite])))
 
+    @pytest.mark.skip_xp_meta(
+        reason='callable returns a list; eim._loop places it on the default device')
     def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously.

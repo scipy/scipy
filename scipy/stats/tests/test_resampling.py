@@ -1132,6 +1132,8 @@ class TestPower:
         dtype = xp_default_dtype(xp) if dtype is None else dtype
         return lambda size: xp.asarray(rng.normal(size=size), dtype=dtype)
 
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (broadcast shape math on default-device nobs)')
     def test_input_validation(self, xp):
         # test that the appropriate error messages are raised for invalid input
         rng = np.random.default_rng(8519895914314711673)

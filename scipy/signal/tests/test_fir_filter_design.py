@@ -59,6 +59,8 @@ class TestFirwin:
             mse = abs(actual - expected)**2
             assert mse < tol, f'response not as expected, mse={mse:g} > {tol:g}'
 
+    @pytest.mark.skip_xp_meta(
+        reason='test helper builds time indices on the default device (`xp.arange`)')
     def test_response(self, xp):
         N = 51
         f = xp.asarray(.5)
@@ -121,6 +123,8 @@ class TestFirwin:
             ([.5], False, (1, 1)),
         ]
     )
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (test `mse` helper on default-device grid)')
     def test_scaling(self, cutoff, pass_zero, expected_response, xp):
         """
         For one lowpass, bandpass, and highpass example filter, this test

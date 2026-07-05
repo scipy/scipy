@@ -965,6 +965,9 @@ def gen_oa_shapes_eq(sizes):
 
 
 @make_xp_test_case(oaconvolve)
+@pytest.mark.skip_xp_meta(
+    reason='internal host transfer (`xpx.pad` pad_width round-trip in oaconvolve; '
+               'fixed upstream in array-api-extra, remove after the next bump)')
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
@@ -4202,6 +4205,8 @@ class TestPartialFractionExpansion:
 @make_xp_test_case(vectorstrength)
 class TestVectorstrength:
 
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xp.any(period <= 0)` bool on meta period)')
     def test_single_1dperiod(self, xp):
         events = xp.asarray([.5])
         period = 5.
@@ -4230,6 +4235,8 @@ class TestVectorstrength:
         assert_array_almost_equal(strength, targ_strength)
         assert_almost_equal(phase, 2 * xp.pi * targ_phase)
 
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xp.any(period <= 0)` bool on meta period)')
     def test_equal_1dperiod(self, xp):
         events = xp.asarray([.25, .25, .25, .25, .25, .25])
         period = 2
@@ -4257,6 +4264,8 @@ class TestVectorstrength:
         assert_almost_equal(strength, targ_strength)
         assert_almost_equal(phase, 2 * xp.pi * targ_phase)
 
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xp.any(period <= 0)` bool on meta period)')
     def test_spaced_1dperiod(self, xp):
         events = xp.asarray([.1, 1.1, 2.1, 4.1, 10.1])
         period = 1
@@ -4285,6 +4294,8 @@ class TestVectorstrength:
         rtol_kw = {'rtol': 2e-6} if xp_default_dtype(xp) == xp.float32 else {}
         xp_assert_close(phase, 2 * xp.pi * targ_phase, **rtol_kw)
 
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xp.any(period <= 0)` bool on meta period)')
     def test_partial_1dperiod(self, xp):
         events = xp.asarray([.25, .5, .75])
         period = 1
@@ -4314,6 +4325,8 @@ class TestVectorstrength:
         assert_almost_equal(strength, targ_strength)
         assert_almost_equal(phase, 2 * xp.pi * targ_phase)
 
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xp.any(period <= 0)` bool on meta period)')
     def test_opposite_1dperiod(self, xp):
         events = xp.asarray([0, .25, .5, .75])
         period = 1.

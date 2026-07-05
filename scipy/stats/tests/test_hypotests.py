@@ -42,6 +42,8 @@ class TestEppsSingleton:
                 epps_singleton_2samp(x, y, t=t)
 
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xp.any(t <= 0)` bool on default-device t)')
     def test_statistic_1(self, dtype, xp):
         # first example in Goerg & Kaiser, also in original paper of
         # Epps & Singleton. Note: values do not match exactly, the
@@ -56,6 +58,8 @@ class TestEppsSingleton:
         xp_assert_close(w, xp.asarray(15.14, dtype=dtype), atol=0.03)
         xp_assert_close(p, xp.asarray(0.00442, dtype=dtype), atol=0.0001)
 
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xp.any(t <= 0)` bool on default-device t)')
     def test_statistic_2(self, xp):
         # second example in Goerg & Kaiser, again not a perfect match
         x = xp.asarray([0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4,
@@ -84,6 +88,8 @@ class TestEppsSingleton:
             xp_assert_equal(res.statistic, xp.asarray(xp.nan))
             xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xp.any(t <= 0)` bool on default-device t)')
     def test_epps_singleton_nonfinite(self, xp):
         rng = np.random.default_rng(83249872384543)
         x = rng.random(size=(10, 11))

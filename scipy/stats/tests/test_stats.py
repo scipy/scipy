@@ -2392,6 +2392,8 @@ class HistFunctionsTest:
     @pytest.mark.parametrize("edge_points", [False, True])
     @pytest.mark.parametrize("specify_limits", [False, True])
     @pytest.mark.parametrize("specify_weights", [False, True])
+    @pytest.mark.skip_xp_meta(
+        reason='test feeds host `limits`; result fields land on the default device')
     def test_against_reference(self, dtype, edge_points, specify_limits,
                                specify_weights, xp):
         rng = np.random.default_rng(5194553734)
@@ -3301,6 +3303,8 @@ class TestMedianAbsDeviation:
 
 
 @make_xp_test_case(stats.iqr)
+@pytest.mark.skip_xp_meta(
+    reason='quantile levels are constructed on the default device')
 class TestIQR:
 
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])

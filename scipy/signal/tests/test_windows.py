@@ -50,6 +50,8 @@ window_funcs = [
 @make_xp_test_case(windows.barthann)
 class TestBartHann:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.barthann(6, sym=True, xp=xp),
                         xp.asarray([0, 0.35857354213752, 0.8794264578624801,
@@ -67,6 +69,8 @@ class TestBartHann:
 @make_xp_test_case(windows.bartlett)
 class TestBartlett:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.bartlett(6, xp=xp),
                         xp.asarray([0, 0.4, 0.8, 0.8, 0.4, 0], dtype=xp.float64))
@@ -79,6 +83,8 @@ class TestBartlett:
 @make_xp_test_case(windows.blackman)
 class TestBlackman:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.blackman(6, sym=False, xp=xp),
                         xp.asarray([0, 0.13, 0.63, 1.0, 0.63, 0.13], dtype=xp.float64),
@@ -102,6 +108,8 @@ class TestBlackman:
 @make_xp_test_case(windows.blackmanharris)
 class TestBlackmanHarris:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.blackmanharris(6, False, xp=xp),
                         xp.asarray([6.0e-05, 0.055645, 0.520575,
@@ -121,6 +129,8 @@ class TestBlackmanHarris:
 
 
 @make_xp_test_case(windows.taylor)
+@pytest.mark.skip_xp_meta(
+    reason='output is constructed on the default device (host int `M`)')
 class TestTaylor:
 
     def test_normalized(self, xp):
@@ -201,6 +211,8 @@ class TestTaylor:
 @make_xp_test_case(windows.bohman)
 class TestBohman:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.bohman(6, xp=xp),
                         xp.asarray([0, 0.1791238937062839, 0.8343114522576858,
@@ -219,6 +231,8 @@ class TestBohman:
 @make_xp_test_case(windows.boxcar)
 class TestBoxcar:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.boxcar(6, xp=xp),
                         xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
@@ -264,6 +278,8 @@ cheb_even_true = [0.203894, 0.107279, 0.133904,
 
 
 @make_xp_test_case(windows.chebwin)
+@pytest.mark.skip_xp_meta(
+    reason='output is constructed on the default device (host int `M`)')
 class TestChebWin:
 
     def test_basic(self, xp):
@@ -360,6 +376,8 @@ exponential_data = {
 
 
 @make_xp_test_case(windows.exponential)
+@pytest.mark.skip_xp_meta(
+    reason='output is constructed on the default device (host int `M`)')
 def test_exponential(xp):
     for k, v in exponential_data.items():
         if v is None:
@@ -372,6 +390,8 @@ def test_exponential(xp):
 @make_xp_test_case(windows.flattop)
 class TestFlatTop:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.flattop(6, sym=False, xp=xp),
                         xp.asarray([-0.000421051, -0.051263156, 0.19821053, 1.0,
@@ -395,6 +415,8 @@ class TestFlatTop:
 @make_xp_test_case(windows.gaussian)
 class TestGaussian:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.gaussian(6, 1.0, xp=xp),
                         xp.asarray([0.04393693362340742, 0.3246524673583497,
@@ -441,6 +463,8 @@ class TestGeneralCosine:
 @make_xp_test_case(windows.general_hamming)
 class TestGeneralHamming:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.general_hamming(5, 0.7, xp=xp),
                         xp.asarray([0.4, 0.7, 1.0, 0.7, 0.4], dtype=xp.float64))
@@ -455,6 +479,8 @@ class TestGeneralHamming:
 @make_xp_test_case(windows.hamming)
 class TestHamming:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.hamming(6, False, xp=xp),
                         xp.asarray([0.08, 0.31, 0.77, 1.0, 0.77, 0.31],
@@ -476,6 +502,8 @@ class TestHamming:
 @make_xp_test_case(windows.hann)
 class TestHann:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.hann(6, sym=False, xp=xp),
                         xp.asarray([0, 0.25, 0.75, 1.0, 0.75, 0.25], dtype=xp.float64),
@@ -500,6 +528,8 @@ class TestHann:
 @make_xp_test_case(windows.kaiser)
 class TestKaiser:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.kaiser(6, 0.5, xp=xp),
                         xp.asarray([0.9403061933191572, 0.9782962393705389,
@@ -530,6 +560,8 @@ class TestKaiser:
 @make_xp_test_case(windows.kaiser_bessel_derived)
 class TestKaiserBesselDerived:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         # cover case `M < 1`
         w = windows.kaiser_bessel_derived(0.5, beta=4.0, xp=xp)
@@ -579,6 +611,8 @@ class TestKaiserBesselDerived:
 @make_xp_test_case(windows.nuttall)
 class TestNuttall:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.nuttall(6, sym=False, xp=xp),
                         xp.asarray([0.0003628, 0.0613345, 0.5292298, 1.0, 0.5292298,
@@ -601,6 +635,8 @@ class TestNuttall:
 @make_xp_test_case(windows.parzen)
 class TestParzen:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         xp_assert_close(windows.parzen(6, xp=xp),
                         xp.asarray([0.009259259259259254, 0.25, 0.8611111111111112,
@@ -620,6 +656,8 @@ class TestParzen:
 @make_xp_test_case(windows.triang)
 class TestTriang:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
 
         xp_assert_close(windows.triang(6, True, xp=xp),
@@ -662,6 +700,8 @@ tukey_data = {
 @make_xp_test_case(windows.tukey)
 class TestTukey:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         # Test against hardcoded data
         for k, v in tukey_data.items():
@@ -774,6 +814,8 @@ class TestDPSS:
 @make_xp_test_case(windows.lanczos)
 class TestLanczos:
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, xp):
         # Analytical results:
         # sinc(x) = sinc(-x)
@@ -848,6 +890,8 @@ class TestGetWindow:
         xp_assert_equal(w, xp.ones_like(w))
 
     @make_xp_test_case(windows.chebwin)
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_cheb_odd(self, xp):
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -858,6 +902,8 @@ class TestGetWindow:
         )
 
     @make_xp_test_case(windows.chebwin)
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_cheb_even(self, xp):
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -949,6 +995,8 @@ class TestGetWindow:
             get_window(('general_cosine', [0.5, 0.3, 0.2]), 4, xp=xp)
 
     @make_xp_test_case(windows.general_hamming)
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_general_hamming(self, xp):
         xp_assert_close(get_window(('general_hamming', 0.7), 5, xp=xp),
                         xp.asarray([0.4, 0.6072949, 0.9427051, 0.9427051, 0.6072949],
@@ -957,6 +1005,8 @@ class TestGetWindow:
                         xp.asarray([0.4, 0.7, 1.0, 0.7, 0.4], dtype=xp.float64))
 
     @make_xp_test_case(windows.lanczos)
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_lanczos(self, xp):
         xp_assert_close(get_window('lanczos', 6, xp=xp),
                         xp.asarray([0., 0.413496672, 0.826993343, 1., 0.826993343,
@@ -1000,6 +1050,8 @@ class TestGeneralGaussian:
     @pytest.mark.parametrize('p', (1, 1.5))
     @pytest.mark.parametrize('sig', (1., 2.))
     @pytest.mark.parametrize('sym', (True, False))
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, M, p, sig, sym, xp):
         """Verify basic parametrizations. """
         if sym:
@@ -1024,6 +1076,8 @@ class TestGeneralGaussian:
         w2 = windows.gaussian(7, std=2.0, xp=xp)
         xp_assert_close(w1, w2)
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_peak_value(self, xp):
         """ Testing that if M is odd, the peak is at 1. """
         w = windows.general_gaussian(7, p=3, sig=2.0, xp=xp)
@@ -1033,6 +1087,8 @@ class TestGeneralGaussian:
         w = windows.general_gaussian(6, p=1.5, sig=2.0, xp=xp)
         assert float(xp.max(w)) < 1.0
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_len_edge_cases(self, xp):
         """Test the length edge cases are handled correctly. """
         # length = 0 should return an empty array:
@@ -1050,6 +1106,8 @@ class TestGeneralGaussian:
 class TestCosine:
     @pytest.mark.parametrize('M', (3, 4))
     @pytest.mark.parametrize('sym', (True, False))
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_basic(self, M, sym, xp):
         """Verify basic parametrizations. """
         if sym:
@@ -1067,6 +1125,8 @@ class TestCosine:
         x_ref = windows.cosine(6, sym=True, xp=xp)
         xp_assert_equal(x, x_ref)
 
+    @pytest.mark.skip_xp_meta(
+        reason='output is constructed on the default device (host int `M`)')
     def test_len_edge_cases(self, xp):
         """Testing that the length edge cases are handled correctly."""
         # length = 0 should return an empty array:
@@ -1088,6 +1148,8 @@ class TestCosine:
         for window_name, params in window_funcs
     ]
 )
+@pytest.mark.skip_xp_meta(
+    reason='output is constructed on the default device (host int `M`)')
 def test_windowfunc_basics(window, window_name, params, xp):
     window = getattr(windows, window_name)
     if window_name in ['dpss']:
@@ -1200,6 +1262,8 @@ def test_not_needs_params(xp, window, winstr):
 
 
 @make_xp_test_case(windows.lanczos)
+@pytest.mark.skip_xp_meta(
+    reason='output is constructed on the default device (host int `M`)')
 def test_symmetric(xp):
 
     for win in [windows.lanczos]:

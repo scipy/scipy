@@ -536,6 +536,9 @@ class TestDotTests:
 
     @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     @pytest.mark.parametrize("args", all_args_list)
+    @pytest.mark.skip_xp_meta(
+        reason='internal host transfer (`xpx.pad` pad_width round-trip in test matvec; '
+               'fixed upstream in array-api-extra, remove after the next bump)')
     def test_identity_nonsquare(
         self, args: OperatorArgs, batch_shape: tuple[int, ...], xp
     ):

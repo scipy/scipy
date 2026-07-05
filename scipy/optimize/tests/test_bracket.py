@@ -186,6 +186,8 @@ class TestBracketRoot:
         xp_assert_close(res.fl, xp.asarray(self.f(res.xl, *args)))
         xp_assert_close(res.fr, xp.asarray(self.f(res.xr, *args)))
 
+    @pytest.mark.skip_xp_meta(
+        reason='callable returns a list; eim._loop places it on the default device')
     def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously.
