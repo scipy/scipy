@@ -222,6 +222,9 @@ def iter_py(root, submodule_paths):
 
 
 def main(argv):
+    # Deliberately not a top-level import: the unit tests
+    # (scipy/_lib/tests/test_check_nondefault_device.py) load this module by
+    # file path, without `tools/` on `sys.path`, and only use `check_source`.
     from get_submodule_paths import get_submodule_paths
 
     submodule_paths = get_submodule_paths()

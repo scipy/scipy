@@ -12,7 +12,7 @@ from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
                                    is_numpy, make_xp_test_case, xp_device)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
-from scipy.integrate._tanhsinh import _pair_cache
+from scipy.integrate._tanhsinh import _pair_cache, _compute_pair, _get_base_step
 from scipy.special._ufuncs import _gen_harmonic
 
 
@@ -788,7 +788,6 @@ def test_pair_device(xp, devices):
     # device; they are anchored on `h0` from `_get_base_step` (see gh-22680).
     # `TestTanhSinh.test_device` above cannot exercise this on the multi-device
     # array-api-strict backend because `tanhsinh` is skipped there.
-    from scipy.integrate._tanhsinh import _compute_pair, _get_base_step
     for d in devices:
         ref = xp.asarray(1.0, device=d)
         h0 = _get_base_step(xp.float64, xp, device=xp_device(ref))

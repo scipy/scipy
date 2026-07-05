@@ -5,7 +5,8 @@ import pytest
 
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    np_compat, xp_default_dtype, xp_result_type, is_torch, _xp_copy_to_numpy
+    np_compat, xp_default_dtype, xp_device, xp_promote, xp_result_type, is_torch,
+    _xp_copy_to_numpy
 )
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
@@ -376,8 +377,6 @@ def test_xp_promote_device(xp, devices):
     # Scalars and array-like iterables promoted alongside an array are
     # created on that array's device; array arguments keep their own device.
     # See gh-22680.
-    from scipy._lib._array_api import xp_promote, xp_device
-
     for d in devices:
         x = xp.asarray([1., 2., 3.], device=d)
 
