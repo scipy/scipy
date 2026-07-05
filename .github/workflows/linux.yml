@@ -245,7 +245,7 @@ jobs:
           python3-dbg -m pytest --pyargs scipy -n4 --durations=10 -m "not slow"
 
   #################################################################################
-  gcc9:
+  gcc10:
     # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
     name: Oldest GCC & pydata/sparse, full, py3.12/npMin, pip+pytest
     needs: get_commit_message
@@ -267,7 +267,7 @@ jobs:
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          sudo apt install -y g++-9 gcc-9 gfortran-9
+          sudo apt install -y g++-10 gcc-10 gfortran-10
           sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
             libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev ccache
 
@@ -288,7 +288,7 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC="ccache gcc-9" CXX="ccache g++-9" FC="ccache gfortran-9" python -m pip install . -v \
+          CC="ccache gcc-10" CXX="ccache g++-10" FC="ccache gfortran-10" python -m pip install . -v \
               --no-build-isolation -Cbuild-dir=build \
               -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
 
