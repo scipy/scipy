@@ -1408,9 +1408,9 @@ class TestResample:
             assert xp_device(y) == xp_device(x)
             # also exercise the `t is not None` return branch
             t = xp.arange(16, dtype=xp.float64, device=d)
-            y, new_t = signal.resample(x, 32, t=t)
+            y, t_new = signal.resample(x, 32, t=t)
             assert xp_device(y) == xp_device(x)
-            assert xp_device(new_t) == xp_device(x)
+            assert xp_device(t_new) == xp_device(x)
 
     @skip_xp_backends("cupy",
                       reason="delegated to cupyx, whose time vector is float64")
@@ -1420,8 +1420,8 @@ class TestResample:
         for dtype in (xp.float32, xp.float64):
             x = xp.arange(16, dtype=dtype)
             t = xp.arange(16, dtype=dtype)
-            _, new_t = signal.resample(x, 32, t=t)
-            assert new_t.dtype == dtype
+            _, t_new = signal.resample(x, 32, t=t)
+            assert t_new.dtype == dtype
 
     @pytest.mark.parametrize('window', (None, 'hamming'))
     @pytest.mark.parametrize('N', (20, 19))

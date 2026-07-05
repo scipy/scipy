@@ -3908,13 +3908,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if x_r.ndim > 1:  # moving active axis back to original position:
         x_r = xp.moveaxis(x_r, -1, axis)
     if t is not None:
-        # `new_t` must be floating-point for array API promotion with the
-        # python-float `s_fac`; follow `t`'s precision (or the default float
-        # dtype when `t` is a python sequence).
-        new_t_dtype = (xp_result_type(t, force_floating=True, xp=xp)
-                       if hasattr(t, "dtype") else xp_default_dtype(xp))
-        new_t = xp.arange(num, dtype=new_t_dtype, device=xp_device(x))
-        return x_r, t[0] + (t[1] - t[0]) * s_fac * new_t
+        t_new_dtype = xp_result_type(t, force_floating=True, xp=xp)
+        t_new = xp.arange(num, dtype=t_new_dtype, device=xp_device(x))
+        return x_r, t[0] + (t[1] - t[0]) * s_fac * t_new
     return x_r
 
 
