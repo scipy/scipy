@@ -1374,7 +1374,7 @@ class TestResample:
         # window.shape must equal to sig.shape[0]
         sig = xp.arange(128, dtype=xp.float64)
         num = 256
-        win = signal.get_window(('kaiser', 8.0), 160, xp=xp)
+        win = signal.get_window(('kaiser', 8.0), 160, xp=xp, device=xp_device(sig))
         assert_raises(ValueError, signal.resample, sig, num, window=win)
         assert_raises(ValueError, signal.resample, sig, num, domain='INVALID')
 
@@ -1522,11 +1522,12 @@ class TestResample:
         # Sinusoids, windowed to avoid edge artifacts
         t = xp.arange(rate, dtype=xp.float64) / float(rate)
         freqs = xp.asarray((1., 10., 40.))[:, xp.newaxis]
-        x = xp.sin(2 * xp.pi * freqs * t) * hann(rate, xp=xp)
+        x = xp.sin(2 * xp.pi * freqs * t) * hann(rate, xp=xp, device=xp_device(t))
 
         for rate_to in rates_to:
             t_to = xp.arange(rate_to, dtype=xp.float64) / float(rate_to)
-            y_tos = xp.sin(2 * xp.pi * freqs * t_to) * hann(rate_to, xp=xp)
+            y_tos = (xp.sin(2 * xp.pi * freqs * t_to)
+                     * hann(rate_to, xp=xp, device=xp_device(t_to)))
             if method == 'fft':
                 y_resamps = signal.resample(x, rate_to, axis=-1)
             else:

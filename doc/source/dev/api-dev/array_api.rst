@@ -1305,7 +1305,11 @@ its input arrays, so any internal creation that omits ``device=`` lands on
 ``meta`` and fails loudly (``Expected all tensors to be on the same device``)
 at the first combination with input data. In other words: the entire torch
 test lane doubles as a device-propagation leak detector, equivalent in
-structure to a GPU CI run with cpu inputs.
+structure to a GPU CI run with cpu inputs. This includes ``cpu_only``
+functions: their NumPy round-trip must return results on the *input's*
+device (not the default device), so they run and are value-checked in this
+mode — more coverage than a cuda run, where their inputs cannot be converted
+to NumPy at all.
 
 When triaging a failure in this mode:
 

@@ -223,12 +223,12 @@ if SCIPY_ARRAY_API:
             pytest.param(torch, id='torch',
             marks=_array_api_backends))
         torch.set_default_device(SCIPY_DEVICE)
-        # This also covers the meta leak-check mode (SCIPY_DEVICE=meta; see the
-        # `xp` fixture): `cpu_only` functions round-trip through NumPy and
-        # convert their result back onto the default device -- a working
-        # device-to-device copy on e.g. cuda, but impossible on the data-free
-        # meta device.
-        if SCIPY_DEVICE != "cpu":
+        # In the meta leak-check mode (SCIPY_DEVICE=meta; see the `xp`
+        # fixture) test inputs are real cpu tensors and `cpu_only` functions
+        # preserve the input device across their NumPy round-trip, so they run
+        # and are value-checked -- unlike on an actual non-default device such
+        # as cuda, where their inputs cannot be converted to NumPy.
+        if SCIPY_DEVICE not in ("cpu", "meta"):
             xp_skip_cpu_only_backends.add('torch')
 
         # default to float64 unless explicitly requested
@@ -372,7 +372,9 @@ class _CpuPinningNamespace:
                     device = "cpu"
                 return attr(obj, *args, device=device, **kwargs)
             return _asarray_pin_cpu
-        if name == "fft":
+        if name == "fft" and self._creation is self._CREATION:
+            # wrap the fft extension namespace (but only at the top level:
+            # inside the fft wrapper, `fft` would be the fft *function*)
             return _CpuPinningNamespace(
                 attr, creation=frozenset({"fftfreq", "rfftfreq"}))
         return attr
