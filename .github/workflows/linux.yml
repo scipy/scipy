@@ -391,31 +391,24 @@ jobs:
         submodules: recursive
         persist-credentials: false
 
-    - name: build + test in i686 container
-      run: |
-        set -exuo pipefail
-        # Note: `ccache` not used because it isn't available on i686 CentOS 7
-        docker pull quay.io/pypa/manylinux2014_i686
-        docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
-        uname -a && \
-        python3.12 -m venv test && \
-        source test/bin/activate && \
-        python -m pip install spin 'click<8.3.0' meson ninja && \
-        python -m pip install -r requirements/openblas.txt && \
-        # Ensure that scipy-openblas is picked up by the numpy<1.26 build
-        cat > \$HOME/.numpy-site.cfg <<EOL
-        [openblas]
-        libraries = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_library())')
-        library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
-        include_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_include_dir())')
-        runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
-        symbol_prefix = scipy_
-        EOL
-        python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir && \
-        python -m pip install cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
-        python -c 'import numpy as np; np.show_config()' && \
-        spin build --with-scipy-openblas=32 && \
-        spin test"
+      - name: build + test in i686 container
+        run: |
+          set -exuo pipefail
+          docker pull quay.io/pypa/manylinux_2_28_i686
+          docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux_2_28_i686 /bin/bash -c "cd /scipy && \
+          uname -a && \
+          python3.12 -m venv test && \
+          source test/bin/activate && \
+          python -m pip install --upgrade pip && \
+          python -m pip install --group build --group dev-cli --group test-core && \
+          # we want `mpmath` but cannot install `gmpy2` on 32-bit,
+          # so cannot use `--group test-mp`
+          python -m pip install mpmath && \
+          python -m pip install -r requirements/openblas.txt && \
+          python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir && \
+          python -c 'import numpy as np; np.show_config()' && \
+          spin build --with-scipy-openblas=32 && \
+          spin test"
 
   #################################################################################
   distro_multiple_pythons:
