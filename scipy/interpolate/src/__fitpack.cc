@@ -922,17 +922,21 @@ void fpback_clamped( /* inputs */
     const double* ywptr,
     const double *yptr, int64_t ydim2,
     const double *clamp_values,           // clamp_values(2, ydim2)
+    const int left_clamp_only,
+    const int right_clamp_only,
     /* outputs */
     double *cptr,
     double *fp,
     double *residualsptr)
 {
-    int64_t nc_full = nc_reduced + 2;
+    int64_t nc_full = nc_reduced + ((left_clamp_only || right_clamp_only) ? 1 : 2);
 
     auto R = ConstRealArray2D(Rptr, m, nz);
     auto yw = ConstRealArray2D(ywptr, m, ydim2);
     auto clamp = ConstRealArray2D(clamp_values, 2, ydim2);
-    auto c_red = RealArray2D(cptr + ydim2, nc_reduced, ydim2);
+
+    int64_t c_red_start = right_clamp_only ? 0 : ydim2;
+    auto c_red = RealArray2D(cptr + c_red_start, nc_reduced, ydim2);
 
     /* The loops remain same as fpback, they directly write to the
     memory region starting from `cptr + ydim2` to `cptr + ydim2 + nc_reduced * ydim2`,
@@ -942,9 +946,13 @@ void fpback_clamped( /* inputs */
 
     /* Reassembly: add c[0] & c[-1] to c before computing residuals. */
     auto c = RealArray2D(cptr, nc_full, ydim2);
-    for (int64_t l=0; l < ydim2; ++l) {
-        c(0, l) = clamp(0, l);
-        c(nc_full - 1, l) = clamp(1, l);
+    for (int64_t l = 0; l < ydim2; ++l) {
+        if (!right_clamp_only) {   // left is clamped, pin c[0]
+            c(0, l) = clamp(0, l);
+        }
+        if (!left_clamp_only) {    // right is clamped, pin c[nc_full-1]
+            c(nc_full - 1, l) = clamp(1, l);
+        }
     }
 
     _compute_residuals(

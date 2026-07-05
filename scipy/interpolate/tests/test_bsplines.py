@@ -1835,12 +1835,45 @@ class TestLSQ:
         xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
     
+    def test_clamp_values_one_sided_matches_dense_reference(self):
+        # For left-only clamp: pin spl(x[0]) = ci, right end free
+        x = np.linspace(0, 10, 30)
+        y = np.sin(x)
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        y0 = 0.5
+        
+        # Dense reference: drop first row and first column
+        N = BSpline.design_matrix(x, t, k).toarray()
+        Q = y - N[:, 0] * y0
+        N_reduced = N[:, 1:]       # drop first column only
+        N_reduced = N_reduced[1:]  # drop first row only
+        Q_reduced = Q[1:]          # drop first row
+        c_free = np.linalg.solve(N_reduced.T @ N_reduced, N_reduced.T @ Q_reduced)
+        c_ref_left = np.concatenate([[y0], c_free])
+        
+        for method in ["norm-eq", "qr"]:
+            spl = make_lsq_spline(x, y, t, k=k, method=method, clamp_values=(y0, None))
+            np.testing.assert_allclose(spl.c, c_ref_left, atol=1e-12)
+        
+        # For right-only clamp: pin spl(x[-1]) = cf, left end free
+        y1 = -0.3
+        Q = y - N[:, -1] * y1
+        N_reduced = N[:, :-1]       # drop last column only
+        N_reduced = N_reduced[:-1]  # drop last row only
+        Q_reduced = Q[:-1]
+        c_free = np.linalg.solve(N_reduced.T @ N_reduced, N_reduced.T @ Q_reduced)
+        c_ref_right = np.concatenate([c_free, [y1]])
+        
+        for method in ["norm-eq", "qr"]:
+            spl = make_lsq_spline(x, y, t, k=k, method=method, clamp_values=(None, y1))
+            np.testing.assert_allclose(spl.c, c_ref_right, atol=1e-12)
+
     @pytest.mark.parametrize("clamp_values", [(3, None), (None, 3), (None, None)])
-    @pytest.mark.parametrize("solver", ["norm-eq"])
+    @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     @parametrize_lsq_methods
     def test_lsq_with_one_sided_clamp_values(self, method, xp, solver, clamp_values):
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        clamp_values = clamp_values
 
         if clamp_values == (None, None):
             with assert_raises(ValueError):

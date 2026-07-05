@@ -239,6 +239,8 @@ void fpback_clamped( /* inputs */
     const double* ywptr,
     const double *yptr, int64_t ydim2,
     const double *clamp_values,           // clamp_values(2, ydim2)
+    const int left_clamp_only,
+    const int right_clamp_only,
     /* outputs */
     double *cptr,
     double *fp,
