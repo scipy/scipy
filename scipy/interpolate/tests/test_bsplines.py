@@ -106,6 +106,8 @@ class TestBSpline:
         expected = xp.where(xx < 1., xp.asarray(3., dtype=xp.float64), 4.0)
         xp_assert_close(b(xx), expected)
 
+    @pytest.mark.skip_xp_meta(
+        reason='namespace identity cannot hold for the pinning wrapper')
     def test_attributes_have_correct_namespace(self, xp):
         b = BSpline(t=xp.asarray([0, 1., 2]), c=xp.asarray([3., 4]), k=0)
         assert array_namespace(b.t) is xp

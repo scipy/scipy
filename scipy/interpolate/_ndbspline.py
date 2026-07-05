@@ -10,7 +10,9 @@ from . import _dierckx  # type: ignore[attr-defined]
 
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
-from scipy._lib._array_api import array_namespace, xp_capabilities
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_device, _has_own_device
+)
 
 from ._bsplines import _not_a_knot, BSpline
 
@@ -91,7 +93,11 @@ class NdBSpline:
     def __init__(self, t, c, k, *, extrapolate=None):
         self._k, self._indices_k1d, (self._t, self._len_t) = _preprocess_inputs(k, t)
 
-        self._asarray = array_namespace(c, *t).asarray
+        # the NumPy round-trip must return results on the inputs' device
+        device = next(
+            (xp_device(a) for a in (c, *t) if _has_own_device(a)), None)
+        self._asarray = functools.partial(
+            array_namespace(c, *t).asarray, device=device)
 
         if extrapolate is None:
             extrapolate = True

@@ -789,6 +789,10 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     """
     xp = array_namespace(*system, w)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = next(
+        (xp_device(arg) for arg in (*system, w) if _has_own_device(arg)), None
+    )
     b, a = map(np.atleast_1d, system)
 
     if w is None:
@@ -833,7 +837,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     w = w * (fs / (2 * xp.pi))
 
-    return xp.asarray(w), xp.asarray(gd)
+    return xp.asarray(w, device=device), xp.asarray(gd, device=device)
 
 
 def _validate_sos(sos, xp=None):
@@ -1296,8 +1300,11 @@ def zpk2tf(z, p, k):
     (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
     xp = array_namespace(z, p)
+    # a scalar `k` must be created on the device of the array arguments
+    device = next((xp_device(a) for a in (z, p, k) if _has_own_device(a)), None)
     z, p = map(xp.asarray, (z, p))
-    k = xp.asarray(k, dtype=xp.result_type(xp.real(z), xp.real(p), k))
+    k = xp.asarray(k, dtype=xp.result_type(xp.real(z), xp.real(p), k),
+                   device=device)
     if xp.isdtype(k.dtype, "integral"):
         k = xp.astype(k, xp.float64)
 
@@ -1680,6 +1687,8 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     # See the wiki for other potential issues.
 
     xp = array_namespace(z, p)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = next((xp_device(a) for a in (z, p, k) if _has_own_device(a)), None)
 
     # convert to numpy, convert back on exit   XXX
     z, p = map(np.asarray, (z, p))
@@ -1698,9 +1707,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     if len(z) == len(p) == 0:
         if not analog:
-            return xp.asarray(np.asarray([[k, 0., 0., 1., 0., 0.]]))
+            return xp.asarray(np.asarray([[k, 0., 0., 1., 0., 0.]]), device=device)
         else:
-            return xp.asarray(np.asarray([[0., 0., k, 0., 0., 1.]]))
+            return xp.asarray(np.asarray([[0., 0., k, 0., 0., 1.]]), device=device)
 
     if pairing != 'minimal':
         # ensure we have the same number of poles and zeros, and make copies
@@ -1811,7 +1820,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     # put gain in first sos
     sos[0][:3] *= k
-    return xp.asarray(sos)
+    return xp.asarray(sos, device=device)
 
 
 def _align_nums(nums, xp):
@@ -2461,6 +2470,8 @@ def bilinear(b, a, fs=1.0):
     reduce those deviations.
     """
     xp = array_namespace(b, a)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = next((xp_device(arg) for arg in (b, a) if _has_own_device(arg)), None)
 
     b, a = map(np.asarray, (b, a))
     b, a = np.atleast_1d(b), np.atleast_1d(a)  # convert scalars, if needed
@@ -2483,8 +2494,8 @@ def bilinear(b, a, fs=1.0):
     denominator = sum(a_ * zp1**(N-p) * zm1**p for p, a_ in enumerate(a[::-1]))
 
     return normalize(
-        xp.asarray(numerator.coef[::-1].copy()),
-        xp.asarray(denominator.coef[::-1].copy())
+        xp.asarray(numerator.coef[::-1].copy(), device=device),
+        xp.asarray(denominator.coef[::-1].copy(), device=device)
     )
 
 
@@ -2823,10 +2834,12 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
 
     """
     xp = array_namespace(Wn)
+    # the analog prototype below must be created on the device of `Wn`
+    device = xp_device(Wn) if _has_own_device(Wn) else None
     # For now, outputs will have float64 base dtype regardless of
     # the dtype of Wn, so cast to float64 here to ensure 64 bit
     # precision for all calculations.
-    Wn = xp.asarray(Wn, dtype=xp.float64)
+    Wn = xp.asarray(Wn, dtype=xp.float64, device=device)
 
     fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
@@ -2862,24 +2875,24 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
 
     # Get analog lowpass prototype
     if typefunc == buttap:
-        z, p, k = typefunc(N, xp=xp)
+        z, p, k = typefunc(N, xp=xp, device=device)
     elif typefunc == besselap:
-        z, p, k = typefunc(N, norm=bessel_norms[ftype], xp=xp)
+        z, p, k = typefunc(N, norm=bessel_norms[ftype], xp=xp, device=device)
     elif typefunc == cheb1ap:
         if rp is None:
             raise ValueError("passband ripple (rp) must be provided to "
                              "design a Chebyshev I filter.")
-        z, p, k = typefunc(N, rp, xp=xp)
+        z, p, k = typefunc(N, rp, xp=xp, device=device)
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
                              "design a Chebyshev II filter.")
-        z, p, k = typefunc(N, rs, xp=xp)
+        z, p, k = typefunc(N, rs, xp=xp, device=device)
     elif typefunc == ellipap:
         if rs is None or rp is None:
             raise ValueError("Both rp and rs must be provided to design an "
                              "elliptic filter.")
-        z, p, k = typefunc(N, rp, rs, xp=xp)
+        z, p, k = typefunc(N, rp, rs, xp=xp, device=device)
     else:
         raise NotImplementedError(f"'{ftype}' not implemented in iirfilter.")
 
@@ -4226,7 +4239,10 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind, *, xp):
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:          # stop
-
+        # the NumPy round-trip must return the result on the inputs' device
+        device = next(
+            (xp_device(a) for a in (passb, stopb) if _has_own_device(a)), None
+        )
         passb, stopb = np.asarray(passb), np.asarray(stopb)    # XXX fminbound array API
         wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
                                  args=(0, passb, stopb, gpass, gstop,
@@ -4237,7 +4253,8 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind, *, xp):
                                        filter_kind),
                                  disp=0)
         passb = [float(wp0), float(wp1)]
-        passb, stopb = xp.asarray(passb), xp.asarray(stopb)
+        passb = xp.asarray(passb, device=device)
+        stopb = xp.asarray(stopb, device=device)
         nat = ((stopb * (passb[0] - passb[1])) /
                (stopb ** 2 - passb[0] * passb[1]))
     elif filter_type == 4:          # pass
@@ -4338,7 +4355,8 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    wp, ws = map(xp.asarray, (wp, ws))
+    # NB: keep `wp`, `ws` as-is: `_validate_wp_ws` converts scalars and
+    # sequences on the device of the array argument, if any
 
     _validate_gpass_gstop(gpass, gstop)
     fs = _validate_fs(fs, allow_none=True)
@@ -4469,7 +4487,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    wp, ws = map(xp.asarray, (wp, ws))
+    # NB: keep `wp`, `ws` as-is: `_validate_wp_ws` converts scalars and
+    # sequences on the device of the array argument, if any
 
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
@@ -4567,7 +4586,8 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    wp, ws = map(xp.asarray, (wp, ws))
+    # NB: keep `wp`, `ws` as-is: `_validate_wp_ws` converts scalars and
+    # sequences on the device of the array argument, if any
 
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
@@ -4693,7 +4713,8 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    wp, ws = map(xp.asarray, (wp, ws))
+    # NB: keep `wp`, `ws` as-is: `_validate_wp_ws` converts scalars and
+    # sequences on the device of the array argument, if any
 
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)

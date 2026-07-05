@@ -3,7 +3,7 @@
 import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import _has_own_device, array_namespace, xp_device
 from . import _signaltools
 from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
 from .windows import get_window
@@ -663,13 +663,16 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
         if isinstance(window, str | tuple)
         else array_namespace(x, window)
     )
+    # the NumPy round-trip must return the result on the inputs' device
+    device = next((xp_device(a) for a in (x, window) if _has_own_device(a)), None)
     x_np = np.asarray(x)
     freqs_np, Pxx_np = csd(x_np, x_np, fs=fs, window=window, nperseg=nperseg,
                            noverlap=noverlap, nfft=nfft, detrend=detrend,
                            return_onesided=return_onesided, scaling=scaling,
                            axis=axis, average=average)
 
-    return xp.asarray(freqs_np), xp.asarray(Pxx_np.real)
+    return (xp.asarray(freqs_np, device=device),
+            xp.asarray(Pxx_np.real, device=device))
 
 
 def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,

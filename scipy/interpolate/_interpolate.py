@@ -13,7 +13,8 @@ from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
 from scipy._lib._array_api import (
-    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy
+    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy,
+    xp_device, _has_own_device
 )
 
 from . import _fitpack_py
@@ -1396,11 +1397,15 @@ class PPoly:
     def __init__(self, c, x, extrapolate=None, axis=0):
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        # a NumPy round-trip in the delegate must return results on the
+        # device of the inputs, not on the backend's default device
+        device = next((xp_device(a) for a in (c, x) if _has_own_device(a)), None)
         if not is_numpy(xp):
             c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         self._delegate_to = xp_ppoly_cls(c, x, extrapolate=extrapolate, axis=axis)
         self._xp = xp
         self._xp_internal = xp_internal
+        self._device = device
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -1413,13 +1418,15 @@ class PPoly:
         _, xp_internal = _get_xp_ppoly_cls(self._xp)
         self._xp_internal = xp_internal
         self.__dict__.update(state)
+        self.__dict__.setdefault("_device", None)
 
     @classmethod
-    def _construct_from_xp(cls, xp_ppoly, *, xp_external):
+    def _construct_from_xp(cls, xp_ppoly, *, xp_external, device=None):
         self = object.__new__(cls)
         self._delegate_to = xp_ppoly
         self._xp = xp_external
         self._xp_internal = array_namespace(xp_ppoly.c)
+        self._device = device
         return self
 
     @classmethod
@@ -1434,17 +1441,19 @@ class PPoly:
         """
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        device = next((xp_device(a) for a in (c, x) if _has_own_device(a)), None)
         c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         return cls._construct_from_xp(
             xp_ppoly_cls.construct_fast(
                 c, x, extrapolate=extrapolate, axis=axis
             ),
             xp_external=xp,
+            device=device,
         )
 
     @property
     def c(self):
-        return self._xp.asarray(self._delegate_to.c)
+        return self._xp.asarray(self._delegate_to.c, device=self._device)
 
     @c.setter
     def c(self, c):
@@ -1454,7 +1463,7 @@ class PPoly:
 
     @property
     def x(self):
-        return self._xp.asarray(self._delegate_to.x)
+        return self._xp.asarray(self._delegate_to.x, device=self._device)
 
     @x.setter
     def x(self, x):
@@ -1532,10 +1541,12 @@ class PPoly:
         ``[a, b)``, except for the last interval which is closed
         ``[a, b]``.
         """
+        device = xp_device(x) if _has_own_device(x) else self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
-            )
+            ),
+            device=device,
         )
 
     def derivative(self, nu=1):
@@ -1565,6 +1576,7 @@ class PPoly:
         return self._construct_from_xp(
             self._delegate_to.derivative(nu=nu),
             xp_external=self._xp,
+            device=self._device,
         )
 
     def antiderivative(self, nu=1):
@@ -1600,6 +1612,7 @@ class PPoly:
         return self._construct_from_xp(
             self._delegate_to.antiderivative(nu=nu),
             xp_external=self._xp,
+            device=self._device,
         )
 
     def integrate(self, a, b, extrapolate=None):
@@ -1624,7 +1637,8 @@ class PPoly:
             Definite integral of the piecewise polynomial over [a, b]
         """
         return self._xp.asarray(
-            self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+            self._delegate_to.integrate(a, b, extrapolate=extrapolate),
+            device=self._device,
         )
 
     def solve(self, y=0, discontinuity=True, extrapolate=None):
@@ -1679,7 +1693,8 @@ class PPoly:
         return self._xp.asarray(
             self._delegate_to.solve(
                 y=y, discontinuity=discontinuity, extrapolate=extrapolate
-            )
+            ),
+            device=self._device,
         )
 
     def roots(self, discontinuity=True, extrapolate=None):
@@ -1787,9 +1802,10 @@ class PPoly:
             t, c, k = tck
             xp = array_namespace(t, c)
         xp_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        device = next((xp_device(a) for a in (t, c) if _has_own_device(a)), None)
         t, c = xp_internal.asarray(t), xp_internal.asarray(c)
         pp = xp_cls.from_spline((t, c, k), extrapolate=extrapolate)
-        return cls._construct_from_xp(pp, xp_external=xp)
+        return cls._construct_from_xp(pp, xp_external=xp, device=device)
 
     @classmethod
     def from_bernstein_basis(cls, bp, extrapolate=None):
@@ -1812,7 +1828,7 @@ class PPoly:
         xp = bp._xp
         xp_cls, _ = _get_xp_ppoly_cls(xp)
         pp = xp_cls.from_bernstein_basis(bp._delegate_to, extrapolate=extrapolate)
-        return cls._construct_from_xp(pp, xp_external=xp)
+        return cls._construct_from_xp(pp, xp_external=xp, device=bp._device)
 
 
 _bpoly_extra_note = (
@@ -1927,11 +1943,15 @@ class BPoly:
     def __init__(self, c, x, extrapolate=None, axis=0):
         xp = array_namespace(c, x)
         xp_bpoly_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        # a NumPy round-trip in the delegate must return results on the
+        # device of the inputs, not on the backend's default device
+        device = next((xp_device(a) for a in (c, x) if _has_own_device(a)), None)
         if not is_numpy(xp):
             c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         self._delegate_to = xp_bpoly_cls(c, x, extrapolate=extrapolate, axis=axis)
         self._xp = xp
         self._xp_internal = xp_internal
+        self._device = device
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -1944,13 +1964,15 @@ class BPoly:
         _, xp_internal = _get_xp_bpoly_cls(self._xp)
         self._xp_internal = xp_internal
         self.__dict__.update(state)
+        self.__dict__.setdefault("_device", None)
 
     @classmethod
-    def _construct_from_xp(cls, xp_bpoly, *, xp_external):
+    def _construct_from_xp(cls, xp_bpoly, *, xp_external, device=None):
         self = object.__new__(cls)
         self._delegate_to = xp_bpoly
         self._xp = xp_external
         self._xp_internal = array_namespace(xp_bpoly.c)
+        self._device = device
         return self
 
     @classmethod
@@ -1965,17 +1987,19 @@ class BPoly:
         """
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        device = next((xp_device(a) for a in (c, x) if _has_own_device(a)), None)
         c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         return cls._construct_from_xp(
             xp_ppoly_cls.construct_fast(
                 c, x, extrapolate=extrapolate, axis=axis
             ),
             xp_external=xp,
+            device=device,
         )
 
     @property
     def c(self):
-        return self._xp.asarray(self._delegate_to.c)
+        return self._xp.asarray(self._delegate_to.c, device=self._device)
 
     @c.setter
     def c(self, c):
@@ -1985,7 +2009,7 @@ class BPoly:
 
     @property
     def x(self):
-        return self._xp.asarray(self._delegate_to.x)
+        return self._xp.asarray(self._delegate_to.x, device=self._device)
 
     @x.setter
     def x(self, x):
@@ -2063,10 +2087,12 @@ class BPoly:
         ``[a, b)``, except for the last interval which is closed
         ``[a, b]``.
         """
+        device = xp_device(x) if _has_own_device(x) else self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
-            )
+            ),
+            device=device,
         )
 
     def derivative(self, nu=1):
@@ -2089,6 +2115,7 @@ class BPoly:
         return self._construct_from_xp(
             self._delegate_to.derivative(nu=nu),
             xp_external=self._xp,
+            device=self._device,
         )
 
     def antiderivative(self, nu=1):
@@ -2117,6 +2144,7 @@ class BPoly:
         return self._construct_from_xp(
             self._delegate_to.antiderivative(nu=nu),
             xp_external=self._xp,
+            device=self._device,
         )
 
     def integrate(self, a, b, extrapolate=None):
@@ -2141,7 +2169,8 @@ class BPoly:
 
         """
         return self._xp.asarray(
-            self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+            self._delegate_to.integrate(a, b, extrapolate=extrapolate),
+            device=self._device,
         )
 
     @classmethod
@@ -2165,7 +2194,7 @@ class BPoly:
         xp = pp._xp
         xp_cls, _ = _get_xp_bpoly_cls(xp)
         bp = xp_cls.from_power_basis(pp._delegate_to, extrapolate=extrapolate)
-        return cls._construct_from_xp(bp, xp_external=xp)
+        return cls._construct_from_xp(bp, xp_external=xp, device=pp._device)
 
     @classmethod
     def from_derivatives(cls, xi, yi, orders=None, extrapolate=None):
@@ -2240,6 +2269,9 @@ class BPoly:
         else:
             xp = array_namespace(xi, yi)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        yi_seq = yi if isinstance(yi, (list, tuple)) else (yi,)
+        device = next(
+            (xp_device(a) for a in (xi, *yi_seq) if _has_own_device(a)), None)
         xi = xp_internal.asarray(xi)
         if isinstance(yi, (list, tuple)):
             # If yi is a ragged list or tuple of arrays, then need to apply
@@ -2251,7 +2283,7 @@ class BPoly:
         bp = xp_cls.from_derivatives(
             xi, yi, orders=orders, extrapolate=extrapolate
         )
-        return cls._construct_from_xp(bp, xp_external=xp)
+        return cls._construct_from_xp(bp, xp_external=xp, device=device)
 
     @staticmethod
     def _construct_from_derivatives(xa, xb, ya, yb):
@@ -2310,8 +2342,10 @@ class BPoly:
         """
         xp = array_namespace(ya, yb)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        device = next((xp_device(a) for a in (ya, yb) if _has_own_device(a)), None)
         ya, yb = xp_internal.asarray(ya), xp_internal.asarray(yb)
-        return xp.asarray(xp_cls._construct_from_derivatives(xa, xb, ya, yb))
+        return xp.asarray(
+            xp_cls._construct_from_derivatives(xa, xb, ya, yb), device=device)
 
     @staticmethod
     def _raise_degree(c, d):
@@ -2343,7 +2377,9 @@ class BPoly:
         """
         xp = array_namespace(c)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
-        return xp.asarray(xp_cls._raise_degree(xp_internal.asarray(c), d))
+        device = xp_device(c) if _has_own_device(c) else None
+        return xp.asarray(
+            xp_cls._raise_degree(xp_internal.asarray(c), d), device=device)
 
 class NdPPoly:
     """

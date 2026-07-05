@@ -5,7 +5,8 @@ from numpy import (zeros_like, array, tan, arange, floor,
                    moveaxis, abs, complex64, float32)
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, xp_promote
+from scipy._lib._array_api import (_has_own_device, array_namespace, xp_device,
+                                   xp_promote)
 
 from scipy._lib._util import normalize_axis_index
 
@@ -61,6 +62,8 @@ def spline_filter(Iin, lmbda=5.0):
 
     """
     xp = array_namespace(Iin)
+    # the NumPy round-trip must return the result on the input's device
+    device = xp_device(Iin) if _has_own_device(Iin) else None
     Iin = np.asarray(Iin)
 
     if Iin.dtype not in [np.float32, np.float64, np.complex64, np.complex128]:
@@ -79,7 +82,7 @@ def spline_filter(Iin, lmbda=5.0):
     ck = cspline2d(Iin, lmbda)
     out = sepfir2d(ck, hcol, hcol)
     out = out.astype(intype)
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)
 
 
 def gauss_spline(x, n):
@@ -134,22 +137,24 @@ def gauss_spline(x, n):
 
 def _cubic(x):
     xp = array_namespace(x)
+    device = xp_device(x) if _has_own_device(x) else None
 
     x = np.asarray(x, dtype=float)
     b = BSpline.basis_element([-2, -1, 0, 1, 2], extrapolate=False)
     out = b(x)
     out[(x < -2) | (x > 2)] = 0
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)
 
 
 def _quadratic(x):
     xp = array_namespace(x)
+    device = xp_device(x) if _has_own_device(x) else None
 
     x = abs(np.asarray(x, dtype=float))
     b = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5], extrapolate=False)
     out = b(x)
     out[(x < -1.5) | (x > 1.5)] = 0
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)
 
 
 def _coeff_smooth(lam):
@@ -344,12 +349,14 @@ def cspline1d(signal, lamb=0.0):
 
     """
     xp = array_namespace(signal)
+    # the NumPy round-trip must return the result on the input's device
+    device = xp_device(signal) if _has_own_device(signal) else None
 
     if lamb != 0.0:
         ret = _cubic_smooth_coeff(signal, lamb)
     else:
         ret = _cubic_coeff(signal)
-    return xp.asarray(ret)
+    return xp.asarray(ret, device=device)
 
 
 def qspline1d(signal, lamb=0.0):
@@ -398,11 +405,13 @@ def qspline1d(signal, lamb=0.0):
 
     """
     xp = array_namespace(signal)
+    # the NumPy round-trip must return the result on the input's device
+    device = xp_device(signal) if _has_own_device(signal) else None
 
     if lamb != 0.0:
         raise ValueError("Smoothing quadratic splines not supported yet.")
     else:
-        return xp.asarray(_quadratic_coeff(signal))
+        return xp.asarray(_quadratic_coeff(signal), device=device)
 
 
 def collapse_2d(x, axis):
@@ -571,6 +580,8 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     """
     xp = array_namespace(cj, newx)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = next((xp_device(a) for a in (cj, newx) if _has_own_device(a)), None)
 
     newx = (np.asarray(newx) - x0) / float(dx)
     cj = np.asarray(cj)
@@ -580,7 +591,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     res = zeros_like(newx, dtype=cj.dtype)
     if res.size == 0:
-        return xp.asarray(res)
+        return xp.asarray(res, device=device)
     N = len(cj)
     cond1 = newx < 0
     cond2 = newx > (N - 1)
@@ -590,7 +601,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     res[cond2] = cspline1d_eval(cj, 2 * (N - 1) - newx[cond2])
     newx = newx[cond3]
     if newx.size == 0:
-        return xp.asarray(res)
+        return xp.asarray(res, device=device)
     result = zeros_like(newx, dtype=cj.dtype)
     jlower = floor(newx - 2).astype(int) + 1
     for i in range(4):
@@ -598,7 +609,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
         indj = thisj.clip(0, N - 1)  # handle edge cases
         result += cj[indj] * _cubic(newx - thisj)
     res[cond3] = result
-    return xp.asarray(res)
+    return xp.asarray(res, device=device)
 
 
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
@@ -654,11 +665,13 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     """
     xp = array_namespace(newx, cj)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = next((xp_device(a) for a in (cj, newx) if _has_own_device(a)), None)
 
     newx = (np.asarray(newx) - x0) / dx
     res = np.zeros_like(newx)
     if res.size == 0:
-        return xp.asarray(res)
+        return xp.asarray(res, device=device)
 
     cj = np.asarray(cj)
     if cj.size == 0:
@@ -673,7 +686,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     res[cond2] = qspline1d_eval(cj, 2 * (N - 1) - newx[cond2])
     newx = newx[cond3]
     if newx.size == 0:
-        return xp.asarray(res)
+        return xp.asarray(res, device=device)
     result = zeros_like(newx)
     jlower = floor(newx - 1.5).astype(int) + 1
     for i in range(3):
@@ -681,7 +694,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
         indj = thisj.clip(0, N - 1)  # handle edge cases
         result += cj[indj] * _quadratic(newx - thisj)
     res[cond3] = result
-    return xp.asarray(res)
+    return xp.asarray(res, device=device)
 
 
 def symiirorder1(signal, c0, z1, precision=-1.0):
@@ -717,6 +730,8 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     """
     xp = array_namespace(signal)
     signal = xp_promote(signal, force_floating=True, xp=xp)
+    # the NumPy round-trip must return the result on the input's device
+    device = xp_device(signal) if _has_own_device(signal) else None
     # This function uses C internals
     signal = np.asarray(signal)
 
@@ -759,7 +774,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     if squeeze_dim:
         out = out[0]
 
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)
 
 
 def symiirorder2(input, r, omega, precision=-1.0):
@@ -797,6 +812,8 @@ def symiirorder2(input, r, omega, precision=-1.0):
     """
     xp = array_namespace(input)
     input = xp_promote(input, force_floating=True, xp=xp)
+    # the NumPy round-trip must return the result on the input's device
+    device = xp_device(input) if _has_own_device(input) else None
     # This function uses C internals
     input = np.ascontiguousarray(input)
 
@@ -841,4 +858,4 @@ def symiirorder2(input, r, omega, precision=-1.0):
     if squeeze_dim:
         out = out[0]
 
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)

@@ -13,7 +13,7 @@ from .windows import get_window
 from . import _sigtools
 
 from scipy._lib._array_api import (
-    array_namespace, xp_size, xp_default_dtype, xp_device
+    _has_own_device, array_namespace, xp_size, xp_default_dtype, xp_device
 )
 import scipy._external.array_api_extra as xpx
 
@@ -682,6 +682,8 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     """
     xp = array_namespace(freq, gain)
+    # internal creations must happen on the device of the array inputs
+    device = next((xp_device(a) for a in (freq, gain) if _has_own_device(a)), None)
     freq, gain = xp.asarray(freq), xp.asarray(gain)
 
     fs = _validate_fs(fs, allow_none=True)
@@ -752,8 +754,8 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)
     fx = np.interp(x, np.asarray(freq), np.asarray(gain))  # XXX array-api-extra#193
-    x = xp.asarray(x)
-    fx = xp.asarray(fx)
+    x = xp.asarray(x, device=device)
+    fx = xp.asarray(fx, device=device)
 
     # Adjust the phases of the coefficients so that the first `ntaps` of the
     # inverse FFT are the desired filter coefficients.
@@ -768,7 +770,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     if window is not None:
         # Create the window to apply to the filter coefficients.
-        wind = get_window(window, numtaps, fftbins=False, xp=xp)
+        wind = get_window(window, numtaps, fftbins=False, xp=xp, device=device)
     else:
         wind = 1
 
@@ -932,6 +934,9 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
 
     """
     xp = array_namespace(bands, desired, weight)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = next((xp_device(a) for a in (bands, desired, weight)
+                   if _has_own_device(a)), None)
     bands = np.asarray(bands)
     desired = np.asarray(desired)
     if weight is not None:
@@ -954,7 +959,7 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     bands = np.asarray(bands).copy()
     result = _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
                               maxiter, grid_density)
-    return xp.asarray(result)
+    return xp.asarray(result, device=device)
 
 
 def firls(numtaps, bands, desired, *, weight=None, fs=None):
@@ -1068,6 +1073,9 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
 
     """
     xp = array_namespace(bands, desired)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = next((xp_device(a) for a in (bands, desired, weight)
+                   if _has_own_device(a)), None)
     bands = np.asarray(bands)
     desired = np.asarray(desired)
 
@@ -1174,7 +1182,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
 
     # make coefficients symmetric (linear phase)
     coeffs = np.hstack((a[:0:-1], 2 * a[0], a[1:]))
-    return xp.asarray(coeffs)
+    return xp.asarray(coeffs, device=device)
 
 
 def _dhtm(mag, xp):

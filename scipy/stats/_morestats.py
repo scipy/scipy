@@ -3251,7 +3251,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
             varAB = n * m * (N + 1.0) * (3 + N ** 2) / (48.0 * N ** 2)
         else:
             varAB = m * n * (N + 2) * (N - 2.0) / 48 / (N - 1.0)
-        varAB = xp.asarray(varAB, dtype=dtype)
+        varAB = xp.asarray(varAB, dtype=dtype, device=xp_device(AB))
 
     # Small values of AB indicate larger dispersion for the x sample.
     # Large values of AB indicate larger dispersion for the y sample.
@@ -3524,7 +3524,9 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     W = numer / denom
     W = xp.squeeze(W, axis=-1)
     dfd = xp.squeeze(dfd, axis=-1) if is_marray(xp) else dfd
-    dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
+    device = xp_device(W)
+    dfn, dfd = (xp.asarray(dfn, dtype=W.dtype, device=device),
+                xp.asarray(dfd, dtype=W.dtype, device=device))
     pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
     W = W[()] if W.ndim == 0 else W
     pval = pval[()] if pval.ndim == 0 else pval

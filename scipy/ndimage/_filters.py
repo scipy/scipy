@@ -36,7 +36,8 @@ import operator
 import math
 
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_cupy, xp_size, xp_device
+from scipy._lib._array_api import (_has_own_device, array_namespace, is_cupy,
+                                   xp_size, xp_device)
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -56,8 +57,13 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
                           axes, batch_memory):
     xp = array_namespace(input, footprint, output)
 
+    # Anchor internal array creations to the device of the array arguments so
+    # that host data does not land on the backend's default device (gh-22680).
+    device = next((xp_device(arg) for arg in (input, footprint, output)
+                   if _has_own_device(arg)), None)
+
     # vectorized_filter input validation and standardization
-    input = xp.asarray(input)
+    input = xp.asarray(input, device=device)
 
     if not callable(function):
         raise ValueError("`function` must be a callable.")
@@ -85,12 +91,13 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     if size is not None:
         # If provided, size must be an integer or tuple of integers.
         size = (size,)*n_axes if np.isscalar(size) else tuple(size)
-        valid = [xp.isdtype(xp.asarray(i).dtype, 'integral') and i > 0 for i in size]
+        valid = [xp.isdtype(xp.asarray(i, device=device).dtype, 'integral')
+                 and i > 0 for i in size]
         if not all(valid):
             raise ValueError("All elements of `size` must be positive integers.")
     else:
         # If provided, `footprint` must be array-like
-        footprint = xp.asarray(footprint, dtype=xp.bool)
+        footprint = xp.asarray(footprint, dtype=xp.bool, device=device)
         size = footprint.shape
         def footprinted_function(input, *args, axis=-1, **kwargs):
             return function(input[..., footprint], *args, axis=-1, **kwargs)
@@ -120,7 +127,8 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         origin = (0,) * n_axes
     else:
         origin = (origin,)*n_axes if np.isscalar(origin) else tuple(origin)
-        integral = [xp.isdtype(xp.asarray(i).dtype, 'integral') for i in origin]
+        integral = [xp.isdtype(xp.asarray(i, device=device).dtype, 'integral')
+                    for i in origin]
         if not all(integral):
             raise ValueError("All elements of `origin` must be integers.")
         if not len(origin) == n_axes:
@@ -149,11 +157,11 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
     # `cval` must be a scalar or "broadcastable" to a tuple with the same
     # dimensionality of `input`. (Full input validation done by `np.pad`/`cp.pad`.)
-    if not xp.isdtype(xp.asarray(cval).dtype, 'numeric'):
+    if not xp.isdtype(xp.asarray(cval, device=device).dtype, 'numeric'):
         raise ValueError("`cval` must include only numbers.")
 
     # `batch_memory` must be a positive number.
-    temp = xp.asarray(batch_memory)
+    temp = xp.asarray(batch_memory, device=device)
     if temp.ndim != 0 or (not xp.isdtype(temp.dtype, 'numeric')) or temp <= 0:
         raise ValueError("`batch_memory` must be positive number.")
 
@@ -170,7 +178,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         kwargs = {'axis': working_axes}
 
         if working_axes == ():
-            return footprinted_function(xp.asarray(view), **kwargs)
+            return footprinted_function(xp.asarray(view, device=device), **kwargs)
 
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
@@ -179,10 +187,11 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             raise ValueError("`batch_memory` is insufficient for minimum chunk size.")
 
         elif slices_per_batch == view.shape[0]:
+            view = xp.asarray(view, device=device)
             if output is None:
-                return footprinted_function(xp.asarray(view), **kwargs)
+                return footprinted_function(view, **kwargs)
             else:
-                output[...] = footprinted_function(xp.asarray(view), **kwargs)
+                output[...] = footprinted_function(view, **kwargs)
                 return output
 
         for i in range(0, view.shape[0], slices_per_batch):
@@ -190,13 +199,14 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             if output is None:
                 # Look at the dtype before allocating the array. (In a follow-up, we
                 # can also look at the shape to support non-scalar elements.)
-                temp = footprinted_function(xp.asarray(view[i:i2]), **kwargs)
+                temp = footprinted_function(xp.asarray(view[i:i2], device=device),
+                                            **kwargs)
                 output = xp.empty(view.shape[:-n_axes], dtype=temp.dtype,
                                   device=xp_device(input))
                 output[i:i2, ...] = temp
             else:
-                output[i:i2, ...] = footprinted_function(xp.asarray(view[i:i2]),
-                                                         **kwargs)
+                output[i:i2, ...] = footprinted_function(
+                    xp.asarray(view[i:i2], device=device), **kwargs)
         return output
 
     return (input, wrapped_function, size, mode, cval, origin,
@@ -445,8 +455,9 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     # This seems to be defined.
     if input.ndim == 0 and size == ():
+        device = xp_device(input) if _has_own_device(input) else None
         return xp.asarray(function(input) if footprint is None
-                          else function(input[footprint]))
+                          else function(input[footprint]), device=device)
 
     if is_cupy(xp):
         # CuPy is the only GPU backend that has `pad` (with all modes)

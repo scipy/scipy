@@ -432,7 +432,7 @@ def _psi1_mod(x, *, xp=None):
     def _ed2(y):
         z = y**2 / 4
         z_ = np.asarray(z)
-        b = xp.asarray(kv(1/4, z_) + kv(3/4, z_))
+        b = xp.asarray(kv(1/4, z_) + kv(3/4, z_), device=xp_device(z))
         return xp.exp(-z) * (y/2)**(3/2) * b / math.sqrt(np.pi)
 
     def _ed3(y):
@@ -440,7 +440,8 @@ def _psi1_mod(x, *, xp=None):
         z_ = np.asarray(z)
         c = xp.exp(-z) / math.sqrt(np.pi)
         kv_terms = xp.asarray(2*kv(1/4, z_)
-                              + 3*kv(3/4, z_) - kv(5/4, z_))
+                              + 3*kv(3/4, z_) - kv(5/4, z_),
+                              device=xp_device(z))
         return c * (y/2)**(5/2) * kv_terms
 
     def _Ak(k, x):
@@ -498,7 +499,8 @@ def _cdf_cvm_inf(x, *, xp=None):
         u = math.exp(gammaln(k + 0.5) - gammaln(k+1)) / (xp.pi**1.5 * xp.sqrt(x))
         y = 4*k + 1
         q = y**2 / (16*x)
-        b = xp.asarray(kv(0.25, np.asarray(q)), dtype=u.dtype)  # not automatic?
+        b = xp.asarray(kv(0.25, np.asarray(q)), dtype=u.dtype,  # not automatic?
+                       device=xp_device(q))
         return u * math.sqrt(y) * xp.exp(-q) * b
 
     tot = xp.zeros_like(x, dtype=x.dtype)
@@ -683,7 +685,8 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     rvs = xp_promote(rvs, force_floating=True, xp=xp)
     vals = xp.sort(rvs, axis=-1)
     cdfvals = _masked_apply(cdf, args=(vals, *args), xp=xp)
-    n_count = xp.asarray(_count_nonmasked(rvs, axis=-1, xp=xp), dtype=rvs.dtype)
+    n_count = xp.asarray(_count_nonmasked(rvs, axis=-1, xp=xp), dtype=rvs.dtype,
+                         device=xp_device(rvs))
 
     u = ((2*xp.arange(1, n_length+1, dtype=rvs.dtype, device=xp_device(rvs)) - 1)
          / (2*n_count[..., xp.newaxis]))
@@ -1645,7 +1648,9 @@ def _pval_cvm_2samp_exact(s, m, n):
 
 def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     # compute expected value and variance of T (eq. 11 and 14 in [2])
-    nx, ny = xp.asarray(nx, dtype=t.dtype), xp.asarray(ny, dtype=t.dtype)
+    device = xp_device(t)
+    nx, ny = (xp.asarray(nx, dtype=t.dtype, device=device),
+              xp.asarray(ny, dtype=t.dtype, device=device))
     et = (1 + 1 / N) / 6
     vt = (N + 1) * (4 * k * N - 3 * (nx ** 2 + ny ** 2) - 2 * k)
     vt = vt / (45 * N ** 2 * 4 * k)
@@ -1836,7 +1841,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
         if is_marray(xp):
             u, count_x, count_y = u.data, count_x.data, count_y.data
         p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
-        p = xp.asarray(p, dtype=dtype)
+        p = xp.asarray(p, dtype=dtype, device=xp_device(t))
     else:
         p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
 

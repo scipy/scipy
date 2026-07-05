@@ -85,6 +85,7 @@ from scipy._lib._array_api import (
     _masked_apply,
     xp_swapaxes,
     xp_device,
+    _has_own_device,
 )
 import scipy._external.array_api_extra as xpx
 from scipy.stats._quantile import _xp_searchsorted
@@ -4008,7 +4009,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
                             for sample in samples])
             n_t = xp.asarray(n_t, dtype=n_t.dtype)
         else:
-            n_t = xp.asarray([sample.shape[-1] for sample in samples], dtype=y_t.dtype)
+            n_t = xp.asarray([sample.shape[-1] for sample in samples],
+                             dtype=y_t.dtype, device=xp_device(y_t))
             n_t = xp.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
         # "... from $k$ different normal populations..."
         k = len(samples)
@@ -4705,7 +4707,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`x` and `y` must have length at least 2.')
 
     x, y = _share_masks(x, y, xp=xp)
-    n = xp.asarray(_count_nonmasked(x, axis=axis), dtype=x.dtype)
+    n = xp.asarray(_count_nonmasked(x, axis=axis), dtype=x.dtype,
+                   device=xp_device(x))
 
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
@@ -5711,6 +5714,7 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
     xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
     dtype = x.dtype
+    device = xp_device(x) if _has_own_device(x) else None
     if is_marray(xp):
         mask_x, mask_y = np.asarray(x.mask), np.asarray(y.mask)
         x, y = np.asarray(x.data).copy(), np.asarray(y.data).copy()
@@ -5728,8 +5732,8 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
     res = _kendalltau(x, y, nan_policy=nan_policy, method=method, variant=variant,
                       alternative=alternative, axis=axis, keepdims=keepdims)
     vals = res.statistic, res.pvalue, res.statistic
-    vals = (xp.asarray(val, dtype=dtype)[()] if val.ndim == 0
-            else xp.asarray(val, dtype=dtype) for val in vals)
+    vals = (xp.asarray(val, dtype=dtype, device=device)[()] if val.ndim == 0
+            else xp.asarray(val, dtype=dtype, device=device) for val in vals)
     return _pack_CorrelationResult(*vals)
 
 
@@ -6107,7 +6111,9 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
     # Due to behavior of `_axis_nan_policy` decorator, `alternative` can be any number
     # of dimensions, but there is at most one unique non-NaN value.
     # `_xp_mean` with `nan_policy='omit'` is a JIT-compatible way to extract it.
-    alternative = xp.asarray(alternative)
+    device = next((xp_device(a) for a in (statistic, pvalue)
+                   if _has_own_device(a)), None)
+    alternative = xp.asarray(alternative, device=device)
     alternative = (_xp_mean(alternative, axis=None, nan_policy='omit', warn=False)
                    if xp_size(alternative) != 0 else xp.nan)
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
@@ -6333,7 +6339,7 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
         raise ValueError(message)
 
     confidence_level = xp.asarray(confidence_level, dtype=dtype, device=xp_device(t))
-    inf = xp.asarray(xp.inf, dtype=dtype)
+    inf = xp.asarray(xp.inf, dtype=dtype, device=xp_device(t))
 
     if alternative < 0:  # 'less'
         p = confidence_level
@@ -6398,13 +6404,14 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
     # The pooled variance is still defined, though, because the (n-1) in the
     # numerator should cancel with the (n-1) in the denominator, leaving only
     # the sum of squared differences from the mean: zero.
-    v1 = xp.where(xp.asarray(n1 == 1), 0., v1)
-    v2 = xp.where(xp.asarray(n2 == 1), 0., v2)
+    device = xp_device(v1) if _has_own_device(v1) else None
+    v1 = xp.where(xp.asarray(n1 == 1, device=device), 0., v1)
+    v2 = xp.where(xp.asarray(n2 == 1, device=device), 0., v2)
 
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
     denom = xp.sqrt(svar * (1.0 / n1 + 1.0 / n2))
-    df = xp.asarray(df, dtype=denom.dtype)
+    df = xp.asarray(df, dtype=denom.dtype, device=xp_device(denom))
     return df, denom
 
 
@@ -6856,8 +6863,10 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
 
 def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method, *, xp):
+    device = next((xp_device(a) for a in (x, y) if _has_own_device(a)), None)
+
     def statistic(x, y, axis):
-        x, y = xp.asarray(x), xp.asarray(y)
+        x, y = xp.asarray(x, device=device), xp.asarray(y, device=device)
         return ttest_ind(x, y, axis=axis, **ttest_kwargs).statistic
 
     test = (permutation_test if isinstance(method, PermutationMethod)
@@ -7677,7 +7686,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if alternative == 'greater':
         Dplus, d_location = _compute_d(cdfvals, x, +1)
         pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
+        pvalue = xp.asarray(pvalue, dtype=x.dtype, device=xp_device(x))
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
         return KstestResult(Dplus, pvalue,
@@ -7687,7 +7696,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if alternative == 'less':
         Dminus, d_location = _compute_d(cdfvals, x, -1)
         pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
+        pvalue = xp.asarray(pvalue, dtype=x.dtype, device=xp_device(x))
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
         return KstestResult(Dminus, pvalue,
@@ -7713,7 +7722,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     else:
         # mode == 'approx'
         prob = 2 * _masked_apply(distributions.ksone.sf, args=(D, N), xp=xp)
-    prob = xp.clip(xp.asarray(prob, dtype=x.dtype), 0., 1.)
+    prob = xp.clip(xp.asarray(prob, dtype=x.dtype, device=xp_device(x)), 0., 1.)
     return KstestResult(D, prob,
                         statistic_location=d_location,
                         statistic_sign=d_sign)
@@ -8140,8 +8149,9 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         n1, n2 = np.asarray(n1.data, dtype=int), np.asarray(n2.data, dtype=int)
     prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
     dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
-    prob = xp.asarray(prob, dtype=dtype)
-    d = xp.asarray(d, dtype=dtype)
+    device = xp_device(d_location)
+    prob = xp.asarray(prob, dtype=dtype, device=device)
+    d = xp.asarray(d, dtype=dtype, device=device)
     if d.ndim == 0:
         d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
     return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
@@ -9255,18 +9265,19 @@ class QuantileTestResult:
 def quantile_test_iv(x, q, p, alternative, axis, keepdims):
     xp = array_namespace(x, q, p)
     dtype = xp_result_type(x, q, p, force_floating=True, xp=xp)
+    device = next((xp_device(a) for a in (x, q, p) if _has_own_device(a)), None)
 
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
     message = '`x` must be an array of numbers.'
     if not xp.isdtype(x.dtype, 'numeric'):
         raise ValueError(message)
 
-    q = xp.asarray(q)
+    q = xp.asarray(q, device=device)
     message = "`q` must be a scalar or array of numbers."
     if not xp.isdtype(q.dtype, 'numeric'):
         raise ValueError(message)
 
-    p = xp.asarray(p)
+    p = xp.asarray(p, device=device)
     message = "`p` must be a scalar or array of floats."
     if not xp.isdtype(p.dtype, 'real floating'):
         raise ValueError(message)
@@ -10646,7 +10657,7 @@ def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
 
     message = "`order` must be a scalar or a non-empty array of positive integers."
     order = (xp.arange(1, 5, device=xp_device(sample)) if order is None
-             else xp.asarray(order))
+             else xp.asarray(order, device=xp_device(sample)))
     if (not xp.isdtype(order.dtype, "integral") or order.size == 0 or order.ndim > 1
             or (not is_lazy_array(order) and xp.any(order <= 0))):
         raise ValueError(message)
@@ -10958,7 +10969,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
     degenerate = (ssxm == 0.0) | (ssym == 0.0)
-    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype)
+    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype, device=xp_device(ssxym))
     r = xpx.apply_where(
         ~degenerate,
         (ssxym, ssxm, ssym),
@@ -10974,7 +10985,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
         # to estimate the mean and standard deviation
         t = r * xp.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
 
-        dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+        dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype, device=xp_device(t)))
         prob = _get_pvalue(t, dist, alternative, xp=xp)
         prob = prob[()] if prob.ndim == 0 else prob
 

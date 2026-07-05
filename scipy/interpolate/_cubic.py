@@ -6,7 +6,8 @@ import numpy as np
 
 from scipy.linalg import solve, solve_banded
 from scipy._lib._array_api import (
-    array_namespace, xp_size, xp_capabilities, is_cupy, scipy_namespace_for, xp_device
+    array_namespace, xp_size, xp_capabilities, is_cupy, scipy_namespace_for,
+    xp_device, _has_own_device
 )
 from scipy._external.array_api_compat import numpy as np_compat
 import scipy._external.array_api_extra as xpx
@@ -825,6 +826,8 @@ class CubicSpline(CubicHermiteSpline):
             )
             return
 
+        # the NumPy round-trip must return the result on the inputs' device
+        device = next((xp_device(a) for a in (x, y) if _has_own_device(a)), None)
         x, dx, y, axis, _ = prepare_input(x, y, axis, xp=np_compat)
         n = len(x)
 
@@ -990,7 +993,7 @@ class CubicSpline(CubicHermiteSpline):
                                      overwrite_b=True, check_finite=False)
                     s = s.reshape(b.shape)
 
-        x, y, s = map(xp.asarray, (x, y, s))
+        x, y, s = (xp.asarray(arr, device=device) for arr in (x, y, s))
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
 
