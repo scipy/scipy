@@ -104,6 +104,7 @@ capabilities_dict = {
         allow_dask_compute=True, jax_jit=True
     ),
     "labeled_comprehension": xp_capabilities(np_only=True),
+    "hampel_filter": xp_capabilities(np_only=True),
 }
 
 # ### decorate ###

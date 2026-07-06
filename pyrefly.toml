@@ -46,6 +46,7 @@ ignore-missing-imports = [
     "scipy.integrate._vode",
     "scipy.interpolate._dierckx",
     "scipy.interpolate._fitpack",
+    "scipy.ndimage._hampel_1d",
     "scipy.ndimage._nd_image",
     "scipy.ndimage._ni_label",
     "scipy.ndimage._rank_filter_1d",
