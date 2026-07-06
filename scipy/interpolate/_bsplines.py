@@ -167,62 +167,48 @@ def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w,
     return A_reduced, offset_reduced, nc_free, y_w
 
 def _validate_clamp_values(clamp_values, k, t, y, xp):
-    """Validate clamp_values input for make_lsq_spline."""
-
-    if not isinstance(clamp_values, list | tuple):
-        raise ValueError(
-            f"""clamp_values should be a tuple or list of a numeric type, 
-                got type {type(clamp_values)}."""
-        )
-
-    if len(clamp_values) != 2:
-        raise ValueError(
-            f"""Expect clamp_values to be a tuple of length 2, got 
-            {len(clamp_values)} instead"""
-        )
-
-    left_clamp_only = right_clamp_only = False
-    clamp_values = list(clamp_values)
-
-    if clamp_values[0] is None and clamp_values[1] is None:
-        raise ValueError("At least one clamp value must not be None")
-
-    if clamp_values[0] is None:
-        right_clamp_only = True
-        clamp_values[0] = 0
-    if clamp_values[1] is None:
-        left_clamp_only = True
-        clamp_values[1] = 0
-
-    try:
-        clamp_values = xp.asarray(clamp_values)   
-        # `xp` strict doesn't support strings
-    except TypeError:
-        raise ValueError(f"clamp_values should be of numeric type, got {clamp_values}.")
-
-
-    if not xp.isdtype(clamp_values.dtype, ("integral", "real floating")):
-        raise ValueError(
-            f"""clamp_values should be of type float or int, got 
-                {clamp_values.dtype}."""
-        )
-    if not xp.all(xp.isfinite(clamp_values)):
-        raise ValueError("clamp_values must contain only finite numbers")
-    if not right_clamp_only and np.any(t[:k+1] != t[0]):
-        raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
-    if not left_clamp_only and np.any(t[-(k+1):] != t[-1]):
-        raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
-
-    if clamp_values.shape[1:] != y.shape[1:]:
-        raise ValueError(
-            """There should be one clamp_value for each dimension of the output 
-            datapoints."""
-        )
+    """Checks if clamp_values has valid values or not."""
     
-    clamp_values = np.asarray(clamp_values)
-
-    return clamp_values, left_clamp_only, right_clamp_only
-
+    if not isinstance(clamp_values, list | tuple):
+        raise ValueError(...)
+    if len(clamp_values) != 2:
+        raise ValueError(...)
+    
+    ci_raw, cf_raw = clamp_values
+    
+    if ci_raw is None and cf_raw is None:
+        raise ValueError("At least one clamp value must not be None")
+    
+    def _prepare(val, side):
+        if isinstance(val, np.ndarray):
+            raise ValueError(
+                f"clamp_values[{side}] should be a scalar or list of scalars, "
+                f"not an ndarray."
+            )
+        try:
+            arr = xp.asarray(val, dtype=xp.float64)
+        except (TypeError, ValueError):
+            raise ValueError(f"clamp_values[{side}] should be numeric, got {val}.")
+        if not xp.all(xp.isfinite(arr)):
+            raise ValueError(f"clamp_values[{side}] must be finite.")
+        arr = xp.reshape(arr, (-1,))
+        expected = y.shape[1:] if y.ndim > 1 else ()
+        if expected and arr.shape != expected:
+            raise ValueError(
+               f"clamp_values[{side}] has wrong dimension: shape {arr.shape} !="
+               f" {expected}."
+            )           
+        return np.asarray(arr)   # convert for downstream numpy consumers
+    
+    ci = _prepare(ci_raw, 0) if ci_raw is not None else None
+    cf = _prepare(cf_raw, 1) if cf_raw is not None else None
+    
+    if ci is not None and np.any(t[:k+1] != t[0]):
+        raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
+    if cf is not None and np.any(t[-(k+1):] != t[-1]):
+        raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
+    
+    return ci, cf
 
 class _BSpline:
     """NumPy Backend for BSpline.
@@ -2223,15 +2209,11 @@ clamp_values=None):
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
     if clamp_values is not None:
-        clamp_values, left_clamp_only, right_clamp_only = _validate_clamp_values(
+        ci, cf = _validate_clamp_values(
             clamp_values, k, t, y, xp
         )
-        ci, cf = clamp_values
-        ci = ci.reshape(-1)
-        cf = cf.reshape(-1)
-        # has shape (extradim, )
     else:
-        left_clamp_only = right_clamp_only = False
+        ci, cf = None, None
 
     # number of coefficients
     n = t.size - k - 1
@@ -2279,6 +2261,9 @@ clamp_values=None):
             #
             # Reference: https://stackoverflow.com/questions/78482220
 
+            left_clamp_only = cf is None
+            right_clamp_only = ci is None
+
             if left_clamp_only:
                 ab_reduced = ab[:, 1:]  # Drop first column
                 rhs = rhs[1:]           # Drop first row
@@ -2301,15 +2286,27 @@ clamp_values=None):
             # Column 0 of A.T @ A in banded storage: straight read down ab[:, 0]
             # If one sided clamp only, that corresponding coefficient is zero
             # hence, no contribution to rhs reduced.
-            ab_col0[:k] = ab[1: k + 1, 0: 1]
-            ab_col0 = ab_col0 * ci
-
-            banded_idx_last_col = np.arange(1, k + 1)
-            ab_col_last[-k:] = ab[banded_idx_last_col, 
-                                (n-1) -banded_idx_last_col][::-1, None]
-            ab_col_last = ab_col_last * cf
+            if left_clamp_only:
+                ab_col0[:k] = ab[1: k + 1, 0: 1]
+                ab_col0 = ab_col0 * ci
+                rhs -= ab_col0
+    
+            elif right_clamp_only:
+               banded_idx_last_col = np.arange(1, k + 1)
+               ab_col_last[-k:] = ab[banded_idx_last_col, 
+                                   (n-1) -banded_idx_last_col][::-1, None]
+               ab_col_last = ab_col_last * cf
+               rhs -= ab_col_last
+    
+            else:
+                ab_col0[:k] = ab[1: k + 1, 0: 1]
+                ab_col0 = ab_col0 * ci
+                banded_idx_last_col = np.arange(1, k + 1)
+                ab_col_last[-k:] = ab[banded_idx_last_col, 
+                                    (n-1) -banded_idx_last_col][::-1, None]
+                ab_col_last = ab_col_last * cf
+                rhs = rhs - ab_col0 - ab_col_last
             
-            rhs = rhs - ab_col0 - ab_col_last
             ab = ab_reduced
 
         # have observation matrix & rhs, can solve the LSQ problem
@@ -2340,9 +2337,7 @@ clamp_values=None):
 
     elif method == "qr":
         _, _, c, _, _ = _lsq_solve_qr(
-            x, yy, t, k, w, clamp_values=clamp_values,
-            left_clamp_only=left_clamp_only,
-            right_clamp_only=right_clamp_only,
+            x, yy, t, k, w, ci=ci, cf=cf,
         )
 
         if was_complex:
@@ -2363,8 +2358,7 @@ clamp_values=None):
 # LSQ spline helpers #
 ######################
 
-def _lsq_clamp_preprocess(A, offset, nc, k, y_w, ci, cf, x, y, w,
-                    left_clamp_only=False, right_clamp_only=False):
+def _lsq_clamp_preprocess(A, offset, nc, k, y_w, ci, cf, x, y, w):
     """
     Apply the clamp preprocessing to packed matrix + RHS for the QR path.
     
@@ -2372,6 +2366,9 @@ def _lsq_clamp_preprocess(A, offset, nc, k, y_w, ci, cf, x, y, w,
     dropping boundary rows and dense columns 0 and nc-1, and returns
     everything ready to feed into qr_reduce + fpback.
     """
+    left_clamp_only = cf is None
+    right_clamp_only = ci is None
+
     y_w_new = y_w.copy()
     if not right_clamp_only:  # left is clamped, need ci contribution
         A_col0 = _get_fitpack_packed_column(A, offset, k, 0, y_w.shape[0])
@@ -2447,8 +2444,7 @@ def _lsq_solve_qr_for_root_rati_periodic(x, y, t, k, w):
     return R, A1, A2, Z, y_w, c, p, residuals
 
 
-def _lsq_solve_qr(x, y, t, k, w, periodic=False, clamp_values=None,
-            right_clamp_only=False, left_clamp_only=False):
+def _lsq_solve_qr(x, y, t, k, w, periodic=False, ci=None, cf=None):
     """Solve for the LSQ spline coeffs given x, y and knots.
 
     `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
@@ -2459,12 +2455,9 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False, clamp_values=None,
     if not periodic:
         A, offset, nc = _dierckx.data_matrix(x, t, k, w)
 
-        if clamp_values is not None:
+        if ci is not None or cf is not None:
             return _lsq_solve_qr_clamp_values(
-                x, y, t, k, w, clamp_values,
-                left_clamp_only=left_clamp_only,
-                right_clamp_only=right_clamp_only,
-            )
+                x, y, t, k, w, ci=ci, cf=cf,            )
         
         else:
             _dierckx.qr_reduce(A, offset, nc, y_w)
@@ -2482,23 +2475,24 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False, clamp_values=None,
         c, residuals, _ = _dierckx.fpbacp(A1, A2, Z, k, k, x, y, t, w)
         return R, y_w, c, fp, residuals
 
-
-def _lsq_solve_qr_clamp_values(x, y, t, k, w, clamp_values,
-                               left_clamp_only=False, right_clamp_only=False):
+def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
     """Solve for the LSQ spline coeffs given x, y, knots and clamp_values."""
     y_w = y * w[:, None]
     A, offset, nc = _dierckx.data_matrix(x, t, k, w)
     
-    ci = clamp_values[0].reshape(-1)
-    cf = clamp_values[1].reshape(-1)
+    # For the C++ call, still need a (2, ...) array with zero placeholders
+    # since fpback_clamped takes it as a fixed shape
+    extradim = ci.shape[0] if ci is not None else cf.shape[0]
+    ci_arr = ci if ci is not None else np.zeros(extradim)
+    cf_arr = cf if cf is not None else np.zeros(extradim)
+    clamp_arr = np.stack([ci_arr, cf_arr]).astype(np.float64)
     
-    clamp_arr = np.zeros((2, ci.shape[0]), dtype=np.float64)
-    clamp_arr[0], clamp_arr[1] = ci, cf
+    # Determine which sides are clamped
+    left_clamp_only = cf is None
+    right_clamp_only = ci is None
     
     A, offset, nc, y_w, x, y, w = _lsq_clamp_preprocess(
-        A, offset, nc, k, y_w, ci, cf, x, y, w,
-        left_clamp_only=left_clamp_only,
-        right_clamp_only=right_clamp_only,
+        A, offset, nc, k, y_w, ci, cf, x, y, w
     )
     
     _dierckx.qr_reduce(A, offset, nc, y_w)
