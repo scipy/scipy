@@ -3601,7 +3601,7 @@ class TestMoments:
     testcase_moment_accuracy = rng.random(42)
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
-    @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
+    @pytest.mark.parametrize('m, c', list(product((0, 1, 2, 3), (None, 0, 1))))
     def test_moment_center_scalar_moment(self, size, m, c, xp):
         rng = np.random.default_rng(6581432544381372042)
         x = xp.asarray(rng.random(size=size))

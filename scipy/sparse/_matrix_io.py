@@ -66,7 +66,9 @@ def save_npz(file, matrix, compressed=True):
         else:
             arrays_dict.update(coords=matrix.coords)
     else:
-        msg = f'Save is not implemented for sparse matrix of format {matrix.format}.'
+        msg = (f'Save is not implemented for sparse matrix of format {matrix.format}; '
+               'convert to a supported format with e.g. .tocsr() or '
+               '.tocoo() before saving.')
         raise NotImplementedError(msg)
     arrays_dict.update(
         format=matrix.format.encode('ascii'),

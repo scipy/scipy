@@ -511,7 +511,7 @@ class TestTransformedDensityRejection:
     mvs = [mv0, mv1, mv2, mv3]
 
     @pytest.mark.parametrize("dist, mv_ex",
-                             zip(dists, mvs))
+                             list(zip(dists, mvs)))
     @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
     def test_basic(self, dist, mv_ex):
         with warnings.catch_warnings():
@@ -821,7 +821,7 @@ class TestNumericalInversePolynomial:
 
     @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
     @pytest.mark.parametrize("dist, mv_ex",
-                             zip(dists, mvs))
+                             list(zip(dists, mvs)))
     def test_basic(self, dist, mv_ex):
         rng = NumericalInversePolynomial(dist, random_state=42)
         check_cont_samples(rng, dist, mv_ex)
@@ -1072,7 +1072,7 @@ class TestNumericalInverseHermite:
     mvs = [mv0, mv1]
 
     @pytest.mark.parametrize("dist, mv_ex",
-                             zip(dists, mvs))
+                             list(zip(dists, mvs)))
     @pytest.mark.parametrize("order", [3, 5])
     @pytest.mark.thread_unsafe
     def test_basic(self, dist, mv_ex, order):
@@ -1364,7 +1364,7 @@ class TestSimpleRatioUniforms:
     mvs = [mv1, mv2]
 
     @pytest.mark.parametrize("dist, mv_ex",
-                             zip(dists, mvs))
+                             list(zip(dists, mvs)))
     @pytest.mark.thread_unsafe
     def test_basic(self, dist, mv_ex):
         rng = SimpleRatioUniforms(dist, mode=dist.mode, random_state=42)

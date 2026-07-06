@@ -1634,7 +1634,7 @@ def mood_cases_with_ties():
 @make_xp_test_case(stats.mood)
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
-                             mood_cases_with_ties())
+                             list(mood_cases_with_ties()))
     def test_against_SAS(self, x, y, alternative, stat_expect, p_expect, xp):
         """
         Example code used to generate SAS output:

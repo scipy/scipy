@@ -11,6 +11,7 @@
 #include <xsf/bessel.h>
 #include <xsf/beta.h>
 #include <xsf/binom.h>
+#include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/digamma.h>
@@ -29,6 +30,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/mathieu.h>
+#include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/specfun.h>
 #include <xsf/sph_bessel.h>
@@ -73,6 +75,8 @@ extern const char *besselpoly_doc;
 extern const char *beta_doc;
 extern const char *betaln_doc;
 extern const char *binom_doc;
+extern const char *boxcox_doc;
+extern const char *boxcox1p_doc;
 extern const char *cbrt_doc;
 extern const char *cosdg_doc;
 extern const char *cosm1_doc;
@@ -123,6 +127,8 @@ extern const char *i0_doc;
 extern const char *i0e_doc;
 extern const char *i1_doc;
 extern const char *i1e_doc;
+extern const char *inv_boxcox_doc;
+extern const char *inv_boxcox1p_doc;
 extern const char *iv_doc;
 extern const char *iv_ratio_doc;
 extern const char *iv_ratio_c_doc;
@@ -160,6 +166,7 @@ extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *ndtr_doc;
+extern const char *ndtri_exp_doc;
 extern const char *nrdtrimn_doc;
 extern const char *nrdtrisd_doc;
 extern const char *obl_ang1_doc;
@@ -334,6 +341,16 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::rel_entr), static_cast<xsf::numpy::dd_d>(xsf::rel_entr)}, "rel_entr",
         rel_entr_doc);
     PyModule_AddObjectRef(module, "rel_entr", rel_entr);
+
+    PyObject *boxcox = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::boxcox), static_cast<xsf::numpy::dd_d>(xsf::boxcox)}, "boxcox",
+        boxcox_doc);
+    PyModule_AddObjectRef(module, "boxcox", boxcox);
+
+    PyObject *boxcox1p = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::boxcox1p), static_cast<xsf::numpy::dd_d>(xsf::boxcox1p)}, "boxcox1p",
+        boxcox1p_doc);
+    PyModule_AddObjectRef(module, "boxcox1p", boxcox1p);
 
     PyObject *airy =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ffff>(xsf::airy), static_cast<xsf::numpy::d_dddd>(xsf::airy),
@@ -510,6 +527,12 @@ _special_ufuncs_module_exec(PyObject *module)
                           "log_ndtr", log_ndtr_doc);
     PyModule_AddObjectRef(module, "log_ndtr", log_ndtr);
 
+    PyObject *ndtri_exp =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ndtri_exp),
+                           static_cast<xsf::numpy::d_d>(xsf::ndtri_exp)},
+                          "ndtri_exp", ndtri_exp_doc);
+    PyModule_AddObjectRef(module, "ndtri_exp", ndtri_exp);
+
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ff>(xsf::fresnel), static_cast<xsf::numpy::d_dd>(xsf::fresnel),
                            static_cast<xsf::numpy::F_FF>(xsf::fresnel), static_cast<xsf::numpy::D_DD>(xsf::fresnel)},
@@ -637,6 +660,16 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i1e), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i1e)}, "i1e",
         i1e_doc);
     PyModule_AddObjectRef(module, "i1e", i1e);
+
+    PyObject *inv_boxcox = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::inv_boxcox), static_cast<xsf::numpy::dd_d>(xsf::inv_boxcox)},
+        "inv_boxcox", inv_boxcox_doc);
+    PyModule_AddObjectRef(module, "inv_boxcox", inv_boxcox);
+
+    PyObject *inv_boxcox1p = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::inv_boxcox1p), static_cast<xsf::numpy::dd_d>(xsf::inv_boxcox1p)},
+        "inv_boxcox1p", inv_boxcox1p_doc);
+    PyModule_AddObjectRef(module, "inv_boxcox1p", inv_boxcox1p);
 
     PyObject *iv = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cyl_bessel_i), static_cast<xsf::numpy::dd_d>(xsf::cyl_bessel_i),

@@ -3,6 +3,7 @@ import math
 import warnings
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import importlib
 from itertools import product
 from math import gcd
 
@@ -39,6 +40,11 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 lazy_xp_modules = [signal]
+
+try:
+    CUPY_VERSION = importlib.metadata.version('cupy')
+except ImportError:
+    CUPY_VERSION = None
 
 
 @make_xp_test_case(convolve)
@@ -3444,8 +3450,12 @@ class TestHilbert2:
         x1_a = hilbert2(x, N=(4, 4))
         xp_assert_equal(x1_a, x0_a)
 
+    @xfail_xp_backends(
+        "cupy",
+        CUPY_VERSION and CUPY_VERSION < "14",
+        reason="Bug in cupy implementation fixed in 14.0.0, see cupy#9396"
+    )
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    @skip_xp_backends("cupy", reason="Bug in cupy implementation, see cupy#9396")
     def test_quadrant_values(self, shape, xp):
         """Compare desired and calculated values in Fourier space. """
         x_f = xp.ones(shape, dtype=xp.complex128)  # FFT of input signal

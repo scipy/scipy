@@ -859,7 +859,8 @@ def kron(A, B, format=None):
 
             if A.nnz == 0 or B.nnz == 0:
                 # kronecker product is the zero matrix
-                return coo_sparse(output_shape).asformat(format)
+                dtype = upcast(A.dtype, B.dtype)
+                return coo_sparse(output_shape, dtype=dtype).asformat(format)
 
             B = B.toarray()
             data = A.data.repeat(B.size).reshape(-1, B.shape[0], B.shape[1])
@@ -881,7 +882,8 @@ def kron(A, B, format=None):
 
     if A.nnz == 0 or B.nnz == 0:
         # kronecker product is the zero matrix
-        return coo_sparse(output_shape).asformat(format)
+        dtype = upcast(A.dtype, B.dtype)
+        return coo_sparse(output_shape, dtype=dtype).asformat(format)
 
     # expand entries of a into blocks
     data = A.data.repeat(B.nnz)
