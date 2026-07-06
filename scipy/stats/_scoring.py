@@ -62,6 +62,7 @@ def crps_gaussian(y, mu, sigma):
     --------
     Compute the CRPS for a single forecast and observation:
 
+    >>> import numpy as np
     >>> from scipy.stats import crps_gaussian
     >>> float(np.round(crps_gaussian(y=0.5, mu=0.0, sigma=1.0), 10))
     0.3314035313
