@@ -194,14 +194,19 @@ def _validate_clamp_values(clamp_values, k, t, y, xp):
         left_clamp_only = True
         clamp_values[1] = 0
 
-    clamp_values = np.asarray(clamp_values)
+    try:
+        clamp_values = xp.asarray(clamp_values)   
+        # `xp` strict doesn't support strings
+    except TypeError:
+        raise ValueError(f"clamp_values should be of numeric type, got {clamp_values}.")
+
 
     if not xp.isdtype(clamp_values.dtype, ("integral", "real floating")):
         raise ValueError(
             f"""clamp_values should be of type float or int, got 
                 {clamp_values.dtype}."""
         )
-    if not np.all(np.isfinite(clamp_values)):
+    if not xp.all(xp.isfinite(clamp_values)):
         raise ValueError("clamp_values must contain only finite numbers")
     if not right_clamp_only and np.any(t[:k+1] != t[0]):
         raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
@@ -213,6 +218,8 @@ def _validate_clamp_values(clamp_values, k, t, y, xp):
             """There should be one clamp_value for each dimension of the output 
             datapoints."""
         )
+    
+    clamp_values = np.asarray(clamp_values)
 
     return clamp_values, left_clamp_only, right_clamp_only
 
@@ -2217,7 +2224,7 @@ clamp_values=None):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
     if clamp_values is not None:
         clamp_values, left_clamp_only, right_clamp_only = _validate_clamp_values(
-        clamp_values, k, t, y, xp
+            clamp_values, k, t, y, xp
         )
         ci, cf = clamp_values
         ci = ci.reshape(-1)
