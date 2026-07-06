@@ -116,9 +116,9 @@ def _asarray(
         try:
             array = xp.asarray(array, dtype=dtype, copy=copy, device=device)
         except TypeError:
-            # `xp.asarray(3)` is a throwaway used only to obtain the coerced
-            # namespace; its device is irrelevant.
-            coerced_xp = array_namespace(xp.asarray(3))  # skip device check
+            # `xp` lacks features SciPy relies on (e.g. the `device` keyword
+            # on NumPy 1.x / CuPy 13.x); retry with the compat namespace
+            coerced_xp = xp_compat_namespace(xp)
             array = coerced_xp.asarray(array, dtype=dtype, copy=copy, device=device)
 
     if check_finite:
