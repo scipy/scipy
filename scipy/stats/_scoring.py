@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import norm
+from scipy.special import ndtr as _ndtr
 
 __all__ = ['crps_gaussian']
 
@@ -63,23 +63,23 @@ def crps_gaussian(y, mu, sigma):
     Compute the CRPS for a single forecast and observation:
 
     >>> from scipy.stats import crps_gaussian
-    >>> crps_gaussian(y=0.5, mu=0.0, sigma=1.0)
-    0.3207...
+    >>> float(np.round(crps_gaussian(y=0.5, mu=0.0, sigma=1.0), 10))
+    0.3314035313
 
     A tighter forecast (smaller sigma) around the true value gives a
     lower (better) score:
 
-    >>> crps_gaussian(y=0.0, mu=0.0, sigma=0.1)
-    0.0563...
-    >>> crps_gaussian(y=0.0, mu=0.0, sigma=1.0)
-    0.2338...
+    >>> float(np.round(crps_gaussian(y=0.0, mu=0.0, sigma=0.1), 10))
+    0.0233694977
+    >>> float(np.round(crps_gaussian(y=0.0, mu=0.0, sigma=1.0), 10))
+    0.2336949773
 
     The function supports broadcasting:
 
     >>> import numpy as np
     >>> y = np.array([0.0, 1.0, 2.0])
-    >>> crps_gaussian(y, mu=0.0, sigma=1.0)
-    array([0.2338..., 0.5207..., 1.0169...])
+    >>> np.round(crps_gaussian(y, mu=0.0, sigma=1.0), 4)
+    array([0.2337, 0.6024, 1.4528])
     """
     y = np.asarray(y, dtype=np.float64)
     mu = np.asarray(mu, dtype=np.float64)
@@ -94,8 +94,11 @@ def crps_gaussian(y, mu, sigma):
 
     z = (y - mu) / sigma_safe
 
-    phi_z = norm.pdf(z)
-    Phi_z = norm.cdf(z)
+    # Standard normal PDF and CDF using scipy.special.ndtr
+    # ndtr(z) = Phi(z) = standard normal CDF
+    # phi(z) = (1/sqrt(2*pi)) * exp(-z^2/2)
+    Phi_z = _ndtr(z)
+    phi_z = (1.0 / np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * z * z)
     pi_inv = 1.0 / np.sqrt(np.pi)
 
     crps = sigma_safe * (z * (2.0 * Phi_z - 1.0) + 2.0 * phi_z - pi_inv)

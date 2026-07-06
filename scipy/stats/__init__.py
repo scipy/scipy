@@ -568,6 +568,14 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
+Scoring Rules
+-------------
+
+.. autosummary::
+   :toctree: generated/
+
+   crps_gaussian
+
 Warnings / Errors used in :mod:`scipy.stats`
 --------------------------------------------
 
