@@ -230,7 +230,7 @@ fpback( /* inputs*/
  */
 void fpback_clamped( /* inputs */
     const double *Rptr, int64_t m, int64_t nz,
-    int64_t nc_reduced,
+    int64_t nc_free,
     const double *xptr, int64_t m_,
     const double *tptr, int64_t len_t,
     int k,
@@ -238,13 +238,14 @@ void fpback_clamped( /* inputs */
     int extrapolate,
     const double* ywptr,
     const double *yptr, int64_t ydim2,
-    const double *clamp_values,           // clamp_values(2, ydim2)
-    const int left_clamp_only,
-    const int right_clamp_only,
     /* outputs */
     double *cptr,
     double *fp,
-    double *residualsptr
+    double *residualsptr,
+    /* clamp specific args */
+    const double *clamp_values,           // clamp_values(2, ydim2)
+    const int left_clamp_only,
+    const int right_clamp_only
 );
 
 void

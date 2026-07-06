@@ -95,12 +95,12 @@ py_fpback_clamped(PyObject* self, PyObject *args)
     PyObject *py_clamp_values;
     PyObject *py_left_clamp_only=0;
     PyObject *py_right_clamp_only=0;
-    Py_ssize_t nc_reduced;
+    Py_ssize_t nc_free;
     int k;
     int extrapolate = 0;   // default is False
 
-    if(!PyArg_ParseTuple(args, "OnOOOiOOO|pOO", &py_R, &nc_reduced, &py_x, &py_y, &py_t, &k, &py_w, &py_yw,
-         &py_clamp_values, &extrapolate, &py_left_clamp_only, &py_right_clamp_only)) {
+    if(!PyArg_ParseTuple(args, "OnOOOiOO|pOOO", &py_R, &nc_free, &py_x, &py_y, &py_t, &k, &py_w, &py_yw,
+         &extrapolate, &py_clamp_values, &py_left_clamp_only, &py_right_clamp_only)) {
         return NULL;
     }
 
@@ -134,8 +134,8 @@ py_fpback_clamped(PyObject* self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, msg.c_str());
         return NULL;
     }
-    if (nc_reduced > m) {
-        std::string msg = "nc_reduced = " + std::to_string(nc_reduced) + " > m = " + std::to_string(m);
+    if (nc_free > m) {
+        std::string msg = "nc_free = " + std::to_string(nc_free) + " > m = " + std::to_string(m);
         PyErr_SetString(PyExc_ValueError, msg.c_str());
         return NULL;
     }
@@ -144,10 +144,10 @@ py_fpback_clamped(PyObject* self, PyObject *args)
     npy_intp dims[2];
     dims[1] = PyArray_DIM(a_yw, 1);
     if (left_clamp_only == 1 || right_clamp_only == 1) {
-        dims[0] = nc_reduced + 1;
+        dims[0] = nc_free + 1;
     } 
     else {
-        dims[0] = nc_reduced + 2;
+        dims[0] = nc_free + 2;
     }
     PyArrayObject *a_c = (PyArrayObject *)PyArray_SimpleNew(2, dims, NPY_DOUBLE);
     npy_intp dims1[1] = {m_};
@@ -162,18 +162,18 @@ py_fpback_clamped(PyObject* self, PyObject *args)
     try {
         // heavy lifting happens here
         fitpack::fpback_clamped(static_cast<const double *>(PyArray_DATA(a_R)), m, nz,
-                        nc_reduced, static_cast<const double *>(PyArray_DATA(a_x)), m_,
+                        nc_free, static_cast<const double *>(PyArray_DATA(a_x)), m_,
                         static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
                         k, static_cast<const double *>(PyArray_DATA(a_w)),
                         extrapolate,
                         static_cast<const double *>(PyArray_DATA(a_yw)),
                         static_cast<const double *>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),
-                        static_cast<const double *>(PyArray_DATA(a_clamp_values)),
-                        left_clamp_only,
-                        right_clamp_only,
                         static_cast<double *>(PyArray_DATA(a_c)),
                         &fp,
-                        static_cast<double *>(PyArray_DATA(a_residuals))
+                        static_cast<double *>(PyArray_DATA(a_residuals)),
+                        static_cast<const double *>(PyArray_DATA(a_clamp_values)),
+                        left_clamp_only,
+                        right_clamp_only
         );
     }
     catch (const std::exception& e) {

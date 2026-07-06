@@ -874,46 +874,46 @@ void _compute_residuals(
     }
 }
 
-/* Back-substitution for R (upper-triangular banded, packed) into c_red.
- * R has shape (m, nz), c_red has shape (nc_reduced, ydim2), yw has 
+/* Back-substitution for R (upper-triangular banded, packed) into c_free.
+ * R has shape (m, nz), c_free has shape (nc_free, ydim2), yw has 
  * shape (m, ydim2). 
 */
 static inline void _back_substitute(
-    RealArray2D& c_red,
+    RealArray2D& c_free,
     ConstRealArray2D& R,
     ConstRealArray2D& yw,
     int64_t nz,
-    int64_t nc_reduced,
+    int64_t nc_free,
     int64_t ydim2)
 {
     // c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
     for (int64_t l = 0; l < ydim2; ++l) {
-        c_red(nc_reduced - 1, l) = yw(nc_reduced - 1, l) / R(nc_reduced - 1, 0);
+        c_free(nc_free - 1, l) = yw(nc_free - 1, l) / R(nc_free - 1, 0);
     }
 
     // for i in range(nc-2, -1, -1): c[i] = (y[i] - sum(R[i, j] * c[i+j])) / R[i, 0]
-    for (int64_t i = nc_reduced - 2; i >= 0; --i) {
-        int64_t nel = std::min(nz, nc_reduced - i);
+    for (int64_t i = nc_free - 2; i >= 0; --i) {
+        int64_t nel = std::min(nz, nc_free - i);
         for (int64_t l = 0; l < ydim2; ++l) {
             double ssum = yw(i, l);
             for (int64_t j = 1; j < nel; ++j) {
-                ssum -= R(i, j) * c_red(i + j, l);
+                ssum -= R(i, j) * c_free(i + j, l);
             }
-            c_red(i, l) = ssum / R(i, 0);
+            c_free(i, l) = ssum / R(i, 0);
         }
     }
 }
 
 /*
  * fpback analogue for the clamped LSQ problem. Back-substitutes on the reduced
- * R (nc_reduced coefficients) directly into c[1 : nc_full-1], then fills c[0]
+ * R (nc_free coefficients) directly into c[1 : nc_full-1], then fills c[0]
  * and c[nc_full-1] from clamp_values so residual computation on the full-length
  * c is consistent with (t, k). clamp_values has shape (2, ydim2): row 0 is ci, 
  * row 1 is cf.
  */
 void fpback_clamped( /* inputs */
     const double *Rptr, int64_t m, int64_t nz,
-    int64_t nc_reduced,
+    int64_t nc_free,
     const double *xptr, int64_t m_,
     const double *tptr, int64_t len_t,
     int k,
@@ -921,28 +921,29 @@ void fpback_clamped( /* inputs */
     int extrapolate,
     const double* ywptr,
     const double *yptr, int64_t ydim2,
-    const double *clamp_values,           // clamp_values(2, ydim2)
-    const int left_clamp_only,
-    const int right_clamp_only,
     /* outputs */
     double *cptr,
     double *fp,
-    double *residualsptr)
+    double *residualsptr,
+    /* clamp specific args */
+    const double *clamp_values,           // clamp_values(2, ydim2)
+    const int left_clamp_only,
+    const int right_clamp_only)
 {
-    int64_t nc_full = nc_reduced + ((left_clamp_only || right_clamp_only) ? 1 : 2);
+    int64_t nc_full = nc_free + ((left_clamp_only || right_clamp_only) ? 1 : 2);
 
     auto R = ConstRealArray2D(Rptr, m, nz);
     auto yw = ConstRealArray2D(ywptr, m, ydim2);
     auto clamp = ConstRealArray2D(clamp_values, 2, ydim2);
 
-    int64_t c_red_start = right_clamp_only ? 0 : ydim2;
-    auto c_red = RealArray2D(cptr + c_red_start, nc_reduced, ydim2);
+    int64_t c_free_start = right_clamp_only ? 0 : ydim2;
+    auto c_free = RealArray2D(cptr + c_free_start, nc_free, ydim2);
 
     /* The loops remain same as fpback, they directly write to the
-    memory region starting from `cptr + ydim2` to `cptr + ydim2 + nc_reduced * ydim2`,
+    memory region starting from `cptr + ydim2` to `cptr + ydim2 + nc_free * ydim2`,
     that is, `c[1: -1]`.
     */
-    _back_substitute(c_red, R, yw, nz, nc_reduced, ydim2);
+    _back_substitute(c_free, R, yw, nz, nc_free, ydim2);
 
     /* Reassembly: add c[0] & c[-1] to c before computing residuals. */
     auto c = RealArray2D(cptr, nc_full, ydim2);

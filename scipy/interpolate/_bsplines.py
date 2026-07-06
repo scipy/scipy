@@ -166,6 +166,56 @@ def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w,
 
     return A_reduced, offset_reduced, nc_free, y_w
 
+def _validate_clamp_values(clamp_values, k, t, y, xp):
+    """Validate clamp_values input for make_lsq_spline."""
+
+    if not isinstance(clamp_values, list | tuple):
+        raise ValueError(
+            f"""clamp_values should be a tuple or list of a numeric type, 
+                got type {type(clamp_values)}."""
+        )
+
+    if len(clamp_values) != 2:
+        raise ValueError(
+            f"""Expect clamp_values to be a tuple of length 2, got 
+            {len(clamp_values)} instead"""
+        )
+
+    left_clamp_only = right_clamp_only = False
+    clamp_values = list(clamp_values)
+
+    if clamp_values[0] is None and clamp_values[1] is None:
+        raise ValueError("At least one clamp value must not be None")
+
+    if clamp_values[0] is None:
+        right_clamp_only = True
+        clamp_values[0] = 0
+    if clamp_values[1] is None:
+        left_clamp_only = True
+        clamp_values[1] = 0
+
+    clamp_values = np.asarray(clamp_values)
+
+    if not xp.isdtype(clamp_values.dtype, ("integral", "real floating")):
+        raise ValueError(
+            f"""clamp_values should be of type float or int, got 
+                {clamp_values.dtype}."""
+        )
+    if not np.all(np.isfinite(clamp_values)):
+        raise ValueError("clamp_values must contain only finite numbers")
+    if not right_clamp_only and np.any(t[:k+1] != t[0]):
+        raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
+    if not left_clamp_only and np.any(t[-(k+1):] != t[-1]):
+        raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
+
+    if clamp_values.shape[1:] != y.shape[1:]:
+        raise ValueError(
+            """There should be one clamp_value for each dimension of the output 
+            datapoints."""
+        )
+
+    return clamp_values, left_clamp_only, right_clamp_only
+
 
 class _BSpline:
     """NumPy Backend for BSpline.
@@ -2053,7 +2103,9 @@ clamp_values=None):
         Default is "qr".
     clamp_values : tuple, optional
         If `clamp_values` is supplied, it pins the splines values at x[0] and x[-1] to 
-        `clamp_values[0]` and `clamp_values[1]` respectively.
+        `clamp_values[0]` and `clamp_values[1]` respectively. If only one numeric value 
+        is supplied, it will pin the corresponding spline endpoint to it, for example,
+        (5, None) will clamp x[0] to 5.
         Default is None.
 
     Returns
@@ -2164,53 +2216,15 @@ clamp_values=None):
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
     if clamp_values is not None:
-        if isinstance(clamp_values, np.ndarray):
-            raise ValueError(
-                "clamp_values should be a tuple of a numeric type, got a `ndarray`."
-            )
-
-        if len(clamp_values) != 2:
-            raise ValueError(
-                f"""Expect clamp_values to be a tuple of length 2, got 
-                {len(clamp_values)} instead"""
-            )
-
-        clamp_values = list(clamp_values)
-
-        if clamp_values[0] is None and clamp_values[1] is None:
-            raise ValueError("At least one clamp value must not be None")
-
-        if clamp_values[0] is None:
-            right_clamp_only = True
-            clamp_values[0] = 0
-        if clamp_values[1] is None:
-            left_clamp_only = True
-            clamp_values[1] = 0
-
-        clamp_values = np.asarray(clamp_values)
-
-        if clamp_values.dtype.kind in ["c", "U"]:
-            raise ValueError(
-                f"""clamp_values should be of type float or int, got 
-                    {clamp_values.dtype}."""
-            )
-        if not np.all(np.isfinite(clamp_values)):
-            raise ValueError("clamp_values must contain only finite numbers")
-        if not right_clamp_only and np.any(t[:k+1] != t[0]):
-            raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
-        if not left_clamp_only and np.any(t[-(k+1):] != t[-1]):
-            raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
-
-        if clamp_values.shape[1:] != y.shape[1:]:
-            raise ValueError(
-                """There should be one clamp_value for each dimension of the output 
-                datapoints."""
-            )
-
+        clamp_values, left_clamp_only, right_clamp_only = _validate_clamp_values(
+        clamp_values, k, t, y, xp
+        )
         ci, cf = clamp_values
         ci = ci.reshape(-1)
         cf = cf.reshape(-1)
         # has shape (extradim, )
+    else:
+        left_clamp_only = right_clamp_only = False
 
     # number of coefficients
     n = t.size - k - 1
@@ -2439,28 +2453,11 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False, clamp_values=None,
         A, offset, nc = _dierckx.data_matrix(x, t, k, w)
 
         if clamp_values is not None:
-            
-            ci = clamp_values[0].reshape(-1)
-            cf = clamp_values[1].reshape(-1)
-
-            clamp_arr = np.zeros((2, ci.shape[0]), dtype=np.float64)
-            clamp_arr[0], clamp_arr[1] = ci, cf
-
-            A, offset, nc, y_w, x, y, w = _lsq_clamp_preprocess(
-                A, offset, nc, k, y_w, ci, cf, x, y, w, 
+            return _lsq_solve_qr_clamp_values(
+                x, y, t, k, w, clamp_values,
                 left_clamp_only=left_clamp_only,
                 right_clamp_only=right_clamp_only,
             )
-            
-            _dierckx.qr_reduce(A, offset, nc, y_w)
-            c, residuals, fp = _dierckx.fpback_clamped(
-                A, nc, x, y, t, k, w, y_w, clamp_arr,
-                False,
-                left_clamp_only,
-                right_clamp_only,
-            )   
-            
-            return A, y_w, c, fp, residuals
         
         else:
             _dierckx.qr_reduce(A, offset, nc, y_w)
@@ -2479,6 +2476,30 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False, clamp_values=None,
         return R, y_w, c, fp, residuals
 
 
+def _lsq_solve_qr_clamp_values(x, y, t, k, w, clamp_values,
+                               left_clamp_only=False, right_clamp_only=False):
+    """Solve for the LSQ spline coeffs given x, y, knots and clamp_values."""
+    y_w = y * w[:, None]
+    A, offset, nc = _dierckx.data_matrix(x, t, k, w)
+    
+    ci = clamp_values[0].reshape(-1)
+    cf = clamp_values[1].reshape(-1)
+    
+    clamp_arr = np.zeros((2, ci.shape[0]), dtype=np.float64)
+    clamp_arr[0], clamp_arr[1] = ci, cf
+    
+    A, offset, nc, y_w, x, y, w = _lsq_clamp_preprocess(
+        A, offset, nc, k, y_w, ci, cf, x, y, w,
+        left_clamp_only=left_clamp_only,
+        right_clamp_only=right_clamp_only,
+    )
+    
+    _dierckx.qr_reduce(A, offset, nc, y_w)
+    c, residuals, fp = _dierckx.fpback_clamped(
+        A, nc, x, y, t, k, w, y_w, False,
+        clamp_arr, left_clamp_only, right_clamp_only,
+    )
+    return A, y_w, c, fp, residuals
 
 
 #############################
