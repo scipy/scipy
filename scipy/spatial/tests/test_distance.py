@@ -255,7 +255,7 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
     return arrays, weights
 
 
-assert_allclose_forgiving = partial(assert_allclose, atol=1e-5)
+assert_allclose_forgiving = partial(xp_assert_close, atol=1e-5, check_dtype=False)
 
 
 def _rough_check(a, b, compare_assert=assert_allclose_forgiving,
