@@ -120,7 +120,7 @@ solve-group = "debug"
 features = ["lint", "default-platforms"]
 
 [environments.typecheck]
-# tasks: mypy, pyrefly
+# tasks: pyrefly
 features = ["typecheck", "run-deps", "test-deps", "default-platforms"]
 
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
@@ -370,7 +370,6 @@ description = "Test SciPy with `fail-slow=1.0`"
 
 [feature.typecheck.dependencies]
 # type checkers
-mypy = "==2.1.0"
 pyrefly = "==1.1.1"
 # typing deps
 typing_extensions = "*"
@@ -387,11 +386,6 @@ pybind11 = "*"
 sphinx = "*"
 sympy = "*"
 uarray = "*"
-
-[feature.typecheck.tasks.mypy]
-cmd = "spin mypy --no-build"
-depends-on = "build"
-description = "Run mypy type checks"
 
 [feature.typecheck.tasks.pyrefly]
 cmd = "pyrefly check"
