@@ -367,55 +367,6 @@ def working_dir(new_dir):
     finally:
         os.chdir(current_dir)
 
-@click.command(context_settings={"ignore_unknown_options": True})
-@meson.build_dir_option
-@meson.build_option
-@click.pass_context
-def mypy(ctx, build_dir, build):
-    """🦆 Run Mypy tests for SciPy
-    """
-    if is_editable_install():
-        click.secho(
-            "Error: Mypy does not work (well) for editable installs",
-            fg="bright_red",
-        )
-        raise SystemExit(1)
-    else:
-        if build:
-            click.secho(
-                    "Invoking `build` prior to running mypy tests:",
-                    bold=True, fg="bright_green"
-                )
-            ctx.invoke(build_cmd, build_dir=build_dir)
-
-    try:
-        import mypy.api
-    except ImportError as e:
-        raise RuntimeError(
-            "Mypy not found. Please install it by running "
-            "`pip install --group typecheck` from the repo root"
-        ) from e
-
-    build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
-    config = os.path.join(root, "mypy.ini")
-    check_path = PROJECT_MODULE
-    install_dir = meson._get_site_packages(build_dir)
-
-    with working_dir(install_dir):
-        os.environ['MYPY_FORCE_COLOR'] = '1'
-        click.secho(f"mypy.api.run --config-file {config} {check_path}",
-                    bold=True, fg="bright_blue")
-        report, errors, status = mypy.api.run([
-            "--config-file",
-            str(config),
-            check_path,
-        ])
-    print(report, end='')
-    print(errors, end='', file=sys.stderr)
-    if status:
-        raise SystemExit(status)
-
 @spin.util.extend_command(test, doc="")
 def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     """🔧 Run doctests of objects in the public API.
