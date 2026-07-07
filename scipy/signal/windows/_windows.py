@@ -195,6 +195,9 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     :math:`W[l]` is zero for nonzero integer values of :math:`l` and its sidelobes
     decrease on the order of :math:`O(|l|^{-1})`.
 
+    For many applications, like calculating a magnitude spectrum in the example below,
+    a normalized window is needed. Consult the :ref:`tutorial_SpectralAnalysis` section
+    of the :ref:`user_guide` for details.
 
     References
     ----------
@@ -251,7 +254,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
 
     The following plot shows a logarithmically scaled version of the magnitude
     spectrum. The x-axis has been recscaled to correspond to the FFT-bin number.
-    The dashed orange line represents the approximate sidelobe height.
+    The dashed green line represents the approximate sidelobe height.
 
     >>> import numpy as np
     >>> from matplotlib import pyplot as plt
@@ -935,7 +938,7 @@ def hann(M, sym=True, *, xp=None, device=None):
 
     .. math::
 
-        H(f) = \frac{\operatorname{sinc}(f\tau)}{
+        H(f) = -\frac{\operatorname{sinc}(f\tau)}{
                                       \tau (f- \frac{1}{\tau}) (f + \frac{1}{\tau})} \,,
 
     with :math:`\operatorname{sinc}(f) := \sin(\pi f) / (\pi f)`. Eq.
@@ -946,14 +949,18 @@ def hann(M, sym=True, *, xp=None, device=None):
     .. math::
 
         W_p[l] := \frac{1}{T\gamma} H(l\Delta f)
-                = \frac{M}{\gamma} \frac{\operatorname{sinc}(l)}{(l - 1)(l + 1)} \,,
+                = -\frac{M}{\gamma} \frac{\operatorname{sinc}(l)}{(l - 1)(l + 1)} \,,
                                                \qquad \Delta f := 1 / \tau = 1/ (MT) \,.
 
     Here, :math:`\gamma` is the FFT normalization constant (default: :math:`\gamma=1`).
     For :math:`l \in\mathbb{Z}`, the values of :math:`W_p` are given by:
-    :math:`W_p[0] = 1`, :math:`W_p[l\rightarrow \pm 1] = 1/2` and :math:`W_p[l] = 0`
-    for :math:`|l| \geq 2`.
+    :math:`W_p[0] = M/\gamma`, :math:`W_p[l\rightarrow \pm 1] = M/(2\gamma)` and
+    :math:`W_p[l] = 0` for :math:`|l| \geq 2`.
     The height of the sidelobes decreases on the order of :math:`O(|l|^{-3})`.
+
+    For many applications, like calculating a magnitude spectrum in the example below,
+    a normalized window is needed. Consult the :ref:`tutorial_SpectralAnalysis` section
+    of the :ref:`user_guide` for details.
 
     References
     ----------
