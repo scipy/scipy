@@ -438,7 +438,8 @@ def geometric_discrepancy(
     if sample.shape[0] < 2:
         raise ValueError("Sample must contain at least two points")
 
-    distances = distance.pdist(sample, metric=metric)  # pyrefly: ignore[no-matching-overload]
+    # pyrefly: ignore[no-matching-overload]
+    distances = distance.pdist(sample, metric=metric)
 
     if np.any(distances == 0.0):
         warnings.warn("Sample contains duplicate points.", stacklevel=2)
