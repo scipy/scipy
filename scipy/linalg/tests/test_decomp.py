@@ -1295,6 +1295,35 @@ class TestEigh:
             else:
                 assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
 
+    @pytest.mark.parametrize("dtypes", [
+        (np.float32, np.float64), (np.complex64, np.complex128)
+    ])
+    @pytest.mark.parametrize("driver", ["gv", "gvd", "gvx"])
+    def test_b_upcast_a(self, dtypes, driver):
+        # Regression test to deal with the case where `b` upcasts `a` which would
+        # necessitate recomputing the `overwrite_a` flag in its entirety.
+        n = 5
+        rng = np.random.default_rng(seed=12345)
+        atol = 1e-14
+
+        dtype_a, dtype_b = dtypes
+
+        v_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype_b, np.complexfloating):
+            v_base = v_base + 1j * rng.normal(size=(n, n))
+        v_base = v_base.astype(dtype_b)
+        v, _ = qr(v_base, mode="full")
+
+        w = np.sort(rng.uniform(-2, 2, size=(n,))).astype(dtype_b)
+        a = (v @ np.diag(w) @ np.conj(v.T)).astype(dtype_a)
+        b = np.eye(n, dtype=dtype_b)
+
+        w_n, v_n = eigh(a, b, driver=driver)
+
+        # check correctness
+        assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+
 class TestSVD_GESDD:
     lapack_driver = 'gesdd'
 

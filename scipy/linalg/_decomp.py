@@ -534,7 +534,10 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
 
         a1, b1 = _ensure_dtype_cdsz(a1, b1) # Let `b1` and `a1` upcast each other
         b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
-        overwrite_a = overwrite_a or _datacopied(a1, a) # Deal with potential upcast
+
+        # Deal with the case where `b` could still upcast `a`, hence recompute the flag
+        overwrite_a = overwrite_a or _datacopied(a1, a)
+        overwrite_a = overwrite_a and a1.ndim == 2 and a1.flags["F_CONTIGUOUS"]
         overwrite_b = overwrite_b or _datacopied(b1, b)
         overwrite_b = overwrite_b and b1.ndim == 2 and b1.flags["F_CONTIGUOUS"]
 
