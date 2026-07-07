@@ -248,7 +248,7 @@ class ScalarFunction:
             _dtype = _x.dtype
 
         # original arguments
-        self._wrapped_fun = _ScalarFunctionWrapper(fun, args)
+        self._wrapped_fun = _ScalarFunctionWrapper(fun, args, xp=self.xp)
         self._orig_fun = fun
         self._orig_grad = grad
         self._orig_hess = hess
