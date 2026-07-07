@@ -8,14 +8,6 @@ categories:
     `test_from_window` function).
 3. Test algorithmic properties of STFT/ISTFT. Some tests were ported from
    ``test_spectral.py``.
-
-Notes
------
-* Mypy 0.990 does interpret the line::
-
-        from scipy.stats import norm as normal_distribution
-
-  incorrectly (but the code works), hence a ``type: ignore`` was appended.
 """
 import math
 from itertools import product
