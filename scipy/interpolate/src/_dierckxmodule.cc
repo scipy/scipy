@@ -92,20 +92,17 @@ py_fpback_clamped(PyObject* self, PyObject *args)
 {
     PyObject *py_R = NULL, *py_y = NULL, *py_yw = NULL;
     PyObject *py_x = NULL, *py_t = NULL, *py_w = NULL;
-    PyObject *py_clamp_values;
-    PyObject *py_left_clamp_only=0;
-    PyObject *py_right_clamp_only=0;
+    PyObject *py_ci = NULL, *py_cf = NULL;
     Py_ssize_t nc_free;
     int k;
     int extrapolate = 0;   // default is False
 
     if(!PyArg_ParseTuple(args, "OnOOOiOO|pOOO", &py_R, &nc_free, &py_x, &py_y, &py_t, &k, &py_w, &py_yw,
-         &extrapolate, &py_clamp_values, &py_left_clamp_only, &py_right_clamp_only)) {
+         &extrapolate, &py_ci, &py_cf)) {
         return NULL;
     }
 
-    if (!(check_array(py_R, 2, NPY_DOUBLE) && check_array(py_yw, 2, NPY_DOUBLE) && 
-        check_array(py_clamp_values, 2, NPY_DOUBLE))) {
+    if (!(check_array(py_R, 2, NPY_DOUBLE) && check_array(py_yw, 2, NPY_DOUBLE))) {
         return NULL;
     }
 
@@ -115,13 +112,8 @@ py_fpback_clamped(PyObject* self, PyObject *args)
     PyArrayObject *a_x = (PyArrayObject *)py_x;
     PyArrayObject *a_t = (PyArrayObject *)py_t;
     PyArrayObject *a_w = (PyArrayObject *)py_w;
-    PyArrayObject *a_clamp_values = (PyArrayObject *)py_clamp_values;
-
-    int left_clamp_only = PyObject_IsTrue(py_left_clamp_only);
-    int right_clamp_only = PyObject_IsTrue(py_right_clamp_only);
-    if (left_clamp_only < 0 || right_clamp_only < 0) {
-        return NULL;  // error out
-    }
+    PyArrayObject *a_ci = (py_ci == Py_None) ? NULL : (PyArrayObject *)py_ci;
+    PyArrayObject *a_cf = (py_cf == Py_None) ? NULL : (PyArrayObject *)py_cf;
 
     // check consistency of array sizes
     Py_ssize_t m = PyArray_DIM(a_R, 0);
@@ -143,7 +135,7 @@ py_fpback_clamped(PyObject* self, PyObject *args)
     // allocate the output buffer
     npy_intp dims[2];
     dims[1] = PyArray_DIM(a_yw, 1);
-    if (left_clamp_only == 1 || right_clamp_only == 1) {
+    if ((a_cf == NULL) || (a_ci == NULL)) {
         dims[0] = nc_free + 1;
     } 
     else {
@@ -159,6 +151,9 @@ py_fpback_clamped(PyObject* self, PyObject *args)
 
     double fp = 0.0;
 
+    const double *ci_ptr = (a_ci != NULL) ? static_cast<const double *>(PyArray_DATA(a_ci)) : nullptr;
+    const double *cf_ptr = (a_cf != NULL) ? static_cast<const double *>(PyArray_DATA(a_cf)) : nullptr;
+
     try {
         // heavy lifting happens here
         fitpack::fpback_clamped(static_cast<const double *>(PyArray_DATA(a_R)), m, nz,
@@ -171,10 +166,9 @@ py_fpback_clamped(PyObject* self, PyObject *args)
                         static_cast<double *>(PyArray_DATA(a_c)),
                         &fp,
                         static_cast<double *>(PyArray_DATA(a_residuals)),
-                        static_cast<const double *>(PyArray_DATA(a_clamp_values)),
-                        left_clamp_only,
-                        right_clamp_only
-        );
+                        ci_ptr,
+                        cf_ptr
+                    );
     }
     catch (const std::exception& e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());

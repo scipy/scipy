@@ -1869,7 +1869,8 @@ class TestLSQ:
             spl = make_lsq_spline(x, y, t, k=k, method=method, clamp_values=(None, y1))
             np.testing.assert_allclose(spl.c, c_ref_right, atol=1e-12)
 
-    @pytest.mark.parametrize("clamp_values", [(3, None), (None, 3), (None, None)])
+    @pytest.mark.parametrize("clamp_values", [(3, None), (None, 3), (None, None),
+                                            (0, None), (None, 0)])
     @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     @parametrize_lsq_methods
     def test_lsq_with_one_sided_clamp_values(self, method, xp, solver, clamp_values):
@@ -1886,7 +1887,7 @@ class TestLSQ:
                 assert math.isclose(sp(x[0]), clamp_values[0])
     
     @pytest.mark.parametrize("clamp_values", [(5, 8), (1.12, 3.14), (3.14, 22), 
-                                            (1, 1000), (0, np.inf), (np.nan, 10)])
+                                        (1, 1000), (0, np.inf), (np.nan, 10), (0, 0)])
     @pytest.mark.parametrize("solver", ["norm-eq", "qr"])
     @parametrize_lsq_methods
     def test_lsq_with_clamp_values(self, method, xp, solver, clamp_values):

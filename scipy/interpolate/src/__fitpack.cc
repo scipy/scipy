@@ -879,27 +879,27 @@ void _compute_residuals(
  * shape (m, ydim2). 
 */
 static inline void _back_substitute(
-    RealArray2D& c_free,
+    RealArray2D& c,
     ConstRealArray2D& R,
     ConstRealArray2D& yw,
     int64_t nz,
-    int64_t nc_free,
+    int64_t nc,
     int64_t ydim2)
 {
     // c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
     for (int64_t l = 0; l < ydim2; ++l) {
-        c_free(nc_free - 1, l) = yw(nc_free - 1, l) / R(nc_free - 1, 0);
+        c(nc - 1, l) = yw(nc - 1, l) / R(nc - 1, 0);
     }
 
     // for i in range(nc-2, -1, -1): c[i] = (y[i] - sum(R[i, j] * c[i+j])) / R[i, 0]
-    for (int64_t i = nc_free - 2; i >= 0; --i) {
-        int64_t nel = std::min(nz, nc_free - i);
+    for (int64_t i = nc - 2; i >= 0; --i) {
+        int64_t nel = std::min(nz, nc - i);
         for (int64_t l = 0; l < ydim2; ++l) {
             double ssum = yw(i, l);
             for (int64_t j = 1; j < nel; ++j) {
-                ssum -= R(i, j) * c_free(i + j, l);
+                ssum -= R(i, j) * c(i + j, l);
             }
-            c_free(i, l) = ssum / R(i, 0);
+            c(i, l) = ssum / R(i, 0);
         }
     }
 }
@@ -926,34 +926,44 @@ void fpback_clamped( /* inputs */
     double *fp,
     double *residualsptr,
     /* clamp specific args */
-    const double *clamp_values,           // clamp_values(2, ydim2)
-    const int left_clamp_only,
-    const int right_clamp_only)
+    const double *ci_ptr,
+    const double *cf_ptr)           // clamp_values(2, ydim2)
 {
-    int64_t nc_full = nc_free + ((left_clamp_only || right_clamp_only) ? 1 : 2);
+    int64_t nc_full = nc_free + ((cf_ptr == NULL || ci_ptr == NULL) ? 1 : 2);
 
     auto R = ConstRealArray2D(Rptr, m, nz);
     auto yw = ConstRealArray2D(ywptr, m, ydim2);
-    auto clamp = ConstRealArray2D(clamp_values, 2, ydim2);
 
-    int64_t c_free_start = right_clamp_only ? 0 : ydim2;
+    /*
+    * The output buffer `cptr` holds the full coefficient vector, including any
+    * pinned boundary values. Back-substitution writes only the free coefficients
+    * into the interior slots.
+    *
+    * If the left endpoint is clamped (or two-sided), c[0] is
+    * reserved for ci, so free coefficients start at offset `ydim2` (one row of
+    * the (nc_full, ydim2) buffer). If only the right endpoint is clamped
+    * , c[0] is a free coefficient and no offset is needed.
+    */
+    int64_t c_free_start = ci_ptr == NULL ? 0 : ydim2;
     auto c_free = RealArray2D(cptr + c_free_start, nc_free, ydim2);
 
-    /* The loops remain same as fpback, they directly write to the
-    memory region starting from `cptr + ydim2` to `cptr + ydim2 + nc_free * ydim2`,
-    that is, `c[1: -1]`.
+    /* 
+    * The loops remain same as fpback, they directly write to the
+    * memory region starting from `cptr + ydim2` to `cptr + ydim2 + nc_free * ydim2`,
+    * that is, `c[1: -1]`.
     */
     _back_substitute(c_free, R, yw, nz, nc_free, ydim2);
 
-    /* Reassembly: add c[0] & c[-1] to c before computing residuals. */
-    auto c = RealArray2D(cptr, nc_full, ydim2);
-    for (int64_t l = 0; l < ydim2; ++l) {
-        if (!right_clamp_only) {   // left is clamped, pin c[0]
-            c(0, l) = clamp(0, l);
-        }
-        if (!left_clamp_only) {    // right is clamped, pin c[nc_full-1]
-            c(nc_full - 1, l) = clamp(1, l);
-        }
+    /* Reassembly: add `c[0]` & `c[-1]` to `c` before computing residuals. */
+    if (ci_ptr != NULL) {   
+        // Left is clamped: pin `ci_ptr` directly to the first row (cptr[0])
+        memcpy(cptr, ci_ptr, ydim2 * sizeof(double));
+    }
+    
+    if (cf_ptr != NULL) {    
+        // Right is clamped: pin `cf_ptr` to the last row (cptr[nc_full - 1])
+        double* c_last_row = cptr + (nc_full - 1) * ydim2;
+        memcpy(c_last_row, cf_ptr, ydim2 * sizeof(double));
     }
 
     _compute_residuals(

@@ -80,8 +80,7 @@ def _get_fitpack_packed_column(A_packed, offset, k, j, m):
     col[rows] = A_packed[rows, p[rows]]
     return col 
 
-def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, 
-                        left_clamp_only=False, right_clamp_only=False):
+def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, ci, cf):
     """
     Drop boundary rows and the first/last dense columns from a FITPACK
     packed matrix, returning a smaller packed matrix ready for `qr_reduce`.
@@ -109,11 +108,11 @@ def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w,
        is at new column 0, so their offset stays 0.
     """
     # Drop boundary rows
-    if left_clamp_only:
+    if cf is None:
         A_kept = A_packed[1:]
         offset_kept = offset[1:]
         y_w = y_w[1:]
-    elif right_clamp_only:
+    elif ci is None:
         A_kept = A_packed[:-1]
         offset_kept = offset[:-1]
         y_w = y_w[:-1]
@@ -129,9 +128,9 @@ def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w,
     A_reduced = np.zeros_like(A_kept) # (m - 2, k + 1) or (m - 1, k + 1)
 
     # Copy-as is (full `k + 1` width)
-    if left_clamp_only:
+    if cf is None:
         elements_undroped = ~A_col0_mask
-    elif right_clamp_only:
+    elif ci is None:
         elements_undroped = ~A_col_last_mask
     else:
         elements_undroped = ~A_col0_mask & ~A_col_last_mask
@@ -142,24 +141,24 @@ def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w,
     elements_last_only = ~A_col0_mask & A_col_last_mask 
 
     # Touching Col0: Shift elements by left and copy
-    if left_clamp_only:
+    if cf is None:
         A_reduced[elements_col0_only, :k] = A_kept[elements_col0_only, 1: k + 1]
 
     # Touching Col last: Copy directly
-    elif right_clamp_only:
+    elif ci is None:
         A_reduced[elements_last_only, :k] = A_kept[elements_last_only, :k]
 
     else:
         A_reduced[elements_col0_only, :k] = A_kept[elements_col0_only, 1: k + 1]
         A_reduced[elements_last_only, :k] = A_kept[elements_last_only, :k]
 
-    if not right_clamp_only:
+    if ci is not None:
         offset_reduced = offset_kept - 1
         offset_reduced[A_col0_mask] = 0
     else:
         offset_reduced = offset_kept.copy()
 
-    if left_clamp_only or right_clamp_only:
+    if cf is None or ci is None:
         nc_free = nc - 1
     else:
         nc_free = nc - 2
@@ -209,6 +208,74 @@ def _validate_clamp_values(clamp_values, k, t, y, xp):
         raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
     
     return ci, cf
+
+def _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf):
+    """
+    Apply the clamp preprocessing to the banded matrix and RHS for the
+    norm-eq path.
+
+    Clamped LSQ: pin spl(x[0]) = ci and spl(x[-1]) = cf.
+
+    For a clamped knot vector, only B[0] is nonzero at x[0] and only
+    B[nc-1] is nonzero at x[-1] (both with value 1). So spl(x[0]) = c[0]
+    and spl(x[-1]) = c[nc-1], clamping the endpoint values reduces to
+    pinning the first and last coefficients.
+
+    The reduced LSQ solves for the (nc-2) free coefficients:
+      minimize || (y - ci*A[:, 0] - cf*A[:, -1]) - A_reduced @ c_free ||^2
+    where A_reduced is A with the first and last columns dropped.
+
+    In the LAPACK lower-banded storage of A.T @ A, dropping the first
+    and last columns of the symmetric A.T @ A is equivalent to slicing
+    ab[:, 1:-1].
+
+    References: 
+    - https://stackoverflow.com/questions/78482220
+    - https://pages.mtu.edu/%7Eshene/COURSES/cs3621/NOTES/INT-APP/CURVE-APP-global.html
+    """
+    if cf is None:
+        ab_reduced = ab[:, 1:]  # Drop first column
+        rhs = rhs[1:]           # Drop first row
+        ab_col0 = np.zeros((n - 1, extradim))
+        ab_col_last = np.zeros((n - 1, extradim))
+    elif ci is None:
+        ab_reduced = ab[:, :-1]  # Drop last column
+        rhs = rhs[:-1]           # Drop last row
+        ab_col0 = np.zeros((n - 1, extradim))
+        ab_col_last = np.zeros((n - 1, extradim))
+    else:
+        ab_reduced = ab[:, 1:-1]
+        rhs = rhs[1:-1]
+        ab_col0 = np.zeros((n - 2, extradim))
+        ab_col_last = np.zeros((n - 2, extradim))
+
+    # Subtract the contribution of clamped coefficients from the RHS:
+    # rhs_adjusted = A_reduced.T @ y - ci * A_reduced.T @ A[:, 0]
+    #                                 - cf * A_reduced.T @ A[:, -1]
+    # Column 0 of A.T @ A in banded storage: straight read down ab[:, 0]
+    # If one sided clamp only, that corresponding coefficient is zero
+    # hence, no contribution to rhs reduced.
+    if cf is None:
+        ab_col0[:k] = ab[1:k + 1, 0:1]
+        ab_col0 = ab_col0 * ci
+        rhs -= ab_col0
+    elif ci is None:
+        banded_idx_last_col = np.arange(1, k + 1)
+        ab_col_last[-k:] = ab[banded_idx_last_col,
+                              (n - 1) - banded_idx_last_col][::-1, None]
+        ab_col_last = ab_col_last * cf
+        rhs -= ab_col_last
+    else:
+        ab_col0[:k] = ab[1:k + 1, 0:1]
+        ab_col0 = ab_col0 * ci
+        banded_idx_last_col = np.arange(1, k + 1)
+        ab_col_last[-k:] = ab[banded_idx_last_col,
+                              (n - 1) - banded_idx_last_col][::-1, None]
+        ab_col_last = ab_col_last * cf
+        rhs = rhs - ab_col0 - ab_col_last
+
+    return ab_reduced, rhs
+
 
 class _BSpline:
     """NumPy Backend for BSpline.
@@ -2095,10 +2162,10 @@ clamp_values=None):
         "qr" (Use the QR factorization of the design matrix).
         Default is "qr".
     clamp_values : tuple, optional
-        If `clamp_values` is supplied, it pins the splines values at x[0] and x[-1] to 
-        `clamp_values[0]` and `clamp_values[1]` respectively. If only one numeric value 
-        is supplied, it will pin the corresponding spline endpoint to it, for example,
-        (5, None) will clamp x[0] to 5.
+        If ``clamp_values`` is supplied, it pins the splines values at ``x[0]`` and
+        ``x[-1]`` to ``clamp_values[0]`` and ``clamp_values[1]`` respectively. If 
+        only one numeric value is supplied, it will pin the corresponding spline 
+        endpoint to it, for example, ``(5, None)`` will clamp ``x[0]`` to ``5``.
         Default is None.
 
     Returns
@@ -2188,8 +2255,6 @@ clamp_values=None):
         # C routines in _dierckx currently require C contiguity
         y = y.copy(order='C')
 
-    left_clamp_only = right_clamp_only = False
-
     if x.ndim != 1:
         raise ValueError("Expect x to be a 1-D sequence.")
     if x.shape[0] < k+1:
@@ -2244,70 +2309,7 @@ clamp_values=None):
             rhs = rhs.view(complex)
 
         if clamp_values is not None:
-            # Clamped LSQ: pin spl(x[0]) = ci and spl(x[-1]) = cf.
-            #
-            # For a clamped knot vector, only B[0] is nonzero at x[0] and only
-            # B[nc-1] is nonzero at x[-1] (both with value 1). So spl(x[0]) = c[0]
-            # and spl(x[-1]) = c[nc-1], clamping the endpoint values reduces to
-            # pinning the first and last coefficients.
-            #
-            # The reduced LSQ solves for the (nc-2) free coefficients:
-            #   minimize || (y - ci*A[:, 0] - cf*A[:, -1]) - A_reduced @ c_free ||^2
-            # where A_reduced is A with the first and last columns dropped.
-            #
-            # In the LAPACK lower-banded storage of A.T @ A, dropping the first
-            # and last columns of the symmetric A.T @ A is equivalent to slicing
-            # ab[:, 1:-1].
-            #
-            # Reference: https://stackoverflow.com/questions/78482220
-
-            left_clamp_only = cf is None
-            right_clamp_only = ci is None
-
-            if left_clamp_only:
-                ab_reduced = ab[:, 1:]  # Drop first column
-                rhs = rhs[1:]           # Drop first row
-                ab_col0 = np.zeros((n - 1, extradim))
-                ab_col_last = np.zeros((n - 1, extradim))
-            elif right_clamp_only:
-                ab_reduced = ab[:, :-1] # Drop last column
-                rhs = rhs[:-1]          # Drop last row
-                ab_col0 = np.zeros((n - 1, extradim))
-                ab_col_last = np.zeros((n - 1, extradim))
-            else:
-                ab_reduced = ab[:, 1:-1]
-                rhs = rhs[1: -1] 
-                ab_col0 = np.zeros((n - 2, extradim))
-                ab_col_last = np.zeros((n - 2, extradim))
-
-            # Subtract the contribution of clamped coefficients from the RHS:
-            # rhs_adjusted = A_reduced.T @ y - ci * A_reduced.T @ A[:, 0]
-            #                                 - cf * A_reduced.T @ A[:, -1]
-            # Column 0 of A.T @ A in banded storage: straight read down ab[:, 0]
-            # If one sided clamp only, that corresponding coefficient is zero
-            # hence, no contribution to rhs reduced.
-            if left_clamp_only:
-                ab_col0[:k] = ab[1: k + 1, 0: 1]
-                ab_col0 = ab_col0 * ci
-                rhs -= ab_col0
-    
-            elif right_clamp_only:
-               banded_idx_last_col = np.arange(1, k + 1)
-               ab_col_last[-k:] = ab[banded_idx_last_col, 
-                                   (n-1) -banded_idx_last_col][::-1, None]
-               ab_col_last = ab_col_last * cf
-               rhs -= ab_col_last
-    
-            else:
-                ab_col0[:k] = ab[1: k + 1, 0: 1]
-                ab_col0 = ab_col0 * ci
-                banded_idx_last_col = np.arange(1, k + 1)
-                ab_col_last[-k:] = ab[banded_idx_last_col, 
-                                    (n-1) -banded_idx_last_col][::-1, None]
-                ab_col_last = ab_col_last * cf
-                rhs = rhs - ab_col0 - ab_col_last
-            
-            ab = ab_reduced
+            ab, rhs = _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf)
 
         # have observation matrix & rhs, can solve the LSQ problem
         cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
@@ -2317,23 +2319,8 @@ clamp_values=None):
                              check_finite=check_finite).reshape(rhs.shape)
 
         if clamp_values is not None:
-            new_dims = list(c.shape)
-            if left_clamp_only or right_clamp_only:
-                new_dims[0] += 1
-            else:
-                new_dims[0] += 2
-            c_full = np.zeros(tuple(new_dims))
-            if left_clamp_only:
-                c_full[0, :] = ci   # Reassemble ci only
-                c_full[1:] = c
-            elif right_clamp_only:
-                c_full[-1, :] = cf  # Reassemble cf only
-                c_full[: -1] = c
-            else:
-                c_full[0, :] = ci
-                c_full[-1, :] = cf
-                c_full[1: -1, :] = c
-            c = c_full
+            nc_full = n   # full coefficient count 
+            c = _lsq_clamp_postprocess(c, ci, cf, nc_full)
 
     elif method == "qr":
         _, _, c, _, _ = _lsq_solve_qr(
@@ -2366,30 +2353,26 @@ def _lsq_clamp_preprocess(A, offset, nc, k, y_w, ci, cf, x, y, w):
     dropping boundary rows and dense columns 0 and nc-1, and returns
     everything ready to feed into qr_reduce + fpback.
     """
-    left_clamp_only = cf is None
-    right_clamp_only = ci is None
 
     y_w_new = y_w.copy()
-    if not right_clamp_only:  # left is clamped, need ci contribution
+    if ci is not None:  # left is clamped, need ci contribution
         A_col0 = _get_fitpack_packed_column(A, offset, k, 0, y_w.shape[0])
         y_w_new = y_w_new - A_col0[:, None] * ci[None, :]
-    if not left_clamp_only:  # right is clamped, need cf contribution
+    if cf is not None:  # right is clamped, need cf contribution
         A_col_last = _get_fitpack_packed_column(A, offset, k, nc - 1, y_w.shape[0])
         y_w_new = y_w_new - A_col_last[:, None] * cf[None, :]
     
     y_w = y_w_new
 
     A, offset, nc, y_w = _reduce_packed_for_clamp(
-        A, offset, nc, k, y_w, 
-        left_clamp_only=left_clamp_only, 
-        right_clamp_only=right_clamp_only,
+        A, offset, nc, k, y_w, ci, cf
     )
     
-    if left_clamp_only:
+    if cf is None:
         x_reduced = x[1:]
         y_reduced = y[1:]
         w_reduced = w[1:]
-    elif right_clamp_only:
+    elif ci is None:
         x_reduced = x[:-1]
         y_reduced = y[:-1]
         w_reduced = w[:-1]
@@ -2401,18 +2384,17 @@ def _lsq_clamp_preprocess(A, offset, nc, k, y_w, ci, cf, x, y, w):
     return A, offset, nc, y_w, x_reduced, y_reduced, w_reduced
 
 
-def _lsq_clamp_postprocess(c_free, ci, cf, nc_full,
-                           left_clamp_only=False, right_clamp_only=False):
+def _lsq_clamp_postprocess(c_free, ci, cf, nc_full):
     """Reassemble the full coefficient vector after solving the reduced system.
     """
     extradim = c_free.shape[1] if c_free.ndim > 1 else 1
     c_full = np.zeros((nc_full, extradim))
     
-    if left_clamp_only:
+    if cf is None:
         # Only ci pinned at position 0, free coefficients fill the rest
         c_full[0, :] = ci
         c_full[1:, :] = c_free.reshape(nc_full - 1, extradim)
-    elif right_clamp_only:
+    elif ci is None:
         # Only cf pinned at position -1, free coefficients fill the rest
         c_full[-1, :] = cf
         c_full[:-1, :] = c_free.reshape(nc_full - 1, extradim)
@@ -2476,29 +2458,23 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False, ci=None, cf=None):
         return R, y_w, c, fp, residuals
 
 def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
-    """Solve for the LSQ spline coeffs given x, y, knots and clamp_values."""
+    """Solve for the LSQ spline coeffs given x, y, knots and clamp_values.
+    
+    `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
+    `w` is always 1D: one weight value per `x` value.
+    `clamp_values` is always 2D: matches the shape of `y`.
+    """
     y_w = y * w[:, None]
     A, offset, nc = _dierckx.data_matrix(x, t, k, w)
-    
-    # For the C++ call, still need a (2, ...) array with zero placeholders
-    # since fpback_clamped takes it as a fixed shape
-    extradim = ci.shape[0] if ci is not None else cf.shape[0]
-    ci_arr = ci if ci is not None else np.zeros(extradim)
-    cf_arr = cf if cf is not None else np.zeros(extradim)
-    clamp_arr = np.stack([ci_arr, cf_arr]).astype(np.float64)
-    
-    # Determine which sides are clamped
-    left_clamp_only = cf is None
-    right_clamp_only = ci is None
-    
+
     A, offset, nc, y_w, x, y, w = _lsq_clamp_preprocess(
         A, offset, nc, k, y_w, ci, cf, x, y, w
     )
-    
+
     _dierckx.qr_reduce(A, offset, nc, y_w)
     c, residuals, fp = _dierckx.fpback_clamped(
         A, nc, x, y, t, k, w, y_w, False,
-        clamp_arr, left_clamp_only, right_clamp_only,
+        ci, cf
     )
     return A, y_w, c, fp, residuals
 
