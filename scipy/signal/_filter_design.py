@@ -1446,6 +1446,27 @@ def sos2zpk(sos):
     even if some of these are (effectively) zero.
 
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Design a Butterworth lowpass filter in second-order sections format and
+    convert it to its zeros, poles, and gain representation:
+
+    >>> import numpy as np
+    >>> from scipy.signal import butter, sos2zpk
+    >>> sos = butter(4, 0.25, output='sos')
+    >>> z, p, k = sos2zpk(sos)
+
+    The filter is made of two sections, so there are ``2 * 2 = 4`` zeros and
+    poles:
+
+    >>> z.shape, p.shape
+    ((4,), (4,))
+
+    All poles lie inside the unit circle, confirming that the filter is stable:
+
+    >>> bool(np.all(np.abs(p) < 1))
+    True
     """
     xp = array_namespace(sos)
     sos = xp.asarray(sos)
