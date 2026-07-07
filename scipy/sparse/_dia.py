@@ -59,6 +59,7 @@ class _dia_base(_data_matrix):
                     if not copy:
                         copy = copy_if_needed
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
+                    getdtype(self.data.dtype)  # check that dtype is supported
                     offsets = np.array(arg1[1],
                                        dtype=self._get_index_dtype(maxval=max(shape)),
                                        copy=copy)

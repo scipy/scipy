@@ -501,8 +501,8 @@ Ellipsoidal harmonics
 .. autosummary::
    :toctree: generated/
 
-   ellip_harm   -- Ellipsoidal harmonic functions E^p_n(l).
-   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n(l).
+   ellip_harm   -- Ellipsoidal harmonic functions E^p_n.
+   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n.
    ellip_normal -- Ellipsoidal harmonic normalization constants gamma^p_n.
 
 Orthogonal polynomials

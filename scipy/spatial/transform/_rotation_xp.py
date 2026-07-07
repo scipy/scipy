@@ -9,6 +9,7 @@ that work with any Array API-compatible backend.
 import re
 import warnings
 from types import EllipsisType
+from typing import cast
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -65,7 +66,7 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
         elif lazy:
             matrix = xp.where(mask[..., None, None], xp.nan, matrix)
 
-        gramians = matrix @ xp.matrix_transpose(matrix)
+        gramians = matrix @ matrix.mT
         eye = xp.eye(3, dtype=matrix.dtype, device=device)
         is_orthogonal = xp.all(
             xpx.isclose(gramians, eye, atol=1e-12, xp=xp), axis=(-2, -1)
@@ -245,6 +246,8 @@ def from_davenport(
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
     angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
     num_axes = axes.shape[-2]
+    if num_axes is None:
+        raise ValueError(f"axes must have a known shape, got shape {axes.shape}")
     if num_axes < 1 or num_axes > 3:
         raise ValueError(f"Expected up to 3 axes, got {num_axes}")
 
@@ -270,7 +273,7 @@ def from_davenport(
         angles = _deg2rad(angles)
 
     if (
-        not broadcastable(axes.shape[:-1], angles.shape)
+        not broadcastable(axes.shape[:-1], cast(tuple[int, ...], angles.shape))
         or axes.shape[-2] != angles.shape[-1]
     ):
         raise ValueError(
@@ -521,7 +524,7 @@ def mean(
     # Branching code is okay for checks that include meta info such as shapes and types
     quat_expand = quat[..., None, :]
     if weights is None:
-        K = xp.matrix_transpose(quat_expand) @ quat_expand
+        K = quat_expand.mT @ quat_expand
     else:
         weights = xp.asarray(weights, dtype=dtype, device=device)
         neg_weights = weights < 0
@@ -540,7 +543,7 @@ def mean(
 
         # Make sure we can transpose quat
         weighted_quat = weights[..., None, None] * quat_expand
-        K = xp.matrix_transpose(weighted_quat) @ quat_expand
+        K = weighted_quat.mT @ quat_expand
 
     # Move reduction axes to the end
     keep_axes = tuple(i for i in all_axes if i not in axis)
@@ -629,7 +632,6 @@ def reduce(
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
-    xp = array_namespace(quat)
     mat = as_matrix(quat)
     # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
     # dimension to the points array and remove it after the operation.
@@ -640,8 +642,7 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
             "vectors."
         )
     if inverse:
-        # TODO: Replace with .mT once numpy 2.0 is the minimum supported version
-        return (xp.matrix_transpose(mat) @ points)[..., 0]
+        return (mat.mT @ points)[..., 0]
     return (mat @ points)[..., 0]
 
 

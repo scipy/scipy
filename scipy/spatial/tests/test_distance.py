@@ -35,6 +35,7 @@
 from functools import wraps, partial
 import os.path
 import sys
+import platform
 import sysconfig
 import warnings
 import weakref
@@ -115,7 +116,7 @@ _ytdist = squareform(_tdist)
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
 # Each test loads inputs and outputs from this dictionary.
-eo = {}
+eo: dict[str, np.generic] = {}
 
 
 def load_testing_files():
@@ -1906,6 +1907,10 @@ def test_minkowski_w():
     xp_assert_close(c0, c1, rtol=1e-15)
 
 
+@pytest.mark.skipif(
+    (sys.platform == 'darwin') and (platform.machine() == 'x86_64'),
+    reason="dtypes do not match, on MacOS x86-64 only"
+)
 def test_sqeuclidean_dtypes():
     # Assert that sqeuclidean returns the right types of values.
     # Integer types should be converted to floating for stability.

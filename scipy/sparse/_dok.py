@@ -19,7 +19,7 @@ _NoValue = object()
 
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
-    _allow_nd = (1, 2)
+    _allow_nd: tuple[int, ...] = (1, 2)
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _spbase.__init__(self, arg1, maxprint=maxprint)

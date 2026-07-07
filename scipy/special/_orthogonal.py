@@ -84,6 +84,42 @@ from scipy.special import airy
 # There is no .pyi file for _specfun
 from . import _specfun  # type: ignore
 from . import _ufuncs
+
+
+__all__ = [
+    'legendre',
+    'chebyt',
+    'chebyu',
+    'chebyc',
+    'chebys',
+    'jacobi',
+    'laguerre',
+    'genlaguerre',
+    'hermite',
+    'hermitenorm',
+    'gegenbauer',
+    'sh_legendre',
+    'sh_chebyt',
+    'sh_chebyu',
+    'sh_jacobi',
+    'roots_legendre',
+    'roots_chebyt',
+    'roots_chebyu',
+    'roots_chebyc',
+    'roots_chebys',
+    'roots_jacobi',
+    'roots_laguerre',
+    'roots_genlaguerre',
+    'roots_hermite',
+    'roots_hermitenorm',
+    'roots_gegenbauer',
+    'roots_sh_legendre',
+    'roots_sh_chebyt',
+    'roots_sh_chebyu',
+    'roots_sh_jacobi',
+]
+
+
 _gam = _ufuncs.gamma
 
 _polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',

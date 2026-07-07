@@ -90,7 +90,8 @@ jobs:
         git submodule update --init
         sudo apt update
         sudo apt install -y gcc g++ libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
-        python -m pip install --group build --group dev
+        python -m pip install --upgrade pip
+        python -m pip install --group build --group dev-cli
         spin build
 
     - if: matrix.language == 'c-cpp'

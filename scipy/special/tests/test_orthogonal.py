@@ -406,7 +406,7 @@ def test_roots_jacobi():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_jacobi, 0, 1, 1)
-    assert_raises(ValueError, sc.roots_jacobi, 3.3, 1, 1)
+    assert_raises(ValueError, sc.roots_jacobi, 3.3, 1, 1)  # type: ignore[call-overload]
     assert_raises(ValueError, sc.roots_jacobi, 3, -2, 1)
     assert_raises(ValueError, sc.roots_jacobi, 3, 1, -2)
     assert_raises(ValueError, sc.roots_jacobi, 3, -2, -2)
@@ -461,7 +461,7 @@ def test_roots_sh_jacobi():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_sh_jacobi, 0, 1, 1)
-    assert_raises(ValueError, sc.roots_sh_jacobi, 3.3, 1, 1)
+    assert_raises(ValueError, sc.roots_sh_jacobi, 3.3, 1, 1)  # type: ignore[call-overload]
     assert_raises(ValueError, sc.roots_sh_jacobi, 3, 1, 2)    # p - q <= -1
     assert_raises(ValueError, sc.roots_sh_jacobi, 3, 2, -1)   # q <= 0
     assert_raises(ValueError, sc.roots_sh_jacobi, 3, -2, -1)  # both
@@ -492,7 +492,7 @@ def test_roots_hermite():
     assert_allclose(sum(v), m, 1e-14, 1e-14)
 
     assert_raises(ValueError, sc.roots_hermite, 0)
-    assert_raises(ValueError, sc.roots_hermite, 3.3)
+    assert_raises(ValueError, sc.roots_hermite, 3.3)  # type: ignore[call-overload]
 
 def test_roots_hermite_asy():
     # Recursion for Hermite functions
@@ -541,7 +541,7 @@ def test_roots_hermitenorm():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_hermitenorm, 0)
-    assert_raises(ValueError, sc.roots_hermitenorm, 3.3)
+    assert_raises(ValueError, sc.roots_hermitenorm, 3.3)  # type: ignore[call-overload]
 
 def test_roots_gegenbauer():
     def rootf(a):
@@ -604,7 +604,7 @@ def test_roots_gegenbauer():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_gegenbauer, 0, 2)
-    assert_raises(ValueError, sc.roots_gegenbauer, 3.3, 2)
+    assert_raises(ValueError, sc.roots_gegenbauer, 3.3, 2)  # type: ignore[call-overload]
     assert_raises(ValueError, sc.roots_gegenbauer, 3, -.75)
 
 def test_roots_chebyt():
@@ -623,7 +623,7 @@ def test_roots_chebyt():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_chebyt, 0)
-    assert_raises(ValueError, sc.roots_chebyt, 3.3)
+    assert_raises(ValueError, sc.roots_chebyt, 3.3)  # type: ignore[call-overload]
 
 def test_chebyt_symmetry():
     x, w = sc.roots_chebyt(21)
@@ -646,7 +646,7 @@ def test_roots_chebyu():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_chebyu, 0)
-    assert_raises(ValueError, sc.roots_chebyu, 3.3)
+    assert_raises(ValueError, sc.roots_chebyu, 3.3)  # type: ignore[call-overload]
 
 def test_roots_chebyc():
     weightf = orth.chebyc(5).weight_func
@@ -664,7 +664,7 @@ def test_roots_chebyc():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_chebyc, 0)
-    assert_raises(ValueError, sc.roots_chebyc, 3.3)
+    assert_raises(ValueError, sc.roots_chebyc, 3.3)  # type: ignore[call-overload]
 
 def test_roots_chebys():
     weightf = orth.chebys(5).weight_func
@@ -681,7 +681,7 @@ def test_roots_chebys():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_chebys, 0)
-    assert_raises(ValueError, sc.roots_chebys, 3.3)
+    assert_raises(ValueError, sc.roots_chebys, 3.3)  # type: ignore[call-overload]
 
 def test_roots_sh_chebyt():
     weightf = orth.sh_chebyt(5).weight_func
@@ -699,7 +699,7 @@ def test_roots_sh_chebyt():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_sh_chebyt, 0)
-    assert_raises(ValueError, sc.roots_sh_chebyt, 3.3)
+    assert_raises(ValueError, sc.roots_sh_chebyt, 3.3)  # type: ignore[call-overload]
 
 def test_roots_sh_chebyu():
     weightf = orth.sh_chebyu(5).weight_func
@@ -717,7 +717,7 @@ def test_roots_sh_chebyu():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_sh_chebyu, 0)
-    assert_raises(ValueError, sc.roots_sh_chebyu, 3.3)
+    assert_raises(ValueError, sc.roots_sh_chebyu, 3.3)  # type: ignore[call-overload]
 
 def test_roots_legendre():
     weightf = orth.legendre(5).weight_func
@@ -736,7 +736,7 @@ def test_roots_legendre():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_legendre, 0)
-    assert_raises(ValueError, sc.roots_legendre, 3.3)
+    assert_raises(ValueError, sc.roots_legendre, 3.3)  # type: ignore[call-overload]
 
 def test_roots_sh_legendre():
     weightf = orth.sh_legendre(5).weight_func
@@ -755,7 +755,7 @@ def test_roots_sh_legendre():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_sh_legendre, 0)
-    assert_raises(ValueError, sc.roots_sh_legendre, 3.3)
+    assert_raises(ValueError, sc.roots_sh_legendre, 3.3)  # type: ignore[call-overload]
 
 def test_roots_laguerre():
     weightf = orth.laguerre(5).weight_func
@@ -774,7 +774,7 @@ def test_roots_laguerre():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_laguerre, 0)
-    assert_raises(ValueError, sc.roots_laguerre, 3.3)
+    assert_raises(ValueError, sc.roots_laguerre, 3.3)  # type: ignore[call-overload]
 
 def test_roots_genlaguerre():
     def rootf(a):
@@ -814,7 +814,7 @@ def test_roots_genlaguerre():
     assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, sc.roots_genlaguerre, 0, 2)
-    assert_raises(ValueError, sc.roots_genlaguerre, 3.3, 2)
+    assert_raises(ValueError, sc.roots_genlaguerre, 3.3, 2)  # type: ignore[call-overload]
     assert_raises(ValueError, sc.roots_genlaguerre, 3, -1.1)
 
 

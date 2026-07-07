@@ -225,7 +225,6 @@ linalg
 Needed:
 
 - Reduce duplication of functions with ``numpy.linalg``, make APIs consistent.
-- ``get_lapack_funcs`` should always use ``flapack``
 - Wrap more LAPACK functions
 - One too many funcs for LU decomposition, remove one
 

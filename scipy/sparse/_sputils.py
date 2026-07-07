@@ -18,7 +18,7 @@ supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
                     np.float32, np.float64, np.longdouble,
                     np.complex64, np.complex128, np.clongdouble]
 
-_upcast_memo = {}
+_upcast_memo: dict[int, np.dtype] = {}
 
 
 def upcast(*args):
@@ -131,7 +131,8 @@ def getdtype(dtype, a=None, default=None):
     else:
         newdtype = np.dtype(dtype)
 
-    if newdtype not in supported_dtypes:
+    # check newdtype.type to avoid raising for endians which get fixed later
+    if newdtype.type not in supported_dtypes:
         supported_dtypes_fmt = ", ".join(t.__name__ for t in supported_dtypes)
         raise ValueError(f"scipy.sparse does not support dtype {newdtype}. "
                          f"The only supported types are: {supported_dtypes_fmt}.")
@@ -335,9 +336,9 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 def get_sum_dtype(dtype: np.dtype) -> np.dtype | type[np.generic]:
     """Mimic numpy's casting for np.sum"""
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
-        return np.uint
+        return np.dtype(np.uint)
     if np.can_cast(dtype, np.int_):
-        return np.int_
+        return np.dtype(np.int_)
     return dtype
 
 
