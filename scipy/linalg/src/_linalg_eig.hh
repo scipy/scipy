@@ -506,12 +506,12 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
         }
 
         case Eigh_driver::EVR : {
-            call_sy_he_evr(&jobz, &range, &uplo, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, NULL, NULL, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &lrwork, &tmp_iwork, &liwork, &info);
+            call_sy_he_evr(&jobz, &range, &uplo, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, NULL, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &lrwork, &tmp_iwork, &liwork, &info);
             break;
         }
 
         case Eigh_driver::EVX : {
-            call_sy_he_evx(&jobz, &range, &uplo, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, NULL, NULL, NULL, &intn, &tmp_work, &lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+            call_sy_he_evx(&jobz, &range, &uplo, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, NULL, NULL, &intn, &tmp_work, &lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
             break;
         }
 
@@ -526,7 +526,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
         }
 
         case Eigh_driver::GVX : {
-            call_sy_he_gvx(&int_itype, &jobz, &range, &uplo, &intn, NULL, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, NULL, NULL, NULL, &intn, &tmp_work, &lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+            call_sy_he_gvx(&int_itype, &jobz, &range, &uplo, &intn, NULL, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, NULL, NULL, &intn, &tmp_work, &lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
             break;
         }
 
