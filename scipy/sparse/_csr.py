@@ -287,7 +287,7 @@ class _csr_base(_cs_matrix):
             n_cols = len(col_indices)
             row = np.repeat(row, n_cols)
             col = np.tile(col_indices, n_rows)
-            return self._get_arrayXarray(row, col).reshape(n_rows, n_cols)
+            return self._get_arrayXarray(row, col)
         return self._major_index_fancy(row)._get_submatrix(minor=col)
 
     def _set_int(self, idx, x):
