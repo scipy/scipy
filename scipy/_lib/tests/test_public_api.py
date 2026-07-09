@@ -34,10 +34,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.misc',
     'scipy.misc.common',
     'scipy.misc.doccer',
-    'scipy.spatial.ckdtree',
-    'scipy.spatial.kdtree',
-    'scipy.spatial.qhull',
-    'scipy.spatial.transform.rotation',
     'scipy.special.add_newdocs',
     'scipy.special.basic',
     'scipy.special.cython_special',
@@ -207,10 +203,6 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                          ('scipy.spatial.ckdtree', None),
-                          ('scipy.spatial.kdtree', None),
-                          ('scipy.spatial.qhull', None),
-                          ('scipy.spatial.transform.rotation', 'transform'),
                           ('scipy.special.add_newdocs', None),
                           ('scipy.special.basic', None),
                           ('scipy.special.orthogonal', None),

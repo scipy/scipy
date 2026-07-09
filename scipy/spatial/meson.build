@@ -110,10 +110,7 @@ py3.install_sources([
     '_plotutils.py',
     '_procrustes.py',
     '_spherical_voronoi.py',
-    'ckdtree.py',
     'distance.py',
-    'kdtree.py',
-    'qhull.py'
   ],
   subdir: 'scipy/spatial'
 )
