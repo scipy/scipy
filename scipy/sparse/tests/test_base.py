@@ -3029,6 +3029,12 @@ class _TestSlicing:
                            match='an index can only have a single ellipsis'):
             a[..., 1, ...]
 
+    def test_array_by_strided_slice(self):
+        b = self.asdense(arange(50).reshape(5, 10))
+        a = self.spcreator(b)
+
+        assert_array_equal(a[[1, 0], 0:10:2].toarray(), b[[1, 0], 0:10:2])
+
 
 class _TestSlicingAssign:
     def test_slice_scalar_assign(self):
