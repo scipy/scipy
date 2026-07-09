@@ -224,14 +224,8 @@ python_sources = [
   '_support_alternative_backends.py',
   '_testutils.py',
   '_ufuncs.pyi',
-  'add_newdocs.py',
-  'basic.py',
   'cython_special.pxd',
   'cython_special.pyi',
-  'orthogonal.py',
-  'sf_error.py',
-  'specfun.py',
-  'spfun_stats.py',
   '_ufunc_tools.py'
 ]
 
