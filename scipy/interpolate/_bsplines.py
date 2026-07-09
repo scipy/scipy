@@ -166,7 +166,7 @@ def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, ci, cf):
 
     return A_reduced, offset_reduced, nc_free, y_w
 
-def _validate_clamp_values(clamp_values, k, t, y, xp, check_finite=True):
+def _validate_clamp_values(clamp_values, k, t, y, x, xp, check_finite=True):
     """Checks if clamp_values has valid values or not."""
     
     if not isinstance(clamp_values, list | tuple):
@@ -184,40 +184,61 @@ def _validate_clamp_values(clamp_values, k, t, y, xp, check_finite=True):
         raise ValueError("At least one clamp value must not be None")
     
     try:
-       # Array_namespace raises TypeError,
-       # we expect a ValueError as per the tests.
-       # Also, array_namespace internally casts to np.ndarray whe
-       # python tuples are supplied, hence, apply only on array clamp values.
+       # clamp_values is documented to accept plain Python numbers/tuples (the
+        # common case), which should work uniformly across xp backends without
+        # requiring users to wrap them in xp.asarray(...) themselves. We only
+        # invoke array_namespace to validate genuine array-like clamp_values
+        # against xp's namespace; plain scalars/tuples flow through untouched
+        # and adopt the numpy dtype via _as_float_array below.
+        #
+        # array_namespace raises TypeError; we convert to ValueError for
+        # consistency with the rest of this function's validation errors.
        array_namespace(*(v for v in clamp_values if is_array_api_obj(v)), xp.empty(0))
     except TypeError as e:
         raise ValueError(f"clamp_values contains invalid values: {e}") from e
 
     def _prepare(val, side):
         try:
-            arr = xp.asarray(val, dtype=xp.float64)
+            arr = _as_float_array(val, check_finite)
         except (TypeError, ValueError):
             raise ValueError(
-                f"clamp_values[{side}] should be a real number, got {val!r}."
+                f"clamp_values[{side}] should be a real, finite number, got {val!r}."
             )
-        if check_finite:
-            if not xp.all(xp.isfinite(arr)):
-                raise ValueError(f"clamp_values[{side}] must be finite.")
-        expected = y.shape[1:] if y.ndim > 1 else ()
+        
+        if np.iscomplexobj(arr):
+            raise ValueError(
+                f"clamp_values[{side}] should be a real number, "
+                f"got complex value {val!r}."
+            )
+
+        arr = np.atleast_1d(arr)
+        expected = y.shape[1:] if y.ndim > 1 else (1,)
         if arr.shape != expected:
             raise ValueError(
-               f"clamp_values[{side}] has wrong dimension: shape {arr.shape} !="
-               f" {expected}."
+            f"clamp_values[{side}] has wrong dimension: shape {arr.shape} !="
+            f" {expected}."
             )
-        arr = xp.reshape(arr, (-1,))           
-        return np.asarray(arr)
-    
+        arr = arr.reshape(-1)
+        return arr
+        
     ci = _prepare(ci_raw, 0) if ci_raw is not None else None
     cf = _prepare(cf_raw, 1) if cf_raw is not None else None
     
-    if ci is not None and np.any(t[:k+1] != t[0]):
-        raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
-    if cf is not None and np.any(t[-(k+1):] != t[-1]):
-        raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
+    if ci is not None:
+        if np.any(t[:k+1] != t[0]):
+            raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
+        if t[0] != x[0]:
+            raise ValueError(
+                f"Left clamp requires t[0] == x[0], got t[0]={t[0]}, x[0]={x[0]}"
+            )
+    
+    if cf is not None:
+        if np.any(t[-(k+1):] != t[-1]):
+            raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
+        if t[-1] != x[-1]:
+            raise ValueError(
+                f"Right clamp requires t[-1] == x[-1], got t[-1]={t[-1]}, x[-1]={x[-1]}"
+            )
     
     return ci, cf
 
@@ -2174,10 +2195,13 @@ clamp_values=None):
         "qr" (Use the QR factorization of the design matrix).
         Default is "qr".
     clamp_values : tuple, optional
-        A 2-tuple ``(ci, cf)`` where each element is either a real number or
-        ``None``. Pins the spline's value at ``x[0]`` to ``ci`` and at ``x[-1]``
-        to ``cf``. ``None`` leaves that endpoint unclamped. For example,
-        ``(5, None)`` clamps ``x[0]`` to ``5`` and leaves ``x[-1]`` free.
+        A 2-tuple ``(ci, cf)`` where each element is either a real number, 
+        a numeric array or ``None``. Pins the spline's value at ``x[0]`` 
+        to ``ci`` and at ``x[-1]`` to ``cf``. ``None`` leaves that endpoint 
+        unclamped. For example, ``(5, None)`` clamps ``x[0]`` to ``5`` and 
+        leaves ``x[-1]`` free. Requires the knot vector to have multiplicity
+        ``k + 1`` located exactly at the clamped endpoint(s) and be equal to
+        ``x[0]`` and ``x[-1]``.
         Default is None.
 
     Returns
@@ -2295,7 +2319,7 @@ clamp_values=None):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
     if clamp_values is not None:
         ci, cf = _validate_clamp_values(
-            clamp_values, k, t, y, xp, check_finite=check_finite,
+            clamp_values, k, t, y, x, xp, check_finite=check_finite,
         )
     else:
         ci, cf = None, None

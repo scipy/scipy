@@ -1834,6 +1834,40 @@ class TestLSQ:
         xp_assert_close(b.t, b_w.t, atol=1e-14)
         xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
+
+    @parametrize_lsq_methods
+    def test_clamp_values_wrong_shape_non_scalar(self, method, xp):
+        # clamp_values shape (3, 1) must not silently broadcast a
+        # gainst y.shape[1:] == (3,)
+        x = np.linspace(0, 10, 30)
+        y3 = np.column_stack([np.sin(x), 2*np.sin(x), 3*np.sin(x)])
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        
+        x, y3, t = xp.asarray(x), xp.asarray(y3), xp.asarray(t)
+        
+        with assert_raises(ValueError, match="dimension"):
+            make_lsq_spline(
+                x, y3, t, k=k, method=method,
+                clamp_values=([[0], [0], [0]], None)
+            )
+
+    @parametrize_lsq_methods
+    def test_clamp_values_wrong_knot_location(self, method, xp):
+        # (k+1) multiplicity knot vector but the repeated value doesn't match 
+        # x[0]/x[-1]. Should be rejected, otherwise clamp gives wrong results.
+        x_np = self.x
+        k = self.k
+        t_bad = np.r_[
+            (x_np[0] - 1,) * (k + 1),   # shifted left: repeated value != x[0]
+            self.t[k+1:-(k+1)],
+            (x_np[-1] + 1,) * (k + 1),  # shifted right: repeated value != x[-1]
+        ]
+        
+        x, y, t = xp.asarray(x_np), xp.asarray(self.y), xp.asarray(t_bad)
+        
+        with assert_raises(ValueError):
+            make_lsq_spline(x, y, t, k, method=method, clamp_values=(5, 8))
     
     @parametrize_lsq_methods
     def test_clamp_values_one_sided_matches_dense_reference(self, method):
