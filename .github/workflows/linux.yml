@@ -399,7 +399,10 @@ jobs:
           python3.12 -m venv test && \
           source test/bin/activate && \
           python -m pip install --upgrade pip && \
-          python -m pip install --group build --group dev-cli --group test-core && \
+          # hypothesis>=6.156 ships a Rust extension with no Linux i686 wheel
+          # see https://github.com/HypothesisWorks/hypothesis/issues/4789
+          # so we pin to the last pure Python release
+          python -m pip install --group build --group dev-cli --group test-core 'hypothesis<6.156' && \
           # we want `mpmath` but cannot install `gmpy2` on 32-bit,
           # so cannot use `--group test-mp`
           python -m pip install mpmath && \
