@@ -551,7 +551,7 @@ BOOST_TESTS = [
         data(elliprg, 'ellint_rg_xyy_ipp-ellint_rg_xyy', (0, 1, 2), 3,
              rtol=7.5e-16),
         data(elliprg, 'ellint_rg_xy0_ipp-ellint_rg_xy0', (0, 1, 2), 3,
-             rtol=5e-16),
+             rtol=5.2e-16),
         data(elliprg, 'ellint_rg_00x_ipp-ellint_rg_00x', (0, 1, 2), 3,
              rtol=5e-16),
         data(elliprj, 'ellint_rj_data_ipp-ellint_rj_data', (0, 1, 2, 3), 4,

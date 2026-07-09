@@ -58,6 +58,7 @@ def matrices(sparse_cls):
     return A_dense, A_sparse, b
 
 
+@pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
 def test_isolve_gmres(matrices):
     # Several of the iterative solvers use the same
     # isolve.utils.make_system wrapper code, so test just one of them.
@@ -68,6 +69,7 @@ def test_isolve_gmres(matrices):
     assert_allclose(A_sparse @ x, b)
 
 
+@pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
 def test_lsmr(matrices):
     A_dense, A_sparse, b = matrices
     res0 = splin.lsmr(A_dense, b)
@@ -88,6 +90,7 @@ def test_lsqr(matrices):
     assert_allclose(res[0], res0[0], atol=1e-5)
 
 
+@pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
 def test_eigs(matrices):
     A_dense, A_sparse, v0 = matrices
 
@@ -114,6 +117,7 @@ def test_eigs(matrices):
         assert_allclose(v, v_dense)
 
 
+@pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
 def test_svds(matrices):
     A_dense, A_sparse, v0 = matrices
 
