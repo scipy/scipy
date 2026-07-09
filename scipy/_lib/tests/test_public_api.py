@@ -31,14 +31,6 @@ def test_dir_testing():
 # deprecation messages emitted by each of these modules say.
 PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.fftpack.convolve',
-    'scipy.interpolate.dfitpack',
-    'scipy.interpolate.fitpack',
-    'scipy.interpolate.fitpack2',
-    'scipy.interpolate.interpnd',
-    'scipy.interpolate.interpolate',
-    'scipy.interpolate.ndgriddata',
-    'scipy.interpolate.polyint',
-    'scipy.interpolate.rbf',
     'scipy.io.arff.arffread',
     'scipy.io.harwell_boeing',
     'scipy.io.idl',
@@ -287,14 +279,6 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                          ('scipy.interpolate.dfitpack', None),
-                          ('scipy.interpolate.fitpack', None),
-                          ('scipy.interpolate.fitpack2', None),
-                          ('scipy.interpolate.interpnd', None),
-                          ('scipy.interpolate.interpolate', None),
-                          ('scipy.interpolate.ndgriddata', None),
-                          ('scipy.interpolate.polyint', None),
-                          ('scipy.interpolate.rbf', None),
                           ('scipy.io.harwell_boeing', None),
                           ('scipy.io.idl', None),
                           ('scipy.io.mmio', None),
