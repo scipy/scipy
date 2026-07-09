@@ -33,6 +33,7 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.misc',
     'scipy.misc.common',
     'scipy.misc.doccer',
+    'scipy.optimize.cython_optimize'
     'scipy.special.cython_special',
 ]
 
