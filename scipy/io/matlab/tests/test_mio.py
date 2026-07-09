@@ -13,13 +13,12 @@ import gzip
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_, assert_allclose)
 import pytest
-from pytest import raises as assert_raises, warns as assert_warns
+from pytest import raises as assert_raises
 
 import numpy as np
 from numpy import array
 from scipy.sparse import issparse, eye_array, coo_array, csc_array, sparray
 
-import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
 import scipy.io.matlab._byteordercodes as boc
 from scipy.io.matlab._miobase import (matdims, MatWriteError, MatReadError,
