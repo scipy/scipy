@@ -564,6 +564,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         major, minor = self._swap((row, col))
         major = np.asarray(major, dtype=idx_dtype)
         minor = np.asarray(minor, dtype=idx_dtype)
+        
+        major, minor = np.broadcast_arrays(major, minor)
 
         val = np.empty(major.size, dtype=self.dtype)
         csr_sample_values(M, N, self.indptr, self.indices, self.data,

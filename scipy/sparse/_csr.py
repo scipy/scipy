@@ -283,7 +283,8 @@ class _csr_base(_cs_matrix):
     def _get_arrayXslice(self, row, col):
         if col.step not in (1, None):
             col = np.arange(*col.indices(self.shape[1]))
-            return self._get_arrayXarray(row, col)
+            return self._get_arrayXarray(np.asarray(row)[:, None], col)
+
         return self._major_index_fancy(row)._get_submatrix(minor=col)
 
     def _set_int(self, idx, x):

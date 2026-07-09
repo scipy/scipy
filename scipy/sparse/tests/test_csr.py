@@ -128,6 +128,14 @@ def test_fancy_indexing_broadcasts_without_making_dense_2d(cls):
     assert S[I, J].nnz == 0  # 1D row array for columns -> broadcasts to 2D
     assert S[I, J.reshape(1, -1)].nnz == 0  # 2D row array as index for columns
 
+@pytest.mark.parametrize("cls", [csr_matrix, csr_array])
+def test_fancy_indexing_with_stepped_column_slice(cls):
+    A = cls(np.eye(10))
+
+    result = A[[1, 0], 0:10:2]
+    expected = np.eye(10)[[1, 0], 0:10:2]
+
+    assert_array_equal(result.toarray(), expected)
 
 def test_csr_hstack_int64():
     """
