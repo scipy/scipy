@@ -53,11 +53,6 @@ py3.install_sources([
     '_quadpack_py.py',
     '_tanhsinh.py',
     '_cubature.py',
-    'dop.py',
-    'lsoda.py',
-    'odepack.py',
-    'quadpack.py',
-    'vode.py',
     'src/LICENSE_DOP'
   ],
   subdir: 'scipy/integrate'

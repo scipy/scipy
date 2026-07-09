@@ -31,10 +31,6 @@ def test_dir_testing():
 # deprecation messages emitted by each of these modules say.
 PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.fftpack.convolve',
-    'scipy.integrate.dop',
-    'scipy.integrate.odepack',
-    'scipy.integrate.quadpack',
-    'scipy.integrate.vode',
     'scipy.interpolate.dfitpack',
     'scipy.interpolate.fitpack',
     'scipy.interpolate.fitpack2',
@@ -291,10 +287,6 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                          ('scipy.integrate.dop', None),
-                          ('scipy.integrate.odepack', None),
-                          ('scipy.integrate.quadpack', None),
-                          ('scipy.integrate.vode', None),
                           ('scipy.interpolate.dfitpack', None),
                           ('scipy.interpolate.fitpack', None),
                           ('scipy.interpolate.fitpack2', None),
