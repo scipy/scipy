@@ -320,19 +320,9 @@ python_sources = [
   '_solvers.py',
   '_special_matrices.py',
   '_testutils.py',
-  'basic.py',
   'blas.py',
-  'decomp.py',
-  'decomp_cholesky.py',
-  'decomp_lu.py',
-  'decomp_qr.py',
-  'decomp_schur.py',
-  'decomp_svd.py',
   'interpolative.py',
   'lapack.py',
-  'matfuncs.py',
-  'misc.py',
-  'special_matrices.py'
 ]
 
 py3.install_sources(

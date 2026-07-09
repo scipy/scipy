@@ -265,16 +265,6 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                          ('scipy.linalg.basic', None),
-                          ('scipy.linalg.decomp', None),
-                          ('scipy.linalg.decomp_cholesky', None),
-                          ('scipy.linalg.decomp_lu', None),
-                          ('scipy.linalg.decomp_qr', None),
-                          ('scipy.linalg.decomp_schur', None),
-                          ('scipy.linalg.decomp_svd', None),
-                          ('scipy.linalg.matfuncs', None),
-                          ('scipy.linalg.misc', None),
-                          ('scipy.linalg.special_matrices', None),
                           ('scipy.ndimage.filters', None),
                           ('scipy.ndimage.fourier', None),
                           ('scipy.ndimage.interpolation', None),
