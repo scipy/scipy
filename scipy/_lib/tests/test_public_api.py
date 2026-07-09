@@ -30,8 +30,6 @@ def test_dir_testing():
 # These private modules support will be removed in SciPy v2.0.0, as the
 # deprecation messages emitted by each of these modules say.
 PRIVATE_BUT_PRESENT_MODULES = [
-    'scipy.constants.codata',
-    'scipy.constants.constants',
     'scipy.fftpack.basic',
     'scipy.fftpack.convolve',
     'scipy.fftpack.helper',
@@ -297,8 +295,6 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                         [('scipy.constants.codata', None),
-                          ('scipy.constants.constants', None),
                           ('scipy.fftpack.basic', None),
                           ('scipy.fftpack.helper', None),
                           ('scipy.fftpack.pseudo_diffs', None),
