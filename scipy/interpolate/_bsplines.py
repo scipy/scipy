@@ -16,7 +16,8 @@ from scipy.special import poch
 from itertools import combinations
 
 from scipy._lib._array_api import (
-    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy
+    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy,
+    is_array_api_obj
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
@@ -165,39 +166,50 @@ def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, ci, cf):
 
     return A_reduced, offset_reduced, nc_free, y_w
 
-def _validate_clamp_values(clamp_values, k, t, y, xp):
+def _validate_clamp_values(clamp_values, k, t, y, xp, check_finite=True):
     """Checks if clamp_values has valid values or not."""
     
     if not isinstance(clamp_values, list | tuple):
-        raise ValueError(...)
+        raise ValueError(
+            f"clamp_values should be a tuple or list, got type {type(clamp_values)}."
+        )
     if len(clamp_values) != 2:
-        raise ValueError(...)
+        raise ValueError(
+            f"Expect clamp_values to be of length 2, got {len(clamp_values)}."
+        )
     
     ci_raw, cf_raw = clamp_values
     
     if ci_raw is None and cf_raw is None:
         raise ValueError("At least one clamp value must not be None")
     
+    try:
+       # Array_namespace raises TypeError,
+       # we expect a ValueError as per the tests.
+       # Also, array_namespace internally casts to np.ndarray whe
+       # python tuples are supplied, hence, apply only on array clamp values.
+       array_namespace(*(v for v in clamp_values if is_array_api_obj(v)), xp.empty(0))
+    except TypeError as e:
+        raise ValueError(f"clamp_values contains invalid values: {e}") from e
+
     def _prepare(val, side):
-        if isinstance(val, np.ndarray):
-            raise ValueError(
-                f"clamp_values[{side}] should be a scalar or list of scalars, "
-                f"not an ndarray."
-            )
         try:
             arr = xp.asarray(val, dtype=xp.float64)
         except (TypeError, ValueError):
-            raise ValueError(f"clamp_values[{side}] should be numeric, got {val}.")
-        if not xp.all(xp.isfinite(arr)):
-            raise ValueError(f"clamp_values[{side}] must be finite.")
-        arr = xp.reshape(arr, (-1,))
+            raise ValueError(
+                f"clamp_values[{side}] should be a real number, got {val!r}."
+            )
+        if check_finite:
+            if not xp.all(xp.isfinite(arr)):
+                raise ValueError(f"clamp_values[{side}] must be finite.")
         expected = y.shape[1:] if y.ndim > 1 else ()
-        if expected and arr.shape != expected:
+        if arr.shape != expected:
             raise ValueError(
                f"clamp_values[{side}] has wrong dimension: shape {arr.shape} !="
                f" {expected}."
-            )           
-        return np.asarray(arr)   # convert for downstream numpy consumers
+            )
+        arr = xp.reshape(arr, (-1,))           
+        return np.asarray(arr)
     
     ci = _prepare(ci_raw, 0) if ci_raw is not None else None
     cf = _prepare(cf_raw, 1) if cf_raw is not None else None
@@ -2162,10 +2174,10 @@ clamp_values=None):
         "qr" (Use the QR factorization of the design matrix).
         Default is "qr".
     clamp_values : tuple, optional
-        If ``clamp_values`` is supplied, it pins the splines values at ``x[0]`` and
-        ``x[-1]`` to ``clamp_values[0]`` and ``clamp_values[1]`` respectively. If 
-        only one numeric value is supplied, it will pin the corresponding spline 
-        endpoint to it, for example, ``(5, None)`` will clamp ``x[0]`` to ``5``.
+        A 2-tuple ``(ci, cf)`` where each element is either a real number or
+        ``None``. Pins the spline's value at ``x[0]`` to ``ci`` and at ``x[-1]``
+        to ``cf``. ``None`` leaves that endpoint unclamped. For example,
+        ``(5, None)`` clamps ``x[0]`` to ``5`` and leaves ``x[-1]`` free.
         Default is None.
 
     Returns
@@ -2187,6 +2199,14 @@ clamp_values=None):
     Knots ``t`` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
     ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
+
+    When ``clamp_values`` is supplied, the knot vector must additionally
+    have multiplicity ``k + 1`` at the endpoint(s) being clamped, i.e.
+    ``t[0] == t[1] == ... == t[k]`` for the left endpoint and/or
+    ``t[-1] == t[-2] == ... == t[-(k+1)]`` for the right endpoint. This
+    holds for the standard clamped knot vector construction as well as
+    other constructions with the same boundary multiplicity, such as
+    not-a-knot boundary conditions.
 
     Examples
     --------
@@ -2275,7 +2295,7 @@ clamp_values=None):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
     if clamp_values is not None:
         ci, cf = _validate_clamp_values(
-            clamp_values, k, t, y, xp
+            clamp_values, k, t, y, xp, check_finite=check_finite,
         )
     else:
         ci, cf = None, None

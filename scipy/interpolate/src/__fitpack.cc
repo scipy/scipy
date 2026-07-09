@@ -874,8 +874,8 @@ void _compute_residuals(
     }
 }
 
-/* Back-substitution for R (upper-triangular banded, packed) into c_free.
- * R has shape (m, nz), c_free has shape (nc_free, ydim2), yw has 
+/* Back-substitution for R (upper-triangular banded, packed) into c.
+ * R has shape (m, nz), c_free has shape (nc, ydim2), yw has 
  * shape (m, ydim2). 
 */
 static inline void _back_substitute(

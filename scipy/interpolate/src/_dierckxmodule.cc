@@ -145,6 +145,8 @@ py_fpback_clamped(PyObject* self, PyObject *args)
     npy_intp dims1[1] = {m_};
     PyArrayObject *a_residuals = (PyArrayObject *)PyArray_SimpleNew(1, dims1, NPY_DOUBLE);
     if (a_c == NULL || a_residuals == NULL) {
+        Py_XDECREF(a_c);
+        Py_XDECREF(a_residuals);
         PyErr_NoMemory();
         return NULL;
     }
