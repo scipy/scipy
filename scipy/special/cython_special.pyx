@@ -1353,6 +1353,9 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_struve_h(double v, double z) nogil
     double xsf_struve_l(double v, double z) nogil
 
+    double xsf_wrightomega(double z) nogil
+    npy_cdouble xsf_cwrightomega(npy_cdouble z) nogil
+
     # Stats
 
     double xsf_bdtr(double k, int n, double p) nogil
@@ -1364,10 +1367,7 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_gdtr(double a, double b, double x) nogil
     double xsf_gdtrc(double a, double b, double x) nogil
     double xsf_kolmogorov(double x) nogil
-    double xsf_kolmogc(double x) nogil
     double xsf_kolmogi(double x) nogil
-    double xsf_kolmogci(double x) nogil
-    double xsf_kolmogp(double x) nogil
     double xsf_nbdtr(int k, int n, double p) nogil
     double xsf_nbdtrc(int k, int n, double p) nogil
     double xsf_nbdtri(int k, int n, double p) nogil
@@ -1393,6 +1393,8 @@ cdef extern from r"xsf_wrappers.h":
 
     double special_boxcox(double x, double lmbda) nogil
     double special_boxcox1p(double x, double lmbda) nogil
+    npy_cdouble special_chyp0f1(double v, npy_cdouble z) nogil
+    double special_hyp0f1(double v, double z) nogil
     double special_hyperu(double a, double b, double x) nogil
     double special_inv_boxcox(double x, double lmbda) nogil
     double special_inv_boxcox1p(double x, double lmbda) nogil
@@ -1639,14 +1641,6 @@ cdef _proto_fdtridfd_t *_proto_fdtridfd_t_var = &_func_fdtridfd
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
 
-from ._hyp0f1 cimport _hyp0f1_cmplx as _func__hyp0f1_cmplx
-ctypedef double complex _proto__hyp0f1_cmplx_t(double, double complex) noexcept nogil
-cdef _proto__hyp0f1_cmplx_t *_proto__hyp0f1_cmplx_t_var = &_func__hyp0f1_cmplx
-
-from ._hyp0f1 cimport _hyp0f1_real as _func__hyp0f1_real
-ctypedef double _proto__hyp0f1_real_t(double, double) noexcept nogil
-cdef _proto__hyp0f1_real_t *_proto__hyp0f1_real_t_var = &_func__hyp0f1_real
-
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_cdouble _func_chyp1f1_wrap "chyp1f1_wrap"(npy_double, npy_double, npy_cdouble)nogil
 
@@ -1690,9 +1684,6 @@ from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
 ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
 
-from ._cdflib_wrappers cimport nctdtridf as _func_nctdtridf
-ctypedef double _proto_nctdtridf_t(double, double, double) noexcept nogil
-cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
@@ -2530,9 +2521,9 @@ cpdef double huber(double x0, double x1) noexcept nogil:
 cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.hyp0f1"""
     if Dd_number_t is double_complex:
-        return _func__hyp0f1_cmplx(x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(special_chyp0f1(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func__hyp0f1_real(x0, x1)
+        return special_hyp0f1(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3119,7 +3110,7 @@ cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcep
 
 cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtridf"""
-    return _func_nctdtridf(x0, x1, x2)
+    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_find_degrees_of_freedom_double)(x0, x1, x2)
 
 cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrinc"""
@@ -3539,9 +3530,9 @@ cpdef double complex wofz(double complex x0) noexcept nogil:
 cpdef Dd_number_t wrightomega(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.wrightomega"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_wrightomega)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cwrightomega(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_wrightomega_real)(x0)
+        return xsf_wrightomega(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
