@@ -30,11 +30,7 @@ def test_dir_testing():
 # These private modules support will be removed in SciPy v2.0.0, as the
 # deprecation messages emitted by each of these modules say.
 PRIVATE_BUT_PRESENT_MODULES = [
-    'scipy.fftpack.basic',
     'scipy.fftpack.convolve',
-    'scipy.fftpack.helper',
-    'scipy.fftpack.pseudo_diffs',
-    'scipy.fftpack.realtransforms',
     'scipy.integrate.dop',
     'scipy.integrate.odepack',
     'scipy.integrate.quadpack',
@@ -295,10 +291,6 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                          ('scipy.fftpack.basic', None),
-                          ('scipy.fftpack.helper', None),
-                          ('scipy.fftpack.pseudo_diffs', None),
-                          ('scipy.fftpack.realtransforms', None),
                           ('scipy.integrate.dop', None),
                           ('scipy.integrate.odepack', None),
                           ('scipy.integrate.quadpack', None),
