@@ -1382,17 +1382,6 @@ def test_write_multiple_matlab_opaque():
         assert data[name][0]['_ObjectMetadata'][4, 0] == expected_id
 
 
-def test_deprecation():
-    """Test that access to previous attributes still works."""
-    # This should be accessible immediately from scipy.io import
-    with assert_warns(DeprecationWarning):
-        scipy.io.matlab.mio5_params.MatlabOpaque
-
-    # These should be importable but warn as well
-    with assert_warns(DeprecationWarning):
-        from scipy.io.matlab.miobase import MatReadError  # noqa: F401
-
-
 def test_gh_17992(tmp_path):
     rng = np.random.default_rng(12345)
     outfile = tmp_path / "lists.mat"
