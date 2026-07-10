@@ -396,6 +396,19 @@ def test_chdtr_gh21311(xp):
     xp_assert_close(res, xp.asarray(ref))
 
 
+@pytest.mark.parametrize(
+    "func", [make_xp_pytest_param(special.chdtr),
+             make_xp_pytest_param(special.chdtrc)]
+)
+def test_dask_broadcast_shape(func, xp):
+    if not is_dask(xp):
+        pytest.skip("Dask-specific output metadata check")
+
+    v = xp.asarray(np.ones((2, 1)))
+    x = xp.asarray(np.ones(2))
+    assert func(v, x).shape == (2, 2)
+
+
 @make_xp_test_case(special.fdtrc)
 def test_mixed_arrays_and_python_scalars(xp):
     # Tests that the delegation infrastructure respects NEP50.

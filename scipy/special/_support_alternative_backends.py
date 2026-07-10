@@ -173,6 +173,13 @@ class _FuncInfo:
             return f
 
         if is_dask(xp):
+            # Dask's ``__array_ufunc__`` handles broadcasting and infers the
+            # output shape and chunks.  ``map_blocks`` assumes that the output
+            # has the shape of the first input block, which can leave incorrect
+            # metadata when the inputs need broadcasting (gh-25343).
+            if self.is_ufunc:
+                return self.func
+
             # Apply the function to each block of the Dask array.
             # IMPORTANT: map_blocks works only because all functions in this module
             # are elementwise. It would be a grave mistake to apply this to gufuncs
