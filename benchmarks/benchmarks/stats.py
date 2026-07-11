@@ -565,8 +565,9 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
             raise NotImplementedError("no alternate case for this dist")
         default_shapes = default_shapes_n[case]
 
-        param_values = self.custom_input.get(dist_name, [*default_shapes,
-                                                         .834, 4.342])
+        # Single layout shared by rvs and fit: [loc, scale, *shapes]
+        param_values = self.custom_input.get(dist_name, [.834, 4.342,
+                                                        *default_shapes])
         self.param_values = param_values
 
         # separate relevant and non-relevant parameters for this distribution
@@ -584,18 +585,17 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
 
         # add fixed values if fixed in relevant_parameters to self.fixed
         # with keys from self.fnames and values in the same order as `fnames`.
-        # ensure fixed_vales aligns with param_values.
-        fixed_vales = param_values 
         self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
-                          compress(fixed_vales, relevant_parameters)))
+                          compress(param_values, relevant_parameters)))
         
-        # shapes need to come before loc and scale.
-        # hardcode loc and scale array indices for compatibility 
-        # with an arbitrary shape configuration.
-        self.data = self.distn.rvs(*param_values[2:], loc=param_values[0],
-                                    scale=param_values[1],
+        # shapes need to come before loc and scale in rvs call.
+        # param_values is [loc, scale, *shapes] (same order as fnames).
+        # Pass shapes positionally, loc and scale by keyword.
+        self.data = self.distn.rvs(*param_values[2:], loc=param_values[0], 
+                                   scale=param_values[1], 
                                    size=1000,
                                    random_state=np.random.default_rng(4653465))
+
 
     def time_fit(self, dist_name, case, loc_fixed, scale_fixed,
                  shape1_fixed, shape2_fixed, shape3_fixed):
