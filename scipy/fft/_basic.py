@@ -1361,7 +1361,7 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.fft import rfft2, irfft2, fftfreq, rfftfreq
-
+    ...
     >>> rng = np.random.default_rng()
     >>> m = 280  # Image size is m x m.
 
@@ -1396,7 +1396,7 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
 
     Take a look at the result:
 
-    >>> fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5, 3.25))
+    >>> fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True)
     >>> ax1.imshow(im, cmap='Blues')
     >>> ax1.set_title('Input')
     >>> ax1.set_axis_off()
