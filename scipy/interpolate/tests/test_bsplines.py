@@ -1930,7 +1930,8 @@ class TestLSQ:
         # Test if `clamp_values` actually clamps the first and last values
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         
-        if not xp.all(xp.isfinite(clamp_values)):
+        clamp_arr = xp.asarray(clamp_values, dtype=xp.float64)
+        if not xp.all(xp.isfinite(clamp_arr)):
             with assert_raises(ValueError):
                 make_lsq_spline(x, y, t, k, method=method, clamp_values=clamp_values)
         else:
