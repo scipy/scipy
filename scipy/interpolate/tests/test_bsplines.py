@@ -1848,11 +1848,12 @@ class TestLSQ:
         t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
         
         x, y3, t = xp.asarray(x), xp.asarray(y3), xp.asarray(t)
+        ci = xp.asarray([[0], [0], [0]], dtype=xp.float64)
         
         with assert_raises(ValueError, match="dimension"):
             make_lsq_spline(
                 x, y3, t, k=k, method=method,
-                clamp_values=([[0], [0], [0]], None)
+                clamp_values=(ci, None)
             )
 
     @parametrize_lsq_methods
@@ -1922,14 +1923,14 @@ class TestLSQ:
                 assert math.isclose(sp(x[0]), clamp_values[0])
     
     @pytest.mark.parametrize("clamp_values", [(5, 8), (1.12, 3.14), (3.14, 22), 
-                                        (1, 1000), (0, np.inf), (np.nan, 10), (0, 0)])
+                                    (1, 1000), (0, math.inf), (math.nan, 10),
+                                    (0, 0)])
     @parametrize_lsq_methods
     def test_lsq_with_clamp_values(self, method, xp, clamp_values):
         # Test if `clamp_values` actually clamps the first and last values
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
-        clamp_values = clamp_values
         
-        if not np.isfinite(clamp_values).all():
+        if not xp.all(xp.isfinite(clamp_values)):
             with assert_raises(ValueError):
                 make_lsq_spline(x, y, t, k, method=method, clamp_values=clamp_values)
         else:
@@ -1937,7 +1938,26 @@ class TestLSQ:
 
             assert math.isclose(sp(x[0]), clamp_values[0], abs_tol=1e-14)
             assert math.isclose(sp(x[-1]), clamp_values[1], abs_tol=1e-14)
-    
+
+    @skip_xp_backends('numpy', reason="no namespace mismatch possible when xp is numpy")
+    @parametrize_lsq_methods
+    def test_clamp_values_namespace_mismatch(self, xp, method):
+        # A plain tuple/list clamp value gets coerced to numpy internally by
+        # array_namespace; pairing it with a non-numpy xp should raise
+        # TypeError (not ValueError), matching library-wide convention.
+        x = np.linspace(0, 10, 30)
+        y = np.column_stack([np.sin(x), np.cos(x)])
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        
+        x_xp, y_xp, t_xp = xp.asarray(x), xp.asarray(y), xp.asarray(t)
+        
+        with assert_raises(TypeError):
+            make_lsq_spline(
+                x_xp, y_xp, t_xp, k=k, method=method,
+                clamp_values=((0.5, -0.5), (-0.3, 0.7)) 
+            )
+
     @parametrize_lsq_methods
     def test_clamp_values_multidim_y(self, xp, method):
         # Parametric 2D y: each clamp value is a 2-vector
@@ -1948,7 +1968,9 @@ class TestLSQ:
 
         x, y, t = xp.asarray(x), xp.asarray(y), xp.asarray(t)
         
-        clamp_values = ((0.5, -0.5), (-0.3, 0.7))
+        ci = xp.asarray([0.5, -0.5], dtype=xp.float64)
+        cf = xp.asarray([-0.3, 0.7], dtype=xp.float64)
+        clamp_values = (ci, cf)
         spl = make_lsq_spline(x, y, t, k=k, method=method, clamp_values=clamp_values)
         
         xp_assert_close(
@@ -1996,13 +2018,14 @@ class TestLSQ:
         xp_assert_close(spl.c, c_ref, atol=1e-12)
     
     @parametrize_lsq_methods
-    @pytest.mark.parametrize("clamp_values,reason", [
-        ((1 + 2j, 8),           "complex"),
-        ((2,),                   "wrong length"),
-        (('a', 'b'),             "non-numeric"),
-        (np.array([1, 2]),      "array"),
+    @pytest.mark.parametrize("clamp_values,reason,expected_exc", [
+        ((1 + 2j, 8),           "complex", ValueError),
+        ((2,),                   "wrong length", ValueError),
+        (('a', 'b'),             "non-numeric", (TypeError, ValueError)),
+        (np.array([1, 2]),      "array", ValueError),
     ])
-    def test_clamp_values_invalid_input(self, clamp_values, reason, xp, method):
+    def test_clamp_values_invalid_input(self, clamp_values, reason, xp, method,
+                                    expected_exc):
         # clamp_values must be a 2-tuple of finite real numbers
         x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         t = np.asarray(t).copy()
@@ -2011,7 +2034,7 @@ class TestLSQ:
         t[-(k+1):] = float(self.x[-1])
         t = xp.asarray(t)
 
-        with assert_raises(ValueError):
+        with assert_raises(expected_exc):
             make_lsq_spline(x, y, t, k, method=method, clamp_values=clamp_values)
 
     @parametrize_lsq_methods

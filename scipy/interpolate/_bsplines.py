@@ -17,7 +17,7 @@ from itertools import combinations
 
 from scipy._lib._array_api import (
     array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy,
-    is_array_api_obj, is_cupy
+    is_cupy
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
@@ -183,19 +183,15 @@ def _validate_clamp_values(clamp_values, k, t, y, x, xp, check_finite=True):
     if ci_raw is None and cf_raw is None:
         raise ValueError("At least one clamp value must not be None")
     
-    try:
-       # clamp_values is documented to accept plain Python numbers/tuples (the
-        # common case), which should work uniformly across xp backends without
-        # requiring users to wrap them in xp.asarray(...) themselves. We only
-        # invoke array_namespace to validate genuine array-like clamp_values
-        # against xp's namespace; plain scalars/tuples flow through untouched
-        # and adopt the numpy dtype via _as_float_array below.
-        #
-        # array_namespace raises TypeError; we convert to ValueError for
-        # consistency with the rest of this function's validation errors.
-       array_namespace(*(v for v in clamp_values if is_array_api_obj(v)), xp.empty(0))
-    except TypeError as e:
-        raise ValueError(f"clamp_values contains invalid values: {e}") from e
+    # array_namespace validates that clamp_values is compatible with xp's
+    # namespace. Plain Python scalars and None are accepted regardless of
+    # xp (per array_namespace's own handling), but non-scalar array-likes
+    # (e.g. nested tuples for multidim y) must match xp's namespace -- this
+    # follows the same "lists don't implicitly become xp-arrays" convention
+    # used elsewhere in scipy, rather than special-casing clamp_values.
+    # Raises TypeError on mismatch, consistent with array_namespace's
+    # behavior throughout the rest of the library.
+    array_namespace(*clamp_values, xp.empty(0))
 
     def _prepare(val, side):
         try:
