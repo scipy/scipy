@@ -370,9 +370,10 @@ def main(
     if parameter_groups is not None:
         # Group 9 params only used if specified in arguments.
         params.extend(group_9_params)
+        parameter_groups_set = set(parameter_groups)
         params = [
             (a, b, c, group) for a, b, c, group in params
-            if group in parameter_groups
+            if group in parameter_groups_set
         ]
 
     # grid_size * grid_size grid in box with corners
@@ -386,7 +387,8 @@ def main(
     # Add z = 1 + 0j (region 0).
     Z.append(1 + 0j)
     if regions is not None:
-        Z = [z for z in Z if get_region(z) in regions]
+        regions_set = set(regions)
+        Z = [z for z in Z if get_region(z) in regions_set]
 
     # Evaluate scipy and mpmath's hyp2f1 for all parameter combinations
     # above against all arguments in the grid Z

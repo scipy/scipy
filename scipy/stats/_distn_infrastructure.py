@@ -1908,7 +1908,7 @@ class rv_continuous(rv_generic):
         self._attach_methods()
 
         if longname is None:
-            if name[0] in ['aeiouAEIOU']:
+            if name[0].lower() in 'aeiou':
                 hstr = "An "
             else:
                 hstr = "A "
@@ -3398,7 +3398,7 @@ class rv_discrete(rv_generic):
 
         # generate docstring for subclass instances
         if longname is None:
-            if name[0] in ['aeiouAEIOU']:
+            if name[0].lower() in 'aeiou':
                 hstr = "An "
             else:
                 hstr = "A "

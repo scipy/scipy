@@ -87,7 +87,6 @@ def main():
     bool_filter = bool_filter & ~((a_range < 5.4) & (x_range > 1e16))
     bool_filter = bool_filter & ~((a_range < 5.8) & (x_range > 1e17))
     bool_filter = bool_filter & ~((a_range < 6.2) & (x_range > 1e18))
-    bool_filter = bool_filter & ~((a_range < 6.2) & (x_range > 1e18))
     bool_filter = bool_filter & ~((a_range < 6.5) & (x_range > 1e19))
     bool_filter = bool_filter & ~((a_range < 6.9) & (x_range > 1e20))
 
@@ -109,11 +108,12 @@ def main():
         [1.5, 0.1, 500],
         [1.5, 20, 100000],
         [1.5, 100, 100000],
-        ]).tolist()
+        ])
+    failing_set = {tuple(row) for row in failing}
 
     does_fail = np.full_like(a_range, False, dtype=bool)
     for i in range(x_range.size):
-        if [a_range[i], b_range[i], x_range[i]] in failing:
+        if (a_range[i], b_range[i], x_range[i]) in failing_set:
             does_fail[i] = True
 
     # filter and flatten
