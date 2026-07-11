@@ -562,6 +562,14 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         w = 2 * pi * w / fs
 
     if h is None:  # still need to compute using freqs w
+        try:
+            np.broadcast_shapes(b.shape[1:], a.shape[1:], w.shape)
+        except ValueError as e:
+            raise ValueError(
+                "b.shape[1:], a.shape[1:], and the shape of the frequencies "
+                "array must be compatible for broadcasting."
+            ) from e
+
         zm1 = xp.exp(-1j * w)
         h = (_pu.npp_polyval(zm1, b, tensor=False, xp=xp) /
              _pu.npp_polyval(zm1, a, tensor=False, xp=xp))
