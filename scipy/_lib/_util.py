@@ -15,7 +15,7 @@ from typing import Literal
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
                                    is_marray, xp_size, xp_result_device, xp_result_type,
-                                   xp_capabilities, is_array_api_obj)
+                                   xp_capabilities, is_array_api_obj, xp_isscalar)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -529,19 +529,6 @@ class _FunctionWrapper:
 
 
 @xp_capabilities()
-def isscalar(x):
-    """
-    Return True if x is a scalar: either a plain Python number,
-    or a 0-dimensional array from any Array API-compatible library
-    (numpy, pytorch, dask, jax, cupy, ...).
-    """
-    if isinstance(x, (int, float, complex, bool)):
-        return True
-
-    return is_array_api_obj(x) and x.ndim == 0
-
-
-@xp_capabilities()
 def item(x, xp=None):
     """
     Extract a scalar from an array-scalar, size-1 array, list, or tuple.
@@ -549,7 +536,7 @@ def item(x, xp=None):
     standard so it works across numpy, pytorch, dask, jax, cupy, etc.,
     and also unwraps plain Python lists/tuples.
     """
-    if isscalar(x):
+    if xp_isscalar(x):
         return x
 
     # Handle plain Python containers by unwrapping recursively

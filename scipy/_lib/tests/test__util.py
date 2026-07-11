@@ -11,12 +11,12 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.conftest import skip_xp_invalid_arg
 
-from scipy._lib._array_api import xp_assert_equal, make_xp_test_case
+from scipy._lib._array_api import xp_assert_equal, make_xp_test_case, xp_isscalar
 from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _workers_wrapper,
-                              item, isscalar)
+                              item)
 import scipy._external.array_api_extra as xpx
 from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
@@ -143,18 +143,6 @@ def test__workers_wrapper():
         assert_equal(part_f(arr), req)
 
 
-@make_xp_test_case(isscalar)
-def test_isscalar(xp):
-    assert isscalar(xp.asarray(1.0))
-    assert isscalar(1.0)
-    assert isscalar(1.0 + 1j)
-    assert isscalar(True)
-    assert isscalar(xp.asarray(1.0))
-
-    assert not isscalar(xp.asarray([1.0]))
-    assert not isscalar([1.0])
-
-
 @make_xp_test_case(item)
 def test_item(xp):
     # check that item can extract a scalar from an array-scalar or an array
@@ -174,7 +162,7 @@ def test_item(xp):
 
     x = [1.0]
     y = item(x)
-    assert isscalar(y)
+    assert xp_isscalar(y)
 
     x = xp.asarray([1.0, 2.0])
     with assert_raises(ValueError):
