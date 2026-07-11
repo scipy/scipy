@@ -16,7 +16,7 @@ from typing import Literal
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
                                    is_marray, xp_size, xp_result_device, xp_result_type,
-                                   xp_capabilities, xp_isscalar)
+                                   xp_capabilities, xp_isscalar, xp_copy)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -576,19 +576,29 @@ def _item_for_scalar_function(x, xp=None):
     return x
 
 
+def xp_array_equal(x1, x2, xp):
+    # an array-api compliant equivalent to np.array_equal
+    x1 = xp.asarray(x1)
+    x2 = xp.asarray(x2)
+    if x1.shape != x2.shape:
+        return False
+    return item(xp.all(xp.equal(x1, x2)))
+
+
 class _ScalarFunctionWrapper:
     """
     Object to wrap scalar user function, allowing picklability
     """
-    def __init__(self, f, args=None):
+    def __init__(self, f, args=None, x0=None):
         self.f = f
         self.args = [] if args is None else args
         self.nfev = 0
+        self._xp = array_namespace(x0)
 
     def __call__(self, x):
         # Send a copy because the user may overwrite it.
         # The user of this class might want `x` to remain unchanged.
-        fx = self.f(np.copy(x), *self.args)
+        fx = self.f(xp_copy(x, xp=self._xp), *self.args)
         self.nfev += 1
 
         # Make sure the function returns a true scalar
@@ -600,6 +610,16 @@ class _ScalarFunctionWrapper:
                 "must return a scalar value."
             ) from e
         return fx
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        self.__dict__.update(state)
+
 
 class MapWrapper:
     """
