@@ -1038,6 +1038,33 @@ class TestSpectrogram:
         assert_allclose(f1, f3)
         assert_allclose(p1, p3)
 
+
+@pytest.mark.parametrize("func", [welch, spectrogram, signal.stft])
+def test_adjust_noverlap_for_short_data(func):
+    x = np.arange(8.0)
+    message = (r"noverlap = 8 is greater than or equal to adjusted "
+               r"nperseg = 8, using noverlap = 7")
+
+    with pytest.warns(UserWarning) as caught:
+        result = func(x, nperseg=16, noverlap=8)
+    expected = func(x, nperseg=8, noverlap=7)
+
+    assert len(caught) == 2
+    assert any("using nperseg = 8" in str(item.message) for item in caught)
+    assert any(message == str(item.message) for item in caught)
+    for actual, reference in zip(result, expected):
+        assert_allclose(actual, reference)
+
+
+@pytest.mark.parametrize("func", [welch, spectrogram, signal.stft])
+def test_invalid_noverlap_with_short_data(func):
+    x = np.arange(8.0)
+
+    with pytest.warns(UserWarning, match="nperseg"):
+        with pytest.raises(ValueError, match="noverlap must be less than nperseg"):
+            func(x, nperseg=16, noverlap=16)
+
+
 class TestLombscargle:
     def test_frequency(self):
         """Test if frequency location of peak corresponds to frequency of

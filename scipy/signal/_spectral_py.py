@@ -875,8 +875,10 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         out_dtype = np.result_type(x, np.complex64)
 
     n = x.shape[axis] if same_data else max(x.shape[axis], y.shape[axis])
+    requested_nperseg = nperseg
     if isinstance(window, str) or isinstance(window, tuple):
         nperseg = int(nperseg) if nperseg is not None else 256
+        requested_nperseg = nperseg
         if nperseg < 1:
             raise ValueError(f"Parameter {nperseg=} is not a positive integer!")
         elif n < nperseg:
@@ -888,15 +890,16 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         win = np.asarray(window)
         if nperseg is None:
             nperseg = len(win)
+            requested_nperseg = nperseg
     if nperseg != len(win):
         raise ValueError(f"{nperseg=} does not equal {len(win)=}")
 
     nfft = int(nfft) if nfft is not None else nperseg
     if nfft < nperseg:
         raise ValueError(f"{nfft=} must be greater than or equal to {nperseg=}!")
-    noverlap = int(noverlap) if noverlap is not None else nperseg // 2
-    if noverlap >= nperseg:
-        raise ValueError(f"{noverlap=} must be less than {nperseg=}!")
+    noverlap = (nperseg // 2 if noverlap is None else
+                _triage_noverlap(noverlap, nperseg, requested_nperseg,
+                                  stacklevel=4))
     if np.iscomplexobj(x) and return_onesided:
         return_onesided = False
 
@@ -1105,13 +1108,20 @@ def spectrogram(x, fs=1.0, window=('tukey_periodic', .25), nperseg=None, noverla
     if mode not in modelist:
         raise ValueError(f'unknown value for mode {mode}, must be one of {modelist}')
 
+    requested_nperseg = nperseg
+    string_window = isinstance(window, str | tuple)
+
     # need to set default for nperseg before setting default for noverlap below
     window, nperseg = _triage_segments(window, nperseg,
                                        input_length=x.shape[axis])
+    if requested_nperseg is None:
+        requested_nperseg = 256 if string_window else nperseg
 
     # Less overlap than welch, so samples are more statistically independent
     if noverlap is None:
         noverlap = nperseg // 8
+    else:
+        noverlap = _triage_noverlap(noverlap, nperseg, requested_nperseg)
 
     if mode == 'psd':
         freqs, time, Sxx = _spectral_helper(x, x, fs, window, nperseg,
@@ -2191,13 +2201,18 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                 pad_shape[-1] = x.shape[-1] - y.shape[-1]
                 y = np.concatenate((y, np.zeros(pad_shape)), -1)
 
+    requested_nperseg = nperseg
     if nperseg is not None:  # if specified by user
         nperseg = int(nperseg)
+        requested_nperseg = nperseg
         if nperseg < 1:
             raise ValueError('nperseg must be a positive integer')
 
     # parse window; if array like, then set nperseg = win.shape
     win, nperseg = _triage_segments(window, nperseg, input_length=x.shape[-1])
+    if requested_nperseg is None:
+        requested_nperseg = (256 if isinstance(window, str | tuple)
+                              else nperseg)
 
     if nfft is None:
         nfft = nperseg
@@ -2209,9 +2224,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if noverlap is None:
         noverlap = nperseg//2
     else:
-        noverlap = int(noverlap)
-    if noverlap >= nperseg:
-        raise ValueError('noverlap must be less than nperseg.')
+        noverlap = _triage_noverlap(noverlap, nperseg, requested_nperseg,
+                                     stacklevel=4)
     nstep = nperseg - noverlap
 
     # Padding occurs after boundary extension, so that the extended signal ends
@@ -2444,6 +2458,22 @@ def _triage_segments(window, nperseg, input_length):
                 raise ValueError("value specified for nperseg is different"
                                  " from length of window")
     return win, nperseg
+
+
+def _triage_noverlap(noverlap, nperseg, requested_nperseg, *, stacklevel=3):
+    """Validate `noverlap` and adjust it after `nperseg` is reduced."""
+    noverlap = int(noverlap)
+    if noverlap >= requested_nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    if noverlap >= nperseg:
+        adjusted_noverlap = nperseg - 1
+        warnings.warn(
+            f'noverlap = {noverlap:d} is greater than or equal to adjusted '
+            f'nperseg = {nperseg:d}, using noverlap = {adjusted_noverlap:d}',
+            stacklevel=stacklevel,
+        )
+        noverlap = adjusted_noverlap
+    return noverlap
 
 
 def _median_bias(n):
