@@ -544,7 +544,7 @@ def isscalar(x):
 @xp_capabilities()
 def item(x, xp=None):
     """
-    Extract a scalar from a size-1 array, list, or tuple.
+    Extract a scalar from an array-scalar, size-1 array, list, or tuple.
     Equivalent to np.ndarray.item(), implemented via the Array API
     standard so it works across numpy, pytorch, dask, jax, cupy, etc.,
     and also unwraps plain Python lists/tuples.
