@@ -151,13 +151,13 @@ def test_item(xp):
     for dtype in dtypes:
         x = xp.asarray(1, dtype=dtype)
         y = item(x)
-        assert isscalar(y)
+        assert xp_isscalar(y)
         assert y.dtype == dtype
 
         x = xp.asarray([1], dtype=dtype)
         # ensure that we can pass the array namespace in as a parameter
         y = item(x, xp=xp)
-        assert isscalar(y)
+        assert xp_isscalar(y)
         assert y.dtype == dtype
 
     x = [1.0]
