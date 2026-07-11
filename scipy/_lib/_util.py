@@ -14,7 +14,8 @@ from typing import Literal
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
-                                   is_marray, xp_size, xp_result_device, xp_result_type)
+                                   is_marray, xp_size, xp_result_device, xp_result_type,
+                                   xp_capabilities, is_array_api_obj)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -527,6 +528,57 @@ class _FunctionWrapper:
         return self.f(x, *self.args)
 
 
+@xp_capabilities()
+def isscalar(x):
+    """
+    Return True if x is a scalar: either a plain Python number,
+    or a 0-dimensional array from any Array API-compatible library
+    (numpy, pytorch, dask, jax, cupy, ...).
+    """
+    if isinstance(x, (int, float, complex, bool)):
+        return True
+
+    return is_array_api_obj(x) and x.ndim == 0
+
+
+@xp_capabilities()
+def item(x, xp=None):
+    """
+    Extract a scalar from a size-1 array, list, or tuple.
+    Equivalent to np.ndarray.item(), implemented via the Array API
+    standard so it works across numpy, pytorch, dask, jax, cupy, etc.,
+    and also unwraps plain Python lists/tuples.
+    """
+    if isscalar(x):
+        return x
+
+    # Handle plain Python containers by unwrapping recursively
+    if isinstance(x, (list, tuple)):
+        if len(x) != 1:
+            raise ValueError(
+                f"can only convert a sequence of size 1 to a Python scalar,"
+                f" got size {len(x)}"
+            )
+        return item(x[0])
+
+    # assume we're an xp array object from here
+    # such as np.float64([1.0]), np.array(1.0)
+    sz = xp_size(x)
+    if sz != 1:
+        raise ValueError(
+            f"can only convert an array of size 1 to a Python scalar, got size {x.size}"
+        )
+
+    # supply xp to save checking what namespace we're dealing with
+    xp = xp or array_namespace(x)
+
+    # Flatten to 0-d/1-element so scalar dunder methods apply uniformly
+    if x.ndim != 0:
+        x = xp.reshape(x, (-1,))[0]
+
+    return x
+
+
 class _ScalarFunctionWrapper:
     """
     Object to wrap scalar user function, allowing picklability
@@ -543,15 +595,13 @@ class _ScalarFunctionWrapper:
         self.nfev += 1
 
         # Make sure the function returns a true scalar
-        if not np.isscalar(fx):
-            _dt = getattr(fx, "dtype", np.dtype(np.float64))
-            try:
-                fx = _dt.type(np.asarray(fx).item())
-            except (TypeError, ValueError) as e:
-                raise ValueError(
-                    "The user-provided objective function "
-                    "must return a scalar value."
-                ) from e
+        try:
+            fx = item(fx)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                "The user-provided objective function "
+                "must return a scalar value."
+            ) from e
         return fx
 
 class MapWrapper:
