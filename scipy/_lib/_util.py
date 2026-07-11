@@ -15,7 +15,7 @@ from typing import Literal
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
                                    is_marray, xp_size, xp_result_device, xp_result_type,
-                                   xp_capabilities, is_array_api_obj, xp_isscalar)
+                                   xp_capabilities, xp_isscalar)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
