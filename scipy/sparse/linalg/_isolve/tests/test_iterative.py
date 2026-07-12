@@ -18,6 +18,7 @@ from scipy._lib._array_api import (
 )
 from scipy._external import array_api_extra as xpx
 from scipy._lib._sparse import issparse
+from scipy._lib._testutils import IS_WASM
 from scipy.sparse import dia_array, csr_array, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
@@ -359,6 +360,8 @@ def test_precond_dummy(case, xp, batch_A, batch_b):
         pytest.skip("Hits divide-by-zero with single precision")
     if (case.solver is tfqmr) and ("rand-sym-pd-F" in case.name) and _is_32bit():
         pytest.skip("Fails to converge on i686 (32-bit) linux")
+    if IS_WASM and (case.solver is cg) and ("rand-cmplx-sym-pd-F" in case.name):
+        pytest.skip("Struggles to converge with single-precision complex on WASM")
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
 
