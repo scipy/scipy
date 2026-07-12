@@ -23,6 +23,9 @@ PROJECT_DIR="$(cd "${PROJECT_DIR}" && pwd)"
 # cibuildwheel doesn't have a default wheel repair command for Pyodide
 python -m pip install "auditwheel-emscripten==0.2.5"
 
+# for semicolon-lapack to build
+python -m pip install "meson>=1.5.0" "ninja>=1.8.2"
+
 # BLIS
 BLIS_REPO="https://github.com/pyodide/blis"
 BLIS_REF="pyodide-2.1"
