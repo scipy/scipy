@@ -924,7 +924,7 @@ class DifferentialEvolutionSolver:
         self.random_number_generator = check_random_state(rng)
 
         # Which parameters are going to be integers?
-        if np.any(integrality):
+        if integrality is not None and np.any(integrality):
             # # user has provided a truth value for integer constraints
             integrality = np.broadcast_to(
                 integrality,
