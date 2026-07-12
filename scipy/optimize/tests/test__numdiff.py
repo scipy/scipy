@@ -271,10 +271,9 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
-    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_scalar_vector(self):
         x0 = 0.5
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
                                            method='2-point', workers=mapper)
         jac_diff_3 = approx_derivative(self.fun_scalar_vector, x0, workers=map)
@@ -286,12 +285,12 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     @pytest.mark.fail_slow(5.0)
-    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers_evaluations_and_nfev(self):
         # check that nfev consumed by approx_derivative is tracked properly
         # and that parallel evaluation is same as series
+        n_workers = 1 if IS_WASM else 2
         x0 = [0.5, 1.5, 2.0]
-        with MapWrapper(2) as mapper:
+        with MapWrapper(n_workers) as mapper:
             md2, mdct2 = approx_derivative(rosen, x0,
                                            method='2-point', workers=mapper,
                                            full_output=True)
@@ -300,7 +299,7 @@ class TestApproxDerivativesDense:
         # supply a number for workers. This is not normally recommended
         # for upstream workers as setting up processes incurs a large overhead
         md4, mdct4 = approx_derivative(rosen, x0,
-                                       method='cs', workers=2,
+                                       method='cs', workers=n_workers,
                                        full_output=True)
 
         sfr = _ScalarFunctionWrapper(rosen)
@@ -347,13 +346,12 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_3, jac_true, rtol=3e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
-    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_vector_vector(self):
         x0 = np.array([-100.0, 0.2])
         jac_diff_2 = approx_derivative(self.fun_vector_vector, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_vector_vector, x0)
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             jac_diff_4 = approx_derivative(self.fun_vector_vector, x0,
                                            method='cs', workers=mapper)
         jac_true = self.jac_vector_vector(x0)
@@ -647,7 +645,6 @@ class TestApproxDerivativeSparse:
         return A
 
     @pytest.mark.fail_slow(5)
-    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_all(self):
         A = self.structure(self.n)
         order = np.arange(self.n)
@@ -655,7 +652,7 @@ class TestApproxDerivativeSparse:
         self.rng.shuffle(order)
         groups_2 = group_columns(A, order)
 
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             for method, groups, l, u, mf in product(
                     ['2-point', '3-point', 'cs'], [groups_1, groups_2],
                     [-np.inf, self.lb], [np.inf, self.ub], [map, mapper]):

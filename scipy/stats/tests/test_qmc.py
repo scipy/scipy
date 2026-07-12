@@ -719,11 +719,11 @@ class TestHalton(QMCEngineTests):
                             [0.87746036, 0.71160259],
                             [0.37746036, 0.04493592]])
 
-    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_workers(self):
+        workers = 1 if IS_WASM else 8
         ref_sample = self.reference(scramble=True)
         engine = self.engine(d=2, scramble=True)
-        sample = engine.random(n=len(ref_sample), workers=8)
+        sample = engine.random(n=len(ref_sample), workers=workers)
 
         assert_allclose(sample, ref_sample, atol=1e-3)
 
@@ -731,7 +731,7 @@ class TestHalton(QMCEngineTests):
         engine.reset()
         ref_sample = engine.integers(10)
         engine.reset()
-        sample = engine.integers(10, workers=8)
+        sample = engine.integers(10, workers=workers)
         assert_equal(sample, ref_sample)
 
 

@@ -2664,14 +2664,14 @@ class TestBrute:
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
                                   full_output=True, finish=None)
 
+        workers = 1 if IS_WASM else 2
         resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
-                                   full_output=True, finish=None, workers=2)
+                                   full_output=True, finish=None, workers=workers)
 
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
@@ -3449,8 +3449,11 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nhev == res_sparse.nhev
 
 
-@pytest.mark.xfail(IS_WASM, reason="cannot create thread pool in Pyodide/WASM")
-@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize('workers', [
+    None,
+    pytest.param(2, marks=pytest.mark.xfail(
+        IS_WASM, reason="cannot create process pool in Pyodide/WASM")),
+])
 @pytest.mark.parametrize(
     'method',
     ['l-bfgs-b',

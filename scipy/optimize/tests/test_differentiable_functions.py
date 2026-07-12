@@ -133,12 +133,11 @@ class TestScalarFunction(TestCase):
         assert_array_almost_equal(g_analit, g_approx)
 
     @pytest.mark.fail_slow(5.0)
-    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers(self):
         x0 = np.array([2.0, 0.3])
         ex = ExScalarFunction()
         ex2 = ExScalarFunction()
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             approx = ScalarFunction(ex.fun, x0, (), '2-point',
                                     ex.hess, None, (-np.inf, np.inf),
                                     workers=mapper)
@@ -598,14 +597,13 @@ class TestVectorialFunction(TestCase):
         assert ex.njev == 1
 
     @pytest.mark.fail_slow(5.0)
-    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers(self):
         x0 = np.array([2.5, 3.0])
         ex = ExVectorialFunction()
         ex2 = ExVectorialFunction()
         v = np.array([1.0, 2.0])
 
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             approx = VectorFunction(ex.fun, x0, '2-point',
                                     ex.hess, None, None, (-np.inf, np.inf),
                                     False, workers=mapper)
