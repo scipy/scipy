@@ -21,16 +21,19 @@
 #include <complex>
 #include "scipy_blas_defines.h"
 #include "fortran_defs.h"   /* F_FUNC, for the non-BLAS shim symbols of wrap_*_g77_abi.c */
+/**
+ * MKL ILP64 exports a few LAPACK auxiliaries as `foo_64` (no trailing Fortran underscore)
+ * instead of `foo_64_`; of the routines we bind, only `cspr` is affected.  This header
+ * `#define`s `cspr_64_ -> cspr_64` (and its siblings), gated on FIX_MKL_2025_ILP64_MISSING_SYMBOL
+ * which meson sets only for MKL, and is a no-op for every other library. It must precede the
+ * BLAS_FUNC prototypes below. f2py got this transitively via `_blas64_defines.h`.
+ */
+#include "_mkl_ilp64_fixes.h"
 
-/*
- * Mangling for the g77-ABI complex-dot shims (`cdotuwrp` & co.) of wrap_*_g77_abi.c.  These are
- * *not* BLAS symbols, so they carry no ILP64 width in their name -- but the shim source still
- * suffixes them in ILP64 builds: it includes `_blas64_defines.h`, which redefines `F_FUNC(f,F)`
- * to `BLAS_FUNC(f)` (so `cdotuwrp` is emitted as e.g. `cdotuwrp_64_`, not `cdotuwrp_`).  The
- * f2py `_fblas_64` matched because f2py injected that same redefinition; we must reproduce it, or
- * the shims come out unsuffixed and fail to link against an ILP64 wrapper library.  In LP64 both
- * sides use the plain Fortran mangling, so `F_FUNC` is correct there (and any symbol prefix/suffix
- * only ever reaches the real BLAS symbols via `BLAS_FUNC`, never these shims).
+/**
+ * Mangling for the g77-ABI complex-dot shims from wrap_*_g77_abi.c. These are not BLAS symbols,
+ * so they carry no ILP64 width in their name, but the shim source still suffixes them in ILP64
+ * builds. In LP64 both sides use the plain Fortran mangling, so `F_FUNC` is used.
  */
 #ifdef HAVE_BLAS_ILP64
 #define WRP_FUNC(f, F) BLAS_FUNC(f)
