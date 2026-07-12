@@ -21,6 +21,8 @@ from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
 from pytest import raises as assert_raises, warns
 import pytest
 
+from scipy._lib._testutils import IS_WASM
+
 
 class TestDifferentialEvolutionSolver:
 
@@ -743,6 +745,7 @@ class TestDifferentialEvolutionSolver:
             solver.solve()
 
     @pytest.mark.fail_slow(10)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_parallel_processes(self):
         bounds = [(0., 2.), (0., 2.)]
         with DifferentialEvolutionSolver(

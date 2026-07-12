@@ -1,5 +1,7 @@
 import pytest
 import numpy as np
+
+from scipy._lib._testutils import IS_WASM
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
@@ -131,6 +133,7 @@ class TestScalarFunction(TestCase):
         assert_array_almost_equal(g_analit, g_approx)
 
     @pytest.mark.fail_slow(5.0)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers(self):
         x0 = np.array([2.0, 0.3])
         ex = ExScalarFunction()
@@ -595,6 +598,7 @@ class TestVectorialFunction(TestCase):
         assert ex.njev == 1
 
     @pytest.mark.fail_slow(5.0)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers(self):
         x0 = np.array([2.5, 3.0])
         ex = ExVectorialFunction()

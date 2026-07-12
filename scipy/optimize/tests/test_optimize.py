@@ -20,6 +20,8 @@ from numpy.testing import (assert_allclose, assert_equal,
                            assert_no_warnings,
                            assert_array_less)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 
 from scipy._lib._gcutils import assert_deallocated
@@ -2662,6 +2664,7 @@ class TestBrute:
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
     @pytest.mark.fail_slow(10)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
@@ -3605,6 +3608,7 @@ class TestAnnotations:
         assert res.success, f"Unexpected error: {res.message}"
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 def test_multiprocessing_too_many_open_files_23080():
     # https://github.com/scipy/scipy/issues/23080
     x0 = np.array([0.9, 0.9])

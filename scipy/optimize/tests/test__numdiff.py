@@ -6,6 +6,8 @@ from numpy.testing import assert_allclose, assert_equal, assert_
 import pytest
 from pytest import raises as assert_raises
 
+from scipy._lib._testutils import IS_WASM
+
 from scipy._lib._util import MapWrapper, _ScalarFunctionWrapper
 from scipy.sparse import csr_array, csc_array, lil_array
 from scipy._lib._array_api import xp_result_type
@@ -269,6 +271,7 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_scalar_vector(self):
         x0 = 0.5
         with MapWrapper(2) as mapper:
@@ -283,6 +286,7 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     @pytest.mark.fail_slow(5.0)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers_evaluations_and_nfev(self):
         # check that nfev consumed by approx_derivative is tracked properly
         # and that parallel evaluation is same as series
@@ -343,6 +347,7 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_3, jac_true, rtol=3e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_vector_vector(self):
         x0 = np.array([-100.0, 0.2])
         jac_diff_2 = approx_derivative(self.fun_vector_vector, x0,
@@ -642,6 +647,7 @@ class TestApproxDerivativeSparse:
         return A
 
     @pytest.mark.fail_slow(5)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_all(self):
         A = self.structure(self.n)
         order = np.arange(self.n)

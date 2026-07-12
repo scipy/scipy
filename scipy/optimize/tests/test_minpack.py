@@ -421,10 +421,12 @@ class TestLeastSq:
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_concurrent_no_gradient(self):
         v = sequence_parallel([self.test_basic] * 10)
         assert all([result is None for result in v])
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_concurrent_with_gradient(self):
         v = sequence_parallel([self.test_basic_with_gradient] * 10)
         assert all([result is None for result in v])
