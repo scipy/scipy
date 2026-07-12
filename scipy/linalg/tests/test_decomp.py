@@ -1,6 +1,5 @@
 import itertools
 import platform
-import sys
 import warnings
 
 import numpy as np
