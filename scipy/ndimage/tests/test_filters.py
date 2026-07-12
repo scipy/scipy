@@ -14,6 +14,7 @@ from hypothesis import given
 import hypothesis.extra.numpy as npst
 from pytest import raises as assert_raises
 from scipy import ndimage
+from scipy._lib._testutils import IS_WASM
 from scipy._lib._array_api import (
     assert_almost_equal,
     assert_array_almost_equal,
@@ -2840,6 +2841,7 @@ def test_gaussian_radius_invalid(xp):
         ndimage.gaussian_filter1d(xp.zeros(8), sigma=1, radius=1.1)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 @uses_output_array
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):

@@ -3,6 +3,8 @@ Unit tests for optimization routines from minpack.py.
 """
 import warnings
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 import threading
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
@@ -207,10 +209,12 @@ class TestFSolve:
             fprime=deriv_func)
         assert_array_almost_equal(final_flows, np.ones(4))
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create thread pool in Pyodide/WASM")
     def test_concurrent_no_gradient(self):
         v = sequence_parallel([self.test_pressure_network_no_gradient] * 10)
         assert all([result is None for result in v])
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create thread pool in Pyodide/WASM")
     def test_concurrent_with_gradient(self):
         v = sequence_parallel([self.test_pressure_network_with_gradient] * 10)
         assert all([result is None for result in v])

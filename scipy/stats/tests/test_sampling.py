@@ -1,6 +1,8 @@
 import threading
 import pickle
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from copy import deepcopy
 import platform
 import sys
@@ -199,6 +201,7 @@ def test_set_random_state():
     assert_equal(rvs1, rvs2)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_threading_behaviour():
     # Test if the API is thread-safe.
     # This verifies if the lock mechanism and the use of `PyErr_Occurred`

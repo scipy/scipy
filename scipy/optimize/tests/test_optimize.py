@@ -2696,6 +2696,7 @@ class TestBrute:
 
 
 @pytest.mark.fail_slow(20)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -3448,6 +3449,7 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nhev == res_sparse.nhev
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create thread pool in Pyodide/WASM")
 @pytest.mark.parametrize('workers', [None, 2])
 @pytest.mark.parametrize(
     'method',

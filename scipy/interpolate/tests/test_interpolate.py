@@ -23,7 +23,7 @@ from scipy.special import poch, gamma
 from scipy.interpolate import _ppoly
 
 from scipy._lib._gcutils import assert_deallocated
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 from scipy.integrate import nquad
 
@@ -1053,6 +1053,7 @@ def test_complex(method):
     with pytest.raises(ValueError, match=msg):
         method(x, y)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to Akima1D
         x = np.linspace(-5, 5, 11)
@@ -1174,6 +1175,7 @@ class TestPPolyCommon:
 
             assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]], dtype=object))
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self, xp):
         # Check that no segfaults appear with concurrent access to BPoly, PPoly
         c = np.random.rand(8, 12, 5, 6, 7)
@@ -2623,6 +2625,7 @@ class TestNdPPoly:
         paz = p.antiderivative((0, 0, 1))
         xp_assert_close(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
 

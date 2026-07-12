@@ -10,7 +10,7 @@ from scipy.interpolate._rbfinterp import (
     _get_backend
     )
 from scipy.interpolate import _rbfinterp_pythran
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -555,6 +555,7 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
 
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # RbfInterpolator

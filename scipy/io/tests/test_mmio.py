@@ -12,6 +12,7 @@ from numpy.testing import (assert_equal, assert_allclose,
 import pytest
 from pytest import raises as assert_raises
 
+from scipy._lib._testutils import IS_WASM
 import scipy.sparse
 import scipy.io._mmio
 import scipy.io._fast_matrix_market as fmm
@@ -746,6 +747,7 @@ class TestMMIOCoordinate:
                 result = mmread(fname, spmatrix=False).toarray()
                 assert_array_almost_equal(result, expected)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_precision(self):
         test_values = [pi] + [10**(i) for i in range(0, -10, -1)]
         test_precisions = range(1, 10)
@@ -781,6 +783,7 @@ class TestMMIOCoordinate:
             scipy.io.mmread(io.BytesIO(text))
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_gh11389():
     mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
                        " 1 1 1\n"
@@ -788,6 +791,7 @@ def test_gh11389():
            spmatrix=False)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_gh18123(tmp_path):
     lines = [" %%MatrixMarket matrix coordinate real general\n",
              "5 5 3\n",
@@ -799,6 +803,7 @@ def test_gh18123(tmp_path):
         f.writelines(lines)
     mmread(test_file, spmatrix=False)
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_mtx_append(tmp_path):
     a = mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
                            " 1 1 1\n"

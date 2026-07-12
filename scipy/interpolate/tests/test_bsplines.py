@@ -34,7 +34,7 @@ from scipy.interpolate import generate_knots, make_splrep, make_splprep
 
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
@@ -702,6 +702,7 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         xp_assert_close(b(xx), np.ones_like(xx) * 3.0)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self, xp):
         # Check that no segfaults appear with concurrent access to BSpline
         b = _make_random_spline(xp=xp)
@@ -2931,6 +2932,7 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
         k = 3

@@ -3,6 +3,8 @@ from collections import Counter
 from itertools import combinations, product
 
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal, assert_array_equal,
     assert_array_less)
@@ -708,6 +710,7 @@ class TestHalton(QMCEngineTests):
                             [0.87746036, 0.71160259],
                             [0.37746036, 0.04493592]])
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_workers(self):
         ref_sample = self.reference(scramble=True)
         engine = self.engine(d=2, scramble=True)

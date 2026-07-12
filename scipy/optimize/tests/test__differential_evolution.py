@@ -733,6 +733,7 @@ class TestDifferentialEvolutionSolver:
                 solver.solve()
         assert s._updating == 'deferred'
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create thread pool in Pyodide/WASM")
     def test_parallel_threads(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]

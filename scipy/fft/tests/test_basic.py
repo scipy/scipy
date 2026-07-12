@@ -425,6 +425,7 @@ def test_fft_with_order(dtype, order, fft):
         raise ValueError
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 @skip_xp_backends(cpu_only=True)
 class TestFFTThreadSafe:
     threads = 16
