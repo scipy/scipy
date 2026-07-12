@@ -1702,7 +1702,6 @@ def mathieu_even_coef(m, q):
     >>> plt.grid(True)
     >>> plt.title(f'Mathieu Function $\\rm{{ce_{m}}}(x, {q})$')
     >>> plt.xlabel('x [degrees]')
-    >>> plt.legend(framealpha=1, shadow=True)
     >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
     >>> plt.tight_layout()
     >>> plt.show()
