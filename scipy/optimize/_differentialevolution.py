@@ -2,6 +2,7 @@
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
+from collections.abc import Callable
 from functools import partial
 import warnings
 
@@ -28,7 +29,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, rng=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1, constraints=(), x0=None, *,
+                           workers: int | Callable = 1, constraints=(), x0=None, *,
                            integrality=None, vectorized=False):
     r"""Finds the global minimum of a multivariate function.
 
@@ -807,8 +808,8 @@ class DifferentialEvolutionSolver:
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, rng=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1, constraints=(), x0=None, *, integrality=None,
-                 vectorized=False):
+                 workers: int | Callable = 1, constraints=(), x0=None, *,
+                 integrality=None, vectorized=False):
 
         if callable(strategy):
             # a callable strategy is going to be stored in self.strategy anyway

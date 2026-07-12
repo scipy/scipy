@@ -726,10 +726,11 @@ class TestDifferentialEvolutionSolver:
         solver = DifferentialEvolutionSolver(rosen, bounds)
         assert_(solver._updating == 'immediate')
 
+        workers = map if IS_WASM else 2
         # should raise a UserWarning because the updating='immediate'
         # is being overridden by the workers keyword
         with warns(UserWarning):
-            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as s:
+            with DifferentialEvolutionSolver(rosen, bounds, workers=workers) as s:
                 solver.solve()
         assert s._updating == 'deferred'
 
