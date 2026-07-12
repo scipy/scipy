@@ -396,10 +396,12 @@ class TestVDC:
                0.375, 0.875, 0.0625, 0.5625]
         assert_allclose(sample, out)
 
-        sample = van_der_corput(10, workers=4)
+        # Run serially on WASM to avoid spawning threads
+        w1, w2 = (1, 1) if IS_WASM else (4, 8)
+        sample = van_der_corput(10, workers=w1)
         assert_allclose(sample, out)
 
-        sample = van_der_corput(10, workers=8)
+        sample = van_der_corput(10, workers=w2)
         assert_allclose(sample, out)
 
         sample = van_der_corput(7, start_index=3)
@@ -412,13 +414,15 @@ class TestVDC:
         sample = van_der_corput(7, start_index=3, scramble=True, rng=rng)
         assert_allclose(sample, out[3:])
 
+        # Run serially on WASM to avoid spawning threads
+        w1, w2 = (1, 1) if IS_WASM else (4, 8)
         sample = van_der_corput(
-            7, start_index=3, scramble=True, rng=rng, workers=4
+            7, start_index=3, scramble=True, rng=rng, workers=w1
         )
         assert_allclose(sample, out[3:])
 
         sample = van_der_corput(
-            7, start_index=3, scramble=True, rng=rng, workers=8
+            7, start_index=3, scramble=True, rng=rng, workers=w2
         )
         assert_allclose(sample, out[3:])
 
