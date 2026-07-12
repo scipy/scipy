@@ -946,7 +946,7 @@ class DifferentialEvolutionSolver:
             nlb = np.nextafter(lb[integrality] - 0.5, np.inf)
             nub = np.nextafter(ub[integrality] + 0.5, -np.inf)
 
-            self.integrality = integrality
+            self.integrality: np.ndarray | bool = integrality
             self.limits[0, self.integrality] = nlb
             self.limits[1, self.integrality] = nub
         else:
