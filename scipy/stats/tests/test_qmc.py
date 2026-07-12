@@ -1442,6 +1442,10 @@ class TestMultivariateNormalQMC:
         cov = np.cov(samples.transpose())
         assert np.abs(cov[0, 1] - 0.5) < 1e-2
 
+    @pytest.mark.xfail(
+        IS_WASM,
+        reason="small numerical difference with the WASM BLIS/semicolon-lapack stack"
+    )
     def test_MultivariateNormalQMCDegenerate(self):
         # X, Y iid standard Normal and Z = X + Y, random vector (X, Y, Z)
         rng = np.random.default_rng(16320637417581448357869821654290448620)
