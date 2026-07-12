@@ -146,6 +146,11 @@ class TestUtils:
         with pytest.raises(ValueError, match=r"'toto' is not a valid ..."):
             qmc.discrepancy(sample, method="toto")
 
+    @pytest.mark.skipif(
+            IS_WASM,
+            reason="thread constructor's C destructor crashes "
+                   "during pytest GC cleanup under WASM"
+                )
     def test_discrepancy_parallel(self, monkeypatch):
         sample = np.array([[2, 1, 1, 2, 2, 2],
                            [1, 2, 2, 2, 2, 2],
