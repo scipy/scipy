@@ -471,7 +471,8 @@ static double wate(double freq, double *fx, double *wtx, int lband, int jtype)
 
 static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
                      double *response, double *weight, int type, int maxiter,
-                     int grid_density, int *niter_out) {
+                     int grid_density, int *niter_out, int *ngrid_out,
+                     int *nfcns_out) {
 
   int jtype, nbands, nfilt, lgrid, nz;
   int neg, nodd, nm1;
@@ -566,6 +567,15 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
     ngrid = j - 1;
     if (neg == nodd) {
 	if (grid[ngrid] > (0.5-delf)) --ngrid;
+    }
+
+    /* Need at least nfcns+1 grid points for the extremal frequencies;
+       a too-narrow band yields fewer and overruns the arrays (gh-24495). */
+    if (ngrid < nfcns + 1) {
+	*ngrid_out = ngrid;
+	*nfcns_out = nfcns;
+	free(tempstor);
+	return -3;
     }
 
     /*
@@ -839,6 +849,7 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     double oldvalue, *dptr, fs = 1.0;
     char mystr[255];
     int niter = -1;
+    int ngrid = -1, nfcns = -1;
 
     if (!PyArg_ParseTuple(args, "iOOO|idii", &numtaps, &bands, &des, &weight,
                           &type, &fs, &maxiter, &grid_density)) {
@@ -903,7 +914,7 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
                     (double *)PyArray_DATA(a_bands),
                     (double *)PyArray_DATA(a_des),
                     (double *)PyArray_DATA(a_weight),
-                    type, maxiter, grid_density, &niter);
+                    type, maxiter, grid_density, &niter, &ngrid, &nfcns);
     if (err < 0) {
         if (err == -1) {
             snprintf(mystr, sizeof(mystr), "Failure to converge at iteration %d, try reducing transition band width.\n", niter);
@@ -912,6 +923,15 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
         }
         else if (err == -2) {
             PyErr_NoMemory();
+            goto fail;
+        }
+        else if (err == -3) {
+            snprintf(mystr, sizeof(mystr),
+                "Band edges are too close together to build the dense "
+                "frequency grid: it has only %d point(s) but at least %d "
+                "(one per extremal frequency) are required. Widen the bands, "
+                "reduce numtaps, or increase grid_density.", ngrid, nfcns + 1);
+            PyErr_SetString(PyExc_ValueError, mystr);
             goto fail;
         }
     }

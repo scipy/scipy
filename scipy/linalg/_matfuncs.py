@@ -389,7 +389,7 @@ def sqrtm(A):
     a = np.asarray(A)
     _deprecate_dtypes('sqrtm', a)
     if a.size == 1 and a.ndim < 2:
-        return np.array([[np.exp(a.item())]])
+        return np.array([[np.sqrt(a.item())]])
 
     if a.ndim < 2:
         raise LinAlgError('The input array must be at least two-dimensional')
