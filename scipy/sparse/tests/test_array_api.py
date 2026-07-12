@@ -1,6 +1,8 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
+
+from scipy._lib._testutils import IS_WASM
 import scipy.sparse
 import scipy.sparse.linalg as spla
 
@@ -155,6 +157,11 @@ def test_sparse_divide(A):
     assert isinstance(A / A, np.ndarray)
 
 @parametrize_sparrays
+@pytest.mark.xfail(
+    IS_WASM,
+    reason="no floating-point exception support in WASM, "
+    "see https://github.com/pyodide/pyodide/issues/4859"
+)
 def test_sparse_dense_divide(A):
     with pytest.warns(RuntimeWarning):
         assert isinstance((A / A.todense()), scipy.sparse.sparray)

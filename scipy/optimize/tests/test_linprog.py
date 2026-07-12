@@ -18,6 +18,8 @@ from scipy.linalg import LinAlgWarning
 import scipy.sparse
 import pytest
 
+from scipy._lib._testutils import IS_WASM
+
 has_umfpack = True
 try:
     from scikits.umfpack import UmfpackWarning
@@ -611,6 +613,11 @@ class LinprogCommonTests:
         if do_presolve:
             assert_equal(res.nit, 0)
 
+    @pytest.mark.xfail(
+        IS_WASM,
+        reason="no floating-point exception support in WASM, "
+        "see https://github.com/pyodide/pyodide/issues/4859"
+    )
     def test_bounds_infeasible_2(self):
 
         # Test ill-valued bounds (lower inf, upper -inf)

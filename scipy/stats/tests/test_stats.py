@@ -20,6 +20,8 @@ from numpy.testing import (assert_, assert_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 from numpy import array, arange, power
 import numpy as np
@@ -5081,6 +5083,11 @@ class TestKSTwoSamples:
 
     @pytest.mark.slow
     @skip_xp_backends(np_only=True)
+    @pytest.mark.xfail(
+        IS_WASM,
+        reason="no floating-point exception support in WASM, "
+        "see https://github.com/pyodide/pyodide/issues/4859"
+    )
     def test_some_code_paths(self):
         # Check that some code paths are executed
         from scipy.stats._stats_py import (
@@ -8553,6 +8560,11 @@ class TestWassersteinDistance:
                                        [1, 1, 0], [1, 1]),
             stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
 
+    @pytest.mark.xfail(
+        IS_WASM,
+        reason="no floating-point exception support in WASM, "
+        "see https://github.com/pyodide/pyodide/issues/4859"
+    )
     def test_inf_values(self):
         # Inf values can lead to an inf distance or trigger a RuntimeWarning
         # (and return NaN) if the distance is undefined.
@@ -8621,6 +8633,11 @@ class TestEnergyDistance:
             stats.energy_distance([1, 2, 100000], [1, 1], [1, 1, 0], [1, 1]),
             stats.energy_distance([1, 2], [1, 1], [1, 1], [1, 1]))
 
+    @pytest.mark.xfail(
+        IS_WASM,
+        reason="no floating-point exception support in WASM, "
+        "see https://github.com/pyodide/pyodide/issues/4859"
+    )
     def test_inf_values(self):
         # Inf values can lead to an inf distance or trigger a RuntimeWarning
         # (and return NaN) if the distance is undefined.
@@ -8779,6 +8796,11 @@ class TestBrunnerMunzel:
         with eager_warns(RuntimeWarning, match=msg, xp=xp):
             stats.brunnermunzel(x, y, distribution="t")
 
+    @pytest.mark.xfail(
+        IS_WASM,
+        reason="no floating-point exception support in WASM, "
+        "see https://github.com/pyodide/pyodide/issues/4859"
+    )
     def test_brunnermunzel_normal_dist(self, xp):
         """ tests that a p is 0 for datasets that cause p->nan
         when t-distribution is used (see gh-15843)

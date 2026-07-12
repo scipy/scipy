@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from scipy import stats
 from scipy.optimize import differential_evolution
 
@@ -203,6 +205,11 @@ def test_expon_fit():
     assert_allclose(phat, [0, 1.0], atol=1e-3)
 
 
+@pytest.mark.xfail(
+    IS_WASM,
+    reason="no floating-point exception support in WASM, "
+    "see https://github.com/pyodide/pyodide/issues/4859"
+)
 def test_fit_error():
     data = np.concatenate([np.zeros(29), np.ones(21)])
     message = "Optimization converged to parameters that are..."
