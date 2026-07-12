@@ -16,9 +16,10 @@ import scipy
 from scipy.linalg import get_blas_funcs, toeplitz, solve
 from scipy.linalg.blas import HAS_ILP64
 
+FBLAS_ERROR: type[Exception] = ValueError
+
 try:
     from scipy.linalg import _fblas as fblas
-    FBLAS_ERROR = ValueError
     HAS_LP64_FBLAS = True
 except ImportError:
     fblas = None
@@ -26,7 +27,6 @@ except ImportError:
 
 try:
     from scipy.linalg import _fblas_64 as fblas_64
-    FBLAS_ERROR = ValueError
 except ImportError:
     fblas_64 = None
 
