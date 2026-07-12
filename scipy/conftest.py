@@ -21,7 +21,7 @@ from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
     is_cupy, is_dask, is_jax, is_torch,
 )
-from scipy._lib._testutils import FPUModeChangeWarning
+from scipy._lib._testutils import IS_WASM, FPUModeChangeWarning
 from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
 from scipy._external.packaging_version import version
 
@@ -107,6 +107,26 @@ def pytest_configure(config):
         # deadlocks. This has been changed in 3.14 to 'forkserver'.
         multiprocessing.set_start_method('forkserver', force=True)
 
+    if IS_WASM:
+        # threading.get_native_id is not available without OS thread support in
+        # the WebAssembly runtime. A number of tests (and helpers) reach for it
+        # even when not doing anything genuinely threaded, so we provide a stub.
+        import random
+        import threading
+        if not hasattr(threading, "get_native_id"):
+            threading.get_native_id = lambda: random.randint(0, 10000)
+
+        # pytest's gc_collect_harder forces a GC pass during cleanup, which can
+        # cause a fatal error from C-extension destructors under WASM. We have it
+        # as a  no-op so that pytest can finish and print its summary. Refer to
+        # pytest_unconfigure below for how we then hand the real exit status back
+        # to Node.js.
+        try:
+            import _pytest.unraisableexception
+            _pytest.unraisableexception.gc_collect_harder = lambda *args, **kwargs: None
+        except (ImportError, AttributeError):
+            pass
+
 
 def pytest_runtest_setup(item):
     mark = item.get_closest_marker("xslow")
@@ -155,6 +175,32 @@ def pytest_runtest_setup(item):
                     # May raise AttributeError for older versions of OpenBLAS.
                     # Catch any error for robustness.
                     return
+
+
+# Node.js reports a non-zero exit code if the interpreter hits a fatal error
+# while finalizing (some SciPy C-extension destructors do, under WASM), even
+# when every test passes. To hand Node.js the real pytest status, we stash it
+# in pytest_sessionfinish (which runs after the summary is printed) and then,
+# in pytest_unconfigure, exit via os._exit before interpreter finalization runs.
+# This logic is brought from SciPy's Pyodide recipe via 
+# https://github.com/pyodide/pyodide-recipes/pull/619/
+_EMSCRIPTEN_EXIT_STATUS = 0
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    if IS_WASM:
+        global _EMSCRIPTEN_EXIT_STATUS
+        _EMSCRIPTEN_EXIT_STATUS = int(exitstatus)
+
+
+def pytest_unconfigure(config):
+    if not IS_WASM:
+        return
+    import os
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(_EMSCRIPTEN_EXIT_STATUS)
 
 
 @pytest.fixture(scope="function", autouse=True)
