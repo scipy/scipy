@@ -349,7 +349,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     Parameters
     ----------
     x : array_like
-        Time series of measurement values
+        Time series of measurement values. If its length (i.e., ``x.shape[axis]``) is
+        less than `nfft`, it is zero-padded to that length.
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
@@ -361,14 +362,14 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         of the axis over which the periodogram is computed. Defaults
         to 'boxcar'.
     nfft : int, optional
-        Length of the FFT used. If `None` the length of `x` will be
-        used.
-    detrend : str or function or `False`, optional
-        Specifies how to detrend each segment. If `detrend` is a
-        string, it is passed as the `type` argument to the `detrend`
-        function. If it is a function, it takes a segment and returns a
-        detrended segment. If `detrend` is `False`, no detrending is
-        done. Defaults to 'constant'.
+        Length of the FFT used. If ``None`` and `window` is a string or tuple, then
+        the length of `x` will be used. If ``None`` and `window` is an array, then
+        ``len(window)`` will be used. A ``ValueError`` will be raised if ``nfft < 1``.
+    detrend : 'linear' | 'constant' | Callable[[ndarray], ndarray] | False, optional
+        If not ``False`` then a trend is removed from each segment: If 'constant'
+        (default), the mean is subtracted. If 'linear', the linear trend is removed.
+        This is achieved by calling `detrend`. If *detrend* is a function with one
+        parameter, *detrend* is applied to each segment.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
         `False` return a two-sided spectrum. Defaults to `True`, but for
@@ -461,30 +462,19 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
     """
     x = np.asarray(x)
-
-    if x.size == 0:
-        return np.empty(x.shape), np.empty(x.shape)
-
     if window is None:
         window = 'boxcar'
-
+    elif not isinstance(window, str | tuple):
+        window = np.asarray(window)
     if nfft is None:
-        nperseg = x.shape[axis]
-    elif nfft == x.shape[axis]:
-        nperseg = nfft
-    elif nfft > x.shape[axis]:
-        nperseg = x.shape[axis]
-    elif nfft < x.shape[axis]:
-        s = [np.s_[:]]*len(x.shape)
-        s[axis] = np.s_[:nfft]
-        x = x[tuple(s)]
-        nperseg = nfft
-        nfft = None
-
-    if hasattr(window, 'size'):
-        if window.size != nperseg:
-            raise ValueError('the size of the window must be the same size '
-                             'of the input on the specified axis')
+        nfft = x.shape[axis] if isinstance(window, str | tuple) else len(window)
+    if not nfft > 0:
+        raise ValueError(f"Parameter {nfft=} not positive due to signal length " +
+                         "and/or window length being zero!")
+    nperseg = nfft if nfft <= x.shape[axis] else x.shape[axis]
+    if (not isinstance(window, str | tuple)) and window.shape != (nperseg,):
+        raise ValueError("Parameter `window` is not an 1d-array of length `nperseg`, " +
+                         f"but {window.shape=}!")
 
     return welch(x, fs=fs, window=window, nperseg=nperseg, noverlap=0,
                  nfft=nfft, detrend=detrend, return_onesided=return_onesided,
@@ -494,8 +484,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
           axis=-1, average='mean'):
-    r"""
-    Estimate power spectral density using Welch's method.
+    r"""Estimate power spectral density using Welch's method.
 
     Welch's method [1]_ computes an estimate of the power spectral
     density by dividing the data into overlapping segments, computing a
@@ -505,7 +494,9 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
     Parameters
     ----------
     x : array_like
-        Time series of measurement values
+        Input signal made up of ``n_x`` equidistant samples. If `x` is a
+        multidimensional array, then the time axis is defined by the `axis` parameter.
+        If needed, `x` is zero-padded to length `nperseg`.
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
@@ -513,39 +504,41 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
         passed to `get_window` to generate the window values, which are
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
-        to a periodic Hann window.
+        directly as the window, and it must be of shape ``(nperseg,)``.
+        Defaults to a periodic Hann window.
     nperseg : int, optional
-        Length of each segment. Defaults to None, but if window is str or
-        tuple, is set to 256, and if window is array_like, is set to the
-        length of the window.
+        Length of each segment. If ``None`` (default) and `window` is a str or a tuple,
+        it is set to 256. If ``None`` and `window` is an array then `nperseg` is set
+        to ``len(window)``. A ``ValueError`` is raised, if ``nperseg != len(window)`` or
+        if ``nperseg < 1``.
     noverlap : int, optional
-        Number of points to overlap between segments. If `None`,
-        ``noverlap = nperseg // 2``. Defaults to `None`.
+        Number of points to overlap between segments. If ``None`` (default),
+        ``noverlap = nperseg // 2``. It may not be greater than `nperseg`.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired. If
-        `None`, the FFT length is `nperseg`. Defaults to `None`.
-    detrend : str or function or `False`, optional
-        Specifies how to detrend each segment. If `detrend` is a
-        string, it is passed as the `type` argument to the `detrend`
-        function. If it is a function, it takes a segment and returns a
-        detrended segment. If `detrend` is `False`, no detrending is
-        done. Defaults to 'constant'.
+        ``None``, the FFT length is `nperseg`. Defaults to ``None``.
+    detrend : 'linear' | 'constant' | Callable[[ndarray], ndarray] | False, optional
+        If not ``False`` then a trend is removed from each segment: If 'constant'
+        (default), the mean is subtracted. If 'linear', the linear trend is removed.
+        This is achieved by calling `detrend`. If *detrend* is a function with one
+        parameter, *detrend* is applied to each segment.
     return_onesided : bool, optional
-        If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for
+        If ``True``, return a one-sided spectrum for real data. If
+        ``False`` return a two-sided spectrum. Defaults to ``True``, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the squared magnitude
-        spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
+        where `Pxx` has units of V²/Hz and computing the squared magnitude
+        spectrum ('spectrum') where `Pxx` has units of V², if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
     axis : int, optional
         Axis along which the periodogram is computed; the default is
         over the last axis (i.e. ``axis=-1``).
     average : { 'mean', 'median' }, optional
-        Method to use when averaging periodograms. Defaults to 'mean'.
+        Method to use when averaging periodograms. Since the spectrum is
+        complex-valued, the mean / median is computed separately for the real and
+        imaginary parts. Defaults to 'mean'.
 
         .. versionadded:: 1.2.0
 
@@ -554,7 +547,7 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
     f : ndarray
         Array of sample frequencies.
     Pxx : ndarray
-        Power spectral density or power spectrum of x.
+        Real-valued power spectral density or power spectrum of x.
 
     See Also
     --------
@@ -658,11 +651,8 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
     >>> plt.show()
 
     """
-    xp = (
-        array_namespace(x)
-        if isinstance(window, str | tuple)
-        else array_namespace(x, window)
-    )
+    xp = (array_namespace(x) if isinstance(window, str | tuple) else
+          array_namespace(x, window))
     device = xp_result_device(x, window)
     x_np = np.asarray(x)
     freqs_np, Pxx_np = csd(x_np, x_np, fs=fs, window=window, nperseg=nperseg,
@@ -677,15 +667,18 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
 def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density',
         axis=-1, average='mean'):
-    r"""
-    Estimate the cross power spectral density, Pxy, using Welch's method.
+    r"""Estimate the cross power spectral density, Pxy, using Welch's method.
 
     Parameters
     ----------
     x : array_like
-        Time series of measurement values
+        The first signal made up of ``n_x`` equidistant samples. If `x` is a
+        multidimensional array, then the time axis is defined by the `axis` parameter.
+        If needed, `x` is zero-padded to length ``n = max(n_x, n_y, nperseg)``.
     y : array_like
-        Time series of measurement values
+        The second signal made up of ``n_y`` equidistant samples. If `y` is a
+        multidimensional array, then the time axis is defined by the `axis` parameter.
+        If needed, `y` is zero-padded to length ``n = max(n_x, n_y, nperseg)``.
     fs : float, optional
         Sampling frequency of the `x` and `y` time series. Defaults
         to 1.0.
@@ -694,40 +687,39 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         passed to `get_window` to generate the window values, which are
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
-        to a periodic Hann window.
+        directly as the window, and it must be of shape ``(nperseg,)``.
+        Defaults to a periodic Hann window.
     nperseg : int, optional
-        Length of each segment. Defaults to None, but if window is str or
-        tuple, is set to 256, and if window is array_like, is set to the
-        length of the window.
+        Length of each segment. If ``None`` (default) and `window` is a str or a tuple,
+        it is set to 256. If ``None`` and `window` is an array then `nperseg` is set
+        to ``len(window)``. A ``ValueError`` is raised, if ``nperseg != len(window)``
+        or if ``nperseg < 1``.
     noverlap : int, optional
-        Number of points to overlap between segments. If `None`,
-        ``noverlap = nperseg // 2``. Defaults to `None` and may
-        not be greater than `nperseg`.
+        Number of points to overlap between segments. If ``None`` (default),
+        ``noverlap = nperseg // 2``. It may not be greater than `nperseg`.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired. If
-        `None`, the FFT length is `nperseg`. Defaults to `None`.
-    detrend : str or function or `False`, optional
-        Specifies how to detrend each segment. If `detrend` is a
-        string, it is passed as the `type` argument to the `detrend`
-        function. If it is a function, it takes a segment and returns a
-        detrended segment. If `detrend` is `False`, no detrending is
-        done. Defaults to 'constant'.
+        Length of the FFT used, if a zero padded or shortened FFT is desired. If
+        ``None``, the FFT length is `nperseg`. Defaults to ``None``.
+    detrend : 'linear' | 'constant' | Callable[[ndarray], ndarray] | False, optional
+        If not ``False`` then a trend is removed from each segment: If 'constant'
+        (default), the mean is subtracted. If 'linear', the linear trend is removed.
+        This is achieved by calling `detrend`. If *detrend* is a function with one
+        parameter, *detrend* is applied to each segment.
     return_onesided : bool, optional
-        If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for
+        If ``True``, return a one-sided spectrum for real data. If
+        ``False`` return a two-sided spectrum. Defaults to ``True``, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
-        where `Pxy` has units of V**2/Hz and computing the cross spectrum
-        ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
+        where `Pxy` has units of V²/Hz and computing the cross spectrum
+        ('spectrum') where `Pxy` has units of V², if `x` and `y` are
         measured in V and `fs` is measured in Hz. Defaults to 'density'
     axis : int, optional
         Axis along which the CSD is computed for both inputs; the
         default is over the last axis (i.e. ``axis=-1``).
     average : { 'mean', 'median' }, optional
         Method to use when averaging periodograms. If the spectrum is
-        complex, the average is computed separately for the real and
+        complex, the mean / median is computed separately for the real and
         imaginary parts. Defaults to 'mean'.
 
         .. versionadded:: 1.2.0
@@ -737,7 +729,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     f : ndarray
         Array of sample frequencies.
     Pxy : ndarray
-        Cross spectral density or cross power spectrum of x,y.
+        Complex-valued cross spectral density or cross power spectrum of x,y.
 
     See Also
     --------
@@ -749,11 +741,11 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
 
     Notes
     -----
-    By convention, Pxy is computed with the conjugate FFT of X
-    multiplied by the FFT of Y.
-
-    If the input series differ in length, the shorter series will be
-    zero-padded to match.
+    By convention, `Pxy` is computed with the conjugate FFT of `x` multiplied by the
+    FFT of `y`. If the input signals differ in shape, first the time axis will be
+    zero-padded to the same length of ``n = max(n_x, n_y, nperseg)`` as required. Then
+    the FFTs will be calculated of each signal and the results will be broadcasted
+    together through multiplication.
 
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default Hann window an overlap of
@@ -767,8 +759,9 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     If `return_onesided` is ``True``, the values of the negative frequencies are added
     to values of the corresponding positive ones.
 
-    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
-    for a discussion of the scalings of a spectral density and an (amplitude) spectrum.
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide` for a
+    discussion of the possible scalings of a spectral density and an (amplitude)
+    spectrum.
 
     Welch's method may be interpreted as taking the average over the time slices of a
     (cross-) spectrogram. Internally, this function utilizes the  `ShortTimeFFT`  to
@@ -783,7 +776,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
       sensible interpretation.
     * `ShortTimeFFT` uses `float64` / `complex128` internally, which is due to the
       behavior of the utilized `~scipy.fft` module. Thus, those are the dtypes being
-      returned. The `csd` function casts the return values to `float32` / `complex64`
+      returned. The `csd` function casts the return values to `complex64`
       if the input is `float32` / `complex64` as well.
     * The `csd` function calculates ``np.conj(Sx[q,p]) * Sy[q,p]``, whereas
       `~ShortTimeFFT.spectrogram` calculates ``Sx[q,p] * np.conj(Sy[q,p])`` where
@@ -822,10 +815,11 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     >>> x += amp*np.sin(2*np.pi*freq*time)
     >>> y += rng.normal(scale=0.1*np.sqrt(noise_power), size=time.shape)
     ...
-    ... # Compute and plot the magnitude of the cross spectral density:
+    ... # Compute the cross spectral density:
     >>> nperseg, noverlap, win = 1024, 512, 'hann'
     >>> f, Pxy = signal.csd(x, y, fs, win, nperseg, noverlap)
-    >>> fig0, ax0 = plt.subplots(tight_layout=True)
+    ...
+    >>> fig0, ax0 = plt.subplots(tight_layout=True)  # do the plotting
     >>> ax0.set_title(f"CSD ({win.title()}-window, {nperseg=}, {noverlap=})")
     >>> ax0.set(xlabel="Frequency $f$ in kHz", ylabel="CSD Magnitude in V²/Hz")
     >>> ax0.semilogy(f/1e3, np.abs(Pxy))
@@ -851,76 +845,62 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     Note that the code snippet above can be easily adapted to determine other
     statistical properties than the mean value.
     """
-    # The following lines are resembling the behavior of the originally utilized
-    # `_spectral_helper()` function:
-    same_data, axis = y is x, int(axis)
-    x = np.asarray(x)
-
-    if not same_data:
-        y = np.asarray(y)
-        # Check if we can broadcast the outer axes together
-        x_outer, y_outer  = list(x.shape), list(y.shape)
-        x_outer.pop(axis)
-        y_outer.pop(axis)
-        try:
-            outer_shape = np.broadcast_shapes(x_outer, y_outer)
-        except ValueError as e:
-            raise ValueError('x and y cannot be broadcast together.') from e
-        if x.size == 0 or y.size == 0:
-            out_shape = outer_shape + (min([x.shape[axis], y.shape[axis]]),)
-            empty_out = np.moveaxis(np.empty(out_shape), -1, axis)
-            return empty_out, empty_out
-        out_dtype = np.result_type(x, y, np.complex64)
-    else:  # x is y:
-        if x.size == 0:
-            return np.empty(x.shape), np.empty(x.shape)
-        out_dtype = np.result_type(x, np.complex64)
-
-    n = x.shape[axis] if same_data else max(x.shape[axis], y.shape[axis])
-    if isinstance(window, str) or isinstance(window, tuple):
+    if isinstance(window, str | tuple): # use get_window():
         nperseg = int(nperseg) if nperseg is not None else 256
         if nperseg < 1:
-            raise ValueError(f"Parameter {nperseg=} is not a positive integer!")
-        elif n < nperseg:
-            warnings.warn(f"{nperseg=} is greater than signal length max(len(x), " +
-                          f"len(y)) = {n}, using nperseg = {n}", stacklevel=3)
-            nperseg = n
+            raise ValueError(f"Parameter nperseg={nperseg} is not a positive integer!")
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
-        if nperseg is None:
-            nperseg = len(win)
-    if nperseg != len(win):
-        raise ValueError(f"{nperseg=} does not equal {len(win)=}")
+        if nperseg is not None and win.shape != (nperseg,):
+            raise ValueError("Invalid parameters: window.shape != (nperseg,) with " +
+                             f"{nperseg=}, {win.shape=}")
+        nperseg = len(win)
 
-    nfft = int(nfft) if nfft is not None else nperseg
-    if nfft < nperseg:
-        raise ValueError(f"{nfft=} must be greater than or equal to {nperseg=}!")
-    noverlap = int(noverlap) if noverlap is not None else nperseg // 2
-    if noverlap >= nperseg:
-        raise ValueError(f"{noverlap=} must be less than {nperseg=}!")
+    x, ax = np.asarray(x), int(axis)
+    if x is y:
+        out_dtype = np.result_type(x, np.complex64)
+    else:  # x is not y:
+        y = np.array(y)
+        out_dtype = np.result_type(x, y, np.complex64)
+
+    n = max(x.shape[ax], y.shape[ax], nperseg)
+    if x.shape[ax] < n:  # Zero-pad time-axis of `x` to length `n`:
+        pw_x = np.zeros((x.ndim, 2), dtype=np.intp)
+        pw_x[ax, 1] = max(n - x.shape[ax], 0)  # padding amount
+        x = np.pad(x, pw_x.tolist())
+    if x is not y:
+        if y.shape[ax] < n:  # Zero-pad time-axis of `y` to length `n`:
+            pw_y = np.zeros((y.ndim, 2), dtype=np.intp)
+            pw_y[ax, 1] = max(n - y.shape[ax], 0)  # padding amount
+            y = np.pad(y, pw_y.tolist())
+        try:  # Check if shapes are compatible:
+            np.broadcast_shapes(x.shape, y.shape)
+        except ValueError as e:
+            raise ValueError('x and y cannot be broadcasted together.') from e
+
+    mfft = int(nfft) if nfft is not None else nperseg
+    if mfft < nperseg:
+        raise ValueError(f"nfft={mfft} must be greater than or equal to {nperseg=}!")
+    n_overlap = int(noverlap) if noverlap is not None else nperseg // 2
+    if n_overlap >= nperseg:
+        raise ValueError(f"{n_overlap=} must be less than {nperseg=}!")
     if np.iscomplexobj(x) and return_onesided:
         return_onesided = False
 
-    if x.shape[axis] < y.shape[axis]:  # zero-pad x to shape of y:
-        z_shape = list(y.shape)
-        z_shape[axis] = y.shape[axis] - x.shape[axis]
-        x = np.concatenate((x, np.zeros(z_shape)), axis=axis)
-    elif y.shape[axis] < x.shape[axis]:  # zero-pad y to shape of x:
-        z_shape = list(x.shape)
-        z_shape[axis] = x.shape[axis] - y.shape[axis]
-        y = np.concatenate((y, np.zeros(z_shape)), axis=axis)
+    # Translate parameters to ShortTimeFFT's conventions:
+    SCALES = {"spectrum": "magnitude", "density": "psd"}
+    if (scale_to := SCALES.get(scaling, None)) is None:
+        raise ValueError(f"Parameter {scaling=} not in {SCALES}!")
+    fft_mode = "onesided" if return_onesided else "twosided"
+    if (n := x.shape[ax]) < nperseg:
+        raise ValueError(f"Signal length {n=} ≥ nperseg={nperseg} does not hold!")
 
-    fft_mode = 'onesided' if return_onesided else 'twosided'
-    if scaling not in (scales := {'spectrum': 'magnitude', 'density': 'psd'}):
-        raise ValueError(f"Parameter {scaling=} not in {scales}!")
-
-    SFT = ShortTimeFFT(win, nperseg - noverlap, fs, fft_mode=fft_mode, mfft=nfft,
-                       scale_to=scales[scaling], phase_shift=None)
+    SFT = ShortTimeFFT(win, nperseg - n_overlap, fs, fft_mode=fft_mode, mfft=mfft,
+                       scale_to=scale_to, phase_shift=None)
     # csd() calculates X.conj()*Y instead of X*Y.conj():
-    Pxy = SFT.spectrogram(y, x, detr=None if detrend is False else detrend,
-                          p0=0, p1=(n - noverlap) // SFT.hop, k_offset=nperseg // 2,
-                          axis=axis)
+    Pxy = SFT.spectrogram(y, x, detr=None if detrend is False else detrend, axis=ax,
+                          p0=0, p1=(n - n_overlap) // SFT.hop, k_offset=nperseg // 2)
 
     # Note:
     # 'onesided2X' scaling of ShortTimeFFT conflicts with the
@@ -928,17 +908,16 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     # which in the view of the ShortTimeFFT implementation does not make sense.
     # Hence, the doubling of the square is implemented here:
     if return_onesided:
-        f_axis = Pxy.ndim - 1 + axis if axis < 0 else axis
+        f_axis = Pxy.ndim - 1 + ax if ax < 0 else ax
         Pxy = np.moveaxis(Pxy, f_axis, -1)
         Pxy[..., 1:-1 if SFT.mfft % 2 == 0 else None] *= 2
         Pxy = np.moveaxis(Pxy, -1, f_axis)
 
-    # Average over windows.
+    # Average over time slices:
     if Pxy.shape[-1] > 1:
         if average == 'median':
-            # np.median must be passed real arrays for the desired result
             bias = _median_bias(Pxy.shape[-1])
-            if np.iscomplexobj(Pxy):
+            if np.iscomplexobj(Pxy):  # np.median ony works with real-valued arrays:
                 Pxy = (np.median(np.real(Pxy), axis=-1) +
                        np.median(np.imag(Pxy), axis=-1) * 1j)
             else:
@@ -953,8 +932,6 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
 
     # cast output type;
     Pxy = Pxy.astype(out_dtype)
-    if same_data:
-        Pxy = Pxy.real
     return SFT.f, Pxy
 
 
@@ -1920,9 +1897,13 @@ def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
     Parameters
     ----------
     x : array_like
-        Time series of measurement values
+        The first signal made up of ``n_x`` equidistant samples. If `x` is a
+        multidimensional array, then the time axis is defined by the `axis` parameter.
+        If needed, `x` is zero-padded to length ``n = max(n_x, n_y, nperseg)``.
     y : array_like
-        Time series of measurement values
+        The second signal made up of ``n_y`` equidistant samples. If `y` is a
+        multidimensional array, then the time axis is defined by the `axis` parameter.
+        If needed, `y` is zero-padded to length ``n = max(n_x, n_y, nperseg)``.
     fs : float, optional
         Sampling frequency of the `x` and `y` time series. Defaults
         to 1.0.
@@ -1931,24 +1912,25 @@ def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
         passed to `get_window` to generate the window values, which are
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
-        to a periodic Hann window.
+        directly as the window, and it must be of shape ``(nperseg,)``.
+        Defaults to a periodic Hann window.
     nperseg : int, optional
-        Length of each segment. Defaults to None, but if window is str or
-        tuple, is set to 256, and if window is array_like, is set to the
-        length of the window.
+        Length of each segment. If ``None`` (default) and `window` is a str or a tuple,
+        it is set to 256. If ``None`` and `window` is an array then `nperseg` is set
+        to ``len(window)``. A ``ValueError`` is raised, if ``nperseg != len(window)`` or
+        ``nperseg < 1``.
     noverlap : int, optional
-        Number of points to overlap between segments. If `None`,
-        ``noverlap = nperseg // 2``. Defaults to `None`.
+        Number of points to overlap between segments. If ``None``,
+        ``noverlap = nperseg // 2``. Defaults to ``None`` and may
+        not be greater than `nperseg`.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired. If
-        `None`, the FFT length is `nperseg`. Defaults to `None`.
-    detrend : str or function or `False`, optional
-        Specifies how to detrend each segment. If `detrend` is a
-        string, it is passed as the `type` argument to the `detrend`
-        function. If it is a function, it takes a segment and returns a
-        detrended segment. If `detrend` is `False`, no detrending is
-        done. Defaults to 'constant'.
+        ``None``, the FFT length is `nperseg`. Defaults to ``None``.
+    detrend : 'linear' | 'constant' | Callable[[ndarray], ndarray] | False, optional
+        If not ``False`` then a trend is removed from each segment: If 'constant'
+        (default), the mean is subtracted. If 'linear', the linear trend is removed.
+        This is achieved by calling `detrend`. If *detrend* is a function with one
+        parameter, *detrend* is applied to each segment.
     axis : int, optional
         Axis along which the coherence is computed for both inputs; the
         default is over the last axis (i.e. ``axis=-1``).
@@ -2016,17 +1998,15 @@ def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
     >>> plt.show()
 
     """
-    freqs, Pxx = welch(x, fs=fs, window=window, nperseg=nperseg,
-                       noverlap=noverlap, nfft=nfft, detrend=detrend,
-                       axis=axis)
-    _, Pyy = welch(y, fs=fs, window=window, nperseg=nperseg, noverlap=noverlap,
-                   nfft=nfft, detrend=detrend, axis=axis)
-    _, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
-                 noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axis)
+    kw = dict(fs=fs, window=window, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
+              detrend=detrend, axis=axis)
 
-    Cxy = np.abs(Pxy)**2 / Pxx / Pyy
+    f, Pxx = welch(x, **kw)
+    _, Pyy = welch(y, **kw)
+    _, Pxy = csd(x, y, **kw)
 
-    return freqs, Cxy
+    Cxy = (Pxy.real**2 + Pxy.imag**2) / Pxx / Pyy
+    return f, Cxy
 
 
 def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
