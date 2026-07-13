@@ -48,8 +48,13 @@ py_fpknot(PyObject* self, PyObject *args)
         return NULL;
     }
 
-    bool is_periodic = PyObject_IsTrue(py_periodic);
+    int periodic = PyObject_IsTrue(py_periodic);
+    if (periodic < 0) {
+        return NULL;
+    }
+    bool is_periodic = periodic != 0;
 
+    
     if (!(check_array(py_x, 1, NPY_DOUBLE) &&
           check_array(py_t, 1, NPY_DOUBLE) &&
           check_array(py_residuals, 1, NPY_DOUBLE))

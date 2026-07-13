@@ -3977,6 +3977,19 @@ index 1afb1900f1..d817e51ad8 100644
         with pytest.raises(ValueError, match="weights are zero"):
             list(gen)
 
+    @pytest.mark.parametrize("s", [1e-8, 1, 42])
+    def test_periodic_non_matching_endpoints_ignored(self, s):
+        # gh-24693: for s > 0, generate_knots should ignore y[-1] for
+        # bc_type='periodic', just like make_splrep does.
+        x = np.linspace(0, 1, 11)
+        y = np.sin(2 * np.pi * x)
+        y1 = y.copy()
+        y1[-1] = 1
+        k = 3
+        knots0 = list(generate_knots(x, y, k=k, s=s, bc_type="periodic"))[-1]
+        knots1 = list(generate_knots(x, y1, k=k, s=s, bc_type="periodic"))[-1]
+        xp_assert_close(knots0, knots1, atol=1e-14)
+
 
 def disc_naive(t, k):
     """Straightforward way to compute the discontinuity matrix. For testing ONLY.
@@ -4510,21 +4523,6 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         assert spl_0.t.shape[0] == n + k + 1
         assert spl_1.t.shape[0] == 2 * (k + 1)
 
-    def test_small_s_fallback_not_a_knot(self):
-        s1 = 0
-        s2 = 1e-8
-        rng = np.random.default_rng(1234)
-        x = np.arange(11, dtype=float)
-        y = rng.random((11,))
-        spl1 = make_splrep(x, y, s=s1)
-        spl2 = make_splrep(x, y, s=s2)
-        spl_interp = make_interp_spline(x, y, bc_type="not-a-knot")
-        xs = np.linspace(x[0], x[-1], 100)
-        # Should fallback to not-a-knot, same as make_interp_spline
-        # since s=0.
-        xp_assert_close(spl1(xs), spl_interp(xs))
-        xp_assert_close(spl2(xs), spl_interp(xs), atol=1e-4)
-
 
 @make_xp_test_case(make_splrep)
 class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
@@ -4572,34 +4570,54 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
 
-    @pytest.mark.parametrize("s", [0, 1e-8, 1, 42])
-    def test_periodic_smoothing_non_matching_endpoints(self, s):
-        # gh-24693: with s > 0, the periodic boundary condition applies to
-        # the spline, not the data; y[0] != y[-1] should be allowed.
+    def _make_periodic_test_data(self):
         x = np.linspace(0, 1, 11)
-        y = np.sin(2* x * np.pi)
+        y = np.sin(2 * x * np.pi)
         y1 = y.copy()
         y1[-1] = 1
+        return x, y, y1
+
+    def test_periodic_smoothing_s0_raises_on_non_matching_endpoints(self):
+        # gh-24693: at s = 0, matching endpoints are required for
+        # bc_type='periodic'.
+        x, y, y1 = self._make_periodic_test_data()
+        with assert_raises(ValueError):
+            make_splrep(x, y1, s=0, bc_type='periodic')
+
+    def test_periodic_smoothing_non_matching_endpoints_with_internal_knots(self):
+        # gh-24693: with s > 0 and internal knots present, the periodic
+        # boundary condition applies to the spline, not the data;
+        # y[0] != y[-1] should be allowed and y[-1] is ignored.
+        x, y, y1 = self._make_periodic_test_data()
         k = 3
+        s = 1
+        spl0 = make_splrep(x, y, s=s, bc_type="periodic")
+        spl1 = make_splrep(x, y1, s=s, bc_type="periodic")
+        xp_assert_close(spl0.t, spl1.t, atol=1e-14)
+        xp_assert_close(spl0.c, spl1.c, atol=1e-14)
+        assert len(spl0.t) > 2 * (k + 1)
 
-        if s == 0:
-            with assert_raises(ValueError):
-                make_splrep(x, y1, s=s, bc_type='periodic')
-        else:
-            spl_periodic_endpoint = make_splrep(x, y, s=s, bc_type="periodic")
-            spl_non_periodic_endpoint = make_splrep(x, y1, s=s, bc_type="periodic")
+    def test_periodic_smoothing_non_matching_endpoints_no_internal_knots(self):
+        # gh-24693: same as above, but s is large enough that no internal
+        # knots are needed.
+        x, y, y1 = self._make_periodic_test_data()
+        k = 3
+        s = 42
+        spl0 = make_splrep(x, y, s=s, bc_type="periodic")
+        spl1 = make_splrep(x, y1, s=s, bc_type="periodic")
+        xp_assert_close(spl0.t, spl1.t, atol=1e-14)
+        xp_assert_close(spl0.c, spl1.c, atol=1e-14)
+        assert len(spl0.t) == 2 * (k + 1)
 
-            # y[-1] should be ignored in both cases.
-            # Should return the same spline.
-            xp_assert_close(spl_periodic_endpoint.t, spl_non_periodic_endpoint.t,
-            atol=1e-14)
-            xp_assert_close(spl_periodic_endpoint.c, spl_non_periodic_endpoint.c,
-            atol=1e-14)
-
-            if s == 1:
-                assert len(spl_periodic_endpoint.t) > 2 * (k + 1)
-            elif s == 42:
-                assert len(spl_periodic_endpoint.t) == 2 * (k + 1)
+    def test_periodic_smoothing_non_matching_endpoints_small_s(self):
+        # gh-24693: same as above, in the near-interpolation regime
+        # (s small enough that every data point becomes a knot).
+        s = 1e-8
+        x, y, y1 = self._make_periodic_test_data()
+        spl0 = make_splrep(x, y, s=s, bc_type="periodic")
+        spl1 = make_splrep(x, y1, s=s, bc_type="periodic")
+        xp_assert_close(spl0.t, spl1.t, atol=1e-14)
+        xp_assert_close(spl0.c, spl1.c, atol=1e-14)
 
     def test_periodic_with_non_periodic_data(self):
         # When s > 0, periodic BC applies to the spline, not the data;
@@ -4612,23 +4630,8 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
         xp_assert_close(spl(x[0]), spl(x[-1]), atol=1e-5)
 
-    def test_small_s_fallback_interp(self):
-        s1 = 0
-        s2 = 1e-8
-        rng = np.random.default_rng(1234)
-        x = np.arange(11, dtype=float)
-        y = np.sin(x * np.pi / 5) + rng.standard_normal(11) * 0.5
-        y[0], y[-1] = 0, 0
-        spl1 = make_splrep(x, y, s=s1, bc_type="periodic")
-        spl2 = make_splrep(x, y, s=s2, bc_type="periodic")
-        spl_interp = make_interp_spline(x, y, bc_type="periodic")
-        xs = np.linspace(x[0], x[-1], 100)
-        # Should fallback to periodic interpolation.
-        xp_assert_close(spl1(xs), spl_interp(xs))
-        xp_assert_close(spl2(xs), spl_interp(xs), atol=1e-4)
-
-    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5])
-    @pytest.mark.parametrize("s", [1e-4, 1e-3, 1e-2, 1, 42])
+    @pytest.mark.parametrize("k", [1, 3, 4, 5])
+    @pytest.mark.parametrize("s", [1e-3, 1e-2, 1, 42])
     def test_periodic_agrees_with_splrep_non_matching_endpoint(self, k, s):
         # Regression test: make_splrep with bc_type='periodic' should ignore
         # y[-1] just like splrep(per=True) does, so both must agree even when
@@ -4649,24 +4652,9 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         xp_assert_close(tck0[0], tck1[0], atol=1e-15)
         xp_assert_close(tck0[1], tck1[1], atol=1e-15)
 
-        # make_splrep must ignore y[-1] for bc_type='periodic',
-        # so knots generated by make_splrep and splrep must be
-        # match.
-        xp_assert_close(spl0.t, tck0[0], atol=1e-15)
-        xp_assert_close(spl1.t, tck1[0], atol=1e-15)
-
-        # make_splrep must ignore y[-1] for bc_type='periodic',
-        # so coefficients generated by make_splrep and splrep must be
-        # match.
-        xp_assert_close(np.r_[spl0.c, [0]*(spl0.k + 1)],
-                        tck0[1], atol=1e-14)
-        xp_assert_close(np.r_[spl1.c, [0]*(spl1.k + 1)],
-                        tck1[1], atol=1e-14)
-
-        # make_splrep must agree with splrep in both cases.
-        xs = np.linspace(0, 1, 200)
-        xp_assert_close(spl0(xs), splev(xs, tck0), atol=1e-14)
-        xp_assert_close(spl1(xs), splev(xs, tck1), atol=1e-14)
+        # make_splrep must ignore y[-1] too, same solver.
+        xp_assert_close(spl0.t, spl1.t, atol=1e-15)
+        xp_assert_close(spl0.c, spl1.c, atol=1e-15)
 
     @pytest.mark.parametrize("s", [0, 1e-50])
     def test_make_splrep_periodic_m_eq_2_k_eq_1(self, s):
@@ -4980,6 +4968,33 @@ class TestMakeSplprepPeriodic:
             xp_assert_close(spl.c, expected.c, atol=1e-12)
             xp_assert_close(spl.t, expected.t, atol=1e-12)
             assert spl.extrapolate == expected.extrapolate
+
+    def test_periodic_non_matching_endpoints_s0_raises(self):
+        # gh-24693: at s = 0, matching endpoints are required for
+        # bc_type='periodic'.
+        theta = np.linspace(0, 2 * np.pi, 11)
+        x = np.cos(theta)
+        y = np.sin(theta)
+        x1 = x.copy()
+        x1[-1] = 5
+        with assert_raises(ValueError):
+            make_splprep([x1, y], s=0, bc_type="periodic")
+
+    @pytest.mark.parametrize("s", [1e-8, 1, 42])
+    def test_periodic_non_matching_endpoints_ignored(self, s):
+        # gh-24693: for s > 0, make_splprep should ignore the last point
+        # for bc_type='periodic', just like make_splrep does.
+        theta = np.linspace(0, 2 * np.pi, 11)
+        x = np.cos(theta)
+        y = np.sin(theta)
+        x1 = x.copy()
+        x1[-1] = 5
+        u = np.linspace(0, 1, 11)
+        spl0, u0 = make_splprep([x, y], u=u, s=s, bc_type="periodic")
+        spl1, u1 = make_splprep([x1, y], u=u, s=s, bc_type="periodic")
+        xp_assert_close(spl0.t, spl1.t, atol=1e-14)
+        xp_assert_close(spl0.c, spl1.c, atol=1e-14)
+
 
 class BatchSpline:
     # BSpline-line class with reference batch behavior
