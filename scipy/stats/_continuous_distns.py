@@ -12647,6 +12647,7 @@ rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
 
 # Collect names of classes and objects in this module.
 pairs = list(globals().copy().items())
+_distn_names: list[str]
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']

@@ -77,92 +77,6 @@ add_newdoc("_ellip_harm",
     Internal function, use `ellip_harm` instead.
     """)
 
-add_newdoc("wrightomega",
-    r"""
-    wrightomega(z, out=None)
-
-    Wright Omega function.
-
-    Defined as the solution to
-
-    .. math::
-
-        \omega + \log(\omega) = z
-
-    where :math:`\log` is the principal branch of the complex logarithm.
-
-    Parameters
-    ----------
-    z : array_like
-        Points at which to evaluate the Wright Omega function
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    omega : scalar or ndarray
-        Values of the Wright Omega function
-
-    See Also
-    --------
-    lambertw : The Lambert W function
-
-    Notes
-    -----
-    .. versionadded:: 0.19.0
-
-    The function can also be defined as
-
-    .. math::
-
-        \omega(z) = W_{K(z)}(e^z)
-
-    where :math:`K(z) = \lceil (\Im(z) - \pi)/(2\pi) \rceil` is the
-    unwinding number and :math:`W` is the Lambert W function.
-
-    The implementation here is taken from [1]_.
-
-    References
-    ----------
-    .. [1] Lawrence, Corless, and Jeffrey, "Algorithm 917: Complex
-           Double-Precision Evaluation of the Wright :math:`\omega`
-           Function." ACM Transactions on Mathematical Software,
-           2012. :doi:`10.1145/2168773.2168779`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import wrightomega, lambertw
-
-    >>> wrightomega([-2, -1, 0, 1, 2])
-    array([0.12002824, 0.27846454, 0.56714329, 1.        , 1.5571456 ])
-
-    Complex input:
-
-    >>> wrightomega(3 + 5j)
-    (1.5804428632097158+3.8213626783287937j)
-
-    Verify that ``wrightomega(z)`` satisfies ``w + log(w) = z``:
-
-    >>> w = -5 + 4j
-    >>> wrightomega(w + np.log(w))
-    (-5+4j)
-
-    Verify the connection to ``lambertw``:
-
-    >>> z = 0.5 + 3j
-    >>> wrightomega(z)
-    (0.0966015889280649+1.4937828458191993j)
-    >>> lambertw(np.exp(z))
-    (0.09660158892806493+1.4937828458191993j)
-
-    >>> z = 0.5 + 4j
-    >>> wrightomega(z)
-    (-0.3362123489037213+2.282986001579032j)
-    >>> lambertw(np.exp(z), k=1)
-    (-0.33621234890372115+2.282986001579032j)
-    """)
-
 add_newdoc("bdtr",
     r"""
     bdtr(k, n, p, out=None)
@@ -208,6 +122,35 @@ add_newdoc("bdtr",
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 16 times.  What is the probability that
+    the number of heads is less than or equal to 5?
+
+    Let X be the number of heads.  We want to find the probability that
+    X <= `k`, given `k` is 5, the total number of flips `n` is 16 and
+    the probability `p` of heads for a single flip is 0.525.
+    This is what ``bdtr(k, n, p)`` computes:
+
+    >>> from scipy.special import bdtr
+
+    >>> bdtr(5, 16, 0.525)
+    np.float64(0.07281293895810999)
+
+    The following plot shows the graph of ``bdtr(k, 16, 0.525)``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> n = 16
+    >>> p = 0.525
+    >>> k = np.arange(n + 1)
+    >>> plt.plot(k, bdtr(k, n, p), 'o')
+    >>> plt.grid(True)
+    >>> plt.xlabel('k')
+    >>> plt.title(f"bdtr(k, {n}, {p})")
+    >>> plt.show()
     """)
 
 add_newdoc("bdtrc",
@@ -260,6 +203,35 @@ add_newdoc("bdtrc",
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 16 times.  What is the probability that
+    the number of heads is greater than 10?
+
+    Let X be the number of heads.  We want to find the probability that
+    X > `k`, given `k` is 10, the total number of flips `n` is 16 and the
+    probability `p` of heads in a single flip is 0.525.  This is what
+    ``bdtrc(k, n, p)`` computes:
+
+    >>> from scipy.special import bdtrc
+
+    >>> bdtrc(10, 16, 0.525)
+    np.float64(0.14643065267555583)
+
+    The following plot shows the graph ``bdtrc(k, 16, 0.525)``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> n = 16
+    >>> p = 0.525
+    >>> k = np.arange(n + 1)
+    >>> plt.plot(k, bdtrc(k, n, p), 'o')
+    >>> plt.grid(True)
+    >>> plt.xlabel('k')
+    >>> plt.title(f"bdtrc(k, {n}, {p})")
+    >>> plt.show()
     """)
 
 add_newdoc("bdtri",
@@ -307,13 +279,35 @@ add_newdoc("bdtri",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
+
+    Examples
+    --------
+    An "unfair" coin is to be created that has probability `p` of showing
+    heads when flipped.  What is the value of `p` that will ensure that
+    the probability of getting heads at most once in 4 tosses is 0.5?
+
+    Let X be the number of heads. We want to find `p` such that the probability
+    that X <= `k` is `y`, where `k` is 1, the total number of flips `n` is 4,
+    and the cumulative probability `y` is 0.5. This is what ``bdtri(k, n, y)``
+    computes:
+
+    >>> from scipy.special import bdtri, bdtr
+
+    >>> p = bdtri(1, 4, 0.5)
+    >>> p
+    np.float64(0.3857275681323896)
+
+    Verify the result:
+
+    >>> bdtr(1, 4, p)  # Should be 0.5.
+    np.float64(0.5)
     """)
 
 add_newdoc("bdtrik",
     """
     bdtrik(y, n, p, out=None)
 
-    Inverse function to `bdtr` with respect to `k`.
+    Binomial distribution quantile.
 
     Finds the number of successes `k` such that the sum of the terms 0 through
     `k` of the Binomial probability density for `n` events with probability
@@ -338,17 +332,15 @@ add_newdoc("bdtrik",
 
     See Also
     --------
-    bdtr
+    bdtr : Binomial distribution cumulative distribution function
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
+    Formula 26.5.24 of [1]_ is used to reduce the binomial
     distribution to the cumulative incomplete beta distribution.
 
-    Computation of `k` involves a search for a value that produces the desired
-    value of `y`. The search relies on the monotonicity of `y` with `k`.
-
-    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
+    This function uses routines from the Boost.Math C++ library [3]_ which rely
+    on numerical inversion of the binomial distribution CDF [4]_.
 
     References
     ----------
@@ -357,10 +349,48 @@ add_newdoc("bdtrik",
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17.5#E5
-    .. [3] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [3] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [4] https://www.boost.org/doc/libs/latest/libs/math/doc/html/math_toolkit/dist_ref/dists/binomial_dist.html
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 8 times.  Find the largest value of `k`
+    such that the probability that X <= `k` is not greater than 0.2, where
+    X is the number of heads.
+
+    In fact, there is no integer value of `k` that will give a probability
+    of *exactly* 0.2, as this plot of the cumulative distribution function shows.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import bdtr, bdtrik
+
+    >>> n = 8
+    >>> p = 0.525
+    >>> k = np.arange(0, n + 1)
+    >>> plt.plot(k, bdtr(k, n, p), 'o')
+    >>> plt.grid(True, alpha=0.5)
+    >>> plt.xlabel('k')
+    >>> plt.axhline(0.2, linestyle='--', color='k', alpha=0.5)
+    >>> plt.title(f"bdtr(k, {n}, {p})")
+    >>> plt.show()
+
+    From the graph we can see that we would choose `k` = 2.  The function
+    ``bdtrik`` lets us find this value directly.
+
+    ``bdtrik`` returns a floating point value that is like a continuous
+    extension of `k`.  This computes `k` as a noninteger floating point value:
+
+    >>> bdtrik(0.2, n, p)
+    np.float64(2.508332751475262)
+
+    For our final answer we need an integer `k`, and since we want to ensure
+    that the probability at `k` does not exceed 0.2, we truncate the fractional
+    part of this value with ``np.floor``:
+
+    >>> np.floor(bdtrik(0.2, n, p))
+    np.float64(2.0)
     """)
 
 add_newdoc("bdtrin",
@@ -3081,73 +3111,6 @@ add_newdoc(
 
     """)
 '''
-
-add_newdoc("hyp0f1",
-    r"""
-    hyp0f1(v, z, out=None)
-
-    Confluent hypergeometric limit function 0F1.
-
-    Parameters
-    ----------
-    v : array_like
-        Real-valued parameter
-    z : array_like
-        Real- or complex-valued argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        The confluent hypergeometric limit function
-
-    Notes
-    -----
-    This function is defined as:
-
-    .. math:: _0F_1(v, z) = \sum_{k=0}^{\infty}\frac{z^k}{(v)_k k!}.
-
-    It's also the limit as :math:`q \to \infty` of :math:`_1F_1(q; v; z/q)`,
-    and satisfies the differential equation :math:`f''(z) + vf'(z) =
-    f(z)`. See [1]_ for more information.
-
-    References
-    ----------
-    .. [1] Wolfram MathWorld, "Confluent Hypergeometric Limit Function",
-           https://mathworld.wolfram.com/ConfluentHypergeometricLimitFunction.html
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    It is one when `z` is zero.
-
-    >>> sc.hyp0f1(1, 0)
-    1.0
-
-    It is the limit of the confluent hypergeometric function as `q`
-    goes to infinity.
-
-    >>> q = np.array([1, 10, 100, 1000])
-    >>> v = 1
-    >>> z = 1
-    >>> sc.hyp1f1(q, v, z / q)
-    array([2.71828183, 2.31481985, 2.28303778, 2.27992985])
-    >>> sc.hyp0f1(v, z)
-    2.2795853023360673
-
-    It is related to Bessel functions.
-
-    >>> n = 1
-    >>> x = np.linspace(0, 1, 5)
-    >>> sc.jv(n, x)
-    array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
-    >>> (0.5 * x)**n / sc.factorial(n) * sc.hyp0f1(n + 1, -0.25 * x**2)
-    array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
-
-    """)
 
 add_newdoc("hyp1f1",
     r"""

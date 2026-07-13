@@ -235,7 +235,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         derivatives (`fun`, `jac` functions).
     bounds : sequence, optional
         Bounds on variables. 'new-style' bounds are required.
-    eps : float or ndarray
+    epsilon : float or ndarray
         If ``jac is None`` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     finite_diff_rel_step : None or array_like, optional

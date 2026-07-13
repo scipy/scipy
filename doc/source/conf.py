@@ -64,7 +64,7 @@ plt.ioff()
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 
 # The main toctree document.
 master_doc = 'index'
@@ -209,7 +209,7 @@ html_sidebars = {
     "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
-html_js_files = ['custom-icons.js']  # defines custom icon(s) used in header
+html_js_files = [('custom-icons.js', {"defer": "defer"}),]  # for custom header icon(s)
 html_theme_options = {
     "header_links_before_dropdown": 6,
     "icon_links": [

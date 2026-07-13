@@ -27,6 +27,8 @@
 #include <xsf/expint.h>
 #include <xsf/fresnel.h>
 #include <xsf/gamma.h>
+#include <xsf/gen_harmonic.h>
+#include <xsf/hyp0f1.h>
 #include <xsf/hyperu.h>
 #include <xsf/hyp2f1.h>
 #include <xsf/iv_ratio.h>
@@ -47,8 +49,8 @@
 #include <xsf/struve.h>
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
+#include <xsf/wright.h>
 #include <xsf/zeta.h>
-#include "gen_harmonic.h"
 
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "xsf::numpy::ufunc" with a braced list of kernel functions that will become the ufunc overloads. There are
@@ -141,6 +143,7 @@ extern const char *hankel1_doc;
 extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
+extern const char *hyp0f1_doc;
 extern const char *hyp2f1_doc;
 extern const char *hyperu_doc;
 extern const char *i0_doc;
@@ -238,6 +241,7 @@ extern const char *tklmbda_doc;
 extern const char *voigt_profile_doc;
 extern const char *wofz_doc;
 extern const char *wright_bessel_doc;
+extern const char *wrightomega_doc;
 extern const char *xlogy_doc;
 extern const char *xlog1py_doc;
 extern const char *y0_doc;
@@ -284,9 +288,9 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "_cospi", _cospi);
 
     PyObject *_gen_harmonic =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::ld_d>(gen_harmonic),
-                           static_cast<xsf::numpy::qd_d>(gen_harmonic),
-                           static_cast<xsf::numpy::dd_d>(gen_harmonic)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ld_d>(xsf::gen_harmonic),
+                           static_cast<xsf::numpy::qd_d>(xsf::gen_harmonic),
+                           static_cast<xsf::numpy::dd_d>(xsf::gen_harmonic)},
                            "_gen_harmonic", _gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_gen_harmonic", _gen_harmonic);
 
@@ -306,9 +310,9 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "_kolmogp", _kolmogp);
 
     PyObject *_normalized_gen_harmonic =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::llld_d>(normalized_gen_harmonic),
-                           static_cast<xsf::numpy::qqqd_d>(normalized_gen_harmonic),
-                           static_cast<xsf::numpy::dddd_d>(normalized_gen_harmonic)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::llld_d>(xsf::normalized_gen_harmonic),
+                           static_cast<xsf::numpy::qqqd_d>(xsf::normalized_gen_harmonic),
+                           static_cast<xsf::numpy::dddd_d>(xsf::normalized_gen_harmonic)},
                           "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_normalized_gen_harmonic", _normalized_gen_harmonic);
 
@@ -708,6 +712,12 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::gammasgn), static_cast<xsf::numpy::d_d>(xsf::gammasgn)},
                           "gammasgn", gammasgn_doc);
     PyModule_AddObjectRef(module, "gammasgn", gammasgn);
+
+    PyObject *hyp0f1 =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::hyp0f1), static_cast<xsf::numpy::dd_d>(xsf::hyp0f1),
+                           static_cast<xsf::numpy::fF_F>(xsf::hyp0f1), static_cast<xsf::numpy::dD_D>(xsf::hyp0f1)},
+                          "hyp0f1", hyp0f1_doc);
+    PyModule_AddObjectRef(module, "hyp0f1", hyp0f1);
 
     PyObject *hyp2f1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(xsf::hyp2f1), static_cast<xsf::numpy::dddd_d>(xsf::hyp2f1),
@@ -1355,6 +1365,12 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::wright_bessel), static_cast<xsf::numpy::ddd_d>(xsf::wright_bessel)},
         "wright_bessel", wright_bessel_doc);
     PyModule_AddObjectRef(module, "wright_bessel", wright_bessel);
+
+    PyObject *wrightomega = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::wrightomega), static_cast<xsf::numpy::d_d>(xsf::wrightomega),
+         static_cast<xsf::numpy::F_F>(xsf::wrightomega), static_cast<xsf::numpy::D_D>(xsf::wrightomega)},
+        "wrightomega", wrightomega_doc);
+    PyModule_AddObjectRef(module, "wrightomega", wrightomega);
 
     PyObject *y0 = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_y0), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_y0)}, "y0",

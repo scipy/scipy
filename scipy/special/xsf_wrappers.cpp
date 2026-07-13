@@ -19,6 +19,7 @@
 #include <xsf/expint.h>
 #include <xsf/fresnel.h>
 #include <xsf/gamma.h>
+#include <xsf/hyp0f1.h>
 #include <xsf/hyp2f1.h>
 #include <xsf/hyperu.h>
 #include <xsf/kelvin.h>
@@ -39,6 +40,7 @@
 #include <xsf/struve.h>
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
+#include <xsf/wright.h>
 #include <xsf/zeta.h>
 
 #include <xsf/cephes/cbrt.h>
@@ -69,6 +71,10 @@ npy_cdouble to_ccomplex(complex<double> z) { return {z.real(), z.imag()}; }
 } // namespace
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::hyp1f1(a, b, to_complex(z))); }
+
+npy_cdouble special_chyp0f1(double v, npy_cdouble z) { return to_ccomplex(xsf::hyp0f1(v, to_complex(z))); }
+
+double special_hyp0f1(double v, double z) { return xsf::hyp0f1(v, z); }
 
 double hyp1f1_wrap(double a, double b, double x) { return xsf::hyp1f1(a, b, x); }
 
@@ -342,6 +348,10 @@ double cephes_polevl_wrap(double x, const double coef[], int N) { return xsf::ce
 
 double special_wright_bessel(double a, double b, double x) { return xsf::wright_bessel(a, b, x); }
 double special_log_wright_bessel(double a, double b, double x) { return xsf::log_wright_bessel(a, b, x); }
+
+double xsf_wrightomega(double z) { return xsf::wrightomega(z); }
+
+npy_cdouble xsf_cwrightomega(npy_cdouble z) { return to_ccomplex(xsf::wrightomega(to_complex(z))); }
 
 double special_ellipk(double m) { return xsf::ellipk(m); }
 

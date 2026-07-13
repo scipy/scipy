@@ -578,6 +578,12 @@ class TestSqrtM:
             res = sqrtm(a)
             assert np.isinf(res[0, 1:]).all()
 
+    def test_scalar_input(self):
+        assert_allclose(sqrtm(4), [[2.0]])
+
+    def test_1d_single_element_input(self):
+        assert_allclose(sqrtm([4]), [[2.0]])
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):

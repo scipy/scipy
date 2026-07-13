@@ -23,6 +23,10 @@ from scipy._lib._gcutils import assert_deallocated
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
 
 
+def _is_32bit():
+    return np.intp(0).itemsize < 8
+
+
 def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
     """
     Return tolerance values suitable for a given test:
@@ -77,6 +81,11 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
             # missing more cases, from PR 14798
             rtol *= 10
             atol *= 10
+
+    if _is_32bit():
+        # Small tolerance bumps needed on i686 linux after moving
+        # from GCC 10.2 to 14.2
+        rtol *= 2
 
     return tol, rtol, atol
 
