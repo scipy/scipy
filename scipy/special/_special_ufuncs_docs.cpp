@@ -1603,11 +1603,9 @@ const char *kolmogi_doc = R"(
 
     Notes
     -----
-    `kolmogorov` is used by ``stats.kstest`` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in ``scipy.special``, but the recommended way to achieve
-    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    ``stats.kstwobign`` distribution.
+    For historical reasons this function is exposed in ``scipy.special``, but the 
+    recommended way to achieve the most accurate CDF/SF/PDF/PPF/ISF computations is to 
+    use the ``stats.kstwobign`` distribution.
 
     Examples
     --------
