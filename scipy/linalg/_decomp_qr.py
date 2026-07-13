@@ -176,7 +176,7 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
         else:
             warnings.warn(
                 "scipy.linalg.qr: the `lwork` keyword is deprecated and no longer in"
-                "use as of SciPy 1.18.0 and will be removed in SciPy 1.20.0",
+                "use as of SciPy 1.18.0 and will be removed in SciPy 2.1.0",
                 DeprecationWarning,
                 skip_file_prefixes=(os.path.dirname(__file__),)
             )
