@@ -1,16 +1,12 @@
 runners:
-  - name: gpu-runner
-    cloud: aws
-    instance_type: g5.8xlarge
-    machine_image: ami-014cf2391cb36896e
-    region: eu-west-1
+  - name: scipy-onprem-gpu
+    cloud: on_prem
+    instance_type: 12vcpu-48gb-100gb
+    machine_image: "ubuntu-gpu:latest"
+    region: RegionOne
     labels:
-      - cirun-aws-gpu
+      - cirun-scipy-onprem-gpu
     extra_config:
+      executor: meda
+      gpu: all
       cache: true
-      BlockDeviceMappings:
-        - DeviceName: /dev/sda1
-          VolumeType: gp3
-          VolumeSize: 100
-          Iops: 16000
-          Throughput: 1000
