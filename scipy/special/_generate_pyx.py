@@ -78,6 +78,8 @@ import textwrap
 
 special_ufuncs = [
     "_bivariate_normal_sf",
+    "_cosine_cdf",
+    "_cosine_invcdf",
     "_cospi",
     "_gen_harmonic",
     "_igam_fac",

@@ -146,7 +146,6 @@ double cephes_jv_wrap(double v, double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
 int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
 double cephes_yn_wrap(Py_ssize_t n, double x);
-double cephes_polevl_wrap(double x, const double coef[], int N);
 double special_wright_bessel(double a, double b, double x);
 double special_log_wright_bessel(double a, double b, double x);
 

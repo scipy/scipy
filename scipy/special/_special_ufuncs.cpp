@@ -17,6 +17,7 @@
 #include <xsf/cephes/poch.h>
 #include <xsf/cephes/round.h>
 #include <xsf/cephes/unity.h>
+#include <xsf/cosine.h>
 #include <xsf/convex_analysis.h>
 #include <xsf/cpu/stats.h>
 #include <xsf/digamma.h>
@@ -62,6 +63,8 @@
 
 extern const char *_cospi_doc;
 extern const char *_bivariate_normal_sf_doc;
+extern const char *_cosine_cdf_doc;
+extern const char *_cosine_invcdf_doc;
 extern const char *_sinpi_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_igam_fac_doc;
@@ -280,6 +283,16 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
         "_bivariate_normal_sf", _bivariate_normal_sf_doc);
     PyModule_AddObjectRef(module, "_bivariate_normal_sf", _bivariate_normal_sf);
+
+    PyObject *_cosine_cdf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cosine_cdf), static_cast<xsf::numpy::d_d>(xsf::cosine_cdf)},
+        "_cosine_cdf", _cosine_cdf_doc);
+    PyModule_AddObjectRef(module, "_cosine_cdf", _cosine_cdf);
+
+    PyObject *_cosine_invcdf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_f>(xsf::cosine_invcdf), static_cast<xsf::numpy::d_d>(xsf::cosine_invcdf)},
+        "_cosine_invcdf", _cosine_invcdf_doc);
+    PyModule_AddObjectRef(module, "_cosine_invcdf", _cosine_invcdf);
 
     PyObject *_cospi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::cospi), static_cast<xsf::numpy::d_d>(xsf::cospi),
