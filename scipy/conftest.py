@@ -127,6 +127,13 @@ def pytest_configure(config):
         except (ImportError, AttributeError):
             pass
 
+        # Drop when https://github.com/joblib/threadpoolctl/pull/201 makes it to
+        # a threadpoolctl release
+        config.addinivalue_line(
+            "filterwarnings",
+            "ignore:JsProxy.as_object_map:RuntimeWarning",
+        )
+
 
 def pytest_runtest_setup(item):
     mark = item.get_closest_marker("xslow")
