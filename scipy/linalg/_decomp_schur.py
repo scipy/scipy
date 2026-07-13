@@ -6,6 +6,7 @@ from numpy.linalg import norm
 from scipy._lib._util import _apply_over_batch
 from scipy._lib.deprecation import _NoValue
 
+import os
 import warnings
 
 # Local imports.
@@ -161,9 +162,9 @@ def schur(a, output='real', lwork=_NoValue, overwrite_a=False, sort=None,
     if lwork is not _NoValue:
         warnings.warn(
             "scipy.linalg.schur: the `lwork` keyword is deprecated and no longer in use"
-            " as of SciPy 1.19.0 and will be removed in SciPy 1.21.0",
+            " as of SciPy 2.0.0 and will be removed in SciPy 2.2.0",
             DeprecationWarning,
-            stacklevel=2
+            skip_file_prefixes=(os.path.dirname(__file__),)
         )
 
     lwork = None

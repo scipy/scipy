@@ -4,6 +4,7 @@ import numpy as np
 from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from scipy._lib.deprecation import _NoValue
 
+import os
 import warnings
 
 # Local imports
@@ -177,7 +178,7 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
                 "scipy.linalg.qr: the `lwork` keyword is deprecated and no longer in"
                 "use as of SciPy 1.18.0 and will be removed in SciPy 1.20.0",
                 DeprecationWarning,
-                stacklevel=2
+                skip_file_prefixes=(os.path.dirname(__file__),)
             )
 
     # First normalize dtypes to ensure consistent return types
@@ -474,9 +475,9 @@ def rq(a, overwrite_a=False, lwork=_NoValue, mode='full', check_finite=True):
     if lwork is not _NoValue:
         warnings.warn(
             "scipy.linalg.rq: the `lwork` keyword is deprecated and no longer in use"
-            " as of SciPy 1.19.0 and will be removed in SciPy 1.21.0",
+            " as of SciPy 2.0.0 and will be removed in SciPy 2.2.0",
             DeprecationWarning,
-            stacklevel=2
+            skip_file_prefixes=(os.path.dirname(__file__),)
         )
 
     lwork = None

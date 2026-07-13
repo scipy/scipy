@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import numpy as np
@@ -83,9 +84,9 @@ def _qz(A, B, output='real', lwork=_NoValue, sort=None, overwrite_a=False,
     if lwork is not _NoValue:
         warnings.warn(
             "scipy.linalg.qz: the `lwork` keyword is deprecated and no longer in use"
-            " as of SciPy 1.19.0 and will be removed in SciPy 1.21.0",
+            " as of SciPy 2.0.0 and will be removed in SciPy 2.2.0",
             DeprecationWarning,
-            stacklevel=2
+            skip_file_prefixes=(os.path.dirname(__file__),)
         )
 
     lwork = None
