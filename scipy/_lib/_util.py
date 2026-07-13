@@ -582,7 +582,7 @@ def xp_array_equal(x1, x2, xp):
     x2 = xp.asarray(x2)
     if x1.shape != x2.shape:
         return False
-    return item(xp.all(xp.equal(x1, x2)))
+    return _item_for_scalar_function(xp.all(xp.equal(x1, x2)))
 
 
 class _ScalarFunctionWrapper:
