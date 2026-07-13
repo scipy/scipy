@@ -554,6 +554,19 @@ class _ScalarFunctionWrapper:
                     "must return a scalar value."
                 ) from e
         return fx
+    
+    # The array namespace self._xp is not pickable, this is a workaround.
+    # Instead of the namespace itself, we save an array from which we can then obtain
+    # the namespace again.
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        self.__dict__.update(state)
+
 
 class MapWrapper:
     """
