@@ -535,16 +535,16 @@ class _ScalarFunctionWrapper:
         self.f = f
         self.args = [] if args is None else args
         self.nfev = 0
-        self.xp = xp
+        self._xp = xp
 
     def __call__(self, x):
         # Send a copy because the user may overwrite it.
         # The user of this class might want `x` to remain unchanged.
-        fx = self.f(self.xp.asarray(x, copy=True), *self.args)
+        fx = self.f(self._xp.asarray(x, copy=True), *self.args)
         self.nfev += 1
 
         # Make sure the function returns a true scalar
-        if is_numpy(self.xp) and not np.isscalar(fx):
+        if is_numpy(self._xp) and not np.isscalar(fx):
             _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
                 fx = _dt.type(np.asarray(fx).item())

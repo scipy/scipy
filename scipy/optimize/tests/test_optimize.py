@@ -2525,16 +2525,16 @@ def himmelblau(p):
 
 def himmelblau_grad(p):
     xp = array_namespace(p)
-    x, y = float(p[0]), float(p[1])
-    return xp.asarray([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
+    x, y = p
+    return xp.stack([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
                      2*x**2 + 4*x*y + 4*y**3 - 26*y - 22])
 
 
 def himmelblau_hess(p):
     xp = array_namespace(p)
-    x, y = float(p[0]), float(p[1])
+    x, y = p
     return xp.asarray([[12*x**2 + 4*y - 42, 4*x + 4*y],
-                     [4*x + 4*y, 4*x + 12*y**2 - 26]])
+                       [4*x + 4*y, 4*x + 12*y**2 - 26]])
 
 
 himmelblau_x0 = [-0.27, -0.9]
