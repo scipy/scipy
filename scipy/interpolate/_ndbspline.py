@@ -12,17 +12,9 @@ import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
 from scipy._lib._array_api import array_namespace, xp_capabilities
 
-from ._bsplines import _not_a_knot, BSpline
+from ._bsplines import _not_a_knot, BSpline, _get_dtype, _deprecate_dtypes
 
 __all__ = ["NdBSpline"]
-
-
-def _get_dtype(dtype):
-    """Return np.complex128 for complex dtypes, np.float64 otherwise."""
-    if np.issubdtype(dtype, np.complexfloating):
-        return np.complex128
-    else:
-        return np.float64
 
 
 @xp_capabilities(
@@ -98,6 +90,7 @@ class NdBSpline:
         self.extrapolate = bool(extrapolate)
 
         self._c = np.asarray(c)
+        _deprecate_dtypes(*[np.asarray(v).dtype for v in t], self._c.dtype)
 
         ndim = self._t.shape[0]   # == len(self.t)
         if self._c.ndim < ndim:
