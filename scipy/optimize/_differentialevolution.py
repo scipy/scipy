@@ -2,7 +2,6 @@
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
-from collections.abc import Callable
 from functools import partial
 import warnings
 
@@ -29,7 +28,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, rng=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers: int | Callable = 1, constraints=(), x0=None, *,
+                           workers=1, constraints=(), x0=None, *,
                            integrality=None, vectorized=False):
     r"""Finds the global minimum of a multivariate function.
 
@@ -808,8 +807,8 @@ class DifferentialEvolutionSolver:
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, rng=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers: int | Callable = 1, constraints=(), x0=None, *,
-                 integrality=None, vectorized=False):
+                 workers=1, constraints=(), x0=None, *, integrality=None,
+                 vectorized=False):
 
         if callable(strategy):
             # a callable strategy is going to be stored in self.strategy anyway
@@ -924,7 +923,7 @@ class DifferentialEvolutionSolver:
         self.random_number_generator = check_random_state(rng)
 
         # Which parameters are going to be integers?
-        if integrality is not None and np.any(integrality):
+        if np.any(integrality):
             # # user has provided a truth value for integer constraints
             integrality = np.broadcast_to(
                 integrality,
@@ -946,7 +945,7 @@ class DifferentialEvolutionSolver:
             nlb = np.nextafter(lb[integrality] - 0.5, np.inf)
             nub = np.nextafter(ub[integrality] + 0.5, -np.inf)
 
-            self.integrality: np.ndarray | bool = integrality
+            self.integrality = integrality
             self.limits[0, self.integrality] = nlb
             self.limits[1, self.integrality] = nub
         else:
