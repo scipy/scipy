@@ -118,7 +118,7 @@ def pytest_configure(config):
 
         # pytest's gc_collect_harder forces a GC pass during cleanup, which can
         # cause a fatal error from C-extension destructors under WASM. We have it
-        # as a  no-op so that pytest can finish and print its summary. Refer to
+        # as a no-op so that pytest can finish and print its summary. Refer to
         # pytest_unconfigure below for how we then hand the real exit status back
         # to Node.js.
         try:

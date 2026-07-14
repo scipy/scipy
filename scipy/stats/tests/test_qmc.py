@@ -1442,7 +1442,7 @@ class TestMultivariateNormalQMC:
         IS_WASM,
         reason="NumPy's Cholesky reports a non-positive-definite matrix"
         " via floating-point exception modes, which WASM does not support,"
-        "see https://github.com/pyodide/pyodide#4859)"
+        " see https://github.com/pyodide/pyodide#4859"
     )
     def test_MultivariateNormalQMCDegenerate(self):
         # X, Y iid standard Normal and Z = X + Y, random vector (X, Y, Z)
