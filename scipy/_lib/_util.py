@@ -529,7 +529,7 @@ class _FunctionWrapper:
 
 
 @xp_capabilities()
-def item(x, xp=None):
+def _item_for_scalar_function(x, xp=None):
     """
     Extract a scalar from an array-scalar, size-1 array, list, or tuple.
     Equivalent to np.ndarray.item(), implemented via the Array API
@@ -546,7 +546,7 @@ def item(x, xp=None):
                 f"can only convert a sequence of size 1 to a Python scalar,"
                 f" got size {len(x)}"
             )
-        return item(x[0])
+        return _item_for_scalar_function(x[0])
 
     # assume we're an xp array object from here
     # such as np.float64([1.0]), np.array(1.0)
@@ -559,7 +559,7 @@ def item(x, xp=None):
     # supply xp to save checking what namespace we're dealing with
     xp = xp or array_namespace(x)
 
-    # Flatten to 0-d/1-element so scalar dunder methods apply uniformly
+    # extract the scalar
     if x.ndim != 0:
         x = xp.reshape(x, (-1,))[0]
 
@@ -583,7 +583,7 @@ class _ScalarFunctionWrapper:
 
         # Make sure the function returns a true scalar
         try:
-            fx = item(fx)
+            fx = _item_for_scalar_function(fx)
         except (TypeError, ValueError) as e:
             raise ValueError(
                 "The user-provided objective function "
