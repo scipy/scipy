@@ -1828,7 +1828,8 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_weights(self, method, xp):
         # weights = 1 is same as None
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k  # type: ignore[misc]
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k  # type: ignore[misc]
         w = xp.ones_like(x)
 
         b = make_lsq_spline(x, y, t, k, method=method)
@@ -1910,7 +1911,8 @@ class TestLSQ:
                                             (0, None), (None, 0)])
     @parametrize_lsq_methods
     def test_lsq_with_one_sided_clamp_values(self, method, xp, clamp_values):
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
 
         if clamp_values == (None, None):
             with assert_raises(ValueError):
@@ -1928,7 +1930,8 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_lsq_with_clamp_values(self, method, xp, clamp_values):
         # Test if `clamp_values` actually clamps the first and last values
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
         
         clamp_arr = xp.asarray(clamp_values, dtype=xp.float64)
         if not xp.all(xp.isfinite(clamp_arr)):
@@ -2028,7 +2031,8 @@ class TestLSQ:
     def test_clamp_values_invalid_input(self, clamp_values, reason, xp, method,
                                     expected_exc):
         # clamp_values must be a 2-tuple of finite real numbers
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
         t = np.asarray(t).copy()
 
         t[:k+1] = float(self.x[0])
@@ -2041,7 +2045,8 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_clamp_values_invalid_knot_vector(self, xp, method):
         # clamp_values requires a clamped knot vector
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
         t = np.asarray(t).copy()
 
         t[:k+1] = float(self.x[0])
@@ -2055,7 +2060,8 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_clamp_values_valid(self, xp, method):
         # valid inputs work without error
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
         t = np.asarray(t).copy()
 
         t[:k+1] = float(self.x[0])
@@ -2066,7 +2072,8 @@ class TestLSQ:
 
     def test_weights_same(self, xp):
         # both methods treat weights
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k  # type: ignore[misc]
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k  # type: ignore[misc]
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
         w = xp.asarray(w)
 
@@ -2079,7 +2086,8 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
+        x, t = map(xp.asarray, (self.x, self.t))
+        k, n = self.k, self.n  # type: ignore[misc]
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
         y = xp.asarray(y)
@@ -2089,7 +2097,8 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs_2(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
+        x, t = map(xp.asarray, (self.x, self.t))
+        k, n = self.k, self.n  # type: ignore[misc]
         nrhs = 3
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
@@ -2103,7 +2112,8 @@ class TestLSQ:
         xp_assert_close(coefs, b.c, atol=1e-15)
 
     def test_multiple_rhs_3(self, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
+        x, t = map(xp.asarray, (self.x, self.t))
+        k, n = self.k, self.n  # type: ignore[misc]
         nrhs = 3
         y = np.random.random(size=(n, nrhs))
         y = xp.asarray(y)
@@ -2114,7 +2124,8 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_complex(self, method, xp):
         # cmplx-valued `y`
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k  # type: ignore[misc]
+        x, t = map(xp.asarray, (self.x, self.t))
+        k = self.k  # type: ignore[misc]
         yc = xp.asarray(self.y * (1. + 2.j))
 
         b = make_lsq_spline(x, yc, t, k, method=method)
@@ -2126,7 +2137,8 @@ class TestLSQ:
     def test_complex_2(self, xp):
         # test complex-valued y with y.ndim > 1
 
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k  # type: ignore[misc]
+        x, t = map(xp.asarray, (self.x, self.t))
+        k = self.k  # type: ignore[misc]
         yc = xp.asarray(self.y * (1. + 2.j))
         yc = xp.stack((yc, yc), axis=1)
 
