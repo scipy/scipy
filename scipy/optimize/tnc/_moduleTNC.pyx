@@ -12,7 +12,7 @@
 from libc.string cimport memcpy
 import numpy as np
 cimport numpy as np
-from scipy._lib._util import item
+from scipy._lib._util import _item_for_scalar_function
 
 
 np.import_array()
@@ -82,7 +82,7 @@ cdef int function(double x[], double *f, double g[], void *state) except 1:
     fx, gx = (<object>py_state.py_function)(xcopy)
 
     try:
-        fx = item(fx)
+        fx = _item_for_scalar_function(fx)
     except (TypeError, ValueError) as e:
         raise ValueError(
             "The user-provided objective function "
