@@ -26,10 +26,6 @@ CUPY_BLACKLIST = [
     'sosfilt_zi', 'remez',
 ]
 
-# freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
-CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
-
-
 def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
@@ -46,12 +42,16 @@ def delegate_xp(delegator, module_name):
 
             # try delegating to a cupyx/jax namesake
             if is_cupy(xp) and func.__name__ not in CUPY_BLACKLIST:
-                func_name = CUPY_RENAMES.get(func.__name__, func.__name__)
-
                 # https://github.com/cupy/cupy/issues/8336
                 import importlib
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
-                cupyx_func = getattr(cupyx_module, func_name)
+                try:
+                    cupyx_func = getattr(cupyx_module, func.__name__)
+                except AttributeError:
+                    if func.__name__ != "freqz_sos":
+                        raise
+                    # CuPy < 14 exposes this under the old SciPy name.
+                    cupyx_func = cupyx_module.sosfreqz
                 kwds.pop('xp', None)
                 return cupyx_func(*args, **kwds)
             elif is_jax(xp) and func.__name__ in JAX_SIGNAL_FUNCS:

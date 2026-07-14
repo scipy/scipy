@@ -6,6 +6,50 @@ const char *_bivariate_normal_sf_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_cosine_cdf_doc = R"(
+    _cosine_cdf(x)
+
+    Cumulative distribution function (CDF) of the cosine distribution::
+
+                 {             0,              x < -pi
+        cdf(x) = { (pi + x + sin(x))/(2*pi),   -pi <= x <= pi
+                 {             1,              x > pi
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    scalar or ndarray
+        The cosine distribution CDF evaluated at `x`.
+    )";
+
+const char *_cosine_invcdf_doc = R"(
+    _cosine_invcdf(p)
+
+    Inverse of the cumulative distribution function (CDF) of the cosine
+    distribution.
+
+    The CDF of the cosine distribution is::
+
+        cdf(x) = (pi + x + sin(x))/(2*pi)
+
+    This function computes the inverse of cdf(x).
+
+    Parameters
+    ----------
+    p : array_like
+        `p` must contain real numbers in the interval ``0 <= p <= 1``.
+        `nan` is returned for values of `p` outside the interval [0, 1].
+
+    Returns
+    -------
+    scalar or ndarray
+        The inverse of the cosine distribution CDF evaluated at `p`.
+    )";
+
 const char *_igam_fac_doc = R"(
     Internal function, do not use.
     )";

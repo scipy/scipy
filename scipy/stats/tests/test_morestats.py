@@ -1315,6 +1315,10 @@ class TestBinomTest:
         xp_assert_equal(res.low, ref.low)
         xp_assert_equal(res.high, ref.high)
 
+    @pytest.mark.xfail_xp_backends(
+        "array_api_strict",
+        reason="https://github.com/data-apis/array-api-strict/pull/223",
+    )
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("method", ['exact', 'wilson', 'wilsoncc'])

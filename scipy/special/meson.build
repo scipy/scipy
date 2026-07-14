@@ -12,7 +12,6 @@ _ufuncs_pxi_pxd_sources = [
 ]
 
 ufuncs_sources = [
-  '_cosine.c',
   'xsf_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
@@ -157,7 +156,6 @@ py3.extension_module('_ellip_harm_2',
 py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
-    '_cosine.c',
     'xsf_wrappers.cpp',
     'sf_error.cc',
     'dd_real_wrappers.cpp'
