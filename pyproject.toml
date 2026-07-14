@@ -271,11 +271,6 @@ PKG_CONFIG_PATH = "{project}"
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
 
 [tool.cibuildwheel.pyodide]
-# This is a WebAssembly build driven via .github/workflows/emscripten.yml.
-# Unlike native builds, we do not use OpenBLAS. We use the before-build
-# script to build BLIS and semicolon-lapack, and build SciPy against that
-# combination. See tools/ci/emscripten/cibw_before_build_pyodide.sh.
-#
 # cibuildwheel 4.1.0 pins pyodide-build 0.35.0. Override to 0.36.0 to fix the
 # cross-build NumPy meson dependency detection. TODO: drop this once it makes
 # it to a released version of cibuildwheel
@@ -290,13 +285,9 @@ setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
 
 [tool.cibuildwheel.pyodide.environment]
 PKG_CONFIG_PATH = "$(pwd)/.blis/lib/pkgconfig:$(pwd)/.blis/share/pkgconfig"
-# Stop Ninja backend from moving long link commands into a response (@rsp) file.
-# The pywasmcross wrapper in pyodide-build does not yet read response files,
-# so it would miss -sSIDE_MODULE=1 and emit a non-relocatable module (as far
-# I've noticed, this happens for scipy.stats._unuran that links the bundled
-# UNU.RAN objects). See"
-# https://github.com/mesonbuild/meson/blob/e542901af6e30865715d3c3c18f703910a096ec0/mesonbuild/backend/ninjabackend.py#L94
-# https://github.com/pyodide/pyodide-recipes/blob/47a1dc3188fb2f93fc83982e62db7d5b02ccc2d8/packages/scipy/meta.yaml#L120-L122
+# Stop Ninja from moving long link commands into a response file,
+# which the pyodide-build pywasmcross wrapper does not read. See:
+# https://github.com/pyodide/pyodide-build/issues/398
 MESON_RSP_THRESHOLD = "131072"
 
 [tool.spin.commands]
