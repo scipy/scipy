@@ -280,7 +280,6 @@ repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib -
 test-command = "python -m pytest --pyargs scipy"
 
 [tool.cibuildwheel.pyodide.config-settings]
-# build-dir = "build"
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
 
 [tool.cibuildwheel.pyodide.environment]
