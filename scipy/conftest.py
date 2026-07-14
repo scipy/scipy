@@ -189,25 +189,21 @@ def pytest_runtest_setup(item):
 # when every test passes. To hand Node.js the real pytest status, we stash it
 # in pytest_sessionfinish (which runs after the summary is printed) and then,
 # in pytest_unconfigure, exit via os._exit before interpreter finalization runs.
-# This logic is brought from SciPy's Pyodide recipe via 
+# This logic is brought from SciPy's Pyodide recipe via
 # https://github.com/pyodide/pyodide-recipes/pull/619/
-_EMSCRIPTEN_EXIT_STATUS = 0
+if IS_WASM:
+    _EMSCRIPTEN_EXIT_STATUS = 0
 
-
-@pytest.hookimpl(trylast=True)
-def pytest_sessionfinish(session, exitstatus):
-    if IS_WASM:
+    @pytest.hookimpl(trylast=True)
+    def pytest_sessionfinish(session, exitstatus):
         global _EMSCRIPTEN_EXIT_STATUS
         _EMSCRIPTEN_EXIT_STATUS = int(exitstatus)
 
-
-def pytest_unconfigure(config):
-    if not IS_WASM:
-        return
-    import os
-    sys.stdout.flush()
-    sys.stderr.flush()
-    os._exit(_EMSCRIPTEN_EXIT_STATUS)
+    def pytest_unconfigure(config):
+        import os
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(_EMSCRIPTEN_EXIT_STATUS)
 
 
 @pytest.fixture(scope="function", autouse=True)
