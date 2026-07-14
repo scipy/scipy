@@ -205,11 +205,7 @@ def test_expon_fit():
     assert_allclose(phat, [0, 1.0], atol=1e-3)
 
 
-@pytest.mark.xfail(
-    IS_WASM,
-    reason="no floating-point exception support in WASM, "
-    "see https://github.com/pyodide/pyodide/issues/4859"
-)
+@pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
 def test_fit_error():
     data = np.concatenate([np.zeros(29), np.ones(21)])
     message = "Optimization converged to parameters that are..."

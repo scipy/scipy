@@ -1239,11 +1239,7 @@ class TestNormalQMC:
 
 class TestMultivariateNormalQMC:
 
-    @pytest.mark.xfail(
-        IS_WASM,
-        reason="no floating-point exception support in WASM, "
-        "see https://github.com/pyodide/pyodide/issues/4859"
-    )
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_validations(self):
 
         message = r"Dimension of `engine` must be consistent"

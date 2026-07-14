@@ -146,11 +146,7 @@ def test_errstate_all_but_one():
     assert_equal(olderr, sc.geterr())
 
 
-@pytest.mark.xfail(
-    IS_WASM,
-    reason="no floating-point exception support in WASM, "
-    "see https://github.com/pyodide/pyodide/issues/4859"
-)
+@pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
 def test_check_overflow_message():
     # Regression test for a bug where the overflow and underflow
     # messages were switched.
