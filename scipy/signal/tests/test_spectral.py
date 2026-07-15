@@ -444,8 +444,8 @@ class TestWelch:
     @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_window_long_or_nd(self, xp):
         f0, p0 = welch(xp.zeros((4,)), 1, xp.asarray([1,1,1,1,1]))
-        xp_assert_close(f0, xp.asarray([0., 0.2, 0.4]))
-        xp_assert_close(p0, xp.asarray([0., 0., 0.]))
+        xp_assert_close(f0, xp.asarray([0., 0.2, 0.4], dtype=f0.dtype))
+        xp_assert_close(p0, xp.asarray([0., 0., 0.], dtype=p0.dtype))
         with pytest.raises(ValueError, match="^Parameter win must be 1d,"):
             welch(xp.zeros((4,)), 1, xp.reshape(xp.arange(6), (2,3)))
 
