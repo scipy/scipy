@@ -476,7 +476,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
 
     """
     # keep in sync with C
-    drivers = {
+    driver_map = {
         "ev": 1,
         "evd": 2,
         "evr": 3,
@@ -487,10 +487,9 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     }
 
     ## General bookkeeping
-    drv_str = [None, "ev", "evd", "evr", "evx", "gv", "gvd", "gvx"]
-    if driver not in drv_str:
+    if driver not in driver_map and driver is not None:
         raise ValueError('"{}" is unknown. Possible values are "None", "{}".'
-                         ''.format(driver, '", "'.join(drv_str[1:])))
+            ''.format(driver, '", "'.join(driver_map)))
 
     ## Check input arrays
     a1 = _asarray_validated(a, check_finite=check_finite)
@@ -504,17 +503,6 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_a = overwrite_a and a1.ndim == 2 and a1.flags["F_CONTIGUOUS"]
 
-    # accommodate square empty matrices
-    # XXX: account for what happens when `b` upcasts `a`?
-    if a1.size == 0:
-        w = np.empty(a1.shape[:-2] + (0,), dtype=np.finfo(a1.dtype).dtype)
-        if eigvals_only:
-            return w
-        else:
-            v = np.empty(a1.shape[:-2] + (0, 0), dtype=a1.dtype)
-            return w, v
-
-
     if b is not None:
         b1 = _asarray_validated(b, check_finite=check_finite)
         _deprecate_dtypes("linalg.eigh", b1)
@@ -523,7 +511,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
 
         if b1.shape[-1] != n:
             raise ValueError(f"Expected matching slice dimensions, got {n} for 'a' and"
-                f"{b.shape[-1]} for 'b'")
+                f" {b.shape[-1]} for 'b'")
 
         if type not in [1, 2, 3]:
                     raise ValueError('"type" keyword only accepts 1, 2, and 3.')
@@ -540,6 +528,15 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         overwrite_a = overwrite_a and a1.ndim == 2 and a1.flags["F_CONTIGUOUS"]
         overwrite_b = overwrite_b or _datacopied(b1, b)
         overwrite_b = overwrite_b and b1.ndim == 2 and b1.flags["F_CONTIGUOUS"]
+
+    # accommodate square empty matrices, after validation of `b` for `dtype` etc.
+    if a1.size == 0:
+        w = np.empty(a1.shape[:-2] + (0,), dtype=np.finfo(a1.dtype).dtype)
+        if eigvals_only:
+            return w
+        else:
+            v = np.empty(a1.shape[:-2] + (0, 0), dtype=a1.dtype)
+            return w, v
 
     ## Check subset arguments
     vals_range = 0 # Maps to `range` on LAPACK side, 0 -> `A`, 1 -> `V`, 2 -> `I`
@@ -558,7 +555,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
                              'Valid range is (-inf, inf) and low < high, but '
                              f'low={vl}, high={vu} is given')
     else: # provide defaults
-        vl, vu = 0, 0
+        vl, vu = -inf, inf
 
     if subset_by_index:
         il, iu = (int(x) for x in subset_by_index)
@@ -568,7 +565,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
                              f'Valid range is [0, {n-1}] and start <= end, but '
                              f'start={il}, end={iu} is given')
     else: # provide defaults
-        il, iu = 0, 0
+        il, iu = -1, -1
 
     ## decide on the driver if not given, first early exit on incompatible choice
     ## If not given, simply use the default
@@ -584,20 +581,20 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     else:
         driver = "evr" if b is None else ("gvx" if subset else "gvd")
 
-    driver_map = drivers[driver]
+    driver_index = driver_map[driver]
     if b is None:
         w, Z, m, ret_lst = _batched_linalg._eigh(a1, overwrite_a, eigvals_only,
-            vals_range, lower, vl, vu, il, iu, driver_map)
+            vals_range, lower, vl, vu, il, iu, driver_index)
     else:
         # Generalized eigenvalue problem
         w, Z, m, ret_lst = _batched_linalg._eigh(a1, overwrite_a, eigvals_only,
-            vals_range, lower, vl, vu, il, iu, driver_map, b1, overwrite_b, type)
+            vals_range, lower, vl, vu, il, iu, driver_index, b1, overwrite_b, type)
 
     # Handle output
     if ret_lst:
         _check_format_errors_warnings(driver, ret_lst)
 
-    # Slice arrays into correct shape (needed for `range == 'V'`)
+    # Slice arrays into correct shape as size not known beforehand for `subset_by_index`
     w = w[..., :m]
     if eigvals_only:
         return w

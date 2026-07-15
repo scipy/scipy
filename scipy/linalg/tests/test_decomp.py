@@ -1108,12 +1108,19 @@ class TestEigh:
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
 
-    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-    def test_empty(self, dt):
-        a = np.empty((0, 0), dtype=dt)
-        w, v = eigh(a)
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [
+        None, int, float, np.float32, complex, np.complex64
+    ])
+    def test_empty(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty((0, 0), dtype=dt_b) if dt_b is not None else None
 
-        w_n, v_n = eigh(np.eye(2, dtype=dt))
+        a_ref = np.eye(2, dtype=dt_a)
+        b_ref = np.eye(2, dtype=dt_b) if dt_b is not None else None
+
+        w, v = eigh(a, b)
+        w_n, v_n = eigh(a_ref, b_ref)
 
         assert w.shape == (0,)
         assert w.dtype == w_n.dtype
@@ -1121,7 +1128,7 @@ class TestEigh:
         assert v.shape == (0, 0)
         assert v.dtype == v_n.dtype
 
-        w = eigh(a, eigvals_only=True)
+        w = eigh(a, b, eigvals_only=True)
         assert_allclose(w, np.empty((0,)))
 
         assert w.shape == (0,)
@@ -1322,6 +1329,36 @@ class TestEigh:
 
         # check correctness
         assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("dtype", [
+        np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("driver", ["evr", "evx", "gvx"])
+    def test_subset_by_index_full(self, dtype, driver):
+        # Regression test to check if `subset_by_index` when requesting the full
+        # range is behaving correctly
+        n = 5
+        atol = 1e-14 if dtype in [np.float64, np.complex128] else 4e-5
+        rng = np.random.default_rng(seed=12345)
+
+        a_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            a_base = a_base + 1j * rng.normal(size=(n, n))
+        a_base = a_base.astype(dtype)
+        a = a_base @ np.conj(a_base.T)
+
+        if driver[0] == "g":
+            b = np.eye(5, dtype=dtype)
+        else:
+            b = None
+
+        w_n, v_n = eigh(a, b, driver=driver, subset_by_index=[0, n-1])
+
+        # Validate correctness
+        if b is not None:
+            assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+        else:
+            assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
 
 
 class TestSVD_GESDD:

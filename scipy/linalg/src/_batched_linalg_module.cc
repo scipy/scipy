@@ -830,12 +830,12 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int eigvals_only = 0;
     int lower = 0;
     int vals_range = 0;
-    double vl = 0;
-    double vu = 0;
-    int il = 0;
-    int iu = 0;
+    double vl = -std::numeric_limits<double>::infinity();
+    double vu = std::numeric_limits<double>::infinity();
+    int il = -1;
+    int iu = -1;
     Eigh_driver lapack_driver;
-    int type = 1;
+    int itype = 1;
 
     int info = 0;
     SliceStatusVec vec_status;
@@ -849,26 +849,52 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
         &PyArray_Type, (PyObject **)&ap_Am, &overwrite_a,
         &eigvals_only, &vals_range, &lower,
         &vl, &vu, &il, &iu, &lapack_driver,
-        &PyArray_Type, (PyArrayObject **)&ap_Bm, &overwrite_b, &type)
+        &PyArray_Type, (PyArrayObject **)&ap_Bm, &overwrite_b, &itype)
     ) {
         return NULL;
     }
 
-    // Convert int input to char for LAPACK
-    char jobz = eigvals_only ? 'N' : 'V';
-    char range = (vals_range == 0) ? 'A' : (vals_range == 1) ? 'V' : 'I'; // NB. for drivers other than `evr`/`evx`/`gvx`, `range` is ignored.
+    /*
+     * Convert int input to char for LAPACK
+     *
+     * - `uplo`: what triangular part of the matrix to use
+     * - `jobz`: whether to compute eigenvectors, always applicable
+     * - `range`: for drivers `evr`, `evx` and `gvx` what eigenvalues to compute:
+     *      - 'A':  all eigenvalues, `N` in total, are returned unconditionally,
+     *              `il`, `iu`, `vl` and `vu` are still sentinel values
+     *      - 'V':  only eigenvalues `w_i` satisfying `vl < w_i <= vu` are returned, since the
+     *              number of eigenvalues satisfying this condition is unknown beforehand,
+     *              space for all `N` eigenvalues has to be allocated.
+     *              `il` and `iu` remain sentinel values.
+     *      - 'I':  when sorted in ascending order, return indices `il` to `iu` (inclusive),
+     *              not yet accounted for Fortran indexing, the number of eigenvalues is known
+     *              beforehand to be `iu - il + 1`, hence only that size should be allocated.
+     *              `vl` and `vu` remain sentinels
+     *
+     * The number of eigenvalues/eigenvectors to be found is denoted with `M`. In order to be
+     * able to return a properly sized array this is also returned to the python side.
+     */
     char uplo = lower ? 'L' : 'U';
+    char jobz = eigvals_only ? 'N' : 'V';
+    char range = (vals_range == 0) ? 'A' : (vals_range == 1) ? 'V' : 'I';
 
     // Sanity check `a`
     if (!_check_dtype_and_flags(ap_Am, "eigh")) {
         return NULL;
     }
 
+
+    /*
+     * Allocation of return objects
+     *
+     * - `w` contains eigenvalues, always present, size (N,) per slice
+     * - `Z` contains eigenvectors, only required when `jobz == 'V'`, size (N, M) per slice
+     */
     int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
-    npy_intp n = shape[ndim - 1];
-    if (shape[ndim - 2] != n) {
+    npy_intp N = shape[ndim - 1];
+    if (shape[ndim - 2] != N) {
         PyErr_SetString(PyExc_ValueError, "Expected a square matrix");
         return NULL;
     }
@@ -881,8 +907,8 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp shape_1[NPY_MAXDIMS];
     for (int i = 0; i < ndim ; i++) { shape_1[i] = shape[i]; }
 
-    int m = (range == 'I') ? iu + 1 - il : n;
-    shape_1[ndim - 2] = m;
+    int M = (range == 'I') ? iu + 1 - il : N;
+    shape_1[ndim - 2] = M;
     ap_w = (PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, w_typenum);
     if (ap_w == NULL) {
         PyErr_NoMemory();
@@ -891,8 +917,8 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     if (jobz != 'N') {
         // XXX: account for `overwrite_x`
-        shape_1[ndim - 2] = n;
-        shape_1[ndim - 1] = m;
+        shape_1[ndim - 2] = N;
+        shape_1[ndim - 1] = M;
 
         ap_Z = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
         if (ap_Z == NULL) {
@@ -905,16 +931,16 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Pass in pointer to `M` to be able to return to python side
     switch (typenum) {
         case NPY_FLOAT32:
-            info = _eigh<float>(ap_Am, ap_Bm, ap_w, ap_Z, &m, overwrite_a, overwrite_b, type, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            info = _eigh<float>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
             break;
         case NPY_FLOAT64:
-            info = _eigh<double>(ap_Am, ap_Bm, ap_w, ap_Z, &m, overwrite_a, overwrite_b, type, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            info = _eigh<double>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
             break;
         case NPY_COMPLEX64:
-            info = _eigh<c64_t>(ap_Am, ap_Bm, ap_w, ap_Z, &m, overwrite_a, overwrite_b, type, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            info = _eigh<c64_t>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
             break;
         case NPY_COMPLEX128:
-            info = _eigh<c128_t>(ap_Am, ap_Bm, ap_w, ap_Z, &m, overwrite_a, overwrite_b, type, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            info = _eigh<c128_t>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
             break;
     }
 
@@ -929,7 +955,7 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     ret_Z = (jobz == 'V') ? PyArray_Return(ap_Z) : Py_None;
     ret_lst = convert_vec_status(vec_status);
 
-    return Py_BuildValue("NNnN", ret_w, ret_Z, (Py_ssize_t)m, ret_lst);
+    return Py_BuildValue("NNnN", ret_w, ret_Z, (Py_ssize_t)M, ret_lst);
 
 fail:
     Py_XDECREF(ap_w);

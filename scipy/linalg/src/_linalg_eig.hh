@@ -478,11 +478,11 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     // -------------------------------------------------------------------
     // Workspace computation and allocation
     //
-    // NB. Zero-sized arrays handled at python side, so max(1, ...) is
-    // not needed.
+    // NB. Zero-sized arrays handled at python side, so the `max(1, ...)`
+    // from the LAPACK documentation is not needed.
     // -------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
-    real_type r_vl = (real_type)vl, r_vu = (real_type)vu;
+    real_type r_vl = (real_type)vl, r_vu = (real_type)vu; // Cast to `real_type` to deal with potential single-precision requirements for float and c64_t
     CBLAS_INT int_il = il + 1; // Deal with Fortran being 1-indexed
     CBLAS_INT int_iu = iu + 1;
     CBLAS_INT int_itype = (CBLAS_INT)itype;
@@ -494,6 +494,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
 
     CBLAS_INT lwork = -1, lrwork = -1, liwork = -1;
 
+    // lwork probe
     switch (lapack_driver) {
         case Eigh_driver::EV : {
             call_sy_he_ev(&jobz, &uplo, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &info);
@@ -537,17 +538,18 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     if (info != 0) { info = -101; return (int)info; }
 
 
+    // process lwork probe
     lwork = _calc_lwork(tmp_work);
 
     if constexpr (!detail::type_traits<T>::is_complex) {
-        lrwork = 0;  // Convert to 0 for buffer allocation later on
+        lrwork = 0;  // for real numbers LAPACK does not require `rwork`, hence set corresponding buffer size to 0.
     } else {
         if (lapack_driver == Eigh_driver::EV || lapack_driver == Eigh_driver::GV) {
-            lrwork = 3 * intn - 2;
+            lrwork = 3 * intn - 2; // See https://www.netlib.org/lapack/explore-html/d8/d1c/group__heev_gabba143a47eee873cbdb00d685fca08a3.html#gabba143a47eee873cbdb00d685fca08a3
         } else if (lapack_driver == Eigh_driver::EVD || lapack_driver == Eigh_driver::EVR || lapack_driver == Eigh_driver::GVD) {
             lrwork = _calc_lwork(tmp_rwork);
         } else if (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX) {
-            lrwork = 7 * intn;
+            lrwork = 7 * intn; // See https://www.netlib.org/lapack/explore-html/d4/de0/group__heevx_ga08ec091a756fdf774ef02cae086f76cb.html#ga08ec091a756fdf774ef02cae086f76cb
         }
     }
 
@@ -577,8 +579,8 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
      * - `buff_A` contains a buffer for the data of `A`, size N * N, only allocated if `overwrite_a` is set
      */
     CBLAS_INT Z_size = (jobz != 'N') ? N * M : 0;
-    CBLAS_INT A_size = (overwrite_a) ? 0 : N * N;
-    CBLAS_INT B_size = (ap_Bm == NULL || overwrite_b) ? 0 : N * N;
+    CBLAS_INT A_size = (!overwrite_a) ? N * N : 0;
+    CBLAS_INT B_size = (ap_Bm != NULL && !overwrite_b) ? N * N : 0;
     T *buffer = (T *)malloc((lwork + Z_size + A_size + B_size) * sizeof(T));
     if (buffer == NULL) { info = -102; return int(info); }
 
@@ -613,22 +615,32 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     CBLAS_INT *ifail = &ibuffer[liwork + isuppz_size];
 
     /*
-     * Real work areas for complex inputs (lrwork) and buffer for eigenvalues
-     * if `range == 'I'` since then the length of elements could be too short
-     * for containing the full output.
+     * Some LAPACK routines require a real work area `rwork` for complex inputs.
+     *
+     * In addition, when `range == 'I'`, the allocated array for the eigenvalues
+     * is of size (M,) whereas the corresponding LAPACK routines always require
+     * a buffer of size (N,) for the eigenvalues. Therefore, when `M < N`, a new
+     * array is allocated to hand to the LAPACK call after which the relevant
+     * arguments can be copied over to the return object.
      */
-    CBLAS_INT w_size = (range == 'I') ? N : 0;
-    real_type *rbuffer = (real_type *)malloc((w_size + lrwork) * sizeof(real_type));
-    if (rbuffer == NULL) {
-        free(buffer);
-        free(ibuffer);
-        info = -104;
-        return int(info);
+    real_type *rbuffer = NULL;
+    real_type *buff_w = NULL;
+    real_type *rwork = NULL;
+
+    CBLAS_INT w_size = (range == 'I' && M < N) ? N : 0;
+    CBLAS_INT rbuffer_size = w_size + lrwork;
+    if (rbuffer_size != 0) {
+        rbuffer = (real_type *)malloc(rbuffer_size * sizeof(real_type));
+        if (rbuffer == NULL) {
+            free(buffer);
+            free(ibuffer);
+            info = -104;
+            return int(info);
+        }
+
+        buff_w = &rbuffer[0];
+        rwork = &rbuffer[w_size];
     }
-
-    real_type *buff_w = &rbuffer[0];
-    real_type *rwork = &rbuffer[w_size];
-
 
     // -------------------------------------------------------------------
     // Main batching loop
@@ -638,9 +650,11 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
-        // `w` is a vector, but should still traverse the same number of dimensions
-        // and the batch shape is the same for all arrays, so make use of `shape` and
-        // `ndim` for all slices.
+        /*
+         * `w` is a vector, but should still traverse the same number of dimensions
+         * and the batch shape is the same for all arrays, so make use of `shape` and
+         * `ndim` for all slices.
+         */
         slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
         slice_ptr_w = compute_slice_ptr(idx, w_data, ndim, shape, strides_w);
         if (jobz != 'N') {
@@ -651,7 +665,13 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
             slice_ptr_B = compute_slice_ptr(idx, B_data, ndim, shape, strides_B);
         }
 
-        real_type *lapack_w = (range == 'I') ? buff_w : slice_ptr_w; // Else the data can fit directly into the return object
+        /*
+         * Cfr. comment above: when `range == 'I`` and `M < N`, the allocated return
+         * object is not large enough for the LAPACK call, hence use an intermediate
+         * buffer and copy over the relevant `M` eigenvalues afterwards.
+         */
+        real_type *lapack_w = (range == 'I' && M < N) ? buff_w : slice_ptr_w;
+
         if (!overwrite_a) {
             // XXX: can exploit the structure of `A` in some way or the other?
             copy_slice_F(buff_A, slice_ptr_A, intn, intn, strides[ndim-2], strides[ndim-1]);
@@ -713,9 +733,9 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
             goto free_exit;
         }
 
-        if (range == 'I') {
-            memcpy(slice_ptr_w, buff_w, intm * sizeof(real_type));
-        } // NB. else the data is already in place, but here it could be smaller than provisioned if `range = 'I'`
+        if (range == 'I' && M < N) {
+            memcpy(slice_ptr_w, buff_w, M * sizeof(real_type));
+        } // If condition violated the eigenvalues are already in place, cfr. previous comments.
 
         if (jobz != 'N') {
             // Copy back eigenvectors
@@ -760,7 +780,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
             }
         }
 
-        // Update the `M` to return to python side for slicing of arrays in case of `range == 'V'`
+        // Update the relevant number of eigenvalues to return to python side for slicing of arrays in case of `range == 'V'`
         *intp_M = intm;
 
     } // End of batching loop
@@ -768,7 +788,10 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
 free_exit:
     free(buffer);
     free(ibuffer);
-    free(rbuffer);
+
+    if (rbuffer != NULL) {
+        free(rbuffer);
+    }
 
     return 1;
 }
