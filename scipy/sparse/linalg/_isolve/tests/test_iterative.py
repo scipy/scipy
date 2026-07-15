@@ -319,6 +319,12 @@ def test_maxiter(case, xp, batch_A, batch_b):
 def test_convergence(case, xp, batch_A, batch_b):
     if (case.solver is tfqmr) and ("poisson2d-F" in case.name):
         pytest.skip("Struggles to converge with single precision on some platforms")
+    if (case.solver is tfqmr) and ("rand-sym-pd-F" in case.name):
+        # Numerical stability is borderline for single precision, tfqmr stagnates at a
+        # relative residual ||b - Ax||/||b|| of ~2e-2, failure yes/no depends on
+        # platform-specific rounding behavior (see, e.g., scipy#25522)
+        pytest.skip("Fails to converge with single precision on some platforms")
+
     case = xp_case(case, xp, batch_A, batch_b, rng=38)
     A = case.A
 
@@ -350,6 +356,9 @@ def test_precond_dummy(case, xp, batch_A, batch_b):
         pytest.skip("Struggles to converge with single precision")
     if (case.solver is tfqmr) and ("poisson2d-F" in case.name):
         pytest.skip("Hits divide-by-zero with single precision")
+    if (case.solver is tfqmr) and ("rand-sym-pd-F" in case.name):
+        # Numerical stability is borderline for float32 (see, scipy#25522)
+        pytest.skip("Fails to converge with single precision on some platforms")
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
 
