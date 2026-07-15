@@ -531,10 +531,12 @@ class _FunctionWrapper:
 @xp_capabilities()
 def _item_for_scalar_function(x, xp=None):
     """
-    Extract a scalar from an array-scalar, size-1 array, list, or tuple.
-    Equivalent to np.ndarray.item(), implemented via the Array API
-    standard so it works across numpy, pytorch, dask, jax, cupy, etc.,
-    and also unwraps plain Python lists/tuples.
+    Extract a value from objects with a single value.
+    e.g. 1.0, [1.0], array(1.0), array([1.0]), etc.
+    1.0 -> 1.0
+    np.array([1.0]) -> np.float64(1.0)
+    [1.0] -> 1.0
+    np.array([1.0]) -> np.array(1.0)
     """
     if xp_isscalar(x):
         return x
@@ -560,9 +562,15 @@ def _item_for_scalar_function(x, xp=None):
     xp = xp or array_namespace(x)
 
     # extract the scalar
+    if x.ndim > 1:
+        warnings.warn(
+            "Returning arrays with more than one dimension is deprecated when using"
+            " ScalarFunction.",
+            DeprecationWarning,
+            stacklevel=2
+        )
     if x.ndim != 0:
         x = xp.reshape(x, (-1,))[0]
-
     return x
 
 
