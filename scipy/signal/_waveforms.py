@@ -61,20 +61,22 @@ def sawtooth(t, width=1.):
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    y = xpx.at(y, mask1).set(xp.nan)
+    y = xp.where(mask1, xp.nan, y)
 
     # take t modulo 2*pi
     tmod = t % (2*xp.pi)
 
     # on the interval 0 to width*2*pi function is tmod / (pi*w) - 1
     mask2 = ~mask1 & (tmod < w*2*xp.pi)
-    y = xpx.at(y, mask2).set(tmod[mask2]/(xp.pi*w[mask2]) - 1)
+    one = xp.asarray(1, dtype=t.dtype)
+    safe_w = xp.where(w == 0, one, w)
+    y = xp.where(mask2, (tmod - xp.pi*safe_w)/(xp.pi*safe_w), y)
 
     # on the interval width*2*pi to 2*pi function is (pi*(w+1)-tmod) / (pi*(1-w))
     mask3 = ~(mask1 | mask2)
-    y = xpx.at(y, mask3).set(
-        (xp.pi*(w[mask3] + 1) - tmod[mask3])/(xp.pi*(1 - w[mask3]))
-    )
+    safe_1mw = xp.where(w == 1, one, 1 - w)
+    y = xp.where(mask3, (xp.pi*(w + 1) - tmod)/(xp.pi*safe_1mw), y)
+
     return y
 
 
