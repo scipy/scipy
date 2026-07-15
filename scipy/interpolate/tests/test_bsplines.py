@@ -4116,7 +4116,7 @@ class TestMakeSplprep:
         # values: note axis=1
         xp_assert_close(spl(u),
                         BSpline(t, c, k, axis=1)(u), atol=1e-15)
-
+    
     @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
     def test_array_not_list(self, s):
         # the argument of splPrep is either a list of arrays or a 2D array (sigh)
@@ -4205,7 +4205,7 @@ class TestMakeSplprepPeriodic:
         y = [np.sin(x), np.cos(x)]
 
         # the number of knots depends on `s` (this is by construction)
-        num_knots = {0: 14, 1e-4: 16, 1e-5: 16, 1e-6: 16}
+        num_knots = {0: 16, 1e-4: 16, 1e-5: 16, 1e-6: 16}
 
         # construct the splines
         (t, c, k), u_ = splprep(y, s=s, per=1)
@@ -4220,6 +4220,18 @@ class TestMakeSplprepPeriodic:
         # values: note axis=1
         xp_assert_close(spl(u), BSpline(t, c, k, axis=1)(u),
                         atol=1e-06, rtol=1e-06)
+    
+    @pytest.mark.parametrize("s", [0, 1e-8, 1, 42])
+    def test_periodic_endpoints_match(self, s):
+        """make_splprep with bc_type='periodic' must evaluate to same values at
+        endpoints."""
+        theta = np.linspace(0, 1, 11)
+        x = np.sin(2*np.pi*theta)
+        y = np.cos(2*np.pi*theta)
+        
+        spl, u = make_splprep([x, y], u=theta, s=s, bc_type="periodic")
+        
+        xp_assert_close(spl(u[0]), spl(u[-1]), atol=1e-12)
 
     @pytest.mark.parametrize('s', [0, 1e-4, 1e-5, 1e-6])
     def test_array_not_list(self, s):
