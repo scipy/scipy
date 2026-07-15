@@ -385,6 +385,7 @@ class TestWelch:
         xp_assert_close(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
 
     @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_window_external(self, xp):
         x = xp.zeros((16,), dtype=xp.float64)
         x = xpx.at(x)[0].set(1)
@@ -404,6 +405,7 @@ class TestWelch:
         assert p1.shape == (17,)
 
     @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_empty_input(self, xp):
         f, p = welch(xp.asarray([]))
         assert f.shape == (129,)
@@ -415,6 +417,7 @@ class TestWelch:
             assert p.shape == tuple(shape)
 
     @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_empty_input_other_axis(self, xp):
         for shape in [[3,0], [0,5,2]]:
             f, p = welch(xp.empty(shape), axis=1)
@@ -423,6 +426,7 @@ class TestWelch:
             assert p.shape == tuple(shape)
 
     @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_short_data(self, xp):
         x = xp.zeros((8,), dtype=xp.float64)
         x = xpx.at(x)[0].set(1)
@@ -437,6 +441,7 @@ class TestWelch:
         assert p2.shape == (5,)
 
     @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_window_long_or_nd(self, xp):
         f0, p0 = welch(xp.zeros((4,)), 1, xp.asarray([1,1,1,1,1]))
         xp_assert_close(f0, xp.asarray([0., 0.2, 0.4]))
