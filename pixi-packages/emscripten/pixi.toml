@@ -1,0 +1,50 @@
+[workspace]
+channels = ["https://prefix.dev/emscripten-forge-4x", "https://prefix.dev/conda-forge"]
+platforms = ["linux-64", "emscripten-wasm32"]
+preview = ["pixi-build"]
+
+[dependencies]
+python = "*"
+scipy.path = "."
+
+[workspace.build-variants]
+python = ["3.13.*"]
+
+[package]
+name = "scipy"
+version = "1.18.0"
+
+[package.build.backend]
+name = "pixi-build-python"
+
+[package.build.source]
+git = "https://github.com/ianthomas23/scipy"
+branch = "v1.18.0-emforge"
+
+[package.build.config]
+compilers = ["c", "cxx"]
+extra-args = [
+  '-Csetup-args="--cross-file=$RECIPE_DIR/emscripten.meson.cross"',
+  '-Csetup-args="-Duse-pythran=false"',
+  '-Csetup-args="-D_without-fortran=true"',
+  # '-Cbuild-dir="_build"', useful locally
+]
+installer = "pip" # no `uv` on emscripten-wasm32
+
+[package.build.config.env]
+# are these workarounds that can be removed at some point?
+PKG_CONFIG_PATH = "$PREFIX/lib/python3.13/site-packages/numpy/_core/lib/pkgconfig"
+LD_LIBRARY_PATH = "$BUILD_PREFIX/lib"
+
+[package.build-dependencies]
+python = "*"
+cross-python_emscripten-wasm32 = "*"
+cython = "*"
+meson-python = "*"
+numpy = "*"
+pkg-config = "*"
+
+[package.host-dependencies]
+numpy = "*"
+openblas = "*"
+pybind11 = "*"

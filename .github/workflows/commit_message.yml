@@ -32,7 +32,7 @@ jobs:
         # and changing the output here based on the combination of tags (if desired).
         run: |
           set -xe
-          RUN="1"
+          RUN="0" # turn off other jobs for now
           # For running a job locally with Act (https://github.com/nektos/act),
           # always run the job rather than skip based on commit message
           if [[ $ACT != true ]]; then
