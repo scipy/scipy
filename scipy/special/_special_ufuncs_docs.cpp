@@ -3044,8 +3044,8 @@ const char *ellipj_doc = R"(
 
     Jacobi elliptic functions.
 
-    Calculates the Jacobi elliptic functions of parameter `m` between
-    0 and 1, and real argument `u`.
+    Calculates the Jacobi elliptic functions of parameter `m` less than or equal to
+    1, and real argument `u`.
 
     Parameters
     ----------
