@@ -147,10 +147,11 @@ class TestUtils:
             qmc.discrepancy(sample, method="toto")
 
     @pytest.mark.skipif(
-            IS_WASM,
-            reason="thread constructor's C destructor crashes "
-                   "during pytest GC cleanup under WASM"
-                )
+        IS_WASM,
+        reason="spawns worker threads whose C-level destructor triggers a fatal "
+               "interpreter crash during pytest's GC cleanup under WASM. See "
+               "pyodide/pyodide-recipes#619"
+    )
     def test_discrepancy_parallel(self, monkeypatch):
         sample = np.array([[2, 1, 1, 2, 2, 2],
                            [1, 2, 2, 2, 2, 2],
