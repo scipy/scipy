@@ -480,8 +480,82 @@ cdef inline double eval_hermitenorm(Py_ssize_t n, double x) noexcept nogil:
 # Hermite (physicist's)
 #-----------------------------------------------------------------------------
 
+cdef extern from *:
+    """
+    /* Binary64 round-trip decimal representations of 2**(n/2.0),
+       generated for n = 0..63. */
+    static const double eval_hermite_scales[64] = {
+        1.0,
+        1.4142135623730951,
+        2.0,
+        2.8284271247461903,
+        4.0,
+        5.6568542494923806,
+        8.0,
+        11.313708498984761,
+        16.0,
+        22.627416997969522,
+        32.0,
+        45.254833995939045,
+        64.0,
+        90.509667991878089,
+        128.0,
+        181.01933598375618,
+        256.0,
+        362.03867196751236,
+        512.0,
+        724.07734393502471,
+        1024.0,
+        1448.1546878700494,
+        2048.0,
+        2896.3093757400989,
+        4096.0,
+        5792.6187514801977,
+        8192.0,
+        11585.237502960395,
+        16384.0,
+        23170.475005920791,
+        32768.0,
+        46340.950011841582,
+        65536.0,
+        92681.900023683163,
+        131072.0,
+        185363.80004736633,
+        262144.0,
+        370727.60009473265,
+        524288.0,
+        741455.20018946531,
+        1048576.0,
+        1482910.4003789306,
+        2097152.0,
+        2965820.8007578612,
+        4194304.0,
+        5931641.6015157225,
+        8388608.0,
+        11863283.203031445,
+        16777216.0,
+        23726566.40606289,
+        33554432.0,
+        47453132.81212578,
+        67108864.0,
+        94906265.624251559,
+        134217728.0,
+        189812531.24850312,
+        268435456.0,
+        379625062.49700624,
+        536870912.0,
+        759250124.99401248,
+        1073741824.0,
+        1518500249.988025,
+        2147483648.0,
+        3037000499.9760499
+    };
+    """
+    const double eval_hermite_scales[64]
+
 @cython.cdivision(True)
 cdef inline double eval_hermite(Py_ssize_t n, double x) noexcept nogil:
+    cdef double scale
     if n < 0:
         sf_error.error(
             "eval_hermite",
@@ -489,4 +563,8 @@ cdef inline double eval_hermite(Py_ssize_t n, double x) noexcept nogil:
             "polynomial only defined for nonnegative n",
         )
         return NAN
-    return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)
+    if n < 64:
+        scale = eval_hermite_scales[n]
+    else:
+        scale = 2**(n/2.0)
+    return eval_hermitenorm(n, sqrt(2)*x) * scale

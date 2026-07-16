@@ -247,6 +247,13 @@ def test_hermite_domain():
     assert np.isnan(_ufuncs.eval_hermitenorm(-1, 1.0))
 
 
+@pytest.mark.parametrize("n", [*range(64), 64, 65, 127])
+@pytest.mark.parametrize("x", [0.25, np.array([-1.5, -0.25, 0.0, 0.5, 1.5])])
+def test_hermite_scale_relation(n, x):
+    expected = _ufuncs.eval_hermitenorm(n, np.sqrt(2) * x) * 2**(n / 2.0)
+    assert_allclose(_ufuncs.eval_hermite(n, x), expected, rtol=1e-14, atol=0)
+
+
 @pytest.mark.parametrize("n", [0, 1, 2])
 @pytest.mark.parametrize("x", [0, 1, np.nan])
 def test_hermite_nan(n, x):
