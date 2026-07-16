@@ -4116,7 +4116,6 @@ class TestMakeSplprep:
         # values: note axis=1
         xp_assert_close(spl(u),
                         BSpline(t, c, k, axis=1)(u), atol=1e-15)
-    
     @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
     def test_array_not_list(self, s):
         # the argument of splPrep is either a list of arrays or a 2D array (sigh)
