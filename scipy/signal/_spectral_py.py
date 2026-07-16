@@ -408,6 +408,17 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     for a discussion of the scalings of the power spectral density and
     the magnitude (squared) spectrum.
 
+    .. versionchanged:: 1.19.0
+
+        From this version on, signals which are shorter than `nperseg` are always
+        zero-padded to the appropriate length. Before:
+
+        * If signal `x` had no elements, the returned `f` and `Pxy` had zero size.
+        * If `window` was a string or tuple and if `x` was shorter than the window
+          length (i.e., `nfft`), the window length was shortened.
+        * If `window` was an array and if `x` was shorter than `nfft`, a
+          ``ValueError`` was raised.
+
     .. versionadded:: 0.12.0
 
     Examples
@@ -574,6 +585,18 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
     for a discussion of the scalings of the power spectral density and
     the (squared) magnitude spectrum.
 
+    .. versionchanged:: 1.19.0
+
+        From this version on, signals which are shorter than `nperseg` are always
+        zero-padded to the appropriate length. Before:
+
+        * If signal `x` had no elements, the returned `f` and `Pxy` had zero size.
+        * If `window` was a string or tuple and if `x` was shorter than the window
+          length (i.e., `nperseg`), the window length was shortened.
+        * If `window` was an array and if `x` was shorter than `nperseg`, a
+          ``ValueError`` was raised.
+
+
     .. versionadded:: 0.12.0
 
     References
@@ -713,7 +736,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         Selects between computing the cross spectral density ('density')
         where `Pxy` has units of V²/Hz and computing the cross spectrum
         ('spectrum') where `Pxy` has units of V², if `x` and `y` are
-        measured in V and `fs` is measured in Hz. Defaults to 'density'
+        measured in V and `fs` is measured in Hz. Defaults to 'density'.
     axis : int, optional
         Axis along which the CSD is computed for both inputs; the
         default is over the last axis (i.e. ``axis=-1``).
@@ -783,6 +806,18 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
       ``Sx[q,p]``, ``Sy[q,p]`` are the STFTs of `x` and `y`. Also, the window
       positioning is different.
 
+    .. versionchanged:: 1.19.0
+
+        From this version on, signals which are shorter than `nperseg` are always
+        zero-padded to the appropriate length. Before:
+
+        * If either `x` or `y` had no elements, the returned `f` and `Pxy` had zero
+          size.
+        * If `window` was a string or tuple and if `x` and `y` were shorter than the
+          window length (i.e., `nperseg`), the window length was shortened.
+        * If `window` was an array and if `x` and `y` were shorter than `nperseg`, a
+          ``ValueError`` was raised.
+
     .. versionadded:: 0.16.0
 
     References
@@ -842,8 +877,8 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     the code snippet above and the `csd` function may deviate due to implementation
     details.
 
-    Note that the code snippet above can be easily adapted to determine other
-    statistical properties than the mean value.
+    Note that the code snippet above can be easily adapted to determine
+    statistical properties other than the mean value.
     """
     if isinstance(window, str | tuple): # use get_window():
         nperseg = int(nperseg) if nperseg is not None else 256
@@ -1956,6 +1991,18 @@ def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
     50% is a reasonable trade-off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
+
+    .. versionchanged:: 1.19.0
+
+        From this version on, signals which are shorter than `nperseg` are always
+        zero-padded to the appropriate length. Before:
+
+        * If either `x` or `y` had no elements, the returned `f` and `Pxy` had zero
+          size.
+        * If `window` was a string or tuple and if `x` and `y` were shorter than the
+          window length (i.e., `nperseg`), the window length was shortened.
+        * If `window` was an array and if `x` and `y` were shorter than `nperseg`, a
+          ``ValueError`` was raised.
 
     .. versionadded:: 0.16.0
 
