@@ -563,6 +563,7 @@ def _item_for_scalar_function(x, xp=None):
 
     # extract the scalar
     if x.ndim > 1:
+        # Deprecationwarning added in 1.19
         warnings.warn(
             "Returning arrays with more than one dimension is deprecated when using"
             " ScalarFunction.",
