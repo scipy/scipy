@@ -29,7 +29,7 @@ API Reference
    scipy.special <special>
    scipy.stats <stats>
 
-The SciPy functionality is organized into :ref:`submodules <submodule_list>`, whereas
+SciPy's functionality is organized into :ref:`submodules <submodule_list>`, whereas
 the :ref:`main namespace <main_namespace>` (``scipy``) only has a few utility functions.
 In SciPy, most functions and classes are self-contained and are straightforward to use,
 e.g.:
@@ -52,18 +52,16 @@ modules <design_conventions_modules>`.
 
 Submodules
 ==========
-The ``_lib`` submodule is designated for internal use only and may change without notice.
-The ``misc`` submodule is deprecated and does not contain functions anymore. The public
-submodules have the following structure:
+The public submodules have the following structure:
 
 +---+---+-------------------------------------------------------------------+
 | :ref:`scipy <main_namespace>` Main namespace                              |
 +---+---+-------------------------------------------------------------------+
 |   | `scipy.cluster` Clustering algorithms                                 |
 +---+---+-------------------------------------------------------------------+
-|   |   | `scipy.cluster.vq` K-means clustering and vector quantization     |
-+---+---+-------------------------------------------------------------------+
 |   |   | `scipy.cluster.hierarchy` Hierarchical clustering                 |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.cluster.vq` K-means clustering and vector quantization     |
 +---+---+-------------------------------------------------------------------+
 |   | `scipy.constants` Physical and mathematical constants                 |
 +---+---+-------------------------------------------------------------------+
@@ -93,11 +91,11 @@ submodules have the following structure:
 +---+---+-------------------------------------------------------------------+
 |   |   | `scipy.linalg.cython_blas` BLAS Functions for Cython              |
 +---+---+-------------------------------------------------------------------+
+|   |   | `scipy.linalg.interpolative` Interpolative matrix decomposition   |
++---+---+-------------------------------------------------------------------+
 |   |   | `scipy.linalg.lapack` Low-level LAPACK functions                  |
 +---+---+-------------------------------------------------------------------+
 |   |   | `scipy.linalg.cython_lapack` LAPACK functions for Cython          |
-+---+---+-------------------------------------------------------------------+
-|   |   | `scipy.linalg.interpolative` Interpolative matrix decomposition   |
 +---+---+-------------------------------------------------------------------+
 |   | `scipy.ndimage` Multidimensional image processing                     |
 +---+---+-------------------------------------------------------------------+
@@ -113,9 +111,9 @@ submodules have the following structure:
 +---+---+-------------------------------------------------------------------+
 |   | `scipy.sparse` Sparse linear algebra                                  |
 +---+---+-------------------------------------------------------------------+
-|   |   | `scipy.sparse.linalg` Sparse linear algebra                       |
-+---+---+-------------------------------------------------------------------+
 |   |   | `scipy.sparse.csgraph` Compressed sparse graph routines           |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.sparse.linalg` Sparse linear algebra                       |
 +---+---+-------------------------------------------------------------------+
 |   | `scipy.spatial` Spatial algorithms and data structures                |
 +---+---+-------------------------------------------------------------------+
@@ -135,6 +133,9 @@ submodules have the following structure:
 +---+---+-------------------------------------------------------------------+
 |   |   | `scipy.stats.sampling` Random Number Generators                   |
 +---+---+-------------------------------------------------------------------+
+
+The ``misc`` submodule is deprecated and does not contain functions anymore.
+
 
 .. _main_namespace:
 
