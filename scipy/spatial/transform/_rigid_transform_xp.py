@@ -312,7 +312,7 @@ def mean(
 
 def setitem(
     matrix: Array,
-    indexer: Array | int | tuple | slice | EllipsisType | None,
+    indexer: Array | int | tuple | slice | EllipsisType,
     value: Array,
 ) -> Array:
     xp = array_namespace(matrix)

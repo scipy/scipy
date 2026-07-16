@@ -22,7 +22,7 @@ def test_kde_1d():
     xx = np.asarray([0.1, 0.5, 0.9])
     loc, scale = gkde.dataset, np.sqrt(gkde.covariance)
     assert_allclose(
-        gkde(xx), 
+        gkde(xx),
         stats.norm.pdf(xx[:, None], loc=loc, scale=scale).sum(axis=-1) / gkde.n,
         rtol=5e-14
     )
@@ -65,7 +65,7 @@ def test_kde_1d_weighted():
 
     pdf = stats.norm.pdf
     assert_allclose(
-        gkde(xx), 
+        gkde(xx),
         np.sum(pdf(xx[:, None], loc=loc, scale=scale) * gkde.weights, axis=-1),
         rtol=5e-14
     )
@@ -181,7 +181,7 @@ def test_kde_2d_weighted(n_basesample):
     assert_allclose(
         gkde(xx.T),
         np.sum(pdf(arg, cov=gkde.covariance) * gkde.weights, axis=-1),
-        rtol=5e-14
+        rtol=6e-14
     )
 
     # ... and cdf

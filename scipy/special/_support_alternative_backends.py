@@ -15,7 +15,6 @@ from . import _basic
 from . import _spfun_stats
 from . import _ufuncs
 
-# mypy: disable-error-code=dict-item
 
 def _special_namespace_for(xp):
     spx = scipy_namespace_for(xp)

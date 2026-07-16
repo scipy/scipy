@@ -6,7 +6,7 @@ from scipy.linalg.lapack import HAS_ILP64
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
-from . import _propack  # type: ignore[attr-defined]
+from . import _propack
 
 
 _lansvd_dict = {

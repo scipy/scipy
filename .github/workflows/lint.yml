@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: 0 # previous commits used in tools/lint.py
+          fetch-depth: 0 # previous commits used in tools/linting/lint.py
           submodules: recursive
           persist-credentials: false
 

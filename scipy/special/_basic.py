@@ -1647,20 +1647,69 @@ def mathieu_even_coef(m, q):
     -------
     Ak : ndarray
         Even or odd Fourier coefficients, corresponding to even or odd m.
+        The number of coefficients returned is determined by an empirical formula
+        that depends on `m` and `q` [1]_.
+
+    See Also
+    --------
+    mathieu_cem
+    mathieu_odd_coef
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
+           Original source code hosted by John Burkardt:
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/28.4#i
 
+    Examples
+    --------
+    We use the Fourier coefficients to construct an approximation of
+    ``mathieu_cem(5, 14, x)``, the even Mathieu function of order `m = 5` and
+    parameter `q = 14`.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import mathieu_even_coef, mathieu_cem
+    >>> m = 5
+    >>> q = 14
+
+    ``a`` holds the Fourier coefficients.  As noted above, the number of
+    coefficients returned by ``mathieu_even_coef(m, q)`` is based on an
+    empirical formula that depends on `m` and `q`.  In this case, we get
+    29 coefficients.
+
+    >>> a = mathieu_even_coef(m, q)
+    >>> a.shape
+    (29,)
+
+    Sum the Fourier cosine series on a grid of ``x`` values.
+
+    >>> period = 180 if m % 2 == 0 else 360
+    >>> x = np.linspace(0, period, 5000)             # x has shape (5000,)
+    >>> k = np.arange(len(a)).reshape((-1, 1))       # k has shape (len(a), 1)
+    >>> c = np.cos((2*k + m % 2) * (np.pi/180) * x)  # c has shape (len(a), 5000)
+    >>> y = a @ c                                    # y has shape (5000,)
+
+    Plot the approximation, along with the function computed directly by
+    ``mathieu_cem(m, q, x)``.
+
+    >>> plt.plot(x, y, 'k--', label="Fourier sum")
+    >>> ce, _dce = mathieu_cem(m, q, x)
+    >>> plt.plot(x, ce, alpha=0.35, linewidth=3.5, label="mathieu_cem")
+    >>> plt.grid(True)
+    >>> plt.title(f'Mathieu Function $\\rm{{ce_{m}}}(x, {q})$')
+    >>> plt.xlabel('x [degrees]')
+    >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
-    if (q < 0):
-        raise ValueError("q >=0")
+    if q < 0:
+        raise ValueError(f"q must not be less than 0; got {q = }.")
     if (m != floor(m)) or (m < 0):
         raise ValueError("m must be an integer >=0.")
 
@@ -1708,18 +1757,69 @@ def mathieu_odd_coef(m, q):
     -------
     Bk : ndarray
         Even or odd Fourier coefficients, corresponding to even or odd m.
+        The number of coefficients returned is determined by an empirical formula
+        that depends on `m` and `q` [1]_.
+
+    See Also
+    --------
+    mathieu_sem
+    mathieu_even_coef
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
+           Original source code hosted by John Burkardt:
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/28.4#i
 
+    Examples
+    --------
+    We use the Fourier coefficients to construct an approximation of
+    ``mathieu_sem(5, 11, x)``, the odd Mathieu function of order `m = 5` and
+    parameter `q = 11`.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import mathieu_odd_coef, mathieu_sem
+    >>> m = 5
+    >>> q = 11
+
+    ``b`` holds the Fourier coefficients.  As noted above, the number of
+    coefficients returned by ``mathieu_odd_coef(m, q)`` is based on an
+    empirical formula that depends on `m` and `q`.  In this case, we get
+    28 coefficients.
+
+    >>> b = mathieu_odd_coef(m, q)
+    >>> b.shape
+    (28,)
+
+    Sum the Fourier sine series on a grid of ``x`` values.
+
+    >>> period = 180 if m % 2 == 0 else 360
+    >>> x = np.linspace(0, period, 5000)               # x has shape (5000,)
+    >>> k = np.arange(1, len(b) + 1).reshape((-1, 1))  # k has shape (len(b), 1)
+    >>> c = np.sin((2*k - m % 2) * (np.pi/180) * x)    # c has shape (len(b), 5000)
+    >>> y = b @ c                                      # y has shape (5000,)
+
+    Plot the approximation, along with the function computed directly by
+    ``mathieu_sem(m, q, x)``.
+
+    >>> plt.plot(x, y, 'k--', label="Fourier sum")
+    >>> se, _sce = mathieu_sem(m, q, x)
+    >>> plt.plot(x, se, alpha=0.35, linewidth=3.5, label="mathieu_sem")
+    >>> plt.grid(True)
+    >>> plt.title(f'Mathieu Function $\\rm{{se_{m}}}(x, {q})$')
+    >>> plt.xlabel('x [degrees]')
+    >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
-    if (q < 0):
-        raise ValueError("q >=0")
+    if q < 0:
+        raise ValueError(f"q must not be less than 0; got {q = }.")
     if (m != floor(m)) or (m <= 0):
         raise ValueError("m must be an integer > 0")
 

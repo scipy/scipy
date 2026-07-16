@@ -120,7 +120,7 @@ solve-group = "debug"
 features = ["lint", "default-platforms"]
 
 [environments.typecheck]
-# tasks: mypy, pyrefly
+# tasks: pyrefly
 features = ["typecheck", "run-deps", "test-deps", "default-platforms"]
 
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
@@ -228,7 +228,7 @@ solve-group = "mkl-ilp64"
 
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs", "default-platforms"]
+features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs", "osx-platform"]
 
 [environments.scipy-openblas32]
 # tasks: build-scipy-openblas32, test-scipy-openblas32
@@ -252,7 +252,10 @@ no-default-feature = true
 
 [feature.default-platforms]
 # this feature can be included in any environment to exclude all other platforms
-platforms = ["linux-64", "osx-arm64", "win-64"]
+platforms = ["linux-64", "osx-arm64", "win-64", "linux-aarch64"]
+
+[feature.osx-platform]
+platforms = ["osx-arm64"]
 
 
 ### Default dependencies (included in all environments by default) ###
@@ -367,7 +370,6 @@ description = "Test SciPy with `fail-slow=1.0`"
 
 [feature.typecheck.dependencies]
 # type checkers
-mypy = "==2.1.0"
 pyrefly = "==1.1.1"
 # typing deps
 typing_extensions = "*"
@@ -382,11 +384,8 @@ dask = "*"
 matplotlib = "*"
 pybind11 = "*"
 sphinx = "*"
-
-[feature.typecheck.tasks.mypy]
-cmd = "spin mypy --no-build"
-depends-on = "build"
-description = "Run mypy type checks"
+sympy = "*"
+uarray = "*"
 
 [feature.typecheck.tasks.pyrefly]
 cmd = "pyrefly check"
@@ -504,7 +503,7 @@ description = "Run main lint checks"
 
 [feature.lint.tasks.check-python-h]
 cmd = "python check_python_h_first.py"
-cwd = "tools"
+cwd = "tools/linting"
 description = "Check that `Python.h` is included before any stdlib headers"
 
 [feature.lint.tasks.tach-check]
@@ -750,7 +749,7 @@ jaxlib = { version = "*", build = "*cpu*" }
 
 [feature.jax-cpu-tasks]
 # Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
-platforms = ["linux-64", "osx-arm64"]
+platforms = ["linux-64", "osx-arm64", "linux-aarch64"]
 
 [feature.jax-cpu-tasks.tasks.test-jax]
 cmd = "spin test --no-build --build-dir=build-cpu -b jax.numpy -m 'array_api_backends and not slow'"

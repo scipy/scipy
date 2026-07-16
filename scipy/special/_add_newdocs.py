@@ -24,54 +24,6 @@ add_newdoc("_sf_error_test_function",
     """)
 
 
-add_newdoc("_cosine_cdf",
-    """
-    _cosine_cdf(x)
-
-    Cumulative distribution function (CDF) of the cosine distribution::
-
-                 {             0,              x < -pi
-        cdf(x) = { (pi + x + sin(x))/(2*pi),   -pi <= x <= pi
-                 {             1,              x > pi
-
-    Parameters
-    ----------
-    x : array_like
-        `x` must contain real numbers.
-
-    Returns
-    -------
-    scalar or ndarray
-        The cosine distribution CDF evaluated at `x`.
-
-    """)
-
-add_newdoc("_cosine_invcdf",
-    """
-    _cosine_invcdf(p)
-
-    Inverse of the cumulative distribution function (CDF) of the cosine
-    distribution.
-
-    The CDF of the cosine distribution is::
-
-        cdf(x) = (pi + x + sin(x))/(2*pi)
-
-    This function computes the inverse of cdf(x).
-
-    Parameters
-    ----------
-    p : array_like
-        `p` must contain real numbers in the interval ``0 <= p <= 1``.
-        `nan` is returned for values of `p` outside the interval [0, 1].
-
-    Returns
-    -------
-    scalar or ndarray
-        The inverse of the cosine distribution CDF evaluated at `p`.
-
-    """)
-
 add_newdoc("_ellip_harm",
     """
     Internal function, use `ellip_harm` instead.
@@ -122,6 +74,35 @@ add_newdoc("bdtr",
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 16 times.  What is the probability that
+    the number of heads is less than or equal to 5?
+
+    Let X be the number of heads.  We want to find the probability that
+    X <= `k`, given `k` is 5, the total number of flips `n` is 16 and
+    the probability `p` of heads for a single flip is 0.525.
+    This is what ``bdtr(k, n, p)`` computes:
+
+    >>> from scipy.special import bdtr
+
+    >>> bdtr(5, 16, 0.525)
+    np.float64(0.07281293895810999)
+
+    The following plot shows the graph of ``bdtr(k, 16, 0.525)``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> n = 16
+    >>> p = 0.525
+    >>> k = np.arange(n + 1)
+    >>> plt.plot(k, bdtr(k, n, p), 'o')
+    >>> plt.grid(True)
+    >>> plt.xlabel('k')
+    >>> plt.title(f"bdtr(k, {n}, {p})")
+    >>> plt.show()
     """)
 
 add_newdoc("bdtrc",
@@ -174,6 +155,35 @@ add_newdoc("bdtrc",
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 16 times.  What is the probability that
+    the number of heads is greater than 10?
+
+    Let X be the number of heads.  We want to find the probability that
+    X > `k`, given `k` is 10, the total number of flips `n` is 16 and the
+    probability `p` of heads in a single flip is 0.525.  This is what
+    ``bdtrc(k, n, p)`` computes:
+
+    >>> from scipy.special import bdtrc
+
+    >>> bdtrc(10, 16, 0.525)
+    np.float64(0.14643065267555583)
+
+    The following plot shows the graph ``bdtrc(k, 16, 0.525)``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> n = 16
+    >>> p = 0.525
+    >>> k = np.arange(n + 1)
+    >>> plt.plot(k, bdtrc(k, n, p), 'o')
+    >>> plt.grid(True)
+    >>> plt.xlabel('k')
+    >>> plt.title(f"bdtrc(k, {n}, {p})")
+    >>> plt.show()
     """)
 
 add_newdoc("bdtri",
@@ -221,13 +231,35 @@ add_newdoc("bdtri",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            https://netlib.org/cephes/
+
+    Examples
+    --------
+    An "unfair" coin is to be created that has probability `p` of showing
+    heads when flipped.  What is the value of `p` that will ensure that
+    the probability of getting heads at most once in 4 tosses is 0.5?
+
+    Let X be the number of heads. We want to find `p` such that the probability
+    that X <= `k` is `y`, where `k` is 1, the total number of flips `n` is 4,
+    and the cumulative probability `y` is 0.5. This is what ``bdtri(k, n, y)``
+    computes:
+
+    >>> from scipy.special import bdtri, bdtr
+
+    >>> p = bdtri(1, 4, 0.5)
+    >>> p
+    np.float64(0.3857275681323896)
+
+    Verify the result:
+
+    >>> bdtr(1, 4, p)  # Should be 0.5.
+    np.float64(0.5)
     """)
 
 add_newdoc("bdtrik",
     """
     bdtrik(y, n, p, out=None)
 
-    Inverse function to `bdtr` with respect to `k`.
+    Binomial distribution quantile.
 
     Finds the number of successes `k` such that the sum of the terms 0 through
     `k` of the Binomial probability density for `n` events with probability
@@ -252,17 +284,15 @@ add_newdoc("bdtrik",
 
     See Also
     --------
-    bdtr
+    bdtr : Binomial distribution cumulative distribution function
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
+    Formula 26.5.24 of [1]_ is used to reduce the binomial
     distribution to the cumulative incomplete beta distribution.
 
-    Computation of `k` involves a search for a value that produces the desired
-    value of `y`. The search relies on the monotonicity of `y` with `k`.
-
-    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
+    This function uses routines from the Boost.Math C++ library [3]_ which rely
+    on numerical inversion of the binomial distribution CDF [4]_.
 
     References
     ----------
@@ -271,10 +301,48 @@ add_newdoc("bdtrik",
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17.5#E5
-    .. [3] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [3] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [4] https://www.boost.org/doc/libs/latest/libs/math/doc/html/math_toolkit/dist_ref/dists/binomial_dist.html
 
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 8 times.  Find the largest value of `k`
+    such that the probability that X <= `k` is not greater than 0.2, where
+    X is the number of heads.
+
+    In fact, there is no integer value of `k` that will give a probability
+    of *exactly* 0.2, as this plot of the cumulative distribution function shows.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import bdtr, bdtrik
+
+    >>> n = 8
+    >>> p = 0.525
+    >>> k = np.arange(0, n + 1)
+    >>> plt.plot(k, bdtr(k, n, p), 'o')
+    >>> plt.grid(True, alpha=0.5)
+    >>> plt.xlabel('k')
+    >>> plt.axhline(0.2, linestyle='--', color='k', alpha=0.5)
+    >>> plt.title(f"bdtr(k, {n}, {p})")
+    >>> plt.show()
+
+    From the graph we can see that we would choose `k` = 2.  The function
+    ``bdtrik`` lets us find this value directly.
+
+    ``bdtrik`` returns a floating point value that is like a continuous
+    extension of `k`.  This computes `k` as a noninteger floating point value:
+
+    >>> bdtrik(0.2, n, p)
+    np.float64(2.508332751475262)
+
+    For our final answer we need an integer `k`, and since we want to ensure
+    that the probability at `k` does not exceed 0.2, we truncate the fractional
+    part of this value with ``np.floor``:
+
+    >>> np.floor(bdtrik(0.2, n, p))
+    np.float64(2.0)
     """)
 
 add_newdoc("bdtrin",

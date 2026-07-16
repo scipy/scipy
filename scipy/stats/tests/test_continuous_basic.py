@@ -108,8 +108,7 @@ case1 = (
 )
 case2 = ([1, 1], [0, 1, 10])  # unequal width bins
 for (a, bins), density in itertools.product([case1, case2], [True, False]):
-    # mypy accepts `density={False,True}` here, but not `density=density`
-    _hist = np.histogram(a, bins=bins, density=density)  # type: ignore[call-overload]
+    _hist = np.histogram(a, bins=bins, density=density)
     _rv_hist = stats.rv_histogram(_hist, density=density)
     histogram_test_instances.append((_rv_hist, tuple()))
 

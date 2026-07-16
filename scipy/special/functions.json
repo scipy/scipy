@@ -1,14 +1,4 @@
 {
-    "_cosine_cdf": {
-        "_cosine.h": {
-            "cosine_cdf": "d->d"
-        }
-    },
-    "_cosine_invcdf": {
-        "_cosine.h": {
-            "cosine_invcdf": "d->d"
-        }
-    },
     "_ellip_harm": {
         "_ellip_harm.pxd": {
             "ellip_harmonic": "ddiiddd->d"

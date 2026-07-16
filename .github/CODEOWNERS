@@ -62,7 +62,7 @@ scipy/stats/_survival.py  @tupui @mdhaber
 scipy/stats/.unuran/  @tirthasheshpatel
 
 # Testing infrastructure
-tools/refguide_check.py  @ev-br
+tools/refguide/refguide_check.py  @ev-br
 tools/  @larsoner @rgommers
 pytest.ini  @larsoner
 .coveragerc  @larsoner

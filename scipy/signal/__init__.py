@@ -311,8 +311,6 @@ use the classes to create a reusable function instead.
 """
 # bring in the public functionality from private namespaces
 
-# mypy: ignore-errors
-
 from ._support_alternative_backends import *
 from . import _support_alternative_backends
 __all__ = _support_alternative_backends.__all__

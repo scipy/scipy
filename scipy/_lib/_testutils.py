@@ -5,6 +5,7 @@ Generic test utilities.
 
 import inspect
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -39,7 +40,12 @@ else:
             cython = None
 
 
-__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL']
+__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL',
+           'IS_WASM']
+
+
+IS_WASM = (sys.platform == "emscripten"
+           or platform.machine() in ("wasm32", "wasm64"))
 
 
 IS_MUSL = False
