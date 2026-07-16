@@ -36,6 +36,16 @@ def _check_c1_c2(c1, c2):
 # Minpack's Wolfe line and scalar searches
 #------------------------------------------------------------------------------
 
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "would need lazy_xp_function to avoid dask.compute"),
+        (
+            "jax.numpy",
+            "would need to convert Python float to sclar arrays and jax control flow "
+            "logic (if -> xp.where)"
+        ),
+    ]
+)
 def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
                        old_fval=None, old_old_fval=None,
                        args=(), c1=1e-4, c2=0.9, amax=50, amin=1e-8,
@@ -82,6 +92,7 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
        286-307. doi:`10.1145/192115.192132`
 
     """
+    array_namespace(xk, pk, gfk)
     if gfk is None:
         gfk = fprime(xk, *args)
 
@@ -89,13 +100,13 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
     gc = [0]
     fc = [0]
 
-    def phi(s):
+    def phi(alpha):
         fc[0] += 1
-        return f(xk + s*pk, *args)
+        return f(xk + alpha*pk, *args)
 
-    def derphi(s):
-        gval[0] = fprime(xk + s*pk, *args)
+    def derphi(alpha):
         gc[0] += 1
+        gval[0] = fprime(xk + alpha*pk, *args)
         return gval[0] @ pk
 
     derphi0 = gfk @ pk
@@ -162,6 +173,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
 
     if phi0 is None:
         phi0 = phi(0.)
+
     if derphi0 is None:
         derphi0 = derphi(0.)
 
@@ -267,7 +279,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     Notes
     -----
     Uses the line search algorithm to enforce strong Wolfe conditions. See algorithms
-    3.5 and 3.6 on pp. 60-61 in [1]_ (first edition, algorithms 3.2 and 3.3 on
+    3.5 and 3.6 on pp. 60-61 in [1]_ (first edition: algorithms 3.2 and 3.3 on
     pp. 59-61), see also [2]_.
 
     The search direction `pk` must be a descent direction (e.g.
@@ -303,21 +315,20 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     (1.0, 2, 1, 1.1300000000000001, 6.13, [1.6, 1.4])
 
     """
+    fprime = myfprime  # TODO: deprecate and change name to fprime
     array_namespace(xk, pk, gfk)
-    if old_fval is not None:
-        old_fval = old_fval
-    if old_old_fval is not None:
-        old_old_fval = old_old_fval
+    if gfk is None:
+        gfk = fprime(xk, *args)
+    
+    gval = [gfk]
+    gval_alpha = [None]
     fc = [0]
     gc = [0]
-    gval = [None]
-    gval_alpha = [None]
 
     def phi(alpha):
         fc[0] += 1
         return f(xk + alpha * pk, *args)
 
-    fprime = myfprime
 
     def derphi(alpha):
         gc[0] += 1
@@ -325,8 +336,6 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gval_alpha[0] = alpha
         return gval[0] @ pk
 
-    if gfk is None:
-        gfk = fprime(xk, *args)
     derphi0 = gfk @ pk
 
     if extra_condition is not None:
@@ -424,10 +433,9 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     alpha0 = 0
     if old_phi0 is not None and derphi0 != 0:
         alpha1 = min(1.0, 1.01*2*(phi0 - old_phi0)/derphi0)
+        if alpha1 < 0:
+            alpha1 = 1.0
     else:
-        alpha1 = 1.0
-
-    if alpha1 < 0:
         alpha1 = 1.0
 
     if amax is not None:
