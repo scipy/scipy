@@ -70,20 +70,33 @@ class MilpMiplibBenchmarks(Benchmark):
 
 
 class MilpMagicSquare(Benchmark):
+    """Benchmark MILP feasibility with magic squares.
+
+    A magic square arranges the integers from 1 through n**2 so that every
+    row, column, and the two main diagonals have the same sum.
+    See https://en.wikipedia.org/wiki/Magic_square
+    """
 
     params = [[3, 4, 5, 6]]
     param_names = ['size']
 
     @staticmethod
     def _bounds(n, fix_top_left=False):
+        """Return binary bounds, optionally fixing the top-left cell."""
         if not fix_top_left:
             return (0, 1)
 
         lb = np.zeros(n**4)
         ub = np.ones(n**4)
         row = col = 0
+
+        # A magic square uses each integer from 1 through n**2, and
+        # `magic_square` encodes its placement as x[value - 1, row, col].
+        # Fixing the top-left cell to n**2 - 1, verified feasible for sizes 3-6,
+        # reduces symmetric solutions and makes the problem easier to solve.
         value = n**2 - 1
         lb[(value - 1) * n**2 + row * n + col] = 1
+
         return Bounds(lb, ub)
 
     def setup(self, n):
@@ -92,6 +105,7 @@ class MilpMagicSquare(Benchmark):
 
         A_eq, b_eq, self.c, self.numbers, self.M = magic_square(n)
         self.constraints = (A_eq, b_eq, b_eq)
+
         # Break symmetry in the feasibility problem so the xslow sizes remain
         # under ASV's timeout.
         self.bounds = self._bounds(n, fix_top_left=True)
