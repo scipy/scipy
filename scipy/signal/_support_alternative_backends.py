@@ -7,7 +7,8 @@ from scipy._lib._array_api import (
 from ._signal_api import *   # noqa: F403
 from . import _signal_api
 from . import _delegators
-__all__ = _signal_api.__all__
+__all__ = []
+__all__ += _signal_api.__all__
 
 
 MODULE_NAME = 'signal'

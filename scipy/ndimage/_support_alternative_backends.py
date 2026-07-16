@@ -7,7 +7,8 @@ import numpy as np
 from ._ndimage_api import *   # noqa: F403
 from . import _ndimage_api
 from . import _delegators
-__all__ = _ndimage_api.__all__
+__all__ = []
+__all__ += _ndimage_api.__all__
 
 
 MODULE_NAME = 'ndimage'

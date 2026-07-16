@@ -112,7 +112,24 @@ submodules = [
     'stats'
 ]
 
-__all__ = submodules + [
+__all__ = [
+    'cluster',
+    'constants',
+    'datasets',
+    'differentiate',
+    'fft',
+    'fftpack',
+    'integrate',
+    'interpolate',
+    'io',
+    'linalg',
+    'ndimage',
+    'optimize',
+    'signal',
+    'sparse',
+    'spatial',
+    'special',
+    'stats',
     'LowLevelCallable',
     'test',
     'show_config',
