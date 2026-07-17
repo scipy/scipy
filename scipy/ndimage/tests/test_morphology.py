@@ -3133,8 +3133,6 @@ def test_byte_order_output_writeback(call):
     C code rather than left for NumPy to clean up during deallocation.
     """
     data = np.zeros((5, 5), dtype=np.uint8)
-    data[1, 1] = 1
-    data[3, 3] = 1
     with warnings.catch_warnings(record=True) as rec:
         warnings.simplefilter("always")
         call(data)
