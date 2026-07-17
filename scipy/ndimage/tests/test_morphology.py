@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from scipy._lib._array_api import (
     is_cupy, is_numpy,
@@ -3105,3 +3106,38 @@ def test_distance_transform_cdt_invalid_metric(xp):
     with pytest.raises(ValueError, match=msg):
         ndimage.distance_transform_cdt(xp.ones((5, 5)),
                                        metric="garbage")
+
+
+# NumPy-only because byte order is numpy-specific
+def _swapped_int32(shape):
+    return np.zeros(shape, dtype=np.dtype(np.int32).newbyteorder())
+
+
+@pytest.mark.parametrize('call', [
+    pytest.param(
+        lambda a: ndimage.distance_transform_cdt(
+            a, distances=_swapped_int32((5, 5))),
+        id='distance_transform_cdt'),
+    pytest.param(
+        lambda a: ndimage.distance_transform_edt(
+            a, return_indices=True, indices=_swapped_int32((2, 5, 5))),
+        id='distance_transform_edt'),
+    pytest.param(
+        lambda a: ndimage.binary_erosion(
+            a, output=_swapped_int32((5, 5)), iterations=2),
+        id='binary_erosion'),
+])
+def test_byte_order_output_writeback(call):
+    """Regression test for gh-25641: an output array that NumPy has to copy
+    (here, because of non-native byte order) must be written back by the
+    C code rather than left for NumPy to clean up during deallocation.
+    """
+    data = np.zeros((5, 5), dtype=np.uint8)
+    data[1, 1] = 1
+    data[3, 3] = 1
+    with warnings.catch_warnings(record=True) as rec:
+        warnings.simplefilter("always")
+        call(data)
+    leaked = [str(w.message) for w in rec
+              if issubclass(w.category, RuntimeWarning)]
+    assert leaked == []
