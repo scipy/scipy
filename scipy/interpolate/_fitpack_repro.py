@@ -1157,6 +1157,8 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
 
     # postprocess: squeeze out the last dimension: was added to simplify the internals.
     spl.c = spl.c[:, 0]
+    # make periodic if needed
+    spl.extrapolate = "periodic" if periodic else True
     return spl
 
 
@@ -1329,6 +1331,9 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     # posprocess: `axis=1` so that spl(u).shape == np.shape(x)
     # when `x` is a list of 1D arrays (cf original splPrep)
     cc = spl.c.T
-    spl1 = BSpline(spl.t, cc, spl.k, axis=1)
+    spl1 = BSpline(
+        spl.t, cc, spl.k, axis=1,
+        extrapolate='periodic' if periodic else True
+    )
 
     return spl1, xp.asarray(u)

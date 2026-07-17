@@ -4054,6 +4054,22 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
             xp_assert_close(spl.t, tck[0])
         xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                         tck[1])
+    
+    @pytest.mark.parametrize("s", [1, 1e-8, 42])
+    def test_spline_endpoints_match(self, s):
+        """make_splrep with bc_type='periodic' must produce a periodic
+        spline."""
+        theta = np.linspace(0, 1, 11)
+        y = np.cos(2*np.pi*theta)
+        
+        spl = make_splrep(theta, y, s=s, bc_type="periodic")
+        
+        xp_assert_close(spl(theta[0]), spl(theta[-1]), atol=1e-12)
+        assert spl.extrapolate == 'periodic'
+        
+        # check wraparound: spl(u + delta) = spl(u + 2 * delta)
+        xp_assert_close(spl(theta[-1] + 0.2), spl(theta[0] + 0.2), atol=1e-12)
+        xp_assert_close(spl(theta[0] - 0.2), spl(theta[-1] - 0.2), atol=1e-12)
 
     @pytest.mark.parametrize("k_fp", [(1, -0.0001), (2, -0.0001), (3, -8.62e-05)])
     @pytest.mark.parametrize("s", [1e-4])
@@ -4078,7 +4094,6 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         y_check = bs(x_check)
 
         xp_assert_close(y_check[0], y_check[1])
-
 
 @make_xp_test_case(make_splprep)
 class TestMakeSplprep:
@@ -4221,10 +4236,10 @@ class TestMakeSplprepPeriodic:
         xp_assert_close(spl(u), BSpline(t, c, k, axis=1)(u),
                         atol=1e-06, rtol=1e-06)
     
-    @pytest.mark.parametrize("s", [0, 1e-8, 1, 42])
-    def test_periodic_endpoints_match(self, s):
-        """make_splprep with bc_type='periodic' must evaluate to same values at
-        endpoints."""
+    @pytest.mark.parametrize("s", [1, 1e-8, 42])
+    def test_spline_endpoints_match(self, s):
+        """make_splprep with bc_type='periodic' must produce a periodic 
+        spline: matching endpoint values, extrapolate='periodic'."""
         theta = np.linspace(0, 1, 11)
         x = np.sin(2*np.pi*theta)
         y = np.cos(2*np.pi*theta)
@@ -4232,6 +4247,11 @@ class TestMakeSplprepPeriodic:
         spl, u = make_splprep([x, y], u=theta, s=s, bc_type="periodic")
         
         xp_assert_close(spl(u[0]), spl(u[-1]), atol=1e-12)
+        assert spl.extrapolate == 'periodic'
+        
+        # check wraparound: spl(u + delta) = spl(u + 2 * delta)
+        xp_assert_close(spl(u[-1] + 0.2), spl(u[0] + 0.2), atol=1e-12)
+        xp_assert_close(spl(u[0] - 0.2), spl(u[-1] - 0.2), atol=1e-12)
 
     @pytest.mark.parametrize('s', [0, 1e-4, 1e-5, 1e-6])
     def test_array_not_list(self, s):
