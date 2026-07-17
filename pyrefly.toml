@@ -62,7 +62,6 @@ replace-imports-with-any = [
     "scipy.sparse.linalg._propack.*",
 ]
 
-# for compatibility with mypy
 check-unannotated-defs = false
 errors = { "redundant-cast" = "error" }
 

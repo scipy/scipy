@@ -23,7 +23,7 @@ from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
         is_sptriangular, spbandwidth)
 import scipy.sparse
 
-from scipy._lib._testutils import check_free_memory
+from scipy._lib._testutils import check_free_memory, IS_WASM
 
 
 # scikits.umfpack is not a SciPy dependency but it is optionally used in
@@ -718,6 +718,7 @@ class TestSplu:
         check(np.complex128, True)
 
     @pytest.mark.slow
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_threads_parallel(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", SparseEfficiencyWarning)

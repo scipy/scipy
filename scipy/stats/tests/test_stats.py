@@ -20,6 +20,8 @@ from numpy.testing import (assert_, assert_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 from numpy import array, arange, power
 import numpy as np
@@ -4266,7 +4268,7 @@ class TestPercentileOfScore:
             stats.percentileofscore(np.ones((3, 3)), 1)
 
 
-PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
+PowerDivCase = namedtuple('Case',
                           ['f_obs', 'f_exp', 'ddof', 'axis',
                            'chi2',     # Pearson's
                            'log',      # G-test (log-likelihood)
@@ -5081,6 +5083,7 @@ class TestKSTwoSamples:
 
     @pytest.mark.slow
     @skip_xp_backends(np_only=True)
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_some_code_paths(self):
         # Check that some code paths are executed
         from scipy.stats._stats_py import (
@@ -5157,7 +5160,7 @@ class TestKSTwoSamples:
 class TestTTestRel:
     def test_ttest_rel_xp(self, xp):
         # stats.ttest_rel had no tests using the xp fixture. As a temporary
-        # measure to get tools/check_xp_untested.py to pass, a portion of
+        # measure to get tools/linting/check_xp_untested.py to pass, a portion of
         # test_ttest_rel has been converted. It might seem unnecessary to
         # require tests for a trivial wrapper of a well-tested function, but
         # this seems simpler than having a way to carve out exceptions to
@@ -5662,9 +5665,9 @@ class TestTTestIndResampling:
     b3 = [3, 4]
 
     # data for bigger test
-    rvs1 = stats.norm.rvs(loc=5, scale=10,  # type: ignore
+    rvs1 = stats.norm.rvs(loc=5, scale=10,
                           size=500, random_state=rng).reshape(100, 5).T
-    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100, random_state=rng)  # type: ignore
+    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100, random_state=rng)
 
     p_d = [1/1001, (676+1)/1001]  # desired pvalues
     p_d_gen = [1/1001, (672 + 1)/1001]  # desired pvalues for Generator seed
@@ -8553,6 +8556,7 @@ class TestWassersteinDistance:
                                        [1, 1, 0], [1, 1]),
             stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
 
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_inf_values(self):
         # Inf values can lead to an inf distance or trigger a RuntimeWarning
         # (and return NaN) if the distance is undefined.
@@ -8621,6 +8625,7 @@ class TestEnergyDistance:
             stats.energy_distance([1, 2, 100000], [1, 1], [1, 1, 0], [1, 1]),
             stats.energy_distance([1, 2], [1, 1], [1, 1], [1, 1]))
 
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_inf_values(self):
         # Inf values can lead to an inf distance or trigger a RuntimeWarning
         # (and return NaN) if the distance is undefined.
@@ -8779,6 +8784,7 @@ class TestBrunnerMunzel:
         with eager_warns(RuntimeWarning, match=msg, xp=xp):
             stats.brunnermunzel(x, y, distribution="t")
 
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_brunnermunzel_normal_dist(self, xp):
         """ tests that a p is 0 for datasets that cause p->nan
         when t-distribution is used (see gh-15843)

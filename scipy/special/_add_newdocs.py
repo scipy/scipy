@@ -24,54 +24,6 @@ add_newdoc("_sf_error_test_function",
     """)
 
 
-add_newdoc("_cosine_cdf",
-    """
-    _cosine_cdf(x)
-
-    Cumulative distribution function (CDF) of the cosine distribution::
-
-                 {             0,              x < -pi
-        cdf(x) = { (pi + x + sin(x))/(2*pi),   -pi <= x <= pi
-                 {             1,              x > pi
-
-    Parameters
-    ----------
-    x : array_like
-        `x` must contain real numbers.
-
-    Returns
-    -------
-    scalar or ndarray
-        The cosine distribution CDF evaluated at `x`.
-
-    """)
-
-add_newdoc("_cosine_invcdf",
-    """
-    _cosine_invcdf(p)
-
-    Inverse of the cumulative distribution function (CDF) of the cosine
-    distribution.
-
-    The CDF of the cosine distribution is::
-
-        cdf(x) = (pi + x + sin(x))/(2*pi)
-
-    This function computes the inverse of cdf(x).
-
-    Parameters
-    ----------
-    p : array_like
-        `p` must contain real numbers in the interval ``0 <= p <= 1``.
-        `nan` is returned for values of `p` outside the interval [0, 1].
-
-    Returns
-    -------
-    scalar or ndarray
-        The inverse of the cosine distribution CDF evaluated at `p`.
-
-    """)
-
 add_newdoc("_ellip_harm",
     """
     Internal function, use `ellip_harm` instead.

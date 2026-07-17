@@ -564,6 +564,14 @@ class TestRemez:
         weight = xp.asarray([1.0, 2.0])
         remez(21, bands, desired, weight=weight)
 
+    @pytest.mark.parametrize('type', ['bandpass', 'differentiator', 'hilbert'])
+    def test_gh_24495_narrow_band(self, type):
+        # A band too narrow for the dense grid used to segfault (gh-24495).
+        with pytest.raises(ValueError, match="Band edges are too close"):
+            remez(101, [1000, 1000], [1], fs=20000, type=type)
+        with pytest.raises(ValueError, match="Band edges are too close"):
+            remez(101, [1000, 1011.5], [1], fs=20000, type=type)
+
 
 @make_xp_test_case(firls)
 class TestFirls:

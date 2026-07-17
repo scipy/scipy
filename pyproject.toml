@@ -185,7 +185,6 @@ dev-cli = [
 
 typecheck = [
     # type checkers
-    "mypy==2.1.0",
     "pyrefly==1.1.1",
     # typing deps
     "typing_extensions",
@@ -270,11 +269,29 @@ PKG_CONFIG_PATH = "{project}"
 # do this instead (which will override this setting)
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
 
+[tool.cibuildwheel.pyodide]
+# cibuildwheel 4.1.0 pins pyodide-build 0.35.0. Override to 0.36.0 to fix the
+# cross-build NumPy meson dependency detection. TODO: drop this once it makes
+# it to a released version of cibuildwheel
+dependency-versions = "packages: pyodide-build==0.36.0"
+before-build = "bash {project}/tools/ci/emscripten/cibw_before_build_pyodide.sh {project}"
+repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
+test-command = "python -m pytest --pyargs scipy -m 'not slow'"
+
+[tool.cibuildwheel.pyodide.config-settings]
+setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
+
+[tool.cibuildwheel.pyodide.environment]
+PKG_CONFIG_PATH = "$(pwd)/.blis/lib/pkgconfig:$(pwd)/.blis/share/pkgconfig"
+# Stop Ninja from moving long link commands into a response file,
+# which the pyodide-build pywasmcross wrapper does not read. See:
+# https://github.com/pyodide/pyodide-build/issues/398
+MESON_RSP_THRESHOLD = "131072"
+
 [tool.spin.commands]
 "Build & Develop" = [
   ".spin/cmds.py:build",
   ".spin/cmds.py:test",
-  ".spin/cmds.py:mypy",
   ".spin/cmds.py:lint",
   ".spin/cmds.py:check",
   "spin.cmds.pip.install"

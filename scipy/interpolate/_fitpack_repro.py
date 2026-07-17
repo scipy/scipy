@@ -27,7 +27,7 @@ from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr,
     _lsq_solve_qr_for_root_rati_periodic, _periodic_knots
 )
-from . import _dierckx      # type: ignore[attr-defined]
+from . import _dierckx
 
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

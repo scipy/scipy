@@ -432,11 +432,11 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     """
 
     if is_cupy(xp):
-        import cupyx  # type: ignore[import-not-found,import-untyped]
+        import cupyx
         return cupyx.scipy
 
     if is_jax(xp):
-        import jax  # type: ignore[import-not-found]
+        import jax  # pyrefly: ignore[missing-import]
         return jax.scipy
 
     if is_torch(xp):
@@ -1161,7 +1161,7 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
 
 
 # Is it OK to have a dictionary that is mutated (once upon import) in many places?
-xp_capabilities_table = {}  # type: ignore[var-annotated]
+xp_capabilities_table = {}
 
 
 def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:

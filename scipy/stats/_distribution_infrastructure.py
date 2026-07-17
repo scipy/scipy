@@ -1507,7 +1507,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     """
     __array_priority__ = 1
-    _parameterizations = []  # type: ignore[var-annotated]
+    _parameterizations = []
 
     ### Initialization
 

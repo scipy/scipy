@@ -82,7 +82,7 @@ from scipy.special import airy
 
 # Local imports.
 # There is no .pyi file for _specfun
-from . import _specfun  # type: ignore
+from . import _specfun
 from . import _ufuncs
 
 

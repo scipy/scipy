@@ -740,7 +740,10 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     the :math:`n` original observations. The distance between
     clusters ``Z[i, 0]`` and ``Z[i, 1]`` is given by ``Z[i, 2]``. The
     fourth value ``Z[i, 3]`` represents the number of original
-    observations in the newly formed cluster.
+    observations in the newly formed cluster. Note that the dtype of
+    ``Z`` is ``float64`` even though columns 0, 1 and 3 contain integer
+    data and should be interpreted as such. This is for historical
+    reasons.
 
     The following linkage methods are used to compute the distance
     :math:`d(s, t)` between two clusters :math:`s` and

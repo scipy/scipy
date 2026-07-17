@@ -12,6 +12,7 @@ from pytest import raises as assert_raises
 from scipy.conftest import skip_xp_invalid_arg
 
 from scipy._lib._array_api import xp_assert_equal
+from scipy._lib._testutils import IS_WASM
 from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
@@ -75,11 +76,13 @@ def test_mapwrapper_serial():
         p = MapWrapper(0)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 def test_pool():
     with Pool(2) as p:
         p.map(math.sin, [1, 2, 3, 4])
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 def test_mapwrapper_parallel():
     in_arg = np.arange(10.)
     out_arg = np.sin(in_arg)
@@ -119,6 +122,7 @@ def user_of_workers(x, b=1, workers=None):
     return np.array(list(workers(np.sin, x * b)))
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 def test__workers_wrapper():
     arr = np.linspace(0, np.pi)
     req = np.sin(arr * 2.0)

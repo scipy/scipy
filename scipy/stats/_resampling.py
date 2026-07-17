@@ -2172,7 +2172,7 @@ class ResamplingMethod:
 
     """
     n_resamples: int = 9999
-    batch: int = None  # type: ignore[assignment]
+    batch: int | None = None
 
 
 @dataclass
@@ -2294,8 +2294,7 @@ class PermutationMethod(ResamplingMethod):
             in new code.
 
     """
-    rng: object  # type: ignore[misc]
-    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    _rng: object = field(init=False, repr=False, default=None)
 
     @property
     def random_state(self):
@@ -2309,7 +2308,7 @@ class PermutationMethod(ResamplingMethod):
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
-    @property  # type: ignore[no-redef]
+    @property
     def rng(self):  # noqa: F811
         return self._rng
 
@@ -2384,8 +2383,8 @@ class BootstrapMethod(ResamplingMethod):
         accelerated bootstrap ('BCa', default).
 
     """
-    rng: object  # type: ignore[misc]
-    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    rng: object
+    _rng: object = field(init=False, repr=False, default=None)
     method: str = 'BCa'
 
     @property
@@ -2400,7 +2399,7 @@ class BootstrapMethod(ResamplingMethod):
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
-    @property  # type: ignore[no-redef]
+    @property
     def rng(self):  # noqa: F811
         return self._rng
 
