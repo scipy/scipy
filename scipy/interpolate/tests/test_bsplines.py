@@ -4320,6 +4320,35 @@ class TestMakeSplprepPeriodic:
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
 
+    @pytest.mark.parametrize("bc_type", [None, "not-a-knot", "periodic"])
+    @pytest.mark.parametrize("matching_endpoints", [True, False])
+    def test_bc_type_delegation_s0(self, bc_type, matching_endpoints):
+        # make_splprep at s=0 must delegate bc_type correctly to
+        # make_interp_spline, for every bc_type, endpoint-matching
+        theta = np.linspace(0, 1, 11)
+        x = np.sin(2*np.pi*theta)
+        y = np.cos(2*np.pi*theta)
+
+        if not matching_endpoints:
+            x = x.copy()
+            x[-1] = 1  
+
+        periodic = (bc_type == "periodic")
+        should_raise = periodic and not matching_endpoints
+
+        xy = np.column_stack([x, y])
+
+        if should_raise:
+            with assert_raises(ValueError):
+                make_splprep([x, y], u=theta, s=0, bc_type=bc_type)
+            with assert_raises(ValueError):
+                make_interp_spline(theta, xy, bc_type=bc_type)
+        else:
+            spl, u = make_splprep([x, y], u=theta, s=0, bc_type=bc_type)
+            expected = make_interp_spline(theta, xy, bc_type=bc_type)
+            xp_assert_close(spl.c, expected.c, atol=1e-12)
+            xp_assert_close(spl.t, expected.t, atol=1e-12)
+            assert spl.extrapolate == expected.extrapolate
 
 class BatchSpline:
     # BSpline-line class with reference batch behavior
