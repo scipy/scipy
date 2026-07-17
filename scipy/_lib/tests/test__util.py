@@ -148,8 +148,8 @@ def test__workers_wrapper():
 
 
 @make_xp_test_case(_item_for_scalar_function)
-def test_item(xp):
-    # check that item can extract a scalar from an array-scalar or an array
+def test__item_for_scalar_function(xp):
+    # check that item can extract a 0D array from an array-scalar or an array
     # with 1 element, with the extracted type being unchanged.
     dtypes = [xp.float64, xp.float32, xp.int64, xp.bool]
     for dtype in dtypes:

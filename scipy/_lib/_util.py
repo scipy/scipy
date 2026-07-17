@@ -555,7 +555,7 @@ def _item_for_scalar_function(x, xp=None):
     sz = xp_size(x)
     if sz != 1:
         raise ValueError(
-            f"can only convert an array of size 1 to a Python scalar, got size {x.size}"
+            f"can only convert an array of size 1 to a 0D array, got size {x.size}"
         )
 
     # supply xp to save checking what namespace we're dealing with
@@ -568,7 +568,7 @@ def _item_for_scalar_function(x, xp=None):
             "Returning arrays with more than one dimension is deprecated when using"
             " ScalarFunction.",
             DeprecationWarning,
-            stacklevel=2
+            skip_file_prefixes=(os.path.dirname(__file__),)
         )
     if x.ndim != 0:
         x = xp.reshape(x, (-1,))[0]
