@@ -494,8 +494,8 @@ def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
     >>> from matplotlib.patches import Arc
     >>> fig, ax = plt.subplots()
     >>> ax.plot(points.real, points.imag, '.')
-    >>> ax.add_patch(Arc((0, 0), width=2, height=2, theta1=180,
-    ...                  theta2=360, alpha=.3))
+    >>> ax.add_patch(Arc((0, 0), width=2, height=2, theta1=0,
+    ...                  theta2=180, alpha=.3))
     >>> ax.set_aspect('equal')
     >>> ax.set_xlim(-1.05, 1.05)
     >>> plt.show()
