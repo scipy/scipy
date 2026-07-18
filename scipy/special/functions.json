@@ -516,11 +516,6 @@
             "t_ppf_double": "dd->d"
         }
     },
-    "_stirling2_inexact": {
-        "stirling2.h++": {
-            "_stirling2_inexact": "dd->d"
-        }
-    },
     "yn": {
         "_legacy.pxd": {
             "yn_unsafe": "dd->d"

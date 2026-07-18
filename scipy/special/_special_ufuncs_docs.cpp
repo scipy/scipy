@@ -70,6 +70,10 @@ const char *_lgam1p_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_stirling2_inexact_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *hyp0f1_doc = R"(
     hyp0f1(v, z, out=None)
 
