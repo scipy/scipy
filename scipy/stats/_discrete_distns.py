@@ -998,8 +998,25 @@ class poisson_gen(rv_discrete):
         return random_state.poisson(mu, size)
 
     def _logpmf(self, k, mu):
-        Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
-        return Pk
+        # Loader (2000) saddle-point form avoids cancellation in
+        # xlogy(k, mu) - gammaln(k+1) - mu when k is close to mu and is large:
+        # logpmf = -stirlerr(k) - bd0(k, mu) - 0.5*log(2*pi*k)
+        # Special cases (log of Loader's dpois()): k = 0 evaluates to -mu,
+        # mu = 0 and k > 0 evaluates to -inf (probability 0)
+        return xpx.apply_where(
+            k == 0,
+            (k, mu),
+            lambda k, mu: -mu,
+            lambda k, mu: xpx.apply_where(
+                mu > 0,
+                (k, mu),
+                lambda k, mu: (
+                    -self._stirlerr(k) - self._bd0(k, mu)
+                    - 0.5 * log(2 * np.pi * k)
+                ),
+                fill_value=-np.inf,
+            ),
+        )
 
     def _pmf(self, k, mu):
         # poisson.pmf(k) = exp(-mu) * mu**k / k!
@@ -1034,6 +1051,50 @@ class poisson_gen(rv_discrete):
         g1 = xpx.apply_where(mu_nonzero, tmp, lambda x: sqrt(1.0/x), fill_value=np.inf)
         g2 = xpx.apply_where(mu_nonzero, tmp, lambda x: 1.0/x, fill_value=np.inf)
         return mu, var, g1, g2
+
+    def _stirlerr(self, n):
+        # Stirling remainder is log(n!) - (n*log(n) - n + 0.5*log(2*pi*n))
+        # For small n, evaluate directly using gamln.
+        # For large n, use asymptotic series with coefficients from Loader (2000).
+        S0, S1, S2, S3, S4 = 1/12, 1/360, 1/1260, 1/1680, 1/1188
+        n = np.asarray(n)
+        small = n < 15
+
+        # Dummy n=1 on unused branch to avoid log(0)
+        n_safe = np.where(small & (n > 0), n, 1)
+        exact = (gamln(n_safe + 1)
+                 - (n_safe * log(n_safe) - n_safe
+                    + 0.5 * log(2 * np.pi * n_safe)))
+
+        n2 = n**2
+        # Asymptotic series approximation
+        approx = (S0 - (S1 - (S2 - (S3 - S4/n2)/n2)/n2)/n2)/n
+        return np.where(small, exact, approx)
+
+    def _bd0(self, k, mu):
+        # Deviance term k*log(k/mu) + mu - k from Loader (2000).
+        # Direct form cancels when k is approximately equal to mu, so
+        # use Loader's v-series for |v| < 0.1
+        # where v = (k - mu) / (k + mu).
+        k = np.asarray(k)
+        mu = np.asarray(mu)
+
+        close = np.abs(k - mu) < 0.1 * (k + mu)
+
+        v = (k - mu) / (k + mu)
+        # First term of series expansion
+        series_term = (k - mu)**2 / (k + mu)
+        v2 = v**2
+        term = 2 * k * v
+
+        # Use first ten terms of series expansion,
+        # enough for |v| < 0.1
+        for i in range(1, 11):
+            term *= v2
+            series_term += term / (2 * i + 1)
+
+        direct = special.xlogy(k, k / mu) + mu - k
+        return np.where(close, series_term, direct)
 
 
 poisson = poisson_gen(name="poisson", longname='A Poisson')
