@@ -1319,6 +1319,8 @@ def riccati_jn(n, x):
     In practical applications, frequently the logarithmic derivative of the
     Riccati-Bessel functions is needed. We determine the logarithmic derivative
     of the Riccati-Bessel function of the first kind for order 5 and argument 1.2.
+    The logarithmic derivative is obtained by dividing the derivative of the
+    Riccati-Bessel function by the Riccati-Bessel function itself.
 
     >>> from scipy.special import riccati_jn
     >>> n = 5
@@ -1336,7 +1338,7 @@ def riccati_jn(n, x):
     Alternatively, the logarithmic derivative of the Riccati-Bessel functions
     could be obtained from the corresponding spherical Bessel functions by making
     use of the definition of the Riccati-Bessel function in terms of the
-    spherical Bessel function.
+    spherical Bessel function as given above.
 
     >>> from scipy.special import spherical_jn
     >>> jn = spherical_jn(n, z)
@@ -1406,6 +1408,8 @@ def riccati_yn(n, x):
     In practical applications, frequently the logarithmic derivative of the
     Riccati-Bessel functions is needed. We determine the logarithmic derivative
     of the Riccati-Bessel function of the second kind for order 5 and argument 1.2.
+    The logarithmic derivative is obtained by dividing the derivative of the
+    Riccati-Bessel function by the Riccati-Bessel function itself.
 
     >>> from scipy.special import riccati_yn
     >>> n = 5
@@ -1423,7 +1427,7 @@ def riccati_yn(n, x):
     Alternatively, the logarithmic derivative of the Riccati-Bessel functions
     could be obtained from the corresponding spherical Bessel functions by making
     use of the definition of the Riccati-Bessel function in terms of the
-    spherical Bessel function.
+    spherical Bessel function as given above.
 
     >>> from scipy.special import spherical_yn
     >>> yn = spherical_yn(n, z)
