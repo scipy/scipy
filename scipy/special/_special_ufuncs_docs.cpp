@@ -3174,6 +3174,22 @@ const char *ellipkm1_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> from scipy.special import ellipk, ellipkm1
+    >>> p = 1e-10
+    >>> m = 1-p
+    >>> ellipk(m), ellipkm1(p)
+    (np.float64(12.899219785017415), np.float64(12.8992198263876))
+    
+    While the two values are still rather close, using ellipkm1 becomes
+    important for values of :math:`m` even closer to 1.
+
+    >>> p = 1e-15
+    >>> m = 1-p
+    >>> ellipk(m), ellipkm1(p)
+    (np.float64(18.656082357290334), np.float64(18.655682558575236))
     )";
 
 const char *ellipk_doc = R"(
