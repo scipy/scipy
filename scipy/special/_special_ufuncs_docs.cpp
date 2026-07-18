@@ -3326,6 +3326,34 @@ const char *ellipkinc_doc = R"(
     .. [3] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    >>> from scipy.special import ellipkinc
+    >>> phi = 0.3
+    >>> m = 0.8
+    >>> u = ellipkinc(phi, m)
+    >>> u
+    np.float64(0.30365239221539364)
+
+    The result should be consistent with the known relations
+    for the Jacobi elliptic funtions: ``sn(u|m) = sin(phi)``
+    and ``cn(u|m) = cos(phi)``.
+
+    >>> from math import cos, pi, sin
+    >>> from scipy.special import ellipj
+    >>> sn, cn, _, _ = ellipj(u, m)
+    >>> sn, sin(phi)
+    (np.float64(0.2955202066613395), 0.29552020666133955)
+    >>> cn, cos(phi)
+    (np.float64(0.9553364891256061), 0.955336489125606)
+
+    For :math:`\phi=\pi/2`, the incomplete elliptic integral should
+    equal the complete elliptic integral.
+
+    >>> from scipy.special import ellipk
+    >>> ellipkinc(pi/2, m), ellipk(m)
+    (np.float64(2.257205326820854), np.float64(2.257205326820854))	
     )";
 
 const char *xlogy_doc = R"(
