@@ -3246,8 +3246,7 @@ class TestDecimate:
 
         xp_assert_close(yzp, yzpref, rtol=1e-10, atol=1e-13)
 
-    @skip_xp_backends(np_only=True, reason="dlti")
-    def test_complex_zeros_real_poles_iir_dlti(self, xp):
+    def test_complex_zeros_real_poles_iir_dlti(self):  # np only as dlti
         # A complex filter whose poles are real but zeros are complex must
         # still take the (complex-capable) lfilter path. Previously the guard
         # tested ``system.poles`` twice and never ``system.zeros``, so such a
