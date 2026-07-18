@@ -61,7 +61,7 @@ def sawtooth(t, width=1.):
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    y = xp.where(mask1, xp.nan, y)
+    y = xpx.at(y, mask1).set(xp.nan)
 
     # take t modulo 2*pi
     tmod = t % (2*xp.pi)
