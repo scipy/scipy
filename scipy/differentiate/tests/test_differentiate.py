@@ -498,8 +498,8 @@ class TestJacobian(JacobianHessianTest):
         x, y = z
         return [[2 * x * y, x ** 2], [np.full_like(x, 5), np.cos(y)]]
 
-    f1.mn = 2, 2  # type: ignore[attr-defined]
-    f1.ref = df1  # type: ignore[attr-defined]
+    f1.mn = 2, 2
+    f1.ref = df1
 
     def f2(z, xp):
         r, phi = z
@@ -510,8 +510,8 @@ class TestJacobian(JacobianHessianTest):
         return [[np.cos(phi), -r * np.sin(phi)],
                 [np.sin(phi), r * np.cos(phi)]]
 
-    f2.mn = 2, 2  # type: ignore[attr-defined]
-    f2.ref = df2  # type: ignore[attr-defined]
+    f2.mn = 2, 2
+    f2.ref = df2
 
     def f3(z, xp):
         r, phi, th = z
@@ -526,8 +526,8 @@ class TestJacobian(JacobianHessianTest):
                  r * np.sin(phi) * np.cos(th)],
                 [np.cos(phi), -r * np.sin(phi), np.zeros_like(r)]]
 
-    f3.mn = 3, 3  # type: ignore[attr-defined]
-    f3.ref = df3  # type: ignore[attr-defined]
+    f3.mn = 3, 3
+    f3.ref = df3
 
     def f4(x, xp):
         x1, x2, x3 = x
@@ -541,8 +541,8 @@ class TestJacobian(JacobianHessianTest):
                 [0 * one, 8 * x2, -2 * one],
                 [x3 * np.cos(x1), 0 * one, np.sin(x1)]]
 
-    f4.mn = 3, 4  # type: ignore[attr-defined]
-    f4.ref = df4  # type: ignore[attr-defined]
+    f4.mn = 3, 4
+    f4.ref = df4
 
     def f5(x, xp):
         x1, x2, x3 = x
@@ -555,12 +555,12 @@ class TestJacobian(JacobianHessianTest):
                 [8 * x1, -2 * x3 * np.cos(x2 * x3), -2 * x2 * np.cos(x2 * x3)],
                 [0 * one, x3, x2]]
 
-    f5.mn = 3, 3  # type: ignore[attr-defined]
-    f5.ref = df5  # type: ignore[attr-defined]
+    f5.mn = 3, 3
+    f5.ref = df5
 
     def rosen(x, _): return optimize.rosen(x)
-    rosen.mn = 5, 1  # type: ignore[attr-defined]
-    rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
+    rosen.mn = 5, 1
+    rosen.ref = optimize.rosen_der
 
     @pytest.mark.parametrize('dtype', ('float32', 'float64'))
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])

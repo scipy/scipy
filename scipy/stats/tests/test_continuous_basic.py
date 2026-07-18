@@ -100,12 +100,15 @@ slow_with_lists = {'studentized_range'}
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic
 # and cases_test_moments.
-histogram_test_instances = []
-case1 = {'a': [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
-               6, 6, 6, 7, 7, 7, 8, 8, 9], 'bins': 8}  # equal width bins
-case2 = {'a': [1, 1], 'bins': [0, 1, 10]}  # unequal width bins
-for case, density in itertools.product([case1, case2], [True, False]):
-    _hist = np.histogram(**case, density=density)
+histogram_test_instances: list[tuple[type, tuple]] = []
+case1 = (
+    [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
+     6, 6, 6, 7, 7, 7, 8, 8, 9],
+    8  # equal width bins
+)
+case2 = ([1, 1], [0, 1, 10])  # unequal width bins
+for (a, bins), density in itertools.product([case1, case2], [True, False]):
+    _hist = np.histogram(a, bins=bins, density=density)
     _rv_hist = stats.rv_histogram(_hist, density=density)
     histogram_test_instances.append((_rv_hist, tuple()))
 

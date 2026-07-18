@@ -1,0 +1,8 @@
+paths:
+  .github/workflows/gpu-ci.yml:
+    ignore:
+      - 'label "ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:24.04" is unknown'
+  .github/workflows/**/*.{yml,yaml}:
+    ignore:
+      # ignore double quoting code SC2086
+      - 'shellcheck reported issue in this script: SC2086:.+'

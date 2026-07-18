@@ -76,6 +76,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
+                    getdtype(self.data.dtype)  # check that dtype is supported
                 else:
                     raise ValueError(f"unrecognized {self.__class__.__name__} "
                                      f"constructor input: {arg1}")

@@ -514,7 +514,7 @@ class interp1d(_Interpolator1D):
             ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
             + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
             )
-        
+
         return y_new
 
     def _call_nearest(self, x_new):
@@ -1393,6 +1393,9 @@ class PPoly:
     larger than 20-30.
     """
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
+
     def __init__(self, c, x, extrapolate=None, axis=0):
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
@@ -1401,6 +1404,18 @@ class PPoly:
         self._delegate_to = xp_ppoly_cls(c, x, extrapolate=extrapolate, axis=axis)
         self._xp = xp
         self._xp_internal = xp_internal
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        state.pop("_xp_internal")
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        _, xp_internal = _get_xp_ppoly_cls(self._xp)
+        self._xp_internal = xp_internal
+        self.__dict__.update(state)
 
     @classmethod
     def _construct_from_xp(cls, xp_ppoly, *, xp_external):
@@ -1912,6 +1927,9 @@ class BPoly:
 
     """  # noqa: E501
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
+
     def __init__(self, c, x, extrapolate=None, axis=0):
         xp = array_namespace(c, x)
         xp_bpoly_cls, xp_internal = _get_xp_bpoly_cls(xp)
@@ -1920,6 +1938,18 @@ class BPoly:
         self._delegate_to = xp_bpoly_cls(c, x, extrapolate=extrapolate, axis=axis)
         self._xp = xp
         self._xp_internal = xp_internal
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        state.pop("_xp_internal")
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        _, xp_internal = _get_xp_bpoly_cls(self._xp)
+        self._xp_internal = xp_internal
+        self.__dict__.update(state)
 
     @classmethod
     def _construct_from_xp(cls, xp_bpoly, *, xp_external):
@@ -2383,6 +2413,9 @@ class NdPPoly:
     unstable.
 
     """
+    
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None):
         self.x = tuple(np.ascontiguousarray(v, dtype=np.float64) for v in x)

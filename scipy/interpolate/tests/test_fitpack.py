@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
 )
 from pytest import raises as assert_raises
 import pytest
-from scipy._lib._testutils import check_free_memory
+from scipy._lib._testutils import check_free_memory, IS_WASM
 
 from scipy.interpolate import RectBivariateSpline
 from scipy.interpolate import make_splrep
@@ -304,6 +304,7 @@ class TestSplder:
     def test_order0_diff(self):
         assert_raises(ValueError, splder, self.spl, 4)
 
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_kink(self):
         # Should refuse to differentiate splines with kinks
 

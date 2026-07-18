@@ -1048,7 +1048,6 @@ def _boxcox_llf(data, axis=0, *, lmb):
         logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
-    res = xp.astype(res, data.dtype, copy=False)  # compensate for NumPy <2.0
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -4328,13 +4327,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     if nan_policy == 'propagate' and contains_nan:
         return MedianTestResult(np.nan, np.nan, np.nan, None)
 
-    if contains_nan:
-        grand_median = np.median(cdata[~np.isnan(cdata)])
-    else:
-        grand_median = np.median(cdata)
-    # When the minimum version of numpy supported by scipy is 1.9.0,
-    # the above if/else statement can be replaced by the single line:
-    #     grand_median = np.nanmedian(cdata)
+    grand_median = np.nanmedian(cdata)
 
     # Create the contingency table.
     table = np.zeros((2, len(data)), dtype=np.int64)

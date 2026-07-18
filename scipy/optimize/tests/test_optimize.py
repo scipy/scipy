@@ -20,6 +20,8 @@ from numpy.testing import (assert_allclose, assert_equal,
                            assert_no_warnings,
                            assert_array_less)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 
 from scipy._lib._gcutils import assert_deallocated
@@ -1673,7 +1675,7 @@ class TestOptimizeSimple(CheckOptimize):
                     callback()
             callback_interface = Callback()
         else:
-            def callback_interface(xk, *args):  # type: ignore[misc]
+            def callback_interface(xk, *args):
                 callback()
 
         def callback():
@@ -2667,8 +2669,9 @@ class TestBrute:
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
                                   full_output=True, finish=None)
 
+        workers = 1 if IS_WASM else 2
         resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
-                                   full_output=True, finish=None, workers=2)
+                                   full_output=True, finish=None, workers=workers)
 
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
@@ -2693,6 +2696,7 @@ class TestBrute:
 
 
 @pytest.mark.fail_slow(20)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -3116,6 +3120,23 @@ def test_all_bounds_equal(method):
         assert res.message.startswith(message)
 
 
+@pytest.mark.parametrize('method', eb_data["methods"])
+def test_all_bounds_equal_writable(method):
+    # When all bounds have lb == ub, _optimize_result_for_equal_bounds
+    # must pass a writable x0 to the objective. Previously, x0 was
+    # assigned directly from bounds.lb, which is a non-writable view
+    # produced by np.broadcast_to in _validate_bounds.
+    def f(x):
+        assert x.flags.writeable, "x passed to objective is not writable"
+        return np.linalg.norm(x)
+
+    bounds = [(1, 1), (2, 2)]
+    x0 = (1.0, 3.0)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method)
+    assert res.success
+    assert res.x.flags.writeable
+
+
 def test_eb_constraints():
     # make sure constraint functions aren't overwritten when equal bounds
     # are employed, and a parameter is factored out. GH14859
@@ -3428,7 +3449,11 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nhev == res_sparse.nhev
 
 
-@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize('workers', [
+    None,
+    pytest.param(2, marks=pytest.mark.xfail(
+        IS_WASM, reason="cannot create process pool in Pyodide/WASM")),
+])
 @pytest.mark.parametrize(
     'method',
     ['l-bfgs-b',
@@ -3588,6 +3613,7 @@ class TestAnnotations:
         assert res.success, f"Unexpected error: {res.message}"
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 def test_multiprocessing_too_many_open_files_23080():
     # https://github.com/scipy/scipy/issues/23080
     x0 = np.array([0.9, 0.9])

@@ -39,8 +39,15 @@ static SuperLUGlobalObject *get_tls_global(void)
     }
     obj->memory_dict = PyDict_New();
     obj->jmpbuf_valid = 0;
+    if (obj->memory_dict == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
 
-    PyDict_SetItemString(thread_dict, key, (PyObject *)obj);
+    if (PyDict_SetItemString(thread_dict, key, (PyObject *)obj) < 0) {
+        Py_DECREF(obj);
+        return NULL;
+    }
 
     /*
         Py_DECREF is added because get_tls_global returns
@@ -103,13 +110,13 @@ void *superlu_python_module_malloc(size_t size)
     mem_ptr = malloc(size);
     if (mem_ptr == NULL) {
         NPY_DISABLE_C_API;
-	return NULL;
+        return NULL;
     }
     key = PyLong_FromVoidPtr(mem_ptr);
     if (key == NULL)
-	goto fail;
+        goto fail;
     if (PyDict_SetItem(g->memory_dict, key, Py_None))
-	goto fail;
+        goto fail;
     Py_DECREF(key);
     NPY_DISABLE_C_API;
 
@@ -120,7 +127,7 @@ void *superlu_python_module_malloc(size_t size)
     NPY_DISABLE_C_API;
     free(mem_ptr);
     superlu_python_module_abort
-	("superlu_malloc: Cannot set dictionary key value in malloc.");
+        ("superlu_malloc: Cannot set dictionary key value in malloc.");
     return NULL;
 
 }
@@ -129,31 +136,33 @@ void superlu_python_module_free(void *ptr)
 {
     SuperLUGlobalObject *g;
     PyObject *key;
-    PyObject *ptype, *pvalue, *ptraceback;
+    PyObject *exc;
     NPY_ALLOW_C_API_DEF;
 
     if (ptr == NULL)
-	return;
+        return;
 
     NPY_ALLOW_C_API;
     g = get_tls_global();
     if (g == NULL) {
         abort();
     }
-    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+    exc = PyErr_GetRaisedException();
     key = PyLong_FromVoidPtr(ptr);
     /* This will only free the pointer if it could find it in the dictionary
      * of already allocated pointers --- thus after abort, the module can free all
      * the memory that "might" have been allocated to avoid memory leaks on abort
-     * calls.
+     * calls. If the key cannot be created, leave the pointer in the dictionary;
+     * SuperLUGlobal_dealloc will free it.
      */
-    if (!PyDict_DelItem(g->memory_dict, key)) {
-	free(ptr);
+    if (key != NULL) {
+        if (!PyDict_DelItem(g->memory_dict, key)) {
+            free(ptr);
+        }
+        Py_DECREF(key);
     }
-    Py_DECREF(key);
-    PyErr_Restore(ptype, pvalue, ptraceback);
+    PyErr_SetRaisedException(exc);
     NPY_DISABLE_C_API;
-    return;
 }
 
 
@@ -162,10 +171,12 @@ static void SuperLUGlobal_dealloc(SuperLUGlobalObject *self)
     PyObject *key, *value;
     Py_ssize_t pos = 0;
 
-    while (PyDict_Next(self->memory_dict, &pos, &key, &value)) {
-        void *ptr;
-        ptr = PyLong_AsVoidPtr(value);
-        free(ptr);
+    if (self->memory_dict != NULL) {
+        while (PyDict_Next(self->memory_dict, &pos, &key, &value)) {
+            void *ptr;
+            ptr = PyLong_AsVoidPtr(key);
+            free(ptr);
+        }
     }
 
     Py_XDECREF(self->memory_dict);
@@ -175,52 +186,10 @@ static void SuperLUGlobal_dealloc(SuperLUGlobalObject *self)
 
 PyTypeObject SuperLUGlobalType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_SuperLUGlobal",
-    sizeof(SuperLUGlobalObject),
-    0,
-    (destructor)SuperLUGlobal_dealloc, /* tp_dealloc */
-    0,				/* tp_print */
-    0,	                        /* tp_getattr */
-    0,				/* tp_setattr */
-    0,				/* tp_compare / tp_reserved */
-    0,				/* tp_repr */
-    0,				/* tp_as_number */
-    0,				/* tp_as_sequence */
-    0,				/* tp_as_mapping */
-    0,				/* tp_hash */
-    0,				/* tp_call */
-    0,				/* tp_str */
-    0,				/* tp_getattro */
-    0,				/* tp_setattro */
-    0,				/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,		/* tp_flags */
-    NULL,                       /* tp_doc */
-    0,				/* tp_traverse */
-    0,				/* tp_clear */
-    0,				/* tp_richcompare */
-    0,				/* tp_weaklistoffset */
-    0,				/* tp_iter */
-    0,				/* tp_iternext */
-    0,                          /* tp_methods */
-    0,				/* tp_members */
-    0,               		/* tp_getset */
-    0,				/* tp_base */
-    0,				/* tp_dict */
-    0,				/* tp_descr_get */
-    0,				/* tp_descr_set */
-    0,				/* tp_dictoffset */
-    0,				/* tp_init */
-    0,				/* tp_alloc */
-    0,				/* tp_new */
-    0,				/* tp_free */
-    0,				/* tp_is_gc */
-    0,				/* tp_bases */
-    0,				/* tp_mro */
-    0,				/* tp_cache */
-    0,				/* tp_subclasses */
-    0,				/* tp_weaklist */
-    0,				/* tp_del */
-    0,				/* tp_version_tag */
+    .tp_name = "_SuperLUGlobal",
+    .tp_basicsize = sizeof(SuperLUGlobalObject),
+    .tp_dealloc = (destructor)SuperLUGlobal_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
 };
 
 
@@ -243,8 +212,8 @@ void mc64id_(int *a)
 }
 
 void mc64ad_(int *a, int *b, int *c, int d[], int e[], double f[],
-	     int *g, int h[], int *i, int j[], int *k, double l[],
-	     int m[], int n[])
+             int *g, int h[], int *i, int j[], int *k, double l[],
+             int m[], int n[])
 {
     superlu_python_module_abort("chosen functionality not available");
 }

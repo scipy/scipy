@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from scipy import stats
 from scipy.optimize import differential_evolution
 
@@ -203,6 +205,7 @@ def test_expon_fit():
     assert_allclose(phat, [0, 1.0], atol=1e-3)
 
 
+@pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
 def test_fit_error():
     data = np.concatenate([np.zeros(29), np.ones(21)])
     message = "Optimization converged to parameters that are..."
@@ -212,8 +215,8 @@ def test_fit_error():
 
 
 @pytest.mark.parametrize("dist, params",
-                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined]
-                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined]
+                         [(stats.norm, (0.5, 2.5)),
+                          (stats.binom, (10, 0.3, 2))])
 def test_nnlf_and_related_methods(dist, params):
     rng = np.random.default_rng(983459824)
 
@@ -371,10 +374,10 @@ def assert_nlff_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0,
 
 
 class TestFit:
-    dist = stats.binom  # type: ignore[attr-defined]
+    dist = stats.binom
     seed = 654634816187
     rng = np.random.default_rng(seed)
-    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # type: ignore[attr-defined]  # noqa: E501
+    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # noqa: E501
     shape_bounds_a = [(1, 10), (0, 1)]
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
     atol = 5e-2
