@@ -2244,9 +2244,12 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     else:
         p = u1.shape[1]
 
-    # limit p to at most max(n, m)
+    # limit p to at most min(n, m)
     if p > n or p > m:
-        raise ValueError('Update rank greater than rank(Q @ R).')
+        raise ValueError(
+            f"Invalid update rank p={p}: the inner dimension of u @ v^H "
+            f"cannot exceed min(m, n) = {min(m, n)}."
+        )
 
     u1 = validate_array(u1, chkfinite)
     v1 = validate_array(v1, chkfinite)
@@ -2292,13 +2295,10 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
                 {{endfor}}
     else:
         if m > n and p > m - n:
-            # For full QR factors with m > n, the rank-p update algorithm
-            # requires p <= m - n. When p > m - n, extract economic factors,
-            # perform the update, then reconstruct the full QR decomposition.
-            k = min(m, n)
-            q_thin, r_thin = qr_update(q1[:, :k], r1[:k, :], u1, v1)
-            # Compute updated matrix and obtain full QR decomposition
-            return np.linalg.qr(q_thin @ r_thin, mode="complete")
+            raise ValueError(
+                "For full QR updates with p > m - n, use "
+                "qr(Q @ R + u @ v.conj().T) directly."
+            )
         if m == 1:
             if p == 1:
                 r1 += q1.conj() * u1 * v1.T.conj()
