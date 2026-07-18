@@ -3247,6 +3247,26 @@ class TestDecimate:
         xp_assert_close(yzp, yzpref, rtol=1e-10, atol=1e-13)
 
     @skip_xp_backends(np_only=True, reason="dlti")
+    def test_complex_zeros_real_poles_iir_dlti(self, xp):
+        # A complex filter whose poles are real but zeros are complex must
+        # still take the (complex-capable) lfilter path. Previously the guard
+        # tested ``system.poles`` twice and never ``system.zeros``, so such a
+        # filter was forced through ``zpk2sos`` and raised.
+        system = signal.dlti([0.5j], [0.5], 1.0)
+        rng = np.random.default_rng(1234)
+        u = rng.standard_normal(200)
+
+        z, p, k = system.zeros, system.poles, system.gain
+
+        ynzp = signal.decimate(u, 2, ftype=system, zero_phase=False)
+        ynzpref = signal.lfilter(*signal.zpk2tf(z, p, k), u)[::2]
+        xp_assert_close(ynzp, ynzpref, rtol=1e-10, atol=1e-13)
+
+        yzp = signal.decimate(u, 2, ftype=system, zero_phase=True)
+        yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k), u)[::2]
+        xp_assert_close(yzp, yzpref, rtol=1e-10, atol=1e-13)
+
+    @skip_xp_backends(np_only=True, reason="dlti")
     def test_complex_fir_dlti(self, xp):
         # centre frequency for filter [Hz]
         fcentre = 50

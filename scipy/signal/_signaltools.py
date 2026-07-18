@@ -5415,7 +5415,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             b, a = system.num, system.den
             ftype = 'fir'
         elif (any(np.iscomplex(system.poles))
-              or any(np.iscomplex(system.poles))
+              or any(np.iscomplex(system.zeros))
               or np.iscomplex(system.gain)):
             # sosfilt & sosfiltfilt don't handle complex coeffs
             iir_use_sos = False
