@@ -3638,8 +3638,8 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         determined by ``t[0] + T * n_x / num * np.arange(num)`` with
         ``T = t[1] - t[0]``. Default is ``None``.
     axis : int, optional
-        The time/frequency axis of `x` along which the resampling take place.
-        The Default is 0.
+        The time/frequency axis of `x` along which the resampling takes place.
+        The default is 0.
     window : array_like, callable, str, float, or tuple, optional
         If not ``None``, it specifies a filter in the Fourier domain, which is applied
         before resampling. I.e., the FFT ``X`` of `x` is calculated by
@@ -3647,13 +3647,13 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         function ``W(f_X)`` which consumes the frequencies ``f_X = fftfreq(n_x, T)``.
 
         If `window` is a 1d array of length ``n_x`` then ``W=window``.
-        If `window` is a callable  then ``W = window(f_X)``.
+        If `window` is a callable then ``W = window(f_X)``.
         Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
         ``W = fftshift(signal.get_window(window, n_x))``. Default is ``None``.
 
     domain : 'time' | 'freq', optional
         If set to ``'time'`` (default) then an FFT is applied to `x`, otherwise
-        (``'freq'``) it is asssmued that an FFT was already applied, i.e.,
+        (``'freq'``) it is assumed that an FFT was already applied, i.e.,
         ``x = fft(x_t, axis=axis)`` with ``x_t`` being the input signal in the time
         domain.
 
@@ -3686,9 +3686,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     zero imaginary part are treated identically. I.e., passing `x` or passing
     ``x.astype(np.complex128)`` produce the same numeric result.
 
-    If the number of input  or output samples are prime or have few prime factors, this
+    If the number of input or output samples is prime or has few prime factors, this
     function may be slow due to utilizing FFTs. Consult `~scipy.fft.prev_fast_len` and
-    `~scipy.fft.next_fast_len` for determining efficient signals lengths.
+    `~scipy.fft.next_fast_len` for determining efficient signal lengths.
     Alternatively, utilizing `resample_poly` to calculate an intermediate signal (as
     illustrated in the example below) can result in significant speed increases.
 
@@ -3939,7 +3939,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
         the other signal extension modes supported by `scipy.signal.upfirdn`.
         Changes assumptions on values beyond the boundary. If `constant`,
-        assumed to be `cval` (default zero). If `line` assumed to continue a
+        it is assumed to be `cval` (default zero). If `line` is assumed to continue a
         linear trend defined by the first and last points. `mean`, `median`,
         `maximum` and `minimum` work as in `np.pad` and assume that the values
         beyond the boundary are the mean, median, maximum or minimum
