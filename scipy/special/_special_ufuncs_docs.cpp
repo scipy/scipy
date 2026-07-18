@@ -3094,6 +3094,32 @@ const char *ellipj_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    The elliptic sine sn(u|m) interpolates between the sine function and the
+    hyperbolic tangent when m changes from 0 to 1.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.special import ellipj
+    >>> u = np.linspace(0, 2*np.pi, 100)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(u, np.sin(u), '--', label='sin(u)')
+    >>> for m in (0.2, 0.8, 0.99):
+    ...     ax.plot(u, ellipj(u, m)[0], label=f'sn(u|{m})')
+    >>> ax.plot(u, np.tanh(u), '--', label='tanh(u)')
+    >>> ax.set_xlabel('u')
+    >>> ax.legend(loc='lower left')
+    >>> plt.show()
+
+    Like for sine and cosine, the squares of elliptic sine and elliptic cosine
+    add up to one.
+
+    >>> u = np.linspace(0, 5, 11)
+    >>> sn, cn, _, _ = ellipj(u, 0.7)
+    >>> sn**2 + cn**2
+    array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
     )";
 
 const char *ellipkm1_doc = R"(
