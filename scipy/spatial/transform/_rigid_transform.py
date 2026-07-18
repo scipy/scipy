@@ -1450,9 +1450,7 @@ class RigidTransform:
 
         self._matrix = self._backend.setitem(self._matrix, indexer, value.as_matrix())
 
-    def __mul__(
-        self, other: RigidTransform | Rotation
-    ) -> RigidTransform:
+    def __mul__(self, other: RigidTransform | Rotation) -> RigidTransform:
         """Compose this transform with the other.
 
         If ``p`` and ``q`` are two transforms, then the composition of '``q``
