@@ -10,7 +10,6 @@ from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_default_dtype
                                    xp_size, array_namespace, _xp_copy_to_numpy,
                                    is_lazy_array, eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-from scipy._external import array_api_extra as xpx
 from scipy import stats, special
 from scipy.fft.tests.test_fftlog import skip_xp_backends
 from scipy.optimize import root
@@ -1247,8 +1246,8 @@ class TestPower:
         popmeans = xp.asarray([0, 0.2])
         def test(x, alternative, axis=-1):
             # ensure that popmeans axis is zeroth and orthogonal to the rest
-            popmeans_expanded = xpx.expand_dims(popmeans,
-                                                axis=tuple(range(1, x.ndim + 1)))
+            popmeans_expanded = xp.expand_dims(popmeans,
+                                               axis=tuple(range(1, x.ndim + 1)))
             alternative = alternatives[int(alternative)]
             return stats.ttest_1samp(x, popmeans_expanded, alternative=alternative,
                                      axis=axis)
@@ -1634,7 +1633,6 @@ class TestPermutationTest:
         xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
         xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
-    @skip_xp_backends('cupy', reason='needs kruskal')
     @skip_xp_backends(eager_only=True)  # kruskal does input validation
     @pytest.mark.parametrize('axis', (-1, 2))
     def test_vectorized_nsamp_ptype_both(self, axis, xp):
@@ -2022,7 +2020,7 @@ class TestPermutationTest:
 
 
 def test_all_partitions_concatenated():
-    # make sure that _all_paritions_concatenated produces the correct number
+    # make sure that _all_partitions_concatenated produces the correct number
     # of partitions of the data into samples of the given sizes and that
     # all are unique
     n = np.array([3, 2, 4], dtype=int)

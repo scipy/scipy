@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_, assert_allclose
 import pytest
 
-from scipy.special import _ufuncs
+from scipy.special import _ufuncs, gammasgn
 import scipy.special._orthogonal as orth
 from scipy.special._testutils import FuncData
 
@@ -273,6 +273,22 @@ def test_gegenbauer_nan(n, alpha, x):
     nan_gegenbauer = np.isnan(_ufuncs.eval_gegenbauer(n, alpha, x))
     nan_arg = np.any(np.isnan([n, alpha, x]))
     assert nan_gegenbauer == nan_arg
+
+@pytest.mark.parametrize("n", np.arange(10))
+@pytest.mark.parametrize("alpha", [-0.45, -0.25, -0.125, 0.0, 0.25, 1.0, 2.0])
+@pytest.mark.parametrize("x", [-np.inf, np.inf])
+def test_gegenbauer_infinity(n, alpha, x):
+    # gh-11713 - check correct handling of x = +inf and x = -inf
+    if alpha == 0.0:
+        expected = 0.0
+    elif n == 0.0:
+        expected = 1.0
+    else:
+        # sign of leading coefficient: 2^n * Gamma(n+alpha) / (n! Gamma(alpha))
+        lead_sign = gammasgn(n + alpha) * gammasgn(alpha)
+        expected = lead_sign * (np.sign(x) ** n) * np.inf
+    assert_allclose(_ufuncs.eval_gegenbauer(int(n), alpha, x), expected, rtol=1e-10)
+    assert_allclose(_ufuncs.eval_gegenbauer(float(n), alpha, x), expected, rtol=1e-10)
 
 @pytest.mark.parametrize(
     "n, expected",

@@ -8,11 +8,8 @@ py3.extension_module('_trlib',
     'trlib_tri_factor.c'
   ],
   c_args: cython_c_args,
-  include_directories: [
-    '../../_lib',
-    '../../_build_utils/src'
-  ],
-  dependencies: [lapack_lp64_dep, np_dep],
+  include_directories: ['../../_lib'],
+  dependencies: [lapack_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_trlib'

@@ -870,7 +870,7 @@ L30:
         if (fp0 > s) { goto restart_iteration; }
     }
 
-    // the case that s(u) is a fixed point is treated separetely.
+    // the case that s(u) is a fixed point is treated separately.
     // fp0 denotes the corresponding sum of squared residuals.
     fp0 = 0.0;
     d1 = 0.0;
@@ -1721,7 +1721,7 @@ restart_iteration:
     // for the number of trials.
     for (iter = 1; iter <= m; iter++) {
         if (*n == nmin) { *ier = -2; }
-        // find nrint, tne number of knot intervals.
+        // find nrint, the number of knot intervals.
         nrint = *n - nmin + 1;
         // find the position of the additional knots which are needed for
         // the b-spline representation of s(x).
@@ -3633,7 +3633,7 @@ fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const dou
     if (number == 0) { return; }
     // the sum of squared residulas sq is a quadratic polynomial in the
     // parameters g(j). we determine the unknown coefficients of this
-    // polymomial by calculating (number+1)*(number+2)/2 different splines
+    // polynomial by calculating (number+1)*(number+2)/2 different splines
     // according to specific values for g(j).
     int skip_to_110 = 0;
     for (i = 1; i <= number; i++) {

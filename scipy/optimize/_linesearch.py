@@ -11,10 +11,12 @@ Functions
     scalar_search_wolfe2
 
 """
+import math
 from warnings import warn
 
-from ._dcsrch import DCSRCH
 import numpy as np
+from scipy._lib._array_api import array_namespace, xp_capabilities
+from ._dcsrch import DCSRCH
 
 __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
@@ -39,7 +41,9 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
                        args=(), c1=1e-4, c2=0.9, amax=50, amin=1e-8,
                        xtol=1e-14):
     """
-    As `scalar_search_wolfe1` but do a line search to direction `pk`
+    As `scalar_search_wolfe1` but do a line search to direction `pk`.
+
+    This implements the DCSRCH function of MINPACK.
 
     Parameters
     ----------
@@ -71,6 +75,12 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
     -----
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
+    References
+    ----------
+    .. [1] Jorge J. Moré and David J. Thuente. 1994. "Line search algorithms with
+       guaranteed sufficient decrease". ACM Trans. Math. Softw. 20, 3 (Sept. 1994),
+       286-307. doi:`10.1145/192115.192132`
+
     """
     if gfk is None:
         gfk = fprime(xk, *args)
@@ -86,9 +96,9 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
     def derphi(s):
         gval[0] = fprime(xk + s*pk, *args)
         gc[0] += 1
-        return np.dot(gval[0], pk)
+        return gval[0] @ pk
 
-    derphi0 = np.dot(gfk, pk)
+    derphi0 = gfk @ pk
 
     stp, fval, old_fval = scalar_search_wolfe1(
             phi, derphi, old_fval, old_old_fval, derphi0,
@@ -143,11 +153,9 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
 
     References
     ----------
-    
-    .. [1] Nocedal, J., & Wright, S. J. (2006). Numerical optimization.
-       In Springer Series in Operations Research and Financial Engineering.
-       (Springer Series in Operations Research and Financial Engineering).
-       Springer Nature.
+    .. [1] J. Nocedal and S. J. Wright. "Numerical Optimization". Springer Ser.
+       Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition,
+       2006. :doi:`10.1007/978-0-387-40065-5`
 
     """
     _check_c1_c2(c1, c2)
@@ -183,6 +191,16 @@ line_search = line_search_wolfe1
 
 # Note: `line_search_wolfe2` is the public `scipy.optimize.line_search`
 
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "would need lazy_xp_function to avoid dask.compute"),
+        (
+            "jax.numpy",
+            "would need to convert Python float to sclar arrays and jax control flow "
+            "logic (if -> xp.where)"
+        ),
+    ]
+)
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
                        extra_condition=None, maxiter=10):
@@ -248,14 +266,22 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     Notes
     -----
-    Uses the line search algorithm to enforce strong Wolfe
-    conditions. See Wright and Nocedal, 'Numerical Optimization',
-    1999, pp. 59-61.
+    Uses the line search algorithm to enforce strong Wolfe conditions. See algorithms
+    3.5 and 3.6 on pp. 60-61 in [1]_ (first edition, algorithms 3.2 and 3.3 on
+    pp. 59-61), see also [2]_.
 
     The search direction `pk` must be a descent direction (e.g.
     ``-myfprime(xk)``) to find a step length that satisfies the strong Wolfe
     conditions. If the search direction is not a descent direction (e.g.
     ``myfprime(xk)``), then `alpha`, `new_fval`, and `new_slope` will be None.
+
+    References
+    ----------
+    .. [1] J. Nocedal and S. J. Wright. "Numerical Optimization". Springer Ser.
+       Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition,
+       2006. doi:`10.1007/978-0-387-40065-5`
+    .. [2] R. Fletcher, "Practical Methods of Optimization." Wiley, May 23, 2000.
+       doi:`10.1002/9781118723203`
 
     Examples
     --------
@@ -277,6 +303,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     (1.0, 2, 1, 1.1300000000000001, 6.13, [1.6, 1.4])
 
     """
+    array_namespace(xk, pk, gfk)
+    if old_fval is not None:
+        old_fval = old_fval
+    if old_old_fval is not None:
+        old_old_fval = old_old_fval
     fc = [0]
     gc = [0]
     gval = [None]
@@ -292,11 +323,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gc[0] += 1
         gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
         gval_alpha[0] = alpha
-        return np.dot(gval[0], pk)
+        return gval[0] @ pk
 
     if gfk is None:
         gfk = fprime(xk, *args)
-    derphi0 = np.dot(gfk, pk)
+    derphi0 = gfk @ pk
 
     if extra_condition is not None:
         # Add the current gradient as argument, to avoid needless
@@ -490,20 +521,20 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             db = b - a
             dc = c - a
             denom = (db * dc) ** 2 * (db - dc)
-            d1 = np.empty((2, 2))
-            d1[0, 0] = dc ** 2
-            d1[0, 1] = -db ** 2
-            d1[1, 0] = -dc ** 3
-            d1[1, 1] = db ** 3
-            [A, B] = np.dot(d1, np.asarray([fb - fa - C * db,
-                                            fc - fa - C * dc]).flatten())
-            A /= denom
-            B /= denom
+            D_00 = dc ** 2
+            D_01 = -db ** 2
+            D_10 = -dc ** 3
+            D_11 = db ** 3
+            v_0 = fb - fa - C * db
+            v_1 = fc - fa - C * dc
+            # [A, B] = (D @ v) / denom
+            A = (D_00 * v_0 + D_01 * v_1) / denom
+            B = (D_10 * v_0 + D_11 * v_1) / denom
             radical = B * B - 3 * A * C
-            xmin = a + (-B + np.sqrt(radical)) / (3 * A)
+            xmin = a + (-B + math.sqrt(radical)) / (3 * A)
         except ArithmeticError:
             return None
-    if not np.isfinite(xmin):
+    if not math.isfinite(xmin):
         return None
     return xmin
 
@@ -524,7 +555,7 @@ def _quadmin(a, fa, fpa, b, fb):
             xmin = a - C / (2.0 * B)
         except ArithmeticError:
             return None
-    if not np.isfinite(xmin):
+    if not math.isfinite(xmin):
         return None
     return xmin
 
@@ -654,7 +685,6 @@ def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     Wright and Nocedal in 'Numerical Optimization', 1999, pp. 56-57
 
     """
-    xk = np.atleast_1d(xk)
     fc = [0]
 
     def phi(alpha1):
@@ -666,19 +696,10 @@ def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     else:
         phi0 = old_fval  # compute f(xk) -- done in past loop
 
-    derphi0 = np.dot(gfk, pk)
+    derphi0 = gfk @ pk
     alpha, phi1 = scalar_search_armijo(phi, phi0, derphi0, c1=c1,
                                        alpha0=alpha0)
     return alpha, fc[0], phi1
-
-
-def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
-    """
-    Compatibility wrapper for `line_search_armijo`
-    """
-    r = line_search_armijo(f, xk, pk, gfk, old_fval, args=args, c1=c1,
-                           alpha0=alpha0)
-    return r[0], r[1], 0, r[2]
 
 
 def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):

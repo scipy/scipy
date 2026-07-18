@@ -20,7 +20,6 @@ Subpackages
  io                           --- Data input and output
  linalg                       --- Linear algebra routines
  ndimage                      --- N-D image package
- odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
  sparse                       --- Sparse Matrices
@@ -105,7 +104,6 @@ submodules = [
     'io',
     'linalg',
     'ndimage',
-    'odr',
     'optimize',
     'signal',
     'sparse',
@@ -129,6 +127,11 @@ def __dir__():
 def __getattr__(name):
     if name in submodules:
         return _importlib.import_module(f'scipy.{name}')
+    elif name == "odr":
+        raise AttributeError(
+            "`scipy.odr` was deprecated in SciPy 1.17 and removed in SciPy 1.19. "
+            "Please use https://pypi.org/project/odrpack/ instead."
+        )
     else:
         try:
             return globals()[name]

@@ -11,11 +11,7 @@ from scipy._lib._array_api import (
     xp_promote, xp_default_dtype, xp_size, xp_device, is_numpy
 )
 
-try:
-    from numpy.exceptions import RankWarning
-except ImportError:
-    # numpy 1.x
-    from numpy import RankWarning
+from numpy.exceptions import RankWarning
 
 
 def _sort_cmplx(arr, xp):
@@ -84,7 +80,7 @@ def _lstsq(a, b, xp=None, rcond=None):
     a, b = xp_promote(a, b, force_floating=True, xp=xp)
 
     if rcond is None:
-        rcond = xp.finfo(a.dtype).eps * max(a.shape[-1], a.shape[-2])
+        rcond = xp.finfo(a.dtype).eps
 
     if is_numpy(xp):
         from scipy.linalg import lstsq as s_lstsq

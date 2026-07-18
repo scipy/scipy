@@ -42,6 +42,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         Work array size. If None or -1, it is automatically computed.
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance).
+        See :ref:`tutorial_linalg_overwrite` for details.
     sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
         Specifies whether the upper eigenvalues should be sorted. A callable
         may be passed that, given an eigenvalue, returns a boolean denoting

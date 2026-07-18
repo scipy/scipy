@@ -4,5 +4,4 @@
 # Add the needs-release-note-decision tag to PRs that typically require a
 # mention in the release notes.
 needs-release-note-decision:
-  - 'ENH'
-  - 'DEP'
+  - '(ENH|DEP)'

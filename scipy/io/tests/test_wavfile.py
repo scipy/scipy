@@ -11,7 +11,6 @@ import pytest
 from pytest import raises, warns
 
 from scipy.io import wavfile
-from scipy._lib._gcutils import IS_PYPY, break_cycles
 
 
 def datafile(fn):
@@ -487,12 +486,6 @@ def test_write_roundtrip(realfile, mmap, rate, channels, dt_str, tmpdir):
     else:
         with pytest.raises(ValueError, match='read-only'):
             data2[0] = 0
-
-    if realfile and mmap and IS_PYPY and sys.platform == 'win32':
-        # windows cannot remove a dead file held by a mmap but not collected
-        # in PyPy; since the filename gets reused in this test, clean this up
-        break_cycles()
-        break_cycles()
 
 
 @pytest.mark.parametrize("dtype", [np.float16])

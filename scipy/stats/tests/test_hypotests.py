@@ -205,6 +205,15 @@ class TestMannWhitneyU:
 
     # --- Test Input Validation ---
 
+    def get_zstatistic_from_pvalue(self, p, U, n1, n2, alternative):
+        if alternative == 'less':
+            z = special.ndtri(p)
+        elif alternative == 'greater':
+            z = -special.ndtri(p)
+        else:
+            z = special.ndtri(p/2) if U < n1*n2/2 else -special.ndtri(p/2)
+        return z
+
     def test_empty(self, xp):
         x = xp.asarray([1, 2])  # generic, valid inputs
         y = xp.asarray([3, 4])
@@ -337,6 +346,11 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, **kwds)
         xp_assert_close(res.statistic, xp.asarray(expected[0], dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(expected[1], dtype=dtype))
+        if kwds['method'] == 'asymptotic':
+            z = self.get_zstatistic_from_pvalue(res.pvalue, res.statistic,
+                                                x.shape[0], y.shape[0],
+                                                alternative=kwds['alternative'])
+            xp_assert_close(res.zstatistic, xp.asarray(z, dtype=dtype))
 
     cases_continuity = [[{"alternative": 'two-sided', "use_continuity": True},
                          (23., 0.6865041817876)],
@@ -366,6 +380,10 @@ class TestMannWhitneyU:
         res = mannwhitneyu(y, x, method='asymptotic', **kwds)
         xp_assert_close(res.statistic, xp.asarray(expected[0]))
         xp_assert_close(res.pvalue, xp.asarray(expected[1]))
+        z = self.get_zstatistic_from_pvalue(res.pvalue, res.statistic,
+                                            x.shape[0], y.shape[0],
+                                            alternative=kwds['alternative'])
+        xp_assert_close(res.zstatistic, xp.asarray(z))
 
     def test_tie_correct(self, xp):
         # Test tie correction against R's wilcox.test
@@ -499,13 +517,21 @@ class TestMannWhitneyU:
     def test_equal_scalar_data(self):  # not important to preserve w/ array API
         # when two scalars are equal, there is an -0.5/0 in the asymptotic
         # approximation. R gives pvalue=1.0 for alternatives 'less' and
-        # 'greater' but NA for 'two-sided'. I don't see why, so I don't
-        # see a need for a special case to match that behavior.
+        # 'greater' but NA for 'two-sided'.
         assert_equal(mannwhitneyu(1, 1, method="exact"), (0.5, 1))
-        assert_equal(mannwhitneyu(1, 1, method="asymptotic"), (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='less'),
+                     (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='greater'),
+                     (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic"),
+                     (0.5, np.nan))
 
-        # without continuity correction, this becomes 0/0, which really
+        # without continuity correction, this definitely becomes 0/0, which really
         # is undefined
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='less',
+                                  use_continuity=False), (0.5, np.nan))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='greater',
+                                  use_continuity=False), (0.5, np.nan))
         assert_equal(mannwhitneyu(1, 1, method="asymptotic",
                                   use_continuity=False), (0.5, np.nan))
 
@@ -569,7 +595,7 @@ class TestMannWhitneyU:
         xp_assert_equal(res1.statistic, res2.statistic)
         xp_assert_equal(res1.pvalue, res2.pvalue)
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
+    @skip_xp_backends("jax.numpy", reason="needs jax-ml/jax#34490")
     def test_gh11355_nan(self, xp):
         # NaNs should propagate by default.
         x = [1., 2., 3., 4.]
@@ -642,7 +668,7 @@ class TestMannWhitneyU:
         xp_assert_equal(res.statistic, xp.asarray(statistic_exp))
         xp_assert_close(res.pvalue, xp.asarray(pvalue_exp))
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
+    @skip_xp_backends("jax.numpy", reason="needs jax-ml/jax#34490")
     def test_gh_4067(self, xp):
         # Test for correct behavior with all NaN input - default is propagate
         nan = xp.asarray(xp.nan)
@@ -678,15 +704,15 @@ class TestMannWhitneyU:
         xp_assert_close(res.statistic, xp.asarray(expected[0]), rtol=rtol)
         xp_assert_close(res.pvalue, xp.asarray(expected[1]), rtol=rtol)
 
-    def test_gh19692_smaller_table(self):
+    def test_gh19692_smaller_table(self, xp):
         # In gh-19692, we noted that the shape of the cache used in calculating
         # p-values was dependent on the order of the inputs because the sample
         # sizes n1 and n2 changed. This was indicative of unnecessary cache
         # growth and redundant calculation. Check that this is resolved.
         rng = np.random.default_rng(7600451795963068007)
         m, n = 5, 11
-        x = rng.random(size=m)
-        y = rng.random(size=n)
+        x = xp.asarray(rng.random(size=m).tolist())
+        y = xp.asarray(rng.random(size=n).tolist())
 
         setattr(_mwu_state, 's', _MWU(0, 0))
         _mwu_state.s.reset()  # reset cache
@@ -708,16 +734,16 @@ class TestMannWhitneyU:
         assert shape == _mwu_state.s.configurations.shape
 
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
-    def test_permutation_method(self, alternative):
+    def test_permutation_method(self, alternative, xp):
         rng = np.random.default_rng(7600451795963068007)
-        x = rng.random(size=(2, 5))
-        y = rng.random(size=(2, 6))
+        x = xp.asarray(rng.random(size=(2, 5)))
+        y = xp.asarray(rng.random(size=(2, 6)))
         res = stats.mannwhitneyu(x, y, method=stats.PermutationMethod(),
                                  alternative=alternative, axis=1)
         res2 = stats.mannwhitneyu(x, y, method='exact',
                                   alternative=alternative, axis=1)
-        assert_allclose(res.statistic, res2.statistic, rtol=1e-15)
-        assert_allclose(res.pvalue, res2.pvalue, rtol=1e-15)
+        xp_assert_close(res.statistic, res2.statistic, rtol=1e-15)
+        xp_assert_close(res.pvalue, res2.pvalue, rtol=1e-15)
 
     # Old tests moved from test_stats. Source of magic numbers unknown.
     X = [19.8958398126694, 19.5452691647182, 19.0577309166425, 21.716543054589,

@@ -13,9 +13,10 @@ at the top-level directory.
  * \brief Computes an ILU factorization of a general sparse matrix
  *
  * <pre>
- * -- SuperLU routine (version 4.1) --
+ * -- SuperLU routine (version 7.0.0) --
  * Lawrence Berkeley National Laboratory.
  * June 30, 2009
+ * August 2024
  *
  * </pre>
  */
@@ -197,7 +198,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int       *iperm_c; /* inverse of perm_c */
     int       *swap, *iswap; /* swap is used to store the row permutation
 				during the factorization. Initially, it is set
-				to iperm_c (row indeces of Pc*A*Pc').
+				to iperm_c (row indices of Pc*A*Pc').
 				iswap is the inverse of swap. After the
 				factorization, it is equal to perm_r. */
     int       *iwork;
@@ -217,7 +218,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int_t     nzlumax;
     double    *amax; 
     double    drop_sum;
-    double alpha, omega;  /* used in MILU, mimicing DRIC */
+    double alpha, omega;  /* used in MILU, mimicking DRIC */
     double    *dwork2;	   /* used by the second dropping rule */
 
     /* Local scalars */
@@ -235,7 +236,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     register int jcol, jj;
     register int kcol;	/* end column of a relaxed snode */
     register int icol;
-    int_t     i, k, iinfo;
+    int_t     drop_row, k, iinfo;
     int       m, n, min_mn, jsupno, fsupc;
     int_t     new_next, nextlu, nextu;
     int       w_def;	/* upper bound on panel width */
@@ -298,7 +299,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     for (k = 0; k < n; k++) iswap[k] = perm_c[k];
     amax = (double *) SUPERLU_MALLOC(panel_size * sizeof(double));
     if (drop_rule & DROP_SECONDARY)
-	dwork2 = SUPERLU_MALLOC(n * sizeof(double));
+	dwork2 = (double *) SUPERLU_MALLOC(n * sizeof(double));
     else
 	dwork2 = NULL;
 
@@ -316,18 +317,20 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     else
 	ilu_relax_snode(n, etree, relax, marker, relax_end, relax_fsupc);
 
-    ifill (perm_r, m, EMPTY);
-    ifill (marker, m * NO_MARKER, EMPTY);
+    ifill (perm_r, m, SLU_EMPTY);
+    ifill (marker, m * NO_MARKER, SLU_EMPTY);
     supno[0] = -1;
     xsup[0]  = xlsub[0] = xusub[0] = xlusup[0] = 0;
     w_def    = panel_size;
 
     /* Mark the rows used by relaxed supernodes */
-    ifill (marker_relax, m, EMPTY);
-    i = mark_relax(m, relax_end, relax_fsupc, xa_begin, xa_end,
+    ifill (marker_relax, m, SLU_EMPTY);
+    int relaxed_supernodes = mark_relax(m, relax_end, relax_fsupc, xa_begin, xa_end,
 	         asub, marker_relax);
 #if ( PRNTlevel >= 1)
-    printf("%d relaxed supernodes.\n", (int)i);
+    printf("%d relaxed supernodes.\n", i);
+#else
+    (void)relaxed_supernodes; // to suppress unused variable warning
 #endif
 
     /*
@@ -337,7 +340,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
      */
     for (jcol = 0; jcol < min_mn; ) {
 
-	if ( relax_end[jcol] != EMPTY ) { /* start of a relaxed snode */
+	if ( relax_end[jcol] != SLU_EMPTY ) { /* start of a relaxed snode */
 	    kcol = relax_end[jcol];	  /* end of the relaxed snode */
 	    panel_histo[kcol-jcol+1]++;
 
@@ -352,9 +355,8 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		    quota = gamma * Astore->nnz / m * (m - first) / m
 			    * (last - first + 1);
 		else if (drop_rule & DROP_COLUMN) {
-		    int i;
 		    quota = 0;
-		    for (i = first; i <= last; i++)
+		    for (int i = first; i <= last; i++)
 			quota += xa_end[i] - xa_begin[i];
 		    quota = gamma * quota * (m - first) / m;
 		} else if (drop_rule & DROP_AREA)
@@ -365,7 +367,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		fill_tol = pow(fill_ini, 1.0 - 0.5 * (first + last) / min_mn);
 
 		/* Drop small rows */
-		i = ilu_ddrop_row(options, first, last, tol_L, quota, &nnzLj,
+		drop_row = ilu_ddrop_row(options, first, last, tol_L, quota, &nnzLj,
 				  &fill_tol, Glu, tempv, dwork2, 0);
 		/* Reset the parameters */
 		if (drop_rule & DROP_DYNAMIC) {
@@ -377,7 +379,9 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		}
 		if (fill_tol < 0) iinfo -= (int)fill_tol;
 #ifdef DEBUG
-		num_drop_L += i * (last - first + 1);
+		num_drop_L += drop_row * (last - first + 1);
+#else
+		(void)drop_row; // to suppress unused variable warning
 #endif
 	    }
 
@@ -444,7 +448,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	     */
 	    panel_size = w_def;
 	    for (k = jcol + 1; k < SUPERLU_MIN(jcol+panel_size, min_mn); k++)
-		if ( relax_end[k] != EMPTY ) {
+		if ( relax_end[k] != SLU_EMPTY ) {
 		    panel_size = k - jcol;
 		    break;
 		}
@@ -481,7 +485,6 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 
 		/* Make a fill-in position if the column is entirely zero */
 		if (xlsub[jj + 1] == xlsub[jj]) {
-		    register int i, row;
 		    int_t nextl;
 		    int_t nzlmax = Glu->nzlmax;
 		    int_t *lsub = Glu->lsub;
@@ -500,11 +503,14 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		    ((double *) Glu->lusup)[xlusup[jj]] = zero;
 
 		    /* Choose a row index (pivrow) for fill-in */
-		    for (i = jj; i < n; i++)
-			if (marker_relax[swap[i]] <= jj) break;
-		    row = swap[i];
-		    marker2[row] = jj;
-		    lsub[xlsub[jj]] = row;
+		    for (int i = jj; i < n; i++) {
+			if (marker_relax[swap[i]] <= jj) {
+			    int row = swap[i];
+			    marker2[row] = jj;
+			    lsub[xlsub[jj]] = row;
+			    break;
+			}
+		    }
 #ifdef DEBUG
 		    printf("Fill col %d.\n", (int)jj);
 		    fflush(stdout);
@@ -574,9 +580,8 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 			quota = gamma * Astore->nnz / m * (m - first) / m
 				* (last - first + 1);
 		    else if (drop_rule & DROP_COLUMN) {
-			int i;
 			quota = 0;
-			for (i = first; i <= last; i++)
+			for (int i = first; i <= last; i++)
 			    quota += xa_end[i] - xa_begin[i];
 			quota = gamma * quota * (m - first) / m;
 		    } else if (drop_rule & DROP_AREA)
@@ -588,7 +593,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 			    (double)min_mn);
 
 		    /* Drop small rows */
-		    i = ilu_ddrop_row(options, first, last, tol_L, quota,
+		    drop_row = ilu_ddrop_row(options, first, last, tol_L, quota,
 				      &nnzLj, &fill_tol, Glu, tempv, dwork2,
 				      1);
 
@@ -602,7 +607,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		    }
 		    if (fill_tol < 0) iinfo -= (int)fill_tol;
 #ifdef DEBUG
-		    num_drop_L += i * (last - first + 1);
+		    num_drop_L += drop_row * (last - first + 1);
 #endif
 		} /* if start a new supernode */
 
@@ -618,8 +623,8 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 
     if ( m > n ) {
 	k = 0;
-	for (i = 0; i < m; ++i)
-	    if ( perm_r[i] == EMPTY ) {
+	for (int i = 0; i < m; ++i)
+	    if ( perm_r[i] == SLU_EMPTY ) {
 		perm_r[i] = n + k;
 		++k;
 	    }
@@ -629,8 +634,8 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     fixupL(min_mn, perm_r, Glu);
 
     dLUWorkFree(iwork, dwork, Glu); /* Free work space and compress storage */
-    SUPERLU_FREE(xplore);
-    SUPERLU_FREE(marker_relax);
+    SUPERLU_FREE (xplore);
+    SUPERLU_FREE (marker_relax);
 
     if ( fact == SamePattern_SameRowPerm ) {
 	/* L and U structures may have changed due to possibly different

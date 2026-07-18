@@ -113,6 +113,7 @@ for func_name in _ndimage_api.__all__:
 
     capabilities = capabilities_dict.get(func_name, default_capabilities)
 
+    # pyrefly:ignore[not-callable]
     f = capabilities(
         delegate_xp(delegator, MODULE_NAME)(bare_func)
         if SCIPY_ARRAY_API else bare_func

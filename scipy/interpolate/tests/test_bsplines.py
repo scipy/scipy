@@ -11,7 +11,7 @@ import sys
 import numpy as np
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
-    xp_ravel
+    xp_ravel, _xp_copy_to_numpy, array_namespace, is_cupy
 )
 import scipy._external.array_api_extra as xpx
 from pytest import raises as assert_raises
@@ -34,7 +34,7 @@ from scipy.interpolate import generate_knots, make_splrep, make_splprep
 
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
@@ -44,6 +44,7 @@ from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _dierckx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 @make_xp_test_case(BSpline)
@@ -105,6 +106,11 @@ class TestBSpline:
         expected = xp.where(xx < 1., xp.asarray(3., dtype=xp.float64), 4.0)
         xp_assert_close(b(xx), expected)
 
+    def test_attributes_have_correct_namespace(self, xp):
+        b = BSpline(t=xp.asarray([0, 1., 2]), c=xp.asarray([3., 4]), k=0)
+        assert array_namespace(b.t) is xp
+        assert array_namespace(b.c) is xp
+
     def test_degree_0(self):
         xx = np.linspace(0, 1, 10)
 
@@ -126,7 +132,7 @@ class TestBSpline:
             c[0]*B_012(x, xp=xp) + c[1]*B_012(x-1, xp=xp) + c[2]*B_012(x-2, xp=xp),
             atol=1e-14
         )
-        x_np, t_np, c_np = map(np.asarray, (x, t, c))
+        x_np, t_np, c_np = map(_xp_copy_to_numpy, (x, t, c))
         splev_result = splev(x_np, (t_np, c_np, k))
         xp_assert_close(b(x), xp.asarray(splev_result), atol=1e-14)
 
@@ -135,12 +141,18 @@ class TestBSpline:
         k = 3
         t = xp.asarray([0]*(k+1) + [1]*(k+1))
         c = xp.asarray([1., 2., 3., 4.])
-        bp = BPoly(xp.reshape(c, (-1, 1)), xp.asarray([0, 1]))
+        bp = BPoly(
+            _xp_copy_to_numpy(xp.reshape(c, (-1, 1))),
+            _xp_copy_to_numpy(xp.asarray([0, 1])),
+        )
         bspl = BSpline(t, c, k)
 
         xx = xp.linspace(-1., 2., 10)
-        xp_assert_close(bp(xx, extrapolate=True),
-                        bspl(xx, extrapolate=True), atol=1e-14)
+        xp_assert_close(
+            bspl(xx, extrapolate=True),
+            xp.asarray(bp(_xp_copy_to_numpy(xx), extrapolate=True)),
+            atol=1e-14,
+        )
 
     @skip_xp_backends("dask.array", reason="_naive_eval is not dask-compatible")
     @skip_xp_backends("jax.numpy", reason="too slow; XXX a slow-if marker?")
@@ -241,7 +253,7 @@ class TestBSpline:
                         b(xx[mask], extrapolate=False))
 
         # extrapolated values agree with FITPACK
-        xx_np, t_np, c_np = map(np.asarray, (xx, t, c))
+        xx_np, t_np, c_np = map(_xp_copy_to_numpy, (xx, t, c))
         splev_result = xp.asarray(splev(xx_np, (t_np, c_np, k), ext=0))
         xp_assert_close(b(xx, extrapolate=True), splev_result)
 
@@ -265,7 +277,7 @@ class TestBSpline:
         dt = t[-1] - t[0]
         xx = xp.linspace(t[k] - dt, t[n] + dt, 50)
         xy = t[k] + (xx - t[k]) % (t[n] - t[k])
-        xy_np, t_np, c_np = map(np.asarray, (xy, t, c))
+        xy_np, t_np, c_np = map(_xp_copy_to_numpy, (xy, t, c))
         atol = 1e-12 if xp_default_dtype(xp) == xp.float64 else 2e-7
         xp_assert_close(
             b(xx), xp.asarray(splev(xy_np, (t_np, c_np, k))), atol=atol
@@ -327,6 +339,7 @@ class TestBSpline:
         # 2nd derivative is not guaranteed to be continuous either
         assert not np.allclose(b(x - 1e-10, nu=2), b(x + 1e-10, nu=2))
 
+    @skip_xp_backends("cupy", reason="CuPy doesn't raise")
     def test_basis_element_invalid_too_short(self, xp):
         # There should be at least 2 knots
         assert_raises(ValueError, BSpline.basis_element, **dict(t=xp.asarray([0])))
@@ -336,7 +349,7 @@ class TestBSpline:
         xx = xp.linspace(-1, 4, 20)
         b = BSpline.basis_element(t=xp.asarray([0, 1, 2, 3]))
 
-        xx_np, t_np, c_np = map(np.asarray, (xx, b.t, b.c))
+        xx_np, t_np, c_np = map(_xp_copy_to_numpy, (xx, b.t, b.c))
         splev_result = xp.asarray(splev(xx_np, (t_np, c_np, b.k)))
         xp_assert_close(b(xx), splev_result, atol=1e-14)
 
@@ -414,9 +427,13 @@ class TestBSpline:
 
         # Test ``_fitpack._splint()``
         assert math.isclose(b.integrate(1, -1, extrapolate=False),
-                            _impl.splint(1, -1, b.tck), abs_tol=1e-14)
+                            _impl.splint(1, -1, map(_xp_copy_to_numpy, b.tck)),
+                            abs_tol=1e-14)
 
+    @xfail_xp_backends("cupy", reason="CuPy periodic extrapolation seems broken")
+    def test_integral_periodic(self, xp):
         # Test ``extrapolate='periodic'``.
+        b = BSpline.basis_element(xp.asarray([0, 1, 2]))  # x for x < 1 else 2 - x
         b.extrapolate = 'periodic'
         i = b.antiderivative()
         period_int = xp.asarray(i(2) - i(0), dtype=xp.float64)
@@ -685,6 +702,7 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         xp_assert_close(b(xx), np.ones_like(xx) * 3.0)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self, xp):
         # Check that no segfaults appear with concurrent access to BSpline
         b = _make_random_spline(xp=xp)
@@ -703,7 +721,7 @@ class TestBSpline:
         raises=AttributeError
     )
     def test_memmap(self, tmpdir):
-        # Make sure that memmaps can be used as t and c atrributes after the
+        # Make sure that memmaps can be used as t and c attributes after the
         # spline has been constructed. This is similar to what happens in a
         # scikit-learn context, where joblib can create read-only memmap to
         # share objects between workers. For more details, see
@@ -726,7 +744,7 @@ class TestBSpline:
         xp_assert_close(b(xx), expected)
 
 
-@make_xp_test_case(BSpline)
+@make_xp_test_case((BSpline, "insert_knot"))
 class TestInsert:
 
     @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
@@ -736,7 +754,7 @@ class TestInsert:
         y = xp.sin(x)**3
         spl = make_interp_spline(x, y, k=3)
 
-        tck = (spl._t, spl._c, spl.k)
+        tck = (_xp_copy_to_numpy(spl.t), _xp_copy_to_numpy(spl.c), spl.k)
         spl_1f = BSpline(*insert(xval, tck))     # FITPACK
         spl_1 = spl.insert_knot(xval)
 
@@ -774,7 +792,11 @@ class TestInsert:
         y = xp.sin(x)**3
         spl = make_interp_spline(x, y, k=3)
 
-        spl_1f = BSpline(*insert(xval, (spl._t, spl._c, spl.k), m=m))
+        spl_1f = BSpline(
+            *insert(
+                xval, (_xp_copy_to_numpy(spl.t), _xp_copy_to_numpy(spl.c), spl.k), m=m
+            )
+        )
         spl_1 = spl.insert_knot(xval, m)
 
         xp_assert_close(spl_1.t, xp.asarray(spl_1f.t), atol=1e-15)
@@ -953,7 +975,7 @@ def _sum_basis_elements(x, t, c, k):
 
 def B_012(x, xp=np):
     """ A linear B-spline function B(x | 0, 1, 2)."""
-    x = np.atleast_1d(x)
+    x = np.atleast_1d(_xp_copy_to_numpy(x))
     result = np.piecewise(x, [(x < 0) | (x > 2),
                             (x >= 0) & (x < 1),
                             (x >= 1) & (x <= 2)],
@@ -963,7 +985,7 @@ def B_012(x, xp=np):
 
 def B_0123(x, der=0):
     """A quadratic B-spline function B(x | 0, 1, 2, 3)."""
-    x = np.atleast_1d(x)
+    x = np.atleast_1d(_xp_copy_to_numpy(x))
     conds = [x < 1, (x > 1) & (x < 2), x > 2]
     if der == 0:
         funcs = [lambda x: x*x/2.,
@@ -1283,11 +1305,13 @@ class TestInterp:
         with assert_raises(ValueError, match="Expect x to be a 1D strictly"):
             make_interp_spline(x, y, k=k)
 
-    def test_not_a_knot(self, xp):
+    @pytest.mark.parametrize('k', [2, 3, 4, 5, 6, 7])
+    def test_not_a_knot(self, k, xp):
+        if is_cupy(xp) and k % 2 == 0:
+            pytest.xfail(f"cupy only supports odd degrees, got {k=}.")
         xx, yy = self._get_xy(xp)
-        for k in [2, 3, 4, 5, 6, 7]:
-            b = make_interp_spline(xx, yy, k)
-            xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_periodic(self, xp):
         xx, yy = self._get_xy(xp)
@@ -1522,6 +1546,7 @@ class TestInterp:
         with assert_raises(ValueError):
             make_interp_spline(x, y, bc_type=(l, r))
 
+    @skip_xp_backends("cupy", reason="CuPy does not raise")
     def test_deriv_order_too_large(self, xp):
         x = xp.arange(7)
         y = x**2
@@ -2003,7 +2028,8 @@ def _qr_reduce_py(a_p, y, startrow=1):
     """This is a python counterpart of the `_qr_reduce` routine,
     declared in interpolate/src/__fitpack.h
     """
-    from scipy.linalg.lapack import dlartg
+    from scipy.linalg.lapack import get_lapack_funcs
+    dlartg = get_lapack_funcs('lartg', dtype=np.float64, ilp64='preferred')
 
     # unpack the packed format
     a = a_p.a
@@ -2906,6 +2932,7 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
         k = 3
@@ -3428,7 +3455,7 @@ index 1afb1900f1..d817e51ad8 100644
     @pytest.mark.parametrize("npts", [30, 50, 100])
     @pytest.mark.parametrize("s", [0.1, 1e-2, 0])
     def test_vs_splrep(self, s, npts):
-        # XXX this test is brittle: differences start apearing for k=3 and s=1e-6,
+        # XXX this test is brittle: differences start appearing for k=3 and s=1e-6,
         # also for k != 3. Might be worth investigating at some point.
         # I think we do not really guarantee exact agreement with splrep. Instead,
         # we guarantee it is the same *in most cases*; otherwise slight differences
@@ -3465,7 +3492,7 @@ index 1afb1900f1..d817e51ad8 100644
 
 
 def disc_naive(t, k):
-    """Straitforward way to compute the discontinuity matrix. For testing ONLY.
+    """Straightforward way to compute the discontinuity matrix. For testing ONLY.
 
     This routine returns a dense matrix, while `_fitpack_repro.disc` returns
     a packed one.
@@ -3538,7 +3565,7 @@ class F_dense:
 
 class _TestMakeSplrepBase:
 
-    bc_type = None
+    bc_type: str | None = None
 
     def _get_xykt(self, xp=np):
         if self.bc_type == 'periodic':
@@ -3929,6 +3956,22 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         w = np.asarray([1.38723] * y.shape[0], dtype=np.float64)
         with assert_raises(ValueError):
             make_splrep(x, y, w=w, k=2, s=12)
+
+    def test_k0_raises(self):
+        # k=0 (piecewise constant) with s>0 is not supported: knot selection
+        # is undefined for degree 0, causing a cryptic RuntimeError.
+        # s=0 is fine as it bypasses _generate_knots. gh-25370
+        x = np.arange(10, dtype=float)
+        y = x**2
+        with pytest.raises(ValueError, match="k must be >= 1"):
+          make_splrep(x, y, s=1, k=0)
+
+        # s=0 with k=0 is fine: goes through make_interp_spline
+        result = make_splrep(x, y, s=0, k=0)
+        expected = make_interp_spline(x, y, k=0)
+        xp_assert_close(result.t, expected.t)
+        xp_assert_close(result.c, expected.c)
+        assert result.k == expected.k
 
     def test_shape(self, xp):
         # make sure coefficients have the right shape (not extra dims)

@@ -81,8 +81,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.ndimage.interpolation',
     'scipy.ndimage.measurements',
     'scipy.ndimage.morphology',
-    'scipy.odr.models',
-    'scipy.odr.odrpack',
     'scipy.optimize.cobyla',
     'scipy.optimize.cython_optimize',
     'scipy.optimize.lbfgsb',

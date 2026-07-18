@@ -4,12 +4,8 @@ import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import xp_copy
 
-# TODO:
-# - (maybe?) don't use fancy indexing assignment
-# - figure out how to replace the new `try`/`except`s
 
-
-def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
+def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
                   fatol=None, frtol=0, maxiter=None, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
@@ -34,6 +30,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
         broadcastable with one another.
     args : tuple, optional
         Additional positional arguments to be passed to `func`.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `func`.
     xatol, xrtol, fatol, frtol : float, optional
         Absolute and relative tolerances on the root and function value.
         See Notes for details.
@@ -125,12 +123,12 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
     array([1.8932892 , 2.        , 2.09455148])
 
     """
-    res = _chandrupatla_iv(func, args, xatol, xrtol,
+    res = _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
                            fatol, frtol, maxiter, callback)
-    func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+    func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    temp = eim._initialize(func, (a, b), args)
+    temp = eim._initialize(func, (a, b), args, kwargs=kwargs)
     func, xs, fs, args, shape, dtype, xp = temp
     x1, x2 = xs
     f1, f2 = fs
@@ -243,7 +241,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
                      xp=xp)
 
 
-def _chandrupatla_iv(func, args, xatol, xrtol,
+def _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
                      fatol, frtol, maxiter, callback):
     # Input validation for `_chandrupatla`
 
@@ -270,10 +268,10 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return func, args, xatol, xrtol, fatol, frtol, maxiter, callback
+    return func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
-def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
+def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None,
                            xrtol=None, fatol=None, frtol=None, maxiter=100,
                            callback=None):
     """Find the minimizer of an elementwise function.
@@ -306,6 +304,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         differentiated requires arguments that are not broadcastable with `x`,
         wrap that callable with `func` such that `func` accepts only `x` and
         broadcastable arrays.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     xatol, xrtol, fatol, frtol : float, optional
         Absolute and relative tolerances on the minimizer and function value.
         See Notes for details.
@@ -390,13 +390,13 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     >>> res.x
     array([1. , 1.5, 2. ])
     """
-    res = _chandrupatla_iv(func, args, xatol, xrtol,
+    res = _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
                            fatol, frtol, maxiter, callback)
-    func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+    func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
     xs = (x1, x2, x3)
-    temp = eim._initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args, kwargs=kwargs)
     func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs

@@ -129,8 +129,6 @@ change is made.
 
 * `scipy.ndimage`
 
-* `scipy.odr`
-
 * `scipy.optimize`
 
   - `scipy.optimize.cython_optimize`
@@ -176,7 +174,6 @@ change is made.
    scipy.io <io>
    scipy.linalg <linalg>
    scipy.ndimage <ndimage>
-   scipy.odr <odr>
    scipy.optimize <optimize>
    scipy.signal <signal>
    scipy.sparse <sparse>

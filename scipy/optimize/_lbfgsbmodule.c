@@ -59,9 +59,11 @@ static char doc_setulb[] = (
 static PyObject*
 lbfgsb_setulb(PyObject *self, PyObject *args)
 {
-    int m, n, maxls;
+
+    Py_ssize_t maxls_input, m_input;
+    CBLAS_INT m, n, maxls;
     double f, factr, pgtol;
-    int *nbd, *iwa, *isave, *lsave, *taskptr, *ln_taskptr;
+    CBLAS_INT *nbd, *iwa, *isave, *lsave, *taskptr, *ln_taskptr;
     double *x, *l, *u, *g, *wa, *dsave;
 
     PyArrayObject *ap_x=NULL, *ap_l=NULL, *ap_u=NULL, *ap_g=NULL, *ap_nbd=NULL;
@@ -71,8 +73,8 @@ lbfgsb_setulb(PyObject *self, PyObject *args)
     // Check argument types
     // m,x,l,u,nbd,f,g,factr,pgtol,wa,iwa,task,lsave,isave,dsave,maxls,ln_task
     if (!(PyArg_ParseTuple(args,
-                           "iO!O!O!O!dO!ddO!O!O!O!O!O!iO!",
-                           &m,                                      // i
+                           "nO!O!O!O!dO!ddO!O!O!O!O!O!nO!",
+                           &m_input,                                // n
                            &PyArray_Type, (PyObject **)&ap_x,       // O!
                            &PyArray_Type, (PyObject **)&ap_l,       // O!
                            &PyArray_Type, (PyObject **)&ap_u,       // O!
@@ -87,9 +89,13 @@ lbfgsb_setulb(PyObject *self, PyObject *args)
                            &PyArray_Type, (PyObject **)&ap_lsave,   // O!
                            &PyArray_Type, (PyObject **)&ap_isave,   // O!
                            &PyArray_Type, (PyObject **)&ap_dsave,   // O!
-                           &maxls,                                  // i
+                           &maxls_input,                            // n
                            &PyArray_Type, (PyObject **)&ap_ln_task  // O!
                            ))) { return NULL; }
+
+    maxls = (CBLAS_INT)maxls_input;
+    m = (CBLAS_INT)m_input;
+    int tcode = sizeof(CBLAS_INT) == sizeof(npy_int32) ? NPY_INT32 : NPY_INT64;
 
     // Check if arrays are contiguous and with the right dtype.
     // All arrays are 1D hence both F and C contiguous flags are set to True.
@@ -109,7 +115,7 @@ lbfgsb_setulb(PyObject *self, PyObject *args)
     {
         PYERR(lbfgsb_error, " Argument (wa) must be a contiguous array of type float64.");
     }
-    if (!(PyArray_IS_C_CONTIGUOUS(ap_iwa)) || (PyArray_TYPE(ap_iwa) != NPY_INT32))
+    if (!(PyArray_IS_C_CONTIGUOUS(ap_iwa)) || (PyArray_TYPE(ap_iwa) != tcode))
     {
         PYERR(lbfgsb_error, " Argument (iwa) must be a contiguous array of type int32.");
     }
@@ -117,23 +123,23 @@ lbfgsb_setulb(PyObject *self, PyObject *args)
     {
         PYERR(lbfgsb_error, " Argument (dsave) must be a contiguous array of type float64.");
     }
-    if (!(PyArray_IS_C_CONTIGUOUS(ap_nbd)) || (PyArray_TYPE(ap_nbd) != NPY_INT32))
+    if (!(PyArray_IS_C_CONTIGUOUS(ap_nbd)) || (PyArray_TYPE(ap_nbd) != tcode))
     {
         PYERR(lbfgsb_error, " Argument (nbd) must be a contiguous array of type int32.");
     }
-    if (!(PyArray_IS_C_CONTIGUOUS(ap_task)) || (PyArray_TYPE(ap_task) != NPY_INT32))
+    if (!(PyArray_IS_C_CONTIGUOUS(ap_task)) || (PyArray_TYPE(ap_task) != tcode))
     {
         PYERR(lbfgsb_error, " Argument (task) must be a contiguous array of type int32.");
     }
-    if (!(PyArray_IS_C_CONTIGUOUS(ap_lsave)) || (PyArray_TYPE(ap_lsave) != NPY_INT32))
+    if (!(PyArray_IS_C_CONTIGUOUS(ap_lsave)) || (PyArray_TYPE(ap_lsave) != tcode))
     {
         PYERR(lbfgsb_error, " Argument (lsave) must be a contiguous array of type int32.");
     }
-    if (!(PyArray_IS_C_CONTIGUOUS(ap_isave)) || (PyArray_TYPE(ap_isave) != NPY_INT32))
+    if (!(PyArray_IS_C_CONTIGUOUS(ap_isave)) || (PyArray_TYPE(ap_isave) != tcode))
     {
         PYERR(lbfgsb_error, " Argument (isave) must be a contiguous array of type int32.");
     }
-    if (!(PyArray_IS_C_CONTIGUOUS(ap_ln_task)) || (PyArray_TYPE(ap_ln_task) != NPY_INT32))
+    if (!(PyArray_IS_C_CONTIGUOUS(ap_ln_task)) || (PyArray_TYPE(ap_ln_task) != tcode))
     {
         PYERR(lbfgsb_error, " Argument (ln_task) must be a contiguous array of type int32.");
     }
@@ -142,15 +148,15 @@ lbfgsb_setulb(PyObject *self, PyObject *args)
     x = (double *)PyArray_DATA(ap_x);
     l = (double *)PyArray_DATA(ap_l);
     u = (double *)PyArray_DATA(ap_u);
-    nbd = (int *)PyArray_DATA(ap_nbd);
+    nbd = (CBLAS_INT *)PyArray_DATA(ap_nbd);
     g = (double *)PyArray_DATA(ap_g);
     wa = (double *)PyArray_DATA(ap_wa);
-    iwa = (int *)PyArray_DATA(ap_iwa);
-    lsave = (int *)PyArray_DATA(ap_lsave);
-    isave = (int *)PyArray_DATA(ap_isave);
+    iwa = (CBLAS_INT *)PyArray_DATA(ap_iwa);
+    lsave = (CBLAS_INT *)PyArray_DATA(ap_lsave);
+    isave = (CBLAS_INT *)PyArray_DATA(ap_isave);
     dsave = (double *)PyArray_DATA(ap_dsave);
-    taskptr = (int *)PyArray_DATA(ap_task);
-    ln_taskptr = (int *)PyArray_DATA(ap_ln_task);
+    taskptr = (CBLAS_INT *)PyArray_DATA(ap_task);
+    ln_taskptr = (CBLAS_INT *)PyArray_DATA(ap_ln_task);
 
     // Make the function call
     setulb(n, m, x, l, u, nbd, &f, g, factr, pgtol, wa, iwa, taskptr, lsave,

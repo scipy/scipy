@@ -225,9 +225,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
     def count_nonzero(self, axis=None):
         if axis is not None:
-            raise NotImplementedError(
-                "count_nonzero over axis is not implemented for BSR format."
-            )
+            return self.tocsr().count_nonzero(axis=axis)
         return np.count_nonzero(self._deduped_data())
 
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
@@ -356,25 +354,14 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     ######################
 
     def tobsr(self, blocksize=None, copy=False):
-        """Convert this array/matrix into Block Sparse Row Format.
-
-        With copy=False, the data/indices may be shared between this
-        array/matrix and the resultant bsr_array/bsr_matrix.
-
-        If blocksize=(R, C) is provided, it will be used for determining
-        block size of the bsr_array/bsr_matrix.
-
-        Returns
-        -------
-        bsr array/matrix
-            The converted array/matrix in BSR format.
-        """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
         if copy:
             return self.copy()
         else:
             return self
+
+    tobsr.__doc__ = _spbase.tobsr.__doc__
 
     def tocsr(self, copy=False):
         M, N = self.shape
@@ -405,17 +392,6 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocoo(self, copy=True):
-        """Convert this array/matrix to COOrdinate format.
-
-        When copy=False the data array will be shared between
-        this array/matrix and the resultant coo_array/coo_matrix.
-
-        Returns
-        -------
-        coo array/matrix
-            The converted array/matrix in COO format.
-        """
-
         M,N = self.shape
         R,C = self.blocksize
 
@@ -446,6 +422,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         return self._coo_container(
             (data, (row, col)), shape=self.shape
         )
+
+    tocoo.__doc__ = _spbase.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
         return self.tocoo(copy=False).toarray(order=order, out=out)
@@ -645,6 +623,15 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 def isspmatrix_bsr(x):
     """Is `x` of a bsr_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -696,26 +683,34 @@ class bsr_array(_bsr_base, sparray):
 
     Attributes
     ----------
+    data : ndarray
+        BSR format data array of the array
+    indices : ndarray
+        BSR format index array of the array
+    indptr : ndarray
+        BSR format index pointer array of the array
+    blocksize : 2-tuple of integers
+        Block size (R, C)
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        BSR format data array of the array
-    indices
-        BSR format index array of the array
-    indptr
-        BSR format index pointer array of the array
-    blocksize
-        Block size
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'bsr'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : bsr_array
+        The transpose of the array
+    mT : bsr_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -777,12 +772,21 @@ class bsr_array(_bsr_base, sparray):
            [4, 4, 5, 5, 6, 6],
            [4, 4, 5, 5, 6, 6]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class bsr_matrix(spmatrix, _bsr_base):
     """
     Block Sparse Row format sparse matrix.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         bsr_matrix(D, [blocksize=(R,C)])
@@ -807,26 +811,34 @@ class bsr_matrix(spmatrix, _bsr_base):
 
     Attributes
     ----------
+    data : ndarray
+        BSR format data array of the matrix
+    indices : ndarray
+        BSR format index array of the matrix
+    indptr : ndarray
+        BSR format index pointer array of the matrix
+    blocksize : 2-tuple of integers
+        Block size (R, C)
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        BSR format data array of the matrix
-    indices
-        BSR format index array of the matrix
-    indptr
-        BSR format index pointer array of the matrix
-    blocksize
-        Block size
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'bsr'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : bsr_matrix
+        The transpose of the matrix
+    mT : bsr_matrix
+        The matrix transpose
 
     Notes
     -----

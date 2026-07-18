@@ -334,7 +334,7 @@ def test_repr(func):
 
 
 @pytest.mark.skipif(
-    version.parse(np.__version__) < version.parse("2.2"),
+    version.parse(np.__version__) < version.parse("2.2"),  # type:ignore[attr-defined]
     reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
 @pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
 def test_doc(func):
@@ -394,3 +394,11 @@ def test_chdtr_gh21311(xp):
     ref = special.chdtr(v, x)
     res = special.chdtr(xp.asarray(v), xp.asarray(x))
     xp_assert_close(res, xp.asarray(ref))
+
+
+@make_xp_test_case(special.fdtrc)
+def test_mixed_arrays_and_python_scalars(xp):
+    # Tests that the delegation infrastructure respects NEP50.
+    res = special.fdtrc(1.1, 2., xp.asarray(1., dtype=xp.float32))
+    ref = xp.asarray(0.4349004, dtype=xp.float32)
+    xp_assert_close(res, ref)

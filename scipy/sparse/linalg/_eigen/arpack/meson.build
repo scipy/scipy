@@ -6,19 +6,18 @@ arnaud_sources = [
   'arnaud/src/arnaud_s_single.c',
   'arnaud/src/arnaud_s_double.c'
 ]
-arnaud_incdir = include_directories('arnaud/include')
-
 
 arnaud_lib = static_library('arnaud',
   arnaud_sources,
-  include_directories: arnaud_incdir,
-  dependencies: [m_dep, lapack_lp64_dep],
+  include_directories: ['arnaud/include'],
+  dependencies: [m_dep, lapack_dep, np_dep, py3_dep],
+  c_args: ['-DARNAUD_HAS_BLAS_CONFIG'],
 )
 
 py3.extension_module('_arpacklib',
   '_arpackmodule.c',
   link_with: arnaud_lib,
-  dependencies: [np_dep],
+  dependencies: [np_dep, lapack_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/sparse/linalg/_eigen/arpack',

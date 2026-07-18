@@ -504,6 +504,7 @@ class TestCubature:
             basic_1d_integrand,
             xp.asarray([0], dtype=xp.float32),
             xp.asarray([1], dtype=xp.float32),
+            rtol=1e-7,
             points=[],
             args=(xp.asarray([1], dtype=xp.float32), xp),
         ).estimate.dtype
@@ -971,7 +972,6 @@ class TestCubatureProblems:
                    f"true_error={xp.abs(res.estimate - exact)}")
         assert res.status == "converged", err_msg
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
     @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize("problem", [
         (
@@ -1119,7 +1119,6 @@ class TestCubatureProblems:
             check_0d=False,
         )
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
     @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize("problem", [
         (
@@ -1327,7 +1326,6 @@ class TestRulesCubature:
             GenzMalikCubature(1, xp=xp)
 
 
-@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 @pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestTransformations:

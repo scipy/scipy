@@ -10,11 +10,12 @@ at the top-level directory.
 */
 
 /*! @file 
- * \brief Read a matrix stored in Harwell-Boeing format.
+ * \brief Read a matrix stored in Matrix Market format.
  * Contributed by Francois-Henry Rouet.
  *
  */
 #include <ctype.h>
+#include <stdio.h>
 #include "slu_cdefs.h"
 
 #undef EXPAND_SYM
@@ -42,9 +43,10 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
     int    zero_base = 0;
     char *p, line[512], banner[64], mtx[64], crd[64], arith[64], sym[64];
     int expand;
+    char *cs;
 
     /* 	File format:
-     *    %%MatrixMarket matrix coordinate real general/symmetric/...
+     *    %%MatrixMarket matrix coordinate complex general/symmetric/...
      *    % ...
      *    % (optional comments)
      *    % ...
@@ -53,7 +55,7 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
      */
 
      /* 1/ read header */ 
-     fgets(line,512,fp);
+     cs = fgets(line,512,fp);
      for (p=line; *p!='\0'; *p=tolower(*p),p++);
 
      if (sscanf(line, "%s %s %s %s %s", banner, mtx, crd, arith, sym) != 5) {
@@ -76,9 +78,9 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
        exit(-1);
      }
 
-     if(strcmp(arith,"real")) {
-       if(!strcmp(arith,"complex")) {
-         printf("Complex matrix; use zreadMM instead!\n");
+     if(strcmp(arith,"complex")) {
+       if(!strcmp(arith,"real")) {
+         printf("Complex matrix; use dreadMM instead!\n");
          exit(-1);
        }
        else if(!strcmp(arith, "pattern")) {
@@ -91,14 +93,14 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
        }
      }
 
-     if(strcmp(sym,"general")) {
+     if ( (!strcmp(sym,"symmetric")) || (!strcmp(sym,"hermitian")) ) {
        printf("Symmetric matrix: will be expanded\n");
        expand=1;
      } else expand=0;
 
      /* 2/ Skip comments */
      while(banner[0]=='%') {
-       fgets(line,512,fp);
+       cs = fgets(line,512,fp);
        sscanf(line,"%s",banner);
      }
 
@@ -114,10 +116,12 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
       exit(-1);
    }
 
-    if(expand)
-      new_nonz = 2 * *nonz - *n;
-    else
+    if (expand) {
+      new_nonz = 2 * *nonz; /* upper bound, accommodate hard zeros on the diagonal */
+      printf("new_nonz upper bound symmetric expansion:\t%lld\n", (long long) new_nonz);
+    } else {
       new_nonz = *nonz;
+    }
 
     *m = *n;
     printf("m %lld, n %lld, nonz %lld\n", (long long) *m, (long long) *n, (long long) *nonz);
@@ -126,7 +130,7 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
     asub = *rowind;
     xa   = *colptr;
 
-    if ( !(val = (singlecomplex *) SUPERLU_MALLOC(new_nonz * sizeof(double))) )
+    if ( !(val = singlecomplexMalloc(new_nonz)) )
         ABORT("Malloc fails for val[]");
     if ( !(row = int32Malloc(new_nonz)) )
         ABORT("Malloc fails for row[]");
@@ -161,7 +165,7 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
 	    exit(-1);
 	} else {
 	    ++xa[col[nz]];
-            if(expand) {
+            if (expand) {
 	        if ( row[nz] != col[nz] ) { /* Excluding diagonal */
 	          ++nz;
 	          row[nz] = col[nz-1];
@@ -175,10 +179,9 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
     }
 
     *nonz = nz;
-    if(expand) {
+    if (expand) {
       printf("new_nonz after symmetric expansion:\t%lld\n", (long long)*nonz);
     }
-    
 
     /* Initialize the array of column pointers */
     k = 0;
@@ -223,14 +226,14 @@ creadMM(FILE *fp, int *m, int *n, int_t *nonz,
 static void creadrhs(int m, singlecomplex *b)
 {
     FILE *fp = fopen("b.dat", "r");
-    int i;
 
+    int i;
     if ( !fp ) {
         fprintf(stderr, "creadrhs: file does not exist\n");
 	exit(-1);
     }
     for (i = 0; i < m; ++i)
-      fscanf(fp, "%f%f\n", &b[i].r, &b[i].i);
-
     fclose(fp);
 }
+
+

@@ -70,37 +70,205 @@ the same shared library.
 
 """
 
+import argparse
 import json
 import os
-from stat import ST_MTIME
-import argparse
 import re
 import textwrap
 
 special_ufuncs = [
-    '_cospi', '_gen_harmonic', '_lambertw', '_normalized_gen_harmonic',
-    '_scaled_exp1', '_sinpi',
-    '_spherical_jn', '_spherical_jn_d', '_spherical_yn', '_spherical_yn_d',
-    '_spherical_in', '_spherical_in_d', '_spherical_kn', '_spherical_kn_d',
-    'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
-    'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
-    'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',
-    'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',
-    'iv', '_iv_ratio', '_iv_ratio_c', 'ive', 'jv',
-    'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp', 'kv', 'kve', 'log_expit',
-    'log_wright_bessel', 'loggamma', 'logit', 'mathieu_a', 'mathieu_b', 'mathieu_cem',
-    'mathieu_modcem1', 'mathieu_modcem2', 'mathieu_modsem1', 'mathieu_modsem2',
-    'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
-    'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv', 'pbwa',
-    'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv', 'pro_rad2',
-    'pro_rad2_cv', 'psi', 'rgamma', 'wright_bessel', 'yv', 'yve', 'zetac',
-    '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
-    'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1', 'struve', 'modstruve',
-    'beta', 'betaln', 'besselpoly', 'gammaln', 'gammasgn', 'cbrt', 'radian', 'cosm1',
-    'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel', 'ellipe',
-    'ellipeinc', 'ellipk', 'ellipkinc', 'ellipkm1', 'ellipj', '_riemann_zeta', 'erf',
-    'erfc', 'erfcx', 'erfi', 'voigt_profile', 'wofz', 'dawsn', 'ndtr', 'log_ndtr',
-    'exp2', 'exp10', 'expm1', 'log1p', 'xlogy', 'xlog1py', '_log1pmx', '_log1mexp'
+    "_bivariate_normal_sf",
+    "_cosine_cdf",
+    "_cosine_invcdf",
+    "_cospi",
+    "_gen_harmonic",
+    "_igam_fac",
+    "_iv_ratio",
+    "_iv_ratio_c",
+    "_kolmogc",
+    "_kolmogci",
+    "_kolmogp",
+    "_lambertw",
+    "_lgam1p",
+    "_log1mexp",
+    "_log1pmx",
+    "_normalized_gen_harmonic",
+    "_riemann_zeta",
+    "_scaled_exp1",
+    "_sinpi",
+    "_spherical_in",
+    "_spherical_in_d",
+    "_spherical_jn",
+    "_spherical_jn_d",
+    "_spherical_kn",
+    "_spherical_kn_d",
+    "_spherical_yn",
+    "_spherical_yn_d",
+    "_stirling2_inexact",
+    "_von_mises_cdf",
+    "_zeta",
+    "agm",
+    "airy",
+    "airye",
+    "bei",
+    "beip",
+    "ber",
+    "berp",
+    "besselpoly",
+    "beta",
+    "betaln",
+    "binom",
+    "boxcox",
+    "boxcox1p",
+    "cbrt",
+    "chdtr",
+    "chdtrc",
+    "chdtri",
+    "cosdg",
+    "cosm1",
+    "cotdg",
+    "dawsn",
+    "digammainv",
+    "ellipe",
+    "ellipeinc",
+    "ellipj",
+    "ellipk",
+    "ellipkinc",
+    "ellipkm1",
+    "entr",
+    "erf",
+    "erfc",
+    "erfcinv",
+    "erfcx",
+    "erfi",
+    "exp1",
+    "exp10",
+    "exp2",
+    "expi",
+    "expit",
+    "expm1",
+    "exprel",
+    "fresnel",
+    "gamma",
+    "gammainc",
+    "gammaincc",
+    "gammainccinv",
+    "gammaincinv",
+    "gammaln",
+    "gammasgn",
+    "gdtr",
+    "gdtrc",
+    "gdtria",
+    "gdtrib",
+    "gdtrix",
+    "hankel1",
+    "hankel1e",
+    "hankel2",
+    "hankel2e",
+    "huber",
+    "hyp0f1",
+    "hyp2f1",
+    "hyperu",
+    "i0",
+    "i0e",
+    "i1",
+    "i1e",
+    "inv_boxcox",
+    "inv_boxcox1p",
+    "it2i0k0",
+    "it2j0y0",
+    "it2struve0",
+    "itairy",
+    "iti0k0",
+    "itj0y0",
+    "itmodstruve0",
+    "itstruve0",
+    "iv",
+    "ive",
+    "j0",
+    "j1",
+    "jv",
+    "jve",
+    "k0",
+    "k0e",
+    "k1",
+    "k1e",
+    "kei",
+    "keip",
+    "kelvin",
+    "ker",
+    "kerp",
+    "kl_div",
+    "kolmogi",
+    "kolmogorov",
+    "kv",
+    "kve",
+    "log1p",
+    "log_expit",
+    "log_ndtr",
+    "log_wright_bessel",
+    "loggamma",
+    "logit",
+    "lpmv",
+    "mathieu_a",
+    "mathieu_b",
+    "mathieu_cem",
+    "mathieu_modcem1",
+    "mathieu_modcem2",
+    "mathieu_modsem1",
+    "mathieu_modsem2",
+    "mathieu_sem",
+    "modfresnelm",
+    "modfresnelp",
+    "modstruve",
+    "ndtr",
+    "ndtri",
+    "ndtri_exp",
+    "nrdtrimn",
+    "nrdtrisd",
+    "obl_ang1",
+    "obl_ang1_cv",
+    "obl_cv",
+    "obl_rad1",
+    "obl_rad1_cv",
+    "obl_rad2",
+    "obl_rad2_cv",
+    "owens_t",
+    "pdtr",
+    "pdtrc",
+    "pbdv",
+    "pbvv",
+    "pbwa",
+    "poch",
+    "pro_ang1",
+    "pro_ang1_cv",
+    "pro_cv",
+    "pro_rad1",
+    "pro_rad1_cv",
+    "pro_rad2",
+    "pro_rad2_cv",
+    "pseudo_huber",
+    "psi",
+    "radian",
+    "rel_entr",
+    "rgamma",
+    "round",
+    "sindg",
+    "spence",
+    "struve",
+    "tandg",
+    "tklmbda",
+    "voigt_profile",
+    "wofz",
+    "wright_bessel",
+    "wrightomega",
+    "xlog1py",
+    "xlogy",
+    "y0",
+    "y1",
+    "yv",
+    "yve",
+    "zetac",
 ]
 
 # -----------------------------------------------------------------------------
@@ -133,7 +301,7 @@ STUBS = """\
 # This file is automatically generated by _generate_pyx.py.
 # Do not edit manually!
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -144,8 +312,8 @@ __all__ = [
     {ALL}
 ]
 
-def geterr() -> Dict[str, str]: ...
-def seterr(**kwargs: str) -> Dict[str, str]: ...
+def geterr() -> dict[str, str]: ...
+def seterr(**kwargs: str) -> dict[str, str]: ...
 
 class errstate:
     def __init__(self, **kargs: str) -> None: ...
@@ -781,33 +949,7 @@ def unique(lst):
     return new_lst
 
 
-def newer(source, target):
-    """
-    Return true if 'source' exists and is more recently modified than
-    'target', or if 'source' exists and 'target' doesn't.  Return false if
-    both exist and 'target' is the same age or younger than 'source'.
-    """
-    if not os.path.exists(source):
-        raise ValueError(f"file '{os.path.abspath(source)}' does not exist")
-    if not os.path.exists(target):
-        return 1
-
-    mtime1 = os.stat(source)[ST_MTIME]
-    mtime2 = os.stat(target)[ST_MTIME]
-
-    return mtime1 > mtime2
-
-
-def all_newer(src_files, dst_files):
-    return all(os.path.exists(dst) and newer(dst, src)
-               for dst in dst_files for src in src_files)
-
-
 def main(outdir):
-    pwd = os.path.dirname(__file__)
-    src_files = (os.path.abspath(__file__),
-                 os.path.abspath(os.path.join(pwd, 'functions.json')),
-                 os.path.abspath(os.path.join(pwd, '_add_newdocs.py')))
     dst_files = ('_ufuncs.pyx',
                  '_ufuncs_defs.h',
                  '_ufuncs_cxx.pyx',
@@ -816,10 +958,6 @@ def main(outdir):
     dst_files = (os.path.join(outdir, f) for f in dst_files)
 
     os.chdir(BASE_DIR)
-
-    if all_newer(src_files, dst_files):
-        print("scipy/special/_generate_pyx.py: all files up-to-date")
-        return
 
     ufuncs = []
     with open('functions.json') as data:

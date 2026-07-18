@@ -17,7 +17,7 @@ from pytest import raises as assert_raises, warns as assert_warns
 
 import numpy as np
 from numpy import array
-from scipy.sparse import issparse, eye_array, coo_array, csc_array
+from scipy.sparse import issparse, eye_array, coo_array, csc_array, sparray
 
 import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
@@ -1185,11 +1185,12 @@ def test_empty_sparse():
     sio.seek(0)
 
     res = loadmat(sio, spmatrix=False)
-    assert not scipy.sparse.isspmatrix(res['x'])
+    assert isinstance(res['x'], sparray)
     res = loadmat(sio, spmatrix=True)
-    assert scipy.sparse.isspmatrix(res['x'])
-    res = loadmat(sio)  # chk default
-    assert scipy.sparse.isspmatrix(res['x'])
+    assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
+    with pytest.deprecated_call(match="The default value for `spmatrix"):
+        res = loadmat(sio)  # chk default
+        assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
 
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].toarray(), 0)
@@ -1304,6 +1305,81 @@ def test_opaque_simplify():
     """Test that we can read a MatlabOpaque object when simplify_cells=True."""
     data = loadmat(pjoin(test_data_path, 'parabola.mat'), simplify_cells=True)
     assert isinstance(data['parabola'], MatlabFunction)
+
+
+def test_matlab_string_opaque():
+    """Test that we can read multiple MatlabOpaque objects from same file"""
+    data = loadmat(pjoin(test_data_path, 'testmatlabstring_7_WIN64.mat'))
+    assert "matstring1" in data
+    assert isinstance(data['matstring1'], MatlabOpaque)
+    assert data['matstring1'][0]['_Class'] == "string"
+    assert data['matstring1'][0]['_TypeSystem'] == "MCOS"
+    assert data['matstring1'][0]['_ObjectMetadata'].dtype == np.uint32
+
+    assert "matstring2" in data
+    assert isinstance(data['matstring2'], MatlabOpaque)
+    assert data['matstring2'][0]['_Class'] == "string"
+    assert data['matstring2'][0]['_TypeSystem'] == "MCOS"
+    assert data['matstring2'][0]['_ObjectMetadata'].dtype == np.uint32
+
+    # Ensure different object IDs
+    assert data['matstring1'][0]['_ObjectMetadata'][4, 0] == 1
+    assert data['matstring2'][0]['_ObjectMetadata'][4, 0] == 2
+
+
+def test_write_matlab_opaque():
+    """Test that we can write a MatlabOpaque object"""
+    stream = BytesIO()
+    arr = np.empty((1, 1), dtype=mio5p.OPAQUE_DTYPE)
+    arr[0, 0]['_Class'] = "string"
+    arr[0, 0]['_TypeSystem'] = "MCOS"
+    arr[0, 0]['_ObjectMetadata'] = np.array([[0xDD000000, 2, 1, 1, 1, 1]],
+                                            dtype=np.uint32)
+    arr = MatlabOpaque(arr)
+    savemat(stream, {'matstring1': arr})
+
+    stream.seek(0)
+    data = loadmat(stream)
+    assert "matstring1" in data
+    assert isinstance(data['matstring1'], MatlabOpaque)
+    assert data['matstring1'][0]['_Class'] == "string"
+    assert data['matstring1'][0]['_TypeSystem'] == "MCOS"
+    assert data['matstring1'][0]['_ObjectMetadata'].dtype == np.uint32
+
+
+def test_write_function_workspace():
+    """Test that we can write function workspace to a MAT-file"""
+
+    workspace = "This is not the actual workspace contents. Just a test"
+    stream = BytesIO()
+    savemat(stream, {'__function_workspace__': workspace})
+    stream.seek(0)
+    data = loadmat(stream)
+    assert "__function_workspace__" in data
+
+
+def test_write_multiple_matlab_opaque():
+    """Round-trip two MatlabOpaque objects with distinct IDs in one mdict."""
+    def make_opaque(obj_id):
+        arr = np.empty((1, 1), dtype=mio5p.OPAQUE_DTYPE)
+        arr[0, 0]['_Class'] = "string"
+        arr[0, 0]['_TypeSystem'] = "MCOS"
+        arr[0, 0]['_ObjectMetadata'] = np.array(
+            [[0xDD000000], [2], [1], [1], [obj_id], [1]], dtype=np.uint32)
+        return MatlabOpaque(arr)
+
+    stream = BytesIO()
+    savemat(stream, {'matstring1': make_opaque(1),
+                     'matstring2': make_opaque(2)})
+    stream.seek(0)
+    data = loadmat(stream)
+    for name, expected_id in [('matstring1', 1), ('matstring2', 2)]:
+        assert name in data
+        assert isinstance(data[name], MatlabOpaque)
+        assert data[name][0]['_Class'] == "string"
+        assert data[name][0]['_TypeSystem'] == "MCOS"
+        assert data[name][0]['_ObjectMetadata'].dtype == np.uint32
+        assert data[name][0]['_ObjectMetadata'][4, 0] == expected_id
 
 
 def test_deprecation():

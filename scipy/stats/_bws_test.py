@@ -82,8 +82,7 @@ def _bws_statistic(x, y, alternative, axis, xp):
     return B
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
-                                ('dask.array', 'no rankdata')])
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')])
 def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 

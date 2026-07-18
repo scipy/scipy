@@ -8,7 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.spatial._qhull as qhull
-from scipy.spatial import cKDTree as KDTree  # type: ignore[attr-defined]
+from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
 
 import itertools
@@ -191,7 +191,8 @@ class TestUtilities:
                   (0.3, 0.2, 1)]:
             i = tri.find_simplex(p[:2])
             assert_equal(i, p[2], err_msg=f'{p!r}')
-            j = qhull.tsearch(tri, p[:2])
+            with pytest.warns(DeprecationWarning, match="`tsearch` is deprecated"):
+                j = qhull.tsearch(tri, p[:2])
             assert_equal(i, j)
 
     def test_plane_distance(self):

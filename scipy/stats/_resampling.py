@@ -1356,7 +1356,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     pvalues = xp.reshape(pvalues, shape + (-1,))
     if significance.ndim > 0:
         newdims = tuple(range(significance.ndim, pvalues.ndim + significance.ndim))
-        significance = xpx.expand_dims(significance, axis=newdims)
+        significance = xp.expand_dims(significance, axis=newdims)
 
     float_dtype = xp_result_type(significance, pvalues, xp=xp)
     powers = xp.mean(xp.astype(pvalues < significance, float_dtype), axis=-1)
@@ -2172,7 +2172,7 @@ class ResamplingMethod:
 
     """
     n_resamples: int = 9999
-    batch: int = None  # type: ignore[assignment]
+    batch: int | None = None
 
 
 @dataclass
@@ -2183,7 +2183,7 @@ class MonteCarloMethod(ResamplingMethod):
     hypothesis test functions to perform a Monte Carlo version of the
     hypothesis tests.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of Monte Carlo samples to draw. Default is 9999.
@@ -2253,7 +2253,7 @@ class PermutationMethod(ResamplingMethod):
     hypothesis test functions to perform a permutation version of the
     hypothesis tests.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of resamples to perform. Default is 9999.
@@ -2294,8 +2294,7 @@ class PermutationMethod(ResamplingMethod):
             in new code.
 
     """
-    rng: object  # type: ignore[misc]
-    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    _rng: object = field(init=False, repr=False, default=None)
 
     @property
     def random_state(self):
@@ -2309,7 +2308,7 @@ class PermutationMethod(ResamplingMethod):
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
-    @property  # type: ignore[no-redef]
+    @property
     def rng(self):  # noqa: F811
         return self._rng
 
@@ -2338,7 +2337,7 @@ class BootstrapMethod(ResamplingMethod):
     Instances of this class can be passed into the `method` parameter of some
     confidence interval methods to generate a bootstrap confidence interval.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of resamples to perform. Default is 9999.
@@ -2384,8 +2383,8 @@ class BootstrapMethod(ResamplingMethod):
         accelerated bootstrap ('BCa', default).
 
     """
-    rng: object  # type: ignore[misc]
-    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    rng: object
+    _rng: object = field(init=False, repr=False, default=None)
     method: str = 'BCa'
 
     @property
@@ -2400,7 +2399,7 @@ class BootstrapMethod(ResamplingMethod):
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
-    @property  # type: ignore[no-redef]
+    @property
     def rng(self):  # noqa: F811
         return self._rng
 

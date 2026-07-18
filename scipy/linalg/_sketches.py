@@ -32,10 +32,9 @@ def cwt_matrix(n_rows, n_columns, rng=None):
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
-
     Returns
     -------
-    S : (n_rows, n_columns) csc_matrix
+    S : (n_rows, n_columns) csc_array
         The returned matrix has ``n_columns`` nonzero entries.
 
     Notes
@@ -45,12 +44,12 @@ def cwt_matrix(n_rows, n_columns, rng=None):
     Where the error epsilon is related to the size of S.
     """
     # lazy import to prevent to prevent sparse dependency for whole module (gh-23420)
-    from scipy.sparse import csc_matrix
+    from scipy.sparse import csc_array
     rng = check_random_state(rng)
     rows = rng_integers(rng, 0, n_rows, n_columns)
     cols = np.arange(n_columns+1)
     signs = rng.choice([1, -1], n_columns)
-    S = csc_matrix((signs, rows, cols), shape=(n_rows, n_columns))
+    S = csc_array((signs, rows, cols), shape=(n_rows, n_columns))
     return S
 
 
@@ -109,18 +108,18 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
 
     This implementation takes advantage of sparsity: computing
     a sketch takes time proportional to ``A.nnz``. Data ``A`` which
-    is in ``scipy.sparse.csc_matrix`` format gives the quickest
+    is in ``scipy.sparse.csc_array`` format gives the quickest
     computation time for sparse input.
 
     >>> import numpy as np
     >>> from scipy import linalg
     >>> from scipy import sparse
     >>> rng = np.random.default_rng()
-    >>> n_rows, n_columns, density, sketch_n_rows = 15000, 100, 0.01, 200
-    >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
-    >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
-    >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
-    >>> D = rng.standard_normal((n_rows, n_columns))
+    >>> *shape, density, sketch_n_rows = 15000, 100, 0.01, 200
+    >>> A = sparse.random_array(shape, density=density, format='csc')
+    >>> B = sparse.random_array(shape, density=density, format='csr')
+    >>> C = sparse.random_array(shape, density=density, format='coo')
+    >>> D = rng.standard_normal(shape)
     >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows) # fastest
     >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows) # fast
     >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows) # slower
@@ -187,9 +186,13 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
         raise NotImplementedError(message)
 
     S = cwt_matrix(sketch_size, input_matrix.shape[-2], rng=rng)
+    if input_matrix.ndim <= 2:
+        # transposes are cheap and ensure output class matches input_matrix
+        return (input_matrix.T @ S.T).T
+
     # Despite argument order (required by decorator), this is  S @ input_matrix
     # Can avoid _batch_dot when gh-22153 is resolved.
-    return S @ input_matrix if input_matrix.ndim <= 2 else _batch_dot(input_matrix, S)
+    return _batch_dot(input_matrix, S)
 
 
 @_apply_over_batch(('input_matrix', 2))

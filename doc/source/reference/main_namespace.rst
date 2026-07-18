@@ -38,7 +38,6 @@ Submodules
 `linalg`       Linear algebra functionality
 `misc`         Utility routines (deprecated)
 `ndimage`      N-dimensional image processing and interpolation
-`odr`          Orthogonal distance regression
 `optimize`     Numerical optimization
 `signal`       Signal processing
 `sparse`       Sparse arrays, linear algebra and graph algorithms

@@ -8,7 +8,7 @@ from numpy.testing import assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse._sputils import supported_dtypes
-from scipy._lib._testutils import check_free_memory
+from scipy._lib._testutils import check_free_memory, IS_WASM
 
 import pytest
 from pytest import raises as assert_raises
@@ -25,6 +25,7 @@ def test_exception():
     assert_raises(MemoryError, _sparsetools.test_throw_error)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_threads():
     # Smoke test for parallel threaded execution; doesn't actually
     # check that code runs in parallel, but just that it produces

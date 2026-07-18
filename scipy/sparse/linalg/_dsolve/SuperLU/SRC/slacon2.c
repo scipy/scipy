@@ -89,7 +89,7 @@ int
 slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave[3])
 {
     /* Table of constant values */
-    int c__1 = 1;
+    slu_blasint c__1 = 1;
     float      zero = 0.0;
     float      one = 1.0;
     
@@ -103,13 +103,15 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
     extern float SASUM(int *, float *, int *);
     extern int SCOPY(int *, float *, int *, float *, int *);
 #else
-    extern int isamax_(int *, float *, int *);
-    extern float sasum_(int *, float *, int *);
-    extern int scopy_(int *, float *, int *, float *, int *);
+    extern int isamax_(slu_blasint *, float *, slu_blasint *);
+    extern float sasum_(slu_blasint *, float *, slu_blasint *);
+    extern void scopy_(slu_blasint *, float *, slu_blasint *, float *, slu_blasint *);
 #endif
 #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
 #define i_dnnt(a) \
 	( a>=0 ? floor(a+.5) : -floor(.5-a) ) /* Round to nearest integer */
+
+    slu_blasint n_blas = *n;
 
     if ( *kase == 0 ) {
 	for (i = 0; i < *n; ++i) {
@@ -140,7 +142,7 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
 #ifdef _CRAY
     *est = SASUM(n, x, &c__1);
 #else
-    *est = sasum_(n, x, &c__1);
+    *est = sasum_(&n_blas, x, &c__1);
 #endif
 
     for (i = 0; i < *n; ++i) {
@@ -157,7 +159,7 @@ L40:
 #ifdef _CRAY
     isave[1] = ISAMAX(n, &x[0], &c__1);  /* j */
 #else
-    isave[1] = isamax_(n, &x[0], &c__1);  /* j */
+    isave[1] = isamax_(&n_blas, &x[0], &c__1);  /* j */
 #endif
     --isave[1];  /* --j; */
     isave[2] = 2; /* iter = 2; */
@@ -176,13 +178,13 @@ L70:
 #ifdef _CRAY
     SCOPY(n, x, &c__1, v, &c__1);
 #else
-    scopy_(n, x, &c__1, v, &c__1);
+    scopy_(&n_blas, x, &c__1, v, &c__1);
 #endif
     estold = *est;
 #ifdef _CRAY
     *est = SASUM(n, v, &c__1);
 #else
-    *est = sasum_(n, v, &c__1);
+    *est = sasum_(&n_blas, v, &c__1);
 #endif
 
     for (i = 0; i < *n; ++i)
@@ -205,13 +207,13 @@ L90:
     return 0;
 
     /*     ................ ENTRY   (isave[0] == 4)
-	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
+	   X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
 L110:
     jlast = isave[1];  /* j; */
 #ifdef _CRAY
     isave[1] = ISAMAX(n, &x[0], &c__1);/* j */
 #else
-    isave[1] = isamax_(n, &x[0], &c__1);  /* j */
+    isave[1] = isamax_(&n_blas, &x[0], &c__1);  /* j */
 #endif
     isave[1] = isave[1] - 1;  /* --j; */
     if (x[jlast] != fabs(x[isave[1]]) && isave[2] < 5) {
@@ -236,13 +238,13 @@ L140:
 #ifdef _CRAY
     temp = SASUM(n, x, &c__1) / (float)(*n * 3) * 2.;
 #else
-    temp = sasum_(n, x, &c__1) / (float)(*n * 3) * 2.;
+    temp = sasum_(&n_blas, x, &c__1) / (float)(*n * 3) * 2.;
 #endif
     if (temp > *est) {
 #ifdef _CRAY
 	SCOPY(n, &x[0], &c__1, &v[0], &c__1);
 #else
-	scopy_(n, &x[0], &c__1, &v[0], &c__1);
+	scopy_(&n_blas, &x[0], &c__1, &v[0], &c__1);
 #endif
 	*est = temp;
     }

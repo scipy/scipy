@@ -26,7 +26,8 @@ _EINPUTERR = -5
 _ECONVERGED = 0
 _EINPROGRESS = 1
 
-def _initialize(func, xs, args, complex_ok=False, preserve_shape=None, xp=None):
+def _initialize(func, xs, args, kwargs=None,
+                complex_ok=False, preserve_shape=None, xp=None):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -43,6 +44,8 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None, xp=None):
         Finite real abscissa arrays. Must be broadcastable.
     args : tuple, optional
         Additional positional arguments to be passed to `func`.
+    kwargs : tuple, optional
+        Additional keyword arguments to be passed to `func`.
     preserve_shape : bool, default:False
         When ``preserve_shape=False`` (default), `func` may be passed
         arguments of any shape; `_scalar_optimization_loop` is permitted
@@ -77,6 +80,14 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None, xp=None):
     """
     nx = len(xs)
     xp = array_namespace(*xs) if xp is None else xp
+
+    if kwargs is not None:
+        args = (*args, *kwargs.values())
+        kwnames = tuple(kwargs.keys())
+        def func(x, *args, kwnames=kwnames, func=func, **kwargs):
+            nargs = len(args) - len(kwnames)
+            kwarrays = dict(zip(kwnames, args[nargs:]))
+            return func(x, *args[:nargs], **kwarrays, **kwargs)
 
     # Try to preserve `dtype`, but we need to ensure that the arguments are at
     # least floats before passing them into the function; integers can overflow

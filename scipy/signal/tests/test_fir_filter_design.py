@@ -10,7 +10,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
     array_namespace, xp_default_dtype, make_xp_test_case, _xp_copy_to_numpy
 )
-from scipy.fft import fft, fft2
+from scipy.fft import fft, fft2, rfft
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
     firwin, firwin2, freqz, remez, firls, minimum_phase, convolve2d, firwin_2d
 )
@@ -395,7 +395,6 @@ class TestFirwin2:
             xp.asarray([1.0, 1.0, 1.0, 1.0 - width, 0.5, width]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test02(self, xp):
         width = 0.04
         beta = 12.0
@@ -413,7 +412,6 @@ class TestFirwin2:
             xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test03(self, xp):
         width = 0.02
         ntaps, beta = kaiserord(120, width)
@@ -430,7 +428,6 @@ class TestFirwin2:
             xp.asarray([1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test04(self, xp):
         """Test firwin2 when window=None."""
         ntaps = 5
@@ -460,7 +457,6 @@ class TestFirwin2:
         freqs, response = map(xp.asarray, (freqs, response))
         assert_array_almost_equal(xp.abs(response), freqs / xp.pi, decimal=4)
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test06(self, xp):
         """Test firwin2 for calculating Type III filters"""
         ntaps = 1501
@@ -493,8 +489,7 @@ class TestFirwin2:
         taps2 = firwin2(150, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
         assert_array_almost_equal(taps1, taps2)
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
-    def test_input_modyfication(self, xp):
+    def test_input_modification(self, xp):
         freq1 = xp.asarray([0.0, 0.5, 0.5, 1.0])
         freq2 = xp.asarray(freq1)
         firwin2(80, freq1, xp.asarray([1.0, 1.0, 0.0, 0.0]))
@@ -568,6 +563,14 @@ class TestRemez:
         desired = xp.asarray([1.0, 0.0])
         weight = xp.asarray([1.0, 2.0])
         remez(21, bands, desired, weight=weight)
+
+    @pytest.mark.parametrize('type', ['bandpass', 'differentiator', 'hilbert'])
+    def test_gh_24495_narrow_band(self, type):
+        # A band too narrow for the dense grid used to segfault (gh-24495).
+        with pytest.raises(ValueError, match="Band edges are too close"):
+            remez(101, [1000, 1000], [1], fs=20000, type=type)
+        with pytest.raises(ValueError, match="Band edges are too close"):
+            remez(101, [1000, 1011.5], [1], fs=20000, type=type)
 
 
 @make_xp_test_case(firls)
@@ -761,6 +764,22 @@ class TestMinimumPhase:
         k = xp.asarray(k, dtype=xp.float64)
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         xp_assert_close(m, k, rtol=2e-3)
+
+    @xfail_xp_backends("cupy", reason="cupy/cupy#9795")
+    @pytest.mark.parametrize("N", (963, 964))
+    @pytest.mark.parametrize("dtype", ("float32", "float64"))
+    def test_nyquist(self, N, dtype, xp):
+        fc = xp.asarray(10)
+        fs = 100
+        h = firwin(N, fc, window="hann", pass_zero="lowpass", scale=False, fs=fs)
+        xp_dtype = getattr(xp, dtype)
+        h = xp.astype(h, xp_dtype)
+        h_min_sig = minimum_phase(h, method="homomorphic", n_fft=N, half=False)
+        H_mag = xp.abs(rfft(h, N))
+        H_min_mag = xp.abs(rfft(h_min_sig, N))
+        error = H_mag - H_min_mag
+        atol = dict(float32=2e-5, float64=1e-13)[dtype]
+        xp_assert_close(error, xp.zeros_like(error), atol=atol)
 
 
 class Testfirwin_2d:

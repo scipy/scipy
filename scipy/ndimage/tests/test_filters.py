@@ -4,6 +4,7 @@ import itertools
 import re
 import contextlib
 import warnings
+import importlib
 
 import numpy as np
 import pytest
@@ -13,6 +14,7 @@ from hypothesis import given
 import hypothesis.extra.numpy as npst
 from pytest import raises as assert_raises
 from scipy import ndimage
+from scipy._lib._testutils import IS_WASM
 from scipy._lib._array_api import (
     assert_almost_equal,
     assert_array_almost_equal,
@@ -35,6 +37,11 @@ uses_output_dtype = skip_xp_backends(
     np_only=True, exceptions=["cupy"],
     reason="output=dtype is numpy-specific"
 )
+
+try:
+    CUPY_VERSION = importlib.metadata.version('cupy')
+except ImportError:
+    CUPY_VERSION = None
 
 
 def uses_output_array(f):
@@ -497,7 +504,12 @@ class TestNdimageFilters:
         assert output.dtype.type == xp.float32
 
     @make_xp_test_case(ndimage.correlate, ndimage.convolve)
+    @xfail_xp_backends(
+        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+        reason="multiple modes work in CuPy 14"
+    )
     def test_correlate_mode_sequence(self, xp):
+
         kernel = xp.ones((2, 2))
         array = xp.ones((3, 3), dtype=xp.float64)
         with assert_raises(RuntimeError):
@@ -1118,7 +1130,7 @@ class TestNdimageFilters:
             make_xp_pytest_param(ndimage.percentile_filter, 1, 3, kwargs_rank),
         ]
     )
-    @pytest.mark.parametrize('axes', itertools.combinations(range(-3, 3), 2))
+    @pytest.mark.parametrize('axes', list(itertools.combinations(range(-3, 3), 2)))
     def test_filter_axes_kwargs(self, filter_func, size0, size, kwargs, axes, xp):
         array = xp.arange(6 * 8 * 12, dtype=xp.float64)
         array = xp.reshape(array, (6, 8, 12))
@@ -1288,7 +1300,7 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
     @pytest.mark.parametrize('n_mismatch', [1, 3])
     @pytest.mark.parametrize('filter_func, kwargs, key, val',
-                             _cases_axes_tuple_length_mismatch())
+                             list(_cases_axes_tuple_length_mismatch()))
     def test_filter_tuple_length_mismatch(self, n_mismatch, filter_func,
                                           kwargs, key, val, xp):
         # Test for the intended RuntimeError when a kwargs has an invalid size
@@ -1706,7 +1718,12 @@ class TestNdimageFilters:
         assert_array_almost_equal(output2, output)
 
     @make_xp_test_case(ndimage.minimum_filter)
+    @xfail_xp_backends(
+        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+        reason="multiple modes work in CuPy 14"
+    )
     def test_minimum_filter07(self, xp):
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
                             [5, 8, 3, 7, 1]])
@@ -1715,6 +1732,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[2, 2, 1, 1, 1],
                                               [2, 3, 1, 3, 1],
                                               [5, 5, 3, 3, 1]]), output)
+
         with assert_raises(RuntimeError):
             ndimage.minimum_filter(array, footprint=footprint,
                                    mode=['reflect', 'constant'])
@@ -1797,7 +1815,12 @@ class TestNdimageFilters:
         assert_array_almost_equal(output2, output)
 
     @make_xp_test_case(ndimage.maximum_filter)
+    @xfail_xp_backends(
+        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+        reason="multiple modes work in CuPy 14"
+    )
     def test_maximum_filter07(self, xp):
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
                             [5, 8, 3, 7, 1]])
@@ -1983,6 +2006,18 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
         output = ndimage.median_filter(array, size=(2, 3))
         xp_assert_equal(expected, output)
+
+    @make_xp_test_case(
+        ndimage.rank_filter, ndimage.percentile_filter, ndimage.median_filter
+    )
+    @xfail_xp_backends(
+        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+        reason="multiple modes work in CuPy 14"
+    )
+    def test_rank08_1(self, xp):
+        array = xp.asarray([[3, 2, 5, 1, 4],
+                            [5, 8, 3, 7, 1],
+                            [5, 6, 9, 3, 5]])
 
         # non-separable: does not allow mode sequence
         with assert_raises(RuntimeError):
@@ -2544,6 +2579,8 @@ def test_multiple_modes(xp, filter_func, args, kwargs):
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])
+    if is_cupy(xp) and filter_func.__name__ in ['prewitt', 'sobel']:
+        pytest.xfail("https://github.com/cupy/cupy/issues/9760")
 
     mode1 = 'reflect'
     mode2 = ['reflect', 'reflect']
@@ -2592,8 +2629,13 @@ def test_multiple_modes_sequentially(xp):
 
 
 @make_xp_test_case(ndimage.prewitt)
+@xfail_xp_backends(
+    "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+    reason="https://github.com/cupy/cupy/issues/9760"
+)
 def test_multiple_modes_prewitt(xp):
     # Test prewitt filter for multiple extrapolation modes
+
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])
@@ -2609,8 +2651,13 @@ def test_multiple_modes_prewitt(xp):
 
 
 @make_xp_test_case(ndimage.sobel)
+@xfail_xp_backends(
+    "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
+    reason="https://github.com/cupy/cupy/issues/9760"
+)
 def test_multiple_modes_sobel(xp):
     # Test sobel filter for multiple extrapolation modes
+
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])
@@ -2794,6 +2841,7 @@ def test_gaussian_radius_invalid(xp):
         ndimage.gaussian_filter1d(xp.zeros(8), sigma=1, radius=1.1)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 @uses_output_array
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):

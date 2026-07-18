@@ -5,12 +5,11 @@ from pytest import raises as assert_raises
 from scipy import sparse
 
 from scipy.sparse import csgraph
-from scipy._lib._util import np_long, np_ulong
 
 
 def check_int_type(mat):
     return np.issubdtype(mat.dtype, np.signedinteger) or np.issubdtype(
-        mat.dtype, np_ulong
+        mat.dtype, np.ulong
     )
 
 
@@ -81,9 +80,9 @@ def test_symmetric_graph_laplacian():
         'np.arange(10) * np.arange(10)[:, np.newaxis]',
         'np.ones((7, 7))',
         'np.eye(19)',
-        'sparse.diags([1.0, 1.0], [-1, 1], shape=(4, 4))',
-        'sparse.diags([1.0, 1.0], [-1, 1], shape=(4, 4)).toarray()',
-        'sparse.diags([1.0, 1.0], [-1, 1], shape=(4, 4)).todense()',
+        'sparse.diags_array([1.0, 1.0], offsets=[-1, 1], shape=(4, 4))',
+        'sparse.diags_array([1.0, 1.0], offsets=[-1, 1], shape=(4, 4)).toarray()',
+        'sparse.diags_array([1.0, 1.0], offsets=[-1, 1], shape=(4, 4)).todense()',
         'np.vander(np.arange(4)) + np.vander(np.arange(4)).T'
     )
     for mat in symmetric_mats:
@@ -161,7 +160,7 @@ def _check_laplacian_dtype(
                 _assert_allclose_sparse(L, mat)
 
 
-INT_DTYPES = (np.intc, np_long, np.longlong)
+INT_DTYPES = (np.intc, np.long, np.longlong)
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES

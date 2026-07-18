@@ -322,7 +322,7 @@ class WAVE_FORMAT(IntEnum):
     SPEEX_VOICE = 0xA109
     VIANIX_MASC = 0xA10A
     WM9_SPECTRUM_ANALYZER = 0xA10B
-    WMF_SPECTRUM_ANAYZER = 0xA10C
+    WMF_SPECTRUM_ANALYZER = 0xA10C
     GSM_610 = 0xA10D
     GSM_620 = 0xA10E
     GSM_660 = 0xA10F
@@ -515,7 +515,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian, is_rf6
             count = size if dtype == 'V1' else n_samples
             data = np.fromfile(fid, dtype=dtype, count=count)
         except io.UnsupportedOperation:  # not a C-like file
-            fid.seek(start, 0)  # just in case it seeked, though it shouldn't
+            fid.seek(start, 0)  # just in case it sought, though it shouldn't
             data = np.frombuffer(fid.read(size), dtype=dtype)
 
         if dtype == 'V1':

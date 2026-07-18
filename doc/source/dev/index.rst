@@ -13,6 +13,7 @@ the organization section.
    :caption: Contributing Information
 
    conduct/code_of_conduct
+   conduct/ai_policy
    hacking
    dev_quickstart
    contributor/development_workflow
@@ -38,7 +39,6 @@ the organization section.
 .. toctree::
    :hidden:
 
-   contributor/development_workflow
    contributor/pep8
    contributor/rendering_documentation
    contributor/devpy_test

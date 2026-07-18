@@ -295,8 +295,13 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
     /* offsets used at the borders: */
     edge_offsets = malloc(irank * sizeof(npy_intp*));
+    if (NPY_UNLIKELY(!edge_offsets)) {
+        NPY_END_THREADS;
+        PyErr_NoMemory();
+        goto exit;
+    }
     data_offsets = malloc(irank * sizeof(npy_intp*));
-    if (NPY_UNLIKELY(!edge_offsets || !data_offsets)) {
+    if (NPY_UNLIKELY(!data_offsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;

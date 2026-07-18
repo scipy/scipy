@@ -40,7 +40,7 @@ import bisect
 from collections import deque
 
 import numpy as np
-from . import _hierarchy, _optimal_leaf_ordering
+from . import _hierarchy, _optimal_leaf_ordering  # type:ignore[attr-defined]
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
                                    is_lazy_array, xp_capabilities, xp_copy)
@@ -740,7 +740,10 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     the :math:`n` original observations. The distance between
     clusters ``Z[i, 0]`` and ``Z[i, 1]`` is given by ``Z[i, 2]``. The
     fourth value ``Z[i, 3]`` represents the number of original
-    observations in the newly formed cluster.
+    observations in the newly formed cluster. Note that the dtype of
+    ``Z`` is ``float64`` even though columns 0, 1 and 3 contain integer
+    data and should be interpreted as such. This is for historical
+    reasons.
 
     The following linkage methods are used to compute the distance
     :math:`d(s, t)` between two clusters :math:`s` and
@@ -2933,13 +2936,13 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         Ellipse = matplotlib.patches.Ellipse
         for (x, y) in contraction_marks:
             if orientation in ('left', 'right'):
-                e = Ellipse((y, x), width=dvw / 100, height=1.0)
+                ell = Ellipse((y, x), width=dvw / 100, height=1.0)
             else:
-                e = Ellipse((x, y), width=1.0, height=dvw / 100)
-            ax.add_artist(e)
-            e.set_clip_box(ax.bbox)
-            e.set_alpha(0.5)
-            e.set_facecolor('k')
+                ell = Ellipse((x, y), width=1.0, height=dvw / 100)
+            ax.add_artist(ell)
+            ell.set_clip_box(ax.bbox)
+            ell.set_alpha(0.5)
+            ell.set_facecolor('k')
 
     if trigger_redraw:
         matplotlib.pylab.draw_if_interactive()
