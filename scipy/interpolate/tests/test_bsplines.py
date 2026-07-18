@@ -4061,15 +4061,17 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         spline."""
         theta = np.linspace(0, 1, 11)
         y = np.cos(2*np.pi*theta)
-        
         spl = make_splrep(theta, y, s=s, bc_type="periodic")
-        
         xp_assert_close(spl(theta[0]), spl(theta[-1]), atol=1e-12)
         assert spl.extrapolate == 'periodic'
-        
         # check wraparound: spl(u + delta) = spl(u + 2 * delta)
         xp_assert_close(spl(theta[-1] + 0.2), spl(theta[0] + 0.2), atol=1e-12)
         xp_assert_close(spl(theta[0] - 0.2), spl(theta[-1] - 0.2), atol=1e-12)
+        # check k-derivatives
+        nus = np.arange(spl.k)
+        vals_right = np.array([spl(theta[-1] + 0.2, nu) for nu in nus])
+        vals_left = np.array([spl(theta[0] + 0.2, nu) for nu in nus])
+        xp_assert_close(vals_right, vals_left, atol=1e-10)
 
     @pytest.mark.parametrize("k_fp", [(1, -0.0001), (2, -0.0001), (3, -8.62e-05)])
     @pytest.mark.parametrize("s", [1e-4])
@@ -4242,15 +4244,17 @@ class TestMakeSplprepPeriodic:
         theta = np.linspace(0, 1, 11)
         x = np.sin(2*np.pi*theta)
         y = np.cos(2*np.pi*theta)
-        
         spl, u = make_splprep([x, y], u=theta, s=s, bc_type="periodic")
-        
         xp_assert_close(spl(u[0]), spl(u[-1]), atol=1e-12)
         assert spl.extrapolate == 'periodic'
-        
         # check wraparound: spl(u + delta) = spl(u + 2 * delta)
         xp_assert_close(spl(u[-1] + 0.2), spl(u[0] + 0.2), atol=1e-12)
         xp_assert_close(spl(u[0] - 0.2), spl(u[-1] - 0.2), atol=1e-12)
+        # check k-derivatives match
+        nus = np.arange(spl.k)
+        vals_right = np.array([spl(u[-1] + 0.2, nu) for nu in nus])
+        vals_left = np.array([spl(u[0] + 0.2, nu) for nu in nus])
+        xp_assert_close(vals_right, vals_left, atol=1e-10)
 
     @pytest.mark.parametrize('s', [0, 1e-4, 1e-5, 1e-6])
     def test_array_not_list(self, s):
@@ -4322,8 +4326,8 @@ class TestMakeSplprepPeriodic:
 
     @pytest.mark.parametrize("bc_type", [None, "not-a-knot", "periodic"])
     @pytest.mark.parametrize("matching_endpoints", [True, False])
-    def test_bc_type_delegation_s0(self, bc_type, matching_endpoints):
-        # make_splprep at s=0 must delegate bc_type correctly to
+    def test_bc_type_match_s0(self, bc_type, matching_endpoints):
+        # make_splprep at s=0 must match bc_type correctly to
         # make_interp_spline, for every bc_type, endpoint-matching
         theta = np.linspace(0, 1, 11)
         x = np.sin(2*np.pi*theta)
@@ -4332,12 +4336,10 @@ class TestMakeSplprepPeriodic:
         if not matching_endpoints:
             x = x.copy()
             x[-1] = 1  
-
+        
         periodic = (bc_type == "periodic")
         should_raise = periodic and not matching_endpoints
-
         xy = np.column_stack([x, y])
-
         if should_raise:
             with assert_raises(ValueError):
                 make_splprep([x, y], u=theta, s=0, bc_type=bc_type)
