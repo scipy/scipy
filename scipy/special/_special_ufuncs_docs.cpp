@@ -3229,6 +3229,25 @@ const char *ellipk_doc = R"(
     .. [2] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    The period :math:`T` of a simple pendulum increases with growing oscillation
+    amplitude and can be expressed through the complete elliptic integral of the
+    first kind. The plot displays the ratio of the period of the pendulum and
+    the period :math:`T_0` for small amplitude as a function of the maximum
+    angle :math:`\alpha` reached by the pendulum.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.special import ellipk
+    >>> alpha = np.linspace(0, np.pi, 100)
+    >>> m = np.sin(alpha/2)**2
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(alpha, ellipk(m)*2/np.pi)
+    >>> ax.set_xlabel(r'$\alpha$')
+    >>> ax.set_ylabel('$T/T_0$')
+    >>> ax.plot()
     )";
 
 const char *ellipkinc_doc = R"(
