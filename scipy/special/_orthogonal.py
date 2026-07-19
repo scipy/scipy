@@ -1670,6 +1670,74 @@ def roots_hermitenorm(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_hermitenorm
+    >>> roots, weights = roots_hermitenorm(5)
+    >>> roots
+    array([-2.85697001, -1.35562618,  0.        ,  1.35562618,  2.85697001])
+    >>> weights
+    array([0.02821815, 0.55666179, 1.33686841, 0.55666179, 0.02821815])
+
+    Verify that the values in `roots` are roots of the Hermite polynomial
+    :math:`He_5(x)`.
+
+    >>> from scipy.special import eval_hermitenorm
+    >>> eval_hermitenorm(5, roots)
+    array([ 1.59872116e-14, -5.32907052e-15,  0.00000000e+00,  5.32907052e-15,
+           -1.59872116e-14])
+
+    The values of :math:`He_5(x)` evaluated at the roots are indeed either zero
+    or rather close to it. The increasing values for larger roots can be explained
+    by the increasing derivative of the Hermite polynomial at the roots.
+
+    Verify that the sum of the weights equals the integral from :math:`-\infty`
+    to :math:`\infty` over :math:`\exp(-x^2/2)` which evaluates to :math:`\sqrt{2\pi}`.
+    There are two ways to obtain the sum of weights, both yielding the expected
+    result.
+
+    >>> sum(weights)
+    np.float64(2.5066282746310002)
+    >>> roots, weights, sum_of_weights = roots_hermitenorm(5, mu=True)
+    >>> sum_of_weights
+    np.float64(2.5066282746310002)
+    >>> from math import exp, pi, sqrt
+    >>> sqrt(2*pi)
+    2.5066282746310002
+
+    Roots and weights obtained from the Hermite polynomial :math:`He_n(x)`
+    are used in Gauss-Hermite quadrature where the integral from :math:`-\infty`
+    to :math:`\infty` over :math:`f(x)\exp(-x^2/2)` is evaluated. Roots and weights
+    for order :math:`n` will result in the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(7.519884823892987)
+
+    This result is indeed very close to the exact value of :math:`3\sqrt{2\pi}`.
+
+    >>> 3*sqrt(2*pi)
+    7.519884823893001
+
+    In general, Gauss-Hermite quadrature will only yield an approximate value of
+    the integral. Consider the integral from :math:`-infty` to :math:`infty` over
+    :math:`\cos(x)\exp(-x^2/2)` which evaluates to :math:`\sqrt{2\pi}\exp(-1/2)`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.520412469197972)
+    >>> sqrt(2*pi)*exp(-0.5)
+    1.5203469010662807
+
+    In order to improve the accuracy obtained from Gauss-Hermite quadrature, a
+    large number of nodes can be chosen.
+
+    >>> roots, weights = roots_hermitenorm(50)
+    >>> weights @ np.cos(roots)
+    np.float64(1.5203469010662798)
+
+
     """
     m = int(n)
     if n < 1 or n != m:
