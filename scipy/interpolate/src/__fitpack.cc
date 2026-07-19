@@ -1,5 +1,4 @@
-#include <Python.h>
-/* __fitpack.h includes Python.h */
+#include <cstring>  /* for memcpy */
 #include <string>
 #include <cstdint>
 #include <vector>
