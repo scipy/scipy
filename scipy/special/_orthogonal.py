@@ -1814,10 +1814,11 @@ def roots_chebyt(n, mu=False):
     >>> sum_of_weights
     3.141592653589793
 
-    Roots and weights of the Chebyshev polynomial are used in Gauss-Chebyshev
-    quadrature where the integral from -1 to 1 over :math:`f(x)/\sqrt(1-x^2)`
-    is evaluated. Roots and weights for order :math:`n` should result in the
-    exact result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+    Roots and weights of the Chebyshev polynomial :math:`T_n(x)` are used
+    in Gauss-Chebyshev quadrature where the integral from -1 to 1 over
+    :math:`f(x)/\sqrt(1-x^2)` is evaluated. Roots and weights for order
+    :math:`n` will result in the exact result for polynomials :math:`f(x)`
+    of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
     >>> weights @ f(roots)
@@ -1830,7 +1831,7 @@ def roots_chebyt(n, mu=False):
     1.1780972450961724
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from -1 to 1 over :math:`cos(x)/\sqrt(1-x^2)`
+    integral. Consider the integral from -1 to 1 over :math:`\cos(x)/\sqrt(1-x^2)`
     which evaluates to :math:`\pi J_0(1)`, where :math:`J_0` is the Bessel function
     of first kind and order 0.
 
@@ -2032,10 +2033,11 @@ def roots_chebyu(n, mu=False):
     >>> sum_of_weights
     1.5707963267948966
 
-    Roots and weights of the Chebyshev polynomial are used in Gauss-Chebyshev
-    quadrature where the integral from -1 to 1 over :math:`f(x)\sqrt(1-x^2)`
-    is evaluated. Roots and weights for order :math:`n` should result in the
-    exact result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+    Roots and weights of the Chebyshev polynomial :math:`U_n(x)` are used in
+    Gauss-Chebyshev quadrature where the integral from -1 to 1 over
+    :math:`f(x)\sqrt(1-x^2)` is evaluated. Roots and weights for order
+    :math:`n` will result in the exact result for polynomials :math:`f(x)` of
+    a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
     >>> weights @ f(roots)
@@ -2048,7 +2050,7 @@ def roots_chebyu(n, mu=False):
     0.19634954084936207
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from -1 to 1 over :math:`cos(x)\sqrt(1-x^2)`
+    integral. Consider the integral from -1 to 1 over :math:`\cos(x)\sqrt(1-x^2)`
     which evaluates to :math:`\pi J_1(1)`, where :math:`J_1` is the Bessel function
     of first kind and order 1.
 
@@ -2239,10 +2241,11 @@ def roots_chebyc(n, mu=False):
     >>> sum_of_weights
     6.283185307179586
 
-    Roots and weights of the Chebyshev polynomial are used in Gauss-Chebyshev
-    quadrature where the integral from -2 to 2 over :math:`f(x)/\sqrt(1-(x/2)^2)`
-    is evaluated. Roots and weights for order :math:`n` should result in the
-    exact result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+    Roots and weights of the Chebyshev polynomial :math:`C_n(x)` are used in
+    Gauss-Chebyshev quadrature where the integral from -2 to 2 over
+    :math:`f(x)/\sqrt(1-(x/2)^2)` is evaluated. Roots and weights for order
+    :math:`n` will result in the exact result for polynomials :math:`f(x)` of a
+    maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
     >>> weights @ f(roots)
@@ -2255,7 +2258,7 @@ def roots_chebyc(n, mu=False):
     37.69911184307752
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from -2 to 2 over :math:`cos(x)/\sqrt(1-(x/2)^2)`
+    integral. Consider the integral from -2 to 2 over :math:`\cos(x)/\sqrt(1-(x/2)^2)`
     which evaluates to :math:`2\pi J_0(2)`, where :math:`J_0` is the Bessel function
     of first kind and order 0.
 
