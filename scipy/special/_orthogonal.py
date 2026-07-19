@@ -2401,6 +2401,72 @@ def roots_chebys(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_chebys
+    >>> roots, weights = roots_chebys(5)
+    >>> roots
+    array([-1.73205081e+00, -1.00000000e+00,  1.22464680e-16,  1.00000000e+00,
+            1.73205081e+00])
+    >>> weights
+    array([0.26179939, 0.78539816, 1.04719755, 0.78539816, 0.26179939])
+
+    Verify that the values in `roots` are roots of the Chebyshev polynomial of
+    first kind :math:`S_5(x)`.
+
+    >>> from scipy.special import eval_chebys
+    >>> eval_chebys(5, roots)
+    array([-1.33226763e-15, -1.77635684e-15,  3.67394040e-16, -8.88178420e-16,
+            1.33226763e-15])
+
+    The values of :math:`S_5(x)` evaluated at the roots are indeed very close to zero.
+
+    Verify that the sum of the weights equals the integral from -2 to 2 over 
+    :math:`\sqrt(1-(x/2)^2)` which evaluates to :math:`\pi`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(3.141592653589793)
+    >>> roots, weights, sum_of_weights = roots_chebys(5, mu=True)
+    >>> sum_of_weights
+    3.141592653589793
+
+    Roots and weights of the Chebyshev polynomial :math:`S_n(x)` are used in
+    Gauss-Chebyshev quadrature where the integral from -2 to 2 over
+    :math:`f(x)\sqrt(1-(x/2)^2)` is evaluated. Roots and weights for order
+    :math:`n` will result in the exact result for polynomials :math:`f(x)`
+    of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(6.283185307179585)
+
+    The exact result is :math:`2\pi`.
+
+    >>> from math import pi
+    >>> 2*pi
+    6.283185307179586
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from -2 to 2 over :math:`\cos(x)\sqrt(1-(x/2)^2)`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.8118352216010754)
+
+    Check against the result of `scipy.integrate.quad`.
+
+    >>> from scipy.integrate import quad
+    >>> result, abserror = quad(lambda x: np.cos(x)*np.sqrt(1-(x/2)**2), -2, 2)
+    >>> result
+    1.8118344191919165
+
+    The latter result has an estimated absolute error of
+
+    >>> abserror
+    1.5300099409643053e-08
+
     """
     x, w, m = roots_chebyu(n, True)
     x *= 2
