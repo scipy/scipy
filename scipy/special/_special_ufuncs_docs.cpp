@@ -3174,6 +3174,8 @@ const char *ellipkm1_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+    .. [2] NIST Digital Library of Mathematical Functions,
+           Eq. 19.12.1. https://dlmf.nist.gov/19.12.E1
 
     Examples
     --------
@@ -3182,14 +3184,28 @@ const char *ellipkm1_doc = R"(
     >>> m = 1-p
     >>> ellipk(m), ellipkm1(p)
     (np.float64(12.899219785017415), np.float64(12.8992198263876))
+
+    In order to decide which one of the two results is closer to the correct
+    one, one can use the asymptotic expansion including the next-to-leading
+    order [2]_.
+
+    >>> from math import log, sqrt
+    >>> log(4/sqrt(p)) + 0.25*p*(log(4/sqrt(p))-1)
+    12.8992198263876
     
-    While the two values are still rather close, using ellipkm1 becomes
-    important for values of :math:`m` even closer to 1.
+    We can conclude that for such small values of :math:`p`, `ellipkm1` yields
+    the better result. For even smaller values of :math:`p`, the difference
+    becomes more apparent.
 
     >>> p = 1e-15
     >>> m = 1-p
     >>> ellipk(m), ellipkm1(p)
     (np.float64(18.656082357290334), np.float64(18.655682558575236))
+    >>> log(4/sqrt(p)) + 0.25*p*(log(4/sqrt(p))-1)
+    18.655682558575236
+
+    For even smaller values of :math:`p`, the finite spacing between float
+    numbers becomes relevant. Then `ellipkm1` needs to be used in any case.
     )";
 
 const char *ellipk_doc = R"(
