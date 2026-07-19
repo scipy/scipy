@@ -442,7 +442,7 @@ def jacobi(n, alpha, beta, monic=False):
 
 
 def roots_sh_jacobi(n, p1, q1, mu=False):
-    """Gauss-Jacobi (shifted) quadrature.
+    r"""Gauss-Jacobi (shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Jacobi (shifted)
     quadrature. The sample points are the roots of the nth degree
