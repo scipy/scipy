@@ -793,6 +793,58 @@ def roots_laguerre(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_laguerre
+    >>> roots, weights = roots_laguerre(5)
+    >>> roots
+    array([ 0.26356032,  1.41340306,  3.59642577,  7.08581001, 12.64080084])
+    >>> weights
+    array([5.21755611e-01, 3.98666811e-01, 7.59424497e-02, 3.61175868e-03,
+           2.33699724e-05])
+
+    Verify that the values in `roots` are roots of the Laguerre polynomial
+    :math:`L_5(x)`.
+
+    >>> from scipy.special import eval_laguerre
+    >>> eval_laguerre(5, roots)
+    array([-5.55111512e-17, -5.55111512e-17,  2.22044605e-16, -1.77635684e-15,
+           -5.68434189e-14])
+
+    The values of :math:`L_5(x)` evaluated at the roots are indeed rather close
+    to zero. The increasing values for larger roots can be explained by the
+    increasing derivative of the Laguerre polynomials at the roots.
+
+    Verify that the sum of the weights equals the integral from 0 to :math:`\infty`
+    over :math:`\exp(-x)` which evaluates to 1. There are two ways to obtain the
+    sum of weights, both resulting in 1 within numerical precision.
+
+    >>> sum(weights)
+    np.float64(0.9999999999999998)
+    >>> roots, weights, sum_of_weights = roots_laguerre(5, mu=True)
+    >>> sum_of_weights
+    np.float64(1.0)
+
+    Roots and weights of the Laguerre polynomial :math:`L_n(x)` are used in
+    Gauss-Laguerre quadrature where the integral from 0 to :math:`\infty` over
+    :math:`f(x)\exp(-x)` is evaluated. Roots and weights for order :math:`n`
+    will result in the exact result for polynomials :math:`f(x)` of a maximal
+    order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(24.000000000000014)
+
+    This result is indeed very close to the exact value of 24.
+
+    In general, Gauss-Laguerre quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to :math:`infty` over :math:`\cos(x)\exp(-x)`
+    which evaluates to 1/2.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(0.5005384852176379)
+
     """
     return roots_genlaguerre(n, 0.0, mu=mu)
 
