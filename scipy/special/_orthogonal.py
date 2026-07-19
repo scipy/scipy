@@ -2940,7 +2940,7 @@ def roots_sh_chebyt(n, mu=False):
     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853])
 
     Verify that the values in `roots` are roots of the shifted Chebyshev
-    polynomial of first kind :math:`T^*_5(x)=T_5(2x-1)`.
+    polynomial of the first kind :math:`T^*_5(x)=T_5(2x-1)`.
 
     >>> from scipy.special import eval_chebyt, eval_sh_chebyt
     >>> eval_chebyt(5, 2*roots-1)
@@ -3099,6 +3099,71 @@ def roots_sh_chebyu(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import roots_sh_chebyu
+    >>> roots, weights = roots_sh_chebyu(5)
+    >>> roots
+    array([0.0669873, 0.25     , 0.5      , 0.75     , 0.9330127])
+    >>> weights
+    array([0.03272492, 0.09817477, 0.13089969, 0.09817477, 0.03272492])
+
+    Verify that the values in `roots` are roots of the shifted Chebyshev
+    polynomial of the second kind :math:`U^*_5(x)=U_5(2x-1)`.
+
+    >>> from scipy.special import eval_chebyu, eval_sh_chebyu
+    >>> eval_chebyu(5, 2*roots-1)
+    array([-1.33226763e-15, -1.77635684e-15,  0.00000000e+00,  0.00000000e+00,
+            3.99680289e-15])
+    >>> eval_sh_chebyu(5, roots)
+    array([-1.33226763e-15, -1.77635684e-15,  0.00000000e+00,  0.00000000e+00,
+            3.99680289e-15])
+
+    The values of :math:`U_5(2x-1)` and :math:`U^*_5(x)` evaluated at the roots
+    are indeed zero or very close to it.
+
+    Verify that the sum of the weights equals the integral from 0 to 1 over 
+    :math:`\sqrt{x-x^2}` which evaluates to :math:`\pi/8`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi/8` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(0.39269908169872403)
+    >>> roots, weights, sum_of_weights = roots_sh_chebyu(5, mu=True)
+    >>> sum_of_weights
+    np.float64(0.3926990816987241)
+    >>> from math import pi
+    >>> pi/8
+    0.39269908169872414
+
+    Roots and weights obtained from the shifted Chebyshev polynomial of the
+    second kind :math:`U^*_n(x)` are used in Gauss-Chebyshev quadrature where
+    the integral from 0 to 1 over :math:`f(x)\sqrt{x-x^2}` is evaluated.
+    Roots and weights for order :math:`n` are expected to yield the exact
+    result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.06442719309119692)
+
+    The exact result is :math:`21\pi/1024`.
+
+    >>> 21*pi/1024
+    0.06442719309119693
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to 1 over :math:`\cos(x)\sqrt{x-x^2}`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(0.33396790828677264)
+    >>> from scipy.integrate import quad
+    >>> quad(lambda x: np.cos(x)*np.sqrt(x-x*x), 0, 1)
+    (0.3339679082866854, 1.4951873072988064e-11)
+
+    The two results agree better than the estimated absolute error, i.e. the second
+    value in the last output.
 
     """
     x, w, m = roots_chebyu(n, True)
