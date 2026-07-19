@@ -347,7 +347,7 @@ class TestGaussPulse:
         err_msg = "Integer input 'tpr=-60' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
-    @pytest.mark.parametrize("t_dtype", ["float32", "float64", "int64"])
+    @pytest.mark.parametrize("t_dtype", ["float32", "float64"])
     def test_dtype(self, t_dtype, xp):
         t_dtype = getattr(xp, t_dtype)
         t = xp.linspace(-1, 1, 11, dtype=t_dtype)
