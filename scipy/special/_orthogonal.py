@@ -482,6 +482,80 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    The roots and weights obtained from the shifted Chebyshev polynomials of
+    the first and second kind are special cases of those obtained from the
+    shifted Jacobi polynomials for :math:`p=0, q=1/2` and :math:`p=2, q=3/2`,
+    respectively.
+
+    >>> from scipy.special import roots_sh_chebyt, roots_sh_chebyu, roots_sh_jacobi
+    >>> roots_sh_jacobi(5, 0, 0.5) # doctest: +NORMALIZE_WHITESPACE
+    (array([0.02447174, 0.20610737, 0.5       , 0.79389263, 0.97552826]),
+     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
+    >>> roots_sh_chebyt(5) # doctest: +NORMALIZE_WHITESPACE
+    (array([0.02447174, 0.20610737, 0.5       , 0.79389263, 0.97552826]),
+     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
+    >>> roots_sh_jacobi(5, 2, 1.5) # doctest: +NORMALIZE_WHITESPACE
+    (array([0.0669873, 0.25     , 0.5      , 0.75     , 0.9330127]),
+     array([0.03272492, 0.09817477, 0.13089969, 0.09817477, 0.03272492]))
+    >>> roots_sh_chebyu(5) # doctest: +NORMALIZE_WHITESPACE
+    (array([0.0669873, 0.25     , 0.5      , 0.75     , 0.9330127]),
+     array([0.03272492, 0.09817477, 0.13089969, 0.09817477, 0.03272492]))
+
+    Consider the specific case :math:`p=2, q=0.5`.
+
+    >>> p, q = 2, 0.5
+    >>> roots, weights, sum_of_weights = roots_sh_jacobi(5, p, q, mu=True)
+
+    Verify that the values in `roots` are roots of the shifted Jacobi
+    polynomial :math:`G^{1.5, -0.5}_5(x)`.
+
+    >>> from scipy.special import eval_sh_jacobi
+    >>> eval_sh_jacobi(5, p, q, roots)
+    array([-1.10114283e-18, -8.80914265e-20, -3.52365706e-19, -3.52365706e-19,
+           -6.34258271e-18])
+
+    All values are indeed very close to zero.
+
+    The sum of the weights is given by the integral from 0 to 1 over
+    :math:`(1-x)^{p-q}x^{q-1}` which evalutes to
+    :math:`\Gamma(q)\Gamma(p-q+1)/Gamma(p+1)`.
+
+    >>> sum_of_weights
+    np.float64(1.1780972450961724)
+    >>> from math import gamma, pi
+    >>> gamma(q)*gamma(p-q+1)/gamma(p+1)
+    1.1780972450961726
+
+    Roots and weights obtained from the shifted Jacobi polynomial
+    :math:`G^{p, q}_n(x)` are used in Gauss-Jacobi quadrature where
+    the integral from 0 to 1 over :math:`f(x)(1-x)^{p-q}x^{q-1}` is evaluated.
+    Roots and weights for order :math:`n` are expected to yield the exact
+    result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.02147573103039911)
+
+    The exact result is :math:`7\pi/1024`.
+
+    >>> 7*pi/1024
+    0.021475731030398976
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to 1 over :math:`\cos(x)(1-x)^{p-q}x^{q-1}`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.1421634723142564)
+    >>> from scipy.integrate import quad
+    >>> quad(lambda x: np.cos(x) * (1-x)**(p-q) * x**(q-1), 0, 1)
+    (1.1421634722898315, 6.314033740295599e-10)
+
+    The two result agree better than indicated by the estimated absolute error given
+    by the second value in the last output.
+
     """
     if (p1-q1) <= -1 or q1 <= 0:
         message = "(p - q) must be greater than -1, and q must be greater than 0."
