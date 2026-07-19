@@ -510,10 +510,21 @@ class interp1d(_Interpolator1D):
 
         # Note that the following expression relies on the specifics of the
         # broadcasting semantics.
+        dx = (x_hi - x_lo)[:, None]
         y_new = (
-            ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
-            + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
+            ((x_new - x_lo)[:, None]/dx) * y_hi
+            + ((x_hi - x_new)[:, None]/dx) * y_lo
             )
+
+        # Degenerate (repeated x) intervals make de Boor's weights infinite,
+        # yielding nan everywhere. Fall back to the slope form there to keep
+        # the historical extrapolation behaviour (+/-inf away from the node,
+        # nan on it) for such vertical inputs.
+        degenerate = (dx == 0)
+        if degenerate.any():
+            slope = (y_hi - y_lo) / dx
+            y_slope = slope * (x_new - x_lo)[:, None] + y_lo
+            y_new = np.where(degenerate, y_slope, y_new)
 
         return y_new
 

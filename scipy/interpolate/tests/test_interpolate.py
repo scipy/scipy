@@ -251,6 +251,23 @@ class TestInterp1D:
         xp_assert_close(yp, y, atol=1e-20)
         assert np.all(yp >= 0) # less stable computations give yp[1,1] = -5e-20
 
+    def test_linear_degenerate_extrapolation(self):
+        # regression test for gh-25503: extrapolating over degenerate
+        # (repeated x, i.e. vertical) input must return +/-inf away from the
+        # node and nan on it, not nan everywhere (regression from gh-24282).
+        with np.errstate(divide='ignore', invalid='ignore'):
+            f = interp1d([2, 2], [3, 4], kind='linear', fill_value='extrapolate')
+            xp_assert_equal(f([1, 2, 3]),
+                            np.array([-np.inf, np.nan, np.inf]))
+
+            # multi-dimensional y is handled the same way column-wise
+            f2 = interp1d([2, 2], [[3, 30], [4, 40]], axis=0, kind='linear',
+                          fill_value='extrapolate')
+            xp_assert_equal(f2([1, 2, 3]),
+                            np.array([[-np.inf, -np.inf],
+                                      [np.nan, np.nan],
+                                      [np.inf, np.inf]]))
+
     def test_slinear_dtypes(self):
         # regression test for gh-7273: 1D slinear interpolation fails with
         # float32 inputs
