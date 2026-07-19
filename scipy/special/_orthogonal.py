@@ -1792,7 +1792,7 @@ def roots_chebyt(n, mu=False):
     >>> weights
     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853])
 
-    Verify that the roots are indeed roots of the Chebyshev polynomial of
+    Verify that the values in `roots` are roots of the Chebyshev polynomial of
     first kind :math:`T_5(x)`.
 
     >>> from scipy.special import eval_chebyt
@@ -1817,7 +1817,7 @@ def roots_chebyt(n, mu=False):
     Roots and weights of the Chebyshev polynomial are used in Gauss-Chebyshev
     quadrature where the integral from -1 to 1 over :math:`f(x)/\sqrt(1-x^2)`
     is evaluated. Roots and weights for order :math:`n` should result in the
-    exact result for polynomials :math:`f(x)` of a maximal order of :math:`n`.
+    exact result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
     >>> weights @ f(roots)
@@ -1829,7 +1829,7 @@ def roots_chebyt(n, mu=False):
     >>> 3*pi/8
     1.1780972450961724
 
-    In general, Gauss-Chebyshev will only yield an approximate value of the
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
     integral. Consider the integral from -1 to 1 over :math:`cos(x)/\sqrt(1-x^2)`
     which evaluates to :math:`\pi J_0(1)`, where :math:`J_0` is the Bessel function
     of first kind and order 0.
@@ -1840,6 +1840,7 @@ def roots_chebyt(n, mu=False):
     >>> from scipy.special import jv
     >>> pi*jv(0, 1)
     np.float64(2.4039394306344133)
+
     """
     m = int(n)
     if n < 1 or n != m:
