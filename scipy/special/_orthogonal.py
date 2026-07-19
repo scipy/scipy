@@ -2950,8 +2950,8 @@ def roots_sh_chebyt(n, mu=False):
     array([8.8817842e-16, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
            8.8817842e-16])
 
-    The values of :math:`T_5(x)` evaluated at the roots are indeed zero or
-    very close to it.
+    The values of :math:`T_5(2x-1)` and of :math:`T^*_5(x)` evaluated at the
+    roots are indeed zero or very close to it.
 
     Verify that the sum of the weights equals the integral from 0 to 1 over 
     :math:`1/\sqrt{x-x^2}` which evaluates to :math:`\pi`. There are two ways
