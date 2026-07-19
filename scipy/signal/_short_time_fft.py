@@ -2206,7 +2206,7 @@ class ShortTimeFFT:
 
     def extent(self, n: int, axes_seq: Literal['tf', 'ft'] = 'tf',
                center_bins: bool = False) -> tuple[float, float, float, float]:
-        """Return the minimum and maximum time and frequency values.
+        """Return minimum and maximum time-frequency values.
 
         Parameters
         ----------
