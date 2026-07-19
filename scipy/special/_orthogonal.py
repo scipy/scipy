@@ -1884,6 +1884,73 @@ def roots_gegenbauer(n, alpha, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    Special cases of Gauss-Gegenbauer quadrature are the Gauss-Chebyshev
+    first kind quadrature (:math:`\alpha=0`) and Gauss-Chebyshev second
+    kind quadrature (:math:`\alpha=1`). Therefore, roots and weights obtained
+    from `roots_gegenbauer` should agree with those obtained from `roots_chebyt`
+    and `roots_chebyu` for the appropriate values of :math:`\alpha`.
+
+    >>> from scipy.special import roots_chebyt, roots_chebyu, roots_gegenbauer
+    >>> roots_gegenbauer(5, 0) # doctest: +NORMALIZE_WHITESPACE
+    (array([-0.95105652, -0.58778525,  0.        ,  0.58778525,  0.95105652]),
+     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
+    >>> roots_chebyt(5) # doctest: +NORMALIZE_WHITESPACE
+    (array([-0.95105652, -0.58778525,  0.        ,  0.58778525,  0.95105652]),
+     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
+
+    >>> roots_gegenbauer(5, 1) # doctest: +NORMALIZE_WHITESPACE
+    (array([-0.8660254, -0.5      ,  0.       ,  0.5      ,  0.8660254]),
+     array([0.13089969, 0.39269908, 0.52359878, 0.39269908, 0.13089969]))
+    >>> roots_chebyu(5) # doctest: +NORMALIZE_WHITESPACE
+    (array([-8.66025404e-01, -5.00000000e-01,  6.12323400e-17,  5.00000000e-01,
+             8.66025404e-01]),
+     array([0.13089969, 0.39269908, 0.52359878, 0.39269908, 0.13089969]))
+
+    The sum of weights should equal the integral from -1 to 1 over
+    :math:`(1-x^2)^{\alpha-1/2}` which evaluates to
+    :math:`\sqrt{\pi}\Gamma(\alpha+1/2)/\Gamma(\alpha+1)`.
+
+    >>> alpha = 0.7
+    >>> roots, weights, sum_of_weights = roots_gegenbauer(5, alpha, mu=True)
+    >>> sum(weights)
+    np.float64(1.7910437497388674)
+    >>> sum_of_weights
+    np.float64(1.7910437497388672)
+    >>> from math import gamma, pi, sqrt
+    >>> sqrt(pi)*gamma(alpha+0.5)/gamma(alpha+1)
+    1.7910437497388667
+
+    Roots and weights obtained from the Gegenbauer polynomial :math:`C^\alpha_n(x)`
+    are used in Gauss-Gegenbauer quadrature where the integral from -1 to 1 over
+    :math:`f(x)(1-x^2)^{\alpha-1/2}` is evaluated. Roots and weights for order
+    :math:`n` are expected to yield the exact result for polynomials :math:`f(x)`
+    of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.29265420747367116)
+
+    This result is indeed very close to the exact value of
+    :math:`3\sqrt{\pi}\Gamma(\alpha+1/2)/4\Gamma(\alpha+3)`.
+
+    >>> (3*sqrt(pi)/4) * gamma(alpha+0.5) / gamma(alpha+3)
+    0.2926542074736711
+
+    In general, Gauss-Gegenbauer quadrature will only yield an approximate value of
+    the integral. Consider the integral from -1 to 1 over
+    :math:`\cos(x)(1-x^2)^{\alpha-1/2}` which evaluates to
+    :math:`2^\alpha\sqrt{\pi}\Gamma(\alpha+1/2)J_\alpha(1)` where :math:`J_\alpha`
+    is the Bessel function of first kind and order :math:`\alpha`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.5395778712347201)
+    >>> from scipy.special import jv
+    >>> 2**alpha * sqrt(pi) * gamma(alpha+0.5) *jv(alpha, 1)
+    np.float64(1.5395778706293377)
+
     """
     m = int(n)
     if n < 1 or n != m:
