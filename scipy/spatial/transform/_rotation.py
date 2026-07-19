@@ -426,7 +426,7 @@ class Rotation:
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = select_backend(xp, cython_compatible=quat.ndim < 3)
+        self._backend: ModuleType = select_backend(xp, cython_compatible=quat.ndim < 3)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -2230,7 +2230,7 @@ class Rotation:
             return Rotation(self._xp.take(self._quat, indexer, axis=0), normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
-    def __setitem__(self, indexer: int | slice | EllipsisType | None, value: Rotation):
+    def __setitem__(self, indexer: int | slice | EllipsisType, value: Rotation):
         """Set rotation(s) at given index(es) from object.
 
         Parameters

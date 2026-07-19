@@ -17,8 +17,6 @@ as the existing one and delivers comparable results. Furthermore, the
 wrappers highlight the different philosophies of the implementations,
 especially in the border handling.
 """
-import platform
-from typing import cast, Literal
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -26,7 +24,6 @@ from numpy.testing import assert_allclose
 from scipy.signal import ShortTimeFFT
 from scipy.signal import get_window, stft, istft
 from scipy.signal._arraytools import const_ext, even_ext, odd_ext, zero_ext
-from scipy.signal._short_time_fft import FFT_MODE_TYPE
 from scipy.signal._spectral_py import _triage_segments
 
 
@@ -114,8 +111,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
     if np.iscomplexobj(x) and return_onesided:
         return_onesided = False
-    # using cast() to make mypy happy:
-    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
+    fft_mode = 'onesided' if return_onesided else 'twosided'
 
     ST = ShortTimeFFT(win, nstep, fs, fft_mode=fft_mode, mfft=nfft,
                       scale_to=scale_to, phase_shift=None)
@@ -202,10 +198,8 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     outputlength = nperseg + (nseg-1)*nstep
     # *** End block of: Taken from _spectral_py.istft() ***
 
-    # Using cast() to make mypy happy:
-    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if input_onesided else 'twosided')
-    scale_to = cast(Literal['magnitude', 'psd'],
-                    {'spectrum': 'magnitude', 'psd': 'psd'}[scaling])
+    fft_mode = 'onesided' if input_onesided else 'twosided'
+    scale_to = {'spectrum': 'magnitude', 'psd': 'psd'}[scaling]
 
     ST = ShortTimeFFT(win, nstep, fs, fft_mode=fft_mode, mfft=nfft,
                       scale_to=scale_to, phase_shift=None)
@@ -221,7 +215,6 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     x = ST.istft(Zxx, k0=k0, k1=k1, f_axis=freq_axis, t_axis=time_axis)
     t = np.arange(k1 - k0) * ST.T
     k_hi = ST.upper_border_begin(k1 - k0)[0]
-    # using cast() to make mypy happy:
     return t, x, (ST.lower_border_end[0], k_hi)
 
 
@@ -296,10 +289,11 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     atol = np.finfo(x.dtype).resolution*2  # instead of default atol = 0
     rtol = 1e-7  # default for np.allclose()
 
-    # Relax atol on 32-Bit platforms a bit to pass CI tests.
-    #  - Not clear why there are discrepancies (in the FFT maybe?)
-    #  - Not sure what changed on 'i686' since earlier on those test passed
-    if x.dtype == np.float32 and platform.machine() == 'i686':
+    # Relax tolerances for float32, which loses precision in the FFT
+    # roundtrip. Originally observed on i686; also seen on aarch64 and on
+    # builds using FMA contraction (gh-25488), so the drift is dtype-driven
+    # rather than platform-specific.
+    if x.dtype == np.float32:
         # float32 gets only used by TestSTFT.test_roundtrip_float32() so
         # we are using the tolerances from there to circumvent CI problems
         atol, rtol = 1e-4, 1e-5

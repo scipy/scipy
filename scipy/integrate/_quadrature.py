@@ -2,7 +2,6 @@ import numpy as np
 import math
 import warnings
 from collections import namedtuple
-from collections.abc import Callable
 
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
@@ -20,8 +19,7 @@ __all__ = ['fixed_quad', 'romb',
            'qmc_quad', 'cumulative_simpson']
 
 
-@xp_capabilities(skip_backends=[('jax.numpy',
-                                 "JAX arrays do not support item assignment")])
+@xp_capabilities()
 def trapezoid(y, x=None, dx=1.0, axis=-1):
     r"""
     Integrate along the given axis using the composite trapezoidal rule.
@@ -177,7 +175,7 @@ def _cached_roots_legendre(n):
     return _cached_roots_legendre.cache[n]
 
 
-_cached_roots_legendre.cache = dict()
+_cached_roots_legendre.cache = dict()  # type:ignore[attr-defined]  # pyrefly:ignore[missing-attribute]
 
 
 @xp_capabilities()
@@ -528,12 +526,7 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
     return result
 
 
-def _cumulatively_sum_simpson_integrals(
-    y: np.ndarray,
-    dx: np.ndarray,
-    integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
-    xp
-) -> np.ndarray:
+def _cumulatively_sum_simpson_integrals(y, dx, integration_func, xp):
     """Calculate cumulative sum of Simpson integrals.
     Takes as input the integration function to be used.
     The integration_func is assumed to return the cumulative sum using
@@ -548,11 +541,11 @@ def _cumulatively_sum_simpson_integrals(
     shape = list(sub_integrals_h1.shape)
     shape[-1] += 1
     sub_integrals = xp.empty(shape, dtype=xp.result_type(y, dx))
-    sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
-    sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
+    sub_integrals = xpx.at(sub_integrals)[..., :-1:2].set(sub_integrals_h1[..., ::2])
+    sub_integrals = xpx.at(sub_integrals)[..., 1::2].set(sub_integrals_h2[..., ::2])
     # Integral over last subinterval can only be calculated from
     # formula for h2
-    sub_integrals[..., -1] = sub_integrals_h2[..., -1]
+    sub_integrals = xpx.at(sub_integrals)[..., -1].set(sub_integrals_h2[..., -1])
     res = xp.cumulative_sum(sub_integrals, axis=-1)
     return res
 
@@ -595,8 +588,7 @@ def _cumulative_simpson_unequal_intervals(y: np.ndarray, dx: np.ndarray) -> np.n
     return x21/6 * (coeff1*f1 + coeff2*f2 + coeff3*f3)
 
 
-@xp_capabilities(allow_dask_compute=1,
-                 skip_backends=[("jax.numpy", "item assignment")])
+@xp_capabilities(allow_dask_compute=1, jax_jit=False)
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     r"""
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.

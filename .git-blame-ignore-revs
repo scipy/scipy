@@ -14,8 +14,6 @@ b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
 39787f146137b0ec9d31907989c6f104ba7eed76
 # Line length clean up in `scipyoptdoc.py` (gh-19505)
 49858c5fb2bf479b17a0bf42a7397d73f45f1b31
-# Line length clean up in odr (gh-19514)
-877f1cc34ad2147340684bcadfbf884d47f5a954
 # Line length clean up in fft (gh-19520)
 9d41d85c472438cf17211b843de7c770868d25a4
 # Blanket noqa clean up (gh-19529)
@@ -40,3 +38,7 @@ ceafa8e730887b81cf10d483ce375559ebd1de09
 d1b5af016e907e037136b7a38e485437165490f2
 # Style cleanup in `sparse.linalg._interface` (gh-23836)
 726243cb85d4368d58fb1f95dc1749fb3f3dbce8
+# Style cleanup for `linux.yml`
+06a8231667a412c8f24ebca057bce35ae6080265
+# Style cleanup for `linux_blas.yml`
+c7587c83744164f7b7c8e905de05b5955170acd4

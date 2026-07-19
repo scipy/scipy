@@ -535,7 +535,7 @@ Note that in some modules a systematic process for delegation to native
 implementations is set up, where functions are replaced with wrappers
 that perform delegation. In this case, ``xp_capabilities`` is not always
 applied as a decorator with ``@`` syntax, but may instead be applied
-programatically on the wrappers. When working on array API standard
+programmatically on the wrappers. When working on array API standard
 support within a module, its important to be aware of how such delegation
 is set up, if any, and how ``xp_capabilities`` is being applied. A common
 practice currently is to have a file, ``_support_alternative_backends.py``
@@ -651,20 +651,9 @@ being followed are to exclude:
 * functions which are too implementation specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
 * functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices.
 
-As an example, the contents of `scipy.odr` are considered out-of-scope for a
-combination of reasons 2 and 3 above. `scipy.odr` essentially provides a direct
-wrapper of the monolithic ODRPACK Fortran library, and its API is tied
-to the structure of this monolithic library. An efficient GPU
-accelerated implementation of nonlinear weighted orthogonal distance regression
-would benefit from not having to support an API so tightly coupled to ODRPACK
-but is also a challenging problem in its own right.
-
-(Since the previous paragraph was written `scipy.odr` has been slated for
-deprecation. Things that are deprecated are inherently out-of-scope).
-
 Considerations of what to consider in-scope are evolving, and something which is now
 considered out-of-scope may be decided to be in-scope in the future if sufficient user
-interest and feasability are demonstrated.
+interest and feasibility are demonstrated.
 
 .. _dev-arrayapi_skip_xfail_backends:
 

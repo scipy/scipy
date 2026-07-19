@@ -80,7 +80,7 @@ def _lstsq(a, b, xp=None, rcond=None):
     a, b = xp_promote(a, b, force_floating=True, xp=xp)
 
     if rcond is None:
-        rcond = xp.finfo(a.dtype).eps * max(a.shape[-1], a.shape[-2])
+        rcond = xp.finfo(a.dtype).eps
 
     if is_numpy(xp):
         from scipy.linalg import lstsq as s_lstsq

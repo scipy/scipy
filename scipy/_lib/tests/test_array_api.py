@@ -176,14 +176,12 @@ class TestArrayAPI:
         if is_numpy(xp):
             xp_assert_equal(x, y, **options)
         else:
+            # `desired` can be of a different namespace
+            # as long as `actual` matches the expectation set by `default_xp`
+            xp_assert_equal(x, y, **options)
             with pytest.raises(
                 AssertionError,
-                match="Namespace of desired array does not match",
-            ):
-                xp_assert_equal(x, y, **options)
-            with pytest.raises(
-                AssertionError,
-                match="Namespace of actual and desired arrays do not match",
+                match="Input does not have the desired array namespace",
             ):
                 xp_assert_equal(y, x, **options)
 

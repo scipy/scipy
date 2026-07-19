@@ -15,6 +15,7 @@ BANDWIDTH_DTYPES = (
 
 
 @skip_xp_invalid_arg
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_bandwidth_dtypes():
     n = 5
     for dt in BANDWIDTH_DTYPES:
@@ -89,6 +90,7 @@ def test_bandwidth_rect_inputs(T):
 
 
 @skip_xp_invalid_arg
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_issymetric_ishermitian_dtypes():
     n = 5
     for t in np.typecodes['All']:

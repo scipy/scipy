@@ -76,6 +76,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
+                    getdtype(self.data.dtype)  # check that dtype is supported
                 else:
                     raise ValueError(f"unrecognized {self.__class__.__name__} "
                                      f"constructor input: {arg1}")
@@ -928,7 +929,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # Update index data type
         idx_dtype = self._get_index_dtype((self.indices, self.indptr),
-                                    maxval=(self.indptr[-1] + x.size))
+                                    maxval=(self.indptr[-1].item() + x.size))
         self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
         self.indices = np.asarray(self.indices, dtype=idx_dtype)
         i = np.asarray(i, dtype=idx_dtype)
@@ -937,8 +938,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Collate old and new in chunks by major index
         indices_parts = []
         data_parts = []
-        ui, ui_indptr = np.unique(i, return_index=True)
-        ui_indptr = np.append(ui_indptr, len(j))
+
+        # TODO: explore creating a native sparsetools version of:
+        # ui, ui_indptr = np.unique(i, return_index=True)
+        # These 2 lines are equiv to np.unique but avoid big memory use. See gh-24951
+        ui_indptr = np.diff(np.concatenate(([-1], i))).nonzero()[0]
+        ui = i[ui_indptr]
+
+        ui_indptr = np.concatenate((ui_indptr, [len(j)]))
         new_nnzs = np.diff(ui_indptr)
         prev = 0
         for c, (ii, js, je) in enumerate(zip(ui, ui_indptr, ui_indptr[1:])):

@@ -466,7 +466,7 @@ class RigidTransform:
         if self._single:
             matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
 
-        self._backend = select_backend(xp, matrix.ndim < 4)
+        self._backend: ModuleType = select_backend(xp, matrix.ndim < 4)
         self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
     def __repr__(self):
@@ -773,7 +773,7 @@ class RigidTransform:
             tau = [  0 -rz  ry vx]
                   [ rz   0 -rx vy]
                   [-ry  rx   0 vz]
-                  [  0   0   0  1]
+                  [  0   0   0  0]
 
         Parameters
         ----------
@@ -1409,7 +1409,7 @@ class RigidTransform:
 
     def __setitem__(
         self,
-        indexer: int | slice | EllipsisType | None | ArrayLike,
+        indexer: int | slice | EllipsisType | ArrayLike,
         value: RigidTransform,
     ):
         """Set transform(s) at given index(es) in this object.
@@ -1960,7 +1960,7 @@ class RigidTransform:
     ) -> RigidTransform:
         """Create a RigidTransform skipping all sanitization steps.
 
-        This method is is intended for internal, performant creation of RigidTransforms
+        This method is intended for internal, performant creation of RigidTransforms
         with matrices that are guaranteed to be valid.
         """
         tf = RigidTransform.__new__(RigidTransform)

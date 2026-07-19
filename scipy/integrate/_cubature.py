@@ -13,6 +13,7 @@ from scipy._lib._array_api import (
     xp_promote,
     xp_capabilities
 )
+import scipy._external.array_api_extra as xpx
 from scipy._lib._util import MapWrapper
 
 from scipy.integrate._rules import (
@@ -628,8 +629,8 @@ class _InfiniteLimitsTransform(_VariableTransform):
 
         # Since we flip the limits, we don't need to separately multiply the
         # integrand by -1.
-        self._orig_a[inf_end_mask] = -b[inf_end_mask]
-        self._orig_b[inf_end_mask] = -a[inf_end_mask]
+        self._orig_a = xpx.at(self._orig_a)[inf_end_mask].set(-b[inf_end_mask])
+        self._orig_b = xpx.at(self._orig_b)[inf_end_mask].set(-a[inf_end_mask])
 
         self._num_inf = self._xp.sum(
             self._xp.astype(self._double_inf_pos | self._semi_inf_pos, self._xp.int64),
@@ -640,11 +641,11 @@ class _InfiniteLimitsTransform(_VariableTransform):
         a = xp_copy(self._orig_a)
         b = xp_copy(self._orig_b)
 
-        a[self._double_inf_pos] = -1
-        b[self._double_inf_pos] = 1
+        a = xpx.at(a)[self._double_inf_pos].set(-1)
+        b = xpx.at(b)[self._double_inf_pos].set(1)
 
-        a[self._semi_inf_pos] = 0
-        b[self._semi_inf_pos] = 1
+        a = xpx.at(a)[self._semi_inf_pos].set(0)
+        b = xpx.at(b)[self._semi_inf_pos].set(1)
 
         return a, b
 
@@ -685,11 +686,13 @@ class _InfiniteLimitsTransform(_VariableTransform):
         # zero.
         zero_mask = x[double_inf_mask] == 0
         non_zero_mask = double_inf_mask & ~zero_mask
-        t[zero_mask] = math.inf
-        t[non_zero_mask] = 1/(x[non_zero_mask] + self._xp.sign(x[non_zero_mask]))
+        t = xpx.at(t)[zero_mask].set(math.inf)
+        t = xpx.at(t)[non_zero_mask].set(
+            1/(x[non_zero_mask] + self._xp.sign(x[non_zero_mask]))
+        )
 
         start = self._xp.tile(self._orig_a[self._semi_inf_pos], (npoints,))
-        t[semi_inf_mask] = 1/(x[semi_inf_mask] - start + 1)
+        t = xpx.at(t)[semi_inf_mask].set(1/(x[semi_inf_mask] - start + 1))
 
         return t
 
@@ -708,14 +711,16 @@ class _InfiniteLimitsTransform(_VariableTransform):
         )
 
         # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
-        x[double_inf_mask] = (
+        x = xpx.at(x)[double_inf_mask].set(
             (1 - self._xp.abs(t[double_inf_mask])) / t[double_inf_mask]
         )
 
         start = self._xp.tile(self._orig_a[self._semi_inf_pos], (npoints,))
 
         # For (start, oo) -> (0, 1), use the transformation x = start + (1-t)/t.
-        x[semi_inf_mask] = start + (1 - t[semi_inf_mask]) / t[semi_inf_mask]
+        x = xpx.at(x)[semi_inf_mask].set(
+            start + (1 - t[semi_inf_mask]) / t[semi_inf_mask]
+        )
 
         jacobian_det = 1/self._xp.prod(
             self._xp.reshape(

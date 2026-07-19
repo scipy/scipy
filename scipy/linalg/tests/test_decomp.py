@@ -1,6 +1,5 @@
 import itertools
 import platform
-import sys
 import warnings
 
 import numpy as np
@@ -30,14 +29,12 @@ from numpy import (array, diag, full, linalg, argsort, zeros, arange,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy.sparse._sputils import matrix
 
-from scipy._lib._testutils import check_free_memory
+from scipy._lib._testutils import IS_WASM, check_free_memory
 from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.__config__ import CONFIG
 
 from .test_basic import parametrize_overwrite_arg
-
-IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -1051,6 +1048,7 @@ class TestEigh:
         w, z = eigh(a, b)
 
     @skip_xp_invalid_arg
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_eigh_of_sparse(self):
         # This tests the rejection of inputs that eigh cannot currently handle.
         import scipy.sparse

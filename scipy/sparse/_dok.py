@@ -19,7 +19,7 @@ _NoValue = object()
 
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
-    _allow_nd = (1, 2)
+    _allow_nd: tuple[int, ...] = (1, 2)
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _spbase.__init__(self, arg1, maxprint=maxprint)
@@ -60,7 +60,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 self.dtype = getdtype(d.dtype)
             self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
-    def update(self, val):
+    def update(self, val):  # pyrefly:ignore[bad-override]
         """Update values from a dict, sparse dok or iterable of 2-tuples like
         ``.items()``.
 

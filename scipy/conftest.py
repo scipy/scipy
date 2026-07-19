@@ -21,7 +21,7 @@ from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
     is_cupy, is_dask, is_jax, is_torch,
 )
-from scipy._lib._testutils import FPUModeChangeWarning
+from scipy._lib._testutils import IS_WASM, FPUModeChangeWarning
 from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
 from scipy._external.packaging_version import version
 
@@ -56,6 +56,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers",
         "array_api_backends: test iterates on all array API backends")
     config.addinivalue_line("markers",
+        ("fail_asan: mark test as triggering the address sanitizer "
+         "(and not covered by the suppressions file)"))
+    config.addinivalue_line("markers",
         ("skip_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
          "eager_only=False, exceptions=None): mark the desired skip configuration " +
          "for the `skip_xp_backends` fixture"))
@@ -78,7 +81,7 @@ def pytest_configure(config):
     try:
         # This is a more reliable test of whether pytest_fail_slow is installed
         # When I uninstalled it, `import pytest_fail_slow` didn't fail!
-        from pytest_fail_slow import parse_duration  # type: ignore[import-not-found] # noqa:F401,E501
+        from pytest_fail_slow import parse_duration  # noqa:F401,E501
     except Exception:
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
@@ -97,11 +100,39 @@ def pytest_configure(config):
             "iterations(n): run the given test function `n` times in each thread",
         )
 
-    if os.name == 'posix' and sys.version_info < (3, 14) and sys.platform != "cygwin":
+    if (sys.version_info < (3, 14)
+            and 'forkserver' in multiprocessing.get_all_start_methods()):
         # On POSIX, Python 3.13 and older uses the 'fork' context by
         # default. Calling fork() from multiple threads leads to
         # deadlocks. This has been changed in 3.14 to 'forkserver'.
         multiprocessing.set_start_method('forkserver', force=True)
+
+    if IS_WASM:
+        # threading.get_native_id is not available without OS thread support in
+        # the WebAssembly runtime. A number of tests (and helpers) reach for it
+        # even when not doing anything genuinely threaded, so we provide a stub.
+        import random
+        import threading
+        if not hasattr(threading, "get_native_id"):
+            threading.get_native_id = lambda: random.randint(0, 10000)
+
+        # pytest's gc_collect_harder forces a GC pass during cleanup, which can
+        # cause a fatal error from C-extension destructors under WASM. We have it
+        # as a no-op so that pytest can finish and print its summary. Refer to
+        # pytest_unconfigure below for how we then hand the real exit status back
+        # to Node.js.
+        try:
+            import _pytest.unraisableexception
+            _pytest.unraisableexception.gc_collect_harder = lambda *args, **kwargs: None
+        except (ImportError, AttributeError):
+            pass
+
+        # Drop when https://github.com/joblib/threadpoolctl/pull/201 makes it to
+        # a threadpoolctl release
+        config.addinivalue_line(
+            "filterwarnings",
+            "ignore:JsProxy.as_object_map:RuntimeWarning",
+        )
 
 
 def pytest_runtest_setup(item):
@@ -153,6 +184,28 @@ def pytest_runtest_setup(item):
                     return
 
 
+# Node.js reports a non-zero exit code if the interpreter hits a fatal error
+# while finalizing (some SciPy C-extension destructors do, under WASM), even
+# when every test passes. To hand Node.js the real pytest status, we stash it
+# in pytest_sessionfinish (which runs after the summary is printed) and then,
+# in pytest_unconfigure, exit via os._exit before interpreter finalization runs.
+# This logic is brought from SciPy's Pyodide recipe via
+# https://github.com/pyodide/pyodide-recipes/pull/619/
+if IS_WASM:
+    _EMSCRIPTEN_EXIT_STATUS = 0
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_sessionfinish(session, exitstatus):
+        global _EMSCRIPTEN_EXIT_STATUS
+        _EMSCRIPTEN_EXIT_STATUS = int(exitstatus)
+
+    def pytest_unconfigure(config):
+        import os
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(_EMSCRIPTEN_EXIT_STATUS)
+
+
 @pytest.fixture(scope="function", autouse=True)
 def check_fpu_mode(request):
     """
@@ -175,10 +228,20 @@ if not PARALLEL_RUN_AVAILABLE:
 
 
 # Array API backend handling
+# NOTE: conftest.py is imported before its own ``pytest_configure`` runs, and
+# an installed SciPy does not ship ``pytest.ini``. Accessing
+# ``pytest.mark.<name>`` at import time would therefore emit a spurious
+# ``PytestUnknownMarkWarning`` (gh-25208). Build the decorators once under
+# suppression and reuse them below; the marks are still registered in
+# ``pytest_configure`` and stay fully functional for ``-m`` selection.
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", pytest.PytestUnknownMarkWarning)
+    _array_api_backends = pytest.mark.array_api_backends
+    _thread_unsafe = pytest.mark.thread_unsafe
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
                      'dask.array'}
 xp_available_backends = [
-    pytest.param(np, id='numpy', marks=pytest.mark.array_api_backends)
+    pytest.param(np, id='numpy', marks=_array_api_backends)
 ]
 xp_skip_cpu_only_backends = set()
 xp_skip_eager_only_backends = set()
@@ -189,7 +252,7 @@ if SCIPY_ARRAY_API:
         import array_api_strict
         xp_available_backends.append(
             pytest.param(array_api_strict, id='array_api_strict',
-                         marks=pytest.mark.array_api_backends))
+                         marks=_array_api_backends))
         if version.parse(array_api_strict.__version__) < version.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
@@ -199,10 +262,10 @@ if SCIPY_ARRAY_API:
         pass
 
     try:
-        import torch  # type: ignore[import-not-found]
+        import torch  # pyrefly: ignore[missing-import]
         xp_available_backends.append(
             pytest.param(torch, id='torch',
-            marks=pytest.mark.array_api_backends))
+            marks=_array_api_backends))
         torch.set_default_device(SCIPY_DEVICE)
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('torch')
@@ -220,12 +283,12 @@ if SCIPY_ARRAY_API:
         pass
 
     try:
-        import cupy  # type: ignore[import-not-found]
+        import cupy  # pyrefly: ignore[missing-import]
         # Note: cupy disregards SCIPY_DEVICE and always runs on cuda.
         # It will fail to import if you don't have CUDA hardware and drivers.
         xp_available_backends.append(
             pytest.param(cupy, id='cupy',
-            marks=pytest.mark.array_api_backends))
+            marks=_array_api_backends))
         xp_skip_cpu_only_backends.add('cupy')
 
         # this is annoying in CuPy 13.x
@@ -238,13 +301,13 @@ if SCIPY_ARRAY_API:
         pass
 
     try:
-        import jax.numpy  # type: ignore[import-not-found]
+        import jax.numpy  # pyrefly: ignore[missing-import]
         
         xp_available_backends.append(
             pytest.param(jax.numpy, id='jax.numpy',
-            marks=[pytest.mark.array_api_backends,
+            marks=[_array_api_backends,
                    # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
-                   pytest.mark.thread_unsafe]))
+                   _thread_unsafe]))
 
         jax.config.update("jax_enable_x64", True)
         # Make sure JAX won't default to less accurate TensorFloat32 precision
@@ -265,9 +328,9 @@ if SCIPY_ARRAY_API:
 
         xp_available_backends.append(
             pytest.param(da, id='dask.array',
-            marks=[pytest.mark.array_api_backends,
+            marks=[_array_api_backends,
                    # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
-                   pytest.mark.thread_unsafe]))
+                   _thread_unsafe]))
 
         # Dask can wrap around cupy. However, this is untested in scipy
         # (and will almost surely not work as delegation will misbehave).
@@ -405,8 +468,28 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             reason = marker.kwargs.get("reason") or (
                 f"do not run with array API backend: {backend}")
             # reason overrides the ones from cpu_only, np_only, and eager_only.
-            # This is regardless of order of appearence of the markers.
+            # This is regardless of order of appearance of the markers.
             reasons[backend].insert(0, reason)
+
+            for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
+                if kwarg in marker.kwargs:
+                    raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
+
+        elif len(marker.args) == 2 and isinstance(marker.args[1], bool | type(None)):
+            # condition is provided:
+            #   1. check it
+            #   2. reason is required (similar to pytest's xfail/skipif)
+            backend, condition = marker.args
+
+            if backend not in xp_known_backends:
+                raise ValueError(f"Unknown backend: {backend}; "
+                                 f"must be one of {list(xp_known_backends)}")
+
+            if condition:
+                reason = marker.kwargs.get("reason")
+                # reason overrides the ones from cpu_only, np_only, and eager_only.
+                # This is regardless of order of appearance of the markers.
+                reasons[backend].insert(0, reason)
 
             for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
                 if kwarg in marker.kwargs:
@@ -438,11 +521,13 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
         ...
 
         @skip_xp_backends(backend, *, reason=None)
+        @skip_xp_backends(backend, condition, /, *, reason='skip because condition')
         @skip_xp_backends(*, cpu_only=True, exceptions=(), reason=None)
         @skip_xp_backends(*, eager_only=True, exceptions=(), reason=None)
         @skip_xp_backends(*, np_only=True, exceptions=(), reason=None)
 
         @xfail_xp_backends(backend, *, reason=None)
+        @xfail_xp_backends(backend, condition, /, *, reason='xfail because condition')
         @xfail_xp_backends(*, cpu_only=True, exceptions=(), reason=None)
         @xfail_xp_backends(*, eager_only=True, exceptions=(), reason=None)
         @xfail_xp_backends(*, np_only=True, exceptions=(), reason=None)
@@ -526,7 +611,7 @@ if hypothesis_available:
     # Following the approach of NumPy's conftest.py...
     # Use a known and persistent tmpdir for hypothesis' caches, which
     # can be automatically cleared by the OS or user.
-    hypothesis.configuration.set_hypothesis_home_dir(
+    hypothesis.configuration.set_hypothesis_home_dir(  # pyrefly:ignore[unbound-name]
         os.path.join(tempfile.gettempdir(), ".hypothesis")
     )
 
@@ -614,7 +699,7 @@ if HAVE_SCPDT:
 
         # XXX: this matches the refguide-check behavior, but is a tad strange:
         # makes sure that the seed the old-fashioned np.random* methods is
-        # *NOT* reproducible but the new-style `default_rng()` *IS* repoducible.
+        # *NOT* reproducible but the new-style `default_rng()` *IS* reproducible.
         # Should these two be either both repro or both not repro?
 
         from scipy._lib._util import _fixed_default_rng
@@ -629,10 +714,9 @@ if HAVE_SCPDT:
                     yield
                 else:
                     warnings.simplefilter('error', Warning)
-                    warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
-    dt_config.user_context_mgr = warnings_errors_and_rng
+    dt_config.user_context_mgr = warnings_errors_and_rng  # pyrefly:ignore[unbound-name]
     dt_config.skiplist = set([
         'scipy.linalg.LinAlgError',     # comes from numpy
         'scipy.fftpack.fftshift',       # fftpack stuff is also from numpy
@@ -655,6 +739,9 @@ if HAVE_SCPDT:
         'scipy.interpolate.approximate_taylor_polynomial',
         'scipy.interpolate.pade',
         'scipy.spatial.tsearch',
+        'scipy.spatial.minkowski_distance_p',
+        'scipy.spatial.minkowski_distance',
+        'scipy.spatial.distance_matrix',
     ])
 
     # help pytest collection a bit: these names are either private
@@ -668,11 +755,7 @@ if HAVE_SCPDT:
         "scipy/special/_precompute",
         "scipy/interpolate/_interpnd_info.py",
         "scipy/interpolate/_rbfinterp_pythran.py",
-        "scipy/_build_utils/tempita.py",
         "scipy/_external",
-        "scipy/_lib/array_api_compat",
-        "scipy/_lib/highs",
-        "scipy/_lib/unuran",
         "scipy/_lib/_gcutils.py",
         "scipy/_lib/doccer.py",
         "scipy/_lib/_uarray",

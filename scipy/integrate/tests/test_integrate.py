@@ -55,7 +55,8 @@ class TestOdeint:
 
 class TestODEClass:
 
-    ode_class = None   # Set in subclass.
+    # Set in subclass.
+    ode_class: type | None = None
 
     def _do_problem(self, problem, integrator, method='adams'):
 
@@ -90,7 +91,7 @@ class TestODEClass:
 
 class TestOde(TestODEClass):
 
-    ode_class = ode
+    ode_class: type[ode] = ode
 
     def test_vode(self):
         # Check the vode solver
@@ -405,11 +406,11 @@ class ODE:
     """
     stiff = False
     cmplx = False
-    stop_t = 1
-    z0 = []
+    stop_t: float = 1
+    z0: np.ndarray | list = []
 
-    lband = None
-    uband = None
+    lband: int | None = None
+    uband: int | None = None
 
     atol = 1e-6
     rtol = 1e-5

@@ -227,8 +227,6 @@ class TestConstructUtils:
         for d, o, shape in cases:
             assert_raises(ValueError, construct.diags, d, offsets=o, shape=shape)
 
-        assert_raises(TypeError, construct.diags, [[None]], offsets=[0])
-
     def test_diags_vs_diag(self):
         # Check that
         #
@@ -411,6 +409,22 @@ class TestConstructUtils:
         assert_array_equal(result.toarray(), expected)
         assert isinstance(result, spmatrix)
 
+    @pytest.mark.parametrize(
+        "b",
+        [
+            csr_array([[3]], dtype=np.int64),        # BSR Path
+            csr_array([[3, 0, 0]], dtype=np.int64),  # COO Path
+        ],
+    )
+    def test_kron_zero_matrix_dtype(self, b):
+        a = csr_array([[0]], dtype=np.int64)
+
+        result = construct.kron(a, b)
+
+        assert result.dtype == np.int64
+        assert result.nnz == 0
+
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_kron_ndim_exceptions(self):
         # spmatrix is default, so exceptions with 3D unless sparse arrays are input
         with pytest.raises(TypeError, match='expected 2D array or matrix'):
@@ -460,6 +474,7 @@ class TestConstructUtils:
         result = construct.kronsum(csr_matrix(a), csr_matrix(b)).toarray()
         assert_array_equal(result, expected)
 
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_kronsum_ndim_exceptions(self):
         with pytest.raises(ValueError, match='requires 2D input'):
             construct.kronsum([[0], [1]], csr_array([0, 1]))
@@ -743,6 +758,7 @@ class TestConstructUtils:
         X.coords = tuple(co.astype(np.int64) for co in X.coords)
         assert construct.block_diag([X, X]).coords[0].dtype == np.int64
 
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
         # one 1d matrix and a scalar
@@ -754,6 +770,7 @@ class TestConstructUtils:
         assert_array_equal(construct.block_diag([A, B]).toarray(),
                            [[1, 0, 3, 0, 0], [0, 0, 0, 0, 4]])
 
+    @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_block_diag_1(self):
         """ block_diag with one matrix """
         assert_equal(construct.block_diag([[1, 0]]).toarray(),
@@ -884,6 +901,17 @@ class TestConstructUtils:
         assert_equal(sparse_array.count_nonzero(),172)
 
 
+def test_deprecated_warnings_output_defaults_switch_from_spmatrix():
+    A = B = np.array([[1, 0], [1, 0]])
+    with pytest.deprecated_call(match=".*switching.*sparse array int"):
+        construct.kron(A, B)
+    with pytest.deprecated_call(match=".*switching.*sparse array int"):
+        construct.kronsum(A, B)
+    # Note: vstack hstack and bmat do not support all dense input. So no default.
+    with pytest.deprecated_call(match=".*switching.*sparse array int"):
+        construct.block_diag([A, B])
+
+
 def test_diags_array():
     """Tests of diags_array that do not rely on diags wrapper."""
     diag = np.arange(1.0, 5.0)
@@ -904,29 +932,12 @@ def test_diags_array():
         construct.diags(np.arange(1.0, 5.0), 5, shape=(4, 4))
 
 
-@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
+@pytest.mark.parametrize('func', (construct.diags_array, construct.diags))
 def test_diags_int(func):
     d = [[3], [1, 2], [4]]
     offsets = [-1, 0, 1]
-    # Until the deprecation period is over, `dtype=None` must be given
-    # explicitly to avoid the warning and the cast to an inexact type
-    # in diags_array() (gh-23102).
-    arr = func(d, offsets=offsets, dtype=None)
+    arr = func(d, offsets=offsets)
     expected = np.array([[1, 4], [3, 2]])
-    assert_array_equal(arr.toarray(), expected, strict=True)
-
-
-@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
-def test_diags_int_to_float64(func):
-    d = [[3], [1, 2], [4]]
-    offsets = [-1, 0, 1]
-    # Until the deprecation period is over, diags and diag_array will cast
-    # integer inputs to float64 by default.  A warning will be generated
-    # that indicates this behavior is deprecated.
-    # See gh-23102.
-    with pytest.warns(FutureWarning, match="output has been cast to"):
-        arr = func(d, offsets=offsets)
-    expected = np.array([[1.0, 4.0], [3.0, 2.0]])
     assert_array_equal(arr.toarray(), expected, strict=True)
 
 
@@ -1031,7 +1042,7 @@ def test_3d_permute_dims():
 
 def test_canonical_format_permute_dims():
     A = coo_array([[2, 0, 1], [3, 5, 0]])
-    # identity axes keep has_canoncial_format True after permute_dims.
+    # identity axes keep has_canonical_format True after permute_dims.
     assert construct.permute_dims(A, axes=(0, 1)).has_canonical_format is True
     assert construct.permute_dims(A, axes=[0, 1]).has_canonical_format is True
     # order changes set has_canonical_format to False

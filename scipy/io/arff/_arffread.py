@@ -76,7 +76,7 @@ class ParseArffError(ArffError):
 # ----------
 class Attribute:
 
-    type_name = None
+    type_name: str | None = None
 
     def __init__(self, name):
         self.name = name

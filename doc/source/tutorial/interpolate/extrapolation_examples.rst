@@ -447,7 +447,7 @@ whole dataset using NumPy broadcasting.
         -------
         func : callable
             A callable object which mirrors the CT behavior,
-            with an additional neareast-neighbor extrapolation
+            with an additional nearest-neighbor extrapolation
             outside of the data range.
         """
         x = xy[:, 0]

@@ -9,6 +9,7 @@ that work with any Array API-compatible backend.
 import re
 import warnings
 from types import EllipsisType
+from typing import cast
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -26,9 +27,6 @@ from scipy._external.array_api_compat import device as xp_device
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
-# mypy: disable-error-code=index
-# mypy: disable-error-code=operator
-# mypy: disable-error-code=union-attr
 
 def from_quat(
     quat: Array,
@@ -65,7 +63,7 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
         elif lazy:
             matrix = xp.where(mask[..., None, None], xp.nan, matrix)
 
-        gramians = matrix @ xp.matrix_transpose(matrix)
+        gramians = matrix @ matrix.mT
         eye = xp.eye(3, dtype=matrix.dtype, device=device)
         is_orthogonal = xp.all(
             xpx.isclose(gramians, eye, atol=1e-12, xp=xp), axis=(-2, -1)
@@ -245,6 +243,8 @@ def from_davenport(
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
     angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
     num_axes = axes.shape[-2]
+    if num_axes is None:
+        raise ValueError(f"axes must have a known shape, got shape {axes.shape}")
     if num_axes < 1 or num_axes > 3:
         raise ValueError(f"Expected up to 3 axes, got {num_axes}")
 
@@ -270,7 +270,7 @@ def from_davenport(
         angles = _deg2rad(angles)
 
     if (
-        not broadcastable(axes.shape[:-1], angles.shape)
+        not broadcastable(axes.shape[:-1], cast(tuple[int, ...], angles.shape))
         or axes.shape[-2] != angles.shape[-1]
     ):
         raise ValueError(
@@ -403,7 +403,7 @@ def as_euler(
 
 def as_davenport(
     quat: Array,
-    axes: ArrayLike,
+    axes: Array,
     order: str,
     degrees: bool = False,
     *,
@@ -521,7 +521,7 @@ def mean(
     # Branching code is okay for checks that include meta info such as shapes and types
     quat_expand = quat[..., None, :]
     if weights is None:
-        K = xp.matrix_transpose(quat_expand) @ quat_expand
+        K = quat_expand.mT @ quat_expand
     else:
         weights = xp.asarray(weights, dtype=dtype, device=device)
         neg_weights = weights < 0
@@ -540,7 +540,7 @@ def mean(
 
         # Make sure we can transpose quat
         weighted_quat = weights[..., None, None] * quat_expand
-        K = xp.matrix_transpose(weighted_quat) @ quat_expand
+        K = weighted_quat.mT @ quat_expand
 
     # Move reduction axes to the end
     keep_axes = tuple(i for i in all_axes if i not in axis)
@@ -562,7 +562,7 @@ def reduce(
         return quat, None, None
     # DECISION: We cannot have variable number of return arguments for jit compiled
     # functions. We therefore always return the indices, and filter out later.
-    # TOOD: Properly support broadcasting.
+    # TODO: Properly support broadcasting.
     xp = array_namespace(quat)
     quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
     if left is None:
@@ -629,7 +629,6 @@ def reduce(
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
-    xp = array_namespace(quat)
     mat = as_matrix(quat)
     # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
     # dimension to the points array and remove it after the operation.
@@ -640,13 +639,12 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
             "vectors."
         )
     if inverse:
-        # TODO: Replace with .mT once numpy 2.0 is the minimum supported version
-        return (xp.matrix_transpose(mat) @ points)[..., 0]
+        return (mat.mT @ points)[..., 0]
     return (mat @ points)[..., 0]
 
 
 def setitem(
-    quat: Array, value: Array, indexer: int | slice | EllipsisType | None
+    quat: Array, value: Array, indexer: int | slice | EllipsisType
 ) -> Array:
     return xpx.at(quat)[indexer, ...].set(value)
 
@@ -679,7 +677,8 @@ def align_vectors(
             "Expected inputs `a` and `b` to have shape (3,) or (N, 3), got "
             f"{a_original.shape} and {b_original.shape} respectively."
         )
-    N = a.shape[0]
+    if (N := a.shape[0]) is None:
+        raise ValueError(f"Expected `a` to have a known shape, got {a_original.shape}")
 
     # Check weights
     if weights is None:
@@ -724,7 +723,7 @@ def align_vectors(
     # reasons:
     # 1. Computing both for eager execution models is expensive.
     # 2. Some operations will fail when running the unused branch because of numerical
-    # and algorithmical issues. Numpy e.g. will raise an exception when trying to
+    # and algorithmic issues. Numpy e.g. will raise an exception when trying to
     # compute the svd of a matrix with infinite weights. To prevent this, we only
     # compute the branch that is needed. Lazy backends however require us to take the
     # full compute graph. Therefore, we use xp.where for lazy backends and a branching
@@ -929,9 +928,9 @@ def pow(quat: Array, n: float | Array) -> Array:
     # If n is an array, we sanitize it to a scalar and promote quat and n to
     # the same dtype.
     if is_array_api_obj(n):
-        if n.shape == (1,):
-            n = n[0]
-        elif n.ndim != 0:
+        if n.shape == (1,):  # pyrefly:ignore[missing-attribute]
+            n = n[0]  # pyrefly:ignore[bad-index]
+        elif n.ndim != 0:  # pyrefly:ignore[missing-attribute]
             raise ValueError("Array exponent must be a scalar")
         quat, n = xp_promote(quat, n, force_floating=True, xp=xp)
 

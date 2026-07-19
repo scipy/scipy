@@ -10,10 +10,11 @@ from numpy.testing import (assert_equal, assert_array_equal, assert_,
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
-from scipy.spatial import minkowski_distance
+from scipy.spatial import minkowski_distance, minkowski_distance_p
+from scipy.spatial.distance import cdist, minkowski
 from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
 
 
@@ -46,12 +47,12 @@ def distance_box(a, b, p, boxsize):
     diff = a - b
     diff[diff > 0.5 * boxsize] -= boxsize
     diff[diff < -0.5 * boxsize] += boxsize
-    d = minkowski_distance(diff, 0, p)
+    d = minkowski(diff, 0, p)
     return d
 
 class ConsistencyTests:
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski(a, b, p)
 
     def test_nearest(self):
         x = self.x
@@ -277,7 +278,7 @@ class ball_consistency:
     tol = 0.0
 
     def distance(self, a, b, p):
-        return minkowski_distance(a * 1.0, b * 1.0, p)
+        return minkowski(a * 1.0, b * 1.0, p)
 
     def test_in_ball(self):
         x = np.atleast_2d(self.x)
@@ -430,6 +431,7 @@ def test_random_ball_vectorized(kdtree_type):
 
 @pytest.mark.thread_unsafe(reason="Test spawns worker threads")
 @pytest.mark.fail_slow(5)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_query_ball_point_multithreaded_workers(kdtree_type):
     np.random.seed(0)
     n = 5000
@@ -451,6 +453,7 @@ def test_query_ball_point_multithreaded_workers(kdtree_type):
 
 @pytest.mark.thread_unsafe(reason="Test spawns worker threads")
 @pytest.mark.fail_slow(5)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_query_ball_point_multithreaded_explicit(kdtree_type):
     rng = np.random.RandomState(3819232613)
     n = 10000
@@ -479,7 +482,7 @@ def test_query_ball_point_multithreaded_explicit(kdtree_type):
 class two_trees_consistency:
 
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski(a, b, p)
 
     def test_all_in_ball(self):
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
@@ -596,22 +599,28 @@ class Test_rectangle:
 
 
 def test_distance_l2():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], 2), np.sqrt(2))
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_almost_equal(minkowski_distance([0, 0], [1, 1], 2), np.sqrt(2))
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_almost_equal(minkowski_distance_p([0, 0], [1, 1], 2), 2)
 
 
 def test_distance_l1():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], 1), 2)
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_almost_equal(minkowski_distance([0, 0], [1, 1], 1), 2)
 
 
 def test_distance_linf():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], np.inf), 1)
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_almost_equal(minkowski_distance([0, 0], [1, 1], np.inf), 1)
 
 
 def test_distance_vectorization():
     np.random.seed(1234)
     x = np.random.randn(10, 1, 3)
     y = np.random.randn(1, 7, 3)
-    assert_equal(minkowski_distance(x, y).shape, (10, 7))
+    with pytest.deprecated_call(match="1.20.0"):
+        assert_equal(minkowski_distance(x, y).shape, (10, 7))
 
 
 class count_neighbors_consistency:
@@ -645,7 +654,7 @@ class _Test_count_neighbors(count_neighbors_consistency):
 class sparse_distance_matrix_consistency:
 
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski(a, b, p)
 
     def test_consistency_with_neighbors(self):
         M = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='dok_array')
@@ -667,7 +676,7 @@ class sparse_distance_matrix_consistency:
     def test_consistency(self):
         # Test consistency with a distance_matrix
         M1 = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='dok_array')
-        expected = distance_matrix(self.T1.data, self.T2.data)
+        expected = cdist(self.T1.data, self.T2.data)
         expected[expected > self.r] = 0
         assert_array_almost_equal(M1.toarray(), expected, decimal=14)
 
@@ -755,11 +764,13 @@ def test_distance_matrix():
     np.random.seed(1234)
     xs = np.random.randn(m, k)
     ys = np.random.randn(n, k)
-    ds = distance_matrix(xs, ys)
+    with pytest.deprecated_call(match="1.20.0"):
+        ds = distance_matrix(xs, ys)
     assert_equal(ds.shape, (m, n))
     for i in range(m):
         for j in range(n):
-            assert_almost_equal(minkowski_distance(xs[i], ys[j]), ds[i, j])
+            with pytest.deprecated_call(match="1.20.0"):
+                assert_almost_equal(minkowski_distance(xs[i], ys[j]), ds[i, j])
 
 
 def test_distance_matrix_looping():
@@ -769,8 +780,10 @@ def test_distance_matrix_looping():
     np.random.seed(1234)
     xs = np.random.randn(m, k)
     ys = np.random.randn(n, k)
-    ds = distance_matrix(xs, ys)
-    dsl = distance_matrix(xs, ys, threshold=1)
+    with pytest.deprecated_call(match="1.20.0"):
+        ds = distance_matrix(xs, ys)
+    with pytest.deprecated_call(match="1.20.0"):
+        dsl = distance_matrix(xs, ys, threshold=1)
     assert_equal(ds, dsl)
 
 
@@ -919,7 +932,7 @@ def test_kdtree_pickle_boxsize(kdtree_type):
 def test_kdtree_copy_data(kdtree_type):
     # check if copy_data=True makes the kd-tree
     # impervious to data corruption by modification of
-    # the data arrray
+    # the data array
     np.random.seed(0)
     n = 5000
     k = 4
@@ -931,6 +944,7 @@ def test_kdtree_copy_data(kdtree_type):
     T2 = T.query(q, k=5)[-1]
     assert_array_equal(T1, T2)
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_ckdtree_parallel(kdtree_type, monkeypatch):
     # check if parallel=True also generates correct query results
     np.random.seed(0)
@@ -1193,7 +1207,7 @@ def test_kdtree_weights(kdtree_type):
             tree2, np.linspace(0, 10, 100), weights=w1)
 
 @pytest.mark.fail_slow(10)
-def test_kdtree_count_neighbous_multiple_r(kdtree_type):
+def test_kdtree_count_neighbours_multiple_r(kdtree_type):
     n = 2000
     m = 2
     np.random.seed(1234)
@@ -1483,9 +1497,10 @@ def test_kdtree_tree_access():
 
 
 @pytest.mark.thread_unsafe(reason="Spawns worker threads")
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_multithreaded_tree_access():
     # Test that lazily generating KDTree.tree works when tree generation
-    # is reqested from multiple threads
+    # is requested from multiple threads
     rng = np.random.RandomState(3116978525)
     points = rng.rand(100, 4)
     t = KDTree(points)

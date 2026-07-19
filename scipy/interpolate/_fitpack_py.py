@@ -2,6 +2,8 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
 
+import warnings
+
 import numpy as np
 
 # These are in the API for fitpack even if not used in fitpack.py itself.
@@ -462,6 +464,7 @@ def splint(a, b, tck, full_output=0):
         if full_output != 0:
             mesg = (f"full_output = {full_output} is not supported. Proceeding as if "
                     "full_output = 0")
+            warnings.warn(mesg, RuntimeWarning, stacklevel=2)
 
         return tck.integrate(a, b, extrapolate=False)
     else:
@@ -608,7 +611,7 @@ def spalde(x, tck):
 
     Examples
     --------
-    To calculate the derivatives of a B-spline there are several aproaches. 
+    To calculate the derivatives of a B-spline there are several approaches. 
     In this example, we will demonstrate that `spalde` is equivalent to
     calling `splev` and `splder`.
     

@@ -210,7 +210,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     # Solver tolerance selection
     gamma = 0.9
     eta_max = 0.9999
-    eta_treshold = 0.1
+    eta_threshold = 0.1
     eta = 1e-3
 
     for n in range(maxiter):
@@ -244,7 +244,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Adjust forcing parameters for inexact methods
         eta_A = gamma * Fx_norm_new**2 / Fx_norm**2
-        if gamma * eta**2 < eta_treshold:
+        if gamma * eta**2 < eta_threshold:
             eta = min(eta_max, eta_A)
         else:
             eta = min(eta_max, max(eta_A, gamma*eta**2))
@@ -449,13 +449,13 @@ class Jacobian:
     def aspreconditioner(self):
         return InverseJacobian(self)
 
-    def solve(self, v, tol=0):
+    def solve(self, v, /, tol=0):
         raise NotImplementedError
 
-    def update(self, x, F):
+    def update(self, x, F, /):
         pass
 
-    def setup(self, x, F, func):
+    def setup(self, x, F, func, /):
         self.func = func
         self.shape = (F.size, x.size)
         self.dtype = F.dtype
@@ -607,7 +607,7 @@ class GenericBroyden(Jacobian):
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
-    def setup(self, x0, f0, func):
+    def setup(self, x0, f0, func, /):
         Jacobian.setup(self, x0, f0, func)
         self.last_f = f0
         self.last_x = x0

@@ -154,7 +154,7 @@ def vq(obs, code_book, check_finite=True):
         c_code_book = np.asarray(c_code_book)
         result = _vq.vq(c_obs, c_code_book)
         return xp.asarray(result[0]), xp.asarray(result[1])
-    return py_vq(obs, code_book, check_finite=False)
+    return _py_vq(obs, code_book, check_finite=False)
 
 
 def _py_vq(obs, code_book, check_finite=True):
@@ -179,7 +179,7 @@ def _py_vq(obs, code_book, check_finite=True):
     Returns
     -------
     code : ndarray
-        code[i] gives the label of the ith obversation; its code is
+        code[i] gives the label of the ith observation; its code is
         code_book[code[i]].
     mind_dist : ndarray
         min_dist[i] gives the distance between the ith observation and its

@@ -6,7 +6,7 @@ import numpy as np
 from math import prod
 from types import GenericAlias
 
-from . import _dierckx  # type: ignore[attr-defined]
+from . import _dierckx
 
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
@@ -502,7 +502,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
 
     # Solve for the coefficients given `values`.
     # Trailing dimensions: first ndim dimensions are data, the rest are batch
-    # dimensions, so stack `values` into a 2D array for `spsolve` to undestand.
+    # dimensions, so stack `values` into a 2D array for `spsolve` to understand.
     v_shape = values.shape
     vals_shape = (prod(v_shape[:ndim]), prod(v_shape[ndim:]))
     vals = values.reshape(vals_shape)

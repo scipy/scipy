@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 import pytest
@@ -300,7 +302,7 @@ class TestRankData:
                             [np.nan, np.nan, np.nan],
                             [1, 2.5, 2.5]])
 
-    _rankdata_cases = (
+    _rankdata_cases: Sequence[tuple[list[int], str, np.ndarray | list[float]]] = (
         # values, method, expected
         ([], 'average', []),
         ([], 'min', []),

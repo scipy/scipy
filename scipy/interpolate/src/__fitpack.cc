@@ -1,5 +1,4 @@
-#include <Python.h>
-/* __fitpack.h includes Python.h */
+#include <cstring>  /* for memcpy */
 #include <string>
 #include <cstdint>
 #include <vector>
@@ -380,7 +379,7 @@ data_matrix_periodic( /* inputs */
     https://people.sc.fsu.edu/~jburkardt/f77_src/band_qr/band_qr.f
 
     The `startrow` optional argument accounts for the scenatio with a two-step
-    factorization. Namely, the preceding rows are assumend to be already
+    factorization. Namely, the preceding rows are assumed to be already
     processed and are skipped.
     This is to account for the scenario where we append new rows to an already
     triangularized matrix.

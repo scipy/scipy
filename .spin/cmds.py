@@ -243,13 +243,12 @@ def test(*, parent_callback, pytest_args, tests, coverage,
                     compilers_config = config['Compilers']
                     cpp = compilers_config['c++']['name']
                     c = compilers_config['c']['name']
-                    fortran = compilers_config['fortran']['name']
-                    if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
+                    if not (c == 'gcc' and cpp == 'gcc'):
                         print("SciPy was built with --gcov flag which requires "
                             "LCOV while running tests.\nFurther, LCOV usage "
-                            "requires GCC for C, C++ and Fortran codes in SciPy.\n"
+                            "requires GCC for C and C++ codes in SciPy.\n"
                             "Compilers used currently are:\n"
-                            f"  C: {c}\n  C++: {cpp}\n  Fortran: {fortran}\n"
+                            f"  C: {c}\n  C++: {cpp}\n"
                             "Therefore, exiting without running tests.")
                         exit(1) # Exit because tests will give missing symbol error
 
@@ -368,53 +367,6 @@ def working_dir(new_dir):
     finally:
         os.chdir(current_dir)
 
-@click.command(context_settings={"ignore_unknown_options": True})
-@meson.build_dir_option
-@click.pass_context
-def mypy(ctx, build_dir):
-    """🦆 Run Mypy tests for SciPy
-    """
-    if is_editable_install():
-        click.secho(
-            "Error: Mypy does not work (well) for editable installs",
-            fg="bright_red",
-        )
-        raise SystemExit(1)
-    else:
-        click.secho(
-                "Invoking `build` prior to running mypy tests:",
-                bold=True, fg="bright_green"
-            )
-        ctx.invoke(build)
-
-    try:
-        import mypy.api
-    except ImportError as e:
-        raise RuntimeError(
-            "Mypy not found. Please install it by running "
-            "pip install -r requirements/dev.txt from the repo root"
-        ) from e
-
-    build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
-    config = os.path.join(root, "mypy.ini")
-    check_path = PROJECT_MODULE
-    install_dir = meson._get_site_packages(build_dir)
-
-    with working_dir(install_dir):
-        os.environ['MYPY_FORCE_COLOR'] = '1'
-        click.secho(f"mypy.api.run --config-file {config} {check_path}",
-                    bold=True, fg="bright_blue")
-        report, errors, status = mypy.api.run([
-            "--config-file",
-            str(config),
-            check_path,
-        ])
-    print(report, end='')
-    print(errors, end='', file=sys.stderr)
-    if status:
-        raise SystemExit(status)
-
 @spin.util.extend_command(test, doc="")
 def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     """🔧 Run doctests of objects in the public API.
@@ -497,7 +449,7 @@ def refguide_check(ctx, build_dir, *args, **kwargs):
     install_dir = meson._get_site_packages(build_dir)
 
     cmd = [f'{sys.executable}',
-            os.path.join(root, 'tools', 'refguide_check.py')]
+            os.path.join(root, 'tools', 'refguide', 'refguide_check.py')]
 
     if ctx.params["verbose"]:
         cmd += ['-vvv']
@@ -509,7 +461,7 @@ def refguide_check(ctx, build_dir, *args, **kwargs):
     util.run(cmd)
 
     cmd_numpydoc_lint =  [f'{sys.executable}',
-        os.path.join('tools', 'numpydoc_lint.py')
+        os.path.join('tools', 'linting', 'numpydoc_lint.py')
     ]
     util.run(cmd_numpydoc_lint)
 
@@ -587,7 +539,10 @@ def notes(ctx_obj, version_args):
         sys.argv = version_args
         log_start = sys.argv[0]
         log_end = sys.argv[1]
-    cmd = ["python", "tools/write_release_and_log.py", f"{log_start}", f"{log_end}"]
+    cmd = [
+        "python", "tools/release/write_release_and_log.py",
+        f"{log_start}", f"{log_end}"
+    ]
     click.secho(' '.join(cmd), bold=True, fg="bright_blue")
     util.run(cmd)
 
@@ -606,7 +561,7 @@ def authors(ctx_obj, revision_args):
         sys.argv = revision_args
         start_revision = sys.argv[0]
         end_revision = sys.argv[1]
-    cmd = ["python", "tools/authors.py", f"{start_revision}..{end_revision}"]
+    cmd = ["python", "tools/release/authors.py", f"{start_revision}..{end_revision}"]
     click.secho(' '.join(cmd), bold=True, fg="bright_blue")
     util.run(cmd)
 
@@ -632,7 +587,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
-        os.path.join('tools', 'lint.py'),
+        os.path.join('tools', 'linting', 'lint.py'),
         f'--diff-against={diff_against}'
     ]
     if files != "":
@@ -646,12 +601,12 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     util.run(cmd_lint)
 
     cmd_unicode = cmd_prefix + [
-        os.path.join('tools', 'check_unicode.py')
+        os.path.join('tools', 'linting', 'check_unicode.py')
     ]
     util.run(cmd_unicode)
 
     cmd_check_test_name = cmd_prefix + [
-        os.path.join('tools', 'check_test_name.py')
+        os.path.join('tools', 'linting', 'check_test_name.py')
     ]
     util.run(cmd_check_test_name)
 
@@ -745,16 +700,19 @@ def check(ctx, xp_markers, installed_files, symbol_hiding, loaded_sharedlibs, no
 
     if xp_markers:
         os.environ['SCIPY_ARRAY_API'] = '1'
-        cmd = [sys.executable, os.path.join('tools', 'check_xp_untested.py')]
+        cmd = [sys.executable, os.path.join('tools', 'linting', 'check_xp_untested.py')]
         util.run(cmd)
 
     if installed_files:
-        cmd = [sys.executable, os.path.join('tools', 'check_installation.py'),
-               install_dir]
+        cmd = [
+            sys.executable,
+            os.path.join('tools', 'linting', 'check_installation.py'),
+            install_dir,
+        ]
         util.run(cmd)
 
     if symbol_hiding:
-        script = os.path.join(os.path.abspath('tools'),
+        script = os.path.join(os.path.abspath('tools'), 'linting',
                               'check_pyext_symbol_hiding.sh')
         util.run([script, install_dir])
 
@@ -868,11 +826,15 @@ def _dirty_git_working_dir():
         "'jax.numpy', 'dask.array')."
     )
 )
+@click.option(
+    '--dry-run/--no-dry-run', '-n', default=True,
+    help="Run benchmarks without saving results to disk. "
+)
 @meson.build_option
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, build, build_dir, *args, **kwargs):
+          commits, array_api_backend, dry_run, build, build_dir, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -908,6 +870,9 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if quick:
         bench_args = ['--quick'] + bench_args
 
+    if dry_run:
+        bench_args = ['--dry-run'] + bench_args
+
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 
@@ -936,10 +901,10 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        cmd = ['asv', 'run', '--dry-run', '--show-stderr', '--python=same'] + bench_args
+        cmd = ['asv', 'run', '--show-stderr', '--python=same'] + bench_args
         _run_asv(cmd)
     else:
-        # Ensure that we don't have uncommited changes
+        # Ensure that we don't have uncommitted changes
         commit_a, commit_b = [_commit_to_sha(c) for c in commits]
 
         if commit_b == 'HEAD' and _dirty_git_working_dir():
@@ -958,7 +923,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
 def configure_scipy_openblas(blas_variant='32'):
     """Create scipy-openblas.pc and scipy/_distributor_init_local.py
 
-    Requires a pre-installed scipy-openblas32 wheel from PyPI.
+    Requires a pre-installed scipy-openblas{32,64} wheel from PyPI.
     """
     basedir = os.getcwd()
     pkg_config_fname = os.path.join(basedir, "scipy-openblas.pc")
@@ -1066,6 +1031,69 @@ def _cpu_count_user(os_cpu_count):
 
     return min(cpu_count_affinity, cpu_count_cgroup, cpu_count_loky)
 
+def _count_physical_cores_linux():
+    try:
+        cpu_info = subprocess.run(
+            "lscpu --parse=core".split(), capture_output=True, text=True
+        )
+        cpu_info = cpu_info.stdout.splitlines()
+        cpu_info = {line for line in cpu_info if not line.startswith("#")}
+        return len(cpu_info)
+    except Exception:
+        pass  # fallback to /proc/cpuinfo
+
+    cpu_info = subprocess.run(
+        "cat /proc/cpuinfo".split(), capture_output=True, text=True
+    )
+    cpu_info = cpu_info.stdout.splitlines()
+    cpu_info = {line for line in cpu_info if line.startswith("core id")}
+    return len(cpu_info)
+
+
+def _count_physical_cores_win32():
+    try:
+        cmd = "-Command (Get-CimInstance -ClassName Win32_Processor).NumberOfCores"
+        cpu_info = subprocess.run(
+            f"powershell.exe {cmd}".split(),
+            capture_output=True,
+            text=True,
+        )
+        cpu_info = cpu_info.stdout.splitlines()
+        return int(cpu_info[0])
+    except Exception:
+        pass  # fallback to wmic (older Windows versions; deprecated now)
+
+    cpu_info = subprocess.run(
+        "wmic CPU Get NumberOfCores /Format:csv".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout.splitlines()
+    cpu_info = [
+        l.split(",")[1] for l in cpu_info if (l and l != "Node,NumberOfCores")
+    ]
+    return sum(map(int, cpu_info))
+
+
+def _count_physical_cores_darwin():
+    cpu_info = subprocess.run(
+        "sysctl -n hw.physicalcpu".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout
+    return int(cpu_info)
+
+
+def _count_physical_cores_freebsd():
+    cpu_info = subprocess.run(
+        "sysctl -n kern.smp.cores".split(),
+        capture_output=True,
+        text=True,
+    )
+    cpu_info = cpu_info.stdout
+    return int(cpu_info)
+
 def _count_physical_cores():
     """Return a tuple (number of physical cores, exception)
 
@@ -1084,33 +1112,13 @@ def _count_physical_cores():
     # Not cached yet, find it
     try:
         if sys.platform == "linux":
-            cpu_info = subprocess.run(
-                "lscpu --parse=core".split(), capture_output=True, text=True
-            )
-            cpu_info = cpu_info.stdout.splitlines()
-            cpu_info = {line for line in cpu_info if not line.startswith("#")}
-            cpu_count_physical = len(cpu_info)
+            cpu_count_physical = _count_physical_cores_linux()
         elif sys.platform == "win32":
-            cpu_info = subprocess.run(
-                "wmic CPU Get NumberOfCores /Format:csv".split(),
-                capture_output=True,
-                text=True,
-            )
-            cpu_info = cpu_info.stdout.splitlines()
-            cpu_info = [
-                l.split(",")[1]
-                for l in cpu_info
-                if (l and l != "Node,NumberOfCores")
-            ]
-            cpu_count_physical = sum(map(int, cpu_info))
+            cpu_count_physical = _count_physical_cores_win32()
         elif sys.platform == "darwin":
-            cpu_info = subprocess.run(
-                "sysctl -n hw.physicalcpu".split(),
-                capture_output=True,
-                text=True,
-            )
-            cpu_info = cpu_info.stdout
-            cpu_count_physical = int(cpu_info)
+            cpu_count_physical = _count_physical_cores_darwin()
+        elif sys.platform.startswith("freebsd"):
+            cpu_count_physical = _count_physical_cores_freebsd()
         else:
             raise NotImplementedError(f"unsupported platform: {sys.platform}")
 

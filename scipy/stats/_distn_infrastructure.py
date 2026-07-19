@@ -1872,6 +1872,8 @@ class rv_continuous(rv_generic):
 
     """
 
+    _support: tuple[float | str, float | str]  # not required
+
     def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
                  badvalue=None, name=None, longname=None,
                  shapes=None, seed=None):
@@ -3991,7 +3993,8 @@ for method_name in _remove_scale_methods:
     doc = FunctionDoc(method)
     doc['Parameters'] = [p for p in doc['Parameters'] if p.name != 'scale']
     doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
-    method.__doc__ = str(doc)
+    method.__doc__ = doc
+del method_name, method, doc  # pyrefly:ignore[unbound-name]
 
 
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,

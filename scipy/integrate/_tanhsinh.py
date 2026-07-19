@@ -1,4 +1,3 @@
-# mypy: disable-error-code="attr-defined"
 import math
 import numpy as np
 from scipy import special

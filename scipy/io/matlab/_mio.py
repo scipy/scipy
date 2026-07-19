@@ -106,7 +106,7 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     **kwargs
-        The following aditional keyword arguments can be passed:
+        The following additional keyword arguments can be passed:
 
         byte_order : str or None, optional
             None by default, implying byte order guessed from mat
@@ -166,6 +166,13 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
     You will need an HDF5 Python library to read MATLAB 7.3 format mat
     files. Because SciPy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
+
+    .. warning::
+        The MAT-file readers used by ``loadmat`` are not hardened against adversarial
+        input and should not be used to load files from untrusted sources. Malformed
+        files may cause excessive memory use or read errors. The reader does not execute
+        arbitrary code, but the format is complex and not all corruption modes are
+        caught explicitly.
 
     Examples
     --------

@@ -49,7 +49,7 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
     return res
 
 
-@np.vectorize(excluded={0, 2})  # type: ignore[call-arg]
+@np.vectorize(excluded={0, 2})
 def winsor_reference_1d(y, p, method):
     # Adapted directly from the documentation
     # Note: `y` is the sorted data array
@@ -302,7 +302,7 @@ class TestQuantile:
 
     @pytest.mark.parametrize('zero_weights', [False, True])
     def test_weights_against_numpy(self, zero_weights, xp):
-        if is_numpy(xp) and xp.__version__ < "2.1.3" and zero_weights:
+        if np.__version__ < "2.1.3" and zero_weights:
             pytest.skip('`Bug in np.quantile (numpy/numpy#27563) fixed in 2.1.3')
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(85468924398205602)

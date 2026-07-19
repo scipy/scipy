@@ -70,15 +70,19 @@ jobs:
           # Cache hit if lock file did not change. Otherwise, redownload packages.
           key: ${{ runner.os }}-gpu-pixi-1-${{ hashFiles('pixi.lock') }}
 
+      - name: Get week number for ccache key rotation
+        id: ccache-week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
       - name: Setup compiler cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.CCACHE_DIR }}
-          # Make primary key unique by using `run_id`, this ensures the cache
-          # is always saved at the end.
-          key: ${{ runner.os }}-gpu-ccache-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-gpu-ccache
+          # Note: go back to `github.run_id` after migrating away from Cirrus
+          # As a workaround for broken `restore-key` behavior, we need a fixed `key`;
+          # this will reduce the hit % when sources change, but a weekly refresh will
+          # ensure that it won't change by much.
+          key: ${{ runner.os }}-gpu-ccache-1-${{ steps.ccache-week.outputs.week }}-${{ hashFiles('.github/workflows/pixi.lock') }}
 
       - name: Define default CuPy cache path
         run: |
@@ -90,19 +94,16 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.CUPY_CACHE_DIR }}
-          # Same as for ccache above
-          key: ${{ runner.os }}-gpu-cupy-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-gpu-cupy
+          # Note: go back to `github.run_id` after migrating away from Cirrus
+          # (fallback lookup is broken there, so we need an exact hit on key)
+          key: ${{ runner.os }}-gpu-cupy-1-${{ hashFiles('pixi.lock') }}
 
       - name: Cache JAX kernels
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.JAX_COMPILATION_CACHE_DIR }}
-          # Same as for cupy above
-          key: ${{ runner.os }}-gpu-jax-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-gpu-jax
+          # Note: go back to `github.run_id` after migrating away from Cirrus
+          key: ${{ runner.os }}-gpu-jax-1-${{ hashFiles('pixi.lock') }}
 
       - name: run nvidia-smi
         run: nvidia-smi
@@ -112,7 +113,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.55.0
+          pixi-version: v0.71.0
           cache: false
           environments: >-
             build-cuda
