@@ -3337,7 +3337,7 @@ const char *ellipkinc_doc = R"(
     np.float64(0.30365239221539364)
 
     The result should be consistent with the known relations
-    for the Jacobi elliptic funtions: ``sn(u|m) = sin(phi)``
+    for the Jacobi elliptic functions: ``sn(u|m) = sin(phi)``
     and ``cn(u|m) = cos(phi)``.
 
     >>> from math import cos, pi, sin
