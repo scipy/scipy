@@ -59,8 +59,6 @@ linalg_cython_gen = generator(cython,
 link_language_blas_lapack = 'c'
 
 if needs_lp64_fblas
-  # Hand-maintained C++ successor of the f2py-generated `_fblas`; it took over the
-  # name at switch time.  See src/blas/DELTAS.md for process, deviations and status.
   # Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
   # the float/double routines are in BLAS while the complex routines are in
   # LAPACK - we have historically put these in `_fblas` (and csymv/zsymv & co. are
@@ -114,12 +112,10 @@ if needs_lp64_fblas
 endif
 
 if use_ilp64
-  # ILP64 sibling of `_fblas`, built from the exact same C++ sources.  The only per-ABI
-  # difference is the module name (`_fblas_64`), which the sources derive from the
-  # `-DHAVE_BLAS_ILP64` carried by the ILP64 lapack dependency; `CBLAS_INT` width and the
-  # BLAS symbol suffix are already keyed off the same macro.  The g77-ABI complex-dot shims
-  # come in through `lapack_dep` (which links the ILP64 `g77_abi_wrappers`), same as the
-  # old f2py `_fblas_64` did.  See src/blas/DELTAS.md.
+  # ILP64 sibling of `_fblas`, built from the exact same C++ sources. The module name
+  # becomes (`_fblas_64`), which the sources derive from the `-DHAVE_BLAS_ILP64`.
+  # The g77-ABI complex-dot shims used via `lapack_dep` (which links the ILP64
+  # `g77_abi_wrappers`), same as the old f2py `_fblas_64` did.
   py3.extension_module('_fblas_64',
     [
       'src/blas/blas_calls.hpp',
