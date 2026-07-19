@@ -677,8 +677,9 @@ def roots_genlaguerre(n, alpha, mu=False):
     >>> (10395/64)*sqrt(pi)
     287.88527781504433
 
-    In general, Gauss-Laguerre quadrature will only yield an approximate value of the
-    integral. Consider the integral from 0 to :math:`\infty` over :math:`\cos(x)x^{1.5}\exp(-x)`.
+    In general, Gauss-Laguerre quadrature will only yield an approximate
+    value of the integral. Consider the integral from 0 to :math:`\infty`
+    over :math:`\cos(x)x^{1.5}\exp(-x)`.
 
     >>> import numpy as np
     >>> weights @ np.cos(roots)
