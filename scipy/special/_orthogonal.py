@@ -664,8 +664,8 @@ def roots_genlaguerre(n, alpha, mu=False):
     Roots and weights obtained from the generalized Laguerre polynomial
     :math:`L^\alpha_n(x)` are used in Gauss-Laguerre quadrature where the integral
     from 0 to :math:`\infty` over :math:`f(x)x^\alpha\exp(-x)` is evaluated. Roots
-    and weights for order :math:`n` will result in the exact result for polynomials
-    :math:`f(x)` of a maximal order of :math:`2n-1`.
+    and weights for order :math:`n` are expected to yield the exact result for
+    polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
     >>> weights @ f(roots)
@@ -903,7 +903,7 @@ def roots_laguerre(n, mu=False):
     Roots and weights obtained from the Laguerre polynomial :math:`L_n(x)`
     are used in Gauss-Laguerre quadrature where the integral from 0 to
     :math:`\infty` over :math:`f(x)\exp(-x)` is evaluated. Roots and weights
-    for order :math:`n` will result in the exact result for polynomials
+    for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
@@ -1121,7 +1121,7 @@ def roots_hermite(n, mu=False):
     Roots and weights obtained from the Hermite polynomial :math:`H_n(x)`
     are used in Gauss-Hermite quadrature where the integral from :math:`-\infty`
     to :math:`\infty` over :math:`f(x)\exp(-x^2)` is evaluated. Roots and weights
-    for order :math:`n` will result in the exact result for polynomials
+    for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
@@ -1708,7 +1708,7 @@ def roots_hermitenorm(n, mu=False):
     Roots and weights obtained from the Hermite polynomial :math:`He_n(x)`
     are used in Gauss-Hermite quadrature where the integral from :math:`-\infty`
     to :math:`\infty` over :math:`f(x)\exp(-x^2/2)` is evaluated. Roots and weights
-    for order :math:`n` will result in the exact result for polynomials
+    for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
@@ -2080,8 +2080,8 @@ def roots_chebyt(n, mu=False):
     Roots and weights obtained from the Chebyshev polynomial of the first kind
     :math:`T_n(x)` are used in Gauss-Chebyshev quadrature where the integral
     from -1 to 1 over :math:`f(x)/\sqrt{1-x^2}` is evaluated. Roots and weights
-    for order :math:`n` will result in the exact result for polynomials :math:`f(x)`
-    of a maximal order of :math:`2n-1`.
+    for order :math:`n` are expected to yield the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
     >>> weights @ f(roots)
@@ -2299,7 +2299,7 @@ def roots_chebyu(n, mu=False):
     Roots and weights obtained from the Chebyshev polynomial of the second kind
     :math:`U_n(x)` are used in Gauss-Chebyshev quadrature where the integral from
     -1 to 1 over :math:`f(x)\sqrt{1-x^2}` is evaluated. Roots and weights for order
-    :math:`n` will result in the exact result for polynomials :math:`f(x)` of
+    :math:`n` are expected to yield the exact result for polynomials :math:`f(x)` of
     a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
@@ -2507,7 +2507,7 @@ def roots_chebyc(n, mu=False):
     Roots and weights obtained from the Chebyshev polynomial of the first kind
     :math:`C_n(x)` are used in Gauss-Chebyshev quadrature where the integral
     from -2 to 2 over :math:`f(x)/\sqrt{1-(x/2)^2}` is evaluated. Roots and
-    weights for order :math:`n` will result in the exact result for polynomials
+    weights for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
@@ -2698,7 +2698,7 @@ def roots_chebys(n, mu=False):
     Roots and weights obtained from the Chebyshev polynomial of the second kind
     :math:`S_n(x)` are used in Gauss-Chebyshev quadrature where the integral from
     -2 to 2 over :math:`f(x)\sqrt{1-(x/2)^2}` is evaluated. Roots and weights for
-    order :math:`n` will result in the exact result for polynomials :math:`f(x)`
+    order :math:`n` are expected to yield the exact result for polynomials :math:`f(x)`
     of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
