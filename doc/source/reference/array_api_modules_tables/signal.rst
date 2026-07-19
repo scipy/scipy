@@ -26,7 +26,7 @@ incompatible backends in unit tests, as described in the
 The functions are decorated by the code in file
 ``scipy/signal/_support_alternative_backends.py``:
 
-.. literalinclude:: ../../../../../scipy/signal/_support_alternative_backends.py
+.. literalinclude:: ../../../../scipy/signal/_support_alternative_backends.py
     :lineno-match:
 
 Note that a function will only be decorated if the environment variable
@@ -34,7 +34,7 @@ Note that a function will only be decorated if the environment variable
 ``scipy/signal/_delegators.py``. E.g., for `~scipy.signal.firwin`, the signature
 function looks like this:
 
-.. literalinclude:: ../../../../../scipy/signal/_delegators.py
+.. literalinclude:: ../../../../scipy/signal/_delegators.py
     :pyobject: firwin_signature
     :lineno-match:
 
