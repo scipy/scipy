@@ -2930,6 +2930,68 @@ def roots_sh_chebyt(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_sh_chebyt
+    >>> roots, weights = roots_sh_chebyt(5)
+    >>> roots
+    array([0.02447174, 0.20610737, 0.5       , 0.79389263, 0.97552826])
+    >>> weights
+    array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853])
+
+    Verify that the values in `roots` are roots of the shifted Chebyshev
+    polynomial of first kind :math:`T^*_5(x)=T_5(2x-1)`.
+
+    >>> from scipy.special import eval_chebyt, eval_sh_chebyt
+    >>> eval_chebyt(5, 2*roots-1)
+    array([8.8817842e-16, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
+           8.8817842e-16])
+    >>> eval_sh_chebyt(5, roots)
+    array([8.8817842e-16, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
+           8.8817842e-16])
+
+    The values of :math:`T_5(x)` evaluated at the roots are indeed zero or
+    very close to it.
+
+    Verify that the sum of the weights equals the integral from 0 to 1 over 
+    :math:`1/\sqrt{x-x^2}` which evaluates to :math:`\pi`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(3.141592653589793)
+    >>> roots, weights, sum_of_weights = roots_sh_chebyt(5, mu=True)
+    >>> sum_of_weights
+    3.141592653589793
+
+    Roots and weights obtained from the shifted Chebyshev polynomial of the
+    first kind :math:`T^*_n(x)` are used in Gauss-Chebyshev quadrature where
+    the integral from 0 to 1 over :math:`f(x)/\sqrt{x-x^2}` is evaluated.
+    Roots and weights for order :math:`n` are expected to yield the exact
+    result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.8590292412159591)
+
+    The exact result is :math:`35\pi/128`.
+
+    >>> from math import cos, pi
+    >>> 35*pi/128
+    0.859029241215959
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to 1 over :math:`\cos(x)/\sqrt{x-x^2}`
+    which evaluates to :math:`\pi\cos(1/2) J_0(1/2)`, where :math:`J_0` is the Bessel
+    function of first kind and order 0.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(2.5873677615532227)
+    >>> from scipy.special import jv
+    >>> pi*cos(0.5)*jv(0, 0.5)
+    np.float64(2.587367761551782)
+
     """
     xw = roots_chebyt(n, mu)
     return ((xw[0] + 1) / 2,) + xw[1:]
