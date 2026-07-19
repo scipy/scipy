@@ -1133,7 +1133,7 @@ def roots_hermite(n, mu=False):
     >>> 0.75*sqrt(pi)
     1.329340388179137
 
-    In general, Gauss-Laguerre quadrature will only yield an approximate value of
+    In general, Gauss-Hermite quadrature will only yield an approximate value of
     the integral. Consider the integral from :math:`-infty` to :math:`infty` over
     :math:`\cos(x)\exp(-x^2)` which evaluates to :math:`\sqrt{\pi}\exp(-1/4)`.
 
