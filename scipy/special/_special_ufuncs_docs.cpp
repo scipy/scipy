@@ -3263,7 +3263,7 @@ const char *ellipk_doc = R"(
     >>> ax.plot(alpha, ellipk(m)*2/np.pi)
     >>> ax.set_xlabel(r'$\alpha$')
     >>> ax.set_ylabel('$T/T_0$')
-    >>> ax.plot()
+    >>> plt.show()
     )";
 
 const char *ellipkinc_doc = R"(
