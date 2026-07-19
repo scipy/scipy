@@ -3353,7 +3353,7 @@ const char *ellipkinc_doc = R"(
 
     >>> from scipy.special import ellipk
     >>> ellipkinc(pi/2, m), ellipk(m)
-    (np.float64(2.257205326820854), np.float64(2.257205326820854))	
+    (np.float64(2.257205326820854), np.float64(2.257205326820854))
     )";
 
 const char *xlogy_doc = R"(
