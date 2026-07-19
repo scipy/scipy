@@ -190,6 +190,31 @@ namespace blas {
     }
 
     /**
+     * @brief Coerce @p o to a @p descr -typed array with @p flags
+     *
+     * When @p o is already an ndarray, calls `PyArray_FromArray` directly, skipping
+     * `PyArray_FromAny`'s dtype/shape discovery for non-array inputs (lists, scalars,
+     * sequences, and other f2py's permissive cases) which take the `PyArray_FromAny`
+     * path. Mimics f2py's `array_from_pyobj`.
+     *
+     * @param o     Reference to any Python object including PyArrayObject
+     * @param descr Reference to the desired dtype descriptor
+     * @param flags The resulting array requirements
+     *
+     * @return      New reference to the generated array or nullptr.
+     *
+     * @note Both steal the @p descr reference, so passing the fresh
+     *       `PyArray_DescrFromType` result to either needs no extra INCREF/DECREF.
+     */
+    inline PyArrayObject *array_from_obj(PyObject *o, PyArray_Descr *descr, int flags)
+    {
+        if (PyArray_Check(o)) {
+            return (PyArrayObject *)PyArray_FromArray((PyArrayObject *)o, descr, flags);
+        }
+        return (PyArrayObject *)PyArray_FromAny(o, descr, 0, 0, flags, nullptr);
+    }
+
+    /**
      * @brief Acquire a read-only input: a Fortran-ordered, aligned array of type T,
      *        rank-adjusted to exactly @p ndim (see fix_rank()).
      *
@@ -205,7 +230,7 @@ namespace blas {
     inline PyArrayObject *as_in(PyObject *o, int ndim, PyObject **orig)
     {
         int flags = NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ALIGNED | NPY_ARRAY_FORCECAST;
-        PyArrayObject *arr = (PyArrayObject *)PyArray_FromAny(o, PyArray_DescrFromType(npy_type<T>()), 0, 0, flags, nullptr);
+        PyArrayObject *arr = array_from_obj(o, PyArray_DescrFromType(npy_type<T>()), flags);
         *orig = nullptr;
         return (arr == nullptr) ? nullptr : fix_rank(arr, ndim, orig);
     }
@@ -230,7 +255,7 @@ namespace blas {
     {
         int flags = NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ALIGNED | NPY_ARRAY_WRITEABLE | NPY_ARRAY_FORCECAST;
         if (!overwrite) { flags |= NPY_ARRAY_ENSURECOPY; }
-        PyArrayObject *arr = (PyArrayObject *)PyArray_FromAny(o, PyArray_DescrFromType(npy_type<T>()), 0, 0, flags, nullptr);
+        PyArrayObject *arr = array_from_obj(o, PyArray_DescrFromType(npy_type<T>()), flags);
         *orig = nullptr;
         return (arr == nullptr) ? nullptr : fix_rank(arr, ndim, orig);
     }
