@@ -4054,7 +4054,7 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
             xp_assert_close(spl.t, tck[0])
         xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                         tck[1])
-    
+
     @pytest.mark.parametrize("s", [1, 1e-8, 42])
     def test_spline_endpoints_match(self, s):
         """make_splrep with bc_type='periodic' must produce a periodic
@@ -4236,10 +4236,10 @@ class TestMakeSplprepPeriodic:
         # values: note axis=1
         xp_assert_close(spl(u), BSpline(t, c, k, axis=1)(u),
                         atol=1e-06, rtol=1e-06)
-    
+
     @pytest.mark.parametrize("s", [1, 1e-8, 42])
     def test_spline_endpoints_match(self, s):
-        """make_splprep with bc_type='periodic' must produce a periodic 
+        """make_splprep with bc_type='periodic' must produce a periodic
         spline: matching endpoint values, extrapolate='periodic'."""
         theta = np.linspace(0, 1, 11)
         x = np.sin(2*np.pi*theta)
@@ -4335,8 +4335,8 @@ class TestMakeSplprepPeriodic:
 
         if not matching_endpoints:
             x = x.copy()
-            x[-1] = 1  
-        
+            x[-1] = 1
+
         periodic = (bc_type == "periodic")
         should_raise = periodic and not matching_endpoints
         xy = np.column_stack([x, y])
