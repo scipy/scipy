@@ -1073,6 +1073,28 @@ class TestRectBivariateSpline:
         xp_assert_close(
             _ndbspline_call_like_bivariate(lut_custom, x, y), z.astype(np.float64))
 
+    def test_scalar_grid_false_gh25471(self):
+        # gh-25471: evaluating with grid=False at scalar coordinates must
+        # return a 0-d array (as in <= 1.17), not a (1,)-shaped array, while
+        # array inputs keep their broadcast shape.
+        x = np.arange(6.0)
+        lut = RectBivariateSpline(x, x, np.outer(x, x))
+
+        r = lut(2.5, 3.5, grid=False)
+        assert np.ndim(r) == 0
+        assert np.shape(r) == ()
+
+        # ev() forwards to grid=False and must agree
+        xp_assert_equal(lut.ev(2.5, 3.5), r)
+
+        # 1-d and broadcast inputs keep their shape
+        assert lut([2.5, 1.5], [3.5, 2.5], grid=False).shape == (2,)
+        assert lut(2.5, [3.5, 2.5], grid=False).shape == (2,)
+
+        # grid=True behaviour is unchanged
+        assert lut(2.5, 3.5, grid=True).shape == (1, 1)
+        assert lut([1.5, 2.5], [2.5, 3.5], grid=True).shape == (2, 2)
+
     @pytest.mark.parametrize("k", [3, 4])
     def test_interpolated_offgrid_points(self, k):
         # Setup

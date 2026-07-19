@@ -1411,12 +1411,14 @@ class _BivariateSplineBase:
         >>> ax2.imshow(zdata_interp)
         >>> plt.show()
         """
-        x = np.atleast_1d(np.asarray(x))
-        y = np.atleast_1d(np.asarray(y))
+        x = np.asarray(x)
+        y = np.asarray(y)
 
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
         if grid:
+            x = np.atleast_1d(x)
+            y = np.atleast_1d(y)
             if x.size == 0 or y.size == 0:
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
 
@@ -1439,8 +1441,8 @@ class _BivariateSplineBase:
                 x, y = np.broadcast_arrays(x, y)
 
             shape = x.shape
-            x = x.ravel()
-            y = y.ravel()
+            x = np.atleast_1d(x).ravel()
+            y = np.atleast_1d(y).ravel()
             if x.size == 0 or y.size == 0:
                 return np.zeros(shape, dtype=self.tck[2].dtype)
 
