@@ -1783,6 +1783,63 @@ def roots_chebyt(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_chebyt
+    >>> roots, weights = roots_chebyt(5)
+    >>> roots
+    array([-0.95105652, -0.58778525,  0.        ,  0.58778525,  0.95105652])
+    >>> weights
+    array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853])
+
+    Verify that the roots are indeed roots of the Chebyshev polynomial of
+    first kind :math:`T_5(x)`.
+
+    >>> from scipy.special import eval_chebyt
+    >>> eval_chebyt(5, roots)
+    array([ 8.8817842e-16,  0.0000000e+00,  0.0000000e+00,  0.0000000e+00,
+           -8.8817842e-16])
+
+    The values of :math:`T_5(x)` evaluated at the roots are indeed zero or
+    very close to it.
+
+    Verify that the sum of the weights equals the integral from -1 to 1 over 
+    :math:`1/\sqrt(1-x^2)` which evaluates to :math:`\pi`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(3.141592653589793)
+    >>> roots, weights, sum_of_weights = roots_chebyt(5, mu=True)
+    >>> sum_of_weights
+    3.141592653589793
+
+    Roots and weights of the Chebyshev polynomial are used in Gauss-Chebyshev
+    quadrature where the integral from -1 to 1 over :math:`f(x)/\sqrt(1-x^2)`
+    is evaluated. Roots and weights for order :math:`n` should result in the
+    exact result for polynomials :math:`f(x)` of a maximal order of :math:`n`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(1.1780972450961724)
+
+    The exact result is :math:`3\pi/8`.
+
+    >>> from math import pi
+    >>> 3*pi/8
+    1.1780972450961724
+
+    In general, Gauss-Chebyshev will only yield an approximate value of the
+    integral. Consider the integral from -1 to 1 over :math:`cos(x)/\sqrt(1-x^2)`
+    which evaluates to :math:`\pi J_0(1)`, where :math:`J_0` is the Bessel function
+    of first kind and order 0.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(2.4039394322872774)
+    >>> from scipy.special import jv
+    >>> pi*jv(0, 1)
+    np.float64(2.4039394306344133)
     """
     m = int(n)
     if n < 1 or n != m:
