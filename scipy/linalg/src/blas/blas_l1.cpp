@@ -335,9 +335,9 @@ namespace blas{
             T a;  GETSCALAR_REQ(a);
             T b;  GETSCALAR_REQ(b);
 
-            /* c is REAL in the reference crotg/zrotg; the .pyf mistyped it as complex and
-             * _fblas returned stack garbage in c.imag -- here imag is a deterministic 0
-             * (see DELTAS.md).  a is overwritten with r by the routine and discarded. */
+            /* Though, c should have been REAL in crotg/zrotg, historically
+             * _fblas assumed complex and returned garbage in c.imag. Now,
+             * at least c.imag is 0. */
             real_of_t<T> c{};
             T s{};
             blas::rotg(a, b, c, s);
@@ -425,8 +425,7 @@ namespace blas{
             GETARRAY_INOUT(x, 1, overwrite_x != 0);
             GETARRAY_INOUT(y, 1, overwrite_y != 0);
             GETARRAY_IN(param, 1);
-            /* f2py fixed the length at array creation ("0-th dimension must be fixed to 5");
-             * same ValueError, different message (see DELTAS.md) */
+            /* f2py fixed the length at array creation ("0-th dimension must be fixed to 5") */
             CHECKARRAY(len(param) == 5, param);
 
             CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
