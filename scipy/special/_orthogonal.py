@@ -625,6 +625,80 @@ def roots_genlaguerre(n, alpha, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_genlaguerre
+    >>> roots, weights = roots_genlaguerre(5, 1.5)
+    >>> roots
+    array([ 0.81763176,  2.47233393,  5.11600612,  9.04414651, 15.04988168])
+    >>> weights
+    array([3.96031087e-01, 6.94687948e-01, 2.23227600e-01, 1.52629335e-02,
+           1.30819389e-04])
+
+    Verify that the values in `roots` are roots of the generalized Laguerre
+    polynomial :math:`L^{1.5}_5(x)`.
+
+    >>> from scipy.special import eval_genlaguerre
+    >>> eval_genlaguerre(5, 1.5, roots)
+    array([-3.25585912e-16, -3.25585912e-16,  6.51171825e-16, -1.56281238e-14,
+            4.16749968e-14])
+
+    The values of :math:`L^{1.5}_5(x)` evaluated at the roots are indeed rather
+    close to zero. The increasing values for larger roots can be explained by the
+    increasing derivative of the generalized Laguerre polynomial at the roots.
+
+    Verify that the sum of the weights equals the integral from 0 to :math:`\infty`
+    over :math:`x^\alpha\exp(-x)` which for :math:`\alpha=1.5` evaluates to
+    :math:`3\sqrt(\pi)/4`.  There are two ways to obtain the sum of weights, both
+    yielding the expected result within numerical precision.
+
+    >>> sum(weights)
+    np.float64(1.3293403881791368)
+    >>> roots, weights, sum_of_weights = roots_genlaguerre(5, 1.5, mu=True)
+    >>> sum_of_weights
+    np.float64(1.329340388179137)
+    >>> from math import pi, sqrt
+    >>> 0.75*sqrt(pi)
+    1.329340388179137
+
+    Roots and weights obtained from the generalized Laguerre polynomial
+    :math:`L^\alpha_n(x)` are used in Gauss-Laguerre quadrature where the integral
+    from 0 to :math:`\infty` over :math:`f(x)x^\alpha\exp(-x)` is evaluated. Roots
+    and weights for order :math:`n` will result in the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(287.88527781504445)
+
+    This result agrees with the exact value of :math:`10395\sqrt(\pi)/64` within
+    numerical precision.
+
+    >>> (10395/64)*sqrt(pi)
+    287.88527781504433
+
+    In general, Gauss-Laguerre quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to :math:`infty` over :math:`\cos(x)x^{1.5}\exp(-x)`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(-0.20056731778593656)
+
+    Because of the small number of nodes, this result is rater imprecise.
+
+    >>> from scipy.integrate import quad
+    >>> import numpy as np
+    >>> quad(lambda x: np.cos(x) * x**1.5 * np.exp(-x), 0, np.inf)
+    (-0.2138889584997946, 1.480038372176226e-08)
+
+    Here, the first number refers to the result while the second one gives an estimate
+    of the absolute error. A better result can be obtained by means of Gauss-Laguerre
+    quadrature by choosing a larger number of nodes.
+
+    >>> roots, weights = roots_genlaguerre(50, 1.5)
+    >>> weights @ np.cos(roots)
+    np.float64(-0.21388895849684425)
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -813,7 +887,7 @@ def roots_laguerre(n, mu=False):
 
     The values of :math:`L_5(x)` evaluated at the roots are indeed rather close
     to zero. The increasing values for larger roots can be explained by the
-    increasing derivative of the Laguerre polynomials at the roots.
+    increasing derivative of the Laguerre polynomial at the roots.
 
     Verify that the sum of the weights equals the integral from 0 to :math:`\infty`
     over :math:`\exp(-x)` which evaluates to 1. There are two ways to obtain the
