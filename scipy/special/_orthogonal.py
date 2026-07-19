@@ -825,11 +825,11 @@ def roots_laguerre(n, mu=False):
     >>> sum_of_weights
     np.float64(1.0)
 
-    Roots and weights of the Laguerre polynomial :math:`L_n(x)` are used in
-    Gauss-Laguerre quadrature where the integral from 0 to :math:`\infty` over
-    :math:`f(x)\exp(-x)` is evaluated. Roots and weights for order :math:`n`
-    will result in the exact result for polynomials :math:`f(x)` of a maximal
-    order of :math:`2n-1`.
+    Roots and weights obtained from the Laguerre polynomial :math:`L_n(x)`
+    are used in Gauss-Laguerre quadrature where the integral from 0 to
+    :math:`\infty` over :math:`f(x)\exp(-x)` is evaluated. Roots and weights
+    for order :math:`n` will result in the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
     >>> weights @ f(roots)
@@ -1866,10 +1866,10 @@ def roots_chebyt(n, mu=False):
     >>> sum_of_weights
     3.141592653589793
 
-    Roots and weights of the Chebyshev polynomial :math:`T_n(x)` are used
-    in Gauss-Chebyshev quadrature where the integral from -1 to 1 over
-    :math:`f(x)/\sqrt(1-x^2)` is evaluated. Roots and weights for order
-    :math:`n` will result in the exact result for polynomials :math:`f(x)`
+    Roots and weights obtained from the Chebyshev polynomial of the first kind
+    :math:`T_n(x)` are used in Gauss-Chebyshev quadrature where the integral
+    from -1 to 1 over :math:`f(x)/\sqrt(1-x^2)` is evaluated. Roots and weights
+    for order :math:`n` will result in the exact result for polynomials :math:`f(x)`
     of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
@@ -2085,9 +2085,9 @@ def roots_chebyu(n, mu=False):
     >>> sum_of_weights
     1.5707963267948966
 
-    Roots and weights of the Chebyshev polynomial :math:`U_n(x)` are used in
-    Gauss-Chebyshev quadrature where the integral from -1 to 1 over
-    :math:`f(x)\sqrt(1-x^2)` is evaluated. Roots and weights for order
+    Roots and weights obtained from the Chebyshev polynomial of the second kind
+    :math:`U_n(x)` are used in Gauss-Chebyshev quadrature where the integral from
+    -1 to 1 over :math:`f(x)\sqrt(1-x^2)` is evaluated. Roots and weights for order
     :math:`n` will result in the exact result for polynomials :math:`f(x)` of
     a maximal order of :math:`2n-1`.
 
@@ -2293,11 +2293,11 @@ def roots_chebyc(n, mu=False):
     >>> sum_of_weights
     6.283185307179586
 
-    Roots and weights of the Chebyshev polynomial :math:`C_n(x)` are used in
-    Gauss-Chebyshev quadrature where the integral from -2 to 2 over
-    :math:`f(x)/\sqrt(1-(x/2)^2)` is evaluated. Roots and weights for order
-    :math:`n` will result in the exact result for polynomials :math:`f(x)` of a
-    maximal order of :math:`2n-1`.
+    Roots and weights obtained from the Chebyshev polynomial of the first kind
+    :math:`C_n(x)` are used in Gauss-Chebyshev quadrature where the integral
+    from -2 to 2 over :math:`f(x)/\sqrt(1-(x/2)^2)` is evaluated. Roots and
+    weights for order :math:`n` will result in the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
     >>> weights @ f(roots)
@@ -2484,10 +2484,10 @@ def roots_chebys(n, mu=False):
     >>> sum_of_weights
     3.141592653589793
 
-    Roots and weights of the Chebyshev polynomial :math:`S_n(x)` are used in
-    Gauss-Chebyshev quadrature where the integral from -2 to 2 over
-    :math:`f(x)\sqrt(1-(x/2)^2)` is evaluated. Roots and weights for order
-    :math:`n` will result in the exact result for polynomials :math:`f(x)`
+    Roots and weights obtained from the Chebyshev polynomial of the second kind
+    :math:`S_n(x)` are used in Gauss-Chebyshev quadrature where the integral from
+    -2 to 2 over :math:`f(x)\sqrt(1-(x/2)^2)` is evaluated. Roots and weights for
+    order :math:`n` will result in the exact result for polynomials :math:`f(x)`
     of a maximal order of :math:`2n-1`.
 
     >>> f = lambda x: x**4
