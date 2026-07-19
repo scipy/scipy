@@ -520,7 +520,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
 
     The sum of the weights is given by the integral from 0 to 1 over
     :math:`(1-x)^{p-q}x^{q-1}` which evalutes to
-    :math:`\Gamma(q)\Gamma(p-q+1)/Gamma(p+1)`.
+    :math:`\Gamma(q)\Gamma(p-q+1)/\Gamma(p+1)`.
 
     >>> sum_of_weights
     np.float64(1.1780972450961724)
