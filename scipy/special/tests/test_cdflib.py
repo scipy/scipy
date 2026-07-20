@@ -452,6 +452,40 @@ def test_stdtr_stdtrit_neg_inf():
     assert np.all(np.isnan(sp.stdtrit(-np.inf, [0.0, 0.25, 0.5, 0.75, 1.0])))
 
 
+def test_stdtr_df1_small_x_gh25667():
+    # gh-25667: for df=1 (the Cauchy distribution) the Boost path used to
+    # quantize stdtr near x = 0 and return a flat 0.5 for every |x| below
+    # ~7e-9, so the result stopped tracking x at all. df=1 has the closed form
+    # 0.5 + atan(x)/pi; the reference values below come from mpmath at 60 digits.
+    x_pos = np.array([
+        1e-10, 1e-9, 3e-9, 7.45e-9, 2.0**-27, 1e-8, 1e-7, 1e-5, 1e-3,
+        1.0, 1e2, 1e5, 1e8,
+    ])
+    ref_pos = np.array([
+        0.500000000031831, 0.5000000003183099, 0.5000000009549297,
+        0.5000000023714086, 0.5000000023715935, 0.5000000031830989,
+        0.5000000318309886, 0.5000031830988617, 0.5003183097800805,
+        0.75, 0.9968170072350917, 0.9999968169011383, 0.9999999968169011,
+    ])
+    ref_neg = np.array([
+        0.499999999968169, 0.4999999996816901, 0.49999999904507036,
+        0.4999999976285914, 0.4999999976284065, 0.49999999681690116,
+        0.4999999681690114, 0.4999968169011383, 0.4996816902199194,
+        0.25, 0.003182992764908255, 3.1830988617318035e-06,
+        3.1830988618379066e-09,
+    ])
+
+    x = np.concatenate([-x_pos[::-1], [0.0], x_pos])
+    expected = np.concatenate([ref_neg[::-1], [0.5], ref_pos])
+    got = sp.stdtr(1, x)
+    assert_allclose(got, expected, rtol=2e-15, atol=0.0)
+
+    # The bug collapsed the result to exactly 0.5 across a whole neighbourhood
+    # of the origin; stdtr(1, x) is strictly increasing, so guard against that.
+    assert sp.stdtr(1, 0.0) == 0.5
+    assert np.all(np.diff(got) > 0)
+
+
 def test_bdtrik_nbdtrik_inf():
     y = np.array(
         [np.nan,-np.inf,-10.0, -1.0, 0.0, .00001, .5, 0.9999, 1.0, 10.0, np.inf])

@@ -13,6 +13,7 @@
 #include "boost/math/special_functions/hypergeometric_pFq.hpp"
 
 #include "boost/math/distributions.hpp"
+#include <boost/math/constants/constants.hpp>
 #include <boost/math/distributions/inverse_gaussian.hpp>
 
 typedef boost::math::policies::policy<
@@ -1624,6 +1625,23 @@ t_cdf_wrap(const Real v, const Real x)
     }
     if (std::isinf(x)) {
         return  (x > 0) ? 1.0 : 0.0;
+    }
+    if (v == 1) {
+        /* One degree of freedom is just the standard Cauchy distribution, so
+           use its closed-form CDF, 0.5 + atan(x)/pi. We don't go through Boost
+           here because for df == 1 it takes an arcsine shortcut that evaluates
+           asin(sqrt(1 - z)) with z = x*x/(1 + x*x). Near x = 0 that 1 - z rounds
+           away everything below 2**-53, and asin close to 1 magnifies it, so the
+           answer ends up quantized and pinned to exactly 0.5 for |x| under about
+           7e-9 (gh-25667). The closed form doesn't have that problem.
+
+           For x < -1 we rewrite it as -atan(1/x)/pi, which is the same value but
+           avoids losing precision to cancellation as the CDF heads toward 0. */
+        const Real pi = boost::math::constants::pi<Real>();
+        if (x < -1) {
+            return -std::atan(1 / x) / pi;
+        }
+        return 0.5 + std::atan(x) / pi;
     }
     Real y;
     try {
