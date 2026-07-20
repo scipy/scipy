@@ -78,6 +78,8 @@ import textwrap
 
 special_ufuncs = [
     "_bivariate_normal_sf",
+    "_cosine_cdf",
+    "_cosine_invcdf",
     "_cospi",
     "_gen_harmonic",
     "_igam_fac",
@@ -102,6 +104,7 @@ special_ufuncs = [
     "_spherical_kn_d",
     "_spherical_yn",
     "_spherical_yn_d",
+    "_stirling2_inexact",
     "_von_mises_cdf",
     "_zeta",
     "agm",

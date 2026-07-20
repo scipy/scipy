@@ -1,7 +1,7 @@
 project(
   'scipy',
   'c', 'cpp', 'cython',
-  version: run_command(['tools/gitversion.py'], check: true).stdout().strip(),
+  version: run_command(['tools/building/gitversion.py'], check: true).stdout().strip(),
   license: 'BSD-3',
   meson_version: '>= 1.5.0',
   default_options: [
@@ -16,7 +16,7 @@ project(
 
 fs = import('fs')
 
-meson.add_dist_script('tools/trim_sdist_content.py')
+meson.add_dist_script('tools/building/trim_sdist_content.py')
 
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
@@ -47,8 +47,8 @@ cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
-  if not cc.version().version_compare('>=9.1')
-    error('SciPy requires GCC >= 9.1')
+  if not cc.version().version_compare('>=10.3')
+    error('SciPy requires GCC >= 10.3')
   endif
 elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
   if not cc.version().version_compare('>=15.0')
@@ -97,6 +97,15 @@ if cpp.get_id() == 'msvc'
   add_project_arguments('/bigobj', language: 'cpp')
 endif
 
+# Silence GCC -Wpsabi notes about ABI changes (e.g., the GCC 10.1 ABI changes
+# for passing parameter passing for argument of type ‘std::pair<double, double>`).
+# These notes are informational; SciPy is built against a single compiler ABI.
+if meson.get_compiler('cpp').get_id() == 'gcc'
+  # global rather than project-wide, because it silences a few warnings from
+  # within subprojects/highs as well
+  add_global_arguments('-Wno-psabi', language: 'cpp')
+endif
+
 if host_machine.system() == 'darwin'
   if cc.has_link_argument('-Wl,-dead_strip')
     # Allow linker to strip unused symbols
@@ -132,7 +141,7 @@ add_global_arguments(_intel_cflags, language: ['c', 'cpp'])
 # C++ code. See gh-15996 for details.
 version_link_args = []
 if cc.get_id() != 'clang-cl'
-  _linker_script = meson.project_source_root() / 'scipy/_build_utils/link-version-pyinit.map'
+  _linker_script = meson.project_source_root() / 'tools/building/link-version-pyinit.map'
   vscript_link_args = ['-Wl,--version-script=' + _linker_script]
   # Note that FreeBSD only accepts version scripts when -shared is passed,
   # hence we need to pass that to `cc.links` explicitly (flag is already
@@ -142,8 +151,8 @@ if cc.get_id() != 'clang-cl'
   endif
 endif
 
-generate_f2pymod = find_program('tools/generate_f2pymod.py')
-tempita = find_program('scipy/_build_utils/tempita.py')
+generate_f2pymod = find_program('tools/building/generate_f2pymod.py')
+tempita = find_program('tools/building/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran

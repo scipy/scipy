@@ -15,38 +15,38 @@
 extern "C" {
 
 /* ?GETRF */
-CBLAS_INT
+void
 BLAS_FUNC(sgetrf)(CBLAS_INT *m, CBLAS_INT *n, float a[], CBLAS_INT *lda,
                   CBLAS_INT ipiv[], CBLAS_INT *info
 );
-CBLAS_INT
+void
 BLAS_FUNC(dgetrf)(CBLAS_INT *m, CBLAS_INT *n, double a[], CBLAS_INT *lda,
                   CBLAS_INT ipiv[], CBLAS_INT *info
 );
-CBLAS_INT
+void
 BLAS_FUNC(cgetrf)(CBLAS_INT *m, CBLAS_INT *n, npy_complex64 a[], CBLAS_INT *lda,
                   CBLAS_INT ipiv[], CBLAS_INT *info
 );
-CBLAS_INT
+void
 BLAS_FUNC(zgetrf)(CBLAS_INT *m, CBLAS_INT *n, npy_complex128 a[], CBLAS_INT *lda,
                   CBLAS_INT ipiv[], CBLAS_INT *info
 );
 
 
 /* ?GETRI */
-CBLAS_INT
+void
 BLAS_FUNC(sgetri)(CBLAS_INT *n, float a[], CBLAS_INT *lda, CBLAS_INT ipiv[],
                   float work[], CBLAS_INT *lwork, CBLAS_INT *info
 );
-CBLAS_INT
+void
 BLAS_FUNC(dgetri)(CBLAS_INT *n, double a[], CBLAS_INT *lda, CBLAS_INT ipiv[],
                   double work[], CBLAS_INT *lwork, CBLAS_INT *info
 );
-CBLAS_INT
+void
 BLAS_FUNC(cgetri)(CBLAS_INT *n, npy_complex64 a[], CBLAS_INT *lda, CBLAS_INT ipiv[],
                   npy_complex64 work[], CBLAS_INT *lwork, CBLAS_INT *info
 );
-CBLAS_INT
+void
 BLAS_FUNC(zgetri)(CBLAS_INT *n, npy_complex128 a[], CBLAS_INT *lda, CBLAS_INT ipiv[],
                   npy_complex128 work[], CBLAS_INT *lwork, CBLAS_INT *info
 );

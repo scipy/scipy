@@ -1,14 +1,4 @@
 {
-    "_cosine_cdf": {
-        "_cosine.h": {
-            "cosine_cdf": "d->d"
-        }
-    },
-    "_cosine_invcdf": {
-        "_cosine.h": {
-            "cosine_invcdf": "d->d"
-        }
-    },
     "_ellip_harm": {
         "_ellip_harm.pxd": {
             "ellip_harmonic": "ddiiddd->d"
@@ -524,11 +514,6 @@
         "boost_special_functions.h++": {
             "t_ppf_float": "ff->f",
             "t_ppf_double": "dd->d"
-        }
-    },
-    "_stirling2_inexact": {
-        "stirling2.h++": {
-            "_stirling2_inexact": "dd->d"
         }
     },
     "yn": {

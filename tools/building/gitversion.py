@@ -4,7 +4,7 @@ import textwrap
 
 
 def init_version():
-    init = os.path.join(os.path.dirname(__file__), '../pyproject.toml')
+    init = os.path.join(os.path.dirname(__file__), '../../pyproject.toml')
     with open(init) as fid:
         data = fid.readlines()
 

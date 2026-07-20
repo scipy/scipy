@@ -431,7 +431,7 @@ scipy_dir = py3.get_install_dir() / 'scipy'
 
 # Generate version.py for sdist
 meson.add_dist_script(
-   ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py']
+   ['../tools/building/gitversion.py', '--meson-dist', '--write', 'scipy/version.py']
 )
 if not fs.exists('version.py')
   generate_version = custom_target(
@@ -440,8 +440,8 @@ if not fs.exists('version.py')
     build_always_stale: true,
     build_by_default: true,
     output: 'version.py',
-    input: '../tools/gitversion.py',
-    command: ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py'],
+    input: '../tools/building/gitversion.py',
+    command: ['../tools/building/gitversion.py', '--meson-dist', '--write', 'scipy/version.py'],
     install_dir: scipy_dir,
     install_tag: 'python-runtime',
   )

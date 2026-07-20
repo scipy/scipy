@@ -4,7 +4,7 @@ import numpy as np
 from numpy.exceptions import VisibleDeprecationWarning
 
 from scipy.sparse import csc_array, vstack, issparse
-from ._highspy._highs_wrapper import _highs_wrapper  # type: ignore[import-not-found,import-untyped]
+from ._highspy._highs_wrapper import _highs_wrapper
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
 from ._linprog_highs import _highs_to_scipy_status_message

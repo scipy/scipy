@@ -6,7 +6,7 @@ from scipy._lib._array_api import (
     _xp_copy_to_numpy
 )
 
-from scipy.ndimage import convolve1d   # type: ignore[attr-defined]
+from scipy.ndimage import convolve1d
 
 from scipy.signal import savgol_coeffs, savgol_filter
 from scipy.signal._savitzky_golay import _polyder

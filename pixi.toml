@@ -120,7 +120,7 @@ solve-group = "debug"
 features = ["lint", "default-platforms"]
 
 [environments.typecheck]
-# tasks: mypy, pyrefly
+# tasks: pyrefly
 features = ["typecheck", "run-deps", "test-deps", "default-platforms"]
 
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
@@ -370,7 +370,6 @@ description = "Test SciPy with `fail-slow=1.0`"
 
 [feature.typecheck.dependencies]
 # type checkers
-mypy = "==2.1.0"
 pyrefly = "==1.1.1"
 # typing deps
 typing_extensions = "*"
@@ -385,11 +384,8 @@ dask = "*"
 matplotlib = "*"
 pybind11 = "*"
 sphinx = "*"
-
-[feature.typecheck.tasks.mypy]
-cmd = "spin mypy --no-build"
-depends-on = "build"
-description = "Run mypy type checks"
+sympy = "*"
+uarray = "*"
 
 [feature.typecheck.tasks.pyrefly]
 cmd = "pyrefly check"
@@ -495,6 +491,7 @@ description = "Debug with gdb"
 ### Linting ###
 
 [feature.lint.dependencies]
+actionlint-with-all = "*"
 ruff = "*"
 cython-lint = "*"
 packaging = "*"
@@ -507,7 +504,7 @@ description = "Run main lint checks"
 
 [feature.lint.tasks.check-python-h]
 cmd = "python check_python_h_first.py"
-cwd = "tools"
+cwd = "tools/linting"
 description = "Check that `Python.h` is included before any stdlib headers"
 
 [feature.lint.tasks.check-nondefault-device]
@@ -526,6 +523,10 @@ description = "Check external dependencies"
 [feature.lint.tasks.zizmor]
 cmd = "zizmor .github --config=.github/zizmor.yml"
 description = "Run zizmor (GitHub actions static analysis)"
+
+[feature.lint.tasks.actionlint]
+cmd = "actionlint"
+description = "Run actionlint (GitHub actions static analysis)"
 
 
 ### BLAS/LAPACK features ###

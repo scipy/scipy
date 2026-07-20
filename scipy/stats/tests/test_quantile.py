@@ -49,7 +49,7 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
     return res
 
 
-@np.vectorize(excluded={0, 2})  # type: ignore[call-arg]
+@np.vectorize(excluded={0, 2})
 def winsor_reference_1d(y, p, method):
     # Adapted directly from the documentation
     # Note: `y` is the sorted data array

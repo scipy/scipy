@@ -8,6 +8,8 @@ from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_array
 from scipy.sparse.linalg import aslinearoperator
@@ -398,6 +400,7 @@ class BaseMixin:
     # too many file descriptors to run it in parallel.
     @pytest.mark.parallel_threads_limit(1)
     @pytest.mark.fail_slow(5.0)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers(self):
         serial = least_squares(fun_trivial, 2.0, method=self.method)
 

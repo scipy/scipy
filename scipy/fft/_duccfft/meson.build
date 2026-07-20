@@ -1,11 +1,11 @@
-duccfft_threads = []
+duccfft_args = []
 fft_deps = []
 if is_windows
   if is_mingw
     # mingw-w64 does not implement pthread_pfork, needed by ducc_fft
     # Disable threading completely, because of freezes using threading for
     # mingw-w64 gcc: https://github.com/mreineck/pocketfft/issues/1
-    duccfft_threads += ['-DDUCC0_NO_LOWLEVEL_THREADING']
+    duccfft_args += ['-DDUCC0_NO_LOWLEVEL_THREADING']
   else
     if thread_dep.found()
       # Use native Windows threading for MSVC/Clang. `pthreads` is probably not
@@ -14,7 +14,6 @@ if is_windows
       # progress (see comment on gh-16957).  The ducc FFT sources
       # will include `<threads>` anyway.
       fft_deps += [thread_dep]
-      duccfft_threads += []
     endif
   endif
 else
@@ -22,14 +21,11 @@ else
     fft_deps += [thread_dep]
   endif
 endif
-duccfft_args = duccfft_threads
-# Silence GCC -Wpsabi notes about the GCC 10.1 ABI change for passing
-# SIMD-backed structs by value (triggered heavily by ducc0/fft/fft1d_impl.h).
-# The note is informational; SciPy is built against a single compiler ABI.
-if meson.get_compiler('cpp').get_id() == 'gcc'
-  duccfft_args += ['-Wno-psabi']
-endif
 
+if cc.get_id() == 'gcc' and cc.sizeof('void*') == 4
+  # Disable SIMD, segfaults on Linux i686, see scipy#25572
+  duccfft_args += ['-DDUCC0_NO_SIMD']
+endif
 
 py3.extension_module(
     'pyduccfft',
@@ -41,7 +37,6 @@ py3.extension_module(
     subdir: 'scipy/fft/_duccfft',
 )
 
-
 python_sources = [
   '__init__.py',
   'basic.py',
@@ -49,7 +44,6 @@ python_sources = [
   'LICENSE.md',
   'realtransforms.py'
 ]
-
 
 py3.install_sources(
   python_sources,

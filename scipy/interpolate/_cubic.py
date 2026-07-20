@@ -263,9 +263,6 @@ class PchipInterpolator(CubicHermiteSpline):
 
     """
 
-    # PchipInterpolator is not generic in scipy-stubs
-    __class_getitem__ = None  # type:ignore[assignment]
-
     def __init__(self, x, y, axis=0, extrapolate=None):
         xp = array_namespace(x, y)
         x, _, y, axis, _ = prepare_input(x, y, axis, xp=xp)
@@ -538,9 +535,6 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    # PchipInterpolator is not generic in scipy-stubs
-    __class_getitem__ = None  # type:ignore[assignment]
-
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
@@ -606,7 +600,10 @@ class Akima1DInterpolator(CubicHermiteSpline):
             f12 = f1 + f2
 
             # These are the mask of where the slope at breakpoint is defined:
-            mmax = xp.max(f12) if xp_size(f12) > 0 else -xp.inf
+            size_f12 = xp_size(f12)
+            # if the size is unknown, the `max` reduction is not guaranteed to work,
+            # so use the same fallback value as the known zero size case
+            mmax = xp.max(f12) if size_f12 is not None and size_f12 > 0 else -xp.inf
             ind = f12 > break_mult * mmax
             # Set the slope at breakpoint
             t = xp.where(

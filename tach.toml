@@ -234,6 +234,7 @@ exclude = [
     "pooch",
     "psutil",
     "pyfftw",
+    "_pytest",
     "pytest",
     "pytest_fail_slow",
     "pytest_run_parallel",

@@ -2,7 +2,7 @@
 """
 List the authors who contributed within a given revision interval::
 
-    python tools/authors.py REV1..REV2
+    python tools/release/authors.py REV1..REV2
 
 `REVx` being a commit hash.
 
@@ -20,7 +20,7 @@ import subprocess
 import collections
 
 stdout_b = sys.stdout.buffer
-MAILMAP_FILE = os.path.join(os.path.dirname(__file__), "..", ".mailmap")
+MAILMAP_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".mailmap")
 
 
 def main():

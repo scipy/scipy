@@ -1,6 +1,5 @@
 python_sources = [
   '__init__.py',
-  'cosine_cdf.py',
   'expn_asy.py',
   'gammainc_asy.py',
   'gammainc_data.py',

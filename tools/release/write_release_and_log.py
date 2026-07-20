@@ -1,11 +1,11 @@
 """
 Standalone script for writing release doc and logs::
 
-    python tools/write_release_and_log.py <LOG_START> <LOG_END>
+    python tools/release/write_release_and_log.py <LOG_START> <LOG_END>
 
 Example::
 
-    python tools/write_release_and_log.py v1.7.0 v1.8.0
+    python tools/release/write_release_and_log.py v1.7.0 v1.8.0
 
 Needs to be run from the root of the repository.
 

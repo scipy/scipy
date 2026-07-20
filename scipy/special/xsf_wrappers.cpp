@@ -344,8 +344,6 @@ int xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
 
 double cephes_yn_wrap(Py_ssize_t n, double x) { return xsf::cephes::yn(static_cast<int>(n), x); }
 
-double cephes_polevl_wrap(double x, const double coef[], int N) { return xsf::cephes::polevl(x, coef, N); }
-
 double special_wright_bessel(double a, double b, double x) { return xsf::wright_bessel(a, b, x); }
 double special_log_wright_bessel(double a, double b, double x) { return xsf::log_wright_bessel(a, b, x); }
 

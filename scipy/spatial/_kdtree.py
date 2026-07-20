@@ -4,7 +4,7 @@ import warnings
 import os
 
 import numpy as np
-from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
+from ._ckdtree import cKDTree, cKDTreeNode
 from .distance import minkowski
 from scipy._lib._array_api import xp_capabilities
 

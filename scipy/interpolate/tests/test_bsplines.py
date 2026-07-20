@@ -34,7 +34,7 @@ from scipy.interpolate import generate_knots, make_splrep, make_splprep
 
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
@@ -720,6 +720,7 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         xp_assert_close(b(xx), np.ones_like(xx) * 3.0)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self, xp):
         # Check that no segfaults appear with concurrent access to BSpline
         b = _make_random_spline(xp=xp)
@@ -1846,7 +1847,7 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_weights(self, method, xp):
         # weights = 1 is same as None
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k  # type: ignore[misc]
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         w = xp.ones_like(x)
 
         b = make_lsq_spline(x, y, t, k, method=method)
@@ -1858,7 +1859,7 @@ class TestLSQ:
 
     def test_weights_same(self, xp):
         # both methods treat weights
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k  # type: ignore[misc]
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
         w = xp.asarray(w)
 
@@ -1871,7 +1872,7 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
         y = xp.asarray(y)
@@ -1881,7 +1882,7 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs_2(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         nrhs = 3
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
@@ -1895,7 +1896,7 @@ class TestLSQ:
         xp_assert_close(coefs, b.c, atol=1e-15)
 
     def test_multiple_rhs_3(self, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n  # type: ignore[misc]
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         nrhs = 3
         y = np.random.random(size=(n, nrhs))
         y = xp.asarray(y)
@@ -1906,7 +1907,7 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_complex(self, method, xp):
         # cmplx-valued `y`
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k  # type: ignore[misc]
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
         yc = xp.asarray(self.y * (1. + 2.j))
 
         b = make_lsq_spline(x, yc, t, k, method=method)
@@ -1918,7 +1919,7 @@ class TestLSQ:
     def test_complex_2(self, xp):
         # test complex-valued y with y.ndim > 1
 
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k  # type: ignore[misc]
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
         yc = xp.asarray(self.y * (1. + 2.j))
         yc = xp.stack((yc, yc), axis=1)
 
@@ -2949,6 +2950,7 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
         k = 3

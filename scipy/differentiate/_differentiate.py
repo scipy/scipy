@@ -1,4 +1,3 @@
-# mypy: disable-error-code="attr-defined"
 import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim

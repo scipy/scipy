@@ -466,7 +466,7 @@ class RigidTransform:
         if self._single:
             matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
 
-        self._backend = select_backend(xp, matrix.ndim < 4)
+        self._backend: ModuleType = select_backend(xp, matrix.ndim < 4)
         self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
     def __repr__(self):
@@ -1409,7 +1409,7 @@ class RigidTransform:
 
     def __setitem__(
         self,
-        indexer: int | slice | EllipsisType | None | ArrayLike,
+        indexer: int | slice | EllipsisType | ArrayLike,
         value: RigidTransform,
     ):
         """Set transform(s) at given index(es) in this object.

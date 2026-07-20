@@ -5,11 +5,11 @@ import numpy.typing as npt
 from scipy import fft as sp_fft
 from scipy._lib._array_api import _has_own_device, array_namespace, xp_device
 from . import _signaltools
-from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
+from ._short_time_fft import ShortTimeFFT
 from .windows import get_window
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
-from typing import cast, Literal
+from typing import Literal
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
@@ -912,8 +912,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         z_shape[axis] = x.shape[axis] - y.shape[axis]
         y = np.concatenate((y, np.zeros(z_shape)), axis=axis)
 
-    # using cast() to make mypy happy:
-    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
+    fft_mode = 'onesided' if return_onesided else 'twosided'
     if scaling not in (scales := {'spectrum': 'magnitude', 'density': 'psd'}):
         raise ValueError(f"Parameter {scaling=} not in {scales}!")
 

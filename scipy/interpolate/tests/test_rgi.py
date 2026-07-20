@@ -20,7 +20,7 @@ from scipy.interpolate._regrid import (_regrid,
                                               _ndbspline_call_like_bivariate)
 
 from scipy.sparse._sputils import matrix
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
@@ -784,6 +784,7 @@ class TestRegularGridInterpolator:
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         points, values = self._get_sample_4d(np)
         sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],

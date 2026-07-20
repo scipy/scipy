@@ -13,6 +13,7 @@ import numpy as np
 from numpy.exceptions import ComplexWarning
 
 from scipy import fft as sp_fft
+from scipy._lib._testutils import IS_WASM
 from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
@@ -1285,6 +1286,7 @@ class TestMedFilt:
 
     @pytest.mark.parametrize("dtype", ["uint8", "float32", "float64"])
     @make_xp_test_case(signal.medfilt2d)
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_medfilt2d_parallel(self, dtype, xp):
         dtype = getattr(xp, dtype)
         in_typed = xp.asarray(self.IN, dtype=dtype)

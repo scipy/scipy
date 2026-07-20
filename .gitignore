@@ -112,10 +112,6 @@ doc/source/.jupyterlite.doit.db
 ################
 gh_cache.json
 
-# mypy cache #
-##############
-.mypy_cache/
-
 # linter #
 ##########
 .ruff_cache/

@@ -10,7 +10,7 @@ from numpy.testing import (assert_equal, assert_array_equal, assert_,
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance, minkowski_distance_p
@@ -431,6 +431,7 @@ def test_random_ball_vectorized(kdtree_type):
 
 @pytest.mark.thread_unsafe(reason="Test spawns worker threads")
 @pytest.mark.fail_slow(5)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_query_ball_point_multithreaded_workers(kdtree_type):
     np.random.seed(0)
     n = 5000
@@ -452,6 +453,7 @@ def test_query_ball_point_multithreaded_workers(kdtree_type):
 
 @pytest.mark.thread_unsafe(reason="Test spawns worker threads")
 @pytest.mark.fail_slow(5)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_query_ball_point_multithreaded_explicit(kdtree_type):
     rng = np.random.RandomState(3819232613)
     n = 10000
@@ -942,6 +944,7 @@ def test_kdtree_copy_data(kdtree_type):
     T2 = T.query(q, k=5)[-1]
     assert_array_equal(T1, T2)
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_ckdtree_parallel(kdtree_type, monkeypatch):
     # check if parallel=True also generates correct query results
     np.random.seed(0)
@@ -1494,6 +1497,7 @@ def test_kdtree_tree_access():
 
 
 @pytest.mark.thread_unsafe(reason="Spawns worker threads")
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_multithreaded_tree_access():
     # Test that lazily generating KDTree.tree works when tree generation
     # is requested from multiple threads
