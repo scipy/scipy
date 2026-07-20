@@ -42,8 +42,8 @@ Usage::
     spin lint
 
     # Direct invocation of this checker:
-    python tools/check_nondefault_device.py            # check the scipy/ tree
-    python tools/check_nondefault_device.py scipy/stats/_stats_py.py  # subset
+    python tools/linting/check_nondefault_device.py    # check the scipy/ tree
+    python tools/linting/check_nondefault_device.py scipy/stats/_stats_py.py  # subset
 
 Exit code 1 if any violation is found.  Add ``# skip device check`` to a line to
 allow a genuine standalone-scratch array that is never combined with the input.
@@ -224,13 +224,15 @@ def iter_py(root, submodule_paths):
 def main(argv):
     # Deliberately not a top-level import: the unit tests
     # (scipy/_lib/tests/test_check_nondefault_device.py) load this module by
-    # file path, without `tools/` on `sys.path`, and only use `check_source`.
+    # file path, without `tools/linting/` on `sys.path`, and only use
+    # `check_source`.
     from get_submodule_paths import get_submodule_paths
 
     submodule_paths = get_submodule_paths()
     # Default to the scipy/ package relative to the repo root, so the checker
-    # works regardless of the current working directory (e.g. `cwd = tools`).
-    default_target = Path(__file__).resolve().parent.parent / "scipy"
+    # works regardless of the current working directory (e.g. `cwd =
+    # tools/linting`).
+    default_target = Path(__file__).resolve().parents[2] / "scipy"
     targets = [Path(a) for a in argv] or [default_target]
     total = 0
     for target in targets:

@@ -612,7 +612,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     util.run(cmd_check_test_name)
 
     cmd_check_device = cmd_prefix + [
-        os.path.join('tools', 'check_nondefault_device.py')
+        os.path.join('tools', 'linting', 'check_nondefault_device.py')
     ]
     util.run(cmd_check_device)
 

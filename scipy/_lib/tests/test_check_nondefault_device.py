@@ -1,6 +1,6 @@
-"""Unit tests for ``tools/check_nondefault_device.py``.
+"""Unit tests for ``tools/linting/check_nondefault_device.py``.
 
-The checker lives in the ``tools`` directory of a source checkout.  Tests are
+The checker lives in the ``tools/linting`` directory of a source checkout.  Tests are
 run from an installed copy of SciPy (where ``tools`` is absent), so the checker
 is located relative to the pytest root directory (the repo root) and the tests
 are skipped when it cannot be found.
@@ -12,7 +12,7 @@ import pytest
 
 @pytest.fixture(scope="module")
 def check_source(pytestconfig):
-    tool = pytestconfig.rootpath / "tools" / "check_nondefault_device.py"
+    tool = pytestconfig.rootpath / "tools" / "linting" / "check_nondefault_device.py"
     if not tool.is_file():
         pytest.skip("check_nondefault_device.py requires a source checkout")
     spec = importlib.util.spec_from_file_location("check_nondefault_device", tool)

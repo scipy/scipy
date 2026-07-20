@@ -509,7 +509,7 @@ description = "Check that `Python.h` is included before any stdlib headers"
 
 [feature.lint.tasks.check-nondefault-device]
 cmd = "python check_nondefault_device.py"
-cwd = "tools"
+cwd = "tools/linting"
 description = "Check array-creation calls propagate the input device"
 
 [feature.lint.tasks.tach-check]
