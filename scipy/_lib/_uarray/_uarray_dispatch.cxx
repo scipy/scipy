@@ -312,8 +312,9 @@ struct BackendState {
   bool use_thread_local_globals = true;
 
   static void dealloc(BackendState * self) {
+    PyTypeObject * type = Py_TYPE(self);
     self->~BackendState();
-    Py_TYPE(self)->tp_free(self);
+    type->tp_free(self);
   }
 
   static PyObject * new_(
@@ -764,8 +765,9 @@ struct SetBackendContext {
 
   static void dealloc(SetBackendContext * self) {
     PyObject_GC_UnTrack(self);
+    PyTypeObject * type = Py_TYPE(self);
     self->~SetBackendContext();
-    Py_TYPE(self)->tp_free(self);
+    type->tp_free(self);
   }
 
   static PyObject * new_(
@@ -862,8 +864,9 @@ struct SkipBackendContext {
 
   static void dealloc(SkipBackendContext * self) {
     PyObject_GC_UnTrack(self);
+    PyTypeObject * type = Py_TYPE(self);
     self->~SkipBackendContext();
-    Py_TYPE(self)->tp_free(self);
+    type->tp_free(self);
   }
 
   static PyObject * new_(
@@ -1087,8 +1090,9 @@ struct Function {
 
   static void dealloc(Function * self) {
     PyObject_GC_UnTrack(self);
+    PyTypeObject * type = Py_TYPE(self);
     self->~Function();
-    Py_TYPE(self)->tp_free(self);
+    type->tp_free(self);
   }
 
   static PyObject * new_(
