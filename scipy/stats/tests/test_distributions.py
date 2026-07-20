@@ -3152,9 +3152,7 @@ class TestPoisson:
         mu = 1e15  # scalar mu against array k
         result = stats.poisson.logpmf(k, mu)
         expected = np.array([stats.poisson.logpmf(k_i, mu) for k_i in k])
-        assert_allclose(result, expected)
-        assert result.shape == k.shape
-
+        assert_allclose(result, expected, strict=True)
 
 class TestKSTwo:
 
