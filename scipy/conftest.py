@@ -19,7 +19,7 @@ except ImportError:
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
-    is_cupy, is_dask, is_jax, is_torch,
+    is_cupy, is_dask, is_jax, is_torch, xp_default_dtype,
 )
 from scipy._lib._testutils import IS_WASM, FPUModeChangeWarning
 from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
@@ -688,7 +688,18 @@ def devices(xp):
         devices = xp.__array_namespace_info__().devices()
         # open an issue about this - cannot branch based on `any`/`all`?
         return (device for device in devices if device.type != 'meta')
-    return tuple(xp.__array_namespace_info__().devices()) + (None,)
+    info = xp.__array_namespace_info__()
+    # Exclude devices that do not support the default dtype, such as the
+    # synthetic 'no_float64' device of array-api-strict >= 2.6: this fixture
+    # tests device *propagation*, and scipy functions routinely create
+    # default-dtype intermediates. Reduced-capability devices would need
+    # per-test dtype-support handling instead (see e.g. the `dtype_devices`
+    # fixture in `scipy/stats/tests/test_device_dtype.py`).
+    devices = tuple(
+        d for d in info.devices()
+        if xp_default_dtype(xp) in info.dtypes(device=d).values()
+    )
+    return devices + (None,)
 
 
 if hypothesis_available:

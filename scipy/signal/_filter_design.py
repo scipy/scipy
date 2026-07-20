@@ -550,7 +550,10 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
 
             h = fft_func(b, n=n_fft, axis=0)
             h = h[:min(N, h.shape[0]), ...]
-            h /= a
+            # cast the size-1 divisor: NumPy's in-place divide keeps `h`'s
+            # dtype (e.g. complex64 for float32 `b` with the default a=1,
+            # which converts to float64); strict backends refuse the mix
+            h /= xp.astype(a, h.dtype)
 
             if fft_func is sp_fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse

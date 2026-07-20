@@ -157,12 +157,14 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
     # `cval` must be a scalar or "broadcastable" to a tuple with the same
     # dimensionality of `input`. (Full input validation done by `np.pad`/`cp.pad`.)
-    if not xp.isdtype(xp.asarray(cval, device=device).dtype, 'numeric'):
+    # Throwaway dtype probe; its device is irrelevant.
+    if not xp.isdtype(xp.asarray(cval).dtype, 'numeric'):  # skip device check
         raise ValueError("`cval` must include only numbers.")
 
-    # `batch_memory` must be a positive number.
-    temp = xp.asarray(batch_memory, device=device)
-    if temp.ndim != 0 or (not xp.isdtype(temp.dtype, 'numeric')) or temp <= 0:
+    # `batch_memory` must be a positive number. Validate on the host: it is
+    # a python scalar, and only ever used in host-side bookkeeping below.
+    temp = np.asarray(batch_memory)
+    if temp.ndim != 0 or (not np.issubdtype(temp.dtype, np.number)) or temp <= 0:
         raise ValueError("`batch_memory` must be positive number.")
 
     # For simplicity, work with `axes` at the end.
