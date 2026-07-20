@@ -490,16 +490,16 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     respectively.
 
     >>> from scipy.special import roots_sh_chebyt, roots_sh_chebyu, roots_sh_jacobi
-    >>> roots_sh_jacobi(5, 0, 0.5) # doctest: +NORMALIZE_WHITESPACE
+    >>> roots_sh_jacobi(5, 0, 0.5)  # doctest: +NORMALIZE_WHITESPACE
     (array([0.02447174, 0.20610737, 0.5       , 0.79389263, 0.97552826]),
      array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
-    >>> roots_sh_chebyt(5) # doctest: +NORMALIZE_WHITESPACE
+    >>> roots_sh_chebyt(5)  # doctest: +NORMALIZE_WHITESPACE
     (array([0.02447174, 0.20610737, 0.5       , 0.79389263, 0.97552826]),
      array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
-    >>> roots_sh_jacobi(5, 2, 1.5) # doctest: +NORMALIZE_WHITESPACE
+    >>> roots_sh_jacobi(5, 2, 1.5)  # doctest: +NORMALIZE_WHITESPACE
     (array([0.0669873, 0.25     , 0.5      , 0.75     , 0.9330127]),
      array([0.03272492, 0.09817477, 0.13089969, 0.09817477, 0.03272492]))
-    >>> roots_sh_chebyu(5) # doctest: +NORMALIZE_WHITESPACE
+    >>> roots_sh_chebyu(5)  # doctest: +NORMALIZE_WHITESPACE
     (array([0.0669873, 0.25     , 0.5      , 0.75     , 0.9330127]),
      array([0.03272492, 0.09817477, 0.13089969, 0.09817477, 0.03272492]))
 
@@ -1967,17 +1967,17 @@ def roots_gegenbauer(n, alpha, mu=False):
     and `roots_chebyu` for the appropriate values of :math:`\alpha`.
 
     >>> from scipy.special import roots_chebyt, roots_chebyu, roots_gegenbauer
-    >>> roots_gegenbauer(5, 0) # doctest: +NORMALIZE_WHITESPACE
+    >>> roots_gegenbauer(5, 0)  # doctest: +NORMALIZE_WHITESPACE
     (array([-0.95105652, -0.58778525,  0.        ,  0.58778525,  0.95105652]),
      array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
-    >>> roots_chebyt(5) # doctest: +NORMALIZE_WHITESPACE
+    >>> roots_chebyt(5)  # doctest: +NORMALIZE_WHITESPACE
     (array([-0.95105652, -0.58778525,  0.        ,  0.58778525,  0.95105652]),
      array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
 
-    >>> roots_gegenbauer(5, 1) # doctest: +NORMALIZE_WHITESPACE
+    >>> roots_gegenbauer(5, 1)  # doctest: +NORMALIZE_WHITESPACE
     (array([-0.8660254, -0.5      ,  0.       ,  0.5      ,  0.8660254]),
      array([0.13089969, 0.39269908, 0.52359878, 0.39269908, 0.13089969]))
-    >>> roots_chebyu(5) # doctest: +NORMALIZE_WHITESPACE
+    >>> roots_chebyu(5)  # doctest: +NORMALIZE_WHITESPACE
     (array([-8.66025404e-01, -5.00000000e-01,  6.12323400e-17,  5.00000000e-01,
              8.66025404e-01]),
      array([0.13089969, 0.39269908, 0.52359878, 0.39269908, 0.13089969]))
