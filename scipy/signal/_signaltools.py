@@ -2348,7 +2348,7 @@ def lfiltic(b, a, y, x=None):
     N = a.shape[0] - 1
     M = b.shape[0] - 1
     K = max(M, N)
-    y = xp.asarray(y)
+    y = xpx.atleast_nd(xp.asarray(y), ndim=1, xp=xp)
 
     if N < 0:
         raise ValueError("There must be at least one `a` coefficient.")
@@ -2359,7 +2359,7 @@ def lfiltic(b, a, y, x=None):
             result_type = xp.float64
         x = xp.zeros(M, dtype=result_type)
     else:
-        x = xp.asarray(x)
+        x = xpx.atleast_nd(xp.asarray(x), ndim=1, xp=xp)
 
         result_type = xp.result_type(b, a, y, x)
         if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':

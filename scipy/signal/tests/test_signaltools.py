@@ -2230,6 +2230,21 @@ class _TestLinearFilter:
         check_dtype_arg = {} if self.dtype == object else {'check_dtype': False}
         xp_assert_equal(zi, zi_2, **check_dtype_arg)
 
+    @make_xp_test_case(lfiltic)
+    def test_lfiltic_scalar_ic(self, xp):
+        # regression test for gh-14664: scalar initial conditions must be
+        # accepted and give the same result as the equivalent length-1 array,
+        # independently of the filter length (a short filter used to raise).
+        b = xp.asarray([1 - 0.2])
+        a = xp.asarray([1.0, -0.2])
+        xp_assert_close(lfiltic(b, a, 3.0), lfiltic(b, a, xp.asarray([3.0])))
+
+        # a scalar `x` (with M > 0) is likewise accepted
+        b2 = xp.asarray([1.0, 0.5, 0.25])
+        a2 = xp.asarray([1.0, -0.3])
+        xp_assert_close(lfiltic(b2, a2, 2.0, 1.0),
+                        lfiltic(b2, a2, xp.asarray([2.0]), xp.asarray([1.0])))
+
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_short_x_FIR(self, xp):
         # regression test for #5116
