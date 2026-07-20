@@ -525,7 +525,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     >>> sum_of_weights
     np.float64(1.1780972450961724)
     >>> from math import gamma, pi
-    >>> gamma(q)*gamma(p-q+1)/gamma(p+1)
+    >>> gamma(q) * gamma(p-q+1) / gamma(p+1)
     1.1780972450961726
 
     Roots and weights obtained from the shifted Jacobi polynomial
@@ -1214,7 +1214,7 @@ def roots_hermite(n, mu=False):
     >>> import numpy as np
     >>> weights @ np.cos(roots)
     np.float64(1.3803900759356564)
-    >>> sqrt(pi)*exp(-0.25)
+    >>> sqrt(pi) * exp(-0.25)
     1.380388447043143
 
     In order to improve the accuracy obtained from Gauss-Hermite quadrature, a
@@ -1801,7 +1801,7 @@ def roots_hermitenorm(n, mu=False):
     >>> import numpy as np
     >>> weights @ np.cos(roots)
     np.float64(1.520412469197972)
-    >>> sqrt(2*pi)*exp(-0.5)
+    >>> sqrt(2*pi) * exp(-0.5)
     1.5203469010662807
 
     In order to improve the accuracy obtained from Gauss-Hermite quadrature, a
@@ -1810,7 +1810,6 @@ def roots_hermitenorm(n, mu=False):
     >>> roots, weights = roots_hermitenorm(50)
     >>> weights @ np.cos(roots)
     np.float64(1.5203469010662798)
-
 
     """
     m = int(n)
@@ -1993,7 +1992,7 @@ def roots_gegenbauer(n, alpha, mu=False):
     >>> sum_of_weights
     np.float64(1.7910437497388672)
     >>> from math import gamma, pi, sqrt
-    >>> sqrt(pi)*gamma(alpha+0.5)/gamma(alpha+1)
+    >>> sqrt(pi) * gamma(alpha+0.5) / gamma(alpha+1)
     1.7910437497388667
 
     Roots and weights obtained from the Gegenbauer polynomial :math:`C^\alpha_n(x)`
@@ -2862,7 +2861,7 @@ def roots_chebys(n, mu=False):
     Check against the result of `scipy.integrate.quad`.
 
     >>> from scipy.integrate import quad
-    >>> result, abserror = quad(lambda x: np.cos(x)*np.sqrt(1-(x/2)**2), -2, 2)
+    >>> result, abserror = quad(lambda x: np.cos(x) * np.sqrt(1-(x/2)**2), -2, 2)
     >>> result
     1.8118344191919165
 
@@ -3063,7 +3062,7 @@ def roots_sh_chebyt(n, mu=False):
     >>> weights @ np.cos(roots)
     np.float64(2.5873677615532227)
     >>> from scipy.special import jv
-    >>> pi*cos(0.5)*jv(0, 0.5)
+    >>> pi * cos(0.5) * jv(0, 0.5)
     np.float64(2.587367761551782)
 
     """
@@ -3233,7 +3232,7 @@ def roots_sh_chebyu(n, mu=False):
     >>> weights @ np.cos(roots)
     np.float64(0.33396790828677264)
     >>> from scipy.integrate import quad
-    >>> quad(lambda x: np.cos(x)*np.sqrt(x-x*x), 0, 1)
+    >>> quad(lambda x: np.cos(x) * np.sqrt(x-x*x), 0, 1)
     (0.3339679082866854, 1.4951873072988064e-11)
 
     The two results agree better than the estimated absolute error, i.e. the second
