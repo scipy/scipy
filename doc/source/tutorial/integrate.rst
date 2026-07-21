@@ -196,14 +196,14 @@ As example for non-constant limits consider the integral
 
 .. math::
 
-    I=\int_{y=0}^{1/2}\int_{x=0}^{1-2y} x y \, dx\, dy=\frac{1}{96}.
+    I=\int_{x=0}^{1/2}\int_{y=0}^{1-2x} y x \, dy\, dx=\frac{1}{96}.
 
 
 This integral can be evaluated using the expression below (Note the use of the
 non-constant lambda functions for the upper limit of the inner integral):
 
 >>> from scipy.integrate import dblquad
->>> area = dblquad(lambda x, y: x*y, 0, 0.5, lambda x: 0, lambda x: 1-2*x)
+>>> area = dblquad(lambda y, x: x*y, 0, 0.5, lambda x: 0, lambda x: 1-2*x)
 >>> area
 (0.010416666666666668, 1.1564823173178715e-16)
 
@@ -240,21 +240,21 @@ example from above
 
 .. math::
 
-    I=\int_{y=0}^{1/2}\int_{x=0}^{1-2y} x y \, dx\, dy=\frac{1}{96}.
+    I=\int_{x=0}^{1/2}\int_{y=0}^{1-2x} y x \, dy\, dx=\frac{1}{96}.
 
 can be evaluated by means of
 
 >>> from scipy import integrate
->>> def f(x, y):
-...     return x*y
+>>> def f(y, x):
+...     return y*x
 ...
->>> def bounds_y():
+>>> def bounds_x():
 ...     return [0, 0.5]
 ...
->>> def bounds_x(y):
-...     return [0, 1-2*y]
+>>> def bounds_y(x):
+...     return [0, 1-2*x]
 ...
->>> integrate.nquad(f, [bounds_x, bounds_y])
+>>> integrate.nquad(f, [bounds_y, bounds_x])
 (0.010416666666666668, 4.101620128472366e-16)
 
 which is the same result as before.

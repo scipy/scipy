@@ -1524,6 +1524,38 @@ class TestSomeDistanceFunctions:
             dist = mahalanobis(x, y, vi)
             assert math.isclose(dist, math.sqrt(6.0), abs_tol=1.5e-7)
 
+    def test_shape_mismatches(self):
+        # Mismatched 1D input shapes
+        x1 = np.array([1.0])
+        x2 = np.array([1.0, 2.0])
+
+        # Test mahalanobis raises ValueError on shape mismatch
+        vi = np.array([[1.0, 0.0], [0.0, 1.0]])
+        with pytest.raises(ValueError, match="Input vectors must have the same shape"):
+            mahalanobis(x1, x2, vi)
+
+        # Test mahalanobis raises ValueError on invalid VI shape
+        vi_bad = np.array([[1.0]])
+        with pytest.raises(ValueError, match="VI must be a square matrix of the same dimension"):
+            mahalanobis(x2, x2, vi_bad)
+
+        # Test other 1D functions
+        funcs_with_weights = [
+            correlation, jaccard, cityblock, chebyshev,
+            braycurtis, canberra, yule, dice,
+            rogerstanimoto, russellrao, sokalsneath
+        ]
+
+        for func in funcs_with_weights:
+            with pytest.raises(ValueError, match="Input vectors must have the same shape"):
+                func(x1, x2)
+
+            # Mismatched weights shape
+            w_bad = np.array([1.0])
+            with pytest.raises(ValueError, match="Input weights must have the same shape"):
+                func(x2, x2, w=w_bad)
+
+
 
 class TestSquareForm:
     checked_dtypes = [np.float64, np.float32, np.int32, np.int8, bool]
