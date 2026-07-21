@@ -518,7 +518,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
 
     All values are indeed very close to zero.
 
-    The sum of the weights is given by the integral from 0 to 1 over
+    The sum of the weights is given by the integral from 0 to 1 of
     :math:`(1-x)^{p-q}x^{q-1}` which evalutes to
     :math:`\Gamma(q)\Gamma(p-q+1)/\Gamma(p+1)`.
 
@@ -530,7 +530,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
 
     Roots and weights obtained from the shifted Jacobi polynomial
     :math:`G^{p, q}_n(x)` are used in Gauss-Jacobi quadrature where
-    the integral from 0 to 1 over :math:`f(x)(1-x)^{p-q}x^{q-1}` is evaluated.
+    the integral from 0 to 1 of :math:`f(x)(1-x)^{p-q}x^{q-1}` is evaluated.
     Roots and weights for order :math:`n` are expected to yield the exact
     result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -544,7 +544,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     0.021475731030398976
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from 0 to 1 over :math:`\cos(x)(1-x)^{p-q}x^{q-1}`.
+    integral. Consider the integral from 0 to 1 of :math:`\cos(x)(1-x)^{p-q}x^{q-1}`.
 
     >>> import numpy as np
     >>> weights @ np.cos(roots)
@@ -722,7 +722,7 @@ def roots_genlaguerre(n, alpha, mu=False):
     increasing derivative of the generalized Laguerre polynomial at the roots.
 
     Verify that the sum of the weights equals the integral from 0 to :math:`\infty`
-    over :math:`x^\alpha\exp(-x)` which for :math:`\alpha=1.5` evaluates to
+    of :math:`x^\alpha\exp(-x)` which for :math:`\alpha=1.5` evaluates to
     :math:`3\sqrt{\pi}/4`.  There are two ways to obtain the sum of weights, both
     yielding the expected result within numerical precision.
 
@@ -737,7 +737,7 @@ def roots_genlaguerre(n, alpha, mu=False):
 
     Roots and weights obtained from the generalized Laguerre polynomial
     :math:`L^\alpha_n(x)` are used in Gauss-Laguerre quadrature where the integral
-    from 0 to :math:`\infty` over :math:`f(x)x^\alpha\exp(-x)` is evaluated. Roots
+    from 0 to :math:`\infty` of :math:`f(x)x^\alpha\exp(-x)` is evaluated. Roots
     and weights for order :math:`n` are expected to yield the exact result for
     polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -753,13 +753,13 @@ def roots_genlaguerre(n, alpha, mu=False):
 
     In general, Gauss-Laguerre quadrature will only yield an approximate
     value of the integral. Consider the integral from 0 to :math:`\infty`
-    over :math:`\cos(x)x^{1.5}\exp(-x)`.
+    of :math:`\cos(x)x^{1.5}\exp(-x)`.
 
     >>> import numpy as np
     >>> weights @ np.cos(roots)
     np.float64(-0.20056731778593656)
 
-    Because of the small number of nodes, this result is rater imprecise.
+    Because of the small number of nodes, this result is rather imprecise.
 
     >>> from scipy.integrate import quad
     >>> import numpy as np
@@ -965,7 +965,7 @@ def roots_laguerre(n, mu=False):
     increasing derivative of the Laguerre polynomial at the roots.
 
     Verify that the sum of the weights equals the integral from 0 to :math:`\infty`
-    over :math:`\exp(-x)` which evaluates to 1. There are two ways to obtain the
+    of :math:`\exp(-x)` which evaluates to 1. There are two ways to obtain the
     sum of weights, both resulting in 1 within numerical precision.
 
     >>> sum(weights)
@@ -976,7 +976,7 @@ def roots_laguerre(n, mu=False):
 
     Roots and weights obtained from the Laguerre polynomial :math:`L_n(x)`
     are used in Gauss-Laguerre quadrature where the integral from 0 to
-    :math:`\infty` over :math:`f(x)\exp(-x)` is evaluated. Roots and weights
+    :math:`\infty` of :math:`f(x)\exp(-x)` is evaluated. Roots and weights
     for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -987,7 +987,7 @@ def roots_laguerre(n, mu=False):
     This result is indeed very close to the exact value of 24.
 
     In general, Gauss-Laguerre quadrature will only yield an approximate value of the
-    integral. Consider the integral from 0 to :math:`infty` over :math:`\cos(x)\exp(-x)`
+    integral. Consider the integral from 0 to :math:`\infty` of :math:`\cos(x)\exp(-x)`
     which evaluates to 1/2.
 
     >>> import numpy as np
@@ -1178,7 +1178,7 @@ def roots_hermite(n, mu=False):
     increasing derivative of the Hermite polynomial at the roots.
 
     Verify that the sum of the weights equals the integral from :math:`-\infty`
-    to :math:`\infty` over :math:`\exp(-x^2)` which evaluates to :math:`\sqrt{\pi}`.
+    to :math:`\infty` of :math:`\exp(-x^2)` which evaluates to :math:`\sqrt{\pi}`.
     There are two ways to obtain the sum of weights, both yielding the expected
     result within numerical precision.
 
@@ -1194,7 +1194,7 @@ def roots_hermite(n, mu=False):
 
     Roots and weights obtained from the Hermite polynomial :math:`H_n(x)`
     are used in Gauss-Hermite quadrature where the integral from :math:`-\infty`
-    to :math:`\infty` over :math:`f(x)\exp(-x^2)` is evaluated. Roots and weights
+    to :math:`\infty` of :math:`f(x)\exp(-x^2)` is evaluated. Roots and weights
     for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -1208,7 +1208,7 @@ def roots_hermite(n, mu=False):
     1.329340388179137
 
     In general, Gauss-Hermite quadrature will only yield an approximate value of
-    the integral. Consider the integral from :math:`-infty` to :math:`infty` over
+    the integral. Consider the integral from :math:`-\infty` to :math:`\infty` of
     :math:`\cos(x)\exp(-x^2)` which evaluates to :math:`\sqrt{\pi}\exp(-1/4)`.
 
     >>> import numpy as np
@@ -1766,7 +1766,7 @@ def roots_hermitenorm(n, mu=False):
     by the increasing derivative of the Hermite polynomial at the roots.
 
     Verify that the sum of the weights equals the integral from :math:`-\infty`
-    to :math:`\infty` over :math:`\exp(-x^2/2)` which evaluates to :math:`\sqrt{2\pi}`.
+    to :math:`\infty` of :math:`\exp(-x^2/2)` which evaluates to :math:`\sqrt{2\pi}`.
     There are two ways to obtain the sum of weights, both yielding the expected
     result.
 
@@ -1781,7 +1781,7 @@ def roots_hermitenorm(n, mu=False):
 
     Roots and weights obtained from the Hermite polynomial :math:`He_n(x)`
     are used in Gauss-Hermite quadrature where the integral from :math:`-\infty`
-    to :math:`\infty` over :math:`f(x)\exp(-x^2/2)` is evaluated. Roots and weights
+    to :math:`\infty` of :math:`f(x)\exp(-x^2/2)` is evaluated. Roots and weights
     for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -1795,7 +1795,7 @@ def roots_hermitenorm(n, mu=False):
     7.519884823893001
 
     In general, Gauss-Hermite quadrature will only yield an approximate value of
-    the integral. Consider the integral from :math:`-infty` to :math:`infty` over
+    the integral. Consider the integral from :math:`-\infty` to :math:`\infty` of
     :math:`\cos(x)\exp(-x^2/2)` which evaluates to :math:`\sqrt{2\pi}\exp(-1/2)`.
 
     >>> import numpy as np
@@ -1981,7 +1981,7 @@ def roots_gegenbauer(n, alpha, mu=False):
              8.66025404e-01]),
      array([0.13089969, 0.39269908, 0.52359878, 0.39269908, 0.13089969]))
 
-    The sum of weights should equal the integral from -1 to 1 over
+    The sum of weights should equal the integral from -1 to 1 of
     :math:`(1-x^2)^{\alpha-1/2}` which evaluates to
     :math:`\sqrt{\pi}\Gamma(\alpha+1/2)/\Gamma(\alpha+1)`.
 
@@ -1996,7 +1996,7 @@ def roots_gegenbauer(n, alpha, mu=False):
     1.7910437497388667
 
     Roots and weights obtained from the Gegenbauer polynomial :math:`C^\alpha_n(x)`
-    are used in Gauss-Gegenbauer quadrature where the integral from -1 to 1 over
+    are used in Gauss-Gegenbauer quadrature where the integral from -1 to 1 of
     :math:`f(x)(1-x^2)^{\alpha-1/2}` is evaluated. Roots and weights for order
     :math:`n` are expected to yield the exact result for polynomials :math:`f(x)`
     of a maximal order of :math:`2n-1`.
@@ -2012,7 +2012,7 @@ def roots_gegenbauer(n, alpha, mu=False):
     0.2926542074736711
 
     In general, Gauss-Gegenbauer quadrature will only yield an approximate value of
-    the integral. Consider the integral from -1 to 1 over
+    the integral. Consider the integral from -1 to 1 of
     :math:`\cos(x)(1-x^2)^{\alpha-1/2}` which evaluates to
     :math:`2^\alpha\sqrt{\pi}\Gamma(\alpha+1/2)J_\alpha(1)` where :math:`J_\alpha`
     is the Bessel function of first kind and order :math:`\alpha`.
@@ -2206,7 +2206,7 @@ def roots_chebyt(n, mu=False):
     The values of :math:`T_5(x)` evaluated at the roots are indeed zero or
     very close to it.
 
-    Verify that the sum of the weights equals the integral from -1 to 1 over 
+    Verify that the sum of the weights equals the integral from -1 to 1 of
     :math:`1/\sqrt{1-x^2}` which evaluates to :math:`\pi`. There are two ways
     to obtain the sum of weights, both resulting in :math:`\pi` within numerical
     precision.
@@ -2219,7 +2219,7 @@ def roots_chebyt(n, mu=False):
 
     Roots and weights obtained from the Chebyshev polynomial of the first kind
     :math:`T_n(x)` are used in Gauss-Chebyshev quadrature where the integral
-    from -1 to 1 over :math:`f(x)/\sqrt{1-x^2}` is evaluated. Roots and weights
+    from -1 to 1 of :math:`f(x)/\sqrt{1-x^2}` is evaluated. Roots and weights
     for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -2234,7 +2234,7 @@ def roots_chebyt(n, mu=False):
     1.1780972450961724
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from -1 to 1 over :math:`\cos(x)/\sqrt{1-x^2}`
+    integral. Consider the integral from -1 to 1 of :math:`\cos(x)/\sqrt{1-x^2}`
     which evaluates to :math:`\pi J_0(1)`, where :math:`J_0` is the Bessel function
     of first kind and order 0.
 
@@ -2425,7 +2425,7 @@ def roots_chebyu(n, mu=False):
 
     The values of :math:`U_5(x)` evaluated at the roots are indeed very close to zero.
 
-    Verify that the sum of the weights equals the integral from -1 to 1 over 
+    Verify that the sum of the weights equals the integral from -1 to 1 of
     :math:`\sqrt{1-x^2}` which evaluates to :math:`\pi/2`. There are two ways
     to obtain the sum of weights, both resulting in :math:`\pi/2` within numerical
     precision.
@@ -2438,7 +2438,7 @@ def roots_chebyu(n, mu=False):
 
     Roots and weights obtained from the Chebyshev polynomial of the second kind
     :math:`U_n(x)` are used in Gauss-Chebyshev quadrature where the integral from
-    -1 to 1 over :math:`f(x)\sqrt{1-x^2}` is evaluated. Roots and weights for order
+    -1 to 1 of :math:`f(x)\sqrt{1-x^2}` is evaluated. Roots and weights for order
     :math:`n` are expected to yield the exact result for polynomials :math:`f(x)` of
     a maximal order of :math:`2n-1`.
 
@@ -2453,7 +2453,7 @@ def roots_chebyu(n, mu=False):
     0.19634954084936207
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from -1 to 1 over :math:`\cos(x)\sqrt{1-x^2}`
+    integral. Consider the integral from -1 to 1 of :math:`\cos(x)\sqrt{1-x^2}`
     which evaluates to :math:`\pi J_1(1)`, where :math:`J_1` is the Bessel function
     of first kind and order 1.
 
@@ -2633,7 +2633,7 @@ def roots_chebyc(n, mu=False):
     The values of :math:`C_5(x)` evaluated at the roots are indeed zero or
     very close to it.
 
-    Verify that the sum of the weights equals the integral from -2 to 2 over 
+    Verify that the sum of the weights equals the integral from -2 to 2 of
     :math:`1/\sqrt{1-(x/2)^2}` which evaluates to :math:`2\pi`. There are two ways
     to obtain the sum of weights, both resulting in :math:`2\pi` within numerical
     precision.
@@ -2646,7 +2646,7 @@ def roots_chebyc(n, mu=False):
 
     Roots and weights obtained from the Chebyshev polynomial of the first kind
     :math:`C_n(x)` are used in Gauss-Chebyshev quadrature where the integral
-    from -2 to 2 over :math:`f(x)/\sqrt{1-(x/2)^2}` is evaluated. Roots and
+    from -2 to 2 of :math:`f(x)/\sqrt{1-(x/2)^2}` is evaluated. Roots and
     weights for order :math:`n` are expected to yield the exact result for polynomials
     :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -2661,7 +2661,7 @@ def roots_chebyc(n, mu=False):
     37.69911184307752
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from -2 to 2 over :math:`\cos(x)/\sqrt{1-(x/2)^2}`
+    integral. Consider the integral from -2 to 2 of :math:`\cos(x)/\sqrt{1-(x/2)^2}`
     which evaluates to :math:`2\pi J_0(2)`, where :math:`J_0` is the Bessel function
     of first kind and order 0.
 
@@ -2824,7 +2824,7 @@ def roots_chebys(n, mu=False):
 
     The values of :math:`S_5(x)` evaluated at the roots are indeed very close to zero.
 
-    Verify that the sum of the weights equals the integral from -2 to 2 over 
+    Verify that the sum of the weights equals the integral from -2 to 2 of
     :math:`\sqrt{1-(x/2)^2}` which evaluates to :math:`\pi`. There are two ways
     to obtain the sum of weights, both resulting in :math:`\pi` within numerical
     precision.
@@ -2837,7 +2837,7 @@ def roots_chebys(n, mu=False):
 
     Roots and weights obtained from the Chebyshev polynomial of the second kind
     :math:`S_n(x)` are used in Gauss-Chebyshev quadrature where the integral from
-    -2 to 2 over :math:`f(x)\sqrt{1-(x/2)^2}` is evaluated. Roots and weights for
+    -2 to 2 of :math:`f(x)\sqrt{1-(x/2)^2}` is evaluated. Roots and weights for
     order :math:`n` are expected to yield the exact result for polynomials :math:`f(x)`
     of a maximal order of :math:`2n-1`.
 
@@ -2852,7 +2852,7 @@ def roots_chebys(n, mu=False):
     6.283185307179586
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from -2 to 2 over :math:`\cos(x)\sqrt{1-(x/2)^2}`.
+    integral. Consider the integral from -2 to 2 of :math:`\cos(x)\sqrt{1-(x/2)^2}`.
 
     >>> import numpy as np
     >>> weights @ np.cos(roots)
@@ -3026,7 +3026,7 @@ def roots_sh_chebyt(n, mu=False):
     The values of :math:`T_5(2x-1)` and of :math:`T^*_5(x)` evaluated at the
     roots are indeed zero or very close to it.
 
-    Verify that the sum of the weights equals the integral from 0 to 1 over 
+    Verify that the sum of the weights equals the integral from 0 to 1 of
     :math:`1/\sqrt{x-x^2}` which evaluates to :math:`\pi`. There are two ways
     to obtain the sum of weights, both resulting in :math:`\pi` within numerical
     precision.
@@ -3039,7 +3039,7 @@ def roots_sh_chebyt(n, mu=False):
 
     Roots and weights obtained from the shifted Chebyshev polynomial of the
     first kind :math:`T^*_n(x)` are used in Gauss-Chebyshev quadrature where
-    the integral from 0 to 1 over :math:`f(x)/\sqrt{x-x^2}` is evaluated.
+    the integral from 0 to 1 of :math:`f(x)/\sqrt{x-x^2}` is evaluated.
     Roots and weights for order :math:`n` are expected to yield the exact
     result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -3054,7 +3054,7 @@ def roots_sh_chebyt(n, mu=False):
     0.859029241215959
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from 0 to 1 over :math:`\cos(x)/\sqrt{x-x^2}`
+    integral. Consider the integral from 0 to 1 of :math:`\cos(x)/\sqrt{x-x^2}`
     which evaluates to :math:`\pi\cos(1/2) J_0(1/2)`, where :math:`J_0` is the Bessel
     function of first kind and order 0.
 
@@ -3196,7 +3196,7 @@ def roots_sh_chebyu(n, mu=False):
     The values of :math:`U_5(2x-1)` and :math:`U^*_5(x)` evaluated at the roots
     are indeed zero or very close to it.
 
-    Verify that the sum of the weights equals the integral from 0 to 1 over 
+    Verify that the sum of the weights equals the integral from 0 to 1 of
     :math:`\sqrt{x-x^2}` which evaluates to :math:`\pi/8`. There are two ways
     to obtain the sum of weights, both resulting in :math:`\pi/8` within numerical
     precision.
@@ -3212,7 +3212,7 @@ def roots_sh_chebyu(n, mu=False):
 
     Roots and weights obtained from the shifted Chebyshev polynomial of the
     second kind :math:`U^*_n(x)` are used in Gauss-Chebyshev quadrature where
-    the integral from 0 to 1 over :math:`f(x)\sqrt{x-x^2}` is evaluated.
+    the integral from 0 to 1 of :math:`f(x)\sqrt{x-x^2}` is evaluated.
     Roots and weights for order :math:`n` are expected to yield the exact
     result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
 
@@ -3226,7 +3226,7 @@ def roots_sh_chebyu(n, mu=False):
     0.06442719309119693
 
     In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
-    integral. Consider the integral from 0 to 1 over :math:`\cos(x)\sqrt{x-x^2}`.
+    integral. Consider the integral from 0 to 1 of :math:`\cos(x)\sqrt{x-x^2}`.
 
     >>> import numpy as np
     >>> weights @ np.cos(roots)
