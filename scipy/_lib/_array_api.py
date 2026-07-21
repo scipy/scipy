@@ -720,10 +720,11 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     Python scalars and host data are created on the device of the array
     arguments, not on the backend's default device (see gh-22680).
     """
-    device = xp_result_device(*arrays)
     arys = [
         xpx.atleast_nd(
-            xp.asarray(a, device=None if _has_own_device(a) else device),  # type:ignore[union-attr]
+            # each array keeps its own device; python scalars and host data
+            # are created on the device of the (first) array argument
+            xp.asarray(a, device=xp_result_device(a, *arrays)),  # type:ignore[union-attr]
             ndim=1, xp=xp)
         for a in arrays
     ]
