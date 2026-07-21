@@ -599,9 +599,7 @@ namespace blas{
             GETARRAY_IN(y, 1);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
-            npy_intp nx = (len(x) - 1 - offx) / abs(incx) + 1;
-            npy_intp ny = (len(y) - 1 - offy) / abs(incy) + 1;
-            CBLAS_INT n;      GETSCALAR(n, nx <= ny ? nx : ny);
+            CBLAS_INT n;      GETSCALAR(n, ((len(x)-1-offx)/abs(incx)+1 <= (len(y)-1-offy)/abs(incy)+1 ? (len(x)-1-offx)/abs(incx)+1 : (len(y)-1-offy)/abs(incy)+1));
             CHECKSCALAR(n <= (len(y) - 1 - offy) / abs(incy) + 1, n);
             CHECKSCALAR(n <= (len(x) - 1 - offx) / abs(incx) + 1, n);
             CHECKSCALAR(n >= 0, n);
@@ -641,9 +639,7 @@ namespace blas{
             GETARRAY_IN(y, 1);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
-            npy_intp nx = (len(x) - 1 - offx) / abs(incx) + 1;
-            npy_intp ny = (len(y) - 1 - offy) / abs(incy) + 1;
-            CBLAS_INT n;      GETSCALAR(n, nx <= ny ? nx : ny);
+            CBLAS_INT n;      GETSCALAR(n, ((len(x)-1-offx)/abs(incx)+1 <= (len(y)-1-offy)/abs(incy)+1 ? (len(x)-1-offx)/abs(incx)+1 : (len(y)-1-offy)/abs(incy)+1));
             CHECKSCALAR(n <= (len(y) - 1 - offy) / abs(incy) + 1, n);
             CHECKSCALAR(n <= (len(x) - 1 - offx) / abs(incx) + 1, n);
             CHECKSCALAR(n >= 0, n);
