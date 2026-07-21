@@ -14,7 +14,7 @@ from scipy.special import comb
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, scipy_namespace_for, is_numpy,
-    xp_device, _has_own_device
+    xp_device, _has_own_device, xp_result_device
 )
 
 from . import _fitpack_py
@@ -1402,7 +1402,7 @@ class PPoly:
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
         # a NumPy round-trip in the delegate must return results on the
         # device of the inputs, not on the backend's default device
-        device = next((xp_device(a) for a in (c, x) if _has_own_device(a)), None)
+        device = xp_result_device(c, x)
         if not is_numpy(xp):
             c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         self._delegate_to = xp_ppoly_cls(c, x, extrapolate=extrapolate, axis=axis)
@@ -1444,7 +1444,7 @@ class PPoly:
         """
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
-        device = next((xp_device(a) for a in (c, x) if _has_own_device(a)), None)
+        device = xp_result_device(c, x)
         c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         return cls._construct_from_xp(
             xp_ppoly_cls.construct_fast(
@@ -1805,7 +1805,7 @@ class PPoly:
             t, c, k = tck
             xp = array_namespace(t, c)
         xp_cls, xp_internal = _get_xp_ppoly_cls(xp)
-        device = next((xp_device(a) for a in (t, c) if _has_own_device(a)), None)
+        device = xp_result_device(t, c)
         t, c = xp_internal.asarray(t), xp_internal.asarray(c)
         pp = xp_cls.from_spline((t, c, k), extrapolate=extrapolate)
         return cls._construct_from_xp(pp, xp_external=xp, device=device)
@@ -1951,7 +1951,7 @@ class BPoly:
         xp_bpoly_cls, xp_internal = _get_xp_bpoly_cls(xp)
         # a NumPy round-trip in the delegate must return results on the
         # device of the inputs, not on the backend's default device
-        device = next((xp_device(a) for a in (c, x) if _has_own_device(a)), None)
+        device = xp_result_device(c, x)
         if not is_numpy(xp):
             c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         self._delegate_to = xp_bpoly_cls(c, x, extrapolate=extrapolate, axis=axis)
@@ -1993,7 +1993,7 @@ class BPoly:
         """
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
-        device = next((xp_device(a) for a in (c, x) if _has_own_device(a)), None)
+        device = xp_result_device(c, x)
         c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         return cls._construct_from_xp(
             xp_ppoly_cls.construct_fast(
@@ -2276,8 +2276,7 @@ class BPoly:
             xp = array_namespace(xi, yi)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
         yi_seq = yi if isinstance(yi, (list, tuple)) else (yi,)
-        device = next(
-            (xp_device(a) for a in (xi, *yi_seq) if _has_own_device(a)), None)
+        device = xp_result_device(xi, *yi_seq)
         xi = xp_internal.asarray(xi)
         if isinstance(yi, (list, tuple)):
             # If yi is a ragged list or tuple of arrays, then need to apply
@@ -2348,7 +2347,7 @@ class BPoly:
         """
         xp = array_namespace(ya, yb)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
-        device = next((xp_device(a) for a in (ya, yb) if _has_own_device(a)), None)
+        device = xp_result_device(ya, yb)
         ya, yb = xp_internal.asarray(ya), xp_internal.asarray(yb)
         return xp.asarray(
             xp_cls._construct_from_derivatives(xa, xb, ya, yb), device=device)
@@ -2383,7 +2382,7 @@ class BPoly:
         """
         xp = array_namespace(c)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
-        device = xp_device(c) if _has_own_device(c) else None
+        device = xp_result_device(c)
         return xp.asarray(
             xp_cls._raise_degree(xp_internal.asarray(c), d), device=device)
 

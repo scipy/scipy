@@ -8,7 +8,7 @@ import numpy as np
 
 import scipy.sparse.linalg as ssl
 from scipy._lib._array_api import (
-    array_namespace, xp_capabilities, xp_device, _has_own_device
+    array_namespace, xp_capabilities, xp_result_device
 )
 from scipy._external.array_api_compat import is_array_api_obj
 
@@ -311,9 +311,7 @@ class RegularGridInterpolator:
                     raise e
 
         # the NumPy round-trip must return results on the inputs' device
-        device = next(
-            (xp_device(a) for a in (*points, values) if _has_own_device(a)),
-            None)
+        device = xp_result_device(*points, values)
         self._asarray = functools.partial(xp.asarray, device=device)
         self.method = method
         self._spline = None

@@ -26,7 +26,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    _has_own_device, array_namespace, is_torch, is_numpy, xp_copy, xp_size,
+    xp_result_device, array_namespace, is_torch, is_numpy, xp_copy, xp_size,
     xp_default_dtype, xp_promote, xp_result_type, xp_swapaxes, xp_device,)
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
@@ -234,7 +234,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     """
     xp = array_namespace(in1, in2)
     # the NumPy round-trips must return the result on the inputs' device
-    device = next((xp_device(a) for a in (in1, in2) if _has_own_device(a)), None)
+    device = xp_result_device(in1, in2)
 
     in1 = xp.asarray(in1)
     in2 = xp.asarray(in2)
@@ -1500,7 +1500,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     """
     xp = array_namespace(in1, in2)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (in1, in2) if _has_own_device(a)), None)
+    device = xp_result_device(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1863,7 +1863,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """
     xp = array_namespace(in1, in2)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (in1, in2) if _has_own_device(a)), None)
+    device = xp_result_device(in1, in2)
 
     # NB: do work in NumPy, only convert the output
 
@@ -1966,7 +1966,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """
     xp = array_namespace(in1, in2)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (in1, in2) if _has_own_device(a)), None)
+    device = xp_result_device(in1, in2)
 
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -2078,7 +2078,7 @@ def medfilt2d(input, kernel_size=3):
     """
     xp = array_namespace(input)
     # the NumPy round-trip must return the result on the input's device
-    device = xp_device(input) if _has_own_device(input) else None
+    device = xp_result_device(input)
 
     image = np.asarray(input)
 
@@ -2227,9 +2227,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     """
     xp = array_namespace(b, a, x, zi)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next(
-        (xp_device(arg) for arg in (b, a, x, zi) if _has_own_device(arg)), None
-    )
+    device = xp_result_device(b, a, x, zi)
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
@@ -4389,7 +4387,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     xp = array_namespace(data, bp)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (data, bp) if _has_own_device(a)), None)
+    device = xp_result_device(data, bp)
 
     data = np.asarray(data)
     dtype = data.dtype.char
@@ -4988,7 +4986,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     """
     xp = array_namespace(b, a, x)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(arg) for arg in (b, a, x) if _has_own_device(arg)), None)
+    device = xp_result_device(b, a, x)
 
     b = np.atleast_1d(np.asarray(b))
     a = np.atleast_1d(np.asarray(a))
@@ -5154,9 +5152,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     """
     xp = array_namespace(sos, x, zi)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next(
-        (xp_device(arg) for arg in (sos, x, zi) if _has_own_device(arg)), None
-    )
+    device = xp_result_device(sos, x, zi)
 
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
@@ -5300,7 +5296,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     """
     xp = array_namespace(sos, x)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(arg) for arg in (sos, x) if _has_own_device(arg)), None)
+    device = xp_result_device(sos, x)
 
     sos, n_sections = _validate_sos(sos)
     x = _validate_x(x)

@@ -19,7 +19,8 @@ from scipy.signal import _polyutils as _pu
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    _has_own_device, array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax,
+    _has_own_device, xp_result_device, array_namespace, xp_promote,
+    xp_size, xp_default_dtype, is_jax,
     xp_float_to_complex, xp_result_type, xp_device,
 )
 from scipy._external.array_api_compat import numpy as np_compat
@@ -504,8 +505,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     # device of the array input instead, so that a non-default-device input
     # propagates through the division below. Actual array inputs keep their
     # own device (mixing devices raises, as it should).
-    device = next((xp_device(arg) for arg in (b, a) if _has_own_device(arg)),
-                  None)
+    device = xp_result_device(b, a)
     b, a = (xp.asarray(arg) if _has_own_device(arg)
             else xp.asarray(arg, device=device)
             for arg in (b, a))
@@ -793,9 +793,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     """
     xp = array_namespace(*system, w)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next(
-        (xp_device(arg) for arg in (*system, w) if _has_own_device(arg)), None
-    )
+    device = xp_result_device(*system, w)
     b, a = map(np.atleast_1d, system)
 
     if w is None:
@@ -1304,7 +1302,7 @@ def zpk2tf(z, p, k):
     """
     xp = array_namespace(z, p)
     # a scalar `k` must be created on the device of the array arguments
-    device = next((xp_device(a) for a in (z, p, k) if _has_own_device(a)), None)
+    device = xp_result_device(z, p, k)
     z, p = map(xp.asarray, (z, p))
     k = xp.asarray(k, dtype=xp.result_type(xp.real(z), xp.real(p), k),
                    device=device)
@@ -1691,7 +1689,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     xp = array_namespace(z, p)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (z, p, k) if _has_own_device(a)), None)
+    device = xp_result_device(z, p, k)
 
     # convert to numpy, convert back on exit   XXX
     z, p = map(np.asarray, (z, p))
@@ -2474,7 +2472,7 @@ def bilinear(b, a, fs=1.0):
     """
     xp = array_namespace(b, a)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(arg) for arg in (b, a) if _has_own_device(arg)), None)
+    device = xp_result_device(b, a)
 
     b, a = map(np.asarray, (b, a))
     b, a = np.atleast_1d(b), np.atleast_1d(a)  # convert scalars, if needed
@@ -2838,7 +2836,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
     """
     xp = array_namespace(Wn)
     # the analog prototype below must be created on the device of `Wn`
-    device = xp_device(Wn) if _has_own_device(Wn) else None
+    device = xp_result_device(Wn)
     # For now, outputs will have float64 base dtype regardless of
     # the dtype of Wn, so cast to float64 here to ensure 64 bit
     # precision for all calculations.
@@ -4215,8 +4213,7 @@ def _pre_warp(wp, ws, analog, *, xp):
 def _validate_wp_ws(wp, ws, fs, analog, *, xp):
     # python sequences would land on the default device; create them on
     # the device of the array argument (if any)
-    device = next((xp_device(arg) for arg in (wp, ws)
-                   if _has_own_device(arg)), None)
+    device = xp_result_device(wp, ws)
     wp, ws = (arg if _has_own_device(arg)
               else xp.asarray(arg, device=device) for arg in (wp, ws))
     wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
@@ -4243,9 +4240,7 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind, *, xp):
         nat = passb / stopb
     elif filter_type == 3:          # stop
         # the NumPy round-trip must return the result on the inputs' device
-        device = next(
-            (xp_device(a) for a in (passb, stopb) if _has_own_device(a)), None
-        )
+        device = xp_result_device(passb, stopb)
         passb, stopb = np.asarray(passb), np.asarray(stopb)    # XXX fminbound array API
         wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
                                  args=(0, passb, stopb, gpass, gstop,

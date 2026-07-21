@@ -17,7 +17,7 @@ from itertools import combinations
 
 from scipy._lib._array_api import (
     array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy, is_cupy,
-    xp_device, _has_own_device
+    xp_device, _has_own_device, xp_result_device
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
@@ -617,7 +617,7 @@ class BSpline:
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
         # a NumPy round-trip in the delegate must return results on the
         # device of the inputs, not on the backend's default device
-        device = next((xp_device(a) for a in (t, c) if _has_own_device(a)), None)
+        device = xp_result_device(t, c)
         if not is_numpy(xp):
             # only convert t and c to internal namespace if it is not NumPy
             # to preserve NumPy behavior with lists.
@@ -656,7 +656,7 @@ class BSpline:
         """
         xp = array_namespace(t, c)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
-        device = next((xp_device(a) for a in (t, c) if _has_own_device(a)), None)
+        device = xp_result_device(t, c)
         return cls._construct_from_xp(
             xp_bspline_cls.construct_fast(
                 xp_internal.asarray(t),
@@ -780,7 +780,7 @@ class BSpline:
         """
         xp = array_namespace(t)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
-        device = xp_device(t) if _has_own_device(t) else None
+        device = xp_result_device(t)
         return cls._construct_from_xp(
             xp_bspline_cls.basis_element(
                 xp_internal.asarray(t), extrapolate=extrapolate,
@@ -1125,8 +1125,7 @@ class BSpline:
         """
         xp = array_namespace(pp.x, pp.c)
         xp_bspline_cls, _ = _get_xp_bspline_cls(xp)
-        device = next(
-            (xp_device(a) for a in (pp.x, pp.c) if _has_own_device(a)), None)
+        device = xp_result_device(pp.x, pp.c)
         # from_power_basis isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         spl = xp_bspline_cls.from_power_basis(pp, bc_type=bc_type)
@@ -1795,7 +1794,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     """
     xp = array_namespace(x, y, t)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (x, y, t) if _has_own_device(a)), None)
+    device = xp_result_device(x, y, t)
     if is_cupy(xp):
         # delegate to CuPy, *and* return a SciPy BSpline object
         import cupyx.scipy.interpolate as csi
@@ -2063,8 +2062,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     """
     xp = array_namespace(x, y, t, w)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next(
-        (xp_device(a) for a in (x, y, t, w) if _has_own_device(a)), None)
+    device = xp_result_device(x, y, t, w)
 
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
@@ -2624,7 +2622,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     """  # noqa:E501
     xp = array_namespace(x, y)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (x, y) if _has_own_device(a)), None)
+    device = xp_result_device(x, y)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)

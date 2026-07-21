@@ -85,7 +85,7 @@ from scipy._lib._array_api import (
     _masked_apply,
     xp_swapaxes,
     xp_device,
-    _has_own_device,
+    xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
 from scipy.stats._quantile import _xp_searchsorted
@@ -5714,7 +5714,7 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
     xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
     dtype = x.dtype
-    device = xp_device(x) if _has_own_device(x) else None
+    device = xp_result_device(x)
     if is_marray(xp):
         mask_x, mask_y = np.asarray(x.mask), np.asarray(y.mask)
         x, y = np.asarray(x.data).copy(), np.asarray(y.data).copy()
@@ -6111,8 +6111,7 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
     # Due to behavior of `_axis_nan_policy` decorator, `alternative` can be any number
     # of dimensions, but there is at most one unique non-NaN value.
     # `_xp_mean` with `nan_policy='omit'` is a JIT-compatible way to extract it.
-    device = next((xp_device(a) for a in (statistic, pvalue)
-                   if _has_own_device(a)), None)
+    device = xp_result_device(statistic, pvalue)
     alternative = xp.asarray(alternative, device=device)
     alternative = (_xp_mean(alternative, axis=None, nan_policy='omit', warn=False)
                    if xp_size(alternative) != 0 else xp.nan)
@@ -6404,7 +6403,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
     # The pooled variance is still defined, though, because the (n-1) in the
     # numerator should cancel with the (n-1) in the denominator, leaving only
     # the sum of squared differences from the mean: zero.
-    device = xp_device(v1) if _has_own_device(v1) else None
+    device = xp_result_device(v1)
     v1 = xp.where(xp.asarray(n1 == 1, device=device), 0., v1)
     v2 = xp.where(xp.asarray(n2 == 1, device=device), 0., v2)
 
@@ -6863,7 +6862,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
 
 def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method, *, xp):
-    device = next((xp_device(a) for a in (x, y) if _has_own_device(a)), None)
+    device = xp_result_device(x, y)
 
     def statistic(x, y, axis):
         x, y = xp.asarray(x, device=device), xp.asarray(y, device=device)
@@ -9265,7 +9264,7 @@ class QuantileTestResult:
 def quantile_test_iv(x, q, p, alternative, axis, keepdims):
     xp = array_namespace(x, q, p)
     dtype = xp_result_type(x, q, p, force_floating=True, xp=xp)
-    device = next((xp_device(a) for a in (x, q, p) if _has_own_device(a)), None)
+    device = xp_result_device(x, q, p)
 
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
     message = '`x` must be an array of numbers.'

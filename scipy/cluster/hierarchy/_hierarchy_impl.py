@@ -44,7 +44,7 @@ from . import _hierarchy, _optimal_leaf_ordering  # type:ignore[attr-defined]
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
                                    is_lazy_array, xp_capabilities, xp_copy,
-                                   xp_device, _has_own_device)
+                                   xp_device, xp_result_device)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._external.array_api_extra as xpx
 
@@ -2571,7 +2571,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
     """
     xp = array_namespace(Z)
-    device = xp_device(Z) if _has_own_device(Z) else None
+    device = xp_result_device(Z)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', materialize=True, xp=xp)
 
@@ -3774,7 +3774,7 @@ def is_isomorphic(T1, T2):
 
     """
     xp = array_namespace(T1, T2)
-    device = next((xp_device(a) for a in (T1, T2) if _has_own_device(a)), None)
+    device = xp_result_device(T1, T2)
     T1 = _asarray(T1, xp=xp, device=device)
     T2 = _asarray(T2, xp=xp, device=device)
 

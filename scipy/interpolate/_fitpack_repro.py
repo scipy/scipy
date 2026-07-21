@@ -22,7 +22,7 @@ import operator
 import numpy as np
 
 from scipy._lib._array_api import (
-    array_namespace, concat_1d, xp_capabilities, xp_device, _has_own_device
+    array_namespace, concat_1d, xp_capabilities, xp_result_device
 )
 
 from ._bsplines import (
@@ -254,7 +254,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
     """
     xp = array_namespace(x, y, w)
     # the NumPy round-trip must return the results on the inputs' device
-    device = next((xp_device(a) for a in (x, y, w) if _has_own_device(a)), None)
+    device = xp_result_device(x, y, w)
     bc_type = _validate_bc_type(bc_type)
     periodic = bc_type == 'periodic'
 
@@ -1150,8 +1150,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     """  # noqa:E501
     xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next(
-        (xp_device(a) for a in (x, y, w, t) if _has_own_device(a)), None)
+    device = xp_result_device(x, y, w, t)
     if t is not None:
         t = xp.asarray(t, device=device)
     bc_type = _validate_bc_type(bc_type)
@@ -1322,8 +1321,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
         xp = array_namespace(x, w, u, t)
         x_seq = (x,)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next(
-        (xp_device(a) for a in (*x_seq, w, u, t) if _has_own_device(a)), None)
+    device = xp_result_device(*x_seq, w, u, t)
 
     x = xp.stack(x, axis=1)
 

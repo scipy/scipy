@@ -215,10 +215,7 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
 
     cb_terminate = False
 
-    # Initialize the result object and active element index array on the same
-    # device as the caller's arrays. Every caller stores `work.status` as an
-    # array on the device of its input arrays, so it anchors the device here;
-    # this way, callers cannot forget to propagate the device (see gh-22680).
+    # Initialize the result object and active element index array
     device = xp_device(work.status)
     n_elements = math.prod(shape)
     active = xp.arange(n_elements, device=device)  # in-progress element indices
@@ -259,7 +256,6 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
         if preserve_shape:
             x = xp.reshape(x, (shape + (-1,)))
         f = func(x, *work.args)
-        # `func` may return a python sequence; convert it on the loop's device
         f = xp.asarray(f, dtype=dtype, device=device)
         if preserve_shape:
             x = xp.reshape(x, x_shape)

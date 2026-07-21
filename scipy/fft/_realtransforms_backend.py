@@ -1,4 +1,4 @@
-from scipy._lib._array_api import _has_own_device, array_namespace, xp_device
+from scipy._lib._array_api import xp_result_device, array_namespace
 import numpy as np
 from . import _duccfft
 
@@ -9,7 +9,7 @@ def _execute(duccfft_func, x, type, s, axes, norm,
              overwrite_x, workers, orthogonalize):
     xp = array_namespace(x)
     # the NumPy round-trip must return the result on the input's device
-    device = xp_device(x) if _has_own_device(x) else None
+    device = xp_result_device(x)
     x = np.asarray(x)
     y = duccfft_func(x, type, s, axes, norm,
                        overwrite_x=overwrite_x, workers=workers,

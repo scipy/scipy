@@ -36,7 +36,7 @@ import operator
 import math
 
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import (_has_own_device, array_namespace, is_cupy,
+from scipy._lib._array_api import (xp_result_device, array_namespace, is_cupy,
                                    xp_size, xp_device)
 from . import _ni_support
 from . import _nd_image
@@ -59,8 +59,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
     # Anchor internal array creations to the device of the array arguments so
     # that host data does not land on the backend's default device (gh-22680).
-    device = next((xp_device(arg) for arg in (input, footprint, output)
-                   if _has_own_device(arg)), None)
+    device = xp_result_device(input, footprint, output)
 
     # vectorized_filter input validation and standardization
     input = xp.asarray(input, device=device)
@@ -457,7 +456,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     # This seems to be defined.
     if input.ndim == 0 and size == ():
-        device = xp_device(input) if _has_own_device(input) else None
+        device = xp_result_device(input)
         return xp.asarray(function(input) if footprint is None
                           else function(input[footprint]), device=device)
 

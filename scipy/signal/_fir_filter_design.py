@@ -13,7 +13,7 @@ from .windows import get_window
 from . import _sigtools
 
 from scipy._lib._array_api import (
-    _has_own_device, array_namespace, xp_size, xp_default_dtype, xp_device
+    xp_result_device, array_namespace, xp_size, xp_default_dtype, xp_device
 )
 import scipy._external.array_api_extra as xpx
 
@@ -683,7 +683,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     """
     xp = array_namespace(freq, gain)
     # internal creations must happen on the device of the array inputs
-    device = next((xp_device(a) for a in (freq, gain) if _has_own_device(a)), None)
+    device = xp_result_device(freq, gain)
     freq, gain = xp.asarray(freq), xp.asarray(gain)
 
     fs = _validate_fs(fs, allow_none=True)
@@ -935,8 +935,7 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     """
     xp = array_namespace(bands, desired, weight)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (bands, desired, weight)
-                   if _has_own_device(a)), None)
+    device = xp_result_device(bands, desired, weight)
     bands = np.asarray(bands)
     desired = np.asarray(desired)
     if weight is not None:
@@ -1074,8 +1073,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     """
     xp = array_namespace(bands, desired)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (bands, desired, weight)
-                   if _has_own_device(a)), None)
+    device = xp_result_device(bands, desired, weight)
     bands = np.asarray(bands)
     desired = np.asarray(desired)
 

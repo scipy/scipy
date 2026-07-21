@@ -1,7 +1,7 @@
 import functools
 from scipy._lib._array_api import (
-    _has_own_device, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API,
-    xp_capabilities, xp_device,
+    xp_result_device, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API,
+    xp_capabilities,
 )
 
 import numpy as np
@@ -59,9 +59,7 @@ def delegate_xp(delegator, module_name):
                 # The NumPy round-trip must return results on the device of
                 # the input arrays, not on the backend's default device
                 # (see gh-22680)
-                device = next(
-                    (xp_device(arg) for arg in (*args, *kwds.values())
-                     if _has_own_device(arg)), None)
+                device = xp_result_device(*args, *kwds.values())
                 result = func(*args, **kwds)
 
                 if isinstance(result, np.ndarray | np.generic):

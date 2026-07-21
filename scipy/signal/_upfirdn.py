@@ -33,7 +33,7 @@
 
 import numpy as np
 
-from scipy._lib._array_api import _has_own_device, array_namespace, xp_device
+from scipy._lib._array_api import xp_result_device, array_namespace
 from ._upfirdn_apply import _output_len, _apply, mode_enum
 
 __all__ = ['upfirdn', '_output_len']
@@ -213,7 +213,7 @@ def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
     """
     xp = array_namespace(h, x)
     # the NumPy round-trip must return the result on the inputs' device
-    device = next((xp_device(a) for a in (h, x) if _has_own_device(a)), None)
+    device = xp_result_device(h, x)
 
     x = np.asarray(x)
     ufd = _UpFIRDn(h, x.dtype, up, down)

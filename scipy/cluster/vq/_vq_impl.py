@@ -4,7 +4,7 @@ from collections import deque
 from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
                                    xp_capabilities,
                                    xp_default_int_dtype, xp_device, xp_size,
-                                   _has_own_device)
+                                   xp_result_device)
 from scipy._lib._util import (check_random_state, rng_integers,
                               _transition_to_rng)
 from scipy._lib.deprecation import _deprecated
@@ -155,7 +155,7 @@ def vq(obs, code_book, check_finite=True):
         c_obs = np.asarray(c_obs)
         c_code_book = np.asarray(c_code_book)
         result = _vq.vq(c_obs, c_code_book)
-        device = xp_device(obs) if _has_own_device(obs) else None
+        device = xp_result_device(obs)
         return (xp.asarray(result[0], device=device),
                 xp.asarray(result[1], device=device))
     return _py_vq(obs, code_book, check_finite=False)
@@ -210,7 +210,7 @@ def _py_vq(obs, code_book, check_finite=True):
         code_book = code_book[:, xp.newaxis]
 
     # Once `cdist` has array API support, this `xp.asarray` call can be removed
-    device = xp_device(obs) if _has_own_device(obs) else None
+    device = xp_result_device(obs)
     dist = xp.asarray(cdist(obs, code_book), device=device)
     code = xp.argmin(dist, axis=1)
     min_dist = xp.min(dist, axis=1)
@@ -272,8 +272,7 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
                                                           code_book.shape[0])
         code_book = code_book[has_members]
         code_book = xp.asarray(code_book,
-                               device=xp_device(obs) if _has_own_device(obs)
-                               else None)
+                               device=xp_result_device(obs))
         diff = xp.abs(prev_avg_dists[0] - prev_avg_dists[1])
 
     _, final_distortions = vq(obs, code_book, check_finite=False)
@@ -419,7 +418,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         xp = array_namespace(obs, k_or_guess)
     obs = _asarray(obs, xp=xp, check_finite=check_finite)
     guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite,
-                     device=xp_device(obs) if _has_own_device(obs) else None)
+                     device=xp_result_device(obs))
     if iter < 1:
         raise ValueError(f"iter must be at least 1, got {iter}")
 
@@ -735,7 +734,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     else:
         xp = array_namespace(data, k)
     data = _asarray(data, xp=xp, check_finite=check_finite)
-    device = xp_device(data) if _has_own_device(data) else None
+    device = xp_result_device(data)
     code_book = _asarray(k, copy=True, xp=xp, device=device)
     if data.ndim == 1:
         d = 1

@@ -59,7 +59,7 @@ __all__ = [
     'xp_compat_namespace', 'xp_copy', 'xp_default_int_dtype', 'xp_device',
     'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
-    'xp_result_type', 'xp_promote',
+    'xp_result_type', 'xp_result_device', 'xp_promote',
     'make_xp_test_case', 'make_xp_pytest_marks', 'make_xp_pytest_param',
 ]
 
@@ -116,8 +116,8 @@ def _asarray(
         try:
             array = xp.asarray(array, dtype=dtype, copy=copy, device=device)
         except TypeError:
-            # `xp` lacks features SciPy relies on (e.g. the `device` keyword
-            # on NumPy 1.x / CuPy 13.x); retry with the compat namespace
+            # `xp` lacks features SciPy relies on (e.g. the `device` keyword)
+            # so retry with the compat namespace
             coerced_xp = xp_compat_namespace(xp)
             array = coerced_xp.asarray(array, dtype=dtype, copy=copy, device=device)
 
@@ -543,7 +543,6 @@ def xp_result_type(*args, force_floating=False, xp):
                 float_args.append(arg)
         return xp.result_type(*float_args, xp_default_dtype(xp))
 
-
 def _has_own_device(arg):
     """Whether `arg` is an array that carries its own device.
 
@@ -551,6 +550,20 @@ def _has_own_device(arg):
     converting them to another namespace places them on that namespace's
     *default* device, so for device propagation they must be treated like
     python scalars and created on the inferred common device (see gh-22680).
+
+    This never forwards a device across libraries: arguments reaching the
+    device-anchoring call sites have been validated by `array_namespace` at
+    the function boundary, which raises for arrays from multiple libraries.
+    The only foreign arrays that legitimately appear alongside another
+    library's arrays are NumPy arrays and scalars (e.g. numeric parameters
+    computed with NumPy), and those are excluded here. A device returned
+    for an argument with ``_has_own_device(arg) == True`` therefore always
+    belongs to the namespace whose creation functions consume it.
+
+    Backends whose arrays lack the ``.device`` attribute (e.g. Dask; see
+    the workarounds in ``array_api_compat.device``) are treated like host
+    data. They are effectively single-device, so creating on the backend
+    default -- what a `None` anchor means -- is correct for them.
     """
     return hasattr(arg, "device") and not isinstance(arg, (np.ndarray, np.generic))
 
@@ -583,7 +596,7 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
 
     # Infer the common device from the array arguments; `devices[i]` is the
     # device to create argument `i` on (None to keep an array's own device).
-    device = next((xp_device(arg) for arg in args if _has_own_device(arg)), None)
+    device = xp_result_device(*args)
     devices = [None if _has_own_device(arg) else device for arg in args]
 
     # prevent double conversion of iterable to array
@@ -652,11 +665,10 @@ def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
 def xp_compat_namespace(xp: ModuleType | None) -> ModuleType:
     """Return the array-api-compat(ible) namespace corresponding to `xp`.
 
-    A user-provided `xp` may be a "raw" namespace (e.g. bare `numpy` or
-    `torch`) that lacks features SciPy relies on (such as the `device`
-    keyword of creation functions on NumPy 1.x / CuPy 13.x); resolve it
-    through `array_namespace` with a throwaway array. `None` maps to the
-    compat NumPy namespace.
+    A user-provided `xp` may be a "raw" namespace (e.g. bare `numpy` or `torch`) that
+    lacks features SciPy relies on (such as the `device` keyword of creation functions
+    on CuPy <=14.1, xref cupy#9848); resolve it through `array_namespace` with a
+    throwaway array. `None` maps to the compat NumPy namespace.
     """
     if xp is None:
         return np_compat
@@ -685,17 +697,19 @@ def xp_default_dtype(xp):
 
 
 def xp_result_device(*args):
-    """Return the device of an array in `args`, for the purpose of
-    input-output device propagation.
-    If there are multiple devices, return an arbitrary one.
-    If there are no arrays, return None (this typically happens only on NumPy).
+    """Return the device for the result of a function with inputs `args`,
+    for the purpose of input-output device propagation.
+
+    Arguments that do not carry a device -- python scalars, NumPy arrays
+    and scalars (host data), and arrays of backends without a ``.device``
+    attribute; see `_has_own_device` -- do not determine the result device
+    and are skipped. If the remaining arguments live on multiple devices,
+    return an arbitrary one (combining arrays across devices raises inside
+    the backend anyway). Return `None` if no argument carries a device;
+    creation functions then use the backend's default device, which is the
+    correct result device for NumPy and for purely host-data inputs.
     """
-    for arg in args:
-        # Do not do a duck-type test for the .device attribute, as many backends today
-        # don't have it yet. See workarouunds in array_api_compat.device().
-        if is_array_api_obj(arg):
-            return xp_device(arg)
-    return None
+    return next((xp_device(arg) for arg in args if _has_own_device(arg)), None)
 
 
 # np.r_ replacement
@@ -706,7 +720,7 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     Python scalars and host data are created on the device of the array
     arguments, not on the backend's default device (see gh-22680).
     """
-    device = next((xp_device(a) for a in arrays if _has_own_device(a)), None)
+    device = xp_result_device(*arrays)
     arys = [
         xpx.atleast_nd(
             xp.asarray(a, device=None if _has_own_device(a) else device),  # type:ignore[union-attr]

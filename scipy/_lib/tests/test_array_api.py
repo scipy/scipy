@@ -5,8 +5,8 @@ import pytest
 
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    np_compat, xp_default_dtype, xp_device, xp_promote, xp_result_type, is_torch,
-    _xp_copy_to_numpy
+    np_compat, xp_default_dtype, xp_device, xp_promote, xp_result_device,
+    xp_result_type, is_torch, _xp_copy_to_numpy
 )
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
@@ -164,7 +164,7 @@ class TestArrayAPI:
             # Ensure y is a copy when xp is numpy.
             assert id(x) != id(y)
 
-    
+
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])
     def test_strict_checks(self, xp, dtype, shape):
@@ -379,8 +379,8 @@ def test_xp_promote_device(xp, devices):
     # Scalars and array-like iterables promoted alongside an array are
     # created on that array's device; array arguments keep their own device.
     # See gh-22680.
-    for d in devices:
-        x = xp.asarray([1., 2., 3.], device=d)
+    for device in devices:
+        x = xp.asarray([1., 2., 3.], device=device)
 
         # scalar rides along on the array's device
         x2, scalar = xp_promote(x, 1.5, xp=xp)
@@ -406,11 +406,35 @@ def test_xp_promote_device(xp, devices):
 
         # NumPy scalars and arrays report device 'cpu' but are *host data*:
         # they must ride along on the array argument's device like python
-        # scalars do (they land on the default device otherwise)
+        # scalars do (they land on the default device otherwise). This mix
+        # is user-reachable: `array_namespace` rejects NumPy *sample* arrays
+        # mixed with another backend's arrays, but NumPy scalars arrive as
+        # numeric keyword parameters that are not validated as arrays, e.g.
+        # `differentiate(f, x_gpu, initial_step=1/np.sqrt(2))`.
         x2, np_scalar = xp_promote(x, np.float64(0.5), xp=xp)
         assert xp_device(np_scalar) == xp_device(x)
         x2, np_arr = xp_promote(x, np.asarray([1.0, 2.0, 3.0]), xp=xp)
         assert xp_device(np_arr) == xp_device(x)
+
+
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
+def test_xp_result_device(xp, devices):
+    # `xp_result_device` anchors the result device on the first argument
+    # that carries a device, skipping python scalars and NumPy host data.
+    # No device-carrying argument -> None (create on the backend default).
+    # NumPy arrays, and arrays of backends without a `.device` attribute
+    # (e.g. Dask), are treated like host data: always None.
+    for device in devices:
+        x = xp.asarray([1., 2.], device=device)
+        host_like = is_numpy(xp) or not hasattr(x, "device")
+        expected = None if host_like else xp_device(x)
+        assert xp_result_device(x) == expected
+        assert xp_result_device(1.5, None, x) == expected
+        assert xp_result_device(np.float64(0.5), x) == expected
+        assert xp_result_device(np.asarray([1.0]), x) == expected
+    assert xp_result_device() is None
+    assert xp_result_device(1.5, None) is None
+    assert xp_result_device(np.asarray([1.0])) is None
 
 
 @pytest.mark.uses_xp_capabilities(False, reason="tests conftest machinery")
