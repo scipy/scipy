@@ -40,6 +40,7 @@
 #include <xsf/log_exp.h>
 #include <xsf/mathieu.h>
 #include <xsf/ndtri_exp.h>
+#include <xsf/orthogonal_eval.h>
 #include <xsf/par_cyl.h>
 #include <xsf/specfun.h>
 #include <xsf/spence.h>
@@ -201,6 +202,8 @@ extern const char *ndtri_doc;
 extern const char *ndtri_exp_doc;
 extern const char *nrdtrimn_doc;
 extern const char *nrdtrisd_doc;
+extern const char *eval_jacobi_doc;
+extern const char *eval_sh_jacobi_doc;
 extern const char *obl_ang1_doc;
 extern const char *obl_ang1_cv_doc;
 extern const char *obl_cv_doc;
@@ -380,6 +383,28 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::nrdtrisd), static_cast<xsf::numpy::ddd_d>(xsf::nrdtrisd)},
         "nrdtrisd", nrdtrisd_doc);
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
+
+    PyObject *eval_jacobi = xsf::numpy::ufunc(
+        {[](std::ptrdiff_t n, double alpha, double beta, double x) {
+             return xsf::eval_jacobi(n, alpha, beta, x);
+         },
+         [](float n, float alpha, float beta, float x) { return xsf::eval_jacobi(n, alpha, beta, x); },
+         [](float n, float alpha, float beta, std::complex<float> x) { return xsf::eval_jacobi(n, alpha, beta, x); },
+         static_cast<xsf::numpy::dddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::dddD_D>(xsf::eval_jacobi)},
+        "eval_jacobi", eval_jacobi_doc);
+    PyModule_AddObjectRef(module, "eval_jacobi", eval_jacobi);
+
+    PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
+        {[](std::ptrdiff_t n, double p, double q, double x) {
+             return xsf::eval_sh_jacobi(n, p, q, x);
+         },
+         [](float n, float p, float q, float x) { return xsf::eval_sh_jacobi(n, p, q, x); },
+         [](float n, float p, float q, std::complex<float> x) { return xsf::eval_sh_jacobi(n, p, q, x); },
+         static_cast<xsf::numpy::dddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::dddD_D>(xsf::eval_sh_jacobi)},
+        "eval_sh_jacobi", eval_sh_jacobi_doc);
+    PyModule_AddObjectRef(module, "eval_sh_jacobi", eval_sh_jacobi);
 
     PyObject *_sinpi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::sinpi), static_cast<xsf::numpy::d_d>(xsf::sinpi),

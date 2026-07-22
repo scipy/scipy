@@ -29,6 +29,7 @@
 #include <xsf/loggamma.h>
 #include <xsf/mathieu.h>
 #include <xsf/ndtri_exp.h>
+#include <xsf/orthogonal_eval.h>
 #include <xsf/par_cyl.h>
 #include <xsf/sici.h>
 #include <xsf/specfun.h>
@@ -151,6 +152,26 @@ void it2i0k0_wrap(double x, double *i0int, double *k0int) { xsf::it2i0k0(x, *i0i
 
 void xsf_cfresnel(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
     xsf::fresnel(to_complex(z), *reinterpret_cast<complex<double> *>(zfs), *reinterpret_cast<complex<double> *>(zfc));
+}
+
+double xsf_eval_jacobi(double n, double alpha, double beta, double x) { return xsf::eval_jacobi(n, alpha, beta, x); }
+
+npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_jacobi(n, alpha, beta, to_complex(x)));
+}
+
+double xsf_eval_jacobi_l(Py_ssize_t n, double alpha, double beta, double x) {
+    return xsf::eval_jacobi(static_cast<std::ptrdiff_t>(n), alpha, beta, x);
+}
+
+double xsf_eval_sh_jacobi(double n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); }
+
+npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_sh_jacobi(n, p, q, to_complex(x)));
+}
+
+double xsf_eval_sh_jacobi_l(Py_ssize_t n, double p, double q, double x) {
+    return xsf::eval_sh_jacobi(static_cast<std::ptrdiff_t>(n), p, q, x);
 }
 
 double cem_cva_wrap(double m, double q) { return xsf::cem_cva(m, q); }

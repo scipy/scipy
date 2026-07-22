@@ -1104,7 +1104,7 @@ optional Cython ``bint``, leading to the following signatures.
 from libc.math cimport NAN
 
 from numpy cimport (npy_float, npy_double, npy_longdouble, npy_cdouble,
-                    npy_int, npy_long)
+                    npy_int, npy_long, npy_intp)
 
 cdef extern from "numpy/ufuncobject.h":
     int PyUFunc_getfperr() nogil
@@ -1180,6 +1180,13 @@ cdef extern from r"xsf_wrappers.h":
     void special_cairy(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     void special_airye(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
     void special_cairye(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
+
+    npy_double xsf_eval_jacobi(npy_double, npy_double, npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_jacobi(npy_double, npy_double, npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_jacobi_l(npy_intp, npy_double, npy_double, npy_double) nogil
+    npy_double xsf_eval_sh_jacobi(npy_double, npy_double, npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_sh_jacobi(npy_double, npy_double, npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_sh_jacobi_l(npy_intp, npy_double, npy_double, npy_double) nogil
 
     npy_cdouble special_ccyl_hankel_1(npy_double, npy_cdouble) nogil
     npy_cdouble special_ccyl_hankel_1e(npy_double, npy_cdouble) nogil
@@ -1543,18 +1550,6 @@ from .orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
 ctypedef double _proto_eval_hermitenorm_t(Py_ssize_t, double) noexcept nogil
 cdef _proto_eval_hermitenorm_t *_proto_eval_hermitenorm_t_var = &_func_eval_hermitenorm
 
-from .orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
-ctypedef double complex _proto_eval_jacobi_double_complex__t(double, double, double, double complex) noexcept nogil
-cdef _proto_eval_jacobi_double_complex__t *_proto_eval_jacobi_double_complex__t_var = &_func_eval_jacobi[double_complex]
-
-from .orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
-ctypedef double _proto_eval_jacobi_double__t(double, double, double, double) noexcept nogil
-cdef _proto_eval_jacobi_double__t *_proto_eval_jacobi_double__t_var = &_func_eval_jacobi[double]
-
-from .orthogonal_eval cimport eval_jacobi_l as _func_eval_jacobi_l
-ctypedef double _proto_eval_jacobi_l_t(Py_ssize_t, double, double, double) noexcept nogil
-cdef _proto_eval_jacobi_l_t *_proto_eval_jacobi_l_t_var = &_func_eval_jacobi_l
-
 from .orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
 ctypedef double complex _proto_eval_laguerre_double_complex__t(double, double complex) noexcept nogil
 cdef _proto_eval_laguerre_double_complex__t *_proto_eval_laguerre_double_complex__t_var = &_func_eval_laguerre[double_complex]
@@ -1602,18 +1597,6 @@ cdef _proto_eval_sh_chebyu_double__t *_proto_eval_sh_chebyu_double__t_var = &_fu
 from .orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
 ctypedef double _proto_eval_sh_chebyu_l_t(Py_ssize_t, double) noexcept nogil
 cdef _proto_eval_sh_chebyu_l_t *_proto_eval_sh_chebyu_l_t_var = &_func_eval_sh_chebyu_l
-
-from .orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
-ctypedef double complex _proto_eval_sh_jacobi_double_complex__t(double, double, double, double complex) noexcept nogil
-cdef _proto_eval_sh_jacobi_double_complex__t *_proto_eval_sh_jacobi_double_complex__t_var = &_func_eval_sh_jacobi[double_complex]
-
-from .orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
-ctypedef double _proto_eval_sh_jacobi_double__t(double, double, double, double) noexcept nogil
-cdef _proto_eval_sh_jacobi_double__t *_proto_eval_sh_jacobi_double__t_var = &_func_eval_sh_jacobi[double]
-
-from .orthogonal_eval cimport eval_sh_jacobi_l as _func_eval_sh_jacobi_l
-ctypedef double _proto_eval_sh_jacobi_l_t(Py_ssize_t, double, double, double) noexcept nogil
-cdef _proto_eval_sh_jacobi_l_t *_proto_eval_sh_jacobi_l_t_var = &_func_eval_sh_jacobi_l
 
 from .orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
 ctypedef double complex _proto_eval_sh_legendre_double_complex__t(double, double complex) noexcept nogil
@@ -2230,13 +2213,15 @@ cpdef double eval_hermitenorm(Py_ssize_t x0, double x1) noexcept nogil:
 cpdef Dd_number_t eval_jacobi(dlp_number_t x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.eval_jacobi"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_jacobi[double_complex](x0, x1, x2, x3)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_jacobi(x0, x1, x2, _complexstuff.npy_cdouble_from_double_complex(x3))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_jacobi[double](x0, x1, x2, x3)
+        return xsf_eval_jacobi(x0, x1, x2, x3)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_jacobi_l(x0, x1, x2, x3)
+        return xsf_eval_jacobi_l(<npy_intp>x0, x1, x2, x3)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_jacobi_l(x0, x1, x2, x3)
+        return xsf_eval_jacobi_l(<npy_intp>x0, x1, x2, x3)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2310,13 +2295,15 @@ cpdef Dd_number_t eval_sh_chebyu(dlp_number_t x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t eval_sh_jacobi(dlp_number_t x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_jacobi"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_sh_jacobi[double_complex](x0, x1, x2, x3)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_sh_jacobi(x0, x1, x2, _complexstuff.npy_cdouble_from_double_complex(x3))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_sh_jacobi[double](x0, x1, x2, x3)
+        return xsf_eval_sh_jacobi(x0, x1, x2, x3)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_sh_jacobi_l(x0, x1, x2, x3)
+        return xsf_eval_sh_jacobi_l(<npy_intp>x0, x1, x2, x3)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_sh_jacobi_l(x0, x1, x2, x3)
+        return xsf_eval_sh_jacobi_l(<npy_intp>x0, x1, x2, x3)
     else:
         if Dd_number_t is double_complex:
             return NAN

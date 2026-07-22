@@ -204,13 +204,6 @@
             "eval_hermitenorm": "pd->d"
         }
     },
-    "eval_jacobi": {
-        "orthogonal_eval.pxd": {
-            "eval_jacobi[double complex]": "dddD->D",
-            "eval_jacobi[double]": "dddd->d",
-            "eval_jacobi_l": "pddd->d"
-        }
-    },
     "eval_laguerre": {
         "orthogonal_eval.pxd": {
             "eval_laguerre[double complex]": "dD->D",
@@ -237,13 +230,6 @@
             "eval_sh_chebyu[double complex]": "dD->D",
             "eval_sh_chebyu[double]": "dd->d",
             "eval_sh_chebyu_l": "pd->d"
-        }
-    },
-    "eval_sh_jacobi": {
-        "orthogonal_eval.pxd": {
-            "eval_sh_jacobi[double complex]": "dddD->D",
-            "eval_sh_jacobi[double]": "dddd->d",
-            "eval_sh_jacobi_l": "pddd->d"
         }
     },
     "eval_sh_legendre": {

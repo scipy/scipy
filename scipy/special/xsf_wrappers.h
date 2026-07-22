@@ -212,6 +212,15 @@ double xsf_struve_h(double v, double z);
 
 double xsf_struve_l(double v, double z);
 
+// Orthogonal Polynomial
+
+double xsf_eval_jacobi(double n, double alpha, double beta, double x);
+npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x);
+double xsf_eval_jacobi_l(Py_ssize_t n, double alpha, double beta, double x);
+double xsf_eval_sh_jacobi(double n, double p, double q, double x);
+npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x);
+double xsf_eval_sh_jacobi_l(Py_ssize_t n, double p, double q, double x);
+
 // Exp
 
 double xsf_expm1(double x);
