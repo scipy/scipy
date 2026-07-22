@@ -17,7 +17,6 @@ except ImportError:
     hypothesis_available = False
 
 from scipy._lib._fpumode import get_fpu_mode
-import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
     is_cupy, is_dask, is_jax, is_torch, )
@@ -695,9 +694,10 @@ def devices(xp):
     # default-dtype intermediates. Reduced-capability devices would need
     # per-test dtype-support handling instead (see e.g. the `dtype_devices`
     # fixture in `scipy/stats/tests/test_device_dtype.py`).
+    default_dtype = info.default_dtypes()["real floating"]
     devices = tuple(
         d for d in info.devices()
-        if xpx.default_dtype(xp) in info.dtypes(device=d).values()
+        if default_dtype in info.dtypes(device=d).values()
     )
     return devices + (None,)
 
