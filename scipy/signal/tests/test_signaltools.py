@@ -32,7 +32,7 @@ import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy, xp_size, xp_default_dtype, array_namespace, make_xp_test_case,
+    xp_copy, xp_size, array_namespace, make_xp_test_case,
     make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy, xp_device
 )
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -1432,7 +1432,7 @@ class TestResample:
     def test_rfft(self, N, num, window, xp):
         # Make sure the speed up using rfft gives the same result as the normal
         # way using fft
-        dt_r = xp_default_dtype(xp)
+        dt_r = xpx.default_dtype(xp)
         dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
 
         x = xp.linspace(0, 10, N, endpoint=False)
@@ -1743,8 +1743,8 @@ class TestOrderFilt:
         xp_assert_equal(actual, expect)
 
     def test_doc_example(self, xp):
-        x = xp.reshape(xp.arange(25, dtype=xp_default_dtype(xp)), (5, 5))
-        domain = xp.eye(3, dtype=xp_default_dtype(xp))
+        x = xp.reshape(xp.arange(25, dtype=xpx.default_dtype(xp)), (5, 5))
+        domain = xp.eye(3, dtype=xpx.default_dtype(xp))
 
         # minimum of elements 1,3,9 (zero-padded) on phone pad
         # 7,5,3 on numpad
@@ -1754,7 +1754,7 @@ class TestOrderFilt:
              [0., 5., 6., 7., 0.],
              [0., 10., 11., 12., 0.],
              [0., 0., 0., 0., 0.]],
-            dtype=xp_default_dtype(xp)
+            dtype=xpx.default_dtype(xp)
         )
         xp_assert_close(signal.order_filter(x, domain, 0), expected)
 
@@ -1776,7 +1776,7 @@ class TestOrderFilt:
              [10, 11, 12, 13, 8],
              [15, 16, 17, 18, 13],
              [0, 15, 16, 17, 18]],
-            dtype=xp_default_dtype(xp)
+            dtype=xpx.default_dtype(xp)
         )
         xp_assert_close(signal.order_filter(x, domain, 1), expected)
 
@@ -3564,7 +3564,7 @@ class TestEnvelope:
     @staticmethod
     def assert_close(actual, desired, msg, xp):
         a_r_tol = ({'atol': 1e-12, 'rtol': 1e-12}
-                   if xp_default_dtype(xp) == xp.float64
+                   if xpx.default_dtype(xp) == xp.float64
                    else {'atol': 1e-5, 'rtol': 1e-5}
         )
 
@@ -3600,7 +3600,7 @@ class TestEnvelope:
 
     def test_envelope_verify_parameters(self, xp):
         """Ensure that the various parametrizations produce compatible results. """
-        dt_r = xp_default_dtype(xp)
+        dt_r = xpx.default_dtype(xp)
         dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
 
         Z = xp.asarray([4.0, 2, 2, 3, 0], dtype=dt_r)
@@ -3725,7 +3725,7 @@ class TestEnvelope:
 
     def test_envelope_verify_axis_parameter(self, xp):
         """Test for multi-channel envelope calculations. """
-        dt_r = xp_default_dtype(xp)
+        dt_r = xpx.default_dtype(xp)
         dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
 
         z = sp_fft.irfft(xp.asarray([[1.0, 0, 2, 2, 0], [7, 0, 4, 4, 0]], dtype=dt_r))
@@ -3748,7 +3748,7 @@ class TestEnvelope:
 
     def test_envelope_verify_axis_parameter_complex(self, xp):
         """Test for multi-channel envelope calculations with complex values. """
-        dt_r = xp_default_dtype(xp)
+        dt_r = xpx.default_dtype(xp)
         dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
         inp = xp.asarray([[1.0, 5, 0, 5, 2], [1, 10, 0, 10, 2]], dtype=dt_r)
         z = sp_fft.ifft(sp_fft.ifftshift(inp, axes=1))
@@ -4291,7 +4291,7 @@ class TestVectorstrength:
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        rtol_kw = {'rtol': 2e-6} if xp_default_dtype(xp) == xp.float32 else {}
+        rtol_kw = {'rtol': 2e-6} if xpx.default_dtype(xp) == xp.float32 else {}
         xp_assert_close(phase, 2 * xp.pi * targ_phase, **rtol_kw)
 
     @pytest.mark.skip_xp_meta(
@@ -4709,7 +4709,7 @@ class TestDetrend:
         # regression test for https://github.com/scipy/scipy/issues/18675
         rng = np.random.RandomState(12345)
         x = rng.rand(10)
-        x = xp.asarray(x, dtype=xp_default_dtype(xp))
+        x = xp.asarray(x, dtype=xpx.default_dtype(xp))
         if isinstance(bp, np.ndarray) and not is_jax(xp):
             # JAX expects a static array for bp, so don't call xp.asarray
             # for JAX.
@@ -4723,7 +4723,7 @@ class TestDetrend:
             -1.11128506e-01, -1.69470553e-01,  1.14710683e-01,  6.35468419e-02,
             3.53533144e-01, -3.67877935e-02, -2.00417675e-02, -1.94362049e-01])
 
-        atol = 3e-7 if xp_default_dtype(xp) == xp.float32 else 1e-14
+        atol = 3e-7 if xpx.default_dtype(xp) == xp.float32 else 1e-14
         xp_assert_close(res, res_scipy_191, atol=atol)
 
 

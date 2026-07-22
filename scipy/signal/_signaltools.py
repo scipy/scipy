@@ -27,7 +27,7 @@ from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
     xp_result_device, array_namespace, is_torch, is_numpy, xp_copy, xp_size,
-    xp_default_dtype, xp_promote, xp_result_type, xp_swapaxes, xp_device,)
+    xp_promote, xp_result_type, xp_swapaxes, xp_device,)
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
@@ -534,9 +534,9 @@ def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
     if xp.isdtype(in1.dtype, 'integral'):
-        in1 = xp.astype(in1, xp_default_dtype(xp))
+        in1 = xp.astype(in1, xpx.default_dtype(xp))
     if xp.isdtype(in2.dtype, 'integral'):
-        in2 = xp.astype(in2, xp_default_dtype(xp))
+        in2 = xp.astype(in2, xpx.default_dtype(xp))
 
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
@@ -3890,7 +3890,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     else:
         W = sp_fft.fftshift(get_window(window, n_x, xp=xp,
                                        device=xp_device(x)))
-        W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
+        W = xp.astype(W, xpx.default_dtype(xp))   # get_window always returns float64
 
     if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
         X = sp_fft.rfft(x)

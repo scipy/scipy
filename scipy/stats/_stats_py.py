@@ -67,7 +67,6 @@ from scipy import stats
 from scipy._lib._array_api import (
     _asarray,
     array_namespace,
-    xp_default_int_dtype,
     is_lazy_array,
     is_dask,
     is_numpy,
@@ -490,7 +489,7 @@ def _mode_result(mode, count):
         # `np.apply_along_axis` to compute mode/count along each axis-slice separately.
         # The result is a single array with the result dtype of `mode` and `count`.
         # We need to change `count` back to an integer.
-        count = xp.astype(count, xp_default_int_dtype(xp))
+        count = xp.astype(count, xpx.default_dtype(xp, "integral"))
     return ModeResult(mode, count)
 
 
@@ -587,7 +586,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         mask = xp.isnan(vals)
         cnts = xpx.at(cnts)[mask].set(xp.count_nonzero(mask))
         modes, counts = vals[xp.argmax(cnts)], xp.max(cnts)
-        default_int = xp_default_int_dtype(xp)
+        default_int = xpx.default_dtype(xp, "integral")
         counts = xp.astype(counts, default_int, copy=False)
         modes = modes[()] if modes.ndim == 0 else modes
         counts = counts[()] if counts.ndim == 0 else counts
@@ -8108,7 +8107,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         # These counts are given by the differences between consecutive ("min" or "max")
         # ranks corresponding with the observations in the (sorted) samples.
         ranks, data_all, _ = _rankdata(data_all, method='min', return_sorted=True)
-        ranks = xp.astype(ranks, xp_default_int_dtype(xp))
+        ranks = xp.astype(ranks, xpx.default_dtype(xp, "integral"))
         one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype,
                       device=xp_device(ranks))
         cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)

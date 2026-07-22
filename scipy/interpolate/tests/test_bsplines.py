@@ -10,7 +10,7 @@ import sys
 
 import numpy as np
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
+    xp_assert_equal, xp_assert_close, concat_1d, make_xp_test_case,
     xp_ravel, _xp_copy_to_numpy, array_namespace, is_cupy, xp_device
 )
 import scipy._external.array_api_extra as xpx
@@ -280,7 +280,7 @@ class TestBSpline:
         xx = xp.linspace(t[k] - dt, t[n] + dt, 50)
         xy = t[k] + (xx - t[k]) % (t[n] - t[k])
         xy_np, t_np, c_np = map(_xp_copy_to_numpy, (xy, t, c))
-        atol = 1e-12 if xp_default_dtype(xp) == xp.float64 else 2e-7
+        atol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 2e-7
         xp_assert_close(
             b(xx), xp.asarray(splev(xy_np, (t_np, c_np, k))), atol=atol
         )
@@ -291,7 +291,7 @@ class TestBSpline:
         xp_assert_close(
             b(xx, extrapolate='periodic'),
             b(xy, extrapolate=True),
-            atol=1e-14 if xp_default_dtype(xp) == xp.float64 else 5e-7
+            atol=1e-14 if xpx.default_dtype(xp) == xp.float64 else 5e-7
         )
 
     def test_ppoly(self):
@@ -355,7 +355,7 @@ class TestBSpline:
         splev_result = xp.asarray(splev(xx_np, (t_np, c_np, b.k)))
         xp_assert_close(b(xx), splev_result, atol=1e-14)
 
-        atol=1e-14 if xp_default_dtype(xp) == xp.float64 else 1e-7
+        atol=1e-14 if xpx.default_dtype(xp) == xp.float64 else 1e-7
         xp_assert_close(b(xx), xp.asarray(B_0123(xx), dtype=xp.float64), atol=atol)
 
         b = BSpline.basis_element(t=xp.asarray([0, 1, 1, 2]))

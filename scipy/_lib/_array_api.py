@@ -56,7 +56,7 @@ __all__ = [
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_compat_namespace', 'xp_copy', 'xp_default_int_dtype', 'xp_device',
+    'xp_compat_namespace', 'xp_copy', 'xp_device',
     'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
     'xp_result_type', 'xp_result_device', 'xp_promote',
@@ -541,7 +541,7 @@ def xp_result_type(*args, force_floating=False, xp):
             dtype = getattr(arg_array, 'dtype', arg)
             if xp.isdtype(dtype, ('real floating', 'complex floating')):
                 float_args.append(arg)
-        return xp.result_type(*float_args, xp_default_dtype(xp))
+        return xp.result_type(*float_args, xpx.default_dtype(xp))
 
 def _has_own_device(arg):
     """Whether `arg` is an array that carries its own device.
@@ -675,25 +675,6 @@ def xp_compat_namespace(xp: ModuleType | None) -> ModuleType:
     # the probe array is a throwaway used only to resolve the namespace;
     # its device is irrelevant
     return array_namespace(xp.empty(0))  # skip device check
-
-
-def xp_default_int_dtype(xp):
-    """Query the namespace-dependent default integer dtype."""
-    # The default integer dtype is backend- and platform-dependent
-    # (e.g. int32 on JAX unless x64 is enabled), so probe it with a
-    # throwaway scalar conversion; the probe's device is irrelevant.
-    return xp.asarray(1).dtype  # skip device check
-
-
-def xp_default_dtype(xp):
-    """Query the namespace-dependent default floating-point dtype.
-    """
-    if is_torch(xp):
-        # historically, we allow pytorch to keep its default of float32
-        return xp.get_default_dtype()
-    else:
-        # we default to float64
-        return xp.float64
 
 
 def xp_result_device(*args):

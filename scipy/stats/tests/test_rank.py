@@ -7,8 +7,8 @@ import pytest
 from scipy import stats
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._array_api import (xp_assert_equal, make_xp_test_case, xp_result_type,
-                                   xp_default_dtype)
+import scipy._external.array_api_extra as xpx
+from scipy._lib._array_api import (xp_assert_equal, make_xp_test_case, xp_result_type)
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -115,7 +115,7 @@ class TestRankData:
 
     def test_basic(self, xp):
         """Basic tests of stats.rankdata."""
-        desired_dtype = xp_default_dtype(xp)
+        desired_dtype = xpx.default_dtype(xp)
 
         data = [100, 10, 50]
         expected = xp.asarray([3.0, 1.0, 2.0], dtype=desired_dtype)
