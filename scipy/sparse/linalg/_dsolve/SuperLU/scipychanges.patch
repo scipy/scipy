@@ -1,0 +1,402 @@
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
+@@ -29,6 +29,7 @@
+ #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
+ #define __SUPERLU_CNAMES
+ 
++#include "scipy_slu_config.h"
+ 
+ #define ADD_       0
+ #define ADD__      1
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
+@@ -34,6 +34,7 @@
+ #include <assert.h>
+ #include "superlu_enum_consts.h"
+ 
++#include "scipy_slu_config.h"
+ 
+ /***********************************************************************
+  * Macros
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c
+@@ -235,6 +235,12 @@
+ 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #else
++#if SCIPY_FIX
++		   if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		   }
++#endif
+ 		    ctrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #endif
+@@ -428,6 +434,12 @@
+ 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		   if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		   }
++#endif
+ 		    ctrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dpanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dpanel_bmod.c
+@@ -221,6 +221,12 @@
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #else
++#if SCIPY_FIX
++		   if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		   }
++#endif
+ 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #endif
+@@ -400,6 +406,12 @@
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		   if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		   }
++#endif
+ 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c
+@@ -221,6 +221,12 @@
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #else
++#if SCIPY_FIX
++		   if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		   }
++#endif
+ 		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #endif
+@@ -400,6 +406,12 @@
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		   if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		   }
++#endif
+ 		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c
+@@ -235,6 +235,12 @@
+ 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #else
++#if SCIPY_FIX
++		   if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		   }
++#endif
+ 		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #endif
+@@ -428,6 +434,12 @@
+ 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		   if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		   }
++#endif
+ 		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c
+@@ -105,6 +105,12 @@
+ 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	ctrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	cgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsnode_bmod.c
+@@ -104,6 +104,12 @@
+ 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	dgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssnode_bmod.c
+@@ -104,6 +104,12 @@
+ 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	strsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	sgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsnode_bmod.c
+@@ -105,6 +105,12 @@
+ 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotL.c
+@@ -141,6 +141,15 @@
+         // report the rank, let dgstrf handle the pivot
+ 	*pivrow = lsub_ptr[pivptr];
+ 	perm_r[*pivrow] = jcol;
++#elif 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#endif
+ #endif
+ 	*usepr = 0;
+ 	return (jcol+1);
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dpivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dpivotL.c
+@@ -140,6 +140,15 @@
+         // report the rank, let dgstrf handle the pivot
+ 	*pivrow = lsub_ptr[pivptr];
+ 	perm_r[*pivrow] = jcol;
++#elif 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#endif
+ #endif
+ 	*usepr = 0;
+ 	return (jcol+1);
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spivotL.c
+@@ -140,6 +140,17 @@
+         // report the rank, let dgstrf handle the pivot
+ 	*pivrow = lsub_ptr[pivptr];
+ 	perm_r[*pivrow] = jcol;
++#elif 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
++ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ #endif
+ 	*usepr = 0;
+ 	return (jcol+1);
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpivotL.c
+@@ -141,6 +141,15 @@
+         // report the rank, let dgstrf handle the pivot
+ 	*pivrow = lsub_ptr[pivptr];
+ 	perm_r[*pivrow] = jcol;
++#elif 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#endif
+ #endif
+ 	*usepr = 0;
+ 	return (jcol+1);
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c
+@@ -147,11 +147,15 @@
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+     	/*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1); */
+ 	*usepr = 0;
+ 	return (jcol+1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != SLU_EMPTY)
+@@ -164,11 +168,15 @@
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		/* fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1); */
+    	        *usepr = 0;
+ 	        return (jcol+1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dpivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dpivotL.c
+@@ -145,11 +145,15 @@
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+     	/*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1); */
+ 	*usepr = 0;
+ 	return (jcol+1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != SLU_EMPTY)
+@@ -162,11 +166,15 @@
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		/* fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1); */
+    	        *usepr = 0;
+ 	        return (jcol+1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_spivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_spivotL.c
+@@ -145,11 +145,15 @@
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+     	/*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1); */
+ 	*usepr = 0;
+ 	return (jcol+1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != SLU_EMPTY)
+@@ -162,11 +166,15 @@
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++	ABORT("[1]: matrix is singular");
++#else
+ 		/* fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1); */
+    	        *usepr = 0;
+ 	        return (jcol+1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zpivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zpivotL.c
+@@ -147,11 +147,15 @@
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+     	/*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1); */
+ 	*usepr = 0;
+ 	return (jcol+1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != SLU_EMPTY)
+@@ -164,11 +168,15 @@
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		/* fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1); */
+    	        *usepr = 0;
+ 	        return (jcol+1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];

@@ -1,0 +1,365 @@
+! Signatures for f2py-wrappers of FORTRAN LAPACK General Tridiagonal Matrix functions.
+!
+
+subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
+    callstatement (*f2py_func)(&n, &nrhs, dl, d, du, b, &n, &info);
+    callprotoargument F_INT*, F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype> dimension(n-1), intent(in,out,copy,out=du2), depend(d,n) :: dl
+    <ftype> dimension(n), intent(in,out,copy) :: d
+    <ftype> dimension(n-1), intent(in,out,copy), depend(n) :: du
+    <ftype> dimension(n,nrhs), intent(in,out,copy,out=x), depend(n), check(shape(b,0)==n) :: b
+    integer intent(out) :: info
+
+end subroutine <prefix>gtsv
+
+
+subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
+    ! dl, d, du, du2, ipiv, info  = gttrf(dl, d, du, [overwrite_dl=0, overwrite_d=0, overwrite_du=0])
+    ! ?GTTRF computes an LU factorization of a tridiagonal matrix A
+    ! using elimination with partial pivoting and row interchanges.
+    !
+    ! The factorization has the form
+    !    A = L * U
+    !
+    ! where L is a product of permutation and unit lower bidiagonal
+    ! matrices and U is upper triangular with nonzeros in only the main
+    ! diagonal and first two superdiagonals.
+    callstatement (*f2py_func)(&n, dl, d, du, du2, ipiv, &info)
+    callprotoargument F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
+
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: dl
+    <ftype> intent(in,out,copy), dimension(n) :: d
+    <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: du
+    <ftype> intent(out), depend(n), dimension(n-2) :: du2
+    integer intent(out), depend(n), dimension(n) :: ipiv
+    integer intent(out) :: info
+
+end subroutine <prefix>gttrf
+
+
+subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
+    ! x, info  = gttrs(dl, d, du, du2, ipiv, b, trans="N", overwrite_b=0)
+    !
+    ! ?GTTRS solves one of the systems of equations:
+    ! A*X = B  or  A**T*X = B,
+    ! with a tridiagonal matrix A using the LU factorization computed
+    ! by ?GTTRF.
+    callstatement (*f2py_func)(trans, &n, &nrhs, dl, d, du, du2, ipiv, b, &ldb, &info)
+    callprotoargument char*, F_INT*, F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, <ctype>*, F_INT*, F_INT*
+    threadsafe
+
+    character optional, intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = "N"
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    integer intent(hide), depend(b) :: nrhs = max(1, shape(b, 1))
+    integer intent(hide), depend(n) :: ldb = max(1, n)
+    <ftype> intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype> intent(in), dimension(n) :: d
+    <ftype> intent(in), depend(n), dimension(n - 1) :: du
+    <ftype> intent(in), depend(n), dimension(n - 2) :: du2
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
+    integer intent(out) :: info
+
+end subroutine gttrs
+
+
+subroutine <prefix2>gtcon(norm,n,dl,d,du,du2,ipiv,anorm,rcond,work,iwork,info)
+    ! ?GTCON estimates the reciprocal of the condition number of a real
+    ! tridiagonal matrix A using the LU factorization as computed by
+    ! ?GTTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as RCOND = 1 / (ANORM * norm(inv(A))).
+    threadsafe
+    callstatement (*f2py_func)(norm,&n,dl,d,du,du2,ipiv,&anorm,&rcond,work,iwork,&info)
+    callprotoargument char*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    <ftype2> intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype2> intent(in), dimension(n) :: d
+    <ftype2> intent(in), depend(n), dimension(n - 1) :: du
+    <ftype2> intent(in), depend(n), dimension(n - 2) :: du2
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(hide, cache), dimension(2*n), depend(n) :: work
+    integer intent(hide, cache), dimension(n), depend(n) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>gtcon
+
+
+subroutine <prefix2c>gtcon(norm,n,dl,d,du,du2,ipiv,anorm,rcond,work,info)
+    ! ?GTCON estimates the reciprocal of the condition number of a real
+    ! tridiagonal matrix A using the LU factorization as computed by
+    ! ?GTTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as RCOND = 1 / (ANORM * norm(inv(A))).
+    threadsafe
+    callstatement (*f2py_func)(norm,&n,dl,d,du,du2,ipiv,&anorm,&rcond,work,&info)
+    callprotoargument char*, F_INT*, <ctype2c>*, <ctype2c>*, <ctype2c>*, <ctype2c>*, F_INT*, <ctype2>*, <ctype2>*, <ctype2c>*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    <ftype2c> intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype2c> intent(in), dimension(n) :: d
+    <ftype2c> intent(in), depend(n), dimension(n - 1) :: du
+    <ftype2c> intent(in), depend(n), dimension(n - 2) :: du2
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2c> intent(hide, cache), dimension(2*n), depend(n) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2c>gtcon
+
+
+subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
+    ! ?GTSVX uses the LU factorization to compute the solution to a real
+    ! system of linear equations A * X = B or A**T * X = B,
+    ! where A is a tridiagonal matrix of order N and X and B are N-by-NRHS
+    ! matrices.
+    !
+    ! Error bounds on the solution and a condition estimate are also
+    !provided.
+    callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
+
+    character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
+    character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2> intent(in), depend(n), dimension(MAX(0, n-1)) :: dl
+    <ftype2> intnet(in), dimension(n) :: d
+    <ftype2> intent(in), depend(n), dimension(MAX(0, n-1)) :: du
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: dlf
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: df
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: duf
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-2)) :: du2
+    integer optional, intent(in,out), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in), dimension(ldb, nrhs) :: b
+    integer intent(hide), check(ldb >= n), depend(b) :: ldb = max(1, shape(b, 0))
+    <ftype2> intent(out), dimension(ldx,nrhs) :: x
+    integer intent(hide) :: ldx = MAX(1, shape(b, 0))
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: ferr
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: berr
+    <ftype2> intent(hide, cache), dimension(3*n),depend(n) :: work
+    integer intent(hide, cache), dimension(n), depend(n) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>gtsvx
+
+
+subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,rwork,info)
+    ! ?GTSVX uses the LU factorization to compute the solution to a
+    ! complex system of linear equations A * X = B or A**T * X = B,
+    ! where A is a tridiagonal matrix of order N and X and B are N-by-NRHS
+    ! matrices.
+    !
+    ! Error bounds on the solution and a condition estimate are also
+    !provided.
+    callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,F_INT*
+
+    character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
+    character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2c> intent(in), depend(n), dimension(MAX(0, n-1)) :: dl
+    <ftype2c> intnet(in), dimension(n) :: d
+    <ftype2c> intent(in), depend(n), dimension(MAX(0, n-1)) :: du
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: dlf
+    <ftype2c> optional, intent(in,out), depend(n), dimension(n) :: df
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: duf
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-2)) :: du2
+    integer optional, intent(in,out), depend(n), dimension(n) :: ipiv
+    <ftype2c> intent(in), dimension(ldb, nrhs) :: b
+    integer intent(hide), check(ldb >= n), depend(b) :: ldb = max(1, shape(b, 0))
+    <ftype2c> intent(out), dimension(ldx,nrhs) :: x
+    integer intent(hide) :: ldx = MAX(1, shape(b, 0))
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: ferr
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: berr
+    <ftype2c> dimension(2*n),depend(n),intent(hide,cache) :: work
+    <ftype2> intent(hide,cache),dimension(n),depend(n) :: rwork
+    integer intent(out) :: info
+
+end subroutine <prefix2c>gtsvx
+
+
+!
+! Eigenvalue routines
+!
+
+
+subroutine <prefix2>stev(d,e,compute_v,n,z,ldz,work,info)
+    ! computes all eigenvalues, and, optionally eigvectors of a real,
+    ! symmetric tridiagonal matrix.
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),&n,d,e,z,&ldz,work,&info)
+    callprotoargument char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*
+
+    integer optional,intent(in):: compute_v = 1
+    <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
+    integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
+    <ftype2> depend(n),dimension(MAX(n-1,1)),intent(in,copy) :: e
+    integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+    <ftype2> dimension(ldz,(compute_v?n:1)),intent(out),depend(n,ldz) :: z
+    <ftype2> dimension((compute_v?MAX(1,2*n-2):1)),depend(n),intent(hide) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2>stev
+
+
+subroutine <prefix2>stebz(d,e,range,vl,vu,il,iu,tol,order,n,work,iwork,m,nsplit,w,iblock,isplit,info)
+    ! computes all or selected eigenvalues of a real, symmetric tridiagonal
+    ! matrix.
+
+    callstatement (*f2py_func)((range>0?(range==1?"V":"I"):"A"),order,&n,&vl,&vu,&il,&iu,&tol,d,e,&m,&nsplit,w,iblock,isplit,work,iwork,&info)
+    callprotoargument char*,char*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*
+
+    <ftype2> dimension(n),intent(in) :: d
+    <ftype2> dimension(n-1),depend(n),intent(in) :: e
+    <ftype2> intent(in) :: vl
+    <ftype2> intent(in) :: vu
+    character intent(in) :: order
+    integer intent(in) :: il
+    integer intent(in) :: iu
+    <ftype2> intent(in) :: tol
+    integer intent(in) :: range
+    integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
+    <ftype2> dimension(4*n),depend(n),intent(hide) :: work
+    integer dimension(3*n),depend(n),intent(hide) :: iwork
+    integer intent(out) :: m
+    integer intent(hide) :: nsplit
+    <ftype2> dimension(n),depend(n),intent(out) :: w
+    integer dimension(n),depend(n),intent(out) :: iblock
+    integer dimension(n),depend(n),intent(out) :: isplit
+    integer intent(out) :: info
+
+end subroutine <prefix2>stebz
+
+
+subroutine <prefix2>sterf(d,e,n,info)
+    ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
+
+    callstatement (*f2py_func)(&n,d,e,&info)
+    callprotoargument F_INT*,<ctype2>*,<ctype2>*,F_INT*
+
+    <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
+    <ftype2> dimension(n-1),depend(n),intent(in,copy) :: e
+    integer depend(d),intent(hide) :: n = shape(d,0)
+    integer intent(out) :: info
+
+end subroutine <prefix2>sterf
+
+
+subroutine <prefix2>stein(d,e,w,iblock,isplit,m,n,z,ldz,work,iwork,ifail,info)
+    ! computes eigenvectors corresponding to eigenvalues of a real, symmetric
+    ! tridiagonal matrix.
+
+    callstatement (*f2py_func)(&n,d,e,&m,w,iblock,isplit,z,&ldz,work,iwork,ifail,&info)
+    callprotoargument F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
+
+    <ftype2> dimension(n),intent(in) :: d
+    <ftype2> dimension(n-1),depend(n),intent(in) :: e
+    <ftype2> dimension(m),intent(in) :: w
+    integer depend(w),intent(hide) :: m = shape(w,0)
+    integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
+    integer dimension(n),depend(n),intent(in) :: iblock
+    integer dimension(n),depend(n),intent(in) :: isplit
+    <ftype2> dimension(ldz,m),intent(out) :: z
+    integer depend(n),intent(hide) :: ldz = n
+    <ftype2> dimension(5*n),intent(hide) :: work
+    integer dimension(n),intent(hide) :: iwork
+    integer dimension(m),depend(m),intent(hide) :: ifail
+    integer intent(out) :: info
+
+end subroutine <prefix2>stein
+
+
+subroutine <prefix2>stemr(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
+    ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,work,&lwork,iwork,&liwork,&info)
+    callprotoargument char*,char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
+
+    <ftype2> dimension(n),intent(in,copy) :: d
+    <ftype2> dimension(n),intent(in) :: e
+    integer intent(in) :: range
+    <ftype2> intent(in) :: vl
+    <ftype2> intent(in) :: vu
+    integer intent(in) :: il
+    integer intent(in) :: iu
+    integer optional,intent(in) :: compute_v = 1
+    integer intent(hide),depend(d),check(n>0) :: n = shape(d,0)
+    integer intent(out) :: m
+    <ftype2> dimension(n),depend(n),intent(out) :: w
+    <ftype2> dimension(n,n),depend(n),intent(out) :: z
+    integer depend(n),intent(hide) :: ldz = (compute_v?n:1)  ! could be made more efficient for index queries
+    integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
+    integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
+    integer intent(hide) :: tryrac = 1
+    integer depend(n),optional,intent(in),check(lwork>=(compute_v?18*n:12*n)) :: lwork = max((compute_v?18*n:12*n),1)
+    <ftype2> dimension(lwork),depend(lwork),intent(hide) :: work
+    integer depend(n),optional,intent(in),check(liwork>=(compute_v?10*n:8*n)) :: liwork = (compute_v?10*n:8*n)
+    integer dimension(liwork),depend(liwork),intent(hide) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>stemr
+
+
+subroutine <prefix2>stemr_lwork(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
+    ! LWORK=-1, LIWORK=-1 call for STEMR
+
+    fortranname <prefix2>stemr
+    callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,&work,&lwork,&iwork,&liwork,&info)
+    callprotoargument char*,char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
+
+    <ftype2> dimension(n),intent(in,copy) :: d
+    <ftype2> dimension(n),intent(in,copy) :: e
+    integer intent(in) :: range
+    <ftype2> intent(in) :: vl
+    <ftype2> intent(in) :: vu
+    integer intent(in) :: il
+    integer intent(in) :: iu
+    integer optional,intent(in) :: compute_v = 1
+    integer intent(hide),depend(d),check(n>0) :: n = shape(d,0)
+    integer intent(hide) :: m
+    <ftype2> dimension(n),depend(n),intent(hide) :: w
+    <ftype2> dimension(n,n),depend(n),intent(hide) :: z
+    integer depend(n),intent(hide) :: ldz = (compute_v?n:1)  ! could be made more efficient for index queries
+    integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
+    integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
+    integer intent(hide) :: tryrac = 1
+    integer intent(hide) :: lwork = -1
+    <ftype2> intent(out) :: work
+    integer intent(hide) :: liwork = -1
+    integer intent(out) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2>stemr_lwork
+
+
+subroutine <prefix2>stevd(d,e,compute_v,n,z,ldz,work,lwork,iwork,liwork,info)
+    ! ?STEVD computes all eigenvalues and, optionally, eigenvectors of a
+    ! real symmetric tridiagonal matrix A. If eigenvectors are desired, it
+    ! uses a divide and conquer algorithm.
+    callstatement (*f2py_func)((compute_v?"V":"N"),&n,d,e,z,&ldz,work,&lwork,iwork,&liwork,&info)
+    callprotoargument char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
+
+    integer optional,intent(in):: compute_v = 1
+    integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
+    <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
+    <ftype2> depend(n),dimension(MAX(n-1,1)),intent(in,copy) :: e
+    <ftype2> dimension(ldz,(compute_v?n:1)),intent(out),depend(n,ldz) :: z
+    integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+    <ftype2> dimension(lwork),depend(lwork),intent(hide) :: work
+    integer depend(n),optional,intent(in),check(lwork>=(compute_v?1+4*n+n*n:1)) :: lwork = (compute_v?1+4*n+n*n:1)
+    integer dimension(liwork),depend(liwork),intent(hide) :: iwork
+    integer depend(n),optional,intent(in),check(liwork>=(compute_v?3+5*n:1)) :: liwork = (compute_v?3+5*n:1)
+    integer intent(out) :: info
+end subroutine <prefix2>stevd

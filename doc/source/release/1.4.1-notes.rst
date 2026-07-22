@@ -1,0 +1,26 @@
+==========================
+SciPy 1.4.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.4.1 is a bug-fix release with no new features
+compared to 1.4.0. Importantly, it aims to fix a problem
+where an older version of pybind11 may cause a segmentation
+fault when imported alongside incompatible libraries.
+
+Authors
+=======
+
+* Ralf Gommers
+* Tyler Reddy
+
+Issues closed for 1.4.1
+-----------------------
+
+* `#11237 <https://github.com/scipy/scipy/issues/11237>`__: Seg fault when importing torch
+
+Pull requests for 1.4.1
+-----------------------
+
+* `#11238 <https://github.com/scipy/scipy/pull/11238>`__: BLD: update minimum pybind11 version to 2.4.0.

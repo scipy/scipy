@@ -1,0 +1,23 @@
+python_sources = [
+  '__init__.py',
+  'test__gcutils.py',
+  'test__testutils.py',
+  'test__util.py',
+  'test_bunch.py',
+  'test_ccallback.py',
+  'test_config.py',
+  'test_deprecation.py',
+  'test_doccer.py',
+  'test_import_cycles.py',
+  'test_public_api.py',
+  'test_scipy_version.py',
+  'test_warnings.py',
+  'test_array_api.py',
+  'test_xp_capabilities.py'
+]
+
+py3.install_sources(
+  python_sources,
+  subdir: 'scipy/_lib/tests',
+  install_tag: 'tests'
+)

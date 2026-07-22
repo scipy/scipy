@@ -1,0 +1,72 @@
+project-includes = ["scipy"]
+project-excludes = ["scipy/*/tests/**"]
+
+ignore-missing-imports = [
+    # pyrefly can't find these on some machines
+    "scipy.__config__",
+    "scipy.version",
+    # vendoring
+    "scipy._external.*",
+    # deps with no types
+    "pytest_run_parallel",
+    "scipy_doctest.*",
+    "sksparse.*",
+    # missing deps
+    "cupyx.*",
+    "scikits.umfpack",
+    # implicit relative imports
+    "_wrappers_common",
+    "convert",
+    "tempita",
+    # extension modules with no stubs
+    "scipy._lib._fpumode",
+    "scipy._lib._uarray._uarray",
+    "scipy.fft._duccfft.pyduccfft",
+    "scipy.integrate._dop",
+    "scipy.integrate._odepack",
+    "scipy.integrate._quadpack",
+    "scipy.integrate._vode",
+    "scipy.interpolate._dierckx",
+    "scipy.interpolate._fitpack",
+    "scipy.linalg._batched_linalg",
+    "scipy.linalg._decomp_update",
+    "scipy.linalg._fblas",
+    "scipy.linalg._fblas_64",
+    "scipy.linalg._flapack",
+    "scipy.linalg._flapack_64",
+    "scipy.linalg._internal_matfuncs",
+    "scipy.optimize._highspy._core",
+    "scipy.optimize._lbfgsb",
+    "scipy.optimize._lsap",
+    "scipy.optimize._minpack",
+    "scipy.optimize._moduleTNC",
+    "scipy.optimize._pava_pybind",
+    "scipy.optimize._slsqplib",
+    "scipy.optimize._zeros",
+    "scipy.ndimage._nd_image",
+    "scipy.ndimage._ni_label",
+    "scipy.ndimage._rank_filter_1d",
+    "scipy.signal._sigtools",
+    "scipy.sparse._sparsetools",
+    "scipy.sparse.linalg._dsolve._superlu",
+    "scipy.sparse.linalg._eigen.arpack._arpacklib",
+    "scipy.spatial._distance_pybind",
+    "scipy.spatial._distance_wrap",
+    "scipy.spatial.cKDTree", # TODO(lucascolley): figure out why this is needed, I can't reproduce locally
+    "scipy.special._gufuncs",
+    "scipy.special._special_ufuncs",
+]
+replace-imports-with-any = [
+    # missing attributes from modules
+    "scipy.linalg.blas.dtrsm",
+    "scipy.sparse.linalg._propack.*",
+]
+
+check-unannotated-defs = false
+errors = { "redundant-cast" = "error" }
+
+# there are currently 960 `bad-override` errors in `scipy/stats/**`, most of which
+# are caused by violations of Liskov's substitution principle in the distributions
+[[sub-config]]
+matches = "scipy/stats/**/*.py"
+errors = { "bad-override" = "ignore" }

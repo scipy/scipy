@@ -1,0 +1,49 @@
+
+ Qhull 2020.2  2020/08/31  (8.0.2)
+
+        http://www.qhull.org
+        http://github.com/qhull/qhull/wiki
+        git@github.com:qhull/qhull.git
+        http://www.geomview.org
+
+Qhull computes convex hulls, Delaunay triangulations, Voronoi diagrams,
+furthest-site Voronoi diagrams, and halfspace intersections about a point.
+It runs in 2-d, 3-d, 4-d, or higher.  It implements the Quickhull algorithm
+for computing convex hulls.   Qhull handles round-off errors from floating
+point arithmetic.  It can approximate a convex hull.
+
+The program includes options for hull volume, facet area, partial hulls,
+input transformations, randomization, tracing, multiple output formats, and
+execution statistics.  The program can be called from within your application.
+You can view the results in 2-d, 3-d and 4-d with Geomview.
+
+Download Qhull:
+
+        http://www.qhull.org/download
+        git@github.com:qhull/qhull.git
+ 
+Reference:
+
+        Barber, C. B., D.P. Dobkin, and H.T. Huhdanpaa, "The
+        Quickhull Algorithm for Convex Hulls," ACM Trans. on
+        Mathematical Software, 22(4):469-483, Dec. 1996.
+        http://portal.acm.org/citation.cfm?doid=235815.235821
+        http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.117.405
+
+Abstract:
+
+The convex hull of a set of points is the smallest convex set that contains
+the points.  This article presents a practical convex hull algorithm that
+combines the two-dimensional Quickhull Algorithm with  the general dimension
+Beneath-Beyond Algorithm.  It is similar to the randomized, incremental
+algorithms for convex hull and Delaunay triangulation.  We provide empirical
+evidence that the algorithm runs faster when the input contains non-extreme
+points, and that it uses less memory.
+
+Computational geometry algorithms have traditionally assumed that input sets
+are well behaved.  When an algorithm is implemented with floating point
+arithmetic, this assumption can lead to serious errors.  We briefly describe
+a solution to this problem when computing the convex hull in two, three, or
+four dimensions.  The output is a set of "thick" facets that contain all
+possible exact convex hulls of the input.   A variation is effective in five
+or more dimensions.

@@ -1,0 +1,166 @@
+! Signatures for f2py-wrappers of FORTRAN LAPACK General Banded Matrix functions.
+!
+
+subroutine <prefix>gbsv(n,kl,ku,nrhs,ab,piv,b,info)
+     ! lub,piv,x,info = gbsv(kl,ku,ab,b,overwrite_ab=0,overwrite_b=0)
+    ! Solve A * X = B
+    ! A = P * L * U
+    ! A is a band matrix of order n with kl subdiagonals and ku superdiagonals
+    ! starting at kl-th row.
+    ! X, B are n-by-nrhs matrices
+ 
+    callstatement {F_INT i=2*kl+ku+1;(*f2py_func)(&n,&kl,&ku,&nrhs,ab,&i,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
+    callprotoargument F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
+    integer depend(ab),intent(hide):: n = shape(ab,1)
+    integer intent(in) :: kl
+    integer intent(in) :: ku
+    integer depend(b),intent(hide) :: nrhs = shape(b,1)
+    <ftype> dimension(2*kl+ku+1,n),depend(kl,ku), check(2*kl+ku+1==shape(ab,0)) :: ab
+    integer dimension(n),depend(n),intent(out) :: piv
+    <ftype> dimension(n,nrhs),depend(n),check(shape(ab,1)==shape(b,0)) :: b
+    integer intent(out) :: info
+    intent(in,out,copy,out=x) b
+    intent(in,out,copy,out=lub) ab
+
+end subroutine <prefix>gbsv
+   
+subroutine <prefix>gbtrf(m,n,ab,kl,ku,ldab,ipiv,info)
+    ! in :Band:dgbtrf.f
+    ! lu,ipiv,info = dgbtrf(ab,kl,ku,[m,n,ldab,overwrite_ab])
+    ! Compute  an  LU factorization of a real m-by-n band matrix
+
+    ! threadsafe  ! FIXME: should this be added ?
+
+    callstatement {F_INT i;(*f2py_func)(&m,&n,&kl,&ku,ab,&ldab,ipiv,&info); for(i=0,n=MIN(m,n);i\<n;--ipiv[i++]);}
+    callprotoargument F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*
+
+    ! let the default be a square matrix:
+    integer optional,depend(ab) :: m=shape(ab,1)
+    integer optional,depend(ab) :: n=shape(ab,1)
+    integer :: kl
+    integer :: ku
+
+    <ftype> dimension(ldab,n),intent(in,out,copy,out=lu) :: ab
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=max(shape(ab,0),1)
+    integer dimension(MIN(m,n)),depend(m,n),intent(out) :: ipiv
+    integer intent(out):: info
+
+end subroutine <prefix>gbtrf
+
+subroutine <prefix>gbtrs(ab,kl,ku,b,ipiv,trans,n,nrhs,ldab,ldb,info) ! in :Band:dgbtrs.f
+    ! x,info = dgbtrs(ab,kl,ku,b,ipiv,[trans,n,ldab,ldb,overwrite_b])
+    ! solve a system of linear equations A * X = B or A' * X = B
+    ! with a general band matrix A using the  LU  factorization
+    ! computed by DGBTRF
+    !
+    ! TRANS   Specifies the form of the system of equations.
+    !  0  = 'N':  A * X =B  (No transpose)
+    !  1  = 'T':  A'* X = B  (Transpose)
+    !  2  = 'C':  A'* X = B  (Conjugate transpose = Transpose)
+    
+    callstatement {F_INT i;for(i=0;i\<n;++ipiv[i++]);(*f2py_func)((trans>0?(trans==1?"T":"C"):"N"),&n,&kl,&ku,&nrhs,ab,&ldab,ipiv,b,&ldb,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*,F_INT*,F_INT *,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
+    !character optional:: trans='N'
+    integer optional:: trans=0
+    integer optional,depend(ab) :: n=shape(ab,1)
+    integer :: kl
+    integer :: ku
+    integer intent(hide),depend(b):: nrhs=shape(b,1)
+
+    <ftype> dimension(ldab,n),intent(in) :: ab
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+
+    integer dimension(n),intent(in) :: ipiv
+    <ftype> dimension(ldb,nrhs),intent(in,out,copy,out=x) :: b
+    integer optional,check(shape(b,0)==ldb),depend(b) :: ldb=shape(b,0)
+    !integer optional,check(shape(b,0)==ldb),depend(b) :: ldb=shape(b,0)
+    integer intent(out):: info
+
+end subroutine <prefix>gbtrs
+
+
+subroutine <prefix2>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,iwork,info)
+    ! ?GBCON estimates the reciprocal of the condition number of a real
+    ! general band matrix A, in either the 1-norm or the infinity-norm,
+    ! using the LU factorization computed by ?GBTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as
+    ! RCOND = 1 / ( norm(A) * norm(inv(A)) ).
+    threadsafe
+    callstatement {F_INT i;for(i=0;i\<n;++ipiv[i++]);(*f2py_func)(norm,&n,&kl,&ku,ab,&ldab,ipiv,&anorm,&rcond,work,iwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype2>*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer depend(ab),intent(hide) :: n=shape(ab,1)
+    integer intent(in),check(kl>=0) :: kl
+    integer intent(in),check(ku>=0) :: ku
+    <ftype2> dimension(ldab,n),intent(in) :: ab
+    integer optional,intent(in),check(ldab >= (2*kl+ku+1)),depend(ab,kl,ku) :: ldab=2*kl+ku+1
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(hide, cache), dimension(3*n), depend(n) :: work
+    integer intent(hide, cache), dimension(n), depend(n) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2>gbcon
+
+
+subroutine <prefix2c>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,rwork,info)
+    ! ?GBCON estimates the reciprocal of the condition number of a complex
+    ! general band matrix A, in either the 1-norm or the infinity-norm,
+    ! using the LU factorization computed by ?GBTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as
+    ! RCOND = 1 / ( norm(A) * norm(inv(A)) ).
+    threadsafe
+    callstatement {F_INT i;for(i=0;i\<n;++ipiv[i++]);(*f2py_func)(norm,&n,&kl,&ku,ab,&ldab,ipiv,&anorm,&rcond,work,rwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype2c>*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2c>*, <ctype2>*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer depend(ab),intent(hide) :: n=shape(ab,1)
+    integer intent(in),check(kl >= 0) :: kl
+    integer intent(in),check(ku >= 0) :: ku
+    <ftype2c> dimension(ldab,n),intent(in) :: ab
+    integer optional,intent(in),depend(ab),check(ldab >= (2*kl+ku+1)),depend(ab,kl,ku) :: ldab=2*kl+ku+1
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2c> intent(hide, cache), dimension(2*n), depend(n) :: work
+    <ftype2> intent(hide, cache), dimension(n), depend(n) :: rwork
+    integer intent(out) :: info
+end subroutine <prefix2c>gbcon
+
+
+function <prefix>langb(norm,n,kl,ku,ab,ldab,work) result(n2)
+    ! ?LANGB  returns the value of the one norm,  or the Frobenius norm, or
+    ! the  infinity norm,  or the element of  largest absolute value  of an
+    ! n by n band matrix  A,  with kl sub-diagonals and ku super-diagonals.
+    !
+    ! ?LANGB = ( max(abs(A(i,j))), NORM = 'M' or 'm'
+    !          (
+    !          ( norm1(A),         NORM = '1', 'O' or 'o'
+    !          (
+    !          ( normI(A),         NORM = 'I' or 'i'
+    !          (
+    !          ( normF(A),         NORM = 'F', 'f', 'E' or 'e'
+    !
+    ! where  norm1  denotes the  one norm of a matrix (maximum column sum),
+    ! normI  denotes the  infinity norm  of a matrix  (maximum row sum) and
+    ! normF  denotes the  Frobenius norm of a matrix (square root of sum of
+    ! squares).  Note that  max(abs(A(i,j)))  is not a consistent matrix norm.
+    threadsafe
+    <ftypereal> <prefix>langb, n2
+    callstatement <prefix>langb_return_value = (*f2py_func)(norm, &n, &kl, &ku, ab, &ldab, work)
+    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype>*, F_INT*, <ctypereal>*
+    intent(c) <prefix>langb
+    fortranname F_FUNC(<prefix>langb,<S,C,D,Z>LANGB)
+
+    character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e') :: norm
+    integer depend(ab),intent(hide) :: n=shape(ab,1)
+    integer intent(in),check(kl>=0) :: kl
+    integer intent(in),check(ku>=0) :: ku
+    <ftype> dimension(ldab,n),intent(in) :: ab
+    integer optional,intent(in),depend(ab),check(ldab >= (kl+ku+1)),depend(ab,kl,ku) :: ldab=kl+ku+1
+    <ftypereal> intent(hide,cache),depend(n),dimension(n+1) :: work
+end function <prefix>langb
+

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="353.32" height="222.72" version="1.1" viewBox="0 0 88.33 55.681" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs>
+<linearGradient id="h" x1="87.758" x2="101.25" y1="108.88" y2="108.88" gradientTransform="matrix(.6835 0 0 .99756 -35.284 71.09)" gradientUnits="userSpaceOnUse">
+<stop stop-color="#fff" offset="0"/>
+<stop stop-color="#fff" stop-opacity="0" offset="1"/>
+</linearGradient>
+</defs>
+<g transform="translate(-16.944 -151.91)">
+<rect x="17.077" y="152.04" width="87.791" height="55.416" fill="#fff" stroke="#fff" stroke-width=".26496"/>
+</g>
+<g transform="translate(-16.944 -151.91)">
+<rect x="27.5" y="158.82" width="40" height="41.179" fill="#00f" fill-opacity=".17073"/>
+<path d="m60 191.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m70 191.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m80 191.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m50 191.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m40 191.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m30 191.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m90 191.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<text x="68.322258" y="193.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="68.322258" y="193.48959" stroke-width=".25">50</tspan></text>
+<text x="78.289703" y="193.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="78.289703" y="193.48959" stroke-width=".25">52</tspan></text>
+<text x="88.319656" y="193.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="88.319656" y="193.48959" stroke-width=".25">54</tspan></text>
+<text x="28.328768" y="193.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="28.328768" y="193.48959">42</tspan><tspan x="28.328768" y="196.82294"/></text>
+<text x="58.280586" y="193.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="58.280586" y="193.48959" stroke-width=".25">48</tspan></text>
+<text x="48.312489" y="193.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="48.312489" y="193.48959" stroke-width=".25">46</tspan></text>
+<text x="38.33918" y="193.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="38.33918" y="193.48959" stroke-width=".25">44</tspan></text>
+<text x="104.14687" y="192.41811" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="104.14687" y="192.41811" stroke-width=".25"><tspan font-style="italic">t</tspan></tspan></text>
+<rect id="g" x="92.5" y="195" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<text x="93.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="93.317047" y="198.45312">55</tspan><tspan x="93.317047" y="201.78647"/></text>
+<rect id="f" x="57.5" y="195" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<rect id="e" x="62.5" y="195" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<rect id="d" x="67.5" y="195" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<rect id="c" x="72.5" y="195" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<rect x="77.5" y="195" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<rect x="82.5" y="195" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<rect x="87.5" y="195" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<text x="88.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="88.317047" y="198.45312">54</tspan><tspan x="88.317047" y="201.78647"/></text>
+<text x="83.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="83.317047" y="198.45312">53</tspan><tspan x="83.317047" y="201.78647"/></text>
+<text x="78.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="78.317047" y="198.45312">52</tspan><tspan x="78.317047" y="201.78647"/></text>
+<text x="73.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="73.317047" y="198.45312">51</tspan><tspan x="73.317047" y="201.78647"/></text>
+<text x="68.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="68.317047" y="198.45312">50</tspan><tspan x="68.317047" y="201.78647"/></text>
+<text x="63.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="63.317047" y="198.45312">49</tspan><tspan x="63.317047" y="201.78647"/></text>
+<text x="58.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="58.317047" y="198.45312">48</tspan><tspan x="58.317047" y="201.78647"/></text>
+<use id="b" transform="translate(-20)" xlink:href="#f"/>
+<use id="a" transform="translate(-20)" xlink:href="#e"/>
+<use transform="translate(-20)" xlink:href="#d"/>
+<use transform="translate(-20)" xlink:href="#c"/>
+<text x="53.323559" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="53.323559" y="198.45312">47</tspan><tspan x="53.323559" y="201.78647"/></text>
+<text x="48.322258" y="198.4707" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="48.322258" y="198.4707">46</tspan><tspan x="48.322258" y="201.80405"/></text>
+<text x="43.354809" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="43.354809" y="198.45312">45</tspan><tspan x="43.354809" y="201.78647"/></text>
+<text x="38.313141" y="198.47202" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="38.313141" y="198.47202">44</tspan><tspan x="38.313141" y="201.80536"/></text>
+<g transform="translate(32.5,75)">
+<rect x="40" y="85" width="30" height="5" fill="#fff" fill-opacity=".63821" stroke="#000" stroke-width=".25"/>
+<path d="m45 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m55 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m60 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m65 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m50 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<rect x="55" y="85" width="5" height="5" fill="#ccc" fill-opacity=".63821"/>
+<text x="55.613281" y="88.245605" fill="#666666" font-family="sans-serif" font-size="2px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="55.613281" y="88.245605" fill="#666666" font-size="2px" stroke-width=".25">mid</tspan></text>
+</g>
+<rect x="72.5" y="160" width="30" height="5" fill="#fff" fill-opacity=".75203" stroke="#fff" stroke-opacity=".74797" stroke-width=".25"/>
+<g transform="translate(2.5,90)">
+<rect x="40" y="85" width="30" height="5" fill="#fff" fill-opacity=".63821" stroke="#000" stroke-width=".25"/>
+<path d="m45 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m55 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m60 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m65 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m50 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<rect x="55" y="85" width="5" height="5" fill="#ccc" fill-opacity=".63821"/>
+<text x="55.613281" y="88.245605" fill="#666666" font-family="sans-serif" font-size="2px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="55.613281" y="88.245605" fill="#666666" font-size="2px" stroke-width=".25">mid</tspan></text>
+</g>
+<g transform="translate(12.5,85)">
+<rect x="40" y="85" width="30" height="5" fill="#fff" fill-opacity=".63821" stroke="#000" stroke-width=".25"/>
+<path d="m45 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m55 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m60 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m65 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m50 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<rect x="55" y="85" width="5" height="5" fill="#ccc" fill-opacity=".63821"/>
+<text x="55.613281" y="88.245605" fill="#666666" font-family="sans-serif" font-size="2px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="55.613281" y="88.245605" fill="#666666" font-size="2px" stroke-width=".25">mid</tspan></text>
+</g>
+<g transform="translate(22.5,80)">
+<rect x="40" y="85" width="30" height="5" fill="#fff" fill-opacity=".63821" stroke="#000" stroke-width=".25"/>
+<path d="m45 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m55 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m60 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m65 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m50 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<rect x="55" y="85" width="5" height="5" fill="#ccc" fill-opacity=".63821"/>
+<text x="55.613281" y="88.245605" fill="#666666" font-family="sans-serif" font-size="2px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="55.613281" y="88.245605" fill="#666666" font-size="2px" stroke-width=".25">mid</tspan></text>
+</g>
+<g transform="translate(-7.5,95)">
+<rect x="40" y="85" width="30" height="5" fill="#fff" fill-opacity=".63821" stroke="#000" stroke-width=".25"/>
+<path d="m45 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m55 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m60 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m65 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<path d="m50 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<rect x="55" y="85" width="5" height="5" fill="#ccc" fill-opacity=".63821"/>
+<text x="55.613281" y="88.245605" fill="#666666" font-family="sans-serif" font-size="2px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="55.613281" y="88.245605" fill="#666666" font-size="2px" stroke-width=".25">mid</tspan></text>
+</g>
+<text transform="rotate(-19.855)" x="-40.724857" y="185.89046" font-family="sans-serif" font-size="7.2054px" stroke-width=".67551" style="line-height:1.25" xml:space="preserve"><tspan x="-40.724857" y="185.89046" font-weight="bold" stroke-width=".67551">...</tspan></text>
+<use transform="translate(-10)" xlink:href="#b"/>
+<use transform="translate(-10)" xlink:href="#a"/>
+<text x="33.345043" y="198.4707" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="33.345043" y="198.4707">43</tspan><tspan x="33.345043" y="201.80405"/></text>
+<text x="28.371737" y="198.48959" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="28.371737" y="198.48959">42</tspan><tspan x="28.371737" y="201.82294"/></text>
+<rect x="24.699" y="158.63" width="9.2213" height="42.138" fill="url(#h)"/>
+<g>
+<path d="m22.375 155v34.807h0.25v-34.807z" color="#000000" style="-inkscape-stroke:none"/>
+<path d="m22.5 155 0.625 0.625-0.625-2.1875-0.625 2.1875z" fill-rule="evenodd" stroke-width=".125"/>
+</g>
+<path d="m21.25 177.5h2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m21.25 182.5h2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m21.25 172.5h2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m21.25 167.5h2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m21.25 162.5h2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<text x="17.322256" y="173.4707" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="17.322256" y="173.4707" stroke-width=".25">25</tspan></text>
+<text x="17.28059" y="178.47202" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="17.28059" y="178.47202" stroke-width=".25">24</tspan></text>
+<text x="17.312492" y="183.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="17.312492" y="183.48959" stroke-width=".25">23</tspan></text>
+<text x="17.289703" y="168.47202" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="17.289703" y="168.47202" stroke-width=".25">26</tspan></text>
+<text x="17.319653" y="163.48959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="17.319653" y="163.48959" stroke-width=".25">27</tspan></text>
+<text x="20.06735" y="154.08342" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="20.06735" y="154.08342" font-style="italic" stroke-width=".25">p</tspan></text>
+<text x="24.877604" y="162.9935" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="24.877604" y="162.9935" stroke-width=".25"><tspan font-style="italic">p</tspan><tspan baseline-shift="sub" font-size="65%">max</tspan> </tspan></text>
+<text x="25" y="178.12952" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="25" y="178.12952" font-style="italic" stroke-width=".25"><tspan>p<tspan baseline-shift="sub" font-size="65%">u</tspan></tspan><tspan baseline-shift="sub" font-size="65%">b</tspan> </tspan></text>
+<g>
+<path d="m22.5 190h80" color="#000000" stroke-width=".25px" style="-inkscape-stroke:none"/>
+<path d="m22.5 189.88v0.25h80v-0.25z" color="#000000" style="-inkscape-stroke:none"/>
+<path d="m102.5 190-0.625 0.625 2.1875-0.625-2.1875-0.625z" fill-rule="evenodd" stroke-width=".125"/>
+</g>
+<text transform="scale(.25)" font-family="sans-serif" font-size="10.667px" style="line-height:1.25;shape-inside:url(#rect12253);white-space:pre" xml:space="preserve"/>
+<path d="m94.875 201.25v2.5h0.25v-2.5z" color="#000000" fill="#00f" style="-inkscape-stroke:none"/>
+<g fill="#00f" fill-rule="evenodd">
+<path d="m95 200.5c0.125 0.375 0.375 0.875 0.625 1.125 0 0-0.5 0-0.625-0.25-0.125 0.25-0.625 0.25-0.625 0.25 0.25-0.25 0.5-0.75 0.625-1.125z" color="#000000" stroke-width=".125pt" style="-inkscape-stroke:none"/>
+<path d="m95 200.24-0.07813 0.23828c-0.12149 0.36446-0.37511 0.86144-0.60547 1.0918l-0.14258 0.14257h0.20118s0.13237 3.2e-4 0.2832-0.0332c0.12395-0.0275 0.24818-0.10895 0.3418-0.2168 0.09361 0.10785 0.21785 0.18926 0.3418 0.2168 0.15083 0.0335 0.2832 0.0332 0.2832 0.0332h0.20117l-0.14258-0.14257c-0.23036-0.23036-0.48398-0.72734-0.60547-1.0918zm0 0.42969c0.11535 0.30251 0.28301 0.6151 0.47656 0.85742-0.04136-4e-3 -0.04724-8e-5 -0.09961-0.0117-0.13042-0.029-0.26011-0.0886-0.30273-0.17383l-0.074218-0.14846-0.07422 0.14844c-0.04262 0.0853-0.17232 0.14485-0.30273 0.17383-0.05237 0.0116-0.05825 7e-3 -0.09961 0.0117 0.19355-0.24232 0.36122-0.55491 0.47656-0.85742z" color="#000000" style="-inkscape-stroke:none"/>
+</g>
+<text x="93.5" y="206.09033" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="93.5" y="206.09033" fill="#0000ff" stroke-width=".25"><tspan font-style="italic">k</tspan><tspan baseline-shift="sub" font-size="65%">max</tspan></tspan></text>
+<path d="m44.875 201.25v2.5h0.25v-2.5z" color="#000000" fill="#00f"/>
+<g fill="#00f" fill-rule="evenodd">
+<path d="m45 200.5c0.125 0.375 0.375 0.875 0.625 1.125 0 0-0.5 0-0.625-0.25-0.125 0.25-0.625 0.25-0.625 0.25 0.25-0.25 0.5-0.75 0.625-1.125z" color="#000000" stroke-width=".125pt"/>
+<path d="m45 200.24-0.07813 0.23828c-0.12149 0.36446-0.37511 0.86144-0.60547 1.0918l-0.14258 0.14257h0.20118s0.13237 3.2e-4 0.2832-0.0332c0.12395-0.0275 0.24818-0.10895 0.3418-0.2168 0.09361 0.10785 0.21785 0.18926 0.3418 0.2168 0.15083 0.0335 0.2832 0.0332 0.2832 0.0332h0.20117l-0.14258-0.14257c-0.23036-0.23036-0.48398-0.72734-0.60547-1.0918zm0 0.42969c0.11535 0.30251 0.28301 0.6151 0.47656 0.85742-0.04136-4e-3 -0.04724-8e-5 -0.09961-0.0117-0.13042-0.029-0.26011-0.0886-0.30273-0.17383l-0.074218-0.14846-0.07422 0.14844c-0.04262 0.0853-0.17232 0.14485-0.30273 0.17383-0.05237 0.0116-0.05825 7e-3 -0.09961 0.0117 0.19355-0.24232 0.36122-0.55491 0.47656-0.85742z" color="#000000"/>
+</g>
+<text x="43.39006" y="206.32681" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="43.39006" y="206.32681" fill="#0000ff" font-style="italic" stroke-width=".25"><tspan>k</tspan><tspan baseline-shift="sub" font-size="65%">ub</tspan> </tspan></text>
+<text x="24.137365" y="198.51303" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="24.137365" y="198.51303" fill="#0000ff" stroke-width=".25"><tspan font-style="italic">k</tspan></tspan></text>
+<use transform="translate(5)" xlink:href="#g"/>
+<text x="98.317047" y="198.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="98.317047" y="198.45312" fill="#0000ff" stroke-width=".25">56</tspan></text>
+<path d="m100 191.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<text x="98.2845" y="193.4707" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="98.2845" y="193.4707" stroke-width=".25">56</tspan></text>
+<text x="49.921501" y="161.80493" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="49.921501" y="161.80493" fill="#0000ff" stroke-width=".25">← Signal <tspan fill="#0000ff" font-family="sans-serif" font-style="italic">x[k]</tspan> </tspan></text>
+</g>
+</svg>

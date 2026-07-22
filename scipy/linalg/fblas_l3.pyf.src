@@ -1,0 +1,222 @@
+! -*- f90 -*-
+! Signatures for f2py-wrappers of FORTRAN LEVEL 3 BLAS functions.
+!
+! Author: Pearu Peterson
+! Created: April 2002
+! Modified: Fabian Pedregosa, 2011; Evgeni Burovski, 2013
+!
+! Implemented:
+!   gemm, symm, hemm, syrk, herk, syr2k, her2k, trmm, trsm
+!
+!
+! Level 3 BLAS
+!
+
+
+subroutine <prefix>gemm(m,n,k,alpha,a,b,beta,c,trans_a,trans_b,lda,ka,ldb,kb)
+  ! Computes a scalar-matrix-matrix product and adds the result to a
+  ! scalar-matrix product.
+  !
+  ! c = gemm(alpha,a,b,beta=0,c=0,trans_a=0,trans_b=0,overwrite_c=0)
+  ! Calculate C <- alpha * op(A) * op(B) + beta * C
+
+  callstatement (*f2py_func)((trans_a?(trans_a==2?"C":"T"):"N"), &
+       (trans_b?(trans_b==2?"C":"T"):"N"),&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&m)
+  callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*, &
+       F_INT*,<ctype>*,<ctype>*,F_INT*
+
+  integer optional,intent(in),check(trans_a>=0 && trans_a <=2) :: trans_a = 0
+  integer optional,intent(in),check(trans_b>=0 && trans_b <=2) :: trans_b = 0
+  <ftype> intent(in) :: alpha
+  <ftype> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype> dimension(lda,ka),intent(in) :: a
+  <ftype> dimension(ldb,kb),intent(in) :: b
+  <ftype> dimension(m,n),intent(in,out,copy),depend(m,n),optional :: c
+  check(shape(c,0)==m && shape(c,1)==n) :: c
+
+  integer depend(a),intent(hide) :: lda = shape(a,0)
+  integer depend(a),intent(hide) :: ka = shape(a,1)
+  integer depend(b),intent(hide) :: ldb = shape(b,0)
+  integer depend(b),intent(hide) :: kb = shape(b,1)
+
+  integer depend(a,trans_a,ka,lda),intent(hide):: m = (trans_a?ka:lda)
+  integer depend(a,trans_a,ka,lda),intent(hide):: k = (trans_a?lda:ka)
+  integer depend(b,trans_b,kb,ldb,k),intent(hide),check(trans_b?kb==k:ldb==k) :: &
+       n = (trans_b?ldb:kb)
+
+end subroutine <prefix>gemm
+
+
+subroutine <prefix6><sy,\0,\0,\0,he,he>mm(m, n, alpha, a, b, beta, c, side, lower, lda, ka, ldb, kb)
+  ! Computes a scalar-matrix-matrix product and adds the result to a
+  ! scalar-matrix product, where one of the matrices is symmetric.
+  !
+  ! c = symm(alpha,a,b,beta=0,c=0,side=0,lower=0,overwrite_c=0)
+  ! Calculate C <- alpha * A * B + beta * C, or
+  !           C <- alpha * B * A + beta * C
+
+  callstatement (*f2py_func)((side?"R":"L"), &
+       (lower?"L":"U"),&m,&n,&alpha,a,&lda,b,&ldb,&beta,c,&m)
+  callprotoargument char*,char*,F_INT*,F_INT*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*, &
+       F_INT*,<ctype6>*,<ctype6>*,F_INT*
+
+  integer optional, intent(in),check(side==0||side==1) :: side = 0
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+
+  <ftype6> intent(in) :: alpha
+  <ftype6> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2,\2,\2>
+
+  <ftype6> dimension(lda,ka),intent(in) :: a
+  <ftype6> dimension(ldb,kb),intent(in) :: b
+  <ftype6> dimension(m,n),intent(in,out,copy),depend(m,n), optional :: c
+  check(shape(c,0)==m && shape(c,1)==n) :: c
+
+  integer depend(a), intent(hide) :: lda=shape(a,0)
+  integer depend(a), intent(hide) :: ka = shape(a,1)
+  integer depend(b), intent(hide) :: ldb = shape(b,0)
+  integer depend(b), intent(hide) :: kb = shape(b, 1)
+
+  integer depend(side, a, lda, b, ldb), intent(hide) :: m= (side ? ldb : lda)
+  integer depend(side, a, lda, ka, b, ldb, kb), intent(hide), &
+        check(side? kb==lda : ka==ldb) :: n = (side ? ka : kb)
+
+end subroutine <prefix6><sy,\0,\0,\0,he,he>mm
+
+
+
+subroutine <prefix6><sy,\0,\0,\0,he,he>rk(n,k,alpha,a,beta,c,trans,lower,lda,ka)
+  !  performs one of the symmetric rank k operations
+  !     C := alpha*A*A**T + beta*C,  or   C := alpha*A**T*A + beta*C,
+  !
+  ! c = syrk(alpha,a,beta=0,c=0,trans=0,lower=0,overwrite_c=0)
+  !
+  callstatement (*f2py_func)((lower?"L":"U"), &
+        (trans?(trans==2?"C":"T"):"N"), &n,&k,&alpha,a,&lda,&beta,c,&n)
+  callprotoargument char*,char*,F_INT*,F_INT*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*, &
+        <ctype6>*,F_INT*
+
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+  integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
+
+  <ftype6> intent(in) :: alpha
+  <ftype6> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2,\2,\2>
+
+  <ftype6> dimension(lda,ka),intent(in) :: a
+  <ftype6> dimension(n,n),intent(in,out,copy),depend(n),optional :: c
+  check(shape(c,0)==n && shape(c,1)==n) :: c
+
+  integer depend(a),intent(hide) :: lda = shape(a,0)
+  integer depend(a),intent(hide) :: ka = shape(a,1)
+
+  integer depend(a, trans, ka, lda), intent(hide) :: n = (trans ? ka : lda)
+  integer depend(a, trans, ka, lda), intent(hide) :: k = (trans ? lda : ka)
+
+end subroutine <prefix6><sy,\0,\0,\0,he,he>rk
+
+
+subroutine <prefix6><sy,\0,\0,\0,he,he>r2k(n,k,alpha,a,b,beta,c,trans,lower,lda,ka, ldb, kb)
+  !  performs one of the symmetric/hermitian rank 2k operations
+  !     C := alpha*A*B**T + alpha*B*A**T + beta*C,  or
+  !     C:=alpha*A**T*B + alpha*B**T*A + beta*C
+  !
+  ! c = syr2k(alpha,a,b,beta=0,c=0,trans=0,lower=0,overwrite_c=0)
+  !
+  callstatement (*f2py_func)((lower?"L":"U"), &
+        (trans?(trans==2?"C":"T"):"N"), &n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&n)
+  callprotoargument char*,char*,F_INT*,F_INT*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*,F_INT*, &
+        <ctype6>*, <ctype6>*,F_INT*
+
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+  integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
+
+  <ftype6> intent(in) :: alpha
+  <ftype6> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2,\2,\2>
+
+  <ftype6> dimension(lda, ka), intent(in) :: a
+  <ftype6> dimension(ldb, kb), intent(in) :: b
+  <ftype6> dimension(n,n),intent(in,out,copy),depend(n),optional :: c
+  check(shape(c,0)==n && shape(c,1)==n) :: c
+
+  integer depend(a),intent(hide) :: lda = shape(a,0)
+  integer depend(a),intent(hide) :: ka = shape(a,1)
+  integer depend(b),intent(hide) :: ldb = shape(b,0)
+  integer depend(b),intent(hide) :: kb = shape(b,1)
+
+  integer depend(a, trans, ka, lda), intent(hide) :: n = (trans ? ka : lda)
+  integer depend(a, b, trans, ka, lda, kb, ldb), intent(hide), &
+        check(trans ? lda==ldb: ka==kb) :: k = (trans ? lda : ka)
+
+end subroutine <prefix6><sy,\0,\0,\0,he,he>r2k
+
+
+subroutine <prefix>trmm(m, n, k, alpha, a, b, lda, ldb, side, lower, trans_a, diag)
+
+  !  performs one of the matrix-matrix operations
+  !
+  !     B := alpha*op( A )*B,   or   B := alpha*B*op( A )
+  !
+  !  where  alpha  is a scalar,  B  is an m by n matrix,  A  is a unit, or
+  !  non-unit,  upper or lower triangular matrix  and  op( A )  is one  of
+  !
+  !     op( A ) = A   or   op( A ) = A**T   or   op( A ) = A**H.
+  !
+  ! c = trmm(alpha, a, b, side=0, lower=0, trans_a=0, diag=0)
+
+  callstatement (*f2py_func)((side?"R":"L"), (lower?"L":"U"),(trans_a?(trans_a==2?"C":"T"):"N"), (diag?"U":"N"), &m, &n, &alpha, a, &lda, b, &ldb)
+  callprotoargument char*, char*, char*, char*, F_INT*, F_INT*, <ctype>*,<ctype>*,F_INT*,<ctype>*, F_INT*
+
+  integer optional, intent(in), check(side==0 || side==1) :: side = 0
+  integer optional, intent(in), check(lower==0 || lower==1) :: lower = 0
+  integer optional, intent(in), check(trans_a>=0 && trans_a <=2) :: trans_a = 0
+  integer optional, intent(in), check(diag==0 || diag==1) :: diag = 0
+
+  <ftype> intent(in) :: alpha
+
+  <ftype> intent(in), dimension(lda, k) :: a
+  <ftype> intent(in, out, copy), dimension(ldb, n) :: b
+
+  integer intent(hide), depend(a) :: lda = MAX(1,shape(a, 0))
+  integer intent(hide), depend(a, n, m, side), check(k>=(side?n:m) && k<=shape(a, 0)) :: k = shape(a, 1)
+
+  integer intent(hide), depend(b) :: ldb = MAX(1,shape(b, 0))
+  integer intent(hide), depend(b) :: m = shape(b, 0)
+  integer intent(hide), depend(b) :: n = shape(b, 1)
+
+end subroutine <prefix>trmm
+
+
+subroutine <prefix>trsm(m, n, alpha, a, b, lda, ldb, side, lower, trans_a, diag)
+  !
+  !  Solves one of the matrix equations
+  !
+  !    op( A )*X = alpha*B,   or   X*op( A ) = alpha*B,
+  !
+  !  where alpha is a scalar, X and B are m by n matrices, A is a unit, or
+  !  non-unit,  upper or lower triangular matrix  and  op( A )  is one  of
+  !
+  !  op( A ) = A   or   op( A ) = A**T.
+  !
+
+  callstatement (*f2py_func)((side?"R":"L"), (lower?"L":"U"), &
+        (trans_a?(trans_a==2?"C":"T"):"N"), (diag?"U":"N"), &m, &n, &alpha, a, &lda, b, &ldb)
+  callprotoargument char*, char*, char*, char*, F_INT*, F_INT*, <ctype>*,<ctype>*,F_INT*,<ctype>*, F_INT*
+
+  integer optional, intent(in), check(side==0 || side==1) :: side = 0
+  integer optional, intent(in), check(lower==0 || lower==1) :: lower = 0
+  integer optional, intent(in), check(trans_a>=0 && trans_a <=2) :: trans_a = 0
+  integer optional, intent(in), check(diag==0 || diag==1) :: diag = 0
+  integer depend(a), intent(hide) :: lda = MAX(shape(a, 0),1)
+  ! integer depend(a), intent(hide) :: k = shape(a, 1)
+  integer depend(b), intent(hide) :: ldb = MAX(shape(b, 0),1)
+  integer depend(b), intent(hide) :: n = shape(b, 1)
+  integer depend(b), intent(hide) :: m = shape(b, 0)
+
+  <ftype> intent(in) :: alpha
+  <ftype> dimension(ldb, n), intent(in, out, copy, out=x) :: b
+
+  <ftype> dimension(lda, *), depend(m, n), intent(in) :: a
+  check(shape(a,0)==shape(a,1)) :: a
+  check(shape(a,0)==(side?n:m)) :: a
+
+end subroutine <prefix>trsm

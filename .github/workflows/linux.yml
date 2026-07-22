@@ -1,0 +1,638 @@
+name: Linux tests
+
+on:
+  push:
+    branches:
+      - main
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+env:
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  CCACHE_MAXSIZE: "250M"
+  # Needed because Pixi doesn't set mtime for compilers
+  CCACHE_COMPILERCHECK: "content"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  test_meson:
+    name: pyrefly (py3.12) & dev deps (py3.15), fast, spin
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.15-dev"] # this run will use python dev versions when available
+        maintenance-branch:
+          - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
+        exclude:
+          - maintenance-branch: true
+            python-version: "3.15-dev"
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+
+      - name: Install Ubuntu dependencies
+        run: |
+          # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+      - name: Install Python packages
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m pip install --group build --group dev-cli --group test-core --group test-mp --group optional-runtime-deps
+
+      - name: Install Python packages from repositories
+        if: matrix.python-version == '3.15-dev' # this run will use python dev versions when available
+        run: |
+          python -m pip install --group build --group dev-cli --group test-core --group test-mp
+          python -m pip install git+https://github.com/numpy/numpy.git
+          python -m pip install git+https://github.com/serge-sans-paille/pythran.git
+          python -m pip install git+https://github.com/mesonbuild/meson.git
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}-${{ matrix.python-version }}
+
+      - name: Setup build and install scipy
+        run: |
+          spin build --release
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+      - name: Check installed files
+        run: |
+          spin check --installed-files --no-build
+
+      - name: Check symbol hiding
+        run: |
+          spin check --symbol-hiding --no-build
+
+      - name: Check usage of install tags
+        run: |
+          rm -r build-install
+          spin build --tags=runtime,python-runtime,devel
+          python tools/linting/check_installation.py build-install --no-tests
+          rm -r build-install
+          spin build --tags=runtime,python-runtime,devel,tests
+          spin check --installed-files --no-build
+
+      - name: Check xp markers
+        run: |
+          spin check --xp-markers --no-build
+
+      - name: Check build-internal dependencies
+        run: ninja -C build -t missingdeps
+
+      - name: Pyrefly
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m pip install --group typecheck
+          pyrefly check --output-format=github
+
+      - name: Test SciPy
+        run: |
+          export OMP_NUM_THREADS=2
+          python -m pip uninstall --yes uarray # avoid deprecation warnings
+          spin test -j3 -- --durations 10 --timeout=60
+
+  #################################################################################
+  test_venv_install:
+    name: Install into venv, cluster only, pyAny/npAny, pip+cluster.test()
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Install Ubuntu dependencies
+        run: |
+          # We're not running the full test suite here, only testing the install
+          # into a venv is working, so leave out optional dependencies. That's
+          # also why we can get away with an old version of OpenBLAS from Ubuntu
+          sudo apt-get update
+          sudo apt-get install -y python3-dev libopenblas-dev pkg-config \
+            ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Create venv, install SciPy
+        run: |
+          python -m venv ../venvs/scipy-venv
+          source ../venvs/scipy-venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install --group test-core
+          # Note that this uses build isolation. That's why we don't need build
+          # dependencies to be installed in the venv itself.
+          python -m pip install . -vv -Csetup-args=--werror
+
+      - name: Basic imports and tests
+        run: |
+          source ../venvs/scipy-venv/bin/activate
+          cd ..
+          python -c "import scipy"
+          python -c "import scipy.linalg"
+          python -c "from scipy import cluster; cluster.test()"
+
+      - name: Create venv inside source tree
+        # This is a regression test for gh-16312
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          # Install build dependencies. Use meson-python from its main branch,
+          # most convenient to test in this job because we're using pip without
+          # build isolation here.
+          python -m pip install --upgrade pip
+          python -m pip install --group build --group test-core
+          python -m pip install git+https://github.com/mesonbuild/meson-python.git
+          # Non-isolated build, so we use dependencies installed inside the source tree
+          python -m pip install . -v --no-build-isolation
+
+          # Basic tests
+          cd ..
+          python -c "import scipy"
+          python -c "import scipy.linalg"
+          python -c "from scipy import cluster; cluster.test()"
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+  #################################################################################
+  python_debug:
+    # also uses the vcs->sdist->wheel route.
+    name: Python-debug & ATLAS & sdist+wheel, fast, py3.12/npMin, pip+pytest
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04 # provides python3.12-dbg
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Configuring Test Environment
+        run: |
+          sudo apt-get update
+          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev \
+            libgmp-dev libmpfr-dev libmpc-dev
+          python3-dbg --version # just to check
+          python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+
+      - name: Build SciPy
+        run: |
+          python3-dbg -m pip install --upgrade pip
+          python3-dbg -m pip install build
+          # Note: we are testing installion via sdist, so can't use `ccache` in this job
+          python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
+          python3-dbg -m pip install dist/scipy*.whl
+
+      - name: Testing SciPy
+        run: |
+          python3-dbg -m pip install --group test
+          cd doc # move out of source root directory
+          python3-dbg -m pytest --pyargs scipy -n4 --durations=10 -m "not slow"
+
+  #################################################################################
+  gcc10:
+    # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
+    name: Oldest GCC & pydata/sparse, full, py3.12/npMin, pip+pytest
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Setup system dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt install -y g++-10 gcc-10
+          sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
+            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev ccache
+
+      - name: Setup Python build deps
+        run: pip install --group build
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Build wheel and install
+        run: |
+          set -euo pipefail
+          export PYTHONOPTIMIZE=2
+
+          # specify which compilers to use using environment variables
+          CC="ccache gcc-10" CXX="ccache g++-10" python -m pip install . -v \
+              --no-build-isolation -Cbuild-dir=build \
+              -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+      - name: Install test dependencies
+        run: |
+          pip install --group test
+          # Downgrade numpy to oldest supported version
+          pip install "numpy==2.0.0"
+
+      - name: Run tests
+        run: |
+          # can't be in source directory
+          pushd $RUNNER_TEMP
+          export PYTHONOPTIMIZE=2
+          python -m pytest --pyargs scipy -n4 --durations=10
+          popd
+
+  #################################################################################
+  prerelease_deps_coverage_64bit_blas:
+    # TODO: re-enable ILP64 build.
+    name: Prerelease deps & coverage report, full, py3.12/npMin & py3.13/npPre, spin, SCIPY_ARRAY_API=1
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Ubuntu dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache \
+            lcov ccache
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --group build --group dev-cli
+          python -m pip install --pre --upgrade --group coverage
+          python -m pip install -r requirements/openblas.txt
+          python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Build and install SciPy
+        run: |
+          spin build --gcov --with-scipy-openblas=32 --release
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+      - name: Downgrade NumPy to lowest supported
+        run: |
+          python -m pip install "numpy==2.0.0"
+
+      - name: Test SciPy
+        run: |
+          export OPENBLAS_NUM_THREADS=1
+          export SCIPY_ARRAY_API=1
+          spin test --no-build --coverage -j2 --mode full -- --cov --cov-report term-missing
+
+  #################################################################################
+  linux_32bit:
+    name: 32-bit, fast, py3.12/npMin, spin
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-latest
+    # I tried running directly in a container:, using the image: and options:
+    # entries. Unfortunately at this time options: does not seem to listen to
+    # --platform linux/i386.
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: build + test in i686 container
+        run: |
+          set -exuo pipefail
+          docker pull quay.io/pypa/manylinux_2_28_i686
+          docker run -v "$(pwd):/scipy" --platform=linux/i386 quay.io/pypa/manylinux_2_28_i686 /bin/bash -c '
+            set -exuo pipefail
+            cd /scipy
+            uname -a
+            python3.12 -m venv test
+            source test/bin/activate
+            python -m pip install --upgrade pip
+            python -m pip install --group build --group dev-cli --group test-core
+            # we want `mpmath` but cannot install `gmpy2` on 32-bit,
+            # so cannot use `--group test-mp`
+            python -m pip install mpmath
+            python -m pip install -r requirements/openblas.txt
+            python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir
+            python -c "import numpy as np; np.show_config()"
+            spin build --with-scipy-openblas=32
+            spin test
+          '
+
+  #################################################################################
+  distro_multiple_pythons:
+    # Purpose is to build for a non-default Python interpreter in a Linux distro
+    # For such a build config, `python`/`python3` executables may not have
+    # build dependencies like Cython or NumPy installed.
+    name: non-default Python interpreter, fast, py3.12/npMin, pip+pytest
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup system dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt install software-properties-common
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt update -y
+          sudo apt install -y python3.12-dev ninja-build pkg-config libatlas-base-dev \
+            liblapack-dev ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Setup Python build deps
+        run: |
+          python3.12 -m pip install --upgrade pip
+          python3.12 -m pip install build
+          python3.12 -m pip install --group build
+
+      - name: Build wheel and install
+        run: |
+          python3.12 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
+          python3.12 -m pip install dist/*.whl
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+      - name: Install test dependencies
+        run: |
+          python3.12 -m pip install --group test-core
+
+      - name: Run tests
+        run: |
+          # Just a small subset of tests; this will be fine if the build
+          # succeeds (that's the real purpose of this job)
+          pushd $RUNNER_TEMP
+          python3.12 -m pytest --pyargs scipy.cluster
+          python3.12 -m pytest --pyargs scipy.linalg
+          popd
+
+  #################################################################################
+  meson_global_install:
+    # Check that `meson` can be used from anywhere. The environment Meson is
+    # installed in doesn't have to have any other build dependencies in it
+    # (i.e., we're using it as a binary). This isn't a normal setup, but it's
+    # sometimes being used that way - see gh-20535 and gh-24406
+    name: build with global meson
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libopenblas-dev liblapack-dev \
+            ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Install global meson
+        run: |
+          python -m pip install meson --break-system-packages
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Setup Python build/test deps
+        run: |
+          python -m pip install --group build --group test-core
+          python -m pip install -r requirements/openblas.txt
+          python -m pip install build
+          # Remove `meson` from environment
+          python -m pip uninstall meson --yes
+
+      - name: Check we're using global Meson
+        run: |
+          which meson
+
+      - name: Build wheel and install
+        run: |
+          python -m build -wnx
+          python -m pip install dist/*.whl
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+      - name: Run tests
+        run: |
+          # Just a small subset of tests; this will be fine if the build
+          # succeeds (that's the real purpose of this job)
+          pushd $RUNNER_TEMP
+          python -m pytest --pyargs scipy.linalg
+          popd
+
+  #################################################################################
+  free-threaded:
+    name: free-threaded${{ matrix.parallel == '1' && ' (pytest-run-parallel)' || '' }}
+    needs: get_commit_message
+    strategy:
+      matrix:
+        parallel: ["0", "1"]
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          fetch-tags: true
+          persist-credentials: false
+      
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.71.0
+          cache: false
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Run tests (full)
+        if: ${{ matrix.parallel == '0'}}
+        run: pixi run test-freethreading -j4 -m full --durations=10
+
+      - name: Run tests (fast, with pytest-run-parallel)
+        if: ${{ matrix.parallel == '1'}}
+        run: pixi run test-parallel-freethreading
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          pixi exec ccache --evict-older-than 1d
+          pixi exec ccache -s
+
+  #################################################################################
+  clang-22-build-only:
+    # Purpose is to check for warnings in builds with latest clang.
+    # We do not run the test suite here.
+    name: Clang-22 aarch build-only (-Werror)
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.71.0
+          cache: false
+
+      - name: Build wheel, check for compiler warnings
+        run: pixi run build-clang-22
+
+  #################################################################################
+  test_aarch64:
+    name: aarch64, fast, fail slow, py3.12/npAny, spin
+    # We want to check for test timing only in a single job, on Linux, running the
+    # fast test suite. This is that job. See gh-20806 for previous issues
+    # after running this job on Windows and in multiple jobs.
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.71.0
+          cache: false
+
+      - name: Test SciPy
+        run: |
+          export OMP_NUM_THREAD=2
+          pixi run test-fail-slow

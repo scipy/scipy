@@ -1,0 +1,122 @@
+==========================
+SciPy 1.9.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.9.3 is a bug-fix release with no new features
+compared to 1.9.2.
+
+Authors
+=======
+
+* Jelle Aalbers (1)
+* Peter Bell (1)
+* Jake Bowhay (3)
+* Matthew Brett (3)
+* Evgeni Burovski (5)
+* drpeteb (1) +
+* Sebastian Ehlert (1) +
+* GavinZhang (1) +
+* Ralf Gommers (2)
+* Matt Haberland (15)
+* Lakshaya Inani (1) +
+* Joseph T. Iosue (1)
+* Nathan Jacobi (1) +
+* jmkuebler (1) +
+* Nikita Karetnikov (1) +
+* Lechnio (1) +
+* Nicholas McKibben (1)
+* Andrew Nelson (1)
+* o-alexandre-felipe (1) +
+* Tirth Patel (1)
+* Tyler Reddy (51)
+* Martin Reinecke (1)
+* Marie Roald (1) +
+* Pamphile Roy (2)
+* Eli Schwartz (1)
+* serge-sans-paille (1)
+* ehsan shirvanian (1) +
+* Mamoru TASAKA (1) +
+* Samuel Wallan (1)
+* Warren Weckesser (7)
+* Gavin Zhang (1) +
+
+A total of 31 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.9.3
+-----------------------
+
+* `#3691 <https://github.com/scipy/scipy/issues/3691>`__: scipy.interpolate.UnivariateSpline segfault
+* `#5286 <https://github.com/scipy/scipy/issues/5286>`__: BUG: multivariate_normal returns a pdf for values outside its...
+* `#6551 <https://github.com/scipy/scipy/issues/6551>`__: BUG: stats: inconsistency in docs and behavior of gmean and hmean
+* `#9245 <https://github.com/scipy/scipy/issues/9245>`__: running scipy.interpolate.tests.test_fitpack::test_bisplev_integer_overflow...
+* `#12471 <https://github.com/scipy/scipy/issues/12471>`__: test_bisplev_integer_overflow: Segmentation fault (core dumped)
+* `#13321 <https://github.com/scipy/scipy/issues/13321>`__: Bug: setting iprint=0 hides all output from fmin_l_bfgs_b, but...
+* `#13730 <https://github.com/scipy/scipy/issues/13730>`__: \`scipy.stats.mood\` does not correct for ties
+* `#14019 <https://github.com/scipy/scipy/issues/14019>`__: ks_2samp throws \`RuntimeWarning: overflow encountered in double_scalars\`
+* `#14589 <https://github.com/scipy/scipy/issues/14589>`__: \`shgo\` error since scipy 1.8.0.dev0+1529.803e52d
+* `#14591 <https://github.com/scipy/scipy/issues/14591>`__: Input data validation for RectSphereBivariateSpline
+* `#15101 <https://github.com/scipy/scipy/issues/15101>`__: BUG: binom.pmf - RuntimeWarning: divide by zero
+* `#15342 <https://github.com/scipy/scipy/issues/15342>`__: BUG: scipy.optimize.minimize: Powell's method function evaluated...
+* `#15964 <https://github.com/scipy/scipy/issues/15964>`__: BUG: lombscargle fails if argument is a view
+* `#16211 <https://github.com/scipy/scipy/issues/16211>`__: BUG: Possible bug when using winsorize on pandas data instead...
+* `#16459 <https://github.com/scipy/scipy/issues/16459>`__: BUG: stats.ttest_ind returns wrong p-values with permutations
+* `#16500 <https://github.com/scipy/scipy/issues/16500>`__: odr.Model default meta value fails with __getattr__
+* `#16519 <https://github.com/scipy/scipy/issues/16519>`__: BUG: Error in error message for incorrect sample dimension in...
+* `#16527 <https://github.com/scipy/scipy/issues/16527>`__: BUG: dimension of isuppz in syevr is mistranslated
+* `#16600 <https://github.com/scipy/scipy/issues/16600>`__: BUG: \`KDTree\`'s optional argument \`eps\` seems to have no...
+* `#16656 <https://github.com/scipy/scipy/issues/16656>`__: dtype not preserved with operations on sparse arrays
+* `#16751 <https://github.com/scipy/scipy/issues/16751>`__: BUG: \`stats.fit\` on \`boltzmann\` expects \`bound\` for \`lambda\`,...
+* `#17012 <https://github.com/scipy/scipy/issues/17012>`__: BUG: Small oversight in sparse.linalg.lsmr?
+* `#17020 <https://github.com/scipy/scipy/issues/17020>`__: BUG: Build failure due to problems with shebang line in cythoner.py
+* `#17088 <https://github.com/scipy/scipy/issues/17088>`__: BUG: stats.rayleigh.fit: returns \`loc\` that is inconsistent...
+* `#17104 <https://github.com/scipy/scipy/issues/17104>`__: BUG? Incorrect branch in \`LAMV\` / \`_specfunc.lamv\`
+* `#17196 <https://github.com/scipy/scipy/issues/17196>`__: DOC: keepdims in stats.mode is incorrectly documented
+
+
+Pull requests for 1.9.3
+-----------------------
+
+* `#5288 <https://github.com/scipy/scipy/pull/5288>`__: BUG: multivariate_normal returns a pdf for values outside its...
+* `#13322 <https://github.com/scipy/scipy/pull/13322>`__: Bug: setting iprint=0 hides all output from fmin_l_bfgs_b, but...
+* `#13349 <https://github.com/scipy/scipy/pull/13349>`__: BUG: stats: Reformulate loggamma._rvs to handle c << 1.
+* `#13411 <https://github.com/scipy/scipy/pull/13411>`__: BUG: fix out-of-bound evaluations in optimize.minimize, powell...
+* `#15363 <https://github.com/scipy/scipy/pull/15363>`__: BUG: fix powell evaluated outside limits
+* `#15381 <https://github.com/scipy/scipy/pull/15381>`__: BUG: fix stats.rv_histogram for non-uniform bins
+* `#16212 <https://github.com/scipy/scipy/pull/16212>`__: stats.mood: correct for when ties are present
+* `#16288 <https://github.com/scipy/scipy/pull/16288>`__: BUG: fix a crash in \`fpknot\`
+* `#16318 <https://github.com/scipy/scipy/pull/16318>`__: MAINT: stats: fix _contains_nan on Pandas Series
+* `#16460 <https://github.com/scipy/scipy/pull/16460>`__: Fix ttest permutations
+* `#16506 <https://github.com/scipy/scipy/pull/16506>`__: MAINT: fix SHGO extra arguments
+* `#16521 <https://github.com/scipy/scipy/pull/16521>`__: BUG: Fix error in error message for incorrect sample dimension...
+* `#16525 <https://github.com/scipy/scipy/pull/16525>`__: MAINT: stats.ks_2samp: always emit warning when exact method...
+* `#16528 <https://github.com/scipy/scipy/pull/16528>`__: BUG: fix syevr series segfault by explicitly specifying operator...
+* `#16562 <https://github.com/scipy/scipy/pull/16562>`__: BUG: optimize: Fix differential_evolution error message.
+* `#16573 <https://github.com/scipy/scipy/pull/16573>`__: FIX: \`odr.Model\` error with default \`meta\` value
+* `#16588 <https://github.com/scipy/scipy/pull/16588>`__: FIX: stats: ignore divide-by-zero warnings from Boost binom impl
+* `#16590 <https://github.com/scipy/scipy/pull/16590>`__: MAINT: stats.vonmises: wrap rvs to -pi, pi interval
+* `#16630 <https://github.com/scipy/scipy/pull/16630>`__: BUG: eps param no effect fixed
+* `#16645 <https://github.com/scipy/scipy/pull/16645>`__: MAINT: Ensure Pythran input for lombscargle are contiguous
+* `#16649 <https://github.com/scipy/scipy/pull/16649>`__: Detect integer overflow in bivariate splines in fitpackmodule.c,...
+* `#16657 <https://github.com/scipy/scipy/pull/16657>`__: BUG: sparse: Fix indexing sparse matrix with empty index arguments.
+* `#16669 <https://github.com/scipy/scipy/pull/16669>`__: FIX: spurious divide error with \`gmean\`
+* `#16701 <https://github.com/scipy/scipy/pull/16701>`__: BUG: fix mutable data types as default arguments in \`ord.{Data,RealData}\`
+* `#16752 <https://github.com/scipy/scipy/pull/16752>`__: MAINT: stats.boltzmann: correct _shape_info typo
+* `#16780 <https://github.com/scipy/scipy/pull/16780>`__: BUG: interpolate: sanity check x and y in make_interp_spline(x,...
+* `#16836 <https://github.com/scipy/scipy/pull/16836>`__: MAINT: avoid \`func_data\`, it conflicts with system header on...
+* `#16872 <https://github.com/scipy/scipy/pull/16872>`__: BUG: interpolate: work array sizes for RectSphereBivariateSpline
+* `#16965 <https://github.com/scipy/scipy/pull/16965>`__: BUG: linalg: Fix the XSLOW test test_sgesdd_lwork_bug_workaround()
+* `#17043 <https://github.com/scipy/scipy/pull/17043>`__: MAINT: fix small LSMR problem
+* `#17090 <https://github.com/scipy/scipy/pull/17090>`__: MAINT: stats.rayleigh: enforce constraint on location
+* `#17105 <https://github.com/scipy/scipy/pull/17105>`__: FIX: special: use intended branching for \`lamv\` implementation
+* `#17166 <https://github.com/scipy/scipy/pull/17166>`__: MAINT: stats.rv_discrete.pmf: should be zero at non-integer argument
+* `#17176 <https://github.com/scipy/scipy/pull/17176>`__: REL: Prep for SciPy 1.9.3
+* `#17190 <https://github.com/scipy/scipy/pull/17190>`__: BUG: special: Fix two XSLOW test failures.
+* `#17193 <https://github.com/scipy/scipy/pull/17193>`__: MAINT: update meson.build to make it work on IBM i system
+* `#17200 <https://github.com/scipy/scipy/pull/17200>`__: BLD: fix issue with incomplete threads dependency handling
+* `#17204 <https://github.com/scipy/scipy/pull/17204>`__: Keepdims incorrectly documneted fix
+* `#17209 <https://github.com/scipy/scipy/pull/17209>`__: MAINT: Handle numpy's deprecation of accepting out-of-bound integers.
+* `#17210 <https://github.com/scipy/scipy/pull/17210>`__: BLD: fix invalid shebang for build helper script
