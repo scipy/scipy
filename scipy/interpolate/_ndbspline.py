@@ -169,7 +169,7 @@ class NdBSpline:
                     f"invalid number of derivative orders {nu = } for "
                     f"ndim = {len(self.t)}.")
             if any(nu < 0):
-                raise ValueError(f"derivatives must be positive, got {nu = }")
+                raise ValueError(f"derivatives must be non-negative, got {nu = }")
 
         # prepare xi : shape (..., m1, ..., md) -> (1, m1, ..., md)
         xi = np.asarray(xi, dtype=float)
@@ -318,7 +318,7 @@ class NdBSpline:
                 f"ndim = {len(self.t)}.")
 
         if any(nu_arr < 0):
-            raise ValueError(f"derivative orders must be positive, got {nu = }")
+            raise ValueError(f"derivative orders must be non-negative, got {nu = }")
 
         # extract t and c as numpy arrays
         t_new = [self._t[d, :self._len_t[d]] for d in range(self._t.shape[0])]
