@@ -936,7 +936,7 @@ def pow(quat: Array, n: float | Array) -> Array:
 
     # If n is a lazy array, we cannot take fast paths for special cases.
     if is_lazy_array(n):
-        result = from_rotvec(n * as_rotvec(quat))  # general scaling of rotation angle
+        result = _pow_scaled(quat, n)  # general scaling of rotation angle
         # Special cases 0 -> identity, -1 -> inv, 1 -> copy
         identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
         identity = xpx.at(identity)[..., 3].set(1)
@@ -951,7 +951,27 @@ def pow(quat: Array, n: float | Array) -> Array:
         return inv(quat)
     if n == 1:
         return quat
-    return from_rotvec(n * as_rotvec(quat))
+    return _pow_scaled(quat, n)
+
+
+def _pow_scaled(quat: Array, n: float | Array) -> Array:
+    """Scale the rotation angle by `n`, keeping the axis fixed.
+
+    Equivalent to ``from_rotvec(n * as_rotvec(quat))`` but without building the
+    intermediate rotation vector, whose norm the round trip would then recompute.
+    """
+    xp = array_namespace(quat)
+    quat = _quat_canonical(quat)
+    ax_norm = xp_vector_norm(quat[..., :3], axis=-1, keepdims=True, xp=xp)
+    # atan2 of a non-negative norm against a canonical (non-negative) scalar part puts
+    # the half angle in [0, pi/2], so scaling it by n matches the rotvec round trip.
+    half_angle = xp.atan2(ax_norm, quat[..., 3:4])
+    # Where the axis vanishes the rotation is the identity: sin(0) is 0 and the axis is
+    # multiplied by it, so only the division needs guarding.
+    div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)
+    axis = quat[..., :3] / div_norm
+    scaled = n * half_angle
+    return xp.concat([axis * xp.sin(scaled), xp.cos(scaled)], axis=-1)
 
 
 def _normalize_quaternion(quat: Array) -> Array:
