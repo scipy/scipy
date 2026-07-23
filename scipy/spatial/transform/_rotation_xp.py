@@ -630,7 +630,7 @@ def reduce(
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     xp = array_namespace(quat)
-    if not broadcastable(quat.shape[:-1] + (3, 1), points[..., None].shape):
+    if not broadcastable(quat.shape[:-1] + (3,), points.shape):
         raise ValueError(
             f"Cannot broadcast {quat.shape[:-1]} rotations to {points.shape[:-1]} "
             "vectors."
