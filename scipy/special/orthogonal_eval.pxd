@@ -191,7 +191,7 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
 cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) noexcept nogil:
     # If n is an integer, use more stable `eval_gegenbauer_l`
     if number_t is double and n >= 0 and n < 1e10 and n == <long long> n:
-        return <number_t> eval_gegenbauer_l(<Py_ssize_t> <long long> n, alpha, <double> x)
+        return <number_t> eval_gegenbauer_l(<Py_ssize_t> n, alpha, <double> x)
 
     cdef double a, b, c, d
     cdef number_t g
