@@ -594,10 +594,8 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     if not args:
         return args
 
-    # Infer the common device from the array arguments; `devices[i]` is the
-    # device to create argument `i` on (None to keep an array's own device).
-    device = xp_result_device(*args)
-    devices = [None if _has_own_device(arg) else device for arg in args]
+    # Infer the common device from the (first of the) array arguments
+    _, devices = _xp_result_devices(*args)
 
     # prevent double conversion of iterable to array
     # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
@@ -684,13 +682,25 @@ def xp_result_device(*args):
     Arguments that do not carry a device -- python scalars, NumPy arrays
     and scalars (host data), and arrays of backends without a ``.device``
     attribute; see `_has_own_device` -- do not determine the result device
-    and are skipped. If the remaining arguments live on multiple devices,
-    return an arbitrary one (combining arrays across devices raises inside
-    the backend anyway). Return `None` if no argument carries a device;
-    creation functions then use the backend's default device, which is the
-    correct result device for NumPy and for purely host-data inputs.
+    and are skipped: the device of the *first* device-carrying argument is
+    returned (combining arrays across devices raises inside the backend
+    anyway). Return `None` if no argument carries a device; creation
+    functions then use the backend's default device, which is the correct
+    result device for NumPy and for purely host-data inputs.
     """
-    return next((xp_device(arg) for arg in args if _has_own_device(arg)), None)
+    return _xp_result_devices(*args)[0]
+
+
+def _xp_result_devices(*args):
+    """Like `xp_result_device`, but return ``(device, devices)``.
+
+    ``devices[i]`` is the device to create argument `i` on: `None` for
+    arguments that carry their own device (which creation functions
+    preserve), the common `device` for python scalars and host data.
+    """
+    device = next((xp_device(arg) for arg in args if _has_own_device(arg)), None)
+    devices = [None if _has_own_device(arg) else device for arg in args]
+    return device, devices
 
 
 # np.r_ replacement
@@ -698,16 +708,14 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     """A replacement for `np.r_` as `xp.concat` does not accept python scalars
        or 0-D arrays.
 
-    Python scalars and host data are created on the device of the array
-    arguments, not on the backend's default device (see gh-22680).
+    Python scalars and host data are created on the device of the first
+    array argument, not on the backend's default device; array arguments
+    keep their own device (see gh-22680).
     """
+    _, devices = _xp_result_devices(*arrays)
     arys = [
-        xpx.atleast_nd(
-            # each array keeps its own device; python scalars and host data
-            # are created on the device of the (first) array argument
-            xp.asarray(a, device=xp_result_device(a, *arrays)),  # type:ignore[union-attr]
-            ndim=1, xp=xp)
-        for a in arrays
+        xpx.atleast_nd(xp.asarray(a, device=d), ndim=1, xp=xp)  # type:ignore[union-attr]
+        for a, d in zip(arrays, devices)
     ]
     return xp.concat(arys)  # type:ignore[union-attr]
 
