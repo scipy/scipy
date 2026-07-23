@@ -5,7 +5,7 @@ from pytest import raises as assert_raises
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case, xp_default_dtype, xp_result_type
+    make_xp_test_case
 )
 
 import scipy.signal._waveforms as waveforms
@@ -352,7 +352,7 @@ class TestGaussPulse:
         t_dtype = getattr(xp, t_dtype)
         t = xp.linspace(-1, 1, 11, dtype=t_dtype)
         y = gausspulse(t, fc=5)
-        assert y.dtype == xp_result_type(t, force_floating=True, xp=xp)
+        assert y.dtype == t_dtype
 
     @pytest.mark.parametrize("retquad, retenv, n_outputs", [
         (False, False, 1),
