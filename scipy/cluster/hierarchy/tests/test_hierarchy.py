@@ -49,7 +49,8 @@ from scipy.cluster.hierarchy._hierarchy_impl import (
     _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS
 )
 from scipy.spatial.distance import pdist
-from scipy._lib._array_api import (eager_warns, make_xp_test_case,
+from scipy._lib._array_api import (eager_warns, is_array_api_strict,
+                                   make_xp_test_case,
                                    xp_assert_close, xp_assert_equal,
                                    make_xp_pytest_param, xp_device,
                                    _xp_copy_to_numpy)
@@ -1215,16 +1216,27 @@ def test_cut_tree(xp):
                     cut_tree(Z, height=[10, 5]), rtol=1e-15)
 
 
-@make_xp_test_case(cut_tree)
-def test_cut_tree_device(xp, devices):
+@make_xp_test_case(fcluster)
+def test_fcluster_device(xp, devices):
+    # `fcluster` round-trips through NumPy (Cython code); the result must
+    # come back on the device of the input, not on the default device
+    # (see gh-22680).
     np.random.seed(23)
     X = np.random.randn(20, 4)
     Zref = ward(X)
+    default_device = xp_device(xp.empty(0))
     for d in devices:
         Z = xp.asarray(Zref, device=d)
-        assert xp_device(cut_tree(Z)) == xp_device(Z)
-        assert xp_device(cut_tree(Z, n_clusters=5)) == xp_device(Z)
-        assert xp_device(cut_tree(Z, height=5)) == xp_device(Z)
+        if is_array_api_strict(xp) and xp_device(Z) != default_device:
+            # array-api-strict refuses to convert non-default-device data
+            # to NumPy, matching GPU semantics (on cuda, `cpu_only`
+            # functions are skipped instead): the round-trip must refuse
+            # loudly, not silently return on another device.
+            with pytest.raises(RuntimeError, match="convert array"):
+                fcluster(Z, t=0.9, criterion='distance')
+            continue
+        assert xp_device(fcluster(Z, t=0.9, criterion='distance')) == xp_device(Z)
+        assert xp_device(fcluster(Z, t=5, criterion='maxclust')) == xp_device(Z)
 
 
 @make_xp_test_case(optimal_leaf_ordering)
