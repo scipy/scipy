@@ -320,13 +320,9 @@ cdef double[:, :] _compute_davenport_from_quat(
 cdef inline void _compose_quat_single( # calculate p * q into r
     const double[:] p, const double[:] q, double[:] r
 ) noexcept nogil:
-    cdef double cx = p[1]*q[2] - p[2]*q[1]
-    cdef double cy = p[2]*q[0] - p[0]*q[2]
-    cdef double cz = p[0]*q[1] - p[1]*q[0]
-
-    r[0] = p[3]*q[0] + q[3]*p[0] + cx
-    r[1] = p[3]*q[1] + q[3]*p[1] + cy
-    r[2] = p[3]*q[2] + q[3]*p[2] + cz
+    r[0] = p[3]*q[0] + q[3]*p[0] + p[1]*q[2] - p[2]*q[1]
+    r[1] = p[3]*q[1] + q[3]*p[1] + p[2]*q[0] - p[0]*q[2]
+    r[2] = p[3]*q[2] + q[3]*p[2] + p[0]*q[1] - p[1]*q[0]
     r[3] = p[3]*q[3] - p[0]*q[0] - p[1]*q[1] - p[2]*q[2]
 
 @cython.boundscheck(False)
