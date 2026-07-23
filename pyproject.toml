@@ -276,7 +276,7 @@ PKG_CONFIG_PATH = "{project}"
 dependency-versions = "packages: pyodide-build==0.36.0"
 before-build = "bash {project}/tools/ci/emscripten/cibw_before_build_pyodide.sh {project}"
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
-test-command = "python -m pytest --pyargs scipy -m 'not slow'"
+test-command = "python -m pytest -vra --pyargs scipy -m 'not slow'"
 
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]

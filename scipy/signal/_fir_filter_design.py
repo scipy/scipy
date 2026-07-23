@@ -12,7 +12,7 @@ from scipy.signal._arraytools import _validate_fs
 from .windows import get_window
 from . import _sigtools
 
-from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
+from scipy._lib._array_api import array_namespace, xp_size
 import scipy._external.array_api_extra as xpx
 
 
@@ -482,7 +482,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     nyq = 0.5 * fs
 
-    cutoff = xp.asarray(cutoff, dtype=xp_default_dtype(xp))
+    cutoff = xp.asarray(cutoff, dtype=xpx.default_dtype(xp))
     cutoff = xpx.atleast_nd(cutoff, ndim=1, xp=xp) / float(nyq)
 
     # Check for invalid input.
@@ -732,7 +732,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     if xp.any(d == 0):
         # Tweak any repeated values in freq so that interp works.
         freq = xp.asarray(freq, copy=True)
-        eps = xp.finfo(xp_default_dtype(xp)).eps * nyq
+        eps = xp.finfo(xpx.default_dtype(xp)).eps * nyq
         for k in range(freq.shape[0] - 1):
             if freq[k] == freq[k + 1]:
                 freq = xpx.at(freq)[k].set(freq[k] - eps)

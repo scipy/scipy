@@ -534,7 +534,7 @@ def xp_result_type(*args, force_floating=False, xp):
             dtype = getattr(arg_array, 'dtype', arg)
             if xp.isdtype(dtype, ('real floating', 'complex floating')):
                 float_args.append(arg)
-        return xp.result_type(*float_args, xp_default_dtype(xp))
+        return xp.result_type(*float_args, xpx.default_dtype(xp))
 
 
 def xp_promote(*args, broadcast=False, force_floating=False, xp):
@@ -617,17 +617,6 @@ def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
         arr = xp.astype(arr, xp.complex128)
 
     return arr
-
-
-def xp_default_dtype(xp):
-    """Query the namespace-dependent default floating-point dtype.
-    """
-    if is_torch(xp):
-        # historically, we allow pytorch to keep its default of float32
-        return xp.get_default_dtype()
-    else:
-        # we default to float64
-        return xp.float64
 
 
 def xp_result_device(*args):
@@ -810,27 +799,31 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
 
     # Note: deliberately not documenting array-api-strict
     note = f"""
-    **Array API Standard Support**
 
-    `{fun_name}` has experimental support for Python Array API Standard compatible
-    backends in addition to NumPy. Please consider testing these features
-    by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
-    CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
-    combinations of backend and device (or other capability) are supported.
+    .. dropdown:: Array API Standard Support
+        :color: primary
 
-    ====================  ====================  ====================
-    Library               CPU                   GPU
-    ====================  ====================  ====================
-    NumPy                 {capabilities['numpy']                   }
-    CuPy                  {capabilities['cupy']                    }
-    PyTorch               {capabilities['torch']                   }
-    JAX                   {capabilities['jax.numpy']               }
-    Dask                  {capabilities['dask.array']              }
-    ====================  ====================  ====================
+        `{fun_name}` has experimental support for Python Array API Standard compatible
+        backends in addition to NumPy. Please consider testing these features
+        by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
+        CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
+        combinations of backend and device (or other capability) are supported.
 
-    {marray_note or ""}
-    {extra_note or ""}
-    See :ref:`dev-arrayapi` for more information.
+        ====================  ====================  ====================
+        Library               CPU                   GPU
+        ====================  ====================  ====================
+        NumPy                 {capabilities['numpy']                   }
+        CuPy                  {capabilities['cupy']                    }
+        PyTorch               {capabilities['torch']                   }
+        JAX                   {capabilities['jax.numpy']               }
+        Dask                  {capabilities['dask.array']              }
+        ====================  ====================  ====================
+
+    {textwrap.indent(marray_note or "", ' '*4)}
+    {textwrap.indent(extra_note or "",  ' '*4)}
+
+        See :ref:`dev-arrayapi` for more information.
+
     """
 
     return textwrap.dedent(note)

@@ -23,7 +23,7 @@ class TestDerivative:
     @pytest.mark.parametrize('x', [0.6, np.linspace(-0.05, 1.05, 10)])
     def test_basic(self, x, xp):
         # Invert distribution CDF and compare against distribution `ppf`
-        default_dtype = xp.asarray(1.).dtype
+        default_dtype = xpx.default_dtype(xp)
         res = derivative(self.f, xp.asarray(x, dtype=default_dtype))
         ref = xp.asarray(stats.norm().pdf(x), dtype=default_dtype)
         xp_assert_close(res.df, ref)

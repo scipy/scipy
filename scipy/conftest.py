@@ -742,6 +742,7 @@ if HAVE_SCPDT:
         'scipy.spatial.minkowski_distance_p',
         'scipy.spatial.minkowski_distance',
         'scipy.spatial.distance_matrix',
+        'scipy.stats.tiecorrect',
     ])
 
     # help pytest collection a bit: these names are either private

@@ -19,7 +19,6 @@ from scipy._lib._array_api import (
     xp_vector_norm,
     xp_assert_close,
     eager_warns,
-    xp_default_dtype,
     make_xp_test_case,
     make_xp_pytest_marks,
     xp_device_type,
@@ -129,7 +128,7 @@ def test_from_quat_array_like():
 
 def test_from_quat_int_dtype(xp):
     r = Rotation.from_quat(xp.asarray([1, 0, 0, 0]))
-    assert r.as_quat().dtype == xp_default_dtype(xp)
+    assert r.as_quat().dtype == xpx.default_dtype(xp)
 
 
 def test_quat_canonical(xp):
@@ -471,7 +470,7 @@ def test_from_matrix_array_like():
 def test_from_matrix_int_dtype(xp):
     mat = xp.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     r = Rotation.from_matrix(mat)
-    assert r.as_quat().dtype == xp_default_dtype(xp)
+    assert r.as_quat().dtype == xpx.default_dtype(xp)
 
 
 @make_xp_test_case((Rotation, "from_rotvec"))
@@ -543,7 +542,7 @@ def test_from_rotvec_array_like():
 def test_from_rotvec_int_dtype(xp):
     rotvec = xp.asarray([1, 0, 0])
     r = Rotation.from_rotvec(rotvec)
-    assert r.as_quat().dtype == xp_default_dtype(xp)
+    assert r.as_quat().dtype == xpx.default_dtype(xp)
 
 
 @make_xp_test_case((Rotation, "from_rotvec"))
@@ -660,7 +659,7 @@ def test_from_mrp_array_like():
 def test_from_mrp_int_dtype(xp):
     mrp = xp.asarray([0, 0, 1])
     r = Rotation.from_mrp(mrp)
-    assert r.as_quat().dtype == xp_default_dtype(xp)
+    assert r.as_quat().dtype == xpx.default_dtype(xp)
 
 
 @make_xp_test_case((Rotation, "from_mrp"))
@@ -1344,7 +1343,7 @@ def test_mean(xp, ndim: int):
     axes = xp.reshape(axes, (1,) * (ndim - 1) + (6, 3))
     thetas = xp.linspace(0, xp.pi / 2, 100)
     desired = xp.asarray(0.0)[()]
-    atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
+    atol = 1e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
     for t in thetas:
         r_mean = Rotation.from_rotvec(t * axes).mean()
         assert r_mean.shape == ()
@@ -1364,7 +1363,7 @@ def test_mean_axis(xp, ndim: int):
     desired = xp.full(axes.shape[:-2], 0.0)
     if ndim == 1:
         desired = desired[()]
-    atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
+    atol = 1e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
     xp_assert_close(r.mean(axis=-1).magnitude(), desired, atol=atol)
 
     # Test tuple axes

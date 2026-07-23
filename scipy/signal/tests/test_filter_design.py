@@ -11,7 +11,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
-    assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
+    assert_array_almost_equal, xp_size, is_numpy,
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
     _xp_copy_to_numpy, xp_assert_close_nulp
 )
@@ -817,7 +817,7 @@ class TestFreqz:
             w, h = freqz(xp.ones(2), a, worN=0)
             assert w.shape == (0,)
             assert h.shape == (0,)
-            hdt = xp.complex128 if xp_default_dtype(xp) == xp.float64 else xp.complex64
+            hdt = xp.complex128 if xpx.default_dtype(xp) == xp.float64 else xp.complex64
             assert h.dtype == hdt
 
     def test_basic2(self, xp):
@@ -1098,7 +1098,7 @@ class TestFreqz:
             w, h = freqz(xp.ones(2), a, worN=0, include_nyquist=True)
             assert w.shape == (0,)
             assert h.shape == (0,)
-            hdt = xp.complex128 if xp_default_dtype(xp) == xp.float64 else xp.complex64
+            hdt = xp.complex128 if xpx.default_dtype(xp) == xp.float64 else xp.complex64
             assert h.dtype == hdt
 
         w1, h1 = freqz(xp.asarray([1.0]), worN=8, whole = True, include_nyquist=True)
@@ -1576,7 +1576,7 @@ class TestNormalize:
         # The test on b works for decimal=14 but the one for a does not. For
         # the sake of consistency, both of these are decimal=13. If something
         # breaks on another platform, it is probably fine to relax this lower.
-        decimal = 13 if xp_default_dtype(xp) == xp.float64 else 5
+        decimal = 13 if xpx.default_dtype(xp) == xp.float64 else 5
         assert_array_almost_equal(b_matlab, b_output, decimal=decimal)
         assert_array_almost_equal(a_matlab, a_output, decimal=decimal)
 
@@ -2540,7 +2540,7 @@ class TestEllipord:
 # Currently the filter functions tested below (bessel, butter, cheby1, cheby2,
 # and ellip) all return float64 (or complex128) output regardless of input
 # dtype. Therefore reference arrays in these tests are all given an explicit 64
-# bit dtype, because the output will not match the xp_default_dtype when the
+# bit dtype, because the output will not match the default dtype when the
 # default dtype is float32. Although the output arrays and all internal
 # calculations are in 64 bit precision, tolerances are still loosened for the
 # float32 case when results are impacted by reduced precision in the inputs.
