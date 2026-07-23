@@ -629,18 +629,20 @@ def reduce(
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
-    mat = as_matrix(quat)
-    # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
-    # dimension to the points array and remove it after the operation.
-    points = points[..., None]
-    if not broadcastable(mat.shape, points.shape):
+    xp = array_namespace(quat)
+    if not broadcastable(quat.shape[:-1] + (3, 1), points[..., None].shape):
         raise ValueError(
             f"Cannot broadcast {quat.shape[:-1]} rotations to {points.shape[:-1]} "
             "vectors."
         )
+    # Rotate by the quaternion directly rather than materializing a (..., 3, 3) matrix
+    # to produce a (..., 3) result: v' = v + 2w(qv x v) + 2(qv x (qv x v)).
+    qv = quat[..., :3]
+    w = quat[..., 3:4]
     if inverse:
-        return (mat.mT @ points)[..., 0]
-    return (mat @ points)[..., 0]
+        qv = -qv
+    t = 2.0 * xp.linalg.cross(qv, points)
+    return points + w * t + xp.linalg.cross(qv, t)
 
 
 def setitem(
