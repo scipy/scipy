@@ -241,7 +241,7 @@ def from_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
     num_axes = axes.shape[-2]
     if num_axes is None:
         raise ValueError(f"axes must have a known shape, got shape {axes.shape}")
@@ -635,8 +635,7 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
             f"Cannot broadcast {quat.shape[:-1]} rotations to {points.shape[:-1]} "
             "vectors."
         )
-    # Rotate by the quaternion directly rather than materializing a (..., 3, 3) matrix
-    # to produce a (..., 3) result: v' = v + 2w(qv x v) + 2(qv x (qv x v)).
+    # Quaternion rotation: p' = p + 2w(qv x p) + 2(qv x (qv x p))
     qv = quat[..., :3]
     w = quat[..., 3:4]
     if inverse:
@@ -645,9 +644,7 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     return points + w * t + xp.linalg.cross(qv, t)
 
 
-def setitem(
-    quat: Array, value: Array, indexer: int | slice | EllipsisType
-) -> Array:
+def setitem(quat: Array, value: Array, indexer: int | slice | EllipsisType) -> Array:
     return xpx.at(quat)[indexer, ...].set(value)
 
 
