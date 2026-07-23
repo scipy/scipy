@@ -81,7 +81,6 @@ rotation_extra_note = """The methods ``as_davenport``, ``apply``, and ``align_ve
         "apply": dict(
             skip_backends=[
                 ("dask.array", "missing linalg.cross/det functions and .mT attribute"),
-                ("cupy", "missing .mT attribute in cupy<14.*"),
             ],
         ),
         "__getitem__": dict(
