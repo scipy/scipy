@@ -241,7 +241,7 @@ def from_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
     num_axes = axes.shape[-2]
     if num_axes is None:
         raise ValueError(f"axes must have a known shape, got shape {axes.shape}")
@@ -519,10 +519,7 @@ def mean(
 
     lazy = is_lazy_array(quat)
     # Branching code is okay for checks that include meta info such as shapes and types
-    quat_expand = quat[..., None, :]
-    if weights is None:
-        K = quat_expand.mT @ quat_expand
-    else:
+    if weights is not None:
         weights = xp.asarray(weights, dtype=dtype, device=device)
         neg_weights = weights < 0
         if not lazy and xp.any(neg_weights):
@@ -537,18 +534,25 @@ def mean(
                 "Expected `weights` to be broadcastable to rotation shape, got shape "
                 f"{weights.shape} for {quat.shape[:-1]} rotations."
             )
+        weights = xp.broadcast_to(weights, quat.shape[:-1])
 
-        # Make sure we can transpose quat
-        weighted_quat = weights[..., None, None] * quat_expand
-        K = weighted_quat.mT @ quat_expand
-
-    # Move reduction axes to the end
+    # Move reduction axes to the end and flatten them. Reordering the quaternions
+    # instead of their (4, 4) outer products lets the sum over rotations be  a single
+    # matmul, instead of materializing one 4x4 matrix per rotation.
     keep_axes = tuple(i for i in all_axes if i not in axis)
     axes_order = keep_axes + axis
-    K_reordered = xp.moveaxis(K, axes_order, all_axes)
-    # Reshape to flatten reduction axes
-    new_shape = K_reordered.shape[: len(keep_axes)] + (-1, 4, 4)
-    K = xp.mean(xp.reshape(K_reordered, new_shape), axis=-3)
+    q = xp.moveaxis(quat, axes_order, all_axes)
+    q = xp.reshape(q, q.shape[: len(keep_axes)] + (-1, 4))
+    n_reduced = q.shape[-2]
+
+    if weights is None:
+        K = q.mT @ q
+    else:
+        w = xp.moveaxis(weights, axes_order, all_axes)
+        w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1,))
+        K = (q * w[..., None]).mT @ q
+    K = K / n_reduced
+
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
@@ -643,9 +647,7 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     return (mat @ points)[..., 0]
 
 
-def setitem(
-    quat: Array, value: Array, indexer: int | slice | EllipsisType
-) -> Array:
+def setitem(quat: Array, value: Array, indexer: int | slice | EllipsisType) -> Array:
     return xpx.at(quat)[indexer, ...].set(value)
 
 
