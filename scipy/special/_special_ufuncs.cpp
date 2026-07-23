@@ -3,6 +3,7 @@
 #include <cmath>
 #include <complex>
 
+#include "boost_special_functions.h"
 #include "sf_error.h"
 #include <xsf/agm.h>
 #include <xsf/airy.h>
@@ -86,6 +87,7 @@ extern const char *pseudo_huber_doc;
 extern const char *rel_entr_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
+extern const char *bdtrik_doc;
 extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
@@ -330,6 +332,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dddd_d>(xsf::normalized_gen_harmonic)},
                           "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_normalized_gen_harmonic", _normalized_gen_harmonic);
+
+    PyObject *bdtrik =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(bdtrik_float),
+                           static_cast<xsf::numpy::ddd_d>(bdtrik_double)},
+                          "bdtrik", bdtrik_doc);
+    PyModule_AddObjectRef(module, "bdtrik", bdtrik);
 
     PyObject *gdtr = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::gdtr), static_cast<xsf::numpy::ddd_d>(xsf::gdtr)},

@@ -2575,6 +2575,55 @@ const char *berp_doc = R"(
 
     )";
 
+const char *bdtrik_doc = R"(
+    bdtrik(y, n, p, out=None)
+
+    Inverse function to `bdtr` with respect to `k`.
+
+    Finds the number of successes `k` such that the sum of the terms 0 through
+    `k` of the Binomial probability density for `n` events with probability
+    `p` is equal to the given cumulative probability `y`.
+
+    Parameters
+    ----------
+    y : array_like
+        Cumulative probability (probability of `k` or fewer successes in `n`
+        events).
+    n : array_like
+        Number of events (float).
+    p : array_like
+        Success probability (float).
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    k : scalar or ndarray
+        The number of successes `k` such that `bdtr(k, n, p) = y`.
+
+    See Also
+    --------
+    bdtr
+
+    Notes
+    -----
+    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
+    distribution to the cumulative incomplete beta distribution.
+
+    Computation of `k` involves a search for a value that produces the desired
+    value of `y`. The search relies on the monotonicity of `y` with `k`.
+
+    Implemented using the Boost library.
+
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.5#E5
+    )";
+
 const char *binom_doc = R"(
     binom(x, y, out=None)
 
