@@ -13,7 +13,7 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
-import scipy._external.array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
                                    make_xp_pytest_param,
                                    xp_assert_close, xp_device)

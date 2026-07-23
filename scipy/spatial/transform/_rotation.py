@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType
 
 import numpy as np
 
@@ -1712,7 +1712,7 @@ class Rotation:
             return result[0, ...]
         return result
 
-    def __mul__(self, other: Rotation) -> Rotation | NotImplementedType:
+    def __mul__(self, other: Rotation) -> Rotation:
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed

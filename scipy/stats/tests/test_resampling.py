@@ -5,10 +5,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
+from scipy._external import array_api_extra as xpx
 from scipy._lib._util import rng_integers
-import scipy._external.array_api_extra as xpx
-from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_size,
-                                   array_namespace, _xp_copy_to_numpy,
+from scipy._lib._array_api import (is_numpy, make_xp_test_case,
+                                   xp_size, array_namespace, _xp_copy_to_numpy,
                                    is_lazy_array, eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special

@@ -2678,7 +2678,7 @@ class TestEllipord:
 # Currently the filter functions tested below (bessel, butter, cheby1, cheby2,
 # and ellip) all return float64 (or complex128) output regardless of input
 # dtype. Therefore reference arrays in these tests are all given an explicit 64
-# bit dtype, because the output will not match the xpx.default_dtype when the
+# bit dtype, because the output will not match the default dtype when the
 # default dtype is float32. Although the output arrays and all internal
 # calculations are in 64 bit precision, tolerances are still loosened for the
 # float32 case when results are impacted by reduced precision in the inputs.

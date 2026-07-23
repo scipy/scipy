@@ -53,8 +53,7 @@ class TestFirwin:
         xp = array_namespace(h)
         N = h.shape[0]
         alpha = 0.5 * (N-1)
-        # time indices of taps
-        m = xp.arange(0, N, dtype=xpx.default_dtype(xp)) - alpha
+        m = xp.arange(0, N, dtype=xpx.default_dtype(xp)) - alpha  # time indices of taps
         for freq, expected in expected_response:
             actual = abs(xp.sum(h * xp.exp(-1j * xp.pi * m * freq)))
             mse = abs(actual - expected)**2

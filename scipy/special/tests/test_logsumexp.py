@@ -4,9 +4,8 @@ import pytest
 
 import numpy as np
 
-import scipy._external.array_api_extra as xpx
-from scipy._lib._array_api import (is_array_api_strict, make_xp_test_case,
-                                   xp_device)
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import is_array_api_strict, make_xp_test_case, xp_device
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 

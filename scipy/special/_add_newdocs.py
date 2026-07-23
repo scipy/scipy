@@ -1852,6 +1852,8 @@ add_newdoc("eval_sh_jacobi",
         Parameter
     q : float
         Parameter
+    x : array_like
+        Points at which to evaluate the polynomial.
     out : ndarray, optional
         Optional output array for the function values
 

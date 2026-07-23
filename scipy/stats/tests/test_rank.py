@@ -7,8 +7,8 @@ import pytest
 from scipy import stats
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
-import scipy._external.array_api_extra as xpx
-from scipy._lib._array_api import (xp_assert_equal, make_xp_test_case, xp_result_type)
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import xp_assert_equal, make_xp_test_case, xp_result_type
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
