@@ -112,7 +112,7 @@ the function will fail when running inside ``jax.jit``.
 Additional caveats may be listed in the docstring of the function.
 
 Some functions also note support for `MArray <https://mdhaber.github.io/marray/tutorial.html>`__,
-a library that adds a "missing data" awareness to the array library of your choice. MArray
+a library that adds "missing data" awareness to the array library of your choice. MArray
 is not an independent array library; rather, it wraps the namespace of an array API
 compatible library to add "mask" support. Consequently, where MArray support is noted,
 it is supported in conjunction with all backend/device combinations marked as supported
