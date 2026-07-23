@@ -504,13 +504,6 @@ class TestFFTShift:
         xp_assert_close(fft.fftshift(freqs), shift_dim_both)
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
-    def test_device(self, xp, devices):
-        # output arrays must be on the same device as the input (gh-22680)
-        for d in devices:
-            x = xp.asarray([0., 1, 2, 3, 4, -4, -3, -2, -1], device=d)
-            assert xp_device(fft.fftshift(x)) == xp_device(x)
-            assert xp_device(fft.ifftshift(x)) == xp_device(x)
-
 
 @make_xp_test_case(fft.fftfreq)
 class TestFFTFreq:

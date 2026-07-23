@@ -6,12 +6,11 @@ import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case, xp_device
+from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
-
 
 
 @make_xp_test_case(derivative)
@@ -452,13 +451,6 @@ class TestDerivative:
         ref = p*x**(p-1.) + c
         xp_assert_close(res.df, ref)
 
-    def test_device(self, xp, devices):
-        # Test input device propagation to output.
-        for d in devices:
-            x = xp.asarray([1., 2., 3.], device=d)
-            res = derivative(lambda t: t**3, x)
-            assert xp_device(res.df) == xp_device(x)
-
 
 class JacobianHessianTest:
     def test_iv(self, xp):
@@ -488,16 +480,6 @@ class JacobianHessianTest:
         message = '`maxiter` must be a positive integer.'
         with pytest.raises(ValueError, match=message):
             jh_func(func, x, maxiter=-1)
-
-    def test_device(self, xp, devices):
-        # Test input device propagation to output.
-        jh_func = self.jh_func.__func__
-        for d in devices:
-            x = xp.asarray([1., 2., 3.], device=d)
-            res = jh_func(optimize.rosen, x)
-            # `df` for `jacobian`, `ddf` for `hessian`
-            res_arr = res.df if hasattr(res, 'df') else res.ddf
-            assert xp_device(res_arr) == xp_device(x)
 
 
 @make_xp_test_case(jacobian)

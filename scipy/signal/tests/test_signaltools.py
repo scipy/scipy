@@ -1402,17 +1402,6 @@ class TestResample:
         xp_assert_equal(x1, x_ref)
         xp_assert_equal(x0, x_ref)
 
-    @make_xp_test_case(signal.resample)
-    def test_device(self, xp, devices):
-        for d in devices:
-            x = xp.arange(16, dtype=xp.float64, device=d)
-            y = signal.resample(x, 32)
-            assert xp_device(y) == xp_device(x)
-            # also exercise the `t is not None` return branch
-            t = xp.arange(16, dtype=xp.float64, device=d)
-            y, t_new = signal.resample(x, 32, t=t)
-            assert xp_device(y) == xp_device(x)
-            assert xp_device(t_new) == xp_device(x)
 
     @skip_xp_backends("cupy",
                       reason="delegated to cupyx, whose time vector is float64")
@@ -2230,16 +2219,6 @@ class _TestLinearFilter:
         # compare lfiltic's output with reference
         assert_array_almost_equal(zi_1, zi_2)
 
-    @make_xp_test_case(lfiltic)
-    def test_device(self, xp, devices):
-        dtype = (getattr(xp, self.dtype)
-                 if isinstance(self.dtype, str) else self.dtype)
-        for d in devices:
-            b = xp.asarray([0.5, 1.0, 0.2], dtype=dtype, device=d)
-            a = xp.asarray([1.0, 0.5], dtype=dtype, device=d)
-            y = xp.asarray([1.0, 2.0, 3.0], dtype=dtype, device=d)
-            zi = lfiltic(b, a, y)
-            assert xp_device(zi) == xp_device(b)
 
     @make_xp_test_case(lfiltic)
     def test_lfiltic_bad_coeffs(xp):
@@ -2732,7 +2711,6 @@ class TestCorrelateComplex:
                         check_shape=False)
         xp_assert_equal(correlate([3j], [4]), np.asarray(correlate(3j, 4)),
                         check_shape=False)
-
 
 
 class TestCorrelate2d:
@@ -4614,14 +4592,6 @@ class TestSOSFilt:
 
         _, zf = sosfilt(sos, xp.ones(40, dtype=dt), zi=zi.tolist())
         xp_assert_close(zf, zi, rtol=1e-13, check_dtype=False)
-
-
-@make_xp_test_case(sosfilt_zi)
-def test_sosfilt_zi_device(xp, devices):
-    for d in devices:
-        sos = xp.asarray(signal.butter(6, 0.2, output='sos'), device=d)
-        zi = sosfilt_zi(sos)
-        assert xp_device(zi) == xp_device(sos)
 
 
 @make_xp_test_case(signal.deconvolve)

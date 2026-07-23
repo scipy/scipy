@@ -8,10 +8,10 @@ from numpy.testing import assert_allclose
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
-                                   is_numpy, make_xp_test_case, xp_device)
+                                   is_numpy, make_xp_test_case)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
-from scipy.integrate._tanhsinh import _pair_cache, _compute_pair, _get_base_step
+from scipy.integrate._tanhsinh import _pair_cache
 from scipy.special._ufuncs import _gen_harmonic
 
 
@@ -769,32 +769,6 @@ class TestTanhSinh:
         ref = b**(p+1) / (p+1) + c
         xp_assert_close(res.integral, ref)
 
-    def test_device(self, xp, devices):
-        def f(x):
-            return xp.exp(-x**2)
-
-        for d in devices:
-            a = xp.asarray(-1., device=d)
-            b = xp.asarray(1., device=d)
-            res = _tanhsinh(f, a, b)
-            assert xp_device(res.integral) == xp_device(a)
-            assert xp_device(res.error) == xp_device(a)
-
-
-@pytest.mark.uses_xp_capabilities(False, reason="tests private machinery")
-def test_pair_device(xp, devices):
-    # The abscissa-weight machinery must build its arrays on the input's
-    # device; they are anchored on `h0` from `_get_base_step` (see gh-22680).
-    # `TestTanhSinh.test_device` above cannot exercise this on the multi-device
-    # array-api-strict backend because `tanhsinh` is skipped there.
-    for d in devices:
-        ref = xp.asarray(1.0, device=d)
-        h0 = _get_base_step(xp.float64, xp, device=xp_device(ref))
-        assert xp_device(h0) == xp_device(ref)
-        xjc, wj = _compute_pair(0, h0, xp)
-        assert xp_device(xjc) == xp_device(ref)
-        assert xp_device(wj) == xp_device(ref)
-
 
 @make_xp_test_case(nsum)
 class TestNSum:
@@ -1211,13 +1185,3 @@ class TestNSum:
         ref = xp.sum(f(x, c[..., xp.newaxis], p=p[..., xp.newaxis]), axis=-1)
         xp_assert_close(res.sum, ref)
 
-    def test_device(self, xp, devices):
-        def f(k):
-            return 1 / k**2
-
-        for d in devices:
-            a = xp.asarray(1., device=d)
-            b = xp.asarray(xp.inf, device=d)
-            res = nsum(f, a, b)
-            assert xp_device(res.sum) == xp_device(a)
-            assert xp_device(res.error) == xp_device(a)

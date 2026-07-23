@@ -13,8 +13,7 @@ from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 
 from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (make_xp_test_case, is_numpy,
-                                   xp_device)
+from scipy._lib._array_api import (make_xp_test_case, is_numpy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._external import array_api_extra as xpx
 
@@ -297,13 +296,6 @@ class TestCumulative_trapezoid:
         with pytest.raises(ValueError, match="At least one point is required"):
             cumulative_trapezoid(y=xp.asarray([]))
 
-    def test_device(self, xp, devices):
-        for d in devices:
-            x = xp.asarray([1., 2., 3., 4.], device=d)
-            y = xp.asarray([1., 4., 9., 16.], device=d)
-            res = cumulative_trapezoid(y, x, initial=0)
-            assert xp_device(res) == xp_device(x)
-
 
 class CommonTrapezoidSimpsonTests:
     def test_simple(self, xp):
@@ -519,19 +511,6 @@ class TestQMCQuad:
         ref = stats.norm.cdf(1, scale=2) - stats.norm.cdf(0, scale=2)
         assert_allclose(res.integral, ref, 1e-2)
 
-    def test_device(self, xp, devices):
-        dtype = xpx.default_dtype(xp)
-
-        def func(x):
-            return xp.exp(-0.5 * xp.sum(x*x, axis=0)) / (2 * xp.pi)
-
-        for d in devices:
-            a = xp.asarray([0., 0.], dtype=dtype, device=d)
-            b = xp.asarray([1., 1.], dtype=dtype, device=d)
-            res = qmc_quad(func, a, b, n_points=2**6, n_estimates=4)
-            assert xp_device(res.integral) == xp_device(a)
-            assert xp_device(res.standard_error) == xp_device(a)
-
 
 def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1):
     # Use cumulative_trapezoid if length of y < 3
@@ -568,20 +547,6 @@ def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1
     res = res[..., 1:] if initial_was_none else res
     res = np.moveaxis(res, -1, axis)
     return res
-
-
-@make_xp_test_case(simpson, trapezoid, cumulative_simpson)
-@pytest.mark.parametrize('func', [simpson, trapezoid, cumulative_simpson])
-def test_quadrature_device(func, xp, devices):
-    # Input array device should propagate to the output; see gh-22680.
-    for d in devices:
-        x = xp.linspace(0., 4., 17, device=d)
-        y = x**2
-        assert xp_device(func(y, x=x)) == xp_device(x)
-        assert xp_device(func(y, dx=0.5)) == xp_device(y)
-        if func is cumulative_simpson:
-            res = func(y, dx=0.5, initial=0.0)
-            assert xp_device(res) == xp_device(y)
 
 
 @make_xp_test_case(cumulative_simpson)

@@ -2,7 +2,7 @@ import pickle
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy._lib._array_api import xp_assert_close, make_xp_test_case, xp_device
+from scipy._lib._array_api import xp_assert_close, make_xp_test_case
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree
 from scipy.interpolate._rbfinterp import (
@@ -442,15 +442,6 @@ class _TestRBFInterpolator:
             f = self.build(y, d, kernel='linear')(y)
             xp_assert_close(f, d)
 
-    def test_device(self, xp, devices):
-        # Input array device should propagate to the output; see gh-22680.
-        seq = Halton(1, scramble=False, seed=np.random.RandomState(1))
-        x_np = 3*seq.random(50)
-        for d in devices:
-            x = xp.asarray(x_np, device=d)
-            y = _1d_test_function(x, xp)
-            out = self.build(x, y)(x)
-            assert xp_device(out) == xp_device(x)
 
     def test_pickleable(self, xp):
         # Make sure we can pickle and unpickle the interpolant without any

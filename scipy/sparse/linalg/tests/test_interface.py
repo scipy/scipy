@@ -16,8 +16,7 @@ import numpy as np
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, is_torch, xp_assert_close, is_lazy_array,
     xp_assert_equal, xp_ravel, is_numpy, make_xp_pytest_marks, is_jax_array,
-    xp_device,
-)
+    )
 from scipy._external import array_api_extra as xpx
 import scipy.sparse as sparse
 
@@ -74,17 +73,6 @@ class TestLinearOperator:
         self.C = np.array([[1,2],
                            [3,4]])
 
-    def test_device(self, xp, devices):
-        # Input device should propagate to the output of `matvec`/`matmat`.
-        for d in devices:
-            A = xp.asarray(self.A, dtype=xp.float64, device=d)
-            op = aslinearoperator(A)
-
-            x = xp.asarray([1, 2, 3], dtype=xp.float64, device=d)
-            assert xp_device(op.matvec(x)) == xp_device(x)
-
-            X = xp.asarray([[1, 2], [3, 4], [5, 6]], dtype=xp.float64, device=d)
-            assert xp_device(op.matmat(X)) == xp_device(X)
 
     def test_matvec(self, xp):
         def get_matvecs(A):

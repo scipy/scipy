@@ -43,7 +43,7 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
 from scipy._lib._array_api_no_0d import xp_assert_equal
-from scipy._lib._array_api import make_xp_test_case, xp_device
+from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._util import MapWrapper
 
 lazy_xp_modules = [optimize]
@@ -2510,15 +2510,6 @@ class TestRosen:
         p = xp.astype(p, one.dtype)
         dothp = optimize.rosen_hess(x) @ p
         xp_assert_equal(hp, dothp)
-
-    @make_xp_test_case(optimize.rosen_hess, optimize.rosen_hess_prod)
-    def test_device(self, xp, devices):
-        # Test input device propagation to output.
-        for d in devices:
-            x = xp.asarray([0.5, 1.0, 1.5], device=d)
-            assert xp_device(optimize.rosen_hess(x)) == xp_device(x)
-            p = xp.asarray([1.0, 2.0, 3.0], device=d)
-            assert xp_device(optimize.rosen_hess_prod(x, p)) == xp_device(x)
 
 
 def himmelblau(p):

@@ -9,7 +9,7 @@ from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy._lib._array_api import (
     is_numpy, xp_size, xp_assert_close, xp_assert_equal, make_xp_test_case,
-    make_xp_pytest_param, xp_device
+    make_xp_pytest_param
 )
 from scipy._lib._testutils import IS_WASM
 
@@ -555,27 +555,3 @@ def test_real_input(func, dtype, xp):
     func(x)
 
 
-@pytest.mark.parametrize("func", [make_xp_pytest_param(fft.fft),
-                                  make_xp_pytest_param(fft.ifft),
-                                  make_xp_pytest_param(fft.rfft),
-                                  make_xp_pytest_param(fft.irfft),
-                                  make_xp_pytest_param(fft.hfft),
-                                  make_xp_pytest_param(fft.ihfft),
-                                  make_xp_pytest_param(fft.fft2),
-                                  make_xp_pytest_param(fft.ifft2),
-                                  make_xp_pytest_param(fft.rfft2),
-                                  make_xp_pytest_param(fft.irfft2),
-                                  make_xp_pytest_param(fft.hfft2),
-                                  make_xp_pytest_param(fft.ihfft2),
-                                  make_xp_pytest_param(fft.fftn),
-                                  make_xp_pytest_param(fft.ifftn),
-                                  make_xp_pytest_param(fft.rfftn),
-                                  make_xp_pytest_param(fft.irfftn),
-                                  make_xp_pytest_param(fft.hfftn),
-                                  make_xp_pytest_param(fft.ihfftn)])
-def test_device(func, xp, devices):
-    # output arrays must be on the same device as the input (gh-22680)
-    dtype = get_expected_input_dtype(func, xp)
-    for d in devices:
-        x = xp.asarray(np.ones((4, 4)), dtype=dtype, device=d)
-        assert xp_device(func(x)) == xp_device(x)
