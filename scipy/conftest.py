@@ -604,7 +604,19 @@ def devices(xp):
         devices = xp.__array_namespace_info__().devices()
         # open an issue about this - cannot branch based on `any`/`all`?
         return (device for device in devices if device.type != 'meta')
-    return tuple(xp.__array_namespace_info__().devices()) + (None,)
+    info = xp.__array_namespace_info__()
+    # Exclude devices that do not support the default dtype, such as the
+    # synthetic 'no_float64' device of array-api-strict >= 2.6: this fixture
+    # tests device *propagation*, and scipy functions routinely create
+    # default-dtype intermediates. Reduced-capability devices would need
+    # per-test dtype-support handling instead (see e.g. the `dtype_devices`
+    # fixture in `scipy/stats/tests/test_device_dtype.py`).
+    default_dtype = info.default_dtypes()["real floating"]
+    devices = tuple(
+        d for d in info.devices()
+        if default_dtype in info.dtypes(device=d).values()
+    )
+    return devices + (None,)
 
 
 if hypothesis_available:
