@@ -194,9 +194,9 @@ def qz(A, B, output='real', lwork=_NoValue, sort=None, overwrite_a=False,
     lwork : int, optional
         Work array size. If None or -1, it is automatically computed.
 
-        .. deprecated:: 1.19.0
+        .. deprecated:: 2.0.0
             This keyword is deprecated and no longer in use and will be
-            removed in 1.21.0.
+            removed in 2.2.0.
 
     sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
         NOTE: THIS INPUT IS DISABLED FOR NOW. Use ordqz instead.

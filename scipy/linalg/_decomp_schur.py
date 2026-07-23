@@ -46,9 +46,9 @@ def schur(a, output='real', lwork=_NoValue, overwrite_a=False, sort=None,
     lwork : int, optional
         Work array size. If None or -1, it is automatically computed.
 
-        .. deprecated:: 1.19.0
+        .. deprecated:: 2.0.0
             This keyword is deprecated as well as no longer in use and will be
-            removed in 1.21.0.
+            removed in 2.2.0.
 
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance).

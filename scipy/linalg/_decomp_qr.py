@@ -415,9 +415,9 @@ def rq(a, overwrite_a=False, lwork=_NoValue, mode='full', check_finite=True):
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
 
-        .. deprecated:: 1.19.0
+        .. deprecated:: 2.0.0
             This keyword is deprecated as well as no longer in use and will be
-            removed in 1.21.0.
+            removed in 2.2.0.
 
     mode : {'full', 'r', 'economic'}, optional
         Determines what information is to be returned: either both Q and R
