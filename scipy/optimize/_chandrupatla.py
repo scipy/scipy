@@ -6,7 +6,8 @@ from scipy._lib._array_api import xp_copy
 
 
 def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
-                  fatol=None, frtol=0, maxiter=None, callback=None):
+                  fatol=None, frtol=0, maxiter=None, callback=None,
+                  preserve_shape=False):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
     For each element of the output of `func`, `chandrupatla` seeks the scalar
@@ -47,6 +48,9 @@ def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
         `_chandrupatla` will return a result.
+    preserve_shape : bool, default: False
+        Whether calls to `func` must preserve the broadcasted shape of the arguments to
+        `_chandrupatla`. See `find_root` documentation.
 
     Returns
     -------
@@ -124,11 +128,14 @@ def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
 
     """
     res = _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
-                           fatol, frtol, maxiter, callback)
-    func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback = res
+                           fatol, frtol, maxiter, callback, preserve_shape)
+    (func, args, kwargs, xatol, xrtol, 
+     fatol, frtol, maxiter, callback, preserve_shape) = res
 
     # Initialization
-    temp = eim._initialize(func, (a, b), args, kwargs=kwargs)
+    temp = eim._initialize(func, (a, b), args, kwargs=kwargs, 
+                           preserve_shape=preserve_shape)
+
     func, xs, fs, args, shape, dtype, xp = temp
     x1, x2 = xs
     f1, f2 = fs
@@ -238,11 +245,11 @@ def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp=xp)
+                     xp=xp, preserve_shape=preserve_shape)
 
 
 def _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
-                     fatol, frtol, maxiter, callback):
+                     fatol, frtol, maxiter, callback, preserve_shape):
     # Input validation for `_chandrupatla`
 
     if not callable(func):
@@ -268,12 +275,17 @@ def _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback
+    message = '`preserve_shape` must be True or False.'
+    if preserve_shape not in {True, False}:
+        raise ValueError(message)
+
+    return (func, args, kwargs, xatol, xrtol, 
+            fatol, frtol, maxiter, callback, preserve_shape)
 
 
 def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None,
                            xrtol=None, fatol=None, frtol=None, maxiter=100,
-                           callback=None):
+                           callback=None, preserve_shape=False):
     """Find the minimizer of an elementwise function.
 
     For each element of the output of `func`, `_chandrupatla_minimize` seeks
@@ -319,6 +331,9 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None
         the current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
         `_chandrupatla_minimize` will return a result.
+    preserve_shape : bool, default: False
+        Whether calls to `func` must preserve the broadcasted shape of the arguments to
+        `_chandrupatla_minimize`. See `find_minimum` documentation.
 
     Returns
     -------
@@ -391,12 +406,15 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None
     array([1. , 1.5, 2. ])
     """
     res = _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
-                           fatol, frtol, maxiter, callback)
-    func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback = res
+                           fatol, frtol, maxiter, callback, preserve_shape)
+    (func, args, kwargs, xatol, xrtol, 
+     fatol, frtol, maxiter, callback, preserve_shape) = res
 
     # Initialization
     xs = (x1, x2, x3)
-    temp = eim._initialize(func, xs, args, kwargs=kwargs)
+    temp = eim._initialize(func, xs, args, kwargs=kwargs, 
+                           preserve_shape=preserve_shape)
+
     func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
@@ -548,4 +566,4 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp=xp)
+                     xp=xp, preserve_shape=preserve_shape)
