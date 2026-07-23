@@ -2959,7 +2959,8 @@ class TestNdBSpline:
         b = make_interp_spline(x, np.sin(x), k=3)
         nb = NdBSpline((b.t,), b.c, b.k)
         pt = np.array([[0.5]])
-        nb(pt, nu=(0,))  # nu == 0 is accepted (function value)
+        # ``nu == 0`` is accepted and must return the function value itself.
+        xp_assert_close(nb(pt, nu=(0,)), nb(pt))
         nb.derivative((0,))
         with assert_raises(ValueError, match="non-negative"):
             nb(pt, nu=(-1,))
