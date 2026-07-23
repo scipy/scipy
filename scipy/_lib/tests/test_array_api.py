@@ -395,6 +395,14 @@ def test_xp_promote_device(xp, devices):
         scalar, x2 = xp_promote(2, x, force_floating=True, xp=xp)
         assert xp_device(scalar) == xp_device(x)
 
+        # with arrays on several devices, the *first* array argument is the
+        # anchor for scalars; each array keeps its own device
+        y = xp.asarray([4., 5., 6.])  # on the default device
+        scalar, x2, y2 = xp_promote(2, x, y, force_floating=True, xp=xp)
+        assert xp_device(scalar) == xp_device(x)
+        assert xp_device(x2) == xp_device(x)
+        assert xp_device(y2) == xp_device(y)
+
         # None passes through; remaining args still promoted on device
         x2, none, scalar = xp_promote(x, None, 0.5, xp=xp)
         assert none is None
@@ -432,6 +440,13 @@ def test_xp_result_device(xp, devices):
         assert xp_result_device(1.5, None, x) == expected
         assert xp_result_device(np.float64(0.5), x) == expected
         assert xp_result_device(np.asarray([1.0]), x) == expected
+
+        # the *first* device-carrying argument is the anchor
+        y = xp.asarray([3., 4.])  # on the default device
+        expected_y = None if host_like else xp_device(y)
+        assert xp_result_device(x, y) == expected
+        assert xp_result_device(y, x) == expected_y
+        assert xp_result_device(1.5, y, x) == expected_y
     assert xp_result_device() is None
     assert xp_result_device(1.5, None) is None
     assert xp_result_device(np.asarray([1.0])) is None
