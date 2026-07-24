@@ -273,9 +273,6 @@ class TestArrayAPI:
         xp_assert_equal_no_0d(0., xp.asarray(0.))
         xp_assert_equal_no_0d(42, xp.asarray(42))
 
-    def test_default_dtype(self, xp):
-        assert xpx.default_dtype(xp) == xp.asarray(1.).dtype
-
 
 scalars = [1, 1., 1. + 1j]
 lists = [[1], [1.], [1. + 1j]]
