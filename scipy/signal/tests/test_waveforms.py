@@ -370,6 +370,7 @@ class TestGaussPulse:
             assert yi.shape == t.shape
 
     def test_scalar_array_input(self, xp):
+        # NumPy returns a scalar; other backends return a 0-D array.
         t = xp.asarray(0.0)
         y = gausspulse(t, fc=5)
         xp_assert_close(y, xp.asarray(1.0), check_0d=False)
