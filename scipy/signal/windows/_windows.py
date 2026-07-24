@@ -210,7 +210,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     The following example compares a 10-sample boxcar window to its corresponding rect
     function. The upper plot depicts the amplitudes, whereas the corresponding magnitude
     spectra are shown in the lower plot. A standard resolution spectrum and a high
-    resoultion one, which is zero-padded by factor 16, are shown of the boxcar window.
+    resolution one, which is zero-padded by factor 16, are shown of the boxcar window.
     That the boxcar spectrum does not coincide everywhere with the rect function
     spectrum is due to the underlying continuous-time function of the boxcar window
     being a 10-term Fourier series approximation of the rect function.
@@ -253,7 +253,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     >>> plt.show()
 
     The following plot shows a logarithmically scaled version of the magnitude
-    spectrum. The x-axis has been recscaled to correspond to the FFT-bin number.
+    spectrum. The x-axis has been rescaled to correspond to the FFT-bin number.
     The dashed green line represents the approximate sidelobe height.
 
     >>> import numpy as np
@@ -975,8 +975,8 @@ def hann(M, sym=True, *, xp=None, device=None):
 
     Examples
     --------
-    The following example compares the mangitude spectra of a periodic 10-point Hann
-    Hann window to its continuous-time counterpart.
+    The following example compares the magnitude spectra of a periodic 10-point Hann
+    window to its continuous-time counterpart.
 
     >>> import numpy as np
     >>> from matplotlib import pyplot as plt
@@ -1008,7 +1008,7 @@ def hann(M, sym=True, *, xp=None, device=None):
     >>> ax0.set_title(r"Periodic Hann window and Hann function of width $\tau=1\,$s")
     >>> ax0.set(ylabel="Amplitude", xlim=(t[0], t[-1]),
     ...         xlabel=rf"Time $t$ in seconds (${M}$ samples with interval ${T=}\,$s)")
-    >>> ax0.plot(t, h, 'C0-', label=r"$h(t) = \sin^2(\pi t / \tau)$")
+    >>> ax0.plot(t, h, 'C0-', label=r"$\sin^2(\pi t / \tau)$")
     >>> ax0.plot(k, w_k, 'C1o', label="Window $w_p[kT]$")
     >>> ax1.set_title(r"Magnitude Spectrum of Hann window and Hann function")
     >>> ax1.set(ylabel="Magnitude", xlim=(f_abs[0], f_abs[-1]),
@@ -1023,7 +1023,7 @@ def hann(M, sym=True, *, xp=None, device=None):
     >>> ax2a = ax2.twinx() # create right y-axis with non-logarithmic scaling:
     >>> ax2a.set_ylabel("Magnitude $|H(f)|$", rotation=-90, labelpad=15)
     >>> ax2a.set(ylim=(1e-4, 10 ** (1 / 20)), yscale="log")
-    >>> ax2.plot(f_dB, H_dB, 'C0-', label=r"$|H(l\Delta f)$|")
+    >>> ax2.plot(f_dB, H_dB, 'C0-', label=r"$|H(l\Delta f)|$")
     >>> ax2.plot(f_dB[f_dB>0.5], -60*np.log10(f_dB[f_dB>0.5]) - 20*np.log10(np.pi),
     ...          'C2--', alpha=0.5, label=r"$\pi^{-1} (l\Delta f)^{-3}$")
     >>> for ax_ in (ax0, ax1, ax2):
