@@ -48,6 +48,7 @@ Multivariate interpolation
    NearestNDInterpolator
    CloughTocher2DInterpolator
    RBFInterpolator
+   LSQMultivariateSpline
 
 **For data on a grid:**
 
@@ -212,6 +213,7 @@ from ._pade import *
 from ._rgi import *
 
 from ._ndbspline import NdBSpline
+from ._lsq_multivariate import LSQMultivariateSpline
 
 from ._bary_rational import *
 

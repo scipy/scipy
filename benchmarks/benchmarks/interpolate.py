@@ -14,6 +14,12 @@ with safe_import():
 with safe_import():
     from scipy.interpolate._regrid import _regrid
 
+with safe_import():
+    from scipy.interpolate._lsq_multivariate_basis import (
+        _construct_full_knots,
+        _design_matrix,
+    )
+
 
 class Leaks(Benchmark):
     unit = "relative increase with repeats"
@@ -640,3 +646,87 @@ class NearestNDInterpolator(Benchmark):
            interp = interpolate.NearestNDInterpolator(
                list(zip(self.x, self.y)), self.z)
            interp(self.X, self.Y)
+
+
+class LSQMultivariateSpline(Benchmark):
+    param_names = ['case']
+    params = ['1d', '2d_dense', '2d_sparse', '3d_sparse']
+
+    def setup(self, case):
+        rng = np.random.default_rng(0)
+
+        if case == '1d':
+            self.x = np.sort(rng.uniform(0.0, 1.0, 500))
+            self.y = np.sin(8.0 * self.x)
+            self.t = 12
+            self.bbox = [0.0, 1.0]
+            self.k = 3
+            self.sparse = False
+            self.x_eval = np.linspace(0.0, 1.0, 2000)
+        elif case in {'2d_dense', '2d_sparse'}:
+            x0 = rng.uniform(-1.0, 1.0, 900)
+            x1 = rng.uniform(-1.0, 1.0, 900)
+            self.x = np.column_stack((x0, x1))
+            self.y = np.sin(x0) + np.cos(x1)
+            self.t = [8, 8]
+            self.bbox = [[-1.0, 1.0], [-1.0, 1.0]]
+            self.k = 3
+            self.sparse = case == '2d_sparse'
+            grid = np.linspace(-1.0, 1.0, 75)
+            x0_eval, x1_eval = np.meshgrid(grid, grid, indexing='ij')
+            self.x_eval = np.column_stack((x0_eval.ravel(), x1_eval.ravel()))
+        else:
+            x0 = rng.uniform(-1.0, 1.0, 2000)
+            x1 = rng.uniform(-1.0, 1.0, 2000)
+            x2 = rng.uniform(0.0, 1.0, 2000)
+            self.x = np.column_stack((x0, x1, x2))
+            self.y = np.sin(x0) + np.cos(x1) + x2
+            self.t = [5, 5, 5]
+            self.bbox = [[-1.0, 1.0], [-1.0, 1.0], [0.0, 1.0]]
+            self.k = 3
+            self.sparse = True
+            self.x_eval = rng.uniform(
+                [-1.0, -1.0, 0.0],
+                [1.0, 1.0, 1.0],
+                (5000, 3),
+            )
+
+        self.spline = interpolate.LSQMultivariateSpline(
+            self.x,
+            self.y,
+            t=self.t,
+            bbox=self.bbox,
+            k=self.k,
+            sparse=self.sparse,
+        )
+
+    def time_fit(self, case):
+        interpolate.LSQMultivariateSpline(
+            self.x,
+            self.y,
+            t=self.t,
+            bbox=self.bbox,
+            k=self.k,
+            sparse=self.sparse,
+        )
+
+    def time_evaluate(self, case):
+        self.spline(self.x_eval)
+
+
+class LSQMultivariateSplineDesignMatrix(Benchmark):
+    param_names = ['sparse']
+    params = [False, True]
+
+    def setup(self, sparse):
+        rng = np.random.default_rng(0)
+        x0 = rng.uniform(-1.0, 1.0, 2000)
+        x1 = rng.uniform(-1.0, 1.0, 2000)
+        self.x = np.column_stack((x0, x1))
+        bbox = np.array([[-1.0, 1.0], [-1.0, 1.0]])
+        interior = [np.linspace(-1.0, 1.0, 10)[1:-1]] * 2
+        self.knots = _construct_full_knots(interior, bbox, (3, 3))
+        self.degrees = (3, 3)
+
+    def time_design_matrix(self, sparse):
+        _design_matrix(self.x, self.knots, self.degrees, sparse=sparse)
