@@ -13,6 +13,7 @@ from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
 
 
+
 @make_xp_test_case(derivative)
 class TestDerivative:
 

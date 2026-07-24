@@ -16,7 +16,7 @@ import numpy as np
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, is_torch, xp_assert_close, is_lazy_array,
     xp_assert_equal, xp_ravel, is_numpy, make_xp_pytest_marks, is_jax_array,
-    )
+)
 from scipy._external import array_api_extra as xpx
 import scipy.sparse as sparse
 
@@ -72,7 +72,6 @@ class TestLinearOperator:
                            [5,6]])
         self.C = np.array([[1,2],
                            [3,4]])
-
 
     def test_matvec(self, xp):
         def get_matvecs(A):

@@ -200,7 +200,6 @@ def test_array_like(xp, op):
          [[1.0, 1.0], [1.0, 1.0]]]
     xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))
 
-
 @pytest.mark.parametrize('n', [128, 129])
 @make_xp_test_case(fhtoffset, fht)
 def test_gh_21661(xp, n):
