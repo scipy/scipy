@@ -543,30 +543,6 @@ def xp_result_type(*args, force_floating=False, xp):
                 float_args.append(arg)
         return xp.result_type(*float_args, xpx.default_dtype(xp))
 
-def _has_own_device(arg):
-    """Whether `arg` is an array that carries its own device.
-
-    NumPy arrays and scalars report ``device='cpu'`` but are *host data*:
-    converting them to another namespace places them on that namespace's
-    *default* device, so for device propagation they must be treated like
-    python scalars and created on the inferred common device (see gh-22680).
-
-    This never forwards a device across libraries: arguments reaching the
-    device-anchoring call sites have been validated by `array_namespace` at
-    the function boundary, which raises for arrays from multiple libraries.
-    The only foreign arrays that legitimately appear alongside another
-    library's arrays are NumPy arrays and scalars (e.g. numeric parameters
-    computed with NumPy), and those are excluded here. A device returned
-    for an argument with ``_has_own_device(arg) == True`` therefore always
-    belongs to the namespace whose creation functions consume it.
-
-    Backends whose arrays lack the ``.device`` attribute (e.g. Dask; see
-    the workarounds in ``array_api_compat.device``) are treated like host
-    data. They are effectively single-device, so creating on the backend
-    default -- what a `None` anchor means -- is correct for them.
-    """
-    return hasattr(arg, "device") and not isinstance(arg, (np.ndarray, np.generic))
-
 
 def xp_promote(*args, broadcast=False, force_floating=False, xp):
     """
@@ -594,7 +570,6 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     if not args:
         return args
 
-    # Infer the common device from the (first of the) array arguments
     _, devices = _xp_result_devices(*args)
 
     # prevent double conversion of iterable to array
@@ -677,16 +652,16 @@ def xp_compat_namespace(xp: ModuleType | None) -> ModuleType:
 
 def xp_result_device(*args):
     """Return the device for the result of a function with inputs `args`,
-    for the purpose of input-output device propagation.
 
-    Arguments that do not carry a device -- python scalars, NumPy arrays
-    and scalars (host data), and arrays of backends without a ``.device``
-    attribute; see `_has_own_device` -- do not determine the result device
-    and are skipped: the device of the *first* device-carrying argument is
-    returned (combining arrays across devices raises inside the backend
-    anyway). Return `None` if no argument carries a device; creation
-    functions then use the backend's default device, which is the correct
-    result device for NumPy and for purely host-data inputs.
+    The purpose of this function is to be used for input-output device propagation.
+
+    Arguments that do not carry a device - python scalars, NumPy arrays and
+    scalars (host data), and arrays of backends without a ``.device`` attribute
+    - do not determine the result device and are skipped: the device of the
+    first device-carrying argument is returned (combining arrays across devices
+    raises inside the backend anyway). Return ``None`` if no argument carries
+    a device; creation functions then use the backend's default device, which
+    is the correct result device for NumPy and for purely host-data inputs.
     """
     return _xp_result_devices(*args)[0]
 
@@ -694,10 +669,35 @@ def xp_result_device(*args):
 def _xp_result_devices(*args):
     """Like `xp_result_device`, but return ``(device, devices)``.
 
-    ``devices[i]`` is the device to create argument `i` on: `None` for
-    arguments that carry their own device (which creation functions
-    preserve), the common `device` for python scalars and host data.
+    ``devices[i]`` is the device on which to create argument `i`: `None` for
+    arguments that carry their own device (which creation functions preserve),
+    the common `device` for Python scalars and host data.
     """
+    def _has_own_device(arg):
+        """Whether `arg` is an array that carries its own device.
+
+        NumPy arrays and scalars report ``device='cpu'`` but are *host data*:
+        converting them to another namespace places them on that namespace's
+        *default* device, so for device propagation they must be treated like
+        python scalars and created on the inferred common device (see gh-22680).
+
+        This never forwards a device across libraries: arguments reaching the
+        device-anchoring call sites have been validated by `array_namespace` at
+        the function boundary, which raises for arrays from multiple libraries.
+        The only foreign arrays that legitimately appear alongside another
+        library's arrays are NumPy arrays and scalars (e.g. numeric parameters
+        computed with NumPy), and those are excluded here. A device returned
+        for an argument with ``_has_own_device(arg) == True`` therefore always
+        belongs to the namespace whose creation functions consume it.
+
+        Backends whose arrays lack the ``.device`` attribute (e.g. Dask; see
+        the workarounds in ``array_api_compat.device``) are treated like host
+        data. They are effectively single-device, so creating on the backend
+        default -- what a `None` anchor means -- is correct for them.
+        """
+        return hasattr(arg, "device") and not isinstance(arg, (np.ndarray, np.generic))
+
+
     device = next((xp_device(arg) for arg in args if _has_own_device(arg)), None)
     devices = [None if _has_own_device(arg) else device for arg in args]
     return device, devices
