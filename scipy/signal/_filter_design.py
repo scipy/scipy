@@ -19,7 +19,7 @@ from scipy.signal import _polyutils as _pu
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    _has_own_device, xp_result_device, array_namespace, xp_promote,
+    _xp_result_devices, xp_result_device, array_namespace, xp_promote,
     xp_size, is_jax,
     xp_float_to_complex, xp_result_type, xp_device,
 )
@@ -505,10 +505,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     # device of the array input instead, so that a non-default-device input
     # propagates through the division below. Actual array inputs keep their
     # own device (mixing devices raises, as it should).
-    device = xp_result_device(b, a)
-    b, a = (xp.asarray(arg) if _has_own_device(arg)
-            else xp.asarray(arg, device=device)
-            for arg in (b, a))
+    _, devices = _xp_result_devices(b, a)
+    b, a = (xp.asarray(arg, device=d) for arg, d in zip((b, a), devices))
     if xp.isdtype(a.dtype, 'integral'):
         a = xp.astype(a, xpx.default_dtype(xp))
     res_dtype = xp.result_type(b, a)
@@ -4213,9 +4211,8 @@ def _pre_warp(wp, ws, analog, *, xp):
 def _validate_wp_ws(wp, ws, fs, analog, *, xp):
     # python sequences would land on the default device; create them on
     # the device of the array argument (if any)
-    device = xp_result_device(wp, ws)
-    wp, ws = (arg if _has_own_device(arg)
-              else xp.asarray(arg, device=device) for arg in (wp, ws))
+    _, devices = _xp_result_devices(wp, ws)
+    wp, ws = (xp.asarray(arg, device=d) for arg, d in zip((wp, ws), devices))
     wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
     ws = xpx.atleast_nd(ws, ndim=1, xp=xp)
     wp, ws = xp_promote(wp, ws, force_floating=True, xp=xp)

@@ -17,7 +17,7 @@ from itertools import combinations
 
 from scipy._lib._array_api import (
     array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy, is_cupy,
-    xp_device, _has_own_device, xp_result_device
+    xp_device, xp_result_device
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
@@ -893,7 +893,9 @@ class BSpline:
             in the coefficient array with the shape of `x`.
 
         """
-        device = xp_device(x) if _has_own_device(x) else self._device
+        device = xp_result_device(x)
+        if device is None:
+            device = self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate

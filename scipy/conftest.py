@@ -415,8 +415,8 @@ class _CpuPinningNamespace:
             def _asarray_pin_cpu(obj, *args, device=None, **kwargs):
                 # arrays keep their own device; device-less input (python
                 # scalars/sequences, NumPy host data) is created on cpu
-                from scipy._lib._array_api import _has_own_device
-                if device is None and not _has_own_device(obj):
+                from scipy._lib._array_api import xp_result_device
+                if device is None and xp_result_device(obj) is None:
                     device = "cpu"
                 return attr(obj, *args, device=device, **kwargs)
             return _asarray_pin_cpu

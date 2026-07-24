@@ -14,7 +14,7 @@ from scipy.special import comb
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, scipy_namespace_for, is_numpy,
-    xp_device, _has_own_device, xp_result_device
+    xp_result_device
 )
 
 from . import _fitpack_py
@@ -1544,7 +1544,9 @@ class PPoly:
         ``[a, b)``, except for the last interval which is closed
         ``[a, b]``.
         """
-        device = xp_device(x) if _has_own_device(x) else self._device
+        device = xp_result_device(x)
+        if device is None:
+            device = self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
@@ -2093,7 +2095,9 @@ class BPoly:
         ``[a, b)``, except for the last interval which is closed
         ``[a, b]``.
         """
-        device = xp_device(x) if _has_own_device(x) else self._device
+        device = xp_result_device(x)
+        if device is None:
+            device = self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
