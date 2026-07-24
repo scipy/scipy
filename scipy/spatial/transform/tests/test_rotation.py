@@ -2088,7 +2088,7 @@ def test_align_vectors_near_inf(xp):
 
 @make_xp_test_case((Rotation, "align_vectors"), (Rotation, "as_matrix"))
 def test_align_vectors_parallel(xp):
-    atol = 1e-12
+    atol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-7
     a = xp.asarray([[1.0, 0, 0], [0, 1, 0]])
     b = xp.asarray([[0.0, 1, 0], [0, 1, 0]])
     m_expected = xp.asarray([[0.0, 1, 0],

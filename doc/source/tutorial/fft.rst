@@ -264,6 +264,7 @@ and its support extends over the complete real axis. The DFT may be interpreted 
 sampling the continuous Fourier transform due to
 
 .. math::
+    :label: eq_FFT_SamplingFourierTrafo
 
     Z(l \Delta f) = \tau\frac{\gamma}{N} c_l = T \gamma c_l
                                                          \quad\text{ for }\quad l\in\IZ

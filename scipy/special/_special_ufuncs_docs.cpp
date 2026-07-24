@@ -3108,6 +3108,32 @@ const char *ellipj_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    The elliptic sine sn(u|m) interpolates between the sine function and the
+    hyperbolic tangent when m changes from 0 to 1.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.special import ellipj
+    >>> u = np.linspace(0, 2*np.pi, 100)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(u, np.sin(u), '--', label='sin(u)')
+    >>> for m in (0.2, 0.8, 0.99):
+    ...     ax.plot(u, ellipj(u, m)[0], label=f'sn(u|{m})')
+    >>> ax.plot(u, np.tanh(u), '--', label='tanh(u)')
+    >>> ax.set_xlabel('u')
+    >>> ax.legend(loc='lower left')
+    >>> plt.show()
+
+    Like for sine and cosine, the squares of elliptic sine and elliptic cosine
+    add up to one.
+
+    >>> u = np.linspace(0, 5, 11)
+    >>> sn, cn, _, _ = ellipj(u, 0.7)
+    >>> sn**2 + cn**2
+    array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
     )";
 
 const char *ellipkm1_doc = R"(
@@ -3162,6 +3188,38 @@ const char *ellipkm1_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+    .. [2] NIST Digital Library of Mathematical Functions,
+           Eq. 19.12.1. https://dlmf.nist.gov/19.12.E1
+
+    Examples
+    --------
+    >>> from scipy.special import ellipk, ellipkm1
+    >>> p = 1e-10
+    >>> m = 1-p
+    >>> ellipk(m), ellipkm1(p)
+    (np.float64(12.899219785017415), np.float64(12.8992198263876))
+
+    In order to decide which one of the two results is closer to the correct
+    one, one can use the asymptotic expansion including the next-to-leading
+    order [2]_.
+
+    >>> from math import log, sqrt
+    >>> log(4/sqrt(p)) + 0.25*p*(log(4/sqrt(p))-1)
+    12.8992198263876
+    
+    We can conclude that for such small values of :math:`p`, `ellipkm1` yields
+    the better result. For even smaller values of :math:`p`, the difference
+    becomes more apparent.
+
+    >>> p = 1e-15
+    >>> m = 1-p
+    >>> ellipk(m), ellipkm1(p)
+    (np.float64(18.656082357290334), np.float64(18.655682558575236))
+    >>> log(4/sqrt(p)) + 0.25*p*(log(4/sqrt(p))-1)
+    18.655682558575236
+
+    For even smaller values of :math:`p`, the finite spacing between float
+    numbers becomes relevant. Then `ellipkm1` needs to be used in any case.
     )";
 
 const char *ellipk_doc = R"(
@@ -3217,6 +3275,25 @@ const char *ellipk_doc = R"(
     .. [2] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    The period :math:`T` of a simple pendulum increases with growing oscillation
+    amplitude and can be expressed through the complete elliptic integral of the
+    first kind. The plot displays the ratio of the period of the pendulum and
+    the period :math:`T_0` for small amplitude as a function of the maximum
+    angle :math:`\alpha` reached by the pendulum.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.special import ellipk
+    >>> alpha = np.linspace(0, np.pi, 100)
+    >>> m = np.sin(alpha/2)**2
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(alpha, ellipk(m)*2/np.pi)
+    >>> ax.set_xlabel(r'$\alpha$')
+    >>> ax.set_ylabel('$T/T_0$')
+    >>> plt.show()
     )";
 
 const char *ellipkinc_doc = R"(
@@ -3279,6 +3356,34 @@ const char *ellipkinc_doc = R"(
     .. [3] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    >>> from scipy.special import ellipkinc
+    >>> phi = 0.3
+    >>> m = 0.8
+    >>> u = ellipkinc(phi, m)
+    >>> u
+    np.float64(0.30365239221539364)
+
+    The result should be consistent with the known relations
+    for the Jacobi elliptic functions: ``sn(u|m) = sin(phi)``
+    and ``cn(u|m) = cos(phi)``.
+
+    >>> from math import cos, pi, sin
+    >>> from scipy.special import ellipj
+    >>> sn, cn, _, _ = ellipj(u, m)
+    >>> sn, sin(phi)
+    (np.float64(0.2955202066613395), 0.29552020666133955)
+    >>> cn, cos(phi)
+    (np.float64(0.9553364891256061), 0.955336489125606)
+
+    For :math:`\phi=\pi/2`, the incomplete elliptic integral should
+    equal the complete elliptic integral.
+
+    >>> from scipy.special import ellipk
+    >>> ellipkinc(pi/2, m), ellipk(m)
+    (np.float64(2.257205326820854), np.float64(2.257205326820854))
     )";
 
 const char *xlogy_doc = R"(

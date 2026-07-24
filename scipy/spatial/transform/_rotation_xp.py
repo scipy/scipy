@@ -170,10 +170,11 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     # value of the Taylor series approximation, but non-branching operations require
     # that we still divide by the angle. Since we do not use the result where the angle
     # is close to 0, this is safe.
-    div_angle = angle + xp.asarray(small_angle, dtype=angle.dtype)
-    large_scale = xp.sin(angle / 2) / div_angle
+    half_angle = angle / 2
+    div_angle = angle + xp.astype(small_angle, angle.dtype)
+    large_scale = xp.sin(half_angle) / div_angle
     scale = xp.where(small_angle, small_scale, large_scale)
-    quat = xp.concat([rotvec * scale, xp.cos(angle / 2)], axis=-1)
+    quat = xp.concat([rotvec * scale, xp.cos(half_angle)], axis=-1)
     return quat
 
 
@@ -241,7 +242,7 @@ def from_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
     num_axes = axes.shape[-2]
     if num_axes is None:
         raise ValueError(f"axes must have a known shape, got shape {axes.shape}")
@@ -631,23 +632,22 @@ def reduce(
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
-    mat = as_matrix(quat)
-    # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
-    # dimension to the points array and remove it after the operation.
-    points = points[..., None]
-    if not broadcastable(mat.shape, points.shape):
+    xp = array_namespace(quat)
+    if not broadcastable(quat.shape[:-1] + (3,), points.shape):
         raise ValueError(
             f"Cannot broadcast {quat.shape[:-1]} rotations to {points.shape[:-1]} "
             "vectors."
         )
+    # Quaternion rotation: p' = p + 2w(qv x p) + 2(qv x (qv x p))
+    qv = quat[..., :3]
+    w = quat[..., 3:4]
     if inverse:
-        return (mat.mT @ points)[..., 0]
-    return (mat @ points)[..., 0]
+        qv = -qv
+    t = 2.0 * xp.linalg.cross(qv, points)
+    return points + w * t + xp.linalg.cross(qv, t)
 
 
-def setitem(
-    quat: Array, value: Array, indexer: int | slice | EllipsisType
-) -> Array:
+def setitem(quat: Array, value: Array, indexer: int | slice | EllipsisType) -> Array:
     return xpx.at(quat)[indexer, ...].set(value)
 
 
@@ -1116,17 +1116,17 @@ def _get_angles(
 
 def compose_quat(p: Array, q: Array) -> Array:
     xp = array_namespace(p)
-    cross = xp.linalg.cross(p[..., :3], q[..., :3])
-    qx = p[..., 3] * q[..., 0] + q[..., 3] * p[..., 0] + cross[..., 0]
-    qy = p[..., 3] * q[..., 1] + q[..., 3] * p[..., 1] + cross[..., 1]
-    qz = p[..., 3] * q[..., 2] + q[..., 3] * p[..., 2] + cross[..., 2]
-    qw = (
-        p[..., 3] * q[..., 3]
-        - p[..., 0] * q[..., 0]
-        - p[..., 1] * q[..., 1]
-        - p[..., 2] * q[..., 2]
+    px, py, pz, pw = p[..., 0], p[..., 1], p[..., 2], p[..., 3]
+    qx, qy, qz, qw = q[..., 0], q[..., 1], q[..., 2], q[..., 3]
+    quat = xp.stack(
+        [
+            pw * qx + px * qw + py * qz - pz * qy,
+            pw * qy - px * qz + py * qw + pz * qx,
+            pw * qz + px * qy - py * qx + pz * qw,
+            pw * qw - px * qx - py * qy - pz * qz,
+        ],
+        axis=-1,
     )
-    quat = xp.stack([qx, qy, qz, qw], axis=-1)
     return quat
 
 

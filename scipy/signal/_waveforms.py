@@ -8,7 +8,7 @@ import numpy as np
 from numpy import asarray, zeros, pi, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
-from scipy._lib._array_api import array_namespace, xp_promote
+from scipy._lib._array_api import array_namespace, xp_device, xp_promote
 import scipy._external.array_api_extra as xpx
 
 
@@ -68,13 +68,15 @@ def sawtooth(t, width=1.):
 
     # on the interval 0 to width*2*pi function is tmod / (pi*w) - 1
     mask2 = ~mask1 & (tmod < w*2*xp.pi)
-    y = xpx.at(y, mask2).set(tmod[mask2]/(xp.pi*w[mask2]) - 1)
+    one = xp.asarray(1, dtype=t.dtype, device=xp_device(t))
+    safe_w = xp.where(w == 0, one, w)
+    y = xp.where(mask2, (tmod - xp.pi*safe_w)/(xp.pi*safe_w), y)
 
     # on the interval width*2*pi to 2*pi function is (pi*(w+1)-tmod) / (pi*(1-w))
     mask3 = ~(mask1 | mask2)
-    y = xpx.at(y, mask3).set(
-        (xp.pi*(w[mask3] + 1) - tmod[mask3])/(xp.pi*(1 - w[mask3]))
-    )
+    safe_1mw = xp.where(w == 1, one, 1 - w)
+    y = xp.where(mask3, (xp.pi*(w + 1) - tmod)/(xp.pi*safe_1mw), y)
+
     return y
 
 

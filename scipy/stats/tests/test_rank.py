@@ -12,6 +12,7 @@ from scipy._lib._array_api import xp_assert_equal, make_xp_test_case, xp_result_
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+@pytest.mark.filterwarnings("ignore: `tiecorrect` is deprecated")
 class TestTieCorrect:
 
     def test_empty(self):

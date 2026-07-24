@@ -4,6 +4,7 @@ import numpy as np
 from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from scipy._lib.deprecation import _NoValue
 
+import os
 import warnings
 
 # Local imports
@@ -174,10 +175,10 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
 
         else:
             warnings.warn(
-                "scipy.linalg: the `lwork` keyword is deprecated and no longer in use"
-                " as of SciPy 1.18.0 and will be removed in SciPy 1.20.0",
+                "scipy.linalg.qr: the `lwork` keyword is deprecated and no longer in"
+                "use as of SciPy 1.18.0 and will be removed in SciPy 2.1.0",
                 DeprecationWarning,
-                stacklevel=2
+                skip_file_prefixes=(os.path.dirname(__file__),)
             )
 
     # First normalize dtypes to ensure consistent return types
@@ -396,7 +397,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
 
 
 @_apply_over_batch(('a', 2))
-def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
+def rq(a, overwrite_a=False, lwork=_NoValue, mode='full', check_finite=True):
     """
     Compute RQ decomposition of a matrix.
 
@@ -413,6 +414,11 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
+
+        .. deprecated:: 2.0.0
+            This keyword is deprecated as well as no longer in use and will be
+            removed in 2.2.0.
+
     mode : {'full', 'r', 'economic'}, optional
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
@@ -465,6 +471,16 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     if mode not in ['full', 'r', 'economic']:
         raise ValueError(
                  "Mode argument should be one of ['full', 'r', 'economic']")
+
+    if lwork is not _NoValue:
+        warnings.warn(
+            "scipy.linalg.rq: the `lwork` keyword is deprecated and no longer in use"
+            " as of SciPy 2.0.0 and will be removed in SciPy 2.2.0",
+            DeprecationWarning,
+            skip_file_prefixes=(os.path.dirname(__file__),)
+        )
+
+    lwork = None
 
     if check_finite:
         a1 = np.asarray_chkfinite(a)

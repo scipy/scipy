@@ -394,7 +394,7 @@ class TestSawtoothWaveform:
         t_dtype = getattr(xp, t_dtype)
         width_dtype = getattr(xp, width_dtype)
         waveform = sawtooth(
-            xp.asarray(1, dtype=t_dtype), width=xp.asarray(1, dtype=width_dtype)
+            xp.asarray(1, dtype=t_dtype), width=xp.asarray(0.5, dtype=width_dtype)
         )
         assert waveform.dtype == xp.result_type(t_dtype, width_dtype)
 

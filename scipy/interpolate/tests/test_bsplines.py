@@ -2954,6 +2954,22 @@ class TestNdBSpline:
 
         _run_concurrent_barrier(10, worker_fn, spl)
 
+    def test_nu_negative_error_message_is_non_negative(self):
+        # ``nu == 0`` is a valid derivative order (it evaluates the function
+        # value), so the error raised for ``nu < 0`` must say "non-negative",
+        # not "positive" -- matching the ``__call__`` docstring for ``nu``.
+        x = np.linspace(0, 1, 7)
+        b = make_interp_spline(x, np.sin(x), k=3)
+        nb = NdBSpline((b.t,), b.c, b.k)
+        pt = np.array([[0.5]])
+        # ``nu == 0`` is accepted and must return the function value itself.
+        xp_assert_close(nb(pt, nu=(0,)), nb(pt))
+        nb.derivative((0,))
+        with assert_raises(ValueError, match="non-negative"):
+            nb(pt, nu=(-1,))
+        with assert_raises(ValueError, match="non-negative"):
+            nb.derivative((-1,))
+
 
 class TestMakeND:
     def test_2D_separable_simple(self):
