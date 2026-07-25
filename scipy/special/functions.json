@@ -42,12 +42,6 @@
             "binom_ppf_float": "fff->f"
         }
     },
-    "bdtrin": {
-        "boost_special_functions.h++": {
-            "bdtrin_double": "ddd->d",
-            "bdtrin_float": "fff->f"
-        }
-    },
     "betainc": {
         "boost_special_functions.h++": {
             "ibeta_float": "fff->f",

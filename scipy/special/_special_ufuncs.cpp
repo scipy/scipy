@@ -88,6 +88,7 @@ extern const char *rel_entr_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bdtrik_doc;
+extern const char *bdtrin_doc;
 extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
@@ -338,6 +339,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::ddd_d>(bdtrik_double)},
                           "bdtrik", bdtrik_doc);
     PyModule_AddObjectRef(module, "bdtrik", bdtrik);
+
+    PyObject *bdtrin =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(bdtrin_float),
+                           static_cast<xsf::numpy::ddd_d>(bdtrin_double)},
+                          "bdtrin", bdtrin_doc);
+    PyModule_AddObjectRef(module, "bdtrin", bdtrin);
 
     PyObject *gdtr = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::gdtr), static_cast<xsf::numpy::ddd_d>(xsf::gdtr)},
