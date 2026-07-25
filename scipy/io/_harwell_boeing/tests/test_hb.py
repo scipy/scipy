@@ -1,10 +1,10 @@
 from io import StringIO
 import tempfile
+import pytest
 
 import numpy as np
 
-from numpy.testing import assert_equal, \
-    assert_array_almost_equal_nulp
+from numpy.testing import assert_equal, assert_array_almost_equal_nulp
 
 from scipy.sparse import coo_array, csc_array, random_array, sparray, issparse
 
