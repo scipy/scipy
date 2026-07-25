@@ -34,6 +34,7 @@
 #include <cassert>       /* assert: buffer/kwlist invariants                            */
 #include <cstdio>        /* snprintf: format names/messages into fixed buffers (no I/O) */
 #include <cstring>       /* strchr/strcmp/strlen: parse the kwlist and PyArg format     */
+#include <climits>       /* INT_MAX/INT_MIN: range check for the PyArg 'i'-style flags   */
 
 #ifndef NPY_NO_DEPRECATED_API
 #define NPY_NO_DEPRECATED_API NPY_API_VERSION
@@ -461,6 +462,30 @@ namespace blas {
         return r;
     }
 
+    /**
+     * @brief Convert a synthetic `overwrite_*` flag with PyArg's `i`-format semantics.
+     *
+     * f2py declares these flags `int` and lets PyArg's `i` code convert them -- which is
+     * `__index__`-based and *stricter* than the permissive `from_pyobj` above: an int, bool or
+     * numpy integer is accepted, but a float, str or None raises TypeError
+     * `'<type>' object cannot be interpreted as an integer` (from PyNumber_Index).  Kept
+     * separate so the flags reproduce that message rather than f2py's "can't be converted to".
+     *
+     * @return true on success (@p out written); false with an exception set.
+     */
+    inline bool from_pyobj_index(int *out, PyObject *obj)
+    {
+        PyObject *idx = PyNumber_Index(obj);
+        if (idx == nullptr) { return false; }
+        long v = PyLong_AsLong(idx);
+        Py_DECREF(idx);
+        if (v == -1 && PyErr_Occurred()) { return false; }
+        if (v > INT_MAX) { PyErr_SetString(PyExc_OverflowError, "signed integer is greater than maximum"); return false; }
+        if (v < INT_MIN) { PyErr_SetString(PyExc_OverflowError, "signed integer is less than minimum"); return false; }
+        *out = static_cast<int>(v);
+        return true;
+    }
+
 
     /**
      * @brief Owning reference to an acquired array; the reason the wrappers have no `goto fail`.
@@ -533,6 +558,42 @@ namespace blas {
 
 
     /**
+     * @brief Uniform return packing for the wrappers (the RETURN macro below).
+     *
+     * Each result is either an acquired array (a `py_ref`, handed to Python via `release()`)
+     * or a computed scalar (through `to_pyobj` / a Python int).  `make_result` maps each item
+     * accordingly and, for more than one, packs them into a tuple in argument order --
+     * replacing f2py's per-routine `Py_BuildValue("N"/"NN"/"NNNNNi", ...)` spellings with one
+     * `RETURN(...)`.  Values are computed into locals first (no expressions tucked inside
+     * RETURN); this only does the packing.
+     */
+    inline PyObject *result_item(py_ref &r)                { return r.release(); }
+    inline PyObject *result_item(float v)                 { return to_pyobj(v); }
+    inline PyObject *result_item(double v)                { return to_pyobj(v); }
+    inline PyObject *result_item(std::complex<float> v)   { return to_pyobj(v); }
+    inline PyObject *result_item(std::complex<double> v)  { return to_pyobj(v); }
+    inline PyObject *result_item(long long v)             { return PyLong_FromLongLong(v); }
+
+    template <class... A>
+    inline PyObject *make_result(A &&...a)
+    {
+        if constexpr (sizeof...(A) == 1) {
+            return result_item(a...);                       /* single value: no tuple */
+        } else {
+            PyObject *items[] = { result_item(a)... };      /* brace-init: left-to-right order */
+            constexpr Py_ssize_t n = sizeof...(A);
+            PyObject *t = PyTuple_New(n);
+            if (t == nullptr) {
+                for (Py_ssize_t i = 0; i < n; i++) { Py_XDECREF(items[i]); }
+                return nullptr;
+            }
+            for (Py_ssize_t i = 0; i < n; i++) { PyTuple_SET_ITEM(t, i, items[i]); }
+            return t;
+        }
+    }
+
+
+    /**
      * @brief Per-routine context: everything f2py's generator derived from the .pyf declaration.
      *
      * It derives the flavored routine name (`"saxpy"`), whether an argument is a required positional
@@ -571,38 +632,48 @@ namespace blas {
         Ctx(const char *name, const char *pyfmt, const char *const *kwlist)
             : Ctx(flavor<T>(), name, pyfmt, kwlist) {}
 
-        /** @brief Full PyArg format, e.g. `"OO|OOOOOO:_fblas.saxpy"`. */
-        const char *fmt() const { return fmt_; }
-        /** @brief The kwlist as PyArg_ParseTupleAndKeywords wants it (non-const for the C API). */
-        char **kws() const { return const_cast<char **>(kwlist_); }
+        /** @brief The keyword list, null-terminated and in signature order. */
+        const char *const *kws() const { return kwlist_; }
+        /** @brief Count of required (before-'|') arguments; drives ordinals and missing-arg checks. */
+        int nreq() const { return nreq_; }
+        /** @brief Error-message routine name, e.g. "_fblas.daxpy" (the ':' suffix of fmt_). */
+        const char *qualname() const { return strchr(fmt_, ':') + 1; }
 
         /**
          * @brief Position of @p kw in the kwlist (linear scan; the lists are < 12 entries).
          *
-         * The GETSCALAR macro caches the result in a per-site `static const int`, so the scan
+         * The SCALAR_* macros cache the result in a per-site `static const int`, so the scan
          * runs once per process, not once per call.
          */
         int index(const char *kw) const
         {
             int i = 0;
             while (kwlist_[i] && strcmp(kwlist_[i], kw) != 0) { i++; }
-            /* A miss means the kwlist and a GETSCALAR/CHECK* name are out of sync -- a
-            * transcription bug, not a runtime condition.  Fail loudly instead of letting the
+            /* A miss means the kwlist and an argument name spelled in a macro are out of sync --
+            * a transcription bug, not a runtime condition.  Fail loudly instead of letting the
             * end sentinel silently classify the argument as an optional keyword. */
             assert(kwlist_[i] != nullptr && "argument name missing from kwlist");
             return i;
         }
 
+        /** @brief Like index() but returns -1 for an unknown name (used to flag unexpected kwargs). */
+        int index_opt(const char *kw) const
+        {
+            int i = 0;
+            while (kwlist_[i] && strcmp(kwlist_[i], kw) != 0) { i++; }
+            return kwlist_[i] ? i : -1;
+        }
+
         /**
          * @brief Convert one scalar argument, unconditionally.
          *
-         * The provided-or-default branch lives in the GETSCALAR macro (an omitted optional never
-         * reaches this function); here the object is always converted.  On conversion failure
-         * raises `_fblas.saxpy() 4th keyword (incx) can't be converted to int`.
+         * The provided-or-default branch lives in SCALAR_OPT (an omitted optional never reaches
+         * this function); here the object is always converted.  On conversion failure raises
+         * `_fblas.saxpy() 4th keyword (incx) can't be converted to int`.
          *
          * @param v    Conversion target; written only on success.
          * @param kw   Argument name as it appears in the kwlist.
-         * @param idx  The kwlist position of @p kw, as returned by `index(kw)` (the GETSCALAR
+         * @param idx  The kwlist position of @p kw, as returned by `index(kw)` (the SCALAR_*
          *             macros cache it per site); determines the "4th keyword" ordinal.
          * @return true on success; false with an exception set.
          */
@@ -626,11 +697,11 @@ namespace blas {
         }
 
         /**
-         * @brief f2py CHECKSCALAR; no-op when @p ok.
+         * @brief Raise a scalar `check(...)` failure as ValueError; no-op when @p ok.
          *
          * On failure raises `(incx>0||incx<0) failed for 4th keyword incx: saxpy:incx=0`.
          *
-         * @param tcheck  The check expression's source text (the CHECKSCALAR macro stringizes it).
+         * @param tcheck  The check expression's source text (the CHECK macro stringizes it).
          * @param val     The offending value, printed after `name=`; widened to long long so
          *                ILP64 CBLAS_INT values print correctly on LLP64 platforms.
          */
@@ -644,7 +715,7 @@ namespace blas {
         }
 
         /**
-         * @brief f2py CHECKARRAY; no-op when @p ok.
+         * @brief Raise an array `check(...)` failure as ValueError; no-op when @p ok.
          *
          * On failure raises `(shape(a,0)==shape(a,1)) failed for 2nd argument a`.
          */
@@ -765,130 +836,251 @@ namespace blas {
         int nreq_;
     };
 
+
+    /**
+     * @brief Supplies each argument's raw Python object to the wrapper by name, so an argument is
+     *        named exactly once (in the kwlist).  `raw("y")` returns the object passed for `y`
+     *        positionally or by keyword, or nullptr when it was omitted.
+     *
+     * `parse()` performs the up-front structural validation, reproducing CPython's argument-parsing
+     * error precedence: too-many-arguments, then missing-required, then given-by-name-and-position,
+     * then unexpected-keyword (see parse() for why these must be separate passes).  Conversion,
+     * size checks and array acquisition happen afterwards, in the SCALAR_ and ARRAY_ declaration
+     * macros, which read from this cursor and `Ctx`.
+     */
+    template <class T>
+    class ArgCursor {
+    public:
+        ArgCursor(PyObject *args, PyObject *kwds, const Ctx<T> &ctx)
+            : args_(args), kwds_(kwds), ctx_(ctx) {}
+
+        /** @brief CPython-order structural validation; false with an exception set on failure. */
+        bool parse() const
+        {
+            const char *const *kw = ctx_.kws();
+            const char *fn = ctx_.qualname();
+            Py_ssize_t npos = args_ ? PyTuple_GET_SIZE(args_) : 0;
+            Py_ssize_t nkw = kwds_ ? PyDict_Size(kwds_) : 0;
+            int nreq = ctx_.nreq();
+            int nnames = 0;
+            while (kw[nnames]) { nnames++; }
+
+            /* CPython's PyArg validates in *separate passes*, not one interleaved loop -- so a
+             * clash at an earlier index does not pre-empt a missing-required at a later one
+             * (`ddot(x, x=x)` reports missing 'y', not the 'x' clash).  The order is:
+             *   1. too many arguments;  2. missing required;
+             *   3. argument given by name and position;  4. unexpected keyword. */
+
+            /* 1. too many arguments: the count is positional + keyword *total*, so an extra,
+             * duplicate, or unexpected keyword tips a fully-positional call over (e.g. rotg's
+             * `OO|` reports "takes at most 2 (3 given)" for `drotg(a, b, foo=1)`, not an
+             * unexpected-keyword error).  Keyword functions always word this "at most". */
+            if (npos + nkw > nnames) {
+                PyErr_Format(PyExc_TypeError, "%s() takes at most %d argument%s (%zd given)",
+                             fn, nnames, nnames == 1 ? "" : "s", npos + nkw);
+                return false;
+            }
+
+            /* 2. missing required arguments (signature order) */
+            for (int i = 0; i < nreq; i++) {
+                bool given = (i < npos) || (kwds_ && PyDict_GetItemString(kwds_, kw[i]) != nullptr);
+                if (!given) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "%s() missing required argument '%s' (pos %d)", fn, kw[i], i + 1);
+                    return false;
+                }
+            }
+
+            /* 3. arguments given by both name and position (signature order) */
+            for (int i = 0; i < nnames && i < npos; i++) {
+                if (kwds_ && PyDict_GetItemString(kwds_, kw[i]) != nullptr) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "argument for %s() given by name ('%s') and position (%d)",
+                                 fn, kw[i], i + 1);
+                    return false;
+                }
+            }
+
+            /* 4. unexpected keyword arguments */
+            if (kwds_) {
+                PyObject *key, *val;
+                Py_ssize_t pos = 0;
+                while (PyDict_Next(kwds_, &pos, &key, &val)) {
+                    const char *k = PyUnicode_AsUTF8(key);
+                    if (k == nullptr) { return false; }
+                    if (ctx_.index_opt(k) < 0) {
+                        PyErr_Format(PyExc_TypeError,
+                                     "%s() got an unexpected keyword argument '%s'", fn, k);
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /**
+         * @brief Raw (borrowed) object for @p name: its positional slot, else the keyword,
+         *        else nullptr when the argument was omitted (an optional's default applies).
+         *
+         * Safe to call only after parse() succeeded (no position/keyword clash remains).
+         */
+        PyObject *raw(const char *name) const
+        {
+            int idx = ctx_.index(name);
+            Py_ssize_t npos = args_ ? PyTuple_GET_SIZE(args_) : 0;
+            if (idx < npos) { return PyTuple_GET_ITEM(args_, idx); }
+            return kwds_ ? PyDict_GetItemString(kwds_, name) : nullptr;
+        }
+
+    private:
+        PyObject *args_;
+        PyObject *kwds_;
+        const Ctx<T> &ctx_;
+    };
+
 }  // namespace blas
 
 
 /**
  * ====================================================================================
- * Following are helper macros designed to mimic the legacy f2py-generated .pyf wrappers,
- * used until SciPy 2.0. They are not intended to be used in new code and only serve
- * to keep compatibility with the legacy, occasionally buggy, behavior.
+ * Argument-handling vocabulary.  A wrapper parses its arguments with `PARSE_ARGS()` and then
+ * declares each one, in processing order, with one macro line per argument.  Two names are
+ * referenced by convention throughout: `P`, the ArgCursor that supplies each argument's raw
+ * Python object by name, and `ctx`, the per-routine context (flavored routine name, keyword
+ * list, required-argument count) that formats error messages.  Conventions:
  *
- * Though C++ frowns upon macros, these are the only way to concisely mimic f2py's
- * behavior without introducing a lot of boilerplate code. And they are strictly used
- * to perform stringization of the arguments and to mimic f2py's error messages.
+ * - A bare array name (`x`, `y`, `a`, `b`) is the *acquired* array, held by an owning `py_ref`
+ *   that releases its reference on every exit path (so there is no manual cleanup).
+ * - A bare lower-case scalar name (`n`, `incx`, `alpha`, ...) is the converted C scalar.
+ * - A check is an ordinary C expression, stringized into its own error message; `len()`,
+ *   `shape()` and `abs()` are real functions (see above) so the expressions compile as written.
  *
- * Conventions inside a wrapper (see the _blas_l*.cpp files):
- *
- * - `x_obj` is the raw Python argument exactly as `PyArg_ParseTupleAndKeywords` produced it.
- * - A bare array name (`x`, `y`, `a`, `b`) is the *acquired* array, held by an owning
- *   `py_ref` that releases its reference on every exit path.
- * - Bare lower-case names (`n`, `incx`, `alpha`, ...) are, if successful, converted C scalars.
- * - `ctx` is the per-routine context (flavored routine name, keyword list, required-argument
- *   count).  The vocabulary macros below expand against it by convention.
- * - Checks are stringified C-expressions evaluated as-is. Some helper macros stringify
- *   the variables into an error message, `len()`, `shape()` and `abs()` are actual functions
- *   (see above), so those expressions compile as written.
+ * Naming: an argument-declaration macro is named for what the argument *is*, `<KIND>_<ROLE>`.
+ * Scalars vary by requiredness -- `SCALAR_REQ` (required), `SCALAR_OPT` (optional, with a
+ * default), and `SCALAR_FLAG` (the strict-int `overwrite_*` flags).  Arrays vary by direction --
+ * `ARRAY_IN` (input), `ARRAY_INOUT` (in and out), and `ARRAY_OUT` (the output, optionally
+ * supplied); an array's requiredness follows from its direction, so the two suffix sets do not
+ * overlap.  Everything else is a verb for an action: `PARSE_ARGS`, `CHECK`, `CHECKARRAY`,
+ * `RETURN`.
  * ====================================================================================
  */
 
+/** @brief Declare `ArgCursor P` over `args`/`kwds` and run CPython-order structural parsing. */
+#define PARSE_ARGS() \
+    blas::ArgCursor<T> P(args, kwds, ctx); \
+    if (!P.parse()) { return nullptr; }
+
 /**
- * @brief Assign the optional scalar `<name>`: convert `<name>_obj` if the argument was
- *        provided, otherwise assign the .pyf default expression.
+ * @brief Acquire a required array argument, declaring the owning `py_ref <name>`.
  *
- * `GETSCALAR(incx, 1)` is f2py's `integer optional :: incx = 1`, and expands to the branch
- * f2py generated: `if (incx_obj == Py_None) incx = 1; else <convert incx_obj into incx>`.
- * `None` -- omitted or explicitly passed -- selects the default, exactly as in f2py.  The
- * default may be the .pyf expression verbatim, over already-assigned values
- * (`GETSCALAR(n, (len(x) - offx) / abs(incx))`), evaluated only when needed.  Conversion
- * follows f2py's permissive rules (see `from_pyobj` above): floats truncate to int, complex
- * contributes its real part, a sequence contributes element 0.
- *
- * The default is cast to the variable's own type (`decltype(name)`) -- the single narrowing
- * point for derived defaults.  This is lossless by construction: defaults are transcribed
- * .pyf expressions over certified dimensions (see `checked()`), never user input; user input
- * takes the converter branch, which range-checks.
- *
- * @param name  Bare identifier: the target C variable (declared, possibly uninitialized --
- *              every path through the macro assigns it); also selects `<name>_obj` and the
- *              Python-level argument name.
- * @param def   The .pyf default value or expression, assigned when the argument is absent.
- * @note On conversion failure raises TypeError ("... can't be converted to int"; a more
- *       specific exception from the conversion attempt wins) and executes `return nullptr`
- *       in the enclosing wrapper; `py_ref` locals clean themselves up.
+ * `ARRAY_IN` is a read-only input (`intent(in)`): the caller's array is used as-is when it
+ * already fits (dtype, rank, Fortran-contiguous, aligned), otherwise a converted copy is made.
+ * `ARRAY_INOUT` is read-write (`intent(in,out)`): with @p overwrite the caller's buffer is
+ * reused in place when it fits, otherwise a fresh writable copy is made.  The acquired array is
+ * what the wrapper returns.  Two statements (declaration + failure return): block level only.
  */
-#define GETSCALAR(name, def) \
+#define ARRAY_IN(name, ndim) \
+    py_ref name = ctx.in(P.raw(#name), ndim, #name); \
+    if (!name) { return nullptr; }
+#define ARRAY_INOUT(name, ndim, overwrite) \
+    py_ref name = ctx.inout(P.raw(#name), ndim, overwrite, #name); \
+    if (!name) { return nullptr; }
+
+/**
+ * @brief Acquire an *optional* in/out array that is also the wrapper's return value -- the array
+ *        analog of SCALAR_OPT (an optional argument with a default).  A supplied array is taken
+ *        in/out and returned; an omitted one is created fresh, filled by the BLAS call, and
+ *        returned.  This is f2py's `intent(in,out)` optional output (gemv's `y`, syr2/ger's `a`);
+ *        the macro hides the supplied-vs-omitted branch so the wrapper body stays flat.
+ *
+ * @param name       output array name; a `py_ref name` is declared holding the acquired-or-
+ *                   allocated array -- the value the wrapper hands to RETURN.
+ * @param ndim       required rank when the caller supplies the array.
+ * @param overwrite  bool: reuse the caller's supplied array in place instead of copying it.
+ * @param def        what the array defaults to when the caller omits it: a freshly allocated,
+ *                   zero-filled result buffer sized for this routine's output -- `ctx.zeros(len)`
+ *                   for a vector, `ctx.zeros(m, n)` for a matrix. To avoid garbage values,
+ *                   because the routine can accumulate into it (gemv's `beta*y`, syr's
+ *                   `a += alpha*x*x'` etc.), it is zero initialized.
+ *
+ */
+#define ARRAY_OUT(name, ndim, overwrite, def) \
+    py_ref name = (P.raw(#name) == nullptr) ? (def) : ctx.inout(P.raw(#name), ndim, overwrite, #name); \
+    if (!name) { return nullptr; }
+
+/**
+ * @brief Declare the scalar `<name>` of C type @p type and assign it: convert the caller's
+ *        object when the argument is supplied, otherwise apply the default expression @p def.
+ *
+ * The default is cast to @p type.  Conversion follows the permissive `from_pyobj` rules (a
+ * float truncates to int, a complex contributes its real part, a sequence its element 0); on
+ * failure it raises the "can't be converted to" message and returns nullptr.
+ */
+#define SCALAR_OPT(type, name, def) \
+    type name; \
     do { \
-        if (name##_obj == Py_None) { name = static_cast<decltype(name)>(def); } \
+        PyObject *name##_raw = P.raw(#name); \
+        if (name##_raw == nullptr) { name = static_cast<type>(def); } \
         else { \
             static const int name##_kwidx = ctx.index(#name); \
-            if (!ctx.scalar(&name, name##_obj, #name, name##_kwidx)) { return nullptr; } \
+            if (!ctx.scalar(&name, name##_raw, #name, name##_kwidx)) { return nullptr; } \
         } \
     } while (0)
 
 /**
- * @brief Convert the required scalar `<name>` from `<name>_obj`, unconditionally.
+ * @brief Declare and convert a required scalar `<name>` of C type @p type (no default).
  *
- * For required positionals (`alpha` in gemv/trsm) there is no default: whatever the caller
- * passed -- including an explicit `None` -- is converted, and failure raises f2py's
- * "can't be converted to" message.
+ * For required positionals (`alpha`); parse() guarantees the object is present, so it is
+ * converted unconditionally through the permissive `from_pyobj` path, raising the
+ * "can't be converted to" message on failure.
  */
-#define GETSCALAR_REQ(name) \
+#define SCALAR_REQ(type, name) \
+    type name; \
     do { \
         static const int name##_kwidx = ctx.index(#name); \
-        if (!ctx.scalar(&name, name##_obj, #name, name##_kwidx)) { return nullptr; } \
+        if (!ctx.scalar(&name, P.raw(#name), #name, name##_kwidx)) { return nullptr; } \
+    } while (0)
+
+/**
+ * @brief Declare and assign an `int` flag `<name>` (default 0) -- the `overwrite_*` controls,
+ *        which are not BLAS arguments but tell the wrapper whether it may write in place.
+ *
+ * A flag uses strict `__index__`-based conversion (see from_pyobj_index), which rejects the
+ * float/str/None that SCALAR_OPT's permissive path would coerce.  Place SCALAR_FLAG immediately
+ * after PARSE_ARGS(), ahead of the body scalars, so a bad flag is reported before a bad body
+ * scalar (a fixed error precedence).
+ */
+#define SCALAR_FLAG(name) \
+    int name = 0; \
+    do { \
+        PyObject *name##_raw = P.raw(#name); \
+        if (name##_raw != nullptr && !blas::from_pyobj_index(&name, name##_raw)) { return nullptr; } \
     } while (0)
 
 /**
  * @brief Validate a converted scalar against a `check(...)` C-expression.
  *
- * `CHECKSCALAR(incx != 0, incx)` stringizes the expression into f2py's CHECKSCALAR message
- * format, e.g. `(incx != 0) failed for 4th keyword incx: saxpy:incx=0`; the ordinal
- * ("4th keyword") comes from `ctx`.
- *
- * @param expr  The C expression for the check to be performed. Any bare comma needs to be parenthesized.
- * @param name  Bare identifier of the checked scalar; reported by name and value.
- *
- * @note On failure raises ValueError and executes `return nullptr` in the wrapper.
+ * `CHECK(incx != 0, incx)` stringizes the expression into the message
+ * `(incx != 0) failed for 4th keyword incx: daxpy:incx=0`.  @p name is the argument the check
+ * is reported against (not necessarily a variable in @p expr, e.g. the n-bound checks report
+ * `n`), and supplies the printed value.  On failure raises ValueError and returns nullptr.
  */
-#define CHECKSCALAR(expr, name) do { if (!ctx.check_scalar((expr), #expr, #name, static_cast<long long>(name))) { return nullptr; } } while (0)
+#define CHECK(expr, name) \
+    do { if (!ctx.check_scalar((expr), #expr, #name, static_cast<long long>(name))) { return nullptr; } } while (0)
 
 /**
  * @brief Validate an acquired array against a `check(...)` C-expression.
  *
- * `CHECKARRAY(shape(a, 0) == shape(a, 1), a)` stringizes the expression into f2py's
- * CHECKARRAY message format, e.g. `(shape(a, 0) == shape(a, 1)) failed for 2nd argument a`.
- *
- * @param expr  The C expression for the check to be performed. Any bare comma needs to be parenthesized.
- * @param name  Bare identifier of the checked array (a `py_ref` local).
- *
- * @note On failure raises ValueError and executes `return nullptr` in the wrapper.
+ * The array analog of CHECK: `CHECKARRAY(shape(a, 0) == shape(a, 1), a)` stringizes the
+ * expression into `(shape(a, 0) == shape(a, 1)) failed for 2nd argument a`.  @p name is the
+ * array the check is reported against (a `py_ref` local).  On failure raises ValueError and
+ * returns nullptr.
  */
 #define CHECKARRAY(expr, name) do { if (!ctx.check_array((expr), #expr, #name)) { return nullptr; } } while (0)
 
-/**
- * @brief Acquire `<name>_obj` as a Fortran-ordered array of the wrapper's flavor,
- *        declaring the owning local `py_ref <name>`.
- *
- * `GETARRAY_IN` is f2py `intent(in)`: the caller's array is used as-is when it already fits
- * (dtype, exact rank, F-contiguous, aligned), otherwise a converted copy is made.
- * `GETARRAY_INOUT` is `intent(in,out)`: with @p overwrite the caller's array is reused in
- * place when it fits; without it a fresh writable copy is always made (f2py `intent(copy)`).
- * The acquired array is what the wrapper returns to Python via `release()`.
- *
- * @param name       Bare identifier: declares `py_ref name` from `<name>_obj`.
- * @param ndim       Required rank, matched exactly.
- * @param overwrite  (INOUT only) `bool`: reuse the caller's buffer when possible.
- * @note Expands to two statements (declaration + failure return): use at block level only,
- *       never as the body of an unbraced `if`/`else`.  On failure an exception is already
- *       set (or f2py's array-creation message is raised) and the wrapper returns nullptr.
- */
-#define GETARRAY_IN(name, ndim) \
-    py_ref name = ctx.in(name##_obj, ndim, #name); \
-    if (!name) { return nullptr; }
-#define GETARRAY_INOUT(name, ndim, overwrite) \
-    py_ref name = ctx.inout(name##_obj, ndim, overwrite, #name); \
-    if (!name) { return nullptr; }
+/** @brief Pack the wrapper's results and `return` them (see make_result): `RETURN(y)`,
+ *         `RETURN(x, y)`, `RETURN(idx)`.  Compute values into locals first; no expressions here. */
+#define RETURN(...) return blas::make_result(__VA_ARGS__)
 
 /**
  * @brief Emit the four method-table rows of one routine -- `s<name>`, `d<name>`, `c<name>`,
@@ -910,3 +1102,11 @@ namespace blas {
  */
 #define BLAS_ROW(pyname, name, T) \
     {#pyname, (PyCFunction)(void (*)())name<T>, METH_VARARGS | METH_KEYWORDS, nullptr}
+
+/**
+ * @brief Like BLAS_ROW but for a wrapper template with two type parameters `name<T, A>`.
+ *        Used by the real-scalar `scal` overload (`csscal` = `scal<c64, f32>`): the second
+ *        parameter is the scalar type, which also distinguishes it from the regular `scal<T>`.
+ */
+#define BLAS_ROW2(pyname, name, T, A) \
+    {#pyname, (PyCFunction)(void (*)())name<T, A>, METH_VARARGS | METH_KEYWORDS, nullptr}
