@@ -285,7 +285,6 @@ class TestConstructUtils:
 
         self.check_identity(construct.eye_array)
 
-#    @pytest.mark.parametrize("identity", [construct.identity, construct.eye_array])
     def check_identity(self, identity):
         assert_equal(identity(1).toarray(), [[1]])
         assert_equal(identity(2).toarray(), [[1,0],[0,1]])
@@ -299,7 +298,6 @@ class TestConstructUtils:
             assert_equal(I.format, fmt)
             assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
-#    @pytest.mark.parametrize("eye", [construct.eye, construct.eye_array])
     def test_eye(self):
         with pytest.deprecated_call(match=".* is being repl"):
             self.check_eye(construct.eye)
@@ -341,7 +339,6 @@ class TestConstructUtils:
                                 np.eye(m, n, k=k)
                             )
 
-#    @pytest.mark.parametrize("eye", [construct.eye, construct.eye_array])
     def test_eye_one(self):
         with pytest.deprecated_call(match=".* is being repl"):
             self.check_eye_one(construct.eye)
