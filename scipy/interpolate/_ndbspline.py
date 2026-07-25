@@ -454,7 +454,7 @@ def _make_lsq_ndbspl(
     y : array_like, shape (npts, ...)
         Data values at `x`. Any trailing dimensions are treated as batch
         dimensions and fitted with the same design matrix.
-    t : tuple of array_like, shape (nt_i,)
+    t : tuple of array_like, shape (ndim,)
         Full knot vectors for each dimension. Boundary knots must already be
         included.
     k : int or array_like, shape (ndim,), optional
