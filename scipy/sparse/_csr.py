@@ -335,7 +335,7 @@ def isspmatrix_csr(x):
         is elementwise multiplication. See the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        The isspmatrix_csr function will be removed no earlier than v1.20.
+        The isspmatrix_csr function will be removed no earlier than v2.1.
         """
     prefixes = (os.path.dirname(__file__),)
     warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
