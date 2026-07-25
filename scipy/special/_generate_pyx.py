@@ -111,6 +111,7 @@ special_ufuncs = [
     "airy",
     "airye",
     "bdtrik",
+    "bdtrin",
     "bei",
     "beip",
     "ber",
