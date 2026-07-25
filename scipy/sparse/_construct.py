@@ -24,7 +24,7 @@ from ._csc import csc_matrix, csc_array
 from ._csr import csr_matrix, csr_array
 from ._dia import dia_matrix, dia_array
 
-from ._base import issparse, sparray, spmatrix
+from ._base import issparse, sparray
 
 
 def expand_dims(A, /, *, axis=0):

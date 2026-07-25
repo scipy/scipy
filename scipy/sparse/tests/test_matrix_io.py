@@ -27,7 +27,11 @@ def _save_and_load(matrix):
     return loaded_matrix
 
 def _check_save_and_load(dense_matrix):
-    for matrix_class in [csc_matrix, csr_matrix, bsr_matrix, dia_matrix, coo_matrix]:
+    sparse_classes = [
+        csc_matrix, csr_matrix, bsr_matrix, dia_matrix, coo_matrix,
+        csc_array, csr_array, bsr_array, dia_array, coo_array,
+        ]
+    for matrix_class in sparse_classes:
         matrix = matrix_class(dense_matrix)
         loaded_matrix = _save_and_load(matrix)
         assert_(type(loaded_matrix) is matrix_class)
