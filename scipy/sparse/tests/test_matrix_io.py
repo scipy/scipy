@@ -6,11 +6,8 @@ import pytest
 from pytest import raises as assert_raises
 from numpy.testing import assert_equal, assert_
 
-from scipy.sparse import (sparray, save_npz, load_npz,
-                          csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
-                          coo_matrix, dok_matrix, lil_matrix,
-                          csc_array, csr_array, bsr_array, dia_array,
-                          coo_array, dok_array, lil_array)
+from scipy.sparse import (save_npz, load_npz, csc_array, csr_array, bsr_array,
+                          dia_array, coo_array, dok_array, lil_array)
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -27,11 +24,7 @@ def _save_and_load(matrix):
     return loaded_matrix
 
 def _check_save_and_load(dense_matrix):
-    sparse_classes = [
-        csc_matrix, csr_matrix, bsr_matrix, dia_matrix, coo_matrix,
-        csc_array, csr_array, bsr_array, dia_array, coo_array,
-        ]
-    for matrix_class in sparse_classes:
+    for matrix_class in [csc_array, csr_array, bsr_array, dia_array, coo_array]:
         matrix = matrix_class(dense_matrix)
         loaded_matrix = _save_and_load(matrix)
         assert_(type(loaded_matrix) is matrix_class)

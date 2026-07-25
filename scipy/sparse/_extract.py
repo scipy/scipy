@@ -5,9 +5,6 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['find', 'tril', 'triu']
 
-import os
-from warnings import warn
-
 from ._coo import coo_array
 
 

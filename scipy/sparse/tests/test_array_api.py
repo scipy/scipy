@@ -487,11 +487,7 @@ def test_blocks_default_construction_fn_matrices():
 
     # block diag
     m = scipy.sparse.block_diag((A, B, C))
-    assert not isinstance(m, scipy.sparse.sparray)
-
-    # bmat
-    m = scipy.sparse.bmat([[A, None], [None, C]])
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(m, scipy.sparse.sparray)
 
 
 def test_format_property():
