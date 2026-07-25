@@ -2568,6 +2568,16 @@ const char *berp_doc = R"(
     --------
     ber : Kelvin function ber
 
+    Examples
+    --------
+    It can be expressed as the derivative of the Kelvin function `ber`.
+
+    >>> import numpy as np
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.berp(x)
+    array([-0.06244575, -0.49306712, -1.56984663, -3.13465396])
+
     References
     ----------
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
