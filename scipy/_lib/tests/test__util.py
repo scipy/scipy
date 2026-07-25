@@ -11,12 +11,13 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.conftest import skip_xp_invalid_arg
 
-from scipy._lib._array_api import xp_assert_equal
+from scipy._lib._array_api import xp_assert_equal, make_xp_test_case, xp_isscalar
 from scipy._lib._testutils import IS_WASM
 from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan, _rng_html_rewrite, _workers_wrapper)
+                              _contains_nan, _rng_html_rewrite, _workers_wrapper,
+                              _item_for_scalar_function)
 import scipy._external.array_api_extra as xpx
 from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
@@ -144,6 +145,32 @@ def test__workers_wrapper():
     with Pool(2) as p:
         part_f = functools.partial(user_of_workers, b=2, workers=p.map)
         assert_equal(part_f(arr), req)
+
+
+@make_xp_test_case(_item_for_scalar_function)
+def test__item_for_scalar_function(xp):
+    # check that item can extract a 0D array from an array-scalar or an array
+    # with 1 element, with the extracted type being unchanged.
+    dtypes = [xp.float64, xp.float32, xp.int64, xp.bool]
+    for dtype in dtypes:
+        x = xp.asarray(1, dtype=dtype)
+        y = _item_for_scalar_function(x)
+        assert xp_isscalar(y)
+        assert y.dtype == dtype
+
+        x = xp.asarray([1], dtype=dtype)
+        # ensure that we can pass the array namespace in as a parameter
+        y = _item_for_scalar_function(x, xp=xp)
+        assert xp_isscalar(y)
+        assert y.dtype == dtype
+
+    x = [1.0]
+    y = _item_for_scalar_function(x)
+    assert xp_isscalar(y)
+
+    x = xp.asarray([1.0, 2.0])
+    with assert_raises(ValueError):
+        _item_for_scalar_function(x)
 
 
 def test_rng_integers():

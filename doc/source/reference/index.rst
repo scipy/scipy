@@ -1,168 +1,16 @@
 .. _scipy-api:
 
-SciPy API
-=========
+*************
+API Reference
+*************
 
-Importing from SciPy
----------------------
-
-In Python, the distinction between what is the public API of a library and what
-are private implementation details is not always clear.  Unlike in other
-languages like Java, it is possible in Python to access "private" functions or
-objects.  Occasionally this may be convenient, but be aware that if you do so
-your code may break without warning in future releases.  Some widely understood
-rules for what is and isn't public in Python are:
-
-- Methods / functions / classes and module attributes whose names begin with a
-  leading underscore are private.
-
-- If a class name begins with a leading underscore, none of its members are
-  public, whether or not they begin with a leading underscore.
-
-- If a module name in a package begins with a leading underscore none of
-  its members are public, whether or not they begin with a leading underscore.
-
-- If a module or package defines ``__all__``, that authoritatively defines the
-  public interface.
-
-- If a module or package doesn't define ``__all__``, then all names that don't
-  start with a leading underscore are public.
-
-.. note:: Reading the above guidelines one could draw the conclusion that every
-          private module or object starts with an underscore.  This is not the
-          case; the presence of underscores do mark something as private, but
-          the absence of underscores do not mark something as public.
-
-In SciPy there are modules whose names don't start with an underscore, but that
-should be considered private. To clarify which modules these are, we define
-below what the public API is for SciPy, and give some recommendations for how
-to import modules/functions/objects from SciPy.
-
-Guidelines for importing functions from SciPy
----------------------------------------------
-
-Everything in the namespaces of SciPy submodules is public. In general in
-Python, it is recommended to make use of namespaces. For example, the
-function ``curve_fit`` (defined in ``scipy/optimize/_minpack_py.py``) should be
-imported like this::
-
-  import scipy
-  result = scipy.optimize.curve_fit(...)
-
-Or alternatively one could use the submodule as a namespace like so::
-
-  from scipy import optimize
-  result = optimize.curve_fit(...)
-
-.. note:: For ``scipy.io`` prefer the use of  ``import scipy``
-          because ``io`` is also the name of a module in the Python
-          stdlib.
-
-In some cases, the public API is one level deeper.  For example, the
-``scipy.sparse.linalg`` module is public, and the functions it contains are not
-available in the ``scipy.sparse`` namespace.  Sometimes it may result in more
-easily understandable code if functions are imported from one level deeper.
-For example, in the following it is immediately clear that ``lomax`` is a
-distribution if the second form is chosen::
-
-  # first form
-  from scipy import stats
-  stats.lomax(...)
-
-  # second form
-  from scipy.stats import distributions
-  distributions.lomax(...)
-
-In that case, the second form can be chosen **if** it is documented in the next
-section that the submodule in question is public. Of course you can still use::
-
-  import scipy
-  scipy.stats.lomax(...)
-  # or
-  scipy.stats.distributions.lomax(...)
-
-.. note:: SciPy is using a lazy loading mechanism which means that modules
-          are only loaded in memory when you first try to access them.
-
-API definition
---------------
-
-Every submodule listed below is public. That means that these submodules are
-unlikely to be renamed or changed in an incompatible way, and if that is
-necessary, a deprecation warning will be raised for one SciPy release before the
-change is made.
-
-* `scipy`
-
-* `scipy.cluster`
-
-  - `scipy.cluster.vq`
-  - `scipy.cluster.hierarchy`
-
-* `scipy.constants`
-
-* `scipy.datasets`
-
-* `scipy.differentiate`
-
-* `scipy.fft`
-
-* `scipy.fftpack`
-
-* `scipy.integrate`
-
-* `scipy.interpolate`
-
-* `scipy.io`
-
-  - `scipy.io.arff`
-  - `scipy.io.matlab`
-  - `scipy.io.wavfile`
-
-* `scipy.linalg`
-
-  - `scipy.linalg.blas`
-  - `scipy.linalg.cython_blas`
-  - `scipy.linalg.lapack`
-  - `scipy.linalg.cython_lapack`
-  - `scipy.linalg.interpolative`
-
-* `scipy.ndimage`
-
-* `scipy.optimize`
-
-  - `scipy.optimize.cython_optimize`
-  - `scipy.optimize.elementwise`
-
-* `scipy.signal`
-
-  - `scipy.signal.windows`
-
-* `scipy.sparse`
-
-  - `scipy.sparse.linalg`
-  - `scipy.sparse.csgraph`
-
-* `scipy.spatial`
-
-  - `scipy.spatial.distance`
-  - `scipy.spatial.transform`
-
-* `scipy.special`
-
-* `scipy.stats`
-
-  - `scipy.stats.contingency`
-  - `scipy.stats.mstats`
-  - `scipy.stats.qmc`
-  - `scipy.stats.sampling`
+.. A `toctree` should always be placed into the file's top-level section.
+   Otherwise, Sphinx will become confused with section hierarchies.
 
 .. toctree::
-   :maxdepth: 1
+   :caption: API Reference
    :hidden:
-   :titlesonly:
 
-   scipy <main_namespace>
    scipy.cluster <cluster>
    scipy.constants <constants>
    scipy.datasets <datasets>
@@ -181,9 +29,127 @@ change is made.
    scipy.special <special>
    scipy.stats <stats>
 
-SciPy structure
----------------
+SciPy's functionality is organized into :ref:`submodules <submodule_list>`, whereas
+the :ref:`main namespace <main_namespace>` (``scipy``) only has a few utility functions.
+In SciPy, most functions and classes are self-contained and are straightforward to use,
+e.g.:
 
+>>> from scipy.constants import speed_of_light
+>>> from scipy.signal.windows import hann
+...
+>>> print(f"{speed_of_light} m/s is quite fast.")
+299792458.0 m/s is quite fast.
+>>> hann(7, sym=True)  # 7 sample symmetric Hann window
+array([0.  , 0.25, 0.75, 1.  , 0.75, 0.25, 0.  ])
+
+This remainder of this page is organized as follows: It begins with the list of
+:ref:`submodules <submodule_list>`, followed by the content of the :ref:`main namespace
+<main_namespace>`. It concludes by presenting the :ref:`design convention for SciPy
+modules <design_conventions_modules>`.
+
+
+.. _submodule_list:
+
+Submodules
+==========
+The public submodules have the following structure:
+
++---+---+-------------------------------------------------------------------+
+| :ref:`scipy <main_namespace>` Main namespace                              |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.cluster` Clustering algorithms                                 |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.cluster.hierarchy` Hierarchical clustering                 |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.cluster.vq` K-means clustering and vector quantization     |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.constants` Physical and mathematical constants                 |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.datasets` Datasets                                             |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.differentiate` Finite Difference Differentiation               |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.fft` Discrete Fourier transforms                               |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.fftpack` Legacy discrete Fourier transforms                    |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.integrate` Integration and ODEs                                |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.interpolate` Interpolation                                     |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.io` Input and output                                           |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.io.arff` ARFF files                                        |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.io.matlab` MATLAB® files                                   |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.io.wavfile` WAV sound files                                |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.linalg` Linear algebra                                         |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.linalg.blas` Low-level BLAS functions                      |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.linalg.cython_blas` BLAS Functions for Cython              |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.linalg.interpolative` Interpolative matrix decomposition   |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.linalg.lapack` Low-level LAPACK functions                  |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.linalg.cython_lapack` LAPACK functions for Cython          |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.ndimage` Multidimensional image processing                     |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.optimize` Optimization and root finding                        |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.optimize.cython_optimize` Cython optimize root finding API |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.optimize.elementwise` Elementwise Scalar Optimization      |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.signal` Signal processing                                      |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.signal.windows` Window functions                           |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.sparse` Sparse linear algebra                                  |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.sparse.csgraph` Compressed sparse graph routines           |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.sparse.linalg` Sparse linear algebra                       |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.spatial` Spatial algorithms and data structures                |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.spatial.distance` Distance computations                    |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.spatial.transform` Spatial Transformations                 |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.special` Special functions                                     |
++---+---+-------------------------------------------------------------------+
+|   | `scipy.stats` Statistical functions                                   |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.stats.contingency` Contingency table functions             |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.stats.mstats` Statistical functions for masked arrays      |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.stats.qmc` Quasi-Monte Carlo submodule                     |
++---+---+-------------------------------------------------------------------+
+|   |   | `scipy.stats.sampling` Random Number Generators                   |
++---+---+-------------------------------------------------------------------+
+
+The ``misc`` submodule is deprecated and does not contain functions anymore.
+
+
+.. _main_namespace:
+
+Main namespace (``scipy``)
+=============================
+
+.. automodule:: scipy
+    :exclude-members: LowLevelCallable, show_config
+
+
+.. _design_conventions_modules:
+
+Design Conventions for Modules
+==============================
 All SciPy modules should follow the following conventions. In the
 following, a *SciPy module* is defined as a Python package, say
 ``yyy``, that is located in the scipy/ directory.
@@ -200,14 +166,19 @@ following, a *SciPy module* is defined as a Python package, say
   - A directory ``tests/`` that contains files ``test_<name>.py``
     corresponding to modules ``yyy/<name>{.py,.so,/}``.
 
+  - An ``__init__.py`` file, which loads functionality from the other files in the
+    directory as needed. Furthermore, it must list all public members, classes and
+    attributes into its ´´__all__`` attribute. Following Python's conventions, names
+    starting with an underscore character are considered private.
+
 * Private modules should be prefixed with an underscore ``_``,
-  for instance ``yyy/_somemodule.py``.
+  for instance ``yyy/_some_module.py``.
 
 * User-visible functions should have good documentation following
   the `NumPy documentation style`_.
 
-* The ``__init__.py`` of the module should contain the main reference
-  documentation in its docstring. This is connected to the Sphinx
+* The ``__init__.py`` of the module should contain the main reference documentation in
+  its docstring.  This is connected to the Sphinx
   documentation under ``doc/`` via Sphinx's automodule directive.
 
   The reference documentation should first give a categorized list of

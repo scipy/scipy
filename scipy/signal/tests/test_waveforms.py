@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
+
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case, xp_default_dtype
+    make_xp_test_case
 )
 
 import scipy.signal._waveforms as waveforms
@@ -392,7 +394,7 @@ class TestSawtoothWaveform:
         t_dtype = getattr(xp, t_dtype)
         width_dtype = getattr(xp, width_dtype)
         waveform = sawtooth(
-            xp.asarray(1, dtype=t_dtype), width=xp.asarray(1, dtype=width_dtype)
+            xp.asarray(1, dtype=t_dtype), width=xp.asarray(0.5, dtype=width_dtype)
         )
         assert waveform.dtype == xp.result_type(t_dtype, width_dtype)
 
@@ -403,7 +405,7 @@ class TestSawtoothWaveform:
         xp_assert_close(y1, y2)
 
     def test_known_values(self, xp):
-        eps = xp.finfo(xp_default_dtype(xp)).eps
+        eps = xp.finfo(xpx.default_dtype(xp)).eps
         t = xp.asarray([0, xp.pi, 2*xp.pi - 10*eps, 2*xp.pi])
         y = sawtooth(t)
         xp_assert_close(y, xp.asarray([-1., 0., 1., -1.]))
@@ -449,7 +451,7 @@ class TestSquareWaveform:
         t = xp.arange(10000., dtype=dtype) / 10000 * 2*xp.pi
         y = square(t, duty=duty)
 
-        dtype = xp_default_dtype(xp) if dtype is None else dtype
+        dtype = xpx.default_dtype(xp) if dtype is None else dtype
         fraction_high = xp.mean(xp.asarray(y == 1.0, dtype=dtype))
         xp_assert_close(fraction_high, xp.asarray(duty, dtype=dtype)[()])
         xp_assert_close(xp.mean(y), xp.asarray(2*duty - 1, dtype=dtype)[()])

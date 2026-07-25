@@ -10,7 +10,7 @@ import sys
 
 import numpy as np
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
+    xp_assert_equal, xp_assert_close, concat_1d, make_xp_test_case,
     xp_ravel, _xp_copy_to_numpy, array_namespace, is_cupy
 )
 import scipy._external.array_api_extra as xpx
@@ -278,7 +278,7 @@ class TestBSpline:
         xx = xp.linspace(t[k] - dt, t[n] + dt, 50)
         xy = t[k] + (xx - t[k]) % (t[n] - t[k])
         xy_np, t_np, c_np = map(_xp_copy_to_numpy, (xy, t, c))
-        atol = 1e-12 if xp_default_dtype(xp) == xp.float64 else 2e-7
+        atol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 2e-7
         xp_assert_close(
             b(xx), xp.asarray(splev(xy_np, (t_np, c_np, k))), atol=atol
         )
@@ -289,7 +289,7 @@ class TestBSpline:
         xp_assert_close(
             b(xx, extrapolate='periodic'),
             b(xy, extrapolate=True),
-            atol=1e-14 if xp_default_dtype(xp) == xp.float64 else 5e-7
+            atol=1e-14 if xpx.default_dtype(xp) == xp.float64 else 5e-7
         )
 
     def test_ppoly(self):
@@ -353,7 +353,7 @@ class TestBSpline:
         splev_result = xp.asarray(splev(xx_np, (t_np, c_np, b.k)))
         xp_assert_close(b(xx), splev_result, atol=1e-14)
 
-        atol=1e-14 if xp_default_dtype(xp) == xp.float64 else 1e-7
+        atol=1e-14 if xpx.default_dtype(xp) == xp.float64 else 1e-7
         xp_assert_close(b(xx), xp.asarray(B_0123(xx), dtype=xp.float64), atol=atol)
 
         b = BSpline.basis_element(t=xp.asarray([0, 1, 1, 2]))
@@ -2951,6 +2951,22 @@ class TestNdBSpline:
 
         _run_concurrent_barrier(10, worker_fn, spl)
 
+    def test_nu_negative_error_message_is_non_negative(self):
+        # ``nu == 0`` is a valid derivative order (it evaluates the function
+        # value), so the error raised for ``nu < 0`` must say "non-negative",
+        # not "positive" -- matching the ``__call__`` docstring for ``nu``.
+        x = np.linspace(0, 1, 7)
+        b = make_interp_spline(x, np.sin(x), k=3)
+        nb = NdBSpline((b.t,), b.c, b.k)
+        pt = np.array([[0.5]])
+        # ``nu == 0`` is accepted and must return the function value itself.
+        xp_assert_close(nb(pt, nu=(0,)), nb(pt))
+        nb.derivative((0,))
+        with assert_raises(ValueError, match="non-negative"):
+            nb(pt, nu=(-1,))
+        with assert_raises(ValueError, match="non-negative"):
+            nb.derivative((-1,))
+
 
 class TestMakeND:
     def test_2D_separable_simple(self):
@@ -4076,6 +4092,24 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                         tck[1])
 
+    @pytest.mark.parametrize("s", [1, 1e-8, 42])
+    def test_spline_endpoints_match(self, s):
+        """make_splrep with bc_type='periodic' must produce a periodic
+        spline."""
+        theta = np.linspace(0, 1, 11)
+        y = np.cos(2*np.pi*theta)
+        spl = make_splrep(theta, y, s=s, bc_type="periodic")
+        xp_assert_close(spl(theta[0]), spl(theta[-1]), atol=1e-12)
+        assert spl.extrapolate == 'periodic'
+        # check wraparound: spl(u + delta) = spl(u + 2 * delta)
+        xp_assert_close(spl(theta[-1] + 0.2), spl(theta[0] + 0.2), atol=1e-12)
+        xp_assert_close(spl(theta[0] - 0.2), spl(theta[-1] - 0.2), atol=1e-12)
+        # check k-derivatives
+        nus = np.arange(spl.k)
+        vals_right = np.array([spl(theta[-1] + 0.2, nu) for nu in nus])
+        vals_left = np.array([spl(theta[0] + 0.2, nu) for nu in nus])
+        xp_assert_close(vals_right, vals_left, atol=1e-10)
+
     @pytest.mark.parametrize("k_fp", [(1, -0.0001), (2, -0.0001), (3, -8.62e-05)])
     @pytest.mark.parametrize("s", [1e-4])
     def test_fperiodic_basic_fit(self, k_fp, s):
@@ -4099,7 +4133,6 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         y_check = bs(x_check)
 
         xp_assert_close(y_check[0], y_check[1])
-
 
 @make_xp_test_case(make_splprep)
 class TestMakeSplprep:
@@ -4137,7 +4170,6 @@ class TestMakeSplprep:
         # values: note axis=1
         xp_assert_close(spl(u),
                         BSpline(t, c, k, axis=1)(u), atol=1e-15)
-
     @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
     def test_array_not_list(self, s):
         # the argument of splPrep is either a list of arrays or a 2D array (sigh)
@@ -4226,7 +4258,7 @@ class TestMakeSplprepPeriodic:
         y = [np.sin(x), np.cos(x)]
 
         # the number of knots depends on `s` (this is by construction)
-        num_knots = {0: 14, 1e-4: 16, 1e-5: 16, 1e-6: 16}
+        num_knots = {0: 16, 1e-4: 16, 1e-5: 16, 1e-6: 16}
 
         # construct the splines
         (t, c, k), u_ = splprep(y, s=s, per=1)
@@ -4241,6 +4273,25 @@ class TestMakeSplprepPeriodic:
         # values: note axis=1
         xp_assert_close(spl(u), BSpline(t, c, k, axis=1)(u),
                         atol=1e-06, rtol=1e-06)
+
+    @pytest.mark.parametrize("s", [1, 1e-8, 42])
+    def test_spline_endpoints_match(self, s):
+        """make_splprep with bc_type='periodic' must produce a periodic
+        spline: matching endpoint values, extrapolate='periodic'."""
+        theta = np.linspace(0, 1, 11)
+        x = np.sin(2*np.pi*theta)
+        y = np.cos(2*np.pi*theta)
+        spl, u = make_splprep([x, y], u=theta, s=s, bc_type="periodic")
+        xp_assert_close(spl(u[0]), spl(u[-1]), atol=1e-12)
+        assert spl.extrapolate == 'periodic'
+        # check wraparound: spl(u + delta) = spl(u + 2 * delta)
+        xp_assert_close(spl(u[-1] + 0.2), spl(u[0] + 0.2), atol=1e-12)
+        xp_assert_close(spl(u[0] - 0.2), spl(u[-1] - 0.2), atol=1e-12)
+        # check k-derivatives match
+        nus = np.arange(spl.k)
+        vals_right = np.array([spl(u[-1] + 0.2, nu) for nu in nus])
+        vals_left = np.array([spl(u[0] + 0.2, nu) for nu in nus])
+        xp_assert_close(vals_right, vals_left, atol=1e-10)
 
     @pytest.mark.parametrize('s', [0, 1e-4, 1e-5, 1e-6])
     def test_array_not_list(self, s):
@@ -4310,6 +4361,33 @@ class TestMakeSplprepPeriodic:
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
 
+    @pytest.mark.parametrize("bc_type", [None, "not-a-knot", "periodic"])
+    @pytest.mark.parametrize("matching_endpoints", [True, False])
+    def test_bc_type_match_s0(self, bc_type, matching_endpoints):
+        # make_splprep at s=0 must match bc_type correctly to
+        # make_interp_spline, for every bc_type, endpoint-matching
+        theta = np.linspace(0, 1, 11)
+        x = np.sin(2*np.pi*theta)
+        y = np.cos(2*np.pi*theta)
+
+        if not matching_endpoints:
+            x = x.copy()
+            x[-1] = 1
+
+        periodic = (bc_type == "periodic")
+        should_raise = periodic and not matching_endpoints
+        xy = np.column_stack([x, y])
+        if should_raise:
+            with assert_raises(ValueError):
+                make_splprep([x, y], u=theta, s=0, bc_type=bc_type)
+            with assert_raises(ValueError):
+                make_interp_spline(theta, xy, bc_type=bc_type)
+        else:
+            spl, u = make_splprep([x, y], u=theta, s=0, bc_type=bc_type)
+            expected = make_interp_spline(theta, xy, bc_type=bc_type)
+            xp_assert_close(spl.c, expected.c, atol=1e-12)
+            xp_assert_close(spl.t, expected.t, atol=1e-12)
+            assert spl.extrapolate == expected.extrapolate
 
 class BatchSpline:
     # BSpline-line class with reference batch behavior

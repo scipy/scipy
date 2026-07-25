@@ -1314,6 +1314,38 @@ def riccati_jn(n, x):
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
 
+    Examples
+    --------
+    In practical applications, frequently the logarithmic derivative of the
+    Riccati-Bessel functions is needed. We determine the logarithmic derivative
+    of the Riccati-Bessel function of the first kind for order 5 and argument 1.2.
+    The logarithmic derivative is obtained by dividing the derivative of the
+    Riccati-Bessel function by the Riccati-Bessel function itself.
+
+    >>> from scipy.special import riccati_jn
+    >>> n = 5
+    >>> z = 1.2
+    >>> psi_n, psi_n_p = riccati_jn(n, z)
+    >>> psi_n
+    array([9.32039086e-01, 4.14341484e-01, 1.03814624e-01, 1.82194479e-02,
+           2.46548893e-03, 2.71719094e-04])
+    >>> psi_n_p
+    array([0.36235775, 0.58675452, 0.24131711, 0.058266  , 0.01000115,
+           0.00133333])
+    >>> psi_n_p[5]/psi_n[5]
+    np.float64(4.9070016327063115)
+
+    Alternatively, the logarithmic derivative of the Riccati-Bessel functions
+    could be obtained from the corresponding spherical Bessel functions by making
+    use of the definition of the Riccati-Bessel function in terms of the
+    spherical Bessel function as given above.
+
+    >>> from scipy.special import spherical_jn
+    >>> jn = spherical_jn(n, z)
+    >>> jnp = spherical_jn(n, z, derivative=True)
+    >>> jnp/jn + 1/z
+    np.float64(4.907001632706311)
+
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -1370,6 +1402,38 @@ def riccati_yn(n, x):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
+
+    Examples
+    --------
+    In practical applications, frequently the logarithmic derivative of the
+    Riccati-Bessel functions is needed. We determine the logarithmic derivative
+    of the Riccati-Bessel function of the second kind for order 5 and argument 1.2.
+    The logarithmic derivative is obtained by dividing the derivative of the
+    Riccati-Bessel function by the Riccati-Bessel function itself.
+
+    >>> from scipy.special import riccati_yn
+    >>> n = 5
+    >>> z = 1.2
+    >>> chi_n, chi_n_p = riccati_yn(n, z)
+    >>> chi_n
+    array([-3.62357754e-01, -1.23400388e+00, -2.72265195e+00, -1.01103792e+01,
+           -5.62545603e+01, -4.11798823e+02])
+    >>> chi_n_p
+    array([9.32039086e-01, 6.65978813e-01, 3.30374937e+00, 2.25532961e+01,
+           1.77404822e+02, 1.65957387e+03])
+    >>> chi_n_p[5]/chi_n[5]
+    np.float64(-4.030059767479337)
+
+    Alternatively, the logarithmic derivative of the Riccati-Bessel functions
+    could be obtained from the corresponding spherical Bessel functions by making
+    use of the definition of the Riccati-Bessel function in terms of the
+    spherical Bessel function as given above.
+
+    >>> from scipy.special import spherical_yn
+    >>> yn = spherical_yn(n, z)
+    >>> ynp = spherical_yn(n, z, derivative=True)
+    >>> ynp/yn + 1/z
+    np.float64(-4.030059767479337)
 
     """
     if not (isscalar(n) and isscalar(x)):

@@ -26,7 +26,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size,
     xp_promote, xp_swapaxes,)
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
@@ -532,9 +532,9 @@ def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
     if xp.isdtype(in1.dtype, 'integral'):
-        in1 = xp.astype(in1, xp_default_dtype(xp))
+        in1 = xp.astype(in1, xpx.default_dtype(xp))
     if xp.isdtype(in2.dtype, 'integral'):
-        in2 = xp.astype(in2, xp_default_dtype(xp))
+        in2 = xp.astype(in2, xpx.default_dtype(xp))
 
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
@@ -3638,8 +3638,8 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         determined by ``t[0] + T * n_x / num * np.arange(num)`` with
         ``T = t[1] - t[0]``. Default is ``None``.
     axis : int, optional
-        The time/frequency axis of `x` along which the resampling take place.
-        The Default is 0.
+        The time/frequency axis of `x` along which the resampling takes place.
+        The default is 0.
     window : array_like, callable, str, float, or tuple, optional
         If not ``None``, it specifies a filter in the Fourier domain, which is applied
         before resampling. I.e., the FFT ``X`` of `x` is calculated by
@@ -3647,13 +3647,13 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         function ``W(f_X)`` which consumes the frequencies ``f_X = fftfreq(n_x, T)``.
 
         If `window` is a 1d array of length ``n_x`` then ``W=window``.
-        If `window` is a callable  then ``W = window(f_X)``.
+        If `window` is a callable then ``W = window(f_X)``.
         Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
         ``W = fftshift(signal.get_window(window, n_x))``. Default is ``None``.
 
     domain : 'time' | 'freq', optional
         If set to ``'time'`` (default) then an FFT is applied to `x`, otherwise
-        (``'freq'``) it is asssmued that an FFT was already applied, i.e.,
+        (``'freq'``) it is assumed that an FFT was already applied, i.e.,
         ``x = fft(x_t, axis=axis)`` with ``x_t`` being the input signal in the time
         domain.
 
@@ -3686,9 +3686,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     zero imaginary part are treated identically. I.e., passing `x` or passing
     ``x.astype(np.complex128)`` produce the same numeric result.
 
-    If the number of input  or output samples are prime or have few prime factors, this
+    If the number of input or output samples is prime or has few prime factors, this
     function may be slow due to utilizing FFTs. Consult `~scipy.fft.prev_fast_len` and
-    `~scipy.fft.next_fast_len` for determining efficient signals lengths.
+    `~scipy.fft.next_fast_len` for determining efficient signal lengths.
     Alternatively, utilizing `resample_poly` to calculate an intermediate signal (as
     illustrated in the example below) can result in significant speed increases.
 
@@ -3875,7 +3875,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
         W = sp_fft.fftshift(get_window(window, n_x, xp=xp))
-        W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
+        W = xp.astype(W, xpx.default_dtype(xp))   # get_window always returns float64
 
     if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
         X = sp_fft.rfft(x)
@@ -3939,8 +3939,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
         the other signal extension modes supported by `scipy.signal.upfirdn`.
         Changes assumptions on values beyond the boundary. If `constant`,
-        assumed to be `cval` (default zero). If `line` assumed to continue a
-        linear trend defined by the first and last points. `mean`, `median`,
+        it is assumed to be `cval` (default zero). If `line`, it is assumed to continue
+        a linear trend defined by the first and last points. `mean`, `median`,
         `maximum` and `minimum` work as in `np.pad` and assume that the values
         beyond the boundary are the mean, median, maximum or minimum
         respectively of the array along the axis.
@@ -5415,7 +5415,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             b, a = system.num, system.den
             ftype = 'fir'
         elif (any(np.iscomplex(system.poles))
-              or any(np.iscomplex(system.poles))
+              or any(np.iscomplex(system.zeros))
               or np.iscomplex(system.gain)):
             # sosfilt & sosfiltfilt don't handle complex coeffs
             iir_use_sos = False

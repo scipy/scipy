@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "xsf_wrappers.h"
+#include "cython_special_wrappers.h"
 #include <xsf/agm.h>
 #include <xsf/airy.h>
 #include <xsf/amos.h>
@@ -60,6 +60,8 @@
 #include <xsf/cephes/unity.h>
 #include <xsf/cephes/yn.h>
 
+#include "boost_special_functions.h"
+
 using namespace std;
 
 namespace {
@@ -69,6 +71,10 @@ complex<double> to_complex(npy_cdouble z) { return {npy_creal(z), npy_cimag(z)};
 npy_cdouble to_ccomplex(complex<double> z) { return {z.real(), z.imag()}; }
 
 } // namespace
+
+/*
+ * xsf functions
+ */
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::hyp1f1(a, b, to_complex(z))); }
 
@@ -702,3 +708,9 @@ double xsf_tandg(double x) { return xsf::tandg(x); }
 double xsf_cotdg(double x) { return xsf::cotdg(x); }
 
 double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
+
+/*
+ * Boost functions
+ */
+
+ double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p); }
