@@ -371,9 +371,10 @@ class TestGaussPulse:
 
     def test_scalar_array_input(self, xp):
         # NumPy returns a scalar; other backends return a 0-D array.
+        from scipy._lib._array_api_no_0d import xp_assert_close as xp_assert_close_no_0d
         t = xp.asarray(0.0)
         y = gausspulse(t, fc=5)
-        xp_assert_close(y, xp.asarray(1.0), check_0d=False)
+        xp_assert_close_no_0d(y, xp.asarray(1.0))
 
     def test_known_values(self, xp):
         t = xp.asarray([0.0, 0.25, 0.5], dtype=xp.float64)
