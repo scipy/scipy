@@ -1829,7 +1829,8 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_weights(self, method, xp):
         # weights = 1 is same as None
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k  # type: ignore[misc]
         w = xp.ones_like(x)
 
         b = make_lsq_spline(x, y, t, k, method=method)
@@ -1839,9 +1840,241 @@ class TestLSQ:
         xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
 
+    @parametrize_lsq_methods
+    def test_clamp_values_wrong_shape_non_scalar(self, method, xp):
+        # clamp_values shape (3, 1) must not silently broadcast a
+        # gainst y.shape[1:] == (3,)
+        x = np.linspace(0, 10, 30)
+        y3 = np.column_stack([np.sin(x), 2*np.sin(x), 3*np.sin(x)])
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        
+        x, y3, t = xp.asarray(x), xp.asarray(y3), xp.asarray(t)
+        ci = xp.asarray([[0], [0], [0]], dtype=xp.float64)
+        
+        with assert_raises(ValueError, match="dimension"):
+            make_lsq_spline(
+                x, y3, t, k=k, method=method,
+                clamp_values=(ci, None)
+            )
+
+    @parametrize_lsq_methods
+    def test_clamp_values_wrong_knot_location(self, method, xp):
+        # (k+1) multiplicity knot vector but the repeated value doesn't match 
+        # x[0]/x[-1]. Should be rejected, otherwise clamp gives wrong results.
+        x_np = self.x
+        k = self.k
+        t_bad = np.r_[
+            (x_np[0] - 1,) * (k + 1),   # shifted left: repeated value != x[0]
+            self.t[k+1:-(k+1)],
+            (x_np[-1] + 1,) * (k + 1),  # shifted right: repeated value != x[-1]
+        ]
+        
+        x, y, t = xp.asarray(x_np), xp.asarray(self.y), xp.asarray(t_bad)
+        
+        with assert_raises(ValueError):
+            make_lsq_spline(x, y, t, k, method=method, clamp_values=(5, 8))
+    
+    @parametrize_lsq_methods
+    def test_clamp_values_one_sided_matches_dense_reference(self, method):
+        # For left-only clamp: pin spl(x[0]) = ci, right end free
+        x = np.linspace(0, 10, 30)
+        y = np.sin(x)
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        y0 = 0.5
+        
+        # Dense reference: drop first row and first column
+        N = BSpline.design_matrix(x, t, k).toarray()
+        Q = y - N[:, 0] * y0
+        N_reduced = N[:, 1:]       # drop first column only
+        N_reduced = N_reduced[1:]  # drop first row only
+        Q_reduced = Q[1:]          # drop first row
+        c_free = np.linalg.solve(N_reduced.T @ N_reduced, N_reduced.T @ Q_reduced)
+        c_ref_left = np.concatenate([[y0], c_free])
+        
+        spl = make_lsq_spline(x, y, t, k=k, method=method, clamp_values=(y0, None))
+        xp_assert_close(spl.c, c_ref_left, atol=1e-12)
+        
+        # For right-only clamp: pin spl(x[-1]) = cf, left end free
+        y1 = -0.3
+        Q = y - N[:, -1] * y1
+        N_reduced = N[:, :-1]       # drop last column only
+        N_reduced = N_reduced[:-1]  # drop last row only
+        Q_reduced = Q[:-1]
+        c_free = np.linalg.solve(N_reduced.T @ N_reduced, N_reduced.T @ Q_reduced)
+        c_ref_right = np.concatenate([c_free, [y1]])
+        
+        spl = make_lsq_spline(x, y, t, k=k, method=method, clamp_values=(None, y1))
+        xp_assert_close(spl.c, c_ref_right, atol=1e-12)
+
+    @pytest.mark.parametrize("clamp_values", [(3, None), (None, 3), (None, None),
+                                            (0, None), (None, 0)])
+    @parametrize_lsq_methods
+    def test_lsq_with_one_sided_clamp_values(self, method, xp, clamp_values):
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
+
+        if clamp_values == (None, None):
+            with assert_raises(ValueError):
+                make_lsq_spline(x, y, t, k, method=method, clamp_values=clamp_values)
+        else:
+            sp = make_lsq_spline(x, y, t, k, method=method, clamp_values=clamp_values)
+            if clamp_values[0] is None:
+                assert math.isclose(sp(x[-1]), clamp_values[-1])
+            elif clamp_values[1] is None:
+                assert math.isclose(sp(x[0]), clamp_values[0])
+    
+    @pytest.mark.parametrize("clamp_values", [(5, 8), (1.12, 3.14), (3.14, 22), 
+                                    (1, 1000), (0, math.inf), (math.nan, 10),
+                                    (0, 0)])
+    @parametrize_lsq_methods
+    def test_lsq_with_clamp_values(self, method, xp, clamp_values):
+        # Test if `clamp_values` actually clamps the first and last values
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
+        
+        clamp_arr = xp.asarray(clamp_values, dtype=xp.float64)
+        if not xp.all(xp.isfinite(clamp_arr)):
+            with assert_raises(ValueError):
+                make_lsq_spline(x, y, t, k, method=method, clamp_values=clamp_values)
+        else:
+            sp = make_lsq_spline(x, y, t, k, method=method, clamp_values=clamp_values)
+
+            assert math.isclose(sp(x[0]), clamp_values[0], abs_tol=1e-14)
+            assert math.isclose(sp(x[-1]), clamp_values[1], abs_tol=1e-14)
+
+    @skip_xp_backends('numpy', reason="no namespace mismatch possible when xp is numpy")
+    @parametrize_lsq_methods
+    def test_clamp_values_namespace_mismatch(self, xp, method):
+        # A plain tuple/list clamp value gets coerced to numpy internally by
+        # array_namespace; pairing it with a non-numpy xp should raise
+        # TypeError (not ValueError), matching library-wide convention.
+        x = np.linspace(0, 10, 30)
+        y = np.column_stack([np.sin(x), np.cos(x)])
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        
+        x_xp, y_xp, t_xp = xp.asarray(x), xp.asarray(y), xp.asarray(t)
+        
+        with assert_raises(TypeError):
+            make_lsq_spline(
+                x_xp, y_xp, t_xp, k=k, method=method,
+                clamp_values=((0.5, -0.5), (-0.3, 0.7)) 
+            )
+
+    @parametrize_lsq_methods
+    def test_clamp_values_multidim_y(self, xp, method):
+        # Parametric 2D y: each clamp value is a 2-vector
+        x = np.linspace(0, 10, 30)
+        y = np.column_stack([np.sin(x), np.cos(x)])
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+
+        x, y, t = xp.asarray(x), xp.asarray(y), xp.asarray(t)
+        
+        ci = xp.asarray([0.5, -0.5], dtype=xp.float64)
+        cf = xp.asarray([-0.3, 0.7], dtype=xp.float64)
+        clamp_values = (ci, cf)
+        spl = make_lsq_spline(x, y, t, k=k, method=method, clamp_values=clamp_values)
+        
+        xp_assert_close(
+            spl(x[0]), xp.asarray([0.5, -0.5], dtype=xp.float64), atol=1e-12
+        )
+        xp_assert_close(
+            spl(x[-1]), xp.asarray([-0.3, 0.7], dtype=xp.float64), atol=1e-12
+        )
+    
+    @parametrize_lsq_methods
+    def test_clamp_values_shape_mismatch(self, xp, method):
+        # scalar clamps when y is 2D should fail
+        x = np.linspace(0, 10, 30)
+        y = np.column_stack([np.sin(x), np.cos(x)])
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        
+        x, y, t = xp.asarray(x), xp.asarray(y), xp.asarray(t)
+
+        with assert_raises(ValueError, match="dimension"):
+            make_lsq_spline(x, y, t, k=k, method=method, clamp_values=(0.5, -0.3))
+    
+    @parametrize_lsq_methods
+    def test_clamp_values_matches_dense_reference(self, method):
+        # Compare against a dense implementation 
+        # Inspired from the following stackoverflow answer.
+        # https://stackoverflow.com/questions/78482220/fixing-boundary-values-on-a-spline
+        # Array API is skipped here since the reference implementation
+        # BSpline.design_matrix doesn't work well with backends like Dask
+        x = np.linspace(0, 10, 30)
+        y = np.sin(x)
+        k = 3
+        t = np.r_[(x[0],)*(k+1), [3., 5., 7.], (x[-1],)*(k+1)]
+        y0, y1 = 0.5, -0.3
+        
+        # Dense reference
+        N = BSpline.design_matrix(x, t, k).toarray()
+        Q = y - N[:, 0] * y0 - N[:, -1] * y1
+        N_reduced = N[:, 1:-1]
+        c_free = np.linalg.solve(N_reduced.T @ N_reduced, N_reduced.T @ Q)
+        c_ref = np.concatenate([[y0], c_free, [y1]])
+        
+        spl = make_lsq_spline(x, y, t, k=k, method=method, clamp_values=(y0, y1))
+        
+        xp_assert_close(spl.c, c_ref, atol=1e-12)
+    
+    @parametrize_lsq_methods
+    @pytest.mark.parametrize("clamp_values,reason,expected_exc", [
+        ((1 + 2j, 8),           "complex", ValueError),
+        ((2,),                   "wrong length", ValueError),
+        (('a', 'b'),             "non-numeric", (TypeError, ValueError)),
+        (np.array([1, 2]),      "array", ValueError),
+    ])
+    def test_clamp_values_invalid_input(self, clamp_values, reason, xp, method,
+                                    expected_exc):
+        # clamp_values must be a 2-tuple of finite real numbers
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
+        t = np.asarray(t).copy()
+
+        t[:k+1] = float(self.x[0])
+        t[-(k+1):] = float(self.x[-1])
+        t = xp.asarray(t)
+
+        with assert_raises(expected_exc):
+            make_lsq_spline(x, y, t, k, method=method, clamp_values=clamp_values)
+
+    @parametrize_lsq_methods
+    def test_clamp_values_invalid_knot_vector(self, xp, method):
+        # clamp_values requires a clamped knot vector
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
+        t = np.asarray(t).copy()
+
+        t[:k+1] = float(self.x[0])
+        t[-(k+1):] = float(self.x[-1])
+        t[0] = float(self.x[0]) - 1   # break the clamped property at the left
+        t = xp.asarray(t)
+
+        with assert_raises(ValueError):
+            make_lsq_spline(x, y, t, k, method=method, clamp_values=(5, 8))
+
+    @parametrize_lsq_methods
+    def test_clamp_values_valid(self, xp, method):
+        # valid inputs work without error
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k
+        t = np.asarray(t).copy()
+
+        t[:k+1] = float(self.x[0])
+        t[-(k+1):] = float(self.x[-1])
+        t = xp.asarray(t)
+        
+        make_lsq_spline(x, y, t, k, method=method, clamp_values=(5, 8))
+
     def test_weights_same(self, xp):
         # both methods treat weights
-        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        k = self.k  # type: ignore[misc]
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
         w = xp.asarray(w)
 
@@ -1854,7 +2087,8 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t = map(xp.asarray, (self.x, self.t))
+        k, n = self.k, self.n  # type: ignore[misc]
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
         y = xp.asarray(y)
@@ -1864,7 +2098,8 @@ class TestLSQ:
 
     @parametrize_lsq_methods
     def test_multiple_rhs_2(self, method, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t = map(xp.asarray, (self.x, self.t))
+        k, n = self.k, self.n  # type: ignore[misc]
         nrhs = 3
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
@@ -1878,7 +2113,8 @@ class TestLSQ:
         xp_assert_close(coefs, b.c, atol=1e-15)
 
     def test_multiple_rhs_3(self, xp):
-        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
+        x, t = map(xp.asarray, (self.x, self.t))
+        k, n = self.k, self.n  # type: ignore[misc]
         nrhs = 3
         y = np.random.random(size=(n, nrhs))
         y = xp.asarray(y)
@@ -1889,7 +2125,8 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_complex(self, method, xp):
         # cmplx-valued `y`
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        x, t = map(xp.asarray, (self.x, self.t))
+        k = self.k  # type: ignore[misc]
         yc = xp.asarray(self.y * (1. + 2.j))
 
         b = make_lsq_spline(x, yc, t, k, method=method)
@@ -1900,8 +2137,8 @@ class TestLSQ:
 
     def test_complex_2(self, xp):
         # test complex-valued y with y.ndim > 1
-
-        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        x, t = map(xp.asarray, (self.x, self.t))
+        k = self.k  # type: ignore[misc]
         yc = xp.asarray(self.y * (1. + 2.j))
         yc = xp.stack((yc, yc), axis=1)
 
