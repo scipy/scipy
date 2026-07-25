@@ -65,16 +65,17 @@ def biteopt(
 
     Notes
     -----
-    BiteOpt is a stochastic, population-based, global optimizer that maintains a
-    portfolio of candidate-generation strategies and dynamically tracks their
-    efficiency, favouring whichever works best for the current objective function.
-    This contrasts with classical Differential Evolution, which uses a single
-    fixed strategy throughout.
+    BiteOpt (BITmask Evolution OPTimization) is a stochastic, population-based,
+    global optimizer that maintains a portfolio of candidate-generation strategies
+    and dynamically tracks their efficiency, favouring whichever works best for
+    the current objective function. This contrasts with classical
+    Differential Evolution, which uses a single fixed strategy throughout.
     
     BiteOpt targets low- to medium-dimensional continuous problems with finite box
     bounds and requires no gradient information. Because the search is
     stochastic, results depend on the random stream; pass `rng` for
-    reproducible runs.
+    reproducible runs. BiteOpt has proven to be very competitive especially
+    for nonlinear least squares problems [2].
 
     .. versionadded:: 1.19.0
 
@@ -82,6 +83,8 @@ def biteopt(
     ----------
     .. [1] Aleksey Vaneev. "BiteOpt - Derivative-Free Global Optimization
            Method (C++)". https://github.com/avaneev/biteopt
+    .. [2] Andrea Gavana. "NIST benchmark".
+           https://infinity77.net/go_2021/nist.html
 
     Examples
     --------
