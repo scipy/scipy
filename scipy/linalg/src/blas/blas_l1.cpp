@@ -2,9 +2,9 @@
  * @file
  * @brief Level-1 BLAS wrappers.
  *
- * Wrapper conventions and the vocabulary macros (GETSCALAR, CHECKSCALAR, ...) are documented
- * in `blas_helpers.hpp`.  This file contributes the method-table chunk `blas::capi::l1_methods`,
- * merged into the module by `_blas_module.cpp`.
+ * Wrapper conventions and the vocabulary macros (PARSE_ARGS, the SCALAR_ and ARRAY_ argument
+ * declarations, CHECK, RETURN, ...) are documented in `blas_helpers.hpp`.  This file contributes
+ * the method-table chunk `blas::capi::l1_methods`, merged into the module by `_blas_module.cpp`.
  *
  */
 #define PY_ARRAY_UNIQUE_SYMBOL scipy_blas_ARRAY_API
@@ -22,318 +22,269 @@ namespace blas{
         template <class T>
         static PyObject *axpy(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *y_obj, *n_obj = Py_None, *a_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None, *offy_obj = Py_None, *incy_obj = Py_None;
             static const char *kwlist[] = {"x", "y", "n", "a", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("axpy", "OO|OOOOOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &y_obj, &n_obj, &a_obj, &offx_obj, &incx_obj, &offy_obj, &incy_obj)) {
-                return nullptr;
-            }
+            ARRAY_IN(x, 1);
+            ARRAY_INOUT(y, 1, true);
 
-            GETARRAY_IN(x, 1);
-            GETARRAY_INOUT(y, 1, true);
+            SCALAR_OPT(T, a, T(1));
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            T a;             GETSCALAR(a, T(1));
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT incy;  GETSCALAR(incy, 1);  CHECKSCALAR(incy != 0, incy);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-            CBLAS_INT offy;  GETSCALAR(offy, 0);  CHECKSCALAR(offy >= 0 && offy < len(y), offy);
-
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(y) - offy > (n - 1) * abs(incy), n);
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(y) - offy > (n - 1) * abs(incy), n);
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::axpy(n, a, x.data<T>() + offx, incx, y.data<T>() + offy, incy);
-            return y.release();   /* out=z */
+            RETURN(y);   /* out=z */
         }
 
 
         template <class T>
         static PyObject *nrm2(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None;
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
+            /* tchar_fn prefix: snrm2/dnrm2/scnrm2/dznrm2. PARSE_ARGS uses ctx uniformly. */
             static const Ctx<T> ctx(tchar_fn<T>(), "nrm2", "O|OOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &n_obj, &offx_obj, &incx_obj)) {
-                return nullptr;
-            }
+            ARRAY_IN(x, 1);
 
-            GETARRAY_IN(x, 1);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx > 0, incx);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx > 0, incx);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
-
-            return PyFloat_FromDouble(blas::nrm2(n, x.data<T>() + offx, incx));   /* out=n2 */
+            real_of_t<T> n2 = blas::nrm2(n, x.data<T>() + offx, incx);
+            RETURN(n2);   /* out=n2 */
         }
 
 
         template <class T>
         static PyObject *asum(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None;
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             static const Ctx<T> ctx(tchar_fn<T>(), "asum", "O|OOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &n_obj, &offx_obj, &incx_obj)) {
-                return nullptr;
-            }
+            ARRAY_IN(x, 1);
 
-            GETARRAY_IN(x, 1);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
-
-            return PyFloat_FromDouble(blas::asum(n, x.data<T>() + offx, incx));   /* out=s */
+            real_of_t<T> s = blas::asum(n, x.data<T>() + offx, incx);
+            RETURN(s);   /* out=s */
         }
 
 
         template <class T>
         static PyObject *iamax(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None;
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             static const Ctx<T> ctx(iflavor<T>(), "amax", "O|OOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &n_obj, &offx_obj, &incx_obj)) {
-                return nullptr;
-            }
+            ARRAY_IN(x, 1);
 
-            GETARRAY_IN(x, 1);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
-
-            /* Fortran's 1-based index is shifted to 0-based, as the .pyf callstatement did */
-            return PyLong_FromLongLong(blas::iamax(n, x.data<T>() + offx, incx) - 1);   /* out=k */
+            /* Fortran's 1-based index is shifted to 0-based, as the .pyf callstatement did.
+             * long long (not CBLAS_INT) so RETURN resolves to result_item(long long) -> PyLong. */
+            long long idx = blas::iamax(n, x.data<T>() + offx, incx) - 1;
+            RETURN(idx);   /* out=k */
         }
 
 
         template <class T>
         static PyObject *swap(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *y_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None, *offy_obj = Py_None, *incy_obj = Py_None;
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("swap", "OO|OOOOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &y_obj, &n_obj, &offx_obj, &incx_obj, &offy_obj, &incy_obj)) {
-                return nullptr;
-            }
+            ARRAY_INOUT(x, 1, true);
+            ARRAY_INOUT(y, 1, true);
 
-            GETARRAY_INOUT(x, 1, true);
-            GETARRAY_INOUT(y, 1, true);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT incy;  GETSCALAR(incy, 1);  CHECKSCALAR(incy != 0, incy);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-            CBLAS_INT offy;  GETSCALAR(offy, 0);  CHECKSCALAR(offy >= 0 && offy < len(y), offy);
-
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(y) - offy > (n - 1) * abs(incy), n);
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(y) - offy > (n - 1) * abs(incy), n);
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::swap(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy);
-            return Py_BuildValue("NN", x.release(), y.release());   /* out=(x, y) */
+            RETURN(x, y);   /* out=(x, y) */
         }
 
 
         template <class T>
         static PyObject *copy(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *y_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None, *offy_obj = Py_None, *incy_obj = Py_None;
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("copy", "OO|OOOOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &y_obj, &n_obj, &offx_obj, &incx_obj, &offy_obj, &incy_obj)) {
-                return nullptr;
-            }
+            ARRAY_IN(x, 1);
+            ARRAY_INOUT(y, 1, true);
 
-            GETARRAY_IN(x, 1);
-            GETARRAY_INOUT(y, 1, true);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT incy;  GETSCALAR(incy, 1);  CHECKSCALAR(incy != 0, incy);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-            CBLAS_INT offy;  GETSCALAR(offy, 0);  CHECKSCALAR(offy >= 0 && offy < len(y), offy);
-
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(y) - offy > (n - 1) * abs(incy), n);
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(y) - offy > (n - 1) * abs(incy), n);
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::copy(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy);
-            return y.release();   /* out=y */
+            RETURN(y);   /* out=y */
         }
 
 
         template <class T>
         static PyObject *scal(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *a_obj, *x_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None;
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", nullptr};
             static const Ctx<T> ctx("scal", "OO|OOO", kwlist);
-
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &a_obj, &x_obj, &n_obj, &offx_obj, &incx_obj)) {
-                return nullptr;
-            }
+            PARSE_ARGS();
 
             /* f2py processes a before x: a bad scalar wins over a bad array */
-            T a;  GETSCALAR_REQ(a);
-            GETARRAY_INOUT(x, 1, true);
+            SCALAR_REQ(T, a);
+            ARRAY_INOUT(x, 1, true);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::scal(n, a, x.data<T>() + offx, incx);
-            return x.release();   /* out=x */
+            RETURN(x);   /* out=x */
         }
 
 
-        /* csscal/zdscal: real scale factor on complex data; unlike the regular scal, the
-         * .pyf declares x intent(in,out,copy), so these two carry an overwrite_x flag and
-         * copy by default. */
-        template <class T>
-        static PyObject *scal_real(PyObject *, PyObject *args, PyObject *kwds)
+        /* csscal/zdscal: a second overload of scal for a *real* scale factor on complex data
+         * (a is the real type A, not the data type T -- the second template parameter both
+         * types `a` and distinguishes this from the regular scal<T>).  Unlike the regular scal,
+         * the .pyf declares x intent(in,out,copy), so these carry an overwrite_x flag and copy
+         * by default.  Registered as csscal = scal<c64, f32>, zdscal = scal<c128, f64>. */
+        template <class T, class A>
+        static PyObject *scal(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *a_obj, *x_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None;
-            int overwrite_x = 0;
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", "overwrite_x", nullptr};
             static const Ctx<T> ctx(tchar<T>(), "scal", "OO|OOOi", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &a_obj, &x_obj, &n_obj, &offx_obj, &incx_obj, &overwrite_x)) {
-                return nullptr;
-            }
+            SCALAR_FLAG(overwrite_x);
+            SCALAR_REQ(A, a);
+            ARRAY_INOUT(x, 1, overwrite_x != 0);
 
-            real_of_t<T> a;  GETSCALAR_REQ(a);
-            GETARRAY_INOUT(x, 1, overwrite_x != 0);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::scal(n, a, x.data<T>() + offx, incx);
-            return x.release();   /* out=x */
+            RETURN(x);   /* out=x */
         }
 
 
         template <class T>
         static PyObject *dot(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *y_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None, *offy_obj = Py_None, *incy_obj = Py_None;
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("dot", "OO|OOOOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &y_obj, &n_obj, &offx_obj, &incx_obj, &offy_obj, &incy_obj)) {
-                return nullptr;
-            }
+            ARRAY_IN(x, 1);
+            ARRAY_IN(y, 1);
 
-            GETARRAY_IN(x, 1);
-            GETARRAY_IN(y, 1);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT incy;  GETSCALAR(incy, 1);  CHECKSCALAR(incy != 0, incy);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-            CBLAS_INT offy;  GETSCALAR(offy, 0);  CHECKSCALAR(offy >= 0 && offy < len(y), offy);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(y) - offy > (n - 1) * abs(incy), n);
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(y) - offy > (n - 1) * abs(incy), n);
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
-
-            return PyFloat_FromDouble(blas::dot(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy));   /* out=xy */
+            real_of_t<T> xy = blas::dot(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy);
+            RETURN(xy);   /* out=xy */
         }
 
 
         template <class T>
         static PyObject *dotu(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *y_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None, *offy_obj = Py_None, *incy_obj = Py_None;
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("dotu", "OO|OOOOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &y_obj, &n_obj, &offx_obj, &incx_obj, &offy_obj, &incy_obj)) {
-                return nullptr;
-            }
+            ARRAY_IN(x, 1);
+            ARRAY_IN(y, 1);
 
-            GETARRAY_IN(x, 1);
-            GETARRAY_IN(y, 1);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT incy;  GETSCALAR(incy, 1);  CHECKSCALAR(incy != 0, incy);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-            CBLAS_INT offy;  GETSCALAR(offy, 0);  CHECKSCALAR(offy >= 0 && offy < len(y), offy);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(y) - offy > (n - 1) * abs(incy), n);
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(y) - offy > (n - 1) * abs(incy), n);
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
-
-            return to_pyobj(blas::dotu(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy));   /* out=xy */
+            T xy = blas::dotu(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy);
+            RETURN(xy);   /* out=xy */
         }
 
 
         template <class T>
         static PyObject *dotc(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *y_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None, *offy_obj = Py_None, *incy_obj = Py_None;
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("dotc", "OO|OOOOO", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &y_obj, &n_obj, &offx_obj, &incx_obj, &offy_obj, &incy_obj)) {
-                return nullptr;
-            }
+            ARRAY_IN(x, 1);
+            ARRAY_IN(y, 1);
 
-            GETARRAY_IN(x, 1);
-            GETARRAY_IN(y, 1);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT incy;  GETSCALAR(incy, 1);  CHECKSCALAR(incy != 0, incy);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-            CBLAS_INT offy;  GETSCALAR(offy, 0);  CHECKSCALAR(offy >= 0 && offy < len(y), offy);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(y) - offy > (n - 1) * abs(incy), n);
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(y) - offy > (n - 1) * abs(incy), n);
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
-
-            return to_pyobj(blas::dotc(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy));   /* out=xy */
+            T xy = blas::dotc(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy);
+            RETURN(xy);   /* out=xy */
         }
 
 
         template <class T>
         static PyObject *rotg(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *a_obj, *b_obj;
             static const char *kwlist[] = {"a", "b", nullptr};
             static const Ctx<T> ctx("rotg", "OO|", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(), &a_obj, &b_obj)) {
-                return nullptr;
-            }
-
-            T a;  GETSCALAR_REQ(a);
-            T b;  GETSCALAR_REQ(b);
+            SCALAR_REQ(T, a);
+            SCALAR_REQ(T, b);
 
             /* Though, c should have been REAL in crotg/zrotg, historically
              * _fblas assumed complex and returned garbage in c.imag. Now,
@@ -342,26 +293,22 @@ namespace blas{
             T s{};
             blas::rotg(a, b, c, s);
 
-            return Py_BuildValue("NN", to_pyobj(static_cast<T>(c)), to_pyobj(s));   /* out=(c, s) */
+            T cc = static_cast<T>(c);   /* widen real c to the flavor type, imag = 0 */
+            RETURN(cc, s);   /* out=(c, s) */
         }
 
 
         template <class T>
         static PyObject *rotmg(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *d1_obj, *d2_obj, *x1_obj, *y1_obj;
             static const char *kwlist[] = {"d1", "d2", "x1", "y1", nullptr};
             static const Ctx<T> ctx("rotmg", "OOOO|", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &d1_obj, &d2_obj, &x1_obj, &y1_obj)) {
-                return nullptr;
-            }
-
-            T d1;  GETSCALAR_REQ(d1);
-            T d2;  GETSCALAR_REQ(d2);
-            T x1;  GETSCALAR_REQ(x1);
-            T y1;  GETSCALAR_REQ(y1);
+            SCALAR_REQ(T, d1);
+            SCALAR_REQ(T, d2);
+            SCALAR_REQ(T, x1);
+            SCALAR_REQ(T, y1);
 
             py_ref param = ctx.zeros(5);
             if (!param) { return nullptr; }
@@ -369,76 +316,66 @@ namespace blas{
             /* d1, d2, x1 are updated in place by the routine but exposed as intent(in), so
              * the updates are discarded, as in f2py. */
             blas::rotmg(d1, d2, x1, y1, param.data<T>());
-            return param.release();   /* out=param */
+            RETURN(param);   /* out=param */
         }
 
 
         template <class T>
         static PyObject *rot(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *y_obj, *c_obj, *s_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None, *offy_obj = Py_None, *incy_obj = Py_None;
-            int overwrite_x = 0, overwrite_y = 0;
             static const char *kwlist[] = {"x", "y", "c", "s", "n", "offx", "incx", "offy", "incy", "overwrite_x", "overwrite_y", nullptr};
             static const Ctx<T> ctx(tchar<T>(), "rot", "OOOO|OOOOOii", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &y_obj, &c_obj, &s_obj, &n_obj, &offx_obj, &incx_obj,
-                                            &offy_obj, &incy_obj, &overwrite_x, &overwrite_y)) {
-                return nullptr;
-            }
-
-            GETARRAY_INOUT(x, 1, overwrite_x != 0);
-            GETARRAY_INOUT(y, 1, overwrite_y != 0);
+            SCALAR_FLAG(overwrite_x);
+            SCALAR_FLAG(overwrite_y);
+            ARRAY_INOUT(x, 1, overwrite_x != 0);
+            ARRAY_INOUT(y, 1, overwrite_y != 0);
 
             /* c and s are real also for the complex flavors (csrot/zdrot) */
-            real_of_t<T> c;  GETSCALAR_REQ(c);
-            real_of_t<T> s;  GETSCALAR_REQ(s);
+            SCALAR_REQ(real_of_t<T>, c);
+            SCALAR_REQ(real_of_t<T>, s);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT incy;  GETSCALAR(incy, 1);  CHECKSCALAR(incy != 0, incy);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-            CBLAS_INT offy;  GETSCALAR(offy, 0);  CHECKSCALAR(offy >= 0 && offy < len(y), offy);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - 1 - offx) / abs(incx) + 1);
-            CHECKSCALAR(len(y) - offy > (n - 1) * abs(incy), n);
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
+            CHECK(len(y) - offy > (n - 1) * abs(incy), n);
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::rot(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy, c, s);
-            return Py_BuildValue("NN", x.release(), y.release());   /* out=(x, y) */
+            RETURN(x, y);   /* out=(x, y) */
         }
 
 
         template <class T>
         static PyObject *rotm(PyObject *, PyObject *args, PyObject *kwds)
         {
-            PyObject *x_obj, *y_obj, *param_obj, *n_obj = Py_None, *offx_obj = Py_None, *incx_obj = Py_None, *offy_obj = Py_None, *incy_obj = Py_None;
-            int overwrite_x = 0, overwrite_y = 0;
             static const char *kwlist[] = {"x", "y", "param", "n", "offx", "incx", "offy", "incy", "overwrite_x", "overwrite_y", nullptr};
             static const Ctx<T> ctx("rotm", "OOO|OOOOOii", kwlist);
+            PARSE_ARGS();
 
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, ctx.fmt(), ctx.kws(),
-                                            &x_obj, &y_obj, &param_obj, &n_obj, &offx_obj, &incx_obj,
-                                            &offy_obj, &incy_obj, &overwrite_x, &overwrite_y)) {
-                return nullptr;
-            }
-
-            GETARRAY_INOUT(x, 1, overwrite_x != 0);
-            GETARRAY_INOUT(y, 1, overwrite_y != 0);
-            GETARRAY_IN(param, 1);
+            SCALAR_FLAG(overwrite_x);
+            SCALAR_FLAG(overwrite_y);
+            ARRAY_INOUT(x, 1, overwrite_x != 0);
+            ARRAY_INOUT(y, 1, overwrite_y != 0);
+            ARRAY_IN(param, 1);
             /* f2py fixed the length at array creation ("0-th dimension must be fixed to 5") */
             CHECKARRAY(len(param) == 5, param);
 
-            CBLAS_INT incx;  GETSCALAR(incx, 1);  CHECKSCALAR(incx != 0, incx);
-            CBLAS_INT incy;  GETSCALAR(incy, 1);  CHECKSCALAR(incy != 0, incy);
-            CBLAS_INT offx;  GETSCALAR(offx, 0);  CHECKSCALAR(offx >= 0 && offx < len(x), offx);
-            CBLAS_INT offy;  GETSCALAR(offy, 0);  CHECKSCALAR(offy >= 0 && offy < len(y), offy);
+            SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
+            SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
+            SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
+            SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            CBLAS_INT n;     GETSCALAR(n, (len(x) - offx) / abs(incx));
-            CHECKSCALAR(len(y) - offy > (n - 1) * abs(incy), n);
-            CHECKSCALAR(len(x) - offx > (n - 1) * abs(incx), n);
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            CHECK(len(y) - offy > (n - 1) * abs(incy), n);
+            CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::rotm(n, x.data<T>() + offx, incx, y.data<T>() + offy, incy, param.data<T>());
-            return Py_BuildValue("NN", x.release(), y.release());   /* out=(x, y) */
+            RETURN(x, y);   /* out=(x, y) */
         }
 
 
@@ -449,8 +386,8 @@ namespace blas{
             BLAS_FAMILY(scal),
             BLAS_FAMILY(swap),
             /* Irregular function families are added individually */
-            BLAS_ROW(csscal, scal_real, c64),
-            BLAS_ROW(zdscal, scal_real, c128),
+            BLAS_ROW2(csscal, scal, c64, f32),
+            BLAS_ROW2(zdscal, scal, c128, f64),
             BLAS_ROW(isamax, iamax, f32),
             BLAS_ROW(idamax, iamax, f64),
             BLAS_ROW(icamax, iamax, c64),
