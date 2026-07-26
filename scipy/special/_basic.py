@@ -2011,11 +2011,20 @@ def bernoulli(n):
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     n = int(n)
-    if (n < 2):
-        n1 = 2
-    else:
-        n1 = n
-    return _specfun.bernob(int(n1))[:(n+1)]
+    # Use the relation B_n = -n * zeta(1 - n) for even n >= 2
+    # (Abramowitz & Stegun 23.1.2 / Wikipedia Bernoulli number).
+    # This is significantly more accurate than the legacy Fortran
+    # implementation (bernob), which can have errors of thousands of
+    # ulps for small even n.  Odd Bernoulli numbers B_n for n >= 3
+    # are exactly zero.  Fixes GH-25702.
+    result = np.zeros(n + 1)
+    result[0] = 1.0
+    if n >= 1:
+        result[1] = -0.5
+    if n >= 2:
+        k = np.arange(2, n + 1, 2)  # even indices only
+        result[k] = -k * zeta(1 - k)
+    return result
 
 
 def euler(n):
