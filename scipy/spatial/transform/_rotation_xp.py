@@ -607,7 +607,9 @@ def reduce(
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
     # TODO: Can we somehow avoid this?
-    all_idx = xp.reshape(xp.arange(left.shape[-1]), (1, -1))
+    all_idx = xp.reshape(
+        xp.arange(left.shape[-1], device=xp_device(left)), (1, -1)
+    )
     left_idx = xp.reshape(left_best, (-1, 1))
     left = left[left_idx, all_idx]
     right_idx = xp.reshape(right_best, (-1, 1))
@@ -697,7 +699,9 @@ def align_vectors(
 
     # For the special case of a single vector pair, we use the infinite
     # weight code path
-    weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
+    weight_is_inf = (
+        xp.asarray([True], device=xp_device(a)) if N == 1 else weights == xp.inf
+    )
     n_inf = xp.sum(xp.astype(weight_is_inf, a.dtype))
     # We can only error out on multiple infinite weights or sensitivity return with
     # infinite weights in eager execution models. Lazy backends will return NaNs.
