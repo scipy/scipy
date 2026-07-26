@@ -489,7 +489,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     prefix (here, ``d-`` because ``a`` is double precision real):
 
     >>> x_gemv
-    <fortran function dgemv>
+    <fblas function dgemv>
 
     The BLAS variant information is also available from the ``typecode`` attribute:
 
@@ -506,7 +506,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     the ``dtype=`` argument:
 
     >>> LA.get_blas_funcs('gemv', dtype=np.float32)
-    <fortran function sgemv>
+    <fblas function sgemv>
 
     The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
     and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):
