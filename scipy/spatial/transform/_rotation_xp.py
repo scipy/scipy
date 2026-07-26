@@ -141,15 +141,11 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    # Nested selection: three where calls instead of four, and no dead xp.empty
-    # buffer that the first branch would immediately overwrite.
-    quat = xp.where(
-        choice == 0,
-        quat_0,
-        xp.where(choice == 1, quat_1, xp.where(choice == 2, quat_2, quat_3)),
-    )
-
-    return _normalize_quaternion(quat)
+    # Override locations where quat_0 is not our choice
+    quat_0 = xp.where(choice == 1, quat_1, quat_0)
+    quat_0 = xp.where(choice == 2, quat_2, quat_0)
+    quat_0 = xp.where(choice == 3, quat_3, quat_0)
+    return _normalize_quaternion(quat_0)
 
 
 def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
@@ -239,7 +235,7 @@ def from_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
     num_axes = axes.shape[-2]
     if num_axes is None:
         raise ValueError(f"axes must have a known shape, got shape {axes.shape}")
@@ -641,9 +637,7 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     return (mat @ points)[..., 0]
 
 
-def setitem(
-    quat: Array, value: Array, indexer: int | slice | EllipsisType
-) -> Array:
+def setitem(quat: Array, value: Array, indexer: int | slice | EllipsisType) -> Array:
     return xpx.at(quat)[indexer, ...].set(value)
 
 
