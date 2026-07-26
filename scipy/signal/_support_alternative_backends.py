@@ -89,7 +89,6 @@ untested = {
     "find_peaks",
     "find_peaks_cwt",
     "freqresp",
-    "gausspulse",
     "iirdesign", # There's no reason this shouldn't work. It just needs tests.
     "istft",
     "lombscargle",
@@ -318,8 +317,6 @@ capabilities_overrides = {
     "savgol_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                      jax_jit=False,
                                      reason="convolve1d is cpu-only"),
-    "sawtooth": xp_capabilities(jax_jit=False,
-                                skip_backends=[("dask.array", "dask tests fail")]),
     "sos2zpk": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
     "sos2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,

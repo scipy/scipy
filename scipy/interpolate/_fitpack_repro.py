@@ -1161,6 +1161,8 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
 
     # postprocess: squeeze out the last dimension: was added to simplify the internals.
     spl.c = spl.c[:, 0]
+    # make periodic if needed
+    spl.extrapolate = "periodic" if periodic else True
     return spl
 
 
@@ -1321,7 +1323,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")
-        return make_interp_spline(u, x.T, k=k, axis=1), u
+        return make_interp_spline(u, x.T, k=k, bc_type=bc_type, axis=1), u
 
     u, x, w, k, s, ub, ue = _validate_inputs(u, x, w, k, s, ub, ue,
                                              parametric=True, periodic=periodic)
@@ -1335,6 +1337,9 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     # posprocess: `axis=1` so that spl(u).shape == np.shape(x)
     # when `x` is a list of 1D arrays (cf original splPrep)
     cc = spl.c.T
-    spl1 = BSpline(spl.t, cc, spl.k, axis=1)
+    spl1 = BSpline(
+        spl.t, cc, spl.k, axis=1,
+        extrapolate='periodic' if periodic else True
+    )
 
     return spl1, xp.asarray(u)
