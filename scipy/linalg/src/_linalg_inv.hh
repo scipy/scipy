@@ -1,7 +1,6 @@
 /*
  * Templated loops for `linalg.inv`
  */
-#include "Python.h"
 #include <iostream>
 #include <vector>
 #include "numpy/arrayobject.h"

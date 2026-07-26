@@ -1,3 +1,4 @@
+#include "Python.h"
 #include <cstring>
 #include "_linalg_inv.hh"
 #include "_linalg_solve.hh"

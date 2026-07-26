@@ -1,7 +1,6 @@
 /*
  * Templated loops for `linalg.solve`
  */
-#include "Python.h"
 #include <iostream>
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
