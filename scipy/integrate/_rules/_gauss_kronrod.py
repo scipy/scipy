@@ -96,11 +96,8 @@ class GaussKronrodQuadrature(NestedFixedRule):
 
     @cached_property
     def nodes_and_weights(self):
-        # These values are from QUADPACK's `dqk21.f` and `dqk15.f` (1983).
-        # They are constants, kept as NumPy (host) data so their values exist
-        # independently of any array library's default device; they are
-        # converted onto the namespace and device of the integration limits
-        # at apply time (see `_cached_cast`, gh-22680).
+        # These values are from QUADPACK's `dqk21.f` and `dqk15.f` (1983),
+        # as NumPy host data; see `_cached_cast` for details.
         if self.npoints == 21:
             nodes = np.asarray(
                 [

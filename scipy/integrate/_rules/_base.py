@@ -236,9 +236,7 @@ class FixedRule(Rule):
         """
         nodes, weights = self.nodes_and_weights
 
-        # The rule is applied in the namespace of the integration limits; the
-        # built-in rules keep their nodes/weights as NumPy (host) data, which
-        # `_cached_cast` converts onto `a`'s namespace and device.
+        # nodes/weights are NumPy host data; see `_cached_cast` for details
         xp = array_namespace(a)
         if self.xp is None:
             self.xp = xp
@@ -348,9 +346,8 @@ class NestedFixedRule(FixedRule):
         if self.xp is None:
             self.xp = xp
 
-        # Combine the constants in their own namespace (NumPy host data for
-        # the built-in rules); `_cached_cast` then converts the result onto
-        # `a`'s namespace and device.
+        # combine the constants in their own (host) namespace before the
+        # conversion onto `a`'s namespace; see `_cached_cast` for details
         nodes_xp = array_namespace(nodes)
         error_nodes = nodes_xp.concat([nodes, lower_nodes], axis=0)
         error_weights = nodes_xp.concat([weights, -lower_weights], axis=0)
@@ -488,10 +485,22 @@ def _split_subregion(a, b, xp, split_at=None):
 
 
 def _cached_cast(rule, attr, nodes, weights, dtype, device, xp):
-    # Cast the rule's nodes/weights to the target dtype and move them onto the
-    # target device once, memoizing the result on the rule so that the adaptive
-    # cubature loop does not re-cast (or re-transfer, for non-default devices)
-    # them for every subregion; see gh-22680.
+    """Convert a rule's nodes/weights onto ``(xp, dtype, device)``, memoized.
+
+    The built-in fixed rules keep their nodes and weights as NumPy *host*
+    arrays: a rule object is constructed once, independently of any integrand,
+    so at construction time there is no array whose namespace or device could
+    be matched -- ``xp`` arrays built there would land on the backend's
+    default device and get baked into the rule, forcing estimates with
+    integrand arrays on another device to either raise or silently transfer
+    (see gh-22680). Host data keeps construction backend- and device-neutral.
+
+    The target namespace, dtype and device only become known at apply time,
+    from the actual integration limits; this helper performs the conversion
+    there and memoizes the result on the rule (keyed on the full target
+    triple), so the adaptive cubature loop does not re-cast -- or re-transfer,
+    for non-default devices -- the constants for every subregion.
+    """
     cache = getattr(rule, attr, None)
     if cache is None or cache[:3] != (xp, dtype, device):
         nodes = xp.asarray(nodes, dtype=dtype, device=device)
@@ -502,10 +511,8 @@ def _cached_cast(rule, attr, nodes, weights, dtype, device, xp):
 
 
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
-    # Cast nodes and weights to the dtype of a and b, and move them onto the
-    # input's device (the fixed-rule nodes/weights are built on the default
-    # device; see gh-22680), so the result lands on the input device. This is
-    # a no-op (no copy) when they are already converted, as when called via
+    # Convert nodes/weights onto `a`'s dtype and device (see `_cached_cast`
+    # for details); a no-op when already converted, as when called via
     # `FixedRule.estimate`/`NestedFixedRule.estimate_error`.
     result_dtype = a.dtype
     device = xp_device(a)
