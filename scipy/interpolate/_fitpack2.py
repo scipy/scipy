@@ -1674,12 +1674,17 @@ class BivariateSpline(_BivariateSplineBase):
 
     @staticmethod
     def _validate_input(x, y, z, w, kx, ky, eps):
-        x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
+        # Use ascontiguousarray to handle non-contiguous views (e.g., column
+        # slices of a 2D array).  The underlying C/Fortran routines require
+        # C-contiguous data.  Fixes GH-25678.
+        x = np.ascontiguousarray(x)
+        y = np.ascontiguousarray(y)
+        z = np.ascontiguousarray(z)
         if not x.size == y.size == z.size:
             raise ValueError('x, y, and z should have a same length')
 
         if w is not None:
-            w = np.asarray(w)
+            w = np.ascontiguousarray(w)
             if x.size != w.size:
                 raise ValueError('x, y, z, and w should have a same length')
             elif not np.all(w >= 0.0):
