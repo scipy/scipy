@@ -191,7 +191,8 @@ def _validate_clamp_values(clamp_values, k, t, y, x, xp, check_finite=True):
     # used elsewhere in scipy, rather than special-casing clamp_values.
     # Raises TypeError on mismatch, consistent with array_namespace's
     # behavior throughout the rest of the library.
-    array_namespace(*clamp_values, xp.empty(0))
+    # `empty(0)` is a throwaway used only to resolve the namespace
+    array_namespace(*clamp_values, xp.empty(0))  # skip device check
 
     def _prepare(val, side):
         try:
