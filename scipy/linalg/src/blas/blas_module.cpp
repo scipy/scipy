@@ -12,6 +12,10 @@
 namespace blas{
     namespace capi {
         extern PyMethodDef l1_methods[], l2_methods[], l3_methods[];
+
+        /* Defined in blas_docs.cpp: build a routine's docstring on demand.  Returns a new `str`
+         * reference, or nullptr (no exception set) when the routine has no docstring registered. */
+        PyObject *build_doc(const char *name);
     }
 }
 
@@ -51,6 +55,7 @@ typedef struct {
     PyCFunctionWithKeywords meth;
     PyObject *name;   /* "daxpy" -- also __name__ */
     PyObject *dict;   /* instance dict, lazily used by GenericGet/SetAttr */
+    PyObject *doc;    /* __doc__, built on first access and cached (see blasfunc_get_doc) */
 } BlasFunc;
 
 static PyObject *
@@ -69,6 +74,7 @@ static int
 blasfunc_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(((BlasFunc *)self)->dict);
+    Py_VISIT(((BlasFunc *)self)->doc);
     return 0;
 }
 
@@ -76,6 +82,7 @@ static int
 blasfunc_clear(PyObject *self)
 {
     Py_CLEAR(((BlasFunc *)self)->dict);
+    Py_CLEAR(((BlasFunc *)self)->doc);
     return 0;
 }
 
@@ -86,6 +93,7 @@ blasfunc_dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
     Py_CLEAR(((BlasFunc *)self)->name);
     Py_CLEAR(((BlasFunc *)self)->dict);
+    Py_CLEAR(((BlasFunc *)self)->doc);
     tp->tp_free(self);
     Py_DECREF(tp);   /* heap type: instances own a reference to their type */
 }
@@ -96,8 +104,43 @@ blasfunc_get_name(PyObject *self, void *)
     return Py_NewRef(((BlasFunc *)self)->name);
 }
 
+/* __doc__: assembled by build_doc() on first access and cached on the callable.  Returns None
+ * when the routine has no docstring registered.  The cache is published under a per-object
+ * critical section so a free-threaded race just discards the redundant build rather than leaking
+ * or clobbering; the fast-path read is benign either way (doc is set once, never re-cleared while
+ * a reference to self is held). */
+static PyObject *
+blasfunc_get_doc(PyObject *self, void *)
+{
+    BlasFunc *f = (BlasFunc *)self;
+    if (f->doc != nullptr) { return Py_NewRef(f->doc); }
+
+    const char *name = PyUnicode_AsUTF8(f->name);
+    if (name == nullptr) { return nullptr; }
+
+    PyObject *built = blas::capi::build_doc(name);
+    if (built == nullptr) {
+        if (PyErr_Occurred()) { return nullptr; }
+        Py_RETURN_NONE;   /* no docstring registered for this routine */
+    }
+
+#if PY_VERSION_HEX >= 0x030d00f0
+    Py_BEGIN_CRITICAL_SECTION(self);
+#endif
+    if (f->doc == nullptr) {
+        f->doc = built;
+        built = nullptr;
+    }
+#if PY_VERSION_HEX >= 0x030d00f0
+    Py_END_CRITICAL_SECTION();
+#endif
+    if (built != nullptr) { Py_DECREF(built); }   /* lost the race; keep the winner */
+    return Py_NewRef(f->doc);
+}
+
 static PyGetSetDef blasfunc_getset[] = {
     {"__name__", blasfunc_get_name, nullptr, nullptr, nullptr},
+    {"__doc__", blasfunc_get_doc, nullptr, nullptr, nullptr},
     {nullptr, nullptr, nullptr, nullptr, nullptr},
 };
 
@@ -137,6 +180,7 @@ add_wrapped_table(PyObject *module, PyTypeObject *tp, const PyMethodDef *defs)
         Py_INCREF(tp);   /* the reference the instance owns (GC_New does not take one) */
         f->meth = reinterpret_cast<PyCFunctionWithKeywords>(reinterpret_cast<void (*)()>(d->ml_meth));
         f->dict = nullptr;
+        f->doc = nullptr;
         f->name = PyUnicode_FromString(d->ml_name);
         if (f->name == nullptr) { Py_DECREF(f); return -1; }
         PyObject_GC_Track(reinterpret_cast<PyObject *>(f));
