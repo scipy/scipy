@@ -37,7 +37,6 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   CCACHE_MAXSIZE: "350M"
-  PIXI_CACHE_DIR: "${{ github.workspace }}/.cache/rattler"
   # Enable persistent cache
   # https://docs.jax.dev/en/latest/config_options.html
   JAX_COMPILATION_CACHE_DIR: "${{ github.workspace }}/.cache/scipy_jax_cache"
@@ -62,13 +61,6 @@ jobs:
         with:
           submodules: recursive
           persist-credentials: false
-
-      - name: Cache pixi
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ env.PIXI_CACHE_DIR }}
-          # Cache hit if lock file did not change. Otherwise, redownload packages.
-          key: ${{ runner.os }}-gpu-pixi-1-${{ hashFiles('pixi.lock') }}
 
       - name: Get week number for ccache key rotation
         id: ccache-week
@@ -114,7 +106,8 @@ jobs:
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
           pixi-version: v0.71.0
-          cache: false
+          cache: true
+          cache-key: gpu-pixi-1-
           environments: >-
             build-cuda
             torch-cuda
