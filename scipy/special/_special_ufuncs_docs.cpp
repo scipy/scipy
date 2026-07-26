@@ -8869,7 +8869,7 @@ const char *digammainv_doc = R"(
 
     Notes
     -----
-    .. versionadded:: 1.19.0
+    .. versionadded:: 2.0.0
 
     Examples
     --------
