@@ -1,8 +1,10 @@
-# This file is not meant for public use and will be removed in SciPy v2.2.0.
-# Use the `scipy.stats` namespace for importing the functions included below.
-
-from scipy._lib.deprecation import _sub_module_deprecation
-
+#
+# Author:  Travis Oliphant  2002-2011 with contributions from
+#          SciPy Developers 2004-2011
+#
+# NOTE: To look at history using `git blame`, use `git blame -M -C -C`
+#       instead of `git blame -Lxxx,+x`.
+#
 from ._distn_infrastructure import (rv_discrete, rv_continuous, rv_frozen)  # noqa: F401
 
 from . import _continuous_distns
@@ -20,13 +22,3 @@ __all__ = ['rv_discrete', 'rv_continuous', 'rv_histogram', 'entropy']  # noqa: F
 __all__ += _continuous_distns._distn_names
 __all__ += ['levy_stable']
 __all__ += _discrete_distns._distn_names
-
-
-def __dir__():
-    return __all__
-
-
-def __getattr__(name):
-    return _sub_module_deprecation(sub_package="stats", module="distributions",
-                                   private_modules=["_distributions"], all=__all__,
-                                   attribute=name, dep_version="2.2.0")
