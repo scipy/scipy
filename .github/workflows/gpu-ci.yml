@@ -29,7 +29,11 @@ name: GPU jobs
 on:
   push:
     branches:
-      - cirun-onprem-gpu
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
 
 permissions:
   contents: read # to fetch code (actions/checkout)
@@ -53,7 +57,6 @@ jobs:
 
   pytorch_gpu:
     name: PyTorch, JAX, CuPy GPU
-    needs: get_commit_message
     runs-on: "cirun-scipy-onprem-gpu--${{ github.run_id }}"
     steps:
       - name: Checkout scipy repo
