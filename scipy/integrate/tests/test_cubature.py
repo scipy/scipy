@@ -1369,9 +1369,7 @@ class BadErrorRule(Rule):
     """
 
     def estimate(self, f, a, b, args=()):
-        xp = array_namespace(a, b)
         underlying = GaussLegendreQuadrature(10)
-
         return underlying.estimate(f, a, b, args)
 
     def estimate_error(self, f, a, b, args=()):
