@@ -274,7 +274,7 @@ PKG_CONFIG_PATH = "{project}"
 # cross-build NumPy meson dependency detection. TODO: drop this once it makes
 # it to a released version of cibuildwheel
 dependency-versions = "packages: pyodide-build==0.36.0"
-before-build = "bash {project}/tools/ci/emscripten/cibw_before_build_pyodide.sh {project}"
+before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
 test-command = "python -m pytest -vra --pyargs scipy -m 'not slow'"
 
