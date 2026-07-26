@@ -159,6 +159,7 @@ BLAS Level 2 functions
    chpr2
    cspmv
    cspr
+   csymv
    csyr
    ctbmv
    ctbsv
@@ -179,6 +180,7 @@ BLAS Level 2 functions
    zhpr2
    zspmv
    zspr
+   zsymv
    zsyr
    ztbmv
    ztbsv
