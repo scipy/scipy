@@ -1720,5 +1720,14 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     This is really `ihfftn` with different defaults.
     For more details see `ihfftn`.
 
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> import numpy as np
+    >>> x = np.ones((2, 4)) # real input
+    >>> scipy.fft.ihfft2(x)
+    array([[1.+0.j, 0.-0.j, 0.+0.j], # may vary
+           [0.+0.j, 0.+0.j, 0.+0.j]]) # may vary
+
     """
     return (Dispatchable(x, np.ndarray),)
