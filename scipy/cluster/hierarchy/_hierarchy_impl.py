@@ -43,7 +43,8 @@ import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering  # type:ignore[attr-defined]
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
-                                   is_lazy_array, xp_capabilities, xp_copy)
+                                   is_lazy_array, xp_capabilities, xp_copy,
+                                   xp_device, xp_result_device)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._external.array_api_extra as xpx
 
@@ -1265,23 +1266,24 @@ def cut_tree(Z, n_clusters=None, height=None):
         raise ValueError("At least one of either height or n_clusters "
                          "must be None")
     elif height is None and n_clusters is None:  # return the full cut tree
-        cols_idx = xp.arange(nobs)
+        cols_idx = xp.arange(nobs, device=xp_device(Z))
     elif height is not None:
         height = xp.asarray(height)
         heights = xp.asarray([x.dist for x in nodes])
         cols_idx = xp.searchsorted(heights, height)
     else:
         n_clusters = xp.asarray(n_clusters)
-        cols_idx = nobs - xp.searchsorted(xp.arange(nobs), n_clusters)
+        cols_idx = nobs - xp.searchsorted(
+            xp.arange(nobs, device=xp_device(Z)), n_clusters)
 
     try:
         n_cols = len(cols_idx)
     except TypeError:  # scalar
         n_cols = 1
-        cols_idx = xp.asarray([cols_idx])
+        cols_idx = xp.asarray([cols_idx], device=xp_device(Z))
 
-    groups = xp.zeros((n_cols, nobs), dtype=xp.int64)
-    last_group = xp.arange(nobs)
+    groups = xp.zeros((n_cols, nobs), dtype=xp.int64, device=xp_device(Z))
+    last_group = xp.arange(nobs, device=xp_device(Z))
     if 0 in cols_idx:
         groups[0] = last_group
 
@@ -1790,7 +1792,7 @@ def from_mlab_linkage(Z):
     if not lazy and xp.min(Z[:, :2]) != 1.0 and xp.max(Z[:, :2]) != 2 * n:
         raise ValueError('The format of the indices is not 1..N')
 
-    res = xp.empty((Z.shape[0], Z.shape[1] + 1), dtype=Z.dtype)
+    res = xp.empty((Z.shape[0], Z.shape[1] + 1), dtype=Z.dtype, device=xp_device(Z))
     res = xpx.at(res)[:, :2].set(Z[:, :2] - 1.0)
     res = xpx.at(res)[:, 2:-1].set(Z[:, 2:])
 
@@ -2259,7 +2261,8 @@ def _is_valid_linkage(Z, warning=False, throw=False, name=None,
          f'Linkage {name_str}contains negative counts.'),
         (xp.any(Z[:, 3] > n + 1),
          f'Linkage {name_str}contains excessive observations in a cluster'),
-        (xp.any(xp.max(Z[:, :2], axis=1) >= xp.arange(n + 1, 2 * n + 1, dtype=Z.dtype)),
+        (xp.any(xp.max(Z[:, :2], axis=1)
+                >= xp.arange(n + 1, 2 * n + 1, dtype=Z.dtype, device=xp_device(Z))),
          f'Linkage {name_str}uses non-singleton cluster before it is formed.'),
         (xpx.nunique(Z[:, :2]) < n * 2,
          f'Linkage {name_str}uses the same cluster more than once.'),
@@ -2568,6 +2571,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
     """
     xp = array_namespace(Z)
+    device = xp_result_device(Z)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', materialize=True, xp=xp)
 
@@ -2599,7 +2603,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
     else:
         raise ValueError(f'Invalid cluster formation criterion: {str(criterion)}')
-    return xp.asarray(T)
+    return xp.asarray(T, device=device)
 
 
 @xp_capabilities(cpu_only=True, reason="Cython code",
@@ -3770,8 +3774,9 @@ def is_isomorphic(T1, T2):
 
     """
     xp = array_namespace(T1, T2)
-    T1 = _asarray(T1, xp=xp)
-    T2 = _asarray(T2, xp=xp)
+    device = xp_result_device(T1, T2)
+    T1 = _asarray(T1, xp=xp, device=device)
+    T2 = _asarray(T2, xp=xp, device=device)
 
     if T1.ndim != 1:
         raise ValueError('T1 must be one-dimensional.')

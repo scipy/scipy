@@ -5,8 +5,9 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
+from scipy._external import array_api_extra as xpx
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_default_dtype,
+from scipy._lib._array_api import (is_numpy, make_xp_test_case,
                                    xp_size, array_namespace, _xp_copy_to_numpy,
                                    is_lazy_array, eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
@@ -619,7 +620,7 @@ class TestBootstrap:
         shape = 10, 20, 30
         rng = np.random.default_rng(5903363153)
         x = rng.random(shape)
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         p = _resampling._percentile_of_score(xp.asarray(x, dtype=dtype),
                                              xp.asarray(score, dtype=dtype),
                                              axis=-1, xp=xp)
@@ -1129,7 +1130,7 @@ class TestMonteCarloHypothesisTest:
 @make_xp_test_case(power)
 class TestPower:
     def xp_normal(self, rng, *, xp, dtype=None):
-        dtype = xp_default_dtype(xp) if dtype is None else dtype
+        dtype = xpx.default_dtype(xp) if dtype is None else dtype
         return lambda size: xp.asarray(rng.normal(size=size), dtype=dtype)
 
     def test_input_validation(self, xp):
@@ -1884,7 +1885,7 @@ class TestPermutationTest:
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
 
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1997,7 +1998,7 @@ class TestPermutationTest:
         # (Whether a single NaN in the permutation distribution should make the p-value
         #  NaN is debatable. Users can choose for themselves.)
         rng = np.random.default_rng(8951482112)
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         x = xp.asarray(rng.random(5), dtype=dtype)
         x_nan = xp.asarray([0, 0, 0, xp.nan, 0])
         y = xp.asarray(rng.random(6), dtype=dtype)

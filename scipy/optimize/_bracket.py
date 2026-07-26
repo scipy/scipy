@@ -1,7 +1,7 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_ravel, xp_promote
+from scipy._lib._array_api import array_namespace, xp_device, xp_ravel, xp_promote
 
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
@@ -57,7 +57,7 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter):
         xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.ones_like(xmax))
         xr0 = xp.astype(xr0, xl0.dtype, copy=False)
 
-    maxiter = xp.asarray(maxiter)
+    maxiter = xp.asarray(maxiter, device=xp_device(xl0))
     message = '`maxiter` must be a non-negative integer.'
     if (not xp.isdtype(maxiter.dtype, "numeric") or maxiter.shape != tuple()
             or xp.isdtype(maxiter.dtype, "complex floating")):
@@ -210,7 +210,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     factor = xp.astype(factor, dtype, copy=False)
     factor = xp.concat((factor, factor))
 
-    active = xp.arange(2*n)
+    active = xp.arange(2*n, device=xp_device(x))
     args = [xp.concat((arg, arg)) for arg in args]
 
     # This is needed due to inner workings of `eim._loop`.
@@ -482,7 +482,7 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, m
         xr0 = xm0 + xp.minimum((xmax - xm0)/16, 0.5)
         xr0 = xp.astype(xr0, xm0.dtype, copy=False)
 
-    maxiter = xp.asarray(maxiter)
+    maxiter = xp.asarray(maxiter, device=xp_device(xm0))
     message = '`maxiter` must be a non-negative integer.'
     if (not xp.isdtype(maxiter.dtype, "numeric") or maxiter.shape != tuple()
             or xp.isdtype(maxiter.dtype, "complex floating")):

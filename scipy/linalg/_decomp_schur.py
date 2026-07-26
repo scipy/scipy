@@ -4,6 +4,11 @@ from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
 from scipy._lib._util import _apply_over_batch
+from scipy._lib.deprecation import _NoValue
+
+import os
+import warnings
+
 # Local imports.
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
@@ -15,7 +20,7 @@ _double_precision = ['i', 'l', 'd']
 
 
 @_apply_over_batch(('a', 2))
-def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
+def schur(a, output='real', lwork=_NoValue, overwrite_a=False, sort=None,
           check_finite=True):
     """
     Compute Schur decomposition of a matrix.
@@ -40,6 +45,11 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         complex Schur decomposition is computed.
     lwork : int, optional
         Work array size. If None or -1, it is automatically computed.
+
+        .. deprecated:: 2.0.0
+            This keyword is deprecated as well as no longer in use and will be
+            removed in 2.2.0.
+
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance).
         See :ref:`tutorial_linalg_overwrite` for details.
@@ -148,6 +158,16 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         a1 = asarray(a, dtype=np.dtype("long"))
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
+
+    if lwork is not _NoValue:
+        warnings.warn(
+            "scipy.linalg.schur: the `lwork` keyword is deprecated and no longer in use"
+            " as of SciPy 2.0.0 and will be removed in SciPy 2.2.0",
+            DeprecationWarning,
+            skip_file_prefixes=(os.path.dirname(__file__),)
+        )
+
+    lwork = None
 
     typ = a1.dtype.char
     if output in ['complex', 'c'] and typ not in ['F', 'D']:
