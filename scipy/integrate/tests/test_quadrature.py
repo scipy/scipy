@@ -13,7 +13,7 @@ from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 
 from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (make_xp_test_case, is_numpy)
+from scipy._lib._array_api import make_xp_test_case, is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._external import array_api_extra as xpx
 

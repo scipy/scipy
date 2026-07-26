@@ -250,5 +250,3 @@ def test_combine_pvalues(method, dtype_devices, xp):
         assert xp_device(res.pvalue) == xp_device(pvalues)
         assert res.statistic.dtype == dtype
         assert res.pvalue.dtype == dtype
-
-

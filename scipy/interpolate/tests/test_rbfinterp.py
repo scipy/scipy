@@ -442,7 +442,6 @@ class _TestRBFInterpolator:
             f = self.build(y, d, kernel='linear')(y)
             xp_assert_close(f, d)
 
-
     def test_pickleable(self, xp):
         # Make sure we can pickle and unpickle the interpolant without any
         # changes in the behavior.

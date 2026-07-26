@@ -410,7 +410,6 @@ class TestBSpline:
         xp_assert_close(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
 
-
     def test_integral(self, xp):
         b = BSpline.basis_element(xp.asarray([0, 1, 2]))  # x for x < 1 else 2 - x
         assert math.isclose(b.integrate(0, 1), 0.5, abs_tol=1e-14)

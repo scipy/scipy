@@ -1184,4 +1184,3 @@ class TestNSum:
         x = xp.arange(1, 11, dtype=xp.float32)
         ref = xp.sum(f(x, c[..., xp.newaxis], p=p[..., xp.newaxis]), axis=-1)
         xp_assert_close(res.sum, ref)
-

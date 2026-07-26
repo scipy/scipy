@@ -400,7 +400,6 @@ class TestCubature:
             atol=0,
         )
 
-
     def test_pass_array_like_not_array(self):
         n = np_compat.arange(5, dtype=np_compat.float64)
         a = [0]
