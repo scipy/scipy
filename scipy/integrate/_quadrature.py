@@ -453,7 +453,6 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
 
     """
     xp = array_namespace(y, x, dx)
-    # `xp_promote` converts the scalar `dx` on the device of `y`
     y, x, dx = xp_promote(y, x, dx, xp=xp)
     nd = y.ndim
     N = y.shape[axis]
@@ -765,8 +764,6 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         )
 
     if initial is not None:
-        # a scalar `initial` would land on the default device; place it on the
-        # input's device so it does not clash with `res` below (see gh-22680)
         initial = xp.asarray(initial, device=xp_device(y))
         initial = xp_promote(initial, force_floating=True, xp=xp)
         alt_initial_input_shape = tupleset(original_shape, axis, 1)

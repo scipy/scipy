@@ -538,10 +538,12 @@ def _compute_pair(k, h0, xp):
 
     # For iterations after the first, "....the integrand function needs to be
     # evaluated only at the odd-indexed abscissas at each level."
-    # Float `j` so that `j * h` is a legal promotion under the array API
-    # standard; the integer values are represented exactly.
-    j = (xp.arange(max+1, dtype=h.dtype, device=xp_device(h0)) if k == 0
-         else xp.arange(1, max+1, 2, dtype=h.dtype, device=xp_device(h0)))
+    # Float `j` so that `j * h` is a legal promotion under the array API standard;
+    # `j` isn't used elsewhere and promotion would otherwise be implicit.
+    if k == 0:
+        j = xp.arange(max+1, dtype=h.dtype, device=xp_device(h0))
+    else:
+        j = xp.arange(1, max+1, 2, dtype=h.dtype, device=xp_device(h0))
     jh = j * h
 
     # "In this case... the weights wj = u1/cosh(u2)^2, where..."
@@ -765,7 +767,6 @@ def _estimate_error(work, xp):
     Snm2 = work.Sk[..., -2]
     Snm1 = work.Sk[..., -1]
 
-    # `eps` is a python float; place it on the input's device
     e1 = xp.asarray(work.eps, device=xp_device(work.Sn))[()]
 
     if work.log:
