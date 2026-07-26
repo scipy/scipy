@@ -177,13 +177,17 @@ namespace blas{
         }
 
 
-        /* csscal/zdscal: a second overload of scal for a *real* scale factor on complex data
-         * (a is the real type A, not the data type T -- the second template parameter both
-         * types `a` and distinguishes this from the regular scal<T>).  Unlike the regular scal,
-         * the .pyf declares x intent(in,out,copy), so these carry an overwrite_x flag and copy
-         * by default.  Registered as csscal = scal<c64, f32>, zdscal = scal<c128, f64>. */
+        /**
+         * csscal/zdscal: scal for a *real* scale factor on complex data (a is the real type A,
+         * not the data type T).  Unlike the regular scal, the .pyf declares x intent(in,out,copy),
+         * so these carry an overwrite_x flag and copy by default.  Registered as
+         * csscal = scal_real<c64, f32>, zdscal = scal_real<c128, f64>.
+         * It is a distinct name rather than a second scal overload which otherwise works except
+         * MSVC cannot resolve `scal<f32>` to a single function for the PyCFunction cast when
+         * two function templates share the name.
+         * */
         template <class T, class A>
-        static PyObject *scal(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *scal_real(PyObject *, PyObject *args, PyObject *kwds)
         {
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", "overwrite_x", nullptr};
             static const Ctx<T> ctx(tchar<T>(), "scal", "OO|OOOi", kwlist);
@@ -386,8 +390,8 @@ namespace blas{
             BLAS_FAMILY(scal),
             BLAS_FAMILY(swap),
             /* Irregular function families are added individually */
-            BLAS_ROW2(csscal, scal, c64, f32),
-            BLAS_ROW2(zdscal, scal, c128, f64),
+            BLAS_ROW2(csscal, scal_real, c64, f32),
+            BLAS_ROW2(zdscal, scal_real, c128, f64),
             BLAS_ROW(isamax, iamax, f32),
             BLAS_ROW(idamax, iamax, f64),
             BLAS_ROW(icamax, iamax, c64),
