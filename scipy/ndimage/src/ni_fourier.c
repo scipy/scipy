@@ -196,7 +196,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the parameters: */
-    parameters = malloc(PyArray_NDIM(input) * sizeof(double));
+    parameters = PyMem_RawMalloc(PyArray_NDIM(input) * sizeof(double));
     if (!parameters) {
         PyErr_NoMemory();
         goto exit;
@@ -219,7 +219,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         }
     }
     /* allocate memory for tables: */
-    params = malloc(PyArray_NDIM(input) * sizeof(double*));
+    params = PyMem_RawMalloc(PyArray_NDIM(input) * sizeof(double*));
     if (!params) {
         PyErr_NoMemory();
         goto exit;
@@ -229,7 +229,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     }
     for (kk = 0; kk < PyArray_NDIM(input); kk++) {
         if (PyArray_DIM(input, kk) > 1 || filter_type == _NI_ELLIPSOID) {
-            params[kk] = malloc(PyArray_DIM(input, kk) * sizeof(double));
+            params[kk] = PyMem_RawMalloc(PyArray_DIM(input, kk) * sizeof(double));
             if (!params[kk]) {
                 PyErr_NoMemory();
                 goto exit;
@@ -441,12 +441,12 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
 
  exit:
     NPY_END_THREADS;
-    free(parameters);
+    PyMem_RawFree(parameters);
     if (params) {
         for (kk = 0; kk < PyArray_NDIM(input); kk++) {
-            free(params[kk]);
+            PyMem_RawFree(params[kk]);
         }
-        free(params);
+        PyMem_RawFree(params);
     }
     return PyErr_Occurred() ? 0 : 1;
 }
@@ -475,7 +475,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the shifts: */
-    shifts = malloc(PyArray_NDIM(input) * sizeof(double));
+    shifts = PyMem_RawMalloc(PyArray_NDIM(input) * sizeof(double));
     if (!shifts) {
         PyErr_NoMemory();
         goto exit;
@@ -489,7 +489,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
         shifts[kk] = -2.0 * M_PI * *ishifts++ / (double)shape;
     }
     /* allocate memory for tables: */
-    params = malloc(PyArray_NDIM(input) * sizeof(double*));
+    params = PyMem_RawMalloc(PyArray_NDIM(input) * sizeof(double*));
     if (!params) {
         PyErr_NoMemory();
         goto exit;
@@ -499,7 +499,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     }
     for (kk = 0; kk < PyArray_NDIM(input); kk++) {
         if (PyArray_DIM(input, kk) > 1) {
-            params[kk] = malloc(PyArray_DIM(input, kk) * sizeof(double));
+            params[kk] = PyMem_RawMalloc(PyArray_DIM(input, kk) * sizeof(double));
             if (!params[kk]) {
                 PyErr_NoMemory();
                 goto exit;
@@ -594,12 +594,12 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
 
  exit:
     NPY_END_THREADS;
-    free(shifts);
+    PyMem_RawFree(shifts);
     if (params) {
         for (kk = 0; kk < PyArray_NDIM(input); kk++) {
-            free(params[kk]);
+            PyMem_RawFree(params[kk]);
         }
-        free(params);
+        PyMem_RawFree(params);
     }
     return PyErr_Occurred() ? 0 : 1;
 }
