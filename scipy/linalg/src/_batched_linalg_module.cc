@@ -1403,8 +1403,9 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // 2D: return tuple of int scalars; N-d: return tuple of int64 arrays
     if (ndim == 2) {
-        PyObject *lb_obj = PyLong_FromLong((long)lb_data[0]);
-        PyObject *ub_obj = PyLong_FromLong((long)ub_data[0]);
+        // TODO: use PyLong_FromInt64 from py314+
+        PyObject *lb_obj = PyLong_FromLongLong((long long)lb_data[0]);
+        PyObject *ub_obj = PyLong_FromLongLong((long long)ub_data[0]);
         Py_DECREF(ap_lb); Py_DECREF(ap_ub);
         return Py_BuildValue("NN", lb_obj, ub_obj);
     }
