@@ -8,6 +8,7 @@ from typing import Any
 
 from scipy._lib._array_api import (
     array_namespace,
+    xp_device,
     xp_size,
     xp_copy,
     xp_promote,
@@ -661,7 +662,8 @@ class _InfiniteLimitsTransform(_VariableTransform):
         # class, then without this condition the initial region of integration will
         # be split around the origin unnecessarily.
         if self._num_inf != 0:
-            return [self._xp.zeros(self._orig_a.shape)]
+            return [self._xp.zeros(self._orig_a.shape,
+                                   device=xp_device(self._orig_a))]
         else:
             return []
 

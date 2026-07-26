@@ -1,4 +1,6 @@
-from scipy._lib._array_api import array_namespace, np_compat
+import numpy as np
+
+from scipy._lib._array_api import xp_compat_namespace
 
 from functools import cached_property
 
@@ -46,17 +48,14 @@ class GaussLegendreQuadrature(FixedRule):
 
         self.npoints = npoints
 
-        if xp is None:
-            xp = np_compat
-
-        self.xp = array_namespace(xp.empty(0))
+        self.xp = xp_compat_namespace(xp)
 
     @cached_property
     def nodes_and_weights(self):
-        # TODO: current converting to/from numpy
+        # constants as NumPy host data; see `_cached_cast` for details
         nodes, weights = roots_legendre(self.npoints)
 
         return (
-            self.xp.asarray(nodes, dtype=self.xp.float64),
-            self.xp.asarray(weights, dtype=self.xp.float64)
+            np.asarray(nodes, dtype=np.float64),
+            np.asarray(weights, dtype=np.float64),
         )

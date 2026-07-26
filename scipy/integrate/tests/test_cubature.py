@@ -7,6 +7,7 @@ import pytest
 from scipy._lib._array_api import (
     array_namespace,
     xp_assert_close,
+    xp_device,
     xp_size,
     np_compat,
     is_array_api_strict,
@@ -1375,4 +1376,4 @@ class BadErrorRule(Rule):
 
     def estimate_error(self, f, a, b, args=()):
         xp = array_namespace(a, b)
-        return xp.asarray(1e6, dtype=xp.float64)
+        return xp.asarray(1e6, dtype=xp.float64, device=xp_device(a))

@@ -1,4 +1,4 @@
-from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib._array_api import array_namespace, xp_size, xp_device
 
 from functools import cached_property
 
@@ -236,10 +236,14 @@ class FixedRule(Rule):
         """
         nodes, weights = self.nodes_and_weights
 
+        # nodes/weights are NumPy host data; see `_cached_cast` for details
+        xp = array_namespace(a)
         if self.xp is None:
-            self.xp = array_namespace(nodes)
+            self.xp = xp
 
-        return _apply_fixed_rule(f, a, b, nodes, weights, args, self.xp)
+        nodes, weights = _cached_cast(self, "_nw_cache", nodes, weights,
+                                      a.dtype, xp_device(a), xp)
+        return _apply_fixed_rule(f, a, b, nodes, weights, args, xp)
 
 
 class NestedFixedRule(FixedRule):
@@ -338,14 +342,21 @@ class NestedFixedRule(FixedRule):
         nodes, weights = self.nodes_and_weights
         lower_nodes, lower_weights = self.lower_nodes_and_weights
 
+        xp = array_namespace(a)
         if self.xp is None:
-            self.xp = array_namespace(nodes)
+            self.xp = xp
 
-        error_nodes = self.xp.concat([nodes, lower_nodes], axis=0)
-        error_weights = self.xp.concat([weights, -lower_weights], axis=0)
+        # combine the constants in their own (host) namespace before the
+        # conversion onto `a`'s namespace; see `_cached_cast` for details
+        nodes_xp = array_namespace(nodes)
+        error_nodes = nodes_xp.concat([nodes, lower_nodes], axis=0)
+        error_weights = nodes_xp.concat([weights, -lower_weights], axis=0)
+        error_nodes, error_weights = _cached_cast(
+            self, "_error_nw_cache", error_nodes, error_weights,
+            a.dtype, xp_device(a), xp)
 
-        return self.xp.abs(
-            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, self.xp)
+        return xp.abs(
+            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, xp)
         )
 
 
@@ -473,11 +484,40 @@ def _split_subregion(a, b, xp, split_at=None):
         yield a_sub[i, ...], b_sub[i, ...]
 
 
+def _cached_cast(rule, attr, nodes, weights, dtype, device, xp):
+    """Convert a rule's nodes/weights onto ``(xp, dtype, device)``, memoized.
+
+    The built-in fixed rules keep their nodes and weights as NumPy *host*
+    arrays: a rule object is constructed once, independently of any integrand,
+    so at construction time there is no array whose namespace or device could
+    be matched -- ``xp`` arrays built there would land on the backend's
+    default device and get baked into the rule, forcing estimates with
+    integrand arrays on another device to either raise or silently transfer
+    (see gh-22680). Host data keeps construction backend- and device-neutral.
+
+    The target namespace, dtype and device only become known at apply time,
+    from the actual integration limits; this helper performs the conversion
+    there and memoizes the result on the rule (keyed on the full target
+    triple), so the adaptive cubature loop does not re-cast -- or re-transfer,
+    for non-default devices -- the constants for every subregion.
+    """
+    cache = getattr(rule, attr, None)
+    if cache is None or cache[:3] != (xp, dtype, device):
+        nodes = xp.asarray(nodes, dtype=dtype, device=device)
+        weights = xp.asarray(weights, dtype=dtype, device=device)
+        cache = (xp, dtype, device, nodes, weights)
+        setattr(rule, attr, cache)
+    return cache[3], cache[4]
+
+
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
-    # Downcast nodes and weights to common dtype of a and b
+    # Convert nodes/weights onto `a`'s dtype and device (see `_cached_cast`
+    # for details); a no-op when already converted, as when called via
+    # `FixedRule.estimate`/`NestedFixedRule.estimate_error`.
     result_dtype = a.dtype
-    orig_nodes = xp.astype(orig_nodes, result_dtype)
-    orig_weights = xp.astype(orig_weights, result_dtype)
+    device = xp_device(a)
+    orig_nodes = xp.asarray(orig_nodes, dtype=result_dtype, device=device)
+    orig_weights = xp.asarray(orig_weights, dtype=result_dtype, device=device)
 
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)
