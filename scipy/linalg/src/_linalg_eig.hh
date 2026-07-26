@@ -600,19 +600,35 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
         buff_B = B_data;
     } // NB. `overwrite_b` only enabled if input array is 2D
 
-    // integer work areas
-    CBLAS_INT iwork_size = liwork;
+    /*
+     * Integer work areas:
+     *
+     * - All LAPACK routines except `EV` and `GV` require an `iwork` argument.
+     * - `EVR` requires an integer return array for `isuppz` indicating the valid range of the eigenvectors.
+     * - `EVX`/`GVX` require an integer return array for `ifail` indicating the eigenvalues where it failed to converge.
+     */
+    CBLAS_INT *ibuffer = NULL;
+    CBLAS_INT *iwork = NULL;
+    CBLAS_INT *isuppz = NULL;
+    CBLAS_INT *ifail = NULL;
+
+    CBLAS_INT iwork_size = (lapack_driver != Eigh_driver::EV && lapack_driver != Eigh_driver::GV) ? liwork : 0;
     CBLAS_INT isuppz_size = (lapack_driver == Eigh_driver::EVR) ? 2 * M : 0;
     CBLAS_INT ifail_size = (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX) ? N : 0;
-    CBLAS_INT *ibuffer = (CBLAS_INT *)malloc((iwork_size + isuppz_size + ifail_size) * sizeof(CBLAS_INT));
-    if (ibuffer == NULL) {
-        free(buffer);
-        info = -103;
-        return int(info);
+    CBLAS_INT ibuffer_size = iwork_size + isuppz_size + ifail_size;
+
+    if (ibuffer_size > 0) {
+        ibuffer = (CBLAS_INT *)malloc(ibuffer_size * sizeof(CBLAS_INT));
+        if(ibuffer == NULL) {
+            free(buffer);
+            info = -103;
+            return int(info);
+        }
+
+        iwork = &ibuffer[0];
+        isuppz = &ibuffer[liwork];
+        ifail = &ibuffer[liwork + isuppz_size];
     }
-    CBLAS_INT *iwork = &ibuffer[0];
-    CBLAS_INT *isuppz = &ibuffer[liwork];
-    CBLAS_INT *ifail = &ibuffer[liwork + isuppz_size];
 
     /*
      * Some LAPACK routines require a real work area `rwork` for complex inputs.
@@ -621,7 +637,8 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
      * is of size (M,) whereas the corresponding LAPACK routines always require
      * a buffer of size (N,) for the eigenvalues. Therefore, when `M < N`, a new
      * array is allocated to hand to the LAPACK call after which the relevant
-     * arguments can be copied over to the return object.
+     * arguments can be copied over to the return object. This buffer is called
+     * `buff_w`.
      */
     real_type *rbuffer = NULL;
     real_type *buff_w = NULL;
@@ -629,11 +646,15 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
 
     CBLAS_INT w_size = (range == 'I' && M < N) ? N : 0;
     CBLAS_INT rbuffer_size = w_size + lrwork;
-    if (rbuffer_size != 0) {
+    if (rbuffer_size > 0) {
         rbuffer = (real_type *)malloc(rbuffer_size * sizeof(real_type));
         if (rbuffer == NULL) {
             free(buffer);
-            free(ibuffer);
+
+            if (ibuffer != NULL) {
+                free(ibuffer);
+            }
+
             info = -104;
             return int(info);
         }
@@ -787,7 +808,10 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
 
 free_exit:
     free(buffer);
-    free(ibuffer);
+
+    if (ibuffer != NULL) {
+        free(ibuffer);
+    }
 
     if (rbuffer != NULL) {
         free(rbuffer);
