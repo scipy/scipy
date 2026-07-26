@@ -148,7 +148,9 @@ class Rule:
         for a_k, b_k in _split_subregion(a, b):
             refined_est += self.estimate(f, a_k, b_k, args)
 
-        return self.xp.abs(est - refined_est)
+        # rules carry no namespace state; resolve locally from the estimate
+        xp = array_namespace(est)
+        return xp.abs(est - refined_est)
 
 
 class FixedRule(Rule):
@@ -190,9 +192,6 @@ class FixedRule(Rule):
     ... )
      [0.3333333]
     """
-
-    def __init__(self):
-        self.xp = None
 
     @property
     def nodes_and_weights(self):
@@ -238,9 +237,6 @@ class FixedRule(Rule):
 
         # nodes/weights are NumPy host data; see `_cached_cast` for details
         xp = array_namespace(a)
-        if self.xp is None:
-            self.xp = xp
-
         nodes, weights = _cached_cast(self, "_nw_cache", nodes, weights,
                                       a.dtype, xp_device(a), xp)
         return _apply_fixed_rule(f, a, b, nodes, weights, args, xp)
@@ -289,7 +285,6 @@ class NestedFixedRule(FixedRule):
     def __init__(self, higher, lower):
         self.higher = higher
         self.lower = lower
-        self.xp = None
 
     @property
     def nodes_and_weights(self):
@@ -343,8 +338,6 @@ class NestedFixedRule(FixedRule):
         lower_nodes, lower_weights = self.lower_nodes_and_weights
 
         xp = array_namespace(a)
-        if self.xp is None:
-            self.xp = xp
 
         # combine the constants in their own (host) namespace before the
         # conversion onto `a`'s namespace; see `_cached_cast` for details
@@ -411,7 +404,6 @@ class ProductNestedFixed(NestedFixedRule):
                                  "NestedFixedRule")
 
         self.base_rules = base_rules
-        self.xp = None
 
     @cached_property
     def nodes_and_weights(self):
@@ -419,10 +411,8 @@ class ProductNestedFixed(NestedFixedRule):
             [rule.nodes_and_weights[0] for rule in self.base_rules]
         )
 
-        if self.xp is None:
-            self.xp = array_namespace(nodes)
-
-        weights = self.xp.prod(
+        xp = array_namespace(nodes)
+        weights = xp.prod(
             _cartesian_product(
                 [rule.nodes_and_weights[1] for rule in self.base_rules]
             ),
@@ -437,10 +427,8 @@ class ProductNestedFixed(NestedFixedRule):
             [cubature.lower_nodes_and_weights[0] for cubature in self.base_rules]
         )
 
-        if self.xp is None:
-            self.xp = array_namespace(nodes)
-
-        weights = self.xp.prod(
+        xp = array_namespace(nodes)
+        weights = xp.prod(
             _cartesian_product(
                 [cubature.lower_nodes_and_weights[1] for cubature in self.base_rules]
             ),

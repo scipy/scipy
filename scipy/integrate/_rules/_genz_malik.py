@@ -5,7 +5,6 @@ import numpy as np
 
 from functools import cached_property
 
-from scipy._lib._array_api import xp_compat_namespace
 
 from scipy.integrate._rules import NestedFixedRule
 
@@ -20,10 +19,6 @@ class GenzMalikCubature(NestedFixedRule):
     ----------
     ndim : int
         The spatial dimension of the integrand.
-
-    xp : array_namespace, optional
-        The namespace for the node and weight arrays. Default is None, where NumPy is
-        used.
 
     Attributes
     ----------
@@ -58,7 +53,7 @@ class GenzMalikCubature(NestedFixedRule):
      np.float64(1.378269656626685e-06)
     """
 
-    def __init__(self, ndim, degree=7, lower_degree=5, xp=None):
+    def __init__(self, ndim, degree=7, lower_degree=5):
         if ndim < 2:
             raise ValueError("Genz-Malik cubature is only defined for ndim >= 2")
 
@@ -69,8 +64,6 @@ class GenzMalikCubature(NestedFixedRule):
         self.ndim = ndim
         self.degree = degree
         self.lower_degree = lower_degree
-
-        self.xp = xp_compat_namespace(xp)
 
     @cached_property
     def nodes_and_weights(self):

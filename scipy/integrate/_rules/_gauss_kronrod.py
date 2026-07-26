@@ -1,6 +1,5 @@
 import numpy as np
 
-from scipy._lib._array_api import xp_compat_namespace
 
 from functools import cached_property
 
@@ -28,10 +27,6 @@ class GaussKronrodQuadrature(NestedFixedRule):
     ----------
     npoints : int
         Number of nodes for the higher-order rule.
-
-    xp : array_namespace, optional
-        The namespace for the node and weight arrays. Default is None, where NumPy is
-        used.
 
     Attributes
     ----------
@@ -81,7 +76,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
      np.float64(2.220446049250313e-16)
     """
 
-    def __init__(self, npoints, xp=None):
+    def __init__(self, npoints):
         # TODO: nodes and weights are currently hard-coded for values 15 and 21, but in
         # the future it would be best to compute the Kronrod extension of the lower rule
         if npoints != 15 and npoints != 21:
@@ -90,9 +85,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
 
         self.npoints = npoints
 
-        self.xp = xp_compat_namespace(xp)
-
-        self.gauss = GaussLegendreQuadrature(npoints//2, xp=self.xp)
+        self.gauss = GaussLegendreQuadrature(npoints//2)
 
     @cached_property
     def nodes_and_weights(self):
