@@ -157,17 +157,11 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     rotvec = _deg2rad(rotvec) if degrees else rotvec
 
     angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
-    small_angle = angle <= 1e-3
-    angle2 = angle**2
-    small_scale = 0.5 - angle2 / 48 + angle2**2 / 3840
-    # We need to handle the case where angle is 0 to avoid division by zero. We use the
-    # value of the Taylor series approximation, but non-branching operations require
-    # that we still divide by the angle. Since we do not use the result where the angle
-    # is close to 0, this is safe.
     half_angle = angle / 2
-    div_angle = angle + xp.astype(small_angle, angle.dtype)
-    large_scale = xp.sin(half_angle) / div_angle
-    scale = xp.where(small_angle, small_scale, large_scale)
+    # Guard exact-zero angles to avoid 0/0. The rotvec is zero there, so the quaternion
+    # is the identity regardless.
+    div_angle = angle + xp.astype(angle == 0, angle.dtype)
+    scale = xp.sin(half_angle) / div_angle
     quat = xp.concat([rotvec * scale, xp.cos(half_angle)], axis=-1)
     return quat
 
@@ -607,9 +601,7 @@ def reduce(
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
     # TODO: Can we somehow avoid this?
-    all_idx = xp.reshape(
-        xp.arange(left.shape[-1], device=xp_device(left)), (1, -1)
-    )
+    all_idx = xp.reshape(xp.arange(left.shape[-1], device=xp_device(left)), (1, -1))
     left_idx = xp.reshape(left_best, (-1, 1))
     left = left[left_idx, all_idx]
     right_idx = xp.reshape(right_best, (-1, 1))
