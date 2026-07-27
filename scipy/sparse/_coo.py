@@ -1695,7 +1695,7 @@ def isspmatrix_coo(x):
         is elementwise multiplication. See the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        The isspmatrix_coo function will be removed no earlier than v2.1.
+        The isspmatrix_coo function will be removed no earlier than v2.2.
         """
     prefixes = (os.path.dirname(__file__),)
     warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
