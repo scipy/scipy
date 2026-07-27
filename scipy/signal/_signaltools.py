@@ -26,7 +26,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size,
     xp_promote, xp_swapaxes,)
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
@@ -532,9 +532,9 @@ def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
     if xp.isdtype(in1.dtype, 'integral'):
-        in1 = xp.astype(in1, xp_default_dtype(xp))
+        in1 = xp.astype(in1, xpx.default_dtype(xp))
     if xp.isdtype(in2.dtype, 'integral'):
-        in2 = xp.astype(in2, xp_default_dtype(xp))
+        in2 = xp.astype(in2, xpx.default_dtype(xp))
 
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
@@ -3875,7 +3875,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
         W = sp_fft.fftshift(get_window(window, n_x, xp=xp))
-        W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
+        W = xp.astype(W, xpx.default_dtype(xp))   # get_window always returns float64
 
     if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
         X = sp_fft.rfft(x)
@@ -5415,7 +5415,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             b, a = system.num, system.den
             ftype = 'fir'
         elif (any(np.iscomplex(system.poles))
-              or any(np.iscomplex(system.poles))
+              or any(np.iscomplex(system.zeros))
               or np.iscomplex(system.gain)):
             # sosfilt & sosfiltfilt don't handle complex coeffs
             iir_use_sos = False

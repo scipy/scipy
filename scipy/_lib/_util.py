@@ -564,7 +564,7 @@ def _item_for_scalar_function(x, xp=None):
 
     # extract the scalar
     if x.ndim > 1:
-        # Deprecationwarning added in 1.19
+        # Deprecationwarning added in 2.0
         warnings.warn(
             "Returning arrays with more than one dimension is deprecated when using"
             " ScalarFunction.",
@@ -1096,7 +1096,7 @@ def _deprecate_dtypes(func_name, *arrays):
         if a.dtype.char not in np.typecodes['AllInteger'] + 'fdFD':
             msg = (f"Calling {func_name} with arguments of dtype={a.dtype} "
                    f"({a.dtype.char = }) is deprecated in SciPy 1.18.0 and "
-                    "will be removed in SciPy 1.20.0. Please cast array inputs to "
+                    "will be removed in SciPy 2.1.0. Please cast array inputs to "
                     "one of np.float{32,64} or np.complex{64,128} manually."
             )
             import warnings

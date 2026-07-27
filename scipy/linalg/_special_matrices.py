@@ -3,7 +3,9 @@ import math
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from scipy._lib._util import _apply_over_batch
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size, xp_promote
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_size, xp_promote, xp_device
+)
 import scipy._external.array_api_extra as xpx
 
 
@@ -344,7 +346,7 @@ def leslie(f, s):
         raise ValueError("The length of s must be at least 1.")
 
     n = f.shape[-1]
-    a = xp.zeros((n, n), dtype=f.dtype)
+    a = xp.zeros((n, n), dtype=f.dtype, device=xp_device(f))
     a = xpx.at(a)[0, :].set(f)
     a += xpx.create_diagonal(s, offset=-1, xp=xp)
     return a
@@ -433,7 +435,7 @@ def block_diag(*arrs):
     block_shapes = [a.shape[-2:] for a in arrs]
     out = xp.zeros(batch_shape +
                    tuple(map(int, xp.sum(xp.asarray(block_shapes), axis=0))),
-                   dtype=out_dtype)
+                   dtype=out_dtype, device=xp_device(arrs[0]))
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(block_shapes):
@@ -1017,9 +1019,9 @@ def fiedler(a):
     a = xpx.atleast_nd(xp.asarray(a), ndim=1)
 
     if xp_size(a) == 0:
-        return xp.empty((0, 0), dtype=xp.float64)
+        return xp.empty((0, 0), dtype=xp.float64, device=xp_device(a))
     elif xp_size(a) == 1:
-        return xp.asarray([[0.]])
+        return xp.asarray([[0.]], device=xp_device(a))
     else:
         return xp.abs(a[..., :, xp.newaxis] - a[..., xp.newaxis, :])
 

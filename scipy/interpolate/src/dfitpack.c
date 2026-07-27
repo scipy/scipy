@@ -1017,10 +1017,10 @@ restart_iteration:
             }
             l5 = l - k1;
 
-            // test whether the b-splines nj,k+1(u),j=1+n7,...nk1 are all zero at ui
+            // test whether the b-splines nj,k+1(u),j=1+n7,...,nk1 are all zero at ui
             if (l5 < n10) {
                 // rotation of the new row of the observation matrix into
-                // triangle in case the b-splines nj,k+1(u),j=n7+1,...n-k-1 are all zero
+                // triangle in case the b-splines nj,k+1(u),j=n7+1,...,n-k-1 are all zero
                 // at ui.
                 j = l5;
                 for (i = 1; i <= kk1; i++) {
@@ -1059,7 +1059,7 @@ restart_iteration:
                     *fp = *fp + xi[j2 - 1] * xi[j2 - 1];
                 }
             } else {
-                // test whether the b-splines nj,k+1(u),j=1+n7,...nk1 are all zero at ui
+                // test whether the b-splines nj,k+1(u),j=1+n7,...,nk1 are all zero at ui
                 if (jper == 0) {
                     // initialize the matrix a2.
                     for (i = 1; i <= n7; i++) {
@@ -1080,7 +1080,7 @@ restart_iteration:
                     jper = 1;
                 }
 
-                // if one of the b-splines nj,k+1(u),j=n7+1,...nk1 is not zero at ui
+                // if one of the b-splines nj,k+1(u),j=n7+1,...,nk1 is not zero at ui
                 // we take account of condition (**) for setting up the new row
                 // of the observation matrix a. this row is stored in the arrays h1
                 // (the part with respect to a1) and h2 (the part with
@@ -1111,7 +1111,7 @@ restart_iteration:
                 // rotate the new row of the observation matrix into triangle
                 // by givens transformations.
                 if (n10 > 0) {
-                    // rotation with the rows 1,2,...n10 of matrix a.
+                    // rotation with the rows 1,2,...,n10 of matrix a.
                     for (j = 1; j <= n10; j++) {
                         piv = h1[0];
                         if (piv == 0.0) {
@@ -1150,7 +1150,7 @@ restart_iteration:
                     }
                 }
 
-                // rotation with the rows n10+1,...n7 of matrix a.
+                // rotation with the rows n10+1,...,n7 of matrix a.
                 for (j = 1; j <= kk; j++) {
                     ij = n10 + j;
                     if (ij <= 0) { continue; }
@@ -1261,7 +1261,7 @@ restart_iteration:
         fpold = *fp;
 
         // compute the sum of squared residuals for each knot interval
-        // t(j+k) <= ui <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
+        // t(j+k) <= ui <= t(j+k+1) and store it in fpint(j),j=1,2,...,nrint.
         fpart = 0.0;
         i = 1;
         l = k1;
@@ -1338,7 +1338,7 @@ restart_iteration:
     /////////////////////////////////////////////////////////////////////////
 
     // evaluate the discontinuity jump of the kth derivative of the
-    // b-splines at the knots t(l),l=k+2,...n-k-1 and store in b.
+    // b-splines at the knots t(l),l=k+2,...,n-k-1 and store in b.
     fpdisc(t, *n, k2, b, nest);
 
     // initial value for p.
@@ -1456,7 +1456,7 @@ restart_iteration:
             if (n11 > 0) {
                 // 470
                 // rotate this row into triangle by givens transformations
-                // rotation with the rows l,l+1,...n11.
+                // rotation with the rows l,l+1,...,n11.
                 for (j = l; j <= n11; j++) {
                     piv = h1[0];
 
@@ -1488,7 +1488,7 @@ restart_iteration:
             }
             // 510
 
-            // rotation with the rows n11+1,...n7
+            // rotation with the rows n11+1,...,n7
             for (j = 1; j <= k1; j++) {
                 ij = n11 + j;
                 if (ij <= 0) {
@@ -1826,7 +1826,7 @@ restart_iteration:
         }
         fpold = *fp;
         // compute the sum((w(i)*(y(i)-s(x(i))))**2) for each knot interval
-        // t(j+k) <= x(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
+        // t(j+k) <= x(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...,nrint.
         fpart = 0.0;
         i = 1;
         l = k2;
@@ -1909,7 +1909,7 @@ restart_iteration:
     //  guaranteed by taking f1>0 and f3<0.                                //
     /////////////////////////////////////////////////////////////////////////
     // evaluate the discontinuity jump of the kth derivative of the
-    // b-splines at the knots t(l),l=k+2,...n-k-1 and store in b.
+    // b-splines at the knots t(l),l=k+2,...,n-k-1 and store in b.
     fpdisc(t, *n, k2, b, nest);
     // initial value for p.
     p1 = 0.0;
@@ -2772,7 +2772,7 @@ fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const
         mvv = mv + nv8;
     }
     // we first determine the matrices (auu) and (qq). then we reduce the
-    // matrix (auu) to an unit upper triangular form (ru) using givens
+    // matrix (auu) to a unit upper triangular form (ru) using givens
     // rotations without square roots. we apply the same transformations to
     // the rows of matrix qq to obtain the mv x nuu matrix g.
     // we store matrix (ru) into au and g into q.
@@ -4024,7 +4024,7 @@ restart_iteration:
         fpold = *fp;
 
         // compute the sum of squared residuals for each knot interval
-        // t(j+k) <= u(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
+        // t(j+k) <= u(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...,nrint.
         fpart = 0.0;
         i = 1;
         l = k2;
@@ -4124,7 +4124,7 @@ restart_iteration:
     /////////////////////////////////////////////////////////////////////////
 
     // evaluate the discontinuity jump of the kth derivative of the
-    // b-splines at the knots t(l),l=k+2,...n-k-1 and store in b.
+    // b-splines at the knots t(l),l=k+2,...,n-k-1 and store in b.
     fpdisc(t, *n, k2, b, nest);
 
     // initial value for p.
@@ -4491,7 +4491,7 @@ restart_iteration:
             t[j2 - 1] = t[i2 - 1] - per;
         }
 
-        // compute the b-spline coefficients c(j),j=1,...n7 of the least-squares
+        // compute the b-spline coefficients c(j),j=1,...,n7 of the least-squares
         // periodic spline sinf(x). the observation matrix a is built up row
         // by row while taking into account condition (**) and is reduced to
         // triangular form by givens transformations.
@@ -4537,10 +4537,10 @@ restart_iteration:
 
             l5 = l - k1;
 
-            // test whether the b-splines nj,k+1(x),j=1+n7,...nk1 are all zero at xi
+            // test whether the b-splines nj,k+1(x),j=1+n7,...,nk1 are all zero at xi
             if (l5 < n10) {
                 // rotation of the new row of the observation matrix into
-                // triangle in case the b-splines nj,k+1(x),j=n7+1,...n-k-1 are all zero at xi.
+                // triangle in case the b-splines nj,k+1(x),j=n7+1,...,n-k-1 are all zero at xi.
                 j = l5;
                 for (i = 1; i <= kk1; i++) {
                     j++;
@@ -4589,7 +4589,7 @@ restart_iteration:
                     jper = 1;
                 }
 
-                // if one of the b-splines nj,k+1(x),j=n7+1,...nk1 is not zero at xi
+                // if one of the b-splines nj,k+1(x),j=n7+1,...,nk1 is not zero at xi
                 // we take account of condition (**) for setting up the new row
                 // of the observation matrix a. this row is stored in the arrays h1
                 // (the part with respect to a1) and h2 (the part with respect to a2).
@@ -4620,7 +4620,7 @@ restart_iteration:
 
                 // rotate the new row of the observation matrix into triangle by givens transformations.
                 if (n10 > 0) {
-                    // rotation with the rows 1,2,...n10 of matrix a.
+                    // rotation with the rows 1,2,...,n10 of matrix a.
                     for (j = 1; j <= n10; j++) {
                         piv = h1[0];
 
@@ -4657,7 +4657,7 @@ restart_iteration:
                     }
                 }
 
-                // rotation with the rows n10+1,...n7 of matrix a.
+                // rotation with the rows n10+1,...,n7 of matrix a.
                 for (j = 1; j <= kk; j++) {
                     ij = n10 + j;
                     if (ij <= 0) { continue; }
@@ -4739,7 +4739,7 @@ restart_iteration:
         fpold = *fp;
 
         // compute the sum(wi*(yi-s(xi))**2) for each knot interval
-        // t(j+k) <= xi <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
+        // t(j+k) <= xi <= t(j+k+1) and store it in fpint(j),j=1,2,...,nrint.
         fpart = 0.0;
         i = 1;
         l = k1;
@@ -4850,7 +4850,7 @@ restart_iteration:
     /////////////////////////////////////////////////////////////////////////
 
     // evaluate the discontinuity jump of the kth derivative of the
-    // b-splines at the knots t(l),l=k+2,...n-k-1 and store in b.
+    // b-splines at the knots t(l),l=k+2,...,n-k-1 and store in b.
     fpdisc(t, *n, k2, b, nest);
 
     // initial value for p.
@@ -4965,7 +4965,7 @@ restart_iteration:
 
             if (n11 > 0) {
                 // rotate this row into triangle by givens transformations without square roots.
-                // rotation with the rows l,l+1,...n11.
+                // rotation with the rows l,l+1,...,n11.
                 for (j = l; j <= n11; j++) {
                     piv = h1[0];
 
@@ -4994,7 +4994,7 @@ restart_iteration:
                 }
             }
 
-            // rotation with the rows n11+1,...n7
+            // rotation with the rows n11+1,...,n7
             for (j = 1; j <= k1; j++) {
                 ij = n11 + j;
                 if (ij <= 0) { continue; }
@@ -5018,7 +5018,7 @@ restart_iteration:
             }
         }
 
-        // backward substitution to obtain the b-spline coefficients c(j),j=1,2,...n7 of sp(x).
+        // backward substitution to obtain the b-spline coefficients c(j),j=1,2,...,n7 of sp(x).
         fpbacp(g1, g2, c, n7, k1, c, k2, nest);
 
         // calculate from condition (**) the b-spline coefficients c(n7+j),j=1,2,...k.
@@ -6035,7 +6035,7 @@ L70:
             }
         }
         // the coefficients coco and cosi are obtained from the conditions
-        // sc(tp(i))=cos(tp(i)),resp. ss(tp(i))=sin(tp(i)),i=4,5,...np-4.
+        // sc(tp(i))=cos(tp(i)),resp. ss(tp(i))=sin(tp(i)),i=4,5,...,np-4.
         for (i = 1; i <= npp; i++) {
             l2 = i + 3;
             arg = tp[l2 - 1];
