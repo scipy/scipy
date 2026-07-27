@@ -162,7 +162,7 @@ class ScalarFunction:
         Method for computing the Hessian matrix. If it is callable, it should
         return the  Hessian matrix:
 
-            ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
+            ``hess(x, *args) -> {LinearOperator, sparray, array}, (n, n)``
 
         where x is a (n,) ndarray and `args` is a tuple with the fixed
         parameters. Alternatively, the keywords {'2-point', '3-point', 'cs'}

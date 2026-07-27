@@ -325,8 +325,7 @@ class Radau(OdeSolver):
             def solve_lu(LU, b):
                 return LU.solve(b)
 
-            # TODO: use I = eye_array(self.n, format="csc") after spmatrix removed
-            I = self.J.__class__(eye_array(self.n)).tocsc()
+            I = eye_array(self.n, format="csc")
         else:
             def lu(A):
                 self.nlu += 1
@@ -372,13 +371,10 @@ class Radau(OdeSolver):
             self.njev = 1
             if issparse(J):
                 J = J.tocsc()
-                csc_constructor = J.__class__
 
                 def jac_wrapped(t, y, _=None):
                     self.njev += 1
-                    # TODO: Use csc_array after spmatrix removed
-                    return csc_constructor(jac(t, y), dtype=float)
-
+                    return jac(t, y).tocsc().astype(dtype=y0.dtype, copy=False)
             else:
                 J = np.asarray(J, dtype=float)
 

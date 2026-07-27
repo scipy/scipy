@@ -7,7 +7,6 @@ import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 
 from scipy.sparse import coo_array, csr_array, csc_array, bsr_array
-from scipy.sparse import coo_matrix, csr_matrix, csc_matrix, bsr_matrix
 from scipy.sparse._sputils import isscalarlike
 
 
@@ -82,8 +81,8 @@ class Test_MinMaxMixin1D:
                 mat.argmax(axis=axis)
 
 
-@pytest.mark.parametrize("spcreator", formats_for_minmax)
 class Test_ShapeMinMax2DWithAxis:
+    @pytest.mark.parametrize("spcreator", formats_for_minmax)
     def test_minmax(self, spcreator):
         dat = np.array([[-1, 5, 0, 3], [0, 0, -1, -2], [0, 0, 1, 2]])
         datsp = spcreator(dat)
@@ -100,29 +99,5 @@ class Test_ShapeMinMax2DWithAxis:
                 assert spminmax(axis=ax).format == "coo"
 
         for spminmax in [datsp.argmin, datsp.argmax]:
-            for ax in [0, 1]:
-                assert isinstance(spminmax(axis=ax), np.ndarray)
-
-        # verify spmatrix behavior
-        spmat_form = {
-            'coo': coo_matrix,
-            'csr': csr_matrix,
-            'csc': csc_matrix,
-            'bsr': bsr_matrix,
-        }
-        datspm = spmat_form[datsp.format](dat)
-
-        for spm, npm in [
-            (datspm.min, np.min),
-            (datspm.max, np.max),
-            (datspm.nanmin, np.nanmin),
-            (datspm.nanmax, np.nanmax),
-        ]:
-            for ax, result_shape in [(0, (1, 4)), (1, (3, 1))]:
-                assert_equal(toarray(spm(axis=ax)), npm(dat, axis=ax, keepdims=True))
-                assert_equal(spm(axis=ax).shape, result_shape)
-                assert spm(axis=ax).format == "coo"
-
-        for spminmax in [datspm.argmin, datspm.argmax]:
             for ax in [0, 1]:
                 assert isinstance(spminmax(axis=ax), np.ndarray)

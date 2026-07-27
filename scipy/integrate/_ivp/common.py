@@ -1,7 +1,7 @@
 from itertools import groupby
 from warnings import warn
 import numpy as np
-from scipy.sparse import find, csc_array, isspmatrix, csc_matrix
+from scipy.sparse import find, csc_array
 
 
 EPS = np.finfo(float).eps
@@ -303,7 +303,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
 
     Returns
     -------
-    J : ndarray or csc_array or csc_matrix, shape (n, n)
+    J : ndarray or csc_array, shape (n, n)
         Jacobian matrix.
     factor : ndarray, shape (n,)
         Suggested `factor` for the next evaluation.
@@ -448,7 +448,4 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     factor[max_diff > NUM_JAC_DIFF_BIG * scale] *= NUM_JAC_FACTOR_DECREASE
     factor = np.maximum(factor, NUM_JAC_MIN_FACTOR)
 
-    # return spmatrix if structure is spmatrix
-    if isspmatrix(structure):
-        diff = csc_matrix(diff)
     return diff, factor

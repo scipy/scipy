@@ -11,18 +11,8 @@ Sparse arrays (:mod:`scipy.sparse`)
    sparse.csgraph
    sparse.linalg
    sparse.migration_to_sparray
-   sparse.spmatrix_api
 
-SciPy 2-D sparse array package for numeric data.
-
-.. warning::
-
-   SciPy sparse is shifting from a sparse matrix interface to a sparse
-   array interface. In the next few releases we expect to deprecate the
-   sparse matrix interface. For documentation of the matrix
-   interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-   For guidance on converting existing code to sparse arrays, see
-   :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+SciPy sparse array package for numeric data.
 
 
 Submodules
@@ -257,7 +247,6 @@ from ._dia import *
 from ._bsr import *
 from ._construct import *
 from ._extract import *
-from ._matrix import spmatrix
 from ._matrix_io import *
 from ._sputils import get_index_dtype, safely_cast_index_arrays
 

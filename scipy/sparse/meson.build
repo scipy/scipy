@@ -29,7 +29,6 @@ python_sources = [
   '_index.py',
   '_lil.py',
   '_matrix_io.py',
-  '_matrix.py',
   '_spfuncs.py',
   '_sputils.py',
   'base.py',

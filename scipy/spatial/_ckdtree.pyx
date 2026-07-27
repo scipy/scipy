@@ -229,15 +229,6 @@ cdef class coo_entries:
     def dok_array(coo_entries self, m, n):
         return self.coo_array(m,n).todok()
 
-    def coo_matrix(coo_entries self, m, n):
-        res_arr = self.ndarray()
-        return scipy.sparse.coo_matrix(
-                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
-                                       shape=(m, n))
-
-    def dok_matrix(coo_entries self, m, n):
-        return self.coo_matrix(m,n).todok()
-
 
 # ordered_pair wrapper
 # ====================
@@ -1495,9 +1486,9 @@ cdef class cKDTree:
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.0,
-                               output_type='dok_matrix'):
+                               output_type="dok_array"):
         """
-        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
+        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_array')
 
         Compute a sparse distance matrix
 
@@ -1517,17 +1508,7 @@ cdef class cKDTree:
         output_type : str, optional
             Which container to use for output data. Options: ``'dok_array'``,
             ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
-            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
-            Default: ``'dok_matrix'``.
-
-            .. warning:: dok_matrix and coo_matrix are being replaced.
-
-               All new code using scipy sparse should use sparse array
-               types 'dok_array' or 'coo_array'. The default value of
-               `output_type` will be deprecated at v1.19 and switch from
-               'dok_matrix' to 'dok_array' in v1.21.
-               The values 'dok_matrix' and 'coo_matrix' continue
-               to work, but will go away eventually.
+            Default: ``'dok_array'``.
 
         Returns
         -------
@@ -1585,12 +1566,8 @@ cdef class cKDTree:
             return res.dict()
         elif output_type == 'ndarray':
             return res.ndarray()
-        elif output_type == 'dok_matrix':
-            return res.dok_matrix(self.n, other.n)
         elif output_type == 'dok_array':
             return res.dok_array(self.n, other.n)
-        elif output_type == 'coo_matrix':
-            return res.coo_matrix(self.n, other.n)
         elif output_type == 'coo_array':
             return res.coo_array(self.n, other.n)
         else:

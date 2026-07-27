@@ -5,11 +5,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['find', 'tril', 'triu']
 
-import os
-from warnings import warn
-
-from ._coo import coo_array, coo_matrix
-from ._base import sparray, spmatrix
+from ._coo import coo_array
 
 
 def find(A):
@@ -112,36 +108,14 @@ def tril(A, k=0, format=None):
         with 4 stored elements and shape (3, 5)>
 
     """
-    if isinstance(A, sparray):
-        coo_sparse = coo_array
-    elif isinstance(A, spmatrix):
-        coo_sparse = coo_matrix
-    else:  # dense
-        msg = """`tril` is switching to the sparse array interface.
-
-        For the case where input arrays are numpy arrays, this function is
-        switching to returning a sparse array instead of sparse matrix.
-        Recover the sparse matrix return value by making one input a sparse matrix.
-        For example, tril(coo_matrix(A)).
-        Avoid this message for sparse array output by using tril(coo_array(A)).
-        For more information, see the spmatrix to sparray migration guide
-        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-
-        This function will be changed no earlier than v1.20.
-        """
-        prefixes = (os.path.dirname(__file__),)
-        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-        # default when input is ndarray
-        coo_sparse = coo_matrix
-
     # convert to COOrdinate format where things are easy
-    A = coo_sparse(A, copy=False)
+    A = coo_array(A, copy=False)
     mask = A.row + k >= A.col
 
     row = A.row[mask]
     col = A.col[mask]
     data = A.data[mask]
-    new_coo = coo_sparse((data, (row, col)), shape=A.shape, dtype=A.dtype)
+    new_coo = coo_array((data, (row, col)), shape=A.shape, dtype=A.dtype)
     return new_coo.asformat(format)
 
 
@@ -213,34 +187,12 @@ def triu(A, k=0, format=None):
         with 8 stored elements and shape (3, 5)>
 
     """
-    if isinstance(A, sparray):
-        coo_sparse = coo_array
-    elif isinstance(A, spmatrix):
-        coo_sparse = coo_matrix
-    else:  # dense
-        msg = """`triu` is switching to the sparse array interface.
-
-        For the case where input arrays are numpy arrays, this function is
-        switching to returning a sparse array instead of sparse matrix.
-        Recover the sparse matrix return value by making one input a sparse matrix.
-        For example, triu(coo_matrix(A)).
-        Avoid this message for sparse array output by using triu(coo_array(A)).
-        For more information, see the spmatrix to sparray migration guide
-        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-
-        This function will be changed no earlier than v1.20.
-        """
-        prefixes = (os.path.dirname(__file__),)
-        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-        # default when input is ndarray
-        coo_sparse = coo_matrix
-
     # convert to COOrdinate format where things are easy
-    A = coo_sparse(A, copy=False)
+    A = coo_array(A, copy=False)
     mask = A.row + k <= A.col
 
     row = A.row[mask]
     col = A.col[mask]
     data = A.data[mask]
-    new_coo = coo_sparse((data, (row, col)), shape=A.shape, dtype=A.dtype)
+    new_coo = coo_array((data, (row, col)), shape=A.shape, dtype=A.dtype)
     return new_coo.asformat(format)

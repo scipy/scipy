@@ -8,7 +8,7 @@ class SparseABC(ABC):
 
 
 def issparse(x):
-    """Is `x` either sparse array or sparse matrix type?
+    """Is `x` a sparse array type?
 
     Parameters
     ----------
@@ -22,16 +22,12 @@ def issparse(x):
 
     Notes
     -----
-    Use `sp.sparse.isspmatrix(x)` or `isinstance(x, sp.sparse.sparray)` to
-    check between sparray or spmatrix.
     Use `a.format` to check the sparse format, e.g. `a.format == 'csr'`.
 
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csr_array, csr_matrix, issparse
-    >>> issparse(csr_matrix([[5]]))
-    True
+    >>> from scipy.sparse import csr_array, issparse
     >>> issparse(csr_array([[5]]))
     True
     >>> issparse(np.array([[5]]))
