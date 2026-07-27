@@ -1,13 +1,24 @@
+#include "Python.h"
+
 #include <cstring>
+#include <complex>
+#include <vector>
+#include <tuple>
+#include "numpy/arrayobject.h"
+#include "numpy/npy_math.h"
+
+#include "scipy_blas_defines.h"
+#include "_npymath.hh"
+#include "_common_array_utils.hh"
+
+#include "_linalg_cholesky.hh"
+#include "_linalg_eig.hh"
 #include "_linalg_inv.hh"
+#include "_linalg_lstsq.hh"
+#include "_linalg_lu_det.hh"
+#include "_linalg_qr.hh"
 #include "_linalg_solve.hh"
 #include "_linalg_svd.hh"
-#include "_linalg_lstsq.hh"
-#include "_linalg_eig.hh"
-#include "_linalg_cholesky.hh"
-#include "_linalg_qr.hh"
-#include "_common_array_utils.hh"
-#include "_linalg_lu_det.hh"
 
 using namespace sp_linalg;
 
