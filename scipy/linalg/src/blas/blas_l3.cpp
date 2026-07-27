@@ -22,7 +22,7 @@ namespace blas{
         static PyObject *gemm(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "trans_a", "trans_b", "overwrite_c", nullptr};
-            static const Ctx<T> ctx("gemm", "OOO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("gemm", "OOO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_c);
@@ -57,7 +57,7 @@ namespace blas{
         static PyObject *symm(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "side", "lower", "overwrite_c", nullptr};
-            static const Ctx<T> ctx("symm", "OOO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("symm", "OOO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_c);
@@ -87,7 +87,7 @@ namespace blas{
         static PyObject *hemm(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "side", "lower", "overwrite_c", nullptr};
-            static const Ctx<T> ctx("hemm", "OOO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("hemm", "OOO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_c);
@@ -117,7 +117,7 @@ namespace blas{
         static PyObject *syrk(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "beta", "c", "trans", "lower", "overwrite_c", nullptr};
-            static const Ctx<T> ctx("syrk", "OO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("syrk", "OO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_c);
@@ -147,7 +147,7 @@ namespace blas{
         static PyObject *herk(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "beta", "c", "trans", "lower", "overwrite_c", nullptr};
-            static const Ctx<T> ctx("herk", "OO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("herk", "OO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_c);
@@ -174,7 +174,7 @@ namespace blas{
         static PyObject *syr2k(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "trans", "lower", "overwrite_c", nullptr};
-            static const Ctx<T> ctx("syr2k", "OOO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("syr2k", "OOO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_c);
@@ -208,7 +208,7 @@ namespace blas{
         static PyObject *her2k(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "trans", "lower", "overwrite_c", nullptr};
-            static const Ctx<T> ctx("her2k", "OOO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("her2k", "OOO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_c);
@@ -239,7 +239,7 @@ namespace blas{
         static PyObject *trmm(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "side", "lower", "trans_a", "diag", "overwrite_b", nullptr};
-            static const Ctx<T> ctx("trmm", "OOO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("trmm", "OOO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_b);
@@ -268,7 +268,7 @@ namespace blas{
         static PyObject *trsm(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "side", "lower", "trans_a", "diag", "overwrite_b", nullptr};
-            static const Ctx<T> ctx("trsm", "OOO|OOOOi", kwlist);
+            static constexpr Ctx<T> ctx("trsm", "OOO|OOOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_b);

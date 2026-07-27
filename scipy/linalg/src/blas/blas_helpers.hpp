@@ -68,11 +68,11 @@ namespace blas {
      * A few Level-1 routines mixing complex data with real scalars or results carry irregular
      * two-letter prefixes instead, in two opposite orders; see tchar() and tchar_fn() below.
      */
-    template <class T> const char *flavor();
-    template <> inline const char *flavor<float>()                { return "s"; }
-    template <> inline const char *flavor<double>()               { return "d"; }
-    template <> inline const char *flavor<std::complex<float>>()  { return "c"; }
-    template <> inline const char *flavor<std::complex<double>>() { return "z"; }
+    template <class T> constexpr const char *flavor();
+    template <> inline constexpr const char *flavor<float>()                { return "s"; }
+    template <> inline constexpr const char *flavor<double>()               { return "d"; }
+    template <> inline constexpr const char *flavor<std::complex<float>>()  { return "c"; }
+    template <> inline constexpr const char *flavor<std::complex<double>>() { return "z"; }
 
     /**
      * @brief Irregular prefix, flavor letter first (s/d/cs/zd) -- the pyf `<tchar>` shorthand.
@@ -80,11 +80,11 @@ namespace blas {
      * Used by the routines whose *data* is complex but one *scalar argument* stays real:
      * `csrot`/`zdrot` (the cosine is real), `csscal`/`zdscal` (real scale factor).
      */
-    template <class T> const char *tchar();
-    template <> inline const char *tchar<float>()                { return "s"; }
-    template <> inline const char *tchar<double>()               { return "d"; }
-    template <> inline const char *tchar<std::complex<float>>()  { return "cs"; }
-    template <> inline const char *tchar<std::complex<double>>() { return "zd"; }
+    template <class T> constexpr const char *tchar();
+    template <> inline constexpr const char *tchar<float>()                { return "s"; }
+    template <> inline constexpr const char *tchar<double>()               { return "d"; }
+    template <> inline constexpr const char *tchar<std::complex<float>>()  { return "cs"; }
+    template <> inline constexpr const char *tchar<std::complex<double>>() { return "zd"; }
 
     /**
      * @brief Irregular prefix, result letter first (s/d/sc/dz) -- pyf `<prefix3>`/`<prefix4>`.
@@ -92,22 +92,22 @@ namespace blas {
      * Used by the value-returning routines whose *result* is real even for complex data:
      * `scnrm2`/`dznrm2`, `scasum`/`dzasum`.  Note the opposite letter order from tchar().
      */
-    template <class T> const char *tchar_fn();
-    template <> inline const char *tchar_fn<float>()                { return "s"; }
-    template <> inline const char *tchar_fn<double>()               { return "d"; }
-    template <> inline const char *tchar_fn<std::complex<float>>()  { return "sc"; }
-    template <> inline const char *tchar_fn<std::complex<double>>() { return "dz"; }
+    template <class T> constexpr const char *tchar_fn();
+    template <> inline constexpr const char *tchar_fn<float>()                { return "s"; }
+    template <> inline constexpr const char *tchar_fn<double>()               { return "d"; }
+    template <> inline constexpr const char *tchar_fn<std::complex<float>>()  { return "sc"; }
+    template <> inline constexpr const char *tchar_fn<std::complex<double>>() { return "dz"; }
 
     /**
      * @brief Index-function prefix (is/id/ic/iz) -- the pyf `i<prefix>` pattern, `isamax`.
      *
      * The third naming irregularity: the `i` for "index-returning" precedes the flavor letter.
      */
-    template <class T> const char *iflavor();
-    template <> inline const char *iflavor<float>()                { return "is"; }
-    template <> inline const char *iflavor<double>()               { return "id"; }
-    template <> inline const char *iflavor<std::complex<float>>()  { return "ic"; }
-    template <> inline const char *iflavor<std::complex<double>>() { return "iz"; }
+    template <class T> constexpr const char *iflavor();
+    template <> inline constexpr const char *iflavor<float>()                { return "is"; }
+    template <> inline constexpr const char *iflavor<double>()               { return "id"; }
+    template <> inline constexpr const char *iflavor<std::complex<float>>()  { return "ic"; }
+    template <> inline constexpr const char *iflavor<std::complex<double>>() { return "iz"; }
 
     /**
      * @brief Real counterpart of a flavor: f32 -> f32, c64 -> f32, c128 -> f64.
@@ -615,21 +615,29 @@ namespace blas {
          * @param kwlist  Null-terminated argument-name list, in signature order.  Must outlive
          *                the Ctx (the wrappers use a function-local static).
          */
-        Ctx(const char *prefix, const char *name, const char *pyfmt, const char *const *kwlist)
-            : kwlist_(kwlist)
+        constexpr Ctx(const char *prefix, const char *name, const char *pyfmt, const char *const *kwlist)
+            : rout_{}, fmt_{}, kwlist_(kwlist), nreq_(0)
         {
-            /* growth (LAPACK names, long kwlists) must fail loudly, not truncate silently */
-            int r = snprintf(rout_, sizeof rout_, "%s%s", prefix, name);
-            assert(r > 0 && static_cast<size_t>(r) < sizeof rout_ && "rout_ buffer too small");
-            r = snprintf(fmt_, sizeof fmt_, "%s:_fblas.%s", pyfmt, rout_);
-            assert(r > 0 && static_cast<size_t>(r) < sizeof fmt_ && "fmt_ buffer too small");
-            (void)r;
-            const char *bar = strchr(pyfmt, '|');
-            nreq_ = (int)(bar ? bar - pyfmt : (std::ptrdiff_t)strlen(pyfmt));
+            /* Build rout_ = prefix+name and fmt_ = pyfmt + ":_fblas." + rout_ at compile time,
+             * so `static constexpr Ctx ctx(...)` is constant-initialized -- no per-wrapper guard,
+             * init call, or hot-path guard check.  Growth (LAPACK names, long kwlists) that
+             * overruns a buffer is a write past the array's end, which is not a constant
+             * expression: it fails the build outright, the compile-time analogue of the old
+             * snprintf-truncation asserts. */
+            std::size_t i = 0;
+            for (const char *p = prefix; *p; ++p) { rout_[i++] = *p; }
+            for (const char *p = name;   *p; ++p) { rout_[i++] = *p; }
+            std::size_t j = 0;
+            for (const char *p = pyfmt;       *p; ++p) { fmt_[j++] = *p; }
+            for (const char *p = ":_fblas."; *p; ++p) { fmt_[j++] = *p; }
+            for (std::size_t k = 0; k < i;    ++k)     { fmt_[j++] = rout_[k]; }
+            const char *bar = pyfmt;
+            while (*bar && *bar != '|') { ++bar; }
+            nreq_ = static_cast<int>(bar - pyfmt);
         }
 
         /** @brief Regular naming: prepends the flavor letter, `"axpy"` -> `saxpy`/.../`zaxpy`. */
-        Ctx(const char *name, const char *pyfmt, const char *const *kwlist)
+        constexpr Ctx(const char *name, const char *pyfmt, const char *const *kwlist)
             : Ctx(flavor<T>(), name, pyfmt, kwlist) {}
 
         /** @brief The keyword list, null-terminated and in signature order. */

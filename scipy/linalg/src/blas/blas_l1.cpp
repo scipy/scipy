@@ -23,7 +23,7 @@ namespace blas{
         static PyObject *axpy(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "a", "offx", "incx", "offy", "incy", nullptr};
-            static const Ctx<T> ctx("axpy", "OO|OOOOOO", kwlist);
+            static constexpr Ctx<T> ctx("axpy", "OO|OOOOOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_IN(x, 1);
@@ -49,7 +49,7 @@ namespace blas{
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             /* tchar_fn prefix: snrm2/dnrm2/scnrm2/dznrm2. PARSE_ARGS uses ctx uniformly. */
-            static const Ctx<T> ctx(tchar_fn<T>(), "nrm2", "O|OOO", kwlist);
+            static constexpr Ctx<T> ctx(tchar_fn<T>(), "nrm2", "O|OOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_IN(x, 1);
@@ -69,7 +69,7 @@ namespace blas{
         static PyObject *asum(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
-            static const Ctx<T> ctx(tchar_fn<T>(), "asum", "O|OOO", kwlist);
+            static constexpr Ctx<T> ctx(tchar_fn<T>(), "asum", "O|OOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_IN(x, 1);
@@ -89,7 +89,7 @@ namespace blas{
         static PyObject *iamax(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
-            static const Ctx<T> ctx(iflavor<T>(), "amax", "O|OOO", kwlist);
+            static constexpr Ctx<T> ctx(iflavor<T>(), "amax", "O|OOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_IN(x, 1);
@@ -111,7 +111,7 @@ namespace blas{
         static PyObject *swap(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
-            static const Ctx<T> ctx("swap", "OO|OOOOO", kwlist);
+            static constexpr Ctx<T> ctx("swap", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_INOUT(x, 1, true);
@@ -135,7 +135,7 @@ namespace blas{
         static PyObject *copy(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
-            static const Ctx<T> ctx("copy", "OO|OOOOO", kwlist);
+            static constexpr Ctx<T> ctx("copy", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_IN(x, 1);
@@ -159,7 +159,7 @@ namespace blas{
         static PyObject *scal(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", nullptr};
-            static const Ctx<T> ctx("scal", "OO|OOO", kwlist);
+            static constexpr Ctx<T> ctx("scal", "OO|OOO", kwlist);
             PARSE_ARGS();
 
             /* f2py processes a before x: a bad scalar wins over a bad array */
@@ -190,7 +190,7 @@ namespace blas{
         static PyObject *scal_real(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", "overwrite_x", nullptr};
-            static const Ctx<T> ctx(tchar<T>(), "scal", "OO|OOOi", kwlist);
+            static constexpr Ctx<T> ctx(tchar<T>(), "scal", "OO|OOOi", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_x);
@@ -212,7 +212,7 @@ namespace blas{
         static PyObject *dot(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
-            static const Ctx<T> ctx("dot", "OO|OOOOO", kwlist);
+            static constexpr Ctx<T> ctx("dot", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_IN(x, 1);
@@ -236,7 +236,7 @@ namespace blas{
         static PyObject *dotu(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
-            static const Ctx<T> ctx("dotu", "OO|OOOOO", kwlist);
+            static constexpr Ctx<T> ctx("dotu", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_IN(x, 1);
@@ -260,7 +260,7 @@ namespace blas{
         static PyObject *dotc(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
-            static const Ctx<T> ctx("dotc", "OO|OOOOO", kwlist);
+            static constexpr Ctx<T> ctx("dotc", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
             ARRAY_IN(x, 1);
@@ -284,7 +284,7 @@ namespace blas{
         static PyObject *rotg(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "b", nullptr};
-            static const Ctx<T> ctx("rotg", "OO|", kwlist);
+            static constexpr Ctx<T> ctx("rotg", "OO|", kwlist);
             PARSE_ARGS();
 
             SCALAR_REQ(T, a);
@@ -306,7 +306,7 @@ namespace blas{
         static PyObject *rotmg(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"d1", "d2", "x1", "y1", nullptr};
-            static const Ctx<T> ctx("rotmg", "OOOO|", kwlist);
+            static constexpr Ctx<T> ctx("rotmg", "OOOO|", kwlist);
             PARSE_ARGS();
 
             SCALAR_REQ(T, d1);
@@ -328,7 +328,7 @@ namespace blas{
         static PyObject *rot(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "c", "s", "n", "offx", "incx", "offy", "incy", "overwrite_x", "overwrite_y", nullptr};
-            static const Ctx<T> ctx(tchar<T>(), "rot", "OOOO|OOOOOii", kwlist);
+            static constexpr Ctx<T> ctx(tchar<T>(), "rot", "OOOO|OOOOOii", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_x);
@@ -358,7 +358,7 @@ namespace blas{
         static PyObject *rotm(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "param", "n", "offx", "incx", "offy", "incy", "overwrite_x", "overwrite_y", nullptr};
-            static const Ctx<T> ctx("rotm", "OOO|OOOOOii", kwlist);
+            static constexpr Ctx<T> ctx("rotm", "OOO|OOOOOii", kwlist);
             PARSE_ARGS();
 
             SCALAR_FLAG(overwrite_x);
