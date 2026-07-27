@@ -642,8 +642,8 @@ namespace blas {
         /**
          * @brief Position of @p kw in the kwlist (linear scan; the lists are < 12 entries).
          *
-         * The SCALAR_* macros cache the result in a per-site `static const int`, so the scan
-         * runs once per process, not once per call.
+         * Called only on cold paths -- to format the "Nth keyword" ordinal of an error message
+         * (see scalar()/check_scalar()/checked()).
          */
         int index(const char *kw) const
         {
@@ -672,21 +672,22 @@ namespace blas {
          * `_fblas.saxpy() 4th keyword (incx) can't be converted to int`.
          *
          * @param v    Conversion target; written only on success.
-         * @param kw   Argument name as it appears in the kwlist.
-         * @param idx  The kwlist position of @p kw, as returned by `index(kw)` (the SCALAR_*
-         *             macros cache it per site); determines the "4th keyword" ordinal.
+         * @param kw   Argument name as it appears in the kwlist; on failure its kwlist position
+         *             (the "4th keyword" ordinal) is looked up lazily via `index(kw)`.
          * @return true on success; false with an exception set.
          */
         template <class V>
-        bool scalar(V *v, PyObject *obj, const char *kw, int idx) const
+        bool scalar(V *v, PyObject *obj, const char *kw) const
         {
             conv r = from_pyobj(v, obj);
             if (r == conv::ok) { return true; }
             if (r == conv::fail_msg) {
-                /* f2py's policy: keep an already-set exception's type, replace its message */
+                /* f2py's policy: keep an already-set exception's type, replace its message.
+                 * index(kw) runs only on this cold failure path -- the ordinal exists purely for
+                 * the message, so there is no reason to compute or cache it on the hot path. */
                 PyObject *err = PyErr_Occurred();
                 char pk[32], msg[128];
-                poskind(pk, sizeof pk, idx);
+                poskind(pk, sizeof pk, index(kw));
                 int n = snprintf(msg, sizeof msg, "_fblas.%s() %s (%s) can't be converted to %s",
                                 rout_, pk, kw, conv_name<V>());
                 assert(n > 0 && static_cast<size_t>(n) < sizeof msg && "msg buffer too small");
@@ -1021,10 +1022,7 @@ namespace blas {
     do { \
         PyObject *name##_raw = P.raw(#name); \
         if (name##_raw == nullptr) { name = static_cast<type>(def); } \
-        else { \
-            static const int name##_kwidx = ctx.index(#name); \
-            if (!ctx.scalar(&name, name##_raw, #name, name##_kwidx)) { return nullptr; } \
-        } \
+        else if (!ctx.scalar(&name, name##_raw, #name)) { return nullptr; } \
     } while (0)
 
 /**
@@ -1037,8 +1035,7 @@ namespace blas {
 #define SCALAR_REQ(type, name) \
     type name; \
     do { \
-        static const int name##_kwidx = ctx.index(#name); \
-        if (!ctx.scalar(&name, P.raw(#name), #name, name##_kwidx)) { return nullptr; } \
+        if (!ctx.scalar(&name, P.raw(#name), #name)) { return nullptr; } \
     } while (0)
 
 /**
