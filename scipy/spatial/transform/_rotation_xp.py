@@ -544,8 +544,8 @@ def mean(
         K = q.mT @ q
     else:
         w = xp.moveaxis(weights, axes_order, all_axes)
-        w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1,))
-        K = (q * w[..., None]).mT @ q
+        w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
+        K = (q * w).mT @ q
     K = K / n_reduced
 
     _, v = xp.linalg.eigh(K)
