@@ -618,12 +618,8 @@ namespace blas {
         constexpr Ctx(const char *prefix, const char *name, const char *pyfmt, const char *const *kwlist)
             : rout_{}, fmt_{}, kwlist_(kwlist), nreq_(0)
         {
-            /* Build rout_ = prefix+name and fmt_ = pyfmt + ":_fblas." + rout_ at compile time,
-             * so `static constexpr Ctx ctx(...)` is constant-initialized -- no per-wrapper guard,
-             * init call, or hot-path guard check.  Growth (LAPACK names, long kwlists) that
-             * overruns a buffer is a write past the array's end, which is not a constant
-             * expression: it fails the build outright, the compile-time analogue of the old
-             * snprintf-truncation asserts. */
+            /* rout_ = prefix+name, fmt_ = pyfmt + ":_fblas." + rout_, built here so the ctor is
+             * constexpr.  A name or format longer than its buffer overruns the array -> build error. */
             std::size_t i = 0;
             for (const char *p = prefix; *p; ++p) { rout_[i++] = *p; }
             for (const char *p = name;   *p; ++p) { rout_[i++] = *p; }
