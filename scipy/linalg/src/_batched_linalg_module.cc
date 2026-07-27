@@ -3,6 +3,7 @@
 #include <cstring>
 #include <complex>
 #include <vector>
+#include <tuple>
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
 
