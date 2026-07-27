@@ -15,7 +15,7 @@ namespace blas{
 
         /* Defined in blas_docs.cpp: build a routine's docstring on demand.  Returns a new `str`
          * reference, or nullptr (no exception set) when the routine has no docstring registered. */
-        PyObject *build_doc(const char *name);
+        PyObject *build_doc(const char *name) noexcept;
     }
 }
 
