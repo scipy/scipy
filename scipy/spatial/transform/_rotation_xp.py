@@ -532,13 +532,12 @@ def mean(
         weights = xp.broadcast_to(weights, quat.shape[:-1])
 
     # Move reduction axes to the end and flatten them. Reordering the quaternions
-    # instead of their (4, 4) outer products lets the sum over rotations be  a single
+    # instead of their (4, 4) outer products lets the sum over rotations be a single
     # matmul, instead of materializing one 4x4 matrix per rotation.
     keep_axes = tuple(i for i in all_axes if i not in axis)
     axes_order = keep_axes + axis
     q = xp.moveaxis(quat, axes_order, all_axes)
     q = xp.reshape(q, q.shape[: len(keep_axes)] + (-1, 4))
-    n_reduced = q.shape[-2]
 
     if weights is None:
         K = q.mT @ q
@@ -546,7 +545,6 @@ def mean(
         w = xp.moveaxis(weights, axes_order, all_axes)
         w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
         K = (q * w).mT @ q
-    K = K / n_reduced
 
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
@@ -611,9 +609,7 @@ def reduce(
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
     # TODO: Can we somehow avoid this?
-    all_idx = xp.reshape(
-        xp.arange(left.shape[-1], device=xp_device(left)), (1, -1)
-    )
+    all_idx = xp.reshape(xp.arange(left.shape[-1], device=xp_device(left)), (1, -1))
     left_idx = xp.reshape(left_best, (-1, 1))
     left = left[left_idx, all_idx]
     right_idx = xp.reshape(right_best, (-1, 1))
