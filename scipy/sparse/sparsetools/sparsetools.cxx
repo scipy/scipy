@@ -550,19 +550,19 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 /*
  * Python module initialization
  */
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 #include "sparsetools_impl.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 #if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
-PYBIND11_MODULE(_sparsetools, m, py::mod_gil_not_used())
+NB_MODULE(_sparsetools, m)
 #else
-PYBIND11_MODULE(_sparsetools, m, py::multiple_interpreters::per_interpreter_gil())
+NB_MODULE(_sparsetools, m)
 #endif
 {
     if (_import_array() != 0) {
-      throw py::error_already_set();
+      throw nb::python_error();
     }
     init_bsr(m);
     init_csr(m);

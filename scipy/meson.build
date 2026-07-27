@@ -42,6 +42,8 @@ pybind11_dep = declare_dependency(
   compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
 )
 
+nanobind_dep = dependency('nanobind', version: '>=2.15')
+
 # Pythran include directory and build flags
 if use_pythran
   # This external-property may not be needed if we can use the native include
