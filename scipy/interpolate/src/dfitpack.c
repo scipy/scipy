@@ -1,4 +1,5 @@
 #include "dfitpack.h"
+#include <limits.h>
 
 // The following are not yet translated from the original FITPACK Fortran77 code.
 // cocosp
@@ -1238,7 +1239,8 @@ restart_iteration:
         npl1 = nplus * 2;
         rn = nplus;
         if ((fpold - *fp) > acc) {
-            npl1 = (int)(rn * fpms / (fpold - *fp));
+            double val = rn * fpms / (fpold - *fp);
+            npl1 = (val > INT_MAX) ? INT_MAX : (int)val;
         }
 
         {
@@ -1811,7 +1813,10 @@ restart_iteration:
         if (*ier == 0) {
             npl1 = nplus * 2;
             rn = (double)nplus;
-            if (fpold - *fp > acc) { npl1 = (int)(rn * fpms / (fpold - *fp)); }
+            if (fpold - *fp > acc) {
+                double val = rn * fpms / (fpold - *fp);
+                npl1 = (val > INT_MAX) ? INT_MAX : (int)val;
+            }
             // nplus = min(nplus*2, max(npl1, nplus/2, 1))
             int temp1 = npl1;
             int temp2 = nplus / 2;
@@ -4000,7 +4005,8 @@ restart_iteration:
             npl1 = nplus * 2;
             rn = (double)nplus;
             if ((fpold - *fp) > acc) {
-                npl1 = (int)(rn * fpms / (fpold - *fp));
+                double val = rn * fpms / (fpold - *fp);
+                npl1 = (val > INT_MAX) ? INT_MAX : (int)val;
             }
             // nplus = min0(nplus*2,max0(npl1,nplus/2,1))
             int temp1 = nplus * 2;
@@ -4725,7 +4731,8 @@ restart_iteration:
         npl1 = nplus * 2;
         rn = nplus;
         if ((fpold - *fp) > acc) {
-            npl1 = (int)(rn * fpms / (fpold - *fp));
+            double val = rn * fpms / (fpold - *fp);
+            npl1 = (val > INT_MAX) ? INT_MAX : (int)val;
         }
         // min0(nplus*2,max0(npl1,nplus/2,1))
         int temp1 = npl1;
@@ -5630,7 +5637,8 @@ restart_iteration:
             int npl1 = (*nplusx) * 2;
             double rn = (double)(*nplusx);
             if (*reducx > acc) {
-                npl1 = (int)(rn * fpms / (*reducx));
+                double val = rn * fpms / (*reducx);
+                npl1 = (val > INT_MAX) ? INT_MAX : (int)val;
             }
             // nplx = min0(nplusx*2,max0(npl1,nplusx/2,1))
             int temp1 = (*nplusx) * 2;
@@ -5650,7 +5658,8 @@ restart_iteration:
             int npl1 = (*nplusy) * 2;
             double rn = (double)(*nplusy);
             if (*reducy > acc) {
-                npl1 = (int)(rn * fpms / (*reducy));
+                double val = rn * fpms / (*reducy);
+                npl1 = (val > INT_MAX) ? INT_MAX : (int)val;
             }
             // nply = min0(nplusy*2,max0(npl1,nplusy/2,1))
             int temp1 = (*nplusy) * 2;
@@ -7022,7 +7031,10 @@ L120:
         if (*nu != 8) {
             npl1 = *nplusu * 2;
             rn = (double)(*nplusu);
-            if (*reducu > acc) { npl1 = (int)(rn * fpms / (*reducu)); }
+            if (*reducu > acc) {
+                double val = rn * fpms / (*reducu);
+                npl1 = (val > INT_MAX) ? INT_MAX : (int)val;
+            }
             int max1 = (npl1 > *nplusu / 2) ? npl1 : *nplusu / 2;
             int max2 = (max1 > 1) ? max1 : 1;
             nplu = (*nplusu * 2 < max2) ? *nplusu * 2 : max2;
@@ -7032,7 +7044,10 @@ L120:
         if (*nv != 8) {
             npl1 = *nplusv * 2;
             rn = (double)(*nplusv);
-            if (*reducv > acc) { npl1 = (int)(rn * fpms / (*reducv)); }
+            if (*reducv > acc) {
+                double val = rn * fpms / (*reducv);
+                npl1 = (val > INT_MAX) ? INT_MAX : (int)val;
+            }
             int max1 = (npl1 > *nplusv / 2) ? npl1 : *nplusv / 2;
             int max2 = (max1 > 1) ? max1 : 1;
             nplv = (*nplusv * 2 < max2) ? *nplusv * 2 : max2;
