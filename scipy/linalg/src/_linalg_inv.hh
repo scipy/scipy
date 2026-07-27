@@ -1,14 +1,7 @@
 /*
  * Templated loops for `linalg.inv`
  */
-#include <iostream>
-#include <vector>
-#include "numpy/arrayobject.h"
-#include "numpy/npy_math.h"
-#include "scipy_blas_defines.h"
-#include "_npymath.hh"
-#include "_common_array_utils.hh"
-
+#pragma once
 
 namespace sp_linalg {
 
@@ -89,7 +82,7 @@ void invert_slice_cholesky(
 template<typename T>
 void invert_slice_sym_herm(
     char uplo, CBLAS_INT N, T *data, CBLAS_INT *ipiv, T *work, void *irwork, CBLAS_INT lwork,
-    bool is_symm_not_herm, 
+    bool is_symm_not_herm,
     SliceStatus& status
 ) {
     using real_type = typename detail::type_traits<T>::real_type;
@@ -291,7 +284,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     T *data=NULL, *scratch=NULL, *work=NULL;
     if (overwrite_a) {
-        // work in-place 
+        // work in-place
         data = ret_data;
         work = &buffer[0];
     }
@@ -509,4 +502,3 @@ free_exit:
 }
 
 } // namespace sp_linalg
-

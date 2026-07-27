@@ -2,10 +2,6 @@
  * Helpers for dealing with npy_complex128/npy_complex64 types.
  */
 #pragma once
-#include <iostream>
-#include <complex>
-#include "numpy/npy_math.h"
-
 
 namespace sp_linalg {
 
