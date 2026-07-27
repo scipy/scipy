@@ -3219,6 +3219,9 @@ class _TestFancyIndexing:
         assert_equal(A[3:4, [9]].toarray(), B[3:4, [9]])
         assert_equal(A[1:4, [-1, -5]].toarray(), B[1:4, [-1, -5]])
         assert_equal(A[1:4, array([-1, -5])].toarray(), B[1:4, [-1, -5]])
+        assert_equal(A[1:5:2, [-1, 4]].toarray(), B[1:5:2, [-1, 4]])
+        assert_equal(A[1:5:2, array([-1, 4])].toarray(), B[1:5:2, [-1, 4]])
+        assert_equal(A[5:1:-2, array([-1, 4])].toarray(), B[5:1:-2, [-1, 4]])
 
         # [[1,2],j]
         assert_equal(A[[3], 3].toarray(), B[[3], 3])
@@ -3233,6 +3236,10 @@ class _TestFancyIndexing:
         assert_equal(A[[1, 3], :].toarray(), B[[1, 3], :])
         assert_equal(A[[2, -5], 8:-1].toarray(), B[[2, -5], 8:-1])
         assert_equal(A[array([2, -5]), 8:-1].toarray(), B[[2, -5], 8:-1])
+        # [[1,2],1:5:2]  see gh-25589
+        assert_equal(A[[2, -5], 6:-1:2].toarray(), B[[2, -5], 6:-1:2])
+        assert_equal(A[array([2, -5]), 6:-1:2].toarray(), B[[2, -5], 6:-1:2])
+        assert_equal(A[[2, -5], 6:1:-2].toarray(), B[[2, -5], 6:1:-2])
 
         # [[1,2],[1,2]]
         assert_equal(toarray(A[[3], [4]]), B[[3], [4]])

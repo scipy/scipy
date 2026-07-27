@@ -35,7 +35,7 @@ def lagrange(x, w):
     be able to use more than about 20 points even if they are chosen optimally.
 
     .. deprecated:: 1.18.0
-        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        This function is deprecated and will be removed in SciPy 2.1.0. Use
         `scipy.interpolate.BarycentricInterpolator` instead.
 
     Parameters
@@ -102,7 +102,7 @@ def lagrange(x, w):
 
     """
     _warn_skips = (os.path.dirname(__file__),)
-    msg = ("`lagrange` is deprecated and will be removed in SciPy 1.20.0. Use "
+    msg = ("`lagrange` is deprecated and will be removed in SciPy 2.1.0. Use "
            "`scipy.interpolate.BarycentricInterpolator` instead.")
     warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     M = len(x)
