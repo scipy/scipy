@@ -18,7 +18,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *gemv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *gemv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "x", "beta", "y", "offx", "incx", "offy", "incy", "trans", "overwrite_y", nullptr};
             static const Ctx<T> ctx("gemv", "OOO|OOOOOOOi", kwlist);
@@ -53,7 +53,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *gbmv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *gbmv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"m", "n", "kl", "ku", "alpha", "a", "x", "incx", "offx", "beta", "y", "incy", "offy", "trans", "overwrite_y", nullptr};
             static const Ctx<T> ctx("gbmv", "OOOOOOO|OOOOOOOi", kwlist);
@@ -94,7 +94,7 @@ namespace blas{
         /* The banded symmetric family has no complex-symmetric members in LAPACK (unlike
          * symv): sbmv is s/d only, the complex pair is the hermitian hbmv below. */
         template <class T>
-        static PyObject *sbmv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *sbmv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"k", "alpha", "a", "x", "incx", "offx", "beta", "y", "incy", "offy", "lower", "overwrite_y", nullptr};
             static const Ctx<T> ctx("sbmv", "OOOO|OOOOOOOi", kwlist);
@@ -130,7 +130,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *hbmv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *hbmv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"k", "alpha", "a", "x", "incx", "offx", "beta", "y", "incy", "offy", "lower", "overwrite_y", nullptr};
             static const Ctx<T> ctx("hbmv", "OOOO|OOOOOOOi", kwlist);
@@ -166,7 +166,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *symv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *symv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "x", "beta", "y", "offx", "incx", "offy", "incy", "lower", "overwrite_y", nullptr};
             static const Ctx<T> ctx("symv", "OOO|OOOOOOOi", kwlist);
@@ -200,7 +200,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *hemv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *hemv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "x", "beta", "y", "offx", "incx", "offy", "incy", "lower", "overwrite_y", nullptr};
             static const Ctx<T> ctx("hemv", "OOO|OOOOOOOi", kwlist);
@@ -238,7 +238,7 @@ namespace blas{
          * prefix6); the hermitian chp* members are separate wrappers.  hpr's alpha is
          * real; spr2/hpr2 has no complex-symmetric members. */
         template <class T>
-        static PyObject *spmv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *spmv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "alpha", "ap", "x", "incx", "offx", "beta", "y", "incy", "offy", "lower", "overwrite_y", nullptr};
             static const Ctx<T> ctx("spmv", "OOOO|OOOOOOOi", kwlist);
@@ -272,7 +272,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *hpmv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *hpmv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "alpha", "ap", "x", "incx", "offx", "beta", "y", "incy", "offy", "lower", "overwrite_y", nullptr};
             static const Ctx<T> ctx("hpmv", "OOOO|OOOOOOOi", kwlist);
@@ -306,7 +306,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *spr(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *spr(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "alpha", "x", "ap", "incx", "offx", "lower", "overwrite_ap", nullptr};
             static const Ctx<T> ctx("spr", "OOOO|OOOi", kwlist);
@@ -334,7 +334,7 @@ namespace blas{
 
         /* hpr's alpha is real (the diagonal of a hermitian update stays real) */
         template <class T>
-        static PyObject *hpr(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *hpr(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "alpha", "x", "ap", "incx", "offx", "lower", "overwrite_ap", nullptr};
             static const Ctx<T> ctx("hpr", "OOOO|OOOi", kwlist);
@@ -361,7 +361,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *spr2(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *spr2(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "alpha", "x", "y", "ap", "incx", "offx", "incy", "offy", "lower", "overwrite_ap", nullptr};
             static const Ctx<T> ctx("spr2", "OOOOO|OOOOOi", kwlist);
@@ -394,7 +394,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *hpr2(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *hpr2(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "alpha", "x", "y", "ap", "incx", "offx", "incy", "offy", "lower", "overwrite_ap", nullptr};
             static const Ctx<T> ctx("hpr2", "OOOOO|OOOOOi", kwlist);
@@ -427,7 +427,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *syr(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *syr(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "x", "lower", "incx", "offx", "n", "a", "overwrite_a", nullptr};
             static const Ctx<T> ctx("syr", "OO|OOOOOi", kwlist);
@@ -459,7 +459,7 @@ namespace blas{
          * passed only its (leading) real component through the miscast function pointer.
          * Same conversion here -- complex alpha accepted, imaginary part ignored. */
         template <class T>
-        static PyObject *her(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *her(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "x", "lower", "incx", "offx", "n", "a", "overwrite_a", nullptr};
             static const Ctx<T> ctx("her", "OO|OOOOOi", kwlist);
@@ -488,7 +488,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *syr2(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *syr2(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "x", "y", "lower", "incx", "offx", "incy", "offy", "n", "a", "overwrite_a", nullptr};
             static const Ctx<T> ctx("syr2", "OOO|OOOOOOOi", kwlist);
@@ -520,7 +520,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *her2(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *her2(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "x", "y", "lower", "incx", "offx", "incy", "offy", "n", "a", "overwrite_a", nullptr};
             static const Ctx<T> ctx("her2", "OOO|OOOOOOOi", kwlist);
@@ -552,7 +552,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *ger(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *ger(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "x", "y", "incx", "incy", "a", "overwrite_x", "overwrite_y", "overwrite_a", nullptr};
             static const Ctx<T> ctx("ger", "OOO|OOOiii", kwlist);
@@ -579,7 +579,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *geru(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *geru(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "x", "y", "incx", "incy", "a", "overwrite_x", "overwrite_y", "overwrite_a", nullptr};
             static const Ctx<T> ctx("geru", "OOO|OOOiii", kwlist);
@@ -605,7 +605,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *gerc(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *gerc(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "x", "y", "incx", "incy", "a", "overwrite_x", "overwrite_y", "overwrite_a", nullptr};
             static const Ctx<T> ctx("gerc", "OOO|OOOiii", kwlist);
@@ -631,7 +631,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *trmv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *trmv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "x", "offx", "incx", "lower", "trans", "diag", "overwrite_x", nullptr};
             static const Ctx<T> ctx("trmv", "OO|OOOOOi", kwlist);
@@ -660,7 +660,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *trsv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *trsv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "x", "incx", "offx", "lower", "trans", "diag", "overwrite_x", nullptr};
             static const Ctx<T> ctx("trsv", "OO|OOOOOi", kwlist);
@@ -690,7 +690,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *tbmv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *tbmv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"k", "a", "x", "incx", "offx", "lower", "trans", "diag", "overwrite_x", nullptr};
             static const Ctx<T> ctx("tbmv", "OOO|OOOOOi", kwlist);
@@ -720,7 +720,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *tbsv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *tbsv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"k", "a", "x", "incx", "offx", "lower", "trans", "diag", "overwrite_x", nullptr};
             static const Ctx<T> ctx("tbsv", "OOO|OOOOOi", kwlist);
@@ -750,7 +750,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *tpmv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *tpmv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "ap", "x", "incx", "offx", "lower", "trans", "diag", "overwrite_x", nullptr};
             static const Ctx<T> ctx("tpmv", "OOO|OOOOOi", kwlist);
@@ -779,7 +779,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *tpsv(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *tpsv(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "ap", "x", "incx", "offx", "lower", "trans", "diag", "overwrite_x", nullptr};
             static const Ctx<T> ctx("tpsv", "OOO|OOOOOi", kwlist);

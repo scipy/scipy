@@ -163,7 +163,7 @@ namespace blas {
      * @return      New reference to the rank-@p ndim working view (the input itself when the
      *              rank already matches), or nullptr with an exception set and everything freed.
      */
-    inline PyArrayObject *fix_rank(PyArrayObject *arr, int ndim, PyObject **orig)
+    inline PyArrayObject *fix_rank(PyArrayObject *arr, int ndim, PyObject **orig) noexcept
     {
         *orig = nullptr;
         int nd = PyArray_NDIM(arr);
@@ -207,7 +207,7 @@ namespace blas {
      * @note Both steal the @p descr reference, so passing the fresh
      *       `PyArray_DescrFromType` result to either needs no extra INCREF/DECREF.
      */
-    inline PyArrayObject *array_from_obj(PyObject *o, PyArray_Descr *descr, int flags)
+    inline PyArrayObject *array_from_obj(PyObject *o, PyArray_Descr *descr, int flags) noexcept
     {
         if (PyArray_Check(o)) {
             return (PyArrayObject *)PyArray_FromArray((PyArrayObject *)o, descr, flags);
@@ -228,7 +228,7 @@ namespace blas {
      * @return      New reference, or nullptr with (usually) an exception set.
      */
     template <class T>
-    inline PyArrayObject *as_in(PyObject *o, int ndim, PyObject **orig)
+    inline PyArrayObject *as_in(PyObject *o, int ndim, PyObject **orig) noexcept
     {
         int flags = NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ALIGNED | NPY_ARRAY_FORCECAST;
         PyArrayObject *arr = array_from_obj(o, PyArray_DescrFromType(npy_type<T>()), flags);
@@ -252,7 +252,7 @@ namespace blas {
      * @return           New reference (possibly the caller's array, INCREF'd), or nullptr.
      */
     template <class T>
-    inline PyArrayObject *as_inout(PyObject *o, int ndim, bool overwrite, PyObject **orig)
+    inline PyArrayObject *as_inout(PyObject *o, int ndim, bool overwrite, PyObject **orig) noexcept
     {
         int flags = NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ALIGNED | NPY_ARRAY_WRITEABLE | NPY_ARRAY_FORCECAST;
         if (!overwrite) { flags |= NPY_ARRAY_ENSURECOPY; }
@@ -266,7 +266,7 @@ namespace blas {
      *        not supplied.
      */
     template <class T>
-    inline PyArrayObject *zeros_vec(npy_intp n)
+    inline PyArrayObject *zeros_vec(npy_intp n) noexcept
     {
         return (PyArrayObject *)PyArray_ZEROS(1, &n, npy_type<T>(), 0);
     }
@@ -274,7 +274,7 @@ namespace blas {
     /** @brief Fortran-ordered zero-filled matrix, for optional `intent(in,out)` matrix arguments
      *         not supplied (e.g. `?ger`'s `a`, which f2py explicitly initialized to 0). */
     template <class T>
-    inline PyArrayObject *zeros_mat(npy_intp m, npy_intp n)
+    inline PyArrayObject *zeros_mat(npy_intp m, npy_intp n) noexcept
     {
         npy_intp dims[2] = {m, n};
         return (PyArrayObject *)PyArray_ZEROS(2, dims, npy_type<T>(), 1);
@@ -304,7 +304,7 @@ namespace blas {
      *
      * @param v  Target; written only on success.
      */
-    inline conv from_pyobj(CBLAS_INT *v, PyObject *obj)
+    inline conv from_pyobj(CBLAS_INT *v, PyObject *obj) noexcept
     {
         PyObject *tmp = nullptr;
 
@@ -345,7 +345,7 @@ namespace blas {
     }
 
     /** @brief Port of f2py's `double_from_pyobj`; same coercion rules as the int port. */
-    inline conv from_pyobj(double *v, PyObject *obj)
+    inline conv from_pyobj(double *v, PyObject *obj) noexcept
     {
         PyObject *tmp = nullptr;
 
@@ -380,7 +380,7 @@ namespace blas {
     }
 
     /** @brief Port of f2py's `float_from_pyobj`: converts through double, then narrows. */
-    inline conv from_pyobj(float *v, PyObject *obj)
+    inline conv from_pyobj(float *v, PyObject *obj) noexcept
     {
         double d = 0.0;
         conv r = from_pyobj(&d, obj);
@@ -395,7 +395,7 @@ namespace blas {
      * falls through the real cases by hand (Python has no PyNumber_Complex), and finally
      * sequences via element 0.
      */
-    inline conv from_pyobj(std::complex<double> *v, PyObject *obj)
+    inline conv from_pyobj(std::complex<double> *v, PyObject *obj) noexcept
     {
         if (PyComplex_Check(obj)) {
             Py_complex c = PyComplex_AsCComplex(obj);
@@ -454,7 +454,7 @@ namespace blas {
     }
 
     /** @brief Port of f2py's `complex_float_from_pyobj`: converts through complex_double, then narrows. */
-    inline conv from_pyobj(std::complex<float> *v, PyObject *obj)
+    inline conv from_pyobj(std::complex<float> *v, PyObject *obj) noexcept
     {
         std::complex<double> cd;
         conv r = from_pyobj(&cd, obj);
@@ -473,7 +473,7 @@ namespace blas {
      *
      * @return true on success (@p out written); false with an exception set.
      */
-    inline bool from_pyobj_index(int *out, PyObject *obj)
+    inline bool from_pyobj_index(int *out, PyObject *obj) noexcept
     {
         PyObject *idx = PyNumber_Index(obj);
         if (idx == nullptr) { return false; }
@@ -515,10 +515,10 @@ namespace blas {
         ~py_ref() { Py_XDECREF(p_); Py_XDECREF(orig_); }
 
         /** @brief False when acquisition failed (held pointer is null). */
-        explicit operator bool() const { return p_ != nullptr; }
-        PyArrayObject *get() const { return p_; }
+        explicit operator bool() const noexcept { return p_ != nullptr; }
+        PyArrayObject *get() const noexcept { return p_; }
         /** @brief Data pointer as the wrapper's scalar type; the array's dtype guarantees the cast. */
-        template <class T> T *data() const { return static_cast<T *>(PyArray_DATA(p_)); }
+        template <class T> T *data() const noexcept { return static_cast<T *>(PyArray_DATA(p_)); }
         /** @brief Hand the owned reference to Python -- the wrapper's return value.  When a
          *         rank adjustment made the working array a view, the caller-shaped original
          *         is returned instead (the data is shared, writes are visible in both). */
@@ -575,7 +575,7 @@ namespace blas {
     inline PyObject *result_item(long long v)             { return PyLong_FromLongLong(v); }
 
     template <class... A>
-    inline PyObject *make_result(A &&...a)
+    inline PyObject *make_result(A &&...a) noexcept
     {
         if constexpr (sizeof...(A) == 1) {
             return result_item(a...);                       /* single value: no tuple */
@@ -633,11 +633,11 @@ namespace blas {
             : Ctx(flavor<T>(), name, pyfmt, kwlist) {}
 
         /** @brief The keyword list, null-terminated and in signature order. */
-        const char *const *kws() const { return kwlist_; }
+        const char *const *kws() const noexcept { return kwlist_; }
         /** @brief Count of required (before-'|') arguments; drives ordinals and missing-arg checks. */
-        int nreq() const { return nreq_; }
+        int nreq() const noexcept { return nreq_; }
         /** @brief Error-message routine name, e.g. "_fblas.daxpy" (the ':' suffix of fmt_). */
-        const char *qualname() const { return strchr(fmt_, ':') + 1; }
+        const char *qualname() const noexcept { return strchr(fmt_, ':') + 1; }
 
         /**
          * @brief Position of @p kw in the kwlist (linear scan; the lists are < 12 entries).
@@ -645,7 +645,7 @@ namespace blas {
          * Called only on cold paths -- to format the "Nth keyword" ordinal of an error message
          * (see scalar()/check_scalar()/checked()).
          */
-        int index(const char *kw) const
+        int index(const char *kw) const noexcept
         {
             int i = 0;
             while (kwlist_[i] && strcmp(kwlist_[i], kw) != 0) { i++; }
@@ -657,7 +657,7 @@ namespace blas {
         }
 
         /** @brief Like index() but returns -1 for an unknown name (used to flag unexpected kwargs). */
-        int index_opt(const char *kw) const
+        int index_opt(const char *kw) const noexcept
         {
             int i = 0;
             while (kwlist_[i] && strcmp(kwlist_[i], kw) != 0) { i++; }
@@ -677,7 +677,7 @@ namespace blas {
          * @return true on success; false with an exception set.
          */
         template <class V>
-        bool scalar(V *v, PyObject *obj, const char *kw) const
+        bool scalar(V *v, PyObject *obj, const char *kw) const noexcept
         {
             conv r = from_pyobj(v, obj);
             if (r == conv::ok) { return true; }
@@ -706,7 +706,7 @@ namespace blas {
          * @param val     The offending value, printed after `name=`; widened to long long so
          *                ILP64 CBLAS_INT values print correctly on LLP64 platforms.
          */
-        bool check_scalar(bool ok, const char *tcheck, const char *kw, long long val) const
+        bool check_scalar(bool ok, const char *tcheck, const char *kw, long long val) const noexcept
         {
             if (ok) { return true; }
             char pk[32];
@@ -720,7 +720,7 @@ namespace blas {
          *
          * On failure raises `(shape(a,0)==shape(a,1)) failed for 2nd argument a`.
          */
-        bool check_array(bool ok, const char *tcheck, const char *name) const
+        bool check_array(bool ok, const char *tcheck, const char *name) const noexcept
         {
             if (ok) { return true; }
             char pk[32];
@@ -730,7 +730,7 @@ namespace blas {
         }
 
         /** @brief `as_in` (f2py `intent(in)`) with owning result and f2py's failure message. */
-        py_ref in(PyObject *o, int ndim, const char *name) const
+        py_ref in(PyObject *o, int ndim, const char *name) const noexcept
         {
             PyObject *orig = nullptr;
             /* two statements: orig must be written before it is read as an argument */
@@ -738,7 +738,7 @@ namespace blas {
             return checked(arr, orig, name);
         }
         /** @brief `as_inout` (f2py `intent(in,out[,copy])`) with owning result and failure message. */
-        py_ref inout(PyObject *o, int ndim, bool overwrite, const char *name) const
+        py_ref inout(PyObject *o, int ndim, bool overwrite, const char *name) const noexcept
         {
             PyObject *orig = nullptr;
             PyArrayObject *arr = as_inout<T>(o, ndim, overwrite, &orig);
@@ -747,7 +747,7 @@ namespace blas {
         /** @brief `zeros_vec` with owning result, for optional output vectors not supplied.
          *         Guarded by the same CBLAS_INT_MAX certificate as acquired arrays, so
          *         `len()` stays lossless on internally allocated arrays too. */
-        py_ref zeros(npy_intp n) const
+        py_ref zeros(npy_intp n) const noexcept
         {
             if (n > (npy_intp)CBLAS_INT_MAX) {
                 PyErr_Format(PyExc_OverflowError,
@@ -759,7 +759,7 @@ namespace blas {
             return py_ref(zeros_vec<T>(n));
         }
         /** @brief Two-dimensional variant of zeros(), Fortran-ordered, same certificate. */
-        py_ref zeros(npy_intp m, npy_intp n) const
+        py_ref zeros(npy_intp m, npy_intp n) const noexcept
         {
             if (m > (npy_intp)CBLAS_INT_MAX || n > (npy_intp)CBLAS_INT_MAX) {
                 PyErr_Format(PyExc_OverflowError,
@@ -780,7 +780,7 @@ namespace blas {
          * (gemv's `beta`, 4th in the signature, is the "1st keyword").  The generated `_fblas`
          * never exceeds "7th", so the simple 1st/2nd/3rd/Nth suffix rule is exact.
          */
-        void poskind(char *buf, size_t size, int i) const
+        void poskind(char *buf, size_t size, int i) const noexcept
         {
             bool req = i < nreq_;
             int num = req ? i + 1 : i - nreq_ + 1;
@@ -801,7 +801,7 @@ namespace blas {
          * Downstream, `len()`/`shape()` return CBLAS_INT relying on this certificate, so no
          * other narrowing exists anywhere in the wrappers.
          */
-        py_ref checked(PyArrayObject *a, PyObject *orig, const char *name) const
+        py_ref checked(PyArrayObject *a, PyObject *orig, const char *name) const noexcept
         {
             if (a == nullptr) {
                 Py_XDECREF(orig);
@@ -856,7 +856,7 @@ namespace blas {
             : args_(args), kwds_(kwds), ctx_(ctx) {}
 
         /** @brief CPython-order structural validation; false with an exception set on failure. */
-        bool parse() const
+        bool parse() const noexcept
         {
             const char *const *kw = ctx_.kws();
             const char *fn = ctx_.qualname();
@@ -925,7 +925,7 @@ namespace blas {
          *
          * Safe to call only after parse() succeeded (no position/keyword clash remains).
          */
-        PyObject *raw(const char *name) const
+        PyObject *raw(const char *name) const noexcept
         {
             int idx = ctx_.index(name);
             Py_ssize_t npos = args_ ? PyTuple_GET_SIZE(args_) : 0;

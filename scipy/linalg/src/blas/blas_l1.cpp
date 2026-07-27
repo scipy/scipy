@@ -20,7 +20,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *axpy(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *axpy(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "a", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("axpy", "OO|OOOOOO", kwlist);
@@ -45,7 +45,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *nrm2(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *nrm2(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             /* tchar_fn prefix: snrm2/dnrm2/scnrm2/dznrm2. PARSE_ARGS uses ctx uniformly. */
@@ -66,7 +66,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *asum(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *asum(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             static const Ctx<T> ctx(tchar_fn<T>(), "asum", "O|OOO", kwlist);
@@ -86,7 +86,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *iamax(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *iamax(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             static const Ctx<T> ctx(iflavor<T>(), "amax", "O|OOO", kwlist);
@@ -108,7 +108,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *swap(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *swap(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("swap", "OO|OOOOO", kwlist);
@@ -132,7 +132,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *copy(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *copy(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("copy", "OO|OOOOO", kwlist);
@@ -156,7 +156,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *scal(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *scal(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", nullptr};
             static const Ctx<T> ctx("scal", "OO|OOO", kwlist);
@@ -187,7 +187,7 @@ namespace blas{
          * two function templates share the name.
          * */
         template <class T, class A>
-        static PyObject *scal_real(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *scal_real(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", "overwrite_x", nullptr};
             static const Ctx<T> ctx(tchar<T>(), "scal", "OO|OOOi", kwlist);
@@ -209,7 +209,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *dot(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *dot(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("dot", "OO|OOOOO", kwlist);
@@ -233,7 +233,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *dotu(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *dotu(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("dotu", "OO|OOOOO", kwlist);
@@ -257,7 +257,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *dotc(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *dotc(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static const Ctx<T> ctx("dotc", "OO|OOOOO", kwlist);
@@ -281,7 +281,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *rotg(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *rotg(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "b", nullptr};
             static const Ctx<T> ctx("rotg", "OO|", kwlist);
@@ -303,7 +303,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *rotmg(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *rotmg(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"d1", "d2", "x1", "y1", nullptr};
             static const Ctx<T> ctx("rotmg", "OOOO|", kwlist);
@@ -325,7 +325,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *rot(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *rot(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "c", "s", "n", "offx", "incx", "offy", "incy", "overwrite_x", "overwrite_y", nullptr};
             static const Ctx<T> ctx(tchar<T>(), "rot", "OOOO|OOOOOii", kwlist);
@@ -355,7 +355,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *rotm(PyObject *, PyObject *args, PyObject *kwds)
+        static PyObject *rotm(PyObject *, PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "param", "n", "offx", "incx", "offy", "incy", "overwrite_x", "overwrite_y", nullptr};
             static const Ctx<T> ctx("rotm", "OOO|OOOOOii", kwlist);
