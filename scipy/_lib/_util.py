@@ -1,27 +1,35 @@
-import os
-import re
-from contextlib import contextmanager
 import functools
-import operator
-import warnings
-import numbers
-from collections import namedtuple
 import inspect
 import math
+import numbers
+import operator
+import os
+import re
 import sys
 import textwrap
+import warnings
+from collections import namedtuple
+from contextlib import contextmanager
 from types import ModuleType
 from typing import Literal
 
 import numpy as np
-from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
-                                   is_marray, xp_size, xp_result_device, xp_result_type,
-                                   xp_capabilities, xp_isscalar)
-from scipy._lib._docscrape import FunctionDoc, Parameter
-from scipy._lib._sparse import issparse
-
 from numpy.exceptions import AxisError
 
+from scipy._lib._array_api import (
+    Array,
+    array_namespace,
+    is_lazy_array,
+    is_marray,
+    is_numpy,
+    xp_capabilities,
+    xp_isscalar,
+    xp_result_device,
+    xp_result_type,
+    xp_size,
+)
+from scipy._lib._docscrape import FunctionDoc, Parameter
+from scipy._lib._sparse import issparse
 
 type IntNumber = int | np.integer
 type DecimalNumber = float | np.floating | np.integer
@@ -396,23 +404,19 @@ def _asarray_validated(a, check_finite=True,
         The converted validated array.
 
     """
-    if not sparse_ok:
-        if issparse(a):
-            msg = ('Sparse arrays/matrices are not supported by this function. '
-                   'Perhaps one of the `scipy.sparse.linalg` functions '
-                   'would work instead.')
-            raise ValueError(msg)
-    if not mask_ok:
-        if np.ma.isMaskedArray(a):
-            raise ValueError('masked arrays are not supported')
+    if not sparse_ok and issparse(a):
+        msg = ('Sparse arrays/matrices are not supported by this function. '
+               'Perhaps one of the `scipy.sparse.linalg` functions '
+               'would work instead.')
+        raise ValueError(msg)
+    if not mask_ok and np.ma.isMaskedArray(a):
+        raise ValueError('masked arrays are not supported')
     toarray = np.asarray_chkfinite if check_finite else np.asarray
     a = toarray(a)
-    if not objects_ok:
-        if a.dtype is np.dtype('O'):
-            raise ValueError('object arrays are not supported')
-    if as_inexact:
-        if not np.issubdtype(a.dtype, np.inexact):
-            a = toarray(a, dtype=np.float64)
+    if not objects_ok and a.dtype is np.dtype('O'):
+        raise ValueError('object arrays are not supported')
+    if as_inexact and not np.issubdtype(a.dtype, np.inexact):
+        a = toarray(a, dtype=np.float64)
     return a
 
 
@@ -627,7 +631,9 @@ class MapWrapper:
             self._mapfunc = self.pool
         else:
             from multiprocessing import (
-                get_all_start_methods, get_context, get_start_method
+                get_all_start_methods,
+                get_context,
+                get_start_method,
             )
 
             method = get_start_method(allow_none=True)
@@ -695,9 +701,7 @@ def _workers_wrapper(func):
     @functools.wraps(func)
     def inner(*args, **kwds):
         kwargs = kwds.copy()
-        if 'workers' not in kwargs:
-            _workers = map
-        elif 'workers' in kwargs and kwargs['workers'] is None:
+        if 'workers' not in kwargs or 'workers' in kwargs and kwargs['workers'] is None:
             _workers = map
         else:
             _workers = kwargs['workers']
@@ -801,7 +805,7 @@ def _rng_html_rewrite(func):
     it does not change the result values getting printed.
     """
     # hexadecimal or number seed, case-insensitive
-    pattern = re.compile(r'np.random.default_rng\((0x[0-9A-F]+|\d+)\)', re.I)
+    pattern = re.compile(r'np.random.default_rng\((0x[0-9A-F]+|\d+)\)', re.IGNORECASE)
 
     def _wrapped(*args, **kwargs):
         res = func(*args, **kwargs)
@@ -1219,7 +1223,7 @@ def _apply_over_batch(*argdefs):
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
             # contributor to pass an `pack_result` callable to the decorator factory.
-            return results[0] if len(results) == 1 else results
+            return results[0] if len(results) == 1 else tuple(results)
 
         doc = FunctionDoc(wrapper)
         doc['Extended Summary'].append(_batch_note.rstrip())
