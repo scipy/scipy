@@ -2772,7 +2772,7 @@ fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const
         mvv = mv + nv8;
     }
     // we first determine the matrices (auu) and (qq). then we reduce the
-    // matrix (auu) to an unit upper triangular form (ru) using givens
+    // matrix (auu) to a unit upper triangular form (ru) using givens
     // rotations without square roots. we apply the same transformations to
     // the rows of matrix qq to obtain the mv x nuu matrix g.
     // we store matrix (ru) into au and g into q.
