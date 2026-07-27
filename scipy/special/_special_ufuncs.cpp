@@ -63,6 +63,7 @@
 // If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
+extern const char *_bernoulli_doc;
 extern const char *_binom_ppf_doc;
 extern const char *_cospi_doc;
 extern const char *_bivariate_normal_sf_doc;
@@ -283,6 +284,11 @@ _special_ufuncs_module_exec(PyObject *module)
 {
     if (_import_array() < 0) { return -1; }
     if (_import_umath() < 0) { return -1; }
+
+    PyObject *_bernoulli = xsf::numpy::ufunc(
+        {[](std::ptrdiff_t n) { return bernoulli(n); }},
+        "_bernoulli", _bernoulli_doc);
+    PyModule_AddObjectRef(module, "_bernoulli", _bernoulli);
 
     PyObject *_binom_ppf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(binom_ppf_float),
