@@ -2,7 +2,9 @@
  * @file
  * @brief Python/numpy <-> C++ translation layer for the BLAS wrappers.
  *
- * Three groups live here:
+ * This header holds the machinery that used to be provided by f2py tool for wrapping BLAS and
+ * LAPACK routines. Backwards compatibility is preserved as closely as possible to the point of
+ * carrying over some design choices that are not ideal.
  *
  * 1. Scalar converters (`from_pyobj`): direct ports of the f2py-generated `int_from_pyobj` /
  *    `double_from_pyobj` / `complex_double_from_pyobj` (see `build/scipy/linalg/_fblasmodule.c`),
@@ -30,10 +32,10 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <complex>
-#include <type_traits>   /* std::is_same, used with real_of to pick symv-vs-hemv naming */
-#include <cassert>       /* assert: buffer/kwlist invariants                            */
-#include <cstdio>        /* snprintf: format names/messages into fixed buffers (no I/O) */
-#include <cstring>       /* strchr/strcmp/strlen: parse the kwlist and PyArg format     */
+#include <type_traits>   /* std::is_same, used with real_of to pick symv-vs-hemv naming  */
+#include <cassert>       /* assert: buffer/kwlist invariants                             */
+#include <cstdio>        /* snprintf: format names/messages into fixed buffers (no I/O)  */
+#include <cstring>       /* strchr/strcmp/strlen: parse the kwlist and PyArg format      */
 #include <climits>       /* INT_MAX/INT_MIN: range check for the PyArg 'i'-style flags   */
 
 #ifndef NPY_NO_DEPRECATED_API
@@ -48,12 +50,12 @@
 namespace blas {
 
     /**
-     * Exception policy: f2py used to raise a module-specific `_fblas.error` which was
-     * a bare Exception subclass, reachable only through the private dunder attribute
-     * `_fblas.__fblas_error` which was not possible to catch by name. These wrappers
-     * raise builtin types: ValueError for argument-check failures, TypeError for
-     * conversion fallbacks, OverflowError where a range check fires.
-     * */
+     * Exception policy: these wrappers raise builtin exception types.
+     *
+     * ValueError for argument-check failures, TypeError for conversion fallbacks, and
+     * OverflowError for range-check failures. (f2py instead raised a custom `_fblas.error`
+     * that could not be caught by name.)
+     */
 
     /** @brief Scalar type -> numpy dtype number (NPY_FLOAT/NPY_DOUBLE/NPY_CFLOAT/NPY_CDOUBLE). */
     template <class T> int npy_type();
@@ -143,13 +145,16 @@ namespace blas {
      * @brief Reshape @p *parr, in place of the pointer, to exactly @p ndim dimensions --
      *        f2py's `check_and_fix_dimensions`, specialized to all-free dimensions.
      *
-     * f2py reinterpreted rank mismatches instead of rejecting them, and code in the wild
-     * (including scipy's own test suite: `dgemm(3, [3], [-4])`) relies on it:
+     *  While trying to be as forgiving as possible, f2py reinterpreted rank mismatches
+     *  instead of rejecting them, and code in the wild (including scipy's own test suite:
+     *  `dgemm(3, [3], [-4])`) relies on it:
+     *
      * - fewer dims than declared: trailing unit axes are appended, `[1,2] -> [[1],[2]]`
      *   (a 1-D vector is a column);
      * - more dims than declared: unit axes are squeezed, and any excess non-unit axes
      *   collapse into the last dimension (a Fortran-order flatten, `[[1,2],[3,4]] -> rank-1
      *   [1,3,2,4]`).
+     *
      * The data is already F-contiguous here, so the reshape is a zero-copy view.  The total
      * size is preserved by construction (0-sized axes excepted; numpy then raises).
      *
@@ -223,9 +228,9 @@ namespace blas {
      * when it already fits, or a converted copy.  Either way a single Py_DECREF releases it, so
      * the caller never needs to know whether a copy was made.
      *
-     * @param o     Any Python object numpy can turn into an array (FORCECAST: dtype narrowing OK).
+     * @param o     Any Python object that NumPy can turn into an array (FORCECAST: dtype narrowing OK).
      * @param ndim  Declared rank; other ranks are reinterpreted as f2py did.
-     * @return      New reference, or nullptr with (usually) an exception set.
+     * @return      New reference, or nullptr with an exception set.
      */
     template <class T>
     inline PyArrayObject *as_in(PyObject *o, int ndim, PyObject **orig) noexcept
@@ -463,15 +468,16 @@ namespace blas {
     }
 
     /**
-     * @brief Convert a synthetic `overwrite_*` flag with PyArg's `i`-format semantics.
+     * @brief Convert an integer flag with PyArg `i`-format (`__index__`) semantics.
      *
-     * f2py declares these flags `int` and lets PyArg's `i` code convert them -- which is
-     * `__index__`-based and *stricter* than the permissive `from_pyobj` above: an int, bool or
-     * numpy integer is accepted, but a float, str or None raises TypeError
-     * `'<type>' object cannot be interpreted as an integer` (from PyNumber_Index).  Kept
-     * separate so the flags reproduce that message rather than f2py's "can't be converted to".
+     * Uses PyNumber_Index: accepts an int, bool, or numpy integer; rejects a float, str, or None
+     * with TypeError `'<type>' object cannot be interpreted as an integer`. Stricter than the
+     * permissive from_pyobj(); kept separate so the synthetic `overwrite_*` flags reproduce
+     * PyArg's message rather than f2py's "can't be converted to".
      *
-     * @return true on success (@p out written); false with an exception set.
+     * @param out  Receives the converted int on success.
+     * @param obj  Python object to convert.
+     * @return     true on success (@p out written); false with an exception set.
      */
     inline bool from_pyobj_index(int *out, PyObject *obj) noexcept
     {
@@ -488,22 +494,29 @@ namespace blas {
 
 
     /**
-     * @brief Owning reference to an acquired array; the reason the wrappers have no `goto fail`.
+     * @brief Move-only RAII handle owning an acquired array; frees on scope exit.
      *
-     * Every acquisition returns exactly one new reference (see `as_in`/`as_inout`), so ownership
-     * is uniform: hold it in a py_ref and every early `return nullptr` releases it automatically,
-     * replacing f2py's nested-brace cleanup pyramid.  Move-only, like the reference it manages.
+     * The acquisitions (as_in / as_inout) return owned references; storing them in a py_ref means
+     * every early `return nullptr` releases them through the destructor, so error paths need no
+     * manual cleanup. A handle owns one array normally, or two after a fix_rank() reshape (the
+     * working array plus the caller-shaped original -- see private p_/orig_ below).
      */
     class py_ref {
     public:
-        py_ref() = default;
-        /** @param orig  The pre-reshape array when fix_rank() adjusted the rank (see there);
-         *               it is what release() hands back to Python. */
+        py_ref() = default;   // default constructor: empty handle, owns nothing
+
+        /**
+         * @param p     Acquired working array to own (null if acquisition failed).
+         * @param orig  Set only when fix_rank() reshaped: the caller-shaped original that
+         *              release() hands back. Defaults to null (no reshape).
+         */
         explicit py_ref(PyArrayObject *p, PyObject *orig = nullptr) : p_(p), orig_(orig) {}
-        py_ref(py_ref &&o) noexcept : p_(o.p_), orig_(o.orig_) { o.p_ = nullptr; o.orig_ = nullptr; }
-        py_ref(const py_ref &) = delete;
-        py_ref &operator=(const py_ref &) = delete;
-        py_ref &operator=(py_ref &&o) noexcept
+
+        // Move-only ownership: copies deleted, moves steal the references, dtor releases.
+        py_ref(py_ref &&o) noexcept : p_(o.p_), orig_(o.orig_) { o.p_ = nullptr; o.orig_ = nullptr; } // move constructor
+        py_ref(const py_ref &) = delete;                                                              // copy constructor (deleted)
+        py_ref &operator=(const py_ref &) = delete;                                                   // copy assignment (deleted)
+        py_ref &operator=(py_ref &&o) noexcept                                                        // move assignment
         {
             if (this != &o) {
                 Py_XDECREF(p_); Py_XDECREF(orig_);
@@ -512,16 +525,20 @@ namespace blas {
             }
             return *this;
         }
-        ~py_ref() { Py_XDECREF(p_); Py_XDECREF(orig_); }
+        ~py_ref() { Py_XDECREF(p_); Py_XDECREF(orig_); }                                              // destructor: releases the references
 
-        /** @brief False when acquisition failed (held pointer is null). */
+        /** @brief True while an array is held; false after a failed acquisition or a release(). */
         explicit operator bool() const noexcept { return p_ != nullptr; }
         PyArrayObject *get() const noexcept { return p_; }
-        /** @brief Data pointer as the wrapper's scalar type; the array's dtype guarantees the cast. */
+        /** @brief The working array's data as `T*`; the acquire-time dtype makes the cast sound. */
         template <class T> T *data() const noexcept { return static_cast<T *>(PyArray_DATA(p_)); }
-        /** @brief Hand the owned reference to Python -- the wrapper's return value.  When a
-         *         rank adjustment made the working array a view, the caller-shaped original
-         *         is returned instead (the data is shared, writes are visible in both). */
+        /**
+         * @brief Transfer ownership and clean up.
+         *
+         * Returns the working array, or -- after a fix_rank() reshape -- the caller-shaped original
+         * instead (it shares the working array's data, so the BLAS writes are visible in it). The
+         * handle is left empty, so the destructor then does nothing.
+         */
         PyObject *release()
         {
             PyObject *r = orig_ ? orig_ : (PyObject *)p_;
@@ -531,9 +548,11 @@ namespace blas {
         }
 
     private:
-        PyArrayObject *p_ = nullptr;
-        PyObject *orig_ = nullptr;
+        PyArrayObject *p_ = nullptr;   /**< Owned working array the BLAS call operates on. */
+        PyObject *orig_ = nullptr;     /**< Non-null only after a fix_rank() reshape: the caller-shaped
+                                            original, sharing p_'s data; handed back by release(). */
     };
+
 
     /**
      * @brief Shorthand for the wrappers' size checks: `len(x)`, `shape(a, i)`, `abs(incx)`.
@@ -567,7 +586,7 @@ namespace blas {
      * `RETURN(...)`.  Values are computed into locals first (no expressions tucked inside
      * RETURN); this only does the packing.
      */
-    inline PyObject *result_item(py_ref &r)                { return r.release(); }
+    inline PyObject *result_item(py_ref &r)               { return r.release(); }
     inline PyObject *result_item(float v)                 { return to_pyobj(v); }
     inline PyObject *result_item(double v)                { return to_pyobj(v); }
     inline PyObject *result_item(std::complex<float> v)   { return to_pyobj(v); }
@@ -633,8 +652,7 @@ namespace blas {
         }
 
         /** @brief Regular naming: prepends the flavor letter, `"axpy"` -> `saxpy`/.../`zaxpy`. */
-        constexpr Ctx(const char *name, const char *pyfmt, const char *const *kwlist)
-            : Ctx(flavor<T>(), name, pyfmt, kwlist) {}
+        constexpr Ctx(const char *name, const char *pyfmt, const char *const *kwlist) : Ctx(flavor<T>(), name, pyfmt, kwlist) {}
 
         /** @brief The keyword list, null-terminated and in signature order. */
         const char *const *kws() const noexcept { return kwlist_; }
@@ -653,9 +671,11 @@ namespace blas {
         {
             int i = 0;
             while (kwlist_[i] && strcmp(kwlist_[i], kw) != 0) { i++; }
-            /* A miss means the kwlist and an argument name spelled in a macro are out of sync --
-            * a transcription bug, not a runtime condition.  Fail loudly instead of letting the
-            * end sentinel silently classify the argument as an optional keyword. */
+            /**
+             * A miss means the kwlist and an argument name spelled in a macro are out of sync
+             * Fail loudly instead of letting the end sentinel silently classify the argument
+             * as an optional keyword.
+             * */
             assert(kwlist_[i] != nullptr && "argument name missing from kwlist");
             return i;
         }
@@ -960,13 +980,13 @@ namespace blas {
  * - A check is an ordinary C expression, stringized into its own error message; `len()`,
  *   `shape()` and `abs()` are real functions (see above) so the expressions compile as written.
  *
- * Naming: an argument-declaration macro is named for what the argument *is*, `<KIND>_<ROLE>`.
- * Scalars vary by requiredness -- `SCALAR_REQ` (required), `SCALAR_OPT` (optional, with a
- * default), and `SCALAR_FLAG` (the strict-int `overwrite_*` flags).  Arrays vary by direction --
- * `ARRAY_IN` (input), `ARRAY_INOUT` (in and out), and `ARRAY_OUT` (the output, optionally
- * supplied); an array's requiredness follows from its direction, so the two suffix sets do not
- * overlap.  Everything else is a verb for an action: `PARSE_ARGS`, `CHECK`, `CHECKARRAY`,
- * `RETURN`.
+ * Naming: an argument-declaration macro is `<KIND>_<VARIANT>`.  Scalars: `SCALAR_REQ` (required),
+ * `SCALAR_OPT` (optional, with a default), and `SCALAR_FLAG` (an optional `overwrite_*` flag using
+ * strict `__index__` conversion).  Arrays: `ARRAY_IN` (read-only input) and `ARRAY_INOUT`
+ * (read-write in/out) are required; `ARRAY_OUT` is the *optional* in/out result (the array analog
+ * of `SCALAR_OPT`).  So direction is in or in/out, requiredness is a separate axis, and the
+ * scalar/array suffix sets do not overlap.  Everything else is a verb for an action: `PARSE_ARGS`,
+ * `CHECK`, `CHECKARRAY`, `RETURN`.
  * ====================================================================================
  */
 

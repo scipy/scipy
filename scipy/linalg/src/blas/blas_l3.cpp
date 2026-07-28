@@ -19,7 +19,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *gemm(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *gemm(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "trans_a", "trans_b", "overwrite_c", nullptr};
             static constexpr Ctx<T> ctx("gemm", "OOO|OOOOi", kwlist);
@@ -51,10 +51,12 @@ namespace blas{
         }
 
 
-        /* symm is standard four-flavor BLAS at level 3 (csymm/zsymm are not auxiliaries);
-         * hemm below carries the hermitian pair. */
+        /**
+         * symm is standard four-flavor BLAS at level 3 (csymm/zsymm are not auxiliaries);
+         * hemm below carries the hermitian pair.
+         */
         template <class T>
-        static PyObject *symm(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *symm(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "side", "lower", "overwrite_c", nullptr};
             static constexpr Ctx<T> ctx("symm", "OOO|OOOOi", kwlist);
@@ -84,7 +86,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *hemm(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *hemm(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "side", "lower", "overwrite_c", nullptr};
             static constexpr Ctx<T> ctx("hemm", "OOO|OOOOi", kwlist);
@@ -114,7 +116,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *syrk(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *syrk(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "beta", "c", "trans", "lower", "overwrite_c", nullptr};
             static constexpr Ctx<T> ctx("syrk", "OO|OOOOi", kwlist);
@@ -140,11 +142,12 @@ namespace blas{
         }
 
 
-        /* herk's alpha AND beta are real in the reference; the .pyf declared them complex
-         * and the miscast pointer passed the leading real component.  Same conversion,
-         * honest prototype: complex accepted, imaginary parts ignored. */
+        /**
+         * herk's alpha AND beta are supposed to be real typed following the BLAS reference.
+         * But the SciPy wrapper declared them complex. Though incorrect, same conversion is kept.
+         */
         template <class T>
-        static PyObject *herk(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *herk(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "beta", "c", "trans", "lower", "overwrite_c", nullptr};
             static constexpr Ctx<T> ctx("herk", "OO|OOOOi", kwlist);
@@ -171,7 +174,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *syr2k(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *syr2k(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "trans", "lower", "overwrite_c", nullptr};
             static constexpr Ctx<T> ctx("syr2k", "OOO|OOOOi", kwlist);
@@ -202,10 +205,12 @@ namespace blas{
         }
 
 
-        /* her2k's beta is real in the reference (alpha stays complex); same arrangement as
-         * herk. */
+        /**
+         * her2k's beta is also real in the reference (alpha stays complex); same treatment as
+         * herk.
+         */
         template <class T>
-        static PyObject *her2k(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *her2k(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "beta", "c", "trans", "lower", "overwrite_c", nullptr};
             static constexpr Ctx<T> ctx("her2k", "OOO|OOOOi", kwlist);
@@ -236,7 +241,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *trmm(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *trmm(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "side", "lower", "trans_a", "diag", "overwrite_b", nullptr};
             static constexpr Ctx<T> ctx("trmm", "OOO|OOOOi", kwlist);
@@ -265,7 +270,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *trsm(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *trsm(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"alpha", "a", "b", "side", "lower", "trans_a", "diag", "overwrite_b", nullptr};
             static constexpr Ctx<T> ctx("trsm", "OOO|OOOOi", kwlist);

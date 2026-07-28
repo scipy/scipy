@@ -20,7 +20,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *axpy(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *axpy(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "a", "offx", "incx", "offy", "incy", nullptr};
             static constexpr Ctx<T> ctx("axpy", "OO|OOOOOO", kwlist);
@@ -45,7 +45,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *nrm2(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *nrm2(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             /* tchar_fn prefix: snrm2/dnrm2/scnrm2/dznrm2. PARSE_ARGS uses ctx uniformly. */
@@ -66,7 +66,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *asum(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *asum(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             static constexpr Ctx<T> ctx(tchar_fn<T>(), "asum", "O|OOO", kwlist);
@@ -86,7 +86,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *iamax(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *iamax(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "n", "offx", "incx", nullptr};
             static constexpr Ctx<T> ctx(iflavor<T>(), "amax", "O|OOO", kwlist);
@@ -100,15 +100,17 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
-            /* Fortran's 1-based index is shifted to 0-based, as the .pyf callstatement did.
-             * long long (not CBLAS_INT) so RETURN resolves to result_item(long long) -> PyLong. */
+            /**
+             * Fortran's 1-based index is shifted to 0-based, in the legacy f2py wrappers.
+             * long long (not CBLAS_INT) so RETURN resolves to result_item(long long) -> PyLong.
+             */
             long long idx = blas::iamax(n, x.data<T>() + offx, incx) - 1;
             RETURN(idx);   /* out=k */
         }
 
 
         template <class T>
-        static PyObject *swap(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *swap(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static constexpr Ctx<T> ctx("swap", "OO|OOOOO", kwlist);
@@ -132,7 +134,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *copy(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *copy(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static constexpr Ctx<T> ctx("copy", "OO|OOOOO", kwlist);
@@ -156,7 +158,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *scal(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *scal(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", nullptr};
             static constexpr Ctx<T> ctx("scal", "OO|OOO", kwlist);
@@ -182,12 +184,13 @@ namespace blas{
          * not the data type T).  Unlike the regular scal, the .pyf declares x intent(in,out,copy),
          * so these carry an overwrite_x flag and copy by default.  Registered as
          * csscal = scal_real<c64, f32>, zdscal = scal_real<c128, f64>.
-         * It is a distinct name rather than a second scal overload which otherwise works except
+         *
+         * A distinct name rather than a second scal overload which normally works except
          * MSVC cannot resolve `scal<f32>` to a single function for the PyCFunction cast when
          * two function templates share the name.
-         * */
+         */
         template <class T, class A>
-        static PyObject *scal_real(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *scal_real(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "x", "n", "offx", "incx", "overwrite_x", nullptr};
             static constexpr Ctx<T> ctx(tchar<T>(), "scal", "OO|OOOi", kwlist);
@@ -209,7 +212,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *dot(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *dot(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static constexpr Ctx<T> ctx("dot", "OO|OOOOO", kwlist);
@@ -233,7 +236,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *dotu(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *dotu(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static constexpr Ctx<T> ctx("dotu", "OO|OOOOO", kwlist);
@@ -257,7 +260,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *dotc(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *dotc(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "n", "offx", "incx", "offy", "incy", nullptr};
             static constexpr Ctx<T> ctx("dotc", "OO|OOOOO", kwlist);
@@ -281,7 +284,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *rotg(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *rotg(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"a", "b", nullptr};
             static constexpr Ctx<T> ctx("rotg", "OO|", kwlist);
@@ -290,9 +293,11 @@ namespace blas{
             SCALAR_REQ(T, a);
             SCALAR_REQ(T, b);
 
-            /* Though, c should have been REAL in crotg/zrotg, historically
-             * _fblas assumed complex and returned garbage in c.imag. Now,
-             * at least c.imag is 0. */
+            /**
+             * Though, c should have been REAL in crotg/zrotg, the legacy f2py
+             * wrappers assumed complex and returned garbage in c.imag. Now,
+             * at least c.imag is explicitly set to 0.
+             */
             real_of_t<T> c{};
             T s{};
             blas::rotg(a, b, c, s);
@@ -303,7 +308,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *rotmg(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *rotmg(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"d1", "d2", "x1", "y1", nullptr};
             static constexpr Ctx<T> ctx("rotmg", "OOOO|", kwlist);
@@ -317,15 +322,17 @@ namespace blas{
             py_ref param = ctx.zeros(5);
             if (!param) { return nullptr; }
 
-            /* d1, d2, x1 are updated in place by the routine but exposed as intent(in), so
-             * the updates are discarded, as in f2py. */
+            /**
+             * d1, d2, x1 are updated in place by the routine but exposed as intent(in), so
+             * the updates are discarded, as in f2py.
+             */
             blas::rotmg(d1, d2, x1, y1, param.data<T>());
             RETURN(param);   /* out=param */
         }
 
 
         template <class T>
-        static PyObject *rot(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *rot(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "c", "s", "n", "offx", "incx", "offy", "incy", "overwrite_x", "overwrite_y", nullptr};
             static constexpr Ctx<T> ctx(tchar<T>(), "rot", "OOOO|OOOOOii", kwlist);
@@ -355,7 +362,7 @@ namespace blas{
 
 
         template <class T>
-        static PyObject *rotm(PyObject *, PyObject *args, PyObject *kwds) noexcept
+        static PyObject *rotm(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"x", "y", "param", "n", "offx", "incx", "offy", "incy", "overwrite_x", "overwrite_y", nullptr};
             static constexpr Ctx<T> ctx("rotm", "OOO|OOOOOii", kwlist);
