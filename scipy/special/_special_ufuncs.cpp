@@ -3,6 +3,7 @@
 #include <cmath>
 #include <complex>
 
+#include "boost_special_functions.h"
 #include "sf_error.h"
 #include <xsf/agm.h>
 #include <xsf/airy.h>
@@ -62,6 +63,7 @@
 // If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
+extern const char *_binom_ppf_doc;
 extern const char *_cospi_doc;
 extern const char *_bivariate_normal_sf_doc;
 extern const char *_cosine_cdf_doc;
@@ -86,6 +88,8 @@ extern const char *pseudo_huber_doc;
 extern const char *rel_entr_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
+extern const char *bdtrik_doc;
+extern const char *bdtrin_doc;
 extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
@@ -280,6 +284,12 @@ _special_ufuncs_module_exec(PyObject *module)
     if (_import_array() < 0) { return -1; }
     if (_import_umath() < 0) { return -1; }
 
+    PyObject *_binom_ppf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(binom_ppf_float),
+         static_cast<xsf::numpy::ddd_d>(binom_ppf_double)},
+        "_binom_ppf", _binom_ppf_doc);
+    PyModule_AddObjectRef(module, "_binom_ppf", _binom_ppf);
+
     PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
          static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
@@ -330,6 +340,18 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dddd_d>(xsf::normalized_gen_harmonic)},
                           "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_normalized_gen_harmonic", _normalized_gen_harmonic);
+
+    PyObject *bdtrik =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(bdtrik_float),
+                           static_cast<xsf::numpy::ddd_d>(bdtrik_double)},
+                          "bdtrik", bdtrik_doc);
+    PyModule_AddObjectRef(module, "bdtrik", bdtrik);
+
+    PyObject *bdtrin =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(bdtrin_float),
+                           static_cast<xsf::numpy::ddd_d>(bdtrin_double)},
+                          "bdtrin", bdtrin_doc);
+    PyModule_AddObjectRef(module, "bdtrin", bdtrin);
 
     PyObject *gdtr = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::gdtr), static_cast<xsf::numpy::ddd_d>(xsf::gdtr)},

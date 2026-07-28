@@ -134,8 +134,6 @@ The public submodules have the following structure:
 |   |   | `scipy.stats.sampling` Random Number Generators                   |
 +---+---+-------------------------------------------------------------------+
 
-The ``misc`` submodule is deprecated and does not contain functions anymore.
-
 
 .. _main_namespace:
 

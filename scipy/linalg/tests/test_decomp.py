@@ -2444,6 +2444,21 @@ class TestRQ:
         assert_allclose(r, np.empty((m, k)))
         assert_allclose(q, np.empty((k, n)))
 
+    @pytest.mark.parametrize("supply_lwork", [True, False])
+    def test_lwork_deprecation(self, supply_lwork):
+        rng = np.random.default_rng(seed=12345)
+        m, n = 2, 2
+
+        a = rng.normal(size=(m, n))
+
+        if supply_lwork:
+            with pytest.warns(DeprecationWarning, match="scipy.linalg.rq: the `lwork`"):
+                r, q = rq(a, lwork=None)
+        else:
+            r, q = rq(a)
+
+        assert_allclose(a, r @ q, atol=1e-12)
+
 
 class TestSchur:
 
@@ -2571,6 +2586,24 @@ class TestSchur:
         # are counted.
         sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
         assert sdim == 2 if all_real else sdim == 1
+
+    @pytest.mark.parametrize("supply_lwork", [True, False])
+    def test_deprecation(self, supply_lwork):
+        rng = np.random.default_rng(seed=12345)
+
+        n = 3
+        a = rng.normal(size=(n, n))
+
+        if supply_lwork:
+            with pytest.warns(
+                DeprecationWarning,
+                match="scipy.linalg.schur: the `lwork`",
+            ):
+                t, z = schur(a, lwork=None)
+        else:
+            t, z = schur(a)
+
+        self.check_schur(a, t, z, rtol=1e-14, atol=5e-15)
 
 
 class TestHessenberg:
@@ -2847,6 +2880,25 @@ class TestQZ:
         assert_array_almost_equal(Q @ Q.T, eye(n))
         assert_array_almost_equal(Z @ Z.T, eye(n))
         assert_(np.all(diag(BB) >= 0))
+
+    @pytest.mark.parametrize("supply_lwork", [True, False])
+    def test_deprecation(self, supply_lwork):
+        rng = np.random.default_rng(seed=12345)
+
+        n = 5
+        a = rng.normal(size=(n, n))
+        b = rng.normal(size=(n, n))
+
+        if supply_lwork:
+            with pytest.warns(DeprecationWarning, match="scipy.linalg.qz: the `lwork`"):
+                aa, bb, q, z = qz(a, b, lwork=None)
+        else:
+            aa, bb, q, z = qz(a, b)
+
+        assert_allclose(q @ aa @ z.T, a, atol=1e-12)
+        assert_allclose(q @ bb @ z.T, b, atol=1e-12)
+        assert_allclose(q @ q.T, np.eye(n), atol=1e-12)
+        assert_allclose(z @ z.T, np.eye(n), atol=1e-12)
 
 
 class TestOrdQZ:
