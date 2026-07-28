@@ -51,7 +51,7 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
 
         .. deprecated:: 1.18.0
             This keyword is deprecated as well as no longer in use and will be
-            removed in 1.20.0.
+            removed in 2.1.0.
 
     mode : {'full', 'r', 'economic', 'raw'}, optional
         Determines what information is to be returned: either both Q and R

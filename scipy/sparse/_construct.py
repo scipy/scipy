@@ -743,7 +743,7 @@ def kron(A, B, format=None):
         That removes any deprecation warnings as well.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        Handling of this no sparse input case will change no earlier than v1.20.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -801,7 +801,7 @@ def kron(A, B, format=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
@@ -893,7 +893,7 @@ def kronsum(A, B, format=None):
         That removes any deprecation warnings as well.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        Handling of this no sparse input case will change no earlier than v1.20.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -945,7 +945,7 @@ def kronsum(A, B, format=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
@@ -1391,7 +1391,7 @@ def block_diag(mats, format=None, dtype=None):
         That removes any deprecation warnings as well.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        Handling of this no sparse input case will change no earlier than v1.20.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -1448,7 +1448,7 @@ def block_diag(mats, format=None, dtype=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)

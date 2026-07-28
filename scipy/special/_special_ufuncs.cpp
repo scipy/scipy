@@ -63,6 +63,7 @@
 // If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
+extern const char *_binom_ppf_doc;
 extern const char *_cospi_doc;
 extern const char *_bivariate_normal_sf_doc;
 extern const char *_cosine_cdf_doc;
@@ -282,6 +283,12 @@ _special_ufuncs_module_exec(PyObject *module)
 {
     if (_import_array() < 0) { return -1; }
     if (_import_umath() < 0) { return -1; }
+
+    PyObject *_binom_ppf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(binom_ppf_float),
+         static_cast<xsf::numpy::ddd_d>(binom_ppf_double)},
+        "_binom_ppf", _binom_ppf_doc);
+    PyModule_AddObjectRef(module, "_binom_ppf", _binom_ppf);
 
     PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
