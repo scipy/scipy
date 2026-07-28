@@ -6,20 +6,8 @@ from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
 import pytest
 
-pytestmark = pytest.mark.filterwarnings(
-    "ignore:.*_matrix is being replaced:DeprecationWarning",
-)
 
-warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
-
-
-def _check_csr_rowslice(i, sl, X, Xcsr):
-    np_slice = X[i, sl]
-    csr_slice = Xcsr[i, sl]
-    assert_array_almost_equal(np_slice, csr_slice.toarray()[0])
-    assert_(type(csr_slice) is csr_matrix)
-
-
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_csr_rowslice():
     N = 10
     np.random.seed(0)
@@ -34,9 +22,13 @@ def test_csr_rowslice():
 
     for i in range(N):
         for sl in slices:
-            _check_csr_rowslice(i, sl, X, Xcsr)
+            np_slice = X[i, sl]
+            csr_slice = Xcsr[i, sl]
+            assert_array_almost_equal(np_slice, csr_slice.toarray()[0])
+            assert_(type(csr_slice) is csr_matrix)
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_csr_getrow():
     N = 10
     np.random.seed(0)
@@ -52,6 +44,7 @@ def test_csr_getrow():
         assert_(type(csr_row) is csr_matrix)
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_csr_getcol():
     N = 10
     np.random.seed(0)
@@ -67,22 +60,10 @@ def test_csr_getcol():
         assert_(type(csr_col) is csr_matrix)
 
 @pytest.mark.parametrize("matrix_input, axis, expected_shape",
-    [(csr_matrix([[1, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 2, 3, 0]]),
-      0, (0, 4)),
-     (csr_matrix([[1, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 2, 3, 0]]),
-      1, (3, 0)),
-     (csr_matrix([[1, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 2, 3, 0]]),
-      'both', (0, 0)),
-     (csr_matrix([[0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0],
-                [0, 0, 2, 3, 0]]),
-      0, (0, 5))])
+        [(csr_array([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), 0, (0, 4)),
+         (csr_array([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), 1, (3, 0)),
+         (csr_array([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), 'both', (0, 0)),
+         (csr_array([[0, 1, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 2, 3, 0]]), 0, (0, 5))])
 def test_csr_empty_slices(matrix_input, axis, expected_shape):
     # see gh-11127 for related discussion
     slice_1 = matrix_input.toarray().shape[0] - 1
@@ -103,8 +84,9 @@ def test_csr_empty_slices(matrix_input, axis, expected_shape):
     assert actual_shape_1 == actual_shape_2
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_csr_bool_indexing():
-    data = csr_matrix([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    data = csr_array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
     list_indices1 = [False, True, False]
     array_indices1 = np.array(list_indices1)
     list_indices2 = [[False, True, False], [False, True, False], [False, True, False]]
@@ -122,6 +104,7 @@ def test_csr_bool_indexing():
     assert (slice_list3 == slice_array3).all()
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 @pytest.mark.xfail_on_32bit("Can't create large array for test")
 @pytest.mark.timeout(2)  # only slow when broken (conversion to 2d index arrays)
 @pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
@@ -135,6 +118,7 @@ def test_fancy_indexing_broadcasts_without_making_dense_2d(cls):
     assert S[I, J.reshape(1, -1)].nnz == 0  # 2D row array as index for columns
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_csr_hstack_int64():
     """
     Tests if hstack properly promotes to indices and indptr arrays to np.int64
@@ -145,17 +129,17 @@ def test_csr_hstack_int64():
 
     # First case: indices would overflow with int32
     data = [1.0]
-    row = [0]
+    row = np.array([0], dtype=np.int32)
 
     max_indices_1 = max_int32 - 1
     max_indices_2 = 3
 
     # Individual indices arrays are representable with int32
-    col_1 = [max_indices_1 - 1]
-    col_2 = [max_indices_2 - 1]
+    col_1 = np.array([max_indices_1 - 1], dtype=np.int32)
+    col_2 = np.array([max_indices_2 - 1], dtype=np.int32)
 
-    X_1 = csr_matrix((data, (row, col_1)))
-    X_2 = csr_matrix((data, (row, col_2)))
+    X_1 = csr_array((data, (row, col_1)))
+    X_2 = csr_array((data, (row, col_2)))
 
     assert max(max_indices_1 - 1, max_indices_2 - 1) < max_int32
     assert X_1.indices.dtype == X_1.indptr.dtype == np.int32
@@ -171,8 +155,8 @@ def test_csr_hstack_int64():
 
     # Even if the matrices are empty, we must account for their size
     # contribution so that we may safely set the final elements.
-    X_1_empty = csr_matrix(X_1.shape)
-    X_2_empty = csr_matrix(X_2.shape)
+    X_1_empty = csr_array(X_1.shape)
+    X_2_empty = csr_array(X_2.shape)
     X_hs_empty = hstack([X_1_empty, X_2_empty], format="csr")
 
     assert X_hs_empty.shape == X_hs.shape
@@ -184,8 +168,8 @@ def test_csr_hstack_int64():
     # (namely the `coo_tocsr` routine),
     # we require that max(X_hs_32.shape) < max_int32 as well.
     # Hence we can only support max_int32 - 1.
-    col_3 = [max_int32 - max_indices_1 - 1]
-    X_3 = csr_matrix((data, (row, col_3)))
+    col_3 = np.array([max_int32 - max_indices_1 - 1], dtype=np.int32)
+    X_3 = csr_array((data, (row, col_3)))
     X_hs_32 = hstack([X_1, X_3], format="csr")
     assert X_hs_32.indices.dtype == np.int32
     assert X_hs_32.indices.max() == max_int32 - 1
@@ -227,10 +211,10 @@ def test_broadcast_to():
     assert_array_equal(res_e.toarray(), np.broadcast_to(e, (4,0)))
 
     with pytest.raises(ValueError, match="cannot be broadcast"):
-        csr_matrix([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
+        csr_array([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
 
     with pytest.raises(ValueError, match="cannot be broadcast"):
-        csr_matrix([[0, 1, 2]])._broadcast_to(shape=(3, 2))
+        csr_array([[0, 1, 2]])._broadcast_to(shape=(3, 2))
 
     with pytest.raises(ValueError, match="cannot be broadcast"):
         csr_array([0, 1, 2])._broadcast_to(shape=(3, 2))
