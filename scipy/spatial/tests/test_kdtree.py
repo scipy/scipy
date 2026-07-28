@@ -599,19 +599,19 @@ class Test_rectangle:
 
 
 def test_distance_l2():
-    with pytest.deprecated_call(match="1.20.0"):
+    with pytest.deprecated_call(match="2.1.0"):
         assert_almost_equal(minkowski_distance([0, 0], [1, 1], 2), np.sqrt(2))
-    with pytest.deprecated_call(match="1.20.0"):
+    with pytest.deprecated_call(match="2.1.0"):
         assert_almost_equal(minkowski_distance_p([0, 0], [1, 1], 2), 2)
 
 
 def test_distance_l1():
-    with pytest.deprecated_call(match="1.20.0"):
+    with pytest.deprecated_call(match="2.1.0"):
         assert_almost_equal(minkowski_distance([0, 0], [1, 1], 1), 2)
 
 
 def test_distance_linf():
-    with pytest.deprecated_call(match="1.20.0"):
+    with pytest.deprecated_call(match="2.1.0"):
         assert_almost_equal(minkowski_distance([0, 0], [1, 1], np.inf), 1)
 
 
@@ -619,7 +619,7 @@ def test_distance_vectorization():
     np.random.seed(1234)
     x = np.random.randn(10, 1, 3)
     y = np.random.randn(1, 7, 3)
-    with pytest.deprecated_call(match="1.20.0"):
+    with pytest.deprecated_call(match="2.1.0"):
         assert_equal(minkowski_distance(x, y).shape, (10, 7))
 
 
@@ -765,12 +765,12 @@ def test_distance_matrix():
     np.random.seed(1234)
     xs = np.random.randn(m, k)
     ys = np.random.randn(n, k)
-    with pytest.deprecated_call(match="1.20.0"):
+    with pytest.deprecated_call(match="2.1.0"):
         ds = distance_matrix(xs, ys)
     assert_equal(ds.shape, (m, n))
     for i in range(m):
         for j in range(n):
-            with pytest.deprecated_call(match="1.20.0"):
+            with pytest.deprecated_call(match="2.1.0"):
                 assert_almost_equal(minkowski_distance(xs[i], ys[j]), ds[i, j])
 
 
@@ -781,9 +781,9 @@ def test_distance_matrix_looping():
     np.random.seed(1234)
     xs = np.random.randn(m, k)
     ys = np.random.randn(n, k)
-    with pytest.deprecated_call(match="1.20.0"):
+    with pytest.deprecated_call(match="2.1.0"):
         ds = distance_matrix(xs, ys)
-    with pytest.deprecated_call(match="1.20.0"):
+    with pytest.deprecated_call(match="2.1.0"):
         dsl = distance_matrix(xs, ys, threshold=1)
     assert_equal(ds, dsl)
 

@@ -255,70 +255,6 @@ add_newdoc("bdtri",
     np.float64(0.5)
     """)
 
-add_newdoc("bdtrin",
-    r"""
-    bdtrin(k, y, p, out=None)
-
-    Inverse function to `bdtr` with respect to `n`.
-
-    Finds the number of events `n` such that the sum of the terms 0 through
-    `k` of the Binomial probability density for events with probability `p` is
-    equal to the given cumulative probability `y`.
-
-    Parameters
-    ----------
-    k : array_like
-        Number of successes (float).
-    y : array_like
-        Cumulative probability (probability of `k` or fewer successes in `n`
-        events).
-    p : array_like
-        Success probability (float).
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    n : scalar or ndarray
-        The number of events `n` such that `bdtr(k, n, p) = y`.
-
-    See Also
-    --------
-    bdtr
-
-    Notes
-    -----
-    This function uses the `find_minimum_number_of_trials` method of the
-    `binomial_distribution` class of the Boost.Math C++ library [1]_.
-
-    References
-    ----------
-    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    Examples
-    --------
-    How often do we have to flip a fair coin to have at least a 90% chance
-    of getting 10 heads? `bdtrin` answers this question:
-
-    >>> import scipy.special as sc
-    >>> k = 10  # number of times we want heads
-    >>> p = 0.5  # probability of flipping heads
-    >>> y = 0.9  # cumulative probability
-    >>> result = sc.bdtrin(k, y, p)
-    >>> result
-    15.90442928275109
-
-    To verify, compute the cumulative probability of getting 10 or fewer
-    successes in 16 trials with probability 0.5 using the binomial
-    distribution from `scipy.stats`. Since `bdtrin` returns a non-integer
-    number of trials, we round up to the next integer:
-
-    >>> from scipy.stats import Binomial
-    >>> Binomial(n=16, p=p).cdf(k)
-    0.8949432373046875
-
-    """)
-
 add_newdoc("btdtria",
     r"""
     btdtria(p, b, x, out=None)
@@ -6095,28 +6031,6 @@ add_newdoc(
     _binom_cdf(x, n, p)
 
     Cumulative density function of binomial distribution.
-
-    Parameters
-    ----------
-    x : array_like
-        Real-valued
-    n : array_like
-        Positive, integer-valued parameter
-    p : array_like
-        Positive, real-valued parameter
-
-    Returns
-    -------
-    scalar or ndarray
-
-    """)
-
-add_newdoc(
-    "_binom_ppf",
-    """
-    _binom_ppf(x, n, p)
-
-    Percent point function of binomial distribution.
 
     Parameters
     ----------

@@ -1401,6 +1401,7 @@ cdef extern from r"cython_special_wrappers.h":
     double special_ndtri_exp(double x) nogil
 
     double boost_bdtrik(double y, double n, double p) nogil
+    double boost_bdtrin(double k, double y, double p) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -3075,7 +3076,7 @@ cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
 
 cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrin"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrin_double)(x0, x1, x2)
+    return boost_bdtrin(x0, x1, x2)
 
 cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtri"""

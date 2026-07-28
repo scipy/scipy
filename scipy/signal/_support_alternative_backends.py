@@ -89,7 +89,6 @@ untested = {
     "find_peaks",
     "find_peaks_cwt",
     "freqresp",
-    "gausspulse",
     "iirdesign", # There's no reason this shouldn't work. It just needs tests.
     "istft",
     "lombscargle",
