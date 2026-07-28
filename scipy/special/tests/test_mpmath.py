@@ -761,7 +761,7 @@ class TestSystematic:
         assert_mpmath_equal(lambda n: sc.bernoulli(int(n))[int(n)],
                             lambda n: float(mpmath.bernoulli(int(n))),
                             [IntArg(0, 13000)],
-                            rtol=1e-9, n=13000)
+                            rtol=1e-16, n=13000)
 
     def test_besseli(self):
         assert_mpmath_equal(
