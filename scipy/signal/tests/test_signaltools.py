@@ -32,7 +32,7 @@ import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy, xp_size, xp_default_dtype, array_namespace, make_xp_test_case,
+    xp_copy, xp_size, array_namespace, make_xp_test_case,
     make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy,
 )
 

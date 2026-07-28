@@ -4,8 +4,7 @@ from pytest import raises as assert_raises
 
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_equal, _xp_copy_to_numpy, make_xp_test_case,
-    xp_default_dtype
+    xp_assert_equal, _xp_copy_to_numpy, make_xp_test_case
 )
 from scipy._lib._array_api_no_0d import assert_almost_equal, xp_assert_close
 
