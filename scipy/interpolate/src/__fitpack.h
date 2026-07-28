@@ -224,6 +224,29 @@ fpback( /* inputs*/
        double *residualsptr
 );
 
+/*
+ * Back substitution solve of `R @ c = y` with an upper triangular R
+ * when clamp_values is passed.
+ */
+void fpback_clamped( /* inputs */
+    const double *Rptr, int64_t m, int64_t nz,
+    int64_t nc_free,
+    const double *xptr, int64_t m_,
+    const double *tptr, int64_t len_t,
+    int k,
+    const double *wptr,
+    int extrapolate,
+    const double* ywptr,
+    const double *yptr, int64_t ydim2,
+    /* outputs */
+    double *cptr,
+    double *fp,
+    double *residualsptr,
+    /* clamp specific args */
+    const double *ci_ptr,
+    const double *cf_ptr
+);
+
 void
 fpbacp( /* inputs*/
        const double *A1ptr,

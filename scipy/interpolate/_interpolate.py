@@ -35,7 +35,7 @@ def lagrange(x, w):
     be able to use more than about 20 points even if they are chosen optimally.
 
     .. deprecated:: 1.18.0
-        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        This function is deprecated and will be removed in SciPy 2.1.0. Use
         `scipy.interpolate.BarycentricInterpolator` instead.
 
     Parameters
@@ -102,7 +102,7 @@ def lagrange(x, w):
 
     """
     _warn_skips = (os.path.dirname(__file__),)
-    msg = ("`lagrange` is deprecated and will be removed in SciPy 1.20.0. Use "
+    msg = ("`lagrange` is deprecated and will be removed in SciPy 2.1.0. Use "
            "`scipy.interpolate.BarycentricInterpolator` instead.")
     warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     M = len(x)
@@ -1393,6 +1393,9 @@ class PPoly:
     larger than 20-30.
     """
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
+
     def __init__(self, c, x, extrapolate=None, axis=0):
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
@@ -1924,6 +1927,9 @@ class BPoly:
 
     """  # noqa: E501
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
+
     def __init__(self, c, x, extrapolate=None, axis=0):
         xp = array_namespace(c, x)
         xp_bpoly_cls, xp_internal = _get_xp_bpoly_cls(xp)
@@ -2407,6 +2413,9 @@ class NdPPoly:
     unstable.
 
     """
+    
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None):
         self.x = tuple(np.ascontiguousarray(v, dtype=np.float64) for v in x)

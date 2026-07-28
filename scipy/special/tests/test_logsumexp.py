@@ -4,8 +4,8 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import (is_array_api_strict, make_xp_test_case,
-                                   xp_default_dtype, xp_device)
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import is_array_api_strict, make_xp_test_case, xp_device
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -204,7 +204,7 @@ class TestLogSumExp:
         else:
             desired_dtype = xp.result_type(xp_dtype_a, xp_dtype_b)
             if xp.isdtype(desired_dtype, 'integral'):
-               desired_dtype = xp_default_dtype(xp)
+               desired_dtype = xpx.default_dtype(xp)
         desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=desired_dtype)
         xp_assert_close(logsumexp(a, b=b), desired)
 

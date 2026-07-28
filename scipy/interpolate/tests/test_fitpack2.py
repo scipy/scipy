@@ -19,7 +19,7 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
 
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 from scipy.interpolate import make_splrep, NdBSpline
 from scipy.interpolate._regrid import (_regrid,
@@ -407,6 +407,7 @@ class TestUnivariateSpline:
         with pytest.warns(UserWarning, match=msg):
             UnivariateSpline(x, y, k=1)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # UnivariateSpline

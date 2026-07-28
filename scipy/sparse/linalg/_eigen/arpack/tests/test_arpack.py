@@ -8,6 +8,8 @@ from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import pytest
 
+from scipy._lib._testutils import IS_WASM
+
 from numpy import dot, conj
 from scipy.linalg import eig, eigh
 from scipy.sparse import csc_array, csr_array, diags_array, random_array
@@ -553,6 +555,7 @@ def test_linearoperator_deallocation():
         pass
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_parallel_threads(num_parallel_threads):
     results = []
     rng = np.random.default_rng(1234)

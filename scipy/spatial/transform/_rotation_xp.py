@@ -27,9 +27,6 @@ from scipy._external.array_api_compat import device as xp_device
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
-# mypy: disable-error-code=index
-# mypy: disable-error-code=operator
-# mypy: disable-error-code=union-attr
 
 def from_quat(
     quat: Array,
@@ -90,7 +87,6 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
 def _from_matrix_orthogonal(matrix: Array) -> Array:
     """Convert known orthogonal rotation matrix to quaternion"""
     xp = array_namespace(matrix)
-    device = xp_device(matrix)
 
     matrix_trace = matrix[..., 0, 0] + matrix[..., 1, 1] + matrix[..., 2, 2]
     decision = xp.stack(
@@ -98,7 +94,6 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         axis=-1,
     )
     choice = xp.argmax(decision, axis=-1, keepdims=True)
-    quat = xp.empty((*matrix.shape[:-2], 4), dtype=matrix.dtype, device=device)
 
     # The Array API does not support mixing integer indexing with ellipsis, so we cannot
     # follow the same pattern as the cython backend. Instead, we compute each case
@@ -116,8 +111,6 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where(choice == 0, quat_0, quat)
-
     # Case 1
     quat_1 = xp.stack(
         [
@@ -128,8 +121,6 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where(choice == 1, quat_1, quat)
-
     # Case 2
     quat_2 = xp.stack(
         [
@@ -140,8 +131,6 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where(choice == 2, quat_2, quat)
-
     # Case 3
     quat_3 = xp.stack(
         [
@@ -152,9 +141,11 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where(choice == 3, quat_3, quat)
-
-    return _normalize_quaternion(quat)
+    # Override locations where quat_0 is not our choice
+    quat_0 = xp.where(choice == 1, quat_1, quat_0)
+    quat_0 = xp.where(choice == 2, quat_2, quat_0)
+    quat_0 = xp.where(choice == 3, quat_3, quat_0)
+    return _normalize_quaternion(quat_0)
 
 
 def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
@@ -166,17 +157,12 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     rotvec = _deg2rad(rotvec) if degrees else rotvec
 
     angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
-    small_angle = angle <= 1e-3
-    angle2 = angle**2
-    small_scale = 0.5 - angle2 / 48 + angle2**2 / 3840
-    # We need to handle the case where angle is 0 to avoid division by zero. We use the
-    # value of the Taylor series approximation, but non-branching operations require
-    # that we still divide by the angle. Since we do not use the result where the angle
-    # is close to 0, this is safe.
-    div_angle = angle + xp.asarray(small_angle, dtype=angle.dtype)
-    large_scale = xp.sin(angle / 2) / div_angle
-    scale = xp.where(small_angle, small_scale, large_scale)
-    quat = xp.concat([rotvec * scale, xp.cos(angle / 2)], axis=-1)
+    half_angle = angle / 2
+    # Guard exact-zero angles to avoid 0/0. The rotvec is zero there, so the quaternion
+    # is the identity regardless.
+    div_angle = angle + xp.astype(angle == 0, angle.dtype)
+    scale = xp.sin(half_angle) / div_angle
+    quat = xp.concat([rotvec * scale, xp.cos(half_angle)], axis=-1)
     return quat
 
 
@@ -244,7 +230,7 @@ def from_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
     num_axes = axes.shape[-2]
     if num_axes is None:
         raise ValueError(f"axes must have a known shape, got shape {axes.shape}")
@@ -522,10 +508,7 @@ def mean(
 
     lazy = is_lazy_array(quat)
     # Branching code is okay for checks that include meta info such as shapes and types
-    quat_expand = quat[..., None, :]
-    if weights is None:
-        K = quat_expand.mT @ quat_expand
-    else:
+    if weights is not None:
         weights = xp.asarray(weights, dtype=dtype, device=device)
         neg_weights = weights < 0
         if not lazy and xp.any(neg_weights):
@@ -540,18 +523,23 @@ def mean(
                 "Expected `weights` to be broadcastable to rotation shape, got shape "
                 f"{weights.shape} for {quat.shape[:-1]} rotations."
             )
+        weights = xp.broadcast_to(weights, quat.shape[:-1])
 
-        # Make sure we can transpose quat
-        weighted_quat = weights[..., None, None] * quat_expand
-        K = weighted_quat.mT @ quat_expand
-
-    # Move reduction axes to the end
+    # Move reduction axes to the end and flatten them. Reordering the quaternions
+    # instead of their (4, 4) outer products lets the sum over rotations be a single
+    # matmul, instead of materializing one 4x4 matrix per rotation.
     keep_axes = tuple(i for i in all_axes if i not in axis)
     axes_order = keep_axes + axis
-    K_reordered = xp.moveaxis(K, axes_order, all_axes)
-    # Reshape to flatten reduction axes
-    new_shape = K_reordered.shape[: len(keep_axes)] + (-1, 4, 4)
-    K = xp.mean(xp.reshape(K_reordered, new_shape), axis=-3)
+    q = xp.moveaxis(quat, axes_order, all_axes)
+    q = xp.reshape(q, q.shape[: len(keep_axes)] + (-1, 4))
+
+    if weights is None:
+        K = q.mT @ q
+    else:
+        w = xp.moveaxis(weights, axes_order, all_axes)
+        w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
+        K = (q * w).mT @ q
+
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
@@ -615,7 +603,7 @@ def reduce(
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
     # TODO: Can we somehow avoid this?
-    all_idx = xp.reshape(xp.arange(left.shape[-1]), (1, -1))
+    all_idx = xp.reshape(xp.arange(left.shape[-1], device=xp_device(left)), (1, -1))
     left_idx = xp.reshape(left_best, (-1, 1))
     left = left[left_idx, all_idx]
     right_idx = xp.reshape(right_best, (-1, 1))
@@ -632,23 +620,22 @@ def reduce(
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
-    mat = as_matrix(quat)
-    # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
-    # dimension to the points array and remove it after the operation.
-    points = points[..., None]
-    if not broadcastable(mat.shape, points.shape):
+    xp = array_namespace(quat)
+    if not broadcastable(quat.shape[:-1] + (3,), points.shape):
         raise ValueError(
             f"Cannot broadcast {quat.shape[:-1]} rotations to {points.shape[:-1]} "
             "vectors."
         )
+    # Quaternion rotation: p' = p + 2w(qv x p) + 2(qv x (qv x p))
+    qv = quat[..., :3]
+    w = quat[..., 3:4]
     if inverse:
-        return (mat.mT @ points)[..., 0]
-    return (mat @ points)[..., 0]
+        qv = -qv
+    t = 2.0 * xp.linalg.cross(qv, points)
+    return points + w * t + xp.linalg.cross(qv, t)
 
 
-def setitem(
-    quat: Array, value: Array, indexer: int | slice | EllipsisType | None
-) -> Array:
+def setitem(quat: Array, value: Array, indexer: int | slice | EllipsisType) -> Array:
     return xpx.at(quat)[indexer, ...].set(value)
 
 
@@ -680,7 +667,8 @@ def align_vectors(
             "Expected inputs `a` and `b` to have shape (3,) or (N, 3), got "
             f"{a_original.shape} and {b_original.shape} respectively."
         )
-    N = a.shape[0]
+    if (N := a.shape[0]) is None:
+        raise ValueError(f"Expected `a` to have a known shape, got {a_original.shape}")
 
     # Check weights
     if weights is None:
@@ -705,7 +693,9 @@ def align_vectors(
 
     # For the special case of a single vector pair, we use the infinite
     # weight code path
-    weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
+    weight_is_inf = (
+        xp.asarray([True], device=xp_device(a)) if N == 1 else weights == xp.inf
+    )
     n_inf = xp.sum(xp.astype(weight_is_inf, a.dtype))
     # We can only error out on multiple infinite weights or sensitivity return with
     # infinite weights in eager execution models. Lazy backends will return NaNs.
@@ -1114,17 +1104,17 @@ def _get_angles(
 
 def compose_quat(p: Array, q: Array) -> Array:
     xp = array_namespace(p)
-    cross = xp.linalg.cross(p[..., :3], q[..., :3])
-    qx = p[..., 3] * q[..., 0] + q[..., 3] * p[..., 0] + cross[..., 0]
-    qy = p[..., 3] * q[..., 1] + q[..., 3] * p[..., 1] + cross[..., 1]
-    qz = p[..., 3] * q[..., 2] + q[..., 3] * p[..., 2] + cross[..., 2]
-    qw = (
-        p[..., 3] * q[..., 3]
-        - p[..., 0] * q[..., 0]
-        - p[..., 1] * q[..., 1]
-        - p[..., 2] * q[..., 2]
+    px, py, pz, pw = p[..., 0], p[..., 1], p[..., 2], p[..., 3]
+    qx, qy, qz, qw = q[..., 0], q[..., 1], q[..., 2], q[..., 3]
+    quat = xp.stack(
+        [
+            pw * qx + px * qw + py * qz - pz * qy,
+            pw * qy - px * qz + py * qw + pz * qx,
+            pw * qz + px * qy - py * qx + pz * qw,
+            pw * qw - px * qx - py * qy - pz * qz,
+        ],
+        axis=-1,
     )
-    quat = xp.stack([qx, qy, qz, qw], axis=-1)
     return quat
 
 

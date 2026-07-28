@@ -24,54 +24,6 @@ add_newdoc("_sf_error_test_function",
     """)
 
 
-add_newdoc("_cosine_cdf",
-    """
-    _cosine_cdf(x)
-
-    Cumulative distribution function (CDF) of the cosine distribution::
-
-                 {             0,              x < -pi
-        cdf(x) = { (pi + x + sin(x))/(2*pi),   -pi <= x <= pi
-                 {             1,              x > pi
-
-    Parameters
-    ----------
-    x : array_like
-        `x` must contain real numbers.
-
-    Returns
-    -------
-    scalar or ndarray
-        The cosine distribution CDF evaluated at `x`.
-
-    """)
-
-add_newdoc("_cosine_invcdf",
-    """
-    _cosine_invcdf(p)
-
-    Inverse of the cumulative distribution function (CDF) of the cosine
-    distribution.
-
-    The CDF of the cosine distribution is::
-
-        cdf(x) = (pi + x + sin(x))/(2*pi)
-
-    This function computes the inverse of cdf(x).
-
-    Parameters
-    ----------
-    p : array_like
-        `p` must contain real numbers in the interval ``0 <= p <= 1``.
-        `nan` is returned for values of `p` outside the interval [0, 1].
-
-    Returns
-    -------
-    scalar or ndarray
-        The inverse of the cosine distribution CDF evaluated at `p`.
-
-    """)
-
 add_newdoc("_ellip_harm",
     """
     Internal function, use `ellip_harm` instead.
@@ -301,160 +253,6 @@ add_newdoc("bdtri",
 
     >>> bdtr(1, 4, p)  # Should be 0.5.
     np.float64(0.5)
-    """)
-
-add_newdoc("bdtrik",
-    """
-    bdtrik(y, n, p, out=None)
-
-    Binomial distribution quantile.
-
-    Finds the number of successes `k` such that the sum of the terms 0 through
-    `k` of the Binomial probability density for `n` events with probability
-    `p` is equal to the given cumulative probability `y`.
-
-    Parameters
-    ----------
-    y : array_like
-        Cumulative probability (probability of `k` or fewer successes in `n`
-        events).
-    n : array_like
-        Number of events (float).
-    p : array_like
-        Success probability (float).
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    k : scalar or ndarray
-        The number of successes `k` such that `bdtr(k, n, p) = y`.
-
-    See Also
-    --------
-    bdtr : Binomial distribution cumulative distribution function
-
-    Notes
-    -----
-    Formula 26.5.24 of [1]_ is used to reduce the binomial
-    distribution to the cumulative incomplete beta distribution.
-
-    This function uses routines from the Boost.Math C++ library [3]_ which rely
-    on numerical inversion of the binomial distribution CDF [4]_.
-
-    References
-    ----------
-    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.5#E5
-    .. [3] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-    .. [4] https://www.boost.org/doc/libs/latest/libs/math/doc/html/math_toolkit/dist_ref/dists/binomial_dist.html
-
-    Examples
-    --------
-    We have a coin for which the probability of showing heads when flipped
-    is 0.525. The coin is flipped 8 times.  Find the largest value of `k`
-    such that the probability that X <= `k` is not greater than 0.2, where
-    X is the number of heads.
-
-    In fact, there is no integer value of `k` that will give a probability
-    of *exactly* 0.2, as this plot of the cumulative distribution function shows.
-
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import bdtr, bdtrik
-
-    >>> n = 8
-    >>> p = 0.525
-    >>> k = np.arange(0, n + 1)
-    >>> plt.plot(k, bdtr(k, n, p), 'o')
-    >>> plt.grid(True, alpha=0.5)
-    >>> plt.xlabel('k')
-    >>> plt.axhline(0.2, linestyle='--', color='k', alpha=0.5)
-    >>> plt.title(f"bdtr(k, {n}, {p})")
-    >>> plt.show()
-
-    From the graph we can see that we would choose `k` = 2.  The function
-    ``bdtrik`` lets us find this value directly.
-
-    ``bdtrik`` returns a floating point value that is like a continuous
-    extension of `k`.  This computes `k` as a noninteger floating point value:
-
-    >>> bdtrik(0.2, n, p)
-    np.float64(2.508332751475262)
-
-    For our final answer we need an integer `k`, and since we want to ensure
-    that the probability at `k` does not exceed 0.2, we truncate the fractional
-    part of this value with ``np.floor``:
-
-    >>> np.floor(bdtrik(0.2, n, p))
-    np.float64(2.0)
-    """)
-
-add_newdoc("bdtrin",
-    r"""
-    bdtrin(k, y, p, out=None)
-
-    Inverse function to `bdtr` with respect to `n`.
-
-    Finds the number of events `n` such that the sum of the terms 0 through
-    `k` of the Binomial probability density for events with probability `p` is
-    equal to the given cumulative probability `y`.
-
-    Parameters
-    ----------
-    k : array_like
-        Number of successes (float).
-    y : array_like
-        Cumulative probability (probability of `k` or fewer successes in `n`
-        events).
-    p : array_like
-        Success probability (float).
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    n : scalar or ndarray
-        The number of events `n` such that `bdtr(k, n, p) = y`.
-
-    See Also
-    --------
-    bdtr
-
-    Notes
-    -----
-    This function uses the `find_minimum_number_of_trials` method of the
-    `binomial_distribution` class of the Boost.Math C++ library [1]_.
-
-    References
-    ----------
-    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    Examples
-    --------
-    How often do we have to flip a fair coin to have at least a 90% chance
-    of getting 10 heads? `bdtrin` answers this question:
-
-    >>> import scipy.special as sc
-    >>> k = 10  # number of times we want heads
-    >>> p = 0.5  # probability of flipping heads
-    >>> y = 0.9  # cumulative probability
-    >>> result = sc.bdtrin(k, y, p)
-    >>> result
-    15.90442928275109
-
-    To verify, compute the cumulative probability of getting 10 or fewer
-    successes in 16 trials with probability 0.5 using the binomial
-    distribution from `scipy.stats`. Since `bdtrin` returns a non-integer
-    number of trials, we round up to the next integer:
-
-    >>> from scipy.stats import Binomial
-    >>> Binomial(n=16, p=p).cdf(k)
-    0.8949432373046875
-
     """)
 
 add_newdoc("btdtria",
@@ -1900,6 +1698,8 @@ add_newdoc("eval_sh_jacobi",
         Parameter
     q : float
         Parameter
+    x : array_like
+        Points at which to evaluate the polynomial.
     out : ndarray, optional
         Optional output array for the function values
 
@@ -5040,11 +4840,11 @@ add_newdoc("smirnov",
 
     Notes
     -----
-    `smirnov` is used by `stats.kstest` in the application of the
+    `smirnov` is used by `scipy.stats.kstest` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in `scipy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.ksone` distribution.
+    `scipy.stats.ksone` distribution.
 
     Examples
     --------
@@ -5150,11 +4950,9 @@ add_newdoc("smirnovi",
 
     Notes
     -----
-    `smirnov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
-    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.ksone` distribution.
+    For historical reasons this function is exposed in `scipy.special`, but the
+    recommended way to achieve the most accurate CDF/SF/PDF/PPF/ISF computations is to
+    use the `scipy.stats.ksone` distribution.
 
     Examples
     --------
@@ -6233,28 +6031,6 @@ add_newdoc(
     _binom_cdf(x, n, p)
 
     Cumulative density function of binomial distribution.
-
-    Parameters
-    ----------
-    x : array_like
-        Real-valued
-    n : array_like
-        Positive, integer-valued parameter
-    p : array_like
-        Positive, real-valued parameter
-
-    Returns
-    -------
-    scalar or ndarray
-
-    """)
-
-add_newdoc(
-    "_binom_ppf",
-    """
-    _binom_ppf(x, n, p)
-
-    Percent point function of binomial distribution.
 
     Parameters
     ----------

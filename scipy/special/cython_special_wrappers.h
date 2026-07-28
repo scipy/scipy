@@ -1,10 +1,7 @@
-/* This file is a collection of wrappers around the
- *  Special Function  Fortran library of functions
- *  to be compiled with the other special functions in cephes
- *
- * Functions written by Shanjie Zhang and Jianming Jin.
- * Interface by
- *  Travis E. Oliphant
+/* This file is a collection of wrappers around the special functions from xsf and boost
+ * to be exposed in cython_special. There are also a handful of other uses, for example in
+ * functions.json, however, as we transition to the new ufunc infrastructure, these will
+ * be removed.
  */
 
 #pragma once
@@ -18,6 +15,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+/*
+ * xsf functions
+ */
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 npy_cdouble special_chyp0f1(double v, npy_cdouble z);
@@ -146,7 +147,6 @@ double cephes_jv_wrap(double v, double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
 int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
 double cephes_yn_wrap(Py_ssize_t n, double x);
-double cephes_polevl_wrap(double x, const double coef[], int N);
 double special_wright_bessel(double a, double b, double x);
 double special_log_wright_bessel(double a, double b, double x);
 
@@ -389,6 +389,13 @@ double xsf_cosdg(double x);
 double xsf_tandg(double x);
 double xsf_cotdg(double x);
 double xsf_radian(double d, double m, double s);
+
+/*
+ * Boost functions
+ */
+
+double boost_bdtrik(double y, double n, double p);
+double boost_bdtrin(double k, double y, double p);
 
 #ifdef __cplusplus
 } /* extern "C" */
