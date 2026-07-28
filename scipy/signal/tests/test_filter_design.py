@@ -10,12 +10,12 @@ import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    xp_assert_equal, array_namespace,
-    assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
+    xp_assert_close, xp_assert_equal, array_namespace,
+    assert_array_almost_equal, xp_size, is_numpy,
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
     _xp_copy_to_numpy, xp_assert_close_nulp
 )
-from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api_no_0d import xp_assert_close as xp_assert_close_no_0d
 import scipy._external.array_api_extra as xpx
 
 from numpy import array, spacing, sin, pi
@@ -269,7 +269,7 @@ class TestZpk2Tf:
         b_np, a_np = map(_xp_copy_to_numpy, (b, a))
         z_np, p_np, k_np = tf2zpk(b_np, a_np)
         z, p, k = map(xp.asarray, (z_np, p_np, k_np))
-        xp_assert_close(k, xp.asarray(1j), check_0d=True)
+        xp_assert_close(k, xp.asarray(1j))
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
@@ -818,7 +818,7 @@ class TestFreqz:
             w, h = freqz(xp.ones(2), a, worN=0)
             assert w.shape == (0,)
             assert h.shape == (0,)
-            hdt = xp.complex128 if xp_default_dtype(xp) == xp.float64 else xp.complex64
+            hdt = xp.complex128 if xpx.default_dtype(xp) == xp.float64 else xp.complex64
             assert h.dtype == hdt
 
     def test_basic2(self, xp):
@@ -1099,7 +1099,7 @@ class TestFreqz:
             w, h = freqz(xp.ones(2), a, worN=0, include_nyquist=True)
             assert w.shape == (0,)
             assert h.shape == (0,)
-            hdt = xp.complex128 if xp_default_dtype(xp) == xp.float64 else xp.complex64
+            hdt = xp.complex128 if xpx.default_dtype(xp) == xp.float64 else xp.complex64
             assert h.dtype == hdt
 
         w1, h1 = freqz(xp.asarray([1.0]), worN=8, whole = True, include_nyquist=True)
@@ -1196,13 +1196,13 @@ class TestFreqz_sos:
         w = w / xp.pi
         xp_assert_close(20 * xp.log10(h[w <= 0.1]),
                         zero, atol=3.01,
-                        check_shape=False, check_0d=True)
+                        check_shape=False)
         xp_assert_close(20 * xp.log10(h[w >= 0.6]),
                         zero, atol=3.01,
-                        check_shape=False, check_0d=True)
+                        check_shape=False)
         xp_assert_close(h[(w >= 0.2) & (w <= 0.5)],
                         zero, atol=1e-3,
-                        check_shape=False, check_0d=True)  # <= -60 dB
+                        check_shape=False)  # <= -60 dB
 
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 150)
         sos = cheby2(N, 150, Wn, 'stop', output='sos')
@@ -1211,8 +1211,8 @@ class TestFreqz_sos:
         w, h = freqz_sos(sos)
         dB = 20*xp.log10(xp.abs(h))
         w = w / xp.pi
-        xp_assert_close(dB[w <= 0.1], zero, atol=3.01, check_shape=False, check_0d=True)
-        xp_assert_close(dB[w >= 0.6], zero, atol=3.01, check_shape=False, check_0d=True)
+        xp_assert_close(dB[w <= 0.1], zero, atol=3.01, check_shape=False)
+        xp_assert_close(dB[w >= 0.6], zero, atol=3.01, check_shape=False)
         assert xp.all(dB[(w >= 0.2) & (w <= 0.5)] < -149.9)
 
         # from cheb1ord
@@ -1224,9 +1224,9 @@ class TestFreqz_sos:
         h = xp.abs(h)
         w = w / xp.pi
         xp_assert_close(20 * xp.log10(h[w <= 0.2]), zero, atol=3.01,
-                        check_shape=False, check_0d=True)
+                        check_shape=False)
         xp_assert_close(h[w >= 0.3], zero, atol=1e-2,
-                        check_shape=False, check_0d=True)  # <= -40 dB
+                        check_shape=False)  # <= -40 dB
 
         N, Wn = cheb1ord(0.2, 0.3, 1, 150)
         sos = cheby1(N, 1, Wn, 'low', output='sos')
@@ -1235,7 +1235,7 @@ class TestFreqz_sos:
         w, h = freqz_sos(sos)
         dB = 20*xp.log10(xp.abs(h))
         w /= np.pi
-        xp_assert_close(dB[w <= 0.2], zero, atol=1.01, check_shape=False, check_0d=True)
+        xp_assert_close(dB[w <= 0.2], zero, atol=1.01, check_shape=False)
         assert xp.all(dB[w >= 0.3] < -149.9)
 
         # adapted from ellipord
@@ -1247,9 +1247,9 @@ class TestFreqz_sos:
         h = xp.abs(h)
         w = w / xp.pi
         xp_assert_close(20 * xp.log10(h[w >= 0.3]), zero, atol=3.01,
-                        check_shape=False, check_0d=True)
+                        check_shape=False)
         xp_assert_close(h[w <= 0.1], zero, atol=1.5e-3,
-                        check_shape=False, check_0d=True)  # <= -60 dB (approx)
+                        check_shape=False)  # <= -60 dB (approx)
 
         # adapted from buttord
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 40)
@@ -1261,15 +1261,11 @@ class TestFreqz_sos:
         w = w / xp.pi
 
         h014 = h[w <= 0.14]
-        xp_assert_close(h014, xp.zeros_like(h014),
-                        atol=1e-2,
-                        check_0d=True)  # <= -40 dB
+        xp_assert_close(h014, xp.zeros_like(h014), atol=1e-2)  # <= -40 dB
         h06 = h[w >= 0.6]
-        xp_assert_close(h06, xp.zeros_like(h06),
-                        atol=1e-2,
-                        check_0d=True)  # <= -40 dB
+        xp_assert_close(h06, xp.zeros_like(h06), atol=1e-2)  # <= -40 dB
         h0205 = 20 * xp.log10(h[(w >= 0.2) & (w <= 0.5)])
-        xp_assert_close(h0205, xp.zeros_like(h0205), atol=3.01, check_0d=True)
+        xp_assert_close(h0205, xp.zeros_like(h0205), atol=3.01)
 
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 100)
         sos = butter(N, Wn, 'band', output='sos')
@@ -1282,7 +1278,7 @@ class TestFreqz_sos:
         assert xp.all(dB[(w > 0) & (w <= 0.14)] < -99.9)
         assert xp.all(dB[w >= 0.6] < -99.9)
         db0205 = dB[(w >= 0.2) & (w <= 0.5)]
-        xp_assert_close(db0205, xp.zeros_like(db0205), atol=3.01, check_0d=True)
+        xp_assert_close(db0205, xp.zeros_like(db0205), atol=3.01)
 
     def test_freqz_sos_design_ellip(self, xp):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
@@ -1581,7 +1577,7 @@ class TestNormalize:
         # The test on b works for decimal=14 but the one for a does not. For
         # the sake of consistency, both of these are decimal=13. If something
         # breaks on another platform, it is probably fine to relax this lower.
-        decimal = 13 if xp_default_dtype(xp) == xp.float64 else 5
+        decimal = 13 if xpx.default_dtype(xp) == xp.float64 else 5
         assert_array_almost_equal(b_matlab, b_output, decimal=decimal)
         assert_array_almost_equal(a_matlab, a_output, decimal=decimal)
 
@@ -2545,7 +2541,7 @@ class TestEllipord:
 # Currently the filter functions tested below (bessel, butter, cheby1, cheby2,
 # and ellip) all return float64 (or complex128) output regardless of input
 # dtype. Therefore reference arrays in these tests are all given an explicit 64
-# bit dtype, because the output will not match the xp_default_dtype when the
+# bit dtype, because the output will not match the default dtype when the
 # default dtype is float32. Although the output arrays and all internal
 # calculations are in 64 bit precision, tolerances are still loosened for the
 # float32 case when results are impacted by reduced precision in the inputs.
@@ -3037,7 +3033,7 @@ class TestBessel:
             }
         for N in mpmath_values:
             z, p, k = besselap(N, 'delay')
-            xp_assert_close(_norm_factor(p, k), mpmath_values[N], rtol=1e-13)
+            xp_assert_close_no_0d(_norm_factor(p, k), mpmath_values[N], rtol=1e-13)
 
     def test_bessel_poly(self):
         xp_assert_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
@@ -5123,10 +5119,10 @@ class TestGammatone:
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
             xp_assert_close(response_max,
-                            xp.ones_like(response_max), rtol=1e-2, check_0d=True)
+                            xp.ones_like(response_max), rtol=1e-2)
             xp_assert_close(
                 freq_hz, xp.asarray(1000*xp.ones_like(freq_hz)),
-                rtol=1e-2, check_0d=True
+                rtol=1e-2
             )
 
     # All built-in IIR filters are real, so should have perfectly

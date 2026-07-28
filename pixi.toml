@@ -618,7 +618,7 @@ description = "Check loaded shared libraries with MKL (ILP64, cython-blas ILP64)
 
 
 [feature.scipy-openblas32.pypi-dependencies]
-scipy-openblas32 = "==0.3.31.22.0"
+scipy-openblas32 = "==0.3.34.0.0"
 
 [feature.scipy-openblas32.tasks.build-scipy-openblas32]
 cmd = "spin build --build-dir=build-scipy-openblas32 --with-scipy-openblas=32"
@@ -631,7 +631,7 @@ depends-on = "build-scipy-openblas32"
 description = "Test SciPy with scipy-openblas32"
 
 [feature.scipy-openblas64.pypi-dependencies]
-scipy-openblas64 = "==0.3.31.22.0"
+scipy-openblas64 = "==0.3.34.0.0"
 
 [feature.scipy-openblas64.tasks.build-scipy-openblas64]
 cmd = "spin build --build-dir=build-scipy-openblas64 --with-scipy-openblas=64 -S-Duse-ilp64=true -S-Dblas-symbol-suffix=64_"

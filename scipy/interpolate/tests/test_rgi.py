@@ -6,9 +6,9 @@ import numpy as np
 from numpy.exceptions import ComplexWarning
 
 from scipy._lib._array_api import (
-    xp_assert_equal, assert_array_almost_equal, make_xp_test_case
+    xp_assert_equal, xp_assert_close, assert_array_almost_equal,
+    make_xp_test_case,
 )
-from scipy._lib._array_api_no_0d import xp_assert_close
 
 from scipy.conftest import skip_xp_invalid_arg
 
@@ -540,7 +540,7 @@ class TestRegularGridInterpolator:
 
         with np.errstate(invalid='ignore'):
             res = interp([[1.5, np.nan], [1, 1]])
-        xp_assert_close(res[1], 2.0, atol=1e-14)
+        assert np.isclose(res[1], 2.0, atol=1e-14)
         assert np.isnan(res[0])
 
         # test arbitrary nan pattern

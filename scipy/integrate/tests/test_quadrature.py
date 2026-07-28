@@ -13,7 +13,7 @@ from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 
 from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import make_xp_test_case, xp_default_dtype, is_numpy
+from scipy._lib._array_api import make_xp_test_case, is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._external import array_api_extra as xpx
 
@@ -203,7 +203,7 @@ class TestSimpson:
         if droplast:
             y = y[:, :-1]
         result = simpson(y, axis=-1)
-        expected = simpson(xp.asarray(y, dtype=xp_default_dtype(xp)), axis=-1)
+        expected = simpson(xp.asarray(y, dtype=xpx.default_dtype(xp)), axis=-1)
         xp_assert_equal(result, expected)
 
 
@@ -220,7 +220,7 @@ class TestCumulative_trapezoid:
         xp_assert_close(y_int, y_expected[1:])
 
     def test_y_nd_x_nd(self, xp):
-        x = xp.reshape(xp.arange(3 * 2 * 4, dtype=xp_default_dtype(xp)), (3, 2, 4))
+        x = xp.reshape(xp.arange(3 * 2 * 4, dtype=xpx.default_dtype(xp)), (3, 2, 4))
         y = x
         y_int = cumulative_trapezoid(y, x, initial=0)
         y_expected = xp.asarray([[[0., 0.5, 2., 4.5],
@@ -241,8 +241,8 @@ class TestCumulative_trapezoid:
             assert y_int.shape == shape
 
     def test_y_nd_x_1d(self, xp):
-        y = xp.reshape(xp.arange(3 * 2 * 4, dtype=xp_default_dtype(xp)), (3, 2, 4))
-        x = xp.arange(4, dtype=xp_default_dtype(xp))**2
+        y = xp.reshape(xp.arange(3 * 2 * 4, dtype=xpx.default_dtype(xp)), (3, 2, 4))
+        x = xp.arange(4, dtype=xpx.default_dtype(xp))**2
         # Try with all axes
         ys_expected = (
             xp.asarray([[[4., 5., 6., 7.],
@@ -450,7 +450,7 @@ class TestQMCQuad:
             qmc_quad(lambda x: 1, a, b, log=10)
 
     def basic_test(self, n_points=2**8, n_estimates=8, signs=None, xp=None):
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         if signs is None:
             signs = np.ones(2)
         ndim = 2

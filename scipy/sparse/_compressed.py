@@ -183,6 +183,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if self.indices.dtype.kind != 'i':
             warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
                  stacklevel=3)
+        if self.indices.dtype != self.indptr.dtype:
+            raise ValueError(f"indptr and indices must have the same dtype, "
+                             f"got {self.indptr.dtype} and {self.indices.dtype}")
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:

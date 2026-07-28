@@ -88,6 +88,17 @@ class TestSignM:
         signm(a)
         #XXX: what would be the correct result?
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_signm_dtype_preservation(self, dtype):
+        # gh-25657: signm upcast float32/complex64 for defective matrices
+        # (the iterative fall-through branch) while the non-defective branch
+        # preserved dtype. Output dtype must depend on input dtype, not values.
+        non_defective = np.array([[2, 1], [0, 3]], dtype=dtype)  # distinct eigs
+        defective = np.array([[2, 1], [0, 2]], dtype=dtype)      # repeated eig
+        assert signm(non_defective).dtype == dtype
+        assert signm(defective).dtype == dtype
+
 
 class TestLogM:
     @pytest.mark.filterwarnings("ignore:.*inaccurate.*:RuntimeWarning")
