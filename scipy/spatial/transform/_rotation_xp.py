@@ -950,7 +950,7 @@ def _pow_scaled(quat: Array, n: float | Array) -> Array:
     """Scale the rotation angle by `n`, keeping the axis fixed.
 
     Equivalent to ``from_rotvec(n * as_rotvec(quat))`` but without building the
-    intermediate rotation vector, whose norm the round trip would then recompute.
+    intermediate rotation vector.
     """
     xp = array_namespace(quat)
     quat = _quat_canonical(quat)
@@ -958,9 +958,7 @@ def _pow_scaled(quat: Array, n: float | Array) -> Array:
     # atan2 of a non-negative norm against a canonical (non-negative) scalar part puts
     # the half angle in [0, pi/2], so scaling it by n matches the rotvec round trip.
     half_angle = xp.atan2(ax_norm, quat[..., 3:4])
-    # Where the axis vanishes the rotation is the identity: sin(0) is 0 and the axis is
-    # multiplied by it, so only the division needs guarding.
-    div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)
+    div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)  # avoid division by 0
     axis = quat[..., :3] / div_norm
     scaled = n * half_angle
     return xp.concat([axis * xp.sin(scaled), xp.cos(scaled)], axis=-1)
