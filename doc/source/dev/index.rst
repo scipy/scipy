@@ -21,19 +21,20 @@ the organization section.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Design & Architecture
+
+   api-dev/array_api
+   api-dev/nan_policy
+   api-dev/special_ufuncs
+   api-dev/design_conventions_modules
+
+.. toctree::
+   :maxdepth: 1
    :caption: Roadmap
 
    roadmap
    roadmap-detailed
    toolchain
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Design & Architecture
-
-   api-dev/nan_policy
-   api-dev/special_ufuncs
-   api-dev/array_api
 
 .. toctree::
    :maxdepth: 1
