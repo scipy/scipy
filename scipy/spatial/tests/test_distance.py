@@ -49,7 +49,7 @@ import scipy.spatial.distance
 
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
-    _validate_vector, _METRICS_NAMES)
+    _validate_vector, _validate_weights, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock
 # jensenshannon  and seuclidean are referenced by string name.
@@ -61,7 +61,8 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._lib._util import _apply_over_batch
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api import make_xp_test_case, is_lazy_array, array_namespace
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 @pytest.fixture(params=_METRICS_NAMES, scope="session")
 def metric(request):
@@ -1443,24 +1444,26 @@ class TestSomeDistanceFunctions:
 
         self.cases = [(x, y)]
 
-    def test_minkowski(self):
+    @make_xp_test_case(minkowski)
+    def test_minkowski(self, xp):
         for x, y in self.cases:
+            x, y = xp.asarray(x), xp.asarray(y)
             dist1 = minkowski(x, y, p=1)
-            assert math.isclose(dist1, 3.0, abs_tol=1.5e-7)
+            xp_assert_close(dist1, xp.asarray(3.0), atol=1.5e-7)
             dist1p5 = minkowski(x, y, p=1.5)
-            assert math.isclose(dist1p5, (1.0 + 2.0**1.5)**(2. / 3), abs_tol=1.5e-7)
+            xp_assert_close(dist1p5, xp.asarray((1.0 + 2.0**1.5)**(2. / 3)), atol=1.5e-7)
             dist2 = minkowski(x, y, p=2)
-            assert math.isclose(dist2, 5.0 ** 0.5, abs_tol=1.5e-7)
+            xp_assert_close(dist2, xp.asarray(5.0 ** 0.5), atol=1.5e-7)
             dist0p25 = minkowski(x, y, p=0.25)
-            assert math.isclose(dist0p25, (1.0 + 2.0 ** 0.25) ** 4, abs_tol=1.5e-7)
+            xp_assert_close(dist0p25, xp.asarray((1.0 + 2.0 ** 0.25) ** 4), atol=1.5e-7)
 
         # Check that casting input to minimum scalar type doesn't affect result
         # (issue #10262). This could be extended to more test inputs with
         # np.min_scalar_type(np.max(input_matrix)).
-        a = np.array([352, 916])
-        b = np.array([350, 660])
+        a = xp.asarray([352, 916])
+        b = xp.asarray([350, 660])
         xp_assert_equal(minkowski(a, b),
-                     minkowski(a.astype('uint16'), b.astype('uint16')))
+                        minkowski(xp.astype(a, xp.uint16), xp.astype(b, xp.uint16)))
 
     def test_euclidean(self):
         for x, y in self.cases:
@@ -1815,13 +1818,14 @@ class TestIsValidY:
         return y
 
 
+@make_xp_test_case(minkowski)
 @pytest.mark.parametrize("p", [-10.0, -0.5, 0.0])
-def test_bad_p(p):
+def test_bad_p(xp, p):
     # Raise ValueError if p <=0.
     with pytest.raises(ValueError):
-        minkowski([1, 2], [3, 4], p)
+        minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p)
     with pytest.raises(ValueError):
-        minkowski([1, 2], [3, 4], p, [1, 1])
+        minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p, xp.asarray([1, 1]))
 
 
 def test_sokalsneath_all_false():
@@ -1996,16 +2000,21 @@ def test_Xdist_non_negative_weights(metric):
             cdist(X, X, m, w=w)
 
 
-def test__validate_vector():
-    x = [1, 2, 3]
+@pytest.mark.uses_xp_capabilities(False)
+def test_validate_vector(xp):
+    x = [1, 2, 3]  # Check list inputs are converted to arrays
+    y = _validate_vector(x)
+    xp_assert_equal(y, np.asarray(x), xp=array_namespace(np.empty(0)))
+
+    x = xp.asarray([1, 2, 3])
     y = _validate_vector(x)
     xp_assert_equal(y, x)
 
-    y = _validate_vector(x, dtype=np.float64)
-    xp_assert_equal(y, np.asarray(x, dtype=np.float64))
-    assert y.dtype == np.float64
+    y = _validate_vector(x, dtype=xp.float64)
+    xp_assert_equal(y, xp.asarray([1, 2, 3], dtype=xp.float64))
+    assert y.dtype == xp.float64
 
-    x = [1]
+    x = xp.asarray([1])
     y = _validate_vector(x)
     assert y.ndim == 1
     xp_assert_equal(y, x)
@@ -2014,13 +2023,26 @@ def test__validate_vector():
     with pytest.raises(ValueError, match="Input vector should be 1-D"):
         _validate_vector(x)
 
-    x = np.arange(5).reshape(1, -1, 1)
+    x = xp.reshape(xp.arange(5), (1, -1, 1))
     with pytest.raises(ValueError, match="Input vector should be 1-D"):
         _validate_vector(x)
 
     x = [[1, 2], [3, 4]]
     with pytest.raises(ValueError, match="Input vector should be 1-D"):
         _validate_vector(x)
+
+@pytest.mark.uses_xp_capabilities(False)
+def test_validate_weights(xp):
+    w = xp.asarray([1.0, -1.0, 2.0])
+    if is_lazy_array(w):  # Lazy backends return NaN for a negative weight
+        assert xp.all(xp.isnan(_validate_weights(w)))
+    else:  # Eager backends raise on a negative weight
+        with pytest.raises(ValueError, match="non-negative"):
+            _validate_weights(w)
+    # valid weights pass through unchanged on every backend
+    xp_assert_close(_validate_weights(xp.asarray([1.0, 2.0, 3.0])),
+                    xp.asarray([1.0, 2.0, 3.0]))
+
 
 def test_yule_all_same():
     # Test yule avoids a divide by zero when exactly equal

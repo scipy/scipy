@@ -105,6 +105,7 @@ py3.install_sources([
 
 py3.install_sources([
     '__init__.py',
+    '_distance_xp.py',
     '_geometric_slerp.py',
     '_kdtree.py',
     '_plotutils.py',
