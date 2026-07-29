@@ -2472,6 +2472,9 @@ def _penalty_matrix_banded(t):
     ``C = D1 @ D2`` where `Di` is de-boor derivative reduction. ``R``
     is the mass matrix of linear B-Splines on ``t``.
     """
+    order = 4 # assuming a cubic spline
+    m = len(t) - order # number of coefficients
+
     def deboor_derivative(order):
         r"""
         Build the matrix that differentiates a spline via de Boor's formula.
@@ -2511,7 +2514,40 @@ def _penalty_matrix_banded(t):
                https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node17.html
 
         """
-        pass
+        N = len(t) - order
+        D = np.zeros((N + 1, N))   
+
+        for j in range(N + 1):
+            denom = t[j + order - 1] - t[j]
+            coef = (order - 1) / denom if denom > 0.0 else 0.0  # the (m - 1)
+            if j < N:
+                D[j, j] = coef
+            if j >= 1:
+                D[j, j - 1] = -coef
+
+        return D
+
+    D1 = deboor_derivative(order) # f' 
+    D2 = deboor_derivative(order - 1)  # f''
+
+    C = D2 @ D1
+    R_size = len(t) - 2 # len(t) - order (because linear)
+    R = np.zeros((R_size, R_size)) # integral of mul of hat functions
+
+    for j in range(R_size):
+        R[j, j] = (t[j + 2] - t[j]) / 3.0
+        if j + 1 < R_size:
+            R[j, j + 1] = R[j + 1, j] = (t[j + 2] - t[j + 1]) / 6.0
+
+    omega = C.T @ R @ C
+    omega_banded = np.zeros((4, m))
+    for i in range(4):
+        # Convert to LAPACK banded storage format.
+        # This can be passed to solve_banded.
+        omega_banded[i, : m - i] = np.diag(omega, -i)
+
+    return omega_banded
+
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
