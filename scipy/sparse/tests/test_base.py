@@ -4311,6 +4311,15 @@ class _CompressedMixin:
         D = self.dia_container((diags, offsets), shape=(N, N))
         return self._test_setdiag_sorted(D)
 
+    def test_check_format_index_dtype_mismatch(self):
+        # gh-21959: check_format should give a clear error when indptr and
+        # indices have mismatched (int32 vs int64) dtypes
+        A = self.spcreator(np.eye(3))
+        A.indptr = A.indptr.astype(np.int64)
+        A.indices = A.indices.astype(np.int32)
+        with pytest.raises(ValueError, match=r'must have the same dtype'):
+            A.check_format()
+
 
 class TestCSR(_CompressedMixin, sparse_test_class()):
     @classmethod

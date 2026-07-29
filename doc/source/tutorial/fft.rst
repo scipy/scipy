@@ -352,7 +352,7 @@ determine the periodic components, a magnitude spectrum of :math:`x(t)` and of
 
 The signal's trend manifests as a decreasing slope in the spectrum's low-frequency part.
 Removing the linear trend steepens this slope significantly, making the peaks at
-:math:`100`, :math:`200`, and :math:`300\,`\ Hz much better distinguishable. These peaks, which
+:math:`200`, :math:`300`, and :math:`400\,`\ Hz much better distinguishable. These peaks, which
 correspond to the sinusoidal components of :math:`x(t)`, would have a magnitude of
 :math:`0.5` in a noise- and trend-free signal.
 
@@ -374,7 +374,7 @@ its non-negative frequencies. The gray stems represent the periodic continuation
 left and to the right. The center row shows the :func:`~scipy.fft.fft` with the shifted
 frequencies produced by :func:`~scipy.fft.fftfreq`, where the two highest frequencies
 are shifted to the negative side. The last row depicts the one-sided
-:func:`~scipy.fft.rfft`, which only produces only the non-negative frequencies of the
+:func:`~scipy.fft.rfft`, which produces only the non-negative frequencies of the
 (two-sided) :func:`~scipy.fft.fft`.
 
 .. plot:: tutorial/examples/fft_compare_DFT_fft_rfft.py
