@@ -12,9 +12,7 @@ from scipy.signal._arraytools import _validate_fs
 from .windows import get_window
 from . import _sigtools
 
-from scipy._lib._array_api import (
-    xp_result_device, array_namespace, xp_size, xp_device
-)
+from scipy._lib._array_api import array_namespace, xp_size, xp_device, xp_result_device
 import scipy._external.array_api_extra as xpx
 
 
