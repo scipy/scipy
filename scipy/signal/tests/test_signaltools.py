@@ -33,8 +33,9 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, array_namespace, make_xp_test_case,
-    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy
+    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy,
 )
+
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
@@ -2564,7 +2565,7 @@ def test_correlation_lags(mode, behind, input_size, xp):
     # identify the peak
     lag_index = np.argmax(correlation)
     # Check as expected
-    xp_assert_equal(lags[lag_index], expected)
+    xp_assert_equal(xp.asarray(lags[lag_index]), expected)
     # Correlation and lags shape should match
     assert lags.shape == correlation.shape
 

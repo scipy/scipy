@@ -15,6 +15,7 @@ from scipy._lib._array_api import (
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
     _xp_copy_to_numpy, xp_assert_close_nulp
 )
+from scipy._lib._array_api_no_0d import xp_assert_close as xp_assert_close_no_0d
 import scipy._external.array_api_extra as xpx
 
 from numpy import array, spacing, sin, pi
@@ -268,7 +269,7 @@ class TestZpk2Tf:
         b_np, a_np = map(_xp_copy_to_numpy, (b, a))
         z_np, p_np, k_np = tf2zpk(b_np, a_np)
         z, p, k = map(xp.asarray, (z_np, p_np, k_np))
-        xp_assert_close(k, xp.asarray(1j), check_0d=False)
+        xp_assert_close(k, xp.asarray(1j))
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
@@ -3032,7 +3033,7 @@ class TestBessel:
             }
         for N in mpmath_values:
             z, p, k = besselap(N, 'delay')
-            xp_assert_close(_norm_factor(p, k), mpmath_values[N], rtol=1e-13)
+            xp_assert_close_no_0d(_norm_factor(p, k), mpmath_values[N], rtol=1e-13)
 
     def test_bessel_poly(self):
         xp_assert_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
@@ -5118,9 +5119,11 @@ class TestGammatone:
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
             xp_assert_close(response_max,
-                            xp.ones_like(response_max), rtol=1e-2, check_0d=False)
-            xp_assert_close(freq_hz,
-                            1000*xp.ones_like(freq_hz), rtol=1e-2, check_0d=False)
+                            xp.ones_like(response_max), rtol=1e-2)
+            xp_assert_close(
+                freq_hz, xp.asarray(1000*xp.ones_like(freq_hz)),
+                rtol=1e-2
+            )
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
