@@ -1447,16 +1447,17 @@ class TestSomeDistanceFunctions:
 
     @make_xp_test_case(minkowski)
     def test_minkowski(self, xp):
+        atol = 1.5e-7
         for x, y in self.cases:
             x, y = xp.asarray(x), xp.asarray(y)
             dist1 = minkowski(x, y, p=1)
-            xp_assert_close(dist1, xp.asarray(3.0), atol=1.5e-7)
+            xp_assert_close(dist1, xp.asarray(3.0), atol=atol)
             dist1p5 = minkowski(x, y, p=1.5)
-            xp_assert_close(dist1p5, xp.asarray((1.0 + 2.0**1.5)**(2. / 3)), atol=1.5e-7)
+            xp_assert_close(dist1p5, xp.asarray((1.0 + 2.0**1.5)**(2. / 3)), atol=atol)
             dist2 = minkowski(x, y, p=2)
-            xp_assert_close(dist2, xp.asarray(5.0 ** 0.5), atol=1.5e-7)
+            xp_assert_close(dist2, xp.asarray(5.0 ** 0.5), atol=atol)
             dist0p25 = minkowski(x, y, p=0.25)
-            xp_assert_close(dist0p25, xp.asarray((1.0 + 2.0 ** 0.25) ** 4), atol=1.5e-7)
+            xp_assert_close(dist0p25, xp.asarray((1.0 + 2.0 ** 0.25) ** 4), atol=atol)
 
         # Check that casting input to minimum scalar type doesn't affect result
         # (issue #10262). This could be extended to more test inputs with
