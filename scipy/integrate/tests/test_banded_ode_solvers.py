@@ -174,15 +174,16 @@ def test_banded_ode_solvers():
         assert_allclose(y, y_exact)
 
     for idx in range(len(real_matrices)):
-        p = [[None, 'bdf', 'adams'],   # method
+        solver_method = [['vode', 'adams'],  # solver and method
+                         ['vode', 'bdf'],
+                         ['lsoda', None]]
+        p = [solver_method,
              [False, True],      # use_jac
              [False, True],      # with_jacobian
              [False, True]]      # banded
-        for meth, use_jac, with_jac, banded in itertools.product(*p):
-            if meth is None:
-                check_real(idx, 'lsoda', meth, use_jac, with_jac, banded)
-            else:
-                check_real(idx, 'vode', meth, use_jac, with_jac, banded)
+        for solver_method, use_jac, with_jac, banded in itertools.product(*p):
+            check_real(idx, solver_method[0], solver_method[1], use_jac, with_jac,
+                       banded)
 
     # --- Complex arrays for testing the "zvode" solver ---
 

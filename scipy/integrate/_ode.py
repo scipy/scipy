@@ -1136,11 +1136,11 @@ class dopri5(IntegratorBase):
                  method=None,
                  verbosity=-1,  # no messages if negative
                  ):
-        
+
         if method is not None:
             raise ValueError(f'Integration method must be None for dopri5, got \
                              {method}')
-        
+
         self.rtol = rtol
         self.atol = atol
         self.nsteps = nsteps

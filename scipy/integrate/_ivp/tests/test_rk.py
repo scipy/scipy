@@ -1,7 +1,8 @@
+from itertools import product
 import pytest
 from numpy.testing import assert_allclose, assert_
 import numpy as np
-from scipy.integrate import RK23, RK45, DOP853
+from scipy.integrate import ode, RK23, RK45, DOP853
 from scipy.integrate._ivp import dop853_coefficients
 
 
@@ -35,3 +36,12 @@ def test_error_estimation_complex(solver_class):
     solver.step()
     err_norm = solver._estimate_error_norm(solver.K, h, scale=[1])
     assert np.isrealobj(err_norm)
+
+p = product(['lsoda', 'dopri5', 'dop853'], ['adams', 'bdf'])
+
+@pytest.mark.parametrize("solver_method", list(p))
+def test_compatible_method_solvers(solver_method):
+    solver, method = solver_method
+    if solver in ["lsoda", "dopri5", "dop853"] and method is not None:
+        with pytest.raises(ValueError):
+            ode(lambda t, y: y).set_integrator(solver, method=method)
