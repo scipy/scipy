@@ -1402,7 +1402,6 @@ class TestResample:
         xp_assert_equal(x1, x_ref)
         xp_assert_equal(x0, x_ref)
 
-
     @skip_xp_backends("cupy",
                       reason="delegated to cupyx, whose time vector is float64")
     @make_xp_test_case(signal.resample)
@@ -2219,7 +2218,6 @@ class _TestLinearFilter:
         # compare lfiltic's output with reference
         assert_array_almost_equal(zi_1, zi_2)
 
-
     @make_xp_test_case(lfiltic)
     def test_lfiltic_bad_coeffs(xp):
         # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
@@ -2711,6 +2709,7 @@ class TestCorrelateComplex:
                         check_shape=False)
         xp_assert_equal(correlate([3j], [4]), np.asarray(correlate(3j, 4)),
                         check_shape=False)
+
 
 
 class TestCorrelate2d:

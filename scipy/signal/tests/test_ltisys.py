@@ -964,7 +964,6 @@ class Test_abcd_normalize:
         xp_assert_equal(C, C_)
         xp_assert_equal(D, D_)
 
-
     def test_shapes(self):
         A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0)
         assert A.shape[0] == A.shape[1]

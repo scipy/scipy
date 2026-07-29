@@ -805,7 +805,6 @@ class TestFreqz:
         xp_assert_equal(w, xp.asarray([0. , 0.1]))
         xp_assert_equal(h, xp.asarray([1.+0.j, 1.+0.j]))
 
-
     def test_basic(self, xp):
         w, h = freqz(xp.asarray([1.0]), worN=8)
         assert_array_almost_equal(w, xp.pi * xp.arange(8, dtype=w.dtype) / 8.)
@@ -1132,6 +1131,7 @@ class TestFreqz:
 
         with pytest.raises(ValueError, match="Sampling.*be none."):
             freqz([1.0], fs=None)
+
 
 
 @make_xp_test_case(freqz_sos)

@@ -442,7 +442,6 @@ class TestSawtoothWaveform:
         )
         assert waveform.dtype == xp.result_type(t_dtype, width_dtype)
 
-
     def test_periodic(self, xp):
         t = xp.linspace(0, 2*xp.pi, 100, dtype=xp.float64)
         y1 = sawtooth(t, width=0.4)
