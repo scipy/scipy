@@ -1788,6 +1788,9 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     Convolve `in1` and `in2` with output size determined by `mode`, and
     boundary conditions determined by `boundary` and `fillvalue`.
 
+    The second input is rotated by 180 degrees as part of the convolution.
+    To apply a kernel without this rotation, use :func:`correlate2d` instead.
+
     Parameters
     ----------
     in1 : array_like
@@ -1881,6 +1884,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Cross correlate `in1` and `in2` with output size determined by `mode`, and
     boundary conditions determined by `boundary` and `fillvalue`.
+
+    The second input is rotated by 180 degrees as part of the convolution.
+    To apply a kernel without this rotation, use :func:`correlate2d` instead.
 
     Parameters
     ----------
