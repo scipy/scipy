@@ -7,11 +7,11 @@ import numpy as np
 from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
-                          solve, solve_banded)
+                          solve, solve_banded, solveh_banded)
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
-from scipy.sparse import csr_array
+from scipy.sparse import csr_array, diags_array
 from scipy.special import poch
 from itertools import combinations
 
@@ -2851,8 +2851,84 @@ def _coeff_of_divided_diff(x):
     return res
 
 
+def _penalty_matrix_banded(t):
+    """
+    Omega is ``C.T @ R @ C`` in (4, m), symmetric lower banded storage,
+    ``C = D1 @ D2`` where `Di` is de-boor derivative reduction. ``R``
+    is the mass matrix of linear B-Splines on ``t``.
+    """
+    order = 4 # assuming a cubic spline
+    m = len(t) - order # number of coefficients
+
+    def deboor_derivative(order):
+        r"""
+        Build the matrix that differentiates a spline via de Boor's formula.
+
+        A spline of order :math:`m` (degree :math:`m - 1`) with coefficients
+        :math:`\gamma` has a derivative which is a spline of order
+        :math:`m - 1` on the *same* knot vector :math:`\tau`:
+
+        .. math::
+
+            f'(u) = \sum_{j} (m - 1)\,
+                    \frac{\gamma_j - \gamma_{j-1}}{\tau_{j+m-1} - \tau_j}\,
+                    B_{j,\,m-1}(u)
+
+        Differentiation is therefore a linear map on coefficients. This
+        function returns its matrix :math:`D`, so that the derivative has
+        coefficients :math:`D \gamma`.
+
+        Notes
+        -----
+        Row :math:`j` holds :math:`+c_j` in column :math:`j` and
+        :math:`-c_j` in column :math:`j - 1`, with
+        :math:`c_j = (m - 1) / (\tau_{j+m-1} - \tau_j)`.
+
+        For a clamped knot vector the denominator vanishes at
+        :math:`j = 0` and :math:`j = N`, where the repeated boundary knots
+        coincide. Those coefficients are set to zero, making the first and
+        last rows identically zero; this is why formulations assuming
+        clamped knots omit those terms from the sum entirely.
+
+        References
+        ----------
+        .. [1] C. de Boor, "B(asic)-Spline Basics", 1986.
+               https://ftp.cs.wisc.edu/Approx/bsplbasic.pdf
+        .. [2] N. M. Patrikalakis, T. Maekawa, W. Cho, "Shape Interrogation
+               for Computer Aided Design and Manufacturing", eq. (1.65).
+               https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node17.html
+
+        """
+        N = len(t) - order
+        d = np.zeros(N + 1)
+        j = np.arange(N + 1)
+        mask = np.where(t[j + order - 1] - t[j] > 0)
+        d[mask] = (order - 1) / (t[j[mask] + order - 1] - t[j[mask]])
+
+        # row j: +d_j at column j, -d_j at column j-1
+        return diags_array([d[:N], -d[1:]], offsets=[0, -1], shape=(N + 1, N))
+
+    D1 = deboor_derivative(order)      # cubic
+    D2 = deboor_derivative(order - 1)  # quadratic
+    C = D2 @ D1  # sparse
+    R_size = len(t) - 2 # len(t) - order (because linear)
+
+    d0 = (t[2:] - t[:-2]) / 3.0
+    d1 = (t[2:-1] - t[1:-2]) / 6.0
+    R = diags_array([d1, d0, d1], offsets=[-1, 0, 1], shape=(R_size, R_size))
+
+    omega = (C.T @ R @ C).tocsc()
+    omega_banded = np.zeros((4, m))
+    for i in range(4):
+        # Convert to LAPACK symmetric lower-banded storage,
+        # as accepted by solveh_banded.
+        omega_banded[i, : m - i] = omega.diagonal(-i)
+
+    return omega_banded
+
+
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
-def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
+def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
 
@@ -2974,6 +3050,18 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
 
+    user_knots = t is not None
+
+    if user_knots:
+        if lam is None:
+            raise NotImplementedError(
+                "automatic GCV selection of `lam` is not supported with user knots, "
+                "pass `lam` explicitly")
+        if np.ndim(lam) != 0:
+            raise NotImplementedError(
+                "array-valued `lam` is not supported with user-provided knots yet."
+            )
+
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
 
@@ -2987,7 +3075,8 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
         if any(w <= 0):
             raise ValueError('Invalid vector of weights')
 
-    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
+    if not user_knots:
+        t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
     n = x.shape[0]
 
     if n <= 4:
@@ -3012,21 +3101,41 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     # move from B-spline basis to the basis of natural splines using equations
     # (2.1.7) [4]
     # central elements
-    X = np.zeros((5, n))
-    for i in range(1, 4):
-        X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
+    if not user_knots:
+        # Only transform `X` to a different basis if
+        # `t` is None.
+        X = np.zeros((5, n))
+        for i in range(1, 4):
+            X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
 
-    # first elements
-    X[1, 1] = X_bspl[0, 0]
-    X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
-                X_bspl[1, 1] + X_bspl[1, 2])
-    X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
+        # first elements
+        X[1, 1] = X_bspl[0, 0]
+        X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
+                    X_bspl[1, 1] + X_bspl[1, 2])
+        X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
 
-    # last elements
-    X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
-    X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
-                 (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
-    X[3, -2] = X_bspl[-1, -1]
+        # last elements
+        X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
+        X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
+                    (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
+        X[3, -2] = X_bspl[-1, -1]
+    else:
+        X = X_bspl
+
+    if user_knots:
+        omega = _penalty_matrix_banded(t)
+        XtWX = X.T @ (X.multiply(w[:, None]))
+        XtWy = X.T @ (w[:, None] * y.reshape((n, -1)))
+        XtWX_banded = np.zeros((4, len(t) - 4))
+        for i in range(4):
+            # Convert to LAPACK symmetric lower-banded storage,
+            # as accepted by solveh_banded.
+            XtWX_banded[i, : len(t) - 4 - i] = XtWX.diagonal(-i)
+        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+        c = np.ascontiguousarray(c.reshape((len(t) - 4, *y_shape1)))
+        return BSpline.construct_fast(
+            xp.asarray(t), xp.asarray(c), 3, axis=axis
+        )
 
     # create penalty matrix and divide it by vector of weights: W^{-1} E
     wE = np.zeros((5, n))
