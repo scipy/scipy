@@ -10,15 +10,6 @@
 #include "util.h"
 #include "dense.h"
 
-template <class I, class T>
-struct csr_array {
-    const I n_row;
-    const I n_col;
-    I *indptr;
-    I *indices;
-    T *data;
-};
-
 /*
  * Extract k-th diagonal of CSR matrix A
  *
@@ -276,19 +267,13 @@ void csr_tobsr(const I n_row,
  *
  */
 template <class I, class T>
-void csr_todense(const I n_row,
-                 const I n_col,
-                 const I Ap[],
-                 const I Aj[],
-                 const T Ax[],
-                       T Bx[])
-{
-    T * Bx_row = Bx;
-    for(I i = 0; i < n_row; i++){
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            Bx_row[Aj[jj]] += Ax[jj];
+void csr_todense(csr_array<const I, const T>* A, T B_dense[]) {
+    T* B_row = B_dense;
+    for(I i = 0; i < A->n_row; i++){
+        for(I jj = A->indptr[i]; jj < A->indptr[i+1]; jj++){
+            B_row[A->indices[jj]] += A->data[jj];
         }
-        Bx_row += (npy_intp)n_col;
+        B_row += (npy_intp)(A->n_col);
     }
 }
 
@@ -1715,7 +1700,7 @@ inline int test_throw_error() {
   extern template void csr_scale_rows(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
   extern template void csr_scale_columns(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
   extern template void csr_tobsr(const I n_row, const I n_col, const I R, const I C, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bj[], T Bx[]); \
-  extern template void csr_todense(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Bx[]); \
+  extern template void csr_todense(csr_array<const I,const T>* A, T B_dense[]); \
   extern template void csr_sort_indices(const I n_row, const I Ap[], I Aj[], T Ax[]); \
   extern template void csr_tocsc(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bi[], T Bx[]); \
   extern template void csr_toell(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I row_length, I Bj[], T Bx[]); \
