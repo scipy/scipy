@@ -276,7 +276,24 @@ PKG_CONFIG_PATH = "{project}"
 dependency-versions = "packages: pyodide-build==0.36.0"
 before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
-test-command = "python -m pytest -vra --pyargs scipy -m 'not slow'"
+test-requires = ["pytest", "pytest-xdist", "threadpoolctl", "pooch", "hypothesis", "pytest-reportlog"]
+# Run each subpackage tests in its own Pyodide interpreter to avoid the memory
+# corruption issues seen in a single long-lived instance (gh-25691/gh-25677).
+test-command = """
+logdir="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/scipy-reportlogs" && mkdir -p "$logdir" && ret=0
+echo "Writing per-subpackage report logs to $logdir"
+subs=$(python -c "import scipy, pkgutil; print(' '.join(n for _, n, ispkg in pkgutil.iter_modules(scipy.__path__) if ispkg))")
+echo "Discovered scipy subpackages: $subs"
+for sub in $subs; do
+  echo "::group::scipy.$sub"
+  python -m pytest -vra --pyargs "scipy.$sub" -m 'not slow' --report-log="$logdir/$sub.jsonl"
+  rc=$?
+  echo "::endgroup::"
+  if [ "$rc" -ne 0 ] && [ "$rc" -ne 5 ]; then ret=1; echo "!! scipy.$sub exited $rc"; fi
+done
+cat "$logdir"/*.jsonl > "$logdir/full.jsonl" 2>/dev/null || true
+exit $ret
+"""
 
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]

@@ -42,3 +42,10 @@ jobs:
           CIBW_PLATFORM: pyodide
           CIBW_BUILD: cp314-pyodide_wasm32
           CIBW_BUILD_VERBOSITY: 1
+      - name: Upload Pyodide test report log
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: pyodide-test-reportlog
+          path: ${{ runner.temp }}/scipy-reportlogs/full.jsonl
+          if-no-files-found: warn
