@@ -126,7 +126,6 @@ def spherical_jn(n, z, derivative=False):
         return _spherical_jn(n, z)
 
 
-@use_reflection(-1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_yn(n, z, derivative=False):
     r"""Spherical Bessel function of the second kind or its derivative.
 

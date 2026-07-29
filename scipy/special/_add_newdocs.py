@@ -6048,28 +6048,6 @@ add_newdoc(
     """)
 
 add_newdoc(
-    "_binom_ppf",
-    """
-    _binom_ppf(x, n, p)
-
-    Percent point function of binomial distribution.
-
-    Parameters
-    ----------
-    x : array_like
-        Real-valued
-    n : array_like
-        Positive, integer-valued parameter
-    p : array_like
-        Positive, real-valued parameter
-
-    Returns
-    -------
-    scalar or ndarray
-
-    """)
-
-add_newdoc(
     "_binom_sf",
     """
     _binom_sf(x, n, p)

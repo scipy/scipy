@@ -334,7 +334,7 @@ class LinearOperator:
             msg = (
                 f"Calling {func_name} on 'column vectors' of shape "
                 f"`({inner_dim}, 1)` was deprecated in SciPy 1.18.0 and will no "
-                f"longer be possible in SciPy 1.20.0. "
+                f"longer be possible in SciPy 2.1.0. "
                 f"Please call {matmat_func_name} instead for identical behaviour."
             )
             warnings.warn(

@@ -1743,7 +1743,7 @@ class TestInterp:
 
 
 def make_interp_full_matr(x, y, t, k):
-    """Assemble an spline order k with knots t to interpolate
+    """Assemble a spline order k with knots t to interpolate
     y(x) using full matrices.
     Not-a-knot BC only.
 

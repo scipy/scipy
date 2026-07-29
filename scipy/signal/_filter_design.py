@@ -5135,7 +5135,7 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
     )
 
 
-# TODO: Make this a real public function scipy.misc.ff
+# TODO: Make this a real public function?
 def _falling_factorial(x, n):
     r"""
     Return the factorial of `x` to the `n` falling.

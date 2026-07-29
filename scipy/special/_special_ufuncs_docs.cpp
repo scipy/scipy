@@ -1,3 +1,23 @@
+const char *_binom_ppf_doc = R"(
+    _binom_ppf(x, n, p)
+
+    Percent point function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+)";
+
 const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
@@ -8869,7 +8889,7 @@ const char *digammainv_doc = R"(
 
     Notes
     -----
-    .. versionadded:: 1.19.0
+    .. versionadded:: 2.0.0
 
     Examples
     --------

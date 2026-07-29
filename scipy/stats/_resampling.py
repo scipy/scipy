@@ -2232,9 +2232,9 @@ class MonteCarloMethod(ResamplingMethod):
 
 
 _rs_deprecation = ("Use of attribute `random_state` is deprecated and replaced by "
-                   "`rng`. Support for `random_state` will be removed in SciPy 1.19.0. "
+                   "`rng`. Support for `random_state` will be removed in SciPy 2.0.0. "
                    "To silence this warning and ensure consistent behavior in SciPy "
-                   "1.19.0, control the RNG using attribute `rng`. Values set using "
+                   "2.0.0, control the RNG using attribute `rng`. Values set using "
                    "attribute `rng` will be validated by `np.random.default_rng`, so "
                    "the behavior corresponding with a given value may change compared "
                    "to use of `random_state`. For example, 1) `None` will result in "

@@ -157,17 +157,11 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     rotvec = _deg2rad(rotvec) if degrees else rotvec
 
     angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
-    small_angle = angle <= 1e-3
-    angle2 = angle**2
-    small_scale = 0.5 - angle2 / 48 + angle2**2 / 3840
-    # We need to handle the case where angle is 0 to avoid division by zero. We use the
-    # value of the Taylor series approximation, but non-branching operations require
-    # that we still divide by the angle. Since we do not use the result where the angle
-    # is close to 0, this is safe.
     half_angle = angle / 2
-    div_angle = angle + xp.astype(small_angle, angle.dtype)
-    large_scale = xp.sin(half_angle) / div_angle
-    scale = xp.where(small_angle, small_scale, large_scale)
+    # Guard exact-zero angles to avoid 0/0. The rotvec is zero there, so the quaternion
+    # is the identity regardless.
+    div_angle = angle + xp.astype(angle == 0, angle.dtype)
+    scale = xp.sin(half_angle) / div_angle
     quat = xp.concat([rotvec * scale, xp.cos(half_angle)], axis=-1)
     return quat
 
@@ -514,10 +508,7 @@ def mean(
 
     lazy = is_lazy_array(quat)
     # Branching code is okay for checks that include meta info such as shapes and types
-    quat_expand = quat[..., None, :]
-    if weights is None:
-        K = quat_expand.mT @ quat_expand
-    else:
+    if weights is not None:
         weights = xp.asarray(weights, dtype=dtype, device=device)
         neg_weights = weights < 0
         if not lazy and xp.any(neg_weights):
@@ -532,18 +523,23 @@ def mean(
                 "Expected `weights` to be broadcastable to rotation shape, got shape "
                 f"{weights.shape} for {quat.shape[:-1]} rotations."
             )
+        weights = xp.broadcast_to(weights, quat.shape[:-1])
 
-        # Make sure we can transpose quat
-        weighted_quat = weights[..., None, None] * quat_expand
-        K = weighted_quat.mT @ quat_expand
-
-    # Move reduction axes to the end
+    # Move reduction axes to the end and flatten them. Reordering the quaternions
+    # instead of their (4, 4) outer products lets the sum over rotations be a single
+    # matmul, instead of materializing one 4x4 matrix per rotation.
     keep_axes = tuple(i for i in all_axes if i not in axis)
     axes_order = keep_axes + axis
-    K_reordered = xp.moveaxis(K, axes_order, all_axes)
-    # Reshape to flatten reduction axes
-    new_shape = K_reordered.shape[: len(keep_axes)] + (-1, 4, 4)
-    K = xp.mean(xp.reshape(K_reordered, new_shape), axis=-3)
+    q = xp.moveaxis(quat, axes_order, all_axes)
+    q = xp.reshape(q, q.shape[: len(keep_axes)] + (-1, 4))
+
+    if weights is None:
+        K = q.mT @ q
+    else:
+        w = xp.moveaxis(weights, axes_order, all_axes)
+        w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
+        K = (q * w).mT @ q
+
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
@@ -607,9 +603,7 @@ def reduce(
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
     # TODO: Can we somehow avoid this?
-    all_idx = xp.reshape(
-        xp.arange(left.shape[-1], device=xp_device(left)), (1, -1)
-    )
+    all_idx = xp.reshape(xp.arange(left.shape[-1], device=xp_device(left)), (1, -1))
     left_idx = xp.reshape(left_best, (-1, 1))
     left = left[left_idx, all_idx]
     right_idx = xp.reshape(right_best, (-1, 1))
@@ -934,7 +928,7 @@ def pow(quat: Array, n: float | Array) -> Array:
 
     # If n is a lazy array, we cannot take fast paths for special cases.
     if is_lazy_array(n):
-        result = from_rotvec(n * as_rotvec(quat))  # general scaling of rotation angle
+        result = _pow_scaled(quat, n)  # general scaling of rotation angle
         # Special cases 0 -> identity, -1 -> inv, 1 -> copy
         identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
         identity = xpx.at(identity)[..., 3].set(1)
@@ -949,7 +943,25 @@ def pow(quat: Array, n: float | Array) -> Array:
         return inv(quat)
     if n == 1:
         return quat
-    return from_rotvec(n * as_rotvec(quat))
+    return _pow_scaled(quat, n)
+
+
+def _pow_scaled(quat: Array, n: float | Array) -> Array:
+    """Scale the rotation angle by `n`, keeping the axis fixed.
+
+    Equivalent to ``from_rotvec(n * as_rotvec(quat))`` but without building the
+    intermediate rotation vector.
+    """
+    xp = array_namespace(quat)
+    quat = _quat_canonical(quat)
+    ax_norm = xp_vector_norm(quat[..., :3], axis=-1, keepdims=True, xp=xp)
+    # atan2 of a non-negative norm against a canonical (non-negative) scalar part puts
+    # the half angle in [0, pi/2], so scaling it by n matches the rotvec round trip.
+    half_angle = xp.atan2(ax_norm, quat[..., 3:4])
+    div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)  # avoid division by 0
+    axis = quat[..., :3] / div_norm
+    scaled = n * half_angle
+    return xp.concat([axis * xp.sin(scaled), xp.cos(scaled)], axis=-1)
 
 
 def _normalize_quaternion(quat: Array) -> Array:

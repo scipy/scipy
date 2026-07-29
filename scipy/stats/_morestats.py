@@ -2360,7 +2360,7 @@ _anderson_warning_message = (
 tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
 p-value via Monte Carlo simulation. When `method` is specified, the result object will
 include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
-or `fit_result`. Beginning in 1.19.0, these other attributes will no longer be
+or `fit_result`. Beginning in 2.0.0, these other attributes will no longer be
 available, and a p-value will always be computed according to one of the available
 `method` options.""".replace('\n', ' '))
 
@@ -2397,7 +2397,7 @@ def anderson(x, dist='norm', *, method=None):
             specifying that the user must opt into a p-value calculation method.
             When `method` is specified, the object returned will include a ``pvalue``
             attribute, but no ``critical_value``, ``significance_level``, or
-            ``fit_result`` attributes. Beginning in 1.19.0, these other attributes will
+            ``fit_result`` attributes. Beginning in 2.0.0, these other attributes will
             no longer be available, and a p-value will always be computed according to
             one of the available `method` options.
 
@@ -2430,7 +2430,7 @@ def anderson(x, dist='norm', *, method=None):
         .. deprecated:: 1.17.0
             The tuple-unpacking behavior of the return object and attributes
             ``critical_values``, ``significance_level``, and ``fit_result`` are
-            deprecated. Beginning in SciPy 1.19.0, these features will no longer be
+            deprecated. Beginning in SciPy 2.0.0, these features will no longer be
             available, and the object returned will have attributes ``statistic`` and
             ``pvalue``.
 
@@ -2899,7 +2899,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
 
     if variant == _NoValue or midrank != _NoValue:
         message = ("Parameter `variant` has been introduced to replace `midrank`; "
-                   "`midrank` will be removed in SciPy 1.19.0. Specify `variant` to "
+                   "`midrank` will be removed in SciPy 2.0.0. Specify `variant` to "
                    "silence this warning. Note that the returned object will no longer "
                    "be unpackable as a tuple, and `critical_values` will be omitted.")
         warnings.warn(message, category=UserWarning, stacklevel=2)
