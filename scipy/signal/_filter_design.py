@@ -19,9 +19,8 @@ from scipy.signal import _polyutils as _pu
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    _xp_result_devices, xp_result_device, array_namespace, xp_promote,
-    xp_size, is_jax,
-    xp_float_to_complex, xp_result_type, xp_device,
+    array_namespace, xp_promote, xp_size, is_jax, xp_float_to_complex,
+    xp_result_type, xp_device, xp_result_device, _xp_result_devices,
 )
 from scipy._external.array_api_compat import numpy as np_compat
 
@@ -548,9 +547,6 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
 
             h = fft_func(b, n=n_fft, axis=0)
             h = h[:min(N, h.shape[0]), ...]
-            # cast the size-1 divisor: NumPy's in-place divide keeps `h`'s
-            # dtype (e.g. complex64 for float32 `b` with the default a=1,
-            # which converts to float64); strict backends refuse the mix
             h /= xp.astype(a, h.dtype)
 
             if fft_func is sp_fft.rfft and whole:
@@ -790,7 +786,6 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     """
     xp = array_namespace(*system, w)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(*system, w)
     b, a = map(np.atleast_1d, system)
 
@@ -1686,7 +1681,6 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     # See the wiki for other potential issues.
 
     xp = array_namespace(z, p)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(z, p, k)
 
     # convert to numpy, convert back on exit   XXX
@@ -2469,7 +2463,6 @@ def bilinear(b, a, fs=1.0):
     reduce those deviations.
     """
     xp = array_namespace(b, a)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(b, a)
 
     b, a = map(np.asarray, (b, a))
@@ -4236,7 +4229,6 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind, *, xp):
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:          # stop
-        # the NumPy round-trip must return the result on the inputs' device
         device = xp_result_device(passb, stopb)
         passb, stopb = np.asarray(passb), np.asarray(stopb)    # XXX fminbound array API
         wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
