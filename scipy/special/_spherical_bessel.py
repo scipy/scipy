@@ -216,7 +216,6 @@ def spherical_yn(n, z, derivative=False):
         return _spherical_yn(n, z)
 
 
-@use_reflection(+1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_in(n, z, derivative=False):
     r"""Modified spherical Bessel function of the first kind or its derivative.
 
