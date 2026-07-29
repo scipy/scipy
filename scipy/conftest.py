@@ -116,6 +116,17 @@ def pytest_configure(config):
         if not hasattr(threading, "get_native_id"):
             threading.get_native_id = lambda: random.randint(0, 10000)
 
+        # pytest's gc_collect_harder forces a GC pass during cleanup, which can
+        # cause a fatal error from C-extension destructors under WASM. We have it
+        # as a no-op so that pytest can finish and print its summary. Refer to
+        # pytest_unconfigure below for how we then hand the real exit status back
+        # to Node.js.
+        try:
+            import _pytest.unraisableexception
+            _pytest.unraisableexception.gc_collect_harder = lambda *args, **kwargs: None
+        except (ImportError, AttributeError):
+            pass
+
         # Drop when https://github.com/joblib/threadpoolctl/pull/201 makes it to
         # a threadpoolctl release
         config.addinivalue_line(
@@ -171,6 +182,28 @@ def pytest_runtest_setup(item):
                     # May raise AttributeError for older versions of OpenBLAS.
                     # Catch any error for robustness.
                     return
+
+
+# Node.js reports a non-zero exit code if the interpreter hits a fatal error
+# while finalizing (some SciPy C-extension destructors do, under WASM), even
+# when every test passes. To hand Node.js the real pytest status, we stash it
+# in pytest_sessionfinish (which runs after the summary is printed) and then,
+# in pytest_unconfigure, exit via os._exit before interpreter finalization runs.
+# This logic is brought from SciPy's Pyodide recipe via
+# https://github.com/pyodide/pyodide-recipes/pull/619/
+if IS_WASM:
+    _EMSCRIPTEN_EXIT_STATUS = 0
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_sessionfinish(session, exitstatus):
+        global _EMSCRIPTEN_EXIT_STATUS
+        _EMSCRIPTEN_EXIT_STATUS = int(exitstatus)
+
+    def pytest_unconfigure(config):
+        import os
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(_EMSCRIPTEN_EXIT_STATUS)
 
 
 @pytest.fixture(scope="function", autouse=True)
