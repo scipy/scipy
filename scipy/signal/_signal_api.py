@@ -11,9 +11,9 @@ from . import _waveforms
 from ._waveforms import *        # noqa: F403
 from . import _max_len_seq
 from ._max_len_seq import max_len_seq       # noqa: F401
-from ._upfirdn import upfirdn         # noqa: F401
+from ._upfirdn import upfirdn
 
-from ._spline import sepfir2d          # noqa: F401
+from ._spline import sepfir2d
 
 from . import _spline_filters
 from ._spline_filters import *         # noqa: F403
@@ -27,7 +27,7 @@ from . import _lti_conversion
 from ._lti_conversion import *         # noqa: F403
 from . import _signaltools
 from ._signaltools import *         # noqa: F403
-from ._savitzky_golay import savgol_coeffs, savgol_filter  # noqa: F401
+from ._savitzky_golay import savgol_coeffs, savgol_filter
 from . import _spectral_py
 from ._spectral_py import *         # noqa: F403
 from . import _short_time_fft
@@ -36,8 +36,8 @@ from . import _peak_finding
 from ._peak_finding import *         # noqa: F403
 from . import _czt
 from ._czt import *         # noqa: F403
-from ._whittaker import whittaker_henderson  # noqa: F401
-from .windows import get_window  # keep this one in signal namespace  # noqa: F401
+from ._whittaker import whittaker_henderson
+from .windows import get_window  # keep this one in signal namespace
 
 
 __all__ = []
