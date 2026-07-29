@@ -106,7 +106,8 @@ def _qsimvtv(m, nu, sigma, a, b, rng):
         vp = on.copy()
         s = np.zeros((n, P))
         for i in range(n):
-            x = np.abs(2*np.mod(q[i]*np.arange(1, P+1) + rng.random(), 1)-1)  # periodizing transform
+            # periodizing transform
+            x = np.abs(2*np.mod(q[i]*np.arange(1, P+1) + rng.random(), 1)-1)
             if i == 0:
                 r = on
                 if nu > 0:
