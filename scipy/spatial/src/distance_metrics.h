@@ -362,7 +362,7 @@ struct HammingDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.nonmatches / acc.total;
+            return acc.nonmatches / (acc.total + (acc.total == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -381,7 +381,7 @@ struct HammingDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.nonmatches / acc.total;
+            return acc.nonmatches / (acc.total + (acc.total == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -408,7 +408,8 @@ struct DiceDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.nonmatches / (2*acc.tt_matches + acc.nonmatches);
+            T denom = 2*acc.tt_matches + acc.nonmatches;
+            return acc.nonmatches / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -427,7 +428,8 @@ struct DiceDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.nonmatches / (2*acc.tt_matches + acc.nonmatches);
+            T denom = 2*acc.tt_matches + acc.nonmatches;
+            return acc.nonmatches / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -500,7 +502,8 @@ struct RogerstanimotoDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (acc.n + acc.ndiff);
+            T denom = acc.n + acc.ndiff;
+            return (2 * acc.ndiff) / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -519,7 +522,8 @@ struct RogerstanimotoDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (acc.n + acc.ndiff);
+            T denom = acc.n + acc.ndiff;
+            return (2 * acc.ndiff) / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -547,7 +551,7 @@ struct RussellRaoDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (acc.n - acc.ntt) / acc.n;
+            return (acc.n - acc.ntt) / (acc.n + (acc.n == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -566,7 +570,7 @@ struct RussellRaoDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (acc.n - acc.ntt) / acc.n;
+            return (acc.n - acc.ntt) / (acc.n + (acc.n == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -593,7 +597,8 @@ struct SokalsneathDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (2 * acc.ndiff + acc.ntt);
+            T denom = 2 * acc.ndiff + acc.ntt;
+            return (2 * acc.ndiff) / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -612,7 +617,8 @@ struct SokalsneathDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (2 * acc.ndiff + acc.ntt);
+            T denom = 2 * acc.ndiff + acc.ntt;
+            return (2 * acc.ndiff) / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
