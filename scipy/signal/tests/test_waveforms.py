@@ -102,9 +102,9 @@ class TestChirp:
 
         # Making sure that power of the real part is not affected with
         # complex conversion operation
-        err = w_pwr_r - w_pwr_c
+        err = xp.asarray(w_pwr_r - w_pwr_c)
 
-        xp_assert_less(xp.asarray(err), xp.asarray(1e-6, dtype=err.dtype))
+        xp_assert_less(err, xp.asarray(1e-6, dtype=err.dtype))
 
     @pytest.mark.skip_xp_backends(
         "cupy", reason="cupyx.scipy.signal.chirp does not have `complex` argument"
