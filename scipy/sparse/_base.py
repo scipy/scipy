@@ -623,6 +623,10 @@ class _spbase(SparseABC):
 
             - If `other` is a scalar, the result is a sparse array/matrix.
             - If `other` is an ndarray, the result is an ndarray.
+
+            When the result is sparse, its indices are not necessarily sorted.
+            Check :attr:`has_sorted_indices` before relying on index order, or
+            call :meth:`sort_indices` when sorted indices are required.
         """
         return self._maximum_minimum(other, np.maximum)
 
@@ -641,6 +645,10 @@ class _spbase(SparseABC):
 
             - If `other` is a scalar, the result is a sparse array/matrix.
             - If `other` is an ndarray, the result is an ndarray.
+
+            When the result is sparse, its indices are not necessarily sorted.
+            Check :attr:`has_sorted_indices` before relying on index order, or
+            call :meth:`sort_indices` when sorted indices are required.
         """
         return self._maximum_minimum(other, np.minimum)
 
@@ -659,6 +667,10 @@ class _spbase(SparseABC):
 
             - If `other` is a scalar, the result is a sparse array/matrix.
             - If `other` is an ndarray, the result is an ndarray.
+
+            When the result is sparse, its indices are not necessarily sorted.
+            Check :attr:`has_sorted_indices` before relying on index order, or
+            call :meth:`sort_indices` when sorted indices are required.
 
         Examples
         --------
