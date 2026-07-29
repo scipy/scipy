@@ -1000,9 +1000,6 @@ class TestGetWindow:
         xp_assert_close(get_window('lanczos', 6, xp=xp),
                         get_window('sinc', 6, xp=xp))
 
-    # `kaiser` relies on `special.i0`, which array-api-strict computes via a
-    # round-trip through NumPy; that fails on non-default devices.
-
     def test_xp_default(self, xp):
         # no explicit xp= argument, default to numpy
         win = get_window('lanczos', 6)
@@ -1247,10 +1244,3 @@ def test_symmetric(xp):
         w = win(4097, xp=xp)
         error = xp.max(xp.abs(w - flip(w)))
         xp_assert_equal(error, xp.asarray(0.0), check_dtype=False, check_0d=False)
-
-
-# `dpss` is excluded below: it is np_only ("banded linear algebra is
-# numpy-only"), and NumPy only has a single (CPU) device, so there is no
-# device propagation to test. `general_cosine` derives the device from its
-# array argument `a` instead of a `device` keyword and is tested in
-# `TestGeneralCosine.test_device`; `get_window` in `TestGetWindow.test_device`.
