@@ -39,12 +39,34 @@ from functools import partial
 
 import numpy as np
 
-from scipy._lib._array_api import _asarray
+from scipy._lib._array_api import _asarray, array_namespace, xp_capabilities
 from scipy._lib._util import _asarray_validated, _transition_to_rng
 from scipy._external import array_api_extra as xpx
-from scipy.linalg import norm
 from scipy.special import rel_entr
+from . import _distance_xp
+from ._distance_xp import _validate_weights, _validate_vector
 from . import _hausdorff, _distance_pybind, _distance_wrap
+
+# Backends that take priority over the array API one, keyed by function name and array
+# namespace. Registering per function lets a namespace keep a specialized kernel for
+# some distances and the generic implementation for the rest.
+backend_registry = {}
+
+
+def select_backend(name, xp, generic=False):
+    """Select the backend implementing the distance function.
+
+    Args:
+        name: Public function name, such as "euclidean".
+        xp: Array namespace of the inputs.
+        generic: Skip the registry and take the array API backend.
+
+    Returns:
+        The module implementing `name`.
+    """
+    if generic:
+        return _distance_xp
+    return backend_registry.get((name, xp), _distance_xp)
 
 
 def _copy_array_if_base_present(a):
@@ -216,19 +238,6 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
     return kwargs
 
 
-def _validate_vector(u, dtype=None):
-    # XXX Is order='c' really necessary?
-    u = np.asarray(u, dtype=dtype, order='c')
-    if u.ndim == 1:
-        return u
-    raise ValueError("Input vector should be 1-D.")
-
-
-def _validate_weights(w, dtype=np.float64):
-    w = _validate_vector(w, dtype=dtype)
-    if np.any(w < 0):
-        raise ValueError("Input weights should be all non-negative")
-    return w
 
 
 @_transition_to_rng('seed', position_num=2, replace_doc=False)
@@ -360,6 +369,7 @@ def directed_hausdorff(u, v, rng=0):
     return result
 
 
+@xp_capabilities()
 def minkowski(u, v, p=2, w=None):
     """
     Compute the Minkowski distance between two arrays.
@@ -410,25 +420,8 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    u = _asarray(u, order='C')
-    v = _asarray(v, order='C')
-    if p <= 0:
-        raise ValueError("p must be greater than 0")
-    u_v = u - v
-    if w is not None:
-        w = _validate_weights(w)
-        if p == 1:
-            root_w = w
-        elif p == 2:
-            # better precision and speed
-            root_w = np.sqrt(w)
-        elif p == np.inf:
-            root_w = (w != 0)
-        else:
-            root_w = np.power(w, 1/p)
-        u_v = root_w * u_v
-    dist = norm(u_v, ord=p, axis=-1)
-    return dist
+    backend = select_backend('minkowski', array_namespace(u, v))
+    return backend.minkowski(u, v, p, w)
 
 
 def euclidean(u, v, w=None):
