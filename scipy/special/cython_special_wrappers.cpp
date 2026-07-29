@@ -717,7 +717,21 @@ double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
 
 double boost_bdtrin(double k, double y, double p) { return bdtrin_double(k, y, p); }
 
+double boost_nbdtrik(double y, double n, double p) { return nbdtrik_double(y, n, p); }
+
+double boost_nbdtrin(double k, double y, double p) { return nbinom_invn_double(k, y, p); }
+
+double boost_ncfdtrinc(double dfn, double dfd, double p, double f)
+{
+    return ncf_find_non_centrality_double(dfn, dfd, p, f);
+}
+
 double boost_nctdtridf(double p, double nc, double t)
 {
     return nct_find_degrees_of_freedom_double(p, nc, t);
+}
+
+double boost_nctdtrinc(double df, double p, double t)
+{
+    return nct_find_non_centrality_double(df, p, t);
 }
