@@ -143,7 +143,8 @@ def _chlrps(R, a, b):
         for i in range(k, n):
             if c[i, i] > eps:
                 cii = math.sqrt(max(c[i, i], 0))
-                if i > 0: s = c[i, :k] @ y[:k]
+                if i > 0:
+                    s = c[i, :k] @ y[:k]
                 ai = (ap[i]-s)/cii; bi = (bp[i]-s)/cii; de = _Phi(bi)-_Phi(ai)
                 if de <= dem:
                     ckk = cii; dem = de; am = ai; bm = bi; im = i
