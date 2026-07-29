@@ -391,12 +391,6 @@
             "nct_cdf_float": "fff->f",
             "nct_cdf_double": "ddd->d"    }
     },
-    "nctdtridf": {
-        "boost_special_functions.h++": {
-            "nct_find_degrees_of_freedom_float": "fff->f",
-            "nct_find_degrees_of_freedom_double": "ddd->d"
-        }
-    },
     "nctdtrinc": {
         "boost_special_functions.h++": {
             "nct_find_non_centrality_float": "fff->f",

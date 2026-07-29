@@ -4216,65 +4216,6 @@ add_newdoc("nctdtr",
 
     """)
 
-add_newdoc("nctdtridf",
-    """
-    nctdtridf(p, nc, t, out=None)
-
-    Calculate degrees of freedom for non-central t distribution.
-
-    See `nctdtr` for more details.
-
-    Parameters
-    ----------
-    p : array_like
-        CDF values, in range (0, 1].
-    nc : array_like
-        Noncentrality parameter. Should be in range (-1e6, 1e6).
-    t : array_like
-        Quantiles, i.e., the upper limit of integration.
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    df : scalar or ndarray
-        The degrees of freedom. If all inputs are scalar, the return will be a
-        float. Otherwise, it will be an array.
-
-    See Also
-    --------
-    nctdtr :  CDF of the non-central `t` distribution.
-    nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
-    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
-
-    Notes
-    -----
-    This function calculates the degrees of freedom of the non-central t
-    distribution given a probability, quantile and non-centrality parameter
-    using the Boost Math C++ library [1]_.
-
-    References
-    ----------
-    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    Examples
-    --------
-    >>> from scipy.special import nctdtr, nctdtridf
-
-    Compute the CDF for several values of `df`:
-
-    >>> df = [1, 2, 3]
-    >>> p = nctdtr(df, 0.25, 1)
-    >>> p
-    array([0.67491974, 0.716464  , 0.73349456])
-
-    Compute the inverse. We recover the values of `df`, as expected:
-
-    >>> nctdtridf(p, 0.25, 1)
-    array([1., 2., 3.])
-
-    """)
-
 add_newdoc("nctdtrinc",
     """
     nctdtrinc(df, p, t, out=None)
