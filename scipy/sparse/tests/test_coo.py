@@ -477,7 +477,7 @@ def test_nd_transpose(shape):
         trans_arr = arr.mT
         assert trans_arr.shape == exp_arr.shape
         assert_equal(trans_arr.toarray(), exp_arr)
-    
+
         trans_arr = matrix_transpose(arr)
         assert trans_arr.shape == exp_arr.shape
         assert_equal(trans_arr.toarray(), exp_arr)
