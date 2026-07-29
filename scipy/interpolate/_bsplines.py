@@ -2467,7 +2467,7 @@ def _coeff_of_divided_diff(x):
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
-def make_smoothing_spline(x, y, t=None, w=None, lam=None, *, axis=0):
+def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
 
@@ -2587,10 +2587,15 @@ def make_smoothing_spline(x, y, t=None, w=None, lam=None, *, axis=0):
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
 
-    if t is not None and lam is None:
-        raise NotImplementedError(
-            "``lam`` should be passed when ``t`` is not None."
-        )
+    user_knots = t is not None
+
+    if user_knots:
+        if lam is None:
+            raise NotImplementedError(
+                "automatic GCV selection of `lam` is not supported with user knots, "
+                "pass `lam` explicitly")
+        # TODO: Omega = C^T R C; solve (X^T W X + lam*Omega) c = X^T W y
+        raise NotImplementedError
 
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
@@ -2605,7 +2610,8 @@ def make_smoothing_spline(x, y, t=None, w=None, lam=None, *, axis=0):
         if any(w <= 0):
             raise ValueError('Invalid vector of weights')
 
-    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
+    if not user_knots:
+        t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
     n = x.shape[0]
 
     if n <= 4:
@@ -2630,21 +2636,26 @@ def make_smoothing_spline(x, y, t=None, w=None, lam=None, *, axis=0):
     # move from B-spline basis to the basis of natural splines using equations
     # (2.1.7) [4]
     # central elements
-    X = np.zeros((5, n))
-    for i in range(1, 4):
-        X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
+    if not user_knots:
+        # Only transform `X` to a different basis if
+        # `t` is None.
+        X = np.zeros((5, n))
+        for i in range(1, 4):
+            X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
 
-    # first elements
-    X[1, 1] = X_bspl[0, 0]
-    X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
-                X_bspl[1, 1] + X_bspl[1, 2])
-    X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
+        # first elements
+        X[1, 1] = X_bspl[0, 0]
+        X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
+                    X_bspl[1, 1] + X_bspl[1, 2])
+        X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
 
-    # last elements
-    X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
-    X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
-                 (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
-    X[3, -2] = X_bspl[-1, -1]
+        # last elements
+        X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
+        X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
+                    (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
+        X[3, -2] = X_bspl[-1, -1]
+    else:
+        X = X_bspl
 
     # create penalty matrix and divide it by vector of weights: W^{-1} E
     wE = np.zeros((5, n))
