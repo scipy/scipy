@@ -1086,7 +1086,7 @@ class _TestCommon:
             check(dtype)
 
     def test_sum_dtype_pair_of_dtypes(self):
-        # Test sum with dtype on data of various input dtypes 
+        # Test sum with dtype on data of various input dtypes
         # to ensure elements are cast before summing
         base_dat = array([[0.6, 0.7],
                           [0.8, 0.9]])
@@ -1109,7 +1109,7 @@ class _TestCommon:
                 except Exception:
                     # Skip this combination if NumPy can't handle it
                     continue
-                
+
                 # Check axis=None
                 with np.errstate(over='ignore'):
                     dat_sum = dat.sum(dtype=output_dtype)
@@ -1134,10 +1134,10 @@ class _TestCommon:
         # to ensure elements are cast before summing
         datsp = self.spcreator([[0.6, 0.7],
                           [0.8, 0.9]])
-        
+
         correct_res = array([0, 0] if self.is_array_test else [[0, 0]])
         t_correct_res = array([0, 0] if self.is_array_test else [[0], [0]])
-            
+
         assert_equal(datsp.sum(dtype=int), 0) # Check axis=None
         assert_equal(datsp.sum(axis=0, dtype=int), correct_res) # Check axis=0
         assert_equal(datsp.sum(axis=1, dtype=int), t_correct_res) # Check axis=1
@@ -5212,7 +5212,7 @@ class BaseTestCOO:
         # Using __ne__ and nnz instead
         assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
-    
+
 class TestCOO(BaseTestCOO,
               sparse_test_class(getset=True,
                                 slicing=True, slicing_assign=True,

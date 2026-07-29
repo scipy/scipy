@@ -245,14 +245,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               shape=permuted_shape, copy=copy)
 
     transpose.__doc__ = _spbase.transpose.__doc__
-    
+
     @property
     def mT(self):
         if (n := self.ndim) < 2:
             raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
         axes = None if n == 2 else tuple(range(n - 2)) + (-1, -2)
         return self.transpose(axes=axes)
-    
+
     mT.__doc__ = _spbase.mT.__doc__
 
     def resize(self, *shape) -> None:

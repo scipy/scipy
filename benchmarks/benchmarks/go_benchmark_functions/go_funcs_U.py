@@ -48,7 +48,7 @@ class Ursem03(Benchmark):
 
     .. math::
 
-        f_{\text{Ursem03}}(x) = - \sin(2.2 \pi x_1 + 0.5 \pi) 
+        f_{\text{Ursem03}}(x) = - \sin(2.2 \pi x_1 + 0.5 \pi)
                                 \frac{2 - \lvert x_1 \rvert}{2}
                                 \frac{3 - \lvert x_1 \rvert}{2}
                                 - \sin(2.2 \pi x_2 + 0.5 \pi)

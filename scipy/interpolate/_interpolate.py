@@ -2413,7 +2413,7 @@ class NdPPoly:
     unstable.
 
     """
-    
+
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
