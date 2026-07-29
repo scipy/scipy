@@ -65,7 +65,7 @@ benchmarks/asv.conf.json  @larsoner
 
 # Tools
 tools/  @rgommers
-tools/build/  @rgommers
+tools/building/  @rgommers
 tools/linting/  @lucascolley
 tools/refguide/  @ev-br
 tools/release/  @tylerjereddy
