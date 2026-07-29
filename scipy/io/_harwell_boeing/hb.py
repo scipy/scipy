@@ -197,7 +197,7 @@ class HBInfo:
             raise ValueError(
                 f"Unexpected value {nelementals} for nltvl (last entry of line 3)"
             )
-        
+
         # Fourth line
         line = fid.readline().strip("\n")
 

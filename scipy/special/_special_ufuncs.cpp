@@ -200,6 +200,7 @@ extern const char *mathieu_modsem2_doc;
 extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
+extern const char *nctdtridf_doc;
 extern const char *ndtr_doc;
 extern const char *ndtri_doc;
 extern const char *ndtri_exp_doc;
@@ -653,6 +654,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::F_F>(xsf::dawsn), static_cast<xsf::numpy::D_D>(xsf::dawsn)},
                           "dawsn", dawsn_doc);
     PyModule_AddObjectRef(module, "dawsn", dawsn);
+
+    PyObject *nctdtridf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nct_find_degrees_of_freedom_float),
+                           static_cast<xsf::numpy::ddd_d>(nct_find_degrees_of_freedom_double)},
+                          "nctdtridf", nctdtridf_doc);
+    PyModule_AddObjectRef(module, "nctdtridf", nctdtridf);
 
     PyObject *ndtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ndtr), static_cast<xsf::numpy::d_d>(xsf::ndtr),

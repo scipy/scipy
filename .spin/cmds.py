@@ -212,7 +212,7 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     `spin test -m full`
 
     For more, see `pytest --help`.
-    """  # noqa: E501
+    """
 
     build_dir = os.path.abspath(kwargs['build_dir'])
     site_package_dir = get_site_packages(build_dir)
@@ -399,7 +399,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
      - This command only doctests public objects: those which are accessible
        from the top-level `__init__.py` file.
 
-    """  # noqa: E501
+    """
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
     if (
         not importlib.util.find_spec("scipy_doctest")
@@ -498,7 +498,7 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
      - This command only doctests public objects: those which are accessible
        from the top-level `__init__.py` file.
 
-    """  # noqa: E501
+    """
 
     click.secho(
         "Invoking `build` prior to running tests for tutorials:",
