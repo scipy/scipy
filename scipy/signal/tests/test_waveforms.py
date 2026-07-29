@@ -73,7 +73,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         expected = chirp_linear(tf, f0, f1, t1)
-        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=0, atol=1e-6)
+        xp_assert_close(f, expected, rtol=0, atol=1e-6)
 
     def test_linear_freq_02(self, xp):
         method = 'linear'
@@ -84,7 +84,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         expected = chirp_linear(tf, f0, f1, t1)
-        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=0, atol=1e-6)
+        xp_assert_close(f, expected, rtol=0, atol=1e-6)
 
     @pytest.mark.skip_xp_backends(
         "cupy", reason="cupyx.scipy.signal.chirp does not have `complex` argument"
@@ -140,7 +140,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         expected = chirp_quadratic(tf, f0, f1, t1)
-        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=0, atol=1e-6)
+        xp_assert_close(f, expected, rtol=0, atol=1e-6)
 
     def test_quadratic_freq_02(self, xp):
         method = 'quadratic'
@@ -151,11 +151,11 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         expected = chirp_quadratic(tf, f0, f1, t1)
-        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=0, atol=1e-6)
+        xp_assert_close(f, expected, rtol=0, atol=1e-6)
 
     def test_logarithmic_at_zero(self, xp):
         w = chirp(t=xp.zeros(1), f0=1.0, f1=2.0, t1=1.0, method='logarithmic')
-        xp_assert_close(xp.asarray(w), xp.ones_like(w))
+        xp_assert_close(w, xp.ones_like(w))
 
     def test_logarithmic_freq_01(self, xp):
         method = 'logarithmic'
@@ -166,7 +166,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         expected = chirp_geometric(tf, f0, f1, t1)
-        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=0, atol=1e-6)
+        xp_assert_close(f, expected, rtol=0, atol=1e-6)
 
     def test_logarithmic_freq_02(self, xp):
         method = 'logarithmic'
@@ -177,7 +177,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         expected = chirp_geometric(tf, f0, f1, t1)
-        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=0, atol=1e-6)
+        xp_assert_close(f, expected, rtol=0, atol=1e-6)
 
     def test_logarithmic_freq_03(self, xp):
         method = 'logarithmic'
@@ -188,12 +188,12 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         expected = chirp_geometric(tf, f0, f1, t1)
-        xp_assert_close(xp.asarray(f), xp.asarray(expected), rtol=0, atol=1e-6)
+        xp_assert_close(f, expected, rtol=0, atol=1e-6)
 
     def test_hyperbolic_at_zero(self, xp):
         w = chirp(t=xp.zeros(1), f0=10.0, f1=1.0, t1=1.0,
                   method='hyperbolic')
-        xp_assert_close(xp.asarray(w), xp.ones_like(w))
+        xp_assert_close(w, xp.ones_like(w))
 
     def test_hyperbolic_freq_01(self, xp):
         method = 'hyperbolic'
@@ -208,7 +208,7 @@ class TestChirp:
             phase = waveforms._chirp_phase(t, f0, t1, f1, method)
             tf, f = compute_frequency(t, phase)
             expected = chirp_hyperbolic(tf, f0, f1, t1)
-            xp_assert_close(xp.asarray(f), xp.asarray(expected), atol=1e-7)
+            xp_assert_close(f, expected, atol=1e-7)
 
     def test_hyperbolic_zero_freq(self, xp):
         # f0=0 or f1=0 must raise a ValueError.
