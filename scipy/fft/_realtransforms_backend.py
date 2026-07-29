@@ -1,4 +1,4 @@
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import xp_result_device, array_namespace
 import numpy as np
 from . import _duccfft
 
@@ -8,11 +8,12 @@ __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 def _execute(duccfft_func, x, type, s, axes, norm,
              overwrite_x, workers, orthogonalize):
     xp = array_namespace(x)
+    device = xp_result_device(x)
     x = np.asarray(x)
     y = duccfft_func(x, type, s, axes, norm,
                        overwrite_x=overwrite_x, workers=workers,
                        orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return xp.asarray(y, device=device)
 
 
 def dctn(x, type=2, s=None, axes=None, norm=None,
