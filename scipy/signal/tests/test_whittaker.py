@@ -143,8 +143,6 @@ def test_polynomial_fit(calc_logdet, lamb):
 @pytest.mark.parametrize(
         ["signal", "lamb", "order", "weights", "err", "msg"],
         [
-            ([[1, 2, 3] * 3], 1, 2, None, ValueError,
-             "Input array signal must be of shape \\(n,\\)"),
             (np.zeros(2), 1, 2, None, ValueError,
              "Input array signal must be at least of shape"),
             (np.arange(10), -0.9, 2, None, ValueError,
@@ -423,3 +421,125 @@ def test_whittaker_reml(weights):
     # Double weights should result in double lamb.
     wh2 = whittaker_henderson(y, lamb="reml", order=order, weights=2 * np.ones_like(y))
     assert wh2.lamb == pytest.approx(2 * wh.lamb, rel=1e-7)
+
+# Tests for 2D signal support in whittaker_henderson
+@pytest.mark.parametrize(
+    ["signal", "lamb", "order", "weights", "err", "msg"],
+    [
+        # reject any higher dimensional input signals (dim > 2)
+        (np.ones((5, 5, 5)), 100, 2, None, ValueError, "1D or 2D"),
+        # reject negative lamb for 2D WH
+        (np.ones((10, 10)), -1, 2, None, ValueError, "non-negative lamb"),
+        # reject any weight-signal shape mismatch
+        (np.ones((10, 10)), 100, 2, np.ones((5, 5)), ValueError, " same shape"),
+        # axis too short for a given order
+        (np.ones((2, 10)), 100, 2, None, ValueError, "greater than order"),
+        #no support for lamb="reml" yet for 2D WH signals
+        (np.ones((10, 10)), "reml", 2, None, NotImplementedError, "reml"),
+    ]
+)
+def test_wh_2d_raises(signal, lamb, order, weights, err, msg):
+
+    with pytest.raises(err, match=msg):
+        whittaker_henderson(signal, lamb=lamb, order=order, weights=weights)
+
+@pytest.mark.parametrize(
+        ["signal", "lamb", "order"],
+        [
+            (np.random.default_rng(42).standard_normal((20, 15)), 100, 2),
+            (np.random.default_rng(42).standard_normal((20, 20)), (100, 50), 2),
+            (np.random.default_rng(42).standard_normal((20, 20)), 100, (2, 3)),
+        ],
+)
+def test_wh_2d_output_prop(signal, lamb, order):
+    res = whittaker_henderson(signal, lamb=lamb, order=order)
+    assert res.x.shape == signal.shape
+    assert np.isfinite(res.x).all()
+
+def test_wh_2d_1d_consistency():
+    # (n, 1) 2D signal must pass 1D smoother
+    rng = np.random.default_rng(42)
+    sig_1d = rng.standard_normal(30)
+    res_1d = whittaker_henderson(sig_1d, lamb=100, order=2)
+    res_2d = whittaker_henderson(sig_1d.reshape(30, 1), lamb=100, order=2)
+    assert_allclose(res_1d.x, res_2d.x.ravel(), atol=1e-6)
+
+def test_wh_2d_flat_signal():
+    # return unchanged if signal is constant
+    signal = np.ones((10, 10))
+    res = whittaker_henderson(signal, lamb=100, order=2)
+    assert_allclose(res.x, signal)
+
+@pytest.mark.parametrize(
+        ["lamb", "rtol", "atol"],
+        [
+            (0, 0, 0),
+            (1e-7, 1e-3, 1e-3),
+        ],
+)
+def test_wh_2d_small_lamb(lamb, rtol, atol):
+    rng = np.random.default_rng(42)
+    signal = rng.standard_normal((20, 20))
+    res = whittaker_henderson(signal, lamb=lamb, order=2)
+    assert_allclose(res.x, signal, rtol=rtol, atol=atol)
+    if lamb == 0:
+        assert not np.may_share_memory(res.x, signal)
+
+def test_wh_2d_lamb_inf():
+    # for a very large lamb, op must approach a flat surface
+    rng = np.random.default_rng(42)
+    signal = rng.standard_normal((20, 20))
+    res = whittaker_henderson(signal, lamb=1e10, order=2)
+    signal_rough = np.sum(np.diff(signal, axis=0) ** 2) + \
+        np.sum(np.diff(signal, axis=1) ** 2)
+    res_rough = np.sum(np.diff(res.x, axis=0) ** 2) + \
+        np.sum(np.diff(res.x, axis=1) ** 2)
+    assert res_rough < signal_rough * 1e-3
+
+def test_wh_2d_lamb_return():
+    # check if function returns correct value of lamb
+    res = whittaker_henderson(np.ones((10, 10)), lamb=50, order=2)
+    assert res.lamb == 50
+
+def test_wh_2d_uniform_weights():
+    # uniform weight and no weights should return same result
+    rng = np.random.default_rng(42)
+    signal = rng.standard_normal((20, 20))
+    res_no_weights = whittaker_henderson(signal, lamb=100, order=2)
+    res_weights = whittaker_henderson(
+        signal, lamb=100, order=2, weights=np.ones_like(signal))
+    assert_allclose(res_no_weights.x, res_weights.x, atol=1e-6)
+
+def test_wh_2d_weight_interpolation():
+    # zero-weight region must smoothly interpolate, not get zeroed
+    rng = np.random.default_rng(42)
+    signal = rng.standard_normal((20, 20))
+    weights = np.ones((20, 20))
+    weights[8:12, 8:12] = 0
+    res = whittaker_henderson(signal, lamb=100, order=2, weights=weights)
+    assert np.isfinite(res.x[8:12, 8:12]).all()
+    assert not np.allclose(res.x[8:12, 8:12], 0)
+
+@pytest.mark.parametrize(
+    "shape",
+    [(10, 10), (5, 20), (20, 5), (30, 30)]
+)
+def test_wh_2d_shapes(shape):
+    # check ability of smoother to handle different non-square shapes
+    rng = np.random.default_rng(42)
+    signal = rng.standard_normal(shape)
+    res = whittaker_henderson(signal, lamb=100, order=2)
+    assert res.x.shape == shape
+    assert np.isfinite(res.x).all()
+
+def test_wh_2d_linearity():
+    # wh smoother is a linear operator
+    # wh(a * x1 + b * x2) == a * wh(x1) + b * wh(x2)
+    rng = np.random.default_rng(42)
+    x1 = rng.standard_normal((20, 20))
+    x2 = rng.standard_normal((20, 20))
+    a, b = 1.5, 2.5
+    res_total = whittaker_henderson((a*x1 + b*x2), lamb=100, order=2)
+    res_x1 = whittaker_henderson(x1, lamb=100, order=2)
+    res_x2 = whittaker_henderson(x2, lamb=100, order=2)
+    assert_allclose(res_total.x, a * res_x1.x + b * res_x2.x, atol=1e-5)
