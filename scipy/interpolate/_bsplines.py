@@ -2466,6 +2466,14 @@ def _coeff_of_divided_diff(x):
     return res
 
 
+def _penalty_matrix_banded(t):
+    """
+    Omega is ``C.T @ R @ C`` in (4, m), symmetric lower banded storage,
+    ``C = D1 @ D2`` where `Di` is de-boor derivative reduction. ``R``
+    is the mass matrix of linear B-Splines on ``t``.
+    """
+    pass
+
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     r"""
