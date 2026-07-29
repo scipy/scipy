@@ -895,13 +895,15 @@ HAS_LP64 = not bool(CONFIG['Build Dependencies']['blas']['cython blas ilp64'])
 HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
 del CONFIG
 
-_flapack = None
 if HAS_LP64:
     from scipy.linalg import _flapack
+else:
+    _flapack = None
 
-_flapack_64 = None
 if HAS_ILP64:
     from scipy.linalg import _flapack_64
+else:
+    _flapack_64 = None
 
 if not (HAS_LP64 or HAS_ILP64):
     raise RuntimeError("SciPy needs either LP64 or ILP64 LAPACK.")

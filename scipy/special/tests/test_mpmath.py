@@ -19,7 +19,7 @@ from scipy.special._mptestutils import (
     nonfunctional_tooslow, trace_args, time_limited, exception_to_nan,
     inf_to_nan)
 from scipy.special._ufuncs import (
-    _sinpi, _cospi, _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
+    _sinpi, _cospi, _lgam1p, _log1pmx,
     _igam_fac)
 
 try:
@@ -1621,29 +1621,6 @@ class TestSystematic:
             lambda x, k: mpmath.lambertw(x, int(k.real)),
             [ComplexArg(-np.inf, np.inf), IntArg(0, 10)],
             rtol=1e-13, nan_ok=False,
-        )
-
-    def test_lanczos_sum_expg_scaled(self):
-        maxgamma = 171.624376956302725
-        e = np.exp(1)
-        g = 6.024680040776729583740234375
-
-        def gamma(x):
-            with np.errstate(over='ignore'):
-                fac = ((x + g - 0.5)/e)**(x - 0.5)
-                if fac != np.inf:
-                    res = fac*_lanczos_sum_expg_scaled(x)
-                else:
-                    fac = ((x + g - 0.5)/e)**(0.5*(x - 0.5))
-                    res = fac*_lanczos_sum_expg_scaled(x)
-                    res *= fac
-            return res
-
-        assert_mpmath_equal(
-            gamma,
-            mpmath.gamma,
-            [Arg(0, maxgamma, inclusive_a=False)],
-            rtol=1e-13,
         )
 
     @nonfunctional_tooslow

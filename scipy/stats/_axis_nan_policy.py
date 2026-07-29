@@ -281,7 +281,7 @@ def _add_reduced_axes(res, reduced_axes, keepdims, xp=np):
     Add reduced axes back to all the arrays in the result object
     if keepdims = True.
     """
-    return ([xpx.expand_dims(output, axis=reduced_axes)
+    return ([xp.expand_dims(output, axis=reduced_axes)
              if not isinstance(output, int) else output for output in res]
             if keepdims else res)
 
@@ -579,7 +579,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 if any_contains_nan and (nan_policy == 'propagate'
                                          and override['nan_propagation']):
                     res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
-                    res = _add_reduced_axes(res, reduced_axes, keepdims)
+                    res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                     return tuple_to_result(*res)
 
                 # Addresses nan_policy == "omit"
@@ -595,12 +595,12 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_msg, SmallSampleWarning, stacklevel=2)
                     res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
-                    res = _add_reduced_axes(res, reduced_axes, keepdims)
+                    res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                     return tuple_to_result(*res)
 
                 res = hypotest_fun_out(*samples, **kwds)
                 res = result_to_tuple(res, n_out)
-                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
 
             # check for empty input
@@ -614,7 +614,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     warnings.warn(too_small_nd_not_omit, SmallSampleWarning,
                                   stacklevel=2)
                 res = [xp_copy(empty_output) for i in range(n_out)]
-                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
 
             if not is_numpy(xp) and 'nan_policy' in kwds:
@@ -643,7 +643,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)
                 res = result_to_tuple(res, n_out)
-                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
 
             # Addresses nan_policy == "omit"

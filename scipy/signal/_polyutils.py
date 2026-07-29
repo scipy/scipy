@@ -8,7 +8,7 @@ To distinguish the two sets, the "new-style" routine names start with `npp_`
 import warnings
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    xp_promote, xp_default_dtype, xp_size, xp_device, is_numpy
+    xp_promote, xp_size, xp_device, is_numpy
 )
 
 from numpy.exceptions import RankWarning
@@ -227,7 +227,7 @@ def polyfit(x, y, deg, *, xp, rcond=None):
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/polynomial/polynomial.py#L663
 def npp_polyval(x, c, *, xp, tensor=True):
     if xp.isdtype(c.dtype, 'integral'):
-        c = xp.astype(c, xp_default_dtype(xp))
+        c = xp.astype(c, xpx.default_dtype(xp))
 
     c = xpx.atleast_nd(c, ndim=1, xp=xp)
     if isinstance(x, tuple | list):

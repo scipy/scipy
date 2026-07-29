@@ -73,9 +73,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.linalg.matfuncs',
     'scipy.linalg.misc',
     'scipy.linalg.special_matrices',
-    'scipy.misc',
-    'scipy.misc.common',
-    'scipy.misc.doccer',
     'scipy.ndimage.filters',
     'scipy.ndimage.fourier',
     'scipy.ndimage.interpolation',
@@ -196,7 +193,6 @@ def test_all_modules_are_expected():
     modnames = []
 
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "scipy.misc", DeprecationWarning)
         for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
                                                    prefix=scipy.__name__ + '.',
                                                    onerror=ignore_errors):
@@ -248,7 +244,6 @@ def test_all_modules_are_expected_2():
 
         return members
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore",  "scipy.misc", DeprecationWarning)
         unexpected_members = find_unexpected_members("scipy")
 
     for modname in PUBLIC_MODULES:

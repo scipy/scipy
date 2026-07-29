@@ -19,7 +19,7 @@ from scipy.signal import _polyutils as _pu
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
+    array_namespace, xp_promote, xp_size, is_jax, xp_float_to_complex,
     xp_result_type,
 )
 from scipy._external.array_api_compat import numpy as np_compat
@@ -89,7 +89,7 @@ def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
         result_dt = xp.result_type(start, stop, base)
     except ValueError:
         # all of start, stop and base are python scalars
-        result_dt = xp_default_dtype(xp)
+        result_dt = xpx.default_dtype(xp)
     y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt)
 
     yp = xp.pow(base, y)
@@ -316,7 +316,7 @@ def freqs_zpk(z, p, k, worN=200):
 
     # NB: k is documented to be a scalar; for backwards compat we keep allowing it
     # to be a size-1 array, but it does not influence the namespace calculation.
-    k = xp.asarray(k, dtype=xp_default_dtype(xp))
+    k = xp.asarray(k, dtype=xpx.default_dtype(xp))
     if xp_size(k) > 1:
         raise ValueError('k must be a single scalar gain')
 
@@ -499,7 +499,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
 
     b, a = map(xp.asarray, (b, a))
     if xp.isdtype(a.dtype, 'integral'):
-        a = xp.astype(a, xp_default_dtype(xp))
+        a = xp.astype(a, xpx.default_dtype(xp))
     res_dtype = xp.result_type(b, a)
     real_dtype = _real_dtype_for_complex(res_dtype, xp=xp)
 
@@ -557,7 +557,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
             worN = worN.real
         w = xpx.atleast_nd(xp.asarray(worN, dtype=res_dtype), ndim=1, xp=xp)
         if xp.isdtype(w.dtype, 'integral'):
-            w = xp.astype(w, xp_default_dtype(xp))
+            w = xp.astype(w, xpx.default_dtype(xp))
         del worN
         w = 2 * pi * w / fs
 
@@ -680,7 +680,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     else:
         w = xp.asarray(worN)
         if xp.isdtype(w.dtype, 'integral'):
-            w = xp.astype(w, xp_default_dtype(xp))
+            w = xp.astype(w, xpx.default_dtype(xp))
         w = xpx.atleast_nd(w, ndim=1, xp=xp)
         w = 2 * pi * w / fs
 
@@ -1408,7 +1408,7 @@ def sos2tf(sos):
 
     result_type = sos.dtype
     if xp.isdtype(result_type, 'integral'):
-        result_type = xp_default_dtype(xp)
+        result_type = xpx.default_dtype(xp)
 
     b = xp.asarray([1], dtype=result_type)
     a = xp.asarray([1], dtype=result_type)
@@ -2661,7 +2661,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                      ftype=ftype, output=output, fs=fs)
 
 
-def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
+def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
               ftype='butter', output='ba', fs=None):
     """
     IIR digital and analog filter design given order and critical points.
@@ -2692,6 +2692,13 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         in the stop band. (dB)
     btype : {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         The type of filter.  Default is 'bandpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -2767,7 +2774,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> import matplotlib.pyplot as plt
 
     >>> b, a = signal.iirfilter(17, [2*np.pi*50, 2*np.pi*200], rs=60,
-    ...                         btype='band', analog=True, ftype='cheby2')
+    ...                         btype='bandpass', analog=True, ftype='cheby2')
     >>> w, h = signal.freqs(b, a, 1000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(1, 1, 1)
@@ -2784,7 +2791,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     sections implementation is required to ensure stability of a filter of
     this order):
 
-    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
+    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='bandpass',
     ...                        analog=False, ftype='cheby2', fs=2000,
     ...                        output='sos')
     >>> w, h = signal.freqz_sos(sos, 2000, fs=2000)
@@ -3373,7 +3380,7 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     return z_bs, p_bs, k_bs
 
 
-def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
+def butter(N, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Butterworth digital and analog filter design.
 
@@ -3403,6 +3410,13 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3503,7 +3517,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='butter', fs=fs)
 
 
-def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
+def cheby1(N, rp, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Chebyshev type I digital and analog filter design.
 
@@ -3530,6 +3544,13 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3625,7 +3646,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby1', fs=fs)
 
 
-def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
+def cheby2(N, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Chebyshev type II digital and analog filter design.
 
@@ -3652,6 +3673,13 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3741,7 +3769,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby2', fs=fs)
 
 
-def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
+def ellip(N, rp, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Elliptic (Cauer) digital and analog filter design.
 
@@ -3771,6 +3799,13 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter. Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3870,7 +3905,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='elliptic', fs=fs)
 
 
-def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
+def bessel(N, Wn, btype='lowpass', analog=False, output='ba', norm='phase',
            fs=None):
     """
     Bessel/Thomson digital and analog filter design.
@@ -3893,6 +3928,13 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
         half-cycles / sample.)
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned. (See Notes.)
@@ -5055,7 +5097,7 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
     )
 
 
-# TODO: Make this a real public function scipy.misc.ff
+# TODO: Make this a real public function?
 def _falling_factorial(x, n):
     r"""
     Return the factorial of `x` to the `n` falling.
@@ -5957,7 +5999,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device
             raise ValueError("Invalid order: order must be > 0 and <= 24.")
 
         # Gammatone impulse response settings
-        t = xp.arange(numtaps, device=device, dtype=xp_default_dtype(xp)) / fs
+        t = xp.arange(numtaps, device=device, dtype=xpx.default_dtype(xp)) / fs
         bw = 1.019 * _hz_to_erb(freq)
 
         # Calculate the FIR gammatone filter

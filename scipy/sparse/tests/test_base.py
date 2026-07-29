@@ -16,6 +16,8 @@ import platform
 import itertools
 import sys
 import warnings
+from typing import Any
+from collections.abc import Callable
 
 import pytest
 from pytest import raises as assert_raises
@@ -702,6 +704,13 @@ class _TestCommon:
         assert_raises(ValueError, self.spcreator, (-1,3))
         assert_raises(ValueError, self.spcreator, (3,-1))
         assert_raises(ValueError, self.spcreator, (-1,-1))
+
+    def test_unsupported_dtypes_in_constructors(self):
+        some_unsupported_dtypes = [np.float16, object]
+        for dt in some_unsupported_dtypes:
+            data = np.array([[1]], dtype=dt)
+            with assert_raises(ValueError, match="does not support dtype"):
+                self.spcreator(data)
 
     def test_repr(self):
         datsp = self.spcreator([[1, 0, 0], [0, 0, 0], [0, 0, -2]])
@@ -3210,6 +3219,9 @@ class _TestFancyIndexing:
         assert_equal(A[3:4, [9]].toarray(), B[3:4, [9]])
         assert_equal(A[1:4, [-1, -5]].toarray(), B[1:4, [-1, -5]])
         assert_equal(A[1:4, array([-1, -5])].toarray(), B[1:4, [-1, -5]])
+        assert_equal(A[1:5:2, [-1, 4]].toarray(), B[1:5:2, [-1, 4]])
+        assert_equal(A[1:5:2, array([-1, 4])].toarray(), B[1:5:2, [-1, 4]])
+        assert_equal(A[5:1:-2, array([-1, 4])].toarray(), B[5:1:-2, [-1, 4]])
 
         # [[1,2],j]
         assert_equal(A[[3], 3].toarray(), B[[3], 3])
@@ -3224,6 +3236,10 @@ class _TestFancyIndexing:
         assert_equal(A[[1, 3], :].toarray(), B[[1, 3], :])
         assert_equal(A[[2, -5], 8:-1].toarray(), B[[2, -5], 8:-1])
         assert_equal(A[array([2, -5]), 8:-1].toarray(), B[[2, -5], 8:-1])
+        # [[1,2],1:5:2]  see gh-25589
+        assert_equal(A[[2, -5], 6:-1:2].toarray(), B[[2, -5], 6:-1:2])
+        assert_equal(A[array([2, -5]), 6:-1:2].toarray(), B[[2, -5], 6:-1:2])
+        assert_equal(A[[2, -5], 6:1:-2].toarray(), B[[2, -5], 6:1:-2])
 
         # [[1,2],[1,2]]
         assert_equal(toarray(A[[3], [4]]), B[[3], [4]])
@@ -4295,6 +4311,15 @@ class _CompressedMixin:
         D = self.dia_container((diags, offsets), shape=(N, N))
         return self._test_setdiag_sorted(D)
 
+    def test_check_format_index_dtype_mismatch(self):
+        # gh-21959: check_format should give a clear error when indptr and
+        # indices have mismatched (int32 vs int64) dtypes
+        A = self.spcreator(np.eye(3))
+        A.indptr = A.indptr.astype(np.int64)
+        A.indices = A.indices.astype(np.int32)
+        with pytest.raises(ValueError, match=r'must have the same dtype'):
+            A.check_format()
+
 
 class TestCSR(_CompressedMixin, sparse_test_class()):
     @classmethod
@@ -4772,7 +4797,7 @@ TestCSCMatrix.init_class()
 
 
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
-    spcreator = dok_array
+    spcreator: Callable[..., Any] = dok_array
     math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_mult(self):
@@ -4878,7 +4903,7 @@ TestDOKMatrix.init_class()
 
 
 class TestLIL(sparse_test_class(minmax=False)):
-    spcreator = lil_array
+    spcreator: Callable[..., Any] = lil_array
     math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_dot(self):
@@ -5180,14 +5205,14 @@ class TestCOO(BaseTestCOO,
               sparse_test_class(getset=True,
                                 slicing=True, slicing_assign=True,
                                 fancy_indexing=True, fancy_assign=True)):
-    spcreator = coo_array
+    spcreator: Callable[..., Any] = coo_array
 
 class TestCOOMatrix(_MatrixMixin,
                     BaseTestCOO,
                     sparse_test_class(getset=False,
                                       slicing=False, slicing_assign=False,
                                       fancy_indexing=False, fancy_assign=False)):
-    spcreator = coo_matrix
+    spcreator: Callable[..., Any] = coo_matrix
 
 
 TestCOO.init_class()
@@ -5209,7 +5234,7 @@ def test_sparray_subscriptable():
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False, nnz_axis=False)):
-    spcreator = dia_array
+    spcreator: Callable[..., Any] = dia_array
     math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
@@ -5434,7 +5459,7 @@ class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
                                 nnz_axis=False)):
-    spcreator = bsr_array
+    spcreator: Callable[..., Any] = bsr_array
     math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
@@ -5721,7 +5746,7 @@ class TestBSR(sparse_test_class(getset=False,
 
 
 class TestBSRMatrix(_MatrixMixin, TestBSR):
-    spcreator = bsr_matrix
+    spcreator: Callable[..., Any] = bsr_matrix
 
 
 TestBSR.init_class()

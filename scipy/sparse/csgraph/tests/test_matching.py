@@ -266,7 +266,7 @@ def linear_sum_assignment_assertions(
                            cost_matrix[row_ind, col_ind])).flatten())
 
 
-linear_sum_assignment_test_cases = product(
+linear_sum_assignment_test_cases = list(product(
     [-1, 1],
     [
         # Square
@@ -297,7 +297,7 @@ linear_sum_assignment_test_cases = product(
           [float("inf"), float("inf"), 1],
           [float("inf"), 7, float("inf")]],
          [10, 1, 7])
-    ])
+    ]))
 
 
 @pytest.mark.parametrize('sign,test_case', linear_sum_assignment_test_cases)

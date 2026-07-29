@@ -1764,7 +1764,7 @@ def isspmatrix(x):
         If you just want to check for sparse, use ``issparse(A)``.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        The switch to sparse arrays will occur no earlier than v1.21.
+        The switch to sparse arrays will occur no earlier than v2.2.
 
     Parameters
     ----------

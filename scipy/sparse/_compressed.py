@@ -76,6 +76,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
+                    getdtype(self.data.dtype)  # check that dtype is supported
                 else:
                     raise ValueError(f"unrecognized {self.__class__.__name__} "
                                      f"constructor input: {arg1}")
@@ -182,6 +183,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if self.indices.dtype.kind != 'i':
             warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
                  stacklevel=3)
+        if self.indices.dtype != self.indptr.dtype:
+            raise ValueError(f"indptr and indices must have the same dtype, "
+                             f"got {self.indptr.dtype} and {self.indices.dtype}")
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:

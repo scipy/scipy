@@ -12,6 +12,7 @@ from numpy.testing import (assert_equal, assert_allclose,
 import pytest
 from pytest import raises as assert_raises
 
+from scipy._lib._testutils import IS_WASM
 import scipy.sparse
 import scipy.io._mmio
 import scipy.io._fast_matrix_market as fmm
@@ -32,6 +33,12 @@ def implementations(request):
     mminfo = request.param.mminfo
     mmread = request.param.mmread
     mmwrite = request.param.mmwrite
+    if IS_WASM:
+        from threadpoolctl import threadpool_limits
+        with threadpool_limits(limits=1):
+            yield
+    else:
+        yield
 
 
 class TestMMIOArray:
