@@ -42,7 +42,7 @@ from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         csc_array, csr_array, dok_array,
         coo_array, lil_array, dia_array, bsr_array,
-        eye, issparse, SparseEfficiencyWarning, sparray, spmatrix,
+        eye_array, issparse, SparseEfficiencyWarning, sparray, spmatrix,
         matrix_transpose,)
 from scipy.sparse._base import _formats
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
@@ -1025,7 +1025,7 @@ class _TestCommon:
         dat_2 = np.random.rand(5, 5)
         dat_3 = np.array([[]])
         dat_4 = np.zeros((40, 40))
-        dat_5 = sparse.rand(5, 5, density=1e-2).toarray()
+        dat_5 = sparse.random_array((5, 5), density=1e-2).toarray()
         matrices = [dat_1, dat_2, dat_3, dat_4, dat_5]
 
         def check(dtype, j):
@@ -2065,7 +2065,7 @@ class _TestCommon:
 
     @pytest.mark.filterwarnings("ignore:.*switching.*sparse array:DeprecationWarning")
     def test_sparse_format_conversions(self):
-        A = sparse.kron([[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]])
+        A = sparse.kron([[1,0,2],[0,3,4],[5,0,0]], self.spcreator([[1,2],[0,3]]))
         D = A.toarray()
         A = self.spcreator(A)
 
@@ -3528,7 +3528,7 @@ class _TestFancyIndexingAssign:
 
     def test_sequence_assignment(self):
         A = self.spcreator((4,3))
-        B = self.spcreator(eye(3,4))
+        B = self.spcreator(eye_array(3,4))
 
         i0 = [0,1,2]
         i1 = (0,1,2)
@@ -4618,6 +4618,7 @@ class TestCSR(_CompressedMixin, sparse_test_class()):
 TestCSR.init_class()
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestCSRMatrix(_MatrixMixin, TestCSR):
     @classmethod
     def spcreator(cls, *args, **kwargs):
@@ -4632,7 +4633,9 @@ def test_spmatrix_subscriptable():
     assert result.__args__ == (np.int8,)
 
 
-TestCSRMatrix.init_class()
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
+    TestCSRMatrix.init_class()
 
 
 class TestCSC(_CompressedMixin, sparse_test_class()):
@@ -4785,6 +4788,7 @@ class TestCSC(_CompressedMixin, sparse_test_class()):
 TestCSC.init_class()
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestCSCMatrix(_MatrixMixin, TestCSC):
     @classmethod
     def spcreator(cls, *args, **kwargs):
@@ -4793,7 +4797,9 @@ class TestCSCMatrix(_MatrixMixin, TestCSC):
             return csc_matrix(*args, **kwargs)
 
 
-TestCSCMatrix.init_class()
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
+    TestCSCMatrix.init_class()
 
 
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
@@ -4894,12 +4900,15 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         assert_(len(b.keys()) == 0, "Unexpected entries in keys")
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestDOKMatrix(_MatrixMixin, TestDOK):
     spcreator = dok_matrix
 
 
 TestDOK.init_class()
-TestDOKMatrix.init_class()
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
+    TestDOKMatrix.init_class()
 
 
 class TestLIL(sparse_test_class(minmax=False)):
@@ -5014,12 +5023,15 @@ class TestLIL(sparse_test_class(minmax=False)):
         a[0, :] = 0
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestLILMatrix(_MatrixMixin, TestLIL):
     spcreator = lil_matrix
 
 
 TestLIL.init_class()
-TestLILMatrix.init_class()
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
+    TestLILMatrix.init_class()
 
 
 class BaseTestCOO:
@@ -5207,6 +5219,7 @@ class TestCOO(BaseTestCOO,
                                 fancy_indexing=True, fancy_assign=True)):
     spcreator: Callable[..., Any] = coo_array
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestCOOMatrix(_MatrixMixin,
                     BaseTestCOO,
                     sparse_test_class(getset=False,
@@ -5216,7 +5229,9 @@ class TestCOOMatrix(_MatrixMixin,
 
 
 TestCOO.init_class()
-TestCOOMatrix.init_class()
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
+    TestCOOMatrix.init_class()
 
 
 def test_sparray_subscriptable():
@@ -5447,12 +5462,15 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                       [27., 6., 14.]])
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestDIAMatrix(_MatrixMixin, TestDIA):
     spcreator = dia_matrix
 
 
 TestDIA.init_class()
-TestDIAMatrix.init_class()
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
+    TestDIAMatrix.init_class()
 
 
 class TestBSR(sparse_test_class(getset=False,
@@ -5745,12 +5763,15 @@ class TestBSR(sparse_test_class(getset=False,
             x + x
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestBSRMatrix(_MatrixMixin, TestBSR):
     spcreator: Callable[..., Any] = bsr_matrix
 
 
 TestBSR.init_class()
-TestBSRMatrix.init_class()
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
+    TestBSRMatrix.init_class()
 
 
 #------------------------------------------------------------------------------
@@ -5968,14 +5989,19 @@ class TestCOONonCanonicalMatrix(COONonCanonicalMixin, TestCOOMatrix):
     pass
 
 
-def test_broadcast_to():
+@pytest.mark.parametrize("container", [csc_array, csr_array, csc_matrix, csr_matrix])
+def test_broadcast_to(container):
     a = np.array([[1, 0, 2]])
     b = np.array([[1], [0], [2]])
     c = np.array([[1, 0, 2], [0, 3, 0]])
     d = np.array([[7]])
     e = np.array([[0]])
     f = np.array([[0,0,0,0]])
-    for container in (csc_matrix, csc_array, csr_matrix, csr_array):
+
+    if not issubclass(container, sparray):
+        msg = ".*_matrix is being replaced"
+        warnings.filterwarnings("ignore", msg, DeprecationWarning)
+
         res_a = container(a)._broadcast_to((2,3))
         res_b = container(b)._broadcast_to((3,4))
         res_c = container(c)._broadcast_to((2,3))
