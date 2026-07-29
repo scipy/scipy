@@ -2472,7 +2472,46 @@ def _penalty_matrix_banded(t):
     ``C = D1 @ D2`` where `Di` is de-boor derivative reduction. ``R``
     is the mass matrix of linear B-Splines on ``t``.
     """
-    pass
+    def deboor_derivative(order):
+        r"""
+        Build the matrix that differentiates a spline via de Boor's formula.
+
+        A spline of order :math:`m` (degree :math:`m - 1`) with coefficients
+        :math:`\gamma` has a derivative which is a spline of order
+        :math:`m - 1` on the *same* knot vector :math:`\tau`:
+
+        .. math::
+
+            f'(u) = \sum_{j} (m - 1)\,
+                    \frac{\gamma_j - \gamma_{j-1}}{\tau_{j+m-1} - \tau_j}\,
+                    B_{j,\,m-1}(u)
+
+        Differentiation is therefore a linear map on coefficients. This
+        function returns its matrix :math:`D`, so that the derivative has
+        coefficients :math:`D \gamma`.
+
+        Notes
+        -----
+        Row :math:`j` holds :math:`+c_j` in column :math:`j` and
+        :math:`-c_j` in column :math:`j - 1`, with
+        :math:`c_j = (m - 1) / (\tau_{j+m-1} - \tau_j)`.
+
+        For a clamped knot vector the denominator vanishes at
+        :math:`j = 0` and :math:`j = N`, where the repeated boundary knots
+        coincide. Those coefficients are set to zero, making the first and
+        last rows identically zero; this is why formulations assuming
+        clamped knots omit those terms from the sum entirely.
+
+        References
+        ----------
+        .. [1] C. de Boor, "B(asic)-Spline Basics", 1986.
+               https://ftp.cs.wisc.edu/Approx/bsplbasic.pdf
+        .. [2] N. M. Patrikalakis, T. Maekawa, W. Cho, "Shape Interrogation
+               for Computer Aided Design and Manufacturing", eq. (1.65).
+               https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node17.html
+
+        """
+        pass
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
