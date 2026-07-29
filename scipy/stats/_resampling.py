@@ -2309,7 +2309,7 @@ class PermutationMethod(ResamplingMethod):
         self._random_state = val
 
     @property
-    def rng(self):  # noqa: F811
+    def rng(self):
         return self._rng
 
     def __init__(self, n_resamples=9999, batch=None, random_state=None, *, rng=None):
@@ -2400,7 +2400,7 @@ class BootstrapMethod(ResamplingMethod):
         self._random_state = val
 
     @property
-    def rng(self):  # noqa: F811
+    def rng(self):
         return self._rng
 
     def __init__(self, n_resamples=9999, batch=None, random_state=None,

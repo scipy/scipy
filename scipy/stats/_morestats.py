@@ -34,7 +34,7 @@ from scipy._lib._array_api import (
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
+from ._stats_py import (_get_pvalue, SignificanceResult,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency
 from . import distributions
@@ -404,7 +404,7 @@ def kstatvar(data, n=2, *, axis=None):
     n=10000   : kvar=0.0001
     n=100000  : kvar=9.94e-06
     n=1000000 : kvar=9.99e-07
-    """  # noqa: E501
+    """
     xp = array_namespace(data)
     data = xp.asarray(data)
     if axis is None:
