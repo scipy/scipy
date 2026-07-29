@@ -42,7 +42,7 @@ e.g.:
 >>> hann(7, sym=True)  # 7 sample symmetric Hann window
 array([0.  , 0.25, 0.75, 1.  , 0.75, 0.25, 0.  ])
 
-The remainder of this page is contains the list of :ref:`submodules <submodule_list>`,
+The remainder of this page contains the list of :ref:`submodules <submodule_list>`,
 followed by the content of the :ref:`main namespace <main_namespace>`. The :ref:`design
 conventions for SciPy submodules <design_conventions_modules>` are part of the
 :ref:`scipy-development`.
