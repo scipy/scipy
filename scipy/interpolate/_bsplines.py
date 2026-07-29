@@ -2467,7 +2467,7 @@ def _coeff_of_divided_diff(x):
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
-def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
+def make_smoothing_spline(x, y, t=None, w=None, lam=None, *, axis=0):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
 
@@ -2586,6 +2586,11 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
+
+    if t is not None and lam is None:
+        raise NotImplementedError(
+            "``lam`` should be passed when ``t`` is not None."
+        )
 
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
