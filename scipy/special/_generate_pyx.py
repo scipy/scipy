@@ -224,6 +224,7 @@ special_ufuncs = [
     "modfresnelm",
     "modfresnelp",
     "modstruve",
+    "nctdtridf",
     "ndtr",
     "ndtri",
     "ndtri_exp",

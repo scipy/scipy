@@ -716,3 +716,8 @@ double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
  double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p); }
 
 double boost_bdtrin(double k, double y, double p) { return bdtrin_double(k, y, p); }
+
+double boost_nctdtridf(double p, double nc, double t)
+{
+    return nct_find_degrees_of_freedom_double(p, nc, t);
+}
