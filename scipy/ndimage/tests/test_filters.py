@@ -3320,10 +3320,6 @@ class TestVectorizedFilter:
         xp_assert_close(res, ref)
 
 
-@pytest.mark.skipif(
-    IS_WASM,
-    reason="Intermittent hangs in Pyodide/WASM CI, see gh-25679/gh-25713"
-)
 @given(x=npst.arrays(dtype=np.float64,
                      shape=st.integers(min_value=1, max_value=1000)),
        size=st.integers(min_value=1, max_value=50),

@@ -12,7 +12,6 @@ import hypothesis.extra.numpy as npst
 
 from scipy import special
 from scipy import stats
-from scipy._lib._testutils import IS_WASM
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
 from scipy.stats import qmc
@@ -200,10 +199,6 @@ families = continuous_families + discrete_families
 
 
 class TestDistributions:
-    @pytest.mark.skipif(
-        IS_WASM,
-        reason="Crashes on Pyodide/WASM but works in isolation, see gh-25729",
-    )
     @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
     @settings(max_examples=20)
     @pytest.mark.parametrize('family', families)
