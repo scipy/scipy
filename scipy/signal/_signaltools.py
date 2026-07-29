@@ -233,7 +233,6 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     """
     xp = array_namespace(in1, in2)
-    # the NumPy round-trips must return the result on the inputs' device
     device = xp_result_device(in1, in2)
 
     in1 = xp.asarray(in1)
@@ -1499,7 +1498,6 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     """
     xp = array_namespace(in1, in2)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(in1, in2)
 
     volume = xp.asarray(in1)
@@ -1862,7 +1860,6 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     """
     xp = array_namespace(in1, in2)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(in1, in2)
 
     # NB: do work in NumPy, only convert the output
@@ -1965,7 +1962,6 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     """
     xp = array_namespace(in1, in2)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(in1, in2)
 
     in1 = np.asarray(in1)
@@ -2077,7 +2073,6 @@ def medfilt2d(input, kernel_size=3):
 
     """
     xp = array_namespace(input)
-    # the NumPy round-trip must return the result on the input's device
     device = xp_result_device(input)
 
     image = np.asarray(input)
@@ -2226,7 +2221,6 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     """
     xp = array_namespace(b, a, x, zi)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(b, a, x, zi)
 
     b = np.atleast_1d(b)
@@ -4091,7 +4085,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
         if xp.isdtype(x.dtype, ("real floating", "complex floating")):
             h = firwin(2 * half_len + 1, f_c, window=window)
-            # match dtype and device of x
             h = xp.asarray(h, dtype=x.dtype, device=xp_device(x))
         else:
             h = firwin(2 * half_len + 1, f_c, window=window)
@@ -4386,7 +4379,6 @@ def detrend(data: np.ndarray, axis: int = -1,
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
     xp = array_namespace(data, bp)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(data, bp)
 
     data = np.asarray(data)
@@ -4985,7 +4977,6 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     """
     xp = array_namespace(b, a, x)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(b, a, x)
 
     b = np.atleast_1d(np.asarray(b))
@@ -5151,7 +5142,6 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     """
     xp = array_namespace(sos, x, zi)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(sos, x, zi)
 
     x = _validate_x(x)
@@ -5295,7 +5285,6 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     """
     xp = array_namespace(sos, x)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(sos, x)
 
     sos, n_sections = _validate_sos(sos)

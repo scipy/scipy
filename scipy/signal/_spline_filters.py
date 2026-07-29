@@ -62,7 +62,6 @@ def spline_filter(Iin, lmbda=5.0):
 
     """
     xp = array_namespace(Iin)
-    # the NumPy round-trip must return the result on the input's device
     device = xp_result_device(Iin)
     Iin = np.asarray(Iin)
 
@@ -349,7 +348,6 @@ def cspline1d(signal, lamb=0.0):
 
     """
     xp = array_namespace(signal)
-    # the NumPy round-trip must return the result on the input's device
     device = xp_result_device(signal)
 
     if lamb != 0.0:
@@ -405,7 +403,6 @@ def qspline1d(signal, lamb=0.0):
 
     """
     xp = array_namespace(signal)
-    # the NumPy round-trip must return the result on the input's device
     device = xp_result_device(signal)
 
     if lamb != 0.0:
@@ -580,7 +577,6 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     """
     xp = array_namespace(cj, newx)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(cj, newx)
 
     newx = (np.asarray(newx) - x0) / float(dx)
@@ -665,7 +661,6 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     """
     xp = array_namespace(newx, cj)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(cj, newx)
 
     newx = (np.asarray(newx) - x0) / dx
@@ -730,7 +725,6 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     """
     xp = array_namespace(signal)
     signal = xp_promote(signal, force_floating=True, xp=xp)
-    # the NumPy round-trip must return the result on the input's device
     device = xp_result_device(signal)
     # This function uses C internals
     signal = np.asarray(signal)
@@ -812,7 +806,6 @@ def symiirorder2(input, r, omega, precision=-1.0):
     """
     xp = array_namespace(input)
     input = xp_promote(input, force_floating=True, xp=xp)
-    # the NumPy round-trip must return the result on the input's device
     device = xp_result_device(input)
     # This function uses C internals
     input = np.ascontiguousarray(input)

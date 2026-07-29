@@ -663,7 +663,6 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
         if isinstance(window, str | tuple)
         else array_namespace(x, window)
     )
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(x, window)
     x_np = np.asarray(x)
     freqs_np, Pxx_np = csd(x_np, x_np, fs=fs, window=window, nperseg=nperseg,

@@ -680,7 +680,6 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     """
     xp = array_namespace(freq, gain)
-    # internal creations must happen on the device of the array inputs
     device = xp_result_device(freq, gain)
     freq, gain = xp.asarray(freq), xp.asarray(gain)
 
@@ -932,7 +931,6 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
 
     """
     xp = array_namespace(bands, desired, weight)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(bands, desired, weight)
     bands = np.asarray(bands)
     desired = np.asarray(desired)
@@ -1070,7 +1068,6 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
 
     """
     xp = array_namespace(bands, desired)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(bands, desired, weight)
     bands = np.asarray(bands)
     desired = np.asarray(desired)

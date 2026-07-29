@@ -212,7 +212,6 @@ def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
            [ 6.,  7.]])
     """
     xp = array_namespace(h, x)
-    # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(h, x)
 
     x = np.asarray(x)

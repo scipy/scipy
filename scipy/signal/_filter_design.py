@@ -499,11 +499,11 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     """
     xp = array_namespace(b, a)
 
-    # `b` or `a` may be python scalars or lists (e.g. the common default
-    # ``a=1``), which would land on the default device; create those on the
-    # device of the array input instead, so that a non-default-device input
-    # propagates through the division below. Actual array inputs keep their
-    # own device (mixing devices raises, as it should).
+    # `_xp_result_devices` (rather than a single `xp_result_device` anchor)
+    # because each of `b`, `a` may independently be a scalar (e.g. the
+    # default ``a=1``) or an array: scalars are created on the array
+    # partner's device, while arrays keep their own -- a shared anchor
+    # would silently transfer the second of two mismatched arrays.
     _, devices = _xp_result_devices(b, a)
     b, a = (xp.asarray(arg, device=d) for arg, d in zip((b, a), devices))
     if xp.isdtype(a.dtype, 'integral'):
@@ -1294,7 +1294,6 @@ def zpk2tf(z, p, k):
     (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
     xp = array_namespace(z, p)
-    # a scalar `k` must be created on the device of the array arguments
     device = xp_result_device(z, p, k)
     z, p = map(xp.asarray, (z, p))
     k = xp.asarray(k, dtype=xp.result_type(xp.real(z), xp.real(p), k),
@@ -2826,7 +2825,6 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
 
     """
     xp = array_namespace(Wn)
-    # the analog prototype below must be created on the device of `Wn`
     device = xp_result_device(Wn)
     # For now, outputs will have float64 base dtype regardless of
     # the dtype of Wn, so cast to float64 here to ensure 64 bit
@@ -4202,8 +4200,7 @@ def _pre_warp(wp, ws, analog, *, xp):
 
 
 def _validate_wp_ws(wp, ws, fs, analog, *, xp):
-    # python sequences would land on the default device; create them on
-    # the device of the array argument (if any)
+    # `_xp_result_devices` for the same reason as in `freqz`
     _, devices = _xp_result_devices(wp, ws)
     wp, ws = (xp.asarray(arg, device=d) for arg, d in zip((wp, ws), devices))
     wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
@@ -4342,9 +4339,6 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    # NB: keep `wp`, `ws` as-is: `_validate_wp_ws` converts scalars and
-    # sequences on the device of the array argument, if any
-
     _validate_gpass_gstop(gpass, gstop)
     fs = _validate_fs(fs, allow_none=True)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
@@ -4474,9 +4468,6 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    # NB: keep `wp`, `ws` as-is: `_validate_wp_ws` converts scalars and
-    # sequences on the device of the array argument, if any
-
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
@@ -4573,9 +4564,6 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    # NB: keep `wp`, `ws` as-is: `_validate_wp_ws` converts scalars and
-    # sequences on the device of the array argument, if any
-
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
@@ -4700,9 +4688,6 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    # NB: keep `wp`, `ws` as-is: `_validate_wp_ws` converts scalars and
-    # sequences on the device of the array argument, if any
-
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
