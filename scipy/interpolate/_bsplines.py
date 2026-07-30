@@ -7,7 +7,7 @@ import numpy as np
 from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
-                          solve, solve_banded)
+                          solve, solve_banded, solveh_banded)
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
@@ -2529,7 +2529,6 @@ def _penalty_matrix_banded(t):
 
     D1 = deboor_derivative(order)      # cubic
     D2 = deboor_derivative(order - 1)  # quadratic
-
     C = D2 @ D1
     R_size = len(t) - 2 # len(t) - order (because linear)
     R = np.zeros((R_size, R_size)) # integral of mul of hat functions
@@ -2677,8 +2676,11 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
             raise NotImplementedError(
                 "automatic GCV selection of `lam` is not supported with user knots, "
                 "pass `lam` explicitly")
-        # TODO: Omega = C^T R C; solve (X^T W X + lam*Omega) c = X^T W y
-        raise NotImplementedError
+        if np.ndim(lam) != 0:
+            raise NotImplementedError(
+                "array-valued `lam` is not supported with user-provided knots yet."
+            )
+        fpcheck(x, t, 3)
 
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
@@ -2739,6 +2741,21 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
         X[3, -2] = X_bspl[-1, -1]
     else:
         X = X_bspl
+
+    if user_knots:
+        omega = _penalty_matrix_banded(t)
+        XtWX = X.T @ (X.multiply(w[:, None]))
+        XtWy = X.T @ (w[:, None] * y.reshape((n, -1)))
+        XtWX_banded = np.zeros((4, len(t) - 4))
+        for i in range(4):
+            # Convert to LAPACK symmetric lower-banded storage,
+            # as accepted by solveh_banded.
+            XtWX_banded[i, : len(t) - 4 - i] = XtWX.diagonal(-i)
+        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+        c = np.ascontiguousarray(c.reshape((len(t) - 4, *y_shape1)))
+        return BSpline.construct_fast(
+            xp.asarray(t), xp.asarray(c), 3, axis=axis
+        )
 
     # create penalty matrix and divide it by vector of weights: W^{-1} E
     wE = np.zeros((5, n))
