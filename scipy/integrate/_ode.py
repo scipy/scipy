@@ -1138,8 +1138,8 @@ class dopri5(IntegratorBase):
                  ):
 
         if method is not None:
-            raise ValueError(f'Integration method must be None for dopri5, got \
-                             {method}')
+            raise ValueError(f'Integration method must be None '
+                             f'for dopri5, got {method}')
 
         self.rtol = rtol
         self.atol = atol
@@ -1220,8 +1220,8 @@ class dop853(dopri5):
                  ):
 
         if method is not None:
-                    raise ValueError(f'Integration method must be None for dop853, \
-                                     got {method}')
+            raise ValueError(f'Integration method must be None '
+                             f'for dop853, got {method}')
 
         super().__init__(rtol, atol, nsteps, max_step, first_step, safety,
                          ifactor, dfactor, beta, method, verbosity)
@@ -1278,8 +1278,8 @@ class lsoda(IntegratorBase):
                  ):
 
         if method is not None:
-            raise ValueError(f'Integration method must be None for lsoda, \
-                             got {method}')
+            raise ValueError(f'Integration method must be None '
+                             f'for lsoda, got {method}')
 
         self.with_jacobian = with_jacobian
         self.rtol = rtol
