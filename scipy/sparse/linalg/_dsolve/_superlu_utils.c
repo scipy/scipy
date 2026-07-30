@@ -69,6 +69,44 @@ jmp_buf *superlu_python_jmpbuf(void)
     return &g->jmpbuf;
 }
 
+PyObject *superlu_start_thread_memory_scope(void)
+{
+    SuperLUGlobalObject *g;
+    PyObject *saved_tracker;
+    PyObject *replacement;
+
+    g = get_tls_global();
+    if (g == NULL) {
+        return NULL;
+    }
+    replacement = PyDict_New();
+    if (replacement == NULL) {
+        return NULL;
+    }
+    saved_tracker = g->memory_dict;
+    g->memory_dict = replacement;
+    return saved_tracker;
+}
+
+PyObject *superlu_swap_thread_memory_tracker(PyObject *tracker)
+{
+    SuperLUGlobalObject *g;
+    PyObject *replaced_tracker;
+
+    if (!PyDict_Check(tracker)) {
+        PyErr_SetString(PyExc_TypeError, "memory tracker must be a dictionary");
+        return NULL;
+    }
+    g = get_tls_global();
+    if (g == NULL) {
+        return NULL;
+    }
+    Py_INCREF(tracker);
+    replaced_tracker = g->memory_dict;
+    g->memory_dict = tracker;
+    return replaced_tracker;
+}
+
 void superlu_python_module_abort(char *msg)
 {
     SuperLUGlobalObject *g;
@@ -152,8 +190,8 @@ void superlu_python_module_free(void *ptr)
     /* This will only free the pointer if it could find it in the dictionary
      * of already allocated pointers --- thus after abort, the module can free all
      * the memory that "might" have been allocated to avoid memory leaks on abort
-     * calls. If the key cannot be created, leave the pointer in the dictionary;
-     * SuperLUGlobal_dealloc will free it.
+     * calls. If the key cannot be created, leave the pointer in the dictionary.
+     * The dictionary owner frees residual tracked allocations during deallocation.
      */
     if (key != NULL) {
         if (!PyDict_DelItem(g->memory_dict, key)) {
@@ -166,17 +204,24 @@ void superlu_python_module_free(void *ptr)
 }
 
 
-static void SuperLUGlobal_dealloc(SuperLUGlobalObject *self)
+void superlu_free_tracked_allocations(PyObject *tracker)
 {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
 
+    while (PyDict_Next(tracker, &pos, &key, &value)) {
+        void *ptr;
+        ptr = PyLong_AsVoidPtr(key);
+        free(ptr);
+    }
+    PyDict_Clear(tracker);
+}
+
+
+static void SuperLUGlobal_dealloc(SuperLUGlobalObject *self)
+{
     if (self->memory_dict != NULL) {
-        while (PyDict_Next(self->memory_dict, &pos, &key, &value)) {
-            void *ptr;
-            ptr = PyLong_AsVoidPtr(key);
-            free(ptr);
-        }
+        superlu_free_tracked_allocations(self->memory_dict);
     }
 
     Py_XDECREF(self->memory_dict);

@@ -208,6 +208,8 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
     PyArrayObject *rowind, *colptr, *nzvals;
     SuperMatrix A = { 0 };
     PyObject *result;
+    PyObject *saved_tracker = NULL;
+    PyObject *factor_tracker = NULL;
     PyObject *py_csc_construct_func = NULL;
     PyObject *option_dict = NULL;
     int type;
@@ -244,6 +246,11 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 	return NULL;
     }
 
+    saved_tracker = superlu_start_thread_memory_scope();
+    if (saved_tracker == NULL) {
+        return NULL;
+    }
+
     if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, rowind, colptr,
 			       type)) {
 	goto fail;
@@ -256,11 +263,26 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 
     /* arrays of input matrix will not be freed */
     Destroy_SuperMatrix_Store(&A);
+    factor_tracker = superlu_swap_thread_memory_tracker(saved_tracker);
+    if (factor_tracker == NULL) {
+        abort();
+    }
+    Py_DECREF(saved_tracker);
+    ((SuperLUObject *)result)->memory_tracker = factor_tracker;
     return result;
 
   fail:
     /* arrays of input matrix will not be freed */
     XDestroy_SuperMatrix_Store(&A);
+    if (saved_tracker != NULL) {
+        factor_tracker = superlu_swap_thread_memory_tracker(saved_tracker);
+        if (factor_tracker == NULL) {
+            abort();
+        }
+        Py_DECREF(saved_tracker);
+        superlu_free_tracked_allocations(factor_tracker);
+        Py_DECREF(factor_tracker);
+    }
     return NULL;
 }
 

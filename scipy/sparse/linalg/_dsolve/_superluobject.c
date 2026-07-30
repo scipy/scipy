@@ -127,12 +127,10 @@ static void SuperLU_dealloc(SuperLUObject * self)
     self->cached_U = NULL;
     self->cached_L = NULL;
     self->py_csc_construct_func = NULL;
-    SUPERLU_FREE(self->perm_r);
-    SUPERLU_FREE(self->perm_c);
-    self->perm_r = NULL;
-    self->perm_c = NULL;
-    XDestroy_SuperNode_Matrix(&self->L);
-    XDestroy_CompCol_Matrix(&self->U);
+    if (self->memory_tracker != NULL) {
+        superlu_free_tracked_allocations(self->memory_tracker);
+        Py_CLEAR(self->memory_tracker);
+    }
     PyObject_Del(self);
 }
 
@@ -725,6 +723,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->cached_U = NULL;
     self->cached_L = NULL;
     self->py_csc_construct_func = NULL;
+    self->memory_tracker = NULL;
     self->type = intype;
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();

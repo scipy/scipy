@@ -38,6 +38,7 @@ typedef struct {
     PyObject *cached_U;
     PyObject *cached_L;
     PyObject *py_csc_construct_func;
+    PyObject *memory_tracker;
     int type;
 } SuperLUObject;
 
@@ -78,6 +79,13 @@ void XDestroy_CompCol_Permuted(SuperMatrix *);
 void XStatFree(SuperLUStat_t *);
 
 jmp_buf *superlu_python_jmpbuf(void);
+/* Start transfers the current TLS tracker to the caller.
+ * Swap borrows its argument, gives TLS a reference, and transfers the
+ * replaced TLS tracker to the caller.
+ */
+PyObject *superlu_start_thread_memory_scope(void);
+PyObject *superlu_swap_thread_memory_tracker(PyObject *tracker);
+void superlu_free_tracked_allocations(PyObject *tracker);
 
 
 /* Custom thread begin/end statements: Numpy versions < 1.9 are not safe
