@@ -1,20 +1,18 @@
 """Array-API backend for scipy.spatial.distance."""
 
-from __future__ import annotations
-
-from typing import Any
 from types import ModuleType
+from typing import Any
 
 import numpy as np
 
 from scipy._lib._array_api import (
+    Array,
+    ArrayLike,
     _asarray,
     array_namespace,
     is_lazy_array,
     is_numpy,
     xp_promote,
-    Array,
-    ArrayLike,
 )
 
 # Functions in the backend should be batched by default, operating over the last axis
@@ -23,13 +21,12 @@ from scipy._lib._array_api import (
 
 
 def _validate_vector(u: ArrayLike, dtype: Any | None = None) -> Array:
-    # XXX Is order='c' really necessary?
     try:
-        u = _asarray(u, dtype=dtype, order="c")
+        u = _asarray(u, dtype=dtype)
     except TypeError:
         # String/object arrays (e.g. hamming on byte strings) have no array-API
         # namespace. Fall back to NumPy, which handles them.
-        u = np.asarray(u, dtype=dtype, order="c")
+        u = np.asarray(u, dtype=dtype)
     if u.ndim == 1:
         return u
     raise ValueError("Input vector should be 1-D.")
@@ -66,9 +63,7 @@ def _promote(x: ArrayLike, xp: ModuleType) -> Array:
     return xp_promote(x, force_floating=True, xp=xp)
 
 
-def minkowski(
-    u: ArrayLike, v: ArrayLike, p: float | int = 2, w: ArrayLike | None = None
-):
+def minkowski(u: ArrayLike, v: ArrayLike, p: float = 2, w: ArrayLike | None = None):
     xp = array_namespace(u, v)
     u = _promote(u, xp=xp)
     v = _promote(v, xp=xp)
