@@ -123,7 +123,7 @@ from . import _hausdorff, _distance_pybind, _distance_wrap
 backend_registry = {}
 
 
-def select_backend(name, xp, generic=False):
+def _select_backend(name, xp, generic=False):
     """Select the backend implementing the distance function.
 
     Args:
@@ -490,7 +490,7 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    backend = select_backend('minkowski', array_namespace(u, v))
+    backend = _select_backend('minkowski', array_namespace(u, v))
     return backend.minkowski(u, v, p, w)
 
 
