@@ -531,11 +531,11 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
 
     # accommodate square empty matrices, after validation of `b` for `dtype` etc.
     if a1.size == 0:
-        w = np.empty(a1.shape[:-2] + (0,), dtype=np.finfo(a1.dtype).dtype)
+        w = np.empty(a1.shape[:-1], dtype=np.finfo(a1.dtype).dtype)
         if eigvals_only:
             return w
         else:
-            v = np.empty(a1.shape[:-2] + (0, 0), dtype=a1.dtype)
+            v = np.empty(a1.shape, dtype=a1.dtype)
             return w, v
 
     ## Check subset arguments

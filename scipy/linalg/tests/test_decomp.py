@@ -1112,9 +1112,10 @@ class TestEigh:
     @pytest.mark.parametrize('dt_b', [
         None, int, float, np.float32, complex, np.complex64
     ])
-    def test_empty(self, dt_a, dt_b):
-        a = np.empty((0, 0), dtype=dt_a)
-        b = np.empty((0, 0), dtype=dt_b) if dt_b is not None else None
+    @pytest.mark.parametrize('shape', [(10, 0, 5, 5), (0, 0)])
+    def test_empty(self, dt_a, dt_b, shape):
+        a = np.empty(shape, dtype=dt_a)
+        b = np.empty(shape, dtype=dt_b) if dt_b is not None else None
 
         a_ref = np.eye(2, dtype=dt_a)
         b_ref = np.eye(2, dtype=dt_b) if dt_b is not None else None
@@ -1122,16 +1123,15 @@ class TestEigh:
         w, v = eigh(a, b)
         w_n, v_n = eigh(a_ref, b_ref)
 
-        assert w.shape == (0,)
+        assert w.shape == shape[:-1]
         assert w.dtype == w_n.dtype
 
-        assert v.shape == (0, 0)
+        assert v.shape == shape
         assert v.dtype == v_n.dtype
 
         w = eigh(a, b, eigvals_only=True)
-        assert_allclose(w, np.empty((0,)))
 
-        assert w.shape == (0,)
+        assert w.shape == shape[:-1]
         assert w.dtype == w_n.dtype
 
     @pytest.mark.parametrize("dtype", [
