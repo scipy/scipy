@@ -2515,7 +2515,7 @@ def _penalty_matrix_banded(t):
 
         """
         N = len(t) - order
-        D = np.zeros((N + 1, N))   
+        D = np.zeros((N + 1, N))
 
         for j in range(N + 1):
             denom = t[j + order - 1] - t[j]
@@ -2527,8 +2527,8 @@ def _penalty_matrix_banded(t):
 
         return D
 
-    D1 = deboor_derivative(order) # f' 
-    D2 = deboor_derivative(order - 1)  # f''
+    D1 = deboor_derivative(order)      # cubic
+    D2 = deboor_derivative(order - 1)  # quadratic
 
     C = D2 @ D1
     R_size = len(t) - 2 # len(t) - order (because linear)
@@ -2542,8 +2542,8 @@ def _penalty_matrix_banded(t):
     omega = C.T @ R @ C
     omega_banded = np.zeros((4, m))
     for i in range(4):
-        # Convert to LAPACK banded storage format.
-        # This can be passed to solve_banded.
+        # Convert to LAPACK symmetric lower-banded storage,
+        # as accepted by solveh_banded.
         omega_banded[i, : m - i] = np.diag(omega, -i)
 
     return omega_banded
