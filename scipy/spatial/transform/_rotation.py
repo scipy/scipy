@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType
 
 import numpy as np
 
@@ -81,7 +81,6 @@ rotation_extra_note = """The methods ``as_davenport``, ``apply``, and ``align_ve
         "apply": dict(
             skip_backends=[
                 ("dask.array", "missing linalg.cross/det functions and .mT attribute"),
-                ("cupy", "missing .mT attribute in cupy<14.*"),
             ],
         ),
         "__getitem__": dict(
@@ -1712,7 +1711,7 @@ class Rotation:
             return result[0, ...]
         return result
 
-    def __mul__(self, other: Rotation) -> Rotation | NotImplementedType:
+    def __mul__(self, other: Rotation) -> Rotation:
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed

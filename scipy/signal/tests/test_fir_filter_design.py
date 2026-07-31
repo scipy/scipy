@@ -8,7 +8,7 @@ import scipy._external.array_api_extra as xpx
 import scipy.signal as signal
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
-    array_namespace, xp_default_dtype, make_xp_test_case, _xp_copy_to_numpy
+    array_namespace, make_xp_test_case, _xp_copy_to_numpy
 )
 from scipy.fft import fft, fft2, rfft
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
@@ -52,7 +52,7 @@ class TestFirwin:
         xp = array_namespace(h)
         N = h.shape[0]
         alpha = 0.5 * (N-1)
-        m = xp.arange(0, N, dtype=xp_default_dtype(xp)) - alpha   # time indices of taps
+        m = xp.arange(0, N, dtype=xpx.default_dtype(xp)) - alpha  # time indices of taps
         for freq, expected in expected_response:
             actual = abs(xp.sum(h * xp.exp(-1j * xp.pi * m * freq)))
             mse = abs(actual - expected)**2
@@ -450,7 +450,7 @@ class TestFirwin2:
         taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
 
         flip = array_namespace(freq).flip
-        dec = {'decimal': 4.5} if xp_default_dtype(xp) == xp.float32 else {}
+        dec = {'decimal': 4.5} if xpx.default_dtype(xp) == xp.float32 else {}
         assert_array_almost_equal(taps[: ntaps // 2], flip(-taps[ntaps // 2:]), **dec)
 
         freqs, response = freqz(_xp_copy_to_numpy(taps), worN=2048)
@@ -467,7 +467,7 @@ class TestFirwin2:
         assert taps[ntaps // 2] == 0.0
 
         flip = array_namespace(freq).flip
-        dec = {'decimal': 4.5} if xp_default_dtype(xp) == xp.float32 else {}
+        dec = {'decimal': 4.5} if xpx.default_dtype(xp) == xp.float32 else {}
         assert_array_almost_equal(taps[: ntaps // 2],
                                   flip(-taps[ntaps // 2 + 1:]), **dec
         )
@@ -538,7 +538,7 @@ class TestRemez:
              0.373400753484939, 0.193140296954975, -0.003530911231040,
              -0.075943803756711, -0.041314581814658, 0.024590270518440]
         h = remez(12, xp.asarray([0, 0.3, 0.5, 1]), xp.asarray([1, 0]), fs=2.)
-        atol_arg = {'atol': 1e-8} if xp_default_dtype(xp) == xp.float32 else {}
+        atol_arg = {'atol': 1e-8} if xpx.default_dtype(xp) == xp.float32 else {}
         xp_assert_close(h, xp.asarray(k, dtype=xp.float64), **atol_arg)
 
         h = [-0.038976016082299, 0.018704846485491, -0.014644062687875,
@@ -548,7 +548,7 @@ class TestRemez:
              0.129770906801075, -0.103908158578635, 0.073641298245579,
              -0.043276706138248, 0.016849978528150, 0.002879152556419,
              -0.014644062687875, 0.018704846485491, -0.038976016082299]
-        atol_arg = {'atol': 3e-8} if xp_default_dtype(xp) == xp.float32 else {}
+        atol_arg = {'atol': 3e-8} if xpx.default_dtype(xp) == xp.float32 else {}
         xp_assert_close(
             remez(21, xp.asarray([0, 0.8, 0.9, 1]), xp.asarray([0, 1]), fs=2.),
             xp.asarray(h, dtype=xp.float64), **atol_arg
@@ -644,7 +644,7 @@ class TestFirls:
                       5.11409425599933e-01, 3.17271686090449e-01,
                       -9.81576747564301e-03, -1.03354450635036e-01,
                       -6.26930101730182e-04]
-        atol_arg = {'atol': 5e-8} if xp_default_dtype(xp) == xp.float32 else {}
+        atol_arg = {'atol': 5e-8} if xpx.default_dtype(xp) == xp.float32 else {}
         known_taps = xp.asarray(known_taps, dtype=xp.float64)
         xp_assert_close(taps, known_taps, **atol_arg)
 
@@ -658,7 +658,7 @@ class TestFirls:
             0.317930861136062, 0.012403323025279, -0.104688258464392,
             -0.014233383714318, 0.058545300496815]
         known_taps = xp.asarray(known_taps, dtype=xp.float64)
-        atol_arg = {'atol': 3e-8} if xp_default_dtype(xp) == xp.float32 else {}
+        atol_arg = {'atol': 3e-8} if xpx.default_dtype(xp) == xp.float32 else {}
         xp_assert_close(taps, known_taps, **atol_arg)
 
         # With linear changes:

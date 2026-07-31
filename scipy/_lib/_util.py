@@ -1,3 +1,4 @@
+import os
 import re
 from contextlib import contextmanager
 import functools
@@ -14,7 +15,8 @@ from typing import Literal
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
-                                   is_marray, xp_size, xp_result_device, xp_result_type)
+                                   is_marray, xp_size, xp_result_device, xp_result_type,
+                                   xp_capabilities, xp_isscalar)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -527,6 +529,53 @@ class _FunctionWrapper:
         return self.f(x, *self.args)
 
 
+@xp_capabilities()
+def _item_for_scalar_function(x, xp=None):
+    """
+    Extract a value from objects with a single value.
+    e.g. 1.0, [1.0], array(1.0), array([1.0]), etc.
+    1.0 -> 1.0
+    np.array([1.0]) -> np.float64(1.0)
+    [1.0] -> 1.0
+    np.array([1.0]) -> np.array(1.0)
+    """
+    if xp_isscalar(x):
+        return x
+
+    # Handle plain Python containers by unwrapping recursively
+    if isinstance(x, (list, tuple)):
+        if len(x) != 1:
+            raise ValueError(
+                f"can only convert a sequence of size 1 to a Python scalar,"
+                f" got size {len(x)}"
+            )
+        return _item_for_scalar_function(x[0])
+
+    # assume we're an xp array object from here
+    # such as np.float64([1.0]), np.array(1.0)
+    sz = xp_size(x)
+    if sz != 1:
+        raise ValueError(
+            f"can only convert an array of size 1 to a 0D array, got size {x.size}"
+        )
+
+    # supply xp to save checking what namespace we're dealing with
+    xp = xp or array_namespace(x)
+
+    # extract the scalar
+    if x.ndim > 1:
+        # Deprecationwarning added in 2.0
+        warnings.warn(
+            "Returning arrays with more than one dimension is deprecated when using"
+            " ScalarFunction.",
+            DeprecationWarning,
+            skip_file_prefixes=(os.path.dirname(__file__),)
+        )
+    if x.ndim != 0:
+        x = xp.reshape(x, (-1,))[0]
+    return x
+
+
 class _ScalarFunctionWrapper:
     """
     Object to wrap scalar user function, allowing picklability
@@ -543,15 +592,13 @@ class _ScalarFunctionWrapper:
         self.nfev += 1
 
         # Make sure the function returns a true scalar
-        if not np.isscalar(fx):
-            _dt = getattr(fx, "dtype", np.dtype(np.float64))
-            try:
-                fx = _dt.type(np.asarray(fx).item())
-            except (TypeError, ValueError) as e:
-                raise ValueError(
-                    "The user-provided objective function "
-                    "must return a scalar value."
-                ) from e
+        try:
+            fx = _item_for_scalar_function(fx)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                "The user-provided objective function "
+                "must return a scalar value."
+            ) from e
         return fx
 
 class MapWrapper:
@@ -1049,7 +1096,7 @@ def _deprecate_dtypes(func_name, *arrays):
         if a.dtype.char not in np.typecodes['AllInteger'] + 'fdFD':
             msg = (f"Calling {func_name} with arguments of dtype={a.dtype} "
                    f"({a.dtype.char = }) is deprecated in SciPy 1.18.0 and "
-                    "will be removed in SciPy 1.20.0. Please cast array inputs to "
+                    "will be removed in SciPy 2.1.0. Please cast array inputs to "
                     "one of np.float{32,64} or np.complex{64,128} manually."
             )
             import warnings

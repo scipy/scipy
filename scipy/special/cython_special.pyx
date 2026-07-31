@@ -1124,7 +1124,7 @@ ctypedef float complex float_complex
 ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
-cdef extern from r"xsf_wrappers.h":
+cdef extern from r"cython_special_wrappers.h":
     double special_bei(double) nogil
     double special_beip(double) nogil
     double special_ber(double) nogil
@@ -1399,6 +1399,14 @@ cdef extern from r"xsf_wrappers.h":
     double special_inv_boxcox(double x, double lmbda) nogil
     double special_inv_boxcox1p(double x, double lmbda) nogil
     double special_ndtri_exp(double x) nogil
+
+    double boost_bdtrik(double y, double n, double p) nogil
+    double boost_bdtrin(double k, double y, double p) nogil
+    double boost_nbdtrik(double y, double n, double p) nogil
+    double boost_nbdtrin(double k, double y, double p) nogil
+    double boost_ncfdtrinc(double dfn, double dfd, double p, double f) nogil
+    double boost_nctdtridf(double p, double nc, double t) nogil
+    double boost_nctdtrinc(double df, double p, double t) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -1816,7 +1824,7 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrik_double)(x0, x1, x2)
+    return boost_bdtrik(x0, x1, x2)
 
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""
@@ -3026,11 +3034,11 @@ cpdef double nbdtri(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double nbdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrin"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_invn_double)(x0, x1, x2)
+    return boost_nbdtrin(x0, x1, x2)
 
 cpdef double nbdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrik"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbdtrik_double)(x0, x1, x2)
+    return boost_nbdtrik(x0, x1, x2)
 
 cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtr"""
@@ -3073,7 +3081,7 @@ cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
 
 cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrin"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrin_double)(x0, x1, x2)
+    return boost_bdtrin(x0, x1, x2)
 
 cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtri"""
@@ -3097,7 +3105,7 @@ cpdef double ncfdtridfn(double x0, double x1, double x2, double x3) noexcept nog
 
 cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtrinc"""
-    return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_find_non_centrality_double)(x0, x1, x2, x3)
+    return boost_ncfdtrinc(x0, x1, x2, x3)
 
 cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtr"""
@@ -3110,11 +3118,11 @@ cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcep
 
 cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtridf"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_find_degrees_of_freedom_double)(x0, x1, x2)
+    return boost_nctdtridf(x0, x1, x2)
 
 cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrinc"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_find_non_centrality_double)(x0, x1, x2)
+    return boost_nctdtrinc(x0, x1, x2)
 
 cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrit"""

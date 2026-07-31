@@ -9471,7 +9471,7 @@ class irwinhall_gen(rv_continuous):
             Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html.
 
     %(example)s
-    """  # noqa: E501
+    """
 
     @replace_notes_in_docstring(rv_continuous, notes="""\
         Raises a ``NotImplementedError`` for the Irwin-Hall distribution because

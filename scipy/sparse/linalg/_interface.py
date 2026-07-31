@@ -232,7 +232,8 @@ class LinearOperator:
         """
         xp = np_compat if xp is None else xp
         if dtype is not None:
-            dtype = xp.empty(0, dtype=dtype).dtype
+            # throwaway 0-size array to canonicalize `dtype`; no array in scope
+            dtype = xp.empty(0, dtype=dtype).dtype  # skip device check
 
         shape = tuple(shape)
         if len(shape) < 2:
@@ -267,7 +268,8 @@ class LinearOperator:
         """
         if self.dtype is None:
             xp = self._xp
-            v = xp.zeros(self.shape[-1], dtype=xp.int8)
+            # dtype probe; user callables define the operator, no device to match
+            v = xp.zeros(self.shape[-1], dtype=xp.int8)  # skip device check
             try:
                 matvec_v = xp.asarray(self.matvec(v))
             except (OverflowError, TypeError, RuntimeError):
@@ -332,7 +334,7 @@ class LinearOperator:
             msg = (
                 f"Calling {func_name} on 'column vectors' of shape "
                 f"`({inner_dim}, 1)` was deprecated in SciPy 1.18.0 and will no "
-                f"longer be possible in SciPy 1.20.0. "
+                f"longer be possible in SciPy 2.1.0. "
                 f"Please call {matmat_func_name} instead for identical behaviour."
             )
             warnings.warn(
@@ -558,7 +560,9 @@ class LinearOperator:
     def _check_matching_namespace(self, x):
         xp_x = getattr(x, "_xp", None)
         if xp_x is None:
-            xp_x = array_namespace(x, self._xp.empty(0), sparse_ok=True)
+            # `empty(0)` is a throwaway used only to resolve the namespace
+            xp_x = array_namespace(x, self._xp.empty(0),  # skip device check
+                                   sparse_ok=True)
         if xp_x != self._xp:
             msg = (
                 f"Mismatched array namespaces."

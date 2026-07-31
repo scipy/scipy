@@ -27,7 +27,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.19.0.dev0"
+version = "2.0.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -274,9 +274,9 @@ PKG_CONFIG_PATH = "{project}"
 # cross-build NumPy meson dependency detection. TODO: drop this once it makes
 # it to a released version of cibuildwheel
 dependency-versions = "packages: pyodide-build==0.36.0"
-before-build = "bash {project}/tools/ci/emscripten/cibw_before_build_pyodide.sh {project}"
+before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
-test-command = "python -m pytest --pyargs scipy -m 'not slow'"
+test-command = "python -m pytest -vra --pyargs scipy -m 'not slow'"
 
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]

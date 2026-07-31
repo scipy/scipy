@@ -1035,7 +1035,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     k : int, optional
         The degree of the spline fit. Must be >= 1, except when ``s=0``,
         in which case ``k=0`` is also supported. It is recommended to use
-        cubic splines, ``k=3``, which is the default. Even values of `k` 
+        cubic splines, ``k=3``, which is the default. Even values of `k`
         should be avoided, especially with small `s` values.
     s : float, optional
         The smoothing condition. The amount of smoothness is determined by
@@ -1161,6 +1161,8 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
 
     # postprocess: squeeze out the last dimension: was added to simplify the internals.
     spl.c = spl.c[:, 0]
+    # make periodic if needed
+    spl.extrapolate = "periodic" if periodic else True
     return spl
 
 
@@ -1198,7 +1200,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
          Degree of the spline. Must be >= 1, except when ``s=0``, in which
          case ``k=0`` is also supported. Cubic splines, ``k=3``, are
          recommended. Even values of `k` should be avoided especially with
-         a small ``s`` value. 
+         a small ``s`` value.
          Default is ``k=3``
     s : float, optional
         A smoothing condition.  The amount of smoothness is determined by
@@ -1321,7 +1323,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")
-        return make_interp_spline(u, x.T, k=k, axis=1), u
+        return make_interp_spline(u, x.T, k=k, bc_type=bc_type, axis=1), u
 
     u, x, w, k, s, ub, ue = _validate_inputs(u, x, w, k, s, ub, ue,
                                              parametric=True, periodic=periodic)
@@ -1335,6 +1337,9 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     # posprocess: `axis=1` so that spl(u).shape == np.shape(x)
     # when `x` is a list of 1D arrays (cf original splPrep)
     cc = spl.c.T
-    spl1 = BSpline(spl.t, cc, spl.k, axis=1)
+    spl1 = BSpline(
+        spl.t, cc, spl.k, axis=1,
+        extrapolate='periodic' if periodic else True
+    )
 
     return spl1, xp.asarray(u)

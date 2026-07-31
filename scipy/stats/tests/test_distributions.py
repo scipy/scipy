@@ -3091,7 +3091,7 @@ class TestPoisson:
          (1, 300, -294.29288973525115, -1.5496082669460162e-128)])
     def test_gh8424(self, k, mu, logcdf_reference, logsf_reference):
         # test extreme cases where the naive log(cdf) and log(sf) would fail
-        # reference values were computed with mpmath with 1000 digits of precision 
+        # reference values were computed with mpmath with 1000 digits of precision
         # from mpmath import mp
         # mp.dps = 1000
         # logcdf_reference = float(mp.log(mp.gammainc(mp.mpf(k+1), a=mp.mpf(mu),
@@ -4747,7 +4747,7 @@ class TestExponNorm:
         dist_norm = stats.norm()
         assert_allclose(dist.logpdf(x), dist_norm.logpdf(x))
         assert_allclose(dist.cdf(x), dist_norm.cdf(x))
-        assert_allclose(dist.sf(x), dist_norm.sf(x)) 
+        assert_allclose(dist.sf(x), dist_norm.sf(x))
 
 class TestGenExpon:
     def test_pdf_unity_area(self):
@@ -8608,10 +8608,10 @@ class TestTukeyLambda:
 
         cdf = stats.tukeylambda.cdf(x, lam)
         assert cdf[-1] == 1.0
-        # Check that the cdf is always increasing except when it saturates 
+        # Check that the cdf is always increasing except when it saturates
         # to 1.0
         assert np.all(np.diff(cdf[cdf < 1]) > 0)
-        
+
 class TestLevy:
 
     def test_levy_cdf_ppf(self):

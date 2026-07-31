@@ -81,7 +81,7 @@ def pytest_configure(config):
     try:
         # This is a more reliable test of whether pytest_fail_slow is installed
         # When I uninstalled it, `import pytest_fail_slow` didn't fail!
-        from pytest_fail_slow import parse_duration  # noqa:F401,E501
+        from pytest_fail_slow import parse_duration  # noqa: F401
     except Exception:
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
@@ -302,7 +302,7 @@ if SCIPY_ARRAY_API:
 
     try:
         import jax.numpy  # pyrefly: ignore[missing-import]
-        
+
         xp_available_backends.append(
             pytest.param(jax.numpy, id='jax.numpy',
             marks=[_array_api_backends,
@@ -604,7 +604,19 @@ def devices(xp):
         devices = xp.__array_namespace_info__().devices()
         # open an issue about this - cannot branch based on `any`/`all`?
         return (device for device in devices if device.type != 'meta')
-    return tuple(xp.__array_namespace_info__().devices()) + (None,)
+    info = xp.__array_namespace_info__()
+    # Exclude devices that do not support the default dtype, such as the
+    # synthetic 'no_float64' device of array-api-strict >= 2.6: this fixture
+    # tests device *propagation*, and scipy functions routinely create
+    # default-dtype intermediates. Reduced-capability devices would need
+    # per-test dtype-support handling instead (see e.g. the `dtype_devices`
+    # fixture in `scipy/stats/tests/test_device_dtype.py`).
+    default_dtype = info.default_dtypes()["real floating"]
+    devices = tuple(
+        d for d in info.devices()
+        if default_dtype in info.dtypes(device=d).values()
+    )
+    return devices + (None,)
 
 
 if hypothesis_available:
@@ -742,6 +754,7 @@ if HAVE_SCPDT:
         'scipy.spatial.minkowski_distance_p',
         'scipy.spatial.minkowski_distance',
         'scipy.spatial.distance_matrix',
+        'scipy.stats.tiecorrect',
     ])
 
     # help pytest collection a bit: these names are either private

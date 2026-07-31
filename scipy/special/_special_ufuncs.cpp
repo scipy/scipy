@@ -3,6 +3,7 @@
 #include <cmath>
 #include <complex>
 
+#include "boost_special_functions.h"
 #include "sf_error.h"
 #include <xsf/agm.h>
 #include <xsf/airy.h>
@@ -47,6 +48,7 @@
 #include <xsf/sph_harm.h>
 #include <xsf/sphd_wave.h>
 #include <xsf/stats.h>
+#include <xsf/stirling2.h>
 #include <xsf/struve.h>
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
@@ -61,6 +63,7 @@
 // If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
+extern const char *_binom_ppf_doc;
 extern const char *_cospi_doc;
 extern const char *_bivariate_normal_sf_doc;
 extern const char *_cosine_cdf_doc;
@@ -75,6 +78,7 @@ extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
 extern const char *_normalized_gen_harmonic_doc;
+extern const char *_stirling2_inexact_doc;
 extern const char *_von_mises_cdf_doc;
 extern const char *agm_doc;
 extern const char *entr_doc;
@@ -84,6 +88,8 @@ extern const char *pseudo_huber_doc;
 extern const char *rel_entr_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
+extern const char *bdtrik_doc;
+extern const char *bdtrin_doc;
 extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
@@ -194,6 +200,11 @@ extern const char *mathieu_modsem2_doc;
 extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
+extern const char *nbdtrik_doc;
+extern const char *nbdtrin_doc;
+extern const char *ncfdtrinc_doc;
+extern const char *nctdtridf_doc;
+extern const char *nctdtrinc_doc;
 extern const char *ndtr_doc;
 extern const char *ndtri_doc;
 extern const char *ndtri_exp_doc;
@@ -278,6 +289,12 @@ _special_ufuncs_module_exec(PyObject *module)
     if (_import_array() < 0) { return -1; }
     if (_import_umath() < 0) { return -1; }
 
+    PyObject *_binom_ppf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(binom_ppf_float),
+         static_cast<xsf::numpy::ddd_d>(binom_ppf_double)},
+        "_binom_ppf", _binom_ppf_doc);
+    PyModule_AddObjectRef(module, "_binom_ppf", _binom_ppf);
+
     PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
          static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
@@ -328,6 +345,18 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dddd_d>(xsf::normalized_gen_harmonic)},
                           "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_normalized_gen_harmonic", _normalized_gen_harmonic);
+
+    PyObject *bdtrik =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(bdtrik_float),
+                           static_cast<xsf::numpy::ddd_d>(bdtrik_double)},
+                          "bdtrik", bdtrik_doc);
+    PyModule_AddObjectRef(module, "bdtrik", bdtrik);
+
+    PyObject *bdtrin =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(bdtrin_float),
+                           static_cast<xsf::numpy::ddd_d>(bdtrin_double)},
+                          "bdtrin", bdtrin_doc);
+    PyModule_AddObjectRef(module, "bdtrin", bdtrin);
 
     PyObject *gdtr = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::gdtr), static_cast<xsf::numpy::ddd_d>(xsf::gdtr)},
@@ -486,6 +515,11 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::binom), static_cast<xsf::numpy::dd_d>(xsf::binom)}, "binom", binom_doc);
     PyModule_AddObjectRef(module, "binom", binom);
 
+    PyObject *_stirling2_inexact = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::stirling2), static_cast<xsf::numpy::dd_d>(xsf::stirling2)},
+        "_stirling2_inexact", _stirling2_inexact_doc);
+    PyModule_AddObjectRef(module, "_stirling2_inexact", _stirling2_inexact);
+
     PyObject *cbrt = xsf::numpy::ufunc(
 	{static_cast<xsf::numpy::f_f>(xsf::cbrt), static_cast<xsf::numpy::d_d>(xsf::cbrt)}, "cbrt", cbrt_doc);
     PyModule_AddObjectRef(module, "cbrt", cbrt);
@@ -624,6 +658,36 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::F_F>(xsf::dawsn), static_cast<xsf::numpy::D_D>(xsf::dawsn)},
                           "dawsn", dawsn_doc);
     PyModule_AddObjectRef(module, "dawsn", dawsn);
+
+    PyObject *nbdtrik =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbdtrik_float),
+                           static_cast<xsf::numpy::ddd_d>(nbdtrik_double)},
+                          "nbdtrik", nbdtrik_doc);
+    PyModule_AddObjectRef(module, "nbdtrik", nbdtrik);
+
+    PyObject *nbdtrin =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_invn_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_invn_double)},
+                          "nbdtrin", nbdtrin_doc);
+    PyModule_AddObjectRef(module, "nbdtrin", nbdtrin);
+
+    PyObject *ncfdtrinc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(ncf_find_non_centrality_float),
+                           static_cast<xsf::numpy::dddd_d>(ncf_find_non_centrality_double)},
+                          "ncfdtrinc", ncfdtrinc_doc);
+    PyModule_AddObjectRef(module, "ncfdtrinc", ncfdtrinc);
+
+    PyObject *nctdtridf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nct_find_degrees_of_freedom_float),
+                           static_cast<xsf::numpy::ddd_d>(nct_find_degrees_of_freedom_double)},
+                          "nctdtridf", nctdtridf_doc);
+    PyModule_AddObjectRef(module, "nctdtridf", nctdtridf);
+
+    PyObject *nctdtrinc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nct_find_non_centrality_float),
+                           static_cast<xsf::numpy::ddd_d>(nct_find_non_centrality_double)},
+                          "nctdtrinc", nctdtrinc_doc);
+    PyModule_AddObjectRef(module, "nctdtrinc", nctdtrinc);
 
     PyObject *ndtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ndtr), static_cast<xsf::numpy::d_d>(xsf::ndtr),

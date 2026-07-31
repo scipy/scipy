@@ -52,7 +52,7 @@ RigidTransform.from_matrix(array([[[1., 0., 0., 0.],
                                   [[1., 0., 0., 0.],
                                    [0., 1., 0., 0.],
                                    [0., 0., 1., 0.],
-                                   [0., 0., 0., 1.]]]))"""
+                                   [0., 0., 0., 1.]]]))""" # noqa: W293
     if is_numpy(xp):
         assert actual == expected
     else:
@@ -771,7 +771,7 @@ def test_inverse_apply(xp):
 
 @make_xp_test_case((RigidTransform, "apply"))
 def test_rotation_alone(xp):
-    atol = 1e-12
+    atol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-7
 
     r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     tf = RigidTransform.from_rotation(r)

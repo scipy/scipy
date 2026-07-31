@@ -16,7 +16,7 @@
         "_legacy.pxd": {
             "bdtr_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_bdtr_wrap": "dpd->d"
         }
     },
@@ -24,7 +24,7 @@
         "_legacy.pxd": {
             "bdtrc_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_bdtrc_wrap": "dpd->d"
         }
     },
@@ -32,26 +32,8 @@
         "_legacy.pxd": {
             "bdtri_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_bdtri_wrap": "dpd->d"
-        }
-    },
-    "bdtrik": {
-        "boost_special_functions.h++": {
-            "bdtrik_double": "ddd->d",
-            "bdtrik_float": "fff->f"
-        }
-    },
-    "_binom_ppf": {
-        "boost_special_functions.h++": {
-            "binom_ppf_double": "ddd->d",
-            "binom_ppf_float": "fff->f"
-        }
-    },
-    "bdtrin": {
-        "boost_special_functions.h++": {
-            "bdtrin_double": "ddd->d",
-            "bdtrin_float": "fff->f"
         }
     },
     "betainc": {
@@ -257,7 +239,7 @@
         "_legacy.pxd": {
             "expn_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_expn_wrap": "pd->d"
         }
     },
@@ -287,7 +269,7 @@
         "boost_special_functions.h++": {
             "hyp1f1_double": "ddd->d"
 	    },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "chyp1f1_wrap": "ddD->D"
         }
     },
@@ -295,7 +277,7 @@
         "_legacy.pxd": {
             "kn_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "special_cyl_bessel_k_int": "pd->d"
         }
     },
@@ -345,7 +327,7 @@
         "_legacy.pxd": {
             "nbdtr_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_nbdtr_wrap": "ppd->d"
         }
     },
@@ -353,7 +335,7 @@
         "_legacy.pxd": {
             "nbdtrc_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_nbdtrc_wrap": "ppd->d"
         }
     },
@@ -361,20 +343,8 @@
         "_legacy.pxd": {
             "nbdtri_unsafe": "ddd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_nbdtri_wrap": "ppd->d"
-        }
-    },
-    "nbdtrik": {
-        "boost_special_functions.h++": {
-            "nbdtrik_float": "fff->f",
-            "nbdtrik_double": "ddd->d"
-        }
-    },
-    "nbdtrin": {
-        "boost_special_functions.h++": {
-            "nbinom_invn_float": "fff->f",
-            "nbinom_invn_double": "ddd->d"
         }
     },
     "ncfdtr": {
@@ -398,28 +368,10 @@
         "_cdflib_wrappers.pxd": {
             "ncfdtridfn": "dddd->d"        }
     },
-    "ncfdtrinc": {
-        "boost_special_functions.h++": {
-            "ncf_find_non_centrality_float": "ffff->f",
-            "ncf_find_non_centrality_double": "dddd->d"
-        }
-    },
     "nctdtr": {
         "boost_special_functions.h++": {
             "nct_cdf_float": "fff->f",
             "nct_cdf_double": "ddd->d"    }
-    },
-    "nctdtridf": {
-        "boost_special_functions.h++": {
-            "nct_find_degrees_of_freedom_float": "fff->f",
-            "nct_find_degrees_of_freedom_double": "ddd->d"
-        }
-    },
-    "nctdtrinc": {
-        "boost_special_functions.h++": {
-            "nct_find_non_centrality_float": "fff->f",
-            "nct_find_non_centrality_double": "ddd->d"
-        }
     },
     "nctdtrit": {
         "boost_special_functions.h++": {
@@ -431,7 +383,7 @@
         "_legacy.pxd": {
             "pdtri_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_pdtri_wrap": "pd->d"
         }
     },
@@ -448,13 +400,13 @@
         }
     },
     "shichi": {
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "xsf_cshichi": "D*DD->*i",
             "xsf_shichi": "d*dd->*i"
         }
     },
     "sici": {
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "xsf_csici": "D*DD->*i",
             "xsf_sici": "d*dd->*i"
         }
@@ -463,7 +415,7 @@
         "_legacy.pxd": {
             "smirnov_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnov_wrap": "pd->d"
         }
     },
@@ -471,7 +423,7 @@
         "_legacy.pxd": {
             "smirnovc_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnovc_wrap": "pd->d"
         }
     },
@@ -479,7 +431,7 @@
         "_legacy.pxd": {
             "smirnovci_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnovci_wrap": "pd->d"
         }
     },
@@ -487,7 +439,7 @@
         "_legacy.pxd": {
             "smirnovi_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnovi_wrap": "pd->d"
         }
     },
@@ -495,7 +447,7 @@
         "_legacy.pxd": {
             "smirnovp_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_smirnovp_wrap": "pd->d"
         }
     },
@@ -516,16 +468,11 @@
             "t_ppf_double": "dd->d"
         }
     },
-    "_stirling2_inexact": {
-        "stirling2.h++": {
-            "_stirling2_inexact": "dd->d"
-        }
-    },
     "yn": {
         "_legacy.pxd": {
             "yn_unsafe": "dd->d"
         },
-        "xsf_wrappers.h": {
+        "cython_special_wrappers.h": {
             "cephes_yn_wrap": "pd->d"
         }
     },

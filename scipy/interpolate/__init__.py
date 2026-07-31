@@ -188,7 +188,7 @@ Additional tools
    `scipy.ndimage.map_coordinates`,
    `scipy.ndimage.spline_filter`,
 
-"""  # noqa: E501
+"""
 from . import _interpolate
 from ._interpolate import *
 from . import _fitpack_py

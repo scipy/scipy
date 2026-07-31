@@ -3,7 +3,7 @@
 `` --  Problems for testing linear programming routines
 ==============================================================================
 
-This module provides a comprehensive set of problems for benchmarking linear 
+This module provides a comprehensive set of problems for benchmarking linear
 programming routines, that is, scipy.optimize.linprog with method =
 'interior-point' or 'simplex'.
 

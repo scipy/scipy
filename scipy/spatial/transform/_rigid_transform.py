@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType
 from collections.abc import Callable
 
 import numpy as np
@@ -1450,9 +1450,7 @@ class RigidTransform:
 
         self._matrix = self._backend.setitem(self._matrix, indexer, value.as_matrix())
 
-    def __mul__(
-        self, other: RigidTransform | Rotation
-    ) -> RigidTransform | NotImplementedType:
+    def __mul__(self, other: RigidTransform | Rotation) -> RigidTransform:
         """Compose this transform with the other.
 
         If ``p`` and ``q`` are two transforms, then the composition of '``q``
@@ -1553,7 +1551,7 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=True, copy=False)
 
-    def __rmul__(self, other: Rotation) -> RigidTransform | NotImplementedType:
+    def __rmul__(self, other: Rotation) -> RigidTransform:
         """Compose a rotation with this transform (rotation applied second).
 
         See `__mul__` for more details.

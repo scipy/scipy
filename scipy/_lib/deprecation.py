@@ -76,7 +76,7 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
             if module == private_modules[-1]:
                 raise e
             continue
-    
+
 
 def _deprecated(msg, stacklevel=2):
     """Deprecate a function by emitting a warning on use."""
@@ -254,7 +254,7 @@ def _deprecate_positional_args(func=None, *, version=None,
         kwonly_extra_args = set(kwonly_args) - deprecated_args
         admonition = f"""
 .. deprecated:: {version}
-    Use of argument(s) ``{kwonly_extra_args}`` by position is deprecated; beginning in 
+    Use of argument(s) ``{kwonly_extra_args}`` by position is deprecated; beginning in
     SciPy {version}, these will be keyword-only. """
         if deprecated_args:
             admonition += (f"Argument(s) ``{deprecated_args}`` are deprecated, whether "

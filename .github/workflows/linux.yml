@@ -571,6 +571,8 @@ jobs:
         with:
           workflow_name: ${{ github.workflow }}
           job_name: ${{ github.job }}
+          # the two matrix variants build the same thing, avoid saving twice
+          save: ${{ matrix.parallel == '0' }}
 
       - name: Run tests (full)
         if: ${{ matrix.parallel == '0'}}

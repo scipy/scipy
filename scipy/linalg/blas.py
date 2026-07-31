@@ -256,9 +256,9 @@ if not (HAS_LP64 or HAS_ILP64):
     raise RuntimeError("SciPy needs either LP64 or ILP64 BLAS.")
 
 if HAS_LP64:
-    from scipy.linalg._fblas import *  # noqa: E402, F403
+    from scipy.linalg._fblas import *  # noqa: F403
 else:
-    from scipy.linalg._fblas_64 import *  # noqa: E402, F403
+    from scipy.linalg._fblas_64 import *  # noqa: F403
 
 # all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to
 
