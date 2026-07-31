@@ -907,4 +907,4 @@ description = "Build SciPy with clang-22 and -werror"
 gha-tools = "*"
 
 [feature.gha-update.tasks.gha-update]
-cmd = "gha-tools autoupdate ./.github/workflows/ --write --pin all -s specific"
+cmd = "gha-tools autoupdate ./.github/workflows/ ./.github/ccache/ --write --pin all -s specific"
