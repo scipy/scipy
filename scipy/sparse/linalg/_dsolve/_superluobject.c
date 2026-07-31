@@ -369,6 +369,9 @@ int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
 
+    int i;
+    int *ri;
+
     ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
           PyArray_EquivTypenums(PyArray_TYPE(indices), NPY_INT) &&
           PyArray_EquivTypenums(PyArray_TYPE(pointers), NPY_INT) &&
@@ -386,6 +389,15 @@ int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
                         "sparse matrix arrays must be 1-D C-contiguous and of proper "
                         "sizes and types");
         return -1;
+    }
+
+    ri = (int *)PyArray_DATA(indices);
+    for (i = 0; i < nnz; ++i) {
+        if (ri[i] < 0 || ri[i] >= m) {
+            PyErr_SetString(PyExc_ValueError,
+                            "row index out of bounds for matrix shape");
+            return -1;
+        }
     }
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
