@@ -866,6 +866,7 @@ PYTHON_GIL = "0"
 
 [feature.build-freethreading.tasks.build-freethreading]
 cmd = "spin build --build-dir=build-freethreading --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy (freethreaded Python)"
 
 [feature.test-freethreading.tasks.test-freethreading]
