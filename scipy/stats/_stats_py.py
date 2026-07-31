@@ -3714,6 +3714,15 @@ def trim_mean(a, proportiontocut, axis=0):
     >>> stats.trim_mean(x2, 0.25, axis=1)
     array([ 2.5, 25. ])
 
+    .. deprecated:: 1.16.0
+       `trim_mean` is deprecated and will be removed in a future version.
+       The behavior of this function is ambiguous when ``proportiontocut * n``
+       is not an integer: the number of trimmed elements is rounded down
+       silently, which may not match user expectations. See
+       :gh:`25757` for more details. Consider using
+       :func:`scipy.stats.mstats.trimmed_mean` or a third-party package
+       such as `sgmean <https://pypi.org/project/sgmean/>`_ as alternatives.
+
     """
     xp = array_namespace(a)
 
