@@ -2680,7 +2680,6 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
             raise NotImplementedError(
                 "array-valued `lam` is not supported with user-provided knots yet."
             )
-        fpcheck(x, t, 3)
 
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
