@@ -1483,6 +1483,34 @@ class TestRectBivariateSpline:
             Interpolator(GridPosLats, nonGridPosLons)
         assert "y must be strictly increasing" in str(exc_info.value)
 
+    def test_grid_sparse_meshgrid(self):
+        # gh-25730
+        x = np.arange(-10.0, 10.0)
+        y = np.arange(-20.0, 20.0)
+        lut = RectBivariateSpline(x, y, np.hypot(x[:, None], y[None, :]), s=0)
+
+        xi = np.linspace(-10.0, 10.0, 25)
+        yi = np.linspace(-20.0, 20.0, 30)
+        xs, ys = np.meshgrid(xi, yi, sparse=True, indexing="ij")
+        assert xs.ndim == 2 and ys.ndim == 2
+
+        xp_assert_close(lut(xs, ys), lut(xi, yi))
+
+    def test_not_increasing_input_2d(self):
+        # gh-25730
+        x = np.arange(5.0)
+        y = np.arange(6.0)
+        lut = RectBivariateSpline(x, y, np.hypot(x[:, None], y[None, :]), s=0)
+
+        decreasing = np.array([3.0, 1.0, 4.0])
+        with assert_raises(ValueError) as exc_info:
+            lut(decreasing[:, None], y[None, :])
+        assert "x must be strictly increasing" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            lut(x[:, None], decreasing[None, :])
+        assert "y must be strictly increasing" in str(exc_info.value)
+
     def _sample_large_2d_data(self, nx, ny):
         rng = np.random.default_rng(1)
         x = np.arange(nx)
