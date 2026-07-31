@@ -62,6 +62,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._lib._util import _apply_over_batch
 from scipy.conftest import skip_xp_invalid_arg
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import make_xp_test_case, is_lazy_array, array_namespace
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
@@ -1447,9 +1448,10 @@ class TestSomeDistanceFunctions:
 
     @make_xp_test_case(minkowski)
     def test_minkowski(self, xp):
+        dtype = xpx.default_dtype(xp)
         atol = 1.5e-7
         for x, y in self.cases:
-            x, y = xp.asarray(x), xp.asarray(y)
+            x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
             dist1 = minkowski(x, y, p=1)
             xp_assert_close(dist1, xp.asarray(3.0), atol=atol)
             dist1p5 = minkowski(x, y, p=1.5)
