@@ -11,7 +11,7 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
-from scipy.sparse import csr_array
+from scipy.sparse import csr_array, diags_array
 from scipy.special import poch
 from itertools import combinations
 
@@ -2515,35 +2515,29 @@ def _penalty_matrix_banded(t):
 
         """
         N = len(t) - order
-        D = np.zeros((N + 1, N))
+        d = np.zeros(N + 1)
+        j = np.arange(N + 1)
+        mask = np.where(t[j + order - 1] - t[j] > 0)
+        d[mask] = (order - 1) / (t[j[mask] + order - 1] - t[j[mask]])
 
-        for j in range(N + 1):
-            denom = t[j + order - 1] - t[j]
-            coef = (order - 1) / denom if denom > 0.0 else 0.0  # the (m - 1)
-            if j < N:
-                D[j, j] = coef
-            if j >= 1:
-                D[j, j - 1] = -coef
-
-        return D
+        # row j: +d_j at column j, -d_j at column j-1
+        return diags_array([d[:N], -d[1:]], offsets=[0, -1], shape=(N + 1, N))
 
     D1 = deboor_derivative(order)      # cubic
     D2 = deboor_derivative(order - 1)  # quadratic
-    C = D2 @ D1
+    C = D2 @ D1  # sparse
     R_size = len(t) - 2 # len(t) - order (because linear)
-    R = np.zeros((R_size, R_size)) # integral of mul of hat functions
 
-    for j in range(R_size):
-        R[j, j] = (t[j + 2] - t[j]) / 3.0
-        if j + 1 < R_size:
-            R[j, j + 1] = R[j + 1, j] = (t[j + 2] - t[j + 1]) / 6.0
+    d0 = (t[2:] - t[:-2]) / 3.0
+    d1 = (t[2:-1] - t[1:-2]) / 6.0
+    R = diags_array([d1, d0, d1], offsets=[-1, 0, 1], shape=(R_size, R_size))
 
-    omega = C.T @ R @ C
+    omega = (C.T @ R @ C).tocsc()
     omega_banded = np.zeros((4, m))
     for i in range(4):
         # Convert to LAPACK symmetric lower-banded storage,
         # as accepted by solveh_banded.
-        omega_banded[i, : m - i] = np.diag(omega, -i)
+        omega_banded[i, : m - i] = omega.diagonal(-i)
 
     return omega_banded
 
