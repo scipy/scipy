@@ -120,7 +120,7 @@ from . import _hausdorff, _distance_pybind, _distance_wrap
 # Backends that take priority over the array API one, keyed by function name and array
 # namespace. Registering per function lets a namespace keep a specialized kernel for
 # some distances and the generic implementation for the rest.
-backend_registry = {}
+_backend_registry = {}
 
 
 def _select_backend(name, xp, generic=False):
@@ -136,7 +136,7 @@ def _select_backend(name, xp, generic=False):
     """
     if generic:
         return _distance_xp
-    return backend_registry.get((name, xp), _distance_xp)
+    return _backend_registry.get((name, xp), _distance_xp)
 
 
 def _copy_array_if_base_present(a):
