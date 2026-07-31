@@ -459,6 +459,7 @@ from . import (
     cobyla, lbfgsb, linesearch, minpack, minpack2, moduleTNC, nonlin, optimize,
     slsqp, tnc, zeros
 )
+from . import cython_optimize
 
 __all__ = []
 __all__ += _optimize.__all__
@@ -476,7 +477,7 @@ __all__ += ['fmin_slsqp', 'nnls', 'basinhopping', 'linprog',
             'Bounds', 'HessianUpdateStrategy', 'BFGS', 'SR1', 'shgo',
             'dual_annealing', 'quadratic_assignment', 'direct', 'milp']
 __all__ += ['cobyla', 'lbfgsb', 'linesearch', 'minpack', 'minpack2', 'moduleTNC',
-            'nonlin', 'optimize', 'slsqp', 'tnc', 'zeros']
+            'nonlin', 'optimize', 'slsqp', 'tnc', 'zeros', 'cython_optimize']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
