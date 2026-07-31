@@ -28,7 +28,7 @@ from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
-    get_distribution_names, _kurtosis, _isintegral,
+    _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
@@ -12646,8 +12646,48 @@ rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
 
 
 # Collect names of classes and objects in this module.
-pairs = list(globals().copy().items())
-_distn_names: list[str]
-_distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
-
-__all__ = _distn_names + _distn_gen_names + ['rv_histogram']
+__all__ = [
+    'ksone', 'kstwo', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine', 'beta',
+    'betaprime', 'bradford', 'burr', 'burr12', 'fisk', 'cauchy', 'chi', 'chi2',
+    'cosine', 'dgamma', 'dpareto_lognorm', 'dweibull', 'expon', 'exponnorm',
+    'exponweib', 'exponpow', 'fatiguelife', 'foldcauchy', 'f', 'foldnorm',
+    'weibull_min', 'truncweibull_min', 'weibull_max', 'genlogistic', 'genpareto',
+    'genexpon', 'genextreme', 'gamma', 'erlang', 'gengamma', 'genhalflogistic',
+    'genhyperbolic', 'gompertz', 'gumbel_r', 'gumbel_l', 'halfcauchy', 'halflogistic',
+    'halfnorm', 'hypsecant', 'gausshyper', 'invgamma', 'invgauss', 'geninvgauss',
+    'norminvgauss', 'invweibull', 'jf_skew_t', 'johnsonsb', 'johnsonsu', 'landau',
+    'laplace', 'laplace_asymmetric', 'levy', 'levy_l', 'logistic', 'loggamma',
+    'loglaplace', 'lognorm', 'gibrat', 'maxwell', 'mielke', 'kappa4', 'kappa3',
+    'moyal', 'nakagami', 'ncx2', 'ncf', 't', 'nct', 'pareto', 'lomax', 'pearson3',
+    'powerlaw', 'powerlognorm', 'powernorm', 'rdist', 'rayleigh', 'loguniform',
+    'reciprocal', 'rice', 'irwinhall', 'recipinvgauss', 'semicircular', 'skewcauchy',
+    'skewnorm', 'trapezoid', 'triang', 'truncexpon', 'truncnorm', 'truncpareto',
+    'tukeylambda', 'uniform', 'vonmises', 'vonmises_line', 'wald', 'wrapcauchy',
+    'gennorm', 'halfgennorm', 'crystalball', 'argus', 'studentized_range',
+    'rel_breitwigner', 'ksone_gen', 'kstwo_gen', 'kstwobign_gen', 'norm_gen',
+    'alpha_gen', 'anglit_gen', 'arcsine_gen', 'beta_gen', 'betaprime_gen',
+    'bradford_gen', 'burr_gen', 'burr12_gen', 'fisk_gen', 'cauchy_gen', 'chi_gen',
+    'chi2_gen', 'cosine_gen', 'dgamma_gen', 'dpareto_lognorm_gen', 'dweibull_gen',
+    'expon_gen', 'exponnorm_gen', 'exponweib_gen', 'exponpow_gen', 'fatiguelife_gen',
+    'foldcauchy_gen', 'f_gen', 'foldnorm_gen', 'weibull_min_gen',
+    'truncweibull_min_gen', 'weibull_max_gen', 'genlogistic_gen', 'genpareto_gen',
+    'genexpon_gen', 'genextreme_gen', 'gamma_gen', 'erlang_gen', 'gengamma_gen',
+    'genhalflogistic_gen', 'genhyperbolic_gen', 'gompertz_gen', 'gumbel_r_gen',
+    'gumbel_l_gen', 'halfcauchy_gen', 'halflogistic_gen', 'halfnorm_gen',
+    'hypsecant_gen', 'gausshyper_gen', 'invgamma_gen', 'invgauss_gen',
+    'geninvgauss_gen', 'norminvgauss_gen', 'invweibull_gen', 'jf_skew_t_gen',
+    'johnsonsb_gen', 'johnsonsu_gen', 'landau_gen', 'laplace_gen',
+    'laplace_asymmetric_gen', 'levy_gen', 'levy_l_gen', 'logistic_gen', 'loggamma_gen',
+    'loglaplace_gen', 'lognorm_gen', 'gibrat_gen', 'maxwell_gen', 'mielke_gen',
+    'kappa4_gen', 'kappa3_gen', 'moyal_gen', 'nakagami_gen', 'ncx2_gen', 'ncf_gen',
+    't_gen', 'nct_gen', 'pareto_gen', 'lomax_gen', 'pearson3_gen', 'powerlaw_gen',
+    'powerlognorm_gen', 'powernorm_gen', 'rdist_gen', 'rayleigh_gen', 'reciprocal_gen',
+    'rice_gen', 'irwinhall_gen', 'recipinvgauss_gen', 'semicircular_gen',
+    'skewcauchy_gen', 'skewnorm_gen', 'trapezoid_gen', 'triang_gen', 'truncexpon_gen',
+    'truncnorm_gen', 'truncpareto_gen', 'tukeylambda_gen', 'uniform_gen',
+    'vonmises_gen', 'wald_gen', 'wrapcauchy_gen', 'gennorm_gen', 'halfgennorm_gen',
+    'crystalball_gen', 'argus_gen', 'studentized_range_gen', 'rel_breitwigner_gen',
+    'rv_histogram',
+]
+_distn_names = [n for n in __all__ if not n.endswith('_gen') and n != 'rv_histogram']
+_distn_gen_names = [n for n in __all__ if n.endswith('_gen')]

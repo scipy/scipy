@@ -331,7 +331,9 @@ References
 
 """  # noqa: E501
 # Modules contributed by BasSw (wegwerp@gmail.com)
+from . import _codata
 from ._codata import *
+from . import _constants
 from ._constants import *
 from ._codata import _obsolete_constants, physical_constants
 
@@ -350,7 +352,10 @@ if __doc__:
 del _constant_names
 del _constant_names_list
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = []
+__all__ += _codata.__all__
+__all__ += _constants.__all__
+__all__ += ['codata', 'constants']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

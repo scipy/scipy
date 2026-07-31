@@ -7,6 +7,7 @@ import pkgutil
 import types
 import importlib
 import warnings
+from collections import Counter
 from importlib import import_module
 
 import pytest
@@ -21,6 +22,141 @@ def test_dir_testing():
     """Assert that output of dir has only one "testing/tester"
     attribute without duplicate"""
     assert len(dir(scipy)) == len(set(dir(scipy)))
+
+
+# gh-25630: modules with a static `__all__` kept in sync with dir().
+MODULES_WITH_COMPLETE_ALL = [
+    'scipy', 'scipy.ndimage', 'scipy.signal', 'scipy.linalg',
+    'scipy.optimize', 'scipy.integrate', 'scipy.io', 'scipy.io.arff',
+    'scipy.constants', 'scipy.interpolate', 'scipy.sparse', 'scipy.spatial',
+    'scipy.sparse.linalg', 'scipy.stats', 'scipy.stats.mstats',
+    'scipy.stats.distributions', 'scipy.special',
+    'scipy.integrate._rules', 'scipy.sparse.linalg._eigen.lobpcg',
+]
+
+# Present in dir() but omitted from `__all__` (`test` handled below).
+ALL_DIR_EXCEPTIONS = {
+    'scipy.ndimage': {'filters', 'fourier', 'interpolation', 'measurements',
+                      'morphology'},
+    'scipy.signal': {'bsplines', 'filter_design', 'fir_filter_design',
+                     'lti_conversion', 'ltisys', 'signaltools', 'spectral',
+                     'spline', 'waveforms', 'wavelets'},
+    'scipy.special': {'add_newdocs', 'basic', 'cython_special', 'orthogonal',
+                      'sf_error', 'specfun', 'spfun_stats'},
+    'scipy.stats.distributions': {'rv_frozen'},
+    'scipy.linalg': {'interpolative'},
+    'scipy.optimize': {'elementwise'},
+    'scipy.interpolate': {'pchip'},
+    'scipy.stats': {'sampling'},
+}
+
+# Private modules: only require that every `__all__` entry exists.
+MODULES_WITH_PINNED_ALL = [
+    'scipy.special._orthogonal',
+    'scipy.special._support_alternative_backends',
+]
+
+
+def _remove_private_members(names):
+    return {n for n in names if not n.startswith('_')}
+
+
+def _all_dir_exceptions(module_name):
+    excluded = set(ALL_DIR_EXCEPTIONS.get(module_name, set()))
+    if module_name != 'scipy':
+        excluded.add('test')
+    if module_name == 'scipy.stats.distributions':
+        # not public API; see test_distributions_submodule
+        excluded |= {n for n in dir(import_module(module_name))
+                     if n.endswith('_gen')}
+    return excluded
+
+
+def _check_all_unique_and_present(module, module_name):
+    all_list = list(module.__all__)
+    duplicates = sorted(n for n, c in Counter(all_list).items() if c > 1)
+    assert not duplicates, (
+        f"{module_name}: duplicate names in __all__: {duplicates}"
+    )
+    missing = [n for n in all_list if not hasattr(module, n)]
+    assert not missing, (
+        f"{module_name}: names in __all__ missing from the module: {missing}"
+    )
+
+
+@pytest.mark.parametrize('module_name', MODULES_WITH_COMPLETE_ALL)
+def test_all_dir_coherence(module_name):
+    """Check dir(module) vs module.__all__ for static-``__all__`` modules."""
+    module = import_module(module_name)
+    _check_all_unique_and_present(module, module_name)
+
+    all_members = _remove_private_members(module.__all__)
+    dir_members = _remove_private_members(dir(module))
+    dir_members.discard('tests')
+    excluded = _all_dir_exceptions(module_name)
+
+    only_in_all = sorted(all_members - dir_members)
+    only_in_dir = sorted((dir_members - excluded) - all_members)
+    assert not only_in_all and not only_in_dir, (
+        f"{module_name}: in __all__ but not dir: {only_in_all}; "
+        f"in dir but not __all__: {only_in_dir}"
+    )
+
+
+@pytest.mark.parametrize('module_name', MODULES_WITH_PINNED_ALL)
+def test_pinned_all_entries_exist(module_name):
+    """Names listed in pinned `__all__` must exist on the module."""
+    module = import_module(module_name)
+    _check_all_unique_and_present(module, module_name)
+
+
+@pytest.mark.parametrize(
+    ('module_name', 'base_class', 'extra'),
+    [
+        ('scipy.stats._continuous_distns', 'rv_continuous', {'rv_histogram'}),
+        ('scipy.stats._discrete_distns', 'rv_discrete', set()),
+    ],
+)
+def test_distn_all_matches_discovery(module_name, base_class, extra):
+    """Static distn `__all__` must match get_distribution_names()."""
+    from scipy.stats._distn_infrastructure import (
+        get_distribution_names, rv_continuous, rv_discrete,
+    )
+
+    base_classes = {
+        'rv_continuous': rv_continuous,
+        'rv_discrete': rv_discrete,
+    }
+    module = import_module(module_name)
+    _check_all_unique_and_present(module, module_name)
+
+    distn_names, distn_gen_names = get_distribution_names(
+        list(vars(module).items()), base_classes[base_class])
+    expected = set(distn_names) | set(distn_gen_names) | extra
+    actual = set(module.__all__)
+    assert actual == expected, (
+        f"{module_name}: missing={sorted(expected - actual)}; "
+        f"extra={sorted(actual - expected)}"
+    )
+
+    assert set(module._distn_names) == set(distn_names)
+    assert set(module._distn_gen_names) == set(distn_gen_names)
+    assert not any(name.endswith('_gen') for name in module._distn_names)
+    assert all(name.endswith('_gen') for name in module._distn_gen_names)
+
+
+def test_distributions_all_excludes_generators():
+    """distributions.__all__ has instances only (no *_gen)."""
+    from scipy.stats import distributions, _continuous_distns, _discrete_distns
+
+    actual = set(distributions.__all__)
+    _check_all_unique_and_present(distributions, 'scipy.stats.distributions')
+
+    assert set(_continuous_distns._distn_names) <= actual
+    assert set(_discrete_distns._distn_names) <= actual
+    assert {'rv_discrete', 'rv_continuous', 'rv_histogram',
+            'entropy', 'levy_stable'} <= actual
+    assert not any(name.endswith('_gen') for name in actual)
 
 
 # The PRIVATE_BUT_PRESENT_MODULES list contains modules that lacked underscores

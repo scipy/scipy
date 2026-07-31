@@ -419,15 +419,22 @@ Simple iteration solvers:
 
 """  # noqa: E501
 
+from . import _optimize
 from ._optimize import *
+from . import _minimize
 from ._minimize import *
+from . import _root
 from ._root import *
+from . import _root_scalar
 from ._root_scalar import *
+from . import _minpack_py
 from ._minpack_py import *
+from . import _zeros_py
 from ._zeros_py import *
 from ._lbfgsb_py import fmin_l_bfgs_b, LbfgsInvHessProduct
 from ._tnc import fmin_tnc
 from ._cobyla_py import fmin_cobyla
+from . import _nonlin
 from ._nonlin import *
 from ._slsqp_py import fmin_slsqp
 from ._nnls import nnls
@@ -453,7 +460,23 @@ from . import (
     slsqp, tnc, zeros
 )
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = []
+__all__ += _optimize.__all__
+__all__ += _minimize.__all__
+__all__ += _root.__all__
+__all__ += _root_scalar.__all__
+__all__ += _minpack_py.__all__
+__all__ += _zeros_py.__all__
+__all__ += ['fmin_l_bfgs_b', 'LbfgsInvHessProduct', 'fmin_tnc', 'fmin_cobyla']
+__all__ += _nonlin.__all__
+__all__ += ['fmin_slsqp', 'nnls', 'basinhopping', 'linprog',
+            'linprog_verbose_callback', 'linear_sum_assignment',
+            'differential_evolution', 'least_squares', 'lsq_linear',
+            'isotonic_regression', 'NonlinearConstraint', 'LinearConstraint',
+            'Bounds', 'HessianUpdateStrategy', 'BFGS', 'SR1', 'shgo',
+            'dual_annealing', 'quadratic_assignment', 'direct', 'milp']
+__all__ += ['cobyla', 'lbfgsb', 'linesearch', 'minpack', 'minpack2', 'moduleTNC',
+            'nonlin', 'optimize', 'slsqp', 'tnc', 'zeros']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
