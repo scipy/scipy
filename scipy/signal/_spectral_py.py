@@ -403,7 +403,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     If `return_onesided` is ``True``, the values of the negative frequencies are added
     to values of the corresponding positive ones.
 
-    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    Consult the :ref:`tutorial_signal-SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of the power spectral density and
     the magnitude (squared) spectrum.
 
@@ -577,7 +577,7 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
     If `return_onesided` is ``True``, the values of the negative frequencies are added
     to values of the corresponding positive ones.
 
-    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    Consult the :ref:`tutorial_signal-SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of the power spectral density and
     the (squared) magnitude spectrum.
 
@@ -767,7 +767,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     If `return_onesided` is ``True``, the values of the negative frequencies are added
     to values of the corresponding positive ones.
 
-    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    Consult the :ref:`tutorial_signal-SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of a spectral density and an (amplitude) spectrum.
 
     Welch's method may be interpreted as taking the average over the time slices of a
@@ -970,8 +970,8 @@ def spectrogram(x, fs=1.0, window=('tukey_periodic', .25), nperseg=None, noverla
 
         :class:`ShortTimeFFT` is a newer STFT / ISTFT implementation with more
         features also including a :meth:`~ShortTimeFFT.spectrogram` method.
-        A :ref:`comparison <tutorial_stft_legacy_stft>` between the
-        implementations can be found in the :ref:`tutorial_stft` section of
+        A :ref:`comparison <tutorial_signal-STFT_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_signal-STFT` section of
         the :ref:`user_guide`.
 
     Parameters
@@ -1425,8 +1425,8 @@ def stft(x, fs=1.0, window='hann_periodic', nperseg=256, noverlap=None, nfft=Non
     .. legacy:: function
 
         `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
-        features. A :ref:`comparison <tutorial_stft_legacy_stft>` between the
-        implementations can be found in the :ref:`tutorial_stft` section of the
+        features. A :ref:`comparison <tutorial_signal-STFT_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_signal-STFT` section of the
         :ref:`user_guide`.
 
     Parameters
@@ -1613,8 +1613,8 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
     .. legacy:: function
 
         `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
-        features. A :ref:`comparison <tutorial_stft_legacy_stft>` between the
-        implementations can be found in the :ref:`tutorial_stft` section of the
+        features. A :ref:`comparison <tutorial_signal-STFT_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_signal-STFT` section of the
         :ref:`user_guide`.
 
     Parameters

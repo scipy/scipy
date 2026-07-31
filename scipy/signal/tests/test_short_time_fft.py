@@ -743,7 +743,7 @@ def test_compare_stft_detrend():
 def test_tutorial_stft_sliding_win():
     """Verify example in "Sliding Windows" subsection from the "User Guide".
 
-    In :ref:`tutorial_stft_sliding_win` (file ``signal.rst``) of the
+    In :ref:`tutorial_signal-STFT_sliding_win` (file ``signal.rst``) of the
     :ref:`user_guide` the behavior the border behavior of
     ``ShortTimeFFT(np.ones(6), 2, fs=1)`` with a 50 sample signal is discussed.
     This test verifies the presented indexes.
@@ -770,7 +770,7 @@ def test_tutorial_stft_legacy_stft():
     """Verify STFT example in "Comparison with Legacy Implementation" from the
     "User Guide".
 
-    In :ref:`tutorial_stft_legacy_stft` (file ``signal.rst``) of the
+    In :ref:`tutorial_signal-STFT_legacy_stft` (file ``signal.rst``) of the
     :ref:`user_guide` the legacy and the new implementation are compared.
     """
     fs, N = 200, 1001  # # 200 Hz sampling rate for 5 s signal
@@ -811,7 +811,7 @@ def test_tutorial_stft_legacy_spectrogram():
     """Verify spectrogram example in "Comparison with Legacy Implementation"
     from the "User Guide".
 
-    In :ref:`tutorial_stft_legacy_stft` (file ``signal.rst``) of the
+    In :ref:`tutorial_signal-STFT_legacy_stft` (file ``signal.rst``) of the
     :ref:`user_guide` the legacy and the new implementation are compared.
     """
     fs, N = 200, 1001  # 200 Hz sampling rate for almost 5 s signal
