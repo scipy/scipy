@@ -9,7 +9,7 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
 from scipy import linalg
 
 from scipy._lib._array_api import (array_namespace, xp_size, xp_promote,
-                                   xp_result_type)
+                                   xp_result_type, xp_device)
 import scipy._external.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
@@ -198,13 +198,16 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
         raise ValueError("Dimension q is undefined for parameters C = D = None!")
 
     xp = array_namespace(A, B, C, D)
+    # after `xp_promote` all non-None inputs share one device; at least one
+    # of A, B, C is not None per the checks above
     A, B, C, D = xp_promote(A, B, C, D, xp=xp, force_floating=True)
     dtype = xp_result_type(A, B, C, D, xp=xp)
+    device = xp_device(next(M_ for M_ in (A, B, C, D) if M_ is not None))
 
     # convert inputs into 2d arrays (zero-size 2d array if None):
     A, B, C, D = (
         xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
-        if M_ is not None else xp.zeros((0, 0), dtype=dtype)
+        if M_ is not None else xp.zeros((0, 0), dtype=dtype, device=device)
         for M_ in (A, B, C, D)
     )
 
@@ -213,10 +216,10 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     q = C.shape[0] or D.shape[0]
 
     # Create zero matrices as needed:
-    A = xp.zeros((n, n), dtype=dtype) if xp_size(A) == 0 else A
-    B = xp.zeros((n, p), dtype=dtype) if xp_size(B) == 0 else B
-    C = xp.zeros((q, n), dtype=dtype) if xp_size(C) == 0 else C
-    D = xp.zeros((q, p), dtype=dtype) if xp_size(D) == 0 else D
+    A = xp.zeros((n, n), dtype=dtype, device=device) if xp_size(A) == 0 else A
+    B = xp.zeros((n, p), dtype=dtype, device=device) if xp_size(B) == 0 else B
+    C = xp.zeros((q, n), dtype=dtype, device=device) if xp_size(C) == 0 else C
+    D = xp.zeros((q, p), dtype=dtype, device=device) if xp_size(D) == 0 else D
 
     if A.shape != (n, n):
         raise ValueError(f"Parameter A has shape {A.shape} but should be ({n}, {n})!")
