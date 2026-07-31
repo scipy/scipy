@@ -113,7 +113,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
             cflags_unwanted = ('-O0', '-O1', '-O2')
         meson_args = meson_args + (f"-Dbuildtype={buildtype}", )
         if 'CFLAGS' in os.environ.keys():
-            # Check that CFLAGS doesn't contain something that supercedes -O0
+            # Check that CFLAGS doesn't contain something that supersedes -O0
             # for a plain debug build (conda envs tend to set -O2)
             cflags = os.environ['CFLAGS'].split()
             for flag in cflags_unwanted:
