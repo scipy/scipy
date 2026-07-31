@@ -272,7 +272,7 @@ PKG_CONFIG_PATH = "{project}"
 [tool.cibuildwheel.pyodide]
 before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
-test-requires = ["pytest", "pytest-split", "pytest-reportlog", "hypothesis", "threadpoolctl", "pooch"]
+test-requires = ["pytest", "pytest-split", "hypothesis", "threadpoolctl", "pooch"]
 test-command = "bash {project}/tools/wheels/cibw_test_command_pyodide.sh"
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
