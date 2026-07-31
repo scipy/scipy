@@ -988,6 +988,7 @@ class DifferentialEvolutionSolver:
                 raise ValueError(self.__init_error_msg)
         else:
             self.init_population_array(init)
+        self._init_energized = False
 
         if x0 is not None:
             # scale to within unit interval and
@@ -1210,7 +1211,7 @@ class DifferentialEvolutionSolver:
         # Although this is also done in the evolve generator it's possible
         # that someone can set maxiter=0, at which point we still want the
         # initial energies to be calculated (the following loop isn't run).
-        if np.all(np.isinf(self.population_energies)):
+        if not self._init_energized and np.all(np.isinf(self.population_energies)):
             self.feasible, self.constraint_violation = (
                 self._calculate_population_feasibilities(self.population))
 
@@ -1220,6 +1221,7 @@ class DifferentialEvolutionSolver:
                     self.population[self.feasible]))
 
             self._promote_lowest_energy()
+            self._init_energized = True
 
         # do the optimization.
         for nit in range(1, self.maxiter + 1):
@@ -1609,9 +1611,9 @@ class DifferentialEvolutionSolver:
         fun : float
             Value of objective function obtained from the best solution.
         """
-        # the population may have just been initialized (all entries are
-        # np.inf). If it has you have to calculate the initial energies
-        if np.all(np.isinf(self.population_energies)):
+        # the population may have just been initialized and their energies
+        # not calculated. If it has you have to calculate the initial energies
+        if not self._init_energized:
             self.feasible, self.constraint_violation = (
                 self._calculate_population_feasibilities(self.population))
 
