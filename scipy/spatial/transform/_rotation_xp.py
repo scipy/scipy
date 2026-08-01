@@ -65,15 +65,30 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
 
         gramians = matrix @ matrix.mT
         eye = xp.eye(3, dtype=matrix.dtype, device=device)
+        # float32 reduced precision compared to float64 requires a higher threshold
+        atol = 1e-12 if matrix.dtype == xp.float64 else 1e-6
         is_orthogonal = xp.all(
-            xpx.isclose(gramians, eye, atol=1e-12, xp=xp), axis=(-2, -1)
+            xpx.isclose(gramians, eye, atol=atol, xp=xp), axis=(-2, -1)
         )
 
         if lazy:
             # Lazy backends do not support non-concrete boolean indexing or any form of
             # computation without statically known shapes, so we always compute SVD and
             # use xp.where to select the result.
-            U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
+            # The results from orthogonal matrices are discarded, so we are free to
+            # change the inputs. We use this to our advantage:
+            # 1. the SVD of a diagonal matrix is significantly faster than the SVD of a
+            #    dense, generic matrix, so replacing orthogonal inputs with diagonal
+            #    matrices improves performance of the unnecessary SVDs.
+            # 2. The SVD of a matrix with three equal singular values is not
+            #    differentiable. Valid rotation matrices fall under this category, so
+            #    ironically, the unused results of the SVD produce NaN gradients that
+            #    can poison common autograd frameworks. Setting the value of the matrix
+            #    before the SVD breaks that chain and prevents NaN gradients. Note that
+            #    we do not guarantee gradients, but it is still a notable side-effect.
+            filler = xp.eye(3, dtype=matrix.dtype, device=device)
+            matrix_svd = xp.where(is_orthogonal[..., None, None], filler, matrix)
+            U, _, Vt = xp.linalg.svd(matrix_svd, full_matrices=False)
             matrix = xp.where(is_orthogonal[..., None, None], matrix, U @ Vt)
         elif not xp.all(is_orthogonal):
             # For eager frameworks, only compute SVD if needed.
@@ -607,9 +622,7 @@ def reduce(
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
     # TODO: Can we somehow avoid this?
-    all_idx = xp.reshape(
-        xp.arange(left.shape[-1], device=xp_device(left)), (1, -1)
-    )
+    all_idx = xp.reshape(xp.arange(left.shape[-1], device=xp_device(left)), (1, -1))
     left_idx = xp.reshape(left_best, (-1, 1))
     left = left[left_idx, all_idx]
     right_idx = xp.reshape(right_best, (-1, 1))
