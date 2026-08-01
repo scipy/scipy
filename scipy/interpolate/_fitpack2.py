@@ -1417,6 +1417,8 @@ class _BivariateSplineBase:
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
         if grid:
+            x = x.ravel()
+            y = y.ravel()
             if x.size == 0 or y.size == 0:
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
 
