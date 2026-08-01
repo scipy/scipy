@@ -80,5 +80,5 @@ __all__ = ["ClusterError", "kmeans", "kmeans2", "vq", "whiten"]
 __all__ += ["py_vq"]
 
 
-def __dir__(): 
-    return __all__ 
+def __dir__():
+    return __all__
