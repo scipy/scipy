@@ -825,21 +825,22 @@ def svd(A, eps_or_k, rand=True, rng=None):
         1D array of singular values.
     V : :class:`numpy.ndarray`
         2D array right singular vectors.
-        
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.linalg.interpolative import svd
-    >>> rng = np.random.default_rng(0)
-    >>> A = rng.standard_normal((20, 10))
+    >>> rng = np.random.default_rng()
+    >>> # Create a matrix with rank 5.
+    >>> A = rng.standard_normal((20, 5))
     >>> U, S, V = svd(A, 5)
     >>> U.shape
     (20, 5)
     >>> S.shape
     (5,)
     >>> V.shape
-    (10, 5)
-    
+    (5, 5)
+    >>> np.allclose(A, U @ np.diag(S) @ V.T)
+    True
     """
     from scipy.sparse.linalg import LinearOperator
     rng = np.random.default_rng(rng)
