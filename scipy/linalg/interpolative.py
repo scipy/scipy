@@ -825,6 +825,7 @@ def svd(A, eps_or_k, rand=True, rng=None):
         1D array of singular values.
     V : :class:`numpy.ndarray`
         2D array right singular vectors.
+    
     Examples
     --------
     >>> import numpy as np
@@ -841,6 +842,7 @@ def svd(A, eps_or_k, rand=True, rng=None):
     (5, 5)
     >>> np.allclose(A, U @ np.diag(S) @ V.T)
     True
+
     """
     from scipy.sparse.linalg import LinearOperator
     rng = np.random.default_rng(rng)
