@@ -1,12 +1,15 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
+import functools
 import itertools
 from types import GenericAlias
 
 import numpy as np
 
 import scipy.sparse.linalg as ssl
-from scipy._lib._array_api import array_namespace, xp_capabilities
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_result_device
+)
 from scipy._external.array_api_compat import is_array_api_obj
 
 from ._interpnd import _ndim_coords_from_arrays
@@ -307,7 +310,9 @@ class RegularGridInterpolator:
                 if xp_v != xp:
                     raise e
 
-        self._asarray = xp.asarray
+        # the NumPy round-trip must return results on the inputs' device
+        device = xp_result_device(*points, values)
+        self._asarray = functools.partial(xp.asarray, device=device)
         self.method = method
         self._spline = None
         self.bounds_error = bounds_error

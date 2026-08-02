@@ -17,7 +17,7 @@ from itertools import combinations
 
 from scipy._lib._array_api import (
     array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy,
-    is_cupy
+    is_cupy, xp_device, xp_result_device
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
@@ -191,7 +191,8 @@ def _validate_clamp_values(clamp_values, k, t, y, x, xp, check_finite=True):
     # used elsewhere in scipy, rather than special-casing clamp_values.
     # Raises TypeError on mismatch, consistent with array_namespace's
     # behavior throughout the rest of the library.
-    array_namespace(*clamp_values, xp.empty(0))
+    # `empty(0)` is a throwaway used only to resolve the namespace
+    array_namespace(*clamp_values, xp.empty(0))  # skip device check
 
     def _prepare(val, side):
         try:
@@ -849,6 +850,9 @@ class BSpline:
 
         xp = array_namespace(t, c)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
+        # a NumPy round-trip in the delegate must return results on the
+        # device of the inputs, not on the backend's default device
+        device = xp_result_device(t, c)
         if not is_numpy(xp):
             # only convert t and c to internal namespace if it is not NumPy
             # to preserve NumPy behavior with lists.
@@ -867,13 +871,15 @@ class BSpline:
         # keeping modules in attributes like this.
         self._xp = xp
         self._xp_internal = xp_internal
+        self._device = device
 
     @classmethod
-    def _construct_from_xp(cls, xp_bspline, *, xp_external):
+    def _construct_from_xp(cls, xp_bspline, *, xp_external, device=None):
         self = object.__new__(cls)
         self._delegate_to = xp_bspline
         self._xp = xp_external
         self._xp_internal = array_namespace(xp_bspline.t)
+        self._device = device
         return self
 
     @classmethod
@@ -885,6 +891,7 @@ class BSpline:
         """
         xp = array_namespace(t, c)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
+        device = xp_result_device(t, c)
         return cls._construct_from_xp(
             xp_bspline_cls.construct_fast(
                 xp_internal.asarray(t),
@@ -893,6 +900,7 @@ class BSpline:
                 extrapolate=extrapolate, axis=axis,
             ),
             xp_external=xp,
+            device=device,
         )
 
     @property
@@ -903,7 +911,7 @@ class BSpline:
 
     @property
     def t(self):
-        return self._xp.asarray(self._delegate_to.t)
+        return self._xp.asarray(self._delegate_to.t, device=self._device)
 
     @t.setter
     def t(self, t):
@@ -915,7 +923,7 @@ class BSpline:
 
     @property
     def c(self):
-        return self._xp.asarray(self._delegate_to.c)
+        return self._xp.asarray(self._delegate_to.c, device=self._device)
 
     @c.setter
     def c(self, c):
@@ -1007,11 +1015,13 @@ class BSpline:
         """
         xp = array_namespace(t)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
+        device = xp_result_device(t)
         return cls._construct_from_xp(
             xp_bspline_cls.basis_element(
                 xp_internal.asarray(t), extrapolate=extrapolate,
             ),
             xp_external=xp,
+            device=device,
         )
 
     @classmethod
@@ -1118,10 +1128,14 @@ class BSpline:
             in the coefficient array with the shape of `x`.
 
         """
+        device = xp_result_device(x)
+        if device is None:
+            device = self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
-            )
+            ),
+            device=device,
         )
 
     def derivative(self, nu=1):
@@ -1149,6 +1163,7 @@ class BSpline:
             return self._construct_from_xp(
                 self._delegate_to.derivative(nu=nu),
                 xp_external=self._xp,
+                device=self._device,
             )
 
         ## Array-agnostic codepath
@@ -1159,7 +1174,7 @@ class BSpline:
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:], device=xp_device(c)))
         tck = _fitpack_impl.splder((t, c, self.k), nu)
         return self.construct_fast(*tck, extrapolate=self.extrapolate, axis=self.axis)
 
@@ -1194,6 +1209,7 @@ class BSpline:
             return self._construct_from_xp(
                 self._delegate_to.antiderivative(nu=nu),
                 xp_external=self._xp,
+                device=self._device,
             )
 
         ## Array-agnostic codepath
@@ -1204,7 +1220,7 @@ class BSpline:
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:], device=xp_device(c)))
         tck = _fitpack_impl.splantider((t, c, self.k), nu)
 
         if self.extrapolate == 'periodic':
@@ -1263,7 +1279,8 @@ class BSpline:
 
         """
         return self._xp.asarray(
-            self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+            self._delegate_to.integrate(a, b, extrapolate=extrapolate),
+            device=self._device,
         )
 
     @classmethod
@@ -1345,10 +1362,11 @@ class BSpline:
         """
         xp = array_namespace(pp.x, pp.c)
         xp_bspline_cls, _ = _get_xp_bspline_cls(xp)
+        device = xp_result_device(pp.x, pp.c)
         # from_power_basis isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         spl = xp_bspline_cls.from_power_basis(pp, bc_type=bc_type)
-        return cls._construct_from_xp(spl, xp_external=xp)
+        return cls._construct_from_xp(spl, xp_external=xp, device=device)
 
     def insert_knot(self, x, m=1):
         """Insert a new knot at `x` of multiplicity `m`.
@@ -1422,16 +1440,22 @@ class BSpline:
         # insert_knot isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         return self._construct_from_xp(
-            self._delegate_to.insert_knot(x, m=m), xp_external=self._xp
+            self._delegate_to.insert_knot(x, m=m), xp_external=self._xp,
+            device=self._device,
         )
 
     def __getstate__(self):
         # need custom __getstate__ and __setstate__ methods to allow pickling
         # while holding onto namespaces.
-        return (self._delegate_to, self._xp.empty(0))
+        # `empty(0)` is a pickling sentinel, never combined with input data
+        return (
+            self._delegate_to,
+            self._xp.empty(0),  # skip device check
+            self._device,
+        )
 
     def __setstate__(self, state):
-        self._delegate_to, sentinel_array = state
+        self._delegate_to, sentinel_array, self._device = state
         self._xp_internal = array_namespace(self._delegate_to.t)
         self._xp = array_namespace(sentinel_array)
 
@@ -1773,7 +1797,7 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
             ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
 
 
-def _make_periodic_spline(x, y, t, k, axis, *, xp):
+def _make_periodic_spline(x, y, t, k, axis, *, xp, device=None):
     '''
     Compute the (coefficients of) interpolating B-spline with periodic
     boundary conditions.
@@ -1824,7 +1848,7 @@ def _make_periodic_spline(x, y, t, k, axis, *, xp):
         for i in range(extradim):
             c[:, i] = _make_interp_per_full_matr(x, y_new[:, i], t, k)
         c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
-        t, c = xp.asarray(t), xp.asarray(c)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
         return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
     nt = len(t) - k - 1
@@ -1864,7 +1888,7 @@ def _make_periodic_spline(x, y, t, k, axis, *, xp):
         cc = _woodbury_algorithm(A, ur, ll, y_new[:, i][:-1], k)
         c[:, i] = np.concatenate((cc[-kul:], cc, cc[:kul + k % 2]))
     c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
-    t, c = xp.asarray(t), xp.asarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
 
@@ -2006,6 +2030,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     """
     xp = array_namespace(x, y, t)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = xp_result_device(x, y, t)
     if is_cupy(xp):
         # delegate to CuPy, *and* return a SciPy BSpline object
         import cupyx.scipy.interpolate as csi
@@ -2048,7 +2074,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
-        t, c = xp.asarray(t), xp.asarray(c)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
@@ -2058,7 +2084,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
-        t, c = xp.asarray(t), xp.asarray(c)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     k = operator.index(k)
@@ -2090,7 +2116,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError(f'Out of bounds w/ x = {x}.')
 
     if bc_type == 'periodic':
-        return _make_periodic_spline(x, y, t, k, axis, xp=xp)
+        return _make_periodic_spline(x, y, t, k, axis, xp=xp, device=device)
 
     # Here : deriv_l, r = [(nu, value), ...]
     deriv_l = _convert_string_aliases(deriv_l, y.shape[1:])
@@ -2118,6 +2144,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # bail out if the `y` array is zero-sized
     if y.size == 0:
         c = np.zeros((nt,) + y.shape[1:], dtype=float)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     # set up the LHS: the colocation matrix + derivatives at boundaries
@@ -2153,7 +2180,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     elif info < 0:
         raise ValueError(f'illegal value in {-info}-th argument of internal gbsv')
     c = np.ascontiguousarray(c.reshape((nt,) + y.shape[1:]))
-    t, c = xp.asarray(t), xp.asarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
@@ -2289,6 +2316,8 @@ clamp_values=None):
 
     """
     xp = array_namespace(x, y, t, w)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = xp_result_device(x, y, t, w)
 
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
@@ -2388,7 +2417,7 @@ clamp_values=None):
     # restore the shape of `c` for both single and multiple r.h.s.
     c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
-    t, c = xp.asarray(t), xp.asarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
@@ -2938,6 +2967,8 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
 
     """  # noqa:E501
     xp = array_namespace(x, y)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = xp_result_device(x, y)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
@@ -3037,7 +3068,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
                cm0 * (t[-4] - t[-6]) + cm1,
                cm0 * (2 * t[-4] - t[-5] - t[-6]) + cm1]
 
-    t, c_ = xp.asarray(t), xp.asarray(c_)
+    t, c_ = xp.asarray(t, device=device), xp.asarray(c_, device=device)
     return BSpline.construct_fast(t, c_, 3, axis=axis)
 
 
