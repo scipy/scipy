@@ -20,6 +20,8 @@ concurrency:
 
 env:
   FORCE_COLOR: 3
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  CCACHE_MAXSIZE: "300M"
 
 jobs:
   get_commit_message:
@@ -40,8 +42,32 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Install ccache
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Cache the Emscripten toolchain and Pyodide xbuildenv
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/cibuildwheel
+          key: pyodide-toolchain-${{ hashFiles('.github/workflows/emscripten.yml') }}
+
       - uses: pypa/cibuildwheel@4726cd35bb13f7bde50cf2761f2499ac7b3aa32c # v4.1.1
         env:
           CIBW_PLATFORM: pyodide
           CIBW_BUILD: cp314-pyodide_wasm32
           CIBW_BUILD_VERBOSITY: 1
+          EM_COMPILER_WRAPPER: ccache
+          CCACHE_COMPILERCHECK: "%compiler% --version"
+
+      - name: Ccache performance
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
