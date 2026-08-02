@@ -276,6 +276,7 @@ test-requires = ["pytest", "pytest-split", "hypothesis", "threadpoolctl", "pooch
 test-command = "bash {project}/tools/wheels/cibw_test_command_pyodide.sh"
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
+build-dir = "build/pyodide"
 
 [tool.cibuildwheel.pyodide.environment]
 PKG_CONFIG_PATH = "$(pwd)/.blis/lib/pkgconfig:$(pwd)/.blis/share/pkgconfig"
