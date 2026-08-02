@@ -396,6 +396,8 @@ double xsf_radian(double d, double m, double s);
 
 double boost_bdtrik(double y, double n, double p);
 double boost_bdtrin(double k, double y, double p);
+float boost_erfinv_float(float x);
+double boost_erfinv_double(double x);
 double boost_nbdtrik(double y, double n, double p);
 double boost_nbdtrin(double k, double y, double p);
 double boost_ncfdtrinc(double dfn, double dfd, double p, double f);

@@ -144,6 +144,7 @@ special_ufuncs = [
     "erfcinv",
     "erfcx",
     "erfi",
+    "erfinv",
     "exp1",
     "exp10",
     "exp2",

@@ -1402,6 +1402,8 @@ cdef extern from r"cython_special_wrappers.h":
 
     double boost_bdtrik(double y, double n, double p) nogil
     double boost_bdtrin(double k, double y, double p) nogil
+    float boost_erfinv_float(float x) nogil
+    double boost_erfinv_double(double x) nogil
     double boost_nbdtrik(double y, double n, double p) nogil
     double boost_nbdtrin(double k, double y, double p) nogil
     double boost_ncfdtrinc(double dfn, double dfd, double p, double f) nogil
@@ -2118,9 +2120,9 @@ cpdef Dd_number_t erfi(Dd_number_t x0) noexcept nogil:
 cpdef df_number_t erfinv(df_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfinv"""
     if df_number_t is float:
-        return (<float(*)(float) noexcept nogil>scipy.special._ufuncs_cxx._export_erfinv_float)(x0)
+        return boost_erfinv_float(x0)
     elif df_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_erfinv_double)(x0)
+        return boost_erfinv_double(x0)
     else:
         if df_number_t is double:
             return NAN
