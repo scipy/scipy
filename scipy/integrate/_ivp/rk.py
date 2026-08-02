@@ -487,7 +487,7 @@ class DOP853(RungeKutta):
 
     Examples
     --------
-    Compute one orbit of a satellite around earth using `Cowell's
+    Compute one orbit of a satellite around Earth using `Cowell's
     method
     <https://en.wikipedia.org/wiki/Orbit_modeling#Cowell's_method>`_
     for orbit simulations.
@@ -497,15 +497,15 @@ class DOP853(RungeKutta):
     >>> import matplotlib.pyplot as plt
 
     Import the Newtonian constant of gravitation and create variables
-    for earth's mass and radius, and the satellite's mass and altitude.
-    Calculate the satellite's orbital velocity.
+    for earth's mass and radius, and the satellite's mass and altitude
+    in kilograms and meters. Calculate the satellite's orbital velocity.
 
     >>> from scipy.constants import G
     >>> mass_e, radius_e = 5.9722E24, 6.371E6
     >>> mass_s, alt_s = 6E3, 2E6
     >>> v_orbit = np.sqrt((G*mass_e)/(radius_e+alt_s))
 
-    Cowell's equations for simulating two interacting bodies is a
+    Cowell's equations for simulating two interacting bodies are a
     system of second-order ODEs.
 
     .. math::
@@ -516,9 +516,10 @@ class DOP853(RungeKutta):
         \end{align*}
 
     Where :math:`r_1` and :math:`r_2` are the position vectors of the
-    two bodies, :math:`G` is the Newtonian constant of gravitation, and
-    :math:`m_1` and :math:`m_2` are the masses of the two bodies. The
-    distance between the two bodies is :math:`d = ||r_1 - r_2||`.
+    centers of the two bodies, :math:`G` is the Newtonian constant of
+    gravitation, and :math:`m_1` and :math:`m_2` are the masses of the
+    two bodies. The distance between the centers of the two bodies is
+    :math:`d = ||r_1 - r_2||`.
 
     To convert Cowell's equations into a system of first-order ODEs,
     introduce variables :math:`k_1` and :math:`k_2` for the velocity of
@@ -549,36 +550,35 @@ class DOP853(RungeKutta):
     body's position and velocity followed by the coordinates for the
     second body's position and velocity.
 
-    Set the earth's initial position and velocity to zero. Since the
-    satellite's altitude is ``2000`` kilometers, set its initial position
-    to be ``2E6`` meters on the ``x``-axis and its initial velocity to be its
-    orbital velocity in the ``y``-direction. Combine the initial
-    conditions for both bodies in an initial conditions vector.
+    Set the Earth's initial position and velocity to zero. Set the
+    satellite's initial position to be the sum of the Earth's radius
+    and the satellite's altitude on the ``x``-axis, and its initial
+    velocity to be its orbital velocity in the ``y``-direction.
+    Combine the initial conditions for both bodies in an initial
+    conditions vector.
 
     >>> init_e = np.zeros(6)
-    >>> init_s = [2E6, 0, 0, 0, v_orbit, 0]
+    >>> init_s = [radius_e + alt_s, 0, 0, 0, v_orbit, 0]
     >>> inits = np.concatenate((init_e, init_s))
 
     Create a solver object using the initial conditions.
 
-    >>> solver = itg.DOP853(cowell, 0, inits, 1E6, max_step=0.5)
+    >>> solver = itg.DOP853(cowell, 0, inits, 1E8, max_step=50)
 
-    Create an array in which to store the estimated solution. To allow
-    for concatenation of future states, initialize the array by
-    reshaping the initial state.
+    Use the initial state to create an array in which to store the
+    estimated solution.
 
-    >>> solr = solver.y.reshape(1, 12)
+    >>> solr = solver.y
 
-    Run the solver for a trial ``650`` integration steps, then plot
+    Run the solver for a trial ``120`` integration steps, then plot
     earth's trajectory in blue and the satellite's trajectory in orange.
 
-    >>> for _ in range(650):
+    >>> for _ in range(120):
     ...     solver.step()
-    ...     solrn = solver.y.reshape(1, 12)
-    ...     solr = np.concatenate((solr, solrn))
+    ...     solr = np.vstack((solr, solver.y))
 
-    >>> x_e, y_e, z_e = solr[:,0:3].T
-    >>> x_s, y_s, z_s = solr[:,6:9].T
+    >>> x_e, y_e, z_e = solr.T[0:3]
+    >>> x_s, y_s, z_s = solr.T[6:9]
 
     >>> fig1 = plt.figure()
     >>> ax1 = fig1.add_subplot(projection='3d')
@@ -587,22 +587,21 @@ class DOP853(RungeKutta):
     >>> ax1.set(xlabel='x', ylabel='y', zlabel='z')
     >>> plt.show()
 
-    The figure shows that the earth is approximately stationary and the
+    The figure shows that the Earth is approximately stationary and the
     satellite orbits around it in an ellipse. The satellite orbit has a
-    small gap near the ``y``-axis.
+    gap.
 
     To calculate the rest of the orbit, run the solver for another
-    ``120`` integration steps.
+    ``40`` integration steps.
 
-    >>> for _ in range(120):
+    >>> for _ in range(40):
     ...     solver.step()
-    ...     solrn = solver.y.reshape(1, 12)
-    ...     solr = np.concatenate((solr, solrn))
+    ...     solr = np.vstack((solr, solver.y))
 
     Plot the updated solution.
 
-    >>> x_e, y_e, z_e = solr[:,0:3].T
-    >>> x_s, y_s, z_s = solr[:,6:9].T
+    >>> x_e, y_e, z_e = solr.T[0:3]
+    >>> x_s, y_s, z_s = solr.T[6:9]
 
     >>> fig2 = plt.figure()
     >>> ax2 = fig2.add_subplot(projection='3d')
@@ -611,7 +610,7 @@ class DOP853(RungeKutta):
     >>> ax2.set(xlabel='x', ylabel='y', zlabel='z')
     >>> plt.show()
 
-    The additional ``120`` integration steps close the gap in the orbit.
+    The additional ``40`` integration steps close the gap in the orbit.
 
     References
     ----------
