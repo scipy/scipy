@@ -377,7 +377,7 @@ def splev(x, tck, der=0, ext=0):
     --------
     Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
-    A comparison between `splev`, `splder` and `spalde` to compute the derivatives of a 
+    A comparison between `splev`, `splder` and `spalde` to compute the derivatives of a
     B-spline can be found in the `spalde` examples section.
 
     """
@@ -585,14 +585,14 @@ def spalde(x, tck):
         Note that ``t(k) <= x <= t(n-k+1)`` must hold for each `x`.
     tck : tuple
         A tuple (t,c,k) containing the vector of knots,
-        the B-spline coefficients, and the degree of the spline whose 
+        the B-spline coefficients, and the degree of the spline whose
         derivatives to compute.
 
     Returns
     -------
     results : {ndarray, list of ndarrays}
         An array (or a list of arrays) containing all derivatives
-        up to order k inclusive for each point `x`, being the first element the 
+        up to order k inclusive for each point `x`, being the first element the
         spline itself.
 
     See Also
@@ -611,14 +611,14 @@ def spalde(x, tck):
 
     Examples
     --------
-    To calculate the derivatives of a B-spline there are several approaches. 
+    To calculate the derivatives of a B-spline there are several approaches.
     In this example, we will demonstrate that `spalde` is equivalent to
     calling `splev` and `splder`.
-    
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import BSpline, spalde, splder, splev
-    
+
     >>> # Store characteristic parameters of a B-spline
     >>> tck = ((-2, -2, -2, -2, -1, 0, 1, 2, 2, 2, 2),  # knots
     ...        (0, 0, 0, 6, 0, 0, 0),  # coefficients
@@ -628,9 +628,9 @@ def spalde(x, tck):
     >>> bspl = BSpline(tck[0], tck[1], tck[2])
     >>> # Generate extra points to get a smooth curve
     >>> x = np.linspace(min(tck[0]), max(tck[0]), 100)
-    
+
     Evaluate the curve and all derivatives
-    
+
     >>> # The order of derivative must be less or equal to k, the degree of the spline
     >>> # Method 1: spalde()
     >>> f1_y_bsplin = [spalde(i, tck)[0] for i in x ]  # The B-spline itself
@@ -640,7 +640,7 @@ def spalde(x, tck):
     >>> # You can reach the same result by using `splev`and `splder`
     >>> f2_y_deriv3 = splev(x, bspl, der=3)
     >>> f3_y_deriv3 = splder(bspl, n=3)(x)
-    
+
     >>> # Generate a figure with three axes for graphic comparison
     >>> fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 5))
     >>> suptitle = fig.suptitle(f'Evaluate a B-spline and all derivatives')
@@ -782,7 +782,7 @@ def splder(tck, n=1):
     ----------
     tck : BSpline instance or tuple
         BSpline instance or a tuple (t,c,k) containing the vector of knots,
-        the B-spline coefficients, and the degree of the spline whose 
+        the B-spline coefficients, and the degree of the spline whose
         derivative to compute
     n : int, optional
         Order of derivative to evaluate. Default: 1
@@ -826,7 +826,7 @@ def splder(tck, n=1):
     This agrees well with roots :math:`\\pi/2 + n\\pi` of
     :math:`\\cos(x) = \\sin'(x)`.
 
-    A comparison between `splev`, `splder` and `spalde` to compute the derivatives of a 
+    A comparison between `splev`, `splder` and `spalde` to compute the derivatives of a
     B-spline can be found in the `spalde` examples section.
 
     """

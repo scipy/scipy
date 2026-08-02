@@ -33,7 +33,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, array_namespace, make_xp_test_case,
-    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy
+    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy, xp_device
 )
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
@@ -1376,7 +1376,7 @@ class TestResample:
         # window.shape must equal to sig.shape[0]
         sig = xp.arange(128, dtype=xp.float64)
         num = 256
-        win = signal.get_window(('kaiser', 8.0), 160, xp=xp)
+        win = signal.get_window(('kaiser', 8.0), 160, xp=xp, device=xp_device(sig))
         assert_raises(ValueError, signal.resample, sig, num, window=win)
         assert_raises(ValueError, signal.resample, sig, num, domain='INVALID')
 
@@ -1401,6 +1401,17 @@ class TestResample:
         x1 = signal.resample_poly(sig, 2, 1, padtype='constant', cval=0)
         xp_assert_equal(x1, x_ref)
         xp_assert_equal(x0, x_ref)
+
+    @skip_xp_backends("cupy",
+                      reason="delegated to cupyx, whose time vector is float64")
+    @make_xp_test_case(signal.resample)
+    def test_t_dtype(self, xp):
+        # the returned time vector follows `t`'s precision
+        for dtype in (xp.float32, xp.float64):
+            x = xp.arange(16, dtype=dtype)
+            t = xp.arange(16, dtype=dtype)
+            _, t_new = signal.resample(x, 32, t=t)
+            assert t_new.dtype == dtype
 
     @pytest.mark.parametrize('window', (None, 'hamming'))
     @pytest.mark.parametrize('N', (20, 19))
@@ -1501,11 +1512,12 @@ class TestResample:
         # Sinusoids, windowed to avoid edge artifacts
         t = xp.arange(rate, dtype=xp.float64) / float(rate)
         freqs = xp.asarray((1., 10., 40.))[:, xp.newaxis]
-        x = xp.sin(2 * xp.pi * freqs * t) * hann(rate, xp=xp)
+        x = xp.sin(2 * xp.pi * freqs * t) * hann(rate, xp=xp, device=xp_device(t))
 
         for rate_to in rates_to:
             t_to = xp.arange(rate_to, dtype=xp.float64) / float(rate_to)
-            y_tos = xp.sin(2 * xp.pi * freqs * t_to) * hann(rate_to, xp=xp)
+            y_tos = (xp.sin(2 * xp.pi * freqs * t_to)
+                     * hann(rate_to, xp=xp, device=xp_device(t_to)))
             if method == 'fft':
                 y_resamps = signal.resample(x, rate_to, axis=-1)
             else:

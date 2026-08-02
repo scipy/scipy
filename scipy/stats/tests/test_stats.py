@@ -6559,7 +6559,7 @@ class TestDescribe:
         message = "The input must not be empty."
         with pytest.raises(ValueError, match=message):
             stats.describe(xp.asarray([]))
-    
+
     @skip_xp_backends("array_api_strict", reason="min/max don't accept boolean input")
     def test_boolean_input_gh24847(self, xp):
         # gh-24847 reported that `describe` failed with boolean input

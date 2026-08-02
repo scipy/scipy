@@ -1099,7 +1099,7 @@ class Test_abcd_normalize:
     # Also check case where one input array has size zero.
     @pytest.mark.parametrize("D", [[[2.5]], [[]]])
     def test_dtypes(self, D, A_dtype, B_dtype, C_dtype, D_dtype, xp):
-       
+
         args = []
         for X, X_dtype in zip(
                 [self.A, self.B, self.C, D],
