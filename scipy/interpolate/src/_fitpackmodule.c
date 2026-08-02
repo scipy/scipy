@@ -1100,7 +1100,7 @@ fail:
   * There are three wrappers for surfit below, for different callsites in SciPy as legacy code.
   * Two are from the Fortran interface (_surfit_lsq and _surfit_smth in fitpack2.py) that is
   * used in LSQBivariateSpline and SmoothBivariateSpline.
-  * The remaining is a a C wrapper for use in the legacy function "scipy.interpolate.bisplrep".
+  * The remaining is a C wrapper for use in the legacy function "scipy.interpolate.bisplrep".
   * None of them call surfit as is but assume different parameters as optional or fixed values.
   * Worse is that bisplrep is stateful and keeps previous results in a global dict. Thus there
   * is some care needed to handle all that back and forth correctly.

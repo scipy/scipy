@@ -24,7 +24,7 @@ from ._csc import csc_matrix, csc_array
 from ._csr import csr_matrix, csr_array
 from ._dia import dia_matrix, dia_array
 
-from ._base import issparse, sparray, spmatrix
+from ._base import issparse, sparray
 
 
 def expand_dims(A, /, *, axis=0):
@@ -302,12 +302,25 @@ def spdiags(data, diags, m=None, n=None, format=None):
     >>> from scipy.sparse import spdiags
     >>> data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
     >>> diags = np.array([0, -1, 2])
-    >>> spdiags(data, diags, 4, 4).toarray()
+    >>> spdiags(data, diags, 4, 4).toarray()  # doctest: +SKIP
     array([[1, 0, 3, 0],
            [1, 2, 0, 4],
            [0, 2, 3, 0],
            [0, 0, 3, 4]])
     """
+    msg = """`spdiags` is being replaced by `diags_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     if m is None and n is None:
         m = n = len(data[0])
     elif n is None:
@@ -515,7 +528,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     --------
     >>> from scipy.sparse import diags
     >>> diagonals = [[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0], [1.0, 2.0]]
-    >>> diags(diagonals, [0, -1, 2]).toarray()
+    >>> diags(diagonals, [0, -1, 2]).toarray()  # doctest: +SKIP
     array([[1., 0., 1., 0.],
            [1., 2., 0., 2.],
            [0., 2., 3., 0.],
@@ -524,7 +537,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     Broadcasting of scalars is supported (but shape needs to be
     specified):
 
-    >>> diags([1.0, -2.0, 1.0], [-1, 0, 1], shape=(4, 4)).toarray()
+    >>> diags([1.0, -2.0, 1.0], [-1, 0, 1], shape=(4, 4)).toarray()  # doctest: +SKIP
     array([[-2.,  1.,  0.,  0.],
            [ 1., -2.,  1.,  0.],
            [ 0.,  1., -2.,  1.],
@@ -534,12 +547,25 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     If only one diagonal is wanted (as in `numpy.diag`), the following
     works as well:
 
-    >>> diags([1.0, 2.0, 3.0], 1).toarray()
+    >>> diags([1.0, 2.0, 3.0], 1).toarray()  # doctest: +SKIP
     array([[ 0.,  1.,  0.,  0.],
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
     """
+    msg = """`diags` is being replaced by `diags_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
     return dia_matrix(A).asformat(format)
 
@@ -581,11 +607,11 @@ def identity(n, dtype='d', format=None):
     Examples
     --------
     >>> import scipy as sp
-    >>> sp.sparse.identity(3).toarray()
+    >>> sp.sparse.identity(3).toarray()  # doctest: +SKIP
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sp.sparse.identity(3, dtype='int8', format='dia')
+    >>> sp.sparse.identity(3, dtype='int8', format='dia')  # doctest: +SKIP
     <DIAgonal sparse matrix of dtype 'int8'
         with 3 stored elements (1 diagonals) and shape (3, 3)>
     >>> sp.sparse.eye_array(3, dtype='int8', format='dia')
@@ -593,6 +619,19 @@ def identity(n, dtype='d', format=None):
         with 3 stored elements (1 diagonals) and shape (3, 3)>
 
     """
+    msg = """`identity` is being replaced by `eye_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     return eye(n, n, dtype=dtype, format=format)
 
 
@@ -713,15 +752,28 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     --------
     >>> import numpy as np
     >>> import scipy as sp
-    >>> sp.sparse.eye(3).toarray()
+    >>> sp.sparse.eye(3).toarray()  # doctest: +SKIP
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sp.sparse.eye(3, dtype=np.int8)
+    >>> sp.sparse.eye(3, dtype=np.int8)  # doctest: +SKIP
     <DIAgonal sparse matrix of dtype 'int8'
         with 3 stored elements (1 diagonals) and shape (3, 3)>
 
     """
+    msg = """`eye` is being replaced by `eye_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     return _eye(m, n, k, dtype, format, False)
 
 
@@ -743,7 +795,7 @@ def kron(A, B, format=None):
         That removes any deprecation warnings as well.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        Handling of this no sparse input case will change no earlier than v1.20.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -786,11 +838,7 @@ def kron(A, B, format=None):
         bsr_sparse = bsr_array
         csr_sparse = csr_array
         coo_sparse = coo_array
-    elif isinstance(A, spmatrix) or isinstance(B, spmatrix):
-        bsr_sparse = bsr_matrix
-        csr_sparse = csr_matrix
-        coo_sparse = coo_matrix
-    else:  # all dense
+    elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):  # use default
         msg = """`kron` is switching to the sparse array interface.
 
         For the case where input arrays are numpy arrays, this function is
@@ -801,11 +849,15 @@ def kron(A, B, format=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-        # default when all input are ndarray
+
+        bsr_sparse = bsr_matrix
+        csr_sparse = csr_matrix
+        coo_sparse = coo_matrix
+    else:
         bsr_sparse = bsr_matrix
         csr_sparse = csr_matrix
         coo_sparse = coo_matrix
@@ -893,7 +945,7 @@ def kronsum(A, B, format=None):
         That removes any deprecation warnings as well.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        Handling of this no sparse input case will change no earlier than v1.20.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -931,10 +983,7 @@ def kronsum(A, B, format=None):
         # convert to local variables
         coo_sparse = coo_array
         identity_sparse = eye_array
-    elif isinstance(A, spmatrix) or isinstance(B, spmatrix):
-        coo_sparse = coo_matrix
-        identity_sparse = identity
-    else:  # all dense
+    elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):  # use default
         msg = """`kronsum` is switching to the sparse array interface.
 
         For the case where input arrays are numpy arrays, this function is
@@ -945,11 +994,14 @@ def kronsum(A, B, format=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-        # default when all input are ndarray
+
+        coo_sparse = coo_matrix
+        identity_sparse = identity
+    else:
         coo_sparse = coo_matrix
         identity_sparse = identity
 
@@ -1106,9 +1158,9 @@ def hstack(blocks, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, hstack
-    >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5], [6]])
+    >>> from scipy.sparse import coo_array, hstack
+    >>> A = coo_array([[1, 2], [3, 4]])
+    >>> B = coo_array([[5], [6]])
     >>> hstack([A,B]).toarray()
     array([[1, 2, 5],
            [3, 4, 6]])
@@ -1391,7 +1443,7 @@ def block_diag(mats, format=None, dtype=None):
         That removes any deprecation warnings as well.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        Handling of this no sparse input case will change no earlier than v1.20.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -1435,9 +1487,7 @@ def block_diag(mats, format=None, dtype=None):
     """
     if any(isinstance(a, sparray) for a in mats):
         container = coo_array
-    elif any(isinstance(a, spmatrix) for a in mats):
-        container = coo_matrix
-    else:  # all dense
+    elif all(isinstance(a, np.ndarray) for a in mats):  # use default
         msg = """`block_diag` is switching to the sparse array interface.
 
         For the case where input arrays are numpy arrays, this function is
@@ -1448,12 +1498,13 @@ def block_diag(mats, format=None, dtype=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
 
-        # default when all input are ndarray
+        container = coo_matrix
+    else:
         container = coo_matrix
 
     row = []
@@ -1701,13 +1752,14 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> import scipy as sp
     >>> import numpy as np
     >>> rng = np.random.default_rng()
-    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng)  # doctest: +SKIP
 
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=rvs)
-    >>> S.toarray()
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
+    ...                      data_rvs=rvs)  # doctest: +SKIP
+    >>> S.toarray()  # doctest: +SKIP
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
@@ -1718,7 +1770,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> def np_normal_squared(size=None, rng=rng):
     ...     return rng.standard_normal(size) ** 2
     >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
-    ...                      data_rvs=np_normal_squared)
+    ...                      data_rvs=np_normal_squared)  # doctest: +SKIP
 
     Or we can build it from sp.stats style rvs functions:
 
@@ -1726,7 +1778,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
     ...     return std_normal(size=size, random_state=rng) ** 2
     >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
-    ...                      data_rvs=sp_stats_normal_squared)
+    ...                      data_rvs=sp_stats_normal_squared)  # doctest: +SKIP
 
     Or we can subclass sp.stats rv_continuous or rv_discrete:
 
@@ -1735,8 +1787,22 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=Y.rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
+    ...                      data_rvs=Y.rvs)  # doctest: +SKIP
     """
+    msg = """`random` is being replaced by `random_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     if n is None:
         n = m
     m, n = int(m), int(n)
@@ -1795,14 +1861,27 @@ def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     Examples
     --------
     >>> from scipy.sparse import rand
-    >>> matrix = rand(3, 4, density=0.25, format="csr", rng=42)
-    >>> matrix
+    >>> matrix = rand(3, 4, density=0.25, format="csr", rng=42)  # doctest: +SKIP
+    >>> matrix  # doctest: +SKIP
     <Compressed Sparse Row sparse matrix of dtype 'float64'
         with 3 stored elements and shape (3, 4)>
-    >>> matrix.toarray()
+    >>> matrix.toarray()  # doctest: +SKIP
     array([[0.05641158, 0.        , 0.        , 0.65088847],  # random
            [0.        , 0.        , 0.        , 0.14286682],
            [0.        , 0.        , 0.        , 0.        ]])
 
     """
+    msg = """`rand` is being replaced by `random_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     return random(m, n, density, format, dtype, rng)

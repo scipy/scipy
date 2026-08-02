@@ -396,6 +396,11 @@ double xsf_radian(double d, double m, double s);
 
 double boost_bdtrik(double y, double n, double p);
 double boost_bdtrin(double k, double y, double p);
+double boost_nbdtrik(double y, double n, double p);
+double boost_nbdtrin(double k, double y, double p);
+double boost_ncfdtrinc(double dfn, double dfd, double p, double f);
+double boost_nctdtridf(double p, double nc, double t);
+double boost_nctdtrinc(double df, double p, double t);
 
 #ifdef __cplusplus
 } /* extern "C" */
