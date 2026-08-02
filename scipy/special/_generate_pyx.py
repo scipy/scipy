@@ -209,6 +209,8 @@ special_ufuncs = [
     "kve",
     "log1p",
     "log_expit",
+    "log_gammainc",
+    "log_gammaincc",
     "log_ndtr",
     "log_wright_bessel",
     "loggamma",

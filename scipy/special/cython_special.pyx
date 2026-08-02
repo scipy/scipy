@@ -1404,6 +1404,10 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_bdtrin(double k, double y, double p) nogil
     float boost_erfinv_float(float x) nogil
     double boost_erfinv_double(double x) nogil
+    float boost_log_gammainc_float(float a, float x) nogil
+    double boost_log_gammainc_double(double a, double x) nogil
+    float boost_log_gammaincc_float(float a, float x) nogil
+    double boost_log_gammaincc_double(double a, double x) nogil
     double boost_nbdtrik(double y, double n, double p) nogil
     double boost_nbdtrin(double k, double y, double p) nogil
     double boost_ncfdtrinc(double dfn, double dfd, double p, double f) nogil
@@ -2854,18 +2858,18 @@ cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
 cpdef df_number_t log_gammainc(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.log_gammainc"""
     if df_number_t is float:
-        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_p_float)(x0, x1)
+        return boost_log_gammainc_float(x0, x1)
     elif df_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_p_double)(x0, x1)
+        return boost_log_gammainc_double(x0, x1)
     else:
         return NAN
 
 cpdef df_number_t log_gammaincc(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.log_gammaincc"""
     if df_number_t is float:
-        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_q_float)(x0, x1)
+        return boost_log_gammaincc_float(x0, x1)
     elif df_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_q_double)(x0, x1)
+        return boost_log_gammaincc_double(x0, x1)
     else:
         return NAN
 
