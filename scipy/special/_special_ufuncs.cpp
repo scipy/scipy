@@ -120,6 +120,7 @@ extern const char *erfc_doc;
 extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
+extern const char *erfinv_doc;
 extern const char *exp1_doc;
 extern const char *expm1_doc;
 extern const char *exp2_doc;
@@ -584,6 +585,12 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::d_d>(xsf::cephes::erfcinv)},
         "erfcinv", erfcinv_doc);
     PyModule_AddObjectRef(module, "erfcinv", erfcinv);
+
+    PyObject *erfinv =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(erfinv_float),
+                           static_cast<xsf::numpy::d_d>(erfinv_double)},
+                          "erfinv", erfinv_doc);
+    PyModule_AddObjectRef(module, "erfinv", erfinv);
 
     PyObject *exp1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::exp1), static_cast<xsf::numpy::d_d>(xsf::exp1),

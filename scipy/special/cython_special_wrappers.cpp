@@ -713,9 +713,13 @@ double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
  * Boost functions
  */
 
- double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p); }
+double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p); }
 
 double boost_bdtrin(double k, double y, double p) { return bdtrin_double(k, y, p); }
+
+float boost_erfinv_float(float x) { return erfinv_float(x); }
+
+double boost_erfinv_double(double x) { return erfinv_double(x); }
 
 double boost_nbdtrik(double y, double n, double p) { return nbdtrik_double(y, n, p); }
 
