@@ -333,7 +333,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         eigenvectors will be computed.
     b : (..., M, M) array_like, optional
         A complex Hermitian or real symmetric definite positive matrix in.
-        If omitted, identity matrix is assumed.
+        If omitted, the regular eigenvalue problem is assumed.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
         triangle of ``a`` and, if applicable, ``b``. (Default: lower)
@@ -364,7 +364,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         If provided, this two-element iterable defines the start and the end
         indices of the desired eigenvalues (ascending order and 0-indexed).
         To return only the second smallest to fifth smallest eigenvalues,
-        ``[1, 4]`` is used. ``[n-3, n-1]`` returns the largest three. Only
+        ``[1, 4]`` is used. ``[M-3, M-1]`` returns the largest three. Only
         available with "evr", "evx", and "gvx" drivers. The entries are
         directly converted to integers via ``int()``.
     subset_by_value : iterable, optional

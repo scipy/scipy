@@ -538,9 +538,10 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     if (info != 0) { info = -101; return (int)info; }
 
 
-    // process lwork probe
+    // process `lwork` probe
     lwork = _calc_lwork(tmp_work);
 
+    // process `lrwork` probe
     if constexpr (!detail::type_traits<T>::is_complex) {
         lrwork = 0;  // for real numbers LAPACK does not require `rwork`, hence set corresponding buffer size to 0.
     } else {
@@ -553,7 +554,8 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
         }
     }
 
-    liwork = (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX) ? 5 * intn : tmp_iwork; // Already integer
+    // Process `liwork` probe, already integer so no need to use `_calc_lwork()`.
+    liwork = (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX) ? 5 * intn : tmp_iwork;
 
 
     if ((lwork < 0) || (lrwork < 0) || (liwork < 0) ||
@@ -632,6 +634,8 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
 
     /*
      * Some LAPACK routines require a real work area `rwork` for complex inputs.
+     * In case the input is not complex `lrwork` was already set to 0 during the
+     * "process `lrwork` probe" stage above.
      *
      * In addition, when `range == 'I'`, the allocated array for the eigenvalues
      * is of size (M,) whereas the corresponding LAPACK routines always require
