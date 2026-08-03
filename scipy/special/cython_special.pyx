@@ -1411,8 +1411,12 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_nbdtrik(double y, double n, double p) nogil
     double boost_nbdtrin(double k, double y, double p) nogil
     double boost_ncfdtrinc(double dfn, double dfd, double p, double f) nogil
+    float boost_nctdtr_float(float df, float nc, float t) nogil
+    double boost_nctdtr_double(double df, double nc, double t) nogil
     double boost_nctdtridf(double p, double nc, double t) nogil
     double boost_nctdtrinc(double df, double p, double t) nogil
+    float boost_nctdtrit_float(float df, float nc, float p) nogil
+    double boost_nctdtrit_double(double df, double nc, double p) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -3116,9 +3120,9 @@ cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogi
 cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtr"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_cdf_float)(x0, x1, x2)
+        return boost_nctdtr_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_cdf_double)(x0, x1, x2)
+        return boost_nctdtr_double(x0, x1, x2)
     else:
         return NAN
 
@@ -3133,9 +3137,9 @@ cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
 cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrit"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_ppf_float)(x0, x1, x2)
+        return boost_nctdtrit_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_ppf_double)(x0, x1, x2)
+        return boost_nctdtrit_double(x0, x1, x2)
     else:
         return NAN
 
