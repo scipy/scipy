@@ -1020,6 +1020,8 @@ class DifferentialEvolutionSolver:
         self.constraint_violation = np.zeros((self.num_population_members, 1))
         self.feasible = np.ones(self.num_population_members, bool)
 
+        self._init_energized = False
+
         # an array to shuffle when selecting candidates. Create it here
         # rather than repeatedly creating it in _select_samples.
         self._random_population_index = np.arange(self.num_population_members)
@@ -1220,6 +1222,10 @@ class DifferentialEvolutionSolver:
                     self.population[self.feasible]))
 
             self._promote_lowest_energy()
+
+            # this attribute is used to prevent the codeblock above
+            # from being run again in __next__.
+            self._init_energized = True
 
         # do the optimization.
         for nit in range(1, self.maxiter + 1):
@@ -1611,7 +1617,7 @@ class DifferentialEvolutionSolver:
         """
         # the population may have just been initialized (all entries are
         # np.inf). If it has you have to calculate the initial energies
-        if np.all(np.isinf(self.population_energies)):
+        if not self._init_energized and np.all(np.isinf(self.population_energies)):
             self.feasible, self.constraint_violation = (
                 self._calculate_population_feasibilities(self.population))
 
