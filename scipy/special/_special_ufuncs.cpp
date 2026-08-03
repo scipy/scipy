@@ -253,6 +253,8 @@ extern const char *spherical_in_doc;
 extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
+extern const char *stdtr_doc;
+extern const char *stdtrit_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
 extern const char *tandg_doc;
@@ -1457,6 +1459,18 @@ _special_ufuncs_module_exec(PyObject *module)
                                          "sph_harm_y", nullptr, "(),(),(),()->(3,3)",
                                          [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(module, "sph_harm_y", sph_harm_y);
+
+    PyObject *stdtr =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(t_cdf_float),
+                           static_cast<xsf::numpy::dd_d>(t_cdf_double)},
+                          "stdtr", stdtr_doc);
+    PyModule_AddObjectRef(module, "stdtr", stdtr);
+
+    PyObject *stdtrit =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(t_ppf_float),
+                           static_cast<xsf::numpy::dd_d>(t_ppf_double)},
+                          "stdtrit", stdtrit_doc);
+    PyModule_AddObjectRef(module, "stdtrit", stdtrit);
 
     PyObject *struve =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::struve_h), static_cast<xsf::numpy::dd_d>(xsf::struve_h)},

@@ -411,6 +411,10 @@ double boost_nctdtridf(double p, double nc, double t);
 double boost_nctdtrinc(double df, double p, double t);
 float boost_nctdtrit_float(float df, float nc, float p);
 double boost_nctdtrit_double(double df, double nc, double p);
+float boost_stdtr_float(float df, float t);
+double boost_stdtr_double(double df, double t);
+float boost_stdtrit_float(float df, float p);
+double boost_stdtrit_double(double df, double p);
 
 #ifdef __cplusplus
 } /* extern "C" */

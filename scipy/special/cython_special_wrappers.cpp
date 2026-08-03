@@ -755,3 +755,11 @@ double boost_nctdtrinc(double df, double p, double t)
 float boost_nctdtrit_float(float df, float nc, float p) { return nct_ppf_float(df, nc, p); }
 
 double boost_nctdtrit_double(double df, double nc, double p) { return nct_ppf_double(df, nc, p); }
+
+float boost_stdtr_float(float df, float t) { return t_cdf_float(df, t); }
+
+double boost_stdtr_double(double df, double t) { return t_cdf_double(df, t); }
+
+float boost_stdtrit_float(float df, float p) { return t_ppf_float(df, p); }
+
+double boost_stdtrit_double(double df, double p) { return t_ppf_double(df, p); }
