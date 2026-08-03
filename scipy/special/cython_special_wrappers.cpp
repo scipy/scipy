@@ -721,6 +721,14 @@ float boost_erfinv_float(float x) { return erfinv_float(x); }
 
 double boost_erfinv_double(double x) { return erfinv_double(x); }
 
+float boost_log_gammainc_float(float a, float x) { return lgamma_p_float(a, x); }
+
+double boost_log_gammainc_double(double a, double x) { return lgamma_p_double(a, x); }
+
+float boost_log_gammaincc_float(float a, float x) { return lgamma_q_float(a, x); }
+
+double boost_log_gammaincc_double(double a, double x) { return lgamma_q_double(a, x); }
+
 double boost_nbdtrik(double y, double n, double p) { return nbdtrik_double(y, n, p); }
 
 double boost_nbdtrin(double k, double y, double p) { return nbinom_invn_double(k, y, p); }

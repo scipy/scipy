@@ -188,6 +188,8 @@ extern const char *log1p_doc;
 extern const char *logit_doc;
 extern const char *loggamma_doc;
 extern const char *log_expit_doc;
+extern const char *log_gammainc_doc;
+extern const char *log_gammaincc_doc;
 extern const char *log_ndtr_doc;
 extern const char *log_wright_bessel_doc;
 extern const char *lpmv_doc;
@@ -1034,6 +1036,18 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::g_g>(xsf::log_expit)},
                           "log_expit", log_expit_doc);
     PyModule_AddObjectRef(module, "log_expit", log_expit);
+
+    PyObject *log_gammainc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(lgamma_p_float),
+                           static_cast<xsf::numpy::dd_d>(lgamma_p_double)},
+                          "log_gammainc", log_gammainc_doc);
+    PyModule_AddObjectRef(module, "log_gammainc", log_gammainc);
+
+    PyObject *log_gammaincc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(lgamma_q_float),
+                           static_cast<xsf::numpy::dd_d>(lgamma_q_double)},
+                          "log_gammaincc", log_gammaincc_doc);
+    PyModule_AddObjectRef(module, "log_gammaincc", log_gammaincc);
 
     PyObject *log_wright_bessel = xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(xsf::log_wright_bessel),
                                                      static_cast<xsf::numpy::ddd_d>(xsf::log_wright_bessel)},
