@@ -896,7 +896,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     if x is y:
         out_dtype = np.result_type(x, np.complex64)
     else:  # x is not y:
-        y = np.array(y)
+        y = np.asarray(y)
         out_dtype = np.result_type(x, y, np.complex64)
 
     n = max(x.shape[ax], y.shape[ax], nperseg)
@@ -924,9 +924,9 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         return_onesided = False
 
     # Translate parameters to ShortTimeFFT's conventions:
-    SCALES = {"spectrum": "magnitude", "density": "psd"}
-    if (scale_to := SCALES.get(scaling, None)) is None:
-        raise ValueError(f"Parameter {scaling=} not in {SCALES}!")
+    SCALINGS = {"spectrum": "magnitude", "density": "psd"}
+    if (scale_to := SCALINGS.get(scaling, None)) is None:
+        raise ValueError(f"Parameter {scaling=} not in {SCALINGS}!")
     fft_mode = "onesided" if return_onesided else "twosided"
     if (n := x.shape[ax]) < nperseg:
         raise ValueError(f"Signal length {n=} ≥ nperseg={nperseg} does not hold!")
