@@ -32,6 +32,7 @@ import operator
 import warnings
 from collections import namedtuple
 from collections.abc import Sequence
+import os
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -67,7 +68,6 @@ from scipy import stats
 from scipy._lib._array_api import (
     _asarray,
     array_namespace,
-    xp_default_int_dtype,
     is_lazy_array,
     is_dask,
     is_numpy,
@@ -85,6 +85,7 @@ from scipy._lib._array_api import (
     _masked_apply,
     xp_swapaxes,
     xp_device,
+    xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
 from scipy.stats._quantile import _xp_searchsorted
@@ -489,7 +490,7 @@ def _mode_result(mode, count):
         # `np.apply_along_axis` to compute mode/count along each axis-slice separately.
         # The result is a single array with the result dtype of `mode` and `count`.
         # We need to change `count` back to an integer.
-        count = xp.astype(count, xp_default_int_dtype(xp))
+        count = xp.astype(count, xpx.default_dtype(xp, "integral"))
     return ModeResult(mode, count)
 
 
@@ -586,7 +587,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         mask = xp.isnan(vals)
         cnts = xpx.at(cnts)[mask].set(xp.count_nonzero(mask))
         modes, counts = vals[xp.argmax(cnts)], xp.max(cnts)
-        default_int = xp_default_int_dtype(xp)
+        default_int = xpx.default_dtype(xp, "integral")
         counts = xp.astype(counts, default_int, copy=False)
         modes = modes[()] if modes.ndim == 0 else modes
         counts = counts[()] if counts.ndim == 0 else counts
@@ -1079,7 +1080,7 @@ def _moment_tuple(x, n_out):
 @xp_capabilities(skip_backends=[('dask.array', 'needs axis_nan_policy decorator')],
                  marray=True)
 @_rename_parameter('moment', 'order')
-@_axis_nan_policy_factory(  # noqa: E302
+@_axis_nan_policy_factory(
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=_moment_outputs
 )
@@ -4008,7 +4009,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
                             for sample in samples])
             n_t = xp.asarray(n_t, dtype=n_t.dtype)
         else:
-            n_t = xp.asarray([sample.shape[-1] for sample in samples], dtype=y_t.dtype)
+            n_t = xp.asarray([sample.shape[-1] for sample in samples],
+                             dtype=y_t.dtype, device=xp_device(y_t))
             n_t = xp.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
         # "... from $k$ different normal populations..."
         k = len(samples)
@@ -4182,7 +4184,8 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # Special case: statistic is NaN when variance is zero
     eps = xp.finfo(standard_errors.dtype).eps
     zero = standard_errors <= xp.abs(eps * means)
-    NaN = xp.asarray(xp.nan, dtype=standard_errors.dtype)
+    NaN = xp.asarray(xp.nan, dtype=standard_errors.dtype,
+                     device=xp_device(standard_errors))
     standard_errors = xp.where(zero, NaN, standard_errors)
 
     # (2) define a weight for each sample
@@ -4200,7 +4203,8 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     if is_marray(xp):
         v = xp.stack(lengths) - 1
     else:
-        v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
+        v = xp.asarray(lengths, dtype=t_stats.dtype,
+                       device=xp_device(t_stats)) - 1
         # align along 0th axis, which corresponds with separate samples
         v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
     a = v - .5
@@ -4218,7 +4222,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
-    df = xp.asarray(len(samples) - 1, dtype=A.dtype)
+    df = xp.asarray(len(samples) - 1, dtype=A.dtype, device=xp_device(A))
     chi2 = _SimpleChi2(df)
     p = _get_pvalue(A, chi2, alternative='greater', symmetric=False, xp=xp)
     return AlexanderGovernResult(A, p)
@@ -4703,7 +4707,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`x` and `y` must have length at least 2.')
 
     x, y = _share_masks(x, y, xp=xp)
-    n = xp.asarray(_count_nonmasked(x, axis=axis), dtype=x.dtype)
+    n = xp.asarray(_count_nonmasked(x, axis=axis), dtype=x.dtype,
+                   device=xp_device(x))
 
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
@@ -5709,6 +5714,7 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
     xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
     dtype = x.dtype
+    device = xp_result_device(x)
     if is_marray(xp):
         mask_x, mask_y = np.asarray(x.mask), np.asarray(y.mask)
         x, y = np.asarray(x.data).copy(), np.asarray(y.data).copy()
@@ -5726,8 +5732,8 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
     res = _kendalltau(x, y, nan_policy=nan_policy, method=method, variant=variant,
                       alternative=alternative, axis=axis, keepdims=keepdims)
     vals = res.statistic, res.pvalue, res.statistic
-    vals = (xp.asarray(val, dtype=dtype)[()] if val.ndim == 0
-            else xp.asarray(val, dtype=dtype) for val in vals)
+    vals = (xp.asarray(val, dtype=dtype, device=device)[()] if val.ndim == 0
+            else xp.asarray(val, dtype=dtype, device=device) for val in vals)
     return _pack_CorrelationResult(*vals)
 
 
@@ -6105,7 +6111,8 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
     # Due to behavior of `_axis_nan_policy` decorator, `alternative` can be any number
     # of dimensions, but there is at most one unique non-NaN value.
     # `_xp_mean` with `nan_policy='omit'` is a JIT-compatible way to extract it.
-    alternative = xp.asarray(alternative)
+    device = xp_result_device(statistic, pvalue)
+    alternative = xp.asarray(alternative, device=device)
     alternative = (_xp_mean(alternative, axis=None, nan_policy='omit', warn=False)
                    if xp_size(alternative) != 0 else xp.nan)
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
@@ -6331,7 +6338,7 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
         raise ValueError(message)
 
     confidence_level = xp.asarray(confidence_level, dtype=dtype, device=xp_device(t))
-    inf = xp.asarray(xp.inf, dtype=dtype)
+    inf = xp.asarray(xp.inf, dtype=dtype, device=xp_device(t))
 
     if alternative < 0:  # 'less'
         p = confidence_level
@@ -6396,13 +6403,14 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
     # The pooled variance is still defined, though, because the (n-1) in the
     # numerator should cancel with the (n-1) in the denominator, leaving only
     # the sum of squared differences from the mean: zero.
-    v1 = xp.where(xp.asarray(n1 == 1), 0., v1)
-    v2 = xp.where(xp.asarray(n2 == 1), 0., v2)
+    device = xp_result_device(v1)
+    v1 = xp.where(xp.asarray(n1 == 1, device=device), 0., v1)
+    v2 = xp.where(xp.asarray(n2 == 1, device=device), 0., v2)
 
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
     denom = xp.sqrt(svar * (1.0 / n1 + 1.0 / n2))
-    df = xp.asarray(df, dtype=denom.dtype)
+    df = xp.asarray(df, dtype=denom.dtype, device=xp_device(denom))
     return df, denom
 
 
@@ -6854,8 +6862,10 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
 
 def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method, *, xp):
+    device = xp_result_device(x, y)
+
     def statistic(x, y, axis):
-        x, y = xp.asarray(x), xp.asarray(y)
+        x, y = xp.asarray(x, device=device), xp.asarray(y, device=device)
         return ttest_ind(x, y, axis=axis, **ttest_kwargs).statistic
 
     test = (permutation_test if isinstance(method, PermutationMethod)
@@ -7675,7 +7685,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if alternative == 'greater':
         Dplus, d_location = _compute_d(cdfvals, x, +1)
         pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
+        pvalue = xp.asarray(pvalue, dtype=x.dtype, device=xp_device(x))
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
         return KstestResult(Dplus, pvalue,
@@ -7685,7 +7695,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if alternative == 'less':
         Dminus, d_location = _compute_d(cdfvals, x, -1)
         pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
+        pvalue = xp.asarray(pvalue, dtype=x.dtype, device=xp_device(x))
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
         return KstestResult(Dminus, pvalue,
@@ -7711,7 +7721,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     else:
         # mode == 'approx'
         prob = 2 * _masked_apply(distributions.ksone.sf, args=(D, N), xp=xp)
-    prob = xp.clip(xp.asarray(prob, dtype=x.dtype), 0., 1.)
+    prob = xp.clip(xp.asarray(prob, dtype=x.dtype, device=xp_device(x)), 0., 1.)
     return KstestResult(D, prob,
                         statistic_location=d_location,
                         statistic_sign=d_sign)
@@ -8098,7 +8108,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         # These counts are given by the differences between consecutive ("min" or "max")
         # ranks corresponding with the observations in the (sorted) samples.
         ranks, data_all, _ = _rankdata(data_all, method='min', return_sorted=True)
-        ranks = xp.astype(ranks, xp_default_int_dtype(xp))
+        ranks = xp.astype(ranks, xpx.default_dtype(xp, "integral"))
         one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype,
                       device=xp_device(ranks))
         cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
@@ -8138,8 +8148,9 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         n1, n2 = np.asarray(n1.data, dtype=int), np.asarray(n2.data, dtype=int)
     prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
     dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
-    prob = xp.asarray(prob, dtype=dtype)
-    d = xp.asarray(d, dtype=dtype)
+    device = xp_device(d_location)
+    prob = xp.asarray(prob, dtype=dtype, device=device)
+    d = xp.asarray(d, dtype=dtype, device=device)
     if d.ndim == 0:
         d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
     return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
@@ -8428,9 +8439,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto', *,
                     axis=axis, _no_deco=True)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def tiecorrect(rankvals):
     """Tie correction factor for Mann-Whitney U and Kruskal-Wallis H tests.
+
+    .. deprecated:: 2.0.0
+        This function is deprecated and will be removed in SciPy 2.2.0.
 
     Parameters
     ----------
@@ -8466,6 +8480,10 @@ def tiecorrect(rankvals):
     0.9833333333333333
 
     """
+    _warn_skips = (os.path.dirname(__file__),)
+    msg = "`tiecorrect` is deprecated and will be removed in SciPy 2.2.0."
+    warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
+
     arr = np.sort(rankvals)
     idx = np.nonzero(np.r_[True, arr[1:] != arr[:-1], True])[0]
     cnt = np.diff(idx).astype(np.float64)
@@ -8671,7 +8689,8 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     alldata = xp.concat(samples, axis=-1)
     ranked, _, t = _rankdata(alldata, method='average', return_ties=True)
-    counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype)
+    counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype,
+                         device=xp_device(t))
               for sample in samples]
     totaln = sum(counts)
     ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
@@ -8682,7 +8701,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
                for i in range(num_groups))
 
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
-    df = xp.asarray(num_groups - 1, dtype=h.dtype)
+    df = xp.asarray(num_groups - 1, dtype=h.dtype, device=xp_device(h))
     h /= ties
 
     chi2 = _SimpleChi2(df)
@@ -8781,13 +8800,14 @@ def friedmanchisquare(*samples, axis=0):
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
-    count = xp.asarray(_count_nonmasked(samples[0], axis=-1), dtype=ties.dtype)
+    count = xp.asarray(_count_nonmasked(samples[0], axis=-1), dtype=ties.dtype,
+                       device=xp_device(ties))
     c = 1 - ties / (k*(k*k - 1)*count)
 
     ssbn = xp.sum(xp.sum(data, axis=0)**2, axis=-1)
     statistic = (12.0 / (k*count*(k+1)) * ssbn - 3*count*(k+1)) / c
 
-    chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype))
+    chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype, device=xp_device(ties)))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FriedmanchisquareResult(statistic, pvalue)
 
@@ -9251,18 +9271,19 @@ class QuantileTestResult:
 def quantile_test_iv(x, q, p, alternative, axis, keepdims):
     xp = array_namespace(x, q, p)
     dtype = xp_result_type(x, q, p, force_floating=True, xp=xp)
+    device = xp_result_device(x, q, p)
 
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
     message = '`x` must be an array of numbers.'
     if not xp.isdtype(x.dtype, 'numeric'):
         raise ValueError(message)
 
-    q = xp.asarray(q)
+    q = xp.asarray(q, device=device)
     message = "`q` must be a scalar or array of numbers."
     if not xp.isdtype(q.dtype, 'numeric'):
         raise ValueError(message)
 
-    p = xp.asarray(p)
+    p = xp.asarray(p, device=device)
     message = "`p` must be a scalar or array of floats."
     if not xp.isdtype(p.dtype, 'real floating'):
         raise ValueError(message)
@@ -10642,7 +10663,7 @@ def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
 
     message = "`order` must be a scalar or a non-empty array of positive integers."
     order = (xp.arange(1, 5, device=xp_device(sample)) if order is None
-             else xp.asarray(order))
+             else xp.asarray(order, device=xp_device(sample)))
     if (not xp.isdtype(order.dtype, "integral") or order.size == 0 or order.ndim > 1
             or (not is_lazy_array(order) and xp.any(order <= 0))):
         raise ValueError(message)
@@ -10697,7 +10718,7 @@ def _prk(r, k):
                  cpu_only=True,  # torch doesn't have `binom`
                  exceptions=('cupy', 'jax.numpy'),
                  extra_note="Lazy backends do not support `order` greater than 4.")
-@_axis_nan_policy_factory(  # noqa: E302
+@_axis_nan_policy_factory(
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
 )
@@ -10954,7 +10975,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
     degenerate = (ssxm == 0.0) | (ssym == 0.0)
-    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype)
+    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype, device=xp_device(ssxym))
     r = xpx.apply_where(
         ~degenerate,
         (ssxym, ssxm, ssym),
@@ -10970,7 +10991,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
         # to estimate the mean and standard deviation
         t = r * xp.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
 
-        dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+        dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype, device=xp_device(t)))
         prob = _get_pvalue(t, dist, alternative, xp=xp)
         prob = prob[()] if prob.ndim == 0 else prob
 

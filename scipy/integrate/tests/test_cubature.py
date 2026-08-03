@@ -400,26 +400,6 @@ class TestCubature:
             atol=0,
         )
 
-    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
-    def test_device(self, xp, devices):
-        # Input device should propagate to the output; see gh-22680. The
-        # fixed-rule nodes/weights are built on the default device and moved onto
-        # the input device in `_apply_fixed_rule`.
-        for d in devices:
-            n = xp.arange(5, dtype=xp.float64, device=d)
-            a = xp.asarray([0, 0], dtype=xp.float64, device=d)
-            b = xp.asarray([2, 2], dtype=xp.float64, device=d)
-            for rule in ("gauss-kronrod", "genz-malik"):
-                res = cubature(basic_nd_integrand, a, b, rule=rule, args=(n, xp))
-                assert xp_device(res.estimate) == xp_device(a)
-
-            # infinite limits exercise the `_InfiniteLimitsTransform` path
-            alphas = xp.asarray([[50.0]], dtype=xp.float64, device=d)
-            a_inf = xp.asarray([-xp.inf], dtype=xp.float64, device=d)
-            b_inf = xp.asarray([xp.inf], dtype=xp.float64, device=d)
-            res = cubature(f_gaussian, a_inf, b_inf, args=(alphas, xp))
-            assert xp_device(res.estimate) == xp_device(a_inf)
-
     def test_pass_array_like_not_array(self):
         n = np_compat.arange(5, dtype=np_compat.float64)
         a = [0]
@@ -1235,7 +1215,7 @@ class TestRules:
     ])
     def test_incompatible_dimension_raises_error(self, problem, xp):
         a, b, quadrature, quadrature_args = problem
-        rule = quadrature(*quadrature_args, xp=xp)
+        rule = quadrature(*quadrature_args)
 
         a = xp.asarray(a, dtype=xp.float64)
         b = xp.asarray(b, dtype=xp.float64)
@@ -1266,7 +1246,7 @@ class TestRulesQuadrature:
         (GaussKronrodQuadrature, (21,)),
     ])
     def test_base_1d_quadratures_simple(self, rule, rule_args, xp):
-        quadrature = rule(*rule_args, xp=xp)
+        quadrature = rule(*rule_args)
 
         n = xp.arange(5, dtype=xp.float64)
 
@@ -1298,8 +1278,8 @@ class TestRulesQuadrature:
         a = xp.asarray([0], dtype=xp.float64)
         b = xp.asarray([2], dtype=xp.float64)
 
-        higher = rule_pair[0](rule_pair_args[0], xp=xp)
-        lower = rule_pair[1](rule_pair_args[1], xp=xp)
+        higher = rule_pair[0](rule_pair_args[0])
+        lower = rule_pair[1](rule_pair_args[1])
 
         rule = NestedFixedRule(higher, lower)
         res = cubature(
@@ -1322,7 +1302,7 @@ class TestRulesQuadrature:
     ])
     def test_one_point_fixed_quad_impossible(self, quadrature, xp):
         with pytest.raises(Exception):
-            quadrature(1, xp=xp)
+            quadrature(1)
 
 
 @pytest.mark.uses_xp_capabilities(False, reason="private")
@@ -1338,13 +1318,13 @@ class TestRulesCubature:
         matches the number in Genz and Malik 1980.
         """
 
-        nodes, _ = GenzMalikCubature(ndim, xp=xp).nodes_and_weights
+        nodes, _ = GenzMalikCubature(ndim).nodes_and_weights
 
         assert nodes.shape[0] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
     def test_genz_malik_1d_raises_error(self, xp):
         with pytest.raises(Exception, match="only defined for ndim >= 2"):
-            GenzMalikCubature(1, xp=xp)
+            GenzMalikCubature(1)
 
 
 @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
@@ -1389,11 +1369,9 @@ class BadErrorRule(Rule):
     """
 
     def estimate(self, f, a, b, args=()):
-        xp = array_namespace(a, b)
-        underlying = GaussLegendreQuadrature(10, xp=xp)
-
+        underlying = GaussLegendreQuadrature(10)
         return underlying.estimate(f, a, b, args)
 
     def estimate_error(self, f, a, b, args=()):
         xp = array_namespace(a, b)
-        return xp.asarray(1e6, dtype=xp.float64)
+        return xp.asarray(1e6, dtype=xp.float64, device=xp_device(a))

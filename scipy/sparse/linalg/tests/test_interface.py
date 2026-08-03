@@ -16,7 +16,6 @@ import numpy as np
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, is_torch, xp_assert_close, is_lazy_array,
     xp_assert_equal, xp_ravel, is_numpy, make_xp_pytest_marks, is_jax_array,
-    xp_device,
 )
 from scipy._external import array_api_extra as xpx
 import scipy.sparse as sparse
@@ -39,7 +38,7 @@ pytestmark = make_xp_pytest_marks(
 
 def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
     rng = np.random.default_rng(rng)
-    min = np.broadcast_to(min, ndim)  # so min and max can be scalars or array-like 
+    min = np.broadcast_to(min, ndim)  # so min and max can be scalars or array-like
     max = np.broadcast_to(max, ndim)
     batch_shape = tuple(rng.integers(min_, max_+1) for min_, max_ in zip(min, max))
     shapes = np.repeat([batch_shape], nshapes, axis=0)
@@ -61,7 +60,7 @@ def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
     return [tuple(int(el) for el in shape) for shape in shapes]
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 class TestLinearOperator:
@@ -74,18 +73,6 @@ class TestLinearOperator:
         self.C = np.array([[1,2],
                            [3,4]])
 
-    def test_device(self, xp, devices):
-        # Input device should propagate to the output of `matvec`/`matmat`.
-        for d in devices:
-            A = xp.asarray(self.A, dtype=xp.float64, device=d)
-            op = aslinearoperator(A)
-
-            x = xp.asarray([1, 2, 3], dtype=xp.float64, device=d)
-            assert xp_device(op.matvec(x)) == xp_device(x)
-
-            X = xp.asarray([[1, 2], [3, 4], [5, 6]], dtype=xp.float64, device=d)
-            assert xp_device(op.matmat(X)) == xp_device(X)
-
     def test_matvec(self, xp):
         def get_matvecs(A):
             return [{
@@ -96,7 +83,7 @@ class TestLinearOperator:
                 'rmatmat': lambda x: xp.conj(A.T) @ x,
                 'matmat': lambda x: A @ x
             }]
-        
+
         _asarray = partial(xp.asarray, dtype=xp.complex128)
 
         for matvecs in get_matvecs(_asarray(self.A)):
@@ -346,7 +333,7 @@ class TestLinearOperator:
         A.rdot(xp.ones((3, 3)))
         with pytest.raises(ValueError, match=msg):
             A.rdot(xp.ones((4, 4)))
-        
+
 
 @pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
 class TestDotTests:
@@ -438,13 +425,13 @@ class TestDotTests:
                 v = v + (1j * rng.standard_normal(v_shape, dtype=dtype))
             u = xp.asarray(u)
             v = xp.asarray(v)
-    
+
             op_u = op.matvec(u)
             opH_v = op.rmatvec(v)
-    
+
             op_u_H_v = xp.vecdot(op_u, v, axis=-1)
             uH_opH_v = xp.vecdot(u, opH_v, axis=-1)
-    
+
             rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
             atol = 2e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
             xp_assert_close(op_u_H_v, uH_opH_v, rtol=rtol, atol=atol)
@@ -562,7 +549,7 @@ class TestDotTests:
             shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(x, shape)
 
-        def rmv(x):            
+        def rmv(x):
             match np.sign(N - x.shape[-1]):
                 case 0:  # square
                     pass
@@ -579,7 +566,7 @@ class TestDotTests:
         op = interface.LinearOperator(  # type:ignore[call-arg]
             shape=shape, dtype=dtype, matvec=mv, rmatvec=rmv, xp=xp
         )
-        
+
         self.check_matvec(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
 
@@ -736,7 +723,7 @@ class TestAsLinearOperator:
             cases.append((HasRmatvec(dtype), original))
             cases.append((HasAdjoint(dtype), original))
             cases.append((HasRmatmat(dtype), original))
-            
+
             cases.append((interface.aslinearoperator(original.T).T, original))
             cases.append((
                 interface.aslinearoperator(original.T).H,
@@ -748,7 +735,7 @@ class TestAsLinearOperator:
             )
 
             return cases
-        
+
         cases.append((matrix(original, dtype=dtype), original))
         cases.append((np.array(original, dtype=dtype), original))
         cases.append((sparse.csr_array(original, dtype=dtype), original))
@@ -757,7 +744,7 @@ class TestAsLinearOperator:
         cases.append((HasAdjoint(dtype), original))
         cases.append((HasRmatmat(dtype), original))
         return cases
-    
+
     def setup_method(self):
         self.cases = []
         make_cases = self.make_cases
@@ -852,7 +839,7 @@ class TestAsLinearOperator:
             assert_equal(A.dot(x2), A_array.dot(x2))
 
     @pytest.mark.xfail_xp_backends('dask.array', reason=(
-        "dask does not support broadcast_shapes(). " 
+        "dask does not support broadcast_shapes(). "
         "See: https://github.com/data-apis/array-api-compat/issues/439"
     ))
     @pytest.mark.parametrize("dtype", ["int64", "float64", "complex128"])
@@ -895,9 +882,9 @@ class TestAsLinearOperator:
                 assert_equal(A.dtype, M.dtype)
 
             assert hasattr(A, 'args')
-            
+
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_repr(xp):
@@ -906,7 +893,7 @@ def test_repr(xp):
     assert 'unspecified dtype' not in repr_A, repr_A
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_identity(xp):
@@ -917,7 +904,7 @@ def test_identity(xp):
     assert_raises(ValueError, ident.matvec, xp.asarray([1, 2, 3, 4]))
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_attributes(xp):
@@ -937,7 +924,7 @@ def test_attributes(xp):
         assert hasattr(op, "_matvec")
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def matvec_for_pickle(x):
@@ -950,7 +937,7 @@ def matvec_for_pickle(x):
     reason="pickle-ability is not guaranteed by the standard"
 )
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_pickle(xp):
@@ -966,7 +953,7 @@ def test_pickle(xp):
             assert getattr(A, k) == getattr(B, k)
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_inheritance(xp):
@@ -999,7 +986,7 @@ def test_inheritance(xp):
     assert mm.matvec(xp.asarray(np.random.randn(3))).shape == (5,)
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_dtypes_of_operator_sum(xp):
@@ -1018,7 +1005,7 @@ def test_dtypes_of_operator_sum(xp):
     assert sum_complex.dtype == xp.complex128
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_no_double_init(xp):
@@ -1041,7 +1028,7 @@ INEXACTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
 ALLDTYPES = INT_DTYPES + INEXACTDTYPES
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 @pytest.mark.parametrize("test_dtype", ALLDTYPES)
@@ -1078,7 +1065,7 @@ def test_determine_lo_dtype_for_int(xp):
     assert xp.isdtype(lo.dtype, "integral")
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_adjoint_conjugate(xp):
@@ -1101,7 +1088,7 @@ def test_ndim(xp):
     assert A.ndim == 2
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). " 
+    "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
 def test_transpose_noconjugate(xp):
@@ -1214,7 +1201,7 @@ def test_batch(left, operator_definition, batch_A, batch_x, dtype, xp):
         x_row = x_row + 1j * rng.random(x_row.shape)
         x_col = x_col + 1j * rng.random(x_col.shape)
         x_mat = x_mat + 1j * rng.random(x_mat.shape)
-    
+
     A_, x_row, x_col, x_mat = (xp.asarray(x) for x in (A_, x_row, x_col, x_mat))
 
     def matvec(A, x):

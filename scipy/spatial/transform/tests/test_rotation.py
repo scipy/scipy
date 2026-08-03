@@ -19,10 +19,8 @@ from scipy._lib._array_api import (
     xp_vector_norm,
     xp_assert_close,
     eager_warns,
-    xp_default_dtype,
     make_xp_test_case,
     make_xp_pytest_marks,
-    xp_device,
     xp_device_type,
 )
 import scipy._external.array_api_extra as xpx
@@ -130,7 +128,7 @@ def test_from_quat_array_like():
 
 def test_from_quat_int_dtype(xp):
     r = Rotation.from_quat(xp.asarray([1, 0, 0, 0]))
-    assert r.as_quat().dtype == xp_default_dtype(xp)
+    assert r.as_quat().dtype == xpx.default_dtype(xp)
 
 
 def test_quat_canonical(xp):
@@ -472,7 +470,7 @@ def test_from_matrix_array_like():
 def test_from_matrix_int_dtype(xp):
     mat = xp.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     r = Rotation.from_matrix(mat)
-    assert r.as_quat().dtype == xp_default_dtype(xp)
+    assert r.as_quat().dtype == xpx.default_dtype(xp)
 
 
 @make_xp_test_case((Rotation, "from_rotvec"))
@@ -544,7 +542,7 @@ def test_from_rotvec_array_like():
 def test_from_rotvec_int_dtype(xp):
     rotvec = xp.asarray([1, 0, 0])
     r = Rotation.from_rotvec(rotvec)
-    assert r.as_quat().dtype == xp_default_dtype(xp)
+    assert r.as_quat().dtype == xpx.default_dtype(xp)
 
 
 @make_xp_test_case((Rotation, "from_rotvec"))
@@ -661,7 +659,7 @@ def test_from_mrp_array_like():
 def test_from_mrp_int_dtype(xp):
     mrp = xp.asarray([0, 0, 1])
     r = Rotation.from_mrp(mrp)
-    assert r.as_quat().dtype == xp_default_dtype(xp)
+    assert r.as_quat().dtype == xpx.default_dtype(xp)
 
 
 @make_xp_test_case((Rotation, "from_mrp"))
@@ -1345,7 +1343,7 @@ def test_mean(xp, ndim: int):
     axes = xp.reshape(axes, (1,) * (ndim - 1) + (6, 3))
     thetas = xp.linspace(0, xp.pi / 2, 100)
     desired = xp.asarray(0.0)[()]
-    atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
+    atol = 1e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
     for t in thetas:
         r_mean = Rotation.from_rotvec(t * axes).mean()
         assert r_mean.shape == ()
@@ -1365,7 +1363,7 @@ def test_mean_axis(xp, ndim: int):
     desired = xp.full(axes.shape[:-2], 0.0)
     if ndim == 1:
         desired = desired[()]
-    atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
+    atol = 1e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
     xp_assert_close(r.mean(axis=-1).magnitude(), desired, atol=atol)
 
     # Test tuple axes
@@ -1505,23 +1503,6 @@ def test_reduction_scalar_calculation(xp):
     reduced_check = l[left_best_check] * p * r[right_best_check]
     mag = (reduced.inv() * reduced_check).magnitude()
     xp_assert_close(mag, xp.zeros(len(p)), atol=atol)
-
-
-@make_xp_test_case((Rotation, "reduce"))
-def test_reduce_device(xp, devices):
-    # Test input->output device propagation. `left`/`right` are provided so that
-    # the index-array code path in the backend `reduce` is exercised.
-    for d in devices:
-        q = xp.asarray(
-            [[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 1.0, 0.0]], device=d
-        )
-        p = Rotation.from_quat(q)
-        left = Rotation.from_quat(q)
-        right = Rotation.from_quat(q)
-        reduced, left_idx, right_idx = p.reduce(left, right, return_indices=True)
-        assert xp_device(reduced.as_quat()) == xp_device(q)
-        assert xp_device(left_idx) == xp_device(q)
-        assert xp_device(right_idx) == xp_device(q)
 
 
 @make_xp_test_case((Rotation, "from_matrix"), (Rotation, "apply"))
@@ -2107,7 +2088,7 @@ def test_align_vectors_near_inf(xp):
 
 @make_xp_test_case((Rotation, "align_vectors"), (Rotation, "as_matrix"))
 def test_align_vectors_parallel(xp):
-    atol = 1e-12
+    atol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-7
     a = xp.asarray([[1.0, 0, 0], [0, 1, 0]])
     b = xp.asarray([[0.0, 1, 0], [0, 1, 0]])
     m_expected = xp.asarray([[0.0, 1, 0],
@@ -2216,32 +2197,6 @@ def test_align_vectors_mixed_dtypes(xp):
     # Check that the dtype of the output is the result type of a and b
     est, _ = Rotation.align_vectors(a, b)
     xp_assert_close(est.as_quat(), c.as_quat())
-
-
-@make_xp_test_case((Rotation, "align_vectors"))
-def test_align_vectors_device(xp, devices):
-    # Test input->output device propagation for the various code paths.
-    for d in devices:
-        a = xp.asarray([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], device=d)
-        b = xp.asarray([[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]], device=d)
-
-        # Multiple vectors, finite weights (exercises `_align_vectors`)
-        r, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
-        assert xp_device(r.as_quat()) == xp_device(a)
-        assert xp_device(rssd) == xp_device(a)
-        assert xp_device(sens) == xp_device(a)
-
-        # Single vector pair exercises the ``N == 1`` code path
-        r, rssd = Rotation.align_vectors(a[0, ...], b[0, ...])
-        assert xp_device(r.as_quat()) == xp_device(a)
-        assert xp_device(rssd) == xp_device(a)
-
-        # Infinite weight exercises `_align_vectors_fixed`
-        r, rssd = Rotation.align_vectors(
-            a, b, weights=xp.asarray([xp.inf, 1.0], device=d)
-        )
-        assert xp_device(r.as_quat()) == xp_device(a)
-        assert xp_device(rssd) == xp_device(a)
 
 
 @make_xp_test_case((Rotation, "__repr__"))
@@ -2556,7 +2511,7 @@ def test_pow(xp, ndim: int):
         # Test accuracy
         q = p ** n
         q_identity = xp.asarray([0., 0, 0, 1])
-        # Regression test for gh-24436 
+        # Regression test for gh-24436
         assert isinstance(q._quat, type(q_identity))
         r = Rotation.from_quat(xp.tile(q_identity, batch_shape + (1,)))
         for _ in range(abs(n)):

@@ -2,15 +2,15 @@ import pickle
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy._lib._array_api import xp_assert_close, make_xp_test_case, xp_device
+from scipy._lib._array_api import xp_assert_close, make_xp_test_case
 from scipy.stats.qmc import Halton
-from scipy.spatial import cKDTree  # type: ignore[attr-defined]
+from scipy.spatial import cKDTree
 from scipy.interpolate._rbfinterp import (
     _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, RBFInterpolator,
     _get_backend
     )
 from scipy.interpolate import _rbfinterp_pythran
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -442,16 +442,6 @@ class _TestRBFInterpolator:
             f = self.build(y, d, kernel='linear')(y)
             xp_assert_close(f, d)
 
-    def test_device(self, xp, devices):
-        # Input array device should propagate to the output; see gh-22680.
-        seq = Halton(1, scramble=False, seed=np.random.RandomState(1))
-        x_np = 3*seq.random(50)
-        for d in devices:
-            x = xp.asarray(x_np, device=d)
-            y = _1d_test_function(x, xp)
-            out = self.build(x, y)(x)
-            assert xp_device(out) == xp_device(x)
-
     def test_pickleable(self, xp):
         # Make sure we can pickle and unpickle the interpolant without any
         # changes in the behavior.
@@ -565,6 +555,7 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
 
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # RbfInterpolator

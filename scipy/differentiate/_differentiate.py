@@ -1,9 +1,9 @@
-# mypy: disable-error-code="attr-defined"
 import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import (array_namespace, xp_copy, xp_promote,
+from scipy._lib._array_api import (xp_result_device, array_namespace,
+                                   xp_copy, xp_promote,
                                    xp_capabilities, xp_device)
 import scipy._external.array_api_extra as xpx
 
@@ -42,13 +42,13 @@ def _derivative_iv(f, x, args, kwargs, tolerances, maxiter, order, initial_step,
     if order_int != order or order <= 0:
         raise ValueError('`order` must be a positive integer.')
 
-    # scalar defaults would land on the default device; create them on the
-    # device of `x` instead (array arguments keep their own device)
-    device = xp_device(x) if hasattr(x, "device") else None
-    step_direction, initial_step = (
-        xp.asarray(arg) if hasattr(arg, "device")
-        else xp.asarray(arg, device=device)
-        for arg in (step_direction, initial_step))
+    # scalars and host data land on the device of `x`; arrays keep their own
+    # device, so that a device mismatch raises in `broadcast_arrays` below
+    step_direction = xp.asarray(step_direction,
+                                device=xp_result_device(step_direction, x))
+    initial_step = xp.asarray(initial_step,
+                              device=xp_result_device(initial_step, x))
+
     temp = xp.broadcast_arrays(x, step_direction, initial_step)
     x, step_direction, initial_step = temp
 
@@ -722,7 +722,6 @@ def _derivative_weights(work, n, xp):
 
         diff_state.right = weights
 
-    # the cached weights are NumPy arrays; convert onto the input's device
     device = xp_device(work.x)
     return (xp.asarray(diff_state.central, dtype=work.dtype, device=device),
             xp.asarray(diff_state.right, dtype=work.dtype, device=device))

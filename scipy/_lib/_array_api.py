@@ -56,10 +56,10 @@ __all__ = [
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_compat_namespace', 'xp_copy', 'xp_default_int_dtype', 'xp_device',
+    'xp_compat_namespace', 'xp_copy', 'xp_device',
     'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
-    'xp_result_type', 'xp_promote',
+    'xp_result_type', 'xp_result_device', 'xp_promote',
     'make_xp_test_case', 'make_xp_pytest_marks', 'make_xp_pytest_param',
 ]
 
@@ -116,9 +116,9 @@ def _asarray(
         try:
             array = xp.asarray(array, dtype=dtype, copy=copy, device=device)
         except TypeError:
-            # `xp.asarray(3)` is a throwaway used only to obtain the coerced
-            # namespace; its device is irrelevant.
-            coerced_xp = array_namespace(xp.asarray(3))  # skip device check
+            # `xp` lacks features SciPy relies on (e.g. the `device` keyword)
+            # so retry with the compat namespace
+            coerced_xp = xp_compat_namespace(xp)
             array = coerced_xp.asarray(array, dtype=dtype, copy=copy, device=device)
 
     if check_finite:
@@ -439,11 +439,11 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     """
 
     if is_cupy(xp):
-        import cupyx  # type: ignore[import-not-found,import-untyped]
+        import cupyx
         return cupyx.scipy
 
     if is_jax(xp):
-        import jax  # type: ignore[import-not-found]
+        import jax  # pyrefly: ignore[missing-import]
         return jax.scipy
 
     if is_torch(xp):
@@ -541,7 +541,7 @@ def xp_result_type(*args, force_floating=False, xp):
             dtype = getattr(arg_array, 'dtype', arg)
             if xp.isdtype(dtype, ('real floating', 'complex floating')):
                 float_args.append(arg)
-        return xp.result_type(*float_args, xp_default_dtype(xp))
+        return xp.result_type(*float_args, xpx.default_dtype(xp))
 
 
 def xp_promote(*args, broadcast=False, force_floating=False, xp):
@@ -570,10 +570,7 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     if not args:
         return args
 
-    # Infer the common device from the array arguments; `devices[i]` is the
-    # device to create argument `i` on (None to keep an array's own device).
-    device = next((xp_device(arg) for arg in args if hasattr(arg, "device")), None)
-    devices = [None if hasattr(arg, "device") else device for arg in args]
+    _, devices = _xp_result_devices(*args)
 
     # prevent double conversion of iterable to array
     # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
@@ -641,11 +638,10 @@ def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
 def xp_compat_namespace(xp: ModuleType | None) -> ModuleType:
     """Return the array-api-compat(ible) namespace corresponding to `xp`.
 
-    A user-provided `xp` may be a "raw" namespace (e.g. bare `numpy` or
-    `torch`) that lacks features SciPy relies on (such as the `device`
-    keyword of creation functions on NumPy 1.x / CuPy 13.x); resolve it
-    through `array_namespace` with a throwaway array. `None` maps to the
-    compat NumPy namespace.
+    A user-provided `xp` may be a "raw" namespace (e.g. bare `numpy` or `torch`) that
+    lacks features SciPy relies on (such as the `device` keyword of creation functions
+    on CuPy <=14.1, xref cupy#9848); resolve it through `array_namespace` with a
+    throwaway array. `None` maps to the compat NumPy namespace.
     """
     if xp is None:
         return np_compat
@@ -654,45 +650,73 @@ def xp_compat_namespace(xp: ModuleType | None) -> ModuleType:
     return array_namespace(xp.empty(0))  # skip device check
 
 
-def xp_default_int_dtype(xp):
-    """Query the namespace-dependent default integer dtype."""
-    # The default integer dtype is backend- and platform-dependent
-    # (e.g. int32 on JAX unless x64 is enabled), so probe it with a
-    # throwaway scalar conversion; the probe's device is irrelevant.
-    return xp.asarray(1).dtype  # skip device check
-
-
-def xp_default_dtype(xp):
-    """Query the namespace-dependent default floating-point dtype.
-    """
-    if is_torch(xp):
-        # historically, we allow pytorch to keep its default of float32
-        return xp.get_default_dtype()
-    else:
-        # we default to float64
-        return xp.float64
-
-
 def xp_result_device(*args):
-    """Return the device of an array in `args`, for the purpose of
-    input-output device propagation.
-    If there are multiple devices, return an arbitrary one.
-    If there are no arrays, return None (this typically happens only on NumPy).
+    """Return the device for the result of a function with inputs `args`,
+
+    The purpose of this function is to be used for input-output device propagation.
+
+    Arguments that do not carry a device - python scalars, NumPy arrays and
+    scalars (host data), and arrays of backends without a ``.device`` attribute
+    - do not determine the result device and are skipped: the device of the
+    first device-carrying argument is returned (combining arrays across devices
+    raises inside the backend anyway). Return ``None`` if no argument carries
+    a device; creation functions then use the backend's default device, which
+    is the correct result device for NumPy and for purely host-data inputs.
     """
-    for arg in args:
-        # Do not do a duck-type test for the .device attribute, as many backends today
-        # don't have it yet. See workarouunds in array_api_compat.device().
-        if is_array_api_obj(arg):
-            return xp_device(arg)
-    return None
+    return _xp_result_devices(*args)[0]
+
+
+def _xp_result_devices(*args):
+    """Like `xp_result_device`, but return ``(device, devices)``.
+
+    ``devices[i]`` is the device on which to create argument `i`: `None` for
+    arguments that carry their own device (which creation functions preserve),
+    the common `device` for Python scalars and host data.
+    """
+    def _has_own_device(arg):
+        """Whether `arg` is an array that carries its own device.
+
+        NumPy arrays and scalars report ``device='cpu'`` but are *host data*:
+        converting them to another namespace places them on that namespace's
+        *default* device, so for device propagation they must be treated like
+        python scalars and created on the inferred common device (see gh-22680).
+
+        This never forwards a device across libraries: arguments reaching the
+        device-anchoring call sites have been validated by `array_namespace` at
+        the function boundary, which raises for arrays from multiple libraries.
+        The only foreign arrays that legitimately appear alongside another
+        library's arrays are NumPy arrays and scalars (e.g. numeric parameters
+        computed with NumPy), and those are excluded here. A device returned
+        for an argument with ``_has_own_device(arg) == True`` therefore always
+        belongs to the namespace whose creation functions consume it.
+
+        Backends whose arrays lack the ``.device`` attribute (e.g. Dask; see
+        the workarounds in ``array_api_compat.device``) are treated like host
+        data. They are effectively single-device, so creating on the backend
+        default -- what a `None` anchor means -- is correct for them.
+        """
+        return hasattr(arg, "device") and not isinstance(arg, (np.ndarray, np.generic))
+
+
+    device = next((xp_device(arg) for arg in args if _has_own_device(arg)), None)
+    devices = [None if _has_own_device(arg) else device for arg in args]
+    return device, devices
 
 
 # np.r_ replacement
 def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     """A replacement for `np.r_` as `xp.concat` does not accept python scalars
        or 0-D arrays.
+
+    Python scalars and host data are created on the device of the first
+    array argument, not on the backend's default device; array arguments
+    keep their own device (see gh-22680).
     """
-    arys = [xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp) for a in arrays]  # type:ignore[union-attr]
+    _, devices = _xp_result_devices(*arrays)
+    arys = [
+        xpx.atleast_nd(xp.asarray(a, device=d), ndim=1, xp=xp)  # type:ignore[union-attr]
+        for a, d in zip(arrays, devices)
+    ]
     return xp.concat(arys)  # type:ignore[union-attr]
 
 
@@ -853,27 +877,31 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
 
     # Note: deliberately not documenting array-api-strict
     note = f"""
-    **Array API Standard Support**
 
-    `{fun_name}` has experimental support for Python Array API Standard compatible
-    backends in addition to NumPy. Please consider testing these features
-    by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
-    CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
-    combinations of backend and device (or other capability) are supported.
+    .. dropdown:: Array API Standard Support
+        :color: primary
 
-    ====================  ====================  ====================
-    Library               CPU                   GPU
-    ====================  ====================  ====================
-    NumPy                 {capabilities['numpy']                   }
-    CuPy                  {capabilities['cupy']                    }
-    PyTorch               {capabilities['torch']                   }
-    JAX                   {capabilities['jax.numpy']               }
-    Dask                  {capabilities['dask.array']              }
-    ====================  ====================  ====================
+        `{fun_name}` has experimental support for Python Array API Standard compatible
+        backends in addition to NumPy. Please consider testing these features
+        by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
+        CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
+        combinations of backend and device (or other capability) are supported.
 
-    {marray_note or ""}
-    {extra_note or ""}
-    See :ref:`dev-arrayapi` for more information.
+        ====================  ====================  ====================
+        Library               CPU                   GPU
+        ====================  ====================  ====================
+        NumPy                 {capabilities['numpy']                   }
+        CuPy                  {capabilities['cupy']                    }
+        PyTorch               {capabilities['torch']                   }
+        JAX                   {capabilities['jax.numpy']               }
+        Dask                  {capabilities['dask.array']              }
+        ====================  ====================  ====================
+
+    {textwrap.indent(marray_note or "", ' '*4)}
+    {textwrap.indent(extra_note or "",  ' '*4)}
+
+        See :ref:`dev-arrayapi` for more information.
+
     """
 
     return textwrap.dedent(note)
@@ -1204,7 +1232,7 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
 
 
 # Is it OK to have a dictionary that is mutated (once upon import) in many places?
-xp_capabilities_table = {}  # type: ignore[var-annotated]
+xp_capabilities_table = {}
 
 
 def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:

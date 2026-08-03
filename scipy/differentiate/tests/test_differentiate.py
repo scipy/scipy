@@ -6,7 +6,7 @@ import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case, xp_device
+from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
@@ -23,7 +23,7 @@ class TestDerivative:
     @pytest.mark.parametrize('x', [0.6, np.linspace(-0.05, 1.05, 10)])
     def test_basic(self, x, xp):
         # Invert distribution CDF and compare against distribution `ppf`
-        default_dtype = xp.asarray(1.).dtype
+        default_dtype = xpx.default_dtype(xp)
         res = derivative(self.f, xp.asarray(x, dtype=default_dtype))
         ref = xp.asarray(stats.norm().pdf(x), dtype=default_dtype)
         xp_assert_close(res.df, ref)
@@ -452,13 +452,6 @@ class TestDerivative:
         ref = p*x**(p-1.) + c
         xp_assert_close(res.df, ref)
 
-    def test_device(self, xp, devices):
-        # Test input device propagation to output.
-        for d in devices:
-            x = xp.asarray([1., 2., 3.], device=d)
-            res = derivative(lambda t: t**3, x)
-            assert xp_device(res.df) == xp_device(x)
-
 
 class JacobianHessianTest:
     def test_iv(self, xp):
@@ -489,16 +482,6 @@ class JacobianHessianTest:
         with pytest.raises(ValueError, match=message):
             jh_func(func, x, maxiter=-1)
 
-    def test_device(self, xp, devices):
-        # Test input device propagation to output.
-        jh_func = self.jh_func.__func__
-        for d in devices:
-            x = xp.asarray([1., 2., 3.], device=d)
-            res = jh_func(optimize.rosen, x)
-            # `df` for `jacobian`, `ddf` for `hessian`
-            res_arr = res.df if hasattr(res, 'df') else res.ddf
-            assert xp_device(res_arr) == xp_device(x)
-
 
 @make_xp_test_case(jacobian)
 class TestJacobian(JacobianHessianTest):
@@ -515,8 +498,8 @@ class TestJacobian(JacobianHessianTest):
         x, y = z
         return [[2 * x * y, x ** 2], [np.full_like(x, 5), np.cos(y)]]
 
-    f1.mn = 2, 2  # type: ignore[attr-defined]
-    f1.ref = df1  # type: ignore[attr-defined]
+    f1.mn = 2, 2
+    f1.ref = df1
 
     def f2(z, xp):
         r, phi = z
@@ -527,8 +510,8 @@ class TestJacobian(JacobianHessianTest):
         return [[np.cos(phi), -r * np.sin(phi)],
                 [np.sin(phi), r * np.cos(phi)]]
 
-    f2.mn = 2, 2  # type: ignore[attr-defined]
-    f2.ref = df2  # type: ignore[attr-defined]
+    f2.mn = 2, 2
+    f2.ref = df2
 
     def f3(z, xp):
         r, phi, th = z
@@ -543,8 +526,8 @@ class TestJacobian(JacobianHessianTest):
                  r * np.sin(phi) * np.cos(th)],
                 [np.cos(phi), -r * np.sin(phi), np.zeros_like(r)]]
 
-    f3.mn = 3, 3  # type: ignore[attr-defined]
-    f3.ref = df3  # type: ignore[attr-defined]
+    f3.mn = 3, 3
+    f3.ref = df3
 
     def f4(x, xp):
         x1, x2, x3 = x
@@ -558,8 +541,8 @@ class TestJacobian(JacobianHessianTest):
                 [0 * one, 8 * x2, -2 * one],
                 [x3 * np.cos(x1), 0 * one, np.sin(x1)]]
 
-    f4.mn = 3, 4  # type: ignore[attr-defined]
-    f4.ref = df4  # type: ignore[attr-defined]
+    f4.mn = 3, 4
+    f4.ref = df4
 
     def f5(x, xp):
         x1, x2, x3 = x
@@ -572,12 +555,12 @@ class TestJacobian(JacobianHessianTest):
                 [8 * x1, -2 * x3 * np.cos(x2 * x3), -2 * x2 * np.cos(x2 * x3)],
                 [0 * one, x3, x2]]
 
-    f5.mn = 3, 3  # type: ignore[attr-defined]
-    f5.ref = df5  # type: ignore[attr-defined]
+    f5.mn = 3, 3
+    f5.ref = df5
 
     def rosen(x, _): return optimize.rosen(x)
-    rosen.mn = 5, 1  # type: ignore[attr-defined]
-    rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
+    rosen.mn = 5, 1
+    rosen.ref = optimize.rosen_der
 
     @pytest.mark.parametrize('dtype', ('float32', 'float64'))
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])

@@ -19,7 +19,7 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
 
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 from scipy.interpolate import make_splrep, NdBSpline
 from scipy.interpolate._regrid import (_regrid,
@@ -407,6 +407,7 @@ class TestUnivariateSpline:
         with pytest.warns(UserWarning, match=msg):
             UnivariateSpline(x, y, k=1)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # UnivariateSpline
@@ -1480,6 +1481,54 @@ class TestRectBivariateSpline:
         nonGridPosLons[2] = 0.001
         with assert_raises(ValueError) as exc_info:
             Interpolator(GridPosLats, nonGridPosLons)
+        assert "y must be strictly increasing" in str(exc_info.value)
+
+    def test_grid_sparse_meshgrid(self):
+        # gh-25730
+        x = np.arange(-10.0, 10.0)
+        y = np.arange(-20.0, 20.0)
+        lut = RectBivariateSpline(x, y, np.hypot(x[:, None], y[None, :]), s=0)
+
+        xi = np.linspace(-10.0, 10.0, 25)
+        yi = np.linspace(-20.0, 20.0, 30)
+        xs, ys = np.meshgrid(xi, yi, sparse=True, indexing="ij")
+        assert xs.ndim == 2 and ys.ndim == 2
+
+        xp_assert_close(lut(xs, ys), lut(xi, yi), atol=1e-14)
+
+    def test_grid_sparse_meshgrid_values(self):
+        # gh-25730
+        # The snippet from the issue, without its denominator so that no nans
+        # enter the fit. Reference values obtained by running it on scipy 1.16.1.
+        x = np.arange(-10, 10)
+        y = np.arange(-20, 20)
+        x_mesh, y_mesh = np.meshgrid(x, y)
+        z = np.sin(np.sqrt(x_mesh**2 + y_mesh**2))
+
+        xi = np.linspace(-10, 10, endpoint=True, num=3)
+        yi = np.linspace(-20, 20, endpoint=True, num=3)
+        xs, ys = np.meshgrid(xi, yi, sparse=True)
+
+        expected = np.array([
+            [-3.61178317e-01, 9.12945251e-01, 5.94013869e-02],
+            [-5.44021111e-01, -2.15105711e-16, 4.12118485e-01],
+            [4.97086683e-01, 1.49877210e-01, 8.23386213e-01],
+        ])
+        xp_assert_close(RectBivariateSpline(y, x, z, s=0)(ys, xs), expected, atol=1e-14)
+
+    def test_not_increasing_input_2d(self):
+        # gh-25730
+        x = np.arange(5.0)
+        y = np.arange(6.0)
+        lut = RectBivariateSpline(x, y, np.hypot(x[:, None], y[None, :]), s=0)
+
+        decreasing = np.array([3.0, 1.0, 4.0])
+        with assert_raises(ValueError) as exc_info:
+            lut(decreasing[:, None], y[None, :])
+        assert "x must be strictly increasing" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            lut(x[:, None], decreasing[None, :])
         assert "y must be strictly increasing" in str(exc_info.value)
 
     def _sample_large_2d_data(self, nx, ny):

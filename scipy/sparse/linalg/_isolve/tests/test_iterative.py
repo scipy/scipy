@@ -18,6 +18,7 @@ from scipy._lib._array_api import (
 )
 from scipy._external import array_api_extra as xpx
 from scipy._lib._sparse import issparse
+from scipy._lib._testutils import IS_WASM
 from scipy.sparse import dia_array, csr_array, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
@@ -319,6 +320,12 @@ def test_maxiter(case, xp, batch_A, batch_b):
 def test_convergence(case, xp, batch_A, batch_b):
     if (case.solver is tfqmr) and ("poisson2d-F" in case.name):
         pytest.skip("Struggles to converge with single precision on some platforms")
+    if (case.solver is tfqmr) and ("rand-sym-pd-F" in case.name):
+        # Numerical stability is borderline for single precision, tfqmr stagnates at a
+        # relative residual ||b - Ax||/||b|| of ~2e-2, failure yes/no depends on
+        # platform-specific rounding behavior (see, e.g., scipy#25522)
+        pytest.skip("Fails to converge with single precision on some platforms")
+
     case = xp_case(case, xp, batch_A, batch_b, rng=38)
     A = case.A
 
@@ -350,13 +357,18 @@ def test_precond_dummy(case, xp, batch_A, batch_b):
         pytest.skip("Struggles to converge with single precision")
     if (case.solver is tfqmr) and ("poisson2d-F" in case.name):
         pytest.skip("Hits divide-by-zero with single precision")
+    if (case.solver is tfqmr) and ("rand-sym-pd-F" in case.name):
+        # Numerical stability is borderline for float32 (see, scipy#25522)
+        pytest.skip("Fails to converge with single precision on some platforms")
+    if IS_WASM and (case.solver is cg) and ("rand-cmplx-sym-pd-F" in case.name):
+        pytest.skip("Struggles to converge with single-precision complex on WASM")
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
 
     rtol = 1e-8 if np.finfo(dtype).eps < 1e-8 else 1.4e-3
 
     A = case.A
-    
+
     # NOTE: the following was previously uncommented as dead code --
     # was the intention to set `A = dia_array(...)`?
 
@@ -395,7 +407,7 @@ def test_precond_inverse(case, xp, batch_A, batch_b):
         pytest.skip("specific to poisson1d and poisson2d cases")
     if case.solver is qmr:
         pytest.skip("skipped for qmr")
-    
+
     case = xp_case(case, xp, batch_A, batch_b, rng=38)
     rtol = 1e-8
 
@@ -463,7 +475,7 @@ def test_atol(solver, xp, batch_A, batch_b):
     b = 1e3 * rng.uniform(size=(*batch_b, 10))
 
     dtype = xpx.default_dtype(xp)
-    A = xp.asarray(A, dtype=dtype) 
+    A = xp.asarray(A, dtype=dtype)
     b = xp.asarray(b, dtype=dtype)
 
     tols = np.r_[0, np.logspace(-9, 2, 7), np.inf]
@@ -497,7 +509,7 @@ def test_atol(solver, xp, batch_A, batch_b):
 @pytest.mark.parametrize("batch_b", [()])
 def test_zero_rhs(solver, xp, batch_A, batch_b):
     rng = np.random.default_rng(1684414984100503)
-    dtype = xpx.default_dtype(xp) 
+    dtype = xpx.default_dtype(xp)
     A = xp.asarray(rng.random(size=(*batch_A, 10, 10)), dtype=dtype)
     A = A @ A.mT + 10 * xp.eye(10)
 

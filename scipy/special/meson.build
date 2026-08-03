@@ -12,8 +12,7 @@ _ufuncs_pxi_pxd_sources = [
 ]
 
 ufuncs_sources = [
-  '_cosine.c',
-  'xsf_wrappers.cpp',
+  'cython_special_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]
@@ -29,20 +28,14 @@ cdflib_lib = static_library('cdflib',
   gnu_symbol_visibility: 'hidden',
 )
 
-# The -Wno-psabi arg is used to silence a warning that the ABI of
-# passing structure with complex float member changed in GCC 4.4,
-# which is not relevant for scipy.special.
 ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
-if meson.get_compiler('cpp').get_id() == 'gcc'
-  ufuncs_cpp_args += ['-Wno-psabi']
-endif
 
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep],
   link_args: version_link_args,
-  cpp_args: ufuncs_cpp_args,
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1'] + ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
 )
@@ -101,9 +94,10 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
+    boost_math_dep,
     xsf_dep,
     np_dep,
   ],
@@ -163,16 +157,14 @@ py3.extension_module('_ellip_harm_2',
 py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
-    '_cosine.c',
-    'xsf_wrappers.cpp',
+    'cython_special_wrappers.cpp',
     'sf_error.cc',
-    'dd_real_wrappers.cpp'
-  ],
+    'dd_real_wrappers.cpp'],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep],
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',

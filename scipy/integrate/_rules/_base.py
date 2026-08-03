@@ -148,7 +148,9 @@ class Rule:
         for a_k, b_k in _split_subregion(a, b):
             refined_est += self.estimate(f, a_k, b_k, args)
 
-        return self.xp.abs(est - refined_est)
+        # rules carry no namespace state; resolve locally from the estimate
+        xp = array_namespace(est)
+        return xp.abs(est - refined_est)
 
 
 class FixedRule(Rule):
@@ -190,9 +192,6 @@ class FixedRule(Rule):
     ... )
      [0.3333333]
     """
-
-    def __init__(self):
-        self.xp = None
 
     @property
     def nodes_and_weights(self):
@@ -236,12 +235,11 @@ class FixedRule(Rule):
         """
         nodes, weights = self.nodes_and_weights
 
-        if self.xp is None:
-            self.xp = array_namespace(nodes)
-
+        # nodes/weights are NumPy host data; see `_cached_cast` for details
+        xp = array_namespace(a)
         nodes, weights = _cached_cast(self, "_nw_cache", nodes, weights,
-                                      a.dtype, xp_device(a), self.xp)
-        return _apply_fixed_rule(f, a, b, nodes, weights, args, self.xp)
+                                      a.dtype, xp_device(a), xp)
+        return _apply_fixed_rule(f, a, b, nodes, weights, args, xp)
 
 
 class NestedFixedRule(FixedRule):
@@ -287,7 +285,6 @@ class NestedFixedRule(FixedRule):
     def __init__(self, higher, lower):
         self.higher = higher
         self.lower = lower
-        self.xp = None
 
     @property
     def nodes_and_weights(self):
@@ -340,17 +337,19 @@ class NestedFixedRule(FixedRule):
         nodes, weights = self.nodes_and_weights
         lower_nodes, lower_weights = self.lower_nodes_and_weights
 
-        if self.xp is None:
-            self.xp = array_namespace(nodes)
+        xp = array_namespace(a)
 
-        error_nodes = self.xp.concat([nodes, lower_nodes], axis=0)
-        error_weights = self.xp.concat([weights, -lower_weights], axis=0)
+        # combine the constants in their own (host) namespace before the
+        # conversion onto `a`'s namespace; see `_cached_cast` for details
+        nodes_xp = array_namespace(nodes)
+        error_nodes = nodes_xp.concat([nodes, lower_nodes], axis=0)
+        error_weights = nodes_xp.concat([weights, -lower_weights], axis=0)
         error_nodes, error_weights = _cached_cast(
             self, "_error_nw_cache", error_nodes, error_weights,
-            a.dtype, xp_device(a), self.xp)
+            a.dtype, xp_device(a), xp)
 
-        return self.xp.abs(
-            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, self.xp)
+        return xp.abs(
+            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, xp)
         )
 
 
@@ -405,7 +404,6 @@ class ProductNestedFixed(NestedFixedRule):
                                  "NestedFixedRule")
 
         self.base_rules = base_rules
-        self.xp = None
 
     @cached_property
     def nodes_and_weights(self):
@@ -413,10 +411,8 @@ class ProductNestedFixed(NestedFixedRule):
             [rule.nodes_and_weights[0] for rule in self.base_rules]
         )
 
-        if self.xp is None:
-            self.xp = array_namespace(nodes)
-
-        weights = self.xp.prod(
+        xp = array_namespace(nodes)
+        weights = xp.prod(
             _cartesian_product(
                 [rule.nodes_and_weights[1] for rule in self.base_rules]
             ),
@@ -431,10 +427,8 @@ class ProductNestedFixed(NestedFixedRule):
             [cubature.lower_nodes_and_weights[0] for cubature in self.base_rules]
         )
 
-        if self.xp is None:
-            self.xp = array_namespace(nodes)
-
-        weights = self.xp.prod(
+        xp = array_namespace(nodes)
+        weights = xp.prod(
             _cartesian_product(
                 [cubature.lower_nodes_and_weights[1] for cubature in self.base_rules]
             ),
@@ -479,24 +473,34 @@ def _split_subregion(a, b, xp, split_at=None):
 
 
 def _cached_cast(rule, attr, nodes, weights, dtype, device, xp):
-    # Cast the rule's nodes/weights to the target dtype and move them onto the
-    # target device once, memoizing the result on the rule so that the adaptive
-    # cubature loop does not re-cast (or re-transfer, for non-default devices)
-    # them for every subregion; see gh-22680.
+    """Convert a rule's nodes/weights onto ``(xp, dtype, device)``, memoized.
+
+    The built-in fixed rules keep their nodes and weights as NumPy *host*
+    arrays: a rule object is constructed once, independently of any integrand,
+    so at construction time there is no array whose namespace or device could
+    be matched -- ``xp`` arrays built there would land on the backend's
+    default device and get baked into the rule, forcing estimates with
+    integrand arrays on another device to either raise or silently transfer
+    (see gh-22680). Host data keeps construction backend- and device-neutral.
+
+    The target namespace, dtype and device only become known at apply time,
+    from the actual integration limits; this helper performs the conversion
+    there and memoizes the result on the rule (keyed on the full target
+    triple), so the adaptive cubature loop does not re-cast -- or re-transfer,
+    for non-default devices -- the constants for every subregion.
+    """
     cache = getattr(rule, attr, None)
-    if cache is None or cache[0] != dtype or cache[1] != device:
+    if cache is None or cache[:3] != (xp, dtype, device):
         nodes = xp.asarray(nodes, dtype=dtype, device=device)
         weights = xp.asarray(weights, dtype=dtype, device=device)
-        cache = (dtype, device, nodes, weights)
+        cache = (xp, dtype, device, nodes, weights)
         setattr(rule, attr, cache)
-    return cache[2], cache[3]
+    return cache[3], cache[4]
 
 
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
-    # Cast nodes and weights to the dtype of a and b, and move them onto the
-    # input's device (the fixed-rule nodes/weights are built on the default
-    # device; see gh-22680), so the result lands on the input device. This is
-    # a no-op (no copy) when they are already converted, as when called via
+    # Convert nodes/weights onto `a`'s dtype and device (see `_cached_cast`
+    # for details); a no-op when already converted, as when called via
     # `FixedRule.estimate`/`NestedFixedRule.estimate_error`.
     result_dtype = a.dtype
     device = xp_device(a)

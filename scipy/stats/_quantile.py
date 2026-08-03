@@ -3,7 +3,6 @@ import numpy as np
 from scipy.special import betainc
 from scipy._lib._array_api import (
     xp_capabilities,
-    xp_default_int_dtype,
     xp_ravel,
     array_namespace,
     xp_promote,
@@ -514,7 +513,7 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     # output is that of `y`, broadcasting the batch dimensions with those of `x` if
     # necessary.
     xp = array_namespace(x, y) if xp is None else xp
-    xp_default_int = xp_default_int_dtype(xp)
+    default_int = xpx.default_dtype(xp, "integral")
     y_0d = xp.asarray(y).ndim == 0
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
     x_1d = x.ndim <= 1
@@ -522,7 +521,7 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     if x_1d or is_torch(xp):
         y = xp.reshape(y, ()) if (y_0d and x_1d) else y
         out = xp.searchsorted(x, y, side=side)
-        out = xp.astype(out, xp_default_int, copy=False)
+        out = xp.astype(out, default_int, copy=False)
         return out
 
     a = xp.full(y.shape, 0, device=xp_device(x))
@@ -546,7 +545,7 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
 
     out = xp.where(compare(y, xp.min(x, axis=-1, keepdims=True)), 0, b)
     out = xp.where(xp.isnan(y), x.shape[-1], out) if side == 'right' else out
-    out = xp.astype(out, xp_default_int, copy=False)
+    out = xp.astype(out, default_int, copy=False)
     return out
 
 

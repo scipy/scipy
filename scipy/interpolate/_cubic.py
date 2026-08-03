@@ -6,7 +6,8 @@ import numpy as np
 
 from scipy.linalg import solve, solve_banded
 from scipy._lib._array_api import (
-    array_namespace, xp_size, xp_capabilities, is_cupy, scipy_namespace_for, xp_device
+    array_namespace, xp_size, xp_capabilities, is_cupy, scipy_namespace_for,
+    xp_device, xp_result_device
 )
 from scipy._external.array_api_compat import numpy as np_compat
 import scipy._external.array_api_extra as xpx
@@ -261,9 +262,6 @@ class PchipInterpolator(CubicHermiteSpline):
            :doi:`10.1137/1.9780898717952`
 
     """
-
-    # PchipInterpolator is not generic in scipy-stubs
-    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, x, y, axis=0, extrapolate=None):
         xp = array_namespace(x, y)
@@ -537,9 +535,6 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    # PchipInterpolator is not generic in scipy-stubs
-    __class_getitem__ = None  # type:ignore[assignment]
-
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
@@ -605,7 +600,10 @@ class Akima1DInterpolator(CubicHermiteSpline):
             f12 = f1 + f2
 
             # These are the mask of where the slope at breakpoint is defined:
-            mmax = xp.max(f12) if xp_size(f12) > 0 else -xp.inf
+            size_f12 = xp_size(f12)
+            # if the size is unknown, the `max` reduction is not guaranteed to work,
+            # so use the same fallback value as the known zero size case
+            mmax = xp.max(f12) if size_f12 is not None and size_f12 > 0 else -xp.inf
             ind = f12 > break_mult * mmax
             # Set the slope at breakpoint
             t = xp.where(
@@ -825,6 +823,8 @@ class CubicSpline(CubicHermiteSpline):
             )
             return
 
+        # the NumPy round-trip must return the result on the inputs' device
+        device = xp_result_device(x, y)
         x, dx, y, axis, _ = prepare_input(x, y, axis, xp=np_compat)
         n = len(x)
 
@@ -990,7 +990,7 @@ class CubicSpline(CubicHermiteSpline):
                                      overwrite_b=True, check_finite=False)
                     s = s.reshape(b.shape)
 
-        x, y, s = map(xp.asarray, (x, y, s))
+        x, y, s = (xp.asarray(arr, device=device) for arr in (x, y, s))
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
 

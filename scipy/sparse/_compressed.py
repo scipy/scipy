@@ -183,6 +183,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if self.indices.dtype.kind != 'i':
             warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
                  stacklevel=3)
+        if self.indices.dtype != self.indptr.dtype:
+            raise ValueError(f"indptr and indices must have the same dtype, "
+                             f"got {self.indptr.dtype} and {self.indices.dtype}")
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:
@@ -499,10 +502,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if (self.ndim == 2 and not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
-            
+
             res_dtype = get_sum_dtype(self.dtype) if dtype is None else dtype
             self_to_reduce = self.astype(res_dtype, copy=False)
-            
+
             # Fast path: reduce along minor axis
             ret = np.zeros(len(self_to_reduce.indptr) - 1, dtype=res_dtype)
             major_index, value = self_to_reduce._minor_reduce(np.add)

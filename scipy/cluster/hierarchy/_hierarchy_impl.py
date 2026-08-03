@@ -44,7 +44,7 @@ from . import _hierarchy, _optimal_leaf_ordering  # type:ignore[attr-defined]
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
                                    is_lazy_array, xp_capabilities, xp_copy,
-                                   xp_device)
+                                   xp_device, xp_result_device)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._external.array_api_extra as xpx
 
@@ -741,7 +741,10 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     the :math:`n` original observations. The distance between
     clusters ``Z[i, 0]`` and ``Z[i, 1]`` is given by ``Z[i, 2]``. The
     fourth value ``Z[i, 3]`` represents the number of original
-    observations in the newly formed cluster.
+    observations in the newly formed cluster. Note that the dtype of
+    ``Z`` is ``float64`` even though columns 0, 1 and 3 contain integer
+    data and should be interpreted as such. This is for historical
+    reasons.
 
     The following linkage methods are used to compute the distance
     :math:`d(s, t)` between two clusters :math:`s` and
@@ -2568,6 +2571,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
     """
     xp = array_namespace(Z)
+    device = xp_result_device(Z)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', materialize=True, xp=xp)
 
@@ -2599,7 +2603,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
     else:
         raise ValueError(f'Invalid cluster formation criterion: {str(criterion)}')
-    return xp.asarray(T)
+    return xp.asarray(T, device=device)
 
 
 @xp_capabilities(cpu_only=True, reason="Cython code",
@@ -3770,8 +3774,9 @@ def is_isomorphic(T1, T2):
 
     """
     xp = array_namespace(T1, T2)
-    T1 = _asarray(T1, xp=xp)
-    T2 = _asarray(T2, xp=xp)
+    device = xp_result_device(T1, T2)
+    T1 = _asarray(T1, xp=xp, device=device)
+    T2 = _asarray(T2, xp=xp, device=device)
 
     if T1.ndim != 1:
         raise ValueError('T1 must be one-dimensional.')

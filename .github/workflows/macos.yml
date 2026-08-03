@@ -48,6 +48,7 @@ jobs:
       - name: Set up ccache
         uses: ./.github/ccache
         with:
+          job_name: ${{ github.job }}
           workflow_name: ${{ github.workflow }}
 
       - name: Test SciPy
@@ -119,6 +120,7 @@ jobs:
       run: |
         brew install llvm@19
         LLVM_PREFIX=$(brew --prefix llvm@19)
+        # shellcheck disable=SC2129
         echo CC="$LLVM_PREFIX/bin/clang" >> $GITHUB_ENV
         echo CXX="$LLVM_PREFIX/bin/clang++" >> $GITHUB_ENV
         echo LDFLAGS="-L$LLVM_PREFIX/lib" >> $GITHUB_ENV
@@ -146,8 +148,10 @@ jobs:
         # TODO
         # - add --asan to spin build command
         # - removmove -fsanitize=address from C{XX}FLAGS
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
-        export CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        export CFLAGS
+        CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        export CXXFLAGS
         spin build -S-Dblas=accelerate
 
     - name: Test

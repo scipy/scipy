@@ -52,7 +52,8 @@ def _xi_std(r, l, y_continuous, xp):
     # "Suppose that X and Y are independent and Y is continuous. Then
     # √n·ξn(X, Y) → N(0, 2/5) in distribution as n → ∞"
     if y_continuous:  # [1] Theorem 2.1
-        return xp.asarray(math.sqrt(2 / 5) / math.sqrt(n), dtype=r.dtype)
+        return xp.asarray(math.sqrt(2 / 5) / math.sqrt(n), dtype=r.dtype,
+                          device=xp_device(r))
 
     # "Suppose that X and Y are independent. Then √n·ξn(X, Y)
     # converges to N(0, τ²) in distribution as n → ∞
@@ -642,8 +643,10 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     deltay = y[..., :, xp.newaxis] - y[..., xp.newaxis, :]
 
     if pfun == 'theilslopes':
-        i = xp.astype(xp.triu(xp.ones(deltax.shape[-2:], device=xp_device(deltax)),
-                              k=1), xp.bool)
+        i = xp.astype(
+            xp.triu(xp.ones(deltax.shape[-2:], device=xp_device(deltax)), k=1),
+            xp.bool,
+        )
         if is_numpy(xp):
             deltax, deltay = deltax[..., i], deltay[..., i]
         else:

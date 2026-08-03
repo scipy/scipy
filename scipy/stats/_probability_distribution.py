@@ -1250,7 +1250,7 @@ class _ProbabilityDistribution(ABC):
         >>> X.cdf(-0.25, 0.25) == X.cdf(0.25) - X.cdf(-0.25)
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1458,7 +1458,7 @@ class _ProbabilityDistribution(ABC):
         >>> X.ccdf(-0.25, 0.25) == X.cdf(-0.25) + X.ccdf(0.25)
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1657,7 +1657,7 @@ class _ProbabilityDistribution(ABC):
         >>> np.allclose(X.logcdf(0.), np.log(X.cdf(0.)))
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1851,7 +1851,7 @@ class _ProbabilityDistribution(ABC):
         >>> np.allclose(X.logccdf(0.), np.log(X.ccdf(0.)))
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod

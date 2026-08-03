@@ -14,7 +14,7 @@ Spherical Voronoi Code
 import numpy as np
 import scipy
 from . import _voronoi
-from scipy.spatial import cKDTree  # type: ignore[attr-defined]
+from scipy.spatial import cKDTree
 
 __all__ = ['SphericalVoronoi']
 

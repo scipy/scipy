@@ -629,7 +629,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     >>> res_root.x
     array([1.8932892 , 2.        , 2.09455148])
 
-    """  # noqa: E501
+    """
 
     res = _bracket_root(f, xl0, xr0=xr0, xmin=xmin, xmax=xmax, factor=factor,
                         args=args, kwargs=kwargs, maxiter=maxiter)
@@ -811,7 +811,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     >>> res_minimum.f_x
     array([2., 2., 2.])
 
-    """  # noqa: E501
+    """
 
     res = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
                            factor=factor, args=args, kwargs=kwargs, maxiter=maxiter)

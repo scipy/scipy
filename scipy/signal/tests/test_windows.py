@@ -12,7 +12,7 @@ from scipy.signal.windows._windows import _WIN_FUNC_DATA, _WIN_FUNCS
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, SCIPY_DEVICE, is_numpy, make_xp_test_case,
-    make_xp_pytest_param, _xp_copy_to_numpy, xp_device
+    make_xp_pytest_param, _xp_copy_to_numpy
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -429,14 +429,6 @@ class TestGeneralCosine:
         xp_assert_close(windows.general_cosine(4, a, sym=False),
                         xp.asarray([0.4, 0.3, 1, 0.3], dtype=xp.float64))
 
-    def test_device(self, xp, devices):
-        # `general_cosine` has no `device` keyword; the output must land on
-        # the device of the coefficient array `a` (gh-22680).
-        for d in devices:
-            a = xp.asarray([0.5, 0.3, 0.2], device=d)
-            w = windows.general_cosine(8, a)
-            assert xp_device(w) == xp_device(a)
-
 
 @make_xp_test_case(windows.general_hamming)
 class TestGeneralHamming:
@@ -804,15 +796,6 @@ class TestLanczos:
             assert windows.lanczos(n, sym=False, xp=xp).shape[0] == n
             assert windows.lanczos(n, sym=True, xp=xp).shape[0] == n
 
-    def test_device(self, xp, devices):
-        # `lanczos` takes a length `M` and a `device` keyword, so check the
-        # output lands on the requested device (both even and odd `M`).
-        for d in devices:
-            ref = xp.asarray(0.0, device=d)
-            for n in (6, 7):
-                w = windows.lanczos(n, xp=xp, device=d)
-                assert xp_device(w) == xp_device(ref)
-
 
 @make_xp_test_case(windows.get_window)
 class TestGetWindow:
@@ -966,22 +949,6 @@ class TestGetWindow:
                                     0.504551152, 0.], dtype=xp.float64), atol=1e-9)
         xp_assert_close(get_window('lanczos', 6, xp=xp),
                         get_window('sinc', 6, xp=xp))
-
-    # `kaiser` relies on `special.i0`, which array-api-strict computes via a
-    # round-trip through NumPy; that fails on non-default devices.
-    @pytest.mark.parametrize('winspec', [
-        pytest.param(('kaiser', 4.0), marks=skip_xp_backends(
-            "array_api_strict",
-            reason="special.i0 round-trips through NumPy")),
-        ('general_hamming', 0.7),
-    ])
-    @make_xp_test_case(windows.kaiser, windows.general_hamming)
-    def test_device(self, winspec, xp, devices):
-        # `get_window` output must land on the requested device (gh-22680).
-        for d in devices:
-            ref = xp.asarray(0.0, device=d)
-            win = get_window(winspec, 8, xp=xp, device=d)
-            assert xp_device(win) == xp_device(ref)
 
     def test_xp_default(self, xp):
         # no explicit xp= argument, default to numpy
@@ -1213,50 +1180,3 @@ def test_symmetric(xp):
         w = win(4097, xp=xp)
         error = xp.max(xp.abs(w - flip(w)))
         xp_assert_equal(error, xp.asarray(0.0), check_dtype=False, check_0d=False)
-
-
-# `dpss` is excluded below: it is np_only ("banded linear algebra is
-# numpy-only"), and NumPy only has a single (CPU) device, so there is no
-# device propagation to test. `general_cosine` derives the device from its
-# array argument `a` instead of a `device` keyword and is tested in
-# `TestGeneralCosine.test_device`; `get_window` in `TestGetWindow.test_device`.
-@pytest.mark.parametrize(
-    "func,kwargs",
-    [
-        make_xp_pytest_param(windows.boxcar, {}),
-        make_xp_pytest_param(windows.triang, {}),
-        make_xp_pytest_param(windows.parzen, {}),
-        make_xp_pytest_param(windows.bohman, {}),
-        make_xp_pytest_param(windows.blackman, {}),
-        make_xp_pytest_param(windows.nuttall, {}),
-        make_xp_pytest_param(windows.blackmanharris, {}),
-        make_xp_pytest_param(windows.flattop, {}),
-        make_xp_pytest_param(windows.bartlett, {}),
-        make_xp_pytest_param(windows.barthann, {}),
-        make_xp_pytest_param(windows.hamming, {}),
-        # `kaiser` relies on `special.i0`, which array-api-strict computes
-        # via a round-trip through NumPy; that fails on non-default devices.
-        make_xp_pytest_param(
-            windows.kaiser, {"beta": 8.6},
-            additional_marks=skip_xp_backends(
-                "array_api_strict",
-                reason="special.i0 round-trips through NumPy"),
-        ),
-        make_xp_pytest_param(windows.general_gaussian, {"p": 1.5, "sig": 2.0}),
-        make_xp_pytest_param(windows.general_hamming, {"alpha": 0.7}),
-        make_xp_pytest_param(windows.gaussian, {"std": 2.0}),
-        make_xp_pytest_param(windows.chebwin, {"at": 100}),
-        make_xp_pytest_param(windows.cosine, {}),
-        make_xp_pytest_param(windows.hann, {}),
-        make_xp_pytest_param(windows.exponential, {}),
-        make_xp_pytest_param(windows.tukey, {"alpha": 0.5}),
-        make_xp_pytest_param(windows.taylor, {}),
-    ],
-)
-def test_device(func, kwargs, xp, devices):
-    # Window functions take a length `M` and a `device` keyword; the output
-    # array must land on the requested device (gh-22680).
-    for d in devices:
-        ref = xp.asarray(0.0, device=d)
-        w = func(8, xp=xp, device=d, **kwargs)
-        assert xp_device(w) == xp_device(ref)

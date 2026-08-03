@@ -241,7 +241,9 @@ def fixed_quad(func, a, b, args=(), n=5):
     xp = array_namespace(a, b)
     a, b = xp_promote(a, b, force_floating=True, xp=xp)
     x, w = _cached_roots_legendre(n)
-    x, w = xp.asarray(x, dtype=a.dtype), xp.asarray(w, dtype=a.dtype)
+    device = xp_device(a)
+    x = xp.asarray(x, dtype=a.dtype, device=device)
+    w = xp.asarray(w, dtype=a.dtype, device=device)
     x = xp.real(x)
     if not is_lazy_array(a) and (xp.isinf(a) or xp.isinf(b)):
         raise ValueError("Gaussian quadrature is only available for "
@@ -451,7 +453,6 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
 
     """
     xp = array_namespace(y, x, dx)
-    # `xp_promote` converts the scalar `dx` on the device of `y`
     y, x, dx = xp_promote(y, x, dx, xp=xp)
     nd = y.ndim
     N = y.shape[axis]
@@ -763,8 +764,6 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         )
 
     if initial is not None:
-        # a scalar `initial` would land on the default device; place it on the
-        # input's device so it does not clash with `res` below (see gh-22680)
         initial = xp.asarray(initial, device=xp_device(y))
         initial = xp_promote(initial, force_floating=True, xp=xp)
         alt_initial_input_shape = tupleset(original_shape, axis, 1)
@@ -861,7 +860,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     slice_all = (slice(None),) * nd
     slice0 = tupleset(slice_all, axis, 0)
     slicem1 = tupleset(slice_all, axis, -1)
-    h = Ninterv * xp.asarray(dx, dtype=xp.float64)
+    h = Ninterv * xp.asarray(dx, dtype=xp.float64, device=xp_device(y))
     R[(0, 0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = slice_all
     start = stop = step = Ninterv

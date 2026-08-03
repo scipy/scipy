@@ -4,11 +4,11 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
+import math
 import numpy as np
-from numpy import asarray, zeros, pi, log, sqrt, \
-    exp, cos, sin, polyval, polyint
+from numpy import zeros, pi, sqrt, cos, polyval, polyint
 
-from scipy._lib._array_api import array_namespace, xp_promote
+from scipy._lib._array_api import array_namespace, xp_device, xp_promote
 import scipy._external.array_api_extra as xpx
 
 
@@ -68,13 +68,15 @@ def sawtooth(t, width=1.):
 
     # on the interval 0 to width*2*pi function is tmod / (pi*w) - 1
     mask2 = ~mask1 & (tmod < w*2*xp.pi)
-    y = xpx.at(y, mask2).set(tmod[mask2]/(xp.pi*w[mask2]) - 1)
+    one = xp.asarray(1, dtype=t.dtype, device=xp_device(t))
+    safe_w = xp.where(w == 0, one, w)
+    y = xp.where(mask2, (tmod - xp.pi*safe_w)/(xp.pi*safe_w), y)
 
     # on the interval width*2*pi to 2*pi function is (pi*(w+1)-tmod) / (pi*(1-w))
     mask3 = ~(mask1 | mask2)
-    y = xpx.at(y, mask3).set(
-        (xp.pi*(w[mask3] + 1) - tmod[mask3])/(xp.pi*(1 - w[mask3]))
-    )
+    safe_1mw = xp.where(w == 1, one, 1 - w)
+    y = xp.where(mask3, (xp.pi*(w + 1) - tmod)/(xp.pi*safe_1mw), y)
+
     return y
 
 
@@ -204,7 +206,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     >>> i, q, e = signal.gausspulse(t, fc=5, retquad=True, retenv=True)
     >>> plt.plot(t, i, t, q, t, e, '--')
 
-    """ 
+    """
     if fc < 0:
         raise ValueError(f"Center frequency (fc={fc:.2f}) must be >=0.")
     if bw <= 0:
@@ -219,7 +221,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # fdel = fc*bw/2:  g(fdel) = ref --- solve this for a
     #
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
-    a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
+    a = -(pi * fc * bw) ** 2 / (4.0 * math.log(ref))
 
     if isinstance(t, str):
         if t == 'cutoff':  # compute cut_off point
@@ -229,13 +231,16 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                 raise ValueError("Reference level for time cutoff must "
                                  "be < 0 dB")
             tref = pow(10.0, tpr / 20.0)
-            return sqrt(-log(tref) / a)
+            return sqrt(-math.log(tref) / a)
         else:
             raise ValueError("If `t` is a string, it must be 'cutoff'")
 
-    yenv = exp(-a * t * t)
-    yI = yenv * cos(2 * pi * fc * t)
-    yQ = yenv * sin(2 * pi * fc * t)
+    xp = array_namespace(t)
+    t = xp_promote(t, xp=xp, force_floating=True)
+
+    yenv = xp.exp(-a * t * t)
+    yI = yenv * xp.cos(2 * xp.pi * fc * t)
+    yQ = yenv * xp.sin(2 * xp.pi * fc * t)
     if not retquad and not retenv:
         return yI
     if not retquad and retenv:
@@ -412,41 +417,45 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, *,
     magnitude of the real-valued cosine function is only 1/2.
     """
     # 'phase' is computed in _chirp_phase, to make testing easier.
-    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero) + np.deg2rad(phi)
-    return np.exp(1j*phase) if complex else np.cos(phase)
+    xp = array_namespace(t)
+    t = xp_promote(t, xp=xp, force_floating=True)
+    # possibly use `xpx.deg2rad(phi)` in the future, see
+    # https://github.com/data-apis/array-api-extra/issues/876
+    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero, xp=xp) + phi * xp.pi / 180
+    return xp.exp(1j*phase) if complex else xp.cos(phase)
 
 
-def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
+def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True, *, xp=None):
     """
     Calculate the phase used by `chirp` to generate its output.
 
     See `chirp` for a description of the arguments.
 
     """
-    t = asarray(t)
+    xp = array_namespace(t) if xp is None else xp
     f0 = float(f0)
     t1 = float(t1)
     f1 = float(f1)
     if method in ['linear', 'lin', 'li']:
         beta = (f1 - f0) / t1
-        phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
+        phase = 2 * xp.pi * (f0 * t + 0.5 * beta * t * t)
 
     elif method in ['quadratic', 'quad', 'q']:
         beta = (f1 - f0) / (t1 ** 2)
         if vertex_zero:
-            phase = 2 * pi * (f0 * t + beta * t ** 3 / 3)
+            phase = 2 * xp.pi * (f0 * t + beta * t ** 3 / 3)
         else:
-            phase = 2 * pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
+            phase = 2 * xp.pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
 
     elif method in ['logarithmic', 'log', 'lo']:
         if f0 * f1 <= 0.0:
             raise ValueError("For a logarithmic chirp, f0 and f1 must be "
                              "nonzero and have the same sign.")
         if f0 == f1:
-            phase = 2 * pi * f0 * t
+            phase = 2 * xp.pi * f0 * t
         else:
-            beta = t1 / log(f1 / f0)
-            phase = 2 * pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
+            beta = t1 / math.log(f1 / f0)
+            phase = 2 * xp.pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
 
     elif method in ['hyperbolic', 'hyp']:
         if f0 == 0 or f1 == 0:
@@ -454,12 +463,12 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
                              "nonzero.")
         if f0 == f1:
             # Degenerate case: constant frequency.
-            phase = 2 * pi * f0 * t
+            phase = 2 * xp.pi * f0 * t
         else:
             # Singular point: the instantaneous frequency blows up
             # when t == sing.
             sing = -f1 * t1 / (f0 - f1)
-            phase = 2 * pi * (-sing * f0) * log(np.abs(1 - t/sing))
+            phase = 2 * xp.pi * (-sing * f0) * xp.log(xp.abs(1 - t/sing))
 
     else:
         raise ValueError("method must be 'linear', 'quadratic', 'logarithmic', "

@@ -57,7 +57,7 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter):
         xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.ones_like(xmax))
         xr0 = xp.astype(xr0, xl0.dtype, copy=False)
 
-    maxiter = xp.asarray(maxiter)
+    maxiter = xp.asarray(maxiter, device=xp_device(xl0))
     message = '`maxiter` must be a non-negative integer.'
     if (not xp.isdtype(maxiter.dtype, "numeric") or maxiter.shape != tuple()
             or xp.isdtype(maxiter.dtype, "complex floating")):
@@ -482,7 +482,7 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, m
         xr0 = xm0 + xp.minimum((xmax - xm0)/16, 0.5)
         xr0 = xp.astype(xr0, xm0.dtype, copy=False)
 
-    maxiter = xp.asarray(maxiter)
+    maxiter = xp.asarray(maxiter, device=xp_device(xm0))
     message = '`maxiter` must be a non-negative integer.'
     if (not xp.isdtype(maxiter.dtype, "numeric") or maxiter.shape != tuple()
             or xp.isdtype(maxiter.dtype, "complex floating")):
@@ -597,7 +597,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     `xmax`. This cautious approach ensures that a minimum near but distinct from
     the boundary isn't missed while also detecting whether or not the `xmax` is
     a minimizer when `xmax` is reached after a finite number of steps.
-    """  # noqa: E501
+    """
     callback = None  # works; I just don't want to test it
 
     temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax,

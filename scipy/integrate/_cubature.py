@@ -342,14 +342,14 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         ndim = xp_size(a)
 
         if rule == "genz-malik":
-            rule = GenzMalikCubature(ndim, xp=xp)
+            rule = GenzMalikCubature(ndim)
         else:
             quadratues = {
-                "gauss-kronrod": GaussKronrodQuadrature(21, xp=xp),
+                "gauss-kronrod": GaussKronrodQuadrature(21),
 
                 # Also allow names quad_vec uses:
-                "gk21": GaussKronrodQuadrature(21, xp=xp),
-                "gk15": GaussKronrodQuadrature(15, xp=xp),
+                "gk21": GaussKronrodQuadrature(21),
+                "gk15": GaussKronrodQuadrature(15),
             }
 
             base_rule = quadratues.get(rule)
