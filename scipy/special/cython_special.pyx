@@ -1417,6 +1417,10 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_nctdtrinc(double df, double p, double t) nogil
     float boost_nctdtrit_float(float df, float nc, float p) nogil
     double boost_nctdtrit_double(double df, double nc, double p) nogil
+    float boost_stdtr_float(float df, float t) nogil
+    double boost_stdtr_double(double df, double t) nogil
+    float boost_stdtrit_float(float df, float p) nogil
+    double boost_stdtrit_double(double df, double p) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -3510,18 +3514,18 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
 cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""
     if df_number_t is float:
-        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_float)(x0, x1)
+        return boost_stdtr_float(x0, x1)
     elif df_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_double)(x0, x1)
+        return boost_stdtr_double(x0, x1)
     else:
         return NAN
 
 cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtrit"""
     if df_number_t is float:
-        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_ppf_float)(x0, x1)
+        return boost_stdtrit_float(x0, x1)
     elif df_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_ppf_double)(x0, x1)
+        return boost_stdtrit_double(x0, x1)
     else:
         return NAN
 

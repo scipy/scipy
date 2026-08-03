@@ -268,6 +268,8 @@ special_ufuncs = [
     "round",
     "sindg",
     "spence",
+    "stdtr",
+    "stdtrit",
     "struve",
     "tandg",
     "tklmbda",

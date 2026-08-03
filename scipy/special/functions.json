@@ -422,21 +422,9 @@
             "cephes_smirnovp_wrap": "pd->d"
         }
     },
-    "stdtr": {
-        "boost_special_functions.h++": {
-            "t_cdf_float": "ff->f",
-            "t_cdf_double": "dd->d"
-        }
-    },
     "stdtridf": {
         "_cdflib_wrappers.pxd": {
             "stdtridf": "dd->d"
-        }
-    },
-    "stdtrit":{
-        "boost_special_functions.h++": {
-            "t_ppf_float": "ff->f",
-            "t_ppf_double": "dd->d"
         }
     },
     "yn": {
