@@ -9,7 +9,6 @@ from scipy._lib._array_api import (
     array_namespace, xp_result_type, xp_copy, xp_capabilities,
     xp_size, xp_vector_norm
 )
-from scipy._external import array_api_extra as xpx
 from scipy._lib._util import MapWrapper, xp_array_equal
 from scipy._external.array_api_compat import is_numpy_namespace
 from scipy._external import array_api_extra as xpx
