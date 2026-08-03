@@ -4730,6 +4730,37 @@ def buttap(N, *, xp=None, device=None):
     --------
     butter : Filter design function using this prototype
 
+    Examples
+    --------
+    Compute the zeros, poles, and gain of a 2nd-order Butterworth analog
+    lowpass prototype with a cutoff frequency of 1 rad/s:
+
+    >>> from scipy.signal import buttap
+    >>> z, p, k = buttap(2)
+    >>> z
+    array([], dtype=float64)
+    >>> p
+    array([-0.70710678+0.70710678j, -0.70710678-0.70710678j])
+    >>> k
+    1.0
+
+    Sweep the frequency response of a 3rd-order prototype:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import freqs_zpk
+    >>> z, p, k = buttap(3)
+    >>> f = np.geomspace(1e-1, 1e1, 200)
+    >>> _, h = freqs_zpk(z, p, k, worN=f)
+    >>> h_db = 20 * np.log10(np.abs(h))
+    >>> fig, ax = plt.subplots()
+    >>> ax.semilogx(f, h_db)
+    >>> ax.set(title='3rd-order Butterworth prototype',
+    ...        xlabel='Frequency [rad/s]', ylabel='Magnitude [dB]')
+    >>> ax.axvline(1.0, color='C1', ls='--', label='Cutoff frequency')
+    >>> ax.grid(True, which='both')
+    >>> ax.legend()
+    >>> plt.show()
     """
     if xp is None:
         xp = np_compat
@@ -4773,6 +4804,20 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     --------
     cheby1 : Filter design function using this prototype
 
+    Examples
+    --------
+    Compute the zeros, poles, and gain of a 3rd-order Chebyshev type I
+    analog lowpass prototype with 1 dB of passband ripple:
+
+    >>> from scipy.signal import cheb1ap
+    >>> z, p, k = cheb1ap(3, 1)
+    >>> z
+    array([], dtype=float64)
+    >>> p
+    array([-0.2470853 +0.96599867j, -0.4941706 +0.j        ,
+           -0.2470853 -0.96599867j])
+    >>> k
+    0.49130668209006784
     """
     if xp is None:
         xp = np_compat
