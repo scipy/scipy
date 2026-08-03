@@ -27,7 +27,8 @@ import scipy.sparse.linalg as ssl
 
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
-                                         _make_interp_per_full_matr)
+                                         _make_interp_per_full_matr,
+                                         _penalty_matrix_banded)
 from scipy.interpolate._fitpack_repro import Fperiodic, root_rati
 
 from scipy.interpolate import generate_knots, make_splrep, make_splprep
@@ -2356,6 +2357,117 @@ class TestSmoothingSpline:
                                  f' points than the original one: {orig:.4} < '
                                  f'{weighted:.4}')
 
+    def test_user_defined_knots(self):
+        # user-supplied knots are used verbatim in the returned spline
+        rng = np.random.RandomState(1234)
+        n = 100
+        x = np.sort(rng.random_sample(n) * 4 - 2)
+        y = x**2 * np.sin(4*x) + x**3 + rng.normal(0., 1.5, n)
+        t = np.r_[[x[0]]*4, [-1.5, 0.0, 1.0], [x[-1]]*4]
+        spl = make_smoothing_spline(x, y, lam=0.5, t=t)
+        xp_assert_close(spl.t, t, atol=1e-15)
+
+    def test_knots_equal_abscissa(self):
+        # knots at the clamped data sites reproduce the default path
+        rng = np.random.RandomState(1234)
+        n = 100
+        x = np.sort(rng.random_sample(n) * 4 - 2)
+        y = x**2 + np.sin(4*x) + x**3 + rng.normal(0., 1.5, n)
+        t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
+        spl1 = make_smoothing_spline(x, y, lam=0.5, t=t)
+        spl2 = make_smoothing_spline(x, y, lam=0.5)
+        xp_assert_close(spl1.t, spl2.t, atol=1e-15)
+        xp_assert_close(spl1.c, spl2.c, atol=1e-8)
+
+    def test_penalty_matrix_is_valid(self):
+        # structural invariants of the penalty matrix
+        t = np.r_[[0.] * 3, np.arange(100.), [99.] * 3]
+        m = len(t) - 4
+        ab = _penalty_matrix_banded(t)
+        assert ab.shape == (4, m)
+
+        # reconstruct dense symmetric Omega from lower-banded storage
+        omega = np.zeros((m, m))
+        for i in range(4):
+            omega += np.diag(ab[i, :m - i], -i)
+            if i > 0:
+                omega += np.diag(ab[i, :m - i], i)
+
+        # constants and straight lines have zero curvature: Omega must
+        # NOT penalize them (they span its null space)
+        greville = np.array([t[i+1:i+4].mean() for i in range(m)])
+        xp_assert_close(omega @ np.ones(m), np.zeros(m), atol=1e-10)
+        xp_assert_close(omega @ greville, np.zeros(m), atol=1e-8)
+
+    def test_penalty_matrix_matches_R(self):
+        # Penalty matrix vs. R's fda::bsplinepen
+        # (values generated with fda 6.x):
+        #   basis <- create.bspline.basis(rangeval=c(0,5), breaks=0:5, norder=4)
+        #   bsplinepen(basis, Lfdobj=2)
+        # References:
+        # https://www.rdocumentation.org/packages/fda/versions/6.2.0/topics/bsplinepen
+        t = np.r_[[0.] * 3, np.arange(6.), [5.] * 3]   # clamped, uniform breaks 0..5
+        m = len(t) - 4                                  # = 8
+        ab = _penalty_matrix_banded(t)
+
+        # reconstruct dense symmetric Omega from (4, m) lower-banded storage
+        omega = np.zeros((m, m))
+        for i in range(4):
+            omega += np.diag(ab[i, :m - i], -i)
+            if i > 0:
+                omega += np.diag(ab[i, :m - i], i)
+
+        omega_R = np.array([
+            [ 12.  , -16.5 ,  3.5  ,  1.   ,  0.   ,  0.   ,  0.  ,   0.  ],
+            [-16.5 ,  24.  , -6.75 , -1.   ,  0.25 ,  0.   ,  0.  ,   0.  ],
+            [  3.5 ,  -6.75,  4.5  , -4/3  , -1/12 ,  1/6  ,  0.  ,   0.  ],
+            [  1.  ,  -1.  , -4/3  ,  8/3  , -1.5  , -1/12 ,  0.25,   0.  ],
+            [  0.  ,   0.25, -1/12 , -1.5  ,  8/3  , -4/3  , -1.  ,   1.  ],
+            [  0.  ,   0.  ,  1/6  , -1/12 , -4/3  ,  4.5  , -6.75,   3.5 ],
+            [  0.  ,   0.  ,  0.   ,  0.25 , -1.   , -6.75 , 24.  , -16.5 ],
+            [  0.  ,   0.  ,  0.   ,  0.   ,  1.   ,  3.5  ,-16.5 ,  12.  ],
+        ])
+        xp_assert_close(omega, omega_R, atol=1e-9)
+
+    def test_user_defined_knots_invalid_cases(self):
+        rng = np.random.RandomState(1234)
+        n = 100
+        x = np.sort(rng.random_sample(n) * 4 - 2)
+        y = x**2 + np.sin(4*x) + x**3 + rng.normal(0., 1.5, n)
+        t = np.r_[[x[0]]*4, [-1.0, 0.0, 1.0], [x[-1]]*4]
+
+        # lam is required with user knots (GCV not supported yet)
+        with assert_raises(NotImplementedError, match="pass `lam` explicitly"):
+            make_smoothing_spline(x, y, t=t)
+
+        # array-valued lam is not supported with user knots
+        with assert_raises(NotImplementedError, match="array-valued"):
+            make_smoothing_spline(x, y, t=t, lam=np.ones(5))
+
+        # negative lam
+        with assert_raises(ValueError, match="non-negative"):
+            make_smoothing_spline(x, y, t=t, lam=-1.0)
+
+        # batched y is not supported with user knots
+        with assert_raises(NotImplementedError, match="1-D"):
+            make_smoothing_spline(x, np.c_[y, y], t=t, lam=0.5)
+
+        # t must be non-decreasing
+        t_bad = t.copy()
+        t_bad[5], t_bad[6] = t_bad[6], t_bad[5]
+        with assert_raises(ValueError, match="non-decreasing"):
+            make_smoothing_spline(x, y, t=t_bad, lam=0.5)
+
+        # all data must lie within the knot support [t[3], t[-4]]
+        t_short = np.r_[[0.0]*4, [0.5], [1.0]*4]   # covers [0, 1], data does not fit
+        with assert_raises(ValueError, match="within the base interval"):
+            make_smoothing_spline(x, y, t=t_short, lam=0.5)
+
+        # non-finite knots
+        with assert_raises(ValueError):
+            make_smoothing_spline(
+                x, y, t=np.r_[[x[0]]*4, [0.0, np.inf], [x[-1]]*4], lam=0.5
+            )
 
 ################################
 # NdBSpline tests

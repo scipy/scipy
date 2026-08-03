@@ -2584,6 +2584,10 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
         The data axis. Default is zero.
         The assumption is that ``y.shape[axis] == n``, and all other axes of ``y``
         are batching axes.
+    t : array_like, optional
+        The knot vector. Default is None.
+        If knot vector is None, a clamped knot vector ``t`` with ``t = x`` is
+        assumed.
 
     Returns
     -------
@@ -2674,6 +2678,19 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
             raise NotImplementedError(
                 "array-valued `lam` is not supported with user-provided knots yet."
             )
+        if lam < 0.:
+            raise ValueError('Regularization parameter should be non-negative')
+        if np.ndim(y) > 1:
+            raise NotImplementedError(
+                "batched `y` is not supported with user-provided knots yet; "
+                "`y` must be 1-D")
+        t = np.ascontiguousarray(t, dtype=float)
+        if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+            raise ValueError("`t` must be a 1-D non-decreasing array")
+        if x[0] < t[3] or x[-1] > t[-4]:
+            raise ValueError(
+                "all `x` values must lie within the base interval "
+                f"[t[3], t[-4]] = [{t[3]}, {t[-4]}]")
 
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
