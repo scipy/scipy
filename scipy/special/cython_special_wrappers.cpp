@@ -738,6 +738,10 @@ double boost_ncfdtrinc(double dfn, double dfd, double p, double f)
     return ncf_find_non_centrality_double(dfn, dfd, p, f);
 }
 
+float boost_nctdtr_float(float df, float nc, float t) { return nct_cdf_float(df, nc, t); }
+
+double boost_nctdtr_double(double df, double nc, double t) { return nct_cdf_double(df, nc, t); }
+
 double boost_nctdtridf(double p, double nc, double t)
 {
     return nct_find_degrees_of_freedom_double(p, nc, t);
@@ -747,3 +751,7 @@ double boost_nctdtrinc(double df, double p, double t)
 {
     return nct_find_non_centrality_double(df, p, t);
 }
+
+float boost_nctdtrit_float(float df, float nc, float p) { return nct_ppf_float(df, nc, p); }
+
+double boost_nctdtrit_double(double df, double nc, double p) { return nct_ppf_double(df, nc, p); }

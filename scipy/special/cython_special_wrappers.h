@@ -405,8 +405,12 @@ double boost_log_gammaincc_double(double a, double x);
 double boost_nbdtrik(double y, double n, double p);
 double boost_nbdtrin(double k, double y, double p);
 double boost_ncfdtrinc(double dfn, double dfd, double p, double f);
+float boost_nctdtr_float(float df, float nc, float t);
+double boost_nctdtr_double(double df, double nc, double t);
 double boost_nctdtridf(double p, double nc, double t);
 double boost_nctdtrinc(double df, double p, double t);
+float boost_nctdtrit_float(float df, float nc, float p);
+double boost_nctdtrit_double(double df, double nc, double p);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -8650,6 +8650,70 @@ const char *ncfdtrinc_doc = R"(
 
     )";
 
+const char *nctdtr_doc = R"(
+    nctdtr(df, nc, t, out=None)
+
+    Cumulative distribution function of the non-central `t` distribution.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution. Should be in range (0, inf).
+    nc : array_like
+        Noncentrality parameter.
+    t : array_like
+        Quantiles, i.e., the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    cdf : scalar or ndarray
+        The calculated CDF. If all inputs are scalar, the return will be a
+        float. Otherwise, it will be an array.
+
+    See Also
+    --------
+    nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
+    nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
+    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Notes
+    -----
+    This function calculates the CDF of the non-central t distribution using
+    the Boost Math C++ library [1]_.
+
+    Note that the argument order of `nctdtr` is different from that of the
+    similar ``cdf`` method of `scipy.stats.nct`: `t` is the last
+    parameter of `nctdtr` but the first parameter of ``scipy.stats.nct.cdf``.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import special
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Plot the CDF of the non-central t distribution, for nc=0. Compare with the
+    t-distribution from scipy.stats:
+
+    >>> x = np.linspace(-5, 5, num=500)
+    >>> df = 3
+    >>> nct_stats = stats.t.cdf(x, df)
+    >>> nct_special = special.nctdtr(df, 0, x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, nct_stats, 'b-', lw=3)
+    >>> ax.plot(x, nct_special, 'r-')
+    >>> plt.show()
+
+    )";
+
 const char *nctdtridf_doc = R"(
     nctdtridf(p, nc, t, out=None)
 
@@ -8762,6 +8826,66 @@ const char *nctdtrinc_doc = R"(
 
     >>> nctdtrinc(3, p, 1.5)
     array([0.5, 1.5, 2.5])
+
+    )";
+
+const char *nctdtrit_doc = R"(
+    nctdtrit(df, nc, p, out=None)
+
+    Inverse cumulative distribution function of the non-central t distribution.
+
+    See `nctdtr` for more details.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution. Should be in range (0, inf).
+    nc : array_like
+        Noncentrality parameter.
+    p : array_like
+        CDF values, in range (0, 1].
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    t : scalar or ndarray
+        Quantiles
+
+    See Also
+    --------
+    nctdtr :  CDF of the non-central `t` distribution.
+    nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
+    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Notes
+    -----
+    This function calculates the quantile of the non-central t distribution using
+    the Boost Math C++ library [1]_.
+
+    Note that the argument order of `nctdtrit` is different from that of the
+    similar ``ppf`` method of `scipy.stats.nct`: `t` is the last
+    parameter of `nctdtrit` but the first parameter of ``scipy.stats.nct.ppf``.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtrit
+
+    Compute the CDF for several values of `t`:
+
+    >>> t = [0.5, 1, 1.5]
+    >>> p = nctdtr(3, 1, t)
+    >>> p
+    array([0.29811049, 0.46922687, 0.6257559 ])
+
+    Compute the inverse. We recover the values of `t`, as expected:
+
+    >>> nctdtrit(3, 1, p)
+    array([0.5, 1. , 1.5])
 
     )";
 
