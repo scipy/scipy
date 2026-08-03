@@ -6,9 +6,10 @@ from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, spmatrix, find, csc_array, csr_array, csr_matrix
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import (
-    array_namespace, xp_result_type, xp_default_dtype, xp_copy, xp_capabilities,
+    array_namespace, xp_result_type, xp_copy, xp_capabilities,
     xp_size, xp_vector_norm
 )
+from scipy._external import array_api_extra as xpx
 from scipy._lib._util import MapWrapper, xp_array_equal
 from scipy._external.array_api_compat import is_numpy_namespace
 from scipy._external import array_api_extra as xpx
@@ -137,7 +138,7 @@ def _eps_for_method(x0_dtype, f0_dtype, method, xp):
     """
     # the default EPS value. Normally we want this to be 64 bit, but torch
     # has a 32 bit default.
-    out_dtype = xp_default_dtype(xp)
+    out_dtype = xpx.default_dtype(xp)
     EPS = xp.finfo(out_dtype).eps
 
     bits = {}
