@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "xsf_wrappers.h"
+#include "cython_special_wrappers.h"
 #include <xsf/agm.h>
 #include <xsf/airy.h>
 #include <xsf/amos.h>
@@ -60,6 +60,8 @@
 #include <xsf/cephes/unity.h>
 #include <xsf/cephes/yn.h>
 
+#include "boost_special_functions.h"
+
 using namespace std;
 
 namespace {
@@ -69,6 +71,10 @@ complex<double> to_complex(npy_cdouble z) { return {npy_creal(z), npy_cimag(z)};
 npy_cdouble to_ccomplex(complex<double> z) { return {z.real(), z.imag()}; }
 
 } // namespace
+
+/*
+ * xsf functions
+ */
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::hyp1f1(a, b, to_complex(z))); }
 
@@ -702,3 +708,50 @@ double xsf_tandg(double x) { return xsf::tandg(x); }
 double xsf_cotdg(double x) { return xsf::cotdg(x); }
 
 double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
+
+/*
+ * Boost functions
+ */
+
+double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p); }
+
+double boost_bdtrin(double k, double y, double p) { return bdtrin_double(k, y, p); }
+
+float boost_erfinv_float(float x) { return erfinv_float(x); }
+
+double boost_erfinv_double(double x) { return erfinv_double(x); }
+
+float boost_log_gammainc_float(float a, float x) { return lgamma_p_float(a, x); }
+
+double boost_log_gammainc_double(double a, double x) { return lgamma_p_double(a, x); }
+
+float boost_log_gammaincc_float(float a, float x) { return lgamma_q_float(a, x); }
+
+double boost_log_gammaincc_double(double a, double x) { return lgamma_q_double(a, x); }
+
+double boost_nbdtrik(double y, double n, double p) { return nbdtrik_double(y, n, p); }
+
+double boost_nbdtrin(double k, double y, double p) { return nbinom_invn_double(k, y, p); }
+
+double boost_ncfdtrinc(double dfn, double dfd, double p, double f)
+{
+    return ncf_find_non_centrality_double(dfn, dfd, p, f);
+}
+
+float boost_nctdtr_float(float df, float nc, float t) { return nct_cdf_float(df, nc, t); }
+
+double boost_nctdtr_double(double df, double nc, double t) { return nct_cdf_double(df, nc, t); }
+
+double boost_nctdtridf(double p, double nc, double t)
+{
+    return nct_find_degrees_of_freedom_double(p, nc, t);
+}
+
+double boost_nctdtrinc(double df, double p, double t)
+{
+    return nct_find_non_centrality_double(df, p, t);
+}
+
+float boost_nctdtrit_float(float df, float nc, float p) { return nct_ppf_float(df, nc, p); }
+
+double boost_nctdtrit_double(double df, double nc, double p) { return nct_ppf_double(df, nc, p); }

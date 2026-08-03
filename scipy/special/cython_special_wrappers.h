@@ -1,10 +1,7 @@
-/* This file is a collection of wrappers around the
- *  Special Function  Fortran library of functions
- *  to be compiled with the other special functions in cephes
- *
- * Functions written by Shanjie Zhang and Jianming Jin.
- * Interface by
- *  Travis E. Oliphant
+/* This file is a collection of wrappers around the special functions from xsf and boost
+ * to be exposed in cython_special. There are also a handful of other uses, for example in
+ * functions.json, however, as we transition to the new ufunc infrastructure, these will
+ * be removed.
  */
 
 #pragma once
@@ -18,6 +15,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+/*
+ * xsf functions
+ */
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 npy_cdouble special_chyp0f1(double v, npy_cdouble z);
@@ -388,6 +389,28 @@ double xsf_cosdg(double x);
 double xsf_tandg(double x);
 double xsf_cotdg(double x);
 double xsf_radian(double d, double m, double s);
+
+/*
+ * Boost functions
+ */
+
+double boost_bdtrik(double y, double n, double p);
+double boost_bdtrin(double k, double y, double p);
+float boost_erfinv_float(float x);
+double boost_erfinv_double(double x);
+float boost_log_gammainc_float(float a, float x);
+double boost_log_gammainc_double(double a, double x);
+float boost_log_gammaincc_float(float a, float x);
+double boost_log_gammaincc_double(double a, double x);
+double boost_nbdtrik(double y, double n, double p);
+double boost_nbdtrin(double k, double y, double p);
+double boost_ncfdtrinc(double dfn, double dfd, double p, double f);
+float boost_nctdtr_float(float df, float nc, float t);
+double boost_nctdtr_double(double df, double nc, double t);
+double boost_nctdtridf(double p, double nc, double t);
+double boost_nctdtrinc(double df, double p, double t);
+float boost_nctdtrit_float(float df, float nc, float p);
+double boost_nctdtrit_double(double df, double nc, double p);
 
 #ifdef __cplusplus
 } /* extern "C" */

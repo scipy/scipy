@@ -52,7 +52,7 @@ RigidTransform.from_matrix(array([[[1., 0., 0., 0.],
                                   [[1., 0., 0., 0.],
                                    [0., 1., 0., 0.],
                                    [0., 0., 1., 0.],
-                                   [0., 0., 0., 1.]]]))"""
+                                   [0., 0., 0., 1.]]]))""" # noqa: W293
     if is_numpy(xp):
         assert actual == expected
     else:

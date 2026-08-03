@@ -65,15 +65,30 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
 
         gramians = matrix @ matrix.mT
         eye = xp.eye(3, dtype=matrix.dtype, device=device)
+        # float32 reduced precision compared to float64 requires a higher threshold
+        atol = 1e-12 if matrix.dtype == xp.float64 else 1e-6
         is_orthogonal = xp.all(
-            xpx.isclose(gramians, eye, atol=1e-12, xp=xp), axis=(-2, -1)
+            xpx.isclose(gramians, eye, atol=atol, xp=xp), axis=(-2, -1)
         )
 
         if lazy:
             # Lazy backends do not support non-concrete boolean indexing or any form of
             # computation without statically known shapes, so we always compute SVD and
             # use xp.where to select the result.
-            U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
+            # The results from orthogonal matrices are discarded, so we are free to
+            # change the inputs. We use this to our advantage:
+            # 1. the SVD of a diagonal matrix is significantly faster than the SVD of a
+            #    dense, generic matrix, so replacing orthogonal inputs with diagonal
+            #    matrices improves performance of the unnecessary SVDs.
+            # 2. The SVD of a matrix with three equal singular values is not
+            #    differentiable. Valid rotation matrices fall under this category, so
+            #    ironically, the unused results of the SVD produce NaN gradients that
+            #    can poison common autograd frameworks. Setting the value of the matrix
+            #    before the SVD breaks that chain and prevents NaN gradients. Note that
+            #    we do not guarantee gradients, but it is still a notable side-effect.
+            filler = xp.eye(3, dtype=matrix.dtype, device=device)
+            matrix_svd = xp.where(is_orthogonal[..., None, None], filler, matrix)
+            U, _, Vt = xp.linalg.svd(matrix_svd, full_matrices=False)
             matrix = xp.where(is_orthogonal[..., None, None], matrix, U @ Vt)
         elif not xp.all(is_orthogonal):
             # For eager frameworks, only compute SVD if needed.
@@ -87,7 +102,6 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
 def _from_matrix_orthogonal(matrix: Array) -> Array:
     """Convert known orthogonal rotation matrix to quaternion"""
     xp = array_namespace(matrix)
-    device = xp_device(matrix)
 
     matrix_trace = matrix[..., 0, 0] + matrix[..., 1, 1] + matrix[..., 2, 2]
     decision = xp.stack(
@@ -95,7 +109,6 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         axis=-1,
     )
     choice = xp.argmax(decision, axis=-1, keepdims=True)
-    quat = xp.empty((*matrix.shape[:-2], 4), dtype=matrix.dtype, device=device)
 
     # The Array API does not support mixing integer indexing with ellipsis, so we cannot
     # follow the same pattern as the cython backend. Instead, we compute each case
@@ -113,8 +126,6 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where(choice == 0, quat_0, quat)
-
     # Case 1
     quat_1 = xp.stack(
         [
@@ -125,8 +136,6 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where(choice == 1, quat_1, quat)
-
     # Case 2
     quat_2 = xp.stack(
         [
@@ -137,8 +146,6 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where(choice == 2, quat_2, quat)
-
     # Case 3
     quat_3 = xp.stack(
         [
@@ -149,9 +156,11 @@ def _from_matrix_orthogonal(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where(choice == 3, quat_3, quat)
-
-    return _normalize_quaternion(quat)
+    # Override locations where quat_0 is not our choice
+    quat_0 = xp.where(choice == 1, quat_1, quat_0)
+    quat_0 = xp.where(choice == 2, quat_2, quat_0)
+    quat_0 = xp.where(choice == 3, quat_3, quat_0)
+    return _normalize_quaternion(quat_0)
 
 
 def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
@@ -163,17 +172,11 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     rotvec = _deg2rad(rotvec) if degrees else rotvec
 
     angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
-    small_angle = angle <= 1e-3
-    angle2 = angle**2
-    small_scale = 0.5 - angle2 / 48 + angle2**2 / 3840
-    # We need to handle the case where angle is 0 to avoid division by zero. We use the
-    # value of the Taylor series approximation, but non-branching operations require
-    # that we still divide by the angle. Since we do not use the result where the angle
-    # is close to 0, this is safe.
     half_angle = angle / 2
-    div_angle = angle + xp.astype(small_angle, angle.dtype)
-    large_scale = xp.sin(half_angle) / div_angle
-    scale = xp.where(small_angle, small_scale, large_scale)
+    # Guard exact-zero angles to avoid 0/0. The rotvec is zero there, so the quaternion
+    # is the identity regardless.
+    div_angle = angle + xp.astype(angle == 0, angle.dtype)
+    scale = xp.sin(half_angle) / div_angle
     quat = xp.concat([rotvec * scale, xp.cos(half_angle)], axis=-1)
     return quat
 
@@ -339,16 +342,9 @@ def as_rotvec(quat: Array, degrees: bool = False) -> Array:
     quat = _quat_canonical(quat)
     ax_norm = xp_vector_norm(quat[..., :3], axis=-1, keepdims=True, xp=xp)
     angle = 2 * xp.atan2(ax_norm, quat[..., 3][..., None])
-    small_angle = angle <= 1e-3
-    angle2 = angle**2
-    small_scale = 2 + angle2 / 12 + 7 * angle2**2 / 2880
-    # We need to handle the case where sin(angle/2) is 0 to avoid division by zero. We
-    # use the value of the Taylor series approximation, but non-branching operations
-    # require that we still divide by the sin. Since we do not use the result where the
-    # angle is close to 0, adding one to the sin where we discard the result is safe.
-    div_sin = xp.sin(angle / 2.0) + xp.asarray(small_angle, dtype=angle.dtype)
-    large_scale = angle / div_sin
-    scale = xp.where(small_angle, small_scale, large_scale)
+    # Guard against division by zero. The rotvec is zero in that case.
+    div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)
+    scale = angle / div_norm
     if degrees:
         scale = _rad2deg(scale)
     rotvec = scale * quat[..., :3]
@@ -520,10 +516,7 @@ def mean(
 
     lazy = is_lazy_array(quat)
     # Branching code is okay for checks that include meta info such as shapes and types
-    quat_expand = quat[..., None, :]
-    if weights is None:
-        K = quat_expand.mT @ quat_expand
-    else:
+    if weights is not None:
         weights = xp.asarray(weights, dtype=dtype, device=device)
         neg_weights = weights < 0
         if not lazy and xp.any(neg_weights):
@@ -538,18 +531,23 @@ def mean(
                 "Expected `weights` to be broadcastable to rotation shape, got shape "
                 f"{weights.shape} for {quat.shape[:-1]} rotations."
             )
+        weights = xp.broadcast_to(weights, quat.shape[:-1])
 
-        # Make sure we can transpose quat
-        weighted_quat = weights[..., None, None] * quat_expand
-        K = weighted_quat.mT @ quat_expand
-
-    # Move reduction axes to the end
+    # Move reduction axes to the end and flatten them. Reordering the quaternions
+    # instead of their (4, 4) outer products lets the sum over rotations be a single
+    # matmul, instead of materializing one 4x4 matrix per rotation.
     keep_axes = tuple(i for i in all_axes if i not in axis)
     axes_order = keep_axes + axis
-    K_reordered = xp.moveaxis(K, axes_order, all_axes)
-    # Reshape to flatten reduction axes
-    new_shape = K_reordered.shape[: len(keep_axes)] + (-1, 4, 4)
-    K = xp.mean(xp.reshape(K_reordered, new_shape), axis=-3)
+    q = xp.moveaxis(quat, axes_order, all_axes)
+    q = xp.reshape(q, q.shape[: len(keep_axes)] + (-1, 4))
+
+    if weights is None:
+        K = q.mT @ q
+    else:
+        w = xp.moveaxis(weights, axes_order, all_axes)
+        w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
+        K = (q * w).mT @ q
+
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
@@ -613,7 +611,7 @@ def reduce(
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
     # TODO: Can we somehow avoid this?
-    all_idx = xp.reshape(xp.arange(left.shape[-1]), (1, -1))
+    all_idx = xp.reshape(xp.arange(left.shape[-1], device=xp_device(left)), (1, -1))
     left_idx = xp.reshape(left_best, (-1, 1))
     left = left[left_idx, all_idx]
     right_idx = xp.reshape(right_best, (-1, 1))
@@ -703,7 +701,9 @@ def align_vectors(
 
     # For the special case of a single vector pair, we use the infinite
     # weight code path
-    weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
+    weight_is_inf = (
+        xp.asarray([True], device=xp_device(a)) if N == 1 else weights == xp.inf
+    )
     n_inf = xp.sum(xp.astype(weight_is_inf, a.dtype))
     # We can only error out on multiple infinite weights or sensitivity return with
     # infinite weights in eager execution models. Lazy backends will return NaNs.
@@ -936,7 +936,7 @@ def pow(quat: Array, n: float | Array) -> Array:
 
     # If n is a lazy array, we cannot take fast paths for special cases.
     if is_lazy_array(n):
-        result = from_rotvec(n * as_rotvec(quat))  # general scaling of rotation angle
+        result = _pow_scaled(quat, n)  # general scaling of rotation angle
         # Special cases 0 -> identity, -1 -> inv, 1 -> copy
         identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
         identity = xpx.at(identity)[..., 3].set(1)
@@ -951,7 +951,25 @@ def pow(quat: Array, n: float | Array) -> Array:
         return inv(quat)
     if n == 1:
         return quat
-    return from_rotvec(n * as_rotvec(quat))
+    return _pow_scaled(quat, n)
+
+
+def _pow_scaled(quat: Array, n: float | Array) -> Array:
+    """Scale the rotation angle by `n`, keeping the axis fixed.
+
+    Equivalent to ``from_rotvec(n * as_rotvec(quat))`` but without building the
+    intermediate rotation vector.
+    """
+    xp = array_namespace(quat)
+    quat = _quat_canonical(quat)
+    ax_norm = xp_vector_norm(quat[..., :3], axis=-1, keepdims=True, xp=xp)
+    # atan2 of a non-negative norm against a canonical (non-negative) scalar part puts
+    # the half angle in [0, pi/2], so scaling it by n matches the rotvec round trip.
+    half_angle = xp.atan2(ax_norm, quat[..., 3:4])
+    div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)  # avoid division by 0
+    axis = quat[..., :3] / div_norm
+    scaled = n * half_angle
+    return xp.concat([axis * xp.sin(scaled), xp.cos(scaled)], axis=-1)
 
 
 def _normalize_quaternion(quat: Array) -> Array:

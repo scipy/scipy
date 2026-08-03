@@ -502,7 +502,7 @@ class MatrixSampling(Benchmark):
     def time_invwishart(self, size):
         stats.invwishart.rvs(df=self.df, scale=self.V,
                              size=size, random_state=self.rng)
-        
+
     def time_matrix_t(self, size):
         stats.matrix_t.rvs(mean=self.M, row_spread=self.U, col_spread=self.V,
                            df=self.df, size=size, random_state=self.rng)
@@ -587,12 +587,12 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         # with keys from self.fnames and values in the same order as `fnames`.
         self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
                           compress(param_values, relevant_parameters)))
-        
+
         # shapes need to come before loc and scale in rvs call.
         # param_values is [loc, scale, *shapes] (same order as fnames).
         # Pass shapes positionally, loc and scale by keyword.
-        self.data = self.distn.rvs(*param_values[2:], loc=param_values[0], 
-                                   scale=param_values[1], 
+        self.data = self.distn.rvs(*param_values[2:], loc=param_values[0],
+                                   scale=param_values[1],
                                    size=1000,
                                    random_state=np.random.default_rng(4653465))
 
