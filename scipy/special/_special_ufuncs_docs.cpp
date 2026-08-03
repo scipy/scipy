@@ -2141,6 +2141,35 @@ const char *eval_genlaguerre_doc = R"(
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E12
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_genlaguerre
+    >>> import matplotlib.pyplot as plt
+
+    This is the parameter value that we'll use in this example.
+
+    >>> alpha = 1.25
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_genlaguerre(3, alpha, [0, 0.25, 0.5])
+    array([5.1796875 , 3.58333333, 2.23697917])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0.0, 9.0, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_genlaguerre(n, alpha, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Generalized Laguerre Polynomials")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel(r'$L_n^{(\alpha)}(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+
     )";
 
 const char *eval_hermite_doc = R"(
@@ -2186,6 +2215,31 @@ const char *eval_hermite_doc = R"(
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.T1
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_hermite
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_hermite(3, [0, 0.25, 0.5])
+    array([-0.   , -2.875, -5.   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1.6, 1.6, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_hermite(n, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Physicist's Hermite Polynomials")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel('$H_n(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
 
     )";
 
@@ -2233,6 +2287,31 @@ const char *eval_hermitenorm_doc = R"(
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.T1
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_hermitenorm
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_hermitenorm(3, [0, 0.25, 0.5])
+    array([-0.      , -0.734375, -1.375   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-2.3, 2.3, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_hermitenorm(n, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Probabilist's Hermite Polynomials")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel('$He_n(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
 
     )";
 
@@ -2287,6 +2366,36 @@ const char *eval_jacobi_doc = R"(
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E7
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_jacobi
+    >>> import matplotlib.pyplot as plt
+
+    These are the parameter values that we'll use in this example.
+
+    >>> alpha = 1.0
+    >>> beta = 0.5
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_jacobi(3, alpha, beta, [0, 0.25, 0.5])
+    array([-0.2109375 , -0.67687988, -0.47949219])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_jacobi(n, alpha, beta, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Jacobi Polynomials")
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel(r'$P_n^{(\alpha, \beta)}(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+
     )";
 
 const char *eval_laguerre_doc = R"(
@@ -2338,6 +2447,31 @@ const char *eval_laguerre_doc = R"(
         https://dlmf.nist.gov/18.1#I1.ix7.p1
     .. [DLMF2] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E12
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_laguerre
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_laguerre(3, [0, 0.25, 0.5])
+    array([ 1.        ,  0.34114583, -0.14583333])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0.0, 8.0, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_laguerre(n, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Laguerre Polynomials")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel('$L_n(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
 
     )";
 
@@ -2391,6 +2525,36 @@ const char *eval_sh_jacobi_doc = R"(
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.1.E2
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_jacobi
+    >>> import matplotlib.pyplot as plt
+
+    These are the parameter values that we'll use in this example.
+
+    >>> p1 = 0.5
+    >>> q1 = 0.125
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_jacobi(3, p1, q1, [0, 0.25, 0.5])
+    array([-0.00344968,  0.01217532, -0.02333604])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_jacobi(n, p1, q1, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Jacobi Polynomials")
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('$G_n^{(p, q)}(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
 
     )";
 

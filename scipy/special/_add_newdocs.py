@@ -300,6 +300,34 @@ add_newdoc("eval_gegenbauer",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E9
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_gegenbauer
+    >>> import matplotlib.pyplot as plt
+
+    This is the parameter value that we'll use in this example.
+
+    >>> alpha = 1.25
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_gegenbauer(3, alpha, [0, 0.25, 0.5])
+    array([ 0.        , -1.21582031, -1.2890625 ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_gegenbauer(n, alpha, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Gegenbauer Polynomials")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel(r'$C_n^{(\alpha)}(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_chebyt",
@@ -356,6 +384,30 @@ add_newdoc("eval_chebyt",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E11_2
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyt(3, [0, 0.25, 0.5])
+    array([-0.    , -0.6875, -1.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyt(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the First Kind")
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('$T_n(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_chebyu",
@@ -406,6 +458,30 @@ add_newdoc("eval_chebyu",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E11_4
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyu(3, [0, 0.25, 0.5])
+    array([-0.   , -0.875, -1.   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyu(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the Second Kind")
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('$U_n(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_chebys",
@@ -457,17 +533,36 @@ add_newdoc("eval_chebys",
     Examples
     --------
     >>> import numpy as np
-    >>> import scipy.special as sc
+    >>> from scipy.special import eval_chebys, eval_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebys(3, [0, 0.25, 0.5])
+    array([-0.      , -0.484375, -0.875   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-2, 2, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebys(n, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the Second Kind")
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('$S_n(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
 
     They are a scaled version of the Chebyshev polynomials of the
     second kind.
 
     >>> x = np.linspace(-2, 2, 6)
-    >>> sc.eval_chebys(3, x)
+    >>> eval_chebys(3, x)
     array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
-    >>> sc.eval_chebyu(3, x / 2)
+    >>> eval_chebyu(3, x / 2)
     array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
-
     """)
 
 add_newdoc("eval_chebyc",
@@ -520,17 +615,36 @@ add_newdoc("eval_chebyc",
     Examples
     --------
     >>> import numpy as np
-    >>> import scipy.special as sc
+    >>> from scipy.special import eval_chebyc, eval_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyc(3, [0, 0.25, 0.5])
+    array([-0.      , -0.734375, -1.375   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-2, 2, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyc(n, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the First Kind")
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('$C_n(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
 
     They are a scaled version of the Chebyshev polynomials of the
     first kind.
 
     >>> x = np.linspace(-2, 2, 6)
-    >>> sc.eval_chebyc(3, x)
+    >>> eval_chebyc(3, x)
     array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
-    >>> 2 * sc.eval_chebyt(3, x / 2)
+    >>> 2 * eval_chebyt(3, x / 2)
     array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
-
     """)
 
 add_newdoc("eval_sh_chebyt",
@@ -580,6 +694,30 @@ add_newdoc("eval_sh_chebyt",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E7
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_chebyt(3, [0, 0.125, 0.25, 0.375, 0.5])
+    array([-1.    ,  0.5625,  1.    ,  0.6875, -0.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_chebyt(n, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Chebyshev Polynomials of the First Kind")
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('$T_n^*(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_sh_chebyu",
@@ -628,6 +766,30 @@ add_newdoc("eval_sh_chebyu",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E8
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_chebyu(3, [0, 0.125, 0.25, 0.375, 0.5])
+    array([-4.   , -0.375,  1.   ,  0.875, -0.   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_chebyu(n, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Chebyshev Polynomials of the Second Kind")
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('$U_n^*(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_legendre",
@@ -682,6 +844,7 @@ add_newdoc("eval_legendre",
     --------
     >>> import numpy as np
     >>> from scipy.special import eval_legendre
+    >>> import matplotlib.pyplot as plt
 
     Evaluate the zero-order Legendre polynomial at x = 0
 
@@ -690,31 +853,29 @@ add_newdoc("eval_legendre",
 
     Evaluate the first-order Legendre polynomial between -1 and 1
 
-    >>> X = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
-    >>> eval_legendre(1, X)
+    >>> x = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
+    >>> eval_legendre(1, x)
     array([-1. , -0.5,  0. ,  0.5,  1. ])
 
     Evaluate Legendre polynomials of order 0 through 4 at x = 0
 
-    >>> N = range(0, 5)
-    >>> eval_legendre(N, 0)
+    >>> n = range(0, 5)
+    >>> eval_legendre(n, 0)
     array([ 1.   ,  0.   , -0.5  ,  0.   ,  0.375])
 
     Plot Legendre polynomials of order 0 through 4
 
-    >>> X = np.linspace(-1, 1)
-
-    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> x = np.linspace(-1, 1)
     >>> for n in range(0, 5):
-    ...     y = eval_legendre(n, X)
-    ...     plt.plot(X, y, label=r'$P_{}(x)$'.format(n))
-
-    >>> plt.title("Legendre Polynomials")
-    >>> plt.xlabel("x")
-    >>> plt.ylabel(r'$P_n(x)$')
-    >>> plt.legend(loc='lower right')
+    ...     y = eval_legendre(n, x)
+    ...     ax.plot(x, y, label=r'$P_{}(x)$'.format(n))
+    >>> ax.set_title("Legendre Polynomials")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel(r'$P_n(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> ax.grid()
     >>> plt.show()
-
     """)
 
 add_newdoc("eval_sh_legendre",
@@ -763,6 +924,31 @@ add_newdoc("eval_sh_legendre",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E10
 
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_legendre
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_legendre(3, [0, 0.25, 0.5])
+    array([-1.    ,  0.4375,  0.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_legendre(n, x)
+    ...     ax.plot(x, y, label=f'{n =}')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Legendre Polynomials")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel('$P_n^*(x)$')
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("expn",
