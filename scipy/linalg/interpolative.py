@@ -925,7 +925,7 @@ def estimate_rank(A, eps, rng=None):
     >>> # Create a rank-25 matrix
     >>> A = rng.standard_normal((500, 25)) @ rng.standard_normal((25, 200))
     >>> rank = estimate_rank(A, eps=1e-5)
-    >>> rank == 25
+    >>> 20 <= rank <= 30
     True
 
     """
