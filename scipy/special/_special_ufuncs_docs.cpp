@@ -1,7 +1,3 @@
-const char *_bernoulli_doc = R"(
-    Internal function, do not use.
-    )";
-
 const char *_binom_ppf_doc = R"(
     _binom_ppf(x, n, p)
 

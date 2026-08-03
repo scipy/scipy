@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include "sf_error.h"
 
-#include <boost/math/special_functions/bernoulli.hpp>
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
@@ -2812,30 +2811,6 @@ double
 lgamma_q_double(double a, double z)
 {
     return lgamma_q_wrap(a, z);
-}
-
-double
-bernoulli(int n)
-{
-    if (n == 1){
-        return -0.5;
-    } else if (n % 2) {
-        return 0.0;
-    }
-    try {
-        return boost::math::bernoulli_b2n<double>(n/2, SpecialPolicy());
-    } catch (const std::domain_error& e) {
-        sf_error("bernoulli", SF_ERROR_DOMAIN, NULL);
-        return NAN;
-    } catch (const std::overflow_error& e) {
-        sf_error("bernoulli", SF_ERROR_OVERFLOW, NULL);
-        // sign of B_n, n = 2k
-        double sign = ((n / 2) % 2 == 0) ? -1.0 : 1.0;
-        return std::copysign(INFINITY, sign);
-    } catch (...) {
-        sf_error("bernoulli", SF_ERROR_OTHER, NULL);
-        return NAN;
-    }
 }
 
 #endif

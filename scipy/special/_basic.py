@@ -14,7 +14,6 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from scipy.special._special_ufuncs import _bernoulli
 
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
@@ -2012,7 +2011,7 @@ def bernoulli(n):
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     n = int(n)
-    return _bernoulli(np.arange(n + 1))
+    return _specfun.bernob(n)
 
 
 def euler(n):
