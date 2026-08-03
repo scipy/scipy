@@ -2615,6 +2615,30 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     :math:`X^T W X` where :math:`X` is a design matrix is not a positive
     defined matrix) a ValueError is raised.
 
+    When ``t`` is given, the returned spline minimizes
+
+    .. math::
+
+        \sum_{i=1}^n w_i (y_i - f(x_i))^2 + \lambda \int (f''(u))^2 du
+
+    over all cubic splines on the knot vector ``t``, a penalized
+    least-squares spline (in the statistics literature, an O'Sullivan
+    penalized spline). No boundary conditions are imposed: the boundary
+    behavior is whatever minimizes the objective. In particular the
+    solution is not, in general, a natural spline, and extrapolation
+    beyond the base interval continues the boundary polynomial pieces,
+    which may diverge quickly; for the special case of knots at the
+    data sites the minimizer coincides with the natural smoothing
+    spline of the default path.
+    
+    With user-supplied knots, the following are not (yet) supported and
+    raise an error: automatic selection of ``lam`` by GCV (``lam`` must
+    be given explicitly), array-valued ``lam``, and batched ``y``
+    (``y`` must be 1-D).
+
+    The penalty matrix is computed exactly, in closed form, from the
+    knot vector alone; see [5] for the derivation and validation.
+
     References
     ----------
     .. [1] G. Wahba, "Estimating the smoothing parameter" in Spline models for
@@ -2633,6 +2657,9 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
         BSc thesis, 2022.
         `<https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
         Russian)
+    .. [5] A. Chinubhai, "An Exact Penalty Matrix for Cubic Smoothing
+        Splines on Arbitrary Knot Vectors", 2026.
+        `<https://gist.github.com/aadya940/XXXXXXXX>`_
 
     Examples
     --------
