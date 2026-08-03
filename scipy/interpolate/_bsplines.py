@@ -2587,7 +2587,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     t : array_like, optional
         The knot vector. Default is None.
         If knot vector is None, a clamped knot vector ``t`` with ``t = x`` is
-        assumed.
+        assumed. ``t`` can only be passed when ``lam`` is not None.
 
     Returns
     -------

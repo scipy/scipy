@@ -2379,6 +2379,23 @@ class TestSmoothingSpline:
         xp_assert_close(spl1.t, spl2.t, atol=1e-15)
         xp_assert_close(spl1.c, spl2.c, atol=1e-8)
 
+    def test_lam_zero_matches_lsq_spline(self):
+        # at lam=0 the penalty vanishes and the smoothing spline reduces
+        # to an ordinary least-squares spline on the same knots
+        rng = np.random.RandomState(1234)
+        n = 100
+        x = np.sort(rng.random_sample(n) * 4 - 2)
+        y = x**2 + np.sin(4*x) + x**3 + rng.normal(0., 1.5, n)
+        # sparse knots: fewer coefficients than data, so the lam=0
+        # problem is well-posed
+        t = np.r_[[x[0]]*4, [-1.0, 0.0, 1.0], [x[-1]]*4]
+
+        spl = make_smoothing_spline(x, y, lam=0.0, t=t)
+        spl_lsq = make_lsq_spline(x, y, t)
+
+        xp_assert_close(spl.t, spl_lsq.t, atol=1e-15)
+        xp_assert_close(spl.c, spl_lsq.c, atol=1e-10)
+
     def test_penalty_matrix_is_valid(self):
         # structural invariants of the penalty matrix
         t = np.r_[[0.] * 3, np.arange(100.), [99.] * 3]
