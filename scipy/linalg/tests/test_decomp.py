@@ -415,12 +415,14 @@ class TestEig:
             assert np.isclose(D, 4.0, atol=1e-14).any()
             assert np.isclose(D, 8.0, atol=1e-14).any()
 
-    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-    def test_empty(self, dt):
-        a = np.empty((0, 0), dtype=dt)
-        w, vr = eig(a)
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty((0, 0), dtype=dt_b)
+        w, vr = eig(a, b)
 
-        w_n, vr_n = eig(np.eye(2, dtype=dt))
+        w_n, vr_n = eig(np.eye(2, dtype=dt_a), np.eye(2, dtype=dt_b))
 
         assert w.shape == (0,)
         assert w.dtype == w_n.dtype  #eigvals(np.eye(2, dtype=dt)).dtype
@@ -429,7 +431,7 @@ class TestEig:
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
 
-        w, vr = eig(a, homogeneous_eigvals=True)
+        w, vr = eig(a, b, homogeneous_eigvals=True)
         assert w.shape == (2, 0)
         assert w.dtype == w_n.dtype
 
