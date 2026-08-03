@@ -1208,11 +1208,12 @@ class DifferentialEvolutionSolver:
         status_message = _status_message['success']
 
         # The population may have just been initialized (all entries are
-        # np.inf). If it has you have to calculate the initial energies.
+        # np.inf and self._init_energized is False).
+        # If it has you have to calculate the initial energies.
         # Although this is also done in the evolve generator it's possible
         # that someone can set maxiter=0, at which point we still want the
         # initial energies to be calculated (the following loop isn't run).
-        if np.all(np.isinf(self.population_energies)):
+        if not self._init_energized:
             self.feasible, self.constraint_violation = (
                 self._calculate_population_feasibilities(self.population))
 
@@ -1616,8 +1617,9 @@ class DifferentialEvolutionSolver:
             Value of objective function obtained from the best solution.
         """
         # the population may have just been initialized (all entries are
-        # np.inf). If it has you have to calculate the initial energies
-        if not self._init_energized and np.all(np.isinf(self.population_energies)):
+        # np.inf and self._init_energized is False).
+        # If it has you have to calculate the initial energies
+        if not self._init_energized:
             self.feasible, self.constraint_violation = (
                 self._calculate_population_feasibilities(self.population))
 
@@ -1628,6 +1630,7 @@ class DifferentialEvolutionSolver:
                     self.population[self.feasible]))
 
             self._promote_lowest_energy()
+            self._init_energized = True
 
         if self.dither is not None:
             self.scale = self.random_number_generator.uniform(self.dither[0],
