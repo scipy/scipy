@@ -237,24 +237,6 @@
             "cephes_expn_wrap": "pd->d"
         }
     },
-    "fdtr": {
-        "boost_special_functions.h++": {
-            "f_cdf_float": "fff->f",
-            "f_cdf_double": "ddd->d"
-        }
-    },
-    "fdtrc": {
-        "boost_special_functions.h++": {
-            "f_sf_float": "fff->f",
-            "f_sf_double": "ddd->d"
-        }
-    },
-    "fdtri": {
-        "boost_special_functions.h++": {
-            "f_ppf_float": "fff->f",
-            "f_ppf_double": "ddd->d"
-        }
-    },
     "fdtridfd": {
         "_cdflib_wrappers.pxd": {
             "fdtridfd": "ddd->d"        }

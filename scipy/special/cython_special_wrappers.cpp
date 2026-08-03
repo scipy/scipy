@@ -721,6 +721,18 @@ float boost_erfinv_float(float x) { return erfinv_float(x); }
 
 double boost_erfinv_double(double x) { return erfinv_double(x); }
 
+float boost_fdtr_float(float dfn, float dfd, float x) { return f_cdf_float(dfn, dfd, x); }
+
+double boost_fdtr_double(double dfn, double dfd, double x) { return f_cdf_double(dfn, dfd, x); }
+
+float boost_fdtrc_float(float dfn, float dfd, float x) { return f_sf_float(dfn, dfd, x); }
+
+double boost_fdtrc_double(double dfn, double dfd, double x) { return f_sf_double(dfn, dfd, x); }
+
+float boost_fdtri_float(float dfn, float dfd, float p) { return f_ppf_float(dfn, dfd, p); }
+
+double boost_fdtri_double(double dfn, double dfd, double p) { return f_ppf_double(dfn, dfd, p); }
+
 float boost_log_gammainc_float(float a, float x) { return lgamma_p_float(a, x); }
 
 double boost_log_gammainc_double(double a, double x) { return lgamma_p_double(a, x); }
