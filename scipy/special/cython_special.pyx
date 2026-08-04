@@ -1404,6 +1404,12 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_bdtrin(double k, double y, double p) nogil
     float boost_erfinv_float(float x) nogil
     double boost_erfinv_double(double x) nogil
+    float boost_fdtr_float(float dfn, float dfd, float x) nogil
+    double boost_fdtr_double(double dfn, double dfd, double x) nogil
+    float boost_fdtrc_float(float dfn, float dfd, float x) nogil
+    double boost_fdtrc_double(double dfn, double dfd, double x) nogil
+    float boost_fdtri_float(float dfn, float dfd, float p) nogil
+    double boost_fdtri_double(double dfn, double dfd, double p) nogil
     float boost_log_gammainc_float(float a, float x) nogil
     double boost_log_gammainc_double(double a, double x) nogil
     float boost_log_gammaincc_float(float a, float x) nogil
@@ -3069,27 +3075,27 @@ cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_numb
 cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtr"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_cdf_float)(x0, x1, x2)
+        return boost_fdtr_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_cdf_double)(x0, x1, x2)
+        return boost_fdtr_double(x0, x1, x2)
     else:
         return NAN
 
 cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtrc"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_float)(x0, x1, x2)
+        return boost_fdtrc_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_double)(x0, x1, x2)
+        return boost_fdtrc_double(x0, x1, x2)
     else:
         return NAN
 
 cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtri"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_float)(x0, x1, x2)
+        return boost_fdtri_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_double)(x0, x1, x2)
+        return boost_fdtri_double(x0, x1, x2)
     else:
         return NAN
 

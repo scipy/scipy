@@ -128,6 +128,9 @@ extern const char *exp10_doc;
 extern const char *expi_doc;
 extern const char *expit_doc;
 extern const char *exprel_doc;
+extern const char *fdtr_doc;
+extern const char *fdtrc_doc;
+extern const char *fdtri_doc;
 extern const char *fresnel_doc;
 extern const char *gamma_doc;
 extern const char *gammainc_doc;
@@ -619,6 +622,24 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *exprel = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::exprel), static_cast<xsf::numpy::d_d>(xsf::exprel)}, "exprel", exprel_doc);
     PyModule_AddObjectRef(module, "exprel", exprel);
+
+    PyObject *fdtr =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(f_cdf_float),
+                           static_cast<xsf::numpy::ddd_d>(f_cdf_double)},
+                          "fdtr", fdtr_doc);
+    PyModule_AddObjectRef(module, "fdtr", fdtr);
+
+    PyObject *fdtrc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(f_sf_float),
+                           static_cast<xsf::numpy::ddd_d>(f_sf_double)},
+                          "fdtrc", fdtrc_doc);
+    PyModule_AddObjectRef(module, "fdtrc", fdtrc);
+
+    PyObject *fdtri =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(f_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(f_ppf_double)},
+                          "fdtri", fdtri_doc);
+    PyModule_AddObjectRef(module, "fdtri", fdtri);
 
     PyObject *expm1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::expm1), static_cast<xsf::numpy::d_d>(xsf::expm1),
