@@ -3570,7 +3570,7 @@ def zeta(x, q=None, out=None):
         Input data, must be real.  Defaults to Riemann zeta. When `q` is
         ``None``, complex inputs `x` are supported. If `q` is not ``None``,
         then currently only real inputs `x` with ``x >= 1`` are supported,
-        even when ``q = 1.0`` (corresponding to the Riemann zeta function).
+        except when ``q = 1.0`` (corresponding to the Riemann zeta function).
 
     out : ndarray, optional
         Output array for the computed values.
