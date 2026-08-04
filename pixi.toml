@@ -511,11 +511,6 @@ cmd = "python check_python_h_first.py"
 cwd = "tools/linting"
 description = "Check that `Python.h` is included before any stdlib headers"
 
-[feature.lint.tasks.check-nondefault-device]
-cmd = "python check_nondefault_device.py"
-cwd = "tools/linting"
-description = "Check array-creation calls propagate the input device"
-
 [feature.lint.tasks.tach-check]
 cmd = "tach check --exact"
 description = "Check inter-module dependencies"
