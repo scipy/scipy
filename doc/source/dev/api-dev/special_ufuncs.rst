@@ -18,7 +18,7 @@ write a C wrapper around the code; for examples of such wrappers see
 ``specfun_wrappers.c``.
 
 After implementing the scalar function, register the new function by
-adding an entry to ``functions.json``. The docstring in
+adding an entry to ``XSF ufunc machinery in special_ufuncs.cpp``. The docstring in
 ``generate_ufuncs.py`` explains the format. Also add documentation for
 the new function by adding an entry to ``add_newdocs.py``; look in the
 file for examples.
