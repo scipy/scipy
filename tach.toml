@@ -91,10 +91,6 @@ path = "scipy.linalg.lapack"
 depends_on = ["scipy.linalg", "scipy.linalg.blas"]
 
 [[modules]]
-path = "scipy.misc"
-depends_on = []
-
-[[modules]]
 path = "scipy.ndimage"
 depends_on = ["scipy._lib", "scipy.special", "scipy._external"]
 
@@ -234,6 +230,7 @@ exclude = [
     "pooch",
     "psutil",
     "pyfftw",
+    "_pytest",
     "pytest",
     "pytest_fail_slow",
     "pytest_run_parallel",

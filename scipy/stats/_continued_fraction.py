@@ -2,7 +2,7 @@ import numpy as np
 
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
-    array_namespace, xp_ravel, xp_copy, xp_promote
+    array_namespace, xp_ravel, xp_copy, xp_device, xp_promote
 )
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
@@ -309,7 +309,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     if tiny is None:
         tiny = xp.finfo(dtype).eps**2 if not log else 2*np.log(xp.finfo(dtype).eps)
 
-    tiny = xp.asarray(tiny, dtype=dtype)
+    tiny = xp.asarray(tiny, dtype=dtype, device=xp_device(b0))
 
     # "Set f0 and C0 to the value b0 or to tiny if b0=0. Set D0 = 0.
     zero = -xp.inf if log else 0

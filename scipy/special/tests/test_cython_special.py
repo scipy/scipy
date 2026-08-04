@@ -96,7 +96,7 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.erfc, cython_special.erfc, ('d', 'D'), None),
     (special.erfcx, cython_special.erfcx, ('d', 'D'), None),
     (special.erfi, cython_special.erfi, ('d', 'D'), None),
-    (special.erfinv, cython_special.erfinv, ('d',), None),
+    (special.erfinv, cython_special.erfinv, ('f', 'd'), None),
     (special.erfcinv, cython_special.erfcinv, ('d',), None),
     (special.eval_chebyc, cython_special.eval_chebyc, ('dd', 'dD', 'ld'), None),
     (special.eval_chebys, cython_special.eval_chebys, ('dd', 'dD', 'ld'),

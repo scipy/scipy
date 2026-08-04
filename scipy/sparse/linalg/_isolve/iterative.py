@@ -71,9 +71,9 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
 
     References
     ----------
-    .. [1] "Preconditioner", Wikipedia, 
+    .. [1] "Preconditioner", Wikipedia,
            https://en.wikipedia.org/wiki/Preconditioner
-    .. [2] "Biconjugate gradient method", Wikipedia, 
+    .. [2] "Biconjugate gradient method", Wikipedia,
            https://en.wikipedia.org/wiki/Biconjugate_gradient_method
 
     Examples
@@ -207,9 +207,9 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
     References
     ----------
-    .. [1] "Preconditioner", Wikipedia, 
+    .. [1] "Preconditioner", Wikipedia,
            https://en.wikipedia.org/wiki/Preconditioner
-    .. [2] "Biconjugate gradient stabilized method", 
+    .. [2] "Biconjugate gradient stabilized method",
            Wikipedia, https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
 
     Examples
@@ -358,9 +358,9 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     References
     ----------
-    .. [1] "Conjugate Gradient Method, Wikipedia, 
+    .. [1] "Conjugate Gradient Method, Wikipedia,
            https://en.wikipedia.org/wiki/Conjugate_gradient_method
-    .. [2] "Preconditioner", 
+    .. [2] "Preconditioner",
            Wikipedia, https://en.wikipedia.org/wiki/Preconditioner
 
     Examples
@@ -479,7 +479,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
 
     References
     ----------
-    .. [1] "Preconditioner", Wikipedia, 
+    .. [1] "Preconditioner", Wikipedia,
            https://en.wikipedia.org/wiki/Preconditioner
     .. [2] "Conjugate gradient squared", Wikipedia,
            https://en.wikipedia.org/wiki/Conjugate_gradient_squared_method

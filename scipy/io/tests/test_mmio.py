@@ -12,6 +12,7 @@ from numpy.testing import (assert_equal, assert_allclose,
 import pytest
 from pytest import raises as assert_raises
 
+from scipy._lib._testutils import IS_WASM
 import scipy.sparse
 import scipy.io._mmio
 import scipy.io._fast_matrix_market as fmm
@@ -32,6 +33,12 @@ def implementations(request):
     mminfo = request.param.mminfo
     mmread = request.param.mmread
     mmwrite = request.param.mmwrite
+    if IS_WASM:
+        from threadpoolctl import threadpool_limits
+        with threadpool_limits(limits=1):
+            yield
+    else:
+        yield
 
 
 class TestMMIOArray:
@@ -267,6 +274,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
         a = scipy.sparse.csr_array(a)
         self.check(a, (20, 15, 300, 'coordinate', 'real', 'general'))
 
+    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_simple_pattern(self):
         a = scipy.sparse.csr_array([[0, 1.5], [3.0, 2.5]])
         p = np.zeros_like(a.toarray())

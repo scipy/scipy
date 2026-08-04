@@ -176,9 +176,9 @@ License: MIT
   For details, see subprojects/array_api_extra/LICENSE
 
 Name: Tempita
-Files: scipy/_build_utils/tempita/*
+Files: tools/building/tempita/*
 License: MIT
-  For details, see scipy/_build_utils/tempita/LICENSE.txt
+  For details, see tools/building/tempita/LICENSE.txt
 
 Name: Chebfun
 Files: scipy/interpolate/[_bary_rational.py, tests/test_bary_rational.py]

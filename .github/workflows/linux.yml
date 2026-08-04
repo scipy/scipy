@@ -16,8 +16,6 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   CCACHE_MAXSIZE: "250M"
-  # Needed because Pixi doesn't set mtime for compilers
-  CCACHE_COMPILERCHECK: "content"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -29,7 +27,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: mypy (py3.12) & dev deps (py3.15), fast, spin
+    name: pyrefly (py3.12) & dev deps (py3.15), fast, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -67,7 +65,7 @@ jobs:
       - name: Install Python packages
         if: matrix.python-version == '3.12'
         run: |
-          python -m pip install --group build --group dev-cli --group test-core --group test-mp 
+          python -m pip install --group build --group dev-cli --group test-core --group test-mp --group optional-runtime-deps
 
       - name: Install Python packages from repositories
         if: matrix.python-version == '3.15-dev' # this run will use python dev versions when available
@@ -105,7 +103,7 @@ jobs:
         run: |
           rm -r build-install
           spin build --tags=runtime,python-runtime,devel
-          python tools/check_installation.py build-install --no-tests
+          python tools/linting/check_installation.py build-install --no-tests
           rm -r build-install
           spin build --tags=runtime,python-runtime,devel,tests
           spin check --installed-files --no-build
@@ -117,19 +115,16 @@ jobs:
       - name: Check build-internal dependencies
         run: ninja -C build -t missingdeps
 
-      - name: Mypy
+      - name: Pyrefly
         if: matrix.python-version == '3.12'
         run: |
           python -m pip install --group typecheck
-          spin mypy
-
-      - name: Pyrefly
-        if: matrix.python-version == '3.12'
-        run: pyrefly check --output-format=github
+          pyrefly check --output-format=github
 
       - name: Test SciPy
         run: |
           export OMP_NUM_THREADS=2
+          python -m pip uninstall --yes uarray # avoid deprecation warnings
           spin test -j3 -- --durations 10 --timeout=60
 
   #################################################################################
@@ -243,7 +238,7 @@ jobs:
           python3-dbg -m pytest --pyargs scipy -n4 --durations=10 -m "not slow"
 
   #################################################################################
-  gcc9:
+  gcc10:
     # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
     name: Oldest GCC & pydata/sparse, full, py3.12/npMin, pip+pytest
     needs: get_commit_message
@@ -265,7 +260,7 @@ jobs:
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          sudo apt install -y g++-9 gcc-9
+          sudo apt install -y g++-10 gcc-10
           sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
             libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev ccache
 
@@ -284,7 +279,7 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC="ccache gcc-9" CXX="ccache g++-9" python -m pip install . -v \
+          CC="ccache gcc-10" CXX="ccache g++-10" python -m pip install . -v \
               --no-build-isolation -Cbuild-dir=build \
               -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
 
@@ -392,22 +387,24 @@ jobs:
       - name: build + test in i686 container
         run: |
           set -exuo pipefail
-          # Note: `ccache` not used because it isn't available on i686 CentOS 7
-          docker pull quay.io/pypa/manylinux2014_i686
-          docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
-          uname -a && \
-          python3.12 -m venv test && \
-          source test/bin/activate && \
-          python -m pip install --upgrade pip && \
-          python -m pip install --group build --group dev-cli --group test-core && \
-          # we want `mpmath` but cannot install `gmpy2` on 32-bit,
-          # so cannot use `--group test-mp`
-          python -m pip install mpmath && \
-          python -m pip install -r requirements/openblas.txt && \
-          python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir && \
-          python -c 'import numpy as np; np.show_config()' && \
-          spin build --with-scipy-openblas=32 && \
-          spin test"
+          docker pull quay.io/pypa/manylinux_2_28_i686
+          docker run -v "$(pwd):/scipy" --platform=linux/i386 quay.io/pypa/manylinux_2_28_i686 /bin/bash -c '
+            set -exuo pipefail
+            cd /scipy
+            uname -a
+            python3.12 -m venv test
+            source test/bin/activate
+            python -m pip install --upgrade pip
+            python -m pip install --group build --group dev-cli --group test-core
+            # we want `mpmath` but cannot install `gmpy2` on 32-bit,
+            # so cannot use `--group test-mp`
+            python -m pip install mpmath
+            python -m pip install -r requirements/openblas.txt
+            python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir
+            python -c "import numpy as np; np.show_config()"
+            spin build --with-scipy-openblas=32
+            spin test
+          '
 
   #################################################################################
   distro_multiple_pythons:
@@ -572,6 +569,8 @@ jobs:
         with:
           workflow_name: ${{ github.workflow }}
           job_name: ${{ github.job }}
+          # the two matrix variants build the same thing, avoid saving twice
+          save: ${{ matrix.parallel == '0' }}
 
       - name: Run tests (full)
         if: ${{ matrix.parallel == '0'}}

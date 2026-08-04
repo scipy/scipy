@@ -5,7 +5,7 @@ from scipy import stats
 from scipy.stats._axis_nan_policy import _broadcast_arrays
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_ravel,
-                                   xp_result_type)
+                                   xp_result_type, xp_device)
 
 
 def _bws_input_validation(x, y, alternative, axis, method):
@@ -59,7 +59,8 @@ def _bws_statistic(x, y, alternative, axis, xp):
 
     Ri, Hj = xp.sort(x, axis=axis), xp.sort(y, axis=axis)
     n, m = Ri.shape[axis], Hj.shape[axis]
-    i, j = xp.arange(1, n+1, dtype=Ri.dtype), xp.arange(1, m+1, dtype=Hj.dtype)
+    i = xp.arange(1, n+1, dtype=Ri.dtype, device=xp_device(Ri))
+    j = xp.arange(1, m+1, dtype=Hj.dtype, device=xp_device(Hj))
 
     Bx_num = Ri - (m + n)/n * i
     By_num = Hj - (m + n)/m * j

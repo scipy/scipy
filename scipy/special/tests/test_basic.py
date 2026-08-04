@@ -1690,6 +1690,34 @@ class TestEllip:
         rel = [sin(0.2),cos(0.2),1.0,0.20]
         assert_allclose(el, rel, atol=1.5e-13, rtol=0)
 
+    @pytest.mark.parametrize(
+        "u, m, expected",
+        [
+            (
+                20,
+                -0.0001,
+                [0.91314537820787445, 0.40763404943355497, 1.0000416908550234],
+            ),
+            (
+                20,
+                -1,
+                [-0.89393389569287096, 0.44819882879294476, 1.3413119733561736],
+            ),
+            (
+                20,
+                -251.18864315095823,
+                [0.19646166026649953, 0.98051150734977632, 3.2703477287623963],
+            ),
+        ],
+    )
+    def test_ellipj_negative_m(self, u, m, expected):
+        sn, cn, dn, ph = special.ellipj(u, m)
+
+        assert_allclose([sn, cn, dn], expected, rtol=1e-8, atol=0)
+        assert_allclose(sn**2 + cn**2, 1, rtol=1e-12, atol=0)
+        assert_allclose(dn**2 + m * sn**2, 1, rtol=1e-12, atol=0)
+        assert_allclose(special.ellipkinc(ph, m), u, rtol=1e-8, atol=0)
+
     def test_ellipk(self):
         elk = special.ellipk(.2)
         assert_allclose(elk, 1.659623598610528, atol=1.5e-11, rtol=0)

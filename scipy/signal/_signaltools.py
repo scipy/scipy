@@ -26,8 +26,8 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
-    xp_promote, xp_swapaxes,)
+    xp_result_device, array_namespace, is_torch, is_numpy, xp_copy, xp_size,
+    xp_promote, xp_result_type, xp_swapaxes, xp_device,)
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
@@ -233,6 +233,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     """
     xp = array_namespace(in1, in2)
+    device = xp_result_device(in1, in2)
 
     in1 = xp.asarray(in1)
     in2 = xp.asarray(in2)
@@ -262,7 +263,7 @@ def correlate(in1, in2, mode='full', method='auto'):
             a_in1 = np.asarray(in1)
             a_in2 = np.asarray(in2)
             out = np.correlate(a_in1, a_in2, mode)
-            return xp.asarray(out)
+            return xp.asarray(out, device=device)
 
         # _correlateND is far slower when in2.size > in1.size, so swap them
         # and then undo the effect afterward if mode == 'full'.  Also, it fails
@@ -299,7 +300,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
             z = _sigtools._correlateND(in1zpadded, a_in2, out, val)
 
-        z = xp.asarray(z)
+        z = xp.asarray(z, device=device)
 
         if swapped_inputs:
             # Reverse and conjugate to undo the effect of swapping inputs
@@ -532,9 +533,9 @@ def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
     if xp.isdtype(in1.dtype, 'integral'):
-        in1 = xp.astype(in1, xp_default_dtype(xp))
+        in1 = xp.astype(in1, xpx.default_dtype(xp))
     if xp.isdtype(in2.dtype, 'integral'):
-        in2 = xp.astype(in2, xp_default_dtype(xp))
+        in2 = xp.astype(in2, xpx.default_dtype(xp))
 
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
@@ -698,7 +699,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif xp_size(in1) == 0 or xp_size(in2) == 0:  # empty arrays
-        return xp.asarray([])
+        return xp.asarray([], device=xp_device(in1))
 
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=False)
@@ -945,7 +946,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
-        return xp.asarray([])
+        return xp.asarray([], device=xp_device(in1))
     elif in1.shape == in2.shape:  # Equivalent to fftconvolve
         return fftconvolve(in1, in2, mode=mode, axes=axes)
 
@@ -1497,6 +1498,7 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     """
     xp = array_namespace(in1, in2)
+    device = xp_result_device(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1534,7 +1536,7 @@ def convolve(in1, in2, mode='full', method='auto'):
             a_volume = np.asarray(volume)
             a_kernel = np.asarray(kernel)
             out = np.convolve(a_volume, a_kernel, mode)
-            return xp.asarray(out)
+            return xp.asarray(out, device=device)
 
         return correlate(volume, _reverse_and_conj(kernel, xp), mode, 'direct')
     else:
@@ -1645,7 +1647,7 @@ def medfilt(volume, kernel_size=None):
     --------
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
-    
+
     Examples
     --------
     Apply a 1-D median filter to an array containing noise spikes.
@@ -1659,7 +1661,7 @@ def medfilt(volume, kernel_size=None):
     >>> signal.medfilt(x, kernel_size=3)
     array([ 1,  2,  2,  2,  1,  1, 30, 30,  1])
 
-    The size 3 kernel is not big enough to eliminate the 
+    The size 3 kernel is not big enough to eliminate the
     2-wide spike near the end of the array.
     A larger size 5 kernel successfully eliminates the 2-wide spike.
 
@@ -1667,10 +1669,10 @@ def medfilt(volume, kernel_size=None):
     array([1, 2, 2, 2, 2, 2, 1, 1, 1])
 
     Kernel size 1 acts as an identity operator.
-    
+
     >>> signal.medfilt(x, kernel_size=1)
     array([  1,   2, 100,   2,   1,   1,  35,  30,   1])
-    
+
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
@@ -1683,7 +1685,7 @@ def medfilt(volume, kernel_size=None):
 
     if kernel_size is None:
         kernel_size = [3] * volume.ndim
-    kernel_size = xp.asarray(kernel_size)
+    kernel_size = xp.asarray(kernel_size, device=xp_device(volume))
     if kernel_size.shape == ():
         kernel_size = xp.repeat(kernel_size, volume.ndim)
 
@@ -1762,12 +1764,13 @@ def wiener(im, mysize=None, noise=None):
 
     # Estimate the local mean
     size = math.prod(mysize)
-    lMean = correlate(im, xp.ones(mysize), 'same')
+    lMean = correlate(im, xp.ones(mysize, device=xp_device(im)), 'same')
     lsize = float(size)
     lMean = lMean / lsize
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, xp.ones(mysize), 'same') / lsize - lMean ** 2)
+    lVar = (correlate(im ** 2, xp.ones(mysize, device=xp_device(im)), 'same')
+            / lsize - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
@@ -1857,6 +1860,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     """
     xp = array_namespace(in1, in2)
+    device = xp_result_device(in1, in2)
 
     # NB: do work in NumPy, only convert the output
 
@@ -1872,7 +1876,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
     out = _sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)
 
 
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
@@ -1958,6 +1962,8 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     """
     xp = array_namespace(in1, in2)
+    device = xp_result_device(in1, in2)
+
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
 
@@ -1975,7 +1981,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     if swapped_inputs:
         out = out[::-1, ::-1]
 
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)
 
 
 def medfilt2d(input, kernel_size=3):
@@ -2067,13 +2073,14 @@ def medfilt2d(input, kernel_size=3):
 
     """
     xp = array_namespace(input)
+    device = xp_result_device(input)
 
     image = np.asarray(input)
 
     # checking dtype.type, rather than just dtype, is necessary for
     # excluding np.longdouble with MS Visual C.
     if image.dtype.type not in (np.ubyte, np.float32, np.float64):
-        return xp.asarray(medfilt(image, kernel_size))
+        return xp.asarray(medfilt(image, kernel_size), device=device)
 
     if kernel_size is None:
         kernel_size = [3] * 2
@@ -2086,7 +2093,7 @@ def medfilt2d(input, kernel_size=3):
             raise ValueError("Each element of kernel_size should be odd.")
 
     result_np = _sigtools._medfilt2d(image, kernel_size)
-    return xp.asarray(result_np)
+    return xp.asarray(result_np, device=device)
 
 
 def lfilter(b, a, x, axis=-1, zi=None):
@@ -2214,6 +2221,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     """
     xp = array_namespace(b, a, x, zi)
+    device = xp_result_device(b, a, x, zi)
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
@@ -2283,18 +2291,18 @@ def lfilter(b, a, x, axis=-1, zi=None):
         out = out_full[tuple(ind)]
 
         if zi is None:
-            return xp.asarray(out)
+            return xp.asarray(out, device=device)
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
             zf = out_full[tuple(ind)]
-            return xp.asarray(out), xp.asarray(zf)
+            return xp.asarray(out, device=device), xp.asarray(zf, device=device)
     else:
         if zi is None:
             result =_sigtools._linear_filter(b, a, x, axis)
-            return xp.asarray(result)
+            return xp.asarray(result, device=device)
         else:
             out, zf = _sigtools._linear_filter(b, a, x, axis, zi)
-            return xp.asarray(out), xp.asarray(zf)
+            return xp.asarray(out, device=device), xp.asarray(zf, device=device)
 
 
 def lfiltic(b, a, y, x=None):
@@ -2357,7 +2365,7 @@ def lfiltic(b, a, y, x=None):
         result_type = xp.result_type(b, a, y)
         if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
             result_type = xp.float64
-        x = xp.zeros(M, dtype=result_type)
+        x = xp.zeros(M, dtype=result_type, device=xp_device(b))
     else:
         x = xp.asarray(x)
 
@@ -2368,14 +2376,14 @@ def lfiltic(b, a, y, x=None):
 
         L = xp_size(x)
         if L < M:
-            x = xp.concat((x, xp.zeros(M - L)))
+            x = xp.concat((x, xp.zeros(M - L, device=xp_device(x))))
 
     y = xp.astype(y, result_type)
-    zi = xp.zeros(K, dtype=result_type)
+    zi = xp.zeros(K, dtype=result_type, device=xp_device(b))
 
     L = xp_size(y)
     if L < N:
-        y = xp.concat((y, xp.zeros(N - L)))
+        y = xp.concat((y, xp.zeros(N - L, device=xp_device(y))))
 
     for m in range(M):
         zi = xpx.at(zi)[m].set(xp.sum(b[m + 1:] * x[:M - m], axis=0))
@@ -2449,7 +2457,7 @@ def deconvolve(signal, divisor):
         quot = []
         rem = num
     else:
-        input = xp.zeros(N - D + 1, dtype=xp.float64)
+        input = xp.zeros(N - D + 1, dtype=xp.float64, device=xp_device(num))
         input = xpx.at(input)[0].set(1)
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
@@ -3638,8 +3646,8 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         determined by ``t[0] + T * n_x / num * np.arange(num)`` with
         ``T = t[1] - t[0]``. Default is ``None``.
     axis : int, optional
-        The time/frequency axis of `x` along which the resampling take place.
-        The Default is 0.
+        The time/frequency axis of `x` along which the resampling takes place.
+        The default is 0.
     window : array_like, callable, str, float, or tuple, optional
         If not ``None``, it specifies a filter in the Fourier domain, which is applied
         before resampling. I.e., the FFT ``X`` of `x` is calculated by
@@ -3647,13 +3655,13 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         function ``W(f_X)`` which consumes the frequencies ``f_X = fftfreq(n_x, T)``.
 
         If `window` is a 1d array of length ``n_x`` then ``W=window``.
-        If `window` is a callable  then ``W = window(f_X)``.
+        If `window` is a callable then ``W = window(f_X)``.
         Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
         ``W = fftshift(signal.get_window(window, n_x))``. Default is ``None``.
 
     domain : 'time' | 'freq', optional
         If set to ``'time'`` (default) then an FFT is applied to `x`, otherwise
-        (``'freq'``) it is asssmued that an FFT was already applied, i.e.,
+        (``'freq'``) it is assumed that an FFT was already applied, i.e.,
         ``x = fft(x_t, axis=axis)`` with ``x_t`` being the input signal in the time
         domain.
 
@@ -3686,9 +3694,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     zero imaginary part are treated identically. I.e., passing `x` or passing
     ``x.astype(np.complex128)`` produce the same numeric result.
 
-    If the number of input  or output samples are prime or have few prime factors, this
+    If the number of input or output samples is prime or has few prime factors, this
     function may be slow due to utilizing FFTs. Consult `~scipy.fft.prev_fast_len` and
-    `~scipy.fft.next_fast_len` for determining efficient signals lengths.
+    `~scipy.fft.next_fast_len` for determining efficient signal lengths.
     Alternatively, utilizing `resample_poly` to calculate an intermediate signal (as
     illustrated in the example below) can result in significant speed increases.
 
@@ -3867,15 +3875,16 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if window is None: # Determine spectral windowing function:
         W = None
     elif callable(window):
-        W = window(sp_fft.fftfreq(n_x))
+        W = window(sp_fft.fftfreq(n_x, xp=xp, device=xp_device(x)))
     elif hasattr(window, 'shape'): # must be an array object
         if window.shape != (n_x,):
             raise ValueError(f"{window.shape=} != ({n_x},), i.e., window length " +
                              "is not equal to number of frequency bins!")
         W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
-        W = sp_fft.fftshift(get_window(window, n_x, xp=xp))
-        W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
+        W = sp_fft.fftshift(get_window(window, n_x, xp=xp,
+                                       device=xp_device(x)))
+        W = xp.astype(W, xpx.default_dtype(xp))   # get_window always returns float64
 
     if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
         X = sp_fft.rfft(x)
@@ -3892,7 +3901,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         X = sp_fft.fft(x) if domain == 'time' else x
         if W is not None:
             X = X * W  # writing X *= W could modify parameter x
-        Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
+        Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype, device=xp_device(X))
         Y = xpx.at(Y)[..., :m2].set(X[..., :m2])  # copy up to Nyquist
         if m2 < m:  # == m > 2
             Y = xpx.at(Y)[..., m2-m:].set(X[..., m2-m:])  # copy negative frequencies
@@ -3907,7 +3916,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if x_r.ndim > 1:  # moving active axis back to original position:
         x_r = xp.moveaxis(x_r, -1, axis)
     if t is not None:
-        return x_r, t[0] + (t[1] - t[0]) * s_fac * xp.arange(num)
+        t_new_dtype = xp_result_type(t, force_floating=True, xp=xp)
+        t_new = xp.arange(num, dtype=t_new_dtype, device=xp_device(x))
+        return x_r, t[0] + (t[1] - t[0]) * s_fac * t_new
     return x_r
 
 
@@ -3939,8 +3950,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
         the other signal extension modes supported by `scipy.signal.upfirdn`.
         Changes assumptions on values beyond the boundary. If `constant`,
-        assumed to be `cval` (default zero). If `line` assumed to continue a
-        linear trend defined by the first and last points. `mean`, `median`,
+        it is assumed to be `cval` (default zero). If `line`, it is assumed to continue
+        a linear trend defined by the first and last points. `mean`, `median`,
         `maximum` and `minimum` work as in `np.pad` and assume that the values
         beyond the boundary are the mean, median, maximum or minimum
         respectively of the array along the axis.
@@ -4074,10 +4085,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
         if xp.isdtype(x.dtype, ("real floating", "complex floating")):
             h = firwin(2 * half_len + 1, f_c, window=window)
-            h = xp.asarray(h, dtype=x.dtype)    # match dtype of x
+            h = xp.asarray(h, dtype=x.dtype, device=xp_device(x))
         else:
             h = firwin(2 * half_len + 1, f_c, window=window)
-            h = xp.asarray(h)
+            h = xp.asarray(h, device=xp_device(x))
 
     h *= up
 
@@ -4089,13 +4100,14 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     while _output_len(h.shape[0] + n_pre_pad + n_post_pad, n_in,
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
-    h = xp.concat((xp.zeros(n_pre_pad, dtype=h.dtype), h,
-                   xp.zeros(n_post_pad, dtype=h.dtype)))
+    h = xp.concat((xp.zeros(n_pre_pad, dtype=h.dtype, device=xp_device(h)), h,
+                   xp.zeros(n_post_pad, dtype=h.dtype, device=xp_device(h))))
     n_pre_remove_end = n_pre_remove + n_out
 
     # XXX consider using stats.quantile, which is natively Array API compatible
     def _median(x, *args, **kwds):
-        return xp.asarray(np.median(np.asarray(x), *args, **kwds))
+        return xp.asarray(np.median(np.asarray(x), *args, **kwds),
+                          device=xp_device(x))
 
     # Remove background depending on the padtype option
     funcs = {'mean': xp.mean, 'median': _median,
@@ -4367,6 +4379,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
     xp = array_namespace(data, bp)
+    device = xp_result_device(data, bp)
 
     data = np.asarray(data)
     dtype = data.dtype.char
@@ -4374,7 +4387,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         dtype = 'd'
     if type in ['constant', 'c']:
         ret = data - np.mean(data, axis, keepdims=True)
-        return xp.asarray(ret)
+        return xp.asarray(ret, device=device)
     else:
         dshape = data.shape
         N = dshape[axis]
@@ -4411,7 +4424,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         # Put data back in original shape.
         newdata = newdata.reshape(newdata_shape)
         ret = np.moveaxis(newdata, 0, axis)
-        return xp.asarray(ret)
+        return xp.asarray(ret, device=device)
 
 
 def lfilter_zi(b, a):
@@ -4612,7 +4625,7 @@ def sosfilt_zi(sos):
         sos = xp.astype(sos, xp.float64)
 
     n_sections = sos.shape[0]
-    zi = xp.empty((n_sections, 2), dtype=sos.dtype)
+    zi = xp.empty((n_sections, 2), dtype=sos.dtype, device=xp_device(sos))
     scale = 1.0
     for section in range(n_sections):
         b = sos[section, :3]
@@ -4964,6 +4977,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     """
     xp = array_namespace(b, a, x)
+    device = xp_result_device(b, a, x)
 
     b = np.atleast_1d(np.asarray(b))
     a = np.atleast_1d(np.asarray(a))
@@ -4974,7 +4988,9 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     if method == "gust":
         y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
-        return xp.asarray(y)
+        if is_torch(xp):
+            y = y.copy()    # pytorch/pytorch#59786 : no negative strides in pytorch
+        return xp.asarray(y, device=device)
 
     # method == "pad"
     edge, ext = _validate_pad(padtype, padlen, x, axis,
@@ -5005,10 +5021,11 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     if edge > 0:
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
-        if is_torch(xp):
-            y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
 
-    return xp.asarray(y)
+    if is_torch(xp):
+        y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
+
+    return xp.asarray(y, device=device)
 
 
 def _validate_pad(padtype, padlen, x, axis, ntaps):
@@ -5125,6 +5142,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     """
     xp = array_namespace(sos, x, zi)
+    device = xp_result_device(sos, x, zi)
 
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
@@ -5171,9 +5189,9 @@ def sosfilt(sos, x, axis=-1, zi=None):
     if return_zi:
         zi = zi.reshape(zi_shape)
         zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
-        out = (xp.asarray(x), xp.asarray(zi))
+        out = (xp.asarray(x, device=device), xp.asarray(zi, device=device))
     else:
-        out = xp.asarray(x)
+        out = xp.asarray(x, device=device)
     return out
 
 
@@ -5267,6 +5285,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     """
     xp = array_namespace(sos, x)
+    device = xp_result_device(sos, x)
 
     sos, n_sections = _validate_sos(sos)
     x = _validate_x(x)
@@ -5289,7 +5308,9 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     y = axis_reverse(y, axis=axis)
     if edge > 0:
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
-    return xp.asarray(y)
+    if is_torch(xp):
+        y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
+    return xp.asarray(y, device=device)
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
@@ -5415,7 +5436,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             b, a = system.num, system.den
             ftype = 'fir'
         elif (any(np.iscomplex(system.poles))
-              or any(np.iscomplex(system.poles))
+              or any(np.iscomplex(system.zeros))
               or np.iscomplex(system.gain)):
             # sosfilt & sosfiltfilt don't handle complex coeffs
             iir_use_sos = False

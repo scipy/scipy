@@ -13,8 +13,9 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
-                                   xp_default_dtype, make_xp_pytest_param,
+                                   make_xp_pytest_param,
                                    xp_assert_close)
 
 
@@ -162,7 +163,7 @@ class TestBlockDiag:
 
     def test_dtype(self, xp):
         x = block_diag(xp.asarray([[1.5]]))
-        assert x.dtype == xp_default_dtype(xp)
+        assert x.dtype == xpx.default_dtype(xp)
 
         x = block_diag(xp.asarray([[True]]))
         assert x.dtype == xp.bool

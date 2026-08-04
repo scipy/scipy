@@ -9,7 +9,7 @@ from . import _rbfinterp_np
 from . import _rbfinterp_xp
 
 from scipy._lib._array_api import (
-    _asarray, array_namespace, xp_size, is_numpy, xp_capabilities
+    _asarray, array_namespace, xp_size, is_numpy, xp_capabilities, xp_device
 )
 import scipy._external.array_api_extra as xpx
 
@@ -264,7 +264,8 @@ class RBFInterpolator:
         d = d.view(float)     # NB not Array API compliant (and jax copies)
 
         if isinstance(smoothing, int | float) or smoothing.shape == ():
-            smoothing = xp.full(ny, smoothing, dtype=xp.float64)
+            smoothing = xp.full(ny, smoothing, dtype=xp.float64,
+                                device=xp_device(y))
         else:
             smoothing = _asarray(smoothing, dtype=float, order="C", xp=xp)
             if smoothing.shape != (ny,):
@@ -313,7 +314,8 @@ class RBFInterpolator:
             neighbors = int(min(neighbors, ny))
             nobs = neighbors
 
-        powers = _backend._monomial_powers(ndim, degree, xp)
+        powers = _backend._monomial_powers(ndim, degree, xp,
+                                           device=xp_device(y))
         # The polynomial matrix must have full column rank in order for the
         # interpolant to be well-posed, which is not possible if there are
         # fewer observations than monomials.
@@ -418,7 +420,8 @@ class RBFInterpolator:
         # in each chunk we consume the same space we already occupy
         chunksize = memory_budget // (self.powers.shape[0] + nnei) + 1
         if chunksize <= nx:
-            out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64)
+            out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64,
+                                 device=xp_device(self.d))
             for i in range(0, nx, chunksize):
                 chunk = _backend.compute_interpolation(
                     x[i:i + chunksize, :],

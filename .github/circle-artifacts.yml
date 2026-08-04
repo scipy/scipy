@@ -1,0 +1,3 @@
+artifact-path: 0/html/index.html
+circleci-jobs: build_docs
+job-title: Check the rendered docs here!

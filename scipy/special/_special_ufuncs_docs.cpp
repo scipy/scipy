@@ -1,9 +1,73 @@
+const char *_binom_ppf_doc = R"(
+    _binom_ppf(x, n, p)
+
+    Percent point function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+)";
+
 const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
 const char *_bivariate_normal_sf_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_cosine_cdf_doc = R"(
+    _cosine_cdf(x)
+
+    Cumulative distribution function (CDF) of the cosine distribution::
+
+                 {             0,              x < -pi
+        cdf(x) = { (pi + x + sin(x))/(2*pi),   -pi <= x <= pi
+                 {             1,              x > pi
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    scalar or ndarray
+        The cosine distribution CDF evaluated at `x`.
+    )";
+
+const char *_cosine_invcdf_doc = R"(
+    _cosine_invcdf(p)
+
+    Inverse of the cumulative distribution function (CDF) of the cosine
+    distribution.
+
+    The CDF of the cosine distribution is::
+
+        cdf(x) = (pi + x + sin(x))/(2*pi)
+
+    This function computes the inverse of cdf(x).
+
+    Parameters
+    ----------
+    p : array_like
+        `p` must contain real numbers in the interval ``0 <= p <= 1``.
+        `nan` is returned for values of `p` outside the interval [0, 1].
+
+    Returns
+    -------
+    scalar or ndarray
+        The inverse of the cosine distribution CDF evaluated at `p`.
     )";
 
 const char *_igam_fac_doc = R"(
@@ -23,6 +87,10 @@ const char *_kolmogp_doc = R"(
     )";
 
 const char *_lgam1p_doc = R"(
+    Internal function, do not use.
+    )";
+
+const char *_stirling2_inexact_doc = R"(
     Internal function, do not use.
     )";
 
@@ -437,6 +505,77 @@ const char *erfcinv_doc = R"(
     >>> ax.grid(True)
     >>> ax.set_xlabel('y')
     >>> ax.set_title('erfcinv(y)')
+    >>> plt.show()
+
+    )";
+
+const char *erfinv_doc = R"(
+    erfinv(y, out=None)
+
+    Inverse of the error function.
+
+    Computes the inverse of the error function.
+
+    In the complex domain, there is no unique complex number w satisfying
+    erf(w)=z. This indicates a true inverse function would be multivalued.
+    When the domain restricts to the real, -1 < x < 1, there is a unique real
+    number satisfying erf(erfinv(x)) = x.
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [-1, 1]
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    erfinv : scalar or ndarray
+        The inverse of erf of y, element-wise
+
+    See Also
+    --------
+    erf : Error function of a complex argument
+    erfc : Complementary error function, ``1 - erf(x)``
+    erfcinv : Inverse of the complementary error function
+
+    Notes
+    -----
+    This function wraps the ``erf_inv`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import erfinv, erf
+
+    >>> erfinv(0.5)
+    0.4769362762044699
+
+    >>> y = np.linspace(-1.0, 1.0, num=9)
+    >>> x = erfinv(y)
+    >>> x
+    array([       -inf, -0.81341985, -0.47693628, -0.22531206,  0.        ,
+            0.22531206,  0.47693628,  0.81341985,         inf])
+
+    Verify that ``erf(erfinv(y))`` is ``y``.
+
+    >>> erf(x)
+    array([-1.  , -0.75, -0.5 , -0.25,  0.  ,  0.25,  0.5 ,  0.75,  1.  ])
+
+    Plot the function:
+
+    >>> y = np.linspace(-1, 1, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(y, erfinv(y))
+    >>> ax.grid(True)
+    >>> ax.set_xlabel('y')
+    >>> ax.set_title('erfinv(y)')
     >>> plt.show()
 
     )";
@@ -1531,43 +1670,59 @@ const char *gdtrix_doc = R"(
     )";
 
 const char *kolmogorov_doc = R"(
-    kolmogorov(y, out=None)
+    kolmogorov(x, out=None)
 
-    Complementary cumulative distribution (Survival Function) function of
-    Kolmogorov distribution.
+    Complementary cumulative distribution function of the Kolmogorov distribution.
 
-    Returns the complementary cumulative distribution function of
-    Kolmogorov's limiting distribution (``D_n*\sqrt(n)`` as n goes to infinity)
-    of a two-sided test for equality between an empirical and a theoretical
-    distribution. It is equal to the (limit as n->infinity of the)
-    probability that ``sqrt(n) * max absolute deviation > y``.
+    Returns the survival function of Kolmogorov's limiting distribution,
+    i.e., the distribution of :math:`\sqrt{n}\, D_n` as :math:`n \to \infty`,
+    where :math:`D_n` is the Kolmogorov--Smirnov statistic:
+
+    .. math::
+
+       D_n = \sup_x \left| F_n(x) - F(x) \right|
+
+    with :math:`F_n` the empirical cumulative distribution function (ECDF) and
+    :math:`F` the theoretical CDF. Specifically, this function computes:
+
+    .. math::
+
+       \mathbb{P}(\sqrt{n}\, D_n > x)
 
     Parameters
     ----------
-    y : float array_like
-      Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
-      multiplied by sqrt(n).
+    x : array_like
+        Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
+        multiplied by :math:`\sqrt{n}`.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
     scalar or ndarray
-        The value(s) of kolmogorov(y)
+        The probability that the test statistic exceeds `x`, in the range
+        :math:`[0, 1]`.
 
     See Also
     --------
-    kolmogi : The Inverse Survival Function for the distribution
-    scipy.stats.kstwobign : Provides the functionality as a continuous distribution
-    smirnov, smirnovi : Functions for the one-sided distribution
+    kolmogi : Inverse survival function of the Kolmogorov distribution.
+    scipy.stats.kstwobign : Provides the functionality as a continuous distribution.
+    smirnov, smirnovi : Functions for the one-sided distribution.
 
     Notes
     -----
-    `kolmogorov` is used by `stats.kstest` in the application of the
+    `kolmogorov` is used by `scipy.stats.kstest` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in `scipy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distribution.
+    `scipy.stats.kstwobign` distribution.
+
+    References
+    ----------
+    .. [1] Marsaglia, G., Tsang, W. W., & Wang, J. (2003). "Evaluating
+       Kolmogorov's distribution." *Journal of Statistical Software*, 8(18), 1-4.
+    .. [2] "Kolmogorov-Smirnov test", Wikipedia,
+       https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
 
     Examples
     --------
@@ -1588,7 +1743,7 @@ const char *kolmogorov_doc = R"(
     >>> lap01 = laplace(0, 1)
     >>> x = np.sort(lap01.rvs(n, random_state=rng))
     >>> np.mean(x), np.std(x)
-    (-0.05841730131499543, 1.3968109101997568)
+    (np.float64(-0.05841730131499543), np.float64(1.3968109101997568))
 
     Construct the Empirical CDF and the K-S statistic Dn.
 
@@ -1598,14 +1753,14 @@ const char *kolmogorov_doc = R"(
     >>> gaps = np.column_stack([cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
-    >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
+    >>> print(f'Dn={Dn:f}, sqrt(n)*Dn={Kn:f}')
     Dn=0.043363, sqrt(n)*Dn=1.371265
-    >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
-    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %
-    ...    (Kn, kolmogorov(Kn)),
-    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %
-    ...    (Kn, kstwobign.cdf(Kn))]))
-    For a sample of size n drawn from a N(0, 1) distribution:
+    >>> print(chr(10).join(['For a Laplace sample tested against N(0, 1):',
+    ...   f' the approximate Kolmogorov probability that sqrt(n)*Dn>={Kn:f} '
+    ...   f'is {kolmogorov(Kn):f}',
+    ...   f' the approximate Kolmogorov probability that sqrt(n)*Dn<={Kn:f} '
+    ...   f'is {kstwobign.cdf(Kn):f}']))
+    For a Laplace sample tested against N(0, 1):
      the approximate Kolmogorov probability that sqrt(n)*Dn>=1.371265 is 0.046533
      the approximate Kolmogorov probability that sqrt(n)*Dn<=1.371265 is 0.953467
 
@@ -1653,11 +1808,9 @@ const char *kolmogi_doc = R"(
 
     Notes
     -----
-    `kolmogorov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
-    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distribution.
+    For historical reasons this function is exposed in `scipy.special`, but the
+    recommended way to achieve the most accurate CDF/SF/PDF/PPF/ISF computations is to
+    use the `scipy.stats.kstwobign` distribution.
 
     Examples
     --------
@@ -2513,6 +2666,156 @@ const char *berp_doc = R"(
 
     )";
 
+const char *bdtrin_doc = R"(
+    bdtrin(k, y, p, out=None)
+
+    Inverse function to `bdtr` with respect to `n`.
+
+    Finds the number of events `n` such that the sum of the terms 0 through
+    `k` of the Binomial probability density for events with probability `p` is
+    equal to the given cumulative probability `y`.
+
+    Parameters
+    ----------
+    k : array_like
+        Number of successes (float).
+    y : array_like
+        Cumulative probability (probability of `k` or fewer successes in `n`
+        events).
+    p : array_like
+        Success probability (float).
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    n : scalar or ndarray
+        The number of events `n` such that `bdtr(k, n, p) = y`.
+
+    See Also
+    --------
+    bdtr
+
+    Notes
+    -----
+    This function uses the `find_minimum_number_of_trials` method of the
+    `binomial_distribution` class of the Boost.Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    How often do we have to flip a fair coin to have at least a 90% chance
+    of getting 10 heads? `bdtrin` answers this question:
+
+    >>> import scipy.special as sc
+    >>> k = 10  # number of times we want heads
+    >>> p = 0.5  # probability of flipping heads
+    >>> y = 0.9  # cumulative probability
+    >>> result = sc.bdtrin(k, y, p)
+    >>> result
+    15.90442928275109
+
+    To verify, compute the cumulative probability of getting 10 or fewer
+    successes in 16 trials with probability 0.5 using the binomial
+    distribution from `scipy.stats`. Since `bdtrin` returns a non-integer
+    number of trials, we round up to the next integer:
+
+    >>> from scipy.stats import Binomial
+    >>> Binomial(n=16, p=p).cdf(k)
+    0.8949432373046875)";
+
+const char *bdtrik_doc = R"doc(
+    bdtrik(y, n, p, out=None)
+
+    Binomial distribution quantile.
+
+    Finds the number of successes `k` such that the sum of the terms 0 through
+    `k` of the Binomial probability density for `n` events with probability
+    `p` is equal to the given cumulative probability `y`.
+
+    Parameters
+    ----------
+    y : array_like
+        Cumulative probability (probability of `k` or fewer successes in `n`
+        events).
+    n : array_like
+        Number of events (float).
+    p : array_like
+        Success probability (float).
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    k : scalar or ndarray
+        The number of successes `k` such that `bdtr(k, n, p) = y`.
+
+    See Also
+    --------
+    bdtr : Binomial distribution cumulative distribution function
+
+    Notes
+    -----
+    Formula 26.5.24 of [1]_ is used to reduce the binomial
+    distribution to the cumulative incomplete beta distribution.
+
+    This function uses routines from the Boost.Math C++ library [3]_ which rely
+    on numerical inversion of the binomial distribution CDF [4]_.
+
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.5#E5
+    .. [3] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [4] https://www.boost.org/doc/libs/latest/libs/math/doc/html/math_toolkit/dist_ref/dists/binomial_dist.html
+
+    Examples
+    --------
+    We have a coin for which the probability of showing heads when flipped
+    is 0.525. The coin is flipped 8 times.  Find the largest value of `k`
+    such that the probability that X <= `k` is not greater than 0.2, where
+    X is the number of heads.
+
+    In fact, there is no integer value of `k` that will give a probability
+    of *exactly* 0.2, as this plot of the cumulative distribution function shows.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import bdtr, bdtrik
+
+    >>> n = 8
+    >>> p = 0.525
+    >>> k = np.arange(0, n + 1)
+    >>> plt.plot(k, bdtr(k, n, p), 'o')
+    >>> plt.grid(True, alpha=0.5)
+    >>> plt.xlabel('k')
+    >>> plt.axhline(0.2, linestyle='--', color='k', alpha=0.5)
+    >>> plt.title(f"bdtr(k, {n}, {p})")
+    >>> plt.show()
+
+    From the graph we can see that we would choose `k` = 2.  The function
+    ``bdtrik`` lets us find this value directly.
+
+    ``bdtrik`` returns a floating point value that is like a continuous
+    extension of `k`.  This computes `k` as a noninteger floating point value:
+
+    >>> bdtrik(0.2, n, p)
+    np.float64(2.508332751475262)
+
+    For our final answer we need an integer `k`, and since we want to ensure
+    that the probability at `k` does not exceed 0.2, we truncate the fractional
+    part of this value with ``np.floor``:
+
+    >>> np.floor(bdtrik(0.2, n, p))
+    np.float64(2.0)
+    )doc";
+
 const char *binom_doc = R"(
     binom(x, y, out=None)
 
@@ -3000,8 +3303,8 @@ const char *ellipj_doc = R"(
 
     Jacobi elliptic functions.
 
-    Calculates the Jacobi elliptic functions of parameter `m` between
-    0 and 1, and real argument `u`.
+    Calculates the Jacobi elliptic functions of parameter `m` less than or equal to
+    1, and real argument `u`.
 
     Parameters
     ----------
@@ -3046,6 +3349,32 @@ const char *ellipj_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    The elliptic sine sn(u|m) interpolates between the sine function and the
+    hyperbolic tangent when m changes from 0 to 1.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.special import ellipj
+    >>> u = np.linspace(0, 2*np.pi, 100)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(u, np.sin(u), '--', label='sin(u)')
+    >>> for m in (0.2, 0.8, 0.99):
+    ...     ax.plot(u, ellipj(u, m)[0], label=f'sn(u|{m})')
+    >>> ax.plot(u, np.tanh(u), '--', label='tanh(u)')
+    >>> ax.set_xlabel('u')
+    >>> ax.legend(loc='lower left')
+    >>> plt.show()
+
+    Like for sine and cosine, the squares of elliptic sine and elliptic cosine
+    add up to one.
+
+    >>> u = np.linspace(0, 5, 11)
+    >>> sn, cn, _, _ = ellipj(u, 0.7)
+    >>> sn**2 + cn**2
+    array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
     )";
 
 const char *ellipkm1_doc = R"(
@@ -3100,6 +3429,38 @@ const char *ellipkm1_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+    .. [2] NIST Digital Library of Mathematical Functions,
+           Eq. 19.12.1. https://dlmf.nist.gov/19.12.E1
+
+    Examples
+    --------
+    >>> from scipy.special import ellipk, ellipkm1
+    >>> p = 1e-10
+    >>> m = 1-p
+    >>> ellipk(m), ellipkm1(p)
+    (np.float64(12.899219785017415), np.float64(12.8992198263876))
+
+    In order to decide which one of the two results is closer to the correct
+    one, one can use the asymptotic expansion including the next-to-leading
+    order [2]_.
+
+    >>> from math import log, sqrt
+    >>> log(4/sqrt(p)) + 0.25*p*(log(4/sqrt(p))-1)
+    12.8992198263876
+    
+    We can conclude that for such small values of :math:`p`, `ellipkm1` yields
+    the better result. For even smaller values of :math:`p`, the difference
+    becomes more apparent.
+
+    >>> p = 1e-15
+    >>> m = 1-p
+    >>> ellipk(m), ellipkm1(p)
+    (np.float64(18.656082357290334), np.float64(18.655682558575236))
+    >>> log(4/sqrt(p)) + 0.25*p*(log(4/sqrt(p))-1)
+    18.655682558575236
+
+    For even smaller values of :math:`p`, the finite spacing between float
+    numbers becomes relevant. Then `ellipkm1` needs to be used in any case.
     )";
 
 const char *ellipk_doc = R"(
@@ -3155,6 +3516,25 @@ const char *ellipk_doc = R"(
     .. [2] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    The period :math:`T` of a simple pendulum increases with growing oscillation
+    amplitude and can be expressed through the complete elliptic integral of the
+    first kind. The plot displays the ratio of the period of the pendulum and
+    the period :math:`T_0` for small amplitude as a function of the maximum
+    angle :math:`\alpha` reached by the pendulum.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.special import ellipk
+    >>> alpha = np.linspace(0, np.pi, 100)
+    >>> m = np.sin(alpha/2)**2
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(alpha, ellipk(m)*2/np.pi)
+    >>> ax.set_xlabel(r'$\alpha$')
+    >>> ax.set_ylabel('$T/T_0$')
+    >>> plt.show()
     )";
 
 const char *ellipkinc_doc = R"(
@@ -3217,6 +3597,34 @@ const char *ellipkinc_doc = R"(
     .. [3] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    >>> from scipy.special import ellipkinc
+    >>> phi = 0.3
+    >>> m = 0.8
+    >>> u = ellipkinc(phi, m)
+    >>> u
+    np.float64(0.30365239221539364)
+
+    The result should be consistent with the known relations
+    for the Jacobi elliptic functions: ``sn(u|m) = sin(phi)``
+    and ``cn(u|m) = cos(phi)``.
+
+    >>> from math import cos, pi, sin
+    >>> from scipy.special import ellipj
+    >>> sn, cn, _, _ = ellipj(u, m)
+    >>> sn, sin(phi)
+    (np.float64(0.2955202066613395), 0.29552020666133955)
+    >>> cn, cos(phi)
+    (np.float64(0.9553364891256061), 0.955336489125606)
+
+    For :math:`\phi=\pi/2`, the incomplete elliptic integral should
+    equal the complete elliptic integral.
+
+    >>> from scipy.special import ellipk
+    >>> ellipkinc(pi/2, m), ellipk(m)
+    (np.float64(2.257205326820854), np.float64(2.257205326820854))
     )";
 
 const char *xlogy_doc = R"(
@@ -4005,6 +4413,316 @@ const char *dawsn_doc = R"(
     >>> plt.ylabel('$dawsn(x)$')
     >>> plt.show()
     )";
+
+const char *fdtr_doc = R"(
+    fdtr(dfn, dfd, x, out=None)
+
+    F cumulative distribution function.
+
+    Returns the value of the cumulative distribution function of the
+    F-distribution, also known as Snedecor's F-distribution or the
+    Fisher-Snedecor distribution.
+
+    The F-distribution with parameters :math:`d_n` and :math:`d_d` is the
+    distribution of the random variable,
+
+    .. math::
+        X = \frac{U_n/d_n}{U_d/d_d},
+
+    where :math:`U_n` and :math:`U_d` are random variables distributed
+    :math:`\chi^2`, with :math:`d_n` and :math:`d_d` degrees of freedom,
+    respectively.
+
+    Parameters
+    ----------
+    dfn : array_like
+        First parameter (positive float).
+    dfd : array_like
+        Second parameter (positive float).
+    x : array_like
+        Argument (nonnegative float).
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    y : scalar or ndarray
+        The CDF of the F-distribution with parameters `dfn` and `dfd` at `x`.
+
+    See Also
+    --------
+    fdtrc : F distribution survival function
+    fdtri : F distribution inverse cumulative distribution
+    scipy.stats.f : F distribution
+
+    Notes
+    -----
+    The regularized incomplete beta function is used, according to the
+    formula,
+
+    .. math::
+        F(d_n, d_d; x) = I_{xd_n/(d_d + xd_n)}(d_n/2, d_d/2).
+
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtr` directly can improve performance compared to the ``cdf``
+    method of `scipy.stats.f` (see last example below).
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+
+    Examples
+    --------
+    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtr
+    >>> fdtr(1, 2, 1)
+    0.5773502691896258
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.5, 2., 3.])
+    >>> fdtr(1, 2, x)
+    array([0.4472136 , 0.70710678, 0.77459667])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [1, 5, 10, 50]
+    >>> dfd_parameters = [1, 1, 2, 3]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtr_vals = fdtr(dfn, dfd, x)
+    ...     ax.plot(x, fdtr_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("F distribution cumulative distribution function")
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtr`
+    directly can be much faster than calling the ``cdf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).cdf(x)=fdtr(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
+    >>> fdtr_res = fdtr(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).cdf(x)
+    >>> fdtr_res == f_dist_res  # test that results are equal
+    True
+    )";
+
+const char *fdtrc_doc = R"(
+    fdtrc(dfn, dfd, x, out=None)
+
+    F survival function.
+
+    Returns the complemented F-distribution function (the integral of the
+    density from `x` to infinity).
+
+    Parameters
+    ----------
+    dfn : array_like
+        First parameter (positive float).
+    dfd : array_like
+        Second parameter (positive float).
+    x : array_like
+        Argument (nonnegative float).
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    y : scalar or ndarray
+        The complemented F-distribution function with parameters `dfn` and
+        `dfd` at `x`.
+
+    See Also
+    --------
+    fdtr : F distribution cumulative distribution function
+    fdtri : F distribution inverse cumulative distribution function
+    scipy.stats.f : F distribution
+
+    Notes
+    -----
+    The regularized incomplete beta function is used, according to the
+    formula,
+
+    .. math::
+        F(d_n, d_d; x) = I_{d_d/(d_d + xd_n)}(d_d/2, d_n/2).
+
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtrc` directly can improve performance compared to the ``sf``
+    method of `scipy.stats.f` (see last example below).
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtrc
+    >>> fdtrc(1, 2, 1)
+    0.42264973081037427
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.5, 2., 3.])
+    >>> fdtrc(1, 2, x)
+    array([0.5527864 , 0.29289322, 0.22540333])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [1, 5, 10, 50]
+    >>> dfd_parameters = [1, 1, 2, 3]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtrc_vals = fdtrc(dfn, dfd, x)
+    ...     ax.plot(x, fdtrc_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("F distribution survival function")
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtrc`
+    directly can be much faster than calling the ``sf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).sf(x)=fdtrc(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
+    >>> fdtrc_res = fdtrc(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).sf(x)
+    >>> f_dist_res == fdtrc_res  # test that results are equal
+    True
+    )";
+
+const char *fdtri_doc = R"(
+    fdtri(dfn, dfd, p, out=None)
+
+    The `p`-th quantile of the F-distribution.
+
+    This function is the inverse of the F-distribution CDF, `fdtr`, returning
+    the `x` such that `fdtr(dfn, dfd, x) = p`.
+
+    Parameters
+    ----------
+    dfn : array_like
+        First parameter (positive float).
+    dfd : array_like
+        Second parameter (positive float).
+    p : array_like
+        Cumulative probability, in [0, 1].
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    x : scalar or ndarray
+        The quantile corresponding to `p`.
+
+    See Also
+    --------
+    fdtr : F distribution cumulative distribution function
+    fdtrc : F distribution survival function
+    scipy.stats.f : F distribution
+
+    Notes
+    -----
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtri` directly can improve performance compared to the ``ppf``
+    method of `scipy.stats.f` (see last example below).
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    `fdtri` represents the inverse of the F distribution CDF which is
+    available as `fdtr`. Here, we calculate the CDF for ``df1=1``, ``df2=2``
+    at ``x=3``. `fdtri` then returns ``3`` given the same values for `df1`,
+    `df2` and the computed CDF value.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtri, fdtr
+    >>> df1, df2 = 1, 2
+    >>> x = 3
+    >>> cdf_value =  fdtr(df1, df2, x)
+    >>> fdtri(df1, df2, cdf_value)
+    3.000000000000006
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.1, 0.4, 0.7])
+    >>> fdtri(1, 2, x)
+    array([0.02020202, 0.38095238, 1.92156863])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [50, 10, 1, 50]
+    >>> dfd_parameters = [0.5, 1, 1, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtri_vals = fdtri(dfn, dfd, x)
+    ...     ax.plot(x, fdtri_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> title = "F distribution inverse cumulative distribution function"
+    >>> ax.set_title(title)
+    >>> ax.set_ylim(0, 30)
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtri`
+    directly can be much faster than calling the ``ppf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).ppf(x)=fdtri(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 0.7
+    >>> fdtri_res = fdtri(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).ppf(x)
+    >>> f_dist_res == fdtri_res  # test that results are equal
+    True
+    )";
+
 
 const char *fresnel_doc = R"(
     fresnel(z, out=None)
@@ -7333,6 +8051,127 @@ const char *log_expit_doc = R"(
     lose all precision and return 0.
     )";
 
+const char *log_gammainc_doc = R"(
+    log_gammainc(a, x, out=None)
+
+    Logarithm of the regularized lower incomplete gamma function.
+
+    Defined as
+
+    .. math::
+
+        \log P(a, x) = \log \frac{1}{\Gamma(a)} \int_0^x t^{a-1} e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. This function is more accurate
+    than computing ``log(gammainc(a, x))`` directly.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive real parameter.
+    x : array_like
+        Nonneg real argument.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the log of the regularized lower incomplete gamma function.
+
+    See Also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincc : regularized upper incomplete gamma function
+    log_gammaincc : log of the regularized upper incomplete gamma function
+
+    Notes
+    -----
+    This function wraps the ``lgamma_p`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    This function is useful when the naive computation ``log(gammainc(a, x))``
+    underflows for small values.
+
+    >>> import numpy as np
+    >>> from scipy.special import log_gammainc, gammainc
+
+    >>> with np.errstate(divide='ignore'):
+    ...    print(np.log(gammainc(500, 30)))
+    -inf
+
+    >>> log_gammainc(500, 30)
+    -940.6700276993504
+
+    )";
+
+const char *log_gammaincc_doc = R"(
+    log_gammaincc(a, x, out=None)
+
+    Logarithm of the regularized upper incomplete gamma function.
+
+    Defined as
+
+    .. math::
+
+        \log Q(a, x) = \log \frac{1}{\Gamma(a)} \int_x^{\infty} t^{a-1} e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. This function is more accurate
+    than computing ``log(gammaincc(a, x))`` directly when the survival
+    function value is very small.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive real parameter.
+    x : array_like
+        Nonnegative real argument.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the log of the regularized upper incomplete gamma function.
+
+    See Also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincc : regularized upper incomplete gamma function
+    log_gammainc : log of the regularized lower incomplete gamma function
+
+    Notes
+    -----
+    This function wraps the ``lgamma_q`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import log_gammaincc, gammaincc
+
+    For very small survival function values, ``log(gammaincc(a, x))``
+    underflows to ``-inf`` while ``log_gammaincc`` retains precision:
+
+    >>> with np.errstate(divide='ignore'):
+    ...     print(np.log(gammaincc(10, 1000.0)))
+    -inf
+
+    >>> log_gammaincc(10, 1000.0)
+    -950.622998370156
+
+    )";
+
 const char *log_ndtr_doc = R"(
     log_ndtr(x, out=None)
 
@@ -7933,6 +8772,470 @@ const char *obl_ang1_doc = R"(
     See Also
     --------
     obl_ang1_cv
+
+    )";
+
+const char *nbdtrik_doc = R"(
+    nbdtrik(y, n, p, out=None)
+
+    Negative binomial percentile function.
+
+    Returns the inverse with respect to the parameter `k` of
+    ``y = nbdtr(k, n, p)``, the negative binomial cumulative distribution
+    function.
+
+    Parameters
+    ----------
+    y : array_like
+        The probability of `k` or fewer failures before `n` successes (float).
+    n : array_like
+        The target number of successes (positive int).
+    p : array_like
+        Probability of success in a single event (float).
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    k : scalar or ndarray
+        The maximum number of allowed failures such that `nbdtr(k, n, p) = y`.
+
+    See Also
+    --------
+    nbdtr : Cumulative distribution function of the negative binomial.
+    nbdtrc : Survival function of the negative binomial.
+    nbdtri : Inverse with respect to `p` of `nbdtr(k, n, p)`.
+    nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
+    scipy.stats.nbinom : Negative binomial distribution
+
+    Notes
+    -----
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    Compute the negative binomial cumulative distribution function for an
+    exemplary parameter set.
+
+    >>> import numpy as np
+    >>> from scipy.special import nbdtr, nbdtrik
+    >>> k, n, p = 5, 2, 0.5
+    >>> cdf_value = nbdtr(k, n, p)
+    >>> cdf_value
+    0.9375
+
+    Verify that `nbdtrik` recovers the original value for `k`.
+
+    >>> nbdtrik(cdf_value, n, p)
+    5.0
+
+    Plot the function for different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> p_parameters = [0.2, 0.5, 0.7, 0.5]
+    >>> n_parameters = [30, 30, 30, 80]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(p_parameters, n_parameters, linestyles))
+    >>> cdf_vals = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
+    >>> for parameter_set in parameters_list:
+    ...     p, n, style = parameter_set
+    ...     nbdtrik_vals = nbdtrik(cdf_vals, n, p)
+    ...     ax.plot(cdf_vals, nbdtrik_vals, label=rf"$n={n},\ p={p}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_ylabel("$k$")
+    >>> ax.set_xlabel("$CDF$")
+    >>> ax.set_title("Negative binomial percentile function")
+    >>> plt.show()
+
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. The percentile function  method ``ppf``
+    returns the result of `nbdtrik` rounded up to integers:
+
+    >>> from scipy.stats import nbinom
+    >>> q, n, p = 0.6, 5, 0.5
+    >>> nbinom.ppf(q, n, p), nbdtrik(q, n, p)
+    (5.0, 4.800428460273882)
+
+    )";
+
+const char *nbdtrin_doc = R"(
+    nbdtrin(k, y, p, out=None)
+
+    Inverse of `nbdtr` vs `n`.
+
+    Returns the inverse with respect to the parameter `n` of
+    ``y = nbdtr(k, n, p)``, the negative binomial cumulative distribution
+    function.
+
+    Parameters
+    ----------
+    k : array_like
+        The maximum number of allowed failures (nonnegative int).
+    y : array_like
+        The probability of `k` or fewer failures before `n` successes (float).
+    p : array_like
+        Probability of success in a single event (float).
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    n : scalar or ndarray
+        The number of successes `n` such that `nbdtr(k, n, p) = y`.
+
+    See Also
+    --------
+    nbdtr : Cumulative distribution function of the negative binomial.
+    nbdtri : Inverse with respect to `p` of `nbdtr(k, n, p)`.
+    nbdtrik : Inverse with respect to `k` of `nbdtr(k, n, p)`.
+
+    Notes
+    -----
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    Formula 26.5.26 of [2]_ or [3]_,
+
+    .. math::
+        \sum_{j=k + 1}^\infty {{n + j - 1}
+        \choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
+
+    is used to reduce calculation of the cumulative distribution function to
+    that of a regularized incomplete beta :math:`I`.
+
+    Computation of `n` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `n`.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.E24
+
+    Examples
+    --------
+    Compute the negative binomial cumulative distribution function for an
+    exemplary parameter set.
+
+    >>> from scipy.special import nbdtr, nbdtrin
+    >>> k, n, p = 5, 2, 0.5
+    >>> cdf_value = nbdtr(k, n, p)
+    >>> cdf_value
+    0.9375
+
+    Verify that `nbdtrin` recovers the original value for `n` up to floating
+    point accuracy.
+
+    >>> nbdtrin(k, cdf_value, p)
+    2.0
+    )";
+
+const char *ncfdtrinc_doc = R"(
+    ncfdtrinc(dfn, dfd, p, f, out=None)
+
+    Calculate non-centrality parameter for non-central F distribution.
+
+    This is the inverse with respect to `nc` of `ncfdtr`.
+    See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares. Range (0, inf).
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares. Range (0, inf).
+    p : array_like
+        Value of the cumulative distribution function. Must be in the
+        range [0, 1].
+    f : array_like
+        Quantiles, i.e., the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    nc : scalar or ndarray
+        Noncentrality parameter.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+
+    Notes
+    -----
+    This function calculates the non-centrality parameter of the
+    non-central F distribution given a probability, quantile, and degrees
+    of freedom using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtrinc
+
+    Compute the CDF for several values of `nc`:
+
+    >>> nc = [0.5, 1.5, 2.0]
+    >>> p = ncfdtr(2, 3, nc, 15)
+    >>> p
+    array([ 0.96309246,  0.94327955,  0.93304098])
+
+    Compute the inverse. We recover the values of `nc`, as expected:
+
+    >>> ncfdtrinc(2, 3, p, 15)
+    array([ 0.5,  1.5,  2. ])
+
+    )";
+
+const char *nctdtr_doc = R"(
+    nctdtr(df, nc, t, out=None)
+
+    Cumulative distribution function of the non-central `t` distribution.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution. Should be in range (0, inf).
+    nc : array_like
+        Noncentrality parameter.
+    t : array_like
+        Quantiles, i.e., the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    cdf : scalar or ndarray
+        The calculated CDF. If all inputs are scalar, the return will be a
+        float. Otherwise, it will be an array.
+
+    See Also
+    --------
+    nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
+    nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
+    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Notes
+    -----
+    This function calculates the CDF of the non-central t distribution using
+    the Boost Math C++ library [1]_.
+
+    Note that the argument order of `nctdtr` is different from that of the
+    similar ``cdf`` method of `scipy.stats.nct`: `t` is the last
+    parameter of `nctdtr` but the first parameter of ``scipy.stats.nct.cdf``.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import special
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Plot the CDF of the non-central t distribution, for nc=0. Compare with the
+    t-distribution from scipy.stats:
+
+    >>> x = np.linspace(-5, 5, num=500)
+    >>> df = 3
+    >>> nct_stats = stats.t.cdf(x, df)
+    >>> nct_special = special.nctdtr(df, 0, x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, nct_stats, 'b-', lw=3)
+    >>> ax.plot(x, nct_special, 'r-')
+    >>> plt.show()
+
+    )";
+
+const char *nctdtridf_doc = R"(
+    nctdtridf(p, nc, t, out=None)
+
+    Calculate degrees of freedom for non-central t distribution.
+
+    See `nctdtr` for more details.
+
+    Parameters
+    ----------
+    p : array_like
+        CDF values, in range (0, 1].
+    nc : array_like
+        Noncentrality parameter. Should be in range (-1e6, 1e6).
+    t : array_like
+        Quantiles, i.e., the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    df : scalar or ndarray
+        The degrees of freedom. If all inputs are scalar, the return will be a
+        float. Otherwise, it will be an array.
+
+    See Also
+    --------
+    nctdtr :  CDF of the non-central `t` distribution.
+    nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
+    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Notes
+    -----
+    This function calculates the degrees of freedom of the non-central t
+    distribution given a probability, quantile and non-centrality parameter
+    using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtridf
+
+    Compute the CDF for several values of `df`:
+
+    >>> df = [1, 2, 3]
+    >>> p = nctdtr(df, 0.25, 1)
+    >>> p
+    array([0.67491974, 0.716464  , 0.73349456])
+
+    Compute the inverse. We recover the values of `df`, as expected:
+
+    >>> nctdtridf(p, 0.25, 1)
+    array([1., 2., 3.])
+
+    )";
+
+const char *nctdtrinc_doc = R"(
+    nctdtrinc(df, p, t, out=None)
+
+    Calculate non-centrality parameter for non-central t distribution.
+
+    See `nctdtr` for more details.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution. Should be in range (0, inf).
+    p : array_like
+        CDF values, in range (0, 1].
+    t : array_like
+        Quantiles, i.e., the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    nc : scalar or ndarray
+        Noncentrality parameter
+
+    See Also
+    --------
+    nctdtr :  CDF of the non-central `t` distribution.
+    nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
+    nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
+
+    Notes
+    -----
+    This function calculates the non-centrality parameter of the
+    non-central t distribution given a probability, quantile and
+    degrees of freedom using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtrinc
+
+    Compute the CDF for several values of `nc`:
+
+    >>> nc = [0.5, 1.5, 2.5]
+    >>> p = nctdtr(3, nc, 1.5)
+    >>> p
+    array([0.77569497, 0.45524533, 0.1668691 ])
+
+    Compute the inverse. We recover the values of `nc`, as expected:
+
+    >>> nctdtrinc(3, p, 1.5)
+    array([0.5, 1.5, 2.5])
+
+    )";
+
+const char *nctdtrit_doc = R"(
+    nctdtrit(df, nc, p, out=None)
+
+    Inverse cumulative distribution function of the non-central t distribution.
+
+    See `nctdtr` for more details.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution. Should be in range (0, inf).
+    nc : array_like
+        Noncentrality parameter.
+    p : array_like
+        CDF values, in range (0, 1].
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    t : scalar or ndarray
+        Quantiles
+
+    See Also
+    --------
+    nctdtr :  CDF of the non-central `t` distribution.
+    nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
+    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Notes
+    -----
+    This function calculates the quantile of the non-central t distribution using
+    the Boost Math C++ library [1]_.
+
+    Note that the argument order of `nctdtrit` is different from that of the
+    similar ``ppf`` method of `scipy.stats.nct`: `t` is the last
+    parameter of `nctdtrit` but the first parameter of ``scipy.stats.nct.ppf``.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtrit
+
+    Compute the CDF for several values of `t`:
+
+    >>> t = [0.5, 1, 1.5]
+    >>> p = nctdtr(3, 1, t)
+    >>> p
+    array([0.29811049, 0.46922687, 0.6257559 ])
+
+    Compute the inverse. We recover the values of `t`, as expected:
+
+    >>> nctdtrit(3, 1, p)
+    array([0.5, 1. , 1.5])
 
     )";
 
@@ -8592,7 +9895,7 @@ const char *digammainv_doc = R"(
 
     Notes
     -----
-    .. versionadded:: 1.19.0
+    .. versionadded:: 2.0.0
 
     Examples
     --------
@@ -9047,6 +10350,211 @@ const char *spence_doc = R"(
     >>> ax.set_title('spence(x)')
     >>> plt.show()
 )";
+
+const char *stdtr_doc = R"(
+    stdtr(df, t, out=None)
+
+    Student t distribution cumulative distribution function.
+
+    Returns the integral:
+
+    .. math::
+        \frac{\Gamma((df+1)/2)}{\sqrt{\pi df} \Gamma(df/2)}
+        \int_{-\infty}^t (1+x^2/df)^{-(df+1)/2}\, dx
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom
+    t : array_like
+        Upper bound of the integral
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the Student t CDF at t
+
+    See Also
+    --------
+    stdtridf : inverse of stdtr with respect to `df`
+    stdtrit : inverse of stdtr with respect to `t`
+    scipy.stats.t : student t distribution
+
+    Notes
+    -----
+    The student t distribution is also available as `scipy.stats.t`.
+    Calling `stdtr` directly can improve performance compared to the
+    ``cdf`` method of `scipy.stats.t` (see last example below).
+
+    The function is computed using the Boost Math library [1]_, which
+    relies on the incomplete beta function.
+
+    References
+    ----------
+    .. [1] Boost C++ Libraries, https://www.boost.org/
+
+    Examples
+    --------
+    Calculate the function for ``df=3`` at ``t=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import stdtr
+    >>> import matplotlib.pyplot as plt
+    >>> stdtr(3, 1)
+    0.8044988905221148
+
+    Plot the function for three different degrees of freedom.
+
+    >>> x = np.linspace(-10, 10, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> parameters = [(1, "solid"), (3, "dashed"), (10, "dotted")]
+    >>> for (df, linestyle) in parameters:
+    ...     ax.plot(x, stdtr(df, x), ls=linestyle, label=f"$df={df}$")
+    >>> ax.legend()
+    >>> ax.set_title("Student t distribution cumulative distribution function")
+    >>> plt.show()
+
+    The function can be computed for several degrees of freedom at the same
+    time by providing a NumPy array or list for `df`:
+
+    >>> stdtr([1, 2, 3], 1)
+    array([0.75      , 0.78867513, 0.80449889])
+
+    It is possible to calculate the function at several points for several
+    different degrees of freedom simultaneously by providing arrays for `df`
+    and `t` with shapes compatible for broadcasting. Compute `stdtr` at
+    4 points for 3 degrees of freedom resulting in an array of shape 3x4.
+
+    >>> dfs = np.array([[1], [2], [3]])
+    >>> t = np.array([2, 4, 6, 8])
+    >>> dfs.shape, t.shape
+    ((3, 1), (4,))
+
+    >>> stdtr(dfs, t)
+    array([[0.85241638, 0.92202087, 0.94743154, 0.96041658],
+           [0.90824829, 0.97140452, 0.98666426, 0.99236596],
+           [0.93033702, 0.98599577, 0.99536364, 0.99796171]])
+
+    The t distribution is also available as `scipy.stats.t`. Calling `stdtr`
+    directly can be much faster than calling the ``cdf`` method of
+    `scipy.stats.t`. To get the same results, one must use the following
+    parametrization: ``scipy.stats.t(df).cdf(x) = stdtr(df, x)``.
+
+    >>> from scipy.stats import t
+    >>> df, x = 3, 1
+    >>> stdtr_result = stdtr(df, x)  # this can be faster than below
+    >>> stats_result = t(df).cdf(x)
+    >>> stats_result == stdtr_result  # test that results are equal
+    True
+    )";
+
+const char *stdtrit_doc = R"(
+    stdtrit(df, p, out=None)
+
+    The `p`-th quantile of the student t distribution.
+
+    This function is the inverse of the student t distribution cumulative
+    distribution function (CDF), returning `t` such that `stdtr(df, t) = p`.
+
+    Returns the argument `t` such that stdtr(df, t) is equal to `p`.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom
+    p : array_like
+        Probability
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    t : scalar or ndarray
+        Value of `t` such that ``stdtr(df, t) == p``
+
+    See Also
+    --------
+    stdtr : Student t CDF
+    stdtridf : inverse of stdtr with respect to `df`
+    scipy.stats.t : Student t distribution
+
+    Notes
+    -----
+    The student t distribution is also available as `scipy.stats.t`. Calling
+    `stdtrit` directly can improve performance compared to the ``ppf``
+    method of `scipy.stats.t` (see last example below).
+
+    The function is computed using the Boost Math library [1]_, which
+    relies on the incomplete beta function.
+
+    References
+    ----------
+    .. [1] Boost C++ Libraries, https://www.boost.org/
+
+    Examples
+    --------
+    `stdtrit` represents the inverse of the student t distribution CDF which
+    is available as `stdtr`. Here, we calculate the CDF for ``df`` at
+    ``x=1``. `stdtrit` then returns ``1`` up to floating point errors
+    given the same value for `df` and the computed CDF value.
+
+    >>> import numpy as np
+    >>> from scipy.special import stdtr, stdtrit
+    >>> import matplotlib.pyplot as plt
+    >>> df = 3
+    >>> x = 1
+    >>> cdf_value = stdtr(df, x)
+    >>> stdtrit(df, cdf_value)
+    0.9999999994418539
+
+    Plot the function for three different degrees of freedom.
+
+    >>> x = np.linspace(0, 1, 1000)
+    >>> parameters = [(1, "solid"), (2, "dashed"), (5, "dotted")]
+    >>> fig, ax = plt.subplots()
+    >>> for (df, linestyle) in parameters:
+    ...     ax.plot(x, stdtrit(df, x), ls=linestyle, label=f"$df={df}$")
+    >>> ax.legend()
+    >>> ax.set_ylim(-10, 10)
+    >>> ax.set_title("Student t distribution quantile function")
+    >>> plt.show()
+
+    The function can be computed for several degrees of freedom at the same
+    time by providing a NumPy array or list for `df`:
+
+    >>> stdtrit([1, 2, 3], 0.7)
+    array([0.72654253, 0.6172134 , 0.58438973])
+
+    It is possible to calculate the function at several points for several
+    different degrees of freedom simultaneously by providing arrays for `df`
+    and `p` with shapes compatible for broadcasting. Compute `stdtrit` at
+    4 points for 3 degrees of freedom resulting in an array of shape 3x4.
+
+    >>> dfs = np.array([[1], [2], [3]])
+    >>> p = np.array([0.2, 0.4, 0.7, 0.8])
+    >>> dfs.shape, p.shape
+    ((3, 1), (4,))
+
+    >>> stdtrit(dfs, p)
+    array([[-1.37638192, -0.3249197 ,  0.72654253,  1.37638192],
+           [-1.06066017, -0.28867513,  0.6172134 ,  1.06066017],
+           [-0.97847231, -0.27667066,  0.58438973,  0.97847231]])
+
+    The t distribution is also available as `scipy.stats.t`. Calling `stdtrit`
+    directly can be much faster than calling the ``ppf`` method of
+    `scipy.stats.t`. To get the same results, one must use the following
+    parametrization: ``scipy.stats.t(df).ppf(x) = stdtrit(df, x)``.
+
+    >>> from scipy.stats import t
+    >>> df, x = 3, 0.5
+    >>> stdtrit_result = stdtrit(df, x)  # this can be faster than below
+    >>> stats_result = t(df).ppf(x)
+    >>> stats_result == stdtrit_result  # test that results are equal
+    True
+    )";
+
 
 const char *struve_h_doc = R"(
     struve(v, x, out=None)
