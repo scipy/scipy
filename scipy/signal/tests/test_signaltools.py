@@ -2839,12 +2839,14 @@ class _TestFiltFilt:
             sos = xp.asarray(sos)
             return sosfiltfilt(sos, x, axis, padtype, padlen)
 
+    @skip_xp_backends('torch', reason='negative strides')
     def test_basic(self, xp):
         zpk = tf2zpk(xp.asarray([1., 2, 3]), xp.asarray([1., 2, 3]))
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
         atol= 4e-9 if is_cupy(xp) else 5.28e-11
         xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=atol)
 
+    @skip_xp_backends('torch', reason='negative strides')
     def test_sine(self, xp):
         rate = 2000
         t = xp.linspace(0, 1.0, rate + 1)
@@ -2855,7 +2857,7 @@ class _TestFiltFilt:
 
         zpk = butter(8, xp.asarray(0.125), output='zpk')
         # r is the magnitude of the largest pole.
-        r = float(xp.max(xp.abs(zpk[1])))
+        r = np.abs(zpk[1]).max()
         eps = 1e-5
         # n estimates the number of steps for the
         # transient to decay by a factor of eps.
@@ -2864,14 +2866,14 @@ class _TestFiltFilt:
         # High order lowpass filter...
         y = self.filtfilt(zpk, x, padlen=n, xp=xp)
         # Result should be just xlow.
-        err = float(xp.max(xp.abs(y - xlow)))
+        err = np.abs(y - xlow).max()
         assert err < 1e-4
 
         # A 2D case.
-        x2d = xp.stack((xlow, xlow + xhigh))
+        x2d = xp.asarray(np.vstack([xlow, xlow + xhigh]))
         y2d = self.filtfilt(zpk, x2d, padlen=n, axis=1, xp=xp)
         assert y2d.shape == x2d.shape
-        err = float(xp.max(xp.abs(y2d - xlow)))
+        err = np.abs(y2d - xlow).max()
         assert err < 1e-4
 
         # Use the previous result to check the use of the axis keyword.
@@ -2879,6 +2881,7 @@ class _TestFiltFilt:
         y2dt = self.filtfilt(zpk, x2d.T, padlen=n, axis=0, xp=xp)
         xp_assert_equal(y2d, y2dt.T)
 
+    @skip_xp_backends('torch', reason='negative strides')
     def test_axis(self, xp):
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
@@ -2936,6 +2939,7 @@ class TestFiltFilt(_TestFiltFilt):
 class TestSOSFiltFilt(_TestFiltFilt):
     filtfilt_kind = 'sos'
 
+    @skip_xp_backends('torch', reason='negative strides')
     def test_equivalence(self, xp):
         """Test equivalence between sosfiltfilt and filtfilt"""
         x_np = np.random.RandomState(0).randn(1000)
@@ -2945,9 +2949,7 @@ class TestSOSFiltFilt(_TestFiltFilt):
             b, a = zpk2tf(*zpk)
             sos = zpk2sos(*zpk)
 
-            # copy: NumPy filtfilt output has negative strides, which torch
-            # cannot convert (pytorch/pytorch#59786)
-            y = filtfilt(b, a, x_np).copy()
+            y = filtfilt(b, a, x_np)
             b, a, sos, y = map(xp.asarray, (b, a, sos, y))
             y_sos = sosfiltfilt(sos, x)
             xp_assert_close(y, y_sos, atol=1e-12, err_msg=f'order={order}')
