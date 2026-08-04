@@ -232,6 +232,8 @@ special_ufuncs = [
     "modstruve",
     "nbdtrik",
     "nbdtrin",
+    "ncfdtr",
+    "ncfdtri",
     "ncfdtrinc",
     "nctdtr",
     "nctdtridf",
