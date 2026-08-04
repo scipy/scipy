@@ -48,8 +48,8 @@ import pytest
 import scipy.spatial.distance
 
 from scipy.spatial.distance import (
-    squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
-    _validate_vector, _METRICS_NAMES)
+    squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y)
+from scipy.spatial.distance._distance import _validate_vector, _METRICS_NAMES
 
 # these were missing: chebyshev cityblock
 # jensenshannon  and seuclidean are referenced by string name.
