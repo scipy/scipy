@@ -38,6 +38,14 @@ the organization section.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Design & Architecture
+
+   api-dev/nan_policy
+   api-dev/special_ufuncs
+   api-dev/array_api
+
+.. toctree::
+   :maxdepth: 1
    :caption: SciPy Organization
 
    core-dev/index

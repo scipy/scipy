@@ -301,6 +301,14 @@ def _validate_weights(w, dtype=np.float64):
     return w
 
 
+def _check_shape(u, v, w=None):
+    if u.shape != v.shape:
+        raise ValueError('Input vectors must have the same shape/dimension.')
+    if w is not None:
+        if w.shape != u.shape:
+            raise ValueError('Input weights must have the same shape/dimension as the input vectors.')
+
+
 @_transition_to_rng('seed', position_num=2, replace_doc=False)
 def directed_hausdorff(u, v, rng=0):
     """
@@ -649,7 +657,10 @@ def correlation(u, v, w=None, centered=True):
         raise TypeError(msg)
     if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
         w = w / w.sum()
+    else:
+        _check_shape(u, v)
     if centered:
         if w is not None:
             umu = np.dot(u, w)
@@ -885,13 +896,15 @@ def jaccard(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-
     unequal = np.bitwise_xor(u != 0, v != 0)
     nonzero = np.bitwise_or(u != 0, v != 0)
     if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
         unequal = w * unequal
         nonzero = w * nonzero
+    else:
+        _check_shape(u, v)
     a = np.float64(unequal.sum())
     b = np.float64(nonzero.sum())
     return (a / b) if b != 0 else np.float64(0)
@@ -984,10 +997,13 @@ def cityblock(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    l1_diff = abs(u - v)
     if w is not None:
         w = _validate_weights(w)
-        l1_diff = w * l1_diff
+        _check_shape(u, v, w)
+        l1_diff = w * abs(u - v)
+    else:
+        _check_shape(u, v)
+        l1_diff = abs(u - v)
     return l1_diff.sum()
 
 
@@ -1032,7 +1048,10 @@ def mahalanobis(u, v, VI):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+    _check_shape(u, v)
     VI = np.atleast_2d(VI)
+    if VI.shape != (u.shape[0], u.shape[0]):
+        raise ValueError('VI must be a square matrix of the same dimension as u and v.')
     delta = u - v
     m = np.dot(np.dot(delta, VI), delta)
     return np.sqrt(m)
@@ -1095,8 +1114,11 @@ def chebyshev(u, v, w=None):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
         return max((w > 0) * abs(u - v))
-    return max(abs(u - v))
+    else:
+        _check_shape(u, v)
+        return max(abs(u - v))
 
 
 def braycurtis(u, v, w=None):
@@ -1138,12 +1160,15 @@ def braycurtis(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v, dtype=np.float64)
-    l1_diff = abs(u - v)
-    l1_sum = abs(u + v)
     if w is not None:
         w = _validate_weights(w)
-        l1_diff = w * l1_diff
-        l1_sum = w * l1_sum
+        _check_shape(u, v, w)
+        l1_diff = w * abs(u - v)
+        l1_sum = w * abs(u + v)
+    else:
+        _check_shape(u, v)
+        l1_diff = abs(u - v)
+        l1_sum = abs(u + v)
     return l1_diff.sum() / l1_sum.sum()
 
 
@@ -1191,6 +1216,9 @@ def canberra(u, v, w=None):
     v = _validate_vector(v, dtype=np.float64)
     if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
+    else:
+        _check_shape(u, v)
     with np.errstate(invalid='ignore'):
         abs_uv = abs(u - v)
         abs_u = abs(u)
@@ -1332,6 +1360,9 @@ def yule(u, v, w=None):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
+    else:
+        _check_shape(u, v)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     half_R = ntf * nft
     if half_R == 0:
@@ -1391,6 +1422,9 @@ def dice(u, v, w=None):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
+    else:
+        _check_shape(u, v)
     if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
     else:
@@ -1451,6 +1485,9 @@ def rogerstanimoto(u, v, w=None):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
+    else:
+        _check_shape(u, v)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
 
@@ -1499,16 +1536,19 @@ def russellrao(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
-        n = float(len(u))
-    elif w is None:
-        ntt = (u * v).sum()
-        n = float(len(u))
-    else:
+    if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
         ntt = (u * v * w).sum()
         n = w.sum()
+    else:
+        _check_shape(u, v)
+        if u.dtype == v.dtype == bool:
+            ntt = (u & v).sum()
+            n = float(len(u))
+        else:
+            ntt = (u * v).sum()
+            n = float(len(u))
     return float(n - ntt) / n
 
 
@@ -1557,13 +1597,16 @@ def sokalsneath(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
-    elif w is None:
-        ntt = (u * v).sum()
-    else:
+    if w is not None:
         w = _validate_weights(w)
+        _check_shape(u, v, w)
         ntt = (u * v * w).sum()
+    else:
+        _check_shape(u, v)
+        if u.dtype == v.dtype == bool:
+            ntt = (u & v).sum()
+        else:
+            ntt = (u * v).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
     denom = np.array(ntt + 2.0 * (ntf + nft))
     if not denom.any():

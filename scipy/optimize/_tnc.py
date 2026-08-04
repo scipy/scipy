@@ -137,11 +137,23 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         offsets are (up+low)/2 for interval bounded variables
         and x for the others.
     messages : int, optional
-        Bit mask used to select messages display during
-        minimization values defined in the MSGS dict. Defaults to
-        MGS_ALL.
+        Bit mask used to select messages displayed during minimization.
+        Values 0 to 5 map to the following combinations:
+
+        - 0: MSG_NONE (No messages)
+        - 1: MSG_ITER (One line per iteration)
+        - 2: MSG_INFO (Informational messages)
+        - 3: MSG_VERS (Version info)
+        - 4: MSG_EXIT (Exit reasons)
+        - 5: MSG_ALL (All messages)
+
+        Alternatively, you can pass the bit mask value directly (e.g.,
+        15 for MSG_ALL, or combinations like MSG_ITER + MSG_INFO).
+        Defaults to MSG_ALL.
     disp : int, optional
-        Integer interface to messages. 0 = no message, 5 = all messages
+        Integer interface to messages. If specified, it takes precedence
+        over `messages` and is used directly as the messages bit mask
+        (e.g., 0 for no messages, 15 for all messages).
     maxCGit : int, optional
         Maximum number of hessian*vector evaluations per main
         iteration. If maxCGit == 0, the direction chosen is
