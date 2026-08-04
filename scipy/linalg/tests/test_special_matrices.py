@@ -149,8 +149,6 @@ class TestCompanion:
 
 
 @make_xp_test_case(block_diag)
-@pytest.mark.skip_xp_meta(
-    reason='internal host transfer (`int(xp.sum(...))` shape math in block_diag)')
 class TestBlockDiag:
     def test_basic(self, xp):
         dtype = xp.asarray(1).dtype
@@ -174,7 +172,6 @@ class TestBlockDiag:
         actual = block_diag(xp.asarray([[1.]]), xp.asarray([[1j]]))
         desired = xp.asarray([[1, 0], [0, 1j]])
         xp_assert_equal(actual, desired)
-
 
     def test_scalar_and_1d_args(self, xp):
         a = block_diag(xp.asarray(1))

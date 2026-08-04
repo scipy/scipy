@@ -2334,7 +2334,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, *,
                     else xp.count_nonzero((bin_edges[0] <= a) & (a <= bin_edges[-1])))
     extrapoints = a.shape[0] - binnedpoints
 
-    lowerlimit = xp.asarray(defaultlimits[0], dtype=a.dtype)[()]
+    lowerlimit = xp.asarray(defaultlimits[0], dtype=a.dtype, device=xp_device(a))[()]
 
     hist = xp.asarray(hist, dtype=a.dtype)
     if density:
@@ -3199,7 +3199,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if interpolation in {'lower', 'midpoint', 'higher', 'nearest'}:
         interpolation = '_' + interpolation
 
-    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp))
+    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp),
+                     device=xp_result_device(rng, x))
     pct = stats.quantile(x, rng, axis=-1, method=interpolation, keepdims=True)
     out = pct[..., 1:2] - pct[..., 0:1]
 

@@ -1973,8 +1973,6 @@ def dB(x):
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestButtord:
 
-    @pytest.mark.skip_xp_meta(
-        reason='internal host transfer (filter-order math on default-device wp/ws)')
     def test_lowpass(self, xp):
         wp = 0.2
         ws = 0.3
@@ -1991,8 +1989,6 @@ class TestButtord:
         xp_assert_close(Wn,
                         xp.asarray(2.0002776782743284e-01), rtol=1e-15, check_0d=False)
 
-    @pytest.mark.skip_xp_meta(
-        reason='internal host transfer (filter-order math on default-device wp/ws)')
     def test_highpass(self, xp):
         wp = 0.3
         ws = 0.2
@@ -2051,8 +2047,6 @@ class TestButtord:
             rtol=1e-6
         )
 
-    @pytest.mark.skip_xp_meta(
-        reason='internal host transfer (filter-order math on default-device wp/ws)')
     def test_analog(self, xp):
         wp = 200.
         ws = 600.
@@ -2198,8 +2192,6 @@ class TestCheb1ord:
         assert N == 10
         xp_assert_close(Wn, xp.asarray([0.14758232569947785, 0.6]), rtol=1e-5)
 
-    @pytest.mark.skip_xp_meta(
-        reason='internal host transfer (filter-order math on default-device wp/ws)')
     def test_analog(self, xp):
         wp = 700
         ws = 100.
@@ -2271,8 +2263,6 @@ class TestCheb1ord:
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestCheb2ord:
 
-    @pytest.mark.skip_xp_meta(
-        reason='internal host transfer (filter-order math on default-device wp/ws)')
     def test_lowpass(self, xp):
         wp = 0.2
         ws = 0.3
@@ -2288,8 +2278,6 @@ class TestCheb2ord:
         assert N == 8
         xp_assert_close(Wn, xp.asarray(0.28647639976553163), rtol=1e-15, check_0d=False)
 
-    @pytest.mark.skip_xp_meta(
-        reason='internal host transfer (filter-order math on default-device wp/ws)')
     def test_highpass(self, xp):
         wp = 0.3
         ws = 0.2
@@ -2355,8 +2343,6 @@ class TestCheb2ord:
         xp_assert_close(Wn, xp.asarray([1.673740595370124e+01, 5.974641487254268e+01]),
                         rtol=1e-15)
 
-    @pytest.mark.skip_xp_meta(
-        reason='internal host transfer (filter-order math on default-device wp/ws)')
     def test_fs_param(self, xp):
         wp = 150
         ws = 100.
