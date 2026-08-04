@@ -745,6 +745,20 @@ double boost_nbdtrik(double y, double n, double p) { return nbdtrik_double(y, n,
 
 double boost_nbdtrin(double k, double y, double p) { return nbinom_invn_double(k, y, p); }
 
+float boost_ncfdtr_float(float dfn, float dfd, float nc, float f) { return ncf_cdf_float(dfn, dfd, nc, f); }
+
+double boost_ncfdtr_double(double dfn, double dfd, double nc, double f)
+{
+    return ncf_cdf_double(dfn, dfd, nc, f);
+}
+
+float boost_ncfdtri_float(float dfn, float dfd, float nc, float p) { return ncf_ppf_float(dfn, dfd, nc, p); }
+
+double boost_ncfdtri_double(double dfn, double dfd, double nc, double p)
+{
+    return ncf_ppf_double(dfn, dfd, nc, p);
+}
+
 double boost_ncfdtrinc(double dfn, double dfd, double p, double f)
 {
     return ncf_find_non_centrality_double(dfn, dfd, p, f);

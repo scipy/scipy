@@ -1413,6 +1413,10 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_log_gammaincc_double(double a, double x) nogil
     double boost_nbdtrik(double y, double n, double p) nogil
     double boost_nbdtrin(double k, double y, double p) nogil
+    float boost_ncfdtr_float(float dfn, float dfd, float nc, float f) nogil
+    double boost_ncfdtr_double(double dfn, double dfd, double nc, double f) nogil
+    float boost_ncfdtri_float(float dfn, float dfd, float nc, float p) nogil
+    double boost_ncfdtri_double(double dfn, double dfd, double nc, double p) nogil
     double boost_ncfdtrinc(double dfn, double dfd, double p, double f) nogil
     float boost_nctdtr_float(float df, float nc, float t) nogil
     double boost_nctdtr_double(double df, double nc, double t) nogil
@@ -2756,9 +2760,9 @@ cpdef double nbdtrik(double x0, double x1, double x2) noexcept nogil:
 cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtr"""
     if df_number_t is float:
-        return (<float(*)(float, float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_cdf_float)(x0, x1, x2, x3)
+        return boost_ncfdtr_float(x0, x1, x2, x3)
     elif df_number_t is double:
-        return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_cdf_double)(x0, x1, x2, x3)
+        return boost_ncfdtr_double(x0, x1, x2, x3)
 
 cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtr"""
@@ -2788,9 +2792,9 @@ cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
 cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtri"""
     if df_number_t is float:
-        return (<float(*)(float, float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_ppf_float)(x0, x1, x2, x3)
+        return boost_ncfdtri_float(x0, x1, x2, x3)
     elif df_number_t is double:
-        return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_ppf_double)(x0, x1, x2, x3)
+        return boost_ncfdtri_double(x0, x1, x2, x3)
 
 cpdef double ncfdtridfd(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtridfd"""

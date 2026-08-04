@@ -208,6 +208,8 @@ extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *nbdtrik_doc;
 extern const char *nbdtrin_doc;
+extern const char *ncfdtr_doc;
+extern const char *ncfdtri_doc;
 extern const char *ncfdtrinc_doc;
 extern const char *nctdtr_doc;
 extern const char *nctdtridf_doc;
@@ -704,6 +706,18 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::ddd_d>(nbinom_invn_double)},
                           "nbdtrin", nbdtrin_doc);
     PyModule_AddObjectRef(module, "nbdtrin", nbdtrin);
+
+    PyObject *ncfdtr =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(ncf_cdf_float),
+                           static_cast<xsf::numpy::dddd_d>(ncf_cdf_double)},
+                          "ncfdtr", ncfdtr_doc);
+    PyModule_AddObjectRef(module, "ncfdtr", ncfdtr);
+
+    PyObject *ncfdtri =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(ncf_ppf_float),
+                           static_cast<xsf::numpy::dddd_d>(ncf_ppf_double)},
+                          "ncfdtri", ncfdtri_doc);
+    PyModule_AddObjectRef(module, "ncfdtri", ncfdtri);
 
     PyObject *ncfdtrinc =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(ncf_find_non_centrality_float),
