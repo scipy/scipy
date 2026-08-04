@@ -311,18 +311,6 @@
             "cephes_nbdtri_wrap": "ppd->d"
         }
     },
-    "ncfdtr": {
-        "boost_special_functions.h++": {
-            "ncf_cdf_float": "ffff->f",
-            "ncf_cdf_double": "dddd->d"
-        }
-    },
-    "ncfdtri": {
-        "boost_special_functions.h++": {
-            "ncf_ppf_float": "ffff->f",
-            "ncf_ppf_double": "dddd->d"
-        }
-    },
     "ncfdtridfd": {
         "_cdflib_wrappers.pxd": {
             "ncfdtridfd": "dddd->d"
