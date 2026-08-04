@@ -1935,7 +1935,7 @@ def normalize(b, a):
         raise ValueError("Numerator polynomial must be rank-1 or"
                          " rank-2 array.")
     if xp.all(den == 0):
-        raise ValueError("Denominator must have at least on nonzero element.")
+        raise ValueError("Denominator must have at least one nonzero element.")
 
     # Trim leading zeros in denominator, leave at least one.
     den = _pu._trim_zeros(den, 'f')
