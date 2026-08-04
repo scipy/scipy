@@ -1121,7 +1121,7 @@ ctypedef float complex float_complex
 ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
-cdef extern from r"xsf_wrappers.h":
+cdef extern from r"cython_special_wrappers.h":
     double special_bei(double) nogil
     double special_beip(double) nogil
     double special_ber(double) nogil
@@ -1350,6 +1350,9 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_struve_h(double v, double z) nogil
     double xsf_struve_l(double v, double z) nogil
 
+    double xsf_wrightomega(double z) nogil
+    npy_cdouble xsf_cwrightomega(npy_cdouble z) nogil
+
     # Stats
 
     double xsf_bdtr(double k, int n, double p) nogil
@@ -1361,10 +1364,7 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_gdtr(double a, double b, double x) nogil
     double xsf_gdtrc(double a, double b, double x) nogil
     double xsf_kolmogorov(double x) nogil
-    double xsf_kolmogc(double x) nogil
     double xsf_kolmogi(double x) nogil
-    double xsf_kolmogci(double x) nogil
-    double xsf_kolmogp(double x) nogil
     double xsf_nbdtr(int k, int n, double p) nogil
     double xsf_nbdtrc(int k, int n, double p) nogil
     double xsf_nbdtri(int k, int n, double p) nogil
@@ -1390,10 +1390,40 @@ cdef extern from r"xsf_wrappers.h":
 
     double special_boxcox(double x, double lmbda) nogil
     double special_boxcox1p(double x, double lmbda) nogil
+    npy_cdouble special_chyp0f1(double v, npy_cdouble z) nogil
+    double special_hyp0f1(double v, double z) nogil
     double special_hyperu(double a, double b, double x) nogil
     double special_inv_boxcox(double x, double lmbda) nogil
     double special_inv_boxcox1p(double x, double lmbda) nogil
     double special_ndtri_exp(double x) nogil
+
+    double boost_bdtrik(double y, double n, double p) nogil
+    double boost_bdtrin(double k, double y, double p) nogil
+    float boost_erfinv_float(float x) nogil
+    double boost_erfinv_double(double x) nogil
+    float boost_fdtr_float(float dfn, float dfd, float x) nogil
+    double boost_fdtr_double(double dfn, double dfd, double x) nogil
+    float boost_fdtrc_float(float dfn, float dfd, float x) nogil
+    double boost_fdtrc_double(double dfn, double dfd, double x) nogil
+    float boost_fdtri_float(float dfn, float dfd, float p) nogil
+    double boost_fdtri_double(double dfn, double dfd, double p) nogil
+    float boost_log_gammainc_float(float a, float x) nogil
+    double boost_log_gammainc_double(double a, double x) nogil
+    float boost_log_gammaincc_float(float a, float x) nogil
+    double boost_log_gammaincc_double(double a, double x) nogil
+    double boost_nbdtrik(double y, double n, double p) nogil
+    double boost_nbdtrin(double k, double y, double p) nogil
+    double boost_ncfdtrinc(double dfn, double dfd, double p, double f) nogil
+    float boost_nctdtr_float(float df, float nc, float t) nogil
+    double boost_nctdtr_double(double df, double nc, double t) nogil
+    double boost_nctdtridf(double p, double nc, double t) nogil
+    double boost_nctdtrinc(double df, double p, double t) nogil
+    float boost_nctdtrit_float(float df, float nc, float p) nogil
+    double boost_nctdtrit_double(double df, double nc, double p) nogil
+    float boost_stdtr_float(float df, float t) nogil
+    double boost_stdtr_double(double df, double t) nogil
+    float boost_stdtrit_float(float df, float p) nogil
+    double boost_stdtrit_double(double df, double p) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -1626,14 +1656,6 @@ cdef _proto_fdtridfd_t *_proto_fdtridfd_t_var = &_func_fdtridfd
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
 
-from ._hyp0f1 cimport _hyp0f1_cmplx as _func__hyp0f1_cmplx
-ctypedef double complex _proto__hyp0f1_cmplx_t(double, double complex) noexcept nogil
-cdef _proto__hyp0f1_cmplx_t *_proto__hyp0f1_cmplx_t_var = &_func__hyp0f1_cmplx
-
-from ._hyp0f1 cimport _hyp0f1_real as _func__hyp0f1_real
-ctypedef double _proto__hyp0f1_real_t(double, double) noexcept nogil
-cdef _proto__hyp0f1_real_t *_proto__hyp0f1_real_t_var = &_func__hyp0f1_real
-
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_cdouble _func_chyp1f1_wrap "chyp1f1_wrap"(npy_double, npy_double, npy_cdouble)nogil
 
@@ -1677,9 +1699,6 @@ from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
 ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
 
-from ._cdflib_wrappers cimport nctdtridf as _func_nctdtridf
-ctypedef double _proto_nctdtridf_t(double, double, double) noexcept nogil
-cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
@@ -1784,7 +1803,7 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrik_double)(x0, x1, x2)
+    return boost_bdtrik(x0, x1, x2)
 
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""
@@ -2004,9 +2023,9 @@ cpdef Dd_number_t erfi(Dd_number_t x0) noexcept nogil:
 cpdef df_number_t erfinv(df_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfinv"""
     if df_number_t is float:
-        return (<float(*)(float) noexcept nogil>scipy.special._ufuncs_cxx._export_erfinv_float)(x0)
+        return boost_erfinv_float(x0)
     elif df_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_erfinv_double)(x0)
+        return boost_erfinv_double(x0)
 
 cpdef double erfcinv(double x0) noexcept nogil:
     """See the documentation for scipy.special.erfcinv"""
@@ -2309,9 +2328,9 @@ cpdef double huber(double x0, double x1) noexcept nogil:
 cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.hyp0f1"""
     if Dd_number_t is double_complex:
-        return _func__hyp0f1_cmplx(x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(special_chyp0f1(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func__hyp0f1_real(x0, x1)
+        return special_hyp0f1(x0, x1)
 
 cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.hyp1f1"""
@@ -2568,16 +2587,16 @@ cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
 cpdef df_number_t log_gammainc(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.log_gammainc"""
     if df_number_t is float:
-        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_p_float)(x0, x1)
+        return boost_log_gammainc_float(x0, x1)
     elif df_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_p_double)(x0, x1)
+        return boost_log_gammainc_double(x0, x1)
 
 cpdef df_number_t log_gammaincc(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.log_gammaincc"""
     if df_number_t is float:
-        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_q_float)(x0, x1)
+        return boost_log_gammaincc_float(x0, x1)
     elif df_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_lgamma_q_double)(x0, x1)
+        return boost_log_gammaincc_double(x0, x1)
 
 cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.loggamma"""
@@ -2728,11 +2747,11 @@ cpdef double nbdtri(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
 
 cpdef double nbdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrin"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_invn_double)(x0, x1, x2)
+    return boost_nbdtrin(x0, x1, x2)
 
 cpdef double nbdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrik"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbdtrik_double)(x0, x1, x2)
+    return boost_nbdtrik(x0, x1, x2)
 
 cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtr"""
@@ -2744,27 +2763,27 @@ cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_numb
 cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtr"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_cdf_float)(x0, x1, x2)
+        return boost_fdtr_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_cdf_double)(x0, x1, x2)
+        return boost_fdtr_double(x0, x1, x2)
 
 cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtrc"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_float)(x0, x1, x2)
+        return boost_fdtrc_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_double)(x0, x1, x2)
+        return boost_fdtrc_double(x0, x1, x2)
 
 cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtri"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_float)(x0, x1, x2)
+        return boost_fdtri_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_double)(x0, x1, x2)
+        return boost_fdtri_double(x0, x1, x2)
 
 cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrin"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrin_double)(x0, x1, x2)
+    return boost_bdtrin(x0, x1, x2)
 
 cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtri"""
@@ -2783,29 +2802,29 @@ cpdef double ncfdtridfn(double x0, double x1, double x2, double x3) noexcept nog
 
 cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtrinc"""
-    return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncf_find_non_centrality_double)(x0, x1, x2, x3)
+    return boost_ncfdtrinc(x0, x1, x2, x3)
 
 cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtr"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_cdf_float)(x0, x1, x2)
+        return boost_nctdtr_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_cdf_double)(x0, x1, x2)
+        return boost_nctdtr_double(x0, x1, x2)
 
 cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtridf"""
-    return _func_nctdtridf(x0, x1, x2)
+    return boost_nctdtridf(x0, x1, x2)
 
 cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrinc"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_find_non_centrality_double)(x0, x1, x2)
+    return boost_nctdtrinc(x0, x1, x2)
 
 cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrit"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_ppf_float)(x0, x1, x2)
+        return boost_nctdtrit_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_ppf_double)(x0, x1, x2)
+        return boost_nctdtrit_double(x0, x1, x2)
 
 cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.ndtr"""
@@ -3128,16 +3147,16 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
 cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""
     if df_number_t is float:
-        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_float)(x0, x1)
+        return boost_stdtr_float(x0, x1)
     elif df_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_double)(x0, x1)
+        return boost_stdtr_double(x0, x1)
 
 cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtrit"""
     if df_number_t is float:
-        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_ppf_float)(x0, x1)
+        return boost_stdtrit_float(x0, x1)
     elif df_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_ppf_double)(x0, x1)
+        return boost_stdtrit_double(x0, x1)
 
 cpdef double stdtridf(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.stdtridf"""
@@ -3162,9 +3181,9 @@ cpdef double complex wofz(double complex x0) noexcept nogil:
 cpdef Dd_number_t wrightomega(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.wrightomega"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_wrightomega)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cwrightomega(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_wrightomega_real)(x0)
+        return xsf_wrightomega(x0)
 
 cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.xlog1py"""

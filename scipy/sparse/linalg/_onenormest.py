@@ -2,7 +2,9 @@
 """
 
 import numpy as np
+from scipy.sparse import issparse
 from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 
 __all__ = ['onenormest']
@@ -299,7 +301,12 @@ def _onenormest_core(A, AT, t, itmax):
     k = 1
     ind = None
     while True:
-        Y = np.asarray(A_linear_operator.matmat(X))
+        Y = A_linear_operator.matmat(X)
+        Y = (
+            Y.toarray() if issparse(Y)
+            else Y.todense() if is_pydata_spmatrix(Y)
+            else np.asarray(Y)
+        )
         nmults += 1
         mags = _sum_abs_axis0(Y)
         est = np.max(mags)
@@ -330,7 +337,12 @@ def _onenormest_core(A, AT, t, itmax):
                     nresamples += 1
         del S_old
         # (3)
-        Z = np.asarray(AT_linear_operator.matmat(S))
+        Z = AT_linear_operator.matmat(S)
+        Z = (
+            Z.toarray() if issparse(Z)
+            else Z.todense() if is_pydata_spmatrix(Z)
+            else np.asarray(Z)
+        )
         nmults += 1
         h = _max_abs_axis1(Z)
         del Z

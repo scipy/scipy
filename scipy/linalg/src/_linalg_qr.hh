@@ -1,6 +1,7 @@
 /*
  * Templated loops for `linalg.qr`
  */
+#pragma once
 
 namespace sp_linalg {
 

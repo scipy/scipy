@@ -17,7 +17,7 @@ from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._internal_matfuncs import recursive_schur_sqrtm, matrix_exponential
-from ._linalg_pythran import _funm_loops  # type: ignore[import-not-found]
+from ._linalg_pythran import _funm_loops
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
@@ -389,7 +389,7 @@ def sqrtm(A):
     a = np.asarray(A)
     _deprecate_dtypes('sqrtm', a)
     if a.size == 1 and a.ndim < 2:
-        return np.array([[np.exp(a.item())]])
+        return np.array([[np.sqrt(a.item())]])
 
     if a.ndim < 2:
         raise LinAlgError('The input array must be at least two-dimensional')
@@ -827,7 +827,7 @@ def signm(A):
     # min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
     # c = 0.5/min_nonzero_sv
     c = 0.5/max_sv
-    S0 = A + c*np.identity(A.shape[0])
+    S0 = A + c*np.identity(A.shape[0], dtype=A.dtype)
     prev_errest = errest
     for i in range(100):
         iS0 = inv(S0)

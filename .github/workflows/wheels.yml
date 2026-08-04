@@ -76,6 +76,7 @@ jobs:
 
       - name: win_amd64 - configure rtools
         if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
+        shell: pwsh
         run: |
           # mingw-w64
           echo "c:\rtools45\ucrt64\bin;" >> $env:GITHUB_PATH
@@ -84,6 +85,7 @@ jobs:
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         env:
           BUILDPLAT: ${{ matrix.buildplat[2] }}
+        shell: pwsh
         run: |
             echo "C:\Program Files\LLVM\bin" >> $env:GIHUB_PATH
             echo "CC=clang-cl" >> $env:GITHUB_ENV
@@ -94,6 +96,7 @@ jobs:
         if: ${{ matrix.buildplat[1] == 'win' }}
         env:
           WORKSPACE_DIR: ${{ github.workspace }}
+        shell: pwsh
         run: |
           $CIBW = "$env:WORKSPACE_DIR/.openblas"
           # pkgconfig needs a complete path, and not just "./openblas since the
@@ -117,7 +120,7 @@ jobs:
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=MACOSX_DEPLOYMENT_TARGET=14.0 INSTALL_OPENBLAS=false"
           else
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=PKG_CONFIG_PATH=$PWD/.openblas \
-              MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET}""
+              MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}"
           fi
           echo "$CIBW_ENV" >> "$GITHUB_ENV"
 

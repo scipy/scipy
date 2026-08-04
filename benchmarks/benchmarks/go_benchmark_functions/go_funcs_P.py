@@ -160,7 +160,7 @@ class Penalty01(Benchmark):
         \begin{cases}
         k(x_i - a)^m & \textrm{if} \hspace{5pt} x_i > a \\
         0 & \textrm{if} \hspace{5pt} -a \leq x_i \leq a \\
-        k(-x_i - a)^m & \textrm{if} \hspace{5pt} x_i < -a 
+        k(-x_i - a)^m & \textrm{if} \hspace{5pt} x_i < -a
         \end{cases}
 
 
@@ -218,7 +218,7 @@ class Penalty02(Benchmark):
 
     .. math::
 
-        u(x_i, a, k, m) = 
+        u(x_i, a, k, m) =
         \begin{cases}
         k(x_i - a)^m & \textrm{if} \hspace{5pt} x_i > a \\
         0 & \textrm{if} \hspace{5pt} -a \leq x_i \leq a \\

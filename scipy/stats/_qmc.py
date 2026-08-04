@@ -47,9 +47,9 @@ __all__ = ['scale', 'discrepancy', 'geometric_discrepancy', 'update_discrepancy'
 
 
 @overload
-def check_random_state(seed: IntNumber | None = None) -> np.random.Generator: ...
-@overload
 def check_random_state[GeneratorT: _RNG](seed: GeneratorT) -> GeneratorT:...
+@overload
+def check_random_state(seed: IntNumber | None = None) -> np.random.Generator: ...
 
 
 # Based on scipy._lib._util.check_random_state
@@ -438,7 +438,8 @@ def geometric_discrepancy(
     if sample.shape[0] < 2:
         raise ValueError("Sample must contain at least two points")
 
-    distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+    # pyrefly: ignore[no-matching-overload]
+    distances = distance.pdist(sample, metric=metric)
 
     if np.any(distances == 0.0):
         warnings.warn("Sample contains duplicate points.", stacklevel=2)
@@ -671,7 +672,7 @@ def n_primes(n: IntNumber) -> list[int] | np.ndarray:
     if len(primes) < n:
         big_number = 2000
         while 'Not enough primes':
-            primes = primes_from_2_to(big_number)[:n]  # type: ignore
+            primes = primes_from_2_to(big_number)[:n]
             if len(primes) == n:
                 break
             big_number += 1000
@@ -911,7 +912,7 @@ class QMCEngine(ABC):
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self,
-        d: IntNumber,
+        d: int,
         *,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
@@ -926,7 +927,7 @@ class QMCEngine(ABC):
     # `__init__` as `rng`, rejecting `RandomState` arguments.
     def _initialize(
         self,
-        d: IntNumber,
+        d: int,
         *,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
@@ -1219,7 +1220,7 @@ class Halton(QMCEngine):
     """
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *, scramble: bool = True,
+        self, d: int, *, scramble: bool = True,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None
     ) -> None:
@@ -1509,7 +1510,7 @@ class LatinHypercube(QMCEngine):
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *,
+        self, d: int, *,
         scramble: bool = True,
         strength: int = 1,
         optimization: Literal["random-cd", "lloyd"] | None = None,
@@ -1755,7 +1756,7 @@ class Sobol(QMCEngine):
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, d: IntNumber, *, scramble: bool = True,
+        self, d: int, *, scramble: bool = True,
         bits: IntNumber | None = None, rng: SeedType = None,
         optimization: Literal["random-cd", "lloyd"] | None = None
     ) -> None:
@@ -1769,12 +1770,9 @@ class Sobol(QMCEngine):
                 f"Maximum supported dimensionality is {self.MAXDIM}."
             )
 
-        self.bits = bits
+        self.bits = 30 if bits is None else bits
         self.dtype_i: type
         self.scramble = scramble
-
-        if self.bits is None:
-            self.bits = 30
 
         if self.bits <= 32:
             self.dtype_i = np.uint32
@@ -1811,7 +1809,6 @@ class Sobol(QMCEngine):
         self._shift = np.dot(
             rng_integers(self.rng, 2, size=(self.d, self.bits),
                          dtype=self.dtype_i),
-            # pyrefly:ignore[no-matching-overload]
             2 ** np.arange(self.bits, dtype=self.dtype_i),
         )
         # Generate lower triangular matrices (stacked across dimensions)
@@ -1819,7 +1816,7 @@ class Sobol(QMCEngine):
                                    size=(self.d, self.bits, self.bits),
                                    dtype=self.dtype_i))
         _cscramble(
-            dim=self.d, bits=self.bits,  # type: ignore[arg-type]
+            dim=self.d, bits=self.bits,
             ltm=ltm, sv=self._sv
         )
 
@@ -2082,7 +2079,7 @@ class PoissonDisk(QMCEngine):
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self,
-        d: IntNumber,
+        d: int,
         *,
         radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
@@ -2264,7 +2261,7 @@ class PoissonDisk(QMCEngine):
             QMC sample.
 
         """
-        return self.random(np.inf)  # type: ignore[arg-type]
+        return self.random(np.inf)  # pyrefly: ignore[bad-argument-type]
 
     def reset(self) -> "PoissonDisk":
         """Reset the engine to base state.
@@ -2463,7 +2460,7 @@ class MultivariateNormalQMC:
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
-            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))  # type: ignore[attr-defined]  # noqa: E501
+            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
         else:
             # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
@@ -2541,9 +2538,9 @@ class MultinomialQMC:
         rng: SeedType = None,
     ) -> None:
         self.pvals = np.atleast_1d(np.asarray(pvals))
-        if np.min(pvals) < 0:
+        if np.min(self.pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
-        if not np.isclose(np.sum(pvals), 1):
+        if not np.isclose(np.sum(self.pvals), 1):
             raise ValueError('Elements of pvals must sum to 1.')
         self.n_trials = n_trials
         if engine is None:
@@ -2649,9 +2646,9 @@ def _random_cd(
     while n_nochange_ < n_nochange and n_iters_ < n_iters:
         n_iters_ += 1
 
-        col = rng_integers(rng, *bounds[0], endpoint=True)  # type: ignore[misc]
-        row_1 = rng_integers(rng, *bounds[1], endpoint=True)  # type: ignore[misc]
-        row_2 = rng_integers(rng, *bounds[2], endpoint=True)  # type: ignore[misc]
+        col = rng_integers(rng, *bounds[0], endpoint=True)
+        row_1 = rng_integers(rng, *bounds[1], endpoint=True)
+        row_2 = rng_integers(rng, *bounds[2], endpoint=True)
         disc = _perturb_discrepancy(best_sample,
                                     row_1, row_2, col,
                                     best_disc)
@@ -2667,7 +2664,7 @@ def _random_cd(
     return best_sample
 
 
-def _l1_norm(sample: np.ndarray) -> float:
+def _l1_norm(sample: np.ndarray) -> np.floating:
     return distance.pdist(sample, 'cityblock').min()
 
 
@@ -2902,7 +2899,7 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
     """
     workers = int(workers)
     if workers == -1:
-        workers = os.cpu_count()  # type: ignore[assignment]
+        workers = os.cpu_count()  # pyrefly: ignore[bad-assignment]
         if workers is None:
             raise NotImplementedError(
                 "Cannot determine the number of cpus using os.cpu_count(), "

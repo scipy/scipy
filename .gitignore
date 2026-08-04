@@ -112,10 +112,6 @@ doc/source/.jupyterlite.doit.db
 ################
 gh_cache.json
 
-# mypy cache #
-##############
-.mypy_cache/
-
 # linter #
 ##########
 .ruff_cache/
@@ -256,7 +252,6 @@ scipy/spatial/_hausdorff.c
 scipy/spatial/_qhull.c
 scipy/spatial/_voronoi.c
 scipy/spatial/transform/_rotation.c
-scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c

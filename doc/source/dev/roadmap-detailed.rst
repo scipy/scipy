@@ -252,12 +252,6 @@ is in good shape, however we can make a number of improvements:
    `gh-21130 <https://github.com/scipy/scipy/pull/21130>`__)
 
 
-misc
-````
-All features have been removed from ``scipy.misc``, and the namespace itself
-will eventually be removed.
-
-
 ndimage
 ```````
 Underlying ``ndimage`` is a powerful interpolation engine.  Users come

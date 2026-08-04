@@ -1,6 +1,7 @@
 /*
- * Templated loops for linalg.lstsq
+ * Templated loops for `linalg.lstsq`
  */
+#pragma once
 
 namespace sp_linalg {
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType
 
 import numpy as np
 
@@ -81,7 +81,6 @@ rotation_extra_note = """The methods ``as_davenport``, ``apply``, and ``align_ve
         "apply": dict(
             skip_backends=[
                 ("dask.array", "missing linalg.cross/det functions and .mT attribute"),
-                ("cupy", "missing .mT attribute in cupy<14.*"),
             ],
         ),
         "__getitem__": dict(
@@ -426,7 +425,7 @@ class Rotation:
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = select_backend(xp, cython_compatible=quat.ndim < 3)
+        self._backend: ModuleType = select_backend(xp, cython_compatible=quat.ndim < 3)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -1712,7 +1711,7 @@ class Rotation:
             return result[0, ...]
         return result
 
-    def __mul__(self, other: Rotation) -> Rotation | NotImplementedType:
+    def __mul__(self, other: Rotation) -> Rotation:
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
@@ -2230,7 +2229,7 @@ class Rotation:
             return Rotation(self._xp.take(self._quat, indexer, axis=0), normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
-    def __setitem__(self, indexer: int | slice | EllipsisType | None, value: Rotation):
+    def __setitem__(self, indexer: int | slice | EllipsisType, value: Rotation):
         """Set rotation(s) at given index(es) from object.
 
         Parameters

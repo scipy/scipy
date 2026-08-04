@@ -41,13 +41,14 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.68.0
+          pixi-version: v0.71.0
           cache: false
           environments: py312-system-libs-osx
 
       - name: Set up ccache
         uses: ./.github/ccache
         with:
+          job_name: ${{ github.job }}
           workflow_name: ${{ github.workflow }}
 
       - name: Test SciPy
@@ -81,7 +82,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.68.0
+          pixi-version: v0.71.0
           cache: false
           environments: ${{ matrix.environment }}
 
@@ -119,6 +120,7 @@ jobs:
       run: |
         brew install llvm@19
         LLVM_PREFIX=$(brew --prefix llvm@19)
+        # shellcheck disable=SC2129
         echo CC="$LLVM_PREFIX/bin/clang" >> $GITHUB_ENV
         echo CXX="$LLVM_PREFIX/bin/clang++" >> $GITHUB_ENV
         echo LDFLAGS="-L$LLVM_PREFIX/lib" >> $GITHUB_ENV
@@ -139,15 +141,17 @@ jobs:
 
     - name: Install SciPy dependencies from PyPI
       run: |
-        pip install pybind11 pythran spin pooch hypothesis pytest pytest-timeout
+        pip install --group build --group dev-cli --group test-core
 
     - name: Build SciPy with ASan
       run: |
         # TODO
         # - add --asan to spin build command
         # - removmove -fsanitize=address from C{XX}FLAGS
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
-        export CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        export CFLAGS
+        CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        export CXXFLAGS
         spin build -S-Dblas=accelerate
 
     - name: Test

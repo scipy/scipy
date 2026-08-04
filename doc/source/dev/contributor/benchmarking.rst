@@ -137,7 +137,7 @@ as ``main``::
 All of the commands above display the results in plain text in the
 console, and the results are not saved for comparison with future
 commits. For greater control, a graphical view, and to have results
-saved for future comparison, you can use use the ``asv`` terminal command
+saved for future comparison, you can use the ``asv`` terminal command
 directly.
 
 To use it, navigate to ``scipy/benchmarks`` in the console and then

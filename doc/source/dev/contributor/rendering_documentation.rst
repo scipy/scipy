@@ -97,7 +97,7 @@ Once a PR is opened, you can check that documentation renders correctly
 on the cloud.
 
 #. Log in to `GitHub`_.
-#. Log in `CircleCI`_ using your GitHub account.
+#. Log in to `CircleCI`_ using your GitHub account.
 #. Back in GitHub, at the bottom of the PR, select “Show all Checks”.
 #. Next to “Check the rendered docs here!”, select “Details”.
 
@@ -137,9 +137,9 @@ Use of the 'versionadded' markup
   section.
 
 
-Citing wikipedia articles in the "References" section
+Citing Wikipedia articles in the "References" section
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-It is acceptable to use wikipedia articles as references.
+It is acceptable to use Wikipedia articles as references.
 When creating the citation for the reference, include the article title,
 the name "Wikipedia" (similar to how one gives a journal title), and the
 URL.
@@ -211,7 +211,7 @@ Some examples:
 
 Self-contained examples
 ~~~~~~~~~~~~~~~~~~~~~~~
-Each "Example" section (both in docstrings and general documentation)
+Each "Examples" section (both in docstrings and general documentation)
 must be self-contained. This means that all imports
 must be explicit, the data used must be defined, and the code should "just
 work" when copy-pasted into a fresh Python interpreter.
@@ -317,7 +317,7 @@ This will create the following output:
 
 .. legacy:: function
 
----
+
 
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/vcs-authorize/
