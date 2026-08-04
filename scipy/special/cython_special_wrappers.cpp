@@ -717,6 +717,31 @@ double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p
 
 double boost_bdtrin(double k, double y, double p) { return bdtrin_double(k, y, p); }
 
+float boost_chndtr_float(float x, float df, float nc) { return ncx2_cdf_float(x, df, nc); }
+
+double boost_chndtr_double(double x, double df, double nc) { return ncx2_cdf_double(x, df, nc); }
+
+float boost_chndtridf_float(float x, float p, float nc)
+{
+    return ncx2_find_degrees_of_freedom_float(x, p, nc);
+}
+
+double boost_chndtridf_double(double x, double p, double nc)
+{
+    return ncx2_find_degrees_of_freedom_double(x, p, nc);
+}
+
+float boost_chndtrinc_float(float x, float df, float p) { return ncx2_find_noncentrality_float(x, df, p); }
+
+double boost_chndtrinc_double(double x, double df, double p)
+{
+    return ncx2_find_noncentrality_double(x, df, p);
+}
+
+float boost_chndtrix_float(float p, float df, float nc) { return ncx2_ppf_float(p, df, nc); }
+
+double boost_chndtrix_double(double p, double df, double nc) { return ncx2_ppf_double(p, df, nc); }
+
 float boost_erfinv_float(float x) { return erfinv_float(x); }
 
 double boost_erfinv_double(double x) { return erfinv_double(x); }

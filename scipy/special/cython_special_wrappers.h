@@ -396,6 +396,14 @@ double xsf_radian(double d, double m, double s);
 
 double boost_bdtrik(double y, double n, double p);
 double boost_bdtrin(double k, double y, double p);
+float boost_chndtr_float(float x, float df, float nc);
+double boost_chndtr_double(double x, double df, double nc);
+float boost_chndtridf_float(float x, float p, float nc);
+double boost_chndtridf_double(double x, double p, double nc);
+float boost_chndtrinc_float(float x, float df, float p);
+double boost_chndtrinc_double(double x, double df, double p);
+float boost_chndtrix_float(float p, float df, float nc);
+double boost_chndtrix_double(double p, double df, double nc);
 float boost_erfinv_float(float x);
 double boost_erfinv_double(double x);
 float boost_fdtr_float(float dfn, float dfd, float x);
