@@ -328,10 +328,10 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
 
     Parameters
     ----------
-    a : (..., M, M) array_like
+    a : (..., N, N) array_like
         A complex Hermitian or real symmetric matrix whose eigenvalues and
         eigenvectors will be computed.
-    b : (..., M, M) array_like, optional
+    b : (..., N, N) array_like, optional
         A complex Hermitian or real symmetric definite positive matrix in.
         If omitted, the regular eigenvalue problem is assumed.
     lower : bool, optional
@@ -364,7 +364,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         If provided, this two-element iterable defines the start and the end
         indices of the desired eigenvalues (ascending order and 0-indexed).
         To return only the second smallest to fifth smallest eigenvalues,
-        ``[1, 4]`` is used. ``[M-3, M-1]`` returns the largest three. Only
+        ``[1, 4]`` is used. ``[N-3, N-1]`` returns the largest three. Only
         available with "evr", "evx", and "gvx" drivers. The entries are
         directly converted to integers via ``int()``.
     subset_by_value : iterable, optional
@@ -383,10 +383,10 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
 
     Returns
     -------
-    w : (..., N) ndarray
-        The N (N<=M) selected eigenvalues, in ascending order, each
+    w : (..., M) ndarray
+        The M (M<=N) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
-    v : (..., M, N) ndarray
+    v : (..., N, M) ndarray
         The normalized eigenvector corresponding to the eigenvalue ``w[i]`` is
         the column ``v[:,i]``. Only returned if ``eigvals_only=False``.
 
@@ -529,7 +529,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         overwrite_b = overwrite_b or _datacopied(b1, b)
         overwrite_b = overwrite_b and b1.ndim == 2 and b1.flags["F_CONTIGUOUS"]
 
-    # accommodate square empty matrices, after validation of `b` for `dtype` etc.
+    # accommodate square empty batches, after validation of `b` to account for upcasting
     if a1.size == 0:
         w = np.empty(a1.shape[:-1], dtype=np.finfo(a1.dtype).dtype)
         if eigvals_only:
@@ -942,10 +942,10 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
 
     Parameters
     ----------
-    a : (M, M) array_like
+    a : (..., N, N) array_like
         A complex Hermitian or real symmetric matrix whose eigenvalues will
         be computed.
-    b : (M, M) array_like, optional
+    b : (..., N, N) array_like, optional
         A complex Hermitian or real symmetric definite positive matrix in.
         If omitted, identity matrix is assumed.
     lower : bool, optional
@@ -994,8 +994,8 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
 
     Returns
     -------
-    w : (N,) ndarray
-        The N (N<=M) selected eigenvalues, in ascending order, each
+    w : (..., M) ndarray
+        The M (M<=N) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
 
     Raises
