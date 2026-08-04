@@ -395,7 +395,6 @@ double xsf_tandg(double x);
 double xsf_cotdg(double x);
 double xsf_radian(double d, double m, double s);
 
-<<<<<<< HEAD:scipy/special/cython_special_wrappers.h
 /*
  * Boost functions
  */
