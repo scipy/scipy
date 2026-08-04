@@ -116,6 +116,7 @@ Global optimization
    shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
    direct - DIRECT (Dividing Rectangles) optimizer.
+   biteopt - BiteOpt derivative-free global optimizer.
 
 Least-squares and curve fitting
 ===============================
@@ -445,6 +446,7 @@ from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
 from ._direct_py import direct
+from ._biteopt_py import biteopt
 from ._milp import milp
 
 # Deprecated namespaces, to be removed in v2.0.0
