@@ -246,7 +246,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         - :ref:`'revised simplex' <optimize.linprog-revised_simplex>` (legacy)
         - :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
 
-        The legacy methods are deprecated and will be removed in SciPy 1.11.0.
+        The legacy methods are deprecated and will be removed in a future
+        version of SciPy.
     callback : callable, optional
         If a callback function is provided, it will be called at least once per
         iteration of the algorithm. The callback function must accept a single
@@ -313,7 +314,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         rr : bool
             Set to ``False`` to disable automatic redundancy removal.
             Default: ``True``.
-        rr_method : string
+        rr_method : str
             Method used to identify and remove redundant rows from the
             equality constraint matrix after presolve. For problems with
             dense input, the available methods for redundancy removal are:
@@ -360,10 +361,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         within `bounds`.
 
         ``2`` : Semi-continuous variable; decision variable must be within
-        `bounds` or take value ``0``.
+        `bounds` or ``0``.
 
         ``3`` : Semi-integer variable; decision variable must be an integer
-        within `bounds` or take value ``0``.
+        within `bounds` or ``0``.
 
         By default, all variables are continuous.
 
@@ -559,7 +560,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
             simplex method." Mathematical Programming Computation, 10 (1),
-            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+            119-142, 2018. :doi:`10.1007/s12532-017-0130-5`.
 
     Examples
     --------
@@ -579,7 +580,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     constraint is really the simple bound :math:`-3 \leq x_1 \leq \infty`.
     Finally, since there are no bounds on :math:`x_0`, we must explicitly
     specify the bounds :math:`-\infty \leq x_0 \leq \infty`, as the
-    default is for variables to be non-negative. After collecting coeffecients
+    default is for variables to be non-negative. After collecting coefficients
     into arrays and tuples, the input for this problem is:
 
     >>> from scipy.optimize import linprog
@@ -666,9 +667,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
 
-    warn(f"`method='{meth}'` is deprecated and will be removed in SciPy "
-         "1.11.0. Please use one of the HiGHS solvers (e.g. "
-         "`method='highs'`) in new code.", DeprecationWarning, stacklevel=2)
+    warn(f"`method='{meth}'` is deprecated and will be removed in a future version "
+         "of SciPy. Please use one of the HiGHS solvers (e.g. `method='highs'`) in "
+         "new code.", DeprecationWarning, stacklevel=2)
 
     iteration = 0
     complete = False  # will become True if solved in presolve

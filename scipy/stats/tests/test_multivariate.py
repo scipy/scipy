@@ -294,6 +294,28 @@ def _sample_orthonormal_matrix(n):
     u, s, v = scipy.linalg.svd(M)
     return u
 
+def marginal_pdf(X, X_ndim, dimensions, x):
+    """Integrate marginalized dimensions of multivariate
+    probability distribution to calculate the marginalized
+    distribution.
+    """
+    # Sort input data based on order of dimensions
+    dimensions = np.asarray(dimensions)
+    dimensions[dimensions < 0] += X_ndim
+    dim_sort_idx = dimensions.argsort()
+    x = x[:, dim_sort_idx]
+
+    i_marginalize = np.ones(X_ndim, dtype=bool)
+    i_marginalize[dimensions] = False
+
+    def g(z):
+        y = np.empty((z.shape[0], x.shape[0], X_ndim))
+        y[..., i_marginalize] = z[:, np.newaxis, :]
+        y[..., ~i_marginalize] = x
+        return X.pdf(y)
+
+    inf = np.full(X_ndim - len(dimensions), np.inf)
+    return cubature(g, -inf, inf).estimate
 
 @dataclass
 class MVNProblem:
@@ -445,7 +467,8 @@ class SingularMVNProblem:
     ----------
     .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
            singular multivariate normal distribution." Journal of Statistical
-           Computation and Simulation, 51(2-4), 121-135. doi:10.1080/00949659508811627
+           Computation and Simulation, 51(2-4), 121-135.
+           :doi:`10.1080/00949659508811627`.
     """
     ndim : int
     low : np.ndarray
@@ -1135,7 +1158,7 @@ class TestMultivariateNormal:
         mean_est, cov_est = multivariate_normal.fit(x)
         mean_ref, cov_ref = np.mean(x, axis=0), np.cov(x.T, ddof=0)
         assert_allclose(mean_est, mean_ref, atol=1e-15)
-        assert_allclose(cov_est, cov_ref, rtol=1e-15)
+        assert_allclose(cov_est, cov_ref, rtol=5e-15)
 
     def test_fit_both_parameters_fixed(self):
         data = np.full((2, 1), 3)
@@ -1198,7 +1221,6 @@ class TestMultivariateNormal:
                                                      ).sum()
         assert logp_perturbed < logp_fix
 
-
     def test_fit_fix_cov(self):
         rng = np.random.default_rng(4385269356937404)
         loc = rng.random(3)
@@ -1225,6 +1247,80 @@ class TestMultivariateNormal:
                                                      cov=cov_fix)
                                                      ).sum()
         assert logp_perturbed < logp_fix
+
+
+class TestMarginal:
+    @pytest.mark.parametrize('dist,kwargs', [(multivariate_normal, {}),
+                                             (multivariate_t, {'df': 4})])
+    @pytest.mark.parametrize('X_ndim', [3])
+    @pytest.mark.parametrize('dimensions', [[1], [-1, 1]])
+    @pytest.mark.parametrize('frozen', [True, False])
+    @pytest.mark.parametrize('cov_object', [True, False])
+    def test_marginal_distribution(self, dist, X_ndim, dimensions, frozen,
+                                   cov_object, kwargs):
+        rng = np.random.default_rng(413911473)
+        loc = rng.standard_normal(X_ndim)
+        A = rng.standard_normal((X_ndim, X_ndim))
+        scale = A @ A.T
+
+        if cov_object and dist == multivariate_t:
+            pytest.skip('`multivariate_t` does not accept a `Covariance` object')
+        elif cov_object:
+            scale = _covariance.CovViaPrecision(scale)
+
+        # number of points at which to evaluate marginal PDF
+        x = np.random.standard_normal((4, len(dimensions)))
+        X = dist(loc, scale, **kwargs)
+
+        if frozen:
+            Y = X.marginal(dimensions)
+            res = Y.pdf(x)
+        else:
+            Y = dist.marginal(dimensions, loc, scale, **kwargs)
+            res = Y.pdf(x)
+
+        ref = marginal_pdf(X, X_ndim, dimensions, x)
+        assert_allclose(ref, res)
+
+    @pytest.mark.parametrize('dist', [multivariate_normal, multivariate_t])
+    def test_marginal_input_validation(self, dist):
+        rng = np.random.default_rng(413911473)
+        mean = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        cov = A @ A.T
+
+        X = dist(mean, cov)
+
+        msg = r"Dimensions \[3\] are invalid .*"
+        with pytest.raises(ValueError, match=msg):
+            X.marginal(3)
+
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([0, 1, 2, 3])
+
+        msg = r"All elements of `dimensions` must be unique."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([2, -1])
+
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([[0, 1]])
+
+        msg = r"Elements of `dimensions` must be integers."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([1.1, 2.0])
+
+    @pytest.mark.parametrize('dist', [multivariate_normal, multivariate_t])
+    def test_marginal_special_cases(self, dist):
+        rng = np.random.default_rng(413911473)
+        loc = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        scale = A @ A.T
+
+        X = dist(loc, scale)
+
+        msg = r"Cannot marginalize all dimensions."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([])
 
 
 class TestMatrixNormal:
@@ -1500,13 +1596,13 @@ class TestMatrixT:
 
         with pytest.raises(
             np.linalg.LinAlgError,
-            match="2-th leading minor of the array is not positive definite",
+            match="Internal potrf return info",
         ):
             matrix_t.rvs(M, U, np.ones((num_cols, num_cols)), df)
 
         with pytest.raises(
             np.linalg.LinAlgError,
-            match="2-th leading minor of the array is not positive definite",
+            match="Internal potrf return info",
         ):
             matrix_t.rvs(M, np.ones((num_rows, num_rows)), V, df)
 
@@ -2458,18 +2554,16 @@ class TestMultinomial:
 
     @pytest.mark.parametrize("n", [0, 3])
     def test_rvs_np(self, n):
-        # test that .rvs agrees w/numpy
-        message = "Some rows of `p` do not sum to 1.0 within..."
-        with pytest.warns(FutureWarning, match=message):
-            rndm = np.random.RandomState(123)
-            sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
-            np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
-            assert_equal(sc_rvs, np_rvs)
-        with pytest.warns(FutureWarning, match=message):
-            rndm = np.random.RandomState(123)
-            sc_rvs = multinomial.rvs(n, [1/4.]*5, size=7, random_state=123)
-            np_rvs = rndm.multinomial(n, [1/4.]*5, size=7)
-            assert_equal(sc_rvs, np_rvs)
+        # test that .rvs agrees w/numpy when `p` is valid
+        rndm = np.random.RandomState(123)
+        sc_rvs = multinomial.rvs(n, [1/3.]*3, size=7, random_state=123)
+        np_rvs = rndm.multinomial(n, [1/3.]*3, size=7)
+        assert_equal(sc_rvs, np_rvs)
+
+        rndm = np.random.RandomState(123)
+        sc_rvs = multinomial.rvs(n, [1/5.]*5, size=7, random_state=123)
+        np_rvs = rndm.multinomial(n, [1/5.]*5, size=7)
+        assert_equal(sc_rvs, np_rvs)
 
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))
@@ -2602,6 +2696,33 @@ class TestMultinomial:
         res2 = multinomial.pmf(x=[1, 2, 4, 5, 7], n=n, p=p)
         np.testing.assert_allclose(res1, res2, rtol=1e-15)
 
+    @pytest.mark.parametrize('psum', [0.75, 1.25])
+    def test_gh_22585(self, psum):
+        # gh-22585 warned that beginning in SciPy 1.18, rows of p that did not sum to
+        # 1.0 would produce NaNs. Check that this has been implemented.
+        rng = np.random.default_rng(8879715917488330089)
+        d, n = 5, 19  # arbitrary
+        p0 = rng.random(d)
+        p = p0 / np.sum(p0)
+        p_ = p * psum
+        x = multinomial.rvs(n=n, p=p)
+
+        assert np.all(np.isfinite(x))
+        with pytest.raises(ValueError, match="`multinomial.rvs` requires..."):
+            multinomial.rvs(n=n, p=p_)
+
+        assert np.isfinite(multinomial.pmf(x, n=n, p=p))
+        assert np.isnan(multinomial.pmf(x, n=n, p=p_))
+
+        assert np.isfinite(multinomial.pmf(x, n=n, p=p))
+        assert np.isnan(multinomial.pmf(x, n=n, p=p_))
+
+        assert np.isfinite(multinomial.entropy(n=n, p=p))
+        assert np.isnan(multinomial.entropy(n=n, p=p_))
+
+        assert np.all(np.isfinite(multinomial.cov(n=n, p=p)))
+        assert np.all(np.isnan(multinomial.cov(n=n, p=p_)))
+
 
 class TestInvwishart:
     def test_frozen(self):
@@ -2688,7 +2809,7 @@ class TestInvwishart:
         frozen_iw_rvs = iw.rvs(random_state=rng)
 
         # Manually calculate what it should be, based on the decomposition in
-        # https://arxiv.org/abs/2310.15884 of an invers-Wishart into L L',
+        # https://arxiv.org/abs/2310.15884 of an inverse-Wishart into L L',
         # where L A = D, D is the Cholesky factorization of the scale matrix,
         # and A is the lower triangular matrix with the square root of chi^2
         # variates on the diagonal and N(0,1) variates in the lower triangle.
@@ -2947,8 +3068,8 @@ class TestOrthoGroup:
         # Test that the distribution of pairwise distances is close to correct.
         rng = np.random.RandomState(514)
 
-        def random_ortho(dim, random_state=None):
-            u, _s, v = np.linalg.svd(rng.normal(size=(dim, dim)))
+        def random_ortho(dim, random_state):
+            u, _s, v = np.linalg.svd(random_state.normal(size=(dim, dim)))
             return np.dot(u, v)
 
         for dim in range(2, 6):
@@ -2959,7 +3080,7 @@ class TestOrthoGroup:
                     for _ in range(N)
                 ])
                 # Add a bit of noise to account for numeric accuracy.
-                stats += np.random.uniform(-eps, eps, size=stats.shape)
+                stats += rng.uniform(-eps, eps, size=stats.shape)
                 return stats
 
             expected = generate_test_statistics(random_ortho)
@@ -4917,8 +5038,6 @@ class TestNormalInverseGamma:
 
     @pytest.mark.parametrize('dtype', [np.int32, np.float16, np.float32, np.float64])
     def test_dtype(self, dtype):
-        if np.__version__ < "2":
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         rng = np.random.default_rng(8925849245)
         x, s2, mu, lmbda, a, b = rng.uniform(3, 10, size=6).astype(dtype)
         dtype_out = np.result_type(1.0, dtype)

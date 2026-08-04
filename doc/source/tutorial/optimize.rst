@@ -649,9 +649,9 @@ is defined using a :func:`NonlinearConstraint` object.
 Alternatively, it is also possible to define the Hessian :math:`H(x, v)`
 as a sparse matrix,
 
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> def cons_H_sparse(x, v):
-    ...     return v[0]*csc_matrix([[2, 0], [0, 0]]) + v[1]*csc_matrix([[2, 0], [0, 0]])
+    ...     return v[0]*csc_array([[2, 0], [0, 0]]) + v[1]*csc_array([[2, 0], [0, 0]])
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1,
     ...                                            jac=cons_J, hess=cons_H_sparse)
 
@@ -750,10 +750,12 @@ The SLSQP method deals with constrained minimization problems of the form:
 .. math::
    :nowrap:
 
-     \begin{eqnarray*} \min_x & f(x) \\
-          \text{subject to: } & c_j(x) =  0  ,  &j \in \mathcal{E}\\
-            & c_j(x) \geq 0  ,  &j \in \mathcal{I}\\
-           &  \text{lb}_i  \leq x_i \leq \text{ub}_i , &i = 1,...,N. \end{eqnarray*}
+   \begin{eqnarray*}
+                    \min_x & f(x) \\
+       \text{subject to: } & c_j(x) =  0    ,                          &j \in \mathcal{E}\\
+                           & c_j(x) \geq 0  ,                          &j \in \mathcal{I}\\
+                           &  \text{lb}_i  \leq x_i \leq \text{ub}_i , &i = 1,...,N.
+   \end{eqnarray*}
 
 Where :math:`\mathcal{E}` or :math:`\mathcal{I}` are sets of indices
 containing equality and inequality constraints.
@@ -1199,7 +1201,7 @@ to documentation of :func:`least_squares`.
 Univariate function minimizers (:func:`minimize_scalar`)
 --------------------------------------------------------
 
-Often only the minimum of an univariate function (i.e., a function that
+Often only the minimum of a univariate function (i.e., a function that
 takes a scalar as input) is needed. In these circumstances, other
 optimization techniques have been developed that can work faster. These are
 accessible from the :func:`minimize_scalar` function, which proposes several
@@ -1209,7 +1211,7 @@ algorithms.
 Unconstrained minimization (``method='brent'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are, actually, two methods that can be used to minimize an univariate
+There are, actually, two methods that can be used to minimize a univariate
 function: `brent` and `golden`, but `golden` is included only for academic
 purposes and should rarely be used. These can be respectively selected
 through the `method` parameter in :func:`minimize_scalar`. The `brent`

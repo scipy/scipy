@@ -38,7 +38,7 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
-@pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
+@pytest.mark.parametrize('distname,arg,first_case', list(cases_test_discrete_basic()))
 def test_discrete_basic(distname, arg, first_case, num_parallel_threads):
     if (isinstance(distname, str) and distname.startswith('nchypergeom')
             and num_parallel_threads > 1):
@@ -281,7 +281,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     Parameters
     ----------
-    distname : string
+    distname : str
         name of distribution function
     arg : sequence
         parameters of distribution
@@ -399,7 +399,7 @@ def cases_test_discrete_integer_shapes():
 
 
 @pytest.mark.parametrize('distname, shapename, shapes',
-                         cases_test_discrete_integer_shapes())
+                         list(cases_test_discrete_integer_shapes()))
 def test_integer_shapes(distname, shapename, shapes):
     dist = getattr(stats, distname)
     shape_info = dist._shape_info()

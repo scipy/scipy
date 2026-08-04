@@ -9,7 +9,7 @@ References
 ----------
 .. [1] Q. Huangfu and J.A.J. Hall. "Parallelizing the dual revised simplex
            method." Mathematical Programming Computation, 10 (1), 119-142,
-           2018. DOI: 10.1007/s12532-017-0130-5
+           2018. :doi:`10.1007/s12532-017-0130-5`.
 
 """
 

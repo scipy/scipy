@@ -353,6 +353,8 @@ int tnc(int n, double x[], double *f, double g[], tnc_function * function,
             xscale[i] = fabs(scale[i]);
             if (xscale[i] == 0.0) {
                 xoffset[i] = low[i] = up[i] = x[i];
+            } else {
+                xoffset[i] = x[i];
             }
         } else if (low[i] != -HUGE_VAL && up[i] != HUGE_VAL) {
             xscale[i] = up[i] - low[i];
@@ -483,7 +485,7 @@ static void setConstraints(int n, double x[], int pivot[], double xscale[],
     int i;
 
     for (i = 0; i < n; i++) {
-        /* tolerances should be better ajusted */
+        /* tolerances should be better adjusted */
         if (xscale[i] == 0.0) {
             pivot[i] = 2;
         }

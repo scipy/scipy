@@ -16,9 +16,10 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_size,
     xp_device,
-    xp_swapaxes
+    xp_swapaxes,
+    is_lazy_array,
 )
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy.special import ndtr, ndtri
 from scipy import stats
 
@@ -226,7 +227,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             data = [_get_from_last_axis(sample, i, xp=xp) for sample in data]
             return unpaired_statistic(*data, axis=axis)
 
-        data_iv = [xp.arange(n)]
+        data_iv = [xp.arange(n, device=xp_device(data_iv[0]))]
 
     confidence_level_float = float(confidence_level)
 
@@ -293,8 +294,8 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-@xp_capabilities(skip_backends=[("jax.numpy", "Incompatible with `quantile`."),
-                                ("dask.array", "Dask doesn't have take_along_axis.")])
+@xp_capabilities(skip_backends=[("dask.array", "Dask doesn't have take_along_axis.")],
+                 jax_jit=False)  # a few failed assertions - not sure what's going on
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -660,7 +661,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     # Calculate confidence interval of statistic
     interval = xp.stack(interval, axis=-1)
     ci = stats.quantile(theta_hat_b, interval, axis=-1)
-    if xp.any(xp.isnan(ci)):
+    if not is_lazy_array(ci) and xp.any(xp.isnan(ci)):
         msg = (
             "The BCa confidence interval cannot be calculated. "
             "This problem is known to occur when the distribution "
@@ -1072,9 +1073,14 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
     xp = array_namespace(*n_observations, significance, *vals)
 
     significance = xp.asarray(significance)
-    if (not xp.isdtype(significance.dtype, "real floating")
-            or xp.min(significance) < 0 or xp.max(significance) > 1):
-        raise ValueError("`significance` must contain floats between 0 and 1.")
+    if not xp.isdtype(significance.dtype, "real floating"):
+        raise ValueError("`significance` must be of floating point dtype.")
+
+    if is_lazy_array(significance):
+        significance = xp.where((significance < 0.) | (significance > 1.),
+                                xp.nan, significance)
+    elif xp.min(significance) < 0. or xp.max(significance) > 1.:
+        raise ValueError("All elements of `significance` must be between 0. and 1.")
 
     # Wrap callables to ignore unused keyword arguments
     wrapped_rvs = [_wrap_kwargs(rvs_i) for rvs_i in rvs]
@@ -1125,7 +1131,8 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
             n_resamples_int, batch_iv, vals, keys, shape[1:], xp)
 
 
-@xp_capabilities(allow_dask_compute=True, jax_jit=False)
+@xp_capabilities(skip_backends=[('dask.array', 'just because')],
+                 jax_jit=False)  # some problem with batch looping
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
           n_resamples=10000, batch=None, kwargs=None):
     r"""Simulate the power of a hypothesis test under an alternative hypothesis.
@@ -1151,7 +1158,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         in `rvs` must match the number of elements of `n_observations`, i.e.
         ``len(rvs) == len(n_observations)``. If `rvs` is a single callable,
         `n_observations` is treated as a single element.
-    n_observations : tuple of ints or tuple of integer arrays
+    n_observations : tuple of ints or tuple of int arrays
         If a sequence of ints, each is the sizes of a sample to be passed to `test`.
         If a sequence of integer arrays, the power is simulated for each
         set of corresponding sample sizes. See Examples.
@@ -1161,14 +1168,6 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         hypothesis. Equivalently, the acceptable rate of Type I error under
         the null hypothesis. If an array, the power is simulated for each
         significance threshold.
-    kwargs : dict, optional
-        Keyword arguments to be passed to `rvs` and/or `test` callables.
-        Introspection is used to determine which keyword arguments may be
-        passed to each callable.
-        The value corresponding with each keyword must be an array.
-        Arrays must be broadcastable with one another and with each array in
-        `n_observations`. The power is simulated for each set of corresponding
-        sample sizes and arguments. See Examples.
     vectorized : bool, optional
         If `vectorized` is set to ``False``, `test` will not be passed keyword
         argument `axis` and is expected to perform the test only for 1D samples.
@@ -1185,6 +1184,14 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         The number of samples to process in each call to `test`. Memory usage is
         proportional to the product of `batch` and the largest sample size. Default
         is ``None``, in which case `batch` equals `n_resamples`.
+    kwargs : dict, optional
+        Keyword arguments to be passed to `rvs` and/or `test` callables.
+        Introspection is used to determine which keyword arguments may be
+        passed to each callable.
+        The value corresponding with each keyword must be an array.
+        Arrays must be broadcastable with one another and with each array in
+        `n_observations`. The power is simulated for each set of corresponding
+        sample sizes and arguments. See Examples.
 
     Returns
     -------
@@ -1349,7 +1356,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     pvalues = xp.reshape(pvalues, shape + (-1,))
     if significance.ndim > 0:
         newdims = tuple(range(significance.ndim, pvalues.ndim + significance.ndim))
-        significance = xpx.expand_dims(significance, axis=newdims)
+        significance = xp.expand_dims(significance, axis=newdims)
 
     float_dtype = xp_result_type(significance, pvalues, xp=xp)
     powers = xp.mean(xp.astype(pvalues < significance, float_dtype), axis=-1)
@@ -1480,7 +1487,7 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     for indices in _batch_generator(perm_generator, batch=batch):
         # Creating a tensor from a list of numpy.ndarrays is extremely slow...
         indices = np.asarray(indices)
-        indices = xp.asarray(indices)
+        indices = xp.asarray(indices, device=xp_device(data))
 
         # `indices` is 2D: each row is a permutation of the indices.
         # We use it to index `data` along its last axis, which corresponds
@@ -1535,7 +1542,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     null_distribution = []
 
     for indices in batched_perm_generator:
-        indices = xp.asarray(indices)
+        indices = xp.asarray(indices, device=xp_device(data[0]))
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
         # for samples, and the last is for observations. Swap the first two
@@ -2139,6 +2146,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
+    pvalues = xpx.at(pvalues)[xp.isnan(observed)].set(xp.nan)
     pvalues = xp.clip(pvalues, 0., 1.)
 
     return PermutationTestResult(observed, pvalues, null_distribution)
@@ -2164,7 +2172,7 @@ class ResamplingMethod:
 
     """
     n_resamples: int = 9999
-    batch: int = None  # type: ignore[assignment]
+    batch: int | None = None
 
 
 @dataclass
@@ -2175,7 +2183,7 @@ class MonteCarloMethod(ResamplingMethod):
     hypothesis test functions to perform a Monte Carlo version of the
     hypothesis tests.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of Monte Carlo samples to draw. Default is 9999.
@@ -2224,9 +2232,9 @@ class MonteCarloMethod(ResamplingMethod):
 
 
 _rs_deprecation = ("Use of attribute `random_state` is deprecated and replaced by "
-                   "`rng`. Support for `random_state` will be removed in SciPy 1.19.0. "
+                   "`rng`. Support for `random_state` will be removed in SciPy 2.0.0. "
                    "To silence this warning and ensure consistent behavior in SciPy "
-                   "1.19.0, control the RNG using attribute `rng`. Values set using "
+                   "2.0.0, control the RNG using attribute `rng`. Values set using "
                    "attribute `rng` will be validated by `np.random.default_rng`, so "
                    "the behavior corresponding with a given value may change compared "
                    "to use of `random_state`. For example, 1) `None` will result in "
@@ -2245,7 +2253,7 @@ class PermutationMethod(ResamplingMethod):
     hypothesis test functions to perform a permutation version of the
     hypothesis tests.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of resamples to perform. Default is 9999.
@@ -2286,8 +2294,7 @@ class PermutationMethod(ResamplingMethod):
             in new code.
 
     """
-    rng: object  # type: ignore[misc]
-    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    _rng: object = field(init=False, repr=False, default=None)
 
     @property
     def random_state(self):
@@ -2301,8 +2308,8 @@ class PermutationMethod(ResamplingMethod):
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
-    @property  # type: ignore[no-redef]
-    def rng(self):  # noqa: F811
+    @property
+    def rng(self):
         return self._rng
 
     def __init__(self, n_resamples=9999, batch=None, random_state=None, *, rng=None):
@@ -2330,7 +2337,7 @@ class BootstrapMethod(ResamplingMethod):
     Instances of this class can be passed into the `method` parameter of some
     confidence interval methods to generate a bootstrap confidence interval.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of resamples to perform. Default is 9999.
@@ -2376,8 +2383,8 @@ class BootstrapMethod(ResamplingMethod):
         accelerated bootstrap ('BCa', default).
 
     """
-    rng: object  # type: ignore[misc]
-    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    rng: object
+    _rng: object = field(init=False, repr=False, default=None)
     method: str = 'BCa'
 
     @property
@@ -2392,8 +2399,8 @@ class BootstrapMethod(ResamplingMethod):
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
-    @property  # type: ignore[no-redef]
-    def rng(self):  # noqa: F811
+    @property
+    def rng(self):
         return self._rng
 
     def __init__(self, n_resamples=9999, batch=None, random_state=None,

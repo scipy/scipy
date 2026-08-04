@@ -36,31 +36,18 @@ ckdtree_src = [
 
 py3.extension_module('_ckdtree',
   ckdtree_src + [cython_gen_cpp.process('_ckdtree.pyx')],
-  cpp_args: cython_cpp_args,
+  # Revert to just cython_cpp_args once Cython 3.2.5 is available.
+  cpp_args: [
+    cython_cpp_args,
+    _cpp_Wno_unneeded_internal_declaration,
+    _cpp_Wno_unused_function
+  ],
   include_directories: [
     '../_lib',
     '../_build_utils/src',
     'ckdtree/src'
   ],
   dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/spatial'
-)
-
-py3.extension_module('_distance_wrap',
-  'src/distance_wrap.c',
-  include_directories: '../_lib',
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/spatial'
-)
-
-py3.extension_module('_distance_pybind',
-  ['src/distance_pybind.cpp'],
-  include_directories: ['src/'],
-  dependencies: [np_dep, pybind11_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/spatial'
@@ -75,15 +62,6 @@ py3.extension_module('_voronoi',
   subdir: 'scipy/spatial'
 )
 
-py3.extension_module('_hausdorff',
-  [cython_gen.process('_hausdorff.pyx')],
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/spatial'
-)
-
 py3.install_sources([
     'COPYING_QHULL.txt',  # copied from subprojects/qhull_r (see gh-23428)
   ],
@@ -92,8 +70,7 @@ py3.install_sources([
 
 py3.install_sources([
     '_qhull.pyi',
-    '_voronoi.pyi',
-    'distance.pyi'
+    '_voronoi.pyi'
   ],
   subdir: 'scipy/spatial'
 )
@@ -106,12 +83,12 @@ py3.install_sources([
     '_procrustes.py',
     '_spherical_voronoi.py',
     'ckdtree.py',
-    'distance.py',
     'kdtree.py',
     'qhull.py'
   ],
   subdir: 'scipy/spatial'
 )
 
+subdir('distance')
 subdir('tests')
 subdir('transform')

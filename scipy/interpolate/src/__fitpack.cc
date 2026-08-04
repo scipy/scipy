@@ -1,5 +1,4 @@
-#include <Python.h>
-/* __fitpack.h includes Python.h */
+#include <cstring>  /* for memcpy */
 #include <string>
 #include <cstdint>
 #include <vector>
@@ -63,7 +62,7 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
             xb = t[ind];
             xa = t[ind - j];
             if (xb == xa) {
-                h[m] = 0.0;
+                h[n] = 0.0;
                 continue;
             }
             w = j*hh[n - 1]/(xb - xa);
@@ -380,7 +379,7 @@ data_matrix_periodic( /* inputs */
     https://people.sc.fsu.edu/~jburkardt/f77_src/band_qr/band_qr.f
 
     The `startrow` optional argument accounts for the scenatio with a two-step
-    factorization. Namely, the preceding rows are assumend to be already
+    factorization. Namely, the preceding rows are assumed to be already
     processed and are skipped.
     This is to account for the scenario where we append new rows to an already
     triangularized matrix.
@@ -559,7 +558,7 @@ void qr_reduce_periodic(
                             std::tie(A1(j - 1, h1i), H1(it - 1, h1i)) = fprota(c, s, A1(j - 1, h1i), H1(it - 1, h1i));
                         }
 
-                        for( int64_t h1i = 1; h1i <= i2; h1i++ ) {
+                        for( int64_t h1i = 1; h1i < i2; h1i++ ) {
                             H1(it - 1, h1i - 1) = H1(it - 1, h1i);
                         }
                         H1(it - 1, i2 - 1) = 0.0;
@@ -874,6 +873,103 @@ void _compute_residuals(
     }
 }
 
+/* Back-substitution for R (upper-triangular banded, packed) into c.
+ * R has shape (m, nz), c_free has shape (nc, ydim2), yw has 
+ * shape (m, ydim2). 
+*/
+static inline void _back_substitute(
+    RealArray2D& c,
+    ConstRealArray2D& R,
+    ConstRealArray2D& yw,
+    int64_t nz,
+    int64_t nc,
+    int64_t ydim2)
+{
+    // c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
+    for (int64_t l = 0; l < ydim2; ++l) {
+        c(nc - 1, l) = yw(nc - 1, l) / R(nc - 1, 0);
+    }
+
+    // for i in range(nc-2, -1, -1): c[i] = (y[i] - sum(R[i, j] * c[i+j])) / R[i, 0]
+    for (int64_t i = nc - 2; i >= 0; --i) {
+        int64_t nel = std::min(nz, nc - i);
+        for (int64_t l = 0; l < ydim2; ++l) {
+            double ssum = yw(i, l);
+            for (int64_t j = 1; j < nel; ++j) {
+                ssum -= R(i, j) * c(i + j, l);
+            }
+            c(i, l) = ssum / R(i, 0);
+        }
+    }
+}
+
+/*
+ * fpback analogue for the clamped LSQ problem. Back-substitutes on the reduced
+ * R (nc_free coefficients) directly into c[1 : nc_full-1], then fills c[0]
+ * and c[nc_full-1] from clamp_values so residual computation on the full-length
+ * c is consistent with (t, k). clamp_values has shape (2, ydim2): row 0 is ci, 
+ * row 1 is cf.
+ */
+void fpback_clamped( /* inputs */
+    const double *Rptr, int64_t m, int64_t nz,
+    int64_t nc_free,
+    const double *xptr, int64_t m_,
+    const double *tptr, int64_t len_t,
+    int k,
+    const double *wptr,
+    int extrapolate,
+    const double* ywptr,
+    const double *yptr, int64_t ydim2,
+    /* outputs */
+    double *cptr,
+    double *fp,
+    double *residualsptr,
+    /* clamp specific args */
+    const double *ci_ptr,
+    const double *cf_ptr)           // clamp_values(2, ydim2)
+{
+    int64_t nc_full = nc_free + ((cf_ptr == NULL || ci_ptr == NULL) ? 1 : 2);
+
+    auto R = ConstRealArray2D(Rptr, m, nz);
+    auto yw = ConstRealArray2D(ywptr, m, ydim2);
+
+    /*
+    * The output buffer `cptr` holds the full coefficient vector, including any
+    * pinned boundary values. Back-substitution writes only the free coefficients
+    * into the interior slots.
+    *
+    * If the left endpoint is clamped (or two-sided), c[0] is
+    * reserved for ci, so free coefficients start at offset `ydim2` (one row of
+    * the (nc_full, ydim2) buffer). If only the right endpoint is clamped
+    * , c[0] is a free coefficient and no offset is needed.
+    */
+    int64_t c_free_start = ci_ptr == NULL ? 0 : ydim2;
+    auto c_free = RealArray2D(cptr + c_free_start, nc_free, ydim2);
+
+    /* 
+    * The loops remain same as fpback, they directly write to the
+    * memory region starting from `cptr + ydim2` to `cptr + ydim2 + nc_free * ydim2`,
+    * that is, `c[1: -1]`.
+    */
+    _back_substitute(c_free, R, yw, nz, nc_free, ydim2);
+
+    /* Reassembly: add `c[0]` & `c[-1]` to `c` before computing residuals. */
+    if (ci_ptr != NULL) {   
+        // Left is clamped: pin `ci_ptr` directly to the first row (cptr[0])
+        memcpy(cptr, ci_ptr, ydim2 * sizeof(double));
+    }
+    
+    if (cf_ptr != NULL) {    
+        // Right is clamped: pin `cf_ptr` to the last row (cptr[nc_full - 1])
+        double* c_last_row = cptr + (nc_full - 1) * ydim2;
+        memcpy(c_last_row, cf_ptr, ydim2 * sizeof(double));
+    }
+
+    _compute_residuals(
+        xptr, m_, yptr, ydim2, tptr, len_t,
+        wptr, k, extrapolate, nc_full, cptr, fp, residualsptr
+    );
+}
 
 /*
  * Back substitution solve of `R @ c = y` with an upper triangular R.
@@ -913,25 +1009,7 @@ fpback( /* inputs*/
     auto yw = ConstRealArray2D(ywptr, m, ydim2);
     auto c = RealArray2D(cptr, nc, ydim2);
 
-    // c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
-    for (int64_t l=0; l < ydim2; ++l) {
-        c(nc - 1, l) = yw(nc - 1, l) / R(nc - 1, 0);
-    }
-
-    //for i in range(nc-2, -1, -1):
-    //    nel = min(nz, nc-i)
-    //    c[i, ...] = ( y[i] - (R[i, 1:nel, None] * c[i+1:i+nel, ...]).sum(axis=0) ) / R[i, 0]
-    for (int64_t i=nc-2; i >= 0; --i) {
-        int64_t nel = std::min(nz, nc - i);
-        for (int64_t l=0; l < ydim2; ++l){
-            double ssum = yw(i, l);
-            for (int64_t j=1; j < nel; ++j) {
-                ssum -= R(i, j) * c(i + j, l);
-            }
-            ssum /= R(i, 0);
-            c(i, l) = ssum;
-        }
-    }
+    _back_substitute(c, R, yw, nz, nc, ydim2);
 
     _compute_residuals(
         xptr, m_, yptr, ydim2, tptr, len_t,
@@ -1076,7 +1154,7 @@ fpbacp( /* inputs*/
  *
  */
 pair_t
-_split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals)
+_split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals, bool periodic)
 {
     /*
      * c  search for knot interval t(number+k) <= x <= t(number+k+1) where
@@ -1091,8 +1169,17 @@ _split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals
 
     std::vector<double> fparts;
     double fpart = 0.0;
+    int64_t m = x.nelem;
+    // FITPACK performs the split using only the first m-1 elements of x
+    // Refer:
+    // https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L546
+    // and,
+    // https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L348
+    if (periodic) {
+        m--;
+    }
 
-    for(int64_t i=0; i < x.nelem; i++) {
+    for(int64_t i=0; i < m; i++) {
         double xv = x(i);
         double rv = residuals(i);
         fpart += rv;
@@ -1140,7 +1227,8 @@ double
 fpknot(const double *x_ptr, int64_t m,
        const double *t_ptr, int64_t len_t,
        int k,
-       const double *residuals_ptr)
+       const double *residuals_ptr,
+       bool periodic)
 {
     auto x = ConstRealArray1D(x_ptr, m);
     auto t = ConstRealArray1D(t_ptr, len_t);
@@ -1148,7 +1236,7 @@ fpknot(const double *x_ptr, int64_t m,
 
     std::vector<double> fparts;
     std::vector<int64_t> ix;
-    std::tie(fparts, ix) = _split(x, t, k, residuals);
+    std::tie(fparts, ix) = _split(x, t, k, residuals, periodic);
 
     int64_t idx_max = -101;
     double fpart_max = -1e100;
@@ -1190,6 +1278,20 @@ _evaluate_spline(
     auto c = ConstRealArray2D(cptr, n, m);
     auto xp = ConstRealArray1D(xp_ptr, s);
     auto out = RealArray2D(out_ptr, s, m);
+
+    /*
+     * If nu > k+1, the B-spline derivative is identically zero.
+     * Avoid the de Boor recursion (which assumes nu <= k+1) and
+     * return a zero-filled result directly.
+     */
+    if( nu > k + 1 ) {
+        for( int64_t i = 0; i < s; i++ ) {
+            for( int64_t j = 0; j < m; j++ ) {
+                out(i, j) = 0.0;
+            }
+        }
+        return ;
+    }
 
     int64_t interval = k;
     for(int64_t ip=0; ip < s; ip++) {
@@ -1339,6 +1441,22 @@ _evaluate_ndbspline(const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, sh
     auto strides_c1 = ConstIndexArray1D(strides_c1_ptr, ndim);
     auto indices_k1d = ConstIndexArray2D(indices_k1d_ptr, num_k1d, ndim);
     auto out = RealArray2D(out_ptr, npts, num_c_tr);
+
+    /*
+     * If nu(d) > k(d) + 1, the B-spline derivative is identically zero.
+     * Avoid the de Boor recursion (which assumes nu(d) <= k(d) + 1) and
+     * return a zero-filled result directly.
+     */
+    for( int d = 0; d < ndim; d++ ) {
+        if( nu(d) > k(d) + 1 ) {
+            for( int64_t i = 0; i < npts; i++ ) {
+                for( int64_t j = 0; j < num_c_tr; j++ ) {
+                    out(i, j) = 0.0;
+                }
+            }
+            return ;
+        }
+    }
 
     // allocate work arrays (small, allocations unlikely to fail)
     int64_t max_k = *std::max_element(k_ptr, k_ptr + ndim);

@@ -381,7 +381,7 @@ def segv(int m, int n, double c, int kd):
     if specfun_segv(m, n, c, kd, &cv, eeg) == Status.NoMemory:
         # Note: segv is a private function that is called by either pro_cv_seq
         # or obl_cv_seq.  We make the error message useful by including the
-        # approriate name in it.
+        # appropriate name in it.
         caller = 'pro_cv_seq' if kd == 1 else 'obl_cv_seq'
         msg = f'{caller}: failed to allocate working memory in segv.'
         raise MemoryError(msg)

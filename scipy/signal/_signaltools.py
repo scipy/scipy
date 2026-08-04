@@ -1,7 +1,6 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-from __future__ import annotations  # Provides typing union operator `|` in Python 3.9
 import operator
 import math
 from math import prod as _prod
@@ -27,12 +26,10 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
-    xp_swapaxes
-
-)
-from scipy._lib.array_api_compat import is_array_api_obj
-import scipy._lib.array_api_extra as xpx
+    xp_result_device, array_namespace, is_torch, is_numpy, xp_copy, xp_size,
+    xp_promote, xp_result_type, xp_swapaxes, xp_device,)
+from scipy._external.array_api_compat import is_array_api_obj
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -125,8 +122,9 @@ def correlate(in1, in2, mode='full', method='auto'):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     method : str {'auto', 'direct', 'fft'}, optional
         A string indicating which method to use to calculate the correlation.
 
@@ -167,11 +165,11 @@ def correlate(in1, in2, mode='full', method='auto'):
 
           z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, 
-    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the 
-    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and 
+    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``,
+    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the
+    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and
     :math:`y^*` denotes the complex conjugate of :math:`y`.
-    
+
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
@@ -235,6 +233,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     """
     xp = array_namespace(in1, in2)
+    device = xp_result_device(in1, in2)
 
     in1 = xp.asarray(in1)
     in2 = xp.asarray(in2)
@@ -264,7 +263,7 @@ def correlate(in1, in2, mode='full', method='auto'):
             a_in1 = np.asarray(in1)
             a_in2 = np.asarray(in2)
             out = np.correlate(a_in1, a_in2, mode)
-            return xp.asarray(out)
+            return xp.asarray(out, device=device)
 
         # _correlateND is far slower when in2.size > in1.size, so swap them
         # and then undo the effect afterward if mode == 'full'.  Also, it fails
@@ -301,7 +300,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
             z = _sigtools._correlateND(in1zpadded, a_in2, out, val)
 
-        z = xp.asarray(z)
+        z = xp.asarray(z, device=device)
 
         if swapped_inputs:
             # Reverse and conjugate to undo the effect of swapping inputs
@@ -534,9 +533,9 @@ def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
     if xp.isdtype(in1.dtype, 'integral'):
-        in1 = xp.astype(in1, xp.float64)
+        in1 = xp.astype(in1, xpx.default_dtype(xp))
     if xp.isdtype(in2.dtype, 'integral'):
-        in2 = xp.astype(in2, xp.float64)
+        in2 = xp.astype(in2, xpx.default_dtype(xp))
 
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
@@ -618,8 +617,9 @@ def fftconvolve(in1, in2, mode="full", axes=None):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
@@ -629,6 +629,13 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     out : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     See Also
     --------
@@ -692,7 +699,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif xp_size(in1) == 0 or xp_size(in2) == 0:  # empty arrays
-        return xp.asarray([])
+        return xp.asarray([], device=xp_device(in1))
 
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=False)
@@ -729,7 +736,7 @@ def _calc_oa_lens(s1, s2):
     in1_step : int
         The size of each step for the first array.
     in2_step : int
-        The size of each step for the first array.
+        The size of each step for the second array.
 
     """
     # Set up the arguments for the conventional FFT approach.
@@ -822,14 +829,14 @@ def _calc_oa_lens(s1, s2):
 # may want to look at moving xp_swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
-    """A simplified version of np.split, with `indices` being an list.
+    """A simplified version of np.split, with `indices` being a list.
     """
     # https://github.com/numpy/numpy/blob/v2.2.0/numpy/lib/_shape_base_impl.py#L743
     Ntotal = x.shape[axis]
 
     # handle array case.
     Nsections = len(indices_or_sections) + 1
-    div_points = [0] + list(indices_or_sections) + [Ntotal]    
+    div_points = [0] + list(indices_or_sections) + [Ntotal]
 
     sub_arys = []
     sary = xp_swapaxes(x, axis, 0, xp=xp)
@@ -870,8 +877,9 @@ def oaconvolve(in1, in2, mode="full", axes=None):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
@@ -881,6 +889,13 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     out : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     See Also
     --------
@@ -931,7 +946,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
-        return xp.asarray([])
+        return xp.asarray([], device=xp_device(in1))
     elif in1.shape == in2.shape:  # Equivalent to fftconvolve
         return fftconvolve(in1, in2, mode=mode, axes=axes)
 
@@ -1034,9 +1049,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         ret, overpart = _split(ret, [-overlap], ax_fft, xp=xp)
         overpart = _split(overpart, [-1], ax_split, xp=xp)[0]
 
-        ret_overpart = _split(ret, [overlap], ax_fft, xp=xp)[0]
-        ret_overpart = _split(ret_overpart, [1], ax_split, xp)[1]
-        ret_overpart += overpart
+        overlap_slice = [slice(None)] * ret.ndim
+        overlap_slice[ax_fft] = slice(0, overlap)
+        overlap_slice[ax_split] = slice(1, None)
+        ret = xpx.at(ret)[tuple(overlap_slice)].add(overpart)
 
     # Reshape back to the correct dimensionality.
     shape_ret = [ret.shape[i] if i not in fft_axes else
@@ -1259,8 +1275,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
            The output consists only of those elements that do not
            rely on the zero-padding.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     measure : bool, optional
         If True, run and time the convolution of `in1` and `in2` with both
         methods and return the fastest. If False (default), predict the fastest
@@ -1398,8 +1415,9 @@ def convolve(in1, in2, mode='full', method='auto'):
            rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
            must be at least as large as the other in every dimension.
         ``same``
-           The output is the same size as `in1`, centered
+           Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
+           Boundary effects may be visible.
     method : str {'auto', 'direct', 'fft'}, optional
         A string indicating which method to use to calculate the convolution.
 
@@ -1420,6 +1438,13 @@ def convolve(in1, in2, mode='full', method='auto'):
     convolve : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+        The output size along each axis depends on ``mode``. For input
+        sizes ``N`` and ``M`` along a given axis:
+
+        - ``full`` : ``N + M - 1``
+        - ``same`` : ``N`` (same as the size of `in1`)
+        - ``valid`` : ``max(N, M) - min(N, M) + 1``
 
     Warns
     -----
@@ -1473,6 +1498,7 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     """
     xp = array_namespace(in1, in2)
+    device = xp_result_device(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1510,7 +1536,7 @@ def convolve(in1, in2, mode='full', method='auto'):
             a_volume = np.asarray(volume)
             a_kernel = np.asarray(kernel)
             out = np.convolve(a_volume, a_kernel, mode)
-            return xp.asarray(out)
+            return xp.asarray(out, device=device)
 
         return correlate(volume, _reverse_and_conj(kernel, xp), mode, 'direct')
     else:
@@ -1622,6 +1648,31 @@ def medfilt(volume, kernel_size=None):
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
 
+    Examples
+    --------
+    Apply a 1-D median filter to an array containing noise spikes.
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> x = np.array([1, 2, 100, 2, 1, 1, 35, 30, 1])
+
+    Apply a filter with a kernel size of 3:
+
+    >>> signal.medfilt(x, kernel_size=3)
+    array([ 1,  2,  2,  2,  1,  1, 30, 30,  1])
+
+    The size 3 kernel is not big enough to eliminate the
+    2-wide spike near the end of the array.
+    A larger size 5 kernel successfully eliminates the 2-wide spike.
+
+    >>> signal.medfilt(x, kernel_size=5)
+    array([1, 2, 2, 2, 2, 2, 1, 1, 1])
+
+    Kernel size 1 acts as an identity operator.
+
+    >>> signal.medfilt(x, kernel_size=1)
+    array([  1,   2, 100,   2,   1,   1,  35,  30,   1])
+
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
@@ -1634,7 +1685,7 @@ def medfilt(volume, kernel_size=None):
 
     if kernel_size is None:
         kernel_size = [3] * volume.ndim
-    kernel_size = xp.asarray(kernel_size)
+    kernel_size = xp.asarray(kernel_size, device=xp_device(volume))
     if kernel_size.shape == ():
         kernel_size = xp.repeat(kernel_size, volume.ndim)
 
@@ -1713,12 +1764,13 @@ def wiener(im, mysize=None, noise=None):
 
     # Estimate the local mean
     size = math.prod(mysize)
-    lMean = correlate(im, xp.ones(mysize), 'same')
+    lMean = correlate(im, xp.ones(mysize, device=xp_device(im)), 'same')
     lsize = float(size)
     lMean = lMean / lsize
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, xp.ones(mysize), 'same') / lsize - lMean ** 2)
+    lVar = (correlate(im ** 2, xp.ones(mysize, device=xp_device(im)), 'same')
+            / lsize - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
@@ -1808,6 +1860,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     """
     xp = array_namespace(in1, in2)
+    device = xp_result_device(in1, in2)
 
     # NB: do work in NumPy, only convert the output
 
@@ -1823,7 +1876,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
     out = _sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)
 
 
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
@@ -1909,6 +1962,8 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     """
     xp = array_namespace(in1, in2)
+    device = xp_result_device(in1, in2)
+
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
 
@@ -1926,7 +1981,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     if swapped_inputs:
         out = out[::-1, ::-1]
 
-    return xp.asarray(out)
+    return xp.asarray(out, device=device)
 
 
 def medfilt2d(input, kernel_size=3):
@@ -2018,13 +2073,14 @@ def medfilt2d(input, kernel_size=3):
 
     """
     xp = array_namespace(input)
+    device = xp_result_device(input)
 
     image = np.asarray(input)
 
     # checking dtype.type, rather than just dtype, is necessary for
     # excluding np.longdouble with MS Visual C.
     if image.dtype.type not in (np.ubyte, np.float32, np.float64):
-        return xp.asarray(medfilt(image, kernel_size))
+        return xp.asarray(medfilt(image, kernel_size), device=device)
 
     if kernel_size is None:
         kernel_size = [3] * 2
@@ -2037,7 +2093,7 @@ def medfilt2d(input, kernel_size=3):
             raise ValueError("Each element of kernel_size should be odd.")
 
     result_np = _sigtools._medfilt2d(image, kernel_size)
-    return xp.asarray(result_np)
+    return xp.asarray(result_np, device=device)
 
 
 def lfilter(b, a, x, axis=-1, zi=None):
@@ -2165,6 +2221,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     """
     xp = array_namespace(b, a, x, zi)
+    device = xp_result_device(b, a, x, zi)
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
@@ -2234,18 +2291,18 @@ def lfilter(b, a, x, axis=-1, zi=None):
         out = out_full[tuple(ind)]
 
         if zi is None:
-            return xp.asarray(out)
+            return xp.asarray(out, device=device)
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
             zf = out_full[tuple(ind)]
-            return xp.asarray(out), xp.asarray(zf)
+            return xp.asarray(out, device=device), xp.asarray(zf, device=device)
     else:
         if zi is None:
             result =_sigtools._linear_filter(b, a, x, axis)
-            return xp.asarray(result)
+            return xp.asarray(result, device=device)
         else:
             out, zf = _sigtools._linear_filter(b, a, x, axis, zi)
-            return xp.asarray(out), xp.asarray(zf)
+            return xp.asarray(out, device=device), xp.asarray(zf, device=device)
 
 
 def lfiltic(b, a, y, x=None):
@@ -2308,7 +2365,7 @@ def lfiltic(b, a, y, x=None):
         result_type = xp.result_type(b, a, y)
         if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
             result_type = xp.float64
-        x = xp.zeros(M, dtype=result_type)
+        x = xp.zeros(M, dtype=result_type, device=xp_device(b))
     else:
         x = xp.asarray(x)
 
@@ -2319,25 +2376,25 @@ def lfiltic(b, a, y, x=None):
 
         L = xp_size(x)
         if L < M:
-            x = xp.concat((x, xp.zeros(M - L)))
+            x = xp.concat((x, xp.zeros(M - L, device=xp_device(x))))
 
     y = xp.astype(y, result_type)
-    zi = xp.zeros(K, dtype=result_type)
+    zi = xp.zeros(K, dtype=result_type, device=xp_device(b))
 
     L = xp_size(y)
     if L < N:
-        y = xp.concat((y, xp.zeros(N - L)))
+        y = xp.concat((y, xp.zeros(N - L, device=xp_device(y))))
 
     for m in range(M):
-        zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
+        zi = xpx.at(zi)[m].set(xp.sum(b[m + 1:] * x[:M - m], axis=0))
 
     for m in range(N):
-        zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
+        zi = xpx.at(zi)[m].set(zi[m] - xp.sum(a[m + 1:] * y[:N - m], axis=0))
 
     if a[0] != 1.:
         if a[0] == 0.:
             raise ValueError("First `a` filter coefficient must be non-zero.")
-        zi /= a[0]
+        zi = zi / a[0]
 
     return zi
 
@@ -2400,8 +2457,8 @@ def deconvolve(signal, divisor):
         quot = []
         rem = num
     else:
-        input = xp.zeros(N - D + 1, dtype=xp.float64)
-        input[0] = 1
+        input = xp.zeros(N - D + 1, dtype=xp.float64, device=xp_device(num))
+        input = xpx.at(input)[0].set(1)
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
@@ -2414,7 +2471,7 @@ def hilbert(x, N=None, axis=-1):
     doubling the amplitudes of the positive frequencies in the FFT domain.
     The imaginary part of the result is the hilbert transform of the real-valued input
     signal.
-    
+
     The transformation is done along the last axis by default.
 
     For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
@@ -2519,11 +2576,11 @@ def hilbert(x, N=None, axis=-1):
     Xf = sp_fft.fft(x, N, axis=axis)
     Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        Xf[..., 1: N // 2] *= 2.0
-        Xf[..., N // 2 + 1:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: N // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., N // 2 + 1:N].set(0.0)
     else:
-        Xf[..., 1:(N + 1) // 2] *= 2.0
-        Xf[..., (N + 1) // 2:N] = 0.0
+        Xf = xpx.at(Xf)[..., 1: (N + 1) // 2].multiply(2.0)
+        Xf = xpx.at(Xf)[..., (N + 1) // 2:N].set(0.0)
 
     Xf = xp.moveaxis(Xf, -1, axis)
     x = sp_fft.ifft(Xf, axis=axis)
@@ -2692,20 +2749,23 @@ def hilbert2(x, N=None, axes=(-2, -1)):
         if N <= 0:
             raise ValueError("N must be positive.")
         N = (N, N)
-    elif len(N) != 2 or xp.any(xp.asarray(N) <= 0):
+    elif len(N) != 2 or np.any(np.asarray(N) <= 0):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
     Xf = sp_fft.fft2(x, N, axes=axes)
     Xf = xp.moveaxis(Xf, axes, (-2, -1))
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
+    # For even lengths keep the unpaired Nyquist bin (factor 1), as in `hilbert`.
+    z0 = N[0] // 2 + 1
+    z1 = N[1] // 2 + 1
 
     if k0 > 1:  # condition k0 > 1 needed for Dask backend
-        Xf[..., 1:k0, :] *= 2.0
+        Xf = xpx.at(Xf)[..., 1:k0, :].multiply(2.0)
     if k1 > 1:  # condition k1 > 1 needed for Dask backend
-        Xf[..., :, 1:k1] *= 2.0
-    Xf[..., k0:, :] = 0.0
-    Xf[..., :, k1:] = 0.0
+        Xf = xpx.at(Xf)[..., :, 1:k1].multiply(2.0)
+    Xf = xpx.at(Xf)[..., z0:, :].set(0.0)
+    Xf = xpx.at(Xf)[..., :, z1:].set(0.0)
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)
@@ -2779,16 +2839,10 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     which produces a complex-valued signal with the same envelope :math:`|a(t)|`.
 
     The implementation is based on computing the FFT of the input signal and then
-    performing the necessary operations in Fourier space. Hence, the typical FFT
-    caveats need to be taken into account:
-
-    * The signal is assumed to be periodic. Discontinuities between signal start and
-      end can lead to unwanted results due to Gibbs phenomenon.
-    * The FFT is slow if the signal length is prime or very long. Also, the memory
-      demands are typically higher than a comparable FIR/IIR filter based
-      implementation.
-    * The frequency spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter
-      corresponds to the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
+    performing the necessary operations in Fourier space. Hence, the typical :ref:`FFT
+    caveats <tutorial_FFT_Caveats>` need to be taken into account. The frequency
+    spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter corresponds to
+    the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
 
     If the envelope of a complex-valued signal `z` with no bandpass filtering is
     desired, i.e., ``bp_in=(None, None)``, then the envelope corresponds to the
@@ -2883,7 +2937,7 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     i.e., representing the absolute value of the instantaneous amplitude.
 
     The right plot shows the real part of that analytic signal being interpreted
-    as a complex-vauled signal, i.e., having zero imaginary part. There the resulting
+    as a complex-valued signal, i.e., having zero imaginary part. There the resulting
     envelope is not as smooth as in the analytic case and the instantaneous amplitude
     in the real plane is not recovered. If ``z_re`` had been passed as a real-valued
     signal, i.e., as ``z_re = z.real`` instead of ``z_re = z.real + 0j``, the result
@@ -2960,11 +3014,11 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     else:  # avoid calculating negative frequency bins for real signals:
         dt = sp_fft.rfft(z[..., :1]).dtype
         Z = xp.zeros_like(z, dtype=dt)
-        Z[..., :n//2 + 1] = sp_fft.rfft(z)
+        Z = xpx.at(Z)[..., :n//2 + 1].set(sp_fft.rfft(z))
         if bp.start > 0:  # make signal analytic within bp_in band:
-            Z[..., bp] *= 2
+            Z = xpx.at(Z)[..., bp].multiply(2)
         elif bp.stop > 0:
-            Z[..., 1:bp.stop] *= 2
+            Z = xpx.at(Z)[..., 1:bp.stop].multiply(2)
     if not (bp.start <= 0 < bp.stop):  # envelope is invariant to freq. shifts.
         z_bb = sp_fft.ifft(Z[..., bp], n=n_out) * fak  # baseband signal
     else:
@@ -2978,20 +3032,22 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     if residual is None:
         return z_env
     if not (bp.start <= 0 < bp.stop):
-        Z[..., bp] = 0
+        Z = xpx.at(Z)[..., bp].set(0)
     else:
-        Z[..., :bp.stop], Z[..., bp.start:] = 0, 0
+        Z = xpx.at(Z)[..., :bp.stop].set(0)
+        Z = xpx.at(Z)[..., bp.start:].set(0)
     if residual == 'lowpass':
         if bp.stop > 0:
-            Z[..., bp.stop:(n+1) // 2] = 0
+            Z = xpx.at(Z)[..., bp.stop:(n+1) // 2].set(0)
         else:
-            Z[..., bp.start:], Z[..., 0:(n + 1) // 2] = 0, 0
+            Z = xpx.at(Z)[..., bp.start:].set(0)
+            Z = xpx.at(Z)[..., 0:(n + 1) // 2].set(0)
 
     if xp.isdtype(z.dtype, 'complex floating'):  # resample accounts for unpaired bins:
         z_res = resample(Z, n_out, axis=-1, domain='freq')  # ifft() with corrections
     else:  # account for unpaired bin at m//2 before doing irfft():
         if n_out != n and (m := min(n, n_out)) % 2 == 0:
-            Z[..., m//2] *= 2 if n_out < n else 0.5
+            Z = xpx.at(Z)[..., m//2].set(Z[..., m//2] * (2 if n_out < n else 0.5))
         z_res = fak * sp_fft.irfft(Z, n=n_out)
     return xp.stack((z_env, xp.moveaxis(z_res, -1, axis)), axis=0)
 
@@ -3013,9 +3069,9 @@ def _cmplx_sort(p):
 
     Examples
     --------
-    >>> from scipy import signal
+    >>> from scipy.signal._signaltools import _cmplx_sort
     >>> vals = [1, 4, 1+1.j, 3]
-    >>> p_sorted, indx = signal.cmplx_sort(vals)
+    >>> p_sorted, indx = _cmplx_sort(vals)
     >>> p_sorted
     array([1.+0.j, 1.+1.j, 3.+0.j, 4.+0.j])
     >>> indx
@@ -3041,9 +3097,9 @@ def unique_roots(p, tol=1e-3, rtype='min'):
         How to determine the returned root if multiple roots are within
         `tol` of each other.
 
-          - 'max', 'maximum': pick the maximum of those roots
-          - 'min', 'minimum': pick the minimum of those roots
-          - 'avg', 'mean': take the average of those roots
+        - 'max', 'maximum': pick the maximum of those roots
+        - 'min', 'minimum': pick the minimum of those roots
+        - 'avg', 'mean': take the average of those roots
 
         When finding minimum or maximum among complex roots they are compared
         first by the real part and then by the imaginary part.
@@ -3590,22 +3646,22 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         determined by ``t[0] + T * n_x / num * np.arange(num)`` with
         ``T = t[1] - t[0]``. Default is ``None``.
     axis : int, optional
-        The time/frequency axis of `x` along which the resampling take place.
-        The Default is 0.
-    window : array_like, callable, string, float, or tuple, optional
+        The time/frequency axis of `x` along which the resampling takes place.
+        The default is 0.
+    window : array_like, callable, str, float, or tuple, optional
         If not ``None``, it specifies a filter in the Fourier domain, which is applied
         before resampling. I.e., the FFT ``X`` of `x` is calculated by
         ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral windowing
         function ``W(f_X)`` which consumes the frequencies ``f_X = fftfreq(n_x, T)``.
 
         If `window` is a 1d array of length ``n_x`` then ``W=window``.
-        If `window` is a callable  then ``W = window(f_X)``.
+        If `window` is a callable then ``W = window(f_X)``.
         Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
         ``W = fftshift(signal.get_window(window, n_x))``. Default is ``None``.
 
     domain : 'time' | 'freq', optional
         If set to ``'time'`` (default) then an FFT is applied to `x`, otherwise
-        (``'freq'``) it is asssmued that an FFT was already applied, i.e.,
+        (``'freq'``) it is assumed that an FFT was already applied, i.e.,
         ``x = fft(x_t, axis=axis)`` with ``x_t`` being the input signal in the time
         domain.
 
@@ -3616,7 +3672,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         ``T * n_x / num``.
     t_r : ndarray, optional
         The `num` equidistant timestamps of `x_r`.
-        This is only returned if paramater `t` is not ``None``.
+        This is only returned if parameter `t` is not ``None``.
 
     See Also
     --------
@@ -3638,9 +3694,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     zero imaginary part are treated identically. I.e., passing `x` or passing
     ``x.astype(np.complex128)`` produce the same numeric result.
 
-    If the number of input  or output samples are prime or have few prime factors, this
+    If the number of input or output samples is prime or has few prime factors, this
     function may be slow due to utilizing FFTs. Consult `~scipy.fft.prev_fast_len` and
-    `~scipy.fft.next_fast_len` for determining efficient signals lengths.
+    `~scipy.fft.next_fast_len` for determining efficient signal lengths.
     Alternatively, utilizing `resample_poly` to calculate an intermediate signal (as
     illustrated in the example below) can result in significant speed increases.
 
@@ -3694,17 +3750,17 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> import numpy as np
     >>> from scipy.fft import fftshift, fftfreq, fft, rfft, irfft
     >>> from scipy.signal import resample, resample_poly
-    ... 
+    ...
     >>> fac, T0, T1 = 8, 1, 1/8  # upsampling factor and sampling intervals
     >>> for n0 in (15, 16):  # number of samples of input signal
     ...     n1 = fac * n0  # number of samples of upsampled signal
     ...     t0, t1 = T0 * np.arange(n0), T1 * np.arange(n1)  # time stamps
     ...     x0 = np.zeros(n0)  # input signal has two non-zero sample values
     ...     x0[n0//2], x0[n0//2+1] = n0 // 2, -(n0 // 2)
-    ... 
+    ...
     ...     x1n = irfft(rfft(x0), n=n1) * n1 / n0  # naive resampling
     ...     x1r = resample(x0, n1)  # resample signal
-    ... 
+    ...
     ...     # Determine magnitude spectrum:
     ...     x0_up = np.zeros_like(x1r)  # upsampling without antialiasing filter
     ...     x0_up[::n1 // n0] = x0
@@ -3712,25 +3768,25 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     ...     XX1 = (fftshift(fft(x_)) / n1 for x_ in (x1n, x1r))
     ...     f0, f1 = fftshift(fftfreq(n0, T0)), fftshift(fftfreq(n1, T1))  # frequencies
     ...     df = f0[1] - f0[0]  # frequency resolution
-    ... 
+    ...
     ...     fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
     ...     ax0.set_title(rf"Upsampling ${fac}\times$ from {n0} to {n1} samples")
-    ...     ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", 
+    ...     ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$",
     ...             xlim=(0, n1*T1))
-    ...     ax0.step(t0, x0, 'C2o-', where='post', alpha=.3, linewidth=2, 
+    ...     ax0.step(t0, x0, 'C2o-', where='post', alpha=.3, linewidth=2,
     ...              label="$x_0(t)$ / $X_0(f)$")
     ...     for x_, l_ in zip((x1n, x1r), ('C0--', 'C1-')):
     ...         ax0.plot(t1, x_, l_, alpha=.5, label=None)
     ...     ax0.grid()
-    ...     ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {df*1e3:.1f}\,$mHz)", 
+    ...     ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {df*1e3:.1f}\,$mHz)",
     ...             ylabel="Magnitude $|X(f)|$", xlim=(-0.7, 0.7))
     ...     ax1.axvspan(0.5/T0, f1[-1], color='gray', alpha=.2)
     ...     ax1.axvspan(f1[0], -0.5/T0, color='gray', alpha=.2)
     ...     ax1.plot(f1, abs(X0_up), 'C2-', f0, abs(X0),  'C2o', alpha=.3, linewidth=2)
-    ...     for X_, n_, l_ in zip(XX1, ("naive", "resample"), ('C0x--', 'C1.-')): 
+    ...     for X_, n_, l_ in zip(XX1, ("naive", "resample"), ('C0x--', 'C1.-')):
     ...         ax1.plot(f1, abs(X_), l_, alpha=.5, label=n_)
     ...     ax1.grid()
-    ...     fig.legend(loc='outside lower center', ncols=4)    
+    ...     fig.legend(loc='outside lower center', ncols=4)
     >>> plt.show()
 
     The first figure shows that upsampling an odd number of samples produces identical
@@ -3747,9 +3803,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     down-sampling: The input signal a non-zero value at :math:`t=0` and is downsampled
     from 19937 to 128 samples. Since 19937 is prime, the FFT is expected to be slow. To
     speed matters up, `resample_poly` is used to downsample first by a factor of ``n0
-    // n1 = 155`` and then pass the result to `resample`. Two parameterization of 
+    // n1 = 155`` and then pass the result to `resample`. Two parameterization of
     `resample_poly` are used: Passing ``padtype='wrap'`` treats the input as being
-    periodic wheras the default parametrization performs zero-padding. The upper
+    periodic whereas the default parametrization performs zero-padding. The upper
     subplot shows the resulting signals over time whereas the lower subplot depicts the
     resulting one-sided magnitude spectra.
 
@@ -3757,31 +3813,31 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> import numpy as np
     >>> from scipy.fft import rfftfreq, rfft
     >>> from scipy.signal import resample, resample_poly
-    ... 
+    ...
     >>> n0 = 19937 # number of input samples - prime
     >>> n1 = 128  # number of output samples - fast FFT length
     >>> T0, T1 = 1/n0, 1/n1  # sampling intervals
     >>> t0, t1 = np.arange(n0)*T0, np.arange(n1)*T1  # time stamps
-    ... 
+    ...
     >>> x0 = np.zeros(n0)  # Input has one non-zero sample
     >>> x0[0] = n0
-    >>> 
+    >>>
     >>> x1r = resample(x0, n1)  # slow due to n0 being prime
     >>> # This is faster:
-    >>> x1p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)  # periodic 
+    >>> x1p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)  # periodic
     >>> x2p = resample(resample_poly(x0, 1, n0 // n1), n1)  # with zero-padding
-    ... 
-    >>> X0 = rfft(x0) / n0 
+    ...
+    >>> X0 = rfft(x0) / n0
     >>> X1r, X1p, X2p = rfft(x1r) / n1, rfft(x1p) / n1, rfft(x2p) / n1
     >>> f0, f1 = rfftfreq(n0, T0), rfftfreq(n1, T1)
-    ... 
+    ...
     >>> fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
     >>> ax0.set_title(f"Dowsampled Impulse response (from {n0} to {n1} samples)")
-    >>> ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", xlim=(-T1, 1)) 
+    >>> ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", xlim=(-T1, 1))
     >>> for x_ in (x1r, x1p, x2p):
     ...     ax0.plot(t1, x_, alpha=.5)
     >>> ax0.grid()
-    >>> ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f1[1]}\,$Hz)", 
+    >>> ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f1[1]}\,$Hz)",
     ...         ylabel="Magnitude $|X(f)|$", xlim=(0, 0.55/T1))
     >>> ax1.axvspan(0.5/T1, f0[-1], color='gray', alpha=.2)
     >>> ax1.plot(f1, abs(X1r), 'C0.-', alpha=.5, label="resample")
@@ -3789,20 +3845,20 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> ax1.plot(f1, abs(X2p), 'C2x-', alpha=.5, label="resample_poly")
     >>> ax1.grid()
     >>> fig.legend(loc='outside lower center', ncols=2)
-    >>> plt.show()    
+    >>> plt.show()
 
     The plots show that the results of the "pure" `resample` and the usage of the
     default parameters of `resample_poly` agree well.  The periodic padding of
     `resample_poly` (``padtype='wrap'``) on the other hand produces significant
     deviations. This is caused by the disconiuity at the beginning of the signal, for
     which the default filter of `resample_poly` is not suited well. This example
-    illustrates that for some use cases, adpating the `resample_poly` parameters may
+    illustrates that for some use cases, adapting the `resample_poly` parameters may
     be beneficial. `resample` has a big advantage in this regard: It uses the ideal
     antialiasing filter with the maximum bandwidth by default.
 
     Note that the doubled spectral magnitude at the Nyqist frequency of 64 Hz is due the
-    even number of ``n1=128`` output samples, which requires a special treatment as 
-    discussed in the previous example. 
+    even number of ``n1=128`` output samples, which requires a special treatment as
+    discussed in the previous example.
     """
     if domain not in ('time', 'freq'):
         raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")
@@ -3819,47 +3875,50 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if window is None: # Determine spectral windowing function:
         W = None
     elif callable(window):
-        W = window(sp_fft.fftfreq(n_x))
+        W = window(sp_fft.fftfreq(n_x, xp=xp, device=xp_device(x)))
     elif hasattr(window, 'shape'): # must be an array object
         if window.shape != (n_x,):
             raise ValueError(f"{window.shape=} != ({n_x},), i.e., window length " +
                              "is not equal to number of frequency bins!")
         W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
-        W = sp_fft.fftshift(get_window(window, n_x, xp=xp))
-        W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
+        W = sp_fft.fftshift(get_window(window, n_x, xp=xp,
+                                       device=xp_device(x)))
+        W = xp.astype(W, xpx.default_dtype(xp))   # get_window always returns float64
 
     if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
         X = sp_fft.rfft(x)
         if W is not None:  # fold window, i.e., W1[l] = (W[l] + W[-l]) / 2 for l > 0
             n_X = X.shape[-1]
-            W[1:n_X] += xp.flip(W[-n_X+1:])  #W[:-n_X:-1]
-            W[1:n_X] /= 2
-            X *= W[:n_X]  # apply window
+            W = xpx.at(W)[1:n_X].add(xp.flip(W[-n_X+1:]))  #W[:-n_X:-1]
+            W = xpx.at(W)[1:n_X].multiply(0.5)
+            X = X * W[:n_X]  # apply window
         X = X[..., :m2]  # extract relevant data
         if m % 2 == 0 and num != n_x:  # Account for unpaired bin at m//2:
-            X[..., m//2] *= 2 if num < n_x else 0.5
+            X = xpx.at(X)[..., m//2].multiply(2 if num < n_x else 0.5)
         x_r = sp_fft.irfft(X / s_fac, n=num, overwrite_x=True)
     else:  # use standard two-sided FFT:
         X = sp_fft.fft(x) if domain == 'time' else x
         if W is not None:
             X = X * W  # writing X *= W could modify parameter x
-        Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
-        Y[..., :m2] = X[..., :m2]  # copy part up to Nyquist frequency
+        Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype, device=xp_device(X))
+        Y = xpx.at(Y)[..., :m2].set(X[..., :m2])  # copy up to Nyquist
         if m2 < m:  # == m > 2
-            Y[..., m2-m:] = X[..., m2-m:]  # copy negative frequency part
+            Y = xpx.at(Y)[..., m2-m:].set(X[..., m2-m:])  # copy negative frequencies
         if m % 2 == 0:  # Account for unpaired bin at m//2:
             if num < n_x:  # down-sampling: unite bin pair into one unpaired bin
-                Y[..., -m//2] += X[..., -m//2]
+                Y = xpx.at(Y)[..., -m//2].add(X[..., -m//2])
             elif n_x < num:  # up-sampling: split unpaired bin into bin pair
-                Y[..., m//2] /= 2
-                Y[..., num-m//2] = Y[..., m//2]
+                Y = xpx.at(Y)[..., m//2].multiply(0.5)
+                Y = xpx.at(Y)[..., num-m//2].set(Y[..., m//2])
         x_r = sp_fft.ifft(Y / s_fac, n=num, overwrite_x=True)
 
     if x_r.ndim > 1:  # moving active axis back to original position:
         x_r = xp.moveaxis(x_r, -1, axis)
     if t is not None:
-        return x_r, t[0] + (t[1] - t[0]) * s_fac * xp.arange(num)
+        t_new_dtype = xp_result_type(t, force_floating=True, xp=xp)
+        t_new = xp.arange(num, dtype=t_new_dtype, device=xp_device(x))
+        return x_r, t[0] + (t[1] - t[0]) * s_fac * t_new
     return x_r
 
 
@@ -3884,15 +3943,15 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         The downsampling factor.
     axis : int, optional
         The axis of `x` that is resampled. Default is 0.
-    window : string, tuple, or array_like, optional
+    window : str, tuple, or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
-    padtype : string, optional
+    padtype : str, optional
         `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
         the other signal extension modes supported by `scipy.signal.upfirdn`.
         Changes assumptions on values beyond the boundary. If `constant`,
-        assumed to be `cval` (default zero). If `line` assumed to continue a
-        linear trend defined by the first and last points. `mean`, `median`,
+        it is assumed to be `cval` (default zero). If `line`, it is assumed to continue
+        a linear trend defined by the first and last points. `mean`, `median`,
         `maximum` and `minimum` work as in `np.pad` and assume that the values
         beyond the boundary are the mean, median, maximum or minimum
         respectively of the array along the axis.
@@ -4026,10 +4085,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
         if xp.isdtype(x.dtype, ("real floating", "complex floating")):
             h = firwin(2 * half_len + 1, f_c, window=window)
-            h = xp.asarray(h, dtype=x.dtype)    # match dtype of x
+            h = xp.asarray(h, dtype=x.dtype, device=xp_device(x))
         else:
             h = firwin(2 * half_len + 1, f_c, window=window)
-            h = xp.asarray(h)
+            h = xp.asarray(h, device=xp_device(x))
 
     h *= up
 
@@ -4041,13 +4100,14 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     while _output_len(h.shape[0] + n_pre_pad + n_post_pad, n_in,
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
-    h = xp.concat((xp.zeros(n_pre_pad, dtype=h.dtype), h,
-                   xp.zeros(n_post_pad, dtype=h.dtype)))
+    h = xp.concat((xp.zeros(n_pre_pad, dtype=h.dtype, device=xp_device(h)), h,
+                   xp.zeros(n_post_pad, dtype=h.dtype, device=xp_device(h))))
     n_pre_remove_end = n_pre_remove + n_out
 
     # XXX consider using stats.quantile, which is natively Array API compatible
     def _median(x, *args, **kwds):
-        return xp.asarray(np.median(np.asarray(x), *args, **kwds))
+        return xp.asarray(np.median(np.asarray(x), *args, **kwds),
+                          device=xp_device(x))
 
     # Remove background depending on the padtype option
     funcs = {'mean': xp.mean, 'median': _median,
@@ -4126,17 +4186,74 @@ def vectorstrength(events, period):
 
     References
     ----------
-    van Hemmen, JL, Longtin, A, and Vollmayr, AN. Testing resonating vector
-        strength: Auditory system, electric fish, and noise.
-        Chaos 21, 047508 (2011);
-        :doi:`10.1063/1.3670512`.
-    van Hemmen, JL.  Vector strength after Goldberg, Brown, and von Mises:
-        biological and mathematical perspectives.  Biol Cybern.
-        2013 Aug;107(4):385-96. :doi:`10.1007/s00422-013-0561-7`.
-    van Hemmen, JL and Vollmayr, AN.  Resonating vector strength: what happens
-        when we vary the "probing" frequency while keeping the spike times
-        fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
-        :doi:`10.1007/s00422-013-0560-8`.
+    .. [1] Van Hemmen, JL, Longtin, A, and Vollmayr, AN. "Testing resonating vector
+           strength: Auditory system, electric fish, and noise."
+           Chaos 21, 047508 (2011), :doi:`10.1063/1.3670512`.
+    .. [2] Van Hemmen, JL. "Vector strength after Goldberg, Brown, and von Mises:
+           biological and mathematical perspectives."
+           Biol Cybern. 2013 Aug; 107(4): 385-96. :doi:`10.1007/s00422-013-0561-7`.
+    .. [3] Van Hemmen, JL and Vollmayr, AN. "Resonating vector strength: what happens
+           when we vary the 'probing' frequency while keeping the spike times fixed."
+           Biol Cybern. 2013 Aug; 107(4): 491-94. :doi:`10.1007/s00422-013-0560-8`.
+
+    Examples
+    --------
+    In this example, five events occur exactly 1 second apart, starting
+    at 0.25 s. The vector strength is 1 for ``period=1`` because all
+    events fall at the same phase of every cycle, and the returned phase
+    is π/2, a quarter of the way through the period.
+
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    ...
+    >>> events = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
+    >>> vectorstrength(events, period=1.0)
+    (np.float64(1.0), np.float64(1.5707963267948968))  # may vary
+
+    ``period`` can also be an array of candidate periods. With the same
+    events as above, the strength stays at 1 at the true period of 1 s
+    and at the sub-multiple period 0.5 s (a form of aliasing), and drops
+    to 0 at ``period=5`` where the events span a single period at
+    evenly-spaced phases:
+
+    >>> periods = [1, 5, 0.5]
+    >>> strengths, phases = vectorstrength(events, periods)
+    ...
+    >>> for p_, s_, ph_ in zip(periods, strengths, phases):
+    ...     print(f"period = {p_:.1f}: strength = {s_:.2f}, "
+    ...           f"phase = {np.rad2deg(ph_):.1f} deg")
+    period = 1.0: strength = 1.00, phase = 90.0 deg
+    period = 5.0: strength = 0.00, phase = 153.4 deg
+    period = 0.5: strength = 1.00, phase = -180.0 deg
+
+    The following example depicts the vector strength and its phase for
+    100 samples with a constant period of 10 s. The maximum strength of 1
+    occurs at 10 s with phase 0 rad. Due to the finite number of samples,
+    the strength does not drop to zero away from 10 s but exhibits
+    secondary maxima similar to those of an FFT sidelobe pattern. The
+    phase decreases roughly linearly with jumps of π rad at each
+    sidelobe minimum, consistent with an underlying sinc-like function.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    ...
+    >>> N, T = 100, 10  # samples and sampling interval in seconds
+    >>> events = np.arange(N) * T
+    >>> periods = np.linspace(9.5, 10.5, 101)
+    >>> strength, phase = vectorstrength(events, periods)
+    ...
+    >>> fig, (ax_strength, ax_phase) = plt.subplots(
+    ...     2, 1, sharex=True, tight_layout=True)
+    >>> ax_strength.set_title(
+    ...     f"Vector strength of {N} samples at {T} s spacing")
+    >>> ax_strength.set(ylabel="Strength", xlim=(periods[0], periods[-1]))
+    >>> ax_strength.grid(True)
+    >>> ax_phase.set(xlabel="Period (s)", ylabel="Phase (rad)")
+    >>> ax_phase.grid(True)
+    >>> ax_strength.plot(periods, strength, 'C0.-')
+    >>> ax_phase.plot(periods, phase, 'C1.-')
+    >>> plt.show()
     '''
     xp = array_namespace(events, period)
 
@@ -4197,7 +4314,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`. This parameter
         only has an effect when ``type == 'linear'``.
-    overwrite_data: bool, optional
+    overwrite_data : bool, optional
         If True, allow in place detrending and avoid a copy. Default is
         False. In place modification applies only if ``type == 'linear'``
         and `data` is of the floating point dtype ``float32``, ``float64``,
@@ -4216,7 +4333,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     See Also
     --------
-    numpy.polynomial.polynomial.Polynomial.fit: Create least squares fit polynomial.
+    :meth:`numpy.polynomial.polynomial.Polynomial.fit` : Create least squares fit polynomial.
 
 
     Examples
@@ -4257,11 +4374,12 @@ def detrend(data: np.ndarray, axis: int = -1,
     Note that `~numpy.polynomial.polynomial.Polynomial` also allows fitting higher
     degree polynomials. Consult its documentation on how to extract the polynomial
     coefficients.
-    """
+    """  # noqa: E501
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
     xp = array_namespace(data, bp)
+    device = xp_result_device(data, bp)
 
     data = np.asarray(data)
     dtype = data.dtype.char
@@ -4269,7 +4387,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         dtype = 'd'
     if type in ['constant', 'c']:
         ret = data - np.mean(data, axis, keepdims=True)
-        return xp.asarray(ret)
+        return xp.asarray(ret, device=device)
     else:
         dshape = data.shape
         N = dshape[axis]
@@ -4306,12 +4424,11 @@ def detrend(data: np.ndarray, axis: int = -1,
         # Put data back in original shape.
         newdata = newdata.reshape(newdata_shape)
         ret = np.moveaxis(newdata, 0, axis)
-        return xp.asarray(ret)
+        return xp.asarray(ret, device=device)
 
 
 def lfilter_zi(b, a):
-    """
-    Construct initial conditions for lfilter for step response steady-state.
+    r"""Construct initial conditions for `lfilter` for step response steady-state.
 
     Compute an initial state `zi` for the `lfilter` function that corresponds
     to the steady state of the step response.
@@ -4322,14 +4439,23 @@ def lfilter_zi(b, a):
 
     Parameters
     ----------
-    b, a : array_like (1-D)
-        The IIR filter coefficients. See `lfilter` for more
-        information.
+    b : array_like
+        The numerator coefficient vector as a 1-D sequence.
+    a : array_like
+        The denominator coefficient vector as a 1-D sequence.  If ``a[0]``
+        is not 1, then both `a` and `b` are normalized by ``a[0]``.
+        Hence, ``a[0] != 0`` must hold.
 
     Returns
     -------
     zi : 1-D ndarray
         The initial state for the filter.
+
+    Raises
+    ------
+    ValueError
+        If ``a[0] == 0`` (invalid denominator polynomial) or
+        ``sum(a) == 0`` (unstable filter).
 
     See Also
     --------
@@ -4337,116 +4463,103 @@ def lfilter_zi(b, a):
 
     Notes
     -----
-    A linear filter with order m has a state space representation (A, B, C, D),
-    for which the output y of the filter can be expressed as::
+    The parameters `b` and `a` represent a transfer function :math:`H(z) = Y(z)/X(z)`
+    which is defined in the :ref:`tutorial_signal_TransferFunctionRepresentation`
+    section of the :ref:`user_guide`. As discussed in [1]_, the final value of
+    filtering a step response :math:`X(z) = z / (z-1)`, i.e., steady state, is given by
 
-        z(n+1) = A*z(n) + B*x(n)
-        y(n)   = C*z(n) + D*x(n)
+    .. math::
 
-    where z(n) is a vector of length m, A has shape (m, m), B has shape
-    (m, 1), C has shape (1, m) and D has shape (1, 1) (assuming x(n) is
-    a scalar).  lfilter_zi solves::
+        y_\infty := \lim_{k\to\infty} y[k]
+                  =  \lim_{z\to 1}\ (z-1)\, Y(z)
+                  = \frac{\sum_{i=0}^M b_i}{\sum_{j=0}^N a_j} \,.
 
-        zi = A*zi + B
+    If the denominator is zero, :math:`H(z)` has a pole at :math:`z_\infty=1`, which
+    makes the filter unstable. For the transposed Direct Form II, which is implemented
+    in `lfilter`, the initialization values :math:`z_k` for :math:`H(z)` can be
+    determined by the recurrence equation
 
-    In other words, it finds the initial condition for which the response
-    to an input of all ones is a constant.
+    .. math::
 
-    Given the filter coefficients `a` and `b`, the state space matrices
-    for the transposed direct form II implementation of the linear filter,
-    which is the implementation used by scipy.signal.lfilter, are::
+        z_k = z_{k+1} + x[0] \big( b_k - y_\infty a_k \big) \,,
 
-        A = scipy.linalg.companion(a).T
-        B = b[1:] - a[1:]*b[0]
-
-    assuming ``a[0]`` is 1.0; if ``a[0]`` is not 1, `a` and `b` are first
-    divided by a[0].
+    with :math:`x[0]` being the height of the input step function. Note that
+    :math:`a_0=1` is assumed here, which is incorporated into this function by
+    performing a normalization step.
 
     Examples
     --------
-    The following code creates a lowpass Butterworth filter. Then it
-    applies that filter to an array whose values are all 1.0; the
-    output is also all 1.0, as expected for a lowpass filter.  If the
-    `zi` argument of `lfilter` had not been given, the output would have
-    shown the transient signal.
+    The following code creates a lowpass Butterworth filter to filter a signal made up
+    of ones. As expected of a lowpass filter, the output is also all ones. If the `zi`
+    argument of `lfilter` had not been given, a transient signal would have been
+    produced. The second signal illustrates that using the parameter `zi` suppresses
+    transients at the beginning of the output signal:
 
-    >>> from numpy import array, ones
+    >>> import numpy as np
     >>> from scipy.signal import lfilter, lfilter_zi, butter
+    ...
     >>> b, a = butter(5, 0.25)
     >>> zi = lfilter_zi(b, a)
-    >>> y, zo = lfilter(b, a, ones(10), zi=zi)
-    >>> y
+    >>> y0, zi0 = lfilter(b, a, np.ones(10), zi=zi)
+    >>> y0
     array([1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.])
-
-    Another example:
-
-    >>> x = array([0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0])
-    >>> y, zf = lfilter(b, a, x, zi=zi*x[0])
-    >>> y
+    >>> # Another signal:
+    >>> x = np.array([0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0])
+    >>> y1, zi1 = lfilter(b, a, x, zi=zi*x[0])
+    >>> y1
     array([ 0.5       ,  0.5       ,  0.5       ,  0.49836039,  0.48610528,
         0.44399389,  0.35505241])
 
-    Note that the `zi` argument to `lfilter` was computed using
-    `lfilter_zi` and scaled by ``x[0]``.  Then the output `y` has no
-    transient until the input drops from 0.5 to 0.0.
+    Note that the `zi` argument to `lfilter` is computed using `lfilter_zi` and scaled
+    by ``x[0]``. As a result, the output `y1` has no transient until the input drops
+    from 0.5 to 0.
 
+    References
+    ----------
+    .. [1] Boris Likhterov and Norman Kopeika. "Hardware-efficient technique for
+           minimizing startup transients in Direct Form II digital filters". In:
+           International Journal of Electronics -- Volume 90(7), July 2003, pp.
+           471--479. :doi:`10.1080/00207210310001612482`
     """
     xp = array_namespace(b, a)
 
-    # FIXME: Can this function be replaced with an appropriate
-    # use of lfiltic?  For example, when b,a = butter(N,Wn),
-    #    lfiltic(b, a, y=numpy.ones_like(a), x=numpy.ones_like(b)).
-    #
+    # Note: As an alternative to this function, using `lfiltic` might work as well.
+    # For example, when b,a = butter(N,Wn), then
+    #    lfiltic(b, a, y=numpy.ones_like(a)*y_inf, x=numpy.ones_like(b)).
+    # should produce the same result. Though, no obvious algorithmic advantages over
+    # this implementation could be identified.
 
     # We could use scipy.signal.normalize, but it uses warnings in
     # cases where a ValueError is more appropriate, and it allows
     # b to be 2D.
-    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
-    if b.ndim != 1:
-        raise ValueError("Numerator b must be 1-D.")
-    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    if a.ndim != 1:
-        raise ValueError("Denominator a must be 1-D.")
+    b, a = xp_promote(b, a, xp=xp, force_floating=True)  # need floats for division
+    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
 
-    while a.shape[0] > 1 and a[0] == 0.0:
-        a = a[1:]
-    if xp_size(a) < 1:
-        raise ValueError("There must be at least one nonzero `a` coefficient.")
+    if not (b.ndim == a.ndim == 1):
+        raise ValueError("Numerator `b` and Denominator `a` must be 1-D arrays, " +
+                         f"but {b.shape = }, {a.shape = }!")
 
-    if a[0] != 1.0:
-        # Normalize the coefficients so a[0] == 1.
-        b = b / a[0]
-        a = a / a[0]
+    if a[0] == 0:
+        raise ValueError("First coefficient of parameter `a` must be non-zero!")
 
-    n = max(a.shape[0], b.shape[0])
+    if a[0] != 1:  # Normalize the coefficients so a[0] == 1:
+        b, a = b / a[0], a / a[0]
 
-    # Pad a or b with zeros so they are the same length.
-    if a.shape[0] < n:
-        a = xp.concat((a, xp.zeros(n - a.shape[0], dtype=a.dtype)))
-    elif b.shape[0] < n:
-        b = xp.concat((b, xp.zeros(n - b.shape[0], dtype=b.dtype)))
+    if (sum_a := xp.sum(a)) == 0:
+        raise ValueError("Filter not stable due to sum(a) == 0, i.e., " +
+                         "having a pole at z = 1!")
 
-    dt = xp.result_type(a, b)
-    IminusA = np.eye(n - 1) - linalg.companion(a).T
-    IminusA = xp.asarray(IminusA, dtype=dt)
-    B = b[1:] - a[1:] * b[0]
-    # Solve zi = A*zi + B
-    zi = xp.linalg.solve(IminusA, B)
+    y_inf = xp.sum(b) / sum_a  # y[k → ∞] for unit-step input
 
-    # For future reference: we could also use the following
-    # explicit formulas to solve the linear system:
-    #
-    # zi = np.zeros(n - 1)
-    # zi[0] = B.sum() / IminusA[:,0].sum()
-    # asum = 1.0
-    # csum = 0.0
-    # for k in range(1,n-1):
-    #     asum += a[k]
-    #     csum += b[k] - a[k]*b[0]
-    #     zi[k] = asum*zi[0] - csum
-
-    return zi
-
+    # Calculate `zi[k] = zi[k+1] + b - y_inf*a` allowing different length for a, b:
+    n_a, n_b = a.shape[0], b.shape[0]
+    n = max(n_a, n_b)
+    b = xpx.pad(b, (0, n-n_b))
+    a = xpx.pad(a, (0, n-n_a))
+    # `xp.cumulative_sum((b - y_inf*a)[::-1])[-2::-1]` does not work in torch due to
+    # unsupported slicing with a negative step index. Hence, `flip` is used:
+    return xp.flip(xp.cumulative_sum(xp.flip(b - y_inf*a)))[1:]
 
 def sosfilt_zi(sos):
     """
@@ -4512,12 +4625,12 @@ def sosfilt_zi(sos):
         sos = xp.astype(sos, xp.float64)
 
     n_sections = sos.shape[0]
-    zi = xp.empty((n_sections, 2), dtype=sos.dtype)
+    zi = xp.empty((n_sections, 2), dtype=sos.dtype, device=xp_device(sos))
     scale = 1.0
     for section in range(n_sections):
         b = sos[section, :3]
         a = sos[section, 3:]
-        zi[section, ...] = scale * lfilter_zi(b, a)
+        zi = xpx.at(zi)[section, ...].set(scale * lfilter_zi(b, a))
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
@@ -4864,6 +4977,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     """
     xp = array_namespace(b, a, x)
+    device = xp_result_device(b, a, x)
 
     b = np.atleast_1d(np.asarray(b))
     a = np.atleast_1d(np.asarray(a))
@@ -4874,7 +4988,9 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     if method == "gust":
         y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
-        return xp.asarray(y)
+        if is_torch(xp):
+            y = y.copy()    # pytorch/pytorch#59786 : no negative strides in pytorch
+        return xp.asarray(y, device=device)
 
     # method == "pad"
     edge, ext = _validate_pad(padtype, padlen, x, axis,
@@ -4905,10 +5021,11 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     if edge > 0:
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
-        if is_torch(xp):
-            y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
 
-    return xp.asarray(y)
+    if is_torch(xp):
+        y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
+
+    return xp.asarray(y, device=device)
 
 
 def _validate_pad(padtype, padlen, x, axis, ntaps):
@@ -5025,6 +5142,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     """
     xp = array_namespace(sos, x, zi)
+    device = xp_result_device(sos, x, zi)
 
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
@@ -5061,17 +5179,19 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x_shape, zi_shape = x.shape, zi.shape
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
-    zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
-    sos = sos.astype(dtype, copy=False)
+    # _sosfilt requires writable, C-contiguous NumPy arrays.
+    zi = np.array(np.reshape(zi, (-1, n_sections, 2)), dtype=dtype,
+                  order='C', copy=True)
+    sos = np.array(sos, dtype=dtype, order='C', copy=True)
     _sosfilt(sos, x, zi)
     x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)
     if return_zi:
         zi = zi.reshape(zi_shape)
         zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
-        out = (xp.asarray(x), xp.asarray(zi))
+        out = (xp.asarray(x, device=device), xp.asarray(zi, device=device))
     else:
-        out = xp.asarray(x)
+        out = xp.asarray(x, device=device)
     return out
 
 
@@ -5165,6 +5285,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     """
     xp = array_namespace(sos, x)
+    device = xp_result_device(sos, x)
 
     sos, n_sections = _validate_sos(sos)
     x = _validate_x(x)
@@ -5187,7 +5308,9 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     y = axis_reverse(y, axis=axis)
     if edge > 0:
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
-    return xp.asarray(y)
+    if is_torch(xp):
+        y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
+    return xp.asarray(y, device=device)
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
@@ -5203,7 +5326,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         The input signal made up of equidistant samples. If `x` is a multidimensional
         array, the parameter `axis` specifies the time axis.
     q : int
-        The downsampling factor, which is a postive integer. When using IIR
+        The downsampling factor, which is a positive integer. When using IIR
         downsampling, it is recommended to call `decimate` multiple times for
         downsampling factors higher than 13.
     n : int, optional
@@ -5313,7 +5436,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             b, a = system.num, system.den
             ftype = 'fir'
         elif (any(np.iscomplex(system.poles))
-              or any(np.iscomplex(system.poles))
+              or any(np.iscomplex(system.zeros))
               or np.iscomplex(system.gain)):
             # sosfilt & sosfiltfilt don't handle complex coeffs
             iir_use_sos = False

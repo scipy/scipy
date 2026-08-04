@@ -4,18 +4,21 @@ import numpy as np
 from pytest import raises as assert_raises, warns as assert_warns
 import pytest
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
+import scipy.signal as signal
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
-    array_namespace, xp_default_dtype, _xp_copy_to_numpy
+    array_namespace, make_xp_test_case, _xp_copy_to_numpy
 )
-from scipy.fft import fft, fft2
+from scipy.fft import fft, fft2, rfft
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
     firwin, firwin2, freqz, remez, firls, minimum_phase, convolve2d, firwin_2d
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
+
+lazy_xp_modules = [signal]
 
 
 def test_kaiser_beta():
@@ -42,13 +45,14 @@ def test_kaiserord():
     assert (numtaps, beta) == (2, 0.0)
 
 
+@make_xp_test_case(firwin)
 class TestFirwin:
 
     def check_response(self, h, expected_response, tol=.05):
         xp = array_namespace(h)
         N = h.shape[0]
         alpha = 0.5 * (N-1)
-        m = xp.arange(0, N) - alpha   # time indices of taps
+        m = xp.arange(0, N, dtype=xpx.default_dtype(xp)) - alpha  # time indices of taps
         for freq, expected in expected_response:
             actual = abs(xp.sum(h * xp.exp(-1j * xp.pi * m * freq)))
             mse = abs(actual - expected)**2
@@ -56,7 +60,7 @@ class TestFirwin:
 
     def test_response(self, xp):
         N = 51
-        f = .5
+        f = xp.asarray(.5)
 
         # increase length just to try even/odd
         h = firwin(N, f)  # low-pass from 0 to f
@@ -94,16 +98,29 @@ class TestFirwin:
           bands -- list of (left, right) tuples relative to 1==Nyquist of
             passbands
         """
-        w, H = freqz(h, worN=1024)
-        f = w/np.pi
-        passIndicator = np.zeros(len(w), bool)
+        xp = array_namespace(h)
+        h_np = _xp_copy_to_numpy(h)
+        w, H = freqz(h_np, worN=1024)
+        w, H = map(xp.asarray, (w, H))
+        f = w/xp.pi
+        passIndicator = xp.zeros(w.shape[0], dtype=xp.bool)
         for left, right in bands:
             passIndicator |= (f >= left) & (f < right)
-        Hideal = np.where(passIndicator, 1, 0)
-        mse = np.mean(abs(abs(H)-Hideal)**2)
+        Hideal = xp.where(passIndicator, xp.ones_like(passIndicator),
+                          xp.zeros_like(passIndicator))
+        Hideal = xp.astype(Hideal, H.dtype)
+        mse = xp.mean(abs(abs(H)-Hideal)**2)
         return mse
 
-    def test_scaling(self, xp):
+    @pytest.mark.parametrize(
+        "cutoff,pass_zero,expected_response",
+        [
+            ([0.5], True, (0, 1)),
+            ([0.2, .6], False, (.4, 1)),
+            ([.5], False, (1, 1)),
+        ]
+    )
+    def test_scaling(self, cutoff, pass_zero, expected_response, xp):
         """
         For one lowpass, bandpass, and highpass example filter, this test
         checks two things:
@@ -114,28 +131,24 @@ class TestFirwin:
             of the first passband
         """
         N = 11
-        cases = [
-            ([.5], True, (0, 1)),
-            ([0.2, .6], False, (.4, 1)),
-            ([.5], False, (1, 1)),
-        ]
-        for cutoff, pass_zero, expected_response in cases:
-            h = firwin(N, cutoff, scale=False, pass_zero=pass_zero, window='ones')
-            hs = firwin(N, cutoff, scale=True, pass_zero=pass_zero, window='ones')
-            if len(cutoff) == 1:
-                if pass_zero:
-                    cutoff = [0] + cutoff
-                else:
-                    cutoff = cutoff + [1]
-            msg = 'least squares violation'
-            assert self.mse(h, [cutoff]) < self.mse(hs, [cutoff]), msg
-            self.check_response(hs, [expected_response], 1e-12)
+        cutoff = xp.asarray(cutoff)
+        h = firwin(N, cutoff, scale=False, pass_zero=pass_zero, window='ones')
+        hs = firwin(N, cutoff, scale=True, pass_zero=pass_zero, window='ones')
+        if cutoff.shape[0] == 1:
+            if pass_zero:
+                cutoff = xp.concat([xp.asarray([0], dtype=cutoff.dtype), cutoff])
+            else:
+                cutoff = xp.concat([cutoff, xp.asarray([1], dtype=cutoff.dtype)])
+        msg = 'least squares violation'
+        assert self.mse(h, [cutoff]) < self.mse(hs, [cutoff]), msg
+        self.check_response(hs, [expected_response], 1e-12)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             firwin(51, .5, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(firwin)
 class TestFirWinMore:
     """Different author, different style, different tests..."""
 
@@ -314,7 +327,7 @@ class TestFirWinMore:
             firwin2(51, .5, 1, fs=np.array([10, 20]))
 
 
-@skip_xp_backends(cpu_only=True, reason="firwin2 uses np.interp", exceptions=["cupy"])
+@make_xp_test_case(firwin2)
 class TestFirwin2:
 
     def test_invalid_args(self):
@@ -382,7 +395,6 @@ class TestFirwin2:
             xp.asarray([1.0, 1.0, 1.0, 1.0 - width, 0.5, width]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test02(self, xp):
         width = 0.04
         beta = 12.0
@@ -400,7 +412,6 @@ class TestFirwin2:
             xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test03(self, xp):
         width = 0.02
         ntaps, beta = kaiserord(120, width)
@@ -417,7 +428,6 @@ class TestFirwin2:
             xp.asarray([1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5
         )
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test04(self, xp):
         """Test firwin2 when window=None."""
         ntaps = 5
@@ -440,14 +450,13 @@ class TestFirwin2:
         taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
 
         flip = array_namespace(freq).flip
-        dec = {'decimal': 4.5} if xp_default_dtype(xp) == xp.float32 else {}
+        dec = {'decimal': 4.5} if xpx.default_dtype(xp) == xp.float32 else {}
         assert_array_almost_equal(taps[: ntaps // 2], flip(-taps[ntaps // 2:]), **dec)
 
         freqs, response = freqz(_xp_copy_to_numpy(taps), worN=2048)
         freqs, response = map(xp.asarray, (freqs, response))
         assert_array_almost_equal(xp.abs(response), freqs / xp.pi, decimal=4)
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test06(self, xp):
         """Test firwin2 for calculating Type III filters"""
         ntaps = 1501
@@ -458,7 +467,7 @@ class TestFirwin2:
         assert taps[ntaps // 2] == 0.0
 
         flip = array_namespace(freq).flip
-        dec = {'decimal': 4.5} if xp_default_dtype(xp) == xp.float32 else {}
+        dec = {'decimal': 4.5} if xpx.default_dtype(xp) == xp.float32 else {}
         assert_array_almost_equal(taps[: ntaps // 2],
                                   flip(-taps[ntaps // 2 + 1:]), **dec
         )
@@ -480,15 +489,14 @@ class TestFirwin2:
         taps2 = firwin2(150, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
         assert_array_almost_equal(taps1, taps2)
 
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
-    def test_input_modyfication(self, xp):
+    def test_input_modification(self, xp):
         freq1 = xp.asarray([0.0, 0.5, 0.5, 1.0])
         freq2 = xp.asarray(freq1)
         firwin2(80, freq1, xp.asarray([1.0, 1.0, 0.0, 0.0]))
         xp_assert_equal(freq1, freq2)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(remez)
 class TestRemez:
 
     def test_bad_args(self):
@@ -498,7 +506,7 @@ class TestRemez:
         N = 11  # number of taps in the filter
         a = 0.1  # width of the transition band
 
-        # design an unity gain hilbert bandpass filter from w to 0.5-w
+        # design a unity gain hilbert bandpass filter from w to 0.5-w
         h = remez(11, [a, 0.5-a], [1], type='hilbert')
 
         # make sure the filter has correct # of taps
@@ -530,7 +538,7 @@ class TestRemez:
              0.373400753484939, 0.193140296954975, -0.003530911231040,
              -0.075943803756711, -0.041314581814658, 0.024590270518440]
         h = remez(12, xp.asarray([0, 0.3, 0.5, 1]), xp.asarray([1, 0]), fs=2.)
-        atol_arg = {'atol': 1e-8} if xp_default_dtype(xp) == xp.float32 else {}
+        atol_arg = {'atol': 1e-8} if xpx.default_dtype(xp) == xp.float32 else {}
         xp_assert_close(h, xp.asarray(k, dtype=xp.float64), **atol_arg)
 
         h = [-0.038976016082299, 0.018704846485491, -0.014644062687875,
@@ -540,7 +548,7 @@ class TestRemez:
              0.129770906801075, -0.103908158578635, 0.073641298245579,
              -0.043276706138248, 0.016849978528150, 0.002879152556419,
              -0.014644062687875, 0.018704846485491, -0.038976016082299]
-        atol_arg = {'atol': 3e-8} if xp_default_dtype(xp) == xp.float32 else {}
+        atol_arg = {'atol': 3e-8} if xpx.default_dtype(xp) == xp.float32 else {}
         xp_assert_close(
             remez(21, xp.asarray([0, 0.8, 0.9, 1]), xp.asarray([0, 1]), fs=2.),
             xp.asarray(h, dtype=xp.float64), **atol_arg
@@ -556,8 +564,16 @@ class TestRemez:
         weight = xp.asarray([1.0, 2.0])
         remez(21, bands, desired, weight=weight)
 
+    @pytest.mark.parametrize('type', ['bandpass', 'differentiator', 'hilbert'])
+    def test_gh_24495_narrow_band(self, type):
+        # A band too narrow for the dense grid used to segfault (gh-24495).
+        with pytest.raises(ValueError, match="Band edges are too close"):
+            remez(101, [1000, 1000], [1], fs=20000, type=type)
+        with pytest.raises(ValueError, match="Band edges are too close"):
+            remez(101, [1000, 1011.5], [1], fs=20000, type=type)
 
-@skip_xp_backends(cpu_only=True, reason="lstsq", exceptions=["cupy"])
+
+@make_xp_test_case(firls)
 class TestFirls:
 
     def test_bad_args(self):
@@ -628,7 +644,7 @@ class TestFirls:
                       5.11409425599933e-01, 3.17271686090449e-01,
                       -9.81576747564301e-03, -1.03354450635036e-01,
                       -6.26930101730182e-04]
-        atol_arg = {'atol': 5e-8} if xp_default_dtype(xp) == xp.float32 else {}
+        atol_arg = {'atol': 5e-8} if xpx.default_dtype(xp) == xp.float32 else {}
         known_taps = xp.asarray(known_taps, dtype=xp.float64)
         xp_assert_close(taps, known_taps, **atol_arg)
 
@@ -642,7 +658,7 @@ class TestFirls:
             0.317930861136062, 0.012403323025279, -0.104688258464392,
             -0.014233383714318, 0.058545300496815]
         known_taps = xp.asarray(known_taps, dtype=xp.float64)
-        atol_arg = {'atol': 3e-8} if xp_default_dtype(xp) == xp.float32 else {}
+        atol_arg = {'atol': 3e-8} if xpx.default_dtype(xp) == xp.float32 else {}
         xp_assert_close(taps, known_taps, **atol_arg)
 
         # With linear changes:
@@ -685,6 +701,7 @@ class TestFirls:
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             firls(11, .1, 1, fs=np.array([10, 20]))
 
+@make_xp_test_case(minimum_phase)
 class TestMinimumPhase:
 
     def test_bad_args(self):
@@ -720,7 +737,7 @@ class TestMinimumPhase:
             xp_assert_close(np.abs(fft(h_new)), np.abs(fft(h_linear)), rtol=1e-4)
 
     @skip_xp_backends("dask.array", reason="too slow")
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
+    @make_xp_test_case(signal.hilbert)
     def test_hilbert(self, xp):
         # compare to MATLAB output of reference implementation
 
@@ -747,6 +764,22 @@ class TestMinimumPhase:
         k = xp.asarray(k, dtype=xp.float64)
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         xp_assert_close(m, k, rtol=2e-3)
+
+    @xfail_xp_backends("cupy", reason="cupy/cupy#9795")
+    @pytest.mark.parametrize("N", (963, 964))
+    @pytest.mark.parametrize("dtype", ("float32", "float64"))
+    def test_nyquist(self, N, dtype, xp):
+        fc = xp.asarray(10)
+        fs = 100
+        h = firwin(N, fc, window="hann", pass_zero="lowpass", scale=False, fs=fs)
+        xp_dtype = getattr(xp, dtype)
+        h = xp.astype(h, xp_dtype)
+        h_min_sig = minimum_phase(h, method="homomorphic", n_fft=N, half=False)
+        H_mag = xp.abs(rfft(h, N))
+        H_min_mag = xp.abs(rfft(h_min_sig, N))
+        error = H_mag - H_min_mag
+        atol = dict(float32=2e-5, float64=1e-13)[dtype]
+        xp_assert_close(error, xp.zeros_like(error), atol=atol)
 
 
 class Testfirwin_2d:

@@ -2,7 +2,8 @@
 import math
 import numpy as np
 import pytest
-from scipy._lib._array_api import is_cupy, xp_assert_close, xp_default_dtype, concat_1d
+from scipy._lib._array_api import is_cupy, xp_assert_close, concat_1d
+import scipy._external.array_api_extra as xpx
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
@@ -23,6 +24,7 @@ def _compute_symiirorder2_bwd_hs(k, cs, rsq, omega):
     return c0 * rsupk * (np.cos(omega * k) + gamma * np.sin(omega * k))
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestSymIIR:
 
     @skip_xp_backends(np_only=True, reason="_ic functions are private and numpy-only")
@@ -95,7 +97,6 @@ class TestSymIIR:
         cpu_only=True, exceptions=["cupy"], reason="internals are numpy-only"
     )
     @xfail_xp_backends("cupy", reason="sum did not converge")
-    @skip_xp_backends("jax.numpy", reason="item assignment in tests")
     @pytest.mark.parametrize(
         'dtype', ['float32', 'float64', 'complex64', 'complex128'])
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
@@ -110,7 +111,7 @@ class TestSymIIR:
                 c_precision = 1e-11
 
         # Test for a low-pass filter with c0 = 0.15 and z1 = 0.85
-        # using an unit step over 200 samples.
+        # using a unit step over 200 samples.
         c0 = 0.15
         z1 = 0.85
         n = 200
@@ -124,7 +125,7 @@ class TestSymIIR:
 
         # Forward pass
         # The transfer function for the system 1 / (1 - z1 * z^-1) when
-        # applied to an unit step with initial conditions y0 is
+        # applied to a unit step with initial conditions y0 is
         # 1 / (1 - z1 * z^-1) * (z^-1 / (1 - z^-1) + y0)
 
         # Solving the inverse Z-transform for the given expression yields:
@@ -139,11 +140,11 @@ class TestSymIIR:
 
         # -z1 / (1 - z1) * z1**(k - 1) * u[k - 1]
         comp2 = xp.zeros(n, dtype=dtype)
-        comp2[1:] = -z1 / (1 - z1) * z1**pos[:-1]
+        comp2 = xpx.at(comp2)[1:].set(-z1 / (1 - z1) * z1**pos[:-1])
 
         # 1 / (1 - z1) * u[k - 1]
         comp3 = xp.zeros(n, dtype=dtype)
-        comp3[1:] = 1 / (1 - z1)
+        comp3 = xpx.at(comp3)[1:].set(1 / (1 - z1))
 
         expected_fwd = comp1 + comp2 + comp3
 
@@ -157,10 +158,12 @@ class TestSymIIR:
         # Computing a closed form for the complete expression is difficult
         # The result will be computed iteratively from the difference equation
         exp_out = xp.zeros(n, dtype=dtype)
-        exp_out[0] = sym_cond
+        exp_out = xpx.at(exp_out)[0].set(sym_cond)
 
         for i in range(1, n):
-            exp_out[i] = c0 * expected_fwd[n - 1 - i] + z1 * exp_out[i - 1]
+            exp_out = xpx.at(exp_out)[i].set(
+                c0 * expected_fwd[n - 1 - i] + z1 * exp_out[i - 1]
+            )
 
         exp_out = xp.flip(exp_out)
 
@@ -319,7 +322,6 @@ class TestSymIIR:
         xp_assert_close(out_ic, ic2, atol=4e-6, rtol=6e-7)
 
     @skip_xp_backends(cpu_only=True, reason="internals are numpy-only")
-    @skip_xp_backends("jax.numpy", reason="item assignment in tests")
     @pytest.mark.parametrize(
         'dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
@@ -340,11 +342,13 @@ class TestSymIIR:
         ic = symiirorder2_ic_fwd(signal_np, r, omega, precision)
         ic = xp.asarray(ic)
         out1 = xp.zeros(n + 2, dtype=dtype)
-        out1[:2] = ic[0, :]
+        out1 = xpx.at(out1)[:2].set(ic[0, :])
 
         # Apply the forward system cs / (1 - a2 * z^-1 - a3 * z^-2))
         for i in range(2, n + 2):
-            out1[i] = cs * signal[i - 2] + a2 * out1[i - 1] + a3 * out1[i - 2]
+            out1 = xpx.at(out1)[i].set(
+                cs * signal[i - 2] + a2 * out1[i - 1] + a3 * out1[i - 2]
+            )
 
         # Find the backward initial conditions
         ic2 = symiirorder2_ic_bwd(np.asarray(out1), r, omega, precision)[0]
@@ -353,10 +357,10 @@ class TestSymIIR:
         # Apply the system cs / (1 - a2 * z - a3 * z^2)) in backwards
         exp = xp.empty(n, dtype=dtype)
 
-        exp[-2:] = xp.flip(ic2)
+        exp = xpx.at(exp)[-2:].set(xp.flip(ic2))
 
         for i in range(n - 3, -1, -1):
-            exp[i] = cs * out1[i] + a2 * exp[i + 1] + a3 * exp[i + 2]
+            exp = xpx.at(exp)[i].set(cs * out1[i] + a2 * exp[i + 1] + a3 * exp[i + 2])
 
         out = symiirorder2(signal, r, omega, precision)
         xp_assert_close(out, exp, atol=4e-6, rtol=6e-7)
@@ -405,7 +409,7 @@ class TestSymIIR:
             xp.asarray(-1),
             xp.asarray(1),
         )
-        expected = symiirorder1(xp.astype(s, xp_default_dtype(xp)), 0.5, 0.5)
+        expected = symiirorder1(xp.astype(s, xpx.default_dtype(xp)), 0.5, 0.5)
         out = symiirorder1(s, 0.5, 0.5)
         xp_assert_close(out, expected)
 
@@ -417,6 +421,6 @@ class TestSymIIR:
             xp.asarray(-1),
             xp.asarray(1),
         )
-        expected = symiirorder2(xp.astype(s, xp_default_dtype(xp)), 0.5, xp.pi / 3.0)
+        expected = symiirorder2(xp.astype(s, xpx.default_dtype(xp)), 0.5, xp.pi / 3.0)
         out = symiirorder2(s, 0.5, xp.pi / 3.0)
         xp_assert_close(out, expected)

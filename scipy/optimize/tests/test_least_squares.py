@@ -8,6 +8,8 @@ from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_array
 from scipy.sparse.linalg import aslinearoperator
@@ -396,8 +398,9 @@ class BaseMixin:
 
     # This test is thread safe, but it is too slow and opens
     # too many file descriptors to run it in parallel.
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.parallel_threads_limit(1)
     @pytest.mark.fail_slow(5.0)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_workers(self):
         serial = least_squares(fun_trivial, 2.0, method=self.method)
 
@@ -810,11 +813,11 @@ class TestLM(BaseMixin):
 
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       method='lm', loss='huber')
-    
+
     def test_callback_with_lm_method(self):
         def callback(x):
             assert(False)  # Dummy callback function
-        
+
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
@@ -834,17 +837,17 @@ def test_callback():
     # test that callback function works as expected
 
     results = []
-    
+
     def my_callback_optimresult(intermediate_result: OptimizeResult):
         results.append(intermediate_result)
-        
+
     def my_callback_x(x):
         r = OptimizeResult()
         r.nit = 1
         r.x = x
         results.append(r)
         return False
-        
+
     def my_callback_optimresult_stop_exception(
         intermediate_result: OptimizeResult):
         results.append(intermediate_result)
@@ -861,14 +864,14 @@ def test_callback():
     callbacks_nostop = [my_callback_optimresult, my_callback_x]
     callbacks_stop = [my_callback_optimresult_stop_exception,
                       my_callback_x_stop_exception]
-    
+
     # Try for all the implemented methods: trf, trf_bounds and dogbox
     calls = [
-        lambda callback: least_squares(fun_trivial, 5.0, method='trf', 
+        lambda callback: least_squares(fun_trivial, 5.0, method='trf',
                                        callback=callback),
-        lambda callback: least_squares(fun_trivial, 5.0, method='trf', 
+        lambda callback: least_squares(fun_trivial, 5.0, method='trf',
                                        bounds=(-8.0, 8.0), callback=callback),
-        lambda callback: least_squares(fun_trivial, 5.0, method='dogbox', 
+        lambda callback: least_squares(fun_trivial, 5.0, method='dogbox',
                                        callback=callback)
     ]
 

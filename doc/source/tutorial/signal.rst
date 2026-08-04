@@ -566,10 +566,10 @@ stop-band attenuation of :math:`\approx 60` dB.
    >>> import numpy as np
    >>> import scipy.signal as signal
    >>> import matplotlib.pyplot as plt
-
+   ...
    >>> b, a = signal.iirfilter(4, Wn=0.2, rp=5, rs=60, btype='lowpass', ftype='ellip')
    >>> w, h = signal.freqz(b, a)
-
+   ...
    >>> plt.title('Digital filter frequency response')
    >>> plt.plot(w, 20*np.log10(np.abs(h)))
    >>> plt.title('Digital filter frequency response')
@@ -591,7 +591,7 @@ stop-band attenuation of :math:`\approx 60` dB.
         >>> import numpy as np
         >>> from matplotlib import pyplot as plt
         >>> from scipy import signal as sig
-
+        ...
         >>> fs = 16000
         >>> b = sig.firwin(101, 2500, fs=fs)
         >>> f, h_fft = sig.freqz(b, fs=fs)
@@ -599,8 +599,8 @@ stop-band attenuation of :math:`\approx 60` dB.
         >>> _, ax = plt.subplots(layout="constrained")
         >>> ax.plot(f, h_amp, label="FIR")
         >>> ax.grid(True)
-
-        >>> b, a = sig.iirfilter(15, 2500, btype="low", fs=fs)
+        ...
+        >>> b, a = sig.iirfilter(15, 2500, btype="lowpass", fs=fs)
         >>> f, h_fft = sig.freqz(b, a, fs=fs)
         >>> h_amp = 20 * np.log10(np.abs(h_fft))
         >>> ax.plot(f, h_amp, label="IIR")
@@ -619,6 +619,8 @@ Filter coefficients can be stored in several different formats:
 * 'sos' = transfer function coefficients of second-order sections
 
 Functions, such as :func:`tf2zpk` and :func:`zpk2ss`, can convert between them.
+
+.. _tutorial_signal_TransferFunctionRepresentation:
 
 Transfer function representation
 ********************************
@@ -874,7 +876,7 @@ in the amplitude response.
 
 
 .. plot::
-   :alt: "This code displays two plots. The first plot is an IIR filter response as an X-Y plot with amplitude response on the Y axis vs frequency on the X axis. The low-pass filter shown has a passband from 0 to 100 Hz with 0 dB response and a stop-band from about 175 Hz to 1 KHz about 40 dB down. There are two sharp discontinuities in the filter near 175 Hz and 300 Hz. The second plot is an X-Y showing the transfer function in the complex plane. The Y axis is real-valued an the X axis is complex-valued. The filter has four zeros near [300+0j, 175+0j, -175+0j, -300+0j] shown as blue X markers. The filter also has four poles near [50-30j, -50-30j, 100-8j, -100-8j] shown as red dots."
+   :alt: "This code displays two plots. The first plot is an IIR filter response as an X-Y plot with amplitude response on the Y axis vs frequency on the X axis. The low-pass filter shown has a passband from 0 to 100 Hz with 0 dB response and a stop-band from about 175 Hz to 1 KHz about 40 dB down. There are two sharp discontinuities in the filter near 175 Hz and 300 Hz. The second plot is an X-Y showing the transfer function in the complex plane. The Y axis is real-valued and the X axis is complex-valued. The filter has four zeros near [300+0j, 175+0j, -175+0j, -300+0j] shown as blue X markers. The filter also has four poles near [50-30j, -50-30j, 100-8j, -100-8j] shown as red dots."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -1747,7 +1749,7 @@ Eq. :math:numref:`eq_STFT_istftM`, i.e.,
 .. math::
    :label: eq_STFT_WindDualCond0
 
-    \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
+   \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
                                                  \vb{F}\,\vb{W}_{\!p}\,\vb{x}
         = \left(\sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\vb{W}_{\!p}\right)\vb{x}\ ,
 

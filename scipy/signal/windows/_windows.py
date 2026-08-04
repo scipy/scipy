@@ -7,9 +7,10 @@ import warnings
 from scipy._lib import doccer
 
 from scipy import linalg, special, fft as sp_fft
-from scipy._lib.array_api_compat import numpy as np_compat
-from scipy._lib._array_api import array_namespace, xp_device
-from scipy._lib import array_api_extra as xpx
+from scipy._lib._array_api import (array_namespace, xp_compat_namespace,
+                                   xp_device)
+from scipy._lib._array_api import xp_capabilities
+from scipy._external import array_api_extra as xpx
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',
@@ -48,7 +49,7 @@ def _namespace(xp):
     Will be able to replace with `np_compat if xp is None else xp` when we drop
     support for numpy 1.x and cupy 13.x
     """
-    return np_compat if xp is None else array_namespace(xp.empty(0))
+    return xp_compat_namespace(xp)
 
 
 def _general_cosine_impl(M, a, xp, device, sym=True):
@@ -64,9 +65,10 @@ def _general_cosine_impl(M, a, xp, device, sym=True):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_cosine(M, a, sym=True):
     r"""
-    Generic weighted sum of cosine terms window
+    Generic weighted sum of cosine terms window.
 
     Parameters
     ----------
@@ -146,10 +148,11 @@ def general_cosine(M, a, sym=True):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def boxcar(M, sym=True, *, xp=None, device=None):
-    """Return a boxcar or rectangular window.
+    r"""Return a boxcar or rectangular window.
 
-    Also known as a rectangular window or Dirichlet window, this is equivalent
+    Also known as a rectangular window or Dirichlet window. This is equivalent
     to no window at all.
 
     Parameters
@@ -164,33 +167,118 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1.
+        The window, i.e., ``w = np.ones(M)``.
+
+    Notes
+    -----
+    Note that this function differs from the continuous-time "rect" function [1]_ by
+    not returning 1/2 at its borders.
+
+    The Fourier transform of a continuous-time boxcar window can be expressed as
+
+    .. math::
+
+        W(f) = \tau\operatorname{sinc}(\tau f) = \frac{\sin(\pi\tau f)}{\pi f} \,,
+
+    with :math:`\tau = M T` being the window width and :math:`T` the sampling interval.
+    Eq. :math:numref:`eq_FFT_SamplingFourierTrafo` in the :ref:`tutorial_FFT_DFT`
+    section of the :ref:`user_guide` can be used to determine the values of the
+    discrete Fourier transform (aka FFT), i.e.,
+
+    .. math::
+
+        W[l] := \frac{1}{T\gamma} W(l\Delta f)
+              = \frac{M}{\gamma}\operatorname{sinc}(l) \,,
+               \qquad \Delta f := 1 / \tau = 1/ (MT) \,.
+
+    Here, :math:`\gamma` is the FFT normalization constant (default: :math:`\gamma=1`).
+    :math:`W[l]` is zero for nonzero integer values of :math:`l` and its sidelobes
+    decrease on the order of :math:`O(|l|^{-1})`.
+
+    For many applications, like calculating a magnitude spectrum in the example below,
+    a normalized window is needed. Consult the :ref:`tutorial_SpectralAnalysis` section
+    of the :ref:`user_guide` for details.
+
+    References
+    ----------
+    .. [1] "Rectangular function", Wikipedia,
+        https://en.wikipedia.org/wiki/Rectangular_function
 
     Examples
     --------
-    Plot the window and its frequency response:
+
+    The following example compares a 10-sample boxcar window to its corresponding rect
+    function. The upper plot depicts the amplitudes, whereas the corresponding magnitude
+    spectra are shown in the lower plot. A standard resolution spectrum and a high
+    resolution one, which is zero-padded by factor 16, are shown of the boxcar window.
+    That the boxcar spectrum does not coincide everywhere with the rect function
+    spectrum is due to the underlying continuous-time function of the boxcar window
+    being a 10-term Fourier series approximation of the rect function.
 
     >>> import numpy as np
-    >>> from scipy import signal
-    >>> from scipy.fft import fft, fftshift
-    >>> import matplotlib.pyplot as plt
+    >>> from matplotlib import pyplot as plt
+    >>> from scipy.fft import fft, fftfreq, fftshift
+    >>> from scipy.signal.windows import boxcar
+    ...
+    >>> N, T = 10, 1/10  # number of samples and sampling interval in seconds
+    >>> t_w = np.arange(N) * T  # sample times
+    >>> w = boxcar(N)  # boxcar window
+    ...
+    >>> W = fft(w) / sum(w)  # amplitude spectrum of w
+    >>> f_W = fftfreq(N, T)  # frequencies of W in Hz
+    >>> W16 = fftshift(fft(w, n=16*N)) / sum(w)  # zero-padded amplitude spectrum
+    >>> f_W16 = fftshift(fftfreq(N*16, T))  # frequencies of W16 in Hz
+    ...
+    >>> # rect function in the Fourier domain:
+    >>> f_R = np.linspace(-((N + 2) // 2), (N + 1) // 2, 100, endpoint=True)
+    >>> R = np.sinc(f_R)
+    ...
+    >>> _, (ax0, ax1) = plt.subplots(2, 1, figsize=(5, 4.5), constrained_layout=True)
+    >>> ax0.set_title(r"Boxcar window with corresponding rect function")
+    >>> ax0.set(ylabel="Amplitude", xlim=(-0.5, 1.5),
+    ...         xlabel=rf"Time $t$ in seconds (${N}$ samples with interval ${T=}\,$s)")
+    >>> ax0.plot([[-.5,  0,  1], [ 0,  1, 1.5]], [[0, 1, 0], [0, 1, 0]], 'C0-',
+    ...          alpha=0.5, label=(r"$w_r(t) = $rect$(t-\frac{1}{2})$", None, None))
+    >>> ax0.plot([[0, 1]], [[0.5, 0.5]], 'C0.-', alpha=0.5)  # mark border values of 1/2
+    >>> ax0.plot(t_w, w, 'C1o', label="Boxcar window")
+    >>> ax1.set_title(r"Magnitude Spectrum")
+    >>> ax1.set(ylabel="Magnitude", xlim=(f_R[0], f_R[-1]),
+    ...         xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f_W[1]:g}\,$Hz)")
+    >>> ax1.plot(f_R, abs(R), 'C0-', alpha=0.5, label="$W_r(f) = $sinc$(f)$")
+    >>> ax1.plot(f_W, abs(W), 'C1o', label=r"$W_r[l] = $sinc$(l\Delta f)$")
+    >>> ax1.plot(f_W16, abs(W16), 'C1--', alpha=0.5, label="zero-padded $W_r[l]$")
+    >>> for ax_, l_ in zip((ax0, ax1), ('lower center', 'best')):
+    ...     ax_.legend(loc=l_)
+    ...     ax_.grid(True)
+    >>> plt.show()
 
-    >>> window = signal.windows.boxcar(51)
-    >>> plt.plot(window)
-    >>> plt.title("Boxcar window")
-    >>> plt.ylabel("Amplitude")
-    >>> plt.xlabel("Sample")
+    The following plot shows a logarithmically scaled version of the magnitude
+    spectrum. The x-axis has been rescaled to correspond to the FFT-bin number.
+    The dashed green line represents the approximate sidelobe height.
 
-    >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
-    >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
-    >>> plt.plot(freq, response)
-    >>> plt.axis([-0.5, 0.5, -120, 0])
-    >>> plt.title("Frequency response of the boxcar window")
-    >>> plt.ylabel("Normalized magnitude [dB]")
-    >>> plt.xlabel("Normalized frequency [cycles per sample]")
-
+    >>> import numpy as np
+    >>> from matplotlib import pyplot as plt
+    ...
+    >>> f = np.arange(0, 10, 0.01)
+    >>> W_abs = abs(np.sinc(f))
+    >>> W_dB = np.where(W_abs > 0, 20*np.log10(W_abs), -1e250)
+    ...
+    >>> f_Y = np.linspace(.5, f[-1], 100)
+    >>> Y_dB = 20*np.log10(1 / (np.pi*f_Y))
+    ...
+    >>> _, ax0 = plt.subplots(constrained_layout=True)
+    >>> ax0.set_title(r"Magnitude Spectrum of $w(t) = $rect$(t/\tau)$")
+    >>> ax0.set(ylabel=r"Magnitude $20\,\log_{10} |W(l)|$ in dB", ylim=(-40, 1),
+    ...         xlabel=r"Relative Frequency $l=f/\Delta f\ $ ($\Delta f = 1/\tau$)",
+    ...         xlim=(f[0], f[-1]), yticks=[-40, -20, 0], xticks=np.arange(11))
+    >>> ax0.plot(f, W_dB, label="$W(l) = $sinc$(l)$")
+    >>> ax0.plot(f_Y, Y_dB, 'C2--', alpha=0.5, label=r"$1 / (\pi l)$")
+    >>> ax0.legend()
+    >>> ax0.grid(True)
+    >>> ax1 = ax0.twinx() # create right y-axis with logarithmic scaling:
+    >>> ax1.set_ylabel("Magnitude $|W(f)|$", rotation=-90, labelpad=15)
+    >>> ax1.set(ylim=(1e-2, 10**(1/20)), yscale="log")
+    >>> plt.show()
     """
     xp = _namespace(xp)
 
@@ -203,6 +291,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def triang(M, sym=True, *, xp=None, device=None):
     """Return a triangular window.
 
@@ -271,6 +360,7 @@ def triang(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def parzen(M, sym=True, *, xp=None, device=None):
     """Return a Parzen window.
 
@@ -337,6 +427,7 @@ def parzen(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def bohman(M, sym=True, *, xp=None, device=None):
     """Return a Bohman window.
 
@@ -397,6 +488,7 @@ def bohman(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def blackman(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Blackman window.
@@ -487,6 +579,7 @@ def blackman(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def nuttall(M, sym=True, *, xp=None, device=None):
     """Return a minimum 4-term Blackman-Harris window according to Nuttall.
 
@@ -553,6 +646,7 @@ def nuttall(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def blackmanharris(M, sym=True, *, xp=None, device=None):
     """Return a minimum 4-term Blackman-Harris window.
 
@@ -607,6 +701,7 @@ def blackmanharris(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def flattop(M, sym=True, *, xp=None, device=None):
     """Return a flat top window.
 
@@ -676,6 +771,7 @@ def flattop(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def bartlett(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Bartlett window.
@@ -762,7 +858,6 @@ def bartlett(M, sym=True, *, xp=None, device=None):
     >>> plt.title("Frequency response of the Bartlett window")
     >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
-
     """
     # Docstring adapted from NumPy's bartlett function
     xp = _namespace(xp)
@@ -780,9 +875,9 @@ def bartlett(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def hann(M, sym=True, *, xp=None, device=None):
-    r"""
-    Return a Hann window.
+    r"""Return a Hann window.
 
     The Hann window is a taper formed by using a raised cosine or sine-squared
     with ends that touch zero.
@@ -793,23 +888,31 @@ def hann(M, sym=True, *, xp=None, device=None):
         Number of points in the output window. If zero, an empty array
         is returned. An exception is thrown when it is negative.
     sym : bool, optional
-        When True (default), generates a symmetric window, for use in filter
-        design.
-        When False, generates a periodic window, for use in spectral analysis.
+        When ``True`` (default), generates a symmetric window, for use in filter design.
+        When ``False``, generates a periodic window, for use in spectral analysis.
     %(xp_device_snippet)s
 
     Returns
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if `M` is even and `sym` is True).
+        does not appear if `M` is even and `sym` is ``True``).
 
     Notes
     -----
-    The Hann window is defined as
+    The *symmetric* :math:`M`-point Hann window is defined as
 
-    .. math::  w(n) = 0.5 - 0.5 \cos\left(\frac{2\pi{n}}{M-1}\right)
-               \qquad 0 \leq n \leq M-1
+    .. math::
+
+        w_s[k] = \frac{1}{2} - \frac{1}{2} \cos\left(\frac{2\pi k}{M-1}\right)
+               = \sin^2\left(\frac{\pi k}{M-1}\right) \,,        \qquad 0 \leq k < M \,,
+
+    whereas the *periodic* :math:`M`-point Hann window is given by
+
+    .. math::
+
+        w_p[k] = \frac{1}{2} - \frac{1}{2} \cos\left(\frac{2\pi k}{M}\right)
+               = \sin^2\left(\frac{\pi k}{M}\right) \,,          \qquad 0 \leq k < M \,.
 
     The window was named for Julius von Hann, an Austrian meteorologist. It is
     also known as the Cosine Bell. It is sometimes erroneously referred to as
@@ -819,8 +922,45 @@ def hann(M, sym=True, *, xp=None, device=None):
     Most references to the Hann window come from the signal processing
     literature, where it is used as one of many windowing functions for
     smoothing values.  It is also known as an apodization (which means
-    "removing the foot", i.e. smoothing discontinuities at the beginning
+    "removing the foot", i.e., smoothing discontinuities at the beginning
     and end of the sampled signal) or tapering function.
+
+    The corresponding continuous-time function is given by
+
+    .. math::
+
+        h(t) = \begin{cases} \cos^2\left(\frac{\pi t}{\tau}\right) &
+                                                       \text{for } |t| \leq \tau/2 \,,\\
+               0 & \text{otherwise, } \end{cases}
+
+    which is centered at :math:`t=0` and has the width of :math:`\tau = MT`. Here,
+    :math:`T` denotes the sampling interval. Its Fourier transform can be expressed by
+
+    .. math::
+
+        H(f) = -\frac{\operatorname{sinc}(f\tau)}{
+                                      \tau (f- \frac{1}{\tau}) (f + \frac{1}{\tau})} \,,
+
+    with :math:`\operatorname{sinc}(f) := \sin(\pi f) / (\pi f)`. Eq.
+    :math:numref:`eq_FFT_SamplingFourierTrafo` in the :ref:`tutorial_FFT_DFT` section
+    of the :ref:`user_guide` can be used to determine the values of the discrete
+    Fourier transform (aka FFT), i.e.,
+
+    .. math::
+
+        W_p[l] := \frac{1}{T\gamma} H(l\Delta f)
+                = -\frac{M}{\gamma} \frac{\operatorname{sinc}(l)}{(l - 1)(l + 1)} \,,
+                                               \qquad \Delta f := 1 / \tau = 1/ (MT) \,.
+
+    Here, :math:`\gamma` is the FFT normalization constant (default: :math:`\gamma=1`).
+    For :math:`l \in\mathbb{Z}`, the values of :math:`W_p` are given by:
+    :math:`W_p[0] = M/\gamma`, :math:`W_p[l\rightarrow \pm 1] = M/(2\gamma)` and
+    :math:`W_p[l] = 0` for :math:`|l| \geq 2`.
+    The height of the sidelobes decreases on the order of :math:`O(|l|^{-3})`.
+
+    For many applications, like calculating a magnitude spectrum in the example below,
+    a normalized window is needed. Consult the :ref:`tutorial_SpectralAnalysis` section
+    of the :ref:`user_guide` for details.
 
     References
     ----------
@@ -835,35 +975,71 @@ def hann(M, sym=True, *, xp=None, device=None):
 
     Examples
     --------
-    Plot the window and its frequency response:
+    The following example compares the magnitude spectra of a periodic 10-point Hann
+    window to its continuous-time counterpart.
 
     >>> import numpy as np
-    >>> from scipy import signal
-    >>> from scipy.fft import fft, fftshift
-    >>> import matplotlib.pyplot as plt
+    >>> from matplotlib import pyplot as plt
+    >>> from scipy.fft import fft, fftfreq
+    >>> from scipy.signal.windows import hann
+    ...
+    >>> M, T = 10, 1/10  # number of samples and sampling interval in seconds
+    >>> k, tau = np.arange(M) * T, M*T  # sample times and window width in seconds
+    ...
+    >>> w_k = hann(M, sym=False)  # periodic hann window
+    >>> W, f_W = fft(w_k) / sum(w_k), fftfreq(M, T)  # amplitude spectrum of w_k
+    ...
+    >>> # Hann function and its Fourier transform:
+    >>> t = np.linspace(-.25, M*T+.25, 200, endpoint=True)
+    >>> h = np.where(np.logical_and(0 < t, t < 1), np.sin(np.pi * t / tau) ** 2, 0)
+    ...
+    >>> f = np.linspace(-6, 12., 1801, endpoint=True)
+    >>> H, ii0 = np.zeros_like(f), abs(f * tau) != 1
+    >>> H[ii0] = np.sinc(f[ii0] * tau) / ((f[ii0] * tau + 1) * (f[ii0] * tau - 1))
+    >>> H[~ii0] = 0.5  # value when denominator is zero
+    ...
+    >>> ii1 = np.logical_and(min(f_W) - 0.5 <= f, f < max(f_W) + 0.5)
+    >>> H_abs, f_abs, H1, f_dB  = abs(H[ii1]), f[ii1], abs(H[f>=0]), f[f>=0]
+    >>> H_dB = np.where(~np.logical_and(f_dB>=2, np.mod(f_dB, 1)==0),
+    ...                 20*np.log10(H1), -1e250)
+    ...
+    >>> ax0, ax1, ax2 = (plt.subplots(num=n_, constrained_layout=True)[1]
+    ...                   for n_ in range(3))
+    >>> ax0.set_title(r"Periodic Hann window and Hann function of width $\tau=1\,$s")
+    >>> ax0.set(ylabel="Amplitude", xlim=(t[0], t[-1]),
+    ...         xlabel=rf"Time $t$ in seconds (${M}$ samples with interval ${T=}\,$s)")
+    >>> ax0.plot(t, h, 'C0-', label=r"$\sin^2(\pi t / \tau)$")
+    >>> ax0.plot(k, w_k, 'C1o', label="Window $w_p[kT]$")
+    >>> ax1.set_title(r"Magnitude Spectrum of Hann window and Hann function")
+    >>> ax1.set(ylabel="Magnitude", xlim=(f_abs[0], f_abs[-1]),
+    ...         xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f_W[1]:g}\,$Hz)")
+    >>> ax1.plot(f_abs, H_abs, 'C0-', label="$|H(f)|$")
+    >>> ax1.plot(f_W, abs(W), 'C1o', label=r"$|W_p[l\Delta f]|$")
+    >>> ax2.set_title(r"Magnitude Spectrum of Hann function")
+    >>> ax2.set(ylabel=r"Magnitude $20\,\log_{10} |H(l)|$ in dB",
+    ...         xlabel=r"Relative Frequency $l=f/\Delta f\ $ ($\Delta f = 1/\tau$)",
+    ...         xlim=(f_dB[0], f_dB[-1]), ylim=(-80, 1),
+    ...         yticks=20*np.arange(-4, 1), xticks=np.arange(12))
+    >>> ax2a = ax2.twinx() # create right y-axis with non-logarithmic scaling:
+    >>> ax2a.set_ylabel("Magnitude $|H(f)|$", rotation=-90, labelpad=15)
+    >>> ax2a.set(ylim=(1e-4, 10 ** (1 / 20)), yscale="log")
+    >>> ax2.plot(f_dB, H_dB, 'C0-', label=r"$|H(l\Delta f)|$")
+    >>> ax2.plot(f_dB[f_dB>0.5], -60*np.log10(f_dB[f_dB>0.5]) - 20*np.log10(np.pi),
+    ...          'C2--', alpha=0.5, label=r"$\pi^{-1} (l\Delta f)^{-3}$")
+    >>> for ax_ in (ax0, ax1, ax2):
+    ...     ax_.legend(loc='best')
+    ...     ax_.grid(True)
+    >>> plt.show()
 
-    >>> window = signal.windows.hann(51)
-    >>> plt.plot(window)
-    >>> plt.title("Hann window")
-    >>> plt.ylabel("Amplitude")
-    >>> plt.xlabel("Sample")
-
-    >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
-    >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = np.abs(fftshift(A / abs(A).max()))
-    >>> response = 20 * np.log10(np.maximum(response, 1e-10))
-    >>> plt.plot(freq, response)
-    >>> plt.axis([-0.5, 0.5, -120, 0])
-    >>> plt.title("Frequency response of the Hann window")
-    >>> plt.ylabel("Normalized magnitude [dB]")
-    >>> plt.xlabel("Normalized frequency [cycles per sample]")
-
+    The plot of the logarithmically scaled magnitude spectrum illustrates that its
+    zeros are at integers with absolute value ≥ 2 and that the sidelobes decrease on
+    the order of :math:`O(|f|^{-3})`, which corresponds to -60 dB per frequency decade.
     """
     # Docstring adapted from NumPy's hanning function
     return general_hamming(M, 0.5, sym, xp=xp, device=device)
 
 
+@xp_capabilities()
 def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     r"""Return a Tukey window, also known as a tapered cosine window.
 
@@ -951,6 +1127,7 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def barthann(M, sym=True, *, xp=None, device=None):
     """Return a modified Bartlett-Hann window.
 
@@ -1010,6 +1187,7 @@ def barthann(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     r"""Return a generalized Hamming window.
 
@@ -1103,6 +1281,7 @@ def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def hamming(M, sym=True, *, xp=None, device=None):
     r"""Return a Hamming window.
 
@@ -1183,6 +1362,7 @@ def hamming(M, sym=True, *, xp=None, device=None):
     return general_hamming(M, 0.54, sym, xp=xp, device=device)
 
 
+@xp_capabilities()
 def kaiser(M, beta, sym=True, *, xp=None, device=None):
     r"""Return a Kaiser window.
 
@@ -1300,11 +1480,12 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
     n = xp.arange(0, M, dtype=xp.float64, device=device)
     alpha = (M - 1) / 2.0
     w = (special.i0(beta * xp.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
-         special.i0(xp.asarray(beta, dtype=xp.float64)))
+         special.i0(xp.asarray(beta, dtype=xp.float64, device=device)))
 
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     """Return a Kaiser-Bessel derived window.
 
@@ -1380,7 +1561,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
             "shapes"
         )
     elif M < 1:
-        return xp.asarray([])
+        return xp.asarray([], device=device)
     elif M % 2:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for even number "
@@ -1394,6 +1575,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     return xp.asarray(w, device=device)
 
 
+@xp_capabilities()
 def gaussian(M, std, sym=True, *, xp=None, device=None):
     r"""Return a Gaussian window.
 
@@ -1461,6 +1643,7 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
     r"""Return a window with a generalized Gaussian shape.
 
@@ -1536,6 +1719,7 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
 
 
 # `chebwin` contributed by Kumar Appaiah.
+@xp_capabilities(skip_backends=(("dask.array", "data-dependent output shapes"),))
 def chebwin(M, at, sym=True, *, xp=None, device=None):
     r"""Return a Dolph-Chebyshev window.
 
@@ -1646,10 +1830,16 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
     # from scipy.special. Using the expansion in scipy.special leads to errors.
-    p = xp.zeros_like(x)
-    p[x > 1] = xp.cosh(order * xp.acosh(x[x > 1]))
-    p[x < -1] = (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(-x[x < -1]))
-    p[abs(x) <= 1] = xp.cos(order * xp.acos(x[abs(x) <= 1]))
+    one = xp.asarray(1, dtype=x.dtype, device=device)
+    p = xp.where(
+        x > 1,
+        xp.cosh(order * xp.acosh(xp.maximum(x, one))),
+        xp.where(
+            x < -1,
+            (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(xp.maximum(-x, one))),
+            xp.cos(order * xp.acos(xp.clip(x, -1, 1)))
+        )
+    )
 
     # Appropriate IDFT and filling up
     # depending on even/odd M
@@ -1668,6 +1858,7 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def cosine(M, sym=True, *, xp=None, device=None):
     """Return a window with a simple cosine shape.
 
@@ -1731,6 +1922,7 @@ def cosine(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     r"""Return an exponential (or Poisson) window.
 
@@ -1823,6 +2015,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     """
     Return a Taylor window.
@@ -1903,7 +2096,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
-    """  # noqa: E501
+    """
     xp = _namespace(xp)
 
     if _len_guards(M):
@@ -1920,13 +2113,13 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
 
     Fm = xp.empty(nbar - 1, dtype=xp.float64, device=device)
     signs = xp.empty_like(ma)
-    signs[::2] = 1
-    signs[1::2] = -1
+    signs = xpx.at(signs)[::2].set(1)
+    signs = xpx.at(signs)[1::2].set(-1)
     m2 = ma*ma
     for mi, m in enumerate(ma):
         numer = signs[mi] * xp.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
         denom = 2 * xp.prod(1 - m2[mi]/m2[:mi]) * xp.prod(1 - m2[mi]/m2[mi+1:])
-        Fm[mi] = numer / denom
+        Fm = xpx.at(Fm)[mi].set(numer / denom)
 
     def W(n):
         return 1 + 2*xp.matmul(Fm, xp.cos(
@@ -1942,6 +2135,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities(np_only=True, reason='banded linear algebra is numpy-only')
 def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
          *, xp=None, device=None):
     """
@@ -2121,11 +2315,12 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
         singleton = False
     if _len_guards(M):
         if not return_ratios:
-            return xp.ones(M, dtype=xp.float64)
+            return xp.ones(M, dtype=xp.float64, device=device)
         elif singleton:
-            return xp.ones(M, dtype=xp.float64), 1.
+            return xp.ones(M, dtype=xp.float64, device=device), 1.
         else:
-            return xp.ones(M, dtype=xp.float64), xp.ones(1, dtype=xp.float64)
+            return (xp.ones(M, dtype=xp.float64, device=device),
+                    xp.ones(1, dtype=xp.float64, device=device))
     Kmax = operator.index(Kmax)
     if not 0 < Kmax <= M:
         raise ValueError('Kmax must be greater than 0 and less than M')
@@ -2199,7 +2394,8 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
                 correction = M**2 / float(M**2 + NW)
             else:
                 s = sp_fft.rfft(windows[0])
-                shift = -(1 - 1./M) * xp.arange(1, M//2 + 1, dtype=xp.float64)
+                shift = -(1 - 1./M) * xp.arange(1, M//2 + 1, dtype=xp.float64,
+                                                device=device)
                 s[1:] *= 2 * xp.exp(-1j * xp.pi * shift)
                 correction = M / s.real.sum()
             windows *= correction
@@ -2212,6 +2408,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     return (windows, ratios) if return_ratios else windows
 
 
+@xp_capabilities()
 def lanczos(M, *, sym=True, xp=None, device=None):
     r"""Return a Lanczos window also known as a sinc window.
 
@@ -2301,14 +2498,16 @@ def lanczos(M, *, sym=True, xp=None, device=None):
     # half of the window and the flipped one which is the left hand half of
     # the window.
     def _calc_right_side_lanczos(n, m):
-        return xpx.sinc(2. * xp.arange(n, m, dtype=xp.float64) / (m - 1) - 1.0, xp=xp)
+        return xpx.sinc(
+            2. * xp.arange(n, m, dtype=xp.float64, device=device) / (m - 1) - 1.0, xp=xp
+        )
 
     if M % 2 == 0:
         wh = _calc_right_side_lanczos(M/2, M)
         w = xp.concat([xp.flip(wh), wh])
     else:
         wh = _calc_right_side_lanczos((M+1)/2, M)
-        w = xp.concat([xp.flip(wh), xp.ones(1), wh])
+        w = xp.concat([xp.flip(wh), xp.ones(1, device=device), wh])
 
     return _truncate(w, needs_trunc)
 
@@ -2357,6 +2556,7 @@ for nn_, v_ in _WIN_FUNC_DATA.items():
     _WIN_FUNCS.update({n_: v_ for n_ in nn_})
 
 
+@xp_capabilities()
 def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     r"""Convenience function for creating various windows.
 
@@ -2367,7 +2567,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     ----------
     window : str | tuple | float
         Either a string with the window name or a tuple consisting of window name and
-        window parameters. If it is a float, a `~scipy.singal.kaiser` window is
+        window parameters. If it is a float, a `~scipy.signal.kaiser` window is
         created with `window` being the shape parameter. Consult the Notes below for
         more details.
     Nx : int
@@ -2438,7 +2638,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
         Generalized Gaussian with shape parameter ``p`` and standard deviation ``sig``
         (aliases: ``'general_gaussian', 'general gauss', 'general_gauss', 'ggs'``)
     `general_hamming` / ``('general hamming', alpha)``:
-        Generalized Hamming window with coefficent ``alpha``
+        Generalized Hamming window with coefficient ``alpha``
         (aliases: ``'general_hamming'``)
     `hamming` / ``'hamming'``:
         Hamming window (aliases: ``'hamm', 'ham'``)
@@ -2457,7 +2657,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     `parzen` / ``'parzen'``:
         Parzen window (aliases: ``'parz', 'par'``)
     `taylor` / ``'taylor'`` / (``'taylor', nbar, sll, norm)``:
-        Taylor window with ``nbar`` adjascent sidelobes (default: ``4``)), ``sll`` dB
+        Taylor window with ``nbar`` adjacent sidelobes (default: ``4``)), ``sll`` dB
         suppression level (default: ``30``) and boolean value ``norm``
         (default: ``True``) (aliases: ``taylorwin``)
     `triang`/ ``'triangle'``:
@@ -2567,7 +2767,7 @@ xp : array_namespace, optional
     Optional array namespace.
     Should be compatible with the array API standard, or supported by array-api-compat.
     Default: ``numpy``
-device: any
+device : any
     optional device specification for output. Should match one of the
     supported device specification in ``xp``.
 """

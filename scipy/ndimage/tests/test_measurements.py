@@ -21,11 +21,11 @@ import scipy.ndimage as ndimage
 from . import types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
-
-IS_WINDOWS_AND_NP1 = os.name == 'nt' and np.__version__ < '2'
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 @skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class Test_measurements_stats:
     """ndimage._measurements._stats() is a utility used by other functions.
 
@@ -42,7 +42,7 @@ class Test_measurements_stats:
             counts, sums = ndimage._measurements._stats(
                 x, labels=labels, index=index)
 
-            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            dtype_arg = {}
             xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, np.asarray([1.0, 8.0]))
 
@@ -58,7 +58,7 @@ class Test_measurements_stats:
             counts, sums = ndimage._measurements._stats(
                 x, labels=labels, index=index)
 
-            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            dtype_arg = {}
             xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, np.asarray([1.0, 8.0]))
 
@@ -72,7 +72,7 @@ class Test_measurements_stats:
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
 
-            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            dtype_arg = {}
             xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, np.asarray([1.0, 8.0]))
             xp_assert_equal(centers, np.asarray([0.5, 8.0]))
@@ -87,7 +87,7 @@ class Test_measurements_stats:
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
 
-            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            dtype_arg = {}
             xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, np.asarray([1.0, 8.0]))
             xp_assert_equal(centers, np.asarray([0.5, 8.0]))
@@ -102,13 +102,14 @@ class Test_measurements_stats:
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
 
-            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            dtype_arg = {}
             xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, np.asarray([1.0, 8.0]))
             xp_assert_equal(centers, np.asarray([0.5, 8.0]))
 
 
 @skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class Test_measurements_select:
     """ndimage._measurements._select() is a utility used by other functions."""
 
@@ -354,6 +355,7 @@ def test_label13(xp):
 
 @skip_xp_backends(np_only=True, exceptions=["cupy"],
                   reason='output=dtype is numpy-specific')
+@xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/10041")
 @make_xp_test_case(ndimage.label)
 def test_label_output_typed(xp):
     data = xp.ones([5])
@@ -704,7 +706,7 @@ def test_sum12(xp):
         assert_array_almost_equal(output, xp.asarray([4.0, 0.0, 5.0]))
 
 
-@make_xp_test_case(ndimage.sum)
+@make_xp_test_case(ndimage.sum, ndimage.sum_labels)
 def test_sum_labels(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:

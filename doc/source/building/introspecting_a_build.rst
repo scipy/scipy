@@ -48,8 +48,8 @@ in this doc section to explain what is happening):
      description = Linking target $out
 
     # step 1: `.pyx.in` to `.pyx` code generation with Tempita
-    build scipy/linalg/_decomp_update.pyx: CUSTOM_COMMAND ../scipy/linalg/_decomp_update.pyx.in | ../scipy/_build_utils/tempita.py /home/username/anaconda3/envs/scipy-dev/bin/python3.10
-     COMMAND = /home/username/anaconda3/envs/scipy-dev/bin/python3.10 ../scipy/_build_utils/tempita.py ../scipy/linalg/_decomp_update.pyx.in -o scipy/linalg
+    build scipy/linalg/_decomp_update.pyx: CUSTOM_COMMAND ../scipy/linalg/_decomp_update.pyx.in | ../tools/building/tempita.py /home/username/anaconda3/envs/scipy-dev/bin/python3.10
+     COMMAND = /home/username/anaconda3/envs/scipy-dev/bin/python3.10 ../tools/building/tempita.py ../scipy/linalg/_decomp_update.pyx.in -o scipy/linalg
      description = Generating$ scipy/linalg/_decomp_update$ with$ a$ custom$ command
 
     # step 2: `.pyx` to `.c` compilation with Cython
@@ -95,7 +95,7 @@ interest shows:
                 "language": "unknown",
                 "compiler": [
                     "/home/username/anaconda3/envs/scipy-dev/bin/python3.10",
-                    "/home/username/code/scipy/scipy/_build_utils/tempita.py",
+                    "/home/username/code/scipy/tools/building/tempita.py",
                     "@INPUT@",
                     "-o",
                     "@OUTDIR@"

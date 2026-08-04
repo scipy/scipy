@@ -28,7 +28,7 @@ class Dijkstra(Benchmark):
             rows = [0 for i in range(n - 1)] + [i + 1 for i in range(n - 1)]
             cols = [i + 1 for i in range(n - 1)] + [0 for i in range(n - 1)]
             weights = [i + 1 for i in range(n - 1)] * 2
-            self.data = scipy.sparse.csr_matrix((weights, (rows, cols)),
+            self.data = scipy.sparse.csr_array((weights, (rows, cols)),
                                                 shape=(n, n))
         # choose some random vertices
         v = np.arange(n)

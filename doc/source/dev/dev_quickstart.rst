@@ -9,7 +9,7 @@ steps to start contributing:
 
 1. **Set up a development environment**
 
-   Using ``mamba``, or some flavor of the many virtual environment management
+   Using ``conda``, or some flavor of the many virtual environment management
    tools, you can make sure the development version of SciPy does not interfere
    with any other local installations of SciPy on your machine.
 
@@ -32,9 +32,9 @@ Basic workflow
     We **strongly** recommend using a user-activated environment setup, such as
     a conda or virtual environment.
 
-Since SciPy contains parts written in C, C++, and Fortran that need to be
+Since SciPy contains parts written in C and C++ that need to be
 compiled before use, make sure you have the necessary compilers and Python
-development headers installed. If you are using ``mamba``, these will be
+development headers installed. If you are using ``conda``, these will be
 installed automatically. If you are using ``pip``, check which
 :ref:`system-level dependencies <system-level>` you might need.
 

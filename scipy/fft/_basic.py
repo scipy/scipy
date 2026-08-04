@@ -1,4 +1,6 @@
 from scipy._lib.uarray import generate_multimethod, Dispatchable
+from scipy._lib._array_api import xp_capabilities
+
 import numpy as np
 
 
@@ -20,6 +22,7 @@ def _dispatch(func):
     return generate_multimethod(func, _x_replacer, domain="numpy.scipy.fft")
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         plan=None):
@@ -165,6 +168,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
@@ -271,6 +275,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
@@ -365,6 +370,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -466,6 +472,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
@@ -549,6 +556,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -616,6 +624,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
@@ -721,6 +730,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -825,11 +835,12 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
-    Compute the 2-D discrete Fourier Transform
+    Compute the 2-D discrete Fourier Transform.
 
     This function computes the N-D discrete Fourier Transform
     over any axes in an M-D array by means of the
@@ -924,6 +935,7 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -1020,6 +1032,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -1120,6 +1133,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -1181,11 +1195,12 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Computes the inverse of `rfftn`
+    Computes the inverse of `rfftn`.
 
     This function computes the inverse of the N-D discrete
     Fourier Transform for real input over any number of axes in an
@@ -1288,11 +1303,12 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Computes the inverse of `rfft2`
+    Computes the inverse of `rfft2`.
 
     Parameters
     ----------
@@ -1334,10 +1350,65 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     This is really `irfftn` with different defaults.
     For more details see `irfftn`.
 
+    Examples
+    --------
+    Here's a simple FFT-based lowpass filter applied to an image of white noise.
+
+    This code will generate an image of white noise, use `rfft2` to transform
+    it to the frequency domain, apply a lowpass filter, and then transform back
+    to the spatial domain with `irfft2`.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.fft import rfft2, irfft2, fftfreq, rfftfreq
+    ...
+    >>> rng = np.random.default_rng()
+    >>> m = 280  # Image size is m x m.
+
+    Generate an image of white noise:
+
+    >>> im = rng.normal(size=(m, m))
+
+    Transform to the frequency domain:
+
+    >>> f = rfft2(im)
+
+    Create a scaling filter that is applied in the frequency domain.
+    This will be a lowpass filter:
+
+    >>> xfreqs, yfreqs = np.meshgrid(rfftfreq(m), fftfreq(m))
+    >>> r = np.hypot(xfreqs, yfreqs)
+    >>> r = r / r.max()
+    >>> r[0, 0] = 1
+
+    The power of r determines the "clumpiness" of the result:
+
+    >>> p = 2
+    >>> filt = r**-p
+
+    Apply the filter to f:
+
+    >>> f2 = filt * f
+
+    Convert back to the spatial domain with `irfft2`:
+
+    >>> im2 = irfft2(f2)
+
+    Take a look at the result:
+
+    >>> fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True)
+    >>> ax1.imshow(im, cmap='Blues')
+    >>> ax1.set_title('Input')
+    >>> ax1.set_axis_off()
+    >>> ax2.imshow(im2, cmap='Blues')
+    >>> ax2.set_title('Filtered')
+    >>> ax2.set_axis_off()
+    >>> plt.show()
     """
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -1451,6 +1522,7 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
           plan=None):
@@ -1508,6 +1580,7 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
@@ -1602,6 +1675,7 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
            plan=None):

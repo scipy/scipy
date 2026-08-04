@@ -186,7 +186,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         barrier tolerance. Default is 0.1 for both values (recommended in [1]_ p. 19).
         Also note that ``barrier_parameter`` and ``barrier_tolerance`` are updated
         with the same prefactor.
-    factorization_method : string or None, optional
+    factorization_method : str or None, optional
         Method to factorize the Jacobian of the constraints. Use None (default)
         for the auto selection or one of:
 
@@ -260,11 +260,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Gradient of the Lagrangian function at the solution.
     nit : int
         Total number of iterations.
-    nfev : integer
+    nfev : int
         Number of the objective function evaluations.
-    njev : integer
+    njev : int
         Number of the objective function gradient evaluations.
-    nhev : integer
+    nhev : int
         Number of the objective function Hessian evaluations.
     cg_niter : int
         Total number of the conjugate gradient method iterations.
@@ -424,7 +424,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Define stop criteria
     if method == 'equality_constrained_sqp':
-        def stop_criteria(state, x, last_iteration_failed,
+        def stop_criteria_sqp(state, x, last_iteration_failed,
                           optimality, constr_violation,
                           tr_radius, constr_penalty, cg_info):
             state = update_state_sqp(state, x, last_iteration_failed,
@@ -468,7 +468,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
-        def stop_criteria(state, x, last_iteration_failed, tr_radius,
+        def stop_criteria_tr(state, x, last_iteration_failed, tr_radius,
                           constr_penalty, cg_info, barrier_parameter,
                           barrier_tolerance):
             state = update_state_ip(state, x, last_iteration_failed,
@@ -538,7 +538,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             fun_and_constr, grad_and_jac, lagrangian_hess,
             x0, objective.f, objective.g,
             c_eq0, J_eq0,
-            stop_criteria, state,
+            stop_criteria_sqp, state,
             initial_constr_penalty, initial_tr_radius,
             factorization_method)
 
@@ -549,7 +549,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             canonical.fun, canonical.jac,
             x0, objective.f, objective.g,
             c_ineq0, J_ineq0, c_eq0, J_eq0,
-            stop_criteria,
+            stop_criteria_tr,
             canonical.keep_feasible,
             xtol, state, initial_barrier_parameter,
             initial_barrier_tolerance,

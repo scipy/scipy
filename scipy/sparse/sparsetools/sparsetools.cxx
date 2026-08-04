@@ -108,6 +108,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     const char *p;
     PY_LONG_LONG ret;
     Py_ssize_t max_array_size = 0;
+    bool should_release_gil = false;
     NPY_BEGIN_THREADS_DEF;
 
     if (!PyTuple_Check(args)) {
@@ -270,11 +271,19 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64))
                     && value == (npy_int64)value) {
                 arg_list[j] = std::malloc(sizeof(npy_int64));
+                if (arg_list[j] == NULL) {
+                    PyErr_NoMemory();
+                    goto fail;
+                }
                 *(npy_int64*)arg_list[j] = (npy_int64)value;
             }
             else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32)
                      && value == (npy_int32)value) {
                 arg_list[j] = std::malloc(sizeof(npy_int32));
+                if (arg_list[j] == NULL) {
+                    PyErr_NoMemory();
+                    goto fail;
+                }
                 *(npy_int32*)arg_list[j] = (npy_int32)value;
             }
             else {
@@ -338,19 +347,20 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     /*
      * Call thunk
      */
-    if (max_array_size > 100) {
+    should_release_gil = max_array_size > 100;
+    if (should_release_gil) {
         /* Threshold GIL release: it's not a free operation */
         NPY_BEGIN_THREADS;
     }
     try {
         ret = thunk(I_typenum, T_typenum, arg_list);
-        NPY_END_THREADS;
+        if (should_release_gil) NPY_END_THREADS;
     } catch (const std::bad_alloc &e) {
-        NPY_END_THREADS;
+        if (should_release_gil) NPY_END_THREADS;
         PyErr_SetString(PyExc_MemoryError, e.what());
         goto fail;
     } catch (const std::exception &e) {
-        NPY_END_THREADS;
+        if (should_release_gil) NPY_END_THREADS;
         PyErr_SetString(PyExc_RuntimeError, e.what());
         goto fail;
     }
@@ -363,6 +373,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     case 'i':
     case 'l':
         return_value = PyLong_FromLongLong(ret);
+        if (return_value == NULL) goto fail;
         break;
     case 'v':
         Py_INCREF(Py_None);
@@ -371,6 +382,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     default:
         PyErr_SetString(PyExc_ValueError,
                         "internal error: invalid return value spec");
+        goto fail;
     }
 
     /*
@@ -385,6 +397,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
         new_ret = PyTuple_New(VW_count + (old_ret == Py_None ? 0 : 1));
         if (new_ret == NULL) {
+            Py_DECREF(old_ret);
             goto fail;
         }
         if (old_ret != Py_None) {
@@ -409,12 +422,12 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
                 } else {
                     arg = array_from_std_vector_and_free(T_typenum, arg_list[j]);
                 }
-                arg_list[j] = NULL;
                 if (arg == NULL) {
                     Py_XDECREF(new_ret);
                     goto fail;
                 }
                 PyTuple_SET_ITEM(new_ret, pos, arg);
+                arg_list[j] = NULL;
                 ++pos;
             }
         }
@@ -489,17 +502,18 @@ static void free_std_vector_typenum(int typenum, void *p)
 
 static PyObject *array_from_std_vector_and_free(int typenum, void *p)
 {
-#define PROCESS(ntype, ctype)                                   \
-    if (PyArray_EquivTypenums(typenum, ntype)) {                \
-        std::vector<ctype> *v = (std::vector<ctype>*)p;         \
-        npy_intp length = v->size();                            \
-        PyObject *obj = PyArray_SimpleNew(1, &length, typenum); \
-        if (length > 0) {                                       \
+#define PROCESS(ntype, ctype)                                      \
+    if (PyArray_EquivTypenums(typenum, ntype)) {                   \
+        std::vector<ctype> *v = (std::vector<ctype>*)p;            \
+        npy_intp length = v->size();                               \
+        PyObject *obj = PyArray_SimpleNew(1, &length, typenum);    \
+        if (obj == NULL) return NULL;                              \
+        if (length > 0) {                                          \
             memcpy(PyArray_DATA((PyArrayObject *)obj), &((*v)[0]), \
-                   sizeof(ctype)*length);                       \
-        }                                                       \
-        delete v;                                               \
-        return obj;                                             \
+                   sizeof(ctype)*length);                          \
+        }                                                          \
+        delete v;                                                  \
+        return obj;                                                \
     }
 
     SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
@@ -537,38 +551,48 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
  * Python module initialization
  */
 
+/* Prevent the name mangling */
 extern "C" {
-
 #include "sparsetools_impl.h"
+}
+
+
+static int
+_sparsetools_module_exec(PyObject *module)
+{
+    (void)module;  /* unused */
+
+    if (_import_array() < 0) { return -1; }
+
+    return 0;
+}
+
+
+static PyModuleDef_Slot _sparsetools_slots[] = {
+    {Py_mod_exec, (void *)_sparsetools_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
 
 static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_sparsetools",
-    NULL,
-    -1,
-    sparsetools_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    /* m_base     */ PyModuleDef_HEAD_INIT,
+    /* m_name     */ "_sparsetools",
+    /* m_doc      */ NULL,
+    /* m_size     */ 0,
+    /* m_methods  */ sparsetools_methods,
+    /* m_slots    */ _sparsetools_slots,
+    /* m_traverse */ NULL,
+    /* m_clear    */ NULL,
+    /* m_free     */ NULL
 };
+
 
 PyMODINIT_FUNC
 PyInit__sparsetools(void)
 {
-    PyObject *module;
-
-    import_array();
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return module;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
-
-} /* extern "C" */

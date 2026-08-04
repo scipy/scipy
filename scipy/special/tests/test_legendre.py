@@ -68,6 +68,16 @@ class TestLegendreP:
 
 
 class TestAssocLegendreP:
+    def test_assoc_legendre_gh23101(self):
+        z = np.array([-1, -.5, 0, .5, 1])
+        expected = assoc_legendre_p_1_0(z)
+        result = assoc_legendre_p(1, 0, z)
+        assert_allclose(np.squeeze(result), expected)
+
+        expected = assoc_legendre_p_3_0(z)
+        result = assoc_legendre_p(3, 0, z)
+        assert_allclose(np.squeeze(result), expected)
+
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
     @pytest.mark.parametrize("m_max", [5, 4])
     @pytest.mark.parametrize("n_max", [7, 10])
@@ -310,6 +320,27 @@ class TestAssocLegendreP:
         for m in range(3, m_max + 1):
             np.testing.assert_allclose(p_jac[:, m], 0)
             np.testing.assert_allclose(p_jac[:, -m], 0)
+
+    @pytest.mark.parametrize("n", np.arange(0, 20))
+    def test_assoc_legendre_p_norm_m0(self, n):
+        # gh 24099
+        m = 0
+        z = np.linspace(-1, 1, 101)
+        p = assoc_legendre_p(n, m, z, norm=False)
+        p_norm = assoc_legendre_p(n, m, z, norm=True)
+        factor = np.sqrt((2 * n + 1) / 2)
+        np.testing.assert_allclose(p_norm, factor * p)
+
+    @pytest.mark.parametrize("n", np.arange(0, 20))
+    def test_assoc_legendre_p_all_norm_m0(self, n):
+        # gh 24099
+        m = 0
+        z = np.linspace(-1, 1, 101)
+        p_all = assoc_legendre_p_all(n, m, z, norm=False)[0, : n + 1, 0, :]
+        p_norm_all = assoc_legendre_p_all(n, m, z, norm=True)[0, : n + 1, 0, :]
+        factor = np.sqrt((2 * np.arange(n + 1) + 1) / 2)
+        factor = factor[:, np.newaxis]
+        np.testing.assert_allclose(p_norm_all, factor * p_all)
 
 
 class TestMultiAssocLegendreP:

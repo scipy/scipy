@@ -18,7 +18,6 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
-from ._comb import _comb_int
 
 
 __all__ = [
@@ -109,6 +108,7 @@ def diric(x, n):
     Returns
     -------
     diric : ndarray
+        Value of periodic sinc function.
 
     Examples
     --------
@@ -975,7 +975,7 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute derivatives of real-order modified Bessel function Kv(z)
+    """Compute derivatives of real-order modified Bessel function Kv(z).
 
     Kv(z) is the modified Bessel function of the second kind.
     Derivative is calculated with respect to `z`.
@@ -1314,6 +1314,38 @@ def riccati_jn(n, x):
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
 
+    Examples
+    --------
+    In practical applications, frequently the logarithmic derivative of the
+    Riccati-Bessel functions is needed. We determine the logarithmic derivative
+    of the Riccati-Bessel function of the first kind for order 5 and argument 1.2.
+    The logarithmic derivative is obtained by dividing the derivative of the
+    Riccati-Bessel function by the Riccati-Bessel function itself.
+
+    >>> from scipy.special import riccati_jn
+    >>> n = 5
+    >>> z = 1.2
+    >>> psi_n, psi_n_p = riccati_jn(n, z)
+    >>> psi_n
+    array([9.32039086e-01, 4.14341484e-01, 1.03814624e-01, 1.82194479e-02,
+           2.46548893e-03, 2.71719094e-04])
+    >>> psi_n_p
+    array([0.36235775, 0.58675452, 0.24131711, 0.058266  , 0.01000115,
+           0.00133333])
+    >>> psi_n_p[5]/psi_n[5]
+    np.float64(4.9070016327063115)
+
+    Alternatively, the logarithmic derivative of the Riccati-Bessel functions
+    could be obtained from the corresponding spherical Bessel functions by making
+    use of the definition of the Riccati-Bessel function in terms of the
+    spherical Bessel function as given above.
+
+    >>> from scipy.special import spherical_jn
+    >>> jn = spherical_jn(n, z)
+    >>> jnp = spherical_jn(n, z, derivative=True)
+    >>> jnp/jn + 1/z
+    np.float64(4.907001632706311)
+
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -1370,6 +1402,38 @@ def riccati_yn(n, x):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
+
+    Examples
+    --------
+    In practical applications, frequently the logarithmic derivative of the
+    Riccati-Bessel functions is needed. We determine the logarithmic derivative
+    of the Riccati-Bessel function of the second kind for order 5 and argument 1.2.
+    The logarithmic derivative is obtained by dividing the derivative of the
+    Riccati-Bessel function by the Riccati-Bessel function itself.
+
+    >>> from scipy.special import riccati_yn
+    >>> n = 5
+    >>> z = 1.2
+    >>> chi_n, chi_n_p = riccati_yn(n, z)
+    >>> chi_n
+    array([-3.62357754e-01, -1.23400388e+00, -2.72265195e+00, -1.01103792e+01,
+           -5.62545603e+01, -4.11798823e+02])
+    >>> chi_n_p
+    array([9.32039086e-01, 6.65978813e-01, 3.30374937e+00, 2.25532961e+01,
+           1.77404822e+02, 1.65957387e+03])
+    >>> chi_n_p[5]/chi_n[5]
+    np.float64(-4.030059767479337)
+
+    Alternatively, the logarithmic derivative of the Riccati-Bessel functions
+    could be obtained from the corresponding spherical Bessel functions by making
+    use of the definition of the Riccati-Bessel function in terms of the
+    spherical Bessel function as given above.
+
+    >>> from scipy.special import spherical_yn
+    >>> yn = spherical_yn(n, z)
+    >>> ynp = spherical_yn(n, z, derivative=True)
+    >>> ynp/yn + 1/z
+    np.float64(-4.030059767479337)
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -1505,10 +1569,23 @@ def fresnel_zeros(nt):
 
 
 def assoc_laguerre(x, n, k=0.0):
-    """Compute the generalized (associated) Laguerre polynomial of degree n and order k.
+    r"""Compute the generalized (associated) Laguerre polynomial of degree :math:`n`
+    and order :math:`k`.
 
-    The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
-    with weighting function ``exp(-x) * x**k`` with ``k > -1``.
+    This function evaluates the generalized Laguerre polynomial
+
+    .. math::
+
+        L^{(k)}_n(x).
+
+    The polynomial is orthogonal over :math:`[0, \infty)` with weight
+    function
+
+    .. math::
+
+        e^{-x}x^k
+
+    for :math:`k > -1`.
 
     Parameters
     ----------
@@ -1528,6 +1605,35 @@ def assoc_laguerre(x, n, k=0.0):
     -----
     `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
+
+    Examples
+    --------
+    Evaluate the associated Laguerre polynomial :math:`L_3^{(2)}` at
+    :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import assoc_laguerre, eval_genlaguerre
+    >>> np.isclose(assoc_laguerre(1, 3, 2), 7/3)
+    True
+
+    `assoc_laguerre` is equivalent to `eval_genlaguerre` with reversed
+    argument order:
+
+    >>> x = np.linspace(0, 5, 6)
+    >>> np.allclose(assoc_laguerre(x, 3, 2), eval_genlaguerre(3, 2, x))
+    True
+
+    Plot :math:`L_3^{(k)}` for several values of :math:`k`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 8, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for k in range(3):
+    ...     ax.plot(x, assoc_laguerre(x, 3, k), label=rf"$k={k}$")
+    >>> ax.set_title(r"Associated Laguerre polynomials $L_3^{(k)}$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
 
     """
     return _ufuncs.eval_genlaguerre(n, k, x)
@@ -1605,20 +1711,69 @@ def mathieu_even_coef(m, q):
     -------
     Ak : ndarray
         Even or odd Fourier coefficients, corresponding to even or odd m.
+        The number of coefficients returned is determined by an empirical formula
+        that depends on `m` and `q` [1]_.
+
+    See Also
+    --------
+    mathieu_cem
+    mathieu_odd_coef
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
+           Original source code hosted by John Burkardt:
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/28.4#i
 
+    Examples
+    --------
+    We use the Fourier coefficients to construct an approximation of
+    ``mathieu_cem(5, 14, x)``, the even Mathieu function of order `m = 5` and
+    parameter `q = 14`.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import mathieu_even_coef, mathieu_cem
+    >>> m = 5
+    >>> q = 14
+
+    ``a`` holds the Fourier coefficients.  As noted above, the number of
+    coefficients returned by ``mathieu_even_coef(m, q)`` is based on an
+    empirical formula that depends on `m` and `q`.  In this case, we get
+    29 coefficients.
+
+    >>> a = mathieu_even_coef(m, q)
+    >>> a.shape
+    (29,)
+
+    Sum the Fourier cosine series on a grid of ``x`` values.
+
+    >>> period = 180 if m % 2 == 0 else 360
+    >>> x = np.linspace(0, period, 5000)             # x has shape (5000,)
+    >>> k = np.arange(len(a)).reshape((-1, 1))       # k has shape (len(a), 1)
+    >>> c = np.cos((2*k + m % 2) * (np.pi/180) * x)  # c has shape (len(a), 5000)
+    >>> y = a @ c                                    # y has shape (5000,)
+
+    Plot the approximation, along with the function computed directly by
+    ``mathieu_cem(m, q, x)``.
+
+    >>> plt.plot(x, y, 'k--', label="Fourier sum")
+    >>> ce, _dce = mathieu_cem(m, q, x)
+    >>> plt.plot(x, ce, alpha=0.35, linewidth=3.5, label="mathieu_cem")
+    >>> plt.grid(True)
+    >>> plt.title(f'Mathieu Function $\\rm{{ce_{m}}}(x, {q})$')
+    >>> plt.xlabel('x [degrees]')
+    >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
-    if (q < 0):
-        raise ValueError("q >=0")
+    if q < 0:
+        raise ValueError(f"q must not be less than 0; got {q = }.")
     if (m != floor(m)) or (m < 0):
         raise ValueError("m must be an integer >=0.")
 
@@ -1666,18 +1821,69 @@ def mathieu_odd_coef(m, q):
     -------
     Bk : ndarray
         Even or odd Fourier coefficients, corresponding to even or odd m.
+        The number of coefficients returned is determined by an empirical formula
+        that depends on `m` and `q` [1]_.
+
+    See Also
+    --------
+    mathieu_sem
+    mathieu_even_coef
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
+           Original source code hosted by John Burkardt:
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/28.4#i
 
+    Examples
+    --------
+    We use the Fourier coefficients to construct an approximation of
+    ``mathieu_sem(5, 11, x)``, the odd Mathieu function of order `m = 5` and
+    parameter `q = 11`.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import mathieu_odd_coef, mathieu_sem
+    >>> m = 5
+    >>> q = 11
+
+    ``b`` holds the Fourier coefficients.  As noted above, the number of
+    coefficients returned by ``mathieu_odd_coef(m, q)`` is based on an
+    empirical formula that depends on `m` and `q`.  In this case, we get
+    28 coefficients.
+
+    >>> b = mathieu_odd_coef(m, q)
+    >>> b.shape
+    (28,)
+
+    Sum the Fourier sine series on a grid of ``x`` values.
+
+    >>> period = 180 if m % 2 == 0 else 360
+    >>> x = np.linspace(0, period, 5000)               # x has shape (5000,)
+    >>> k = np.arange(1, len(b) + 1).reshape((-1, 1))  # k has shape (len(b), 1)
+    >>> c = np.sin((2*k - m % 2) * (np.pi/180) * x)    # c has shape (len(b), 5000)
+    >>> y = b @ c                                      # y has shape (5000,)
+
+    Plot the approximation, along with the function computed directly by
+    ``mathieu_sem(m, q, x)``.
+
+    >>> plt.plot(x, y, 'k--', label="Fourier sum")
+    >>> se, _sce = mathieu_sem(m, q, x)
+    >>> plt.plot(x, se, alpha=0.35, linewidth=3.5, label="mathieu_sem")
+    >>> plt.grid(True)
+    >>> plt.title(f'Mathieu Function $\\rm{{se_{m}}}(x, {q})$')
+    >>> plt.xlabel('x [degrees]')
+    >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
-    if (q < 0):
-        raise ValueError("q >=0")
+    if q < 0:
+        raise ValueError(f"q must not be less than 0; got {q = }.")
     if (m != floor(m)) or (m <= 0):
         raise ValueError("m must be an integer > 0")
 
@@ -1865,10 +2071,26 @@ def euler(n):
 
 
 def lqn(n, z):
-    """Legendre function of the second kind.
+    """Legendre functions of the second kind.
 
-    Compute sequence of Legendre functions of the second kind, Qn(z) and
-    derivatives for all degrees from 0 to n (inclusive).
+    Compute sequence of Legendre functions of the second kind, ``Qn(z)`` and
+    derivatives for all degrees from 0 to `n` (inclusive).
+    Returns two arrays of size ``(n+1,) + z.shape`` containing ``Qn(z)`` and
+    ``Qn'(z)``.
+
+    Parameters
+    ----------
+    n : int
+        Maximum degree of the Legendre functions.
+    z : array_like, complex
+        Real or complex input values.
+
+    Returns
+    -------
+    Qn_z : ndarray, shape (n+1,) + shape(z)
+        Values for all degrees ``0..n``
+    Qn_d_z : ndarray, shape (n+1,) + shape(z)
+        Derivatives for all degrees ``0..n``
 
     References
     ----------
@@ -1876,6 +2098,35 @@ def lqn(n, z):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute :math:`Q_n(x)` and its derivatives on an interval.
+
+    >>> import numpy as np
+    >>> from scipy.special import lqn
+    >>> import matplotlib.pyplot as plt
+
+    >>> xs = np.linspace(-2, 2, 200)
+    >>> n_max = 3
+    >>> Qn, dQn = lqn(n_max, xs)
+
+    Plot the Legendre functions of the second kind :math:`Q_n(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, Qn.T, "-")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n(x)$")
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
+    >>> plt.show()
+
+    Plot the derivatives :math:`Q_n'(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, dQn.T, "-")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n'(x)$")
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
@@ -2407,10 +2658,18 @@ def keip_zeros(nt):
 
 
 def kelvin_zeros(nt):
-    """Compute nt zeros of all Kelvin functions.
+    """Compute `nt` zeros of all Kelvin functions.
 
-    Returned in a length-8 tuple of arrays of length nt.  The tuple contains
-    the arrays of zeros of (ber, bei, ker, kei, ber', bei', ker', kei').
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute for each function.
+
+    Returns
+    -------
+    zeros : tuple of arrays
+        Length-8 tuple of arrays of length `nt`.  The tuple contains the arrays of zeros
+        of ``(ber, bei, ker, kei, ber', bei', ker', kei')``.
 
     References
     ----------
@@ -2435,8 +2694,20 @@ def pro_cv_seq(m, n, c):
     """Characteristic values for prolate spheroidal wave functions.
 
     Compute a sequence of characteristic values for the prolate
-    spheroidal wave functions for mode m and n'=m..n and spheroidal
-    parameter c.
+    spheroidal wave functions for mode `m` and n'=m..n and spheroidal
+    parameter `c`.
+
+    Parameters
+    ----------
+    m, n : int
+        Non-negative mode parameters.
+    c : float
+        Spheroidal parameter.
+
+    Returns
+    -------
+    cv : array of floats
+        Characteristic values.
 
     References
     ----------
@@ -2461,6 +2732,18 @@ def obl_cv_seq(m, n, c):
     Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
+
+    Parameters
+    ----------
+    m, n : int
+        Non-negative mode parameters.
+    c : float
+        Spheroidal parameter.
+
+    Returns
+    -------
+    cv : array of floats
+        Characteristic values.
 
     References
     ----------
@@ -2528,11 +2811,30 @@ def comb(N, k, *, exact=False, repetition=False):
 
     """
     if repetition:
+        # Special case: C(n, 0) with repetition = 1 for n >= 0
+        # Without this check, comb(0, 0, repetition=True) would compute
+        # comb(-1, 0) which incorrectly returns 0
+        if exact:
+            if k == 0 and int(N) == N and N >= 0:
+                return 1
+        else:
+            k, N = asarray(k), asarray(N)
+            cond = (k == 0) & (N >= 0)
+            vals = binom(N + k - 1, k)
+            if isinstance(vals, np.ndarray):
+                vals[cond] = 1.0
+            elif cond:
+                vals = np.float64(1.0)
+            return vals
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
-            # _comb_int casts inputs to integers, which is safe & intended here
-            return _comb_int(N, k)
+            # cast inputs to integers, which is safe & intended here
+            N = int(N)
+            k = int(k)
+            if k > N or N < 0 or k < 0:
+                return 0
+            return math.comb(N, k)
         else:
             raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
                              "supported.")
@@ -2803,7 +3105,7 @@ def _is_subdtype(dtype, dtypes):
 
     Also allows specifying a list instead of just a single dtype.
 
-    Additionaly, the most important supertypes from
+    Additionally, the most important supertypes from
         https://numpy.org/doc/stable/reference/arrays.scalars.html
     can optionally be specified using abbreviations as follows:
         "i": np.integer
@@ -2940,7 +3242,7 @@ def factorial(n, exact=False, extend="zero"):
         integer arithmetic, otherwise approximate using the gamma function
         (faster, but yields floats instead of integers).
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
         complex extension of the factorial (see below).
@@ -2979,7 +3281,8 @@ def factorial(n, exact=False, extend="zero"):
 
 
 def factorial2(n, exact=False, extend="zero"):
-    """Double factorial.
+    """
+    Double factorial.
 
     This is the factorial with every second value skipped.  E.g., ``7!! = 7 * 5
     * 3 * 1``.  It can be approximated numerically as::
@@ -3000,7 +3303,7 @@ def factorial2(n, exact=False, extend="zero"):
         integer arithmetic, otherwise use above approximation (faster,
         but yields floats instead of integers).
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
         complex extension of the double factorial. This also enables passing
@@ -3018,6 +3321,11 @@ def factorial2(n, exact=False, extend="zero"):
         Double factorial of ``n``, as integer, float or complex (depending on
         ``exact`` and ``extend``). Array inputs are returned as arrays.
 
+    References
+    ----------
+    .. [1] Complex extension to double factorial
+            https://en.wikipedia.org/wiki/Double_factorial#Complex_arguments
+
     Examples
     --------
     >>> from scipy.special import factorial2
@@ -3025,17 +3333,13 @@ def factorial2(n, exact=False, extend="zero"):
     np.float64(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
-
-    References
-    ----------
-    .. [1] Complex extension to double factorial
-            https://en.wikipedia.org/wiki/Double_factorial#Complex_arguments
     """
     return _factorialx_wrapper("factorial2", n, k=2, exact=exact, extend=extend)
 
 
 def factorialk(n, k, exact=False, extend="zero"):
-    """Multifactorial of n of order k, n(!!...!).
+    """
+    Multifactorial of n of order k, n(!!...!).
 
     This is the multifactorial of n skipping k values.  For example,
 
@@ -3059,7 +3363,7 @@ def factorialk(n, k, exact=False, extend="zero"):
         integer arithmetic, otherwise use an approximation (faster,
         but yields floats instead of integers)
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0`` are
         handled - by default they are 0, but it is possible to opt into the complex
         extension of the multifactorial. This enables passing complex values,
@@ -3076,18 +3380,6 @@ def factorialk(n, k, exact=False, extend="zero"):
     nf : int or float or complex or ndarray
         Multifactorial (order ``k``) of ``n``, as integer, float or complex (depending
         on ``exact`` and ``extend``). Array inputs are returned as arrays.
-
-    Examples
-    --------
-    >>> from scipy.special import factorialk
-    >>> factorialk(5, k=1, exact=True)
-    120
-    >>> factorialk(5, k=3, exact=True)
-    10
-    >>> factorialk([5, 7, 9], k=3, exact=True)
-    array([ 10,  28, 162])
-    >>> factorialk([5, 7, 9], k=3, exact=False)
-    array([ 10.,  28., 162.])
 
     Notes
     -----
@@ -3114,6 +3406,18 @@ def factorialk(n, k, exact=False, extend="zero"):
     ----------
     .. [1] Complex extension to multifactorial
             https://en.wikipedia.org/wiki/Double_factorial#Alternative_extension_of_the_multifactorial
+
+    Examples
+    --------
+    >>> from scipy.special import factorialk
+    >>> factorialk(5, k=1, exact=True)
+    120
+    >>> factorialk(5, k=3, exact=True)
+    10
+    >>> factorialk([5, 7, 9], k=3, exact=True)
+    array([ 10,  28, 162])
+    >>> factorialk([5, 7, 9], k=3, exact=False)
+    array([ 10.,  28., 162.])
     """
     return _factorialx_wrapper("factorialk", n, k=k, exact=exact, extend=extend)
 
@@ -3260,7 +3564,7 @@ def zeta(x, q=None, out=None):
 
     Parameters
     ----------
-    x : array_like of float or complex.
+    x : array_like of float or complex
         Input data
     q : array_like of float, optional
         Input data, must be real.  Defaults to Riemann zeta. When `q` is

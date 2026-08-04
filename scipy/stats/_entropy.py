@@ -9,12 +9,12 @@ import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
-                                   is_marray, _share_masks, xp_capabilities)
+                                   _masked_apply, _share_masks, xp_capabilities)
 
 __all__ = ['entropy', 'differential_entropy']
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x,
     n_samples=lambda kwgs: (
@@ -93,7 +93,7 @@ def entropy(pk: np.typing.ArrayLike,
     ----------
     .. [1] Shannon, C.E. (1948), A Mathematical Theory of Communication.
            Bell System Technical Journal, 27: 379-423.
-           https://doi.org/10.1002/j.1538-7305.1948.tb01338.x
+           :doi:`10.1002/j.1538-7305.1948.tb01338.x`.
     .. [2] Thomas M. Cover and Joy A. Thomas. 2006. Elements of Information
            Theory (Wiley Series in Telecommunications and Signal Processing).
            Wiley-Interscience, USA.
@@ -153,11 +153,7 @@ def entropy(pk: np.typing.ArrayLike,
     if qk is None:
         vec = special.entr(pk)
     else:
-        if is_marray(xp):  # compensate for mdhaber/marray#97
-            vec = special.rel_entr(pk.data, qk.data)  # type: ignore[union-attr]
-            vec = xp.asarray(vec, mask=pk.mask)  #  type: ignore[union-attr]
-        else:
-            vec = special.rel_entr(pk, qk)
+        vec = _masked_apply(special.rel_entr, args=(pk, qk), xp=xp)
 
     S = xp.sum(vec, axis=axis)
     if base is not None:
@@ -328,7 +324,7 @@ def differential_entropy(
     xp = array_namespace(values)
     values = xp_promote(values, force_floating=True, xp=xp)
     values = xp.moveaxis(values, axis, -1)
-    n = values.shape[-1]  # type: ignore[union-attr]
+    n = values.shape[-1]
 
     if window_length is None:
         window_length = math.floor(math.sqrt(n) + 0.5)
@@ -369,7 +365,7 @@ def differential_entropy(
 
     # avoid dtype changes due to data-apis/array-api-compat#152
     # can be removed when data-apis/array-api-compat#152 is resolved
-    return xp.astype(res, values.dtype)  # type: ignore[union-attr]
+    return xp.astype(res, values.dtype)
 
 
 def _pad_along_last_axis(X, m, *, xp):

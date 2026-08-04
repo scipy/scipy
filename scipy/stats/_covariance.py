@@ -11,7 +11,7 @@ __all__ = ["Covariance"]
 
 class Covariance:
     """
-    Representation of a covariance matrix
+    Representation of a covariance matrix.
 
     Calculations involving covariance matrices (e.g. data whitening,
     multivariate normal function evaluation) are often performed more
@@ -59,7 +59,7 @@ class Covariance:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self):
         message = ("The `Covariance` class cannot be instantiated directly. "
@@ -76,6 +76,11 @@ class Covariance:
         ----------
         diagonal : array_like
             The diagonal elements of a diagonal matrix.
+
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing `diagonal`.
 
         Notes
         -----
@@ -144,6 +149,12 @@ class Covariance:
             cumulative distribution function of
             `scipy.stats.multivariate_normal`) by inverting `precision`.
 
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `precision`.
+
         Notes
         -----
         Let the covariance matrix be :math:`A`, its precision matrix be
@@ -194,12 +205,18 @@ class Covariance:
     @staticmethod
     def from_cholesky(cholesky):
         r"""
-        Representation of a covariance provided via the (lower) Cholesky factor
+        Representation of a covariance provided via the (lower) Cholesky factor.
 
         Parameters
         ----------
         cholesky : array_like
             The lower triangular Cholesky factor of the covariance matrix.
+
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `cholesky`.
 
         Notes
         -----
@@ -252,7 +269,7 @@ class Covariance:
     @staticmethod
     def from_eigendecomposition(eigendecomposition):
         r"""
-        Representation of a covariance provided via eigendecomposition
+        Representation of a covariance provided via eigendecomposition.
 
         Parameters
         ----------
@@ -260,6 +277,12 @@ class Covariance:
             A sequence (nominally a tuple) containing the eigenvalue and
             eigenvector arrays as computed by `scipy.linalg.eigh` or
             `numpy.linalg.eigh`.
+
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `eigendecomposition`.
 
         Notes
         -----
@@ -467,7 +490,7 @@ class Covariance:
 
 class CovViaPrecision(Covariance):
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, precision, covariance=None):
         precision = self._validate_matrix(precision, 'precision')
@@ -518,11 +541,11 @@ class CovViaDiagonal(Covariance):
         positive_diagonal[i_zero] = 1  # ones don't affect determinant
         self._log_pdet = np.sum(np.log(positive_diagonal), axis=-1)
 
-        psuedo_reciprocals = 1 / np.sqrt(positive_diagonal)
-        psuedo_reciprocals[i_zero] = 0
+        pseudo_reciprocals = 1 / np.sqrt(positive_diagonal)
+        pseudo_reciprocals[i_zero] = 0
 
         self._sqrt_diagonal = np.sqrt(diagonal)
-        self._LP = psuedo_reciprocals
+        self._LP = pseudo_reciprocals
         self._rank = positive_diagonal.shape[-1] - i_zero.sum(axis=-1)
         self._covariance = np.apply_along_axis(np.diag, -1, diagonal)
         self._i_zero = i_zero
@@ -544,7 +567,7 @@ class CovViaDiagonal(Covariance):
 
 class CovViaCholesky(Covariance):
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, cholesky):
         L = self._validate_matrix(cholesky, 'cholesky')
@@ -570,7 +593,7 @@ class CovViaCholesky(Covariance):
 
 class CovViaEigendecomposition(Covariance):
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, eigendecomposition):
         eigenvalues, eigenvectors = eigendecomposition
@@ -592,10 +615,10 @@ class CovViaEigendecomposition(Covariance):
         positive_eigenvalues[i_zero] = 1  # ones don't affect determinant
         self._log_pdet = np.sum(np.log(positive_eigenvalues), axis=-1)
 
-        psuedo_reciprocals = 1 / np.sqrt(positive_eigenvalues)
-        psuedo_reciprocals[i_zero] = 0
+        pseudo_reciprocals = 1 / np.sqrt(positive_eigenvalues)
+        pseudo_reciprocals[i_zero] = 0
 
-        self._LP = eigenvectors * psuedo_reciprocals
+        self._LP = eigenvectors * pseudo_reciprocals
         self._LA = eigenvectors * np.sqrt(eigenvalues)
         self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
         self._w = eigenvalues
@@ -631,7 +654,7 @@ class CovViaPSD(Covariance):
     Representation of a covariance provided via an instance of _PSD
     """
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, psd):
         self._LP = psd.U

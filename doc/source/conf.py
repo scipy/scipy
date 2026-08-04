@@ -64,7 +64,7 @@ plt.ioff()
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 
 # The main toctree document.
 master_doc = 'index'
@@ -121,7 +121,7 @@ add_function_parentheses = False
 # Ensure all our internal links work
 nitpicky = True
 nitpick_ignore = [
-    # This ignores errors for classes (OptimizeResults, sparse.dok_matrix)
+    # This ignores errors for classes (OptimizeResults, sparse.dok_array)
     # which inherit methods from `dict`. missing references to builtins get
     # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
     # but that fix doesn't work for inherited methods.
@@ -209,7 +209,7 @@ html_sidebars = {
     "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
-html_js_files = ['custom-icons.js']  # defines custom icon(s) used in header
+html_js_files = [('custom-icons.js', {"defer": "defer"}),]  # for custom header icon(s)
 html_theme_options = {
     "header_links_before_dropdown": 6,
     "icon_links": [
@@ -293,7 +293,8 @@ phantom_import_file = 'dump.xml'
 # Generate plots for example sections
 numpydoc_use_plots = True
 np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
-    '__call__', '__mul__', '__getitem__', '__len__',
+    '__call__', '__mul__', '__getitem__', '__len__', '__pow__', '__matmul__',
+    '__truediv__', '__add__', '__rmul__', '__rmatmul__'
 ]
 
 # -----------------------------------------------------------------------------
@@ -303,12 +304,11 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 autosummary_generate = True
 
 # maps functions with a name same as a class name that is indistinguishable
-# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Ex: scipy.signal.czt and scipy.signal.CZT
 # Otherwise, the stubs are overwritten when the name is same for
 # OS (like MacOS) which has a filesystem that ignores the case
 # See https://github.com/sphinx-doc/sphinx/pull/7927
 autosummary_filename_map = {
-    "scipy.odr.odr": "odr-function",
     "scipy.signal.czt": "czt-function",
     "scipy.signal.ShortTimeFFT.t": "scipy.signal.ShortTimeFFT.t.lower",
 }
@@ -349,6 +349,13 @@ plot_pre_code = """
 import warnings
 for key in (
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
+        'pade',
+        'lagrange',
+        'approximate_taylor_polynomial',
+        'tsearch',
+        'minkowski_distance_p',
+        'minkowski_distance',
+        'distance_matrix'
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
