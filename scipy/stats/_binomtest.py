@@ -177,8 +177,8 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction, *, x
 
 @xp_capabilities(skip_backends=[('dask.array', "")], cpu_only=True,
                  reason="binomial distribution ufuncs only available for NumPy",
-                 extra_note="`alternative='two-sided'` is incompatible with JAX "
-                            "arrays.")
+                 extra_note=("`alternative='two-sided'` is incompatible with JAX "
+                             "arrays."))
 def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.

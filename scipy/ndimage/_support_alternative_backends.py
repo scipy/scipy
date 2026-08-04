@@ -58,7 +58,6 @@ def delegate_xp(delegator, module_name):
                 # XXX: output arrays
                 # The NumPy round-trip must return results on the device of
                 # the input arrays, not on the backend's default device
-                # (see gh-22680)
                 device = xp_result_device(*args, *kwds.values())
                 result = func(*args, **kwds)
 

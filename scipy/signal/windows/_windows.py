@@ -2096,7 +2096,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
-    """  # noqa: E501
+    """
     xp = _namespace(xp)
 
     if _len_guards(M):

@@ -1943,7 +1943,7 @@ class BPoly:
                \\times b_{2, 2}(x) \\\\
              = 1 \\times (1-x)^2 + 2 \\times 2 x (1 - x) + 3 \\times x^2
 
-    """  # noqa: E501
+    """
 
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
@@ -2452,7 +2452,7 @@ class NdPPoly:
     unstable.
 
     """
-    
+
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
 

@@ -41,7 +41,7 @@ class IsIsomorphic(XPBenchmark):
         nobs = [100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000]
     else:
         nobs = [100, 100_000]
-    # Skip cpu backends for nobs greater than this. 
+    # Skip cpu backends for nobs greater than this.
     # They should all have reached O(n*logn) behaviour by then.
     CPU_MAX_OBS = 1_000_000
 

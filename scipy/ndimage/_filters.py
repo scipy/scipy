@@ -56,9 +56,6 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
 def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
                           axes, batch_memory):
     xp = array_namespace(input, footprint, output)
-
-    # Anchor internal array creations to the device of the array arguments so
-    # that host data does not land on the backend's default device (gh-22680).
     device = xp_result_device(input, footprint, output)
 
     # vectorized_filter input validation and standardization
@@ -161,7 +158,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         raise ValueError("`cval` must include only numbers.")
 
     # `batch_memory` must be a positive number. Validate on the host: it is
-    # a python scalar, and only ever used in host-side bookkeeping below.
+    # a Python scalar, and only ever used in host-side bookkeeping below.
     temp = np.asarray(batch_memory)
     if temp.ndim != 0 or (not np.issubdtype(temp.dtype, np.number)) or temp <= 0:
         raise ValueError("`batch_memory` must be positive number.")

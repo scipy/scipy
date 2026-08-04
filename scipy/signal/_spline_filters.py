@@ -671,7 +671,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     cj = np.asarray(cj)
     if cj.size == 0:
         raise ValueError("Spline coefficients 'cj' must not be empty.")
-    
+
     N = len(cj)
     cond1 = newx < 0
     cond2 = newx > (N - 1)

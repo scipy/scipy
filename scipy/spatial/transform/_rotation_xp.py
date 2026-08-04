@@ -65,15 +65,30 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
 
         gramians = matrix @ matrix.mT
         eye = xp.eye(3, dtype=matrix.dtype, device=device)
+        # float32 reduced precision compared to float64 requires a higher threshold
+        atol = 1e-12 if matrix.dtype == xp.float64 else 1e-6
         is_orthogonal = xp.all(
-            xpx.isclose(gramians, eye, atol=1e-12, xp=xp), axis=(-2, -1)
+            xpx.isclose(gramians, eye, atol=atol, xp=xp), axis=(-2, -1)
         )
 
         if lazy:
             # Lazy backends do not support non-concrete boolean indexing or any form of
             # computation without statically known shapes, so we always compute SVD and
             # use xp.where to select the result.
-            U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
+            # The results from orthogonal matrices are discarded, so we are free to
+            # change the inputs. We use this to our advantage:
+            # 1. the SVD of a diagonal matrix is significantly faster than the SVD of a
+            #    dense, generic matrix, so replacing orthogonal inputs with diagonal
+            #    matrices improves performance of the unnecessary SVDs.
+            # 2. The SVD of a matrix with three equal singular values is not
+            #    differentiable. Valid rotation matrices fall under this category, so
+            #    ironically, the unused results of the SVD produce NaN gradients that
+            #    can poison common autograd frameworks. Setting the value of the matrix
+            #    before the SVD breaks that chain and prevents NaN gradients. Note that
+            #    we do not guarantee gradients, but it is still a notable side-effect.
+            filler = xp.eye(3, dtype=matrix.dtype, device=device)
+            matrix_svd = xp.where(is_orthogonal[..., None, None], filler, matrix)
+            U, _, Vt = xp.linalg.svd(matrix_svd, full_matrices=False)
             matrix = xp.where(is_orthogonal[..., None, None], matrix, U @ Vt)
         elif not xp.all(is_orthogonal):
             # For eager frameworks, only compute SVD if needed.
@@ -327,16 +342,9 @@ def as_rotvec(quat: Array, degrees: bool = False) -> Array:
     quat = _quat_canonical(quat)
     ax_norm = xp_vector_norm(quat[..., :3], axis=-1, keepdims=True, xp=xp)
     angle = 2 * xp.atan2(ax_norm, quat[..., 3][..., None])
-    small_angle = angle <= 1e-3
-    angle2 = angle**2
-    small_scale = 2 + angle2 / 12 + 7 * angle2**2 / 2880
-    # We need to handle the case where sin(angle/2) is 0 to avoid division by zero. We
-    # use the value of the Taylor series approximation, but non-branching operations
-    # require that we still divide by the sin. Since we do not use the result where the
-    # angle is close to 0, adding one to the sin where we discard the result is safe.
-    div_sin = xp.sin(angle / 2.0) + xp.asarray(small_angle, dtype=angle.dtype)
-    large_scale = angle / div_sin
-    scale = xp.where(small_angle, small_scale, large_scale)
+    # Guard against division by zero. The rotvec is zero in that case.
+    div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)
+    scale = angle / div_norm
     if degrees:
         scale = _rad2deg(scale)
     rotvec = scale * quat[..., :3]

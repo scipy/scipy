@@ -275,9 +275,14 @@ blas-devel = "*"
 
 ### Default building ###
 
-[feature.build-deps.dependencies]
+[feature.build-deps.target.unix.dependencies]
 c-compiler = "*"
 cxx-compiler = "*"
+
+[feature.build-deps.target.win-64.dependencies]
+clang-cl_win-64 = "*"
+
+[feature.build-deps.dependencies]
 ccache = "*"
 pkg-config = "*"
 ninja = "*"
@@ -289,7 +294,6 @@ pybind11 = "*"
 # needed at build-time as well as run-time
 numpy = "*"
 blas-devel = "*"
-
 
 [feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
@@ -877,6 +881,7 @@ PYTHON_GIL = "0"
 
 [feature.build-freethreading.tasks.build-freethreading]
 cmd = "spin build --build-dir=build-freethreading --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy (freethreaded Python)"
 
 [feature.test-freethreading.tasks.test-freethreading]
@@ -917,4 +922,4 @@ description = "Build SciPy with clang-22 and -werror"
 gha-tools = "*"
 
 [feature.gha-update.tasks.gha-update]
-cmd = "gha-tools autoupdate ./.github/workflows/ --write --pin all -s specific"
+cmd = "gha-tools autoupdate ./.github/workflows/ ./.github/ccache/ --write --pin all -s specific"

@@ -771,7 +771,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     >>> x = np.array([0.0]) # x axis has length 1
     >>> y = np.linspace(0, 10, 11)
-    >>> points = (x, y) 
+    >>> points = (x, y)
     >>> values = value_func_2d(*np.meshgrid(*points, indexing='ij'))
     >>> xi = np.array([[1.0, 0.5]])
     >>> interpn(points, values, xi, method='linear', bounds_error=False,
@@ -782,7 +782,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     >>> xi = np.array([[0.0, 0.5]])
     >>> interpn(points, values, xi, method='linear', bounds_error=False,
-    ...         fill_value = 42) 
+    ...         fill_value = 42)
     array([-1.5])   # interpolation as normal along y
 
     """

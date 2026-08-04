@@ -122,9 +122,9 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     np.float64(316.6441136688085)
     >>> res.pvalue
     np.float64(2.778946959815902e-67)
-    
+
     The large value of the statistic and small p-value may be taken as evidence that
-    ``x`` and ``y`` were not sampled from the same distribution. 
+    ``x`` and ``y`` were not sampled from the same distribution.
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator

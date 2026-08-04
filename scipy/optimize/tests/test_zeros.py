@@ -995,19 +995,19 @@ def test_bisect_special_parameter(method):
 class TestRidderUnderflow:
     def test_gh_issue_underflow(self):
         # Regression test for underflow in Ridder's method.
-        # Previously, intermediate calculations (fm*fm) would underflow 
+        # Previously, intermediate calculations (fm*fm) would underflow
         # to zero before the ratio converged, causing a Runtime Error.
-        
+
         def f(x): return x**5
 
         # Before the fix, this raised a RuntimeError.
         root, result = optimize.ridder(
-            f, -1, 5, 
-            xtol=1e-300, 
-            full_output=True, 
+            f, -1, 5,
+            xtol=1e-300,
+            full_output=True,
             maxiter=10000
         )
-        
+
         assert result.converged
         assert abs(root) < 1e-10  # Ensuring zero is found
 
@@ -1023,10 +1023,10 @@ class TestRidderUnderflow:
         # Calls: f(-1), f(1) [init], then f(0) [iter 1] -> Exit.
         # Total = 3 calls.
         root, result = optimize.ridder(
-            f, -1, 1, 
+            f, -1, 1,
             full_output=True
         )
-        
+
         assert result.converged
         assert root == 0.0
         assert result.function_calls == nfev

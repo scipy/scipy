@@ -25,7 +25,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
         j = xp.arange(n, dtype=xp.float64, device=xp_device(a))
         a = a * xp.exp(-bias*(j - j_c)*dln)
 
-    # compute FHT coefficients (computed with NumPy, so move to the input device)
+    # compute FHT coefficients
     u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias),
                    device=xp_device(a))
 
@@ -54,7 +54,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
         j = xp.arange(n, dtype=xp.float64, device=xp_device(A))
         A = A * xp.exp(bias*((j - j_c)*dln + offset))
 
-    # compute FHT coefficients (computed with NumPy, so move to the input device)
+    # compute FHT coefficients
     u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias, inverse=True),
                    device=xp_device(A))
 

@@ -1080,7 +1080,7 @@ def _moment_tuple(x, n_out):
 @xp_capabilities(skip_backends=[('dask.array', 'needs axis_nan_policy decorator')],
                  marray=True)
 @_rename_parameter('moment', 'order')
-@_axis_nan_policy_factory(  # noqa: E302
+@_axis_nan_policy_factory(
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=_moment_outputs
 )
@@ -10718,7 +10718,7 @@ def _prk(r, k):
                  cpu_only=True,  # torch doesn't have `binom`
                  exceptions=('cupy', 'jax.numpy'),
                  extra_note="Lazy backends do not support `order` greater than 4.")
-@_axis_nan_policy_factory(  # noqa: E302
+@_axis_nan_policy_factory(
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
 )
