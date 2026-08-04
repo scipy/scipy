@@ -29,7 +29,7 @@ from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
 from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_result_type,
-                                   xp_size)
+                                   xp_size, xp_device)
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 
@@ -429,6 +429,7 @@ def _chi2_contingency_2d(observed, *, correction=True, lambda_=1, xp=None):
     # (chi2_contingency works for ND tables, so it can't be vectorized)
     xp = array_namespace(observed) if xp is None else xp
     dtype = xp_result_type(observed.dtype, force_floating=True, xp=xp)
+    device = xp_device(observed)
     batch_shape = observed.shape[:-2]
     table_shape = observed.shape[-2:]
 
@@ -445,12 +446,13 @@ def _chi2_contingency_2d(observed, *, correction=True, lambda_=1, xp=None):
     dof = math.prod(table_shape) - sum(table_shape) + 1
     ddof = sum(table_shape) - 2
     if dof == 0:
-        return (xp.zeros(batch_shape, dtype=dtype)[()],
-                xp.ones(batch_shape, dtype=dtype)[()])
+        return (xp.zeros(batch_shape, dtype=dtype, device=device)[()],
+                xp.ones(batch_shape, dtype=dtype, device=device)[()])
     elif correction and dof == 1:
         diff = expected - observed
         direction = xp.sign(diff)
-        magnitude = xp.minimum(xp.asarray(0.5, dtype=diff.dtype), xp.abs(diff))
+        half = xp.asarray(0.5, dtype=diff.dtype, device=device)
+        magnitude = xp.minimum(half, xp.abs(diff))
         observed = observed + magnitude * direction
 
     observed = xp.reshape(observed, batch_shape + (-1,))

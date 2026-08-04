@@ -36,6 +36,7 @@ from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (_get_pvalue, SignificanceResult,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
+from .contingency import chi2_contingency  # noqa:F401
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
