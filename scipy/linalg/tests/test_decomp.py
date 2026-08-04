@@ -378,13 +378,24 @@ class TestEig:
         A = np.arange(6).reshape(3, 2)
         assert_raises(ValueError, eig, A)
 
-    def test_shape_mismatch(self):
+    @pytest.mark.parametrize("n_a", [0, 2, 3])
+    @pytest.mark.parametrize("n_b", [0, 2, 3])
+    def test_shape_mismatch(self, n_a, n_b):
         """Check that passing arrays of with different shapes
         raises a ValueError."""
-        A = eye(2)
-        B = np.arange(9.0).reshape(3, 3)
-        assert_raises(ValueError, eig, A, B)
-        assert_raises(ValueError, eig, B, A)
+        A = np.arange(n_a * n_a).reshape(n_a, n_a)
+        B = np.eye(n_b)
+
+        if n_a != n_b:
+            with pytest.raises(ValueError, match="a and b must have"):
+                eig(A, B)
+            with pytest.raises(ValueError, match="a and b must have"):
+                eig(B, A)
+
+        else: # Verify correctness of solution
+            w, v = eig(A, B)
+            assert_allclose(A @ v, B @ v @ np.diag(w), atol=1e-14)
+
 
     def test_gh_11577(self):
         # https://github.com/scipy/scipy/issues/11577
