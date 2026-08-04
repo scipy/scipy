@@ -140,7 +140,7 @@ add_global_arguments(_intel_cflags, language: ['c', 'cpp'])
 # Meson using `-fvisibility=hidden` for C and `-fvisibility-inlines-hidden` for
 # C++ code. See gh-15996 for details.
 version_link_args = []
-if cc.get_id() != 'clang-cl'
+if cc.get_id() != 'clang-cl' and ff.get_id() != 'nagfor'
   _linker_script = meson.project_source_root() / 'tools/building/link-version-pyinit.map'
   vscript_link_args = ['-Wl,--version-script=' + _linker_script]
   # Note that FreeBSD only accepts version scripts when -shared is passed,
