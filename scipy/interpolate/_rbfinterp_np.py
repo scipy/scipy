@@ -25,7 +25,7 @@ def polynomial_matrix(x, powers, xp):
     return _pythran_polynomial_matrix(x, powers)
 
 
-def _monomial_powers(ndim, degree, xp):
+def _monomial_powers(ndim, degree, xp, device=None):
     out = _monomial_powers_impl(ndim, degree)
     out = np.asarray(out, dtype=np.int64)
     if len(out) == 0:

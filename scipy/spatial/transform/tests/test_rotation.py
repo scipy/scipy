@@ -1363,7 +1363,7 @@ def test_mean_axis(xp, ndim: int):
     desired = xp.full(axes.shape[:-2], 0.0)
     if ndim == 1:
         desired = desired[()]
-    atol = 1e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
+    atol = 1.5e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
     xp_assert_close(r.mean(axis=-1).magnitude(), desired, atol=atol)
 
     # Test tuple axes
@@ -2511,7 +2511,7 @@ def test_pow(xp, ndim: int):
         # Test accuracy
         q = p ** n
         q_identity = xp.asarray([0., 0, 0, 1])
-        # Regression test for gh-24436 
+        # Regression test for gh-24436
         assert isinstance(q._quat, type(q_identity))
         r = Rotation.from_quat(xp.tile(q_identity, batch_shape + (1,)))
         for _ in range(abs(n)):

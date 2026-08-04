@@ -30,9 +30,6 @@ def test_dir_testing():
 # deprecation messages emitted by each of these modules say.
 PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.fftpack.convolve',
-    'scipy.misc',
-    'scipy.misc.common',
-    'scipy.misc.doccer',
     'scipy.optimize.cython_optimize',
     'scipy.special.cython_special',
 ]
@@ -89,7 +86,6 @@ def test_all_modules_are_expected():
     modnames = []
 
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "scipy.misc", DeprecationWarning)
         for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
                                                    prefix=scipy.__name__ + '.',
                                                    onerror=ignore_errors):
@@ -141,7 +137,6 @@ def test_all_modules_are_expected_2():
 
         return members
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore",  "scipy.misc", DeprecationWarning)
         unexpected_members = find_unexpected_members("scipy")
 
     for modname in PUBLIC_MODULES:

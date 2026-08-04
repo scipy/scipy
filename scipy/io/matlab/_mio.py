@@ -99,7 +99,7 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
         Only relevant for sparse variables.
 
         .. deprecated:: 1.18.0
-            The default value for `spmatrix` is changing to False in v1.20.
+            The default value for `spmatrix` is changing to False in v2.1.
             That means the default return value will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
             on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
@@ -248,7 +248,7 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
 
-    warn_msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+    warn_msg = """The default value for `spmatrix` is changing to `False` in v2.1.
         That means the default return type will be a sparse array.
         Unless you use * instead of @, ** for matrix power, or you depend
         on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.

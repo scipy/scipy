@@ -187,7 +187,7 @@ def _deprecate_positional_args(func=None, *, version=None,
         kwonly_extra_args = set(kwonly_args) - deprecated_args
         admonition = f"""
 .. deprecated:: {version}
-    Use of argument(s) ``{kwonly_extra_args}`` by position is deprecated; beginning in 
+    Use of argument(s) ``{kwonly_extra_args}`` by position is deprecated; beginning in
     SciPy {version}, these will be keyword-only. """
         if deprecated_args:
             admonition += (f"Argument(s) ``{deprecated_args}`` are deprecated, whether "

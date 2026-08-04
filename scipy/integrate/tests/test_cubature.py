@@ -7,6 +7,7 @@ import pytest
 from scipy._lib._array_api import (
     array_namespace,
     xp_assert_close,
+    xp_device,
     xp_size,
     np_compat,
     is_array_api_strict,
@@ -1214,7 +1215,7 @@ class TestRules:
     ])
     def test_incompatible_dimension_raises_error(self, problem, xp):
         a, b, quadrature, quadrature_args = problem
-        rule = quadrature(*quadrature_args, xp=xp)
+        rule = quadrature(*quadrature_args)
 
         a = xp.asarray(a, dtype=xp.float64)
         b = xp.asarray(b, dtype=xp.float64)
@@ -1245,7 +1246,7 @@ class TestRulesQuadrature:
         (GaussKronrodQuadrature, (21,)),
     ])
     def test_base_1d_quadratures_simple(self, rule, rule_args, xp):
-        quadrature = rule(*rule_args, xp=xp)
+        quadrature = rule(*rule_args)
 
         n = xp.arange(5, dtype=xp.float64)
 
@@ -1277,8 +1278,8 @@ class TestRulesQuadrature:
         a = xp.asarray([0], dtype=xp.float64)
         b = xp.asarray([2], dtype=xp.float64)
 
-        higher = rule_pair[0](rule_pair_args[0], xp=xp)
-        lower = rule_pair[1](rule_pair_args[1], xp=xp)
+        higher = rule_pair[0](rule_pair_args[0])
+        lower = rule_pair[1](rule_pair_args[1])
 
         rule = NestedFixedRule(higher, lower)
         res = cubature(
@@ -1301,7 +1302,7 @@ class TestRulesQuadrature:
     ])
     def test_one_point_fixed_quad_impossible(self, quadrature, xp):
         with pytest.raises(Exception):
-            quadrature(1, xp=xp)
+            quadrature(1)
 
 
 @pytest.mark.uses_xp_capabilities(False, reason="private")
@@ -1317,13 +1318,13 @@ class TestRulesCubature:
         matches the number in Genz and Malik 1980.
         """
 
-        nodes, _ = GenzMalikCubature(ndim, xp=xp).nodes_and_weights
+        nodes, _ = GenzMalikCubature(ndim).nodes_and_weights
 
         assert nodes.shape[0] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
     def test_genz_malik_1d_raises_error(self, xp):
         with pytest.raises(Exception, match="only defined for ndim >= 2"):
-            GenzMalikCubature(1, xp=xp)
+            GenzMalikCubature(1)
 
 
 @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
@@ -1368,11 +1369,9 @@ class BadErrorRule(Rule):
     """
 
     def estimate(self, f, a, b, args=()):
-        xp = array_namespace(a, b)
-        underlying = GaussLegendreQuadrature(10, xp=xp)
-
+        underlying = GaussLegendreQuadrature(10)
         return underlying.estimate(f, a, b, args)
 
     def estimate_error(self, f, a, b, args=()):
         xp = array_namespace(a, b)
-        return xp.asarray(1e6, dtype=xp.float64)
+        return xp.asarray(1e6, dtype=xp.float64, device=xp_device(a))

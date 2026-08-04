@@ -396,6 +396,31 @@ double xsf_radian(double d, double m, double s);
 
 double boost_bdtrik(double y, double n, double p);
 double boost_bdtrin(double k, double y, double p);
+float boost_erfinv_float(float x);
+double boost_erfinv_double(double x);
+float boost_fdtr_float(float dfn, float dfd, float x);
+double boost_fdtr_double(double dfn, double dfd, double x);
+float boost_fdtrc_float(float dfn, float dfd, float x);
+double boost_fdtrc_double(double dfn, double dfd, double x);
+float boost_fdtri_float(float dfn, float dfd, float p);
+double boost_fdtri_double(double dfn, double dfd, double p);
+float boost_log_gammainc_float(float a, float x);
+double boost_log_gammainc_double(double a, double x);
+float boost_log_gammaincc_float(float a, float x);
+double boost_log_gammaincc_double(double a, double x);
+double boost_nbdtrik(double y, double n, double p);
+double boost_nbdtrin(double k, double y, double p);
+double boost_ncfdtrinc(double dfn, double dfd, double p, double f);
+float boost_nctdtr_float(float df, float nc, float t);
+double boost_nctdtr_double(double df, double nc, double t);
+double boost_nctdtridf(double p, double nc, double t);
+double boost_nctdtrinc(double df, double p, double t);
+float boost_nctdtrit_float(float df, float nc, float p);
+double boost_nctdtrit_double(double df, double nc, double p);
+float boost_stdtr_float(float df, float t);
+double boost_stdtr_double(double df, double t);
+float boost_stdtrit_float(float df, float p);
+double boost_stdtrit_double(double df, double p);
 
 #ifdef __cplusplus
 } /* extern "C" */

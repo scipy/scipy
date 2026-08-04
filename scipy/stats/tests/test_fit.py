@@ -377,7 +377,7 @@ class TestFit:
     dist = stats.binom
     seed = 654634816187
     rng = np.random.default_rng(seed)
-    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # noqa: E501
+    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)
     shape_bounds_a = [(1, 10), (0, 1)]
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
     atol = 5e-2

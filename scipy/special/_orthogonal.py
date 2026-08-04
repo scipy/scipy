@@ -1475,7 +1475,7 @@ def _pbcf(n, theta):
     v0 = 1.0
     v1 = (1.0*ctp[3,:] + 6.0*ct) / 24.0
     v2 = (15.0*ctp[4,:] - 327.0*ctp[2,:] - 143.0) / 1152.0
-    v3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 36387.0*ctp[5,:] 
+    v3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 36387.0*ctp[5,:]
           + 238425.0*ctp[3,:] + 259290.0*ct) / 414720.0
     v4 = (-121260.0*ctp[10,:] + 551733.0*ctp[8,:] - 151958.0*ctp[6,:]
           - 57484425.0*ctp[4,:] - 132752238.0*ctp[2,:] - 12118727) / 39813120.0
@@ -1883,7 +1883,7 @@ def hermitenorm(n, monic=False):
     np.float64(-2.0)
 
     Plot probabilist's Hermite polynomials of degree 0 to 4:
-    
+
     >>> x = np.linspace(-3, 3, 100)
     >>> fig, ax = plt.subplots()
     >>> for i in range(5):
@@ -3554,7 +3554,7 @@ def roots_sh_legendre(n, mu=False):
     The sum of the weights for shifted Gauss-Legendre quadrature is always 1:
 
     >>> x, w, mu = roots_sh_legendre(10, mu=True)
-    >>> mu 
+    >>> mu
     1.0  # Sum of weights of shifted Gauss-Legendre quadrature is always 1
 
     """

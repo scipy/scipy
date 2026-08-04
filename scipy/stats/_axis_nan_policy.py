@@ -12,7 +12,8 @@ from scipy._lib._array_api import xp_ravel
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_size, xp_copy,
-                                   xp_promote, is_dask, is_jax, xp_capabilities)
+                                   xp_promote, is_dask, is_jax, xp_capabilities,
+                                   xp_device)
 import scipy._external.array_api_extra as xpx
 
 import inspect
@@ -272,7 +273,7 @@ def _check_empty_inputs(samples, axis, xp=None):
     # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
     NaN = _get_nan(*samples)
-    output = xp.full(output_shape, xp.nan, dtype=NaN.dtype)
+    output = xp.full(output_shape, xp.nan, dtype=NaN.dtype, device=xp_device(NaN))
     return output
 
 
@@ -578,7 +579,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "propagate"
                 if any_contains_nan and (nan_policy == 'propagate'
                                          and override['nan_propagation']):
-                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
+                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype,
+                                  device=xp_device(NaN))
                     res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                     return tuple_to_result(*res)
 
@@ -594,7 +596,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_msg, SmallSampleWarning, stacklevel=2)
-                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
+                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype,
+                                  device=xp_device(NaN))
                     res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                     return tuple_to_result(*res)
 

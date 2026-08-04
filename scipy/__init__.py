@@ -111,7 +111,7 @@ def __getattr__(name):
         return _importlib.import_module(f'scipy.{name}')
     elif name == "odr":
         raise AttributeError(
-            "`scipy.odr` was deprecated in SciPy 1.17 and removed in SciPy 1.19. "
+            "`scipy.odr` was deprecated in SciPy 1.17 and removed in SciPy 2.0. "
             "Please use https://pypi.org/project/odrpack/ instead."
         )
     else:

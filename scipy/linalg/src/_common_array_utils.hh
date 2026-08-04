@@ -1,12 +1,7 @@
 /*
  * LAPACK declarations.
  */
-#ifndef _SCIPY_COMMON_ARRAY_UTILS_H
-#define _SCIPY_COMMON_ARRAY_UTILS_H
-#include "Python.h"
-#include <tuple>
-#include "numpy/npy_math.h"
-#include "scipy_blas_defines.h"
+#pragma once
 
 /*
  * declare LAPACK prototypes
@@ -1580,4 +1575,3 @@ nan_matrix(T * data, npy_intp n) {
 }
 
 } // namespace sp_linalg
-#endif
