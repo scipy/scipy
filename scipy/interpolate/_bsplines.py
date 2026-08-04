@@ -2584,10 +2584,13 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
         The data axis. Default is zero.
         The assumption is that ``y.shape[axis] == n``, and all other axes of ``y``
         are batching axes.
-    t : array_like, optional
-        The knot vector. Default is None.
-        If knot vector is None, a clamped knot vector ``t`` with ``t = x`` is
-        assumed. ``t`` can only be passed when ``lam`` is not None.
+    t : array_like, shape (nt,), optional
+        Knot vector. Must be non-decreasing, with all ``x`` values inside
+        the base interval ``[t[3], t[-4]]``; boundary knots are typically
+        repeated 4 times (clamped). ``t`` can only be passed when ``lam``
+        is given explicitly. Default is None, in which case a clamped knot
+        vector at the data sites is used,
+        ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
 
     Returns
     -------
@@ -2630,7 +2633,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     which may diverge quickly; for the special case of knots at the
     data sites the minimizer coincides with the natural smoothing
     spline of the default path.
-    
+
     With user-supplied knots, the following are not (yet) supported and
     raise an error: automatic selection of ``lam`` by GCV (``lam`` must
     be given explicitly), array-valued ``lam``, and batched ``y``
