@@ -53,36 +53,9 @@ py3.extension_module('_ckdtree',
   subdir: 'scipy/spatial'
 )
 
-py3.extension_module('_distance_wrap',
-  'src/distance_wrap.c',
-  include_directories: '../_lib',
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/spatial'
-)
-
-py3.extension_module('_distance_pybind',
-  ['src/distance_pybind.cpp'],
-  include_directories: ['src/'],
-  dependencies: [np_dep, pybind11_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/spatial'
-)
-
 py3.extension_module('_voronoi',
   [cython_gen.process('_voronoi.pyx')],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/spatial'
-)
-
-py3.extension_module('_hausdorff',
-  [cython_gen.process('_hausdorff.pyx')],
-  c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
@@ -97,8 +70,7 @@ py3.install_sources([
 
 py3.install_sources([
     '_qhull.pyi',
-    '_voronoi.pyi',
-    'distance.pyi'
+    '_voronoi.pyi'
   ],
   subdir: 'scipy/spatial'
 )
@@ -110,10 +82,10 @@ py3.install_sources([
     '_plotutils.py',
     '_procrustes.py',
     '_spherical_voronoi.py',
-    'distance.py',
   ],
   subdir: 'scipy/spatial'
 )
 
+subdir('distance')
 subdir('tests')
 subdir('transform')
