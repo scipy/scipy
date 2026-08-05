@@ -74,6 +74,11 @@ extern const char *_igam_fac_doc;
 extern const char *_kolmogc_doc;
 extern const char *_kolmogci_doc;
 extern const char *_kolmogp_doc;
+extern const char *_landau_cdf_doc;
+extern const char *_landau_isf_doc;
+extern const char *_landau_pdf_doc;
+extern const char *_landau_ppf_doc;
+extern const char *_landau_sf_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
@@ -363,6 +368,36 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogp), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogp)},
         "_kolmogp", _kolmogp_doc);
     PyModule_AddObjectRef(module, "_kolmogp", _kolmogp);
+
+    PyObject *_landau_cdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_cdf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_cdf_double)},
+                          "_landau_cdf", _landau_cdf_doc);
+    PyModule_AddObjectRef(module, "_landau_cdf", _landau_cdf);
+
+    PyObject *_landau_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_isf_double)},
+                          "_landau_isf", _landau_isf_doc);
+    PyModule_AddObjectRef(module, "_landau_isf", _landau_isf);
+
+    PyObject *_landau_pdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_pdf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_pdf_double)},
+                          "_landau_pdf", _landau_pdf_doc);
+    PyModule_AddObjectRef(module, "_landau_pdf", _landau_pdf);
+
+    PyObject *_landau_ppf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_ppf_double)},
+                          "_landau_ppf", _landau_ppf_doc);
+    PyModule_AddObjectRef(module, "_landau_ppf", _landau_ppf);
+
+    PyObject *_landau_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_sf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_sf_double)},
+                          "_landau_sf", _landau_sf_doc);
+    PyModule_AddObjectRef(module, "_landau_sf", _landau_sf);
 
     PyObject *_normalized_gen_harmonic =
         xsf::numpy::ufunc({static_cast<xsf::numpy::llld_d>(xsf::normalized_gen_harmonic),
