@@ -36,12 +36,6 @@
             "cephes_bdtri_wrap": "dpd->d"
         }
     },
-    "chdtriv": {
-        "boost_special_functions.h++": {
-            "chdtriv_float": "ff->f",
-            "chdtriv_double": "dd->d"
-        }
-    },
     "elliprc": {
 	"ellint_carlson_wrap.hh++": {
 	    "fellint_RC": "dd->d",
@@ -270,18 +264,6 @@
         },
         "cython_special_wrappers.h": {
             "cephes_pdtri_wrap": "pd->d"
-        }
-    },
-    "pdtrik": {
-        "boost_special_functions.h++": {
-            "pdtrik_float": "ff->f",
-            "pdtrik_double": "dd->d"
-        }
-    },
-    "powm1": {
-        "boost_special_functions.h++": {
-            "powm1_float": "ff->f",
-            "powm1_double": "dd->d"
         }
     },
     "shichi": {

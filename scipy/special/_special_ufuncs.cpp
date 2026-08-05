@@ -110,6 +110,7 @@ extern const char *cbrt_doc;
 extern const char *chdtr_doc;
 extern const char *chdtrc_doc;
 extern const char *chdtri_doc;
+extern const char *chdtriv_doc;
 extern const char *chndtr_doc;
 extern const char *chndtridf_doc;
 extern const char *chndtrinc_doc;
@@ -240,7 +241,9 @@ extern const char *obl_rad2_cv_doc;
 extern const char *owens_t_doc;
 extern const char *pdtr_doc;
 extern const char *pdtrc_doc;
+extern const char *pdtrik_doc;
 extern const char *poch_doc;
+extern const char *powm1_doc;
 extern const char *_zeta_doc;
 extern const char *pbdv_doc;
 extern const char *pbvv_doc;
@@ -597,6 +600,12 @@ _special_ufuncs_module_exec(PyObject *module)
         chdtri_doc);
     PyModule_AddObjectRef(module, "chdtri", chdtri);
 
+    PyObject *chdtriv =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(chdtriv_float),
+                           static_cast<xsf::numpy::dd_d>(chdtriv_double)},
+                          "chdtriv", chdtriv_doc);
+    PyModule_AddObjectRef(module, "chdtriv", chdtriv);
+
     PyObject *chndtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_cdf_float),
                            static_cast<xsf::numpy::ddd_d>(ncx2_cdf_double)},
@@ -856,10 +865,22 @@ _special_ufuncs_module_exec(PyObject *module)
                           "pdtrc", pdtrc_doc);
     PyModule_AddObjectRef(module, "pdtrc", pdtrc);
 
+    PyObject *pdtrik =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(pdtrik_float),
+                           static_cast<xsf::numpy::dd_d>(pdtrik_double)},
+                          "pdtrik", pdtrik_doc);
+    PyModule_AddObjectRef(module, "pdtrik", pdtrik);
+
     PyObject *poch = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cephes::poch), static_cast<xsf::numpy::dd_d>(xsf::cephes::poch)}, "poch",
         poch_doc);
     PyModule_AddObjectRef(module, "poch", poch);
+
+    PyObject *powm1 =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(powm1_float),
+                           static_cast<xsf::numpy::dd_d>(powm1_double)},
+                          "powm1", powm1_doc);
+    PyModule_AddObjectRef(module, "powm1", powm1);
 
     PyObject *round = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::cephes::round), static_cast<xsf::numpy::d_d>(xsf::cephes::round)}, "round",
