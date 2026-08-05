@@ -1399,6 +1399,14 @@ cdef extern from r"cython_special_wrappers.h":
 
     double boost_bdtrik(double y, double n, double p) nogil
     double boost_bdtrin(double k, double y, double p) nogil
+    float boost_chndtr_float(float x, float df, float nc) nogil
+    double boost_chndtr_double(double x, double df, double nc) nogil
+    float boost_chndtridf_float(float x, float p, float nc) nogil
+    double boost_chndtridf_double(double x, double p, double nc) nogil
+    float boost_chndtrinc_float(float x, float df, float p) nogil
+    double boost_chndtrinc_double(double x, double df, double p) nogil
+    float boost_chndtrix_float(float p, float df, float nc) nogil
+    double boost_chndtrix_double(double p, double df, double nc) nogil
     float boost_erfinv_float(float x) nogil
     double boost_erfinv_double(double x) nogil
     float boost_fdtr_float(float dfn, float dfd, float x) nogil
@@ -1451,30 +1459,30 @@ cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil:
 cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtr"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_cdf_float)(x0, x1, x2)
+        return boost_chndtr_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_cdf_double)(x0, x1, x2)
+        return boost_chndtr_double(x0, x1, x2)
 
 cpdef df_number_t chndtrix(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtrix"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_ppf_float)(x0, x1, x2)
+        return boost_chndtrix_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_ppf_double)(x0, x1, x2)
+        return boost_chndtrix_double(x0, x1, x2)
 
 cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtrinc"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_noncentrality_float)(x0, x1, x2)
+        return boost_chndtrinc_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_noncentrality_double)(x0, x1, x2)
+        return boost_chndtrinc_double(x0, x1, x2)
 
 cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtridf"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_degrees_of_freedom_float)(x0, x1, x2)
+        return boost_chndtridf_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_degrees_of_freedom_double)(x0, x1, x2)
+        return boost_chndtridf_double(x0, x1, x2)
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_ellpj_wrap "cephes_ellpj_wrap"(npy_double, npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil

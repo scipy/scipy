@@ -104,6 +104,10 @@ extern const char *cbrt_doc;
 extern const char *chdtr_doc;
 extern const char *chdtrc_doc;
 extern const char *chdtri_doc;
+extern const char *chndtr_doc;
+extern const char *chndtridf_doc;
+extern const char *chndtrinc_doc;
+extern const char *chndtrix_doc;
 extern const char *cosdg_doc;
 extern const char *cosm1_doc;
 extern const char *cotdg_doc;
@@ -550,6 +554,30 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::chdtri), static_cast<xsf::numpy::dd_d>(xsf::chdtri)}, "chdtri",
         chdtri_doc);
     PyModule_AddObjectRef(module, "chdtri", chdtri);
+
+    PyObject *chndtr =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_cdf_float),
+                           static_cast<xsf::numpy::ddd_d>(ncx2_cdf_double)},
+                          "chndtr", chndtr_doc);
+    PyModule_AddObjectRef(module, "chndtr", chndtr);
+
+    PyObject *chndtridf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_find_degrees_of_freedom_float),
+                           static_cast<xsf::numpy::ddd_d>(ncx2_find_degrees_of_freedom_double)},
+                          "chndtridf", chndtridf_doc);
+    PyModule_AddObjectRef(module, "chndtridf", chndtridf);
+
+    PyObject *chndtrinc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_find_noncentrality_float),
+                           static_cast<xsf::numpy::ddd_d>(ncx2_find_noncentrality_double)},
+                          "chndtrinc", chndtrinc_doc);
+    PyModule_AddObjectRef(module, "chndtrinc", chndtrinc);
+
+    PyObject *chndtrix =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(ncx2_ppf_double)},
+                          "chndtrix", chndtrix_doc);
+    PyModule_AddObjectRef(module, "chndtrix", chndtrix);
 
     PyObject *cosdg = xsf::numpy::ufunc(
 	{static_cast<xsf::numpy::f_f>(xsf::cosdg), static_cast<xsf::numpy::d_d>(xsf::cosdg)}, "cosdg", cosdg_doc);
