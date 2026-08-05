@@ -129,21 +129,42 @@ Exceptions
 
 """
 
+from . import _isolve
 from ._isolve import *
+from . import _dsolve
 from ._dsolve import *
+from . import _interface
 from ._interface import *
+from . import _eigen
 from ._eigen import *
+from . import _matfuncs
 from ._matfuncs import *
+from . import _onenormest
 from ._onenormest import *
+from . import _norm
 from ._norm import *
+from . import _expm_multiply
 from ._expm_multiply import *
+from . import _funm_multiply_krylov
 from ._funm_multiply_krylov import *
+from . import _special_sparse_arrays
 from ._special_sparse_arrays import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import isolve, dsolve, interface, eigen, matfuncs
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = []
+__all__ += _isolve.__all__
+__all__ += _dsolve.__all__
+__all__ += _interface.__all__
+__all__ += _eigen.__all__
+__all__ += _matfuncs.__all__
+__all__ += _onenormest.__all__
+__all__ += _norm.__all__
+__all__ += _expm_multiply.__all__
+__all__ += _funm_multiply_krylov.__all__
+__all__ += _special_sparse_arrays.__all__
+__all__ += ['isolve', 'dsolve', 'interface', 'eigen', 'matfuncs']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

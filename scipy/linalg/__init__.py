@@ -198,26 +198,48 @@ Low-level routines
 
 """  # noqa: E501
 
+from . import _misc
 from ._misc import *
+from . import _cythonized_array_utils
 from ._cythonized_array_utils import *
+from . import _basic
 from ._basic import *
+from . import _decomp
 from ._decomp import *
+from . import _decomp_lu
 from ._decomp_lu import *
+from . import _decomp_ldl
 from ._decomp_ldl import *
+from . import _decomp_cholesky
 from ._decomp_cholesky import *
+from . import _decomp_qr
 from ._decomp_qr import *
+from . import _decomp_qz
 from ._decomp_qz import *
+from . import _decomp_svd
 from ._decomp_svd import *
+from . import _decomp_schur
 from ._decomp_schur import *
+from . import _decomp_polar
 from ._decomp_polar import *
+from . import _matfuncs
 from ._matfuncs import *
+from . import blas
 from .blas import *
+from . import lapack
 from .lapack import *
+from . import cython_blas, cython_lapack
+from . import _special_matrices
 from ._special_matrices import *
+from . import _solvers
 from ._solvers import *
+from . import _procrustes
 from ._procrustes import *
+from . import _decomp_update
 from ._decomp_update import *
+from . import _sketches
 from ._sketches import *
+from . import _decomp_cossin
 from ._decomp_cossin import *
 
 # Deprecated namespaces, to be removed in v2.0.0
@@ -226,7 +248,31 @@ from . import (
     basic, misc, special_matrices, matfuncs,
 )
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = []
+__all__ += _misc.__all__
+__all__ += _cythonized_array_utils.__all__
+__all__ += _basic.__all__
+__all__ += _decomp.__all__
+__all__ += _decomp_lu.__all__
+__all__ += _decomp_ldl.__all__
+__all__ += _decomp_cholesky.__all__
+__all__ += _decomp_qr.__all__
+__all__ += _decomp_qz.__all__
+__all__ += _decomp_svd.__all__
+__all__ += _decomp_schur.__all__
+__all__ += _decomp_polar.__all__
+__all__ += _matfuncs.__all__
+__all__ += blas.__all__
+__all__ += lapack.__all__
+__all__ += _special_matrices.__all__
+__all__ += _solvers.__all__
+__all__ += _procrustes.__all__
+__all__ += _decomp_update.__all__
+__all__ += _sketches.__all__
+__all__ += _decomp_cossin.__all__
+__all__ += ['decomp', 'decomp_cholesky', 'decomp_lu', 'decomp_qr', 'decomp_svd',
+            'decomp_schur', 'basic', 'misc', 'special_matrices', 'matfuncs',
+            'blas', 'lapack', 'cython_blas', 'cython_lapack']
 
 
 from scipy._lib._testutils import PytestTester

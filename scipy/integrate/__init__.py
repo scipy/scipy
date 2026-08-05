@@ -100,9 +100,13 @@ Solving boundary value problems for ODE systems
 """  # noqa: E501
 
 
+from . import _quadrature
 from ._quadrature import *
+from . import _odepack_py
 from ._odepack_py import *
+from . import _quadpack_py
 from ._quadpack_py import *
+from . import _ode
 from ._ode import *
 from ._bvp import solve_bvp
 from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
@@ -115,7 +119,15 @@ from ._lebedev import lebedev_rule
 # Deprecated namespaces, to be removed in v2.0.0
 from . import dop, lsoda, vode, odepack, quadpack
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = []
+__all__ += _quadrature.__all__
+__all__ += _odepack_py.__all__
+__all__ += _quadpack_py.__all__
+__all__ += _ode.__all__
+__all__ += ['solve_bvp', 'solve_ivp', 'OdeSolution', 'DenseOutput', 'OdeSolver',
+            'RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA',
+            'quad_vec', 'nsum', 'tanhsinh', 'cubature', 'lebedev_rule',
+            'dop', 'lsoda', 'vode', 'odepack', 'quadpack']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

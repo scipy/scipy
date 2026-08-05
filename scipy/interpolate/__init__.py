@@ -189,36 +189,63 @@ Additional tools
    `scipy.ndimage.spline_filter`,
 
 """
+from . import _interpolate
 from ._interpolate import *
+from . import _fitpack_py
 from ._fitpack_py import *
 
+from . import _fitpack2
 from ._fitpack2 import *
 
 from ._rbf import Rbf
 
+from . import _rbfinterp
 from ._rbfinterp import *
 
+from . import _polyint
 from ._polyint import *
 
+from . import _cubic
 from ._cubic import *
 
+from . import _ndgriddata
 from ._ndgriddata import *
 
+from . import _bsplines
 from ._bsplines import *
 from ._fitpack_repro import generate_knots, make_splrep, make_splprep
 
+from . import _pade
 from ._pade import *
 
+from . import _rgi
 from ._rgi import *
 
 from ._ndbspline import NdBSpline
 
+from . import _bary_rational
 from ._bary_rational import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf, interpnd
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = []
+__all__ += _interpolate.__all__
+__all__ += _fitpack_py.__all__
+__all__ += _fitpack2.__all__
+__all__ += ['Rbf']
+__all__ += _rbfinterp.__all__
+__all__ += _polyint.__all__
+__all__ += _cubic.__all__
+__all__ += _ndgriddata.__all__
+__all__ += _bsplines.__all__
+__all__ += ['generate_knots', 'make_splrep', 'make_splprep']
+__all__ += _pade.__all__
+__all__ += _rgi.__all__
+__all__ += ['NdBSpline']
+__all__ += _bary_rational.__all__
+__all__ += ['fitpack', 'fitpack2', 'interpolate', 'ndgriddata', 'polyint',
+            'rbf', 'interpnd']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

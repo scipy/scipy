@@ -21,7 +21,8 @@ target-version = "py312"
 # `B028` added in gh-19623 to check that warnings have an explicit stacklevel.
 # `ICN001` added in gh-20382 to enforce common conventions for import.
 # `RUF100` added in gh-25742 to check unused noqa comments.
-select = ["E", "W", "F", "UP", "PGH004", "B006", "B008", "B028", "ICN001", "RUF100"]
+# `PYI056` added in gh-25645 (`__all__` only via `+=`, not append/extend).
+select = ["E", "W", "F", "UP", "PGH004", "B006", "B008", "B028", "ICN001", "RUF100", "PYI056"]
 # E741: ignore ambiguous variable names (this ignore could be made more granular)
 ignore = ["E741"]
 
@@ -32,6 +33,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "**/__init__.py" = ["E402", "F401", "F403", "F405"]
 "scipy/io/_mmio.py" = ["UP031"]
 "scipy/linalg/lapack.py" = ["F405"]
+"scipy/special/_support_alternative_backends.py" = ["F822"]
 "scipy/stats/tests/data/_mvt.py" = ["E501", "E701", "E702"]
 # E501 (line length) ignores
 "scipy/constants/_codata.py" = ["E501"]

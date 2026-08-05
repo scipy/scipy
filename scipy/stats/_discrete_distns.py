@@ -18,8 +18,7 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
-from ._distn_infrastructure import (rv_discrete, get_distribution_names,
-                                    _vectorize_rvs_over_shapes,
+from ._distn_infrastructure import (rv_discrete, _vectorize_rvs_over_shapes,
                                     _ShapeInfo, _isintegral,
                                     rv_discrete_frozen)
 from ._biasedurn import (_PyFishersNCHypergeometric,
@@ -2108,7 +2107,16 @@ nchypergeom_wallenius = nchypergeom_wallenius_gen(
 
 
 # Collect names of classes and objects in this module.
-pairs = list(globals().copy().items())
-_distn_names, _distn_gen_names = get_distribution_names(pairs, rv_discrete)
-
-__all__ = _distn_names + _distn_gen_names
+__all__ = [
+    'binom', 'bernoulli', 'betabinom', 'nbinom', 'betanbinom', 'geom', 'hypergeom',
+    'nhypergeom', 'logser', 'poisson', 'planck', 'boltzmann', 'randint', 'zipf',
+    'zipfian', 'dlaplace', 'poisson_binom', 'skellam', 'yulesimon',
+    'nchypergeom_fisher', 'nchypergeom_wallenius', 'binom_gen', 'bernoulli_gen',
+    'betabinom_gen', 'nbinom_gen', 'betanbinom_gen', 'geom_gen', 'hypergeom_gen',
+    'nhypergeom_gen', 'logser_gen', 'poisson_gen', 'planck_gen', 'boltzmann_gen',
+    'randint_gen', 'zipf_gen', 'zipfian_gen', 'dlaplace_gen', 'poisson_binom_gen',
+    'skellam_gen', 'yulesimon_gen', 'nchypergeom_fisher_gen',
+    'nchypergeom_wallenius_gen',
+]
+_distn_names = [n for n in __all__ if not n.endswith('_gen')]
+_distn_gen_names = [n for n in __all__ if n.endswith('_gen')]

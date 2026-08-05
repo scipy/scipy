@@ -108,10 +108,14 @@ Warnings / Errors used in :mod:`scipy.spatial`
    QhullError
 """  # noqa: E501
 
+from . import _kdtree
 from ._kdtree import *
+from . import _ckdtree
 from ._ckdtree import *
+from . import _qhull
 from ._qhull import *
 from ._spherical_voronoi import SphericalVoronoi
+from . import _plotutils
 from ._plotutils import *
 from ._procrustes import procrustes
 from ._geometric_slerp import geometric_slerp
@@ -119,11 +123,16 @@ from ._geometric_slerp import geometric_slerp
 # Deprecated namespaces, to be removed in v2.0.0
 from . import ckdtree, kdtree, qhull
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = []
+__all__ += _kdtree.__all__
+__all__ += _ckdtree.__all__
+__all__ += _qhull.__all__
+__all__ += ['SphericalVoronoi', 'procrustes', 'geometric_slerp']
+__all__ += _plotutils.__all__
 
 from . import distance, transform
 
-__all__ += ['distance', 'transform']
+__all__ += ['ckdtree', 'kdtree', 'qhull', 'distance', 'transform']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

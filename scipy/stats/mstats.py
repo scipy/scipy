@@ -136,5 +136,7 @@ from ._mstats_extras import *  # noqa: F403
 # mstats namespace for backwards compatibility:
 from scipy.stats import gmean, hmean, zmap, zscore, chisquare
 
-__all__ = _mstats_basic.__all__ + _mstats_extras.__all__
+__all__ = []
+__all__ += _mstats_basic.__all__
+__all__ += _mstats_extras.__all__
 __all__ += ['gmean', 'hmean', 'zmap', 'zscore', 'chisquare']

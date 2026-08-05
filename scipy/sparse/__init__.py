@@ -247,17 +247,28 @@ when passing data to other libraries).
 import warnings as _warnings
 import importlib as _importlib
 
+from . import _base
 from ._base import *
+from . import _csr
 from ._csr import *
+from . import _csc
 from ._csc import *
+from . import _lil
 from ._lil import *
+from . import _dok
 from ._dok import *
+from . import _coo
 from ._coo import *
+from . import _dia
 from ._dia import *
+from . import _bsr
 from ._bsr import *
+from . import _construct
 from ._construct import *
+from . import _extract
 from ._extract import *
 from ._matrix import spmatrix
+from . import _matrix_io
 from ._matrix_io import *
 from ._sputils import get_index_dtype, safely_cast_index_arrays
 
@@ -270,7 +281,23 @@ from . import (
 
 _submodules = ["csgraph", "linalg"]
 
-__all__ = [s for s in dir() if not s.startswith('_')] + _submodules
+__all__ = []
+__all__ += _base.__all__
+__all__ += _csr.__all__
+__all__ += _csc.__all__
+__all__ += _lil.__all__
+__all__ += _dok.__all__
+__all__ += _coo.__all__
+__all__ += _dia.__all__
+__all__ += _bsr.__all__
+__all__ += _construct.__all__
+__all__ += _extract.__all__
+__all__ += ['spmatrix']
+__all__ += _matrix_io.__all__
+__all__ += ['get_index_dtype', 'safely_cast_index_arrays']
+__all__ += ['base', 'bsr', 'compressed', 'construct', 'coo', 'csc', 'csr',
+            'data', 'dia', 'dok', 'extract', 'lil', 'sparsetools', 'sputils',
+            'csgraph', 'linalg']
 
 # Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
 msg = 'the matrix subclass is not the recommended way'

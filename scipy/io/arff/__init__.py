@@ -21,7 +21,9 @@ from . import _arffread
 # Deprecated namespaces, to be removed in v2.0.0
 from .import arffread
 
-__all__ = _arffread.__all__ + ['arffread']
+__all__ = []
+__all__ += _arffread.__all__
+__all__ += ['arffread']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

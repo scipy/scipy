@@ -74,7 +74,7 @@ test = PytestTester(__name__)
 del PytestTester
 
 
-submodules = [
+__all__ = [
     'cluster',
     'constants',
     'datasets',
@@ -91,15 +91,13 @@ submodules = [
     'sparse',
     'spatial',
     'special',
-    'stats'
-]
-
-__all__ = submodules + [
+    'stats',
     'LowLevelCallable',
     'test',
     'show_config',
     '__version__',
 ]
+submodules = __all__[:-4]
 
 
 def __dir__():

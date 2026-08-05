@@ -34,6 +34,8 @@ ignore-missing-imports = [
     "scipy.linalg._fblas_64",
     "scipy.linalg._flapack",
     "scipy.linalg._flapack_64",
+    "scipy.linalg.cython_blas",
+    "scipy.linalg.cython_lapack",
     "scipy.linalg._internal_matfuncs",
     "scipy.optimize._highspy._core",
     "scipy.optimize._lbfgsb",
@@ -70,3 +72,8 @@ errors = { "redundant-cast" = "error" }
 [[sub-config]]
 matches = "scipy/stats/**/*.py"
 errors = { "bad-override" = "ignore" }
+
+# names listed in `__all__` are injected via globals().update(_special_funcs)
+[[sub-config]]
+matches = "scipy/special/_support_alternative_backends.py"
+errors = { "bad-dunder-all" = "ignore" }

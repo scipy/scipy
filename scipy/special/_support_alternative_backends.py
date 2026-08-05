@@ -930,4 +930,17 @@ globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
 # support. Add noqa because the linter gets confused by the sneaky way psi
 # is inserted into globals above.
 digamma = psi  # type:ignore[name-defined]  # noqa: F821
-__all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma"]
+__all__ = [
+    'bdtr', 'bdtrc', 'bdtri', 'betainc', 'betaincc', 'betaincinv', 'betaln',
+    'binom', 'boxcox', 'boxcox1p', 'cbrt', 'chdtr', 'chdtrc', 'chdtri', 'cosdg',
+    'cosm1', 'cotdg', 'ellipk', 'ellipkm1', 'entr', 'erf', 'erfc', 'erfcx',
+    'erfinv', 'exp1', 'exp10', 'exp2', 'exprel', 'expi', 'expit', 'expn', 'fdtr',
+    'fdtrc', 'fdtri', 'gamma', 'gammainc', 'gammaincc', 'gammainccinv',
+    'gammaincinv', 'gammaln', 'gammasgn', 'gdtr', 'gdtrc', 'huber', 'hyp1f1',
+    'hyp2f1', 'inv_boxcox', 'inv_boxcox1p', 'i0', 'i0e', 'i1', 'i1e', 'j0', 'j1',
+    'k0', 'k0e', 'k1', 'k1e', 'kl_div', 'log_ndtr', 'loggamma', 'logit', 'lpmv',
+    'multigammaln', 'nbdtr', 'nbdtrc', 'nbdtri', 'ndtr', 'ndtri', 'pdtr', 'pdtrc',
+    'pdtri', 'poch', 'pseudo_huber', 'polygamma', 'psi', 'radian', 'rel_entr',
+    'rgamma', 'sinc', 'sindg', 'spence', 'stdtr', 'stdtrit', 'tandg', 'xlog1py',
+    'xlogy', 'y0', 'y1', 'yn', 'zeta', 'zetac', 'digamma',
+]

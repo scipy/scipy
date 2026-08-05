@@ -597,30 +597,40 @@ Result classes used in :mod:`scipy.stats`
 
 from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
                                DegenerateDataWarning, FitError)
+from . import _stats_py
 from ._stats_py import *
 from ._variation import variation
+from . import distributions
 from .distributions import *
+from . import _morestats
 from ._morestats import *
+from . import _multicomp
 from ._multicomp import *
 from ._binomtest import binomtest
+from . import _binned_statistic
 from ._binned_statistic import *
 from ._kde import gaussian_kde
 from . import mstats
 from . import qmc
+from . import _multivariate
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData
 from ._resampling import (bootstrap, monte_carlo_test, permutation_test, power,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
+from . import _entropy
 from ._entropy import *
+from . import _hypotests
 from ._hypotests import *
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._bws_test import bws_test
 from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
+from . import _sensitivity_analysis
 from ._sensitivity_analysis import *
+from . import _survival
 from ._survival import *
 from ._distribution_infrastructure import (
     make_distribution, Mixture, order_statistic, truncate, exp, log, abs
@@ -637,7 +647,36 @@ from . import (
 )
 
 
-__all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
+__all__ = []
+__all__ += ['ConstantInputWarning', 'NearConstantInputWarning',
+            'DegenerateDataWarning', 'FitError']
+__all__ += _stats_py.__all__
+__all__ += ['variation']
+__all__ += distributions.__all__
+__all__ += _morestats.__all__
+__all__ += _multicomp.__all__
+__all__ += ['binomtest']
+__all__ += _binned_statistic.__all__
+__all__ += ['gaussian_kde', 'mstats', 'qmc']
+__all__ += _multivariate.__all__
+__all__ += ['contingency', 'chi2_contingency', 'CensoredData']
+__all__ += ['bootstrap', 'monte_carlo_test', 'permutation_test', 'power',
+            'MonteCarloMethod', 'PermutationMethod', 'BootstrapMethod']
+# `entropy` is already included via distributions.__all__
+__all__ += ['differential_entropy']
+__all__ += _hypotests.__all__
+__all__ += ['page_trend_test', 'mannwhitneyu', 'bws_test', 'fit',
+            'goodness_of_fit', 'Covariance']
+__all__ += _sensitivity_analysis.__all__
+__all__ += _survival.__all__
+__all__ += ['make_distribution', 'Mixture', 'order_statistic', 'truncate',
+            'exp', 'log', 'abs']
+__all__ += ['Normal', 'Logistic', 'Uniform', 'Binomial',
+            'multiscale_graphcorr']
+__all__ += ['chatterjeexi', 'spearmanrho', 'theilslopes', 'siegelslopes']
+__all__ += ['quantile', 'estimated_cdf']
+__all__ += ['biasedurn', 'kde', 'morestats', 'mstats_basic', 'mstats_extras',
+            'mvn', 'stats', 'distributions']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

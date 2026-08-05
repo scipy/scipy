@@ -6,11 +6,20 @@ The latter --- also private! --- module adds delegation to CuPy etc and
 re-exports decorated names to __init__.py
 """
 
+from . import _filters
 from ._filters import *    # noqa: F403
+from . import _fourier
 from ._fourier import *   # noqa: F403
+from . import _interpolation
 from ._interpolation import *   # noqa: F403
+from . import _measurements
 from ._measurements import *   # noqa: F403
+from . import _morphology
 from ._morphology import *   # noqa: F403
 
-# '@' due to pytest bug, scipy/scipy#22236
-__all__: list[str] = [s for s in dir() if not s.startswith(('_', '@'))]
+__all__ = []
+__all__ += _filters.__all__
+__all__ += _fourier.__all__
+__all__ += _interpolation.__all__
+__all__ += _measurements.__all__
+__all__ += _morphology.__all__

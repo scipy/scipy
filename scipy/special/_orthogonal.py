@@ -117,34 +117,25 @@ __all__ = [
     'roots_sh_chebyt',
     'roots_sh_chebyu',
     'roots_sh_jacobi',
+    'p_roots',
+    't_roots',
+    'u_roots',
+    'c_roots',
+    's_roots',
+    'j_roots',
+    'l_roots',
+    'la_roots',
+    'h_roots',
+    'he_roots',
+    'cg_roots',
+    'ps_roots',
+    'ts_roots',
+    'us_roots',
+    'js_roots',
 ]
 
 
 _gam = _ufuncs.gamma
-
-_polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
-             'jacobi', 'laguerre', 'genlaguerre', 'hermite',
-             'hermitenorm', 'gegenbauer', 'sh_legendre', 'sh_chebyt',
-             'sh_chebyu', 'sh_jacobi']
-
-# Correspondence between new and old names of root functions
-_rootfuns_map = {'roots_legendre': 'p_roots',
-                 'roots_chebyt': 't_roots',
-                 'roots_chebyu': 'u_roots',
-                 'roots_chebyc': 'c_roots',
-                 'roots_chebys': 's_roots',
-                 'roots_jacobi': 'j_roots',
-                 'roots_laguerre': 'l_roots',
-                 'roots_genlaguerre': 'la_roots',
-                 'roots_hermite': 'h_roots',
-                 'roots_hermitenorm': 'he_roots',
-                 'roots_gegenbauer': 'cg_roots',
-                 'roots_sh_legendre': 'ps_roots',
-                 'roots_sh_chebyt': 'ts_roots',
-                 'roots_sh_chebyu': 'us_roots',
-                 'roots_sh_jacobi': 'js_roots'}
-
-__all__ = _polyfuns + list(_rootfuns_map.keys())
 
 
 class orthopoly1d(np.poly1d):
@@ -3659,7 +3650,18 @@ def sh_legendre(n, monic=False):
 
 
 # Make the old root function names an alias for the new ones
-_modattrs = globals()
-for newfun, oldfun in _rootfuns_map.items():
-    _modattrs[oldfun] = _modattrs[newfun]
-    __all__.append(oldfun)
+p_roots = roots_legendre
+t_roots = roots_chebyt
+u_roots = roots_chebyu
+c_roots = roots_chebyc
+s_roots = roots_chebys
+j_roots = roots_jacobi
+l_roots = roots_laguerre
+la_roots = roots_genlaguerre
+h_roots = roots_hermite
+he_roots = roots_hermitenorm
+cg_roots = roots_gegenbauer
+ps_roots = roots_sh_legendre
+ts_roots = roots_sh_chebyt
+us_roots = roots_sh_chebyu
+js_roots = roots_sh_jacobi
