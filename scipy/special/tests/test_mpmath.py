@@ -1642,16 +1642,19 @@ class TestSystematic:
             [IntArg(), FixedArg(np.logspace(-30, -4, 20))],
         )
 
-    @pytest.mark.xfail(run=False, reason="apparently picks wrong function at |z| > 1")
     def test_legenq(self):
         def lqnm(n, m, z):
             return sc.lqmn(m, n, z)[0][-1,-1]
 
         def legenq(n, m, z):
-            if abs(z) < 1e-15:
+            if abs(z) < 1e-15 or abs(abs(z) - 1.0) < 1e-6:
                 # mpmath has bad performance here
                 return np.nan
-            return exception_to_nan(mpmath.legenq)(n, m, z, type=2)
+            tp = 2 if abs(z) < 1 else 3
+            val = exception_to_nan(mpmath.legenq)(n, m, z, type=tp)
+            if tp == 3 and np.isreal(z) and z < -1:
+                val = (-1)**m * val
+            return val
 
         assert_mpmath_equal(
             lqnm,
@@ -1659,16 +1662,19 @@ class TestSystematic:
             [IntArg(0, 100), IntArg(0, 100), Arg()],
         )
 
-    @nonfunctional_tooslow
     def test_legenq_complex(self):
         def lqnm(n, m, z):
             return sc.lqmn(int(m.real), int(n.real), z)[0][-1,-1]
 
         def legenq(n, m, z):
-            if abs(z) < 1e-15:
+            if abs(z) < 1e-15 or abs(abs(z) - 1.0) < 1e-6:
                 # mpmath has bad performance here
                 return np.nan
-            return exception_to_nan(mpmath.legenq)(int(n.real), int(m.real), z, type=2)
+            tp = 2 if abs(z) < 1 else 3
+            val = exception_to_nan(mpmath.legenq)(int(n.real), int(m.real), z, type=tp)
+            if tp == 3 and z.real < -1:
+                val = (-1)**int(m.real) * val
+            return val
 
         assert_mpmath_equal(
             lqnm,
