@@ -32,15 +32,6 @@ py3.install_sources([
     '_mio5.py',
     '_mio5_params.py',
     '_miobase.py',
-    'byteordercodes.py',
-    'mio.py',
-    'mio4.py',
-    'mio5.py',
-    'mio5_params.py',
-    'mio5_utils.py',
-    'mio_utils.py',
-    'miobase.py',
-    'streams.py'
   ],
   subdir: 'scipy/io/matlab'
 )
