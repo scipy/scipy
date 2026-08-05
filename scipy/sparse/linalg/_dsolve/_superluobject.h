@@ -79,12 +79,18 @@ void XDestroy_CompCol_Permuted(SuperMatrix *);
 void XStatFree(SuperLUStat_t *);
 
 jmp_buf *superlu_python_jmpbuf(void);
-/* Start transfers the current TLS tracker to the caller.
- * Swap borrows its argument, gives TLS a reference, and transfers the
- * replaced TLS tracker to the caller.
+
+/* Per-thread SuperLU state, holding the jmp_buf and the allocation tracker.
+ * Returns a borrowed reference, valid until the thread exits, or NULL with an
+ * exception set.
  */
-PyObject *superlu_start_thread_memory_scope(void);
-PyObject *superlu_swap_thread_memory_tracker(PyObject *tracker);
+SuperLUGlobalObject *get_tls_global(void);
+
+/* Steals a reference to `tracker`, returns a new reference to the tracker it
+ * replaced.  Cannot fail.  See the comment on superlu_free_tracked_allocations
+ * for the ownership rules that make this useful.
+ */
+PyObject *superlu_swap_memory_tracker(SuperLUGlobalObject *g, PyObject *tracker);
 void superlu_free_tracked_allocations(PyObject *tracker);
 
 

@@ -15,7 +15,7 @@
    been allocated.  (It's ok to FREE unallocated memory)---will be ignored.
 */
 
-static SuperLUGlobalObject *get_tls_global(void)
+SuperLUGlobalObject *get_tls_global(void)
 {
     PyObject *thread_dict;
     SuperLUGlobalObject *obj;
@@ -69,39 +69,18 @@ jmp_buf *superlu_python_jmpbuf(void)
     return &g->jmpbuf;
 }
 
-PyObject *superlu_start_thread_memory_scope(void)
+/* Install `tracker` as the thread's allocation tracker, and hand the previously
+ * installed one back to the caller.  Steals a reference to `tracker` and returns
+ * a new reference to the replaced tracker.
+ *
+ * `g` is resolved by the caller, so this is a plain pointer exchange that cannot
+ * fail --- which is what lets the callers swap back on their error paths without
+ * having to invent a recovery strategy for "restoring the tracker failed".
+ */
+PyObject *superlu_swap_memory_tracker(SuperLUGlobalObject *g, PyObject *tracker)
 {
-    SuperLUGlobalObject *g;
-    PyObject *saved_tracker;
-    PyObject *replacement;
-
-    g = get_tls_global();
-    if (g == NULL) {
-        return NULL;
-    }
-    replacement = PyDict_New();
-    if (replacement == NULL) {
-        return NULL;
-    }
-    saved_tracker = g->memory_dict;
-    g->memory_dict = replacement;
-    return saved_tracker;
-}
-
-PyObject *superlu_swap_thread_memory_tracker(PyObject *tracker)
-{
-    SuperLUGlobalObject *g;
     PyObject *replaced_tracker;
 
-    if (!PyDict_Check(tracker)) {
-        PyErr_SetString(PyExc_TypeError, "memory tracker must be a dictionary");
-        return NULL;
-    }
-    g = get_tls_global();
-    if (g == NULL) {
-        return NULL;
-    }
-    Py_INCREF(tracker);
     replaced_tracker = g->memory_dict;
     g->memory_dict = tracker;
     return replaced_tracker;
@@ -204,6 +183,23 @@ void superlu_python_module_free(void *ptr)
 }
 
 
+/* Free every allocation still registered in `tracker` and empty it.
+ *
+ * The keys are the pointers themselves (the values are unused), and every
+ * pointer in a tracker came from `superlu_python_module_malloc`, so freeing all
+ * of them is safe.  Callers must only invoke this on a tracker whose contents
+ * they own:
+ *
+ *  - `Py_gstrf` gives each factorization a tracker of its own, so once it
+ *    succeeds that tracker holds exactly the allocations reachable from the
+ *    factor's L, U, perm_r and perm_c.  Freeing all of them in
+ *    `SuperLU_dealloc` is therefore equivalent to the SUPERLU_FREE /
+ *    Destroy_SuperNode_Matrix / Destroy_CompCol_Matrix sequence it replaces,
+ *    and additionally reclaims anything gstrf left behind that is not
+ *    reachable from L or U.
+ *  - `SuperLUGlobal_dealloc` frees what is left in the thread's own tracker,
+ *    which after the above can only be residue from an aborted call.
+ */
 void superlu_free_tracked_allocations(PyObject *tracker)
 {
     PyObject *key, *value;

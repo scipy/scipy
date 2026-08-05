@@ -127,6 +127,15 @@ static void SuperLU_dealloc(SuperLUObject * self)
     self->cached_U = NULL;
     self->cached_L = NULL;
     self->py_csc_construct_func = NULL;
+    /* The tracker owns L, U, perm_r and perm_c, so freeing it replaces the
+     * SUPERLU_FREE / XDestroy_* calls that used to live here.  Going through
+     * SUPERLU_FREE would be wrong: it consults the *calling* thread's tracker,
+     * so it silently leaks whenever a factor is dropped on a thread other than
+     * the one that built it.
+     *
+     * The tracker is NULL only for an object abandoned by newSuperLUObject's
+     * failure path; Py_gstrf reclaims that memory wholesale instead.
+     */
     if (self->memory_tracker != NULL) {
         superlu_free_tracked_allocations(self->memory_tracker);
         Py_CLEAR(self->memory_tracker);
@@ -723,6 +732,10 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->cached_U = NULL;
     self->cached_L = NULL;
     self->py_csc_construct_func = NULL;
+    /* Py_gstrf attaches the tracker once the factorization has succeeded.  Until
+     * then the allocations below belong to whatever tracker the caller has
+     * installed, and it is the caller's job to reclaim them if we fail.
+     */
     self->memory_tracker = NULL;
     self->type = intype;
 

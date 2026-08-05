@@ -1,3 +1,5 @@
+import gc
+import queue
 import sys
 import threading
 import warnings
@@ -745,6 +747,10 @@ class TestSplu:
     @pytest.mark.parametrize("solver", [splu, spilu])
     @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_factor_outlives_worker_thread(self, solver):
+        # A factor built in a worker thread must stay usable after that thread
+        # exits.  The allocation tracker used to belong to the creating thread,
+        # so thread teardown freed memory the factor was still pointing at, and
+        # solving with it segfaulted.  See gh-25404.
         size = 64
         matrices = [
             scipy.sparse.diags_array(
@@ -759,6 +765,8 @@ class TestSplu:
         factors = []
 
         def worker(batch):
+            # A failed factorization first, so the thread also has to survive
+            # the error path reclaiming a partially built factor.
             with pytest.raises(RuntimeError):
                 solver(singular)
             factors.extend(solver(matrix) for matrix in batch)
@@ -774,10 +782,65 @@ class TestSplu:
                 matrix @ factors[index].solve(rhs), rhs, rtol=1e-5
             )
 
+        # Dropping a factor from a thread that did not create it must free that
+        # factor and nothing else, so the one held back stays usable.
+        survivor = factors.pop()
         thread = threading.Thread(target=factors.clear)
         thread.start()
         thread.join()
-        assert not factors
+        assert_allclose(matrices[-1] @ survivor.solve(rhs), rhs, rtol=1e-5)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
+    def test_factor_freed_on_other_thread_is_not_leaked(self):
+        # Freeing a factor releases its memory even when the thread that built
+        # it is still running.  SUPERLU_FREE only frees a pointer it finds in
+        # the calling thread's allocation tracker, so before the factor owned
+        # its allocations outright this leaked the whole L/U factor every time.
+        resource = pytest.importorskip("resource")
+        check_free_memory(500)
+
+        size, iterations = 1000, 12
+        A = (random_array((size, size), density=0.01, format="csc", rng=0)
+             + eye_array(size, format="csc") * 10)
+
+        work = queue.Queue()
+        done = queue.Queue()
+
+        def worker():
+            # Stays alive for the whole test, so nothing is reclaimed as a side
+            # effect of the thread exiting.
+            while True:
+                matrix = work.get()
+                if matrix is None:
+                    return
+                done.put(splu(matrix))
+
+        def maxrss_mb():
+            return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024
+
+        def factor_and_drop():
+            work.put(A)
+            factor = done.get()
+            del factor  # dropped here, on the main thread
+            gc.collect()
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        try:
+            for _ in range(3):  # warm up allocator high-water mark
+                factor_and_drop()
+            before = maxrss_mb()
+            for _ in range(iterations):
+                factor_and_drop()
+            growth = maxrss_mb() - before
+        finally:
+            work.put(None)
+            thread.join()
+
+        # Each leaked factor is ~6 MB here, so the pre-fix growth was ~60 MB
+        # over these iterations.  Allow generous headroom for allocator noise.
+        assert growth < 25, f"leaked {growth} MB over {iterations} factorizations"
 
     def test_singular_matrix(self):
         # Test that SuperLU does not print to stdout when a singular matrix is
