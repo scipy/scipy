@@ -396,6 +396,18 @@ double xsf_radian(double d, double m, double s);
 
 double boost_bdtrik(double y, double n, double p);
 double boost_bdtrin(double k, double y, double p);
+float boost_betainc_float(float a, float b, float x);
+double boost_betainc_double(double a, double b, double x);
+float boost_betaincc_float(float a, float b, float x);
+double boost_betaincc_double(double a, double b, double x);
+float boost_betainccinv_float(float a, float b, float y);
+double boost_betainccinv_double(double a, double b, double y);
+float boost_betaincinv_float(float a, float b, float y);
+double boost_betaincinv_double(double a, double b, double y);
+float boost_btdtria_float(float p, float b, float x);
+double boost_btdtria_double(double p, double b, double x);
+float boost_btdtrib_float(float a, float p, float x);
+double boost_btdtrib_double(double a, double p, double x);
 float boost_chndtr_float(float x, float df, float nc);
 double boost_chndtr_double(double x, double df, double nc);
 float boost_chndtridf_float(float x, float p, float nc);

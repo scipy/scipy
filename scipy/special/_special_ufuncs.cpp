@@ -96,10 +96,16 @@ extern const char *ber_doc;
 extern const char *berp_doc;
 extern const char *besselpoly_doc;
 extern const char *beta_doc;
+extern const char *betainc_doc;
+extern const char *betaincc_doc;
+extern const char *betainccinv_doc;
+extern const char *betaincinv_doc;
 extern const char *betaln_doc;
 extern const char *binom_doc;
 extern const char *boxcox_doc;
 extern const char *boxcox1p_doc;
+extern const char *btdtria_doc;
+extern const char *btdtrib_doc;
 extern const char *cbrt_doc;
 extern const char *chdtr_doc;
 extern const char *chdtrc_doc;
@@ -486,6 +492,18 @@ _special_ufuncs_module_exec(PyObject *module)
         boxcox1p_doc);
     PyModule_AddObjectRef(module, "boxcox1p", boxcox1p);
 
+    PyObject *btdtria =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ibeta_inva_float),
+                           static_cast<xsf::numpy::ddd_d>(ibeta_inva_double)},
+                          "btdtria", btdtria_doc);
+    PyModule_AddObjectRef(module, "btdtria", btdtria);
+
+    PyObject *btdtrib =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ibeta_invb_float),
+                           static_cast<xsf::numpy::ddd_d>(ibeta_invb_double)},
+                          "btdtrib", btdtrib_doc);
+    PyModule_AddObjectRef(module, "btdtrib", btdtrib);
+
     PyObject *airy =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_ffff>(xsf::airy), static_cast<xsf::numpy::d_dddd>(xsf::airy),
                            static_cast<xsf::numpy::F_FFFF>(xsf::airy), static_cast<xsf::numpy::D_DDDD>(xsf::airy)},
@@ -522,6 +540,30 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *beta = xsf::numpy::ufunc(
 	{static_cast<xsf::numpy::ff_f>(xsf::beta), static_cast<xsf::numpy::dd_d>(xsf::beta)}, "beta", beta_doc);
     PyModule_AddObjectRef(module, "beta", beta);
+
+    PyObject *betainc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ibeta_float),
+                           static_cast<xsf::numpy::ddd_d>(ibeta_double)},
+                          "betainc", betainc_doc);
+    PyModule_AddObjectRef(module, "betainc", betainc);
+
+    PyObject *betaincc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ibetac_float),
+                           static_cast<xsf::numpy::ddd_d>(ibetac_double)},
+                          "betaincc", betaincc_doc);
+    PyModule_AddObjectRef(module, "betaincc", betaincc);
+
+    PyObject *betainccinv =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ibetac_inv_float),
+                           static_cast<xsf::numpy::ddd_d>(ibetac_inv_double)},
+                          "betainccinv", betainccinv_doc);
+    PyModule_AddObjectRef(module, "betainccinv", betainccinv);
+
+    PyObject *betaincinv =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ibeta_inv_float),
+                           static_cast<xsf::numpy::ddd_d>(ibeta_inv_double)},
+                          "betaincinv", betaincinv_doc);
+    PyModule_AddObjectRef(module, "betaincinv", betaincinv);
 
     PyObject *betaln = xsf::numpy::ufunc(
 	{static_cast<xsf::numpy::ff_f>(xsf::betaln), static_cast<xsf::numpy::dd_d>(xsf::betaln)}, "betaln", betaln_doc);
