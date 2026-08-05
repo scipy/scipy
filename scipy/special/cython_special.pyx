@@ -1399,6 +1399,18 @@ cdef extern from r"cython_special_wrappers.h":
 
     double boost_bdtrik(double y, double n, double p) nogil
     double boost_bdtrin(double k, double y, double p) nogil
+    float boost_betainc_float(float a, float b, float x) nogil
+    double boost_betainc_double(double a, double b, double x) nogil
+    float boost_betaincc_float(float a, float b, float x) nogil
+    double boost_betaincc_double(double a, double b, double x) nogil
+    float boost_betainccinv_float(float a, float b, float y) nogil
+    double boost_betainccinv_double(double a, double b, double y) nogil
+    float boost_betaincinv_float(float a, float b, float y) nogil
+    double boost_betaincinv_double(double a, double b, double y) nogil
+    float boost_btdtria_float(float p, float b, float x) nogil
+    double boost_btdtria_double(double p, double b, double x) nogil
+    float boost_btdtrib_float(float a, float p, float x) nogil
+    double boost_btdtrib_double(double a, double p, double x) nogil
     float boost_chndtr_float(float x, float df, float nc) nogil
     double boost_chndtr_double(double x, double df, double nc) nogil
     float boost_chndtridf_float(float x, float p, float nc) nogil
@@ -1843,44 +1855,44 @@ cpdef double beta(double x0, double x1) noexcept nogil:
 cpdef df_number_t betainc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betainc"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_float)(x0, x1, x2)
+        return boost_betainc_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_double)(x0, x1, x2)
+        return boost_betainc_double(x0, x1, x2)
 
 cpdef df_number_t betaincc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betaincc"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibetac_float)(x0, x1, x2)
+        return boost_betaincc_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibetac_double)(x0, x1, x2)
+        return boost_betaincc_double(x0, x1, x2)
 
 cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betaincinv"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inv_float)(x0, x1, x2)
+        return boost_betaincinv_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inv_double)(x0, x1, x2)
+        return boost_betaincinv_double(x0, x1, x2)
 
 cpdef df_number_t btdtrib(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.btdtrib"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_invb_float)(x0, x1, x2)
+        return boost_btdtrib_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_invb_double)(x0, x1, x2)
+        return boost_btdtrib_double(x0, x1, x2)
 
 cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.btdtria"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_float)(x0, x1, x2)
+        return boost_btdtria_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_double)(x0, x1, x2)
+        return boost_btdtria_double(x0, x1, x2)
 
 cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betainccinv"""
     if df_number_t is float:
-        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibetac_inv_float)(x0, x1, x2)
+        return boost_betainccinv_float(x0, x1, x2)
     elif df_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibetac_inv_double)(x0, x1, x2)
+        return boost_betainccinv_double(x0, x1, x2)
 
 cpdef double betaln(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.betaln"""
