@@ -262,12 +262,6 @@ from ._matrix_io import *
 from ._sputils import get_index_dtype, safely_cast_index_arrays
 
 
-# Deprecated namespaces, to be removed in v2.0.0
-from . import (
-    base, bsr, compressed, construct, coo, csc, csr, data, dia, dok, extract,
-    lil, sparsetools, sputils
-)
-
 _submodules = ["csgraph", "linalg"]
 
 __all__ = [s for s in dir() if not s.startswith('_')] + _submodules

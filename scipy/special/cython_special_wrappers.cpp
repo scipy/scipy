@@ -713,18 +713,109 @@ double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
  * Boost functions
  */
 
- double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p); }
+double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p); }
 
 double boost_bdtrin(double k, double y, double p) { return bdtrin_double(k, y, p); }
+
+float boost_betainc_float(float a, float b, float x) { return ibeta_float(a, b, x); }
+
+double boost_betainc_double(double a, double b, double x) { return ibeta_double(a, b, x); }
+
+float boost_betaincc_float(float a, float b, float x) { return ibetac_float(a, b, x); }
+
+double boost_betaincc_double(double a, double b, double x) { return ibetac_double(a, b, x); }
+
+float boost_betainccinv_float(float a, float b, float y) { return ibetac_inv_float(a, b, y); }
+
+double boost_betainccinv_double(double a, double b, double y) { return ibetac_inv_double(a, b, y); }
+
+float boost_betaincinv_float(float a, float b, float y) { return ibeta_inv_float(a, b, y); }
+
+double boost_betaincinv_double(double a, double b, double y) { return ibeta_inv_double(a, b, y); }
+
+float boost_btdtria_float(float p, float b, float x) { return ibeta_inva_float(p, b, x); }
+
+double boost_btdtria_double(double p, double b, double x) { return ibeta_inva_double(p, b, x); }
+
+float boost_btdtrib_float(float a, float p, float x) { return ibeta_invb_float(a, p, x); }
+
+double boost_btdtrib_double(double a, double p, double x) { return ibeta_invb_double(a, p, x); }
+
+float boost_chndtr_float(float x, float df, float nc) { return ncx2_cdf_float(x, df, nc); }
+
+double boost_chndtr_double(double x, double df, double nc) { return ncx2_cdf_double(x, df, nc); }
+
+float boost_chndtridf_float(float x, float p, float nc)
+{
+    return ncx2_find_degrees_of_freedom_float(x, p, nc);
+}
+
+double boost_chndtridf_double(double x, double p, double nc)
+{
+    return ncx2_find_degrees_of_freedom_double(x, p, nc);
+}
+
+float boost_chndtrinc_float(float x, float df, float p) { return ncx2_find_noncentrality_float(x, df, p); }
+
+double boost_chndtrinc_double(double x, double df, double p)
+{
+    return ncx2_find_noncentrality_double(x, df, p);
+}
+
+float boost_chndtrix_float(float p, float df, float nc) { return ncx2_ppf_float(p, df, nc); }
+
+double boost_chndtrix_double(double p, double df, double nc) { return ncx2_ppf_double(p, df, nc); }
+
+float boost_erfinv_float(float x) { return erfinv_float(x); }
+
+double boost_erfinv_double(double x) { return erfinv_double(x); }
+
+float boost_fdtr_float(float dfn, float dfd, float x) { return f_cdf_float(dfn, dfd, x); }
+
+double boost_fdtr_double(double dfn, double dfd, double x) { return f_cdf_double(dfn, dfd, x); }
+
+float boost_fdtrc_float(float dfn, float dfd, float x) { return f_sf_float(dfn, dfd, x); }
+
+double boost_fdtrc_double(double dfn, double dfd, double x) { return f_sf_double(dfn, dfd, x); }
+
+float boost_fdtri_float(float dfn, float dfd, float p) { return f_ppf_float(dfn, dfd, p); }
+
+double boost_fdtri_double(double dfn, double dfd, double p) { return f_ppf_double(dfn, dfd, p); }
+
+float boost_log_gammainc_float(float a, float x) { return lgamma_p_float(a, x); }
+
+double boost_log_gammainc_double(double a, double x) { return lgamma_p_double(a, x); }
+
+float boost_log_gammaincc_float(float a, float x) { return lgamma_q_float(a, x); }
+
+double boost_log_gammaincc_double(double a, double x) { return lgamma_q_double(a, x); }
 
 double boost_nbdtrik(double y, double n, double p) { return nbdtrik_double(y, n, p); }
 
 double boost_nbdtrin(double k, double y, double p) { return nbinom_invn_double(k, y, p); }
 
+float boost_ncfdtr_float(float dfn, float dfd, float nc, float f) { return ncf_cdf_float(dfn, dfd, nc, f); }
+
+double boost_ncfdtr_double(double dfn, double dfd, double nc, double f)
+{
+    return ncf_cdf_double(dfn, dfd, nc, f);
+}
+
+float boost_ncfdtri_float(float dfn, float dfd, float nc, float p) { return ncf_ppf_float(dfn, dfd, nc, p); }
+
+double boost_ncfdtri_double(double dfn, double dfd, double nc, double p)
+{
+    return ncf_ppf_double(dfn, dfd, nc, p);
+}
+
 double boost_ncfdtrinc(double dfn, double dfd, double p, double f)
 {
     return ncf_find_non_centrality_double(dfn, dfd, p, f);
 }
+
+float boost_nctdtr_float(float df, float nc, float t) { return nct_cdf_float(df, nc, t); }
+
+double boost_nctdtr_double(double df, double nc, double t) { return nct_cdf_double(df, nc, t); }
 
 double boost_nctdtridf(double p, double nc, double t)
 {
@@ -735,3 +826,15 @@ double boost_nctdtrinc(double df, double p, double t)
 {
     return nct_find_non_centrality_double(df, p, t);
 }
+
+float boost_nctdtrit_float(float df, float nc, float p) { return nct_ppf_float(df, nc, p); }
+
+double boost_nctdtrit_double(double df, double nc, double p) { return nct_ppf_double(df, nc, p); }
+
+float boost_stdtr_float(float df, float t) { return t_cdf_float(df, t); }
+
+double boost_stdtr_double(double df, double t) { return t_cdf_double(df, t); }
+
+float boost_stdtrit_float(float df, float p) { return t_ppf_float(df, p); }
+
+double boost_stdtrit_double(double df, double p) { return t_ppf_double(df, p); }

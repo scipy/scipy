@@ -583,7 +583,8 @@ def authors(ctx_obj, revision_args):
 @click.pass_context
 def lint(ctx, fix, diff_against, files, all, no_cython):
     """🔦 Run linter on modified files and check for
-    disallowed Unicode characters and possibly-invalid test names."""
+    disallowed Unicode characters, possibly-invalid test names, and
+    array-creation calls that omit `device=`."""
     cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
@@ -609,6 +610,11 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
         os.path.join('tools', 'linting', 'check_test_name.py')
     ]
     util.run(cmd_check_test_name)
+
+    cmd_check_device = cmd_prefix + [
+        os.path.join('tools', 'linting', 'check_nondefault_device.py')
+    ]
+    util.run(cmd_check_device)
 
 
 @click.command()

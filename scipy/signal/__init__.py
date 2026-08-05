@@ -317,13 +317,6 @@ __all__ = _support_alternative_backends.__all__
 del _support_alternative_backends, _signal_api, _delegators  # noqa: F821  # pyrefly:ignore[unbound-name]
 
 
-# Deprecated namespaces, to be removed in v2.0.0
-from . import (
-    bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
-    spectral, signaltools, waveforms, wavelets, spline
-)
-
-
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
