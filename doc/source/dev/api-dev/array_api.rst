@@ -1285,6 +1285,47 @@ as it does to tests of the JAX JIT.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
+Testing device propagation with a torch meta default device
+````````````````````````````````````````````````````````````
+
+Under the array API standard, arrays created without an explicit ``device``
+land on the backend's *default* device. If SciPy code creates an array
+internally without propagating the input's device (``device=xp_device(x)``),
+the result only breaks when the input lives on a *non-default* device — a
+situation regular CPU test runs never exercise.
+
+The ``test-torch-meta`` job closes that gap without hardware. Running::
+
+  pixi run test-torch-meta
+
+sets ``SCIPY_DEVICE=meta``, which makes torch's data-free ``meta`` device the
+default while the ``xp`` fixture hands tests a wrapper namespace that creates
+input arrays on ``cpu``. SciPy-internal code resolves the real namespace from
+its input arrays, so any internal creation that omits ``device=`` lands on
+``meta`` and fails loudly (``Expected all tensors to be on the same device``)
+at the first combination with input data. In other words: the entire torch
+test lane doubles as a device-propagation leak detector, equivalent in
+structure to a GPU CI run with cpu inputs. This includes ``cpu_only``
+functions: their NumPy round-trip must return results on the *input's*
+device (not the default device), so they run and are value-checked in this
+mode — more coverage than a cuda run, where their inputs cannot be converted
+to NumPy at all.
+
+When triaging a failure in this mode:
+
+* ``... same device ... meta and cpu`` inside SciPy code → a real leak; fix it
+  by propagating the input device at the creation site.
+* ``Tensor.item() cannot be called on meta tensors`` / ``Cannot copy out of
+  meta tensor`` → usually a legitimate device-to-host transfer of an
+  internally created scalar, which works on real devices but is impossible on
+  the data-free ``meta`` device. Mark the test with
+  ``@pytest.mark.skip_xp_meta(reason=...)``.
+* A value assertion comparing a ``meta`` result against a ``cpu`` reference →
+  the function constructs its output on the default device by design (it takes
+  no array input, e.g. window functions called without ``device=``). Such
+  values cannot be checked on ``meta``; mark the test with
+  ``@pytest.mark.skip_xp_meta(reason=...)``.
+
 Adding tests for class methods
 ``````````````````````````````
 

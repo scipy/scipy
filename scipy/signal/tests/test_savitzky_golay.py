@@ -72,6 +72,8 @@ def alt_sg_coeffs(window_length, polyorder, pos, xp):
 
 
 @make_xp_test_case(savgol_coeffs)
+@pytest.mark.skip_xp_meta(
+    reason='savgol_coeffs output is constructed on the default device (host int args)')
 def test_sg_coeffs_trivial(xp):
     # Test a trivial case of savgol_coeffs: polyorder = window_length - 1
     h = savgol_coeffs(1, 0, xp=xp)
@@ -104,6 +106,8 @@ def compare_coeffs_to_alt(window_length, order, xp):
 
 
 @make_xp_test_case(savgol_coeffs)
+@pytest.mark.skip_xp_meta(
+    reason='savgol_coeffs output is constructed on the default device (host int args)')
 def test_sg_coeffs_compare(xp):
     # Compare savgol_coeffs() to alt_sg_coeffs().
     for window_length in range(1, 8, 2):
@@ -112,6 +116,8 @@ def test_sg_coeffs_compare(xp):
 
 
 @make_xp_test_case(savgol_coeffs)
+@pytest.mark.skip_xp_meta(
+    reason='savgol_coeffs output is constructed on the default device (host int args)')
 def test_sg_coeffs_exact(xp):
     polyorder = 4
     window_length = 9
@@ -142,6 +148,8 @@ def test_sg_coeffs_exact(xp):
 
 
 @make_xp_test_case(savgol_coeffs)
+@pytest.mark.skip_xp_meta(
+    reason='savgol_coeffs output is constructed on the default device (host int args)')
 def test_sg_coeffs_deriv(xp):
     # The data in `x` is a sampled parabola, so using savgol_coeffs with an
     # order 2 or higher polynomial should give exact results.
@@ -159,6 +167,8 @@ def test_sg_coeffs_deriv(xp):
 
 
 @make_xp_test_case(savgol_coeffs)
+@pytest.mark.skip_xp_meta(
+    reason='savgol_coeffs output is constructed on the default device (host int args)')
 def test_sg_coeffs_deriv_gt_polyorder(xp):
     """
     If deriv > polyorder, the coefficients should be all 0.
@@ -195,6 +205,8 @@ def test_sg_coeffs_large(xp):
 # --------------------------------------------------------------------
 
 @make_xp_test_case(savgol_coeffs)
+@pytest.mark.skip_xp_meta(
+    reason='savgol_coeffs output is constructed on the default device (host int args)')
 def test_sg_coeffs_even_window_length(xp):
     # Simple case - deriv=0, polyorder=0, 1
     window_lengths = [4, 6, 8, 10, 12, 14, 16]

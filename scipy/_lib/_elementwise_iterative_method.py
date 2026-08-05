@@ -98,7 +98,8 @@ def _initialize(func, xs, args, kwargs=None,
     xas = xp.broadcast_arrays(*xs, *args)  # broadcast and rename
     xs, args = xas[:nx], xas[nx:]
     xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
-    fs = [xp.asarray(func(x, *args)) for x in xs]
+    device = xp_device(xs[0])
+    fs = [xp.asarray(func(x, *args), device=device) for x in xs]
     shape = xs[0].shape
     fshape = fs[0].shape
 

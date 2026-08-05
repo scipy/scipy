@@ -4257,8 +4257,9 @@ def vectorstrength(events, period):
     '''
     xp = array_namespace(events, period)
 
-    events = xp.asarray(events)
-    period = xp.asarray(period)
+    device = xp_result_device(events, period)
+    events = xp.asarray(events, device=device)
+    period = xp.asarray(period, device=device)
     if xp.isdtype(period.dtype, 'integral'):
         period = xp.astype(period, xp.float64)
 
