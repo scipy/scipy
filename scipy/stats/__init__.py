@@ -599,7 +599,7 @@ from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
                                DegenerateDataWarning, FitError)
 from ._stats_py import *
 from ._variation import variation
-from .distributions import *
+from ._distributions import *
 from ._morestats import *
 from ._multicomp import *
 from ._binomtest import binomtest

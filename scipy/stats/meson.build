@@ -123,6 +123,7 @@ py3.install_sources([
     '_discrete_distns.py',
     '_distn_infrastructure.py',
     '_distribution_infrastructure.py',
+    '_distributions.py',
     '_distr_params.py',
     '_entropy.py',
     '_finite_differences.py',

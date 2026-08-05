@@ -13,9 +13,9 @@ __all__ = ["_deprecated"]
 _NoValue = object()
 
 def _sub_module_deprecation(*, sub_package, module, private_modules, all,
-                            attribute, correct_module=None, dep_version="1.16.0"):
-    """Helper function for deprecating modules that are public but were
-    intended to be private.
+                            attribute, dep_version, correct_module=None):
+    """Helper function for deprecating modules that are public but
+    will become private.
 
     Parameters
     ----------
@@ -30,11 +30,11 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
         ``__all__`` belonging to `module`
     attribute : str
         The attribute in `module` being accessed
+    dep_version : str, optional
+        Version in which deprecated attributes will be removed.
     correct_module : str, optional
         Module in `sub_package` that `attribute` should be imported from.
         Default is that `attribute` should be imported from ``scipy.sub_package``.
-    dep_version : str, optional
-        Version in which deprecated attributes will be removed.
     """
     if correct_module is not None:
         correct_import = f"scipy.{sub_package}.{correct_module}"
@@ -45,7 +45,7 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
         raise AttributeError(
             f"`scipy.{sub_package}.{module}` has no attribute `{attribute}`; "
             f"furthermore, `scipy.{sub_package}.{module}` is deprecated "
-            f"and will be removed in SciPy 2.0.0."
+            f"and will be removed in SciPy {dep_version}"
         )
 
     attr = getattr(import_module(correct_import), attribute, None)
@@ -54,15 +54,13 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
         message = (
             f"Please import `{attribute}` from the `{correct_import}` namespace; "
             f"the `scipy.{sub_package}.{module}` namespace is deprecated "
-            f"and will be removed in SciPy 2.0.0."
+            f"and will be removed in SciPy {dep_version}"
         )
     else:
         message = (
             f"`scipy.{sub_package}.{module}.{attribute}` is deprecated along with "
             f"the `scipy.{sub_package}.{module}` namespace. "
-            f"`scipy.{sub_package}.{module}.{attribute}` will be removed "
-            f"in SciPy {dep_version}, and the `scipy.{sub_package}.{module}` namespace "
-            f"will be removed in SciPy 2.0.0."
+            f"They will be removed in SciPy {dep_version}."
         )
 
     warnings.warn(message, category=DeprecationWarning, stacklevel=3)
