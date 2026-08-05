@@ -78,10 +78,10 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     Parameters
     ----------
-    a : (..., M, M) array_like
+    a : (..., N, N) array_like
         A complex or real matrix whose eigenvalues and eigenvectors
         will be computed.
-    b : (..., M, M) array_like, optional
+    b : (..., N, N) array_like, optional
         Right-hand side matrix in a generalized eigenvalue problem.
         Default is None, identity matrix is assumed.
     left : bool, optional
@@ -100,7 +100,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     homogeneous_eigvals : bool, optional
         If True, return the eigenvalues in homogeneous coordinates.
-        In this case ``w`` is a ``(2, M)`` array so that::
+        In this case ``w`` is a ``(2, N)`` array so that::
 
             w[1, i] * a @ vr[:, i] = w[0, i] * b @ vr[:, i]
 
@@ -113,14 +113,14 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     Returns
     -------
-    w : (..., M,) or (..., 2, M) complex ndarray
+    w : (..., N,) or (..., 2, N) complex ndarray
         The eigenvalues, each repeated according to its
-        multiplicity. The shape is ``(..., M)`` unless ``homogeneous_eigvals=True``.
-    vl : (..., M, M) double or complex ndarray
+        multiplicity. The shape is ``(..., N)`` unless ``homogeneous_eigvals=True``.
+    vl : (..., N, N) double or complex ndarray
         The left eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vl[:, i]``. Only returned if ``left=True``.
         The left eigenvector is not normalized.
-    vr : (..., M, M) double or complex ndarray
+    vr : (..., N, N) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:, i]``.  Only returned if ``right=True`` (default).
 
@@ -833,10 +833,10 @@ def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
 
     Parameters
     ----------
-    a : (..., M, M) array_like
+    a : (..., N, N) array_like
         A complex or real matrix (or a stack of matrices), whose eigenvalues will be
         computed.
-    b : (..., M, M) array_like, optional
+    b : (..., N, N) array_like, optional
         Right-hand side matrix (or a stack of matrices) in a generalized eigenvalue
         problem. If omitted (default), identity matrix is assumed.
     overwrite_a : bool, optional
@@ -851,7 +851,7 @@ def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
         or NaNs.
     homogeneous_eigvals : bool, optional
         If True, return the eigenvalues in homogeneous coordinates.
-        In this case ``w`` is a ``(2, M)`` array so that::
+        In this case ``w`` is a ``(2, N)`` array so that::
 
             w[1, i] * a @ vr[:, i] = w[0, i] * b @ vr[:, i]
 
@@ -864,9 +864,9 @@ def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
 
     Returns
     -------
-    w : (..., M,) or (..., 2, M) complex ndarray
+    w : (..., N,) or (..., 2, N) complex ndarray
         The eigenvalues, each repeated according to its multiplicity
-        but not in any specific order. The shape is ``(..., M)`` unless
+        but not in any specific order. The shape is ``(..., N)`` unless
         ``homogeneous_eigvals=True``.
 
     Raises
