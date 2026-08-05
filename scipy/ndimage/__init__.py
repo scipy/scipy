@@ -160,13 +160,6 @@ __all__ = _support_alternative_backends.__all__
 del _support_alternative_backends, _ndimage_api, _delegators  # noqa: F821  # pyrefly:ignore[unbound-name]
 
 
-# Deprecated namespaces, to be removed in v2.0.0
-from . import filters
-from . import fourier
-from . import interpolation
-from . import measurements
-from . import morphology
-
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester

@@ -378,13 +378,24 @@ class TestEig:
         A = np.arange(6).reshape(3, 2)
         assert_raises(ValueError, eig, A)
 
-    def test_shape_mismatch(self):
+    @pytest.mark.parametrize("n_a", [0, 2, 3])
+    @pytest.mark.parametrize("n_b", [0, 2, 3])
+    def test_shape_mismatch(self, n_a, n_b):
         """Check that passing arrays of with different shapes
         raises a ValueError."""
-        A = eye(2)
-        B = np.arange(9.0).reshape(3, 3)
-        assert_raises(ValueError, eig, A, B)
-        assert_raises(ValueError, eig, B, A)
+        A = np.arange(n_a * n_a).reshape(n_a, n_a)
+        B = np.eye(n_b)
+
+        if n_a != n_b:
+            with pytest.raises(ValueError, match="a and b must have"):
+                eig(A, B)
+            with pytest.raises(ValueError, match="a and b must have"):
+                eig(B, A)
+
+        else: # Verify correctness of solution
+            w, v = eig(A, B)
+            assert_allclose(A @ v, B @ v @ np.diag(w), atol=1e-14)
+
 
     def test_gh_11577(self):
         # https://github.com/scipy/scipy/issues/11577
@@ -415,12 +426,14 @@ class TestEig:
             assert np.isclose(D, 4.0, atol=1e-14).any()
             assert np.isclose(D, 8.0, atol=1e-14).any()
 
-    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-    def test_empty(self, dt):
-        a = np.empty((0, 0), dtype=dt)
-        w, vr = eig(a)
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty((0, 0), dtype=dt_b)
+        w, vr = eig(a, b)
 
-        w_n, vr_n = eig(np.eye(2, dtype=dt))
+        w_n, vr_n = eig(np.eye(2, dtype=dt_a), np.eye(2, dtype=dt_b))
 
         assert w.shape == (0,)
         assert w.dtype == w_n.dtype  #eigvals(np.eye(2, dtype=dt)).dtype
@@ -429,7 +442,7 @@ class TestEig:
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
 
-        w, vr = eig(a, homogeneous_eigvals=True)
+        w, vr = eig(a, b, homogeneous_eigvals=True)
         assert w.shape == (2, 0)
         assert w.dtype == w_n.dtype
 
@@ -3440,10 +3453,10 @@ def test_subspace_angles():
     # From MATLAB function "subspace", which effectively only returns the
     # last value that we calculate
     x = np.array(
-        [[0.537667139546100, 0.318765239858981, 3.578396939725760, 0.725404224946106],  # noqa: E501
-         [1.833885014595086, -1.307688296305273, 2.769437029884877, -0.063054873189656],  # noqa: E501
+        [[0.537667139546100, 0.318765239858981, 3.578396939725760, 0.725404224946106],
+         [1.833885014595086, -1.307688296305273, 2.769437029884877, -0.063054873189656],
          [-2.258846861003648, -0.433592022305684, -1.349886940156521, 0.714742903826096],  # noqa: E501
-         [0.862173320368121, 0.342624466538650, 3.034923466331855, -0.204966058299775]])  # noqa: E501
+         [0.862173320368121, 0.342624466538650, 3.034923466331855, -0.204966058299775]])
     expected = 1.481454682101605
     assert_allclose(subspace_angles(x[:, :2], x[:, 2:])[0], expected,
                     rtol=1e-12)

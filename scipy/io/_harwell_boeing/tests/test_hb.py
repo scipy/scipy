@@ -45,6 +45,7 @@ def assert_csc_almost_equal(r, l):
 
 
 class TestHBReader:
+    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_simple(self):
         m = hb_read(StringIO(SIMPLE), spmatrix=False)
         assert_csc_almost_equal(m, SIMPLE_MATRIX)

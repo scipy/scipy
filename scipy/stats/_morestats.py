@@ -34,7 +34,7 @@ from scipy._lib._array_api import (
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
+from ._stats_py import (_get_pvalue, SignificanceResult,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency
 from . import distributions
@@ -404,7 +404,7 @@ def kstatvar(data, n=2, *, axis=None):
     n=10000   : kvar=0.0001
     n=100000  : kvar=9.94e-06
     n=1000000 : kvar=9.99e-07
-    """  # noqa: E501
+    """
     xp = array_namespace(data)
     data = xp.asarray(data)
     if axis is None:
@@ -2205,7 +2205,7 @@ def _swilk(y, *, xp):
     if n == 3:
         # [2] Table 5 gives the first four digits
         c = math.sqrt(2) / 2
-        a = xp.asarray([-c, 0, c])
+        a = xp.asarray([-c, 0, c], device=xp_device(y))
         # [2] Corollary 4; discussed in https://github.com/scipy/scipy/issues/18322
         W = xp.clip(_swilk_w(y, a, xp=xp), 0.75, 1.)
         pvalue = xp.clip(1. - 6/np.pi * xp.acos(xp.sqrt(W)), 0., 1.)
@@ -2213,7 +2213,7 @@ def _swilk(y, *, xp):
 
     # Follows [4] section 2.2
     # could calculate half the coefficients and get the rest by antisymmetry
-    i = xp.arange(1, n + 1, dtype=y.dtype)
+    i = xp.arange(1, n + 1, dtype=y.dtype, device=xp_device(y))
     m = special.ndtri((i - 3 / 8) / (n + 1 / 4))
     u = n**(-0.5)
     mTm = xp.vecdot(m, m)
@@ -2360,7 +2360,7 @@ _anderson_warning_message = (
 tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
 p-value via Monte Carlo simulation. When `method` is specified, the result object will
 include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
-or `fit_result`. Beginning in 1.19.0, these other attributes will no longer be
+or `fit_result`. Beginning in 2.0.0, these other attributes will no longer be
 available, and a p-value will always be computed according to one of the available
 `method` options.""".replace('\n', ' '))
 
@@ -2397,7 +2397,7 @@ def anderson(x, dist='norm', *, method=None):
             specifying that the user must opt into a p-value calculation method.
             When `method` is specified, the object returned will include a ``pvalue``
             attribute, but no ``critical_value``, ``significance_level``, or
-            ``fit_result`` attributes. Beginning in 1.19.0, these other attributes will
+            ``fit_result`` attributes. Beginning in 2.0.0, these other attributes will
             no longer be available, and a p-value will always be computed according to
             one of the available `method` options.
 
@@ -2430,7 +2430,7 @@ def anderson(x, dist='norm', *, method=None):
         .. deprecated:: 1.17.0
             The tuple-unpacking behavior of the return object and attributes
             ``critical_values``, ``significance_level``, and ``fit_result`` are
-            deprecated. Beginning in SciPy 1.19.0, these features will no longer be
+            deprecated. Beginning in SciPy 2.0.0, these features will no longer be
             available, and the object returned will have attributes ``statistic`` and
             ``pvalue``.
 
@@ -2899,7 +2899,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
 
     if variant == _NoValue or midrank != _NoValue:
         message = ("Parameter `variant` has been introduced to replace `midrank`; "
-                   "`midrank` will be removed in SciPy 1.19.0. Specify `variant` to "
+                   "`midrank` will be removed in SciPy 2.0.0. Specify `variant` to "
                    "silence this warning. Note that the returned object will no longer "
                    "be unpackable as a tuple, and `critical_values` will be omitted.")
         warnings.warn(message, category=UserWarning, stacklevel=2)
@@ -3251,7 +3251,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
             varAB = n * m * (N + 1.0) * (3 + N ** 2) / (48.0 * N ** 2)
         else:
             varAB = m * n * (N + 2) * (N - 2.0) / 48 / (N - 1.0)
-        varAB = xp.asarray(varAB, dtype=dtype)
+        varAB = xp.asarray(varAB, dtype=dtype, device=xp_device(AB))
 
     # Small values of AB indicate larger dispersion for the x sample.
     # Large values of AB indicate larger dispersion for the y sample.
@@ -3524,7 +3524,9 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     W = numer / denom
     W = xp.squeeze(W, axis=-1)
     dfd = xp.squeeze(dfd, axis=-1) if is_marray(xp) else dfd
-    dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
+    device = xp_device(W)
+    dfn, dfd = (xp.asarray(dfn, dtype=W.dtype, device=device),
+                xp.asarray(dfd, dtype=W.dtype, device=device))
     pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
     W = W[()] if W.ndim == 0 else W
     pval = pval[()] if pval.ndim == 0 else pval
@@ -3684,7 +3686,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     V2 = xp.var(a_Ni, axis=-1, correction=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
 
-    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype, device=xp_device(statistic)))
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FlignerResult(statistic, pval)
 
@@ -3738,7 +3740,7 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     i = xp.argsort(xy, stable=True, axis=-1)
     _, _, a = _stats_py._rankdata(x, method='average', return_ties=True)
 
-    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
+    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype, device=xp_device(a))
     a = xp.concat((a, zeros), axis=-1)
     a = xp.take_along_axis(a, i, axis=-1)
 

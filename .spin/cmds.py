@@ -113,7 +113,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
             cflags_unwanted = ('-O0', '-O1', '-O2')
         meson_args = meson_args + (f"-Dbuildtype={buildtype}", )
         if 'CFLAGS' in os.environ.keys():
-            # Check that CFLAGS doesn't contain something that supercedes -O0
+            # Check that CFLAGS doesn't contain something that supersedes -O0
             # for a plain debug build (conda envs tend to set -O2)
             cflags = os.environ['CFLAGS'].split()
             for flag in cflags_unwanted:
@@ -212,7 +212,7 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     `spin test -m full`
 
     For more, see `pytest --help`.
-    """  # noqa: E501
+    """
 
     build_dir = os.path.abspath(kwargs['build_dir'])
     site_package_dir = get_site_packages(build_dir)
@@ -399,7 +399,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
      - This command only doctests public objects: those which are accessible
        from the top-level `__init__.py` file.
 
-    """  # noqa: E501
+    """
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
     if (
         not importlib.util.find_spec("scipy_doctest")
@@ -498,7 +498,7 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
      - This command only doctests public objects: those which are accessible
        from the top-level `__init__.py` file.
 
-    """  # noqa: E501
+    """
 
     click.secho(
         "Invoking `build` prior to running tests for tutorials:",
@@ -583,7 +583,8 @@ def authors(ctx_obj, revision_args):
 @click.pass_context
 def lint(ctx, fix, diff_against, files, all, no_cython):
     """🔦 Run linter on modified files and check for
-    disallowed Unicode characters and possibly-invalid test names."""
+    disallowed Unicode characters, possibly-invalid test names, and
+    array-creation calls that omit `device=`."""
     cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
@@ -609,6 +610,11 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
         os.path.join('tools', 'linting', 'check_test_name.py')
     ]
     util.run(cmd_check_test_name)
+
+    cmd_check_device = cmd_prefix + [
+        os.path.join('tools', 'linting', 'check_nondefault_device.py')
+    ]
+    util.run(cmd_check_device)
 
 
 @click.command()

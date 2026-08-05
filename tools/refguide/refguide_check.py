@@ -112,7 +112,12 @@ for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
              'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
              'kaiser', 'nuttall', 'parzen', 'triang', 'tukey'):
     REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
-
+# deprecated functions in scipy.sparse namespace
+for name in ('spdiags', 'diags', 'identity', 'eye', 'bmat', 'rand', 'random',
+             'isspmatrix'):
+    REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.sparse\.' + name)
+for fmt in ["bsr", "coo", "csc", "csr", "dia", "dok", "lil"]:
+    REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.sparse\.isspmatrix_' + fmt)
 
 def short_path(path, cwd=None):
     """

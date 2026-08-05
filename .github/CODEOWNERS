@@ -14,10 +14,10 @@
 
 # Build related files
 pyproject.toml  @rgommers
-tools/generate_requirements.py  @rgommers
-requirements/  @rgommers
-environment.yml  @rgommers
+requirements/  @rgommers @lucascolley
+environment.yml  @rgommers @lucascolley
 scipy/_build_utils/  @rgommers
+scipy/_external  @lucascolley
 
 # Dev CLI
 .spin  @rgommers
@@ -28,9 +28,6 @@ scipy/_build_utils/  @rgommers
 
 # Developer workspace
 *pixi*  @lucascolley
-
-# Linting
-lint*  @lucascolley
 
 # Array API
 *array_api*  @lucascolley
@@ -45,7 +42,7 @@ scipy/optimize/  @andyfaff
 scipy/signal/  @larsoner @ilayn @DietBru
 scipy/sparse/  @perimosocordiae @dschult
 scipy/sparse/csgraph/
-scipy/sparse/linalg/
+scipy/sparse/linalg/  @lucascolley
 scipy/spatial/  @tylerjereddy @peterbell10
 scipy/special/  @steppi
 scipy/stats/_distn_infrastructure/  @andyfaff @ev-br
@@ -62,11 +59,18 @@ scipy/stats/_survival.py  @tupui @mdhaber
 scipy/stats/.unuran/  @tirthasheshpatel
 
 # Testing infrastructure
-tools/refguide/refguide_check.py  @ev-br
-tools/  @larsoner @rgommers
 pytest.ini  @larsoner
 .coveragerc  @larsoner
 benchmarks/asv.conf.json  @larsoner
+
+# Tools
+tools/  @rgommers
+tools/building/  @rgommers
+tools/linting/  @lucascolley
+tools/refguide/  @ev-br
+tools/release/  @tylerjereddy
+tools/vendoring/  @lucascolley
+tools/wheels/  @andyfaff @rgommers
 
 # Doc
 doc/source/conf.py  @tupui
