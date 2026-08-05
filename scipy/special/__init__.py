@@ -817,9 +817,6 @@ from ._spherical_bessel import (
 )
 from ._mathieu import mathieu_cem, mathieu_sem
 
-# Deprecated namespaces, to be removed in v2.0.0
-from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
-
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
 # so there is no need to consider _support_alternative_backends.__all__ here.

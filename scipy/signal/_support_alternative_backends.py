@@ -339,7 +339,6 @@ capabilities_overrides = {
                 "sosfiltfilt directly sets shape attributes on arrays"
                 " which dask doesn't like"
             ),
-            ("torch", "negative strides"),
         ],
     ),
     "sosfreqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
