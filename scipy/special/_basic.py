@@ -2130,7 +2130,7 @@ def bernoulli(n):
     >>> bernoulli(4)
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
 
-    The Wikipedia article ([2]_) points out the relationship between the
+    The Wikipedia article ([1]_) points out the relationship between the
     Bernoulli numbers and the zeta function, ``B_n^+ = -n * zeta(1 - n)``
     for ``n > 0``:
 
