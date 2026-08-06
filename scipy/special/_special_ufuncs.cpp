@@ -74,6 +74,11 @@ extern const char *_igam_fac_doc;
 extern const char *_kolmogc_doc;
 extern const char *_kolmogci_doc;
 extern const char *_kolmogp_doc;
+extern const char *_landau_cdf_doc;
+extern const char *_landau_isf_doc;
+extern const char *_landau_pdf_doc;
+extern const char *_landau_ppf_doc;
+extern const char *_landau_sf_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
@@ -110,6 +115,7 @@ extern const char *cbrt_doc;
 extern const char *chdtr_doc;
 extern const char *chdtrc_doc;
 extern const char *chdtri_doc;
+extern const char *chdtriv_doc;
 extern const char *chndtr_doc;
 extern const char *chndtridf_doc;
 extern const char *chndtrinc_doc;
@@ -240,7 +246,9 @@ extern const char *obl_rad2_cv_doc;
 extern const char *owens_t_doc;
 extern const char *pdtr_doc;
 extern const char *pdtrc_doc;
+extern const char *pdtrik_doc;
 extern const char *poch_doc;
+extern const char *powm1_doc;
 extern const char *_zeta_doc;
 extern const char *pbdv_doc;
 extern const char *pbvv_doc;
@@ -360,6 +368,36 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogp), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogp)},
         "_kolmogp", _kolmogp_doc);
     PyModule_AddObjectRef(module, "_kolmogp", _kolmogp);
+
+    PyObject *_landau_cdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_cdf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_cdf_double)},
+                          "_landau_cdf", _landau_cdf_doc);
+    PyModule_AddObjectRef(module, "_landau_cdf", _landau_cdf);
+
+    PyObject *_landau_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_isf_double)},
+                          "_landau_isf", _landau_isf_doc);
+    PyModule_AddObjectRef(module, "_landau_isf", _landau_isf);
+
+    PyObject *_landau_pdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_pdf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_pdf_double)},
+                          "_landau_pdf", _landau_pdf_doc);
+    PyModule_AddObjectRef(module, "_landau_pdf", _landau_pdf);
+
+    PyObject *_landau_ppf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_ppf_double)},
+                          "_landau_ppf", _landau_ppf_doc);
+    PyModule_AddObjectRef(module, "_landau_ppf", _landau_ppf);
+
+    PyObject *_landau_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(landau_sf_float),
+                           static_cast<xsf::numpy::ddd_d>(landau_sf_double)},
+                          "_landau_sf", _landau_sf_doc);
+    PyModule_AddObjectRef(module, "_landau_sf", _landau_sf);
 
     PyObject *_normalized_gen_harmonic =
         xsf::numpy::ufunc({static_cast<xsf::numpy::llld_d>(xsf::normalized_gen_harmonic),
@@ -596,6 +634,12 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::chdtri), static_cast<xsf::numpy::dd_d>(xsf::chdtri)}, "chdtri",
         chdtri_doc);
     PyModule_AddObjectRef(module, "chdtri", chdtri);
+
+    PyObject *chdtriv =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(chdtriv_float),
+                           static_cast<xsf::numpy::dd_d>(chdtriv_double)},
+                          "chdtriv", chdtriv_doc);
+    PyModule_AddObjectRef(module, "chdtriv", chdtriv);
 
     PyObject *chndtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_cdf_float),
@@ -856,10 +900,22 @@ _special_ufuncs_module_exec(PyObject *module)
                           "pdtrc", pdtrc_doc);
     PyModule_AddObjectRef(module, "pdtrc", pdtrc);
 
+    PyObject *pdtrik =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(pdtrik_float),
+                           static_cast<xsf::numpy::dd_d>(pdtrik_double)},
+                          "pdtrik", pdtrik_doc);
+    PyModule_AddObjectRef(module, "pdtrik", pdtrik);
+
     PyObject *poch = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cephes::poch), static_cast<xsf::numpy::dd_d>(xsf::cephes::poch)}, "poch",
         poch_doc);
     PyModule_AddObjectRef(module, "poch", poch);
+
+    PyObject *powm1 =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(powm1_float),
+                           static_cast<xsf::numpy::dd_d>(powm1_double)},
+                          "powm1", powm1_doc);
+    PyModule_AddObjectRef(module, "powm1", powm1);
 
     PyObject *round = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::cephes::round), static_cast<xsf::numpy::d_d>(xsf::cephes::round)}, "round",
