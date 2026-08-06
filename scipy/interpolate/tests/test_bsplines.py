@@ -2480,11 +2480,36 @@ class TestSmoothingSpline:
         with assert_raises(ValueError, match="within the base interval"):
             make_smoothing_spline(x, y, t=t_short, lam=0.5)
 
-        # non-finite knots
-        with assert_raises(ValueError):
-            make_smoothing_spline(
-                x, y, t=np.r_[[x[0]]*4, [0.0, np.inf], [x[-1]]*4], lam=0.5
-            )
+        # non-finite knots are rejected before any further checks
+        for t_bad in (np.r_[[x[0]]*4, [0.0, np.inf], [x[-1]]*4],
+                      np.r_[[x[0]]*4, [0.0], [np.inf]*4],
+                      np.r_[[x[0]]*4, [0.0, np.nan], [x[-1]]*4]):
+            with assert_raises(ValueError, match="infs or nans"):
+                make_smoothing_spline(x, y, t=t_bad, lam=0.5)
+
+        # too few knots: a cubic spline needs at least 8
+        with assert_raises(ValueError, match="at least 8 knots"):
+            make_smoothing_spline(x, y, t=np.r_[[x[0]]*3, [x[-1]]*3], lam=0.5)
+
+        # knot multiplicity above 4 makes basis functions identically zero
+        t_mult5 = np.r_[[x[0]]*4, [0.0]*5, [x[-1]]*4]
+        with assert_raises(ValueError, match="multiplicity"):
+            make_smoothing_spline(x, y, t=t_mult5, lam=0.5)
+
+    def test_duplicate_interior_knots(self):
+        # interior knots may repeat: each repetition reduces continuity
+        # there (a double knot allows a jump in f''). The penalized
+        # problem stays well posed, and R's fda::bsplinepen accepts
+        # duplicated breaks as well.
+        rng = np.random.RandomState(1234)
+        n = 10
+        x = np.sort(rng.random_sample(n) * 4 - 2)
+        y = x**2 + np.sin(4*x) + rng.normal(0., 1.5, n)
+        t = np.r_[[x[0]]*4, [0.0, 0.0], [x[-1]]*4]   # double interior knot
+        spl = make_smoothing_spline(x, y, lam=0.5, t=t)
+        # fit is finite and evaluates cleanly across the repeated knot
+        xx = np.linspace(x[0], x[-1], 101)
+        assert np.all(np.isfinite(spl(xx)))
 
 ################################
 # NdBSpline tests

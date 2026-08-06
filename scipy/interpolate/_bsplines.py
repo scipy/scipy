@@ -2569,8 +2569,20 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
             "batched `y` is not supported with user-provided knots yet; "
             "`y` must be 1-D")
     t = np.ascontiguousarray(t, dtype=float)
+    if not np.all(np.isfinite(t)):
+        raise ValueError("`t` must not contain infs or nans")
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
         raise ValueError("`t` must be a 1-D non-decreasing array")
+    if len(t) < 8:
+        raise ValueError(
+            "`t` must contain at least 8 knots (a cubic spline needs at "
+            f"least one basis interval); got {len(t)}")
+    # interior knots may repeat (each repetition reduces continuity there),
+    # but multiplicity > 4 would make some basis functions identically zero
+    _, counts = np.unique(t, return_counts=True)
+    if np.any(counts > 4):
+        raise ValueError(
+            "knots in `t` must not have multiplicity greater than 4")
     if x[0] < t[3] or x[-1] > t[-4]:
         raise ValueError(
             "all `x` values must lie within the base interval "
