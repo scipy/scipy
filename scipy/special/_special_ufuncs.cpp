@@ -54,6 +54,8 @@
 #include <xsf/wright_bessel.h>
 #include <xsf/wright.h>
 #include <xsf/zeta.h>
+#include "mathieu.h"
+
 
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "xsf::numpy::ufunc" with a braced list of kernel functions that will become the ufunc overloads. There are
@@ -82,6 +84,8 @@ extern const char *_landau_sf_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
+extern const char *_mathieu_cem_doc;
+extern const char *_mathieu_sem_doc;
 extern const char *_normalized_gen_harmonic_doc;
 extern const char *_stirling2_inexact_doc;
 extern const char *_von_mises_cdf_doc;
@@ -214,12 +218,10 @@ extern const char *log_wright_bessel_doc;
 extern const char *lpmv_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
-extern const char *mathieu_cem_doc;
 extern const char *mathieu_modcem1_doc;
 extern const char *mathieu_modcem2_doc;
 extern const char *mathieu_modsem1_doc;
 extern const char *mathieu_modsem2_doc;
-extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *nbdtrik_doc;
@@ -308,10 +310,7 @@ static PyObject* _set_action(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
-static PyMethodDef _methods[] = {
-    {"_set_action", _set_action, METH_VARARGS, NULL},
-    {NULL, NULL, 0, NULL}
-};
+static PyMethodDef _methods[] = {{"_set_action", _set_action, METH_VARARGS, NULL}, {NULL, NULL, 0, NULL}};
 
 static int
 _special_ufuncs_module_exec(PyObject *module)
@@ -1363,19 +1362,23 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "assoc_legendre_p", assoc_legendre_p);
 
     PyObject *mathieu_a =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::cem_cva), static_cast<xsf::numpy::dd_d>(xsf::cem_cva)},
+        xsf::numpy::ufunc({special::mathieu_cv<xsf::mathieu::Parity::Even, float>{},
+                           special::mathieu_cv<xsf::mathieu::Parity::Even, double>{}},
                           "mathieu_a", mathieu_a_doc);
     PyModule_AddObjectRef(module, "mathieu_a", mathieu_a);
 
     PyObject *mathieu_b =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::sem_cva), static_cast<xsf::numpy::dd_d>(xsf::sem_cva)},
+        xsf::numpy::ufunc({special::mathieu_cv<xsf::mathieu::Parity::Odd, float>{},
+                           special::mathieu_cv<xsf::mathieu::Parity::Odd, double>{}},
                           "mathieu_b", mathieu_b_doc);
     PyModule_AddObjectRef(module, "mathieu_b", mathieu_b);
 
-    PyObject *mathieu_cem =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_ff>(xsf::cem), static_cast<xsf::numpy::ddd_dd>(xsf::cem)}, 2,
-                          "mathieu_cem", mathieu_cem_doc);
-    PyModule_AddObjectRef(module, "mathieu_cem", mathieu_cem);
+    PyObject *_mathieu_cem =
+        xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Even, float>{},
+                           special::mathieu_xem<xsf::mathieu::Parity::Even, double>{}},
+                          2, "_mathieu_cem", _mathieu_cem_doc);
+    PyModule_AddObjectRef(module, "_mathieu_cem", _mathieu_cem);
+
 
     PyObject *mathieu_modcem1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_ff>(xsf::mcm1), static_cast<xsf::numpy::ddd_dd>(xsf::mcm1)}, 2,
@@ -1397,10 +1400,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "mathieu_modsem2", mathieu_modsem2_doc);
     PyModule_AddObjectRef(module, "mathieu_modsem2", mathieu_modsem2);
 
-    PyObject *mathieu_sem =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_ff>(xsf::sem), static_cast<xsf::numpy::ddd_dd>(xsf::sem)}, 2,
-                          "mathieu_sem", mathieu_sem_doc);
-    PyModule_AddObjectRef(module, "mathieu_sem", mathieu_sem);
+    PyObject *_mathieu_sem =
+        xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Odd, float>{},
+                           special::mathieu_xem<xsf::mathieu::Parity::Odd, double>{}},
+                          2, "_mathieu_sem", _mathieu_sem_doc);
+    PyModule_AddObjectRef(module, "_mathieu_sem", _mathieu_sem);
 
     PyObject *modfresnelm = xsf::numpy::ufunc({static_cast<xsf::numpy::f_FF>(xsf::modified_fresnel_minus),
                                                static_cast<xsf::numpy::d_DD>(xsf::modified_fresnel_minus)},

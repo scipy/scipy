@@ -12,6 +12,44 @@ def _parse_core_ndims(signature):
     return tuple(0 if not g.strip() else g.count(',') + 1 for g in groups)
 
 
+def _resolve_alloc_order(args, order):
+    """Determine contiguity of output when using in-ufunc caching.
+
+    Since we hijack the iteration order, 'K' isn't really possible
+    so it's just treated like 'A'.
+
+    """
+    order = order.upper() if order is not None else "K"
+    if order in ('K', 'A'):
+        # If all inputs are F-contiguous, return F-contiguous.
+        # Otherwise, default to C.
+        if all(arg.flags.f_contiguous for arg in args):
+            return 'F'
+        return 'C'
+    return order  # Returns 'C' or 'F'
+
+
+def _allocate_out(args, shape, dtype, order, subok):
+    """Allocate output array, respecting subclasses and priority."""
+    prototype = None
+    if subok and args:
+        prototype = max(args, key=lambda x: getattr(x, "__array_priority__", 0.0))
+
+    if prototype is not None:
+        return np.empty_like(
+            prototype, shape=shape, dtype=dtype, order=order, subok=subok
+        )
+
+    return np.empty(shape, dtype=dtype, order=order)
+
+
+def _get_prototype(args):
+    """Find the input argument with the highest __array_priority__."""
+    if not args:
+        return None
+    return
+
+
 def _with_cache_optimization(
         *,
         name,
@@ -45,6 +83,8 @@ def _with_cache_optimization(
         A wrapper for ufunc which transposes the axes of the inputs to ensure
         iteration precedes in such a way to allow the cache within the ufunc
         kernel to eliminate redundant computation.
+        The underlying ufunc can be accessed through the ``ufunc`` attribute
+        of the returned callable.
 
     Notes
     -----
@@ -71,10 +111,6 @@ def _with_cache_optimization(
     the ends and forces computation in C order. This ensures iteration proceeds
     in the optimal order.
 
-    Note that because the pre-allocated output array used internally is C
-    contiguous, the output will be C contiguous regardless of contiguity of
-    the inputs.
-
     """
 
     # Need to keep track of the number of core dimensions for each input
@@ -85,13 +121,39 @@ def _with_cache_optimization(
         else (0,)*ufunc.nin
     )
 
-    def _wrapper(*args):
-        args = [np.asarray(arg) for arg in args]
+    # The kwarg ``where`` is only supported for elementwise ufuncs, while
+    # the kwarg ``axes` is only supported for non-elementwise gufuncs, so
+    # keep track of this here for later.
+    is_elementwise = sum(core_ndims) == 0
+
+    def _wrapper(
+            *args,
+            out=None,
+            where=True,
+            casting="same_kind",
+            order="K",
+            dtype=None,
+            subok=True,
+            signature=None,
+    ):
+        args = [np.asanyarray(arg) if subok else np.asarray(arg) for arg in args]
+        kwargs = dict(casting=casting, subok=subok)
+        if out is not None:
+            kwargs["out"] = out
+            if is_elementwise:
+                if not isinstance(where, bool):
+                    where = np.asanyarray(where) if subok else np.asarray(where)
+                kwargs["where"] = where
+        if signature is not None:
+            kwargs["signature"] = signature
+        if dtype is not None:
+            kwargs["dtype"] = dtype
 
         # Fast path for when the arguments which are used in the cached
         # computation don't have batches.
         if all(args[i].ndim == core_ndims[i] for i in cache_arg_indices):
-            return ufunc(*args)
+            kwargs["order"] = order
+            return ufunc(*args, **kwargs)
 
         # To get batch_shapes, need to exclude core dimensions. Again, the core
         # dimensions won't participate in broadcasting.
@@ -99,14 +161,21 @@ def _with_cache_optimization(
             arg.shape[:-core_ndims[i]] if core_ndims[i] > 0 else arg.shape
             for i, arg in enumerate(args)
         ]
+        if is_elementwise and not isinstance(where, bool):
+            batch_shapes.append(where.shape)
+
+        if out is not None:
+            out_sample = out[0] if isinstance(out, tuple) else out
+            batch_shapes.append(out_sample.shape)
+
         batch_shape = np.broadcast_shapes(*batch_shapes)
         batch_ndim = len(batch_shape)
 
         # Broadcast each arg so that the batch shapes all agree, but the
         # core dimensions may still differ.
         args_b = [
-            np.broadcast_to(arg, batch_shape + arg.shape[-core_ndims[i]:])
-            if core_ndims[i] > 0 else np.broadcast_to(arg, batch_shape)
+            np.broadcast_to(arg, batch_shape + arg.shape[-core_ndims[i]:], subok=subok)
+            if core_ndims[i] > 0 else np.broadcast_to(arg, batch_shape, subok=subok)
             for i, arg in enumerate(args)
         ]
 
@@ -135,28 +204,99 @@ def _with_cache_optimization(
             )
             args_t.append(np.transpose(arg_b, axes=axes))
 
-        # Premake the output array.
-        input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
-        out_dtype = ufunc.resolve_dtypes(input_dtypes)[-1]
-        out_final = np.empty(batch_shape, dtype=out_dtype, order='C')
-        # a view of the output array with axes sorted as needed.
-        out_t = np.transpose(out_final, axes=sorted_batch_axes)
+        # Handle ``where`` kwarg.
+        if is_elementwise and where is not True:
+            kwargs["where"] = np.transpose(
+                np.broadcast_to(where, batch_shape, subok=subok),
+                axes=sorted_batch_axes,
+            )
+
+        # Handle output array (use provided 'out' or pre-allocate)
+        if out is not None:
+            out_final = out
+            if ufunc.nout == 1:
+                # a view of the provided output array with axes sorted as needed.
+                out_t = np.transpose(out_final, axes=sorted_batch_axes)
+            else:
+                out_t = tuple(
+                    np.transpose(x, axes=sorted_batch_axes) for x in out_final
+                )
+        else:
+            # Respect users choice of order, and preserve F-contiguity is all inputs
+            # are F-contiguous and order="K" or "A". This departs from the typical
+            # meaning of order = "K", which enables NumPy's clever logic to determine
+            # a cache friendly iteration order. This is because we hijack the iteration
+            # order for the benefit of in-ufunc caches.
+            alloc_order = _resolve_alloc_order(args, order)
+            if dtype is not None:
+                out_dtype = np.dtype(dtype)
+            else:
+                resolve_kwargs = {"casting": casting}
+                if signature is not None:
+                    resolve_kwargs["signature"] = signature
+                input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
+                out_dtype = ufunc.resolve_dtypes(
+                    input_dtypes, **resolve_kwargs
+                )[-1]
+            if ufunc.nout == 1:
+                out_final = _allocate_out(
+                    args, batch_shape, out_dtype, alloc_order, subok
+                )
+                # a view of the output array with axes sorted as needed.
+                out_t = np.transpose(out_final, axes=sorted_batch_axes)
+            else:
+                out_final = tuple(
+                    _allocate_out(
+                        args, batch_shape, out_dtype, alloc_order, subok
+                    )
+                    for _ in range(ufunc.nout)
+                )
+                out_t = tuple(
+                    np.transpose(x, axes=sorted_batch_axes) for x in out_final
+                )
+        kwargs["out"] = out_t
+        kwargs["order"] = "C"
 
         # Set out to the above view, but return the C contiguous output.
         # This avoids having non-contiguous output.
-        ufunc(*args_t, out=out_t, order='C')
+        ufunc(*args_t, **kwargs)
+
         return out_final
 
     # Do some metaprogramming with exec so that the arg names and func
     # name are as expected.
     arg_str = ", ".join(arg_names)
+
+    # Handle kwargs for function definition and call to wrapper.
+    kwarg_defs = [
+         "casting='same_kind'",
+         "order='K'",
+         "dtype=None",
+         "subok=True",
+         "signature=None",
+    ]
+    kwarg_calls = [
+        "out=out",
+        "casting=casting",
+        "order=order",
+        "dtype=dtype",
+        "subok=subok",
+        "signature=signature",
+    ]
+    if is_elementwise:
+        # where is only available for elementwise ufuncs, not gufuncs.
+        kwarg_defs.insert(1, "where=True")
+        kwarg_calls.insert(1, "where=where")
+    signature_kwargs = ", ".join(kwarg_defs)
+    call_kwargs = ", ".join(kwarg_calls)
     code = (
-        f"""def {name}({arg_str}):
-            return _wrapper({arg_str})
+        f"""def {name}({arg_str}, /, out=None, *, {signature_kwargs}, **kwargs):
+            return _wrapper({arg_str}, {call_kwargs}, **kwargs)
         """
         )
     namespace = {"_wrapper": _wrapper}
     exec(code, namespace)
     wrapper = namespace[name]
     wrapper.__doc__ = docstring
+    wrapper.ufunc = ufunc
     return wrapper
