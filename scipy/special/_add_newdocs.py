@@ -868,7 +868,7 @@ add_newdoc("eval_sh_jacobi",
 
     Parameters
     ----------
-    n : int
+    n : float
         Degree of the polynomial. If not an integer, the result is
         determined via the relation to `binom` and `eval_jacobi`.
     p : float
