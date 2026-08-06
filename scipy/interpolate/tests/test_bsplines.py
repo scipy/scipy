@@ -2433,8 +2433,8 @@ class TestSmoothingSpline:
         # constants and straight lines have zero curvature: Omega must
         # NOT penalize them (they span its null space)
         greville = np.array([t[i+1:i+4].mean() for i in range(m)])
-        xp_assert_close(omega @ np.ones(m), np.zeros(m), atol=1e-10)
-        xp_assert_close(omega @ greville, np.zeros(m), atol=1e-8)
+        xp_assert_close(omega @ np.ones(m), np.zeros(m), atol=1e-14)
+        xp_assert_close(omega @ greville, np.zeros(m), atol=1e-11)
 
     def test_penalty_matrix_matches_R(self):
         # Penalty matrix vs. R's fda::bsplinepen (values generated with
