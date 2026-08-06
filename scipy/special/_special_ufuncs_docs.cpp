@@ -86,6 +86,101 @@ const char *_kolmogp_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_landau_pdf_doc = R"(
+    _landau_pdf(x, loc, scale)
+
+    Probability density function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_cdf_doc = R"(
+    _landau_cdf(x, loc, scale)
+
+    Cumulative distribution function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_sf_doc = R"(
+    _landau_sf(x, loc, scale)
+
+    Survival function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_ppf_doc = R"(
+    _landau_ppf(p, loc, scale)
+
+    Percent point function of the Landau distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Real-valued argument between 0 and 1
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_isf_doc = R"(
+    _landau_isf(p, loc, scale)
+
+    Inverse survival function of the Landau distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Real-valued argument between 0 and 1
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
 const char *_lgam1p_doc = R"(
     Internal function, do not use.
     )";
