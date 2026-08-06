@@ -2417,10 +2417,18 @@ class TestSmoothingSpline:
         xp_assert_close(omega @ greville, np.zeros(m), atol=1e-8)
 
     def test_penalty_matrix_matches_R(self):
-        # Penalty matrix vs. R's fda::bsplinepen
-        # (values generated with fda 6.x):
+        # Penalty matrix vs. R's fda::bsplinepen (values generated with
+        # fda 6.x). Complete session to reproduce, starting from
+        # `sudo apt-get install r-base`, then run `R` and enter:
+        #
+        #   install.packages("fda")
+        #   library(fda)
+        #   # norder = 4 means cubic splines (order = degree + 1)
         #   basis <- create.bspline.basis(rangeval=c(0,5), breaks=0:5, norder=4)
-        #   bsplinepen(basis, Lfdobj=2)
+        #   # Lfdobj = 2: penalize the 2nd derivative, i.e. the matrix
+        #   # of integrals of B_i'' * B_j'' -- same as _penalty_matrix_banded
+        #   print(bsplinepen(basis, Lfdobj=2), digits=13)
+        #
         # References:
         # https://www.rdocumentation.org/packages/fda/versions/6.2.0/topics/bsplinepen
         t = np.r_[[0.] * 3, np.arange(6.), [5.] * 3]   # clamped, uniform breaks 0..5
@@ -2445,6 +2453,109 @@ class TestSmoothingSpline:
             [  0.  ,   0.  ,  0.   ,  0.   ,  1.   ,  3.5  ,-16.5 ,  12.  ],
         ])
         xp_assert_close(omega, omega_R, atol=1e-9)
+
+    def test_fitted_spline_matches_R_fda(self):
+        # Full fitted spline (not just the penalty matrix) vs R's
+        # fda::smooth.basis (method="chol", the default), with user knots
+        # away from the data sites, the only external oracle exercising
+        # the user-knots path itself. Complete R session to reproduce,
+        # starting from `sudo apt-get install r-base` and, in R,
+        # install.packages("fda"):
+        #
+        #   library(fda)
+        #   x <- seq(0, 10, by = 1)
+        #   y <- c(1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9)
+        #   basis <- create.bspline.basis(rangeval = c(0, 10),
+        #                                 breaks = c(0, 2.5, 5, 7.5, 10),
+        #                                 norder = 4)  # norder = degree + 1
+        #   # Lfdobj = 2: penalize the second derivative, i.e. curvature
+        #   fdp <- fdPar(basis, Lfdobj = 2, lambda = 0.5)
+        #   fit <- smooth.basis(x, y, fdp)
+        #   xtest <- c(0, 0.5, 1.7, 3.3, 5, 6.8, 8.1, 9.4, 10)
+        #   print(eval.fd(xtest, fit$fd), digits = 13)
+        x = np.arange(11.0)
+        y = np.array([1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9])
+        t = np.r_[[0.]*4, [2.5, 5.0, 7.5], [10.]*4]
+        spl = make_smoothing_spline(x, y, lam=0.5, t=t)
+        xtest = np.array([0, 0.5, 1.7, 3.3, 5, 6.8, 8.1, 9.4, 10.0])
+        fda_vals = np.array([0.988714558603, 1.101234759497, 1.574112704623,
+                             2.391919714267, 3.236107671481, 4.019879251234,
+                             4.592498381270, 5.296746001197, 5.711071116938])
+        xp_assert_close(spl(xtest), fda_vals, atol=1e-10)
+
+    def test_matches_R_smooth_spline(self):
+        # vs base R's smooth.spline at knots = clamped data sites.
+        # smooth.spline internally rescales x to [0, 1]; its reported
+        # lambda maps to ours as lam = lambda_R * (x range)**3.
+        # Reproduce with `sudo apt-get install r-base`, then run `R`
+        # (smooth.spline is in the built-in stats package, nothing more
+        # to install) and enter:
+        #   x <- seq(0, 10, by = 1)
+        #   y <- c(1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9)
+        #   sfit <- smooth.spline(x, y, all.knots = TRUE, spar = 0.5)
+        #   print(sfit$lambda, digits = 13)    # 2.678534932760e-03
+        #   print(predict(sfit, x)$y, digits = 13)
+        # Tolerance is limited to ~2e-5 by smooth.spline itself: on the
+        # identical rescaled problem with the identical lambda,
+        # fda::smooth.basis differs from smooth.spline by the same 2.1e-5
+        # (this implementation matches fda to ~4e-13), so the deviation is
+        # internal to smooth.spline, not to this comparison.
+        x = np.arange(11.0)
+        y = np.array([1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9])
+        t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
+        lam = 2.678534932760e-03 * 10.0**3     # lambda_R * range^3
+        spl = make_smoothing_spline(x, y, lam=lam, t=t)
+        ss_vals = np.array([0.934363740275, 1.315436569220, 1.763673948545,
+                            2.238708679812, 2.730925815119, 3.196337578928,
+                            3.662177343140, 4.113250679358, 4.593169336058,
+                            5.095038259122, 5.656918050422])
+        xp_assert_close(spl(x), ss_vals, atol=5e-5)
+
+    def test_matches_julia_smoothing_splines(self):
+        # vs Julia's SmoothingSplines.jl (Reinsch algorithm) at
+        # knots = clamped data sites. Its lambda parametrization matches
+        # this function's directly (no rescaling). Reproduce with:
+        #   using Pkg; Pkg.add("SmoothingSplines")
+        #   using SmoothingSplines
+        #   X = collect(0.0:1.0:10.0)
+        #   Y = [1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9]
+        #   spl = fit(SmoothingSpline, X, Y, 0.5)
+        #   predict(spl)     # printed with digits=12
+        # Install Julia as:
+        # https://julialang.org/downloads or
+        #  `curl -fsSL https://install.julialang.org | sh`
+        x = np.arange(11.0)
+        y = np.array([1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9])
+        t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
+        spl = make_smoothing_spline(x, y, lam=0.5, t=t)
+        jl_vals = np.array([1.004132155304, 1.242739695465, 1.725503026530,
+                            2.231090669939, 2.779556989959, 3.214482118771,
+                            3.691512605712, 4.089962309864, 4.565646806484,
+                            5.035378786942, 5.719994835029])
+        xp_assert_close(spl(x), jl_vals, atol=1e-10)
+
+    def test_matches_octave_csaps(self):
+        # vs Octave's csaps (octave-forge splines package) at
+        # knots = clamped data sites. csaps minimizes
+        # p*sum((y - f)^2) + (1-p)*integral(f''^2), so its parameter maps
+        # to this function's as lam = (1 - p)/p (verified exact).
+        # Reproduce with (`sudo apt install octave`, then in octave
+        # `pkg install -forge splines`):
+        #
+        #   pkg load splines
+        #   x = 0:1:10;
+        #   y = [1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9];
+        #   yi = csaps(x, y, 0.5, x);
+        #   printf("%.12f, ", yi)
+        x = np.arange(11.0)
+        y = np.array([1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9])
+        t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
+        spl = make_smoothing_spline(x, y, lam=1.0, t=t)     # (1 - 0.5)/0.5
+        oc_vals = np.array([0.971487266662, 1.281164590875, 1.739160549945,
+                            2.233157293159, 2.755676289164, 3.211328004654,
+                            3.676857830573, 4.099370134810, 4.572947708294,
+                            5.067125662266, 5.691724669597])
+        xp_assert_close(spl(x), oc_vals, atol=1e-10)
 
     def test_user_defined_knots_invalid_cases(self):
         rng = np.random.RandomState(1234)
