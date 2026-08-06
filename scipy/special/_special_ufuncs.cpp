@@ -88,6 +88,9 @@ extern const char *_landau_sf_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
+extern const char *_ncx2_isf_doc;
+extern const char *_ncx2_pdf_doc;
+extern const char *_ncx2_sf_doc;
 extern const char *_normalized_gen_harmonic_doc;
 extern const char *_stirling2_inexact_doc;
 extern const char *_von_mises_cdf_doc;
@@ -440,6 +443,24 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::ddd_d>(landau_sf_double)},
                           "_landau_sf", _landau_sf_doc);
     PyModule_AddObjectRef(module, "_landau_sf", _landau_sf);
+
+    PyObject *_ncx2_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(ncx2_isf_double)},
+                          "_ncx2_isf", _ncx2_isf_doc);
+    PyModule_AddObjectRef(module, "_ncx2_isf", _ncx2_isf);
+
+    PyObject *_ncx2_pdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_pdf_float),
+                           static_cast<xsf::numpy::ddd_d>(ncx2_pdf_double)},
+                          "_ncx2_pdf", _ncx2_pdf_doc);
+    PyModule_AddObjectRef(module, "_ncx2_pdf", _ncx2_pdf);
+
+    PyObject *_ncx2_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_sf_float),
+                           static_cast<xsf::numpy::ddd_d>(ncx2_sf_double)},
+                          "_ncx2_sf", _ncx2_sf_doc);
+    PyModule_AddObjectRef(module, "_ncx2_sf", _ncx2_sf);
 
     PyObject *_normalized_gen_harmonic =
         xsf::numpy::ufunc({static_cast<xsf::numpy::llld_d>(xsf::normalized_gen_harmonic),

@@ -301,24 +301,6 @@
             "cephes_yn_wrap": "pd->d"
         }
     },
-    "_ncx2_pdf": {
-        "boost_special_functions.h++": {
-            "ncx2_pdf_float": "fff->f",
-            "ncx2_pdf_double": "ddd->d"
-        }
-    },
-    "_ncx2_sf": {
-        "boost_special_functions.h++": {
-            "ncx2_sf_float": "fff->f",
-            "ncx2_sf_double": "ddd->d"
-        }
-    },
-    "_ncx2_isf": {
-        "boost_special_functions.h++": {
-            "ncx2_isf_float": "fff->f",
-            "ncx2_isf_double": "ddd->d"
-        }
-    },
     "_ncf_pdf": {
         "boost_special_functions.h++": {
             "ncf_pdf_float": "ffff->f",
