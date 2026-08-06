@@ -2852,10 +2852,39 @@ def _coeff_of_divided_diff(x):
 
 
 def _penalty_matrix_banded(t):
-    """
-    Omega is ``C.T @ R @ C`` in (4, m), symmetric lower banded storage,
-    ``C = D1 @ D2`` where `Di` is de-boor derivative reduction. ``R``
-    is the mass matrix of linear B-Splines on ``t``.
+    r"""Penalty matrix of a cubic smoothing spline on the knot vector ``t``.
+
+    Computes the matrix form of the second-derivative penalty
+    :math:`\int (f''(u))^2 du`, i.e.
+    :math:`\Omega_{ij} = \int B_i''(u) B_j''(u) du` for the cubic
+    B-spline basis on ``t``, exactly and without numerical integration:
+
+    1. ``C = D2 @ D1`` expresses the second derivative of each cubic
+       B-spline in the basis of linear B-splines ("hat functions") on the
+       same knots; ``D1`` and ``D2`` apply de Boor's derivative formula
+       (stated and explained in the docstring of ``deboor_derivative``
+       below) once each.
+    2. ``R`` is the mass (Gram) matrix of the hat functions,
+       ``R[p, q] = integral(N_p * N_q)``, which is tridiagonal with the
+       closed-form entries ``(t[p+2] - t[p]) / 3`` on the diagonal and
+       ``(t[p+2] - t[p+1]) / 6`` off it.
+    3. ``Omega = C.T @ R @ C``, returned in LAPACK symmetric
+       lower-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
+       accepted by ``scipy.linalg.solveh_banded``.
+
+    ``Omega`` depends on ``t`` only (no data enters), is symmetric
+    positive semi-definite, and its null space is the straight lines,
+    which have zero curvature. This null space is why the assembled
+    system ``X.T @ W @ X + lam * Omega`` grows ill-conditioned as
+    ``lam`` grows (condition number proportional to ``lam``): in two
+    directions of coefficient space only the data term contributes,
+    while all others scale with ``lam``.
+
+    The full derivation with worked examples, the validation against
+    ``fda::bsplinepen`` and other independent constructions, and a
+    conditioning analysis are in the companion report (steps 1-3 above
+    are its eqs. (4)-(5), (8)-(9) and (11) respectively):
+    https://github.com/aadya940/scipy-bspline-testing
     """
     order = 4 # assuming a cubic spline
     m = len(t) - order # number of coefficients
@@ -2880,9 +2909,10 @@ def _penalty_matrix_banded(t):
 
         Notes
         -----
-        Row :math:`j` holds :math:`+c_j` in column :math:`j` and
-        :math:`-c_j` in column :math:`j - 1`, with
-        :math:`c_j = (m - 1) / (\tau_{j+m-1} - \tau_j)`.
+        Row :math:`j` holds :math:`+d_j` in column :math:`j` and
+        :math:`-d_j` in column :math:`j - 1`, where
+        :math:`d_j = (m - 1) / (\tau_{j+m-1} - \tau_j)` is the factor
+        multiplying the coefficient difference in the formula above.
 
         For a clamped knot vector the denominator vanishes at
         :math:`j = 0` and :math:`j = N`, where the repeated boundary knots
@@ -2927,8 +2957,70 @@ def _penalty_matrix_banded(t):
     return omega_banded
 
 
+def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
+    """`make_smoothing_spline` path for a user-provided knot vector ``t``.
+
+    Solves the penalized least-squares problem in the cubic B-spline basis
+    on ``t`` via the normal equations,
+
+        (X^T W X + lam * Omega) c = X^T W y,
+
+    with ``Omega`` from `_penalty_matrix_banded`. Both matrices are 7-banded
+    symmetric, so the system is solved with a banded Cholesky factorization.
+    Assumes ``x``, ``y`` and ``w`` are already validated by the caller.
+    """
+    if lam is None:
+        raise NotImplementedError(
+            "automatic GCV selection of `lam` is not supported with user knots, "
+            "pass `lam` explicitly")
+    if np.ndim(lam) != 0:
+        raise NotImplementedError(
+            "array-valued `lam` is not supported with user-provided knots yet."
+        )
+    if lam < 0.:
+        raise ValueError('Regularization parameter should be non-negative')
+    if np.ndim(y) > 1:
+        raise NotImplementedError(
+            "batched `y` is not supported with user-provided knots yet; "
+            "`y` must be 1-D")
+    t = np.ascontiguousarray(t, dtype=float)
+    if not np.all(np.isfinite(t)):
+        raise ValueError("`t` must not contain infs or nans")
+    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+        raise ValueError("`t` must be a 1-D non-decreasing array")
+    if len(t) < 8:
+        raise ValueError(
+            "`t` must contain at least 8 knots (a cubic spline needs at "
+            f"least one basis interval); got {len(t)}")
+    # interior knots may repeat (each repetition reduces continuity there),
+    # but multiplicity > 4 would make some basis functions identically zero
+    _, counts = np.unique(t, return_counts=True)
+    if np.any(counts > 4):
+        raise ValueError(
+            "knots in `t` must not have multiplicity greater than 4")
+    if x[0] < t[3] or x[-1] > t[-4]:
+        raise ValueError(
+            "all `x` values must lie within the base interval "
+            f"[t[3], t[-4]] = [{t[3]}, {t[-4]}]")
+
+    m = len(t) - 4
+    X = BSpline.design_matrix(x, t, 3)
+
+    omega = _penalty_matrix_banded(t)
+    XtWX = X.T @ X.multiply(w[:, None])
+    XtWy = X.T @ (w * y)
+    XtWX_banded = np.zeros((4, m))
+    for i in range(4):
+        # Convert to LAPACK symmetric lower-banded storage,
+        # as accepted by solveh_banded.
+        XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
+    c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+    c = np.ascontiguousarray(c)
+    return BSpline.construct_fast(xp.asarray(t), xp.asarray(c), 3, axis=axis)
+
+
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
-def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
+def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
 
@@ -3003,29 +3095,21 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     :math:`X^T W X` where :math:`X` is a design matrix is not a positive
     defined matrix) a ValueError is raised.
 
-    When ``t`` is given, the returned spline minimizes
+    When ``t`` is given, the returned spline minimizes the same
+    objective over all cubic splines on the knot vector ``t``
+    (sometimes called an O'Sullivan penalized spline [5]_). No boundary
+    conditions are imposed. If the knots contain all data sites, the
+    minimizer is the natural smoothing spline of the default path;
+    for other knot vectors, the boundary behavior is determined by the
+    objective alone.
 
-    .. math::
-
-        \sum_{i=1}^n w_i (y_i - f(x_i))^2 + \lambda \int (f''(u))^2 du
-
-    over all cubic splines on the knot vector ``t``, a penalized
-    least-squares spline (in the statistics literature, an O'Sullivan
-    penalized spline). No boundary conditions are imposed: the boundary
-    behavior is whatever minimizes the objective. In particular the
-    solution is not, in general, a natural spline, and extrapolation
-    beyond the base interval continues the boundary polynomial pieces,
-    which may diverge quickly; for the special case of knots at the
-    data sites the minimizer coincides with the natural smoothing
-    spline of the default path.
-
-    With user-supplied knots, the following are not (yet) supported and
-    raise an error: automatic selection of ``lam`` by GCV (``lam`` must
-    be given explicitly), array-valued ``lam``, and batched ``y``
-    (``y`` must be 1-D).
-
-    The penalty matrix is computed exactly, in closed form, from the
-    knot vector alone; see [5] for the derivation and validation.
+    For large ``lam`` the linear system solved internally becomes
+    increasingly ill-conditioned: its condition number grows
+    proportionally to ``lam``, since in the limit the system matrix
+    approaches the singular penalty matrix, whose null space is the
+    straight lines. The achievable accuracy therefore degrades as
+    ``eps * cond``. This is intrinsic to the problem, and reference
+    implementations exhibit the same behavior.
 
     References
     ----------
@@ -3045,9 +3129,10 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
         BSc thesis, 2022.
         `<https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
         Russian)
-    .. [5] A. Chinubhai, "An Exact Penalty Matrix for Cubic Smoothing
-        Splines on Arbitrary Knot Vectors", 2026.
-        `<https://gist.github.com/aadya940/XXXXXXXX>`_
+    .. [5] M. P. Wand and J. T. Ormerod, "On semiparametric regression
+        with O'Sullivan penalised splines", Australian & New Zealand
+        Journal of Statistics, vol. 50, no. 2, pp. 179-198, 2008.
+        :doi:`10.1111/j.1467-842X.2008.00507.x`
 
     Examples
     --------
@@ -3084,31 +3169,6 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
 
-    user_knots = t is not None
-
-    if user_knots:
-        if lam is None:
-            raise NotImplementedError(
-                "automatic GCV selection of `lam` is not supported with user knots, "
-                "pass `lam` explicitly")
-        if np.ndim(lam) != 0:
-            raise NotImplementedError(
-                "array-valued `lam` is not supported with user-provided knots yet."
-            )
-        if lam < 0.:
-            raise ValueError('Regularization parameter should be non-negative')
-        if np.ndim(y) > 1:
-            raise NotImplementedError(
-                "batched `y` is not supported with user-provided knots yet; "
-                "`y` must be 1-D")
-        t = np.ascontiguousarray(t, dtype=float)
-        if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
-            raise ValueError("`t` must be a 1-D non-decreasing array")
-        if x[0] < t[3] or x[-1] > t[-4]:
-            raise ValueError(
-                "all `x` values must lie within the base interval "
-                f"[t[3], t[-4]] = [{t[3]}, {t[-4]}]")
-
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
 
@@ -3122,12 +3182,18 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
         if any(w <= 0):
             raise ValueError('Invalid vector of weights')
 
-    if not user_knots:
-        t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
     n = x.shape[0]
 
     if n <= 4:
         raise ValueError('``x`` and ``y`` length must be at least 5')
+
+    if t is not None:
+        # user-provided knots: penalized least squares in the B-spline
+        # basis on ``t``. The construction is described in the companion
+        # report, https://github.com/aadya940/scipy-bspline-testing
+        return _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp)
+
+    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
 
     # Internals assume that the data axis is the zero-th axis
     axis = normalize_axis_index(axis, y.ndim)
@@ -3148,41 +3214,21 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     # move from B-spline basis to the basis of natural splines using equations
     # (2.1.7) [4]
     # central elements
-    if not user_knots:
-        # Only transform `X` to a different basis if
-        # `t` is None.
-        X = np.zeros((5, n))
-        for i in range(1, 4):
-            X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
+    X = np.zeros((5, n))
+    for i in range(1, 4):
+        X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
 
-        # first elements
-        X[1, 1] = X_bspl[0, 0]
-        X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
-                    X_bspl[1, 1] + X_bspl[1, 2])
-        X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
+    # first elements
+    X[1, 1] = X_bspl[0, 0]
+    X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
+                X_bspl[1, 1] + X_bspl[1, 2])
+    X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
 
-        # last elements
-        X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
-        X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
-                    (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
-        X[3, -2] = X_bspl[-1, -1]
-    else:
-        X = X_bspl
-
-    if user_knots:
-        omega = _penalty_matrix_banded(t)
-        XtWX = X.T @ (X.multiply(w[:, None]))
-        XtWy = X.T @ (w[:, None] * y.reshape((n, -1)))
-        XtWX_banded = np.zeros((4, len(t) - 4))
-        for i in range(4):
-            # Convert to LAPACK symmetric lower-banded storage,
-            # as accepted by solveh_banded.
-            XtWX_banded[i, : len(t) - 4 - i] = XtWX.diagonal(-i)
-        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
-        c = np.ascontiguousarray(c.reshape((len(t) - 4, *y_shape1)))
-        return BSpline.construct_fast(
-            xp.asarray(t), xp.asarray(c), 3, axis=axis
-        )
+    # last elements
+    X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
+    X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
+                (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
+    X[3, -2] = X_bspl[-1, -1]
 
     # create penalty matrix and divide it by vector of weights: W^{-1} E
     wE = np.zeros((5, n))
