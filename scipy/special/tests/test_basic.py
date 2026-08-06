@@ -4269,6 +4269,47 @@ class TestProCvSeq:
                         atol=1.5e-5, rtol=0)
 
 
+class TestSpheroidalExceedingMaxN:
+    # Regression tests for gh-xsf-241: the _cv variants of spheroidal wave
+    # functions were missing the (n - m) > 198 bounds check present in the
+    # _nocv variants, causing a heap buffer overflow and segfault when
+    # n - m exceeded the fixed-size 200-element internal arrays.
+
+    def test_pro_rad1_cv_large_n(self):
+        result = cephes.pro_rad1_cv(0, 220, 220.0, 1.0, 1.1)
+        assert all(isnan(result))
+
+    def test_pro_rad2_cv_large_n(self):
+        result = cephes.pro_rad2_cv(0, 220, 220.0, 1.0, 1.1)
+        assert all(isnan(result))
+
+    def test_obl_rad1_cv_large_n(self):
+        result = cephes.obl_rad1_cv(0, 220, 220.0, 1.0, 1.1)
+        assert all(isnan(result))
+
+    def test_obl_rad2_cv_large_n(self):
+        result = cephes.obl_rad2_cv(0, 220, 220.0, 1.0, 1.1)
+        assert all(isnan(result))
+
+    def test_pro_ang1_cv_large_n(self):
+        result = cephes.pro_ang1_cv(0, 220, 220.0, 1.0, 0.5)
+        assert all(isnan(result))
+
+    def test_obl_ang1_cv_large_n(self):
+        result = cephes.obl_ang1_cv(0, 220, 220.0, 1.0, 0.5)
+        assert all(isnan(result))
+
+    def test_pro_rad1_cv_at_boundary(self):
+        # n - m == 198 should still work (within bounds)
+        result = cephes.pro_rad1_cv(0, 198, 1.0, 1.0, 1.1)
+        assert not any(isnan(result))
+
+    def test_pro_rad1_cv_just_over_boundary(self):
+        # n - m == 199 should return NaN (exceeds bounds)
+        result = cephes.pro_rad1_cv(0, 199, 1.0, 1.0, 1.1)
+        assert all(isnan(result))
+
+
 class TestPsi:
     def test_psi(self):
         ps = special.psi(1)
