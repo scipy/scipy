@@ -2104,6 +2104,7 @@ _BERNOULLI_EVEN = [1.0,
                    -7.950212504588525e+302,
                    1.3352784187354634e+306]
 
+count = 0
 def bernoulli(n):
     """Bernoulli numbers B0..Bn (inclusive).
 
@@ -2111,6 +2112,7 @@ def bernoulli(n):
     ----------
     n : int
         Indicated the number of terms in the Bernoulli series to generate.
+        Non-integer values are truncated to the nearest integer.  Must be non-negative.
 
     Returns
     -------
@@ -2119,10 +2121,7 @@ def bernoulli(n):
 
     References
     ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    .. [2] "Bernoulli number", Wikipedia, https://en.wikipedia.org/wiki/Bernoulli_number
+    .. [1] "Bernoulli number", Wikipedia, https://en.wikipedia.org/wiki/Bernoulli_number
 
     Examples
     --------
@@ -2146,16 +2145,18 @@ def bernoulli(n):
 
     """
     if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+        raise ValueError("n must be a non-negative.")
     n = int(n)
-    i = min(n // 2, len(_BERNOULLI_EVEN) - 1)
-    res = np.zeros(n + 1, dtype=np.float64)
+    len_bernoulli_even = len(_BERNOULLI_EVEN)
+    i = min(n // 2, len_bernoulli_even - 1)
+    res = np.zeros(n + 1)
     res[:2*i + 1:2] = _BERNOULLI_EVEN[:i + 1]
     if n > 0:
         res[1] = -0.5
-    if n // 2 > len(_BERNOULLI_EVEN) - 1:
-        res[2*i + 2::4] = -np.inf
-        res[2*i + 4::4] = np.inf
+    if n >= 2*len_bernoulli_even:
+        res[2*len_bernoulli_even::4] = -np.inf
+        if n >= 2*len(_BERNOULLI_EVEN) + 2:
+            res[2*len_bernoulli_even + 2::4] = np.inf
     return res
 
 
