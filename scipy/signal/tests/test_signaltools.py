@@ -2352,7 +2352,11 @@ def test_lfilter_notimplemented_input(xp):
 
 
 def test_lfilter_empty_input():
-    # gh-22571: empty x should return empty y and unchanged zi
+    """Verify that unchanged `zi` is returned for an empty input `x`
+
+    This test ensures correct special handling for empty inputs,
+    to prevent leaking internal state as reported in gh-22571.
+    """
     b = np.array([1.0, 0.5])
     a = np.array([1.0, -0.5])
     x = np.array([])
@@ -2360,7 +2364,7 @@ def test_lfilter_empty_input():
 
     y, zf = lfilter(b, a, x, zi=zi)
     assert y.shape == (0,)
-    assert_array_equal(zf, zi)
+    xp_assert_equal(zf, zi)
 
     y_no_zi = lfilter(b, a, x)
     assert y_no_zi.shape == (0,)
