@@ -5,7 +5,7 @@ import numpy as np
 cimport numpy as np
 from scipy.linalg import (solve, lu_solve, lu_factor, solve_triangular,
                           LinAlgError)
-from scipy.linalg.cython_blas cimport daxpy, dswap
+from scipy.linalg.cython_blas cimport blas_int, daxpy, dswap
 try:
     from time import process_time as timer
 except ImportError:
@@ -25,8 +25,8 @@ cdef void swap_rows(self, double[:, ::1] H, int i) noexcept:
     # Python
     # H[[i, i+1]] = H[[i+1, i]]
     # Cython, using BLAS
-    cdef int n = H.shape[1]-i
-    cdef int one = 1
+    cdef blas_int n = H.shape[1]-i
+    cdef blas_int one = 1
     dswap(&n, &H[i, i], &one, &H[i+1, i], &one)
 
 @cython.boundscheck(False)
@@ -43,9 +43,9 @@ cdef double row_subtract(self, double[:, ::1] H, int i) noexcept:
     # Python
     # H[i+1, i:] -= g*H[i, i:]
     # Cython, using BLAS
-    cdef int n = H.shape[1]-i
+    cdef blas_int n = H.shape[1]-i
     cdef double ng = -g
-    cdef int one = 1
+    cdef blas_int one = 1
     daxpy(&n, &ng, &H[i, i], &one, &H[i+1, i], &one)
 
     return g
@@ -81,7 +81,7 @@ cdef void hess_lu(self, double[:, ::1] H, int i, double[:,::1] ops) noexcept:
 cdef void perform_ops(self, double[::1] y, const double[:,::1] ops, bint rev = False) noexcept:
     """
     Replays operations needed to convert Hessenberg matrix into upper
-    triangular form on a vector y. Equivalent to matrix multlication by
+    triangular form on a vector y. Equivalent to matrix multiplication by
     inverse of matrix 5.12.
     """
     cdef int i, j, k, m

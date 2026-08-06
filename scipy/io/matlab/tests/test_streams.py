@@ -2,7 +2,10 @@
 
 """
 
+import platform
 import os
+import random
+import sys
 import zlib
 
 from io import BytesIO
@@ -15,6 +18,7 @@ import numpy as np
 
 from numpy.testing import assert_, assert_equal
 from pytest import raises as assert_raises
+import pytest
 
 from scipy.io.matlab._streams import (make_stream,
     GenericStream, ZlibInputStream,
@@ -87,7 +91,7 @@ def test_read():
 
 class TestZlibInputStream:
     def _get_data(self, size):
-        data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
+        data = random.randbytes(size)
         compressed_data = zlib.compress(data)
         stream = BytesIO(compressed_data)
         return stream, len(compressed_data), data
@@ -118,8 +122,7 @@ class TestZlibInputStream:
                 check(size, read_size)
 
     def test_read_max_length(self):
-        size = 1234
-        data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
+        data = random.randbytes(1234)
         compressed_data = zlib.compress(data)
         compressed_stream = BytesIO(compressed_data + b"abbacaca")
         stream = ZlibInputStream(compressed_stream, len(compressed_data))
@@ -130,7 +133,7 @@ class TestZlibInputStream:
         assert_raises(OSError, stream.read, 1)
 
     def test_read_bad_checksum(self):
-        data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
+        data = random.randbytes(10)
         compressed_data = zlib.compress(data)
 
         # break checksum
@@ -173,7 +176,7 @@ class TestZlibInputStream:
         assert_raises(OSError, stream.read, 12)
 
     def test_seek_bad_checksum(self):
-        data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
+        data = random.randbytes(10)
         compressed_data = zlib.compress(data)
 
         # break checksum
@@ -194,10 +197,13 @@ class TestZlibInputStream:
         stream.seek(1024)
         assert_(stream.all_data_read())
 
+    @pytest.mark.skipif(
+            (platform.system() == 'Windows' and sys.version_info >= (3, 14)),
+            reason='gh-23185')
     def test_all_data_read_overlap(self):
         COMPRESSION_LEVEL = 6
 
-        data = np.arange(33707000).astype(np.uint8).tobytes()
+        data = np.arange(33707000, dtype=np.uint8)
         compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
         compressed_data_len = len(compressed_data)
 
@@ -210,10 +216,13 @@ class TestZlibInputStream:
         stream.seek(len(data))
         assert_(stream.all_data_read())
 
+    @pytest.mark.skipif(
+            (platform.system() == 'Windows' and sys.version_info >= (3, 14)),
+            reason='gh-23185')
     def test_all_data_read_bad_checksum(self):
         COMPRESSION_LEVEL = 6
 
-        data = np.arange(33707000).astype(np.uint8).tobytes()
+        data = np.arange(33707000, dtype=np.uint8)
         compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
         compressed_data_len = len(compressed_data)
 

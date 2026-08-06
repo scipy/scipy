@@ -26,7 +26,7 @@ def laplacian(
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix, 2 dimensions
+    csgraph : array_like or sparse array or matrix, 2 dimensions
         compressed-sparse graph, with shape (N, N).
     normed : bool, optional
         If True, then compute symmetrically normalized Laplacian.
@@ -38,11 +38,11 @@ def laplacian(
         If True, then use out-degree instead of in-degree.
         This distinction matters only if the graph is asymmetric.
         Default: False.
-    copy: bool, optional
+    copy : bool, optional
         If False, then change `csgraph` in place if possible,
         avoiding doubling the memory use.
         Default: True, for backward compatibility.
-    form: 'array', or 'function', or 'lo'
+    form : 'array', or 'function', or 'lo'
         Determines the format of the output Laplacian:
 
         * 'array' is a numpy array;
@@ -53,14 +53,14 @@ def laplacian(
         Choosing 'function' or 'lo' always avoids doubling
         the memory use, ignoring `copy` value.
         Default: 'array', for backward compatibility.
-    dtype: None or one of numeric numpy dtypes, optional
+    dtype : None or one of numeric numpy dtypes, optional
         The dtype of the output. If ``dtype=None``, the dtype of the
         output matches the dtype of the input csgraph, except for
         the case ``normed=True`` and integer-like csgraph, where
         the output dtype is 'float' allowing accurate normalization,
         but dramatically increasing the memory use.
         Default: None, for backward compatibility.
-    symmetrized: bool, optional
+    symmetrized : bool, optional
         If True, then the output Laplacian is symmetric/Hermitian.
         The symmetrization is done by ``csgraph + csgraph.T.conj``
         without dividing by 2 to preserve integer dtypes if possible
@@ -72,9 +72,9 @@ def laplacian(
 
     Returns
     -------
-    lap : ndarray, or sparse matrix, or `LinearOperator`
+    lap : ndarray, or sparse array or matrix, or `LinearOperator`
         The N x N Laplacian of csgraph. It will be a NumPy array (dense)
-        if the input was dense, or a sparse matrix otherwise, or
+        if the input was dense, or a sparse array otherwise, or
         the format of a function or `LinearOperator` if
         `form` equals 'function' or 'lo', respectively.
     diag : ndarray, optional
@@ -237,8 +237,9 @@ def laplacian(
     in a symmetric Laplacian matrix if and only if its graph is symmetric
     and has all non-negative degrees, like in the examples above.
 
-    The output Laplacian matrix is by default a dense array or a sparse matrix
-    inferring its shape, format, and dtype from the input graph matrix:
+    The output Laplacian matrix is by default a dense array or a sparse
+    array or matrix inferring its class, shape, format, and dtype from
+    the input graph matrix:
 
     >>> G = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]).astype(np.float32)
     >>> G
@@ -276,19 +277,19 @@ def laplacian(
     Our final example illustrates the latter
     for a noisy directed linear graph.
 
-    >>> from scipy.sparse import diags, random
+    >>> from scipy.sparse import diags_array, random_array
     >>> from scipy.sparse.linalg import lobpcg
 
     Create a directed linear graph with ``N=35`` vertices
     using a sparse adjacency matrix ``G``:
 
     >>> N = 35
-    >>> G = diags(np.ones(N-1), 1, format="csr")
+    >>> G = diags_array(np.ones(N - 1), offsets=1, format="csr")
 
     Fix a random seed ``rng`` and add a random sparse noise to the graph ``G``:
 
     >>> rng = np.random.default_rng()
-    >>> G += 1e-2 * random(N, N, density=0.1, random_state=rng)
+    >>> G += 1e-2 * random_array((N, N), density=0.1, rng=rng)
 
     Set initial approximations for eigenvectors:
 

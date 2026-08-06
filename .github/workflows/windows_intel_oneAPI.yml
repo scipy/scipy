@@ -9,16 +9,23 @@ on:
     branches:
       - main
       - maintenance/**
+  schedule:
+  #        ┌───────────── minute (0 - 59)
+  #        │  ┌───────────── hour (0 - 23)
+  #        │  │  ┌───────────── day of the month (1 - 31)
+  #        │  │  │  ┌───────────── month (1 - 12 or JAN-DEC)
+  #        │  │  │  │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #        │  │  │  │ │
+  - cron: "9  9 2/2 * *"
 
 permissions:
    contents: read  # to fetch code (actions/checkout)
 
-# The environment variable WINDOWS_BASEKIT_URL and WINDOWS_HPC_URL
+# The environment variable WINDOWS_HPC_URL
 # store the URL for downloading Intel oneAPI.
 # Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
 env:
-  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/7dff44ba-e3af-4448-841c-0d616c8da6e7/w_BaseKit_p_2024.1.0.595_offline.exe
-  WINDOWS_HPC_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/c95a3b26-fc45-496c-833b-df08b10297b9/w_HPCKit_p_2024.1.0.561_offline.exe
+  WINDOWS_HPC_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/a37c30c3-a846-4371-a85d-603e9a9eb94c/intel-oneapi-hpc-toolkit-2025.0.1.48_offline.exe
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -30,7 +37,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   msvc_ifx_blas:
-    name: py3.11, dev.py
+    name: py3.12, spin
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -43,60 +50,56 @@ jobs:
         shell: powershell
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
-
-      - name: Setup conda
-        uses: s-weigand/setup-conda@678f22c807cb6fde6a290be6f3546877c98ec66f # v1.2.2
-        with:
-          update-conda: true
-          python-version: 3.11
-      - run: conda --version
-      - run: which python
-
-      - name: Install packages from conda
-        run: |
-          conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
+          persist-credentials: false
 
       - name: cache install
         id: cache-install
-        uses: actions/cache@v3
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
               C:\Program Files (x86)\Intel\oneAPI\compiler
               C:\Program Files (x86)\Intel\oneAPI\setvars.bat
               C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
-          key: install-${{ env.WINDOWS_HPC_URL }}-${{ env.WINDOWS_BASEKIT_URL }}-compiler
-      - name: Install oneAPI Base kit
-        if: steps.cache-install.outputs.cache-hit != 'true'
-        run: |
-          echo %WINDOWS_BASEKIT_URL%
-          tools/install_intel_oneAPI_windows.bat %WINDOWS_BASEKIT_URL%
+          key: install-${{ env.WINDOWS_HPC_URL }}-compiler
       - name: Install oneAPI HPC kit
         if: steps.cache-install.outputs.cache-hit != 'true'
+        shell: cmd /C call {0}  # need to use `cmd` for batch scripts
         run: |
           echo %WINDOWS_HPC_URL%
-          tools/install_intel_oneAPI_windows.bat %WINDOWS_HPC_URL%
+          tools\intel_oneAPI\install_intel_oneAPI_windows.bat "%WINDOWS_HPC_URL%" "" "dfbf8487f6ee5b9c1bb2cad19f2ef8dd842529a533670ce21582d39c303bf979"  &REM 2025.0.1.48
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
+        with:
+          python-version: 3.12
+          channels: conda-forge
+          channel-priority: strict
+          use-only-tar-bz2: false
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          auto-activate-base: true
+          activate-environment: true
+
+      - run: conda --version
+      - run: which python
+
+      - name: Install packages from conda
+        shell: pwsh
+        run: conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
 
       # MSVC is unable to compile Pythran code, therefore we need to use
       # -C-Duse-pythran=false while building SciPy.
       # Reference - https://github.com/serge-sans-paille/pythran/issues/2215
       - name: Initialise Intel oneAPI, MSVC and Build SciPy
+        shell: cmd /C call {0}  # need to use `cmd` for batch scripts
         run: |
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-          set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          python dev.py build -C-Duse-pythran=false -C--vsenv
-        shell: cmd
+          spin build -S-Duse-pythran=false -S--vsenv
 
-      # "import scipy; scipy.test();" fails because
-      # scipy/sparse/linalg/_eigen/arpack crashes.
-      # Reference - https://github.com/scipy/scipy/issues/20728
       - name: Test scipy.datasets
-        run: python dev.py test -s datasets
-        shell: cmd
-
-      - name: Test scipy.misc
-        run: python dev.py test -s misc
-        shell: cmd
+        shell: pwsh
+        run: spin test -s datasets

@@ -2,7 +2,7 @@
   :target: https://scipy.org
   :width: 110
   :height: 110
-  :align: left 
+  :align: left
 
 .. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
   :target: https://numfocus.org
@@ -19,6 +19,9 @@
 .. image:: https://img.shields.io/badge/DOI-10.1038%2Fs41592--019--0686--2-blue.svg
   :target: https://www.nature.com/articles/s41592-019-0686-2
 
+.. image:: https://insights.linuxfoundation.org/api/badge/health-score?project=scipy
+  :target: https://insights.linuxfoundation.org/project/scipy
+
 SciPy (pronounced "Sigh Pie") is an open-source software for mathematics,
 science, and engineering. It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
@@ -33,7 +36,8 @@ ODE solvers, and more.
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues
 - **Code of Conduct:** https://docs.scipy.org/doc/scipy/dev/conduct/code_of_conduct.html
-- **Report a security vulnerability:** https://tidelift.com/docs/security
+- **Report a security vulnerability:** via Tidelift, as explained in
+  `our docs on Security <https://scipy.github.io/devdocs/tutorial/security.html>`__
 - **Citing in your work:** https://www.scipy.org/citing-scipy/
 
 SciPy is built to work with

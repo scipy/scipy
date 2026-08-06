@@ -1,7 +1,7 @@
 """Linear least squares with bound constraints on independent variables."""
 import numpy as np
 from numpy.linalg import norm
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse, csr_array
 from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
 from scipy.optimize._minimize import Bounds
@@ -39,7 +39,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                verbose=0, *, lsmr_maxiter=None,):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
-    Given a m-by-n design matrix A and a target vector b with m elements,
+    Given an m-by-n design matrix A and a target vector b with m elements,
     `lsq_linear` solves the following optimization problem::
 
         minimize 0.5 * ||A x - b||**2
@@ -50,7 +50,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Parameters
     ----------
-    A : array_like, sparse matrix of LinearOperator, shape (m, n)
+    A : array_like, sparse array or LinearOperator, shape (m, n)
         Design matrix. Can be `scipy.sparse.linalg.LinearOperator`.
     b : array_like, shape (m,)
         Target vector.
@@ -126,58 +126,60 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Returns
     -------
-    OptimizeResult with the following fields defined:
-    x : ndarray, shape (n,)
-        Solution found.
-    cost : float
-        Value of the cost function at the solution.
-    fun : ndarray, shape (m,)
-        Vector of residuals at the solution.
-    optimality : float
-        First-order optimality measure. The exact meaning depends on `method`,
-        refer to the description of `tol` parameter.
-    active_mask : ndarray of int, shape (n,)
-        Each component shows whether a corresponding constraint is active
-        (that is, whether a variable is at the bound):
+    result : OptimizeResult
+        Result object with the following fields defined:
 
-        *  0 : a constraint is not active.
-        * -1 : a lower bound is active.
-        *  1 : an upper bound is active.
+        x : ndarray, shape (n,)
+            Solution found.
+        cost : float
+            Value of the cost function at the solution.
+        fun : ndarray, shape (m,)
+            Vector of residuals at the solution.
+        optimality : float
+            First-order optimality measure. The exact meaning depends on `method`,
+            refer to the description of `tol` parameter.
+        active_mask : ndarray of int, shape (n,)
+            Each component shows whether a corresponding constraint is active
+            (that is, whether a variable is at the bound):
 
-        Might be somewhat arbitrary for the `trf` method as it generates a
-        sequence of strictly feasible iterates and active_mask is determined
-        within a tolerance threshold.
-    unbounded_sol : tuple
-        Unbounded least squares solution tuple returned by the least squares
-        solver (set with `lsq_solver` option). If `lsq_solver` is not set or is
-        set to ``'exact'``, the tuple contains an ndarray of shape (n,) with
-        the unbounded solution, an ndarray with the sum of squared residuals,
-        an int with the rank of `A`, and an ndarray with the singular values
-        of `A` (see NumPy's ``linalg.lstsq`` for more information). If
-        `lsq_solver` is set to ``'lsmr'``, the tuple contains an ndarray of
-        shape (n,) with the unbounded solution, an int with the exit code,
-        an int with the number of iterations, and five floats with
-        various norms and the condition number of `A` (see SciPy's
-        ``sparse.linalg.lsmr`` for more information). This output can be
-        useful for determining the convergence of the least squares solver,
-        particularly the iterative ``'lsmr'`` solver. The unbounded least
-        squares problem is to minimize ``0.5 * ||A x - b||**2``.
-    nit : int
-        Number of iterations. Zero if the unconstrained solution is optimal.
-    status : int
-        Reason for algorithm termination:
+            *  0 : a constraint is not active.
+            * -1 : a lower bound is active.
+            *  1 : an upper bound is active.
 
-        * -1 : the algorithm was not able to make progress on the last
-          iteration.
-        *  0 : the maximum number of iterations is exceeded.
-        *  1 : the first-order optimality measure is less than `tol`.
-        *  2 : the relative change of the cost function is less than `tol`.
-        *  3 : the unconstrained solution is optimal.
+            Might be somewhat arbitrary for the `trf` method as it generates a
+            sequence of strictly feasible iterates and active_mask is determined
+            within a tolerance threshold.
+        unbounded_sol : tuple
+            Unbounded least squares solution tuple returned by the least squares
+            solver (set with `lsq_solver` option). If `lsq_solver` is not set or is
+            set to ``'exact'``, the tuple contains an ndarray of shape (n,) with
+            the unbounded solution, an ndarray with the sum of squared residuals,
+            an int with the rank of `A`, and an ndarray with the singular values
+            of `A` (see NumPy's ``linalg.lstsq`` for more information). If
+            `lsq_solver` is set to ``'lsmr'``, the tuple contains an ndarray of
+            shape (n,) with the unbounded solution, an int with the exit code,
+            an int with the number of iterations, and five floats with
+            various norms and the condition number of `A` (see SciPy's
+            ``sparse.linalg.lsmr`` for more information). This output can be
+            useful for determining the convergence of the least squares solver,
+            particularly the iterative ``'lsmr'`` solver. The unbounded least
+            squares problem is to minimize ``0.5 * ||A x - b||**2``.
+        nit : int
+            Number of iterations. Zero if the unconstrained solution is optimal.
+        status : int
+            Reason for algorithm termination:
 
-    message : str
-        Verbal description of the termination reason.
-    success : bool
-        True if one of the convergence criteria is satisfied (`status` > 0).
+            * -1 : the algorithm was not able to make progress on the last
+              iteration.
+            *  0 : the maximum number of iterations is exceeded.
+            *  1 : the first-order optimality measure is less than `tol`.
+            *  2 : the relative change of the cost function is less than `tol`.
+            *  3 : the unconstrained solution is optimal.
+
+        message : str
+            Verbal description of the termination reason.
+        success : bool
+            True if one of the convergence criteria is satisfied (`status` > 0).
 
     See Also
     --------
@@ -222,18 +224,18 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Examples
     --------
-    In this example, a problem with a large sparse matrix and bounds on the
+    In this example, a problem with a large sparse arrays and bounds on the
     variables is solved.
 
     >>> import numpy as np
-    >>> from scipy.sparse import rand
+    >>> from scipy.sparse import random_array
     >>> from scipy.optimize import lsq_linear
     >>> rng = np.random.default_rng()
     ...
     >>> m = 2000
     >>> n = 1000
     ...
-    >>> A = rand(m, n, density=1e-4, random_state=rng)
+    >>> A = random_array((m, n), density=1e-4, random_state=rng)
     >>> b = rng.standard_normal(m)
     ...
     >>> lb = rng.standard_normal(n)
@@ -254,7 +256,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("`verbose` must be in [0, 1, 2].")
 
     if issparse(A):
-        A = csr_matrix(A)
+        A = csr_array(A)
     elif not isinstance(A, LinearOperator):
         A = np.atleast_2d(np.asarray(A))
 

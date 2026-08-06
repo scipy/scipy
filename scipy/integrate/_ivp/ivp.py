@@ -7,6 +7,7 @@ from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
 from .base import OdeSolver
+from scipy._lib._array_api import xp_capabilities
 
 
 METHODS = {'RK23': RK23,
@@ -156,6 +157,7 @@ def find_active_events(g, g_new, direction):
     return np.nonzero(mask)[0]
 
 
+@xp_capabilities(np_only=True)
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               events=None, vectorized=False, args=None, **options):
     """Solve an initial value problem for a system of ODEs.
@@ -195,38 +197,38 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
         complex data type (even if the initial value is purely real).
-    method : string or `OdeSolver`, optional
+    method : str or `OdeSolver`, optional
         Integration method to use:
 
-            * 'RK45' (default): Explicit Runge-Kutta method of order 5(4) [1]_.
-              The error is controlled assuming accuracy of the fourth-order
-              method, but steps are taken using the fifth-order accurate
-              formula (local extrapolation is done). A quartic interpolation
-              polynomial is used for the dense output [2]_. Can be applied in
-              the complex domain.
-            * 'RK23': Explicit Runge-Kutta method of order 3(2) [3]_. The error
-              is controlled assuming accuracy of the second-order method, but
-              steps are taken using the third-order accurate formula (local
-              extrapolation is done). A cubic Hermite polynomial is used for the
-              dense output. Can be applied in the complex domain.
-            * 'DOP853': Explicit Runge-Kutta method of order 8 [13]_.
-              Python implementation of the "DOP853" algorithm originally
-              written in Fortran [14]_. A 7-th order interpolation polynomial
-              accurate to 7-th order is used for the dense output.
-              Can be applied in the complex domain.
-            * 'Radau': Implicit Runge-Kutta method of the Radau IIA family of
-              order 5 [4]_. The error is controlled with a third-order accurate
-              embedded formula. A cubic polynomial which satisfies the
-              collocation conditions is used for the dense output.
-            * 'BDF': Implicit multi-step variable-order (1 to 5) method based
-              on a backward differentiation formula for the derivative
-              approximation [5]_. The implementation follows the one described
-              in [6]_. A quasi-constant step scheme is used and accuracy is
-              enhanced using the NDF modification. Can be applied in the
-              complex domain.
-            * 'LSODA': Adams/BDF method with automatic stiffness detection and
-              switching [7]_, [8]_. This is a wrapper of the Fortran solver
-              from ODEPACK.
+        * **'RK45' (default)**: Explicit Runge-Kutta method of order 5(4) [1]_.
+          The error is controlled assuming accuracy of the fourth-order
+          method, but steps are taken using the fifth-order accurate
+          formula (local extrapolation is done). A quartic interpolation
+          polynomial is used for the dense output [2]_. Can be applied in
+          the complex domain.
+        * **'RK23'**: Explicit Runge-Kutta method of order 3(2) [3]_. The error
+          is controlled assuming accuracy of the second-order method, but
+          steps are taken using the third-order accurate formula (local
+          extrapolation is done). A cubic Hermite polynomial is used for the
+          dense output. Can be applied in the complex domain.
+        * **'DOP853'**: Explicit Runge-Kutta method of order 8 [13]_.
+          Python implementation of the "DOP853" algorithm originally
+          written in Fortran [14]_. A 7-th order interpolation polynomial
+          accurate to 7-th order is used for the dense output.
+          Can be applied in the complex domain.
+        * **'Radau'**: Implicit Runge-Kutta method of the Radau IIA family of
+          order 5 [4]_. The error is controlled with a third-order accurate
+          embedded formula. A cubic polynomial which satisfies the
+          collocation conditions is used for the dense output.
+        * **'BDF'**: Implicit multi-step variable-order (1 to 5) method based
+          on a backward differentiation formula for the derivative
+          approximation [5]_. The implementation follows the one described
+          in [6]_. A quasi-constant step scheme is used and accuracy is
+          enhanced using the NDF modification. Can be applied in the
+          complex domain.
+        * **'LSODA'**: Adams/BDF method with automatic stiffness detection and
+          switching [7]_, [8]_. This is a wrapper of the Fortran solver
+          from ODEPACK.
 
         Explicit Runge-Kutta methods ('RK23', 'RK45', 'DOP853') should be used
         for non-stiff problems and implicit methods ('Radau', 'BDF') for
@@ -259,16 +261,16 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         events may be missed. Additionally each `event` function might
         have the following attributes:
 
-            terminal: bool or int, optional
-                When boolean, whether to terminate integration if this event occurs.
-                When integral, termination occurs after the specified the number of
-                occurrences of this event.
-                Implicitly False if not assigned.
-            direction: float, optional
-                Direction of a zero crossing. If `direction` is positive,
-                `event` will only trigger when going from negative to positive,
-                and vice versa if `direction` is negative. If 0, then either
-                direction will trigger event. Implicitly 0 if not assigned.
+        terminal: bool or int, optional
+            When boolean, whether to terminate integration if this event occurs.
+            When integral, termination occurs after the specified the number of
+            occurrences of this event.
+            Implicitly False if not assigned.
+        direction: float, optional
+            Direction of a zero crossing. If `direction` is positive,
+            `event` will only trigger when going from negative to positive,
+            and vice versa if `direction` is negative. If 0, then either
+            direction will trigger event. Implicitly 0 if not assigned.
 
         You can assign attributes like ``event.terminal = True`` to any
         function in Python.
@@ -297,31 +299,32 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
-    first_step : float or None, optional
-        Initial step size. Default is `None` which means that the algorithm
-        should choose.
-    max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e., the step size is not
-        bounded and determined solely by the solver.
-    rtol, atol : float or array_like, optional
-        Relative and absolute tolerances. The solver keeps the local error
-        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits), while `atol` controls
-        absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be smaller than the smallest value that
-        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
-        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
-        number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
-        than `atol`. If components of y have different scales, it might be
-        beneficial to set different `atol` values for different components by
-        passing array_like with shape (n,) for `atol`. Default values are
-        1e-3 for `rtol` and 1e-6 for `atol`.
-    jac : array_like, sparse_matrix, callable or None, optional
-        Jacobian matrix of the right-hand side of the system with respect
-        to y, required by the 'Radau', 'BDF' and 'LSODA' method. The
-        Jacobian matrix has shape (n, n) and its element (i, j) is equal to
-        ``d f_i / d y_j``.  There are three ways to define the Jacobian:
+
+        first_step : float or None, optional
+            Initial step size. Default is `None` which means that the algorithm
+            should choose.
+        max_step : float, optional
+            Maximum allowed step size. Default is np.inf, i.e., the step size is not
+            bounded and determined solely by the solver.
+        rtol, atol : float or array_like, optional
+            Relative and absolute tolerances. The solver keeps the local error
+            estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
+            relative accuracy (number of correct digits), while `atol` controls
+            absolute accuracy (number of correct decimal places). To achieve the
+            desired `rtol`, set `atol` to be smaller than the smallest value that
+            can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+            allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+            number of correct digits is not guaranteed. Conversely, to achieve the
+            desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
+            than `atol`. If components of y have different scales, it might be
+            beneficial to set different `atol` values for different components by
+            passing array_like with shape (n,) for `atol`. Default values are
+            1e-3 for `rtol` and 1e-6 for `atol`.
+        jac : array_like, sparse_matrix, callable or None, optional
+            Jacobian matrix of the right-hand side of the system with respect
+            to y, required by the 'Radau', 'BDF' and 'LSODA' method. The
+            Jacobian matrix has shape (n, n) and its element (i, j) is equal to
+            ``d f_i / d y_j``.  There are three ways to define the Jacobian:
 
             * If array_like or sparse_matrix, the Jacobian is assumed to
               be constant. Not supported by 'LSODA'.
@@ -334,65 +337,67 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             * If None (default), the Jacobian will be approximated by
               finite differences.
 
-        It is generally recommended to provide the Jacobian rather than
-        relying on a finite-difference approximation.
-    jac_sparsity : array_like, sparse matrix or None, optional
-        Defines a sparsity structure of the Jacobian matrix for a finite-
-        difference approximation. Its shape must be (n, n). This argument
-        is ignored if `jac` is not `None`. If the Jacobian has only few
-        non-zero elements in *each* row, providing the sparsity structure
-        will greatly speed up the computations [10]_. A zero entry means that
-        a corresponding element in the Jacobian is always zero. If None
-        (default), the Jacobian is assumed to be dense.
-        Not supported by 'LSODA', see `lband` and `uband` instead.
-    lband, uband : int or None, optional
-        Parameters defining the bandwidth of the Jacobian for the 'LSODA'
-        method, i.e., ``jac[i, j] != 0 only for i - lband <= j <= i + uband``.
-        Default is None. Setting these requires your jac routine to return the
-        Jacobian in the packed format: the returned array must have ``n``
-        columns and ``uband + lband + 1`` rows in which Jacobian diagonals are
-        written. Specifically ``jac_packed[uband + i - j , j] = jac[i, j]``.
-        The same format is used in `scipy.linalg.solve_banded` (check for an
-        illustration).  These parameters can be also used with ``jac=None`` to
-        reduce the number of Jacobian elements estimated by finite differences.
-    min_step : float, optional
-        The minimum allowed step size for 'LSODA' method.
-        By default `min_step` is zero.
+            It is generally recommended to provide the Jacobian rather than
+            relying on a finite-difference approximation.
+        jac_sparsity : array_like, sparse matrix or None, optional
+            Defines a sparsity structure of the Jacobian matrix for a finite-
+            difference approximation. Its shape must be (n, n). This argument
+            is ignored if `jac` is not `None`. If the Jacobian has only few
+            non-zero elements in *each* row, providing the sparsity structure
+            will greatly speed up the computations [10]_. A zero entry means that
+            a corresponding element in the Jacobian is always zero. If None
+            (default), the Jacobian is assumed to be dense.
+            Not supported by 'LSODA', see `lband` and `uband` instead.
+        lband, uband : int or None, optional
+            Parameters defining the bandwidth of the Jacobian for the 'LSODA'
+            method, i.e., ``jac[i, j] != 0 only for i - lband <= j <= i + uband``.
+            Default is None. Setting these requires your jac routine to return the
+            Jacobian in the packed format: the returned array must have ``n``
+            columns and ``uband + lband + 1`` rows in which Jacobian diagonals are
+            written. Specifically ``jac_packed[uband + i - j , j] = jac[i, j]``.
+            The same format is used in `scipy.linalg.solve_banded` (check for an
+            illustration).  These parameters can be also used with ``jac=None`` to
+            reduce the number of Jacobian elements estimated by finite differences.
+        min_step : float, optional
+            The minimum allowed step size for 'LSODA' method.
+            By default `min_step` is zero.
 
     Returns
     -------
-    Bunch object with the following fields defined:
-    t : ndarray, shape (n_points,)
-        Time points.
-    y : ndarray, shape (n, n_points)
-        Values of the solution at `t`.
-    sol : `OdeSolution` or None
-        Found solution as `OdeSolution` instance; None if `dense_output` was
-        set to False.
-    t_events : list of ndarray or None
-        Contains for each event type a list of arrays at which an event of
-        that type event was detected. None if `events` was None.
-    y_events : list of ndarray or None
-        For each value of `t_events`, the corresponding value of the solution.
-        None if `events` was None.
-    nfev : int
-        Number of evaluations of the right-hand side.
-    njev : int
-        Number of evaluations of the Jacobian.
-    nlu : int
-        Number of LU decompositions.
-    status : int
-        Reason for algorithm termination:
+    result : OdeResult
+        Bunch object with the following fields defined:
+
+        t : ndarray, shape (n_points,)
+            Time points.
+        y : ndarray, shape (n, n_points)
+            Values of the solution at `t`.
+        sol : `OdeSolution` or None
+            Found solution as `OdeSolution` instance; None if `dense_output` was
+            set to False.
+        t_events : list of ndarray or None
+            Contains for each event type a list of arrays at which an event of
+            that type event was detected. None if `events` was None.
+        y_events : list of ndarray or None
+            For each value of `t_events`, the corresponding value of the solution.
+            None if `events` was None.
+        nfev : int
+            Number of evaluations of the right-hand side.
+        njev : int
+            Number of evaluations of the Jacobian.
+        nlu : int
+            Number of LU decompositions.
+        status : int
+            Reason for algorithm termination:
 
             * -1: Integration step failed.
             *  0: The solver successfully reached the end of `tspan`.
             *  1: A termination event occurred.
 
-    message : string
-        Human-readable description of the termination reason.
-    success : bool
-        True if the solver reached the interval end or a termination event
-        occurred (``status >= 0``).
+        message : str
+            Human-readable description of the termination reason.
+        success : bool
+            True if the solver reached the interval end or a termination event
+            occurred (``status >= 0``).
 
     References
     ----------
@@ -694,8 +699,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             g = g_new
 
         if t_eval is None:
-            ts.append(t)
-            ys.append(y)
+            donot_append = (len(ts) > 1 and
+                            ts[-1] == t and
+                            dense_output)
+            if not donot_append:
+                ts.append(t)
+                ys.append(y)
+            else:
+                if len(interpolants) > 0:
+                    interpolants.pop()
         else:
             # The value in t_eval equal to t will be included.
             if solver.direction > 0:

@@ -12,7 +12,7 @@ class Infinity(Benchmark):
 
     .. math::
 
-        f_{\text{Infinity}}(x) = \sum_{i=1}^{n} x_i^{6} 
+        f_{\text{Infinity}}(x) = \sum_{i=1}^{n} x_i^{6}
         \left [ \sin\left ( \frac{1}{x_i} \right ) + 2 \right ]
 
 
@@ -24,6 +24,7 @@ class Infinity(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -32,7 +33,6 @@ class Infinity(Benchmark):
 
         self.global_optimum = [[1e-16 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

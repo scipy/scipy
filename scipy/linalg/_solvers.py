@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
+from scipy._lib._util import _apply_over_batch
 from ._basic import solve, solve_triangular, matrix_balance
 from .lapack import get_lapack_funcs
 from ._decomp_schur import schur
@@ -19,7 +20,7 @@ from ._decomp_lu import lu
 from ._decomp_qr import qr
 from ._decomp_qz import ordqz
 from ._decomp import _asarray_validated
-from ._special_matrices import kron, block_diag
+from ._special_matrices import block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
@@ -27,6 +28,7 @@ __all__ = ['solve_sylvester',
            'solve_continuous_are', 'solve_discrete_are']
 
 
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2))
 def solve_sylvester(a, b, q):
     """
     Computes a solution (X) to the Sylvester equation :math:`AX + XB = Q`.
@@ -80,7 +82,7 @@ def solve_sylvester(a, b, q):
     True
 
     """
-    # Accomodate empty a
+    # Accommodate empty a
     if a.size == 0 or b.size == 0:
         tdict = {'s': np.float32, 'd': np.float64,
                  'c': np.complex64, 'z': np.complex128}
@@ -106,12 +108,12 @@ def solve_sylvester(a, b, q):
     y = scale*y
 
     if info < 0:
-        raise LinAlgError("Illegal value encountered in "
-                          "the %d term" % (-info,))
+        raise LinAlgError(f"Illegal value encountered in the {-info} term")
 
     return np.dot(np.dot(u, y), v.conj().transpose())
 
 
+@_apply_over_batch(('a', 2), ('q', 2))
 def solve_continuous_lyapunov(a, q):
     """
     Solves the continuous Lyapunov equation :math:`AX + XA^H = Q`.
@@ -178,7 +180,7 @@ def solve_continuous_lyapunov(a, q):
     if a.shape != q.shape:
         raise ValueError("Matrix a and q should have the same shape.")
 
-    # Accomodate empty array
+    # Accommodate empty array
     if a.size == 0:
         tdict = {'s': np.float32, 'd': np.float64,
                  'c': np.complex64, 'z': np.complex128}
@@ -223,7 +225,7 @@ def _solve_discrete_lyapunov_direct(a, q):
     `method=direct`. It is not supposed to be called directly.
     """
 
-    lhs = kron(a, a.conj())
+    lhs = np.kron(a, a.conj())
     lhs = np.eye(lhs.shape[0]) - lhs
     x = solve(lhs, q.flatten())
 
@@ -245,6 +247,7 @@ def _solve_discrete_lyapunov_bilinear(a, q):
     return solve_lyapunov(b.conj().transpose(), -c)
 
 
+@_apply_over_batch(('a', 2), ('q', 2))
 def solve_discrete_lyapunov(a, q, method=None):
     """
     Solves the discrete Lyapunov equation :math:`AXA^H - X + Q = 0`.
@@ -348,11 +351,11 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     The limitations for a solution to exist are :
 
-        * All eigenvalues of :math:`A` on the right half plane, should be
-          controllable.
+    * All eigenvalues of :math:`A` on the right half plane, should be
+      controllable.
 
-        * The associated hamiltonian pencil (See Notes), should have
-          eigenvalues sufficiently away from the imaginary axis.
+    * The associated hamiltonian pencil (See Notes), should have
+      eigenvalues sufficiently away from the imaginary axis.
 
     Moreover, if ``e`` or ``s`` is not precisely ``None``, then the
     generalized version of CARE
@@ -364,6 +367,11 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     is solved. When omitted, ``e`` is assumed to be the identity and ``s``
     is assumed to be the zero matrix with sizes compatible with ``a`` and
     ``b``, respectively.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -454,7 +462,12 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     True
 
     """
+    # ensure that all arguments are present when using `_apply_over_batch` (gh-23336)
+    return _solve_continuous_are(a, b, q, r, e, s, balanced)
 
+
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
+def _solve_continuous_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
                                                      a, b, q, r, e, s, 'care')
@@ -512,7 +525,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     u00 = u[:m, :m]
     u10 = u[m:, :m]
 
-    # Solve via back-substituion after checking the condition of u00
+    # Solve via back-substitution after checking the condition of u00
     up, ul, uu = lu(u00)
     if 1/cond(uu) < np.spacing(1.):
         raise LinAlgError('Failed to find a finite solution.')
@@ -553,11 +566,11 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     The limitations for a solution to exist are :
 
-        * All eigenvalues of :math:`A` outside the unit disc, should be
-          controllable.
+    * All eigenvalues of :math:`A` outside the unit disc, should be
+      controllable.
 
-        * The associated symplectic pencil (See Notes), should have
-          eigenvalues sufficiently away from the unit circle.
+    * The associated symplectic pencil (See Notes), should have
+      eigenvalues sufficiently away from the unit circle.
 
     Moreover, if ``e`` and ``s`` are not both precisely ``None``, then the
     generalized version of DARE
@@ -568,6 +581,11 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     is solved. When omitted, ``e`` is assumed to be the identity and ``s``
     is assumed to be the zero matrix.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -661,7 +679,12 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     True
 
     """
+    # ensure that all arguments are present when using `_apply_over_batch` (gh-23336)
+    return _solve_discrete_are(a, b, q, r, e, s, balanced)
 
+
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
+def _solve_discrete_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
                                                      a, b, q, r, e, s, 'dare')
@@ -720,7 +743,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     u00 = u[:m, :m]
     u10 = u[m:, :m]
 
-    # Solve via back-substituion after checking the condition of u00
+    # Solve via back-substitution after checking the condition of u00
     up, ul, uu = lu(u00)
 
     if 1/cond(uu) < np.spacing(1.):

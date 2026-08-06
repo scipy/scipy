@@ -109,6 +109,8 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
+        "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
 };
 
@@ -156,8 +158,11 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
         /* For ref counting of the memory */
-        PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self);
         Py_INCREF(self);
+        if (PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
         return perm_r;
     }
     else if (strcmp(name, "perm_c") == 0) {
@@ -171,8 +176,11 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
         /* For ref counting of the memory */
-        PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self);
         Py_INCREF(self);
+        if (PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
         return perm_c;
     }
     else if (strcmp(name, "U") == 0 || strcmp(name, "L") == 0) {
@@ -816,13 +824,13 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     char *s = "";                               \
     PyObject *tmpobj = NULL;                    \
     if (input == Py_None) return 1;             \
-    if (PyBytes_Check(input)) {                \
-        s = PyBytes_AS_STRING(input);          \
+    if (PyBytes_Check(input)) {                 \
+        s = PyBytes_AsString(input);            \
     }                                           \
     else if (PyUnicode_Check(input)) {          \
         tmpobj = PyUnicode_AsASCIIString(input);\
         if (tmpobj == NULL) return 0;           \
-        s = PyBytes_AS_STRING(tmpobj);         \
+        s = PyBytes_AsString(tmpobj);           \
     }                                           \
     else if (PyLong_Check(input)) {              \
         i = PyLong_AsLong(input);                \
@@ -915,20 +923,11 @@ static int trans_cvt(PyObject * input, trans_t * value)
 {
     ENUM_CHECK_INIT;
     ENUM_CHECK(NOTRANS);
+    ENUM_CHECK_NAME(NOTRANS, "N");
     ENUM_CHECK(TRANS);
+    ENUM_CHECK_NAME(TRANS, "T");
     ENUM_CHECK(CONJ);
-    if (my_strxcmp(s, "N") == 0) {
-        *value = NOTRANS;
-        return 1;
-    }
-    if (my_strxcmp(s, "T") == 0) {
-        *value = TRANS;
-        return 1;
-    }
-    if (my_strxcmp(s, "H") == 0) {
-        *value = CONJ;
-        return 1;
-    }
+    ENUM_CHECK_NAME(CONJ, "H");
     ENUM_CHECK_FINISH("invalid value for 'Trans' parameter");
 }
 
@@ -967,34 +966,13 @@ static int milu_cvt(PyObject * input, milu_t * value)
 static int droprule_one_cvt(PyObject * input, int *value)
 {
     ENUM_CHECK_INIT;
-    if (my_strxcmp(s, "BASIC") == 0) {
-        *value = DROP_BASIC;
-        return 1;
-    }
-    if (my_strxcmp(s, "PROWS") == 0) {
-        *value = DROP_PROWS;
-        return 1;
-    }
-    if (my_strxcmp(s, "COLUMN") == 0) {
-        *value = DROP_COLUMN;
-        return 1;
-    }
-    if (my_strxcmp(s, "AREA") == 0) {
-        *value = DROP_AREA;
-        return 1;
-    }
-    if (my_strxcmp(s, "SECONDARY") == 0) {
-        *value = DROP_SECONDARY;
-        return 1;
-    }
-    if (my_strxcmp(s, "DYNAMIC") == 0) {
-        *value = DROP_DYNAMIC;
-        return 1;
-    }
-    if (my_strxcmp(s, "INTERP") == 0) {
-        *value = DROP_INTERP;
-        return 1;
-    }
+    ENUM_CHECK_NAME(DROP_BASIC, "BASIC");
+    ENUM_CHECK_NAME(DROP_PROWS, "PROWS");
+    ENUM_CHECK_NAME(DROP_COLUMN, "COLUMN");
+    ENUM_CHECK_NAME(DROP_AREA, "AREA");
+    ENUM_CHECK_NAME(DROP_SECONDARY, "SECONDARY");
+    ENUM_CHECK_NAME(DROP_DYNAMIC, "DYNAMIC");
+    ENUM_CHECK_NAME(DROP_INTERP, "INTERP");
     ENUM_CHECK_FINISH("invalid value for 'ILU_DropRule' parameter");
 }
 

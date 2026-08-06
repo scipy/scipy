@@ -68,7 +68,7 @@
 import numpy as np
 import scipy.special
 import scipy.special._ufuncs as scu
-from scipy._lib._finite_differences import _derivative
+from scipy.stats._finite_differences import _derivative
 
 _E128 = 128
 _EP128 = np.ldexp(np.longdouble(1), _E128)
@@ -512,7 +512,7 @@ def kolmogn(n, x, cdf=True):
 
     Parameters
     ----------
-    n : integer, array_like
+    n : int, array_like
         the number of samples
     x : float, array_like
         The K-S statistic, float between 0 and 1
@@ -526,7 +526,7 @@ def kolmogn(n, x, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, x, cdf, None],
+    it = np.nditer([n, x, cdf, None], flags=['zerosize_ok'],
                    op_dtypes=[None, np.float64, np.bool_, np.float64])
     for _n, _x, _cdf, z in it:
         if np.isnan(_n):
@@ -544,7 +544,7 @@ def kolmognp(n, x):
 
     Parameters
     ----------
-    n : integer, array_like
+    n : int, array_like
         the number of samples
     x : float, array_like
         The K-S statistic, float between 0 and 1
@@ -573,7 +573,7 @@ def kolmogni(n, q, cdf=True):
 
     Parameters
     ----------
-    n : integer, array_like
+    n : int, array_like
         the number of samples
     q : float, array_like
         Probabilities, float between 0 and 1

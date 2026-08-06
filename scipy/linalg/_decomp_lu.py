@@ -4,19 +4,19 @@ from warnings import warn
 
 from numpy import asarray, asarray_chkfinite
 import numpy as np
-from itertools import product
+
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
-from .lapack import get_lapack_funcs
-from ._decomp_lu_cython import lu_dispatcher
+from .lapack import get_lapack_funcs, _normalize_lapack_dtype, HAS_ILP64
+from ._batched_linalg import _lu as _linalg_lu
 
-lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
-                    for x in np.typecodes['All']}
 
 __all__ = ['lu', 'lu_solve', 'lu_factor']
 
 
+@_apply_over_batch(('a', 2))
 def lu_factor(a, overwrite_a=False, check_finite=True):
     """
     Compute pivoted LU decomposition of a matrix.
@@ -33,7 +33,8 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     a : (M, N) array_like
         Matrix to decompose
     overwrite_a : bool, optional
-        Whether to overwrite data in A (may increase performance)
+        Whether to overwrite data in ``a`` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -110,7 +111,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     # accommodate empty arrays
     if a1.size == 0:
         lu = np.empty_like(a1)
-        piv = np.arange(0, dtype=np.int32)
+        piv = np.arange(0, dtype=np.int64 if HAS_ILP64 else np.int32)
         return lu, piv
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
@@ -118,22 +119,31 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     getrf, = get_lapack_funcs(('getrf',), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %dth argument of '
-                         'internal getrf (lu_factor)' % -info)
+        raise ValueError(
+            f'illegal value in {-info}th argument of internal getrf (lu_factor)'
+        )
     if info > 0:
-        warn("Diagonal number %d is exactly zero. Singular matrix." % info,
-             LinAlgWarning, stacklevel=2)
+        warn(
+            f"Diagonal number {info} is exactly zero. Singular matrix.",
+            LinAlgWarning,
+            stacklevel=2
+        )
     return lu, piv
 
 
 def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
-    """Solve an equation system, a x = b, given the LU factorization of a
+    """Solve an equation system, ``a @ x = b``, given the LU factorization of a.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
-    (lu, piv)
-        Factorization of the coefficient matrix a, as given by lu_factor.
-        In particular piv are 0-indexed pivot indices.
+    lu_and_piv : tuple
+        Factorization of the coefficient matrix a in the form ``(lu, piv)``, as given
+        by lu_factor. In particular piv are 0-indexed pivot indices.
     b : array
         Right-hand side
     trans : {0, 1, 2}, optional
@@ -148,6 +158,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
         =====  =========
     overwrite_b : bool, optional
         Whether to overwrite data in b (may increase performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -175,10 +186,18 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
 
     """
     (lu, piv) = lu_and_piv
+    return _lu_solve(lu, piv, b, trans=trans, overwrite_b=overwrite_b,
+                     check_finite=check_finite)
+
+
+@_apply_over_batch(('lu', 2), ('piv', 1), ('b', '1|2'))
+def _lu_solve(lu, piv, b, trans, overwrite_b, check_finite):
     if check_finite:
         b1 = asarray_chkfinite(b)
     else:
         b1 = asarray(b)
+
+    _deprecate_dtypes("lu_solve", lu, b)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
@@ -194,8 +213,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)
     if info == 0:
         return x
-    raise ValueError('illegal value in %dth argument of internal gesv|posv'
-                     % -info)
+    raise ValueError(f'illegal value in {-info}th argument of internal gesv|posv')
 
 
 def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
@@ -212,14 +230,19 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
     ``True`` then ``L`` is returned already permuted and hence satisfying
     ``A = L @ U``.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Array to decompose
     permute_l : bool, optional
         Perform the multiplication P*L (Default: do not permute)
     overwrite_a : bool, optional
-        Whether to overwrite data in a (may improve performance)
+        Whether to overwrite data in a (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -230,23 +253,19 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     Returns
     -------
-    **(If `permute_l` is ``False``)**
+    (p, l, u) | (pl, u):
+        The tuple `(p, l, u)` is returned if `permute_l` is ``False`` (default) else
+        the tuple `(pl, u)` is returned, where:
 
-    p : (..., M, M) ndarray
-        Permutation arrays or vectors depending on `p_indices`
-    l : (..., M, K) ndarray
-        Lower triangular or trapezoidal array with unit diagonal.
-        ``K = min(M, N)``
-    u : (..., K, N) ndarray
-        Upper triangular or trapezoidal array
-
-    **(If `permute_l` is ``True``)**
-
-    pl : (..., M, K) ndarray
-        Permuted L matrix.
-        ``K = min(M, N)``
-    u : (..., K, N) ndarray
-        Upper triangular or trapezoidal array
+        p : (..., M, M) ndarray
+            Permutation arrays or vectors depending on `p_indices`.
+        l : (..., M, K) ndarray
+            Lower triangular or trapezoidal array with unit diagonal, where the last
+            dimension is ``K = min(M, N)``.
+        pl : (..., M, K) ndarray
+            Permuted L matrix with last dimension being ``K = min(M, N)``.
+        u : (..., K, N) ndarray
+            Upper triangular or trapezoidal array.
 
     Notes
     -----
@@ -295,18 +314,12 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     """
     a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
+    _deprecate_dtypes("lu", a1)
     if a1.ndim < 2:
         raise ValueError('The input array must be at least two-dimensional.')
 
     # Also check if dtype is LAPACK compatible
-    if a1.dtype.char not in 'fdFD':
-        dtype_char = lapack_cast_dict[a1.dtype.char]
-        if not dtype_char:  # No casting possible
-            raise TypeError(f'The dtype {a1.dtype} cannot be cast '
-                            'to float(32, 64) or complex(64, 128).')
-
-        a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
-        overwrite_a = True
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     *nd, m, n = a1.shape
     k = min(m, n)
@@ -334,43 +347,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
                  else np.ones_like(a1))
             return P, np.ones_like(a1), (a1 if overwrite_a else a1.copy())
 
-    # Then check overwrite permission
-    if not _datacopied(a1, a):  # "a"  still alive through "a1"
-        if not overwrite_a:
-            # Data belongs to "a" so make a copy
-            a1 = a1.copy(order='C')
-        #  else: Do nothing we'll use "a" if possible
-    # else:  a1 has its own data thus free to scratch
-
-    # Then layout checks, might happen that overwrite is allowed but original
-    # array was read-only or non-contiguous.
-
-    if not (a1.flags['C_CONTIGUOUS'] and a1.flags['WRITEABLE']):
-        a1 = a1.copy(order='C')
-
-    if not nd:  # 2D array
-
-        p = np.empty(m, dtype=np.int32)
-        u = np.zeros([k, k], dtype=a1.dtype)
-        lu_dispatcher(a1, u, p, permute_l)
-        P, L, U = (p, a1, u) if m > n else (p, u, a1)
-
-    else:  # Stacked array
-
-        # Prepare the contiguous data holders
-        P = np.empty([*nd, m], dtype=np.int32)  # perm vecs
-
-        if m > n:  # Tall arrays, U will be created
-            U = np.zeros([*nd, k, k], dtype=a1.dtype)
-            for ind in product(*[range(x) for x in a1.shape[:-2]]):
-                lu_dispatcher(a1[ind], U[ind], P[ind], permute_l)
-            L = a1
-
-        else:  # Fat arrays, L will be created
-            L = np.zeros([*nd, k, k], dtype=a1.dtype)
-            for ind in product(*[range(x) for x in a1.shape[:-2]]):
-                lu_dispatcher(a1[ind], L[ind], P[ind], permute_l)
-            U = a1
+    P, L, U = _linalg_lu(a1, permute_l, overwrite_a)
 
     # Convert permutation vecs to permutation arrays
     # permute_l=False needed to enter here to avoid wasted efforts

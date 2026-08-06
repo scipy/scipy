@@ -5,13 +5,13 @@
 
 import numpy as np
 
-from scipy._lib._util import check_random_state, rng_integers
-from scipy.sparse import csc_matrix
+from scipy._lib._util import (check_random_state, rng_integers,
+                              _transition_to_rng, _apply_over_batch)
 
 __all__ = ['clarkson_woodruff_transform']
 
 
-def cwt_matrix(n_rows, n_columns, seed=None):
+def cwt_matrix(n_rows, n_columns, rng=None):
     r"""
     Generate a matrix S which represents a Clarkson-Woodruff transform.
 
@@ -26,17 +26,15 @@ def cwt_matrix(n_rows, n_columns, seed=None):
         Number of rows of S
     n_columns : int
         Number of columns of S
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
-    S : (n_rows, n_columns) csc_matrix
+    S : (n_rows, n_columns) csc_array
         The returned matrix has ``n_columns`` nonzero entries.
 
     Notes
@@ -45,15 +43,18 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     .. math:: \|SA\| = (1 \pm \epsilon)\|A\|
     Where the error epsilon is related to the size of S.
     """
-    rng = check_random_state(seed)
+    # lazy import to prevent to prevent sparse dependency for whole module (gh-23420)
+    from scipy.sparse import csc_array
+    rng = check_random_state(rng)
     rows = rng_integers(rng, 0, n_rows, n_columns)
     cols = np.arange(n_columns+1)
     signs = rng.choice([1, -1], n_columns)
-    S = csc_matrix((signs, rows, cols),shape=(n_rows, n_columns))
+    S = csc_array((signs, rows, cols), shape=(n_rows, n_columns))
     return S
 
 
-def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
+@_transition_to_rng("seed", position_num=2)
+def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     r"""
     Applies a Clarkson-Woodruff Transform/sketch to the input matrix.
 
@@ -65,19 +66,22 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     with high probability via the Clarkson-Woodruff Transform, otherwise
     known as the CountSketch matrix.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    input_matrix : array_like
-        Input matrix, of shape ``(n, d)``.
+    input_matrix : array_like, shape (..., n, d)
+        Input matrix.
     sketch_size : int
         Number of rows for the sketch.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -104,18 +108,18 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     This implementation takes advantage of sparsity: computing
     a sketch takes time proportional to ``A.nnz``. Data ``A`` which
-    is in ``scipy.sparse.csc_matrix`` format gives the quickest
+    is in ``scipy.sparse.csc_array`` format gives the quickest
     computation time for sparse input.
 
     >>> import numpy as np
     >>> from scipy import linalg
     >>> from scipy import sparse
     >>> rng = np.random.default_rng()
-    >>> n_rows, n_columns, density, sketch_n_rows = 15000, 100, 0.01, 200
-    >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
-    >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
-    >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
-    >>> D = rng.standard_normal((n_rows, n_columns))
+    >>> *shape, density, sketch_n_rows = 15000, 100, 0.01, 200
+    >>> A = sparse.random_array(shape, density=density, format='csc')
+    >>> B = sparse.random_array(shape, density=density, format='csr')
+    >>> C = sparse.random_array(shape, density=density, format='coo')
+    >>> D = rng.standard_normal(shape)
     >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows) # fastest
     >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows) # fast
     >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows) # slower
@@ -175,5 +179,22 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     166.58473879945151
 
     """
-    S = cwt_matrix(sketch_size, input_matrix.shape[0], seed)
-    return S.dot(input_matrix)
+    # lazy import to prevent to prevent sparse dependency for whole module (gh-23420)
+    from scipy.sparse import issparse
+    if issparse(input_matrix) and input_matrix.ndim > 2:
+        message = "Batch support for sparse arrays is not available."
+        raise NotImplementedError(message)
+
+    S = cwt_matrix(sketch_size, input_matrix.shape[-2], rng=rng)
+    if input_matrix.ndim <= 2:
+        # transposes are cheap and ensure output class matches input_matrix
+        return (input_matrix.T @ S.T).T
+
+    # Despite argument order (required by decorator), this is  S @ input_matrix
+    # Can avoid _batch_dot when gh-22153 is resolved.
+    return _batch_dot(input_matrix, S)
+
+
+@_apply_over_batch(('input_matrix', 2))
+def _batch_dot(input_matrix, S):
+    return S @ input_matrix

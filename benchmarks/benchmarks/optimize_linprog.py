@@ -1,7 +1,7 @@
 import os
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 
 from .common import Benchmark, is_xslow, safe_import
 
@@ -17,12 +17,14 @@ with safe_import():
 methods = [("highs-ipm", {}),
            ("highs-ds", {})]
 
+# TODO(rg): CI failures with GROW7 as of gh-21565
+# Can't be reproduced locally...
 problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
             'BANDM', 'BEACONFD', 'BLEND', 'BNL1', 'BNL2', 'BORE3D', 'BRANDY',
             'CAPRI', 'CYCLE', 'CZPROB', 'D2Q06C', 'D6CUBE', 'DEGEN2', 'DEGEN3',
             'DFL001', 'E226', 'ETAMACRO', 'FFFFF800', 'FINNIS', 'FIT1D',
             'FIT1P', 'FIT2D', 'FIT2P', 'GANGES', 'GFRD-PNC', 'GREENBEA',
-            'GREENBEB', 'GROW15', 'GROW22', 'GROW7', 'ISRAEL', 'KB2', 'LOTFI',
+            'GREENBEB', 'GROW15', 'GROW22', 'ISRAEL', 'KB2', 'LOTFI',
             'MAROS', 'MAROS-R7', 'MODSZK1', 'PEROLD', 'PILOT', 'PILOT4',
             'PILOT87', 'PILOT-JA', 'PILOTNOV', 'PILOT-WE', 'QAP8', 'QAP12',
             'QAP15', 'RECIPE', 'SC105', 'SC205', 'SC50A', 'SC50B', 'SCAGR25',
@@ -40,7 +42,8 @@ infeasible_problems = ['bgdbg1', 'bgetam', 'bgindy', 'bgprtr', 'box1',
                        'refinery', 'vol1', 'woodinfe']
 
 if not is_xslow():
-    enabled_problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7',
+    # TODO(rg): CI failures with GROW7 as of gh-21565
+    enabled_problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD',
                         'LOTFI', 'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
     enabled_infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom',
                                    'cplex2', 'ex72a', 'ex73a', 'forest6',
@@ -83,8 +86,8 @@ class MagicSquare(Benchmark):
 
     def time_magic_square(self, meth, prob):
         method, options = meth
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "A_eq does not appear", OptimizeWarning)
             res = linprog(c=self.c, A_eq=self.A_eq, b_eq=self.b_eq,
                           bounds=(0, 1), method=method, options=options)
             self.fun = res.fun
@@ -138,8 +141,9 @@ class LpGen(Benchmark):
 
     def time_lpgen(self, meth, m, n):
         method, options = meth
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll-conditioned")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "scipy.linalg.solve\nIll-conditioned", RuntimeWarning)
             linprog(c=self.c, A_ub=self.A, b_ub=self.b,
                     method=method, options=options)
 

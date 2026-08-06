@@ -6,12 +6,13 @@ from numpy.testing import (assert_allclose,
 import pytest
 import numpy as np
 from scipy.optimize import direct, Bounds
+import threading
 
 
 class TestDIRECT:
 
     def setup_method(self):
-        self.fun_calls = 0
+        self.fun_calls = threading.local()
         self.bounds_sphere = 4*[(-2, 3)]
         self.optimum_sphere_pos = np.zeros((4, ))
         self.optimum_sphere = 0.0
@@ -20,7 +21,9 @@ class TestDIRECT:
 
     # test functions
     def sphere(self, x):
-        self.fun_calls += 1
+        if not hasattr(self.fun_calls, 'c'):
+            self.fun_calls.c = 0
+        self.fun_calls.c += 1
         return np.square(x).sum()
 
     def inv(self, x):
@@ -57,7 +60,7 @@ class TestDIRECT:
         # up to 500 evaluations in last iteration
         assert res.nfev <= 1000 * (len(self.bounds_sphere) + 1)
         # test that number of function evaluations is correct
-        assert res.nfev == self.fun_calls
+        assert res.nfev == self.fun_calls.c
 
         # test that number of iterations is below supplied maximum
         assert res.nit <= self.maxiter
@@ -307,6 +310,17 @@ class TestDIRECT:
     def test_inf_bounds(self):
         error_msg = 'Bounds must not be inf.'
         bounds = Bounds([-np.inf, -1], [-2, np.inf])
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, bounds)
+
+    def test_empty_bounds(self):
+        # gh-25086: empty Bounds() is invalid. This is checked at
+        # Bounds() init time, but the C kernel has an additional
+        # defense-in-depth check, which we exercise here.
+        bounds = Bounds([-1.0], [1.0])
+        bounds.lb = []
+        bounds.ub = []
+        error_msg = "DIRECT requires at least one dimension, got 0"
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, bounds)
 

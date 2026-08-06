@@ -4,7 +4,7 @@
 Continuous Integration
 ======================
 
-Continuous integration (CI) is part of our development process and ensure that
+Continuous integration (CI) is part of our development process and ensures that
 every piece of code or documentation which is contributed to SciPy is working
 and does not have unforeseen effects.
 
@@ -16,19 +16,19 @@ Workflows
 
 We run more than 20 different workflows with different versions of the
 dependencies, different architectures, etc. A PR must pass all these checks
-before it can be merged as to ensure a sustainable state of the project.
+before it can be merged to ensure a sustainable state of the project.
 
 Apart from the unit tests, the documentation and examples in the docstrings are
 also checked. These are common failing workflows as Sphinx and doctests have
 very strict rules. These aspects are very important as documentation and
-examples are user facing elements. Ensures that these elements are properly
+examples are user facing elements. Ensure that these elements are properly
 rendered.
 
 The logs can be long, but you will always find out why your build/test did not
 pass a check. Simply click on ``Details`` to access the logs.
 
 Following is a list of all the different workflows in use. They are grouped
-by CI resources providers.
+by CI resource providers.
 
 GitHub Actions
 --------------
@@ -56,12 +56,6 @@ CircleCI
 * ``run_benchmarks``: verify how the changes impact performance
 * ``refguide_check``: doctests from examples and benchmarks
 
-CirrusCI
---------
-* ``Tests``: test suite for specific architecture like
-  ``musllinux, arm, aarch``
-* ``Wheels``: build and upload some wheels
-
 .. _skip-ci:
 
 Skipping
@@ -79,7 +73,6 @@ Skipping CI can be achieved by adding a special text in the commit message:
 
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
-* ``[skip cirrus]``: will skip CirrusCI
 * ``[docs only]``: will skip *all but* the CircleCI checks and the linter
 * ``[lint only]``: will skip *all but* the linter
 * ``[skip ci]``: will skip *all* CI
@@ -88,7 +81,7 @@ Of course, you can combine these to skip multiple workflows.
 
 This skip information should be placed on a new line. In this example, we
 just updated a ``.rst`` file in the documentation and ask to skip all but the
-relevant docs checks (skip Cirrus and GitHub Actions' workflows)::
+relevant docs checks (skip GitHub Actions' workflows)::
 
     DOC: improve QMCEngine examples.
 
@@ -126,7 +119,7 @@ Adjustment options include:
   on a reduced set of platforms.
 - Marking the test as ``xslow``, if it is acceptable to run the test
   only occasionally.
-- Breaking up the test or parameterizing it, and possible marking
+- Breaking up the test or parameterizing it, and possibly marking
   parts of it as slow. Note that this does not reduce the total
   test duration, so other options are preferred.
 - For truly critical tests that are unavoidably slow, add an exception
@@ -147,7 +140,7 @@ The Action runs:
 * when the commit message contains the text ``[wheel build]``
 * on a scheduled basis once a week
 * when it is started manually.
-* when there is a push to the repository with a github reference starting with ``refs/tags/v`` (and not ending with ``dev0``)
+* when there is a push to the repository with a GitHub reference starting with ``refs/tags/v`` (and not ending with ``dev0``)
 
 The action does not run on forks of the main SciPy repository. The wheels that
 are created are available as artifacts associated with a successful run of the
@@ -157,7 +150,7 @@ are uploaded to the
 repository.
 
 It is not advised to use cibuildwheel to build scipy wheels on your own system
-as it will automatically install gfortran compilers and various other
+as it will automatically install various
 dependencies. Instead, one could use an isolated Docker container to build
 Linux wheels.
 

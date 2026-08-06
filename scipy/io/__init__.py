@@ -5,6 +5,11 @@ Input and output (:mod:`scipy.io`)
 
 .. currentmodule:: scipy.io
 
+.. toctree::
+   :hidden:
+
+   io.matlab
+
 SciPy has many modules, classes, and functions available to read data
 from and write data to a variety of file formats.
 
@@ -105,9 +110,6 @@ from ._fortran import FortranFile, FortranEOFError, FortranFormattingError
 from ._fast_matrix_market import mminfo, mmread, mmwrite
 from ._idl import readsav
 from ._harwell_boeing import hb_read, hb_write
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import arff, harwell_boeing, idl, mmio, netcdf, wavfile
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

@@ -4,17 +4,13 @@ from scipy.datasets._utils import _clear_cache
 from scipy.datasets import ascent, face, electrocardiogram, download_all
 from numpy.testing import assert_equal, assert_almost_equal
 import os
+from threading import get_ident
 import pytest
 
-try:
-    import pooch
-except ImportError:
-    raise ImportError("Missing optional dependency 'pooch' required "
-                      "for scipy.datasets module. Please use pip or "
-                      "conda to install 'pooch'.")
+pooch = pytest.importorskip("pooch")
 
 
-data_dir = data_fetcher.path  # type: ignore
+data_dir = data_fetcher.path
 
 
 def _has_hash(path, expected_hash):
@@ -68,7 +64,10 @@ class TestDatasets:
 
 def test_clear_cache(tmp_path):
     # Note: `tmp_path` is a pytest fixture, it handles cleanup
-    dummy_basepath = tmp_path / "dummy_cache_dir"
+    thread_basepath = tmp_path / str(get_ident())
+    thread_basepath.mkdir()
+
+    dummy_basepath = thread_basepath / "dummy_cache_dir"
     dummy_basepath.mkdir()
 
     # Create three dummy dataset files for dummy dataset methods

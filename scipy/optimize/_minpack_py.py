@@ -7,8 +7,9 @@ from numpy import (atleast_1d, triu, shape, transpose, zeros, prod, greater,
                    finfo, inexact, issubdtype, dtype)
 from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
-from scipy._lib._util import _asarray_validated, _lazywhere, _contains_nan
+from scipy._lib._util import _asarray_validated, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
+import scipy._external.array_api_extra as xpx
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 # from ._lsq.common import make_strictly_feasible
@@ -33,7 +34,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                 msg += f" '{func_name}'."
             else:
                 msg += "."
-            msg += f'Shape should be {output_shape} but it is {shape(res)}.'
+            msg += f' Shape should be {output_shape} but it is {shape(res)}.'
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
@@ -42,8 +43,8 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
     return shape(res), dt
 
 
-def fsolve(func, x0, args=(), fprime=None, full_output=0,
-           col_deriv=0, xtol=1.49012e-8, maxfev=0, band=None,
+def fsolve(func, x0, args=(), fprime=None, full_output=False,
+           col_deriv=False, xtol=1.49012e-8, maxfev=0, band=None,
            epsfcn=None, factor=100, diag=None):
     """
     Find the roots of a function.
@@ -191,7 +192,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
 
 def _root_hybr(func, x0, args=(), jac=None,
-               col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
+               col_deriv=False, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
                factor=100, diag=None, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
@@ -212,10 +213,10 @@ def _root_hybr(func, x0, args=(), jac=None,
     band : tuple
         If set to a two-sequence containing the number of sub- and
         super-diagonals within the band of the Jacobi matrix, the
-        Jacobi matrix is considered banded (only for ``fprime=None``).
+        Jacobi matrix is considered banded (only for ``jac=None``).
     eps : float
         A suitable step length for the forward-difference
-        approximation of the Jacobian (for ``fprime=None``). If
+        approximation of the Jacobian (for ``jac=None``). If
         `eps` is less than the machine precision, it is assumed
         that the relative errors in the functions are of the order of
         the machine precision.
@@ -260,7 +261,7 @@ def _root_hybr(func, x0, args=(), jac=None,
     errors = {0: "Improper input parameters were entered.",
               1: "The solution converged.",
               2: "The number of calls to function has "
-                  "reached maxfev = %d." % maxfev,
+                 f"reached maxfev = {maxfev}.",
               3: f"xtol={xtol:f} is too small, no further improvement "
                   "in the approximate\n solution is possible.",
               4: "The iteration is not making good progress, as measured "
@@ -461,7 +462,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
                   f"column of the\n  Jacobian is at most {gtol:f} in "
                   "absolute value", None],
               5: ["Number of calls to function has reached "
-                  "maxfev = %d." % maxfev, ValueError],
+                  f"maxfev = {maxfev}.", ValueError],
               6: [f"ftol={ftol:f} is too small, no further reduction "
                   "in the sum of squares\n  is possible.",
                   ValueError],
@@ -667,7 +668,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         case.
 
         .. versionadded:: 0.17
-    jac : callable, string or None, optional
+    jac : callable, str or None, optional
         Function with signature ``jac(x, ...)`` which computes the Jacobian
         matrix of the model function with respect to parameters as a dense
         array_like structure. It will be scaled according to provided `sigma`.
@@ -676,8 +677,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         a finite difference scheme, see `least_squares`.
 
         .. versionadded:: 0.18
-    full_output : boolean, optional
-        If True, this function returns additioal information: `infodict`,
+    full_output : bool, optional
+        If True, this function returns additional information: `infodict`,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9
@@ -773,6 +774,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     RuntimeError
         if the least-squares minimization fails.
 
+    TypeError
+        if the number of data points is fewer than the number of parameters
+
     OptimizeWarning
         if covariance of the parameters can not be estimated.
 
@@ -798,6 +802,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     orders of magnitude can lead to incorrect results. For the 'trf' and
     'dogbox' methods, the `x_scale` keyword argument can be used to scale
     the parameters.
+
+    `curve_fit` is for local optimization of parameters to minimize the sum of squares
+    of residuals. For global optimization, other choices of objective function, and
+    other advanced features, consider using SciPy's :ref:`tutorial_optimize_global`
+    tools or the `LMFIT <https://lmfit.github.io/lmfit-py/index.html>`_ package.
 
     References
     ----------
@@ -931,7 +940,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     else:
         ydata = np.asarray(ydata, float)
 
-    if isinstance(xdata, (list, tuple, np.ndarray)):
+    if isinstance(xdata, list | tuple | np.ndarray):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
         if check_finite:
@@ -946,14 +955,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     # the x-y data are already checked, and they don't contain nans.
     if not check_finite and nan_policy is not None:
         if nan_policy == "propagate":
-            raise ValueError("`nan_policy='propagate'` is not supported "
-                             "by this function.")
+            msg = "`nan_policy='propagate'` is not supported by this function."
+            raise ValueError(msg)
+        if nan_policy not in ("raise", "omit"):
+            # Override error message raised by _contains_nan
+            msg = "nan_policy must be one of {None, 'raise', 'omit'}"
+            raise ValueError(msg)
 
-        policies = [None, 'raise', 'omit']
-        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
-                                                   policies=policies)
-        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
-                                                   policies=policies)
+        x_contains_nan = _contains_nan(xdata, nan_policy)
+        y_contains_nan = _contains_nan(ydata, nan_policy)
 
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays
@@ -964,12 +974,21 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             xdata = xdata[..., ~has_nan]
             ydata = ydata[~has_nan]
 
+            # Also omit the corresponding entries from sigma
+            if sigma is not None:
+                sigma = np.asarray(sigma)
+                if sigma.ndim == 1:
+                    sigma = sigma[~has_nan]
+                elif sigma.ndim == 2:
+                    sigma = sigma[~has_nan, :]
+                    sigma = sigma[:, ~has_nan]
+
     # Determine type of sigma
     if sigma is not None:
         sigma = np.asarray(sigma)
 
         # if 1-D or a scalar, sigma are errors, define transform = 1/sigma
-        if sigma.size == 1 or sigma.shape == (ydata.size, ):
+        if sigma.size == 1 or sigma.shape == (ydata.size,):
             transform = 1.0 / sigma
         # if 2-D, sigma is the covariance matrix,
         # define transform = L such that L L^T = C
@@ -1002,7 +1021,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if ydata.size != 1 and n > ydata.size:
             raise TypeError(f"The number of func parameters={n} must not"
                             f" exceed the number of data points={ydata.size}")
-        res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
+        res = leastsq(func, p0, Dfun=jac, full_output=True, **kwargs)
         popt, pcov, infodict, errmsg, ier = res
         ysize = len(infodict['fvec'])
         cost = np.sum(infodict['fvec'] ** 2)
@@ -1058,7 +1077,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         return popt, pcov
 
 
-def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
+def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=False):
     """Perform a simple check on the gradient for correctness.
 
     """
@@ -1072,7 +1091,7 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     ldfjac = m
     fjac = atleast_1d(Dfcn(x, *args))
     fjac = fjac.reshape((m, n))
-    if col_deriv == 0:
+    if not col_deriv:
         fjac = transpose(fjac)
 
     xp = zeros((n,), float)
@@ -1104,14 +1123,14 @@ def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
         if use_accel:
             p2 = func(p1, *args)
             d = p2 - 2.0 * p1 + p0
-            p = _lazywhere(d != 0, (p0, p1, d), f=_del2, fillvalue=p2)
+            p = xpx.apply_where(d != 0, (p0, p1, d), _del2, fill_value=p2)
         else:
             p = p1
-        relerr = _lazywhere(p0 != 0, (p, p0), f=_relerr, fillvalue=p)
+        relerr = xpx.apply_where(p0 != 0, (p, p0), _relerr, fill_value=p)
         if np.all(np.abs(relerr) < xtol):
             return p
         p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    msg = f"Failed to converge after {maxiter} iterations, value is {p}"
     raise RuntimeError(msg)
 
 
@@ -1120,14 +1139,14 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
     Find a fixed point of the function.
 
     Given a function of one or more variables and a starting point, find a
-    fixed point of the function: i.e., where ``func(x0) == x0``.
+    fixed point of the function: i.e., where ``func(xf) == xf``.
 
     Parameters
     ----------
     func : function
         Function to evaluate.
     x0 : array_like
-        Fixed point of function.
+        Guess of fixed point of function.
     args : tuple, optional
         Extra arguments to `func`.
     xtol : float, optional
@@ -1140,6 +1159,11 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
         convergence acceleration [1]_. The "iteration" method simply iterates
         the function until convergence is detected, without attempting to
         accelerate the convergence.
+
+    Returns
+    -------
+    xf : array
+        Fixed point of function.
 
     References
     ----------

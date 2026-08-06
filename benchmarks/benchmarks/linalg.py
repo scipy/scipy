@@ -19,7 +19,7 @@ def random(size):
 class Bench(Benchmark):
     params = [
         [20, 100, 500, 1000],
-        ['contig', 'nocont'],
+        ['contig', 'nocont', 'fcontig'],
         ['numpy', 'scipy']
     ]
     param_names = ['size', 'contiguous', 'module']
@@ -39,12 +39,15 @@ class Bench(Benchmark):
             a[i, i] = 10*(.1+a[i, i])
         b = random([size])
 
-        if contig != 'contig':
+        if contig == 'nocont':
             a = a[-1::-1, -1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
+        elif contig == 'fcontig':
+            a = np.asfortranarray(a)
 
         self.a = a
         self.b = b
+        self.a_pos = a @ a.T + size * np.eye(size)
 
     def time_solve(self, size, contig, module):
         if module == 'numpy':
@@ -78,28 +81,179 @@ class Bench(Benchmark):
         else:
             sl.eigvals(self.a)
 
+    def time_geneig(self, size, contig, module):
+        if module == 'numpy':
+            pass
+        else:
+            sl.eig(self.a, self.a, check_finite=True)
+
     def time_svd(self, size, contig, module):
         if module == 'numpy':
             nl.svd(self.a)
         else:
             sl.svd(self.a)
 
-    # Retain old benchmark results (remove this if changing the benchmark)
-    time_det.version = (
-        "87e530ee50eb6b6c06c7a8abe51c2168e133d5cbd486f4c1c2b9cedc5a078325"
-    )
-    time_eigvals.version = (
-        "9d68d3a6b473df9bdda3d3fd25c7f9aeea7d5cee869eec730fb2a2bcd1dfb907"
-    )
-    time_inv.version = (
-        "20beee193c84a5713da9749246a7c40ef21590186c35ed00a4fe854cce9e153b"
-    )
-    time_solve.version = (
-        "1fe788070f1c9132cbe78a47fdb4cce58266427fc636d2aa9450e3c7d92c644c"
-    )
-    time_svd.version = (
-        "0ccbda456d096e459d4a6eefc6c674a815179e215f83931a81cfa8c18e39d6e3"
-    )
+    def time_cholesky(self, size, contig, module):
+        if module == 'numpy':
+            nl.cholesky(self.a_pos)
+        else:
+            sl.cholesky(self.a_pos)
+
+
+
+class BatchedSolveBench(Benchmark):
+    params = [
+        [(100, 10, 10), (100, 20, 20), (100, 100)],
+        ["gen", "pos", "sym", "diagonal", "tridiagonal", "banded"],
+        ["scipy/detect", "scipy/assume", "numpy"]
+    ]
+    param_names = ["shape", "structure" ,"module"]
+
+    def setup(self, shape, structure, module):
+        a = random(shape)
+        # larger diagonal ensures non-singularity:
+        for i in range(shape[-1]):
+            a[..., i, i] = 10*(.1+a[..., i, i])
+
+        if structure == "pos":
+            self.a = a @ a.mT
+        elif structure == "sym":
+            self.a = a + a.mT
+        elif structure == "diagonal":
+            self.a = np.zeros_like(a)
+            for i in range(shape[-1]):
+                self.a[..., i, i] = a[..., i, i]
+        elif structure == "tridiagonal":
+            self.a = np.zeros_like(a)
+            for i in range(shape[-1]):
+                self.a[..., i, i] = a[..., i, i]
+            for i in range(shape[-1]-1):
+                self.a[..., i+1, i] = a[..., i+1, i]
+            for i in range(shape[-1]-1):
+                self.a[..., i, i+1] = a[..., i, i+1]
+        elif structure == "banded":
+            self.a = np.zeros_like(a)
+            self.a += np.triu(np.tril(a, k=5), k=-5)
+        else:
+            self.a = a
+
+        self.b = random([a.shape[-1]])
+
+        self.kwd = {}
+        if module.split("/")[-1] == "assume":
+            self.kwd = {"assume_a": structure}
+
+    def time_solve(self, shape, structure, module):
+        if module == 'numpy':
+            nl.solve(self.a, self.b)
+        else:
+            sl.solve(self.a, self.b, check_finite=False, **self.kwd)
+
+
+class BatchedSVDBench(Benchmark):
+    params = [
+        [(10, 10, 10, 2), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_svd(self, shape, module):
+        if module == 'numpy':
+            nl.svd(self.a)
+        else:
+            sl.svd(self.a)
+
+
+class BatchedPinvBench(Benchmark):
+    params = [
+        [(10, 10, 10, 2), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_pinv(self, shape, module):
+        if module == 'numpy':
+            nl.pinv(self.a)
+        else:
+            sl.pinv(self.a)
+
+
+class BatchedLstsqBench(Benchmark):
+    params = [
+        [(10, 10, 50, 2), (100, 20, 5), (100, 10, 10), (100, 5, 20), (100, 2, 50)],
+    ]
+    param_names = ['shape']
+
+    def setup(self, shape):
+         self.a = random(shape)
+         self.b = random((shape[-2],))
+
+    def time_lstsq(self, shape):
+        sl.lstsq(self.a, self.b, check_finite=False)
+
+
+class BatchedEigBench(Benchmark):
+    params = [
+        [(10, 10, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_eig(self, shape, module):
+        if module == 'numpy':
+            nl.eig(self.a)
+        else:
+            sl.eig(self.a)
+
+
+class BatchedCholeskyBench(Benchmark):
+    params = [
+        [(100, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100), (100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names  = ["shape", "module"]
+
+    def setup(self, shape, module):
+        x = random(shape[:-1] + (1000,))
+        self.a = x @ np.swapaxes(x, axis1=-2, axis2=-1)
+
+    def time_cholesky(self, shape, module):
+        if module == "numpy":
+            nl.cholesky(self.a)
+        else:
+            sl.cholesky(self.a)
+
+
+class BatchedQRBench(Benchmark):
+    params = [
+        [(100, 10, 10), (100, 20, 20), (100, 100)],
+        ["full/complete", "economic/reduced", "r/r", "raw/raw"],
+        ["scipy", "numpy"]
+    ]
+    param_names = ["shape", "mode", "module"]
+
+    def setup(self, shape, mode, module):
+        self.a = random(shape)
+
+        if module == "scipy":
+            self.kwd = {"mode": mode.split("/")[0]}
+        elif module == "numpy":
+            self.kwd = {"mode": mode.split("/")[1]}
+
+    def time_solve(self, shape, mode, module):
+        if module == "numpy":
+            nl.qr(self.a, **self.kwd)
+        else:
+            sl.qr(self.a, **self.kwd)
 
 
 class Norm(Benchmark):

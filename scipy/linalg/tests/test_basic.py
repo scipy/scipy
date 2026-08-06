@@ -1,14 +1,16 @@
+import os
+import platform
+import math
 import itertools
 import warnings
 
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
                    float32)
-from numpy.random import random
 
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
-                           assert_array_equal, suppress_warnings)
+                           assert_array_equal)
 import pytest
 from pytest import raises as assert_raises
 
@@ -20,10 +22,23 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
+from scipy.conftest import skip_xp_invalid_arg
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+parametrize_overwrite_arg = pytest.mark.parametrize(
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}],
+    ids=["True", "False", "None"]
+)
+
+
+parametrize_overwrite_b_arg = pytest.mark.parametrize(
+    "overwrite_b_kw", [{"overwrite_b": True}, {"overwrite_b": False}, {}],
+    ids=["True", "False", "None"]
+)
 
 
 def _eps_cast(dtyp):
@@ -533,10 +548,8 @@ class TestSolveHBanded:
         assert x.shape == (0, 0)
         assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
-class TestSolve:
-    def setup_method(self):
-        np.random.seed(1234)
 
+class TestSolve:
     def test_20Feb04_bug(self):
         a = [[1, 1], [1.0, 0]]  # ok
         x0 = solve(a, [1, 0j])
@@ -630,8 +643,9 @@ class TestSolve:
             assert_array_almost_equal(dot(a, x), b)
 
     def test_nils_20Feb04(self):
+        rng = np.random.default_rng(1234)
         n = 2
-        A = random([n, n])+random([n, n])*1j
+        A = rng.random([n, n])+rng.random([n, n])*1j
         X = zeros((n, n), 'D')
         Ainv = inv(A)
         R = identity(n)+identity(n)*0j
@@ -641,47 +655,50 @@ class TestSolve:
         assert_array_almost_equal(X, Ainv)
 
     def test_random(self):
-
+        rng = np.random.default_rng(1234)
         n = 20
-        a = random([n, n])
+        a = rng.random([n, n])
         for i in range(n):
             a[i, i] = 20*(.1+a[i, i])
         for i in range(4):
-            b = random([n, 3])
+            b = rng.random([n, 3])
             x = solve(a, b)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_random_complex(self):
+        rng = np.random.default_rng(1234)
         n = 20
-        a = random([n, n]) + 1j * random([n, n])
+        a = rng.random([n, n]) + 1j * rng.random([n, n])
         for i in range(n):
             a[i, i] = 20*(.1+a[i, i])
         for i in range(2):
-            b = random([n, 3])
+            b = rng.random([n, 3])
             x = solve(a, b)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_random_sym(self):
+        rng = np.random.default_rng(1234)
         n = 20
-        a = random([n, n])
+        a = rng.random([n, n])
         for i in range(n):
             a[i, i] = abs(20*(.1+a[i, i]))
             for j in range(i):
                 a[i, j] = a[j, i]
         for i in range(4):
-            b = random([n])
+            b = rng.random([n])
             x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
     def test_random_sym_complex(self):
+        rng = np.random.default_rng(1234)
         n = 20
-        a = random([n, n])
-        a = a + 1j*random([n, n])
+        a = rng.random([n, n])
+        a = a + 1j*rng.random([n, n])
         for i in range(n):
             a[i, i] = abs(20*(.1+a[i, i]))
             for j in range(i):
                 a[i, j] = conjugate(a[j, i])
-        b = random([n])+2j*random([n])
+        b = rng.random([n])+2j*rng.random([n])
         for i in range(2):
             x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
@@ -732,8 +749,9 @@ class TestSolve:
                                                 [-4-5.j, -3+4.j],
                                                 [6.j, 2-3.j]]))
 
-    def test_hermitian(self):
-        # An upper triangular matrix will be used for hermitian matrix a
+    @pytest.mark.parametrize("assume_a", ['her', 'sym'])
+    def test_symmetric_hermitian(self, assume_a):
+        # An upper triangular matrix will be used for symmetric/hermitian matrix a
         a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
                       [0, -4.63, -1.84+0.03j, 2.21+0.21j],
                       [0, 0, -8.87, 1.58-0.90j],
@@ -742,15 +760,18 @@ class TestSolve:
                       [-9.58+3.88j, -24.79-8.40j],
                       [-0.77-16.05j, 4.23-70.02j],
                       [7.79+5.48j, -35.39+18.01j]])
-        res = np.array([[2.+1j, -8+6j],
-                        [3.-2j, 7-2j],
-                        [-1+2j, -1+5j],
-                        [1.-1j, 3-4j]])
-        x = solve(a, b, assume_a='her')
-        assert_array_almost_equal(x, res)
-        # Also conjugate a and test for lower triangular data
-        x = solve(a.conj().T, b, assume_a='her', lower=True)
-        assert_array_almost_equal(x, res)
+
+        a2 = a.T if assume_a == 'sym' else a.conj().T  # for testing `lower`
+        a3 = a + a2                                    # for reference solution
+        a3[np.arange(4), np.arange(4)] = np.diag(a)
+        ref = solve(a3, b, assume_a='general')
+
+        x = solve(a, b, assume_a=assume_a)
+        assert_array_almost_equal(x, ref)
+        # Also transpose(/conjugate) `a` and test for lower triangular data
+        # This also tests gh-22265 resolution; otherwise, a warning would be emitted
+        x = solve(a2, b, assume_a=assume_a, lower=True)
+        assert_array_almost_equal(x, ref)
 
     def test_pos_and_sym(self):
         A = np.arange(1, 10).reshape(3, 3)
@@ -772,19 +793,50 @@ class TestSolve:
         b = np.arange(9)[:, None]
         assert_raises(LinAlgError, solve, a, b)
 
-    def test_ill_condition_warning(self):
-        a = np.array([[1, 1, 1],
-                      [1+1e-16, 1-1e-16, 1],
-                      [1-1e-16, 1+1e-16, 1],
-                      ])
-        b = np.ones(3)
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            assert_raises(LinAlgWarning, solve, a, b)
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', 'banded', None))
+    def test_ill_condition_warning(self, structure):
+        rng = np.random.default_rng(234859349452)
+        n = 10
+        d = np.logspace(0, 50, n)
+        A = np.diag(d)
+        b = rng.random(size=n)
+        message = "(Ill-conditioned matrix|An ill-conditioned matrix)"
+        with pytest.warns(LinAlgWarning, match=message):
+            solve(A, b, assume_a=structure)
+
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', None))
+    def test_exactly_singular_gh22263(self, structure):
+        n = 10
+        A = np.zeros((n, n))
+        b = np.ones(n)
+        with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
+            solve(A, b, assume_a=structure)
+
+    @pytest.mark.parametrize('b', [0, 1, [0, 1]])
+    def test_singular_scalar(self, b):
+        # regression test for gh-24355: scalar a=0 is singular
+        # thus should raise the same error
+
+        with pytest.raises(LinAlgError):
+            a = np.zeros((1, 1))
+            solve(a, b)
+
+        with pytest.raises(LinAlgError):
+            solve(0, b)
+
+        with pytest.raises(LinAlgError):
+            solve([[0]], b)
 
     def test_multiple_rhs(self):
         a = np.eye(2)
-        b = np.random.rand(2, 3, 4)
+        rng = np.random.default_rng(1234)
+        b = rng.random((2, 12))
         x = solve(a, b)
         assert_array_almost_equal(x, b)
 
@@ -795,6 +847,7 @@ class TestSolve:
         x = solve(np.tril(A)/9, np.ones(3), transposed=False)
         assert_array_almost_equal(x, [9, -5.4, -1.2])
 
+    @pytest.mark.skip(reason="1. why? 2. deprecate the kwarg altogether?")
     def test_transposed_notimplemented(self):
         a = np.eye(3).astype(complex)
         with assert_raises(NotImplementedError):
@@ -810,54 +863,46 @@ class TestSolve:
     def test_assume_a_keyword(self):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
-    @pytest.mark.skip(reason="Failure on OS X (gh-7500), "
-                             "crash on Windows (gh-8064)")
-    def test_all_type_size_routine_combinations(self):
-        sizes = [10, 100]
-        assume_as = ['gen', 'sym', 'pos', 'her']
-        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-        for size, assume_a, dtype in itertools.product(sizes, assume_as,
-                                                       dtypes):
-            is_complex = dtype in (np.complex64, np.complex128)
-            if assume_a == 'her' and not is_complex:
-                continue
+    @pytest.mark.parametrize("size", [10, 100])
+    @pytest.mark.parametrize("assume_a", ['gen', 'sym', 'pos', 'her', 'tridiagonal'])
+    @pytest.mark.parametrize(
+        "dtype", [np.float32, np.float64, np.complex64, np.complex128]
+    )
+    def test_all_type_size_routine_combinations(self, size, dtype, assume_a):
+        rng = np.random.default_rng(1234)
+        is_complex = dtype in (np.complex64, np.complex128)
 
-            err_msg = (f"Failed for size: {size}, assume_a: {assume_a},"
-                       f"dtype: {dtype}")
+        a = rng.standard_normal((size, size)).astype(dtype)
+        b = rng.standard_normal(size).astype(dtype)
+        if is_complex:
+            a += (1j*rng.standard_normal((size, size))).astype(dtype)
 
-            a = np.random.randn(size, size).astype(dtype)
-            b = np.random.randn(size).astype(dtype)
-            if is_complex:
-                a = a + (1j*np.random.randn(size, size)).astype(dtype)
+        if assume_a == 'sym':  # Can still be complex but only symmetric
+            a = a + a.T
+        elif assume_a == 'her':  # Handle hermitian matrices here instead
+            a = a + a.T.conj()
+        elif assume_a == 'pos':
+            a = a.T.conj() @ a + 0.1*np.eye(size)
+        elif assume_a == 'tridiagonal':
+            a = (np.diag(np.diag(a)) +
+                 np.diag(np.diag(a, 1), 1) +
+                 np.diag(np.diag(a, -1), -1)
+            )
 
-            if assume_a == 'sym':  # Can still be complex but only symmetric
-                a = a + a.T
-            elif assume_a == 'her':  # Handle hermitian matrices here instead
-                a = a + a.T.conj()
-            elif assume_a == 'pos':
-                a = a.conj().T.dot(a) + 0.1*np.eye(size)
+        tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
 
-            tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
+        if assume_a in ['gen', 'sym', 'her']:
+            # We revert the tolerance from before
+            #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
+            if dtype in (np.float32, np.complex64):
+                tol *= 10
 
-            if assume_a in ['gen', 'sym', 'her']:
-                # We revert the tolerance from before
-                #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
-                if dtype in (np.float32, np.complex64):
-                    tol *= 10
+        x = solve(a, b, assume_a=assume_a)
+        assert_allclose(a @ x, b, atol=tol * size, rtol=tol * size)
 
-            x = solve(a, b, assume_a=assume_a)
-            assert_allclose(a.dot(x), b,
-                            atol=tol * size,
-                            rtol=tol * size,
-                            err_msg=err_msg)
-
-            if assume_a == 'sym' and dtype not in (np.complex64,
-                                                   np.complex128):
-                x = solve(a, b, assume_a=assume_a, transposed=True)
-                assert_allclose(a.dot(x), b,
-                                atol=tol * size,
-                                rtol=tol * size,
-                                err_msg=err_msg)
+        if assume_a == 'sym' and not is_complex:
+            x = solve(a, b, assume_a=assume_a, transposed=True)
+            assert_allclose(a @ x, b, atol=tol * size, rtol=tol * size)
 
     @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
@@ -869,6 +914,13 @@ class TestSolve:
         assert x.size == 0
         dt_nonempty = solve(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b)).dtype
         assert x.dtype == dt_nonempty
+        assert x.shape == np.linalg.solve(a, b).shape
+
+        a = np.ones((3, 0, 2, 2), dtype=dt_a)
+        b = np.ones((2, 4), dtype=dt_b)
+        x = solve(a, b)
+        assert x.shape == (3, 0, 2, 4)
+        assert x.dtype == dt_nonempty
 
     def test_empty_rhs(self):
         a = np.eye(2)
@@ -878,10 +930,11 @@ class TestSolve:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
-    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'lower triangular',
-                                          'upper triangular', 'symmetric', 'hermitian',
-                                          'positive definite', 'general',
-                                          'sym', 'her', 'pos', 'gen'])
+    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
+                                          'lower triangular', 'upper triangular',
+                                          'pos', 'positive definite',
+                                          'symmetric', 'hermitian', 'general',
+                                          'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
     @pytest.mark.parametrize('transposed', [True, False])
     @pytest.mark.parametrize('overwrite', [True, False])
@@ -889,7 +942,7 @@ class TestSolve:
     def test_structure_detection(self, dtype, assume_a, nrhs, transposed,
                                  overwrite, fortran):
         rng = np.random.default_rng(982345982439826)
-        n = 5
+        n = 5 if not assume_a == 'banded' else 20
         b = rng.random(size=(n,) + nrhs)
         A = rng.random(size=(n, n))
 
@@ -907,13 +960,14 @@ class TestSolve:
             A = (np.diag(np.diag(A))
                  + np.diag(np.diag(A, -1), -1)
                  + np.diag(np.diag(A, 1), 1))
+        elif assume_a == 'banded':
+            A = np.triu(np.tril(A, 2), -1)
         elif assume_a in {'symmetric', 'sym'}:
             A = A + A.T
         elif assume_a in {'hermitian', 'her'}:
             A = A + A.conj().T
         elif assume_a in {'positive definite', 'pos'}:
-            A = A + A.T
-            A += np.diag(A.sum(axis=1))
+            A = A @ A.T.conj()
 
         if fortran:
             A = np.asfortranarray(A)
@@ -929,19 +983,287 @@ class TestSolve:
             return
 
         res = solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
-                    transposed=transposed)
+                    transposed=transposed, assume_a=assume_a)
 
+        # Check that solution this solution is *correct*
+        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
+        assert_allclose(res, ref)
+
+        # Check that `solve` correctly identifies the structure and returns
+        # *exactly* the same solution whether `assume_a` is specified or not
+        if assume_a != 'banded':  # structure detection removed for banded
+            assert_allclose(
+                solve(A_copy, b_copy, transposed=transposed), res, atol=1e-15
+            )
+
+        # Check that overwrite was respected
         if not overwrite:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
 
-        assume_a = 'sym' if assume_a in {'positive definite', 'pos'} else assume_a
+    @pytest.mark.parametrize(
+        "assume_a",
+        [
+            None, "diagonal", "general", "upper triangular", "lower triangular", "pos",
+        ]
+    )
+    def test_vs_np_solve(self, assume_a):
+        e = np.eye(2)
+        a = np.arange(1, 4*3*2 + 1).reshape((4, 3, 2, 1, 1)) * e
 
-        ref = solve(A_copy, b_copy, assume_a=assume_a, transposed=transposed)
-        assert_equal(res, ref)
+        b = np.ones(2)
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
 
-        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
-        assert_allclose(res, ref)
+        b = np.ones((2, 1))
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
+
+        b = np.ones((2, 2)) * [1, 2]
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
+
+    def test_pos_lower(self):
+        # regression test for
+        # https://github.com/scipy/scipy/pull/23071#issuecomment-3085826112
+        rng = np.random.default_rng(0)
+        a = rng.normal(size=(4, 4))
+        a = np.tril(np.matmul(a, np.conj(a.T)))  # lower triangle of hermitian array
+        b = rng.normal(size=(4, 2))
+        out = solve(a, b, assume_a='pos', lower=True)
+
+        aa = a + a.T - np.diag(np.diag(a))   # the full hermitian array
+        result_np = np.linalg.solve(aa, b)
+        assert_allclose(out, result_np, atol=1e-15)
+
+        # repeat with uplo='U'
+        out = solve(a.T, b, assume_a='pos', lower=False)
+        assert_allclose(out, result_np, atol=1e-15)
+
+    def test_pos_fails_sym_complex(self):
+        # regression test for the `solve` analog of gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+        b = np.eye(2)
+
+        ainv = solve(a, b)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = solve(a, b, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does solve.
+        ainv_chol = solve(a, b, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with inv.
+        ainv_inv = inv(a, assume_a="pos")
+        assert_allclose(ainv_chol, ainv_inv, atol=1e-14)
+
+    def test_readonly(self):
+        a = np.eye(3)
+        a.flags.writeable = False
+        b = np.ones(3)
+        x = solve(a, b)
+        assert_allclose(x, b, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, ::-1, :, :]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use b with a negative stride now
+        b = np.ones((2, 4))[:, ::-1]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, :, ::-1, :]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use b with a negative stride now
+        b = np.ones((2, 4))[::-1, :]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 4)
+        a = a[..., ::2]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use strided b now
+        b = np.ones(4)[::2]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 6, 2, 2)
+        a = a[:, ::2, ...]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use strided b now
+        b = np.ones((2, 6))[:, ::2]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_weird_strides(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 2, 2)
+        a = a.transpose(1, 3, 4, 0, 2)
+
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize('a_dtype', [int, float])
+    @pytest.mark.parametrize('a_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_dtype', [int, float])
+    @pytest.mark.parametrize('b_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_ndim', [1, 2])    # XXX ndim > 2
+    @pytest.mark.parametrize('transposed', [True, False])
+    @pytest.mark.parametrize('assume_a', [None, "banded"]) # separate branches in C code
+    def test_overwrite_args(
+        self, overwrite_kw, overwrite_b_kw, a_dtype, a_order,
+        b_dtype, b_order, b_ndim, transposed, assume_a
+    ):
+        n = 3
+        a = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
+        a = a.astype(a_dtype, order=a_order)
+
+        b = np.arange(n)
+        if b_ndim > 1:
+            b = np.stack([b*j for j in range(b_ndim)]).T
+        b = b.astype(b_dtype, order=b_order)
+
+        a_ref = a.copy()
+        b_ref = b.copy()
+
+        # solve and check that the solution is correct for all parameters
+        x = solve(a, b, **overwrite_kw, **overwrite_b_kw,
+                transposed=transposed, assume_a=assume_a)
+        a_or_aT = a_ref.T if transposed else a_ref
+        assert_allclose(a_or_aT @ x, b_ref, atol=1e-14)
+
+        # now check that it worked in-place where expected
+        overwrite_a = overwrite_kw.get('overwrite_a', False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags['F_CONTIGUOUS']
+
+        overwrite_b = overwrite_b_kw.get('overwrite_b', False)
+        b_inplace = overwrite_b and (b.dtype != int) and b.flags['F_CONTIGUOUS']
+
+        assert np.shares_memory(x, b) == b_inplace
+
+        # for `assume_a="banded"`, the `overwrite_a` argument is ignored for now
+        assert (b == b_ref).all() != b_inplace
+        assert (a == a_ref).all() != a_inplace or assume_a == "banded"
+
+    def test_posdef_not_posdef(self):
+        # the `b` matrix is invertible but not positive definite
+        a = np.arange(9).reshape(3, 3)
+        A = a + a.T + np.eye(3)
+        b = np.ones(3)
+
+        # cholesky solver fails, and the routine falls back to the general inverse
+        x0 = solve(A, b)
+        assert_allclose(A @ x0, b, atol=1e-14)
+
+        # but it does not fall back if `assume_a` is given
+        with assert_raises(LinAlgError):
+            solve(A, b, assume_a='pos')
+
+    def test_diagonal(self):
+        a = np.stack([np.triu(np.ones((3, 3))), np.diag(np.arange(1, 4))])
+        b = np.ones(3)
+        x = solve(a, b)
+
+        # basic diagonal solve
+        assert_allclose(x[1, ...], 1 / np.arange(1, 4), atol=1e-14)
+
+        # ill-conditioned inputs warn
+        a = np.asarray([[1e30, 0], [0, 1]])
+        b = np.ones(2)
+        with pytest.warns(LinAlgWarning):
+            solve(a, b, assume_a="diagonal")
+
+        # singular input raises
+        a = np.asarray([[0, 0], [0, 1]])
+        b = np.ones(2)
+        with pytest.raises(LinAlgError):
+            solve(a, b, assume_a="diagonal")
+
+    def test_tridiagonal(self):
+        n = 4
+        a = -2*np.diag(np.ones(n)) + np.diag(np.ones(3), 1) + np.diag(np.ones(3), -1)
+        a = np.stack([np.triu(np.ones((n, n))), a])
+        b = np.ones(4)
+        x = solve(a, b)
+
+        # basic tridiag solve
+        assert_allclose(x[1, ...], np.asarray([-2., -3., -3., -2.]), atol=1e-15)
+
+        # ill-conditioned inputs warn
+        a[1, 0, 0] = 1e20
+        with pytest.warns(LinAlgWarning):
+            solve(a, b, assume_a="tridiagonal")
+
+        # singular inputss raise
+        a[1, 0, 0] = a[1, 0, 1] = 0
+        with pytest.raises(LinAlgError):
+            solve(a, b, assume_a="tridiagonal")
+
+    def test_banded(self):
+        rng = np.random.default_rng(982345982439826)
+
+        n = 20
+        A = rng.random((n, n))
+        b = rng.random(n)
+
+        # test if even for full matrix solver gives correct results
+        ref = np.linalg.solve(A, b)
+        res = solve(A, b, assume_a="banded")
+        assert_allclose(ref, res, atol=1e-14)
+
+        # restrict to banded
+        A = np.triu(np.tril(A, k=5), k=-7)
+        ref = np.linalg.solve(A, b)
+        res = solve(A, b, assume_a="banded")
+        assert_allclose(ref, res, atol=1e-14)
+
+        # ill-conditioned inputs warn
+        A[0, 0] = 1e40
+        with pytest.warns(LinAlgWarning):
+            solve(A, b, assume_a="banded")
+
+        # singular inputs raise
+        A[-1, :] = 0
+        with pytest.raises(LinAlgError):
+            solve(A, b, assume_a="banded")
 
 
 class TestSolveTriangular:
@@ -1027,9 +1349,6 @@ class TestSolveTriangular:
 
 
 class TestInv:
-    def setup_method(self):
-        np.random.seed(1234)
-
     def test_simple(self):
         a = [[1, 2], [3, 4]]
         a_inv = inv(a)
@@ -1039,9 +1358,10 @@ class TestInv:
         assert_array_almost_equal(dot(a, a_inv), np.eye(3))
 
     def test_random(self):
+        rng = np.random.default_rng(1234)
         n = 20
         for i in range(4):
-            a = random([n, n])
+            a = rng.random([n, n])
             for i in range(n):
                 a[i, i] = 20*(.1+a[i, i])
             a_inv = inv(a)
@@ -1054,9 +1374,10 @@ class TestInv:
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
 
     def test_random_complex(self):
+        rng = np.random.default_rng(1234)
         n = 20
         for i in range(4):
-            a = random([n, n])+2j*random([n, n])
+            a = rng.random([n, n])+2j*rng.random([n, n])
             for i in range(n):
                 a[i, i] = 20*(.1+a[i, i])
             a_inv = inv(a)
@@ -1075,11 +1396,367 @@ class TestInv:
         assert a_inv.size == 0
         assert a_inv.dtype == inv(np.eye(2, dtype=dt)).dtype
 
+        a = np.ones((3, 0, 2, 2), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.shape == (3, 0, 2, 2)
+
+        a = np.ones((3, 1, 0, 0), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.shape == (3, 1, 0, 0)
+
+    @parametrize_overwrite_arg
+    def test_overwrite_a(self, overwrite_kw):
+        n = 3
+        a0 = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
+
+        # int arrays are copied internally
+        a = a0.copy()
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # float C ordered arrays are copied, too
+        a = a0.copy().astype(float)
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: inv works inplace.
+        # IOW, the output is always the inverse, and the original input may be
+        # destroyed, depending on the `overwrite_a` kwarg value
+        a = a0.astype(float).copy(order='F')
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        assert (a == a0).all() != overwrite_a
+        assert np.shares_memory(a, a_inv) == overwrite_a
+
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+    @pytest.mark.parametrize(
+        "dtyp", [np.float16, np.float32, np.longdouble, np.clongdouble]
+    )
+    def test_dtypes(self, dtyp):
+        # backwards compat: inv(float16)->float32 ; inv(clongdouble)->complex128 etc
+        a = np.arange(4).reshape(2, 2).astype(dtyp)
+
+        a_inv = inv(a)
+        assert_allclose(a @ a_inv, np.eye(a.shape[0]), atol=100*np.finfo(a.dtype).eps)
+
+        dt_map = {
+            'e': 'f',  # float16 -> float32
+            'f': 'f',
+            'g': 'd',  # longdouble -> float64
+            'G': 'D'   # clongdouble -> complex128
+        }
+        assert a_inv.dtype.char == dt_map[a.dtype.char]
+
+    def test_readonly(self):
+        a = np.eye(3)
+        a.flags.writeable = False
+
+        a_inv = inv(a)
+        assert_allclose(a_inv, a, atol=1e-14)
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_batch_core_1x1(self, dt):
+        a = np.arange(3*2, dtype=dt).reshape(3, 2, 1, 1) + 1
+        a_inv = inv(a)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, 1.)
+
+    @parametrize_overwrite_arg
+    def test_batch_zero_stride(self, overwrite_kw):
+        a = np.arange(3*2*2, dtype=float).reshape(3, 2, 2)
+        aa = a[None, ...]
+        a_inv = inv(aa, **overwrite_kw)
+        assert a_inv.shape == aa.shape
+        assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
+
+        aa = a[:, None, ...]
+        a_inv = inv(aa, **overwrite_kw)
+        assert a_inv.shape == aa.shape
+        assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, ::-1, :, :]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, :, ::-1, :]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 4)
+        a = a[..., ::2]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == (2, 3, 2, 2)
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 6, 2, 2)
+        a = a[:, ::2, ...]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == (2, 3, 2, 2)
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=2e-13)
+
+    @parametrize_overwrite_arg
+    def test_singular(self, overwrite_kw):
+        # 2D case: A singular matrix: raise
+
+        with assert_raises(LinAlgError):
+            inv(np.ones((2, 2)))
+
+        # batched case: If all slices are singular, raise
+        with assert_raises(LinAlgError):
+            inv(np.ones((3, 2, 2)))
+
+        # XXX: shall we make this behavior configurable somehow?
+        # A "keep-going" option would be this:
+        # if some of the slices are singular and some are not,
+        # - singular slices are filled with nans
+        # - non-singular slices are inverted
+        # - there is no error
+        a = np.stack((np.ones((2, 2), dtype=complex), np.arange(4).reshape(2, 2)))
+        with assert_raises(LinAlgError):
+            inv(a)
+
+        # this would be true for a "keep-going" option
+        # assert np.isnan(a_inv[0, ...]).all()
+        # assert_allclose(a_inv[1, ...] @ a[1, ...],  np.eye(2), atol=1e-14)
+
+    def test_ill_cond(self):
+        a = np.diag([1., 1e-20])
+        with pytest.warns(LinAlgWarning):
+            inv(a)
+
+        a2 = np.stack([np.diag([1., 1e-20]), np.diag([1, 1]), np.diag([1, 1e-20])])
+        with pytest.warns(LinAlgWarning):
+            inv(a2)
+
+    def test_wrong_assume_a(self):
+        with assert_raises(KeyError):
+            inv(np.eye(2), assume_a="kaboom")
+
+    def test_posdef(self):
+        x = np.arange(25, dtype=float).reshape(5, 5)
+        y = x + x.T
+        y += 21*np.eye(5)
+
+        y_inv0 = inv(y)
+        y_inv1 = inv(y, assume_a="pos")
+
+        assert_allclose(y_inv1, y_inv0, atol=1e-15)
+
+        # check that the lower triangle is not referenced for `lower=False`
+        mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
+        y_inv2 = inv(y*mask, check_finite=False, assume_a="pos", lower=False)
+        assert_allclose(y_inv2, y_inv0, atol=1e-15)
+
+        # repeat with the upper triangle
+        y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos", lower=True)
+        assert_allclose(y_inv3, y_inv0, atol=1e-15)
+
+    @pytest.mark.parametrize('complex_', [False, True])
+    def test_posdef_not_posdef(self, complex_):
+        # the `b` matrix is invertible but not pos definite: test the "sym" fallback
+        a = np.arange(9).reshape(3, 3)
+        b = a + a.T + np.eye(3)
+        if complex_:
+            b = b + 1j*b
+
+        # cholesky solver fails, and the routine falls back to the symmetric inverse
+        b_inv0 = inv(b)
+        assert_allclose(b_inv0 @ b, np.eye(3), atol=3e-15)
+
+        # but it does not fall back if `assume_a` is given
+        with assert_raises(LinAlgError):
+            inv(b, assume_a='pos')
+
+        # test posdef fallback to the hermitian solver, too
+        if complex_:
+            a = np.arange(9).reshape(3, 3)
+            a = a + 1j*a
+            b = a + a.T.conj() + np.eye(3)
+            assert_allclose(inv(b) @ b, np.eye(3), atol=3e-15)
+
+    def test_pos_fails_sym_complex(self):
+        # regression test for gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+
+        ainv = inv(a)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = inv(a, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does inv
+        ainv_chol = inv(a, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with solve.
+        ainv_slv = solve(a, np.eye(2), assume_a="pos")
+        assert_allclose(ainv_chol, ainv_slv, atol=1e-14)
+
+        # Repeat it for bunch of simple cases to cover more branches
+        # Real symmetric, positive definite
+        a = np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real symmetric, NOT positive definite
+        a = -np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real, not symmetric
+        a = -np.eye(4) + np.ones(4)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # | Test                                  | is_symm | is_herm | pos def |
+        # |---------------------------------------|---------|---------|---------|
+        # | Complex, both sym+herm, pos def       |    1    |    1    |   yes   |
+        # | Complex, symmetric only               |    1    |    0    |    -    |
+        # | Complex, both sym+herm, NOT pos def   |    1    |    1    |   no    |
+        # | Complex, neither                      |    0    |    0    |    -    |
+        # | Complex, hermitian only, pos def      |    0    |    1    |   yes   |
+        # | Complex, hermitian only, NOT pos def  |    0    |    1    |   no    |
+
+        # Complex, both symmetric and hermitian, positive definite
+        a = (np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, symmetric only (not hermitian)
+        a = (np.eye(4)*1.0j + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, both symmetric and hermitian, NOT positive definite
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, neither symmetric nor hermitian
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, hermitian only, positive definite
+        a = np.array([[2, 1+1j], [1-1j, 2]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
+
+        # Complex, hermitian only, NOT positive definite
+        a = np.array([[-1, 1+1j], [1-1j, -1]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
+
+    @pytest.mark.parametrize('complex_', [False, True])
+    @pytest.mark.parametrize('sym_herm', ['sym', 'her'])
+    def test_sym_her(self, complex_, sym_herm):
+        # test "sym" and "her" modes
+        a = np.arange(9).reshape(3, 3)
+        if complex_:
+            a = a + 1j*a
+
+        if sym_herm == "sym":
+            b = a + a.T
+        else:   # sym_herm == "herm":
+            b = a + a.T.conj()
+
+        b = b + np.eye(3)
+
+        b_inv0 = np.linalg.inv(b)
+        assert_allclose(b_inv0 @ b, np.eye(3), atol=1e-14)
+
+        b_inv1 = inv(b, assume_a=sym_herm)
+        assert_allclose(b_inv0, b_inv1, atol=1e-15)
+
+        # check that the "other" triangle is not referenced
+        mask = np.where(1 - np.tri(*a.shape, -1) == 0, np.nan, 1)
+        b_inv2 = inv(b*mask, check_finite=False, assume_a=sym_herm, lower=False)
+        assert_allclose(b_inv2, b_inv0, atol=1e-15)
+
+        # repeat with the upper triangle
+        b_inv3 = inv(b*mask.T, check_finite=False, assume_a=sym_herm, lower=True)
+        assert_allclose(b_inv3, b_inv0, atol=1e-15)
+
+    def test_triangular_1(self):
+        x = np.arange(25, dtype=float).reshape(5, 5)
+        y = x + x.T
+        y += 21*np.eye(5)
+        y_inv0 = inv(y, assume_a='upper triangular')
+
+        # check that upper triangular differs from posdef
+        y_inv_posdef = inv(y, assume_a='pos')
+        assert not np.allclose(y_inv0, y_inv_posdef)
+
+    def test_triangular_2(self):
+        y = np.ones(25, dtype=float).reshape(5, 5)
+
+        y_inv_0_u = inv(np.triu(y))
+        assert_allclose(y_inv_0_u @ np.triu(y), np.eye(5), atol=1e-15)
+
+        y_inv_1_u = inv(y, assume_a='upper triangular')
+        assert_allclose(y_inv_1_u @ np.triu(y), np.eye(5), atol=1e-15)
+
+        # check that the lower triangle is not referenced for "upper triangular"
+        mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
+        y_inv_2_u = inv(y*mask, check_finite=False, assume_a='upper triangular')
+        assert_allclose(y_inv_2_u @ np.triu(y), np.eye(5), atol=1e-15)
+
+        # repeat for the lower triangular matrix
+        y_inv_0_l = inv(np.tril(y))
+        assert_allclose(y_inv_0_l @ np.tril(y), np.eye(5), atol=1e-15)
+
+        y_inv_1_l = inv(y, assume_a='lower triangular')
+        assert_allclose(y_inv_1_l @ np.tril(y), np.eye(5), atol=1e-15)
+
+        # check that the lower triangle is not referenced for "lower triangular"
+        mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
+        y_inv_2_l = inv(y*mask.T, check_finite=False, assume_a='lower triangular')
+        assert_allclose(y_inv_2_l @ np.tril(y), np.eye(5), atol=1e-15)
+
+    def test_diagonal(self):
+        a = np.stack([np.triu(np.ones((3, 3))), np.diag(np.arange(1, 4))])
+        inv_a = inv(a)
+
+        # basic diagonal invert
+        assert_allclose(inv_a[1], np.diag(1 / np.arange(1, 4)), atol=1e-14)
+
+        # ill-conditioned inputs warn
+        a = np.asarray([[1e30, 0], [0, 1]])
+        with pytest.warns(LinAlgWarning):
+            inv(a, assume_a="diagonal")
+
+        # singular input raises
+        a = np.asarray([[0, 0], [0, 1]])
+        with pytest.raises(LinAlgError):
+            inv(a, assume_a="diagonal")
+
 
 class TestDet:
-    def setup_method(self):
-        self.rng = np.random.default_rng(1680305949878959)
-
     def test_1x1_all_singleton_dims(self):
         a = np.array([[1]])
         deta = det(a)
@@ -1089,22 +1766,23 @@ class TestDet:
         a = np.array([[[[1]]]], dtype='f')
         deta = det(a)
         assert deta.dtype.char == 'd'
-        assert np.isscalar(deta)
-        assert deta == 1.
+        assert deta.shape == (1, 1)
+        assert_equal(deta, [[1.0]])
         a = np.array([[[1 + 3.j]]], dtype=np.complex64)
         deta = det(a)
         assert deta.dtype.char == 'D'
-        assert np.isscalar(deta)
-        assert deta == 1.+3.j
+        assert deta.shape == (1,)
+        assert_equal(deta, [1.+3.j])
 
     def test_1by1_stacked_input_output(self):
-        a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
+        rng = np.random.default_rng(1680305949878959)
+        a = rng.random([4, 5, 1, 1], dtype=np.float32)
         deta = det(a)
         assert deta.dtype.char == 'd'
         assert deta.shape == (4, 5)
         assert_allclose(deta, np.squeeze(a))
 
-        a = self.rng.random([4, 5, 1, 1], dtype=np.float32)*np.complex64(1.j)
+        a = rng.random([4, 5, 1, 1], dtype=np.float32)*np.complex64(1.j)
         deta = det(a)
         assert deta.dtype.char == 'D'
         assert deta.shape == (4, 5)
@@ -1112,12 +1790,13 @@ class TestDet:
 
     @pytest.mark.parametrize('shape', [[2, 2], [20, 20], [3, 2, 20, 20]])
     def test_simple_det_shapes_real_complex(self, shape):
-        a = self.rng.uniform(-1., 1., size=shape)
+        rng = np.random.default_rng(1680305949878959)
+        a = rng.uniform(-1., 1., size=shape)
         d1, d2 = det(a), np.linalg.det(a)
         assert_allclose(d1, d2)
 
-        b = self.rng.uniform(-1., 1., size=shape)*1j
-        b += self.rng.uniform(-0.5, 0.5, size=shape)
+        b = rng.uniform(-1., 1., size=shape)*1j
+        b += rng.uniform(-0.5, 0.5, size=shape)
         d3, d4 = det(b), np.linalg.det(b)
         assert_allclose(d3, d4)
 
@@ -1160,11 +1839,14 @@ class TestDet:
     # g and G dtypes are handled differently in windows and other platforms
     @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
                                      if x not in 'gG'])
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_sample_compatible_dtype_input(self, typ):
+        rng = np.random.default_rng(1680305949878959)
         n = 4
-        a = self.rng.random([n, n]).astype(typ)  # value is not important
+        a = rng.random([n, n]).astype(typ)  # value is not important
         assert isinstance(det(a), (np.float64 | np.complex128))
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_incompatible_dtype_input(self):
         # Double backslashes needed for escaping pytest regex.
         msg = 'cannot be cast to float\\(32, 64\\)'
@@ -1202,7 +1884,7 @@ class TestDet:
         a = np.empty((3, 0, 0), dtype=dt)
         d = det(a)
         assert d.shape == (3,)
-        assert d.dtype == det(np.empty((3, 1, 1), dtype=dt)).dtype
+        assert d.dtype == det(np.zeros((3, 1, 1), dtype=dt)).dtype
 
     def test_overwrite_a(self):
         # If all conditions are met then input should be overwritten;
@@ -1236,6 +1918,7 @@ def direct_lstsq(a, b, cmplx=0):
     return solve(a1, b1)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLstsq:
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
 
@@ -1347,6 +2030,10 @@ class TestLstsq:
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
                                     err_msg=f"driver: {lapack_driver}")
+
+                    # as documented, residuals is empty for an underdetermined problem
+                    residuals = out[1]
+                    assert residuals.size == 0
 
     @pytest.mark.parametrize("dtype", REAL_DTYPES)
     @pytest.mark.parametrize("n", (20, 200))
@@ -1480,11 +2167,11 @@ class TestLstsq:
                                       err_msg=f"driver: {lapack_driver}")
 
     def test_check_finite(self):
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # On (some) OSX this tests triggers a warning (gh-7538)
-            sup.filter(RuntimeWarning,
-                       "internal gelsd driver lwork query error,.*"
-                       "Falling back to 'gelss' driver.")
+            warnings.filterwarnings("ignore",
+                                    "internal gelsd driver lwork query error,.*"
+                                    "Falling back to 'gelss' driver.", RuntimeWarning)
 
         at = np.array(((1, 20), (-30, 4)))
         for dtype, bt, lapack_driver, overwrite, check_finite in \
@@ -1536,10 +2223,229 @@ class TestLstsq:
         dt_nonempty = lstsq(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b))[0].dtype
         assert x.dtype == dt_nonempty
 
-class TestPinv:
-    def setup_method(self):
-        np.random.seed(1234)
 
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_m_less_than_n(self, driver):
+        # if m < n, LAPACK needs a copy of b:
+        # B is (LDB, NRHS)-shaped, with LDB = max(1, M, N)
+        # https://www.netlib.org/lapack/explore-html/d6/d4b/dgelsy_8f.html
+        a = np.arange(3*4).reshape(3, 4) + 1
+        aa = np.stack((a, 2*a))
+        bb = np.stack((np.arange(3) + 1, 1 + 4*np.arange(3))).T
+
+        x, residues, rank, s = lstsq(aa, bb, lapack_driver=driver)
+        assert_allclose(x,
+                        np.asarray([[[-0.05  ,  0.7   ],
+                                     [ 0.025 ,  0.4   ],
+                                     [ 0.1   ,  0.1   ],
+                                     [ 0.175 , -0.2   ]],
+
+                                    [[-0.025 ,  0.35  ],
+                                     [ 0.0125,  0.2   ],
+                                     [ 0.05  ,  0.05  ],
+                                     [ 0.0875, -0.1   ]]]), atol=1e-15
+        )
+
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_m_larger_than_n(self, driver):
+        # similar to test_m_less_than_n: test copying with LDB=max(1, M, N)
+        a = np.arange(3*4).reshape(4, 3) + 1
+        aa = np.stack((a, 2*a))
+        bb = np.stack((np.arange(4) + 1, 1 + 4*np.arange(4))).T
+
+        x, residues, rank, s = lstsq(aa, bb, lapack_driver=driver)
+        assert_allclose(x,
+                        np.asarray([[[-0.05555556,  1.27777778],
+                                     [ 0.11111111,  0.44444444],
+                                     [ 0.27777778, -0.38888889]],
+
+                                    [[-0.02777778,  0.63888889],
+                                     [ 0.05555556,  0.22222222],
+                                     [ 0.13888889, -0.19444444]]]), atol=1e-15
+        )
+
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_residuals(self, driver):
+        # assert the (quirky) behavior of the `residuals` return
+        a = np.array([[1, 2], [4, 5], [3, 4]], dtype=float)
+        b = np.array([1, 2, 3], dtype=float)
+
+        m, n = a.shape
+        assert m > n    # backcompat: residuals are non-empty iff m > n and rank == n
+
+        # 1. b.shape == (n,)
+        x, resid, rank, s = lstsq(a, b, lapack_driver=driver)
+
+        assert rank == n
+
+        if driver != "gelsy":
+            assert resid.ndim == 0   # it's numpy scalar, in fact
+
+            delta = b - a @ x
+            manual_residuals = np.sum(delta * delta.conj(), axis=0)
+            assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+        else:
+            assert resid.ndim == 1 and resid.size == 0
+
+        # 2. b.shape == (n, nrhs)
+        b2 = np.stack((b, 2*b, 3*b, 4*b), axis=1)   # b1.shape=(3, 4), nrhs=4
+        nrhs = b2.shape[-1]
+        x2, resid2, rank2, s2 = lstsq(a, b2, lapack_driver=driver)
+
+        assert rank2 == n
+
+        if driver != "gelsy":
+            assert resid2.shape == (nrhs,)
+            delta2 = b2 - a @ x2
+            manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
+            assert_allclose(resid2, manual_residuals2, atol=1e-14)
+        else:
+            assert resid.ndim == 1 and resid.size == 0
+
+        # 3. b.shape == (n,), and a has batch shape (2,)
+        a3 = np.stack((a, 2*a))
+        b3 = b.copy()
+        batch_shape = a3.shape[:-2]
+
+        x3, resid3, ranks3, s3 = lstsq(a3, b3, lapack_driver=driver)
+        assert_equal(ranks3, np.asarray([n, n]))
+
+        if driver != "gelsy":
+            assert resid3.shape == (n,)
+            assert_allclose(resid3, [resid]*n, atol=1e-14)
+        else:
+            assert resid3.shape == (2, 0)
+
+        # 4. b.shape == (n, nhrs) and a has batch shape = (2,)
+        a4 = np.stack((a, 2*a))
+        batch_shape = a4.shape[:-2]
+        b4 = b2.copy()
+        x4, resid4, rank4, s4 = lstsq(a4, b4, lapack_driver=driver)
+
+        assert_equal(rank4, np.asarray([n, n]))
+
+        if driver != "gelsy":
+            assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
+            delta4 = b4 - a4 @ x4
+            manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
+            assert_allclose(resid4, manual_residual4, atol=1e-14)
+        else:
+            assert resid4.shape == (2, 0)
+
+    @pytest.mark.parametrize("driver", ["gelsd", "gelss", "gelsy"])
+    @pytest.mark.parametrize("shape_a", [(3, 2), (4, 3, 2)])
+    @pytest.mark.parametrize("shape_b", [(3,), (3, 1), (3, 5)])
+    def test_rank_deficient_residuals(self, driver, shape_a, shape_b):
+        rng = np.random.default_rng(seed=42)
+
+        # Insert one rank-deficient slice to check if `NaN` is returned
+        if len(shape_a) == 2:
+            a = np.zeros(shape_a)
+        else:
+            a = np.zeros(shape_a)
+            a[1:, :, 0] = 1
+            a[1:, :, 1:] = rng.normal(size=(shape_a[0]-1, shape_a[1], shape_a[-1]-1))
+
+        b = rng.normal(size=shape_b)
+
+        x, res, rank, _ = lstsq(a, b, lapack_driver=driver)
+
+        # Validate that the residuals are correct for full-rank slices and that `NaN` is
+        # inserted otherwise.
+        if driver != "gelsy":
+            if b.ndim == 1:
+                b = b[:, None]
+                x = x[..., None]
+                res = res[..., None]
+            res_ref = a @ x - b
+            res_ref = np.sum(res_ref * res_ref.conj(), axis=-2)
+
+            mask = rank == shape_a[-1]
+            assert_allclose(res[mask], res_ref[mask])
+            assert np.all(np.isnan(res[~mask]))
+        else:
+            assert res.shape == (a.shape[:-2] + (0,))
+
+
+    def test_errors(self):
+        a = np.ones((3, 4))
+        b = np.ones(4)
+
+        with pytest.raises(ValueError, match="LAPACK driver"):
+            lstsq(a, b, lapack_driver='krampus')
+
+        with pytest.raises(ValueError, match="Shape mismatch"):
+            lstsq(a, b)
+
+        with pytest.raises(ValueError, match="Input array"):
+            lstsq(np.ones(3), np.ones(3))
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize("driver", ["gelss", "gelsd", "gelsy"])
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("shape", [(2, 4, 3), (4, 3), (3, 4)])
+    @pytest.mark.parametrize("nrhs", [1, 5])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite(
+        self, overwrite_kw, overwrite_b_kw, driver, dtype, shape, nrhs, order
+    ):
+        rng = np.random.default_rng(seed=123456)
+        if dtype is not int:
+            a = np.asarray(rng.normal(size=shape), order=order)
+            b = np.asarray(rng.normal(size=(*shape[:-1], nrhs)), order=order)
+        else: # avoid issues with singularity
+            a = np.asarray(rng.integers(1000, size=shape), order=order)
+            b = np.asarray(rng.integers(1000, size=(*shape[:-1], nrhs)), order=order)
+
+        a_ref = np.copy(a)
+        b_ref = np.copy(b)
+
+        x, res, rank, S = lstsq(
+            a, b, **overwrite_kw, **overwrite_b_kw, lapack_driver=driver
+        )
+
+        # validate solution and residuals
+        a_T = a_ref.swapaxes(-2, -1)
+        if shape[-2] >= shape[-1]:
+            x_ref = solve(a_T @ a_ref, a_T @ b_ref)
+        else:
+            x_ref = a_T @ solve(a_ref @ a_T, b_ref)
+
+        assert_allclose(x_ref, x, atol=1e-12)
+
+        if driver != "gelsy" and shape[-2] >= shape[-1]:
+            res_ref = a_ref @ x - b_ref
+            res_ref = np.sum(res_ref * res_ref.conj(), axis=-2)
+            assert_allclose(res_ref, res, atol=1e-12)
+        else:
+            assert_allclose(np.zeros(shape[:-2] + (0,), x.dtype), res)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        overwrite_a = (
+            overwrite_a and
+            (dtype is not int) and
+            a.flags["F_CONTIGUOUS"] and
+            a.ndim <= 2
+        )
+
+        # Classical conditions: F_contiguity + should not be overwritten internally.
+        # Complemented by the fact that LAPACK requires a `b` of at least `max(m, n)`,
+        # hence if this is not the case `b` can not be used directly.
+        overwrite_b = overwrite_b_kw.get("overwrite_b", False)
+        overwrite_b = (
+            overwrite_b and
+            (dtype is not int) and
+            b.flags["F_CONTIGUOUS"] and
+            shape[0] >= shape[1]
+        )
+
+        assert np.all(a_ref == a) != overwrite_a
+        assert np.all(b_ref == b) != overwrite_b
+        assert np.shares_memory(x, b) == overwrite_b
+
+
+class TestPinv:
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a_pinv = pinv(a)
@@ -1589,9 +2495,10 @@ class TestPinv:
         assert_array_almost_equal(a_pinv, expected)
 
     def test_atol_rtol(self):
+        rng = np.random.default_rng(1234)
         n = 12
         # get a random ortho matrix for shuffling
-        q, _ = qr(np.random.rand(n, n))
+        q, _ = qr(rng.random((n, n)))
         a_m = np.arange(35.0).reshape(7, 5)
         a = a_m.copy()
         a[0, 0] = 0.001
@@ -1606,7 +2513,7 @@ class TestPinv:
         # Now adiff1 should be around atol value while adiff2 should be
         # relatively tiny
         assert_allclose(np.linalg.norm(adiff1), 5e-4, atol=5.e-4)
-        assert_allclose(np.linalg.norm(adiff2), 5e-14, atol=5.e-14)
+        assert_allclose(np.linalg.norm(adiff2), 5e-14, atol=7.e-14)
 
         # Now do the same but remove another sv ~4.234 via rtol
         a_p = pinv(a_m, atol=atol, rtol=rtol)
@@ -1624,10 +2531,6 @@ class TestPinv:
 
 
 class TestPinvSymmetric:
-
-    def setup_method(self):
-        np.random.seed(1234)
-
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a = np.dot(a, a.T)
@@ -1661,15 +2564,16 @@ class TestPinvSymmetric:
     def test_zero_eigenvalue(self):
         # https://github.com/scipy/scipy/issues/12515
         # the SYEVR eigh driver may give the zero eigenvalue > eps
-        a = np.array([[1,-1, 0], [-1, 2, -1], [0, -1, 1]])
+        a = np.array([[1, -1, 0], [-1, 2, -1], [0, -1, 1]])
         p = pinvh(a)
         assert_allclose(p @ a @ p, p, atol=1e-15)
         assert_allclose(a @ p @ a, a, atol=1e-15)
 
     def test_atol_rtol(self):
+        rng = np.random.default_rng(1234)
         n = 12
         # get a random ortho matrix for shuffling
-        q, _ = qr(np.random.rand(n, n))
+        q, _ = qr(rng.random((n, n)))
         a = np.diag([4, 3, 2, 1, 0.99e-4, 0.99e-5] + [0.99e-6]*(n-6))
         a = q.T @ a @ q
         a_m = np.diag([4, 3, 2, 1, 0.99e-4, 0.] + [0.]*(n-6))
@@ -1712,6 +2616,7 @@ def test_auto_rcond(scale, pinv_):
 
 class TestVectorNorms:
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_types(self):
         for dtype in np.typecodes['AllFloat']:
             x = np.array([1, 2, 3], dtype=dtype)
@@ -1774,12 +2679,12 @@ class TestMatrixNorms:
 
     def test_matrix_norms(self):
         # Not all of these are matrix norms in the most technical sense.
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         for n, m in (1, 1), (1, 3), (3, 1), (4, 4), (4, 5), (5, 4):
             for t in np.float32, np.float64, np.complex64, np.complex128, np.int64:
-                A = 10 * np.random.randn(n, m).astype(t)
+                A = 10 * rng.standard_normal((n, m)).astype(t)
                 if np.issubdtype(A.dtype, np.complexfloating):
-                    A = (A + 10j * np.random.randn(n, m)).astype(t)
+                    A += 10j * rng.standard_normal((n, m))
                     t_high = np.complex128
                 else:
                     t_high = np.float64
@@ -1880,7 +2785,7 @@ class TestSolveCirculant:
         c = np.array([1, 2, -3, -5])
         b = np.arange(24).reshape(4, 3, 2)
         x = solve_circulant(c, b)
-        y = solve(circulant(c), b)
+        y = solve(circulant(c), b.reshape(4, -1)).reshape(b.shape)
         assert_allclose(x, y)
 
     def test_complex(self):
@@ -1893,9 +2798,9 @@ class TestSolveCirculant:
 
     def test_random_b_and_c(self):
         # Random b and c
-        np.random.seed(54321)
-        c = np.random.randn(50)
-        b = np.random.randn(50)
+        rng = np.random.RandomState(54321)
+        c = rng.standard_normal(50)
+        b = rng.standard_normal(50)
         x = solve_circulant(c, b)
         y = solve(circulant(c), b)
         assert_allclose(x, y)
@@ -1921,8 +2826,8 @@ class TestSolveCirculant:
         x = solve_circulant(c, b, baxis=1)
         assert_equal(x.shape, (4, 2, 3))
         expected = np.empty_like(x)
-        expected[:, 0, :] = solve(circulant(c[0]), b.T)
-        expected[:, 1, :] = solve(circulant(c[1]), b.T)
+        expected[:, 0, :] = solve(circulant(c[0].ravel()), b.T)
+        expected[:, 1, :] = solve(circulant(c[1].ravel()), b.T)
         assert_allclose(x, expected)
 
         x = solve_circulant(c, b, baxis=1, outaxis=-1)
@@ -1959,7 +2864,8 @@ class TestSolveCirculant:
 
 
 class TestMatrix_Balance:
-
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+    @skip_xp_invalid_arg
     def test_string_arg(self):
         assert_raises(ValueError, matrix_balance, 'Some string for fail')
 
@@ -2034,7 +2940,6 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert t.dtype == t_n.dtype
 
-
         b, (scale, perm) = matrix_balance(a, separate=True)
         assert b.size == 0
         assert scale.size == 0
@@ -2045,3 +2950,84 @@ class TestMatrix_Balance:
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
 
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+class TestDTypes:
+    """Check backwards compatibility for dtypes vs scipy 1.16."""
+
+    def get_arr2D(self, tcode):
+        # return a valid 2D array for the typecode
+        if tcode == 'M':
+            return np.eye(2, dtype='datetime64[ms]')
+        elif tcode == 'm':
+            return np.eye(2, dtype='timedelta64[ms]')
+        elif tcode == 'V':
+            return np.asarray([[b'a', b'b'], [b'c', b'd']], dtype='V')
+        else:
+            return np.eye(2, dtype=tcode)
+
+    def get_arr1D(self, tcode):
+        # return a valid 1D array for the typecode
+        if tcode == 'M':
+            return np.ones(2, dtype='datetime64[ms]')
+        elif tcode =='m':
+            return np.ones(2, dtype='timedelta64[ms]')
+        elif tcode == 'V':
+            return np.asarray([b'a', b'b'], dtype='V')
+        else:
+            return np.ones(2, dtype=tcode)
+
+    @pytest.mark.parametrize("tcode", np.typecodes['All'])
+    def test_inv(self, tcode):
+        # check backwards compat vs scipy 1.16
+        a = self.get_arr2D(tcode)
+        if tcode in 'SUVO':
+            # raises
+            with pytest.raises(ValueError):
+                inv(a)
+        else:
+            # passes
+            inv(a)
+
+    @pytest.mark.parametrize("tcode", np.typecodes['All'])
+    def test_det(self, tcode):
+        a = self.get_arr2D(tcode)
+
+        is_arm = platform.machine() == 'arm64'
+        is_armhf = platform.machine() == 'armv8l'   # gh-24831
+        is_windows = os.name == 'nt'
+
+        failing_tcodes = 'SUVOmM'
+        if not (is_arm or is_armhf or is_windows):
+            failing_tcodes += 'gG'
+
+        if tcode in failing_tcodes:
+            # raises
+            with pytest.raises(TypeError):
+                det(a)
+        else:
+            # passes
+            det(a)
+
+    @pytest.mark.filterwarnings("ignore:Casting complex values")
+    @pytest.mark.parametrize("tcode_a", np.typecodes['All'])
+    @pytest.mark.parametrize("tcode_b", np.typecodes['All'])
+    def test_solve(self, tcode_a, tcode_b):
+        a = self.get_arr2D(tcode_a)
+        b = self.get_arr1D(tcode_b)
+
+        can_combine = True
+        try:
+            np.result_type(tcode_a, tcode_b)
+        except TypeError:
+            can_combine = False
+
+        if not can_combine:
+            # np.exceptions.DTypePromotionError subclasses TypeError
+            with pytest.raises(TypeError):
+                solve(a, b)
+        elif tcode_a in 'SUVO' or tcode_b in 'VO':
+            with pytest.raises(ValueError):
+                solve(a, b)
+        else:
+            solve(a, b)

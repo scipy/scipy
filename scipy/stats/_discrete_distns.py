@@ -3,10 +3,15 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
+from collections.abc import Callable
+from typing import Any
 
 from scipy import special
-from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
-from scipy._lib._util import _lazywhere, rng_integers
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln
+import scipy.special._ufuncs as scu
+from scipy.special._spfun_stats import _poisson_binom_pmf, _poisson_binom_cdf
+from scipy._lib._util import rng_integers
+import scipy._external.array_api_extra as xpx
 from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -15,18 +20,22 @@ import numpy as np
 
 from ._distn_infrastructure import (rv_discrete, get_distribution_names,
                                     _vectorize_rvs_over_shapes,
-                                    _ShapeInfo, _isintegral)
+                                    _ShapeInfo, _isintegral,
+                                    rv_discrete_frozen)
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
-import scipy.special._ufuncs as scu
-
 
 
 class binom_gen(rv_discrete):
-    r"""A binomial discrete random variable.
+    r"""
+    A binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    hypergeom, nbinom, nhypergeom
 
     Notes
     -----
@@ -42,21 +51,26 @@ class binom_gen(rv_discrete):
     where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pmf``, ``cdf``, ``sf``, ``ppf`` and ``isf``
+    methods. [1]_
+
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     %(example)s
-
-    See Also
-    --------
-    hypergeom, nbinom, nhypergeom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
                 _ShapeInfo("p", False, (0, 1), (True, True))]
 
     def _rvs(self, n, p, size=None, random_state=None):
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _argcheck(self, n, p):
         return (n >= 0) & _isintegral(n) & (p >= 0) & (p <= 1)
@@ -104,11 +118,6 @@ class binom_gen(rv_discrete):
             t2 = 6.0/n
             g2 = t1 - t2
         return mu, var, g1, g2
-
-    def _entropy(self, n, p):
-        k = np.r_[0:n + 1]
-        vals = self._pmf(k, n, p)
-        return np.sum(entr(vals), axis=0)
 
 
 binom = binom_gen(name='binom')
@@ -183,9 +192,14 @@ bernoulli = bernoulli_gen(b=1, name='bernoulli')
 
 
 class betabinom_gen(rv_discrete):
-    r"""A beta-binomial discrete random variable.
+    r"""
+    A beta-binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    beta, binom
 
     Notes
     -----
@@ -203,20 +217,15 @@ class betabinom_gen(rv_discrete):
 
     `betabinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
 
+    %(after_notes)s
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Beta-binomial_distribution
 
-    %(after_notes)s
-
     .. versionadded:: 1.4.0
 
-    See Also
-    --------
-    beta, binom
-
     %(example)s
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -225,7 +234,9 @@ class betabinom_gen(rv_discrete):
 
     def _rvs(self, n, a, b, size=None, random_state=None):
         p = random_state.beta(a, b, size)
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _get_support(self, n, a, b):
         return 0, n
@@ -268,9 +279,14 @@ betabinom = betabinom_gen(name='betabinom')
 
 
 class nbinom_gen(rv_discrete):
-    r"""A negative binomial discrete random variable.
+    r"""
+    A negative binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    hypergeom, binom, nhypergeom
 
     Notes
     -----
@@ -309,14 +325,17 @@ class nbinom_gen(rv_discrete):
        p &= \frac{\mu}{\sigma^2} \\
        n &= \frac{\mu^2}{\sigma^2 - \mu}
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pmf``, ``cdf``, ``sf``, ``ppf``, ``isf``
+    and ``stats`` methods. [1]_
+
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     %(example)s
-
-    See Also
-    --------
-    hypergeom, binom, nhypergeom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -380,9 +399,14 @@ nbinom = nbinom_gen(name='nbinom')
 
 
 class betanbinom_gen(rv_discrete):
-    r"""A beta-negative-binomial discrete random variable.
+    r"""
+    A beta-negative-binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    betabinom : Beta binomial distribution
 
     Notes
     -----
@@ -401,20 +425,15 @@ class betanbinom_gen(rv_discrete):
 
     `betanbinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
 
+    %(after_notes)s
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Beta_negative_binomial_distribution
 
-    %(after_notes)s
-
     .. versionadded:: 1.12.0
 
-    See Also
-    --------
-    betabinom : Beta binomial distribution
-
     %(example)s
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -441,18 +460,18 @@ class betanbinom_gen(rv_discrete):
         # BetaNegativeBinomialDistribution[a, b, n]
         def mean(n, a, b):
             return n * b / (a - 1.)
-        mu = _lazywhere(a > 1, (n, a, b), f=mean, fillvalue=np.inf)
+        mu = xpx.apply_where(a > 1, (n, a, b), mean, fill_value=np.inf)
         def var(n, a, b):
             return (n * b * (n + a - 1.) * (a + b - 1.)
                     / ((a - 2.) * (a - 1.)**2.))
-        var = _lazywhere(a > 2, (n, a, b), f=var, fillvalue=np.inf)
+        var = xpx.apply_where(a > 2, (n, a, b), var, fill_value=np.inf)
         g1, g2 = None, None
         def skew(n, a, b):
             return ((2 * n + a - 1.) * (2 * b + a - 1.)
                     / (a - 3.) / sqrt(n * b * (n + a - 1.) * (b + a - 1.)
                     / (a - 2.)))
         if 's' in moments:
-            g1 = _lazywhere(a > 3, (n, a, b), f=skew, fillvalue=np.inf)
+            g1 = xpx.apply_where(a > 3, (n, a, b), skew, fill_value=np.inf)
         def kurtosis(n, a, b):
             term = (a - 2.)
             term_2 = ((a - 1.)**2. * (a**2. + a * (6 * b - 1.)
@@ -468,7 +487,7 @@ class betanbinom_gen(rv_discrete):
             # scipy's Fisher kurtosis
             return term * term_2 / denominator - 3.
         if 'k' in moments:
-            g2 = _lazywhere(a > 4, (n, a, b), f=kurtosis, fillvalue=np.inf)
+            g2 = xpx.apply_where(a > 4, (n, a, b), kurtosis, fill_value=np.inf)
         return mu, var, g1, g2
 
 
@@ -479,6 +498,10 @@ class geom_gen(rv_discrete):
     r"""A geometric discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    planck
 
     Notes
     -----
@@ -501,12 +524,7 @@ class geom_gen(rv_discrete):
 
     %(after_notes)s
 
-    See Also
-    --------
-    planck
-
     %(example)s
-
     """
 
     def _shape_info(self):
@@ -569,6 +587,10 @@ class hypergeom_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    nhypergeom, binom, nbinom
+
     Notes
     -----
     The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
@@ -585,7 +607,14 @@ class hypergeom_gen(rv_discrete):
 
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pmf``, ``cdf``, ``sf`` and ``stats`` methods. [1]_
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -620,11 +649,6 @@ class hypergeom_gen(rv_discrete):
     And to generate random numbers:
 
     >>> R = hypergeom.rvs(M, n, N, size=10)
-
-    See Also
-    --------
-    nhypergeom, binom, nbinom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("M", True, (0, np.inf), (True, False)),
@@ -721,6 +745,10 @@ class nhypergeom_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    hypergeom, binom, nbinom
+
     Notes
     -----
     The symbols used to denote the shape parameters (`M`, `n`, and `r`) are not
@@ -751,6 +779,14 @@ class nhypergeom_gen(rv_discrete):
     PMF of the hypergeometric distribution.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Negative Hypergeometric Distribution on Wikipedia
+           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
+
+    .. [2] Negative Hypergeometric Distribution from
+           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
 
     Examples
     --------
@@ -796,19 +832,6 @@ class nhypergeom_gen(rv_discrete):
     0.06180776620271643
     >>> hypergeom.pmf(k, M, n, k+r-1) * (M - n - (r-1)) / (M - (k+r-1))
     0.06180776620271644
-
-    See Also
-    --------
-    hypergeom, binom, nbinom
-
-    References
-    ----------
-    .. [1] Negative Hypergeometric Distribution on Wikipedia
-           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
-
-    .. [2] Negative Hypergeometric Distribution from
-           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
-
     """
 
     def _shape_info(self):
@@ -841,14 +864,13 @@ class nhypergeom_gen(rv_discrete):
         return _rvs1(M, n, r, size=size, random_state=random_state)
 
     def _logpmf(self, k, M, n, r):
-        cond = ((r == 0) & (k == 0))
-        result = _lazywhere(~cond, (k, M, n, r),
-                            lambda k, M, n, r:
-                                (-betaln(k+1, r) + betaln(k+r, 1) -
-                                 betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1) +
-                                 betaln(n+1, M-n+1) - betaln(M+1, 1)),
-                            fillvalue=0.0)
-        return result
+        return xpx.apply_where(
+            (r != 0) | (k != 0), (k, M, n, r),
+            lambda k, M, n, r:
+                (-betaln(k+1, r) + betaln(k+r, 1)
+                 - betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1)
+                 + betaln(n+1, M-n+1) - betaln(M+1, 1)),
+            fill_value=0.0)
 
     def _pmf(self, k, M, n, r):
         # same as the following but numerically more precise
@@ -912,6 +934,14 @@ class logser_gen(rv_discrete):
     def _pmf(self, k, p):
         # logser.pmf(k) = - p**k / (k*log(1-p))
         return -np.power(p, k) * 1.0 / k / special.log1p(-p)
+
+    def _sf(self, k, p):
+        tiny = 1e-100
+        # Ideally, this is the unregularized beta function with `b=0`. We don't have
+        # an unregularized beta function (yet, although we could get it from Boost),
+        # and neither technically support `b=0` - despite the function being accurate
+        # for `b` super close to zero. See https://github.com/scipy/scipy/issues/3890.
+        return -special.betainc(k+1, tiny, p) * special.beta(k+1, tiny) / np.log1p(-p)
 
     def _stats(self, p):
         r = special.log1p(-p)
@@ -979,9 +1009,17 @@ class poisson_gen(rv_discrete):
         k = floor(x)
         return special.pdtr(k, mu)
 
+    def _logcdf(self, x, mu):
+        k = floor(x)
+        return special.log_gammaincc(k + 1, mu)
+
     def _sf(self, x, mu):
         k = floor(x)
         return special.pdtrc(k, mu)
+
+    def _logsf(self, x, mu):
+        k = floor(x)
+        return special.log_gammainc(k + 1, mu)
 
     def _ppf(self, q, mu):
         vals = ceil(special.pdtrik(q, mu))
@@ -993,8 +1031,8 @@ class poisson_gen(rv_discrete):
         var = mu
         tmp = np.asarray(mu)
         mu_nonzero = tmp > 0
-        g1 = _lazywhere(mu_nonzero, (tmp,), lambda x: sqrt(1.0/x), np.inf)
-        g2 = _lazywhere(mu_nonzero, (tmp,), lambda x: 1.0/x, np.inf)
+        g1 = xpx.apply_where(mu_nonzero, tmp, lambda x: sqrt(1.0/x), fill_value=np.inf)
+        g2 = xpx.apply_where(mu_nonzero, tmp, lambda x: 1.0/x, fill_value=np.inf)
         return mu, var, g1, g2
 
 
@@ -1005,6 +1043,10 @@ class planck_gen(rv_discrete):
     r"""A Planck discrete exponential random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    geom
 
     Notes
     -----
@@ -1022,15 +1064,10 @@ class planck_gen(rv_discrete):
 
     %(after_notes)s
 
-    See Also
-    --------
-    geom
-
     %(example)s
-
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_):
         return lambda_ > 0
@@ -1326,39 +1363,13 @@ class zipf_gen(rv_discrete):
         return Pk
 
     def _munp(self, n, a):
-        return _lazywhere(
+        return xpx.apply_where(
             a > n + 1, (a, n),
             lambda a, n: special.zeta(a - n, 1) / special.zeta(a, 1),
-            np.inf)
+            fill_value=np.inf)
 
 
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
-
-
-def _gen_harmonic_gt1(n, a):
-    """Generalized harmonic number, a > 1"""
-    # See https://en.wikipedia.org/wiki/Harmonic_number; search for "hurwitz"
-    return zeta(a, 1) - zeta(a, n+1)
-
-
-def _gen_harmonic_leq1(n, a):
-    """Generalized harmonic number, a <= 1"""
-    if not np.size(n):
-        return n
-    n_max = np.max(n)  # loop starts at maximum of all n
-    out = np.zeros_like(a, dtype=float)
-    # add terms of harmonic series; starting from smallest to avoid roundoff
-    for i in np.arange(n_max, 0, -1, dtype=float):
-        mask = i <= n  # don't add terms after nth
-        out[mask] += 1/i**a[mask]
-    return out
-
-
-def _gen_harmonic(n, a):
-    """Generalized harmonic number"""
-    n, a = np.broadcast_arrays(n, a)
-    return _lazywhere(a > 1, (n, a),
-                      f=_gen_harmonic_gt1, f2=_gen_harmonic_leq1)
 
 
 class zipfian_gen(rv_discrete):
@@ -1385,8 +1396,12 @@ class zipfian_gen(rv_discrete):
     :math:`H_{n,a}` is the :math:`n`:sup:`th` generalized harmonic
     number of order :math:`a`.
 
-    The Zipfian distribution reduces to the Zipf (zeta) distribution as
-    :math:`n \rightarrow \infty`.
+    The SciPy implementation of this distribution requires :math:`1 \le n \le 2^{53}`.
+    For larger values of :math:`n`, the `zipfian` methods (`pmf`, `cdf`, `mean`, etc.)
+    will return `nan`.
+
+    When :math:`a > 1`, the Zipfian distribution reduces to the Zipf (zeta)
+    distribution as :math:`n \rightarrow \infty`.
 
     %(after_notes)s
 
@@ -1413,32 +1428,48 @@ class zipfian_gen(rv_discrete):
                 _ShapeInfo("n", True, (0, np.inf), (False, False))]
 
     def _argcheck(self, a, n):
-        # we need np.asarray here because moment (maybe others) don't convert
-        return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=int))
+        # The upper bound on n is for practical numerical reasons.  The numerical
+        # methods for computing the PMF, CDF and SF involve sums over range(1, n+1)
+        # when a <= 1, so there is no way they can be computed for extremely large
+        # n--even 2**53 is ridiculously large for those calculations.  The bound is
+        # also required to ensure that the loops compute the sums correctly when
+        # the inputs are double precision instead of integers.
+        #
+        # n may be an integer or a float, but the value must be an integer in the
+        # range 1 <= n <= 2**53.  The expression below clips n to the accepted range
+        # before attempting to cast to integer to avoid warnings generated by an
+        # input such as n=1e100.  The extra `np.asarray()` wrapper avoids the error
+        # that arises with an input such as `n=2**100`.
+        # upper limit changed in gh-24119 because of overflow on windows, linux32 bit
+        return ((a >= 0) &
+                (n == np.asarray(np.clip(n, 1, 2**31 - 1)).astype(dtype=np.int64)))
 
     def _get_support(self, a, n):
-        return 1, n
+        return 1, np.floor(n)
 
     def _pmf(self, k, a, n):
-        k = k.astype(np.float64)
-        return 1.0 / _gen_harmonic(n, a) * k**-a
+        k = np.floor(k)
+        n = np.floor(n)
+        return scu._normalized_gen_harmonic(k, k, n, a)
 
     def _cdf(self, k, a, n):
-        return _gen_harmonic(k, a) / _gen_harmonic(n, a)
+        k = np.floor(k)
+        n = np.floor(n)
+        return scu._normalized_gen_harmonic(1, k, n, a)
 
     def _sf(self, k, a, n):
-        k = k + 1  # # to match SciPy convention
-        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
-                / (k**a*_gen_harmonic(n, a)))
+        k = np.floor(k)
+        n = np.floor(n)
+        return scu._normalized_gen_harmonic(k + 1, n, n, a)
 
     def _stats(self, a, n):
-        # see # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        Hna = _gen_harmonic(n, a)
-        Hna1 = _gen_harmonic(n, a-1)
-        Hna2 = _gen_harmonic(n, a-2)
-        Hna3 = _gen_harmonic(n, a-3)
-        Hna4 = _gen_harmonic(n, a-4)
+        n = np.floor(n)
+        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
+        Hna = scu._gen_harmonic(n, a)
+        Hna1 = scu._gen_harmonic(n, a-1)
+        Hna2 = scu._gen_harmonic(n, a-2)
+        Hna3 = scu._gen_harmonic(n, a-3)
+        Hna4 = scu._gen_harmonic(n, a-4)
         mu1 = Hna1/Hna
         mu2n = (Hna2*Hna - Hna1**2)
         mu2d = Hna**2
@@ -1486,13 +1517,13 @@ class dlaplace_gen(rv_discrete):
     def _cdf(self, x, a):
         k = floor(x)
 
-        def f(k, a):
+        def f1(k, a):
             return 1.0 - exp(-a * k) / (exp(a) + 1)
 
         def f2(k, a):
             return exp(a * (k + 1)) / (exp(a) + 1)
 
-        return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
+        return xpx.apply_where(k >= 0, (k, a), f1, f2)
 
     def _ppf(self, q, a):
         const = 1 + exp(a)
@@ -1537,6 +1568,145 @@ dlaplace = dlaplace_gen(a=-np.inf,
                         name='dlaplace', longname='A discrete Laplacian')
 
 
+class poisson_binom_gen(rv_discrete):
+    r"""A Poisson Binomial discrete random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    binom
+
+    Notes
+    -----
+    The probability mass function for `poisson_binom` is:
+
+    .. math::
+
+     f(k; p_1, p_2, ..., p_n) = \sum_{A \in F_k} \prod_{i \in A} p_i \prod_{j \in A^C} 1 - p_j
+
+    where :math:`k \in \{0, 1, \dots, n-1, n\}`, :math:`F_k` is the set of all
+    subsets of :math:`k` integers that can be selected :math:`\{0, 1, \dots, n-1, n\}`,
+    and :math:`A^C` is the complement of a set :math:`A`.
+
+    `poisson_binom` accepts a single array argument ``p`` for shape parameters
+    :math:`0 ≤ p_i ≤ 1`, where the last axis corresponds with the index :math:`i` and
+    any others are for batch dimensions. Broadcasting behaves according to the usual
+    rules except that the last axis of ``p`` is ignored. Instances of this class do
+    not support serialization/unserialization.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Poisson binomial distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Poisson_binomial_distribution
+    .. [2] Biscarri, William, Sihai Dave Zhao, and Robert J. Brunner. "A simple and
+           fast method for computing the Poisson binomial distribution function".
+           Computational Statistics & Data Analysis 122 (2018) 92-100.
+           :doi:`10.1016/j.csda.2018.01.007`
+
+    %(example)s
+
+    """  # noqa: E501
+
+    _parse_args_rvs: Callable[..., Any]
+    _parse_args_stats: Callable[..., Any]
+    _parse_args: Callable[..., Any]
+
+    def _shape_info(self):
+        # message = 'Fitting is not implemented for this distribution."
+        # raise NotImplementedError(message)
+        return []
+
+    def _argcheck(self, *args):
+        p = np.stack(args, axis=0)
+        conds = (0 <= p) & (p <= 1)
+        return np.all(conds, axis=0)
+
+    def _rvs(self, *args, size=None, random_state=None):
+        # convenient to work along the last axis here to avoid interference with `size`
+        p = np.stack(args, axis=-1)
+        # Size passed by the user is the *shape of the returned array*, so it won't
+        # contain the length of the last axis of p.
+        size = (p.shape if size is None else
+                (size, 1) if np.isscalar(size) else tuple(size) + (1,))
+        size = np.broadcast_shapes(p.shape, size)
+        return bernoulli._rvs(p, size=size, random_state=random_state).sum(axis=-1)
+
+    def _get_support(self, *args):
+        return 0, len(args)
+
+    def _pmf(self, k, *args):
+        k = np.atleast_1d(k).astype(np.int64)
+        k, *args = np.broadcast_arrays(k, *args)
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _poisson_binom_pmf(k, p)
+
+    def _cdf(self, k, *args):
+        k = np.atleast_1d(k).astype(np.int64)
+        k, *args = np.broadcast_arrays(k, *args)
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _poisson_binom_cdf(k, p)
+
+    def _stats(self, *args, **kwds):
+        p = np.stack(args, axis=0)
+        mean = np.sum(p, axis=0)
+        var = np.sum(p * (1-p), axis=0)
+        return (mean, var, None, None)
+
+    def __call__(self, *args, **kwds):
+        return poisson_binomial_frozen(self, *args, **kwds)
+
+
+poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson binomial',
+                                  shapes='p')
+
+# The _parse_args methods don't work with vector-valued shape parameters, so we rewrite
+# them. Note that `p` is accepted as an array with the index `i` of `p_i` corresponding
+# with the last axis; we return it as a tuple (p_1, p_2, ..., p_n) so that it looks
+# like `n` scalar (or arrays of scalar-valued) shape parameters to the infrastructure.
+
+def _parse_args_rvs(self, p, loc=0, size=None):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0, size
+
+def _parse_args_stats(self, p, loc=0, moments='mv'):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0, moments
+
+def _parse_args(self, p, loc=0):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0
+
+# The infrastructure manually binds these methods to the instance, so
+# we can only override them by manually binding them, too.
+_pb_obj, _pb_cls = poisson_binom, poisson_binom_gen  # shorter names (for PEP8)
+poisson_binom._parse_args_rvs = _parse_args_rvs.__get__(_pb_obj, _pb_cls)
+poisson_binom._parse_args_stats = _parse_args_stats.__get__(_pb_obj, _pb_cls)
+poisson_binom._parse_args = _parse_args.__get__(_pb_obj, _pb_cls)
+
+class poisson_binomial_frozen(rv_discrete_frozen):
+    # copied from rv_frozen; we just need to bind the `_parse_args` methods
+    def __init__(self, dist, *args, **kwds):                        # verbatim
+        self.args = args                                            # verbatim
+        self.kwds = kwds                                            # verbatim
+
+        # create a new instance                                     # verbatim
+        self.dist = dist.__class__(**dist._updated_ctor_param())    # verbatim
+
+        # Here is the only modification
+        self.dist._parse_args_rvs = _parse_args_rvs.__get__(_pb_obj, _pb_cls)
+        self.dist._parse_args_stats = _parse_args_stats.__get__(_pb_obj, _pb_cls)
+        self.dist._parse_args = _parse_args.__get__(_pb_obj, _pb_cls)
+
+        shapes, _, _ = self.dist._parse_args(*args, **kwds)         # verbatim
+        self.a, self.b = self.dist._get_support(*shapes)            # verbatim
+
+    def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
+        a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
+        # Here's the modification: we pass all args (including `loc`) into the `args`
+        # parameter of `expect` so the shape only goes through `_parse_args` once.
+        return self.dist.expect(func, self.args, loc, lb, ub, conditional, **kwds)
+
+
 class skellam_gen(rv_discrete):
     r"""A  Skellam discrete random variable.
 
@@ -1558,11 +1728,18 @@ class skellam_gen(rv_discrete):
 
     Parameters :math:`\mu_1` and :math:`\mu_2` must be strictly positive.
 
-    For details see: https://en.wikipedia.org/wiki/Skellam_distribution
-
     `skellam` takes :math:`\mu_1` and :math:`\mu_2` as shape parameters.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Skellam, J. G. "The Frequency Distribution of the Difference
+           Between Two Poisson Variates Belonging to Different Populations."
+           *Journal of the Royal Statistical Society* 109, no. 3 (1946): 296-296.
+           :doi:`10.2307/2981372`
+    .. [2] "Skellam distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Skellam_distribution
 
     %(example)s
 
@@ -1588,8 +1765,8 @@ class skellam_gen(rv_discrete):
         x = floor(x)
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          scu._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                          1 - scu._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                          special.chndtr(2*mu2, -2*x, 2*mu1),
+                          scu._ncx2_sf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
@@ -1692,7 +1869,7 @@ class _nchypergeom_gen(rv_discrete):
 
     """
 
-    rvs_name = None
+    rvs_name: str | None = None
     dist = None
 
     def _shape_info(self):
@@ -1711,9 +1888,9 @@ class _nchypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N, odds):
         M, n = np.asarray(M), np.asarray(n),
         N, odds = np.asarray(N), np.asarray(odds)
-        cond1 = (M.astype(int) == M) & (M >= 0)
-        cond2 = (n.astype(int) == n) & (n >= 0)
-        cond3 = (N.astype(int) == N) & (N >= 0)
+        cond1 = (~np.isnan(M)) & (M.astype(int) == M) & (M >= 0)
+        cond2 = (~np.isnan(n)) & (n.astype(int) == n) & (n >= 0)
+        cond3 = (~np.isnan(N)) & (N.astype(int) == N) & (N >= 0)
         cond4 = odds > 0
         cond5 = N <= M
         cond6 = n <= M
@@ -1723,6 +1900,8 @@ class _nchypergeom_gen(rv_discrete):
 
         @_vectorize_rvs_over_shapes
         def _rvs1(M, n, N, odds, size, random_state):
+            if np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.full(size, np.nan)
             length = np.prod(size)
             urn = _PyStochasticLib3()
             rv_gen = getattr(urn, self.rvs_name)
@@ -1740,15 +1919,19 @@ class _nchypergeom_gen(rv_discrete):
 
         @np.vectorize
         def _pmf1(x, M, n, N, odds):
+            if np.isnan(x) | np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.nan
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.probability(x)
 
         return _pmf1(x, M, n, N, odds)
 
-    def _stats(self, M, n, N, odds, moments):
+    def _stats(self, M, n, N, odds, moments='mv'):
 
         @np.vectorize
         def _moments1(M, n, N, odds):
+            if np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.nan, np.nan
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.moments()
 

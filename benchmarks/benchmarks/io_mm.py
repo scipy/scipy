@@ -19,7 +19,7 @@ def generate_coo(size):
     rows = np.arange(nnz, dtype=np.int32)
     cols = np.arange(nnz, dtype=np.int32)
     data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
-    return scipy.sparse.coo_matrix((data, (rows, cols)), shape=(nnz, nnz))
+    return scipy.sparse.coo_array((data, (rows, cols)), shape=(nnz, nnz))
 
 
 def generate_csr(size):
@@ -29,7 +29,7 @@ def generate_csr(size):
     indptr[-1] = nnz
     indices = np.arange(nnz, dtype=np.int32)
     data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
-    return scipy.sparse.csr_matrix((data, indices, indptr), shape=(nrows, nnz))
+    return scipy.sparse.csr_array((data, indices, indptr), shape=(nrows, nnz))
 
 
 def generate_dense(size):
@@ -46,7 +46,7 @@ class MemUsage(Benchmark):
     def params(self):
         return [
             list(self._get_size().keys()),
-            ['scipy.io', 'scipy.io._mmio', 'scipy.io._fast_matrix_market'],
+            ['scipy.io'],
             ['dense', 'coo']  # + ['csr']
         ]
 
@@ -54,8 +54,12 @@ class MemUsage(Benchmark):
         size = {
             '1M': int(1e6),
             '10M': int(10e6),
-            '100M': int(100e6),
-            '300M': int(300e6),
+            '25M': int(10e6),
+            # Note: the below sizes should work locally but cause issues on CircleCI
+            #       it fails to allocate memory even though there is easily enough
+            #       available (see gh-22574).
+            #'100M': int(100e6),
+            #'300M': int(300e6),
             # '500M': int(500e6),
             # '1000M': int(1000e6),
         }
@@ -115,13 +119,13 @@ class MemUsage(Benchmark):
         import numpy as np
         import scipy.sparse
         from {implementation} import mmwrite
-        
+
         def generate_coo(size):
             nnz = int(size / (4 + 4 + 8))
             rows = np.arange(nnz, dtype=np.int32)
             cols = np.arange(nnz, dtype=np.int32)
             data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
-            return scipy.sparse.coo_matrix((data, (rows, cols)), shape=(nnz, nnz))
+            return scipy.sparse.coo_array((data, (rows, cols)), shape=(nnz, nnz))
 
         def generate_csr(size):
             nrows = 1000
@@ -130,8 +134,8 @@ class MemUsage(Benchmark):
             indptr[-1] = nnz
             indices = np.arange(nnz, dtype=np.int32)
             data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
-            return scipy.sparse.csr_matrix((data, indices, indptr), shape=(nrows, nnz))
-        
+            return scipy.sparse.csr_array((data, indices, indptr), shape=(nrows, nnz))
+
         def generate_dense(size):
             nnz = size // 8
             return np.random.default_rng().uniform(low=0, high=1.0, size=(1, nnz))

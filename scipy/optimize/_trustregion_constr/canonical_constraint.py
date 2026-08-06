@@ -27,7 +27,7 @@ class CanonicalConstraint:
     jac : callable
         Function to evaluate the Jacobian of the constraint. The signature
         is ``jac(x) -> J_eq, J_ineq``, where ``J_eq`` and ``J_ineq`` are
-        either ndarray of csr_matrix of shapes (n_eq, n) and (n_ineq, n),
+        either ndarray of csr_array of shapes (n_eq, n) and (n_ineq, n),
         respectively.
     hess : callable
         Function to evaluate the Hessian of the constraints multiplied
@@ -77,7 +77,7 @@ class CanonicalConstraint:
         """
         empty_fun = np.empty(0)
         empty_jac = np.empty((0, n))
-        empty_hess = sps.csr_matrix((n, n))
+        empty_hess = sps.csr_array((n, n))
 
         def fun(x):
             return empty_fun, empty_fun
@@ -133,7 +133,7 @@ class CanonicalConstraint:
                 index_ineq += c.n_ineq
 
             def matvec(p):
-                result = np.zeros_like(p)
+                result = np.zeros_like(p, dtype=float)
                 for h in hess_all:
                     result += h.dot(p)
                 return result
@@ -158,7 +158,7 @@ class CanonicalConstraint:
         keep_feasible = np.empty(0, dtype=bool)
 
         if cfun.sparse_jacobian:
-            empty_jac = sps.csr_matrix((0, n))
+            empty_jac = sps.csr_array((0, n))
         else:
             empty_jac = np.empty((0, n))
 
@@ -174,7 +174,7 @@ class CanonicalConstraint:
         empty_fun = np.empty(0)
         n = cfun.n
         if cfun.sparse_jacobian:
-            empty_jac = sps.csr_matrix((0, n))
+            empty_jac = sps.csr_array((0, n))
         else:
             empty_jac = np.empty((0, n))
 
@@ -185,7 +185,7 @@ class CanonicalConstraint:
         empty_fun = np.empty(0)
         n = cfun.n
         if cfun.sparse_jacobian:
-            empty_jac = sps.csr_matrix((0, n))
+            empty_jac = sps.csr_array((0, n))
         else:
             empty_jac = np.empty((0, n))
 
@@ -225,7 +225,7 @@ class CanonicalConstraint:
         empty_fun = np.empty(0)
         n = cfun.n
         if cfun.sparse_jacobian:
-            empty_jac = sps.csr_matrix((0, n))
+            empty_jac = sps.csr_array((0, n))
         else:
             empty_jac = np.empty((0, n))
 
@@ -331,7 +331,7 @@ def initial_constraints_as_canonical(n, prepared_constraints, sparse_jacobian):
     """Convert initial values of the constraints to the canonical format.
 
     The purpose to avoid one additional call to the constraints at the initial
-    point. It takes saved values in `PreparedConstraint`, modififies and
+    point. It takes saved values in `PreparedConstraint`, modifies and
     concatenates them to the canonical constraint format.
     """
     c_eq = []
@@ -379,7 +379,7 @@ def initial_constraints_as_canonical(n, prepared_constraints, sparse_jacobian):
 
     if sparse_jacobian:
         vstack = sps.vstack
-        empty = sps.csr_matrix((0, n))
+        empty = sps.csr_array((0, n))
     else:
         vstack = np.vstack
         empty = np.empty((0, n))

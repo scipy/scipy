@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose
 from scipy.special import boxcox, boxcox1p, inv_boxcox, inv_boxcox1p
 import pytest
 
@@ -11,20 +11,20 @@ def test_boxcox_basic():
 
     # lambda = 0  =>  y = log(x)
     y = boxcox(x, 0)
-    assert_almost_equal(y, np.log(x))
+    assert_allclose(y, np.log(x), atol=1.5e-7, rtol=0)
 
     # lambda = 1  =>  y = x - 1
     y = boxcox(x, 1)
-    assert_almost_equal(y, x - 1)
+    assert_allclose(y, x - 1, atol=1.5e-7, rtol=0)
 
     # lambda = 2  =>  y = 0.5*(x**2 - 1)
     y = boxcox(x, 2)
-    assert_almost_equal(y, 0.5*(x**2 - 1))
+    assert_allclose(y, 0.5*(x**2 - 1), atol=1.5e-7, rtol=0)
 
     # x = 0 and lambda > 0  =>  y = -1 / lambda
     lam = np.array([0.5, 1, 2])
     y = boxcox(0, lam)
-    assert_almost_equal(y, -1.0 / lam)
+    assert_allclose(y, -1.0 / lam, atol=1.5e-7, rtol=0)
 
 def test_boxcox_underflow():
     x = 1 + 1e-15
@@ -50,20 +50,20 @@ def test_boxcox1p_basic():
 
     # lambda = 0  =>  y = log(1+x)
     y = boxcox1p(x, 0)
-    assert_almost_equal(y, np.log1p(x))
+    assert_allclose(y, np.log1p(x), atol=1.5e-7, rtol=0)
 
     # lambda = 1  =>  y = x
     y = boxcox1p(x, 1)
-    assert_almost_equal(y, x)
+    assert_allclose(y, x, atol=1.5e-7, rtol=0)
 
     # lambda = 2  =>  y = 0.5*((1+x)**2 - 1) = 0.5*x*(2 + x)
     y = boxcox1p(x, 2)
-    assert_almost_equal(y, 0.5*x*(2 + x))
+    assert_allclose(y, 0.5*x*(2 + x), atol=1.5e-7, rtol=0)
 
     # x = -1 and lambda > 0  =>  y = -1 / lambda
     lam = np.array([0.5, 1, 2])
     y = boxcox1p(-1, lam)
-    assert_almost_equal(y, -1.0 / lam)
+    assert_allclose(y, -1.0 / lam, atol=1.5e-7, rtol=0)
 
 
 def test_boxcox1p_underflow():
@@ -90,13 +90,13 @@ def test_inv_boxcox():
     lam = np.array([0., 1., 2.])
     y = boxcox(x, lam)
     x2 = inv_boxcox(y, lam)
-    assert_almost_equal(x, x2)
+    assert_allclose(x, x2, atol=1.5e-7, rtol=0)
 
     x = np.array([0., 1., 2.])
     lam = np.array([0., 1., 2.])
     y = boxcox1p(x, lam)
     x2 = inv_boxcox1p(y, lam)
-    assert_almost_equal(x, x2)
+    assert_allclose(x, x2, atol=1.5e-7, rtol=0)
 
 
 def test_inv_boxcox1p_underflow():

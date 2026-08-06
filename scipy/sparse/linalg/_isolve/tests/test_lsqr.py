@@ -2,8 +2,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal, assert_equal
 import pytest
 import scipy.sparse
-import scipy.sparse.linalg
-from scipy.sparse.linalg import lsqr
+from scipy.sparse.linalg import lsqr, LinearOperator
 
 # Set up a test problem
 n = 35
@@ -55,7 +54,7 @@ def test_gh_2466():
     row = np.array([0, 0])
     col = np.array([0, 1])
     val = np.array([1, -1])
-    A = scipy.sparse.coo_matrix((val, (row, col)), shape=(1, 2))
+    A = scipy.sparse.coo_array((val, (row, col)), shape=(1, 2))
     b = np.asarray([4])
     lsqr(A, b)
 
@@ -66,7 +65,7 @@ def test_well_conditioned_problems():
     # This is a non-regression test for a potential ZeroDivisionError
     # raised when computing the `test2` & `test3` convergence conditions.
     n = 10
-    A_sparse = scipy.sparse.eye(n, n)
+    A_sparse = scipy.sparse.eye_array(n, n)
     A_dense = A_sparse.toarray()
 
     with np.errstate(invalid='raise'):
@@ -118,3 +117,12 @@ def test_initialization():
     x = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit, x0=x0)
     assert_allclose(x_ref[0], x[0])
     assert_array_equal(b_copy, b)
+
+def test_nD():
+    """Check that >2-D operators are rejected cleanly."""
+    def id(x):
+        return x
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
+    b = np.ones((2, 2))
+    with pytest.raises(ValueError, match="expected 2-D"):
+        lsqr(A, b)

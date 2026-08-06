@@ -97,7 +97,7 @@ def test_prepare_constraint_infeasible_x0():
         return A
 
     def hess(x, v):
-        return sps.csr_matrix((4, 4))
+        return sps.csr_array((4, 4))
 
     nonlinear = NonlinearConstraint(fun, -np.inf, 0, jac, hess,
                                     enforce_feasibility)
@@ -211,6 +211,12 @@ class TestBounds:
         message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
         with pytest.raises(ValueError, match=message):
             Bounds([1, 2], [1, 2, 3])
+
+        # gh-25086: empty `lb`/`ub` describes a zero-variable problem, and
+        # rejecting early prevents issues in downstream optimizers.
+        message = "`lb` and `ub` must be non-empty"
+        with pytest.raises(ValueError, match=message):
+            Bounds([], [])
 
     def test_residual(self):
         bounds = Bounds(-2, 4)

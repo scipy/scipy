@@ -18,7 +18,8 @@ TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
     2: "`xtol` termination condition is satisfied.",
-    3: "`callback` function requested termination."
+    3: "`callback` raised `StopIteration`.",
+    4: "Constraint violation exceeds 'gtol'"
 }
 
 
@@ -124,7 +125,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                  initial_barrier_parameter=0.1,
                                  initial_barrier_tolerance=0.1,
                                  factorization_method=None,
-                                 disp=False):
+                                 disp=False,
+                                 workers=None):
     """Minimize a scalar function subject to constraints.
 
     Parameters
@@ -184,7 +186,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         barrier tolerance. Default is 0.1 for both values (recommended in [1]_ p. 19).
         Also note that ``barrier_parameter`` and ``barrier_tolerance`` are updated
         with the same prefactor.
-    factorization_method : string or None, optional
+    factorization_method : str or None, optional
         Method to factorize the Jacobian of the constraints. Use None (default)
         for the auto selection or one of:
 
@@ -223,6 +225,12 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     disp : bool, optional
         If True (default), then `verbose` will be set to 1 if it was 0.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Returns
     -------
@@ -252,11 +260,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Gradient of the Lagrangian function at the solution.
     nit : int
         Total number of iterations.
-    nfev : integer
+    nfev : int
         Number of the objective function evaluations.
-    njev : integer
+    njev : int
         Number of the objective function gradient evaluations.
-    nhev : integer
+    nhev : int
         Number of the objective function Hessian evaluations.
     cg_niter : int
         Total number of the conjugate gradient method iterations.
@@ -264,7 +272,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Optimization method used.
     constr : list of ndarray
         List of constraint values at the solution.
-    jac : list of {ndarray, sparse matrix}
+    jac : list of {ndarray, sparse array}
         List of the Jacobian matrices of the constraints at the solution.
     v : list of ndarray
         List of the Lagrange multipliers for the constraints at the solution.
@@ -292,13 +300,18 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Total execution time.
     message : str
         Termination message.
-    status : {0, 1, 2, 3}
+    status : {0, 1, 2, 3, 4}
         Termination status:
 
         * 0 : The maximum number of function evaluations is exceeded.
         * 1 : `gtol` termination condition is satisfied.
         * 2 : `xtol` termination condition is satisfied.
-        * 3 : `callback` function requested termination.
+        * 3 : `callback` raised `StopIteration`.
+        * 4 : Constraint violation exceeds 'gtol'.
+
+        .. versionchanged:: 1.15.0
+            If the constraint violation exceeds `gtol`, then ``result.success``
+            will now be False.
 
     cg_stop_cond : int
         Reason for CG subproblem termination at the last iteration:
@@ -325,8 +338,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         verbose = 1
 
     if bounds is not None:
-        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf)
-        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf)
+        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf,
+                                   out=None)
+        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf,
+                                   out=None)
         modified_lb = np.where(np.isfinite(bounds.lb), modified_lb, bounds.lb)
         modified_ub = np.where(np.isfinite(bounds.ub), modified_ub, bounds.ub)
         bounds = Bounds(modified_lb, modified_ub, keep_feasible=bounds.keep_feasible)
@@ -337,7 +352,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Define Objective Function
     objective = ScalarFunction(fun, x0, args, grad, hess,
-                               finite_diff_rel_step, finite_diff_bounds)
+                               finite_diff_rel_step, finite_diff_bounds,
+                               workers=workers)
 
     # Put constraints in list format when needed.
     if isinstance(constraints, (NonlinearConstraint | LinearConstraint)):
@@ -408,7 +424,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Define stop criteria
     if method == 'equality_constrained_sqp':
-        def stop_criteria(state, x, last_iteration_failed,
+        def stop_criteria_sqp(state, x, last_iteration_failed,
                           optimality, constr_violation,
                           tr_radius, constr_penalty, cg_info):
             state = update_state_sqp(state, x, last_iteration_failed,
@@ -452,7 +468,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
-        def stop_criteria(state, x, last_iteration_failed, tr_radius,
+        def stop_criteria_tr(state, x, last_iteration_failed, tr_radius,
                           constr_penalty, cg_info, barrier_parameter,
                           barrier_tolerance):
             state = update_state_ip(state, x, last_iteration_failed,
@@ -522,7 +538,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             fun_and_constr, grad_and_jac, lagrangian_hess,
             x0, objective.f, objective.g,
             c_eq0, J_eq0,
-            stop_criteria, state,
+            stop_criteria_sqp, state,
             initial_constr_penalty, initial_tr_radius,
             factorization_method)
 
@@ -533,12 +549,16 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             canonical.fun, canonical.jac,
             x0, objective.f, objective.g,
             c_ineq0, J_ineq0, c_eq0, J_eq0,
-            stop_criteria,
+            stop_criteria_tr,
             canonical.keep_feasible,
             xtol, state, initial_barrier_parameter,
             initial_barrier_tolerance,
             initial_constr_penalty, initial_tr_radius,
             factorization_method, finite_diff_bounds)
+
+    # Status 4 occurs when minimize is successful but constraints are not satisfied.
+    if result.status in (1, 2) and state.constr_violation > gtol:
+        result.status = 4
 
     # Status 3 occurs when the callback function requests termination,
     # this is assumed to not be a success.

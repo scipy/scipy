@@ -7,6 +7,8 @@ from functools import partial
 from . import _quadpack
 import numpy as np
 
+from scipy._lib._array_api import xp_capabilities
+
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
 
@@ -17,6 +19,7 @@ class IntegrationWarning(UserWarning):
     pass
 
 
+@xp_capabilities(np_only=True)
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
          limlst=50, complex_func=False):
@@ -58,13 +61,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
-    complex_func : bool, optional
-        Indicate if the function's (`func`) return type is real
-        (``complex_func=False``: default) or complex (``complex_func=True``).
-        In both cases, the function's argument is real.
-        If full_output is also non-zero, the `infodict`, `message`, and
-        `explain` for the real and complex components are returned in
-        a dictionary with keys "real output" and "imag output".
 
     Returns
     -------
@@ -113,6 +109,13 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     limlst : int, optional
         Upper bound on the number of cycles (>=3) for use with a sinusoidal
         weighting and an infinite end-point.
+    complex_func : bool, optional
+        Indicate if the function's (`func`) return type is real
+        (``complex_func=False``: default) or complex (``complex_func=True``).
+        In both cases, the function's argument is real.
+        If full_output is also non-zero, the `infodict`, `message`, and
+        `explain` for the real and complex components are returned in
+        a dictionary with keys "real output" and "imag output".
 
     See Also
     --------
@@ -211,9 +214,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     For the 'cos' and 'sin' weighting, additional inputs and outputs are
     available.
 
-    For finite integration limits, the integration is performed using a
-    Clenshaw-Curtis method which uses Chebyshev moments. For repeated
-    calculations, these moments are saved in the output dictionary:
+    For weighted integrals with finite integration limits, the integration
+    is performed using a Clenshaw-Curtis method, which uses Chebyshev moments.
+    For repeated calculations, these moments are saved in the output dictionary:
 
     'momcom'
         The maximum level of Chebyshev moments that have been computed,
@@ -284,7 +287,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types.
+        several types. The integration is performed using a 21-point Gauss-Kronrod
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -427,6 +431,22 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     """
     if not isinstance(args, tuple):
         args = (args,)
+
+    # Shortcut for empty interval, also works for improper integrals.
+    if a == b:
+        if full_output == 0:
+            return (0., 0.)
+        else:
+            infodict = {"neval": 0, "last": 0,
+                        "alist": np.full(limit, np.nan, dtype=np.float64),
+                        "blist": np.full(limit, np.nan, dtype=np.float64),
+                        "rlist": np.zeros(limit, dtype=np.float64),
+                        "elist": np.zeros(limit, dtype=np.float64),
+                        "iord" : np.zeros(limit, dtype=np.int32)}
+            if complex_func:
+                return (0.+0.j, 0.+0.j, {"real": infodict, "imag": infodict})
+            else:
+                return (0., 0., infodict)
 
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)
@@ -576,7 +596,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                 if min(wvar) < -1:
                     msg = "wvar parameters (alpha, beta) must both be >= -1."
                 if b < a:
-                    msg = "Integration limits a, b must satistfy a<b."
+                    msg = "Integration limits a, b must satisfy a<b."
 
             elif weight == 'cauchy' and wvar in (a, b):
                 msg = ("Parameter 'wvar' must not equal"
@@ -605,7 +625,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
         if infbounds == 0:
             return _quadpack._qagse(func,a,b,args,full_output,epsabs,epsrel,limit)
         else:
-            return _quadpack._qagie(func, bound, infbounds, args, full_output, 
+            return _quadpack._qagie(func, bound, infbounds, args, full_output,
                                     epsabs, epsrel, limit)
     else:
         if infbounds != 0:
@@ -675,6 +695,7 @@ def _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                                     epsabs, epsrel, limit)
 
 
+@xp_capabilities(np_only=True)
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
     Compute a double integral.
@@ -745,7 +766,8 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types.
+        several types. The integration is performed using a 21-point Gauss-Kronrod
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -807,6 +829,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
+@xp_capabilities(np_only=True)
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             epsrel=1.49e-8):
     """
@@ -877,7 +900,8 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types.
+        several types. The integration is performed using a 21-point Gauss-Kronrod
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -954,6 +978,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
+@xp_capabilities(np_only=True)
 def nquad(func, ranges, args=None, opts=None, full_output=False):
     r"""
     Integration over multiple variables.
@@ -966,9 +991,9 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     Parameters
     ----------
     func : {callable, scipy.LowLevelCallable}
-        The function to be integrated. Has arguments of ``x0, ... xn``,
-        ``t0, ... tm``, where integration is carried out over ``x0, ... xn``,
-        which must be floats.  Where ``t0, ... tm`` are extra arguments
+        The function to be integrated. Has arguments of ``x0, ..., xn``,
+        ``t0, ..., tm``, where integration is carried out over ``x0, ..., xn``,
+        which must be floats.  Where ``t0, ..., tm`` are extra arguments
         passed in args.
         Function signature should be ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.
         Integration is carried out in order.  That is, integration over ``x0``
@@ -992,7 +1017,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         ``func = f(x0, x1, x2, t0, t1)``, then ``ranges[0]`` may be defined as
         either ``(a, b)`` or else as ``(a, b) = range0(x1, x2, t0, t1)``.
     args : iterable object, optional
-        Additional arguments ``t0, ... tn``, required by ``func``, ``ranges``,
+        Additional arguments ``t0, ..., tn``, required by ``func``, ``ranges``,
         and ``opts``.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
@@ -1004,13 +1029,13 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
-          - epsabs = 1.49e-08
-          - epsrel = 1.49e-08
-          - limit  = 50
-          - points = None
-          - weight = None
-          - wvar   = None
-          - wopts  = None
+        - ``epsabs = 1.49e-08``
+        - ``epsrel = 1.49e-08``
+        - ``limit  = 50``
+        - ``points = None``
+        - ``weight = None``
+        - ``wvar   = None``
+        - ``wopts  = None``
 
         For more information on these options, see `quad`.
 
@@ -1066,7 +1091,8 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types.
+        several types. The integration is is performed using a 21-point Gauss-Kronrod
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as

@@ -4,22 +4,25 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
+import math
 import numpy as np
-from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
-    exp, cos, sin, polyval, polyint
+from numpy import zeros, pi, sqrt, cos, polyval, polyint
+
+from scipy._lib._array_api import array_namespace, xp_device, xp_promote
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
 
 
-def sawtooth(t, width=1):
+def sawtooth(t, width=1.):
     """
     Return a periodic sawtooth or triangle waveform.
 
     The sawtooth waveform has a period ``2*pi``, rises from -1 to 1 on the
     interval 0 to ``width*2*pi``, then drops from 1 to -1 on the interval
-    ``width*2*pi`` to ``2*pi``. `width` must be in the interval [0, 1].
+    ``width*2*pi`` to ``2*pi``. `width` must be in the interval ``[0, 1]``.
 
     Note that this is not band-limited.  It produces an infinite number
     of harmonics, which are aliased back and forth across the frequency
@@ -32,9 +35,9 @@ def sawtooth(t, width=1):
     width : array_like, optional
         Width of the rising ramp as a proportion of the total cycle.
         Default is 1, producing a rising ramp, while 0 produces a falling
-        ramp.  `width` = 0.5 produces a triangle wave.
+        ramp.  ``width=0.5`` produces a triangle wave.
         If an array, causes wave shape to change over time, and must be the
-        same length as t.
+        same length as `t`.
 
     Returns
     -------
@@ -52,36 +55,28 @@ def sawtooth(t, width=1):
     >>> plt.plot(t, signal.sawtooth(2 * np.pi * 5 * t))
 
     """
-    t, w = asarray(t), asarray(width)
-    w = asarray(w + (t - t))
-    t = asarray(t + (w - w))
-    if t.dtype.char in ['fFdD']:
-        ytype = t.dtype.char
-    else:
-        ytype = 'd'
-    y = zeros(t.shape, ytype)
+    xp = array_namespace(t, width)
+    t, w = xp_promote(t, width, broadcast=True, force_floating=True, xp=xp)
+    y = xp.zeros_like(t)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    place(y, mask1, nan)
+    y = xpx.at(y, mask1).set(xp.nan)
 
     # take t modulo 2*pi
-    tmod = mod(t, 2 * pi)
+    tmod = t % (2*xp.pi)
 
-    # on the interval 0 to width*2*pi function is
-    #  tmod / (pi*w) - 1
-    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
-    tsub = extract(mask2, tmod)
-    wsub = extract(mask2, w)
-    place(y, mask2, tsub / (pi * wsub) - 1)
+    # on the interval 0 to width*2*pi function is tmod / (pi*w) - 1
+    mask2 = ~mask1 & (tmod < w*2*xp.pi)
+    one = xp.asarray(1, dtype=t.dtype, device=xp_device(t))
+    safe_w = xp.where(w == 0, one, w)
+    y = xp.where(mask2, (tmod - xp.pi*safe_w)/(xp.pi*safe_w), y)
 
-    # on the interval width*2*pi to 2*pi function is
-    #  (pi*(w+1)-tmod) / (pi*(1-w))
+    # on the interval width*2*pi to 2*pi function is (pi*(w+1)-tmod) / (pi*(1-w))
+    mask3 = ~(mask1 | mask2)
+    safe_1mw = xp.where(w == 1, one, 1 - w)
+    y = xp.where(mask3, (xp.pi*(w + 1) - tmod)/(xp.pi*safe_1mw), y)
 
-    mask3 = (1 - mask1) & (1 - mask2)
-    tsub = extract(mask3, tmod)
-    wsub = extract(mask3, w)
-    place(y, mask3, (pi * (wsub + 1) - tsub) / (pi * (1 - wsub)))
     return y
 
 
@@ -91,7 +86,7 @@ def square(t, duty=0.5):
 
     The square wave has a period ``2*pi``, has value +1 from 0 to
     ``2*pi*duty`` and -1 from ``2*pi*duty`` to ``2*pi``. `duty` must be in
-    the interval [0,1].
+    the interval ``[0,1]``.
 
     Note that this is not band-limited.  It produces an infinite number
     of harmonics, which are aliased back and forth across the frequency
@@ -134,38 +129,34 @@ def square(t, duty=0.5):
     >>> plt.ylim(-1.5, 1.5)
 
     """
-    t, w = asarray(t), asarray(duty)
-    w = asarray(w + (t - t))
-    t = asarray(t + (w - w))
-    if t.dtype.char in ['fFdD']:
-        ytype = t.dtype.char
-    else:
-        ytype = 'd'
+    xp = array_namespace(t, duty)
+    t, w = xp_promote(t, duty, xp=xp, force_floating=True, broadcast=True)
 
-    y = zeros(t.shape, ytype)
+    y = xp.zeros_like(t)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    place(y, mask1, nan)
+    y = xpx.at(y, mask1).set(xp.nan)
 
     # on the interval 0 to duty*2*pi function is 1
-    tmod = mod(t, 2 * pi)
-    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
-    place(y, mask2, 1)
+    tmod = t % (2 * xp.pi)
+    mask2 = ~mask1 & (tmod < w*2*xp.pi)
+    y = xpx.at(y, mask2).set(1)
 
-    # on the interval duty*2*pi to 2*pi function is
-    #  (pi*(w+1)-tmod) / (pi*(1-w))
-    mask3 = (1 - mask1) & (1 - mask2)
-    place(y, mask3, -1)
+    # on the interval duty*2*pi to 2*pi function is -1
+    mask3 = ~(mask1 | mask2)
+    y = xpx.at(y, mask3).set(-1)
     return y
 
 
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
     """
-    Return a Gaussian modulated sinusoid:
+    Return a Gaussian modulated sinusoid.
 
-        ``exp(-a t^2) exp(1j*2*pi*fc*t).``
+    The formula for the returned signal is given by::
+
+        exp(-a t^2) exp(1j*2*pi*fc*t)
 
     If `retquad` is True, then return the real and imaginary parts
     (in-phase and quadrature).
@@ -174,7 +165,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 
     Parameters
     ----------
-    t : ndarray or the string 'cutoff'
+    t : ndarray or 'cutoff'
         Input array.
     fc : float, optional
         Center frequency (e.g. Hz).  Default is 1000.
@@ -197,11 +188,11 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     Returns
     -------
     yI : ndarray
-        Real part of signal.  Always returned.
+        Real part of signal. Always returned.
     yQ : ndarray
-        Imaginary part of signal.  Only returned if `retquad` is True.
+        Imaginary part of signal. Only returned if `retquad` is True.
     yenv : ndarray
-        Envelope of signal.  Only returned if `retenv` is True.
+        Envelope of signal. Only returned if `retenv` is True.
 
     Examples
     --------
@@ -230,7 +221,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # fdel = fc*bw/2:  g(fdel) = ref --- solve this for a
     #
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
-    a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
+    a = -(pi * fc * bw) ** 2 / (4.0 * math.log(ref))
 
     if isinstance(t, str):
         if t == 'cutoff':  # compute cut_off point
@@ -240,13 +231,16 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                 raise ValueError("Reference level for time cutoff must "
                                  "be < 0 dB")
             tref = pow(10.0, tpr / 20.0)
-            return sqrt(-log(tref) / a)
+            return sqrt(-math.log(tref) / a)
         else:
             raise ValueError("If `t` is a string, it must be 'cutoff'")
 
-    yenv = exp(-a * t * t)
-    yI = yenv * cos(2 * pi * fc * t)
-    yQ = yenv * sin(2 * pi * fc * t)
+    xp = array_namespace(t)
+    t = xp_promote(t, xp=xp, force_floating=True)
+
+    yenv = xp.exp(-a * t * t)
+    yI = yenv * xp.cos(2 * xp.pi * fc * t)
+    yQ = yenv * xp.sin(2 * xp.pi * fc * t)
     if not retquad and not retenv:
         return yI
     if not retquad and retenv:
@@ -257,8 +251,9 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         return yI, yQ, yenv
 
 
-def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
-    """Frequency-swept cosine generator.
+def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, *,
+          complex=False):
+    r"""Frequency-swept cosine generator.
 
     In the following, 'Hz' should be interpreted as 'cycles per unit';
     there is no requirement here that the unit is one second.  The
@@ -284,14 +279,21 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
         This parameter is only used when `method` is 'quadratic'.
         It determines whether the vertex of the parabola that is the graph
         of the frequency is at t=0 or t=t1.
+    complex : bool, optional
+        This parameter creates a complex-valued analytic signal instead of a
+        real-valued signal. It allows the use of complex baseband (in communications
+        domain). Default is False.
+
+        .. versionadded:: 1.15.0
 
     Returns
     -------
     y : ndarray
-        A numpy array containing the signal evaluated at `t` with the
-        requested time-varying frequency.  More precisely, the function
-        returns ``cos(phase + (pi/180)*phi)`` where `phase` is the integral
-        (from 0 to `t`) of ``2*pi*f(t)``. ``f(t)`` is defined below.
+        A numpy array containing the signal evaluated at `t` with the requested
+        time-varying frequency.  More precisely, the function returns
+        ``exp(1j*phase + 1j*(pi/180)*phi) if complex else cos(phase + (pi/180)*phi)``
+        where `phase` is the integral (from 0 to `t`) of ``2*pi*f(t)``.
+        The instantaneous frequency ``f(t)`` is defined below.
 
     See Also
     --------
@@ -299,153 +301,161 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
     Notes
     -----
-    There are four options for the `method`.  The following formulas give
-    the instantaneous frequency (in Hz) of the signal generated by
-    `chirp()`.  For convenience, the shorter names shown below may also be
-    used.
+    There are four possible options for the parameter `method`, which have a (long)
+    standard form and some allowed abbreviations. The formulas for the instantaneous
+    frequency :math:`f(t)` of the generated signal are as follows:
 
-    linear, lin, li:
+    1. Parameter `method` in ``('linear', 'lin', 'li')``:
 
-        ``f(t) = f0 + (f1 - f0) * t / t1``
+       .. math::
+           f(t) = f_0 + \beta\, t           \quad\text{with}\quad
+           \beta = \frac{f_1 - f_0}{t_1}
 
-    quadratic, quad, q:
+       Frequency :math:`f(t)` varies linearly over time with a constant rate
+       :math:`\beta`.
 
-        The graph of the frequency f(t) is a parabola through (0, f0) and
-        (t1, f1).  By default, the vertex of the parabola is at (0, f0).
-        If `vertex_zero` is False, then the vertex is at (t1, f1).  The
-        formula is:
+    2. Parameter `method` in ``('quadratic', 'quad', 'q')``:
 
-        if vertex_zero is True:
+       .. math::
+            f(t) =
+            \begin{cases}
+              f_0 + \beta\, t^2          & \text{if vertex_zero is True,}\\
+              f_1 + \beta\, (t_1 - t)^2  & \text{otherwise,}
+            \end{cases}
+            \quad\text{with}\quad
+            \beta = \frac{f_1 - f_0}{t_1^2}
 
-            ``f(t) = f0 + (f1 - f0) * t**2 / t1**2``
+       The graph of the frequency f(t) is a parabola through :math:`(0, f_0)` and
+       :math:`(t_1, f_1)`.  By default, the vertex of the parabola is at
+       :math:`(0, f_0)`. If `vertex_zero` is ``False``, then the vertex is at
+       :math:`(t_1, f_1)`.
+       To use a more general quadratic function, or an arbitrary
+       polynomial, use the function `scipy.signal.sweep_poly`.
 
-        else:
+    3. Parameter `method` in ``('logarithmic', 'log', 'lo')``:
 
-            ``f(t) = f1 - (f1 - f0) * (t1 - t)**2 / t1**2``
+       .. math::
+            f(t) = f_0  \left(\frac{f_1}{f_0}\right)^{t/t_1}
 
-        To use a more general quadratic function, or an arbitrary
-        polynomial, use the function `scipy.signal.sweep_poly`.
+       :math:`f_0` and :math:`f_1` must be nonzero and have the same sign.
+       This signal is also known as a geometric or exponential chirp.
 
-    logarithmic, log, lo:
+    4. Parameter `method` in ``('hyperbolic', 'hyp')``:
 
-        ``f(t) = f0 * (f1/f0)**(t/t1)``
+       .. math::
+              f(t) = \frac{\alpha}{\beta\, t + \gamma} \quad\text{with}\quad
+              \alpha = f_0 f_1 t_1, \ \beta = f_0 - f_1, \ \gamma = f_1 t_1
 
-        f0 and f1 must be nonzero and have the same sign.
+       :math:`f_0` and :math:`f_1` must be nonzero.
 
-        This signal is also known as a geometric or exponential chirp.
-
-    hyperbolic, hyp:
-
-        ``f(t) = f0*f1*t1 / ((f0 - f1)*t + f1*t1)``
-
-        f0 and f1 must be nonzero.
 
     Examples
     --------
-    The following will be used in the examples:
+    For the first example, a linear chirp ranging from 6 Hz to 1 Hz over 10 seconds is
+    plotted:
 
     >>> import numpy as np
-    >>> from scipy.signal import chirp, spectrogram
+    >>> from matplotlib.pyplot import tight_layout
+    >>> from scipy.signal import chirp, square, ShortTimeFFT
+    >>> from scipy.signal.windows import gaussian
     >>> import matplotlib.pyplot as plt
-
-    For the first example, we'll plot the waveform for a linear chirp
-    from 6 Hz to 1 Hz over 10 seconds:
-
-    >>> t = np.linspace(0, 10, 1500)
-    >>> w = chirp(t, f0=6, f1=1, t1=10, method='linear')
-    >>> plt.plot(t, w)
-    >>> plt.title("Linear Chirp, f(0)=6, f(10)=1")
-    >>> plt.xlabel('t (sec)')
-    >>> plt.show()
-
-    For the remaining examples, we'll use higher frequency ranges,
-    and demonstrate the result using `scipy.signal.spectrogram`.
-    We'll use a 4 second interval sampled at 7200 Hz.
-
-    >>> fs = 7200
-    >>> T = 4
-    >>> t = np.arange(0, int(T*fs)) / fs
-
-    We'll use this function to plot the spectrogram in each example.
-
-    >>> def plot_spectrogram(title, w, fs):
-    ...     ff, tt, Sxx = spectrogram(w, fs=fs, nperseg=256, nfft=576)
-    ...     fig, ax = plt.subplots()
-    ...     ax.pcolormesh(tt, ff[:145], Sxx[:145], cmap='gray_r',
-    ...                   shading='gouraud')
-    ...     ax.set_title(title)
-    ...     ax.set_xlabel('t (sec)')
-    ...     ax.set_ylabel('Frequency (Hz)')
-    ...     ax.grid(True)
     ...
-
-    Quadratic chirp from 1500 Hz to 250 Hz
-    (vertex of the parabolic curve of the frequency is at t=0):
-
-    >>> w = chirp(t, f0=1500, f1=250, t1=T, method='quadratic')
-    >>> plot_spectrogram(f'Quadratic Chirp, f(0)=1500, f({T})=250', w, fs)
+    >>> N, T = 1000, 0.01  # number of samples and sampling interval for 10 s signal
+    >>> t = np.arange(N) * T  # timestamps
+    ...
+    >>> x_lin = chirp(t, f0=6, f1=1, t1=10, method='linear')
+    ...
+    >>> fg0, ax0 = plt.subplots()
+    >>> ax0.set_title(r"Linear Chirp from $f(0)=6\,$Hz to $f(10)=1\,$Hz")
+    >>> ax0.set(xlabel="Time $t$ in Seconds", ylabel=r"Amplitude $x_\text{lin}(t)$")
+    >>> ax0.plot(t, x_lin)
     >>> plt.show()
 
-    Quadratic chirp from 1500 Hz to 250 Hz
-    (vertex of the parabolic curve of the frequency is at t=T):
+    The following four plots each show the short-time Fourier transform of a chirp
+    ranging from 45 Hz to 5 Hz with different values for the parameter `method`
+    (and `vertex_zero`):
 
-    >>> w = chirp(t, f0=1500, f1=250, t1=T, method='quadratic',
-    ...           vertex_zero=False)
-    >>> plot_spectrogram(f'Quadratic Chirp, f(0)=1500, f({T})=250\\n' +
-    ...                  '(vertex_zero=False)', w, fs)
+    >>> x_qu0 = chirp(t, f0=45, f1=5, t1=N*T, method='quadratic', vertex_zero=True)
+    >>> x_qu1 = chirp(t, f0=45, f1=5, t1=N*T, method='quadratic', vertex_zero=False)
+    >>> x_log = chirp(t, f0=45, f1=5, t1=N*T, method='logarithmic')
+    >>> x_hyp = chirp(t, f0=45, f1=5, t1=N*T, method='hyperbolic')
+    ...
+    >>> win = gaussian(50, std=12, sym=True)
+    >>> SFT = ShortTimeFFT(win, hop=2, fs=1/T, mfft=800, scale_to='magnitude')
+    >>> ts = ("'quadratic', vertex_zero=True", "'quadratic', vertex_zero=False",
+    ...       "'logarithmic'", "'hyperbolic'")
+    >>> fg1, ax1s = plt.subplots(2, 2, sharex='all', sharey='all',
+    ...                          figsize=(6, 5),  layout="constrained")
+    >>> for x_, ax_, t_ in zip([x_qu0, x_qu1, x_log, x_hyp], ax1s.ravel(), ts):
+    ...     aSx = abs(SFT.stft(x_))
+    ...     im_ = ax_.imshow(aSx, origin='lower', aspect='auto', extent=SFT.extent(N),
+    ...                      cmap='plasma')
+    ...     ax_.set_title(t_)
+    ...     if t_ == "'hyperbolic'":
+    ...         fg1.colorbar(im_, ax=ax1s, label='Magnitude $|S_z(t,f)|$')
+    >>> _ = fg1.supxlabel("Time $t$ in Seconds")  # `_ =` is needed to pass doctests
+    >>> _ = fg1.supylabel("Frequency $f$ in Hertz")
     >>> plt.show()
 
-    Logarithmic chirp from 1500 Hz to 250 Hz:
+    Finally, the short-time Fourier transform of a complex-valued linear chirp
+    ranging from -30 Hz to 30 Hz is depicted:
 
-    >>> w = chirp(t, f0=1500, f1=250, t1=T, method='logarithmic')
-    >>> plot_spectrogram(f'Logarithmic Chirp, f(0)=1500, f({T})=250', w, fs)
+    >>> z_lin = chirp(t, f0=-30, f1=30, t1=N*T, method="linear", complex=True)
+    >>> SFT.fft_mode = 'centered'  # needed to work with complex signals
+    >>> aSz = abs(SFT.stft(z_lin))
+    ...
+    >>> fg2, ax2 = plt.subplots()
+    >>> ax2.set_title(r"Linear Chirp from $-30\,$Hz to $30\,$Hz")
+    >>> ax2.set(xlabel="Time $t$ in Seconds", ylabel="Frequency $f$ in Hertz")
+    >>> im2 = ax2.imshow(aSz, origin='lower', aspect='auto',
+    ...                  extent=SFT.extent(N), cmap='viridis')
+    >>> fg2.colorbar(im2, label='Magnitude $|S_z(t,f)|$')
     >>> plt.show()
 
-    Hyperbolic chirp from 1500 Hz to 250 Hz:
-
-    >>> w = chirp(t, f0=1500, f1=250, t1=T, method='hyperbolic')
-    >>> plot_spectrogram(f'Hyperbolic Chirp, f(0)=1500, f({T})=250', w, fs)
-    >>> plt.show()
-
+    Note that using negative frequencies makes only sense with complex-valued signals.
+    Furthermore, the magnitude of the complex exponential function is one whereas the
+    magnitude of the real-valued cosine function is only 1/2.
     """
     # 'phase' is computed in _chirp_phase, to make testing easier.
-    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero)
-    # Convert  phi to radians.
-    phi *= pi / 180
-    return cos(phase + phi)
+    xp = array_namespace(t)
+    t = xp_promote(t, xp=xp, force_floating=True)
+    # possibly use `xpx.deg2rad(phi)` in the future, see
+    # https://github.com/data-apis/array-api-extra/issues/876
+    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero, xp=xp) + phi * xp.pi / 180
+    return xp.exp(1j*phase) if complex else xp.cos(phase)
 
 
-def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
+def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True, *, xp=None):
     """
     Calculate the phase used by `chirp` to generate its output.
 
     See `chirp` for a description of the arguments.
 
     """
-    t = asarray(t)
+    xp = array_namespace(t) if xp is None else xp
     f0 = float(f0)
     t1 = float(t1)
     f1 = float(f1)
     if method in ['linear', 'lin', 'li']:
         beta = (f1 - f0) / t1
-        phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
+        phase = 2 * xp.pi * (f0 * t + 0.5 * beta * t * t)
 
     elif method in ['quadratic', 'quad', 'q']:
         beta = (f1 - f0) / (t1 ** 2)
         if vertex_zero:
-            phase = 2 * pi * (f0 * t + beta * t ** 3 / 3)
+            phase = 2 * xp.pi * (f0 * t + beta * t ** 3 / 3)
         else:
-            phase = 2 * pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
+            phase = 2 * xp.pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
 
     elif method in ['logarithmic', 'log', 'lo']:
         if f0 * f1 <= 0.0:
             raise ValueError("For a logarithmic chirp, f0 and f1 must be "
                              "nonzero and have the same sign.")
         if f0 == f1:
-            phase = 2 * pi * f0 * t
+            phase = 2 * xp.pi * f0 * t
         else:
-            beta = t1 / log(f1 / f0)
-            phase = 2 * pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
+            beta = t1 / math.log(f1 / f0)
+            phase = 2 * xp.pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
 
     elif method in ['hyperbolic', 'hyp']:
         if f0 == 0 or f1 == 0:
@@ -453,12 +463,12 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
                              "nonzero.")
         if f0 == f1:
             # Degenerate case: constant frequency.
-            phase = 2 * pi * f0 * t
+            phase = 2 * xp.pi * f0 * t
         else:
             # Singular point: the instantaneous frequency blows up
             # when t == sing.
             sing = -f1 * t1 / (f0 - f1)
-            phase = 2 * pi * (-sing * f0) * log(np.abs(1 - t/sing))
+            phase = 2 * xp.pi * (-sing * f0) * xp.log(xp.abs(1 - t/sing))
 
     else:
         raise ValueError("method must be 'linear', 'quadratic', 'logarithmic', "
@@ -483,14 +493,14 @@ def sweep_poly(t, poly, phi=0):
         The desired frequency expressed as a polynomial.  If `poly` is
         a list or ndarray of length n, then the elements of `poly` are
         the coefficients of the polynomial, and the instantaneous
-        frequency is
+        frequency is::
 
-          ``f(t) = poly[0]*t**(n-1) + poly[1]*t**(n-2) + ... + poly[n-1]``
+            f(t) = poly[0]*t**(n-1) + poly[1]*t**(n-2) + ... + poly[n-1]
 
         If `poly` is an instance of numpy.poly1d, then the
-        instantaneous frequency is
+        instantaneous frequency is::
 
-          ``f(t) = poly(t)``
+            f(t) = poly(t)
 
     phi : float, optional
         Phase offset, in degrees, Default: 0.
@@ -579,7 +589,7 @@ def _sweep_poly_phase(t, poly):
 
 
 def unit_impulse(shape, idx=None, dtype=float):
-    """
+    r"""
     Unit impulse signal (discrete delta function) or unit basis vector.
 
     Parameters
@@ -603,7 +613,24 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     Notes
     -----
-    The 1D case is also known as the Kronecker delta.
+    In digital signal processing literature the unit impulse signal is often
+    represented by the Kronecker delta. [1]_ I.e., a signal :math:`u_k[n]`,
+    which is zero everywhere except being one at the :math:`k`-th sample,
+    can be expressed as
+
+    .. math::
+
+        u_k[n] = \delta[n-k] \equiv \delta_{n,k}\ .
+
+    Furthermore, the unit impulse is frequently interpreted as the discrete-time
+    version of the continuous-time Dirac distribution. [2]_
+
+    References
+    ----------
+    .. [1] "Kronecker delta", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Kronecker_delta#Digital_signal_processing
+    .. [2] "Dirac delta function" *Wikipedia*,
+           https://en.wikipedia.org/wiki/Dirac_delta_function#Relationship_to_the_Kronecker_delta
 
     .. versionadded:: 0.19.0
 

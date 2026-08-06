@@ -18,10 +18,12 @@ features are:
 # having reusable facilities to efficiently read/write fortran-formatted files
 # would be useful outside this module.
 
+import os
 import warnings
 
 import numpy as np
-from scipy.sparse import csc_matrix
+from scipy._lib.deprecation import _NoValue
+from scipy.sparse import csc_array, csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
 __all__ = ["hb_read", "hb_write"]
@@ -48,7 +50,7 @@ class HBInfo:
 
         Parameters
         ----------
-        m : sparse matrix
+        m : sparse array or matrix
             the HBInfo instance will derive its parameters from m
         title : str
             Title to put in the HB header
@@ -73,15 +75,18 @@ class HBInfo:
         nnon_zeros = m.nnz
 
         if fmt is None:
-            # +1 because HB use one-based indexing (Fortran), and we will write
-            # the indices /pointer as such
-            pointer_fmt = IntFormat.from_number(np.max(pointer+1))
-            indices_fmt = IntFormat.from_number(np.max(indices+1))
+            # +1 because HB uses one-based (Fortran) indexing.
+            # initial=1 supplies np.max's identity so empty indices/values
+            # (nnz == 0) still yield a valid format.
+            pointer_fmt = IntFormat.from_number(np.max(pointer + 1, initial=1))
+            indices_fmt = IntFormat.from_number(np.max(indices + 1, initial=1))
 
             if values.dtype.kind in np.typecodes["AllFloat"]:
-                values_fmt = ExpFormat.from_number(-np.max(np.abs(values)))
+                values_fmt = ExpFormat.from_number(
+                    -np.max(np.abs(values), initial=np.float64(1)))
             elif values.dtype.kind in np.typecodes["AllInteger"]:
-                values_fmt = IntFormat.from_number(-np.max(np.abs(values)))
+                values_fmt = IntFormat.from_number(
+                    -np.max(np.abs(values), initial=1))
             else:
                 message = f"type {values.dtype.kind} not implemented yet"
                 raise NotImplementedError(message)
@@ -189,8 +194,9 @@ class HBInfo:
         nnon_zeros = _expect_int(line[42:56])
         nelementals = _expect_int(line[56:70])
         if not nelementals == 0:
-            raise ValueError("Unexpected value %d for nltvl (last entry of line 3)"
-                             % nelementals)
+            raise ValueError(
+                f"Unexpected value {nelementals} for nltvl (last entry of line 3)"
+            )
 
         # Fourth line
         line = fid.readline().strip("\n")
@@ -282,18 +288,13 @@ class HBInfo:
         """Gives the header corresponding to this instance as a string."""
         header = [self.title.ljust(72) + self.key.ljust(8)]
 
-        header.append("%14d%14d%14d%14d" %
-                      (self.total_nlines, self.pointer_nlines,
-                       self.indices_nlines, self.values_nlines))
-        header.append("%14s%14d%14d%14d%14d" %
-                      (self.mxtype.fortran_format.ljust(14), self.nrows,
-                       self.ncols, self.nnon_zeros, 0))
+        header.append(f"{self.total_nlines:14d}{self.pointer_nlines:14d}{self.indices_nlines:14d}{self.values_nlines:14d}")
+        header.append(f"{self.mxtype.fortran_format.ljust(14):14s}{self.nrows:14d}{self.ncols:14d}{self.nnon_zeros:14d}{0:14d}")
 
         pffmt = self.pointer_format.fortran_format
         iffmt = self.indices_format.fortran_format
         vffmt = self.values_format.fortran_format
-        header.append("%16s%16s%20s" %
-                      (pffmt.ljust(16), iffmt.ljust(16), vffmt.ljust(20)))
+        header.append(f"{pffmt.ljust(16):16s}{iffmt.ljust(16):16s}{vffmt.ljust(20):20s}")
         return "\n".join(header)
 
 
@@ -323,11 +324,7 @@ def _read_hb_data(content, header):
     val = np.fromstring(val_string,
             dtype=header.values_dtype, sep=' ')
 
-    try:
-        return csc_matrix((val, ind-1, ptr-1),
-                          shape=(header.nrows, header.ncols))
-    except ValueError as e:
-        raise e
+    return csc_array((val, ind-1, ptr-1), shape=(header.nrows, header.ncols))
 
 
 def _write_data(m, fid, header):
@@ -466,7 +463,7 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file):
+def hb_read(path_or_open_file, *, spmatrix=_NoValue):
     """Read HB-format file.
 
     Parameters
@@ -474,31 +471,40 @@ def hb_read(path_or_open_file):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse matrix. Otherwise return sparse array.
+
+        .. deprecated:: 1.18.0
+            The default value for `spmatrix` is changing to False in v2.1.
+            That means the default return value will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
+            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Returns
     -------
-    data : scipy.sparse.csc_matrix instance
-        The data read from the HB file as a sparse matrix.
+    data : csc_array or csc_matrix
+        The data read from the HB file as a sparse array.
 
     Notes
     -----
     At the moment not the full Harwell-Boeing format is supported. Supported
     features are:
 
-        - assembled, non-symmetric, real matrices
-        - integer for pointer/indices
-        - exponential format for float values, and int format
+    - assembled, non-symmetric, real matrices
+    - integer for pointer/indices
+    - exponential format for float values, and int format
 
     Examples
     --------
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_array, eye
-    >>> data = csr_array(eye(3))  # create a sparse array
+    >>> from scipy.sparse import csr_array, eye_array
+    >>> data = csr_array(eye_array(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb"))  # read a hb file
-    <Compressed Sparse Column sparse matrix of dtype 'float64'
+    >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
+    <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (3, 3)>
         Coords	Values
         (0, 0)	1.0
@@ -510,10 +516,26 @@ def hb_read(path_or_open_file):
         return hb.read_matrix()
 
     if hasattr(path_or_open_file, 'read'):
-        return _get_matrix(path_or_open_file)
+        data = _get_matrix(path_or_open_file)
     else:
         with open(path_or_open_file) as f:
-            return _get_matrix(f)
+            data = _get_matrix(f)
+
+    if spmatrix is _NoValue:
+        msg = """The default value for `spmatrix` is changing to `False` in v2.1.
+            That means the default return type will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+            See the spmatrix to sparray migration guide for details.
+            https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+            """
+        prefixes = (os.path.dirname(__file__),)
+        warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+        spmatrix = True
+
+    if spmatrix:
+        return csc_matrix(data)
+    return data
 
 
 def hb_write(path_or_open_file, m, hb_info=None):
@@ -524,34 +546,30 @@ def hb_write(path_or_open_file, m, hb_info=None):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before writing.
-    m : sparse-matrix
-        the sparse matrix to write
+    m : sparse array or matrix
+        the sparse array to write
     hb_info : HBInfo
         contains the meta-data for write
-
-    Returns
-    -------
-    None
 
     Notes
     -----
     At the moment not the full Harwell-Boeing format is supported. Supported
     features are:
 
-        - assembled, non-symmetric, real matrices
-        - integer for pointer/indices
-        - exponential format for float values, and int format
+    - assembled, non-symmetric, real matrices
+    - integer for pointer/indices
+    - exponential format for float values, and int format
 
     Examples
     --------
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_array, eye
-    >>> data = csr_array(eye(3))  # create a sparse array
+    >>> from scipy.sparse import csr_array, eye_array
+    >>> data = csr_array(eye_array(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb"))  # read a hb file
-    <Compressed Sparse Column sparse matrix of dtype 'float64'
+    >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
+    <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (3, 3)>
         Coords	Values
         (0, 0)	1.0
@@ -565,10 +583,10 @@ def hb_write(path_or_open_file, m, hb_info=None):
 
     def _set_matrix(fid):
         hb = HBFile(fid, hb_info)
-        return hb.write_matrix(m)
+        hb.write_matrix(m)
 
     if hasattr(path_or_open_file, 'write'):
-        return _set_matrix(path_or_open_file)
+        _set_matrix(path_or_open_file)
     else:
         with open(path_or_open_file, 'w') as f:
-            return _set_matrix(f)
+            _set_matrix(f)

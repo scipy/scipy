@@ -34,7 +34,7 @@ import warnings
 import numpy as np
 
 
-def _extend_mode_to_code(mode):
+def _extend_mode_to_code(mode, is_filter=False):
     """Convert an extension mode to the corresponding integer code.
     """
     if mode == 'nearest':
@@ -47,8 +47,12 @@ def _extend_mode_to_code(mode):
         return 3
     elif mode == 'constant':
         return 4
+    elif mode == 'grid-wrap' and is_filter:
+        return 1
     elif mode == 'grid-wrap':
         return 5
+    elif mode == 'grid-constant' and is_filter:
+        return 4
     elif mode == 'grid-constant':
         return 6
     else:
@@ -61,7 +65,7 @@ def _normalize_sequence(input, rank):
     check if its length is equal to the length of array.
     """
     is_str = isinstance(input, str)
-    if not is_str and isinstance(input, Iterable):
+    if not is_str and np.iterable(input):
         normalized = list(input)
         if len(normalized) != rank:
             err = "sequence argument must have length equal to input rank"
@@ -80,7 +84,7 @@ def _get_output(output, input, shape=None, complex_output=False):
         else:
             complex_type = np.promote_types(input.dtype, np.complex64)
             output = np.zeros(shape, dtype=complex_type)
-    elif isinstance(output, (type, np.dtype)):
+    elif isinstance(output, type | np.dtype):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
         if complex_output and np.dtype(output).kind != 'c':
             warnings.warn("promoting specified output dtype to complex", stacklevel=3)
@@ -121,7 +125,6 @@ def _check_axes(axes, ndim):
         raise ValueError("axes must be unique")
     return axes
 
-
 def _skip_if_dtype(arg):
     """'array or dtype' polymorphism.
 
@@ -134,8 +137,3 @@ def _skip_if_dtype(arg):
         return None if issubclass(arg, np.generic) else arg
     else:
         return None if isinstance(arg, np.dtype) else arg
-
-
-def _skip_if_int(arg):
-    return None if (arg is None or isinstance(arg, int)) else arg
-

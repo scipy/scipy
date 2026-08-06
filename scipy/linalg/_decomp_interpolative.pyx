@@ -117,31 +117,30 @@ from scipy.fft import rfft, fft
 from scipy.sparse.linalg import LinearOperator
 
 from scipy.linalg.cython_lapack cimport dlarfgp, dorm2r, zunm2r, zlarfgp
-from scipy.linalg.cython_blas cimport dnrm2, dtrsm, dznrm2, ztrsm
+from scipy.linalg.cython_blas cimport blas_int, dnrm2, dtrsm, dznrm2, ztrsm
 
 
-__all__ = ['idd_estrank', 'idd_ldiv', 'idd_poweroftwo', 'idd_reconid', 'iddp_aid',
+__all__ = ['idd_estrank', 'idd_reconid', 'iddp_aid',
            'iddp_asvd', 'iddp_id', 'iddp_qrpiv', 'iddp_svd', 'iddr_aid', 'iddr_asvd',
            'iddr_id', 'iddr_qrpiv', 'iddr_svd', 'idz_estrank', 'idz_reconid',
            'idzp_aid', 'idzp_asvd', 'idzp_id', 'idzp_qrpiv', 'idzp_svd', 'idzr_aid',
-           'idzr_asvd', 'idzr_id', 'idzr_qrpiv', 'idzr_svd', 'idd_id2svd', 'idz_id2svd'
+           'idzr_asvd', 'idzr_id', 'idzr_qrpiv', 'idzr_svd', 'idd_id2svd', 'idz_id2svd',
            # LinearOperator funcs
            'idd_findrank', 'iddp_rid', 'iddp_rsvd', 'iddr_rid', 'iddr_rsvd',
            'idz_findrank', 'idzp_rid', 'idzp_rsvd', 'idzr_rid', 'idzr_rsvd',
-           'idd_snorm', 'idz_snorm', 'idd_diffsnorm', 'idz_diffsnorm'
+           'idd_snorm', 'idz_snorm', 'idd_diffsnorm', 'idz_diffsnorm',
            ]
 
 
-def idd_diffsnorm(A: LinearOperator, B: LinearOperator, int its=20, rng=None):
-    cdef int n = A.shape[1], j = 0, intone = 1
+def idd_diffsnorm(A: LinearOperator, B: LinearOperator, *, rng, int its=20):
+    cdef blas_int n = A.shape[1], intone = 1
+    cdef int j = 0
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] v1
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] v2
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] u1
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] u2
 
-    if not rng:
-        rng = np.random.default_rng()
     v1 = rng.uniform(low=-1., high=1., size=n)
     v1 /= dnrm2(&n, &v1[0], &intone)
 
@@ -162,10 +161,11 @@ def idd_diffsnorm(A: LinearOperator, B: LinearOperator, int its=20, rng=None):
     return snorm
 
 
-def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: float,
-                rng=None):
+def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: float, *,
+                rng):
     cdef int m = a.shape[0], n = a.shape[1]
-    cdef int intone = 1, n2, nsteps = 3, row, r, nstep, cols, k, nulls
+    cdef int n2, nsteps = 3, nstep, k, nulls
+    cdef blas_int intone = 1, row, r, cols
     cdef cnp.float64_t h, alpha, beta
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=3] albetas
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] tau_arr
@@ -178,13 +178,10 @@ def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: fl
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] Fc
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] F
 
-    if not rng:
-        rng = np.random.default_rng()
-
     n2 = idd_poweroftwo(m)
 
     # This part is the initialization that is done via idd_frmi
-    # for a Subsampled Randomized Fourier Transfmrom (SRFT).
+    # for a Subsampled Randomized Fourier Transform (SRFT).
 
     # Draw (nsteps x m x 2) arrays from [-1, 1) uniformly and scale
     # each 2-element row to unity norm
@@ -212,10 +209,10 @@ def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: fl
 
         rta = rta[rng.permutation(m), :]
 
-    # idd_subselect pick randomly n2-many rows
-    subselect = rng.choice(m, n2, replace=False)
-    rta = rta[subselect, :]
-
+    # idd_subselect pick randomly n2-many rows if there are more than one row
+    if m > 1:
+        subselect = rng.choice(m, n2, replace=False)
+        rta = rta[subselect, :]
     # Perform rfft on each column. Note that the first and the last
     # element of the result is real valued (n2 is power of 2).
     #
@@ -281,11 +278,11 @@ def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: fl
     return k, Fcopy
 
 
-def idd_findrank(A: LinearOperator, cnp.float64_t eps, rng=None):
+def idd_findrank(A: LinearOperator, cnp.float64_t eps, *, rng):
     # Estimate the rank of A by repeatedly using A.rmatvec(random vec)
 
-    cdef int m = A.shape[0], n = A.shape[1], k = 0, kk = 0,r = n, krank
-    cdef int no_of_cols = 4, intone = 1, info = 0
+    cdef int m = A.shape[0], k = 0, kk = 0, no_of_cols = 4
+    cdef blas_int n = A.shape[1], r, krank, intone = 1, info = 0
     cdef cnp.float64_t[::1] tau = cnp.PyArray_ZEROS(1, [min(m, n)], cnp.NPY_FLOAT64, 0)
     cdef cnp.float64_t[::1] y = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] retarr
@@ -311,9 +308,6 @@ def idd_findrank(A: LinearOperator, cnp.float64_t eps, rng=None):
                           f"{no_of_cols*n*8} bytes for"
                           "'scipy.linalg.interpolative.idd_findrank()' "
                           "function.")
-
-    if not rng:
-        rng = np.random.default_rng()
 
     krank = 0
     try:
@@ -380,8 +374,9 @@ def idd_id2svd(
     cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms,
     cnp.ndarray[cnp.float64_t, ndim=2] proj,
     ):
-    cdef int m = cols.shape[0], krank = cols.shape[1]
-    cdef int n = proj.shape[1] + krank, info, ci
+    cdef blas_int m = cols.shape[0], krank = cols.shape[1]
+    cdef blas_int n = proj.shape[1] + krank, info
+    cdef int ci
     cdef cnp.ndarray[cnp.float64_t, mode='fortran', ndim=2] C
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] tau1
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] tau2
@@ -464,15 +459,13 @@ def idd_reconid(B, idx, proj):
     return approx
 
 
-def idd_snorm(A: LinearOperator, int its=20, rng=None):
-    cdef int n = A.shape[1]
-    cdef int j = 0, intone = 1
+def idd_snorm(A: LinearOperator, *, rng, int its=20):
+    cdef blas_int n = A.shape[1], intone = 1
+    cdef int j = 0
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] v
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] u
 
-    if not rng:
-        rng = np.random.default_rng()
     v = rng.uniform(low=-1., high=1., size=n)
     v /= dnrm2(&n, &v[0], &intone)
 
@@ -488,7 +481,7 @@ def idd_snorm(A: LinearOperator, int its=20, rng=None):
     return snorm
 
 
-def iddp_aid(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, rng=None):
+def iddp_aid(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, *, rng):
     krank, proj = idd_estrank(a, eps, rng=rng)
     if krank != 0:
         proj = proj[:krank, :]
@@ -497,9 +490,10 @@ def iddp_aid(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, rng=None
     return iddp_id(a, eps=eps)
 
 
-def iddp_asvd(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, rng=None):
-    cdef int m = a.shape[0], n = a.shape[1]
-    cdef int krank, info, ci
+def iddp_asvd(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, *, rng):
+    cdef blas_int m = a.shape[0], n = a.shape[1]
+    cdef blas_int krank, info
+    cdef int ci
     cdef cnp.ndarray[cnp.float64_t, mode='fortran', ndim=2] C
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] tau1
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] tau2
@@ -562,7 +556,8 @@ def iddp_asvd(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, rng=Non
 
 
 def iddp_id(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float):
-    cdef int n = a.shape[1], krank, tmp_int, p
+    cdef blas_int n = a.shape[1], krank, tmp_int
+    cdef int p
     cdef cnp.float64_t one = 1
     krank, _, inds = iddp_qrpiv(a, eps)
 
@@ -608,9 +603,10 @@ def iddp_qrpiv(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a, cnp.float64_t eps
     This function overwrites entries of "a" !
     """
 
-    cdef int m = a.shape[0], n = a.shape[1]
+    cdef blas_int m = a.shape[0], n = a.shape[1]
     cdef cnp.ndarray col_norms = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
-    cdef int k = 0, kpiv = 0, i = 0, tmp_int = 0, int_n = 0
+    cdef int k = 0, kpiv = 0, i = 0
+    cdef blas_int tmp_int = 0, int_n = 0
     cdef cnp.float64_t tmp_sca = 0.
     cdef cnp.ndarray taus = cnp.PyArray_ZEROS(1, [m], cnp.NPY_FLOAT64, 0)
     cdef cnp.ndarray ind = cnp.PyArray_ZEROS(1, [n], cnp.NPY_INT64, 0)
@@ -639,9 +635,8 @@ def iddp_qrpiv(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a, cnp.float64_t eps
         if k < m-1:
             # Compute the householder reflector for column k
             tmp_sca = a[k, k]
-            # FIX: Convert these to F_INT
-            tmp_int = <int>(m - k)
-            int_n = <int>n
+            tmp_int = m - k
+            int_n = n
             dlarfgp(&tmp_int, &tmp_sca, &a[k+1, k], &int_n, &taus_v[k])
 
             # Overwrite with 1. for easy matmul
@@ -680,12 +675,12 @@ def iddp_qrpiv(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a, cnp.float64_t eps
     return k + 1, taus, ind
 
 
-def iddp_rid(A: LinearOperator, cnp.float64_t eps, rng=None):
-    _, ret = idd_findrank(A, eps, rng)
+def iddp_rid(A: LinearOperator, cnp.float64_t eps, *, rng):
+    _, ret = idd_findrank(A, eps, rng=rng)
     return iddp_id(ret, eps)
 
 
-def iddp_rsvd(A: LinearOperator, cnp.float64_t eps, rng=None):
+def iddp_rsvd(A: LinearOperator, cnp.float64_t eps, *, rng):
     cdef int n = A.shape[1]
     cdef int krank, j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
@@ -693,7 +688,7 @@ def iddp_rsvd(A: LinearOperator, cnp.float64_t eps, rng=None):
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] col
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] x
 
-    krank, perms, proj = iddp_rid(A, eps, rng)
+    krank, perms, proj = iddp_rid(A, eps, rng=rng)
     if krank > 0:
         # idd_getcols
         col = cnp.PyArray_EMPTY(2, [n, krank], cnp.NPY_FLOAT64, 0)
@@ -712,7 +707,7 @@ def iddp_rsvd(A: LinearOperator, cnp.float64_t eps, rng=None):
 
 def iddp_svd(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float):
     """a is overwritten"""
-    cdef int m = a.shape[0], krank, info
+    cdef blas_int m = a.shape[0], krank, info
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] taus
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] UU
     cdef cnp.ndarray[cnp.float64_t, mode='fortran', ndim=2] C
@@ -743,8 +738,8 @@ def iddp_svd(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float):
     return UU, S, V
 
 
-def iddr_aid(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank,
-             rng=None):
+def iddr_aid(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank, *,
+             rng):
     cdef int m = a.shape[0], n = a.shape[1], n2, nsteps = 3, row, r, nstep, L
     cdef cnp.float64_t h, alpha, beta
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=3] albetas
@@ -753,9 +748,6 @@ def iddr_aid(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank,
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] giv2x2
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] rta
     cdef cnp.ndarray[cnp.npy_int64, mode='c', ndim=1] marker
-
-    if not rng:
-        rng = np.random.default_rng()
 
     # idd_aidi
     L = krank + 8
@@ -898,10 +890,11 @@ def iddr_aid(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank,
     return perms, proj
 
 
-def iddr_asvd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank,
-              rng=None):
-    cdef int m = a.shape[0], n = a.shape[1]
-    cdef int info, ci
+def iddr_asvd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank, *,
+              rng):
+    cdef blas_int m = a.shape[0], n = a.shape[1]
+    cdef blas_int _krank = krank, info
+    cdef int ci
     cdef cnp.ndarray[cnp.float64_t, mode='fortran', ndim=2] C
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] tau1
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] tau2
@@ -948,22 +941,22 @@ def iddr_asvd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank
     # Apply Q of col to U from the left
     C = col[:, :krank].copy(order='F')
     dorm2r(<char*>'R', <char*>'T',
-           &krank, &m, &krank, &C[0, 0], &m, &tau1[0],
-           &UU[0,0], &krank, &a[0, 0], &info)
+           &_krank, &m, &_krank, &C[0, 0], &m, &tau1[0],
+           &UU[0,0], &_krank, &a[0, 0], &info)
 
     VV[:krank, :krank] = V[:, :].T
     # Apply Q of t to V from the left
     C = t[:, :krank].copy(order='F')
     dorm2r(<char*>'R', <char*>'T',
-           &krank, &n, &krank, &C[0, 0], &n, &tau2[0],
-           &VV[0, 0], &krank, &a[0, 0], &info)
+           &_krank, &n, &_krank, &C[0, 0], &n, &tau2[0],
+           &VV[0, 0], &_krank, &a[0, 0], &info)
 
     return UU, S, VV
 
 
 def iddr_id(cnp.ndarray[cnp.float64_t, ndim=2] a, int krank):
-    cdef int n = a.shape[1]
-    cdef int tmp_int
+    cdef blas_int n = a.shape[1]
+    cdef blas_int tmp_int, _krank = krank
     cdef cnp.float64_t one = 1.0
     cdef cnp.ndarray[cnp.npy_int64, ndim=1] inds
     cdef cnp.ndarray[cnp.npy_int64, ndim=1] perms
@@ -982,15 +975,16 @@ def iddr_id(cnp.ndarray[cnp.float64_t, ndim=2] a, int krank):
     tmp_int = n - krank
     # SIDE,UPLO,TRANSA,DIAG,M,N,ALPHA,A,LDA,B,LDB
     dtrsm(<char*>'R', <char*>'L', <char*>'N', <char*>'N',
-          &tmp_int, &krank, &one, &a[0, 0], &n, &a[0, krank], &n)
+          &tmp_int, &_krank, &one, &a[0, 0], &n, &a[0, krank], &n)
 
     return perms, a[:krank, krank:]
 
 
 def iddr_qrpiv(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, krank: int):
-    cdef int m = a.shape[0], n = a.shape[1]
+    cdef blas_int m = a.shape[0], n = a.shape[1]
     cdef cnp.ndarray col_norms = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
-    cdef int loop = 0, loops, kpiv = 0, i = 0, tmp_int = 0, int_n = 0
+    cdef int loop = 0, loops, kpiv = 0, i = 0
+    cdef blas_int tmp_int = 0, int_n = 0
     cdef cnp.float64_t tmp_sca = 0.
     cdef cnp.ndarray taus = cnp.PyArray_ZEROS(1, [m], cnp.NPY_FLOAT64, 0)
     cdef cnp.ndarray ind = cnp.PyArray_ZEROS(1, [n], cnp.NPY_INT64, 0)
@@ -1017,9 +1011,8 @@ def iddr_qrpiv(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, krank: i
 
         if loop < m-1:
             tmp_sca = a[loop, loop]
-            # FIX: Convert these to F_INT
-            tmp_int = <int>(m - loop)
-            int_n = <int>n
+            tmp_int = m - loop
+            int_n = n
             dlarfgp(&tmp_int, &tmp_sca, &a[loop+1, loop], &int_n, &taus_v[loop])
 
             # Overwrite with 1. for easy matmul
@@ -1057,13 +1050,10 @@ def iddr_qrpiv(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, krank: i
     return ind, taus
 
 
-def iddr_rid(A: LinearOperator, int krank, rng=None):
+def iddr_rid(A: LinearOperator, int krank, *, rng):
     cdef int m = A.shape[0], n = A.shape[1], k = 0
     cdef int L = min(krank+2, min(m, n))
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] r
-
-    if not rng:
-        rng = np.random.default_rng()
 
     r = cnp.PyArray_EMPTY(2, [L, n], cnp.NPY_FLOAT64, 0)
     for k in range(L):
@@ -1072,15 +1062,15 @@ def iddr_rid(A: LinearOperator, int krank, rng=None):
     return iddr_id(a=r, krank=krank)
 
 
-def iddr_rsvd(A: LinearOperator, int krank, rng=None):
-    cdef int n = A.shape[1], j
+def iddr_rsvd(A: LinearOperator, int krank, *, rng):
+    cdef int m = A.shape[0], n = A.shape[1], j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
     cdef cnp.ndarray[cnp.float64_t, ndim=2] proj
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] col
 
-    perms, proj = iddr_rid(A, krank, rng)
+    perms, proj = iddr_rid(A, krank, rng=rng)
     # idd_getcols
-    col = cnp.PyArray_EMPTY(2, [n, krank], cnp.NPY_FLOAT64, 0)
+    col = cnp.PyArray_EMPTY(2, [m, krank], cnp.NPY_FLOAT64, 0)
     x = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
     for j in range(krank):
         x[perms[j]] = 1.
@@ -1091,7 +1081,8 @@ def iddr_rsvd(A: LinearOperator, int krank, rng=None):
 
 
 def iddr_svd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank):
-    cdef int m = a.shape[0], info = 0
+    cdef blas_int m = a.shape[0], info = 0
+    cdef blas_int _krank = krank
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] taus
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] UU
     cdef cnp.ndarray[cnp.float64_t, mode='fortran', ndim=2] C
@@ -1115,22 +1106,21 @@ def iddr_svd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank)
     # Do the transpose dance for C-layout, use a for scratch
     C = a[:, :krank].copy(order='F')
     dorm2r(<char*>'R', <char*>'T',
-           &krank, &m, &krank, &C[0, 0], &m, &taus[0],
-           &UU[0,0], &krank, &a[0, 0], &info)
+           &_krank, &m, &_krank, &C[0, 0], &m, &taus[0],
+           &UU[0,0], &_krank, &a[0, 0], &info)
 
     return UU, S, V
 
 
-def idz_diffsnorm(A: LinearOperator, B: LinearOperator, int its=20, rng=None):
-    cdef int n = A.shape[1], j = 0, intone = 1
+def idz_diffsnorm(A: LinearOperator, B: LinearOperator, *, rng, int its=20):
+    cdef blas_int n = A.shape[1], intone = 1
+    cdef int j = 0
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] v1
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] v2
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] u1
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] u2
 
-    if not rng:
-        rng = np.random.default_rng()
     v1 = rng.uniform(low=-1, high=1, size=(n, 2)).view(np.complex128).ravel()
     v1 /= dznrm2(&n, &v1[0], &intone)
 
@@ -1151,9 +1141,10 @@ def idz_diffsnorm(A: LinearOperator, B: LinearOperator, int its=20, rng=None):
     return snorm
 
 
-def idz_estrank(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: float,
-                rng=None):
-    cdef int m = a.shape[0], n = a.shape[1], n2, nsteps = 3, row, r, nstep, cols, k
+def idz_estrank(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: float, *,
+                rng):
+    cdef int m = a.shape[0], n = a.shape[1], n2, nsteps = 3, nstep, k
+    cdef blas_int row, r, cols
     cdef cnp.float64_t h, alpha, beta
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=3] albetas
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] tau_arr
@@ -1163,12 +1154,9 @@ def idz_estrank(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps:
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] rta
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] F
 
-    if not rng:
-        rng = np.random.default_rng()
-
     n2 = idd_poweroftwo(m)
     # This part is the initialization that is done via idz_frmi
-    # for a Subsampled Randomized Fourier Transfmrom (SRFT).
+    # for a Subsampled Randomized Fourier Transform (SRFT).
 
     # Draw (nsteps x m x 4) array from [0, 2)*pi uniformly for
     # random points on complex unit circle and unitary rotations
@@ -1244,11 +1232,11 @@ def idz_estrank(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps:
     return k, Fcopy
 
 
-def idz_findrank(A: LinearOperator, cnp.float64_t eps, rng=None):
+def idz_findrank(A: LinearOperator, cnp.float64_t eps, *, rng):
     # Estimate the rank of A by repeatedly using A.rmatvec(random vec)
 
-    cdef int m = A.shape[0], n = A.shape[1], k = 0, kk = 0,r = n, krank
-    cdef int no_of_cols = 4, intone = 1, info = 0
+    cdef int m = A.shape[0], k = 0, kk = 0, no_of_cols = 4
+    cdef blas_int n = A.shape[1], r, krank, intone = 1, info = 0
     cdef cnp.complex128_t[::1] tau = cnp.PyArray_ZEROS(1, [min(m, n)],
                                                        cnp.NPY_COMPLEX128, 0)
     cdef cnp.complex128_t[::1] y = cnp.PyArray_ZEROS(1, [n], cnp.NPY_COMPLEX128, 0)
@@ -1276,9 +1264,6 @@ def idz_findrank(A: LinearOperator, cnp.float64_t eps, rng=None):
                           f"{no_of_cols*n*8} bytes for"
                           "'scipy.linalg.interpolative.idz_findrank()' "
                           "function.")
-
-    if not rng:
-        rng = np.random.default_rng()
 
     krank = 0
     try:
@@ -1346,8 +1331,9 @@ def idz_id2svd(
     cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms,
     cnp.ndarray[cnp.complex128_t, ndim=2] proj,
     ):
-    cdef int m = cols.shape[0], krank = cols.shape[1]
-    cdef int n = proj.shape[1] + krank, info, ci
+    cdef blas_int m = cols.shape[0], krank = cols.shape[1]
+    cdef blas_int n = proj.shape[1] + krank, info
+    cdef int ci
     cdef cnp.ndarray[cnp.complex128_t, mode='fortran', ndim=2] C
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] tau1
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] tau2
@@ -1416,15 +1402,12 @@ def idz_reconid(B, idx, proj):
     return approx
 
 
-def idz_snorm(A: LinearOperator, int its=20, rng=None):
-    cdef int n = A.shape[1]
-    cdef int j = 0, intone = 1
+def idz_snorm(A: LinearOperator, *, rng, int its=20):
+    cdef blas_int n = A.shape[1], intone = 1
+    cdef int j = 0
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] v
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] u
-
-    if not rng:
-        rng = np.random.default_rng()
 
     v = rng.uniform(low=-1, high=1, size=(n, 2)).view(np.complex128).ravel()
     v /= dznrm2(&n, &v[0], &intone)
@@ -1441,8 +1424,8 @@ def idz_snorm(A: LinearOperator, int its=20, rng=None):
     return snorm
 
 
-def idzp_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: float,
-             rng=None):
+def idzp_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: float, *,
+             rng):
     krank, proj = idz_estrank(a, eps=eps, rng=rng)
     if krank != 0:
         proj = proj[:krank, :]
@@ -1451,10 +1434,11 @@ def idzp_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: fl
     return idzp_id(a, eps=eps)
 
 
-def idzp_asvd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t eps,
-              rng=None):
-    cdef int m = a.shape[0], n = a.shape[1]
-    cdef int krank, info, ci
+def idzp_asvd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t eps, *,
+              rng):
+    cdef blas_int m = a.shape[0], n = a.shape[1]
+    cdef blas_int krank, info
+    cdef int ci
     cdef cnp.ndarray[cnp.complex128_t, mode='fortran', ndim=2] C
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] tau1
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] tau2
@@ -1469,7 +1453,7 @@ def idzp_asvd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t e
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] p
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] col
 
-    krank, perms, proj = idzp_aid(a.copy(), eps, rng)
+    krank, perms, proj = idzp_aid(a.copy(), eps, rng=rng)
 
     if krank > 0:
         UU = cnp.PyArray_ZEROS(2, [m, krank], cnp.NPY_COMPLEX128, 0)
@@ -1519,7 +1503,8 @@ def idzp_asvd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t e
 
 
 def idzp_id(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, cnp.float64_t eps):
-    cdef int n = a.shape[1], krank, tmp_int, p
+    cdef blas_int n = a.shape[1], krank, tmp_int
+    cdef int p
     cdef double complex one = 1
     krank, _, inds = idzp_qrpiv(a, eps)
 
@@ -1542,9 +1527,10 @@ def idzp_id(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, cnp.float64_t eps
 
 
 def idzp_qrpiv(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, cnp.float64_t eps):
-    cdef int m = a.shape[0], n = a.shape[1]
+    cdef blas_int m = a.shape[0], n = a.shape[1]
     cdef cnp.ndarray col_norms = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
-    cdef int k = 0, kpiv = 0, i = 0, tmp_int = 0, int_n = 0
+    cdef int k = 0, kpiv = 0, i = 0
+    cdef blas_int tmp_int = 0, int_n = 0
     cdef double complex tmp_sca = 0.
     cdef cnp.ndarray taus = cnp.PyArray_ZEROS(1, [m], cnp.NPY_COMPLEX128, 0)
     cdef cnp.ndarray ind = cnp.PyArray_ZEROS(1, [n], cnp.NPY_INT64, 0)
@@ -1573,9 +1559,8 @@ def idzp_qrpiv(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, cnp.float64_t 
         if k < m-1:
             # Compute the householder reflector for column k
             tmp_sca = a[k, k]
-            # FIX: Convert these to F_INT
-            tmp_int = <int>(m - k)
-            int_n = <int>n
+            tmp_int = m - k
+            int_n = n
             zlarfgp(&tmp_int, &tmp_sca, &a[k+1, k], &int_n, &taus_v[k])
 
             # Overwrite with 1. for easy matmul
@@ -1619,12 +1604,12 @@ def idzp_qrpiv(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, cnp.float64_t 
     return k+1, taus, ind
 
 
-def idzp_rid(A: LinearOperator, cnp.float64_t eps, rng=None):
+def idzp_rid(A: LinearOperator, cnp.float64_t eps, *, rng):
     _, ret = idz_findrank(A, eps, rng=rng)
     return idzp_id(ret, eps=eps)
 
 
-def idzp_rsvd(A: LinearOperator, cnp.float64_t eps, rng=None):
+def idzp_rsvd(A: LinearOperator, cnp.float64_t eps, *, rng):
     cdef int n = A.shape[1]
     cdef int krank, j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
@@ -1651,7 +1636,7 @@ def idzp_rsvd(A: LinearOperator, cnp.float64_t eps, rng=None):
 
 
 def idzp_svd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t eps):
-    cdef int m = a.shape[0], krank, info
+    cdef blas_int m = a.shape[0], krank, info
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] taus
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] UU
     cdef cnp.ndarray[cnp.complex128_t, ndim=2] V
@@ -1681,8 +1666,8 @@ def idzp_svd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t ep
     return UU, S, V
 
 
-def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int krank,
-             rng=None):
+def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int krank, *,
+             rng):
     cdef int m = a.shape[0], n2, L, nblock, nsteps = 3, mb
     cdef cnp.float64_t twopi = 2*np.pi, fact
     cdef double complex twopii = twopi*1.j
@@ -1694,9 +1679,6 @@ def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int kra
     cdef cnp.ndarray[cnp.npy_float64, mode='c', ndim=2] rta
     cdef cnp.ndarray[cnp.npy_float64, mode='c', ndim=2] giv2x2
 
-    if not rng:
-        rng = np.random.default_rng()
-
     n2 = 0
     L = krank + 8
     if (L >= n2) or (L > m):
@@ -1705,7 +1687,7 @@ def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int kra
 
     n2 = idd_poweroftwo(m)
     # This part is the initialization that is done via idz_frmi
-    # for a Subsampled Randomized Fourier Transfmrom (SRFT).
+    # for a Subsampled Randomized Fourier Transform (SRFT).
 
     # Draw (nsteps x m x 4) array from [0, 2)*pi uniformly for
     # random points on complex unit circle and unitary rotations
@@ -1771,9 +1753,10 @@ def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int kra
     return idzr_id(V, krank)
 
 
-def idzr_asvd(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank, rng=None):
-    cdef int m = a.shape[0], n = a.shape[1]
-    cdef int info, ci
+def idzr_asvd(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank, *, rng):
+    cdef blas_int m = a.shape[0], n = a.shape[1]
+    cdef blas_int _krank = krank, info
+    cdef int ci
     cdef cnp.ndarray[cnp.complex128_t, mode='fortran', ndim=2] C
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] tau1
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] tau2
@@ -1819,8 +1802,8 @@ def idzr_asvd(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank, rng=
     np.conjugate(tau1, out=tau1)
     C = col[:, :krank].conj().copy(order='F')
     zunm2r(<char*>'R', <char*>'C',
-           &krank, &m, &krank, &C[0, 0], &m, &tau1[0],
-           &UU[0,0], &krank, &a[0, 0], &info)
+           &_krank, &m, &_krank, &C[0, 0], &m, &tau1[0],
+           &UU[0,0], &_krank, &a[0, 0], &info)
 
     VV[:krank, :krank] = V[:, :].conj().T
 
@@ -1829,14 +1812,15 @@ def idzr_asvd(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank, rng=
     np.conjugate(tau2, out=tau2)
     C = t[:, :krank].conj().copy(order='F')
     zunm2r(<char*>'R', <char*>'C',
-           &krank, &n, &krank, &C[0, 0], &n, &tau2[0],
-           &VV[0, 0], &krank, &a[0, 0], &info)
+           &_krank, &n, &_krank, &C[0, 0], &n, &tau2[0],
+           &VV[0, 0], &_krank, &a[0, 0], &info)
 
     return UU, S, VV
 
 
 def idzr_id(cnp.ndarray[cnp.complex128_t, ndim=2] a, int krank):
-    cdef int n = a.shape[1], tmp_int, p
+    cdef blas_int n = a.shape[1], tmp_int, _krank = krank
+    cdef int p
     cdef double complex one = 1.0
     cdef cnp.ndarray[cnp.int64_t, ndim=1] inds
     cdef cnp.ndarray[cnp.int64_t, ndim=1] perms
@@ -1853,14 +1837,15 @@ def idzr_id(cnp.ndarray[cnp.complex128_t, ndim=2] a, int krank):
     tmp_int = n - krank
     # SIDE,UPLO,TRANSA,DIAG,M,N,ALPHA,A,LDA,B,LDB
     ztrsm(<char*>'R', <char*>'L', <char*>'N', <char*>'N',
-          &tmp_int, &krank, &one, &a[0, 0], &n, &a[0, krank], &n)
+          &tmp_int, &_krank, &one, &a[0, 0], &n, &a[0, krank], &n)
 
     return perms, a[:krank, krank:]
 
 
 def idzr_qrpiv(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank):
-    cdef int m = a.shape[0], n = a.shape[1]
-    cdef int loop = 0, loops, kpiv = 0, i = 0, tmp_int = 0
+    cdef blas_int m = a.shape[0], n = a.shape[1]
+    cdef int loop = 0, loops, kpiv = 0, i = 0
+    cdef blas_int tmp_int = 0
     cdef cnp.ndarray col_norms = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
     cdef double complex tmp_sca = 0.
     cdef cnp.ndarray taus = cnp.PyArray_ZEROS(1, [m], cnp.NPY_COMPLEX128, 0)
@@ -1888,8 +1873,7 @@ def idzr_qrpiv(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank):
 
         if loop < m-1:
             tmp_sca = a[loop, loop]
-            # FIX: Convert these to F_INT
-            tmp_int = (m - loop)
+            tmp_int = m - loop
             zlarfgp(&tmp_int, &tmp_sca, &a[loop+1, loop], &n, &taus_v[loop])
 
             # Overwrite with 1. for easy matmul
@@ -1928,13 +1912,10 @@ def idzr_qrpiv(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank):
     return ind, taus
 
 
-def idzr_rid(A: LinearOperator, int krank, rng=None):
+def idzr_rid(A: LinearOperator, int krank, *, rng):
     cdef int m = A.shape[0], n = A.shape[1], k = 0
     cdef int L = min(krank+2, min(m, n))
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] r
-
-    if not rng:
-        rng = np.random.default_rng()
 
     r = cnp.PyArray_EMPTY(2, [L, n], cnp.NPY_COMPLEX128, 0)
     for k in range(L):
@@ -1943,13 +1924,13 @@ def idzr_rid(A: LinearOperator, int krank, rng=None):
     return idzr_id(a=r.conj(), krank=krank)
 
 
-def idzr_rsvd(A: LinearOperator, int krank, rng=None):
+def idzr_rsvd(A: LinearOperator, int krank, *, rng):
     cdef int n = A.shape[1], j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
     cdef cnp.ndarray[cnp.complex128_t, ndim=2] proj
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] col
 
-    perms, proj = idzr_rid(A, krank, rng)
+    perms, proj = idzr_rid(A, krank, rng=rng)
     # idd_getcols
     col = cnp.PyArray_EMPTY(2, [n, krank], cnp.NPY_COMPLEX128, 0)
     x = cnp.PyArray_ZEROS(1, [n], cnp.NPY_COMPLEX128, 0)
@@ -1962,7 +1943,9 @@ def idzr_rsvd(A: LinearOperator, int krank, rng=None):
 
 
 def idzr_svd(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank):
-    cdef int m = a.shape[0], n = a.shape[1], info = 0
+    cdef blas_int m = a.shape[0], info = 0
+    cdef blas_int _krank = krank
+    cdef int n = a.shape[1]
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] taus
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] inds
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] UU
@@ -1986,7 +1969,7 @@ def idzr_svd(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank):
     # But do the adjoint dance for LAPACK via U.H @ Q.H; use a for scratch
     C = a[:, :krank].conj().copy(order='F')
     zunm2r(<char*>'R', <char*>'C',
-           &krank, &m, &krank, &C[0, 0], &m, &taus[0],
-           &UU[0,0], &krank, &a[0, 0], &info)
+           &_krank, &m, &_krank, &C[0, 0], &m, &taus[0],
+           &UU[0,0], &_krank, &a[0, 0], &info)
 
     return UU, S, V

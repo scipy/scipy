@@ -1,7 +1,39 @@
+from functools import wraps
+import scipy._external.array_api_extra as xpx
 import numpy as np
 from ._ufuncs import (_spherical_jn, _spherical_yn, _spherical_in,
                       _spherical_kn, _spherical_jn_d, _spherical_yn_d,
                       _spherical_in_d, _spherical_kn_d)
+
+
+def use_reflection(sign_n_even=None, reflection_fun=None):
+    # - If reflection_fun is not specified, reflects negative `z` and multiplies
+    #   output by appropriate sign (indicated by `sign_n_even`).
+    # - If reflection_fun is specified, calls `reflection_fun` instead of `fun`.
+    # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
+    def decorator(fun):
+        def standard_reflection(n, z, derivative):
+            # sign_n_even indicates the sign when the order `n` is even
+            sign = np.where(n % 2 == 0, sign_n_even, -sign_n_even)
+            # By the chain rule, differentiation at `-z` adds a minus sign
+            sign = -sign if derivative else sign
+            # Evaluate at positive z (minus negative z) and adjust the sign
+            return fun(n, -z, derivative) * sign
+
+        @wraps(fun)
+        def wrapper(n, z, derivative=False):
+            z = np.asarray(z)
+
+            if np.issubdtype(z.dtype, np.complexfloating):
+                return fun(n, z, derivative)  # complex dtype just works
+
+            f2 = standard_reflection if reflection_fun is None else reflection_fun
+            return xpx.apply_where(z.real >= 0, (n, z),
+                                   lambda n, z: fun(n, z, derivative),
+                                   lambda n, z: f2(n, z, derivative))[()]
+        return wrapper
+    return decorator
+
 
 def spherical_jn(n, z, derivative=False):
     r"""Spherical Bessel function of the first kind or its derivative.
@@ -25,6 +57,7 @@ def spherical_jn(n, z, derivative=False):
     Returns
     -------
     jn : ndarray
+        Value or derivative of spherical Bessel function of the first kind.
 
     Notes
     -----
@@ -36,9 +69,10 @@ def spherical_jn(n, z, derivative=False):
     The derivative is computed using the relations [3]_,
 
     .. math::
-        j_n'(z) = j_{n-1}(z) - \frac{n + 1}{z} j_n(z).
-
-        j_0'(z) = -j_1(z)
+        \begin{align}
+        j_n'(z) &= j_{n-1}(z) - \frac{n + 1}{z} j_n(z),\\
+        j_0'(z) &= -j_1(z).
+        \end{align}
 
 
     .. versionadded:: 0.18.0
@@ -114,6 +148,7 @@ def spherical_yn(n, z, derivative=False):
     Returns
     -------
     yn : ndarray
+        Value or derivative of spherical Bessel function of the second kind.
 
     Notes
     -----
@@ -124,9 +159,10 @@ def spherical_yn(n, z, derivative=False):
     The derivative is computed using the relations [3]_,
 
     .. math::
-        y_n' = y_{n-1} - \frac{n + 1}{z} y_n.
-
-        y_0' = -y_1
+        \begin{align}
+        y_n'(z) &= y_{n-1}(z) - \frac{n + 1}{z} y_n(z),\\
+        y_0'(z) &= -y_1(z).
+        \end{align}
 
 
     .. versionadded:: 0.18.0
@@ -202,6 +238,7 @@ def spherical_in(n, z, derivative=False):
     Returns
     -------
     in : ndarray
+        Value or derivative of modified spherical Bessel function of the first kind.
 
     Notes
     -----
@@ -211,9 +248,10 @@ def spherical_in(n, z, derivative=False):
     The derivative is computed using the relations [2]_,
 
     .. math::
-        i_n' = i_{n-1} - \frac{n + 1}{z} i_n.
-
-        i_1' = i_0
+        \begin{align}
+        i_n'(z) &= i_{n-1}(z) - \frac{n + 1}{z} i_n(z),\\
+        i_1'(z) &= i_0(z).
+        \end{align}
 
 
     .. versionadded:: 0.18.0
@@ -267,6 +305,14 @@ def spherical_in(n, z, derivative=False):
         return _spherical_in(n, z)
 
 
+def spherical_kn_reflection(n, z, derivative=False):
+    # More complex than the other cases, and this will likely be re-implemented
+    # in C++ anyway. Would require multiple function evaluations. Probably about
+    # as fast to just resort to complex math, and much simpler.
+    return spherical_kn(n, z + 0j, derivative=derivative).real
+
+
+@use_reflection(reflection_fun=spherical_kn_reflection)
 def spherical_kn(n, z, derivative=False):
     r"""Modified spherical Bessel function of the second kind or its derivative.
 
@@ -289,6 +335,7 @@ def spherical_kn(n, z, derivative=False):
     Returns
     -------
     kn : ndarray
+        Value or derivative of modified spherical Bessel function of the second kind.
 
     Notes
     -----
@@ -298,9 +345,10 @@ def spherical_kn(n, z, derivative=False):
     The derivative is computed using the relations [2]_,
 
     .. math::
-        k_n' = -k_{n-1} - \frac{n + 1}{z} k_n.
-
-        k_0' = -k_1
+        \begin{align}
+        k_n'(z) &= -k_{n-1}(z) - \frac{n + 1}{z} k_n(z),\\
+        k_0'(z) &= -k_1(z).
+        \end{align}
 
 
     .. versionadded:: 0.18.0

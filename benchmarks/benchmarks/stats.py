@@ -478,6 +478,36 @@ class GroupSampling(Benchmark):
         stats.special_ortho_group.rvs(dim, random_state=self.rng)
 
 
+class MatrixSampling(Benchmark):
+    param_names = ['size']
+    params = [[10, 100, 1000, 10000]]
+
+    def setup(self, size):
+        num_rows = 4
+        num_cols = 3
+        self.df = 5
+        self.M = np.full((num_rows,num_cols), 0.3)
+        self.U = 0.5 * np.identity(num_rows) + np.full(
+            (num_rows, num_rows), 0.5
+        )
+        self.V = 0.7 * np.identity(num_cols) + np.full(
+            (num_cols, num_cols), 0.3
+        )
+        self.rng = np.random.default_rng(42)
+
+    def time_matrix_normal(self, size):
+        stats.matrix_normal.rvs(mean=self.M, rowcov=self.U,
+                                 colcov=self.V, size=size, random_state=self.rng)
+
+    def time_invwishart(self, size):
+        stats.invwishart.rvs(df=self.df, scale=self.V,
+                             size=size, random_state=self.rng)
+
+    def time_matrix_t(self, size):
+        stats.matrix_t.rvs(mean=self.M, row_spread=self.U, col_spread=self.V,
+                           df=self.df, size=size, random_state=self.rng)
+
+
 class BinnedStatisticDD(Benchmark):
 
     params = ["count", "sum", "mean", "min", "max", "median", "std", np.std]
@@ -506,6 +536,7 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
     # list of distributions to time
     dists = ["pareto", "laplace", "rayleigh", "invgauss", "gumbel_r",
              "gumbel_l", "powerlaw", "lognorm"]
+
     # add custom values for rvs and fit, if desired, for any distribution:
     # key should match name in dists and value should be list of loc, scale,
     # and shapes
@@ -533,8 +564,12 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         if case >= len(default_shapes_n):
             raise NotImplementedError("no alternate case for this dist")
         default_shapes = default_shapes_n[case]
-        param_values = self.custom_input.get(dist_name, [*default_shapes,
-                                                         .834, 4.342])
+
+        # Single layout shared by rvs and fit: [loc, scale, *shapes]
+        param_values = self.custom_input.get(dist_name, [.834, 4.342,
+                                                        *default_shapes])
+        self.param_values = param_values
+
         # separate relevant and non-relevant parameters for this distribution
         # based on the number of shapes
         nparam = len(param_values)
@@ -548,22 +583,19 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         if True in nonrelevant_parameters or False not in relevant_parameters:
             raise NotImplementedError("skip non-relevant case")
 
-        # TODO: fix failing benchmarks (Aug. 2023), skipped for now
-        if ((dist_name == "pareto" and loc_fixed and scale_fixed)
-                or (dist_name == "invgauss" and loc_fixed)):
-            raise NotImplementedError("skip failing benchmark")
-
         # add fixed values if fixed in relevant_parameters to self.fixed
         # with keys from self.fnames and values in the same order as `fnames`.
-        fixed_vales = self.custom_input.get(dist_name, [.834, 4.342,
-                                                        *default_shapes])
         self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
-                          compress(fixed_vales, relevant_parameters)))
-        self.param_values = param_values
-        # shapes need to come before loc and scale
-        self.data = self.distn.rvs(*param_values[2:], *param_values[:2],
+                          compress(param_values, relevant_parameters)))
+
+        # shapes need to come before loc and scale in rvs call.
+        # param_values is [loc, scale, *shapes] (same order as fnames).
+        # Pass shapes positionally, loc and scale by keyword.
+        self.data = self.distn.rvs(*param_values[2:], loc=param_values[0],
+                                   scale=param_values[1],
                                    size=1000,
                                    random_state=np.random.default_rng(4653465))
+
 
     def time_fit(self, dist_name, case, loc_fixed, scale_fixed,
                  shape1_fixed, shape2_fixed, shape3_fixed):
@@ -617,6 +649,26 @@ class BenchQMCDiscrepancy(Benchmark):
 
     def time_discrepancy(self, method):
         stats.qmc.discrepancy(self.sample, method=method)
+
+
+class BenchQMCGeometricDiscrepancy(Benchmark):
+    param_names = ['method', 'metric', 'ndims']
+    params = [
+        ['mindist', 'mst'],
+        ['euclidean', 'cityblock', 'chebyshev', 'cosine'],
+        [2, 3, 10],
+    ]
+
+    def setup(self, method, metric, ndims):
+        rng = np.random.default_rng(1234)
+        sample = rng.random((1000, ndims))
+        self.sample = sample
+
+    def time_geo_discrepancy(self, method, metric, ndims):
+        stats.qmc.geometric_discrepancy(self.sample, method=method, metric=metric)
+
+    def peakmem_geo_discrepancy(self, method, metric, ndims):
+        stats.qmc.geometric_discrepancy(self.sample, method=method, metric=metric)
 
 
 class BenchQMCHalton(Benchmark):
@@ -764,3 +816,40 @@ class RandomTable(Benchmark):
 
     def time_method(self, method, ntot, ncell):
         self.dist.rvs(1000, method=method, random_state=self.rng)
+
+
+class Quantile(Benchmark):
+    param_names = ["size", "d"]
+    params = [
+        [10_000, 100_000, 1_000_000],
+        [1, 100]
+    ]
+
+    def setup(self, size, d):
+        self.rng = np.random.default_rng(2475928)
+        n = size // d
+        self.x = self.rng.uniform(size=(d, n))
+
+    def time_quantile(self, size, d):
+        stats.quantile(self.x, 0.5, axis=1)
+
+
+class PoissonBinom(Benchmark):
+    param_names = ["size_p", "batch_shape"]
+    params = [
+        [10, 100],
+        [(), (10, ), (100, ), (1000, )]
+    ]
+
+    def setup(self, size_p, batch_shape):
+        self.rng = np.random.default_rng(12345678)
+        shape = batch_shape + (size_p,)
+
+        self.p = self.rng.uniform(size=shape)
+        self.k = self.rng.integers(size_p + 1, size=batch_shape)
+
+    def time_poisson_binom_pmf(self, size_p, batch_shape):
+        stats.poisson_binom.pmf(self.k, self.p)
+
+    def time_poisson_binom_cdf(self, size_p, batch_shape):
+        stats.poisson_binom.cdf(self.k, self.p)

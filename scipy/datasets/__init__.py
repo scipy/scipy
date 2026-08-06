@@ -40,7 +40,7 @@ into the particular dataset method documentation above.
 How dataset retrieval and storage works
 =======================================
 
-SciPy dataset files are stored within individual github repositories under the
+SciPy dataset files are stored within individual GitHub repositories under the
 SciPy GitHub organization, following a naming convention as
 ``'dataset-<name>'``, for example `scipy.datasets.face` files live at
 https://github.com/scipy/dataset-face.  The `scipy.datasets` submodule utilizes

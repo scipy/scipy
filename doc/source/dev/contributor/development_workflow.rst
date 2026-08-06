@@ -10,7 +10,7 @@ reading to see an example of fixing a bug and submitting a pull request.*
 This guide assumes that you have created your own fork (copy) of the SciPy
 repository, cloned the repository on your own machine, and built SciPy from this
 source code. If you haven't, check the :ref:`building-from-source` pages appropriate to your
-system. Before getting started here, there are two other things you need to do
+system. Before getting started here, there are three other things you need to do
 just once before you start modifying SciPy.
 
 #. In a terminal, introduce yourself to Git::
@@ -109,11 +109,11 @@ when it's time to submit a pull request.
 It's also a good idea to build this branch and run tests before continuing.
 Assuming you've followed one of the :ref:`building-from-source` pages to set up
 your development environment, you'll need to activate your development
-environment and then run tests (note that the ``dev.py test`` command will
+environment and then run tests (note that the ``spin test`` command will
 perform a build automatically if needed)::
 
    conda activate scipy-dev
-   python dev.py test -v
+   spin test -v
 
 .. _editing-workflow:
 
@@ -155,7 +155,7 @@ In more detail
      #	INSTALL
      no changes added to commit (use "git add" and/or "git commit -a")
 
-#. Optional: Compare the changes with the previous version using with ``git
+#. Optional: Compare the changes with the previous version using ``git
    diff`` (`git diff`_). This brings up a simple text browser interface that
    highlights the difference between your files and the previous version.
 
@@ -282,15 +282,16 @@ Checklist before submitting a PR
 
 -  Did you check that the code can be distributed under a BSD license? See
    :ref:`license-considerations`.
+-  Have you checked SciPy's AI policy? See :ref:`ai_policy`.
 -  Are there unit tests with good code coverage? See
    `NumPy/SciPy Testing Guidelines`_.
--  Do all unit tests pass locally? See :ref:`the-dev-py-interface`.
+-  Do all unit tests pass locally? See :ref:`the-spin-interface`.
 -  Do all public function have docstrings including examples? See the
    `numpydoc docstring guide`_.
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.
 -  Is the code style correct? See :ref:`pep8-scipy`.
 -  Are there benchmarks? See :ref:`benchmarking-with-asv`.
--  Is the commit message :ref:`formatted correctly <numpy:writing-the-commit-message>`?
+-  Is the commit message formatted correctly? See :ref:`writing-the-commit-message`.
 -  Is the docstring of the new functionality tagged with
    ``.. versionadded:: X.Y.Z`` (where ``X.Y.Z`` is the version number of the
    next release? See the ``updating``, ``workers``, and ``constraints``

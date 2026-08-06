@@ -52,8 +52,7 @@ def _as2d(ar):
     if ar.ndim == 2:
         return ar
     else:  # Assume 1!
-        aux = np.asarray(ar)
-        aux.shape = (ar.shape[0], 1)
+        aux = np.asarray(ar).reshape((ar.shape[0], 1))
         return aux
 
 
@@ -219,7 +218,7 @@ def lobpcg(
         Whether to return iterative eigenvalue history.
     retResidualNormsHistory : bool, default: False
         Whether to return iterative history of residual norms.
-    restartControl : int, optional.
+    restartControl : int, optional
         Iterations restart if the residuals jump ``2**restartControl`` times
         compared to the smallest recorded in ``retResidualNormsHistory``.
         The default is ``restartControl=20``, making the restarts rare for
@@ -307,7 +306,7 @@ def lobpcg(
     ``A x = lambda x`` without constraints or preconditioning.
 
     >>> import numpy as np
-    >>> from scipy.sparse import spdiags
+    >>> from scipy.sparse import diags_array
     >>> from scipy.sparse.linalg import LinearOperator, aslinearoperator
     >>> from scipy.sparse.linalg import lobpcg
 
@@ -323,8 +322,7 @@ def lobpcg(
     the sparse diagonal matrix `A`
     of the eigenvalue problem ``A x = lambda x`` to solve.
 
-    >>> A = spdiags(vals, 0, n, n)
-    >>> A = A.astype(np.int16)
+    >>> A = diags_array(vals, offsets=0, shape=(n, n), dtype=None)
     >>> A.toarray()
     array([[  1,   0,   0, ...,   0,   0,   0],
            [  0,   2,   0, ...,   0,   0,   0],
@@ -332,7 +330,7 @@ def lobpcg(
            ...,
            [  0,   0,   0, ...,  98,   0,   0],
            [  0,   0,   0, ...,   0,  99,   0],
-           [  0,   0,   0, ...,   0,   0, 100]], dtype=int16)
+           [  0,   0,   0, ...,   0,   0, 100]], shape=(100, 100), dtype=int16)
 
     The second mandatory input parameter `X` is a 2D array with the
     row dimension determining the number of requested eigenvalues.
@@ -378,7 +376,7 @@ def lobpcg(
 
     The traditional callable `LinearOperator` is no longer
     necessary but still supported as the input to `lobpcg`.
-    Specifying ``matmat=A_matmat`` explicitly improves performance. 
+    Specifying ``matmat=A_matmat`` explicitly improves performance.
 
     >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat, dtype=np.int16)
     >>> eigenvalues, _ = lobpcg(A_lo, X, maxiter=80)
@@ -399,7 +397,7 @@ def lobpcg(
     and ``largest=False`` parameter
 
     >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=90)
-    >>> print(eigenvalues)  
+    >>> print(eigenvalues)
     [1. 2. 3.]
 
     The next example illustrates computing 3 smallest eigenvalues of
@@ -507,15 +505,15 @@ def lobpcg(
         if M is None:
             aux += "out"
         aux += " preconditioning\n\n"
-        aux += "matrix size %d\n" % n
-        aux += "block size %d\n\n" % sizeX
+        aux += f"matrix size {n}\n"
+        aux += f"block size {sizeX}\n\n"
         if blockVectorY is None:
             aux += "No constraints\n\n"
         else:
             if sizeY > 1:
-                aux += "%d constraints\n\n" % sizeY
+                aux += f"{sizeY} constraints\n\n"
             else:
-                aux += "%d constraint\n\n" % sizeY
+                aux += f"{sizeY} constraint\n\n"
         print(aux)
 
     if (n - sizeY) < (5 * sizeX):
@@ -549,6 +547,7 @@ def lobpcg(
                     raise ValueError(
                         f"The shape {A.shape} of the primary matrix\n"
                         f"defined by a callable object is wrong.\n"
+                        f"Expected {(n, n)}."
                     )
             elif issparse(A):
                 A = A.toarray()

@@ -42,7 +42,7 @@ at the top-level directory.
  *      Col. 30 - 42  Compressed Column: Number of columns (NCOL)
  *                    Elemental: Number of element matrices (NELT)
  *      Col. 44 - 56  Compressed Column: Number of entries (NNZERO)
- *                    Elemental: Number of variable indeces (NVARIX)
+ *                    Elemental: Number of variable indices (NVARIX)
  *      Col. 58 - 70  Compressed Column: Unused, explicitly zero
  *                    Elemental: Number of elemental matrix entries (NELTVL)
  *

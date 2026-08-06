@@ -1,26 +1,48 @@
 import functools
 from scipy._lib._array_api import (
-    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
+    xp_result_device, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API,
+    xp_capabilities,
 )
 
 import numpy as np
 from ._ndimage_api import *   # noqa: F403
 from . import _ndimage_api
-from . import _dispatchers
+from . import _delegators
 __all__ = _ndimage_api.__all__
 
 
 MODULE_NAME = 'ndimage'
 
 
-def dispatch_xp(dispatcher, module_name):
+def _maybe_convert_arg(arg, xp, device=None):
+    """Convert arrays/scalars hiding in the sequence `arg`."""
+    if isinstance(arg, np.ndarray | np.generic):
+        return xp.asarray(arg, device=device)
+    elif isinstance(arg, list | tuple):
+        return type(arg)(_maybe_convert_arg(x, xp, device) for x in arg)
+    else:
+        return arg
+
+
+# Some cupyx.scipy.ndimage functions don't exist or are incompatible with
+# their SciPy counterparts
+CUPY_BLOCKLIST = [
+    'distance_transform_bf',
+    'distance_transform_cdt',
+    'find_objects',
+    'geometric_transform',
+    'vectorized_filter',
+]
+
+
+def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
         def wrapper(*args, **kwds):
-            xp = dispatcher(*args, **kwds)
+            xp = delegator(*args, **kwds)
 
             # try delegating to a cupyx/jax namesake
-            if is_cupy(xp):
+            if is_cupy(xp) and func.__name__ not in CUPY_BLOCKLIST:
                 # https://github.com/cupy/cupy/issues/8336
                 import importlib
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
@@ -34,17 +56,21 @@ def dispatch_xp(dispatcher, module_name):
             else:
                 # the original function (does all np.asarray internally)
                 # XXX: output arrays
+                # The NumPy round-trip must return results on the device of
+                # the input arrays, not on the backend's default device
+                device = xp_result_device(*args, *kwds.values())
                 result = func(*args, **kwds)
 
-                if isinstance(result, (np.ndarray, np.generic)):
+                if isinstance(result, np.ndarray | np.generic):
                     # XXX: np.int32->np.array_0D
-                    return xp.asarray(result)
+                    return xp.asarray(result, device=device)
                 elif isinstance(result, int):
                     return result
                 elif isinstance(result, dict):
-                    # value_indices: result is {np.int64(1): (array(0), array(1))} etc
+                    # value_indices:
+                    # result is {np.int64(1): (array(0), array(1))} etc
                     return {
-                        k.item(): tuple(xp.asarray(vv) for vv in v)
+                        k.item(): tuple(xp.asarray(vv, device=device) for vv in v)
                         for k,v in result.items()
                     }
                 elif result is None:
@@ -52,21 +78,49 @@ def dispatch_xp(dispatcher, module_name):
                     return result
                 else:
                     # lists/tuples
-                    return type(result)(
-                        xp.asarray(x) if isinstance(x, np.ndarray) else x
-                        for x in result
-                    )
+                    return _maybe_convert_arg(result, xp, device)
         return wrapper
     return inner
+
+default_capabilities = xp_capabilities(
+    cpu_only=True, exceptions=["cupy"], allow_dask_compute=True, jax_jit=False
+)
+
+capabilities_dict = {
+    "geometric_transform": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "find_objects": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "distance_transform_bf": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "distance_transform_cdt": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "vectorized_filter": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "generate_binary_structure": xp_capabilities(out_of_scope=True),
+    "map_coordinates": xp_capabilities(
+        cpu_only=True, exceptions=["cupy", "jax.numpy"],
+        allow_dask_compute=True, jax_jit=True
+    ),
+    "labeled_comprehension": xp_capabilities(np_only=True),
+}
 
 # ### decorate ###
 for func_name in _ndimage_api.__all__:
     bare_func = getattr(_ndimage_api, func_name)
-    dispatcher = getattr(_dispatchers, func_name + "_dispatcher")
+    delegator = getattr(_delegators, func_name + "_signature")
 
-    f = (dispatch_xp(dispatcher, MODULE_NAME)(bare_func)
-         if SCIPY_ARRAY_API
-         else bare_func)
+    capabilities = capabilities_dict.get(func_name, default_capabilities)
 
+    # pyrefly:ignore[not-callable]
+    f = capabilities(
+        delegate_xp(delegator, MODULE_NAME)(bare_func)
+        if SCIPY_ARRAY_API else bare_func
+    )
     # add the decorated function to the namespace, to be imported in __init__.py
     vars()[func_name] = f

@@ -31,6 +31,8 @@ try:
     import sksparse  # noqa: F401
     from sksparse.cholmod import cholesky as cholmod  # noqa: F401
     from sksparse.cholmod import analyze as cholmod_analyze
+    from sksparse.cholmod import CholmodTypeConversionWarning
+    from warnings import catch_warnings
 except ImportError:
     has_cholmod = False
 try:
@@ -87,37 +89,54 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
             elif cholesky:
-                try:
-                    # Will raise an exception in the first call,
-                    # or when the matrix changes due to a new problem
-                    _get_solver.cholmod_factor.cholesky_inplace(M)
-                except Exception:
-                    _get_solver.cholmod_factor = cholmod_analyze(M)
-                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                # TODO: revert this suppress_warning once the warning bug fix in
+                # sksparse is merged/released
+                # Suppress spurious warning bug from sksparse with csc_array gh-22089
+                # try:
+                #     # Will raise an exception in the first call,
+                #     # or when the matrix changes due to a new problem
+                #     _get_solver.cholmod_factor.cholesky_inplace(M)
+                # except Exception:
+                #     _get_solver.cholmod_factor = cholmod_analyze(M)
+                #     _get_solver.cholmod_factor.cholesky_inplace(M)
+                with catch_warnings(
+                    action='ignore', category=CholmodTypeConversionWarning
+                ):
+                    try:
+                        # Will raise an exception in the first call,
+                        # or when the matrix changes due to a new problem
+                        _get_solver.cholmod_factor.cholesky_inplace(M)
+                    except Exception:
+                        _get_solver.cholmod_factor = cholmod_analyze(M)
+                        _get_solver.cholmod_factor.cholesky_inplace(M)
                 solve = _get_solver.cholmod_factor
             else:
                 if has_umfpack and sym_pos:
                     solve = sps.linalg.factorized(M)
                 else:  # factorized doesn't pass permc_spec
                     solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
+            return solve
 
         else:
             if lstsq:  # sometimes necessary as solution is approached
-                def solve(r):
+                def _solve(r):
                     return sp.linalg.lstsq(M, r)[0]
+                return _solve
             elif cholesky:
                 L = sp.linalg.cho_factor(M)
 
-                def solve(r):
+                def _solve(r):
                     return sp.linalg.cho_solve(L, r)
+                return _solve
             else:
                 # this seems to cache the matrix factorization, so solving
                 # with multiple right hand sides is much faster
-                def solve(r, sym_pos=sym_pos):
+                def solve_sym_pos_option(r, sym_pos=sym_pos):
                     if sym_pos:
                         return sp.linalg.solve(M, r, assume_a="pos")
                     else:
                         return sp.linalg.solve(M, r)
+                return solve_sym_pos_option
     # There are many things that can go wrong here, and it's hard to say
     # what all of them are. It doesn't really matter: if the matrix can't be
     # factorized, return None. get_solver will be called again with different
@@ -126,7 +145,6 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
         raise
     except Exception:
         return None
-    return solve
 
 
 def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
@@ -199,7 +217,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
     if A.shape[0] == 0:
         # If there are no constraints, some solvers fail (understandably)
         # rather than returning empty solution. This gets the job done.
-        sparse, lstsq, sym_pos, cholesky = False, False, True, False
+        lstsq, sym_pos, cholesky = False, True, False
     n_x = len(x)
 
     # [4] Equation 8.8
@@ -212,7 +230,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
     Dinv = x / z
 
     if sparse:
-        M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
+        M = A.dot(sps.diags_array(Dinv, format="csc").dot(A.T))
     else:
         M = A.dot(Dinv.reshape(-1, 1) * A.T)
     solve = _get_solver(M, sparse, lstsq, sym_pos, cholesky, permc_spec)
@@ -723,7 +741,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     message = "Optimization terminated successfully."
 
     if sparse:
-        A = sps.csc_matrix(A)
+        A = sps.csc_array(A)
 
     while go:
 
@@ -733,7 +751,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
             # [4] Section 4.4
             gamma = 1
 
-            def eta(g):
+            def eta(g=gamma):
                 return 1
         else:
             # gamma = 0 in predictor step according to [4] 4.1
@@ -1005,7 +1023,7 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
     ``sym_pos=False`` skips to solver 3, and ``lstsq=True`` skips
     to solver 4 for both sparse and dense problems.
 
-    Potential improvements for combatting issues associated with dense
+    Potential improvements for combating issues associated with dense
     columns in otherwise sparse problems are outlined in [4]_ Section 5.3 and
     [10]_ Section 4.1-4.2; the latter also discusses the alleviation of
     accuracy issues associated with the substitution approach to free

@@ -114,8 +114,8 @@ def hdquantiles(data, prob=(.25, .5, .75), axis=None, var=False,):
         result = _hd_1D(data, p, var)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_hd_1D, axis, data, p, var)
 
     return ma.fix_invalid(result, copy=False)
@@ -203,8 +203,8 @@ def hdquantiles_sd(data, prob=(.25, .5, .75), axis=None):
         result = _hdsd_1D(data, p)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_hdsd_1D, axis, data, p)
 
     return ma.fix_invalid(result, copy=False).ravel()
@@ -276,7 +276,7 @@ def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
         Axis along which to compute the quantiles. If None, use a flattened
         array.
 
-    """
+    """  # numpydoc ignore=RT01
     def _mjci_1D(data, p):
         data = np.sort(data.compressed())
         n = data.size
@@ -295,8 +295,8 @@ def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
 
     data = ma.array(data, copy=False)
     if data.ndim > 2:
-        raise ValueError("Array 'data' must be at most two dimensional, "
-                         "but got data.ndim = %d" % data.ndim)
+        raise ValueError(f"Array 'data' must be at most two dimensional, "
+                         f"but got data.ndim = {data.ndim}")
 
     p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
@@ -384,8 +384,8 @@ def median_cihs(data, alpha=0.05, axis=None):
         result = _cihs_1D(data, alpha)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_cihs_1D, axis, data, alpha)
 
     return result
@@ -416,6 +416,12 @@ def compare_medians_ms(group_1, group_2, axis=None):
         ndarray of floats with a length equal to the length of `group_1`
         along `axis`.
 
+    References
+    ----------
+    .. [1] McKean, Joseph W., and Ronald M. Schrader. "A comparison of methods
+       for studentizing the sample median." Communications in
+       Statistics-Simulation and Computation 13.6 (1984): 751-773.
+
     Examples
     --------
 
@@ -433,13 +439,6 @@ def compare_medians_ms(group_1, group_2, axis=None):
     >>> y = rng.random(size=(3, 8))
     >>> stats.mstats.compare_medians_ms(x, y, axis=1)
     array([0.36908985, 0.36092538, 0.2765313 ])
-
-    References
-    ----------
-    .. [1] McKean, Joseph W., and Ronald M. Schrader. "A comparison of methods
-       for studentizing the sample median." Communications in
-       Statistics-Simulation and Computation 13.6 (1984): 751-773.
-
     """
     (med_1, med_2) = (ma.median(group_1,axis=axis), ma.median(group_2,axis=axis))
     (std_1, std_2) = (mstats.stde_median(group_1, axis=axis),
@@ -503,7 +502,7 @@ def rsh(data, points=None):
         Sequence of points where to evaluate Rosenblatt shifted histogram.
         If None, use the data.
 
-    """
+    """  # numpydoc ignore=RT01
     data = ma.array(data, copy=False)
     if points is None:
         points = data

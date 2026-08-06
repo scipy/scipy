@@ -32,7 +32,7 @@ your system.
     If you are using Conda, you can skip the steps in this section - with the
     exception of installing compilers for Windows or the Apple Developer Tools
     for macOS. All other dependencies will be installed automatically by the
-    ``mamba env create -f environment.yml`` command.
+    ``conda env create -f environment.yml`` command.
 
 .. tab-set::
 
@@ -41,7 +41,7 @@ your system.
 
     If you want to use the system Python and ``pip``, you will need:
 
-    * C, C++, and Fortran compilers (typically ``gcc``, ``g++``, and ``gfortran``).
+    * C and C++ compilers (typically ``gcc``, ``g++``).
 
     * Python header files (typically a package named ``python3-dev`` or
       ``python3-devel``)
@@ -59,7 +59,7 @@ your system.
 
         To install SciPy build requirements, you can do::
 
-          sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
+          sudo apt install -y gcc g++ libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
 
         Alternatively, you can do::
 
@@ -69,11 +69,11 @@ your system.
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
 
-      .. tab-item:: Fedora
+      .. tab-item:: Fedora / RHEL & CentOS 8+
 
         To install SciPy build requirements, you can do::
 
-          sudo dnf install gcc-gfortran python3-devel openblas-devel lapack-devel pkgconfig
+          sudo dnf install gcc python3-devel openblas-devel lapack-devel pkgconfig
 
         Alternatively, you can do::
 
@@ -83,11 +83,11 @@ your system.
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
 
-      .. tab-item:: CentOS/RHEL
+      .. tab-item:: CentOS & RHEL <=7
 
         To install SciPy build requirements, you can do::
 
-          sudo yum install gcc-gfortran python3-devel openblas-devel lapack-devel pkgconfig
+          sudo yum install gcc python3-devel openblas-devel lapack-devel pkgconfig
 
         Alternatively, you can do::
 
@@ -101,7 +101,7 @@ your system.
 
         To install SciPy build requirements, you can do::
 
-          sudo pacman -S gcc-fortran openblas pkgconf
+          sudo pacman -S gcc openblas pkgconf
 
   .. tab-item:: macOS
     :sync: macos
@@ -119,11 +119,11 @@ your system.
     with `the python.org installer <https://www.python.org/downloads/>`__ or
     with a package manager like Homebrew, MacPorts or Fink.
 
-    The other system dependencies you need are a Fortran compiler, BLAS and
+    The other system dependencies you need are BLAS and
     LAPACK libraries, and pkg-config. They're easiest to install with
     `Homebrew <https://brew.sh/>`__::
 
-        brew install gfortran openblas pkg-config
+        brew install openblas pkg-config
 
     To allow the build tools to find OpenBLAS, you must run::
 
@@ -141,16 +141,14 @@ your system.
   .. tab-item:: Windows
     :sync: windows
 
-    A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
-    This is trickier on Windows than on other platforms, because MSVC does not
-    support Fortran, and gfortran and MSVC can't be used together. You will
-    need one of these sets of compilers:
+    A compatible set of C and C++ compilers is needed to build SciPy.
+    You will need one of these sets of compilers:
 
-    1. Mingw-w64 compilers (``gcc``, ``g++``, ``gfortran``) - *recommended,
+    1. Mingw-w64 compilers (``gcc``, ``g++``) - *recommended,
        because it's easiest to install and is what we use for SciPy's own CI
        and binaries*
-    2. MSVC + Intel Fortran (``ifort``)
-    3. Intel compilers (``icc``, ``ifort``)
+    2. Clang-cl
+    3. Intel compilers (``icc``)
 
     Compared to macOS and Linux, building SciPy on Windows is a little more
     difficult, due to the need to set up these compilers. It is not possible to
@@ -207,17 +205,7 @@ your system.
         can be found) in order to be found, with the exception of MSVC which
         will be found automatically if and only if there are no other compilers
         on the ``PATH``. You can use any shell (e.g., Powershell, ``cmd`` or
-        Git Bash) to invoke a build. To check that this is the case, try
-        invoking a Fortran compiler in the shell you use (e.g., ``gfortran
-        --version`` or ``ifort --version``).
-
-    .. warning::
-
-        When using a conda environment it is possible that the environment
-        creation will not work due to an outdated Fortran compiler. If that
-        happens, remove the ``compilers`` entry from ``environment.yml`` and
-        try again. The Fortran compiler should be installed as described in
-        this section.
+        Git Bash) to invoke a build.
 
 
 Building SciPy from source
@@ -248,10 +236,10 @@ Building from source to use SciPy
     environment::
 
       # Either install all SciPy dev dependencies into a fresh conda environment
-      mamba env create -f environment.yml
+      conda env create -f environment.yml
 
       # Or, install only the required build dependencies
-      mamba install python numpy cython pythran pybind11 compilers openblas meson-python pkg-config
+      conda install python numpy cython pythran pybind11 compilers openblas meson-python pkg-config
 
       # To build the latest stable release:
       pip install scipy --no-build-isolation --no-binary scipy
@@ -278,7 +266,7 @@ Building from source to use SciPy
 
 
 
-.. _the-dev-py-interface:
+.. _the-spin-interface:
 
 Building from source for SciPy development
 ``````````````````````````````````````````
@@ -290,13 +278,30 @@ the SciPy repository::
       cd scipy
       git submodule update --init
 
+
+.. tip::
+
+    Many of the steps described below can now be accomplished automatically
+    with commands which execute tasks in SciPy's Pixi workspace,
+    like ``pixi run build``.
+    To use this workspace, `install Pixi <https://pixi.sh/latest/installation/>`__
+    and execute ``pixi task list`` in a local clone of SciPy's source to see
+    the various tasks available.
+    
+    This removes the need for developers to keep track of development environments
+    and installed dependencies, as running a task automatically installs and uses
+    a suitable environment.
+    A future update to this guide will provide full details on using the Pixi
+    workspace for SciPy development.
+
+
 Then you want to do the following:
 
 1. Create a dedicated development environment (virtual environment or conda
    environment),
 2. Install all needed dependencies (*build*, and also *test*, *doc* and
-   *optional* dependencies), 
-3. Build SciPy with our ``dev.py`` developer interface.
+   *optional* dependencies),
+3. Build SciPy with our ``spin`` developer interface.
 
 Step (3) is always the same, steps (1) and (2) are different between conda and
 virtual environments:
@@ -309,8 +314,8 @@ virtual environments:
     To create a ``scipy-dev`` development environment with every required and
     optional dependency installed, run::
 
-        mamba env create -f environment.yml
-        mamba activate scipy-dev
+        conda env create -f environment.yml
+        conda activate scipy-dev
 
   .. tab-item:: Virtual env or system Python
     :sync: pip
@@ -352,71 +357,61 @@ virtual environments:
         ::
 
           python -m venv venv
-          .\venv\Scripts\activate
+          venv\Scripts\Activate.ps1
 
-    Then install the Python-level dependencies (see ``pyproject.toml``) from
-    PyPI with::
+    Then install the Python-level dependencies from PyPI with::
 
-       # All dependencies
-       python -m pip install -r requirements/all.txt
+       python -m pip install --group dev
 
-       # Alternatively, you can install just the dependencies for certain
-       # development tasks:
-
-       # Build and dev dependencies (for `python dev.py {build, lint, mypy}`)
-       python -m pip install -r requirements/build.txt -r requirements/dev.txt
-
-       # Doc dependencies (for `python dev.py {doc, refguide-check}`)
-       python -m pip install -r requirements/doc.txt
-
-       # Test dependencies (for `python dev.py {test, bench, refguide-check}`)
-       python -m pip install -r requirements/test.txt
+    If you want to install dependencies in a more granular fashion,
+    see the ``doc``, ``test``, and other groups under ``[dependency-groups]``
+    in ``pyproject.toml``.
 
 To build SciPy in an activated development environment, run::
 
-    python dev.py build
+    spin build
 
 This will install SciPy inside the repository (by default in a
-``build-install`` directory). You can then run tests (``python dev.py test``),
-drop into IPython (``python dev.py ipython``), or take other development steps
-like build the html documentation or running benchmarks. The ``dev.py``
-interface is self-documenting, so please see ``python dev.py --help`` and
-``python dev.py <subcommand> --help`` for detailed guidance.
+``build-install`` directory). You can then run tests (``spin test``),
+drop into IPython (``spin ipython``), or take other development steps
+like build the html documentation or running benchmarks. The ``spin``
+interface is self-documenting, so please see ``spin --help`` and
+``spin <subcommand> --help`` for detailed guidance.
 
 
 .. admonition:: IDE support & editable installs
 
-    While the ``dev.py`` interface is our recommended way of working on SciPy,
+    While the ``spin build`` interface is our recommended way of working on SciPy,
     it has one limitation: because of the custom install location, SciPy
-    installed using ``dev.py`` will not be recognized automatically within an
+    will not be recognized automatically within an
     IDE (e.g., for running a script via a "run" button, or setting breakpoints
     visually). This will work better with an *in-place build* (or "editable
     install").
 
-    Editable installs are supported. It is important to understand that **you
-    may use either an editable install or dev.py in a given repository clone,
-    but not both**. If you use editable installs, you have to use ``pytest``
-    and other development tools directly instead of using ``dev.py``.
-
-    To use an editable install, ensure you start from a clean repository (run
-    ``git clean -xdf`` if you've built with ``dev.py`` before) and have all
-    dependencies set up correctly as described higher up on this page. Then
-    do::
-
-        # Note: the --no-build-isolation is important! meson-python will
-        # auto-rebuild each time SciPy is imported by the Python interpreter.
-        pip install -e . --no-build-isolation
-
-        # To run the tests for, e.g., the `scipy.linalg` module:
-        pytest scipy/linalg
-
+    Editable installs are supported via ``spin install``.
     When making changes to SciPy code, including to compiled code, there is no
-    need to manually rebuild or reinstall. When you run ``git clean -xdf``,
+    need to manually rebuild or reinstall. However, should you need to run ``git clean -xdf``,
     which removes the built extension modules, remember to also uninstall SciPy
     with ``pip uninstall scipy``.
 
     See the meson-python_ documentation on editable installs for more details
     on how things work under the hood.
+
+    Note that editable installations are unsuitable for some forms of development,
+    such as working on sections of C/Cython API where tests are disabled for editable
+    installations. They also tend to hit weird corner cases more frequently than
+    regular installations, and have some known limitations like a lack of support
+    for static typing.
+
+
+Installing static type stubs
+----------------------------
+
+If you would like to install static type stubs to aid your development of SciPy,
+you can include the ``scipy-stubs`` package in your development environment.
+It is available on PyPI and conda-forge - see the scipy-stubs_ installation guide.
+
+.. _scipy-stubs: https://github.com/jorenham/scipy-stubs?tab=readme-ov-file#installation
 
 
 Customizing builds

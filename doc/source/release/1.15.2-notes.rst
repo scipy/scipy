@@ -1,0 +1,82 @@
+==========================
+SciPy 1.15.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.15.2 is a bug-fix release with no new features
+compared to 1.15.1. Free-threaded Python 3.13 wheels
+for Linux ARM platform are available on PyPI starting with
+this release.
+
+
+
+Authors
+=======
+* Name (commits)
+* Peter Bell (1)
+* Charles Bousseau (1) +
+* Jake Bowhay (3)
+* Matthew Brett (1)
+* Ralf Gommers (3)
+* Rohit Goswami (1)
+* Matt Haberland (4)
+* Parth Nobel (1) +
+* Tyler Reddy (33)
+* Daniel Schmitz (2)
+* Dan Schult (5)
+* Scott Shambaugh (2)
+* Edgar Andrés Margffoy Tuay (1)
+* Warren Weckesser (4)
+
+A total of 14 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.15.2
+------------------------
+
+* `#21214 <https://github.com/scipy/scipy/issues/21214>`__: BUG: _lib: crash in uarray on interpreter exit with a free-threaded...
+* `#21417 <https://github.com/scipy/scipy/issues/21417>`__: BUG: special: Unchecked calls of malloc() and calloc() in specfun.h
+* `#22183 <https://github.com/scipy/scipy/issues/22183>`__: BUG: Segmentation Fault when passing a special array to ``scipy.cluster.hierarch``...
+* `#22250 <https://github.com/scipy/scipy/issues/22250>`__: BUG: median_filter on 1D array crashes with memory corruption...
+* `#22314 <https://github.com/scipy/scipy/issues/22314>`__: BUG: special: Potential memory leak in the function ``besy()``...
+* `#22325 <https://github.com/scipy/scipy/issues/22325>`__: BUG: ndimage.median_filter: Heap corruption with scipy 1.15
+* `#22333 <https://github.com/scipy/scipy/issues/22333>`__: BUG: signal.medfilt and ndimage.median_filter not returning correct...
+* `#22336 <https://github.com/scipy/scipy/issues/22336>`__: BUG: special: Unchecked malloc in stirling2.h
+* `#22347 <https://github.com/scipy/scipy/issues/22347>`__: BUG: Matrix multiplication of a coo_matrix with an invalid type...
+* `#22349 <https://github.com/scipy/scipy/issues/22349>`__: BLD: libhighs.a static library is installed
+* `#22355 <https://github.com/scipy/scipy/issues/22355>`__: BUG: interpolate test_bary_rational.TestAAA.test_basic_functions...
+* `#22404 <https://github.com/scipy/scipy/issues/22404>`__: BUG: ``scipy.stats.zmap`` returns incorrect values for complex...
+* `#22417 <https://github.com/scipy/scipy/issues/22417>`__: BUG: spatial.transform: ``Rotation.from_matrix()`` uses inaccurate...
+* `#22444 <https://github.com/scipy/scipy/issues/22444>`__: BUG: io.loadmat thinks a file with a lot of zeros is valid
+* `#22458 <https://github.com/scipy/scipy/issues/22458>`__: BUG: Slicing sparse matrix with ``None`` gives result different...
+* `#22479 <https://github.com/scipy/scipy/issues/22479>`__: MAINT: scipy.stats: test_regressZEROX SIMD warning for certain...
+
+Pull requests for 1.15.2
+------------------------
+
+* `#22038 <https://github.com/scipy/scipy/pull/22038>`__: BUG: immortalize uarray global strings in order to prevent negative...
+* `#22080 <https://github.com/scipy/scipy/pull/22080>`__: BUG: special: Fix unchecked memory allocations in ``specfun.h``
+* `#22187 <https://github.com/scipy/scipy/pull/22187>`__: BUG: cluster: ``cophenet`` intercept invalid linkage matrix count
+* `#22306 <https://github.com/scipy/scipy/pull/22306>`__: REL, MAINT: prep for 1.15.2
+* `#22322 <https://github.com/scipy/scipy/pull/22322>`__: MAINT: stats.Mixture: make return type consistent when ``shape``...
+* `#22337 <https://github.com/scipy/scipy/pull/22337>`__: MAINT: stats.Mixture: fix inverse functions when mean is undefined
+* `#22339 <https://github.com/scipy/scipy/pull/22339>`__: BUG: special: Fix unchecked malloc in stirling2.h
+* `#22345 <https://github.com/scipy/scipy/pull/22345>`__: TST: turn off dtype check due to endianness
+* `#22353 <https://github.com/scipy/scipy/pull/22353>`__: BUG: sparse: fix selecting wrong dtype for coo coords
+* `#22356 <https://github.com/scipy/scipy/pull/22356>`__: TST: interpolate: small tolerance bump to TestAAA.test_basic_functions
+* `#22357 <https://github.com/scipy/scipy/pull/22357>`__: MAINT: Stop installing ``libhighs``
+* `#22372 <https://github.com/scipy/scipy/pull/22372>`__: BUG: sparse.linalg.norm: add test for and fix return type
+* `#22373 <https://github.com/scipy/scipy/pull/22373>`__: BUG: sparse: revert NotImplemented return values in dot and matmul
+* `#22374 <https://github.com/scipy/scipy/pull/22374>`__: DOC: sparse.linalg: add two recent functions to namespace and...
+* `#22402 <https://github.com/scipy/scipy/pull/22402>`__: BUG: wrap median_filter stability
+* `#22405 <https://github.com/scipy/scipy/pull/22405>`__: MAINT: stats.zmap: restore support for complex data
+* `#22408 <https://github.com/scipy/scipy/pull/22408>`__: MAINT: integrate.cumulative_simpson: bump test tolerance
+* `#22418 <https://github.com/scipy/scipy/pull/22418>`__: BUG: scipy.spatial: Fix inaccurate orthonormalization in ``Rotation.from_matrix(``...
+* `#22423 <https://github.com/scipy/scipy/pull/22423>`__: BUG: special: Fix a memory leak in the AMOS function besy().
+* `#22446 <https://github.com/scipy/scipy/pull/22446>`__: CI: migrate Linux aarch64 jobs to GitHub Actions, add cp313t...
+* `#22447 <https://github.com/scipy/scipy/pull/22447>`__: BUG: io.loadmat: throw error on file containing all zeros
+* `#22472 <https://github.com/scipy/scipy/pull/22472>`__: BUG: sparse: fix spmatrix indexing with None and implicit padding...
+* `#22482 <https://github.com/scipy/scipy/pull/22482>`__: MAINT: stats: pearsonr SIMD-related shim

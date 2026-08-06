@@ -5,7 +5,7 @@ Meson and ``distutils`` ways of doing things
 
 *Old workflows (numpy.distutils based):*
 
-The `runtests.py` file was removed in commit `0f73f92255253ec5dff2de5ca45d8d3bdda03f92` [^1^_].
+The `runtests.py` file was removed in commit `0f73f92255253ec5dff2de5ca45d8d3bdda03f92` [#]_.
 
 1. ``python runtests.py``
 2. ``python setup.py build_ext -i`` + ``export
@@ -22,11 +22,11 @@ The `runtests.py` file was removed in commit `0f73f92255253ec5dff2de5ca45d8d3bdd
 
 *New workflows (Meson and meson-python based):*
 
-1. ``python dev.py``
+1. ``spin``
 2. ``pip install -e . --no-build-isolation`` (see the ``meson-python`` docs)
 3. the same as (2)
 4. ``python -m build --no-isolation`` + ``pip install dist/scipy*.whl`` - see
    `pypa/build <https://pypa-build.readthedocs.io/en/latest/>`_.
 5. ``pip install .``
 
-[^1^_]: [Commit 0f73f92255253ec5dff2de5ca45d8d3bdda03f92 on GitHub](https://github.com/scipy/scipy/commit/0f73f92255253ec5dff2de5ca45d8d3bdda03f92).
+.. [#] `Commit 0f73f92255253ec5dff2de5ca45d8d3bdda03f92 on GitHub <https://github.com/scipy/scipy/commit/0f73f92255253ec5dff2de5ca45d8d3bdda03f92>`_.

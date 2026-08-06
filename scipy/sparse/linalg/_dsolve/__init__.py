@@ -15,12 +15,12 @@ to solve in the single precision. See also use_solver documentation.
 
 Example session::
 
-    >>> from scipy.sparse import csc_matrix, spdiags
+    >>> from scipy.sparse import csc_array, dia_array
     >>> from numpy import array
     >>>
     >>> print("Inverting a sparse linear system:")
     >>> print("The sparse matrix (constructed from diagonals):")
-    >>> a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
+    >>> a = dia_array(([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1]), shape=(5, 5))
     >>> b = array([1, 2, 3, 4, 5])
     >>> print("Solve: single precision complex:")
     >>> use_solver( useUmfpack = False )
@@ -62,8 +62,8 @@ from . import linsolve
 
 __all__ = [
     'MatrixRankWarning', 'SuperLU', 'factorized',
-    'spilu', 'splu', 'spsolve',
-    'spsolve_triangular', 'use_solver'
+    'spilu', 'splu', 'spsolve', 'is_sptriangular',
+    'spsolve_triangular', 'use_solver', 'spbandwidth',
 ]
 
 from scipy._lib._testutils import PytestTester

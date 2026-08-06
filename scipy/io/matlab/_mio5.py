@@ -87,7 +87,7 @@ from ._byteordercodes import native_code, swapped_code
 
 from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       arr_to_chars, arr_dtype_number, MatWriteError,
-                      MatReadError, MatReadWarning)
+                      MatReadError, MatReadWarning, MatWriteWarning)
 
 # Reader object for matlab 5 format variables
 from ._mio5_utils import VarReader5
@@ -97,7 +97,8 @@ from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
                           miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info, mat_struct)
+                          mxDOUBLE_CLASS, mclass_info, mat_struct,
+                          mxOPAQUE_CLASS, MatlabOpaque)
 
 from ._streams import ZlibInputStream
 
@@ -221,7 +222,7 @@ class MatFile5Reader(MatFileReader):
         hdict['__header__'] = hdr['description'].item().strip(b' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
-        hdict['__version__'] = '%d.%d' % (v_major, v_minor)
+        hdict['__version__'] = f'{v_major}.{v_minor}'
         return hdict
 
     def initialize_read(self):
@@ -267,7 +268,7 @@ class MatFile5Reader(MatFileReader):
             check_stream_limit = False
             self._matrix_reader.set_stream(self.mat_stream)
         if not mdtype == miMATRIX:
-            raise TypeError('Expecting miMATRIX type here, got %d' % mdtype)
+            raise TypeError(f'Expecting miMATRIX type here, got {mdtype}')
         header = self._matrix_reader.read_header(check_stream_limit)
         return header, next_pos
 
@@ -314,7 +315,7 @@ class MatFile5Reader(MatFileReader):
                 msg = (
                     f'Duplicate variable name "{name}" in stream'
                     " - replacing previous with new\nConsider"
-                    "scipy.io.matlab._mio5.varmats_from_mat to split "
+                    "scipy.io.matlab.varmats_from_mat to split "
                     "file into single variable files"
                 )
                 warnings.warn(msg, MatReadWarning, stacklevel=2)
@@ -375,7 +376,7 @@ class MatFile5Reader(MatFileReader):
 
 
 def varmats_from_mat(file_obj):
-    """ Pull variables out of mat 5 file as a sequence of mat file objects
+    """Pull variables out of mat 5 file as a sequence of mat file objects.
 
     This can be useful with a difficult mat file, containing unreadable
     variables. This routine pulls the variables out in raw form and puts them,
@@ -472,7 +473,7 @@ def to_writeable(source):
                   hasattr(source, 'items'))
     # Objects that don't implement mappings, but do have dicts
     if isinstance(source, np.generic):
-        # NumPy scalars are never mappings (PyPy issue workaround)
+        # NumPy scalars are never mappings
         pass
     elif not is_mapping and hasattr(source, '__dict__'):
         source = {key: value for key, value in source.__dict__.items()
@@ -482,10 +483,14 @@ def to_writeable(source):
         dtype = []
         values = []
         for field, value in source.items():
-            if (isinstance(field, str) and
-                    field[0] not in '_0123456789'):
-                dtype.append((str(field), object))
-                values.append(value)
+            if isinstance(field, str):
+                if field[0] not in '_0123456789':
+                    dtype.append((str(field), object))
+                    values.append(value)
+                else:
+                    msg = (f"Starting field name with a underscore "
+                           f"or a digit ({field}) is ignored")
+                    warnings.warn(msg, MatWriteWarning, stacklevel=2)
         if dtype:
             return np.array([tuple(values)], dtype)
         else:
@@ -594,10 +599,11 @@ class VarWriter5:
         af['nzmax'] = nzmax
         self.write_bytes(af)
         # shape
-        self.write_element(np.array(shape, dtype='i4'))
+        if shape is not None:
+            self.write_element(np.array(shape, dtype='i4'))
         # write name
         name = np.asarray(name)
-        if name == '':  # empty string zero-terminated
+        if name == '' or name == b'':  # empty string zero-terminated
             self.write_smalldata_element(name, miINT8, 0)
         else:
             self.write_element(name, miINT8)
@@ -655,7 +661,9 @@ class VarWriter5:
         narr = to_writeable(arr)
         if narr is None:
             raise TypeError(f'Could not convert {arr} (type {type(arr)}) to array')
-        if isinstance(narr, MatlabObject):
+        if isinstance(narr, MatlabOpaque):
+            self.write_opaque(narr)
+        elif isinstance(narr, MatlabObject):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
             raise MatWriteError('Cannot write matlab functions')
@@ -789,12 +797,11 @@ class VarWriter5:
         length = max([len(fieldname) for fieldname in fieldnames])+1
         max_length = (self.long_field_names and 64) or 32
         if length > max_length:
-            raise ValueError("Field names are restricted to %d characters" %
-                             (max_length-1))
+            raise ValueError(
+                f"Field names are restricted to {max_length - 1} characters"
+            )
         self.write_element(np.array([length], dtype='i4'))
-        self.write_element(
-            np.array(fieldnames, dtype='S%d' % (length)),
-            mdtype=miINT8)
+        self.write_element(np.array(fieldnames, dtype=f'S{length}'), mdtype=miINT8)
         A = np.atleast_2d(arr).flatten('F')
         for el in A:
             for f in fieldnames:
@@ -809,6 +816,17 @@ class VarWriter5:
         self.write_element(np.array(arr.classname, dtype='S'),
                            mdtype=miINT8)
         self._write_items(arr)
+
+    def write_opaque(self, arr):
+        '''Array Flags, Var Name, Type System, Class Name, Metadata'''
+        self.write_header(None, mxOPAQUE_CLASS)
+        # Write Type System
+        self.write_element(np.array(arr['_TypeSystem'].item(), dtype='S'),
+                           mdtype=miINT8)
+        # Write Classname
+        self.write_element(np.array(arr['_Class'].item(), dtype='S'),
+                           mdtype=miINT8)
+        self.write(arr['_ObjectMetadata'].item())
 
 
 class MatFile5Writer:
@@ -878,7 +896,12 @@ class MatFile5Writer:
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
-            if name[0] == '_':
+            if name == '__function_workspace__':
+                name = ''
+            elif name[0] == '_':
+                msg = (f"Starting field name with a "
+                       f"underscore ({name}) is ignored")
+                warnings.warn(msg, MatWriteWarning, stacklevel=2)
                 continue
             is_global = name in self.global_vars
             if self.do_compression:

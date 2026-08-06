@@ -63,6 +63,7 @@ Continuous distributions
    cosine            -- Cosine
    crystalball       -- Crystalball
    dgamma            -- Double Gamma
+   dpareto_lognorm   -- Double Pareto Lognormal
    dweibull          -- Double Weibull
    erlang            -- Erlang
    expon             -- Exponential
@@ -188,9 +189,11 @@ Multivariate distributions
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
+   normal_inverse_gamma   -- Normal-inverse-gamma distribution
    random_table           -- Distribution of random tables with given marginals
    uniform_direction      -- Uniform distribution on S(N-1)
    vonmises_fisher        -- Von Mises-Fisher distribution
+   matrix_t               -- Matrix variate t distribution
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
@@ -222,6 +225,7 @@ Discrete distributions
    nhypergeom               -- Negative Hypergeometric
    planck                   -- Planck (Discrete Exponential)
    poisson                  -- Poisson
+   poisson_binom            -- Poisson Binomial
    randint                  -- Discrete Uniform
    skellam                  -- Skellam
    yulesimon                -- Yule-Simon
@@ -245,6 +249,7 @@ Summary statistics
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
+   lmoment
    expectile         -- Expectile
    skew              -- Skewness
    kstat             --
@@ -256,7 +261,6 @@ Summary statistics
    tstd              --
    tsem              --
    variation         -- Coefficient of variation
-   find_repeats
    rankdata
    tiecorrect
    trim_mean
@@ -275,10 +279,12 @@ Frequency statistics
 .. autosummary::
    :toctree: generated/
 
+   quantile
+   estimated_cdf
    cumfreq
+   relfreq
    percentileofscore
    scoreatpercentile
-   relfreq
 
 .. autosummary::
    :toctree: generated/
@@ -351,15 +357,17 @@ coordinates of multivariate observations.
 
    linregress
    pearsonr
-   spearmanr
+   spearmanrho
    pointbiserialr
    kendalltau
+   chatterjeexi
    weightedtau
    somersd
    siegelslopes
    theilslopes
    page_trend_test
    multiscale_graphcorr
+   spearmanr
 
 These association tests and are to work with samples in the form of contingency
 tables. Supporting functions are available in `scipy.stats.contingency`.
@@ -453,36 +461,33 @@ tests) are listed above.
    combine_pvalues
    false_discovery_control
 
+Random Variables
+================
 
-The following functions are related to the tests above but do not belong in the
-above categories.
+.. autosummary::
+   :toctree: generated/
 
-Quasi-Monte Carlo
-=================
-
-.. toctree::
-   :maxdepth: 4
-
-   stats.qmc
-
-Contingency Tables
-==================
-
-.. toctree::
-   :maxdepth: 4
-
-   stats.contingency
-
-Masked statistics functions
-===========================
-
-.. toctree::
-
-   stats.mstats
-
+   make_distribution
+   Normal
+   Logistic
+   Uniform
+   Binomial
+   Mixture
+   order_statistic
+   truncate
+   abs
+   exp
+   log
 
 Other statistical functionality
 ===============================
+.. toctree::
+   :maxdepth: 1
+
+   stats.qmc
+   stats.contingency
+   stats.mstats
+   stats.sampling
 
 Transformations
 ---------------
@@ -513,14 +518,6 @@ Statistical distances
    wasserstein_distance
    wasserstein_distance_nd
    energy_distance
-
-Sampling
---------
-
-.. toctree::
-   :maxdepth: 4
-
-   stats.sampling
 
 Fitting / Survival Analysis
 ---------------------------
@@ -625,14 +622,13 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
-from ._mgc import multiscale_graphcorr
-
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import (
-    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, stats
+from ._distribution_infrastructure import (
+    make_distribution, Mixture, order_statistic, truncate, exp, log, abs
 )
-
+from ._new_distributions import Normal, Logistic, Uniform, Binomial
+from ._mgc import multiscale_graphcorr
+from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
+from ._quantile import quantile, estimated_cdf
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

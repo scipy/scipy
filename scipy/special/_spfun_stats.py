@@ -33,7 +33,10 @@
 analysis."""
 
 import numpy as np
+
+import scipy.special._gufuncs as _gufuncs
 from scipy.special import gammaln as loggam
+from scipy.special._ufunc_tools import _with_cache_optimization
 
 
 __all__ = ['multigammaln']
@@ -96,11 +99,80 @@ def multigammaln(a, d):
     454.1488605074416
     """
     a = np.asarray(a)
+    # Support for 0d arrays is needed for array_api_strict and dask.
+    d = np.asarray(d)[()]
     if not np.isscalar(d) or (np.floor(d) != d):
         raise ValueError("d should be a positive integer (dimension)")
     if np.any(a <= 0.5 * (d - 1)):
-        raise ValueError(f"condition a ({a:f}) > 0.5 * (d-1) ({0.5 * (d-1):f}) not met")
+        raise ValueError(f"condition a ({a}) > 0.5 * (d-1) ({0.5 * (d-1)}) not met")
 
     res = (d * (d-1) * 0.25) * np.log(np.pi)
     res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res
+
+
+_poisson_binom_pmf_doc = (
+    """Returns pmf of Poisson Binomial distribution.
+
+    Parameters
+    ----------
+    k : array
+        Number of successes at which to evaluate pmf.
+
+    p : array
+        Success probabilities of independent Bernoulli trials.
+
+    Notes
+    -----
+    This is equivalent to a gufunc with signature ``()(i)->()``.
+    The last dimension of `p` contains success probabilities and
+    the preceding dimensions are batch dimensions. The batch
+    dimensions are broadcast against ``k``.
+
+    The output will be C contiguous regardless of the contiguity of
+    `k` and `p`.
+
+    """
+)
+
+
+_poisson_binom_pmf = _with_cache_optimization(
+    name="_poisson_binom_pmf",
+    arg_names=["k", "p"],
+    docstring=_poisson_binom_pmf_doc,
+    ufunc=_gufuncs._poisson_binom_pmf,
+    cache_arg_indices=[1],
+)
+
+
+_poisson_binom_cdf_doc = (
+    """Returns cdf of Poisson Binomial distribution.
+
+    Parameters
+    ----------
+    k : array
+        Number of successes at which to evaluate cdf.
+
+    p : array
+        Success probabilities of independent Bernoulli trials.
+
+    Notes
+    -----
+    This is equivalent to a gufunc with signature ``()(i)->()``.
+    The last dimension of `p` contains success probabilities and
+    the preceding dimensions are batch dimensions. The batch
+    dimensions are broadcast against ``k``.
+
+    The output will be C contiguous regardless of the contiguity of
+    `k` and `p`.
+
+    """
+)
+
+_poisson_binom_cdf = _with_cache_optimization(
+    name="_poisson_binom_cdf",
+    arg_names=["k", "p"],
+    docstring=_poisson_binom_cdf_doc,
+    ufunc=_gufuncs._poisson_binom_cdf,
+    cache_arg_indices=[1],
+)

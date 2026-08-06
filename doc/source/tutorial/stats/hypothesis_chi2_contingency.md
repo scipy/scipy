@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_chi2_contingency.ipynb
+.. notebooklite:: hypothesis_chi2_contingency.md
    :new_tab: True
 ```
 
 (hypothesis_chi2_contingency)=
+
++++
+
 # Chi-square test of independence of variables in a contingency table
 
 In [^1], the use of aspirin to prevent cardiovascular events in women and men
@@ -27,7 +32,7 @@ was investigated. The study notably concluded:
 > ischemic stroke in women [...]
 
 The article lists studies of various cardiovascular events. Let's focus on the
-ischemic stoke in women.
+ischemic stroke in women.
 
 The following table summarizes the results of the experiment in which
 participants took aspirin or a placebo on a regular basis for several years.

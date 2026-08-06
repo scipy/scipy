@@ -3,10 +3,10 @@ import operator
 from . import (linear_sum_assignment, OptimizeResult)
 from ._optimize import _check_unknown_options
 
-from scipy._lib._util import check_random_state
 import itertools
 
 QUADRATIC_ASSIGNMENT_METHODS = ['faq', '2opt']
+
 
 def quadratic_assignment(A, B, method="faq", options=None):
     r"""
@@ -60,13 +60,11 @@ def quadratic_assignment(A, B, method="faq", options=None):
             ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
             where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance then
-            that instance is used.
+        rng : `numpy.random.Generator`, optional
+            Pseudorandom number generator state. When `rng` is None, a new
+            `numpy.random.Generator` is created using entropy from the
+            operating system. Types other than `numpy.random.Generator` are
+            passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
         For method-specific options, see
         :func:`show_options('quadratic_assignment') <show_options>`.
@@ -112,11 +110,12 @@ def quadratic_assignment(A, B, method="faq", options=None):
     --------
     >>> import numpy as np
     >>> from scipy.optimize import quadratic_assignment
+    >>> rng = np.random.default_rng()
     >>> A = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
     ...               [150, 130, 0, 120], [170, 100, 120, 0]])
     >>> B = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
     ...               [0, 0, 0, 3], [0, 0, 0, 0]])
-    >>> res = quadratic_assignment(A, B)
+    >>> res = quadratic_assignment(A, B, options={'rng': rng})
     >>> print(res)
          fun: 3260
      col_ind: [0 3 2 1]
@@ -159,7 +158,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     ...               [8, 5, 0, 2], [6, 1, 2, 0]])
     >>> B = np.array([[0, 1, 8, 4], [1, 0, 5, 2],
     ...               [8, 5, 0, 5], [4, 2, 5, 0]])
-    >>> res = quadratic_assignment(A, B)
+    >>> res = quadratic_assignment(A, B, options={'rng': rng})
     >>> print(res)
          fun: 178
      col_ind: [1 0 3 2]
@@ -170,7 +169,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
     >>> guess = np.array([np.arange(len(A)), res.col_ind]).T
     >>> res = quadratic_assignment(A, B, method="2opt",
-    ...                            options = {'partial_guess': guess})
+    ...     options = {'rng': rng, 'partial_guess': guess})
     >>> print(res)
          fun: 176
      col_ind: [1 2 3 0]
@@ -186,6 +185,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
                "2opt": _quadratic_assignment_2opt}
     if method not in methods:
         raise ValueError(f"method {method} must be in {methods}.")
+
     res = methods[method](A, B, **options)
     return res
 
@@ -284,13 +284,8 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``, where
         ``m`` is not greater than the number of nodes, :math:`n`.
 
-    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : {None, int, `numpy.random.Generator`}, optional
+        Pseudorandom number generator state. See `quadratic_assignment` for details.
     P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
         Initial position. Must be a doubly-stochastic matrix [3]_.
 
@@ -312,7 +307,7 @@ def _quadratic_assignment_faq(A, B,
         Integer specifying the max number of Frank-Wolfe iterations performed.
     tol : float (default: 0.03)
         Tolerance for termination. Frank-Wolfe iteration terminates when
-        :math:`\frac{||P_{i}-P_{i+1}||_F}{\sqrt{m')}} \leq tol`,
+        :math:`\frac{||P_{i}-P_{i+1}||_F}{\sqrt{m'}} \leq tol`,
         where :math:`i` is the iteration number.
 
     Returns
@@ -343,19 +338,21 @@ def _quadratic_assignment_faq(A, B,
     As mentioned above, a barycenter initialization often results in a better
     solution than a single random initialization.
 
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> from scipy.optimize import quadratic_assignment
+    >>> import numpy as np
+    >>> rng = np.random.default_rng()
     >>> n = 15
     >>> A = rng.random((n, n))
     >>> B = rng.random((n, n))
-    >>> res = quadratic_assignment(A, B)  # FAQ is default method
+    >>> options = {"rng": rng}
+    >>> res = quadratic_assignment(A, B, options=options)  # FAQ is default method
     >>> print(res.fun)
-    46.871483385480545  # may vary
+    47.797048706380636  # may vary
 
-    >>> options = {"P0": "randomized"}  # use randomized initialization
+    >>> options = {"rng": rng, "P0": "randomized"}  # use randomized initialization
     >>> res = quadratic_assignment(A, B, options=options)
     >>> print(res.fun)
-    47.224831071310625 # may vary
+    47.37287069769966 # may vary
 
     However, consider running from several randomized initializations and
     keeping the best result.
@@ -363,14 +360,14 @@ def _quadratic_assignment_faq(A, B,
     >>> res = min([quadratic_assignment(A, B, options=options)
     ...            for i in range(30)], key=lambda x: x.fun)
     >>> print(res.fun)
-    46.671852533681516 # may vary
+    46.55974835248574 # may vary
 
-    The '2-opt' method can be used to further refine the results.
+    The '2-opt' method can be used to attempt to refine the results.
 
-    >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T}
+    >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T, "rng": rng}
     >>> res = quadratic_assignment(A, B, method="2opt", options=options)
     >>> print(res.fun)
-    46.47160735721583 # may vary
+    46.55974835248574 # may vary
 
     References
     ----------
@@ -406,7 +403,7 @@ def _quadratic_assignment_faq(A, B,
     if msg is not None:
         raise ValueError(msg)
 
-    rng = check_random_state(rng)
+    rng = np.random.default_rng(rng)
     n = len(A)  # number of vertices in graphs
     n_seeds = len(partial_match)  # number of seeds
     n_unseed = n - n_seeds
@@ -578,13 +575,8 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     -------
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
-    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : {None, int, `numpy.random.Generator`}, optional
+        Pseudorandom number generator state. See `quadratic_assignment` for details.
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.
 
@@ -635,11 +627,11 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
 
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
-           203-215, https://doi.org/10.1016/j.patcog.2018.09.014
+           203-215, :doi:`10.1016/j.patcog.2018.09.014`.
 
     """
     _check_unknown_options(unknown_options)
-    rng = check_random_state(rng)
+    rng = np.random.default_rng(rng)
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     N = len(A)

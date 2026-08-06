@@ -1,6 +1,6 @@
 """Equality-constrained quadratic programming solvers."""
 
-from scipy.sparse import (linalg, bmat, csc_matrix)
+from scipy.sparse import linalg, block_array
 from math import copysign
 import numpy as np
 from numpy.linalg import norm
@@ -25,11 +25,11 @@ def eqp_kktfact(H, c, A, b):
 
     Parameters
     ----------
-    H : sparse matrix, shape (n, n)
+    H : sparse array, shape (n, n)
         Hessian matrix of the EQP problem.
     c : array_like, shape (n,)
         Gradient of the quadratic objective function.
-    A : sparse matrix
+    A : sparse array
         Jacobian matrix of the EQP problem.
     b : array_like, shape (m,)
         Right-hand side of the constraint equation.
@@ -47,7 +47,7 @@ def eqp_kktfact(H, c, A, b):
     # Karush-Kuhn-Tucker matrix of coefficients.
     # Defined as in Nocedal/Wright "Numerical
     # Optimization" p.452 in Eq. (16.4).
-    kkt_matrix = csc_matrix(bmat([[H, A.T], [A, None]]))
+    kkt_matrix = block_array([[H, A.T], [A, None]], format="csc")
     # Vector of coefficients.
     kkt_vec = np.hstack([-c, -b])
 
@@ -90,7 +90,7 @@ def sphere_intersections(z, d, trust_radius,
         The line/segment ``x(t) = z + t*d`` is inside the ball for
         for ``ta <= t <= tb``.
     intersect : bool
-        When ``True``, there is a intersection between the line/segment
+        When ``True``, there is an intersection between the line/segment
         and the sphere. On the other hand, when ``False``, there is no
         intersection.
     """
@@ -180,7 +180,7 @@ def box_intersections(z, d, lb, ub,
         The line/segment ``x(t) = z + t*d`` is inside the box for
         for ``ta <= t <= tb``.
     intersect : bool
-        When ``True``, there is a intersection between the line (or segment)
+        When ``True``, there is an intersection between the line (or segment)
         and the rectangular box. On the other hand, when ``False``, there is no
         intersection.
     """
@@ -270,7 +270,7 @@ def box_sphere_intersections(z, d, lb, ub, trust_radius,
         The line/segment ``x(t) = z + t*d`` is inside the rectangular box and
         inside the ball for ``ta <= t <= tb``.
     intersect : bool
-        When ``True``, there is a intersection between the line (or segment)
+        When ``True``, there is an intersection between the line (or segment)
         and both constraints. On the other hand, when ``False``, there is no
         intersection.
     sphere_info : dict, optional
@@ -321,10 +321,10 @@ def modified_dogleg(A, Y, b, trust_radius, lb, ub):
 
     Parameters
     ----------
-    A : LinearOperator (or sparse matrix or ndarray), shape (m, n)
+    A : LinearOperator (or sparse array or ndarray), shape (m, n)
         Matrix ``A`` in the minimization problem. It should have
         dimension ``(m, n)`` such that ``m < n``.
-    Y : LinearOperator (or sparse matrix or ndarray), shape (n, m)
+    Y : LinearOperator (or sparse array or ndarray), shape (n, m)
         LinearOperator that apply the projection matrix
         ``Q = A.T inv(A A.T)`` to the vector. The obtained vector
         ``y = Q x`` being the minimum norm solution of ``A y = x``.
@@ -421,13 +421,13 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
 
     Parameters
     ----------
-    H : LinearOperator (or sparse matrix or ndarray), shape (n, n)
+    H : LinearOperator (or sparse array or ndarray), shape (n, n)
         Operator for computing ``H v``.
     c : array_like, shape (n,)
         Gradient of the quadratic objective function.
-    Z : LinearOperator (or sparse matrix or ndarray), shape (n, n)
+    Z : LinearOperator (or sparse array or ndarray), shape (n, n)
         Operator for projecting ``x`` into the null space of A.
-    Y : LinearOperator,  sparse matrix, ndarray, shape (n, m)
+    Y : LinearOperator,  sparse array, ndarray, shape (n, m)
         Operator that, for a given a vector ``b``, compute smallest
         norm solution of ``A x + b = 0``.
     b : array_like, shape (m,)
@@ -459,7 +459,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
     -------
     x : array_like, shape (n,)
         Solution of the EQP problem.
-    info : Dict
+    info : dict
         Dictionary containing the following:
 
             - niter : Number of iterations.
@@ -479,7 +479,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
     In the absence of spherical and box constraints, for sufficient
     iterations, the method returns a truly optimal result.
     In the presence of those constraints, the value returned is only
-    a inexpensive approximation of the optimal value.
+    an inexpensive approximation of the optimal value.
 
     References
     ----------

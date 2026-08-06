@@ -89,16 +89,16 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         within `bounds`.
 
         ``2`` : Semi-continuous variable; decision variable must be within
-        `bounds` or take value ``0``.
+        `bounds` or ``0``.
 
         ``3`` : Semi-integer variable; decision variable must be an integer
-        within `bounds` or take value ``0``.
+        within `bounds` or ``0``.
 
         By default, all variables are continuous.
 
         For mixed integrality constraints, supply an array of shape `c.shape`.
         To infer a constraint on each decision variable from shorter inputs,
-        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+        the argument will be broadcast to `c.shape` using `np.broadcast_to`.
 
         This argument is currently used only by the ``'highs'`` method and
         ignored otherwise.
@@ -157,10 +157,10 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         Currently, ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
-    mip_rel_gap : double (default: None)
+    mip_rel_gap : double, optional
         Termination criterion for MIP solver: solver will terminate when the
         gap between the primal objective value and the dual objective bound,
-        scaled by the primal objective value, is <= mip_rel_gap.
+        scaled by the primal objective value, is <= mip_rel_gap. Default: 0.0001.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
@@ -280,7 +280,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
-           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+           119-142, 2018. :doi:`10.1007/s12532-017-0130-5`.
     .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
             Mathematical programming 5.1 (1973): 1-28.
     .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
@@ -521,7 +521,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
-           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+           119-142, 2018. :doi:`10.1007/s12532-017-0130-5`.
     .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
             Mathematical programming 5.1 (1973): 1-28.
     .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
@@ -753,7 +753,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
-           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+           119-142, 2018. :doi:`10.1007/s12532-017-0130-5`.
     """
     pass
 
@@ -867,12 +867,12 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         when Mehrota's predictor-corrector is not in use (uncommon).
     sparse : bool (default: False)
         Set to ``True`` if the problem is to be treated as sparse after
-        presolve. If either ``A_eq`` or ``A_ub`` is a sparse matrix,
+        presolve. If either ``A_eq`` or ``A_ub`` is sparse,
         this option will automatically be set ``True``, and the problem
         will be treated as sparse even during presolve. If your constraint
         matrices contain mostly zeros and the problem is not very small (less
         than about 100 constraints or variables), consider setting ``True``
-        or providing ``A_eq`` and ``A_ub`` as sparse matrices.
+        or providing ``A_eq`` and ``A_ub`` as sparse arrays.
     lstsq : bool (default: ``False``)
         Set to ``True`` if the problem is expected to be very poorly
         conditioned. This should always be left ``False`` unless severe
@@ -1017,7 +1017,7 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ``sym_pos=False`` skips to solver 3, and ``lstsq=True`` skips
     to solver 4 for both sparse and dense problems.
 
-    Potential improvements for combatting issues associated with dense
+    Potential improvements for combating issues associated with dense
     columns in otherwise sparse problems are outlined in [4]_ Section 5.3 and
     [10]_ Section 4.1-4.2; the latter also discusses the alleviation of
     accuracy issues associated with the substitution approach to free

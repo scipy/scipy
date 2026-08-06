@@ -15,7 +15,7 @@ def random_sparse_csr(m, n, nnz_per_row):
     rows = np.arange(m).repeat(nnz_per_row)
     cols = np.random.randint(0, n, size=nnz_per_row*m)
     vals = np.random.random_sample(m*nnz_per_row)
-    M = scipy.sparse.coo_matrix((vals, (rows, cols)), (m, n), dtype=float)
+    M = scipy.sparse.coo_array((vals, (rows, cols)), (m, n), dtype=float)
     return M.tocsr()
 
 
@@ -24,7 +24,7 @@ def random_sparse_csc(m, n, nnz_per_row, rng):
     rows = np.arange(m).repeat(nnz_per_row)
     cols = rng.integers(0, n, size=nnz_per_row*m)
     vals = rng.random(m*nnz_per_row)
-    M = scipy.sparse.coo_matrix((vals, (rows, cols)), (m, n), dtype=float)
+    M = scipy.sparse.coo_array((vals, (rows, cols)), (m, n), dtype=float)
     # Use csc instead of csr, because sparse LU decomposition
     # raises a warning when I use csr.
     return M.tocsc()

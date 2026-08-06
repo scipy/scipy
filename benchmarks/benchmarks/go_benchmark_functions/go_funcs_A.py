@@ -28,6 +28,7 @@ class Ackley01(Benchmark):
     TODO: the -0.2 factor in the exponent of the first term is given as
     -0.02 in Jamil et al.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -35,7 +36,6 @@ class Ackley01(Benchmark):
         self._bounds = list(zip([-35.0] * self.N, [35.0] * self.N))
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -178,6 +178,7 @@ class Alpine01(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -185,7 +186,6 @@ class Alpine01(Benchmark):
         self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -218,6 +218,7 @@ class Alpine02(Benchmark):
 
     TODO: eqn 7 in [1]_ has the wrong global minimum value.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -225,7 +226,6 @@ class Alpine02(Benchmark):
         self._bounds = list(zip([0.0] * self.N, [10.0] * self.N))
         self.global_optimum = [[7.91705268, 4.81584232]]
         self.fglob = -6.12950
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -257,6 +257,7 @@ class AMGM(Benchmark):
 
     TODO: eqn 7 in [1]_ has the wrong global minimum value.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -264,7 +265,6 @@ class AMGM(Benchmark):
         self._bounds = list(zip([0.0] * self.N, [10.0] * self.N))
         self.global_optimum = [[1, 1]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

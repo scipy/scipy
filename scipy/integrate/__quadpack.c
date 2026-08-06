@@ -170,7 +170,7 @@ static void dqcheb(const double*,double*,double*,double*);
 static void dqelg(int*,double*,double*,double*,double*,int*);
 static void dqk15(double(*)(double*),const double,const double,double*,double*,double*,double*);
 static void dqk15i(double(*)(double*),const double,const int,const double,const double,double*,double*,double*,double*);
-static void dqk15w(double(*)(double*),double(),const double,const double,
+static void dqk15w(double(*)(double*),quadpack_w_func,const double,const double,
                    const double,const double,const int,const double,const double,
                    double*,double*,double*,double*);
 static void dqk21(double(*)(double*),const double,const double,double*,double*,double*,double*);
@@ -419,6 +419,9 @@ dqagie(double(*fcn)(double* x), const double bound, const int inf,
     rlist[0] = 0.0;
     elist[0] = 0.0;
     iord[0] = 0;
+    // Initialize variables to silence compiler
+    erlarg = 0.0;
+    ertest = 0.0;  
     if ((epsabs <= 0.0) && (epsrel < fmax(50.0*epmach, 0.5e-28))) { *ier = 6; }
     if (*ier == 6) { return; }
 
@@ -1399,6 +1402,7 @@ dqagse(double(*fcn)(double* x), const double a, const double b,
     *abserr = 0.0;
     ierror = 0;
     erlarg = 0.0;
+    ertest = 0.0;
     correc = 0.0;
 
     if ((epsabs <= 0.0) && (epsrel < fmax(50.0*epmach, 0.5e-28)))
@@ -1932,7 +1936,7 @@ dqawfe(double(*fcn)(double* x), const double a, const double omega, const int in
     // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
     //            dedoncker,elise,appl. math. & progr. div. - k.u.leuven
     // ***purpose  the routine calculates an approximation result to a
-    //             given fourier integal
+    //             given fourier integral
     //             i = integral of f(x)*w(x) over (a,infinity)
     //             where w(x)=cos(omega*x) or w(x)=sin(omega*x),
     //             hopefully satisfying following claim for accuracy
@@ -2713,7 +2717,7 @@ LINE70:
         if ((ierror == 3) || (erlarg <= ertest)) { goto LINE90; }
 
         // The smallest interval has the largest error. Before bisecting, decrease
-        // the sum of the erorrs over the larger intervals (erlarg) and perform
+        // the sum of the errors over the larger intervals (erlarg) and perform
         // extrapolation.
         jupbnd = (*last > 2 + (limit/2) ? limit + 3 - *last : *last);
 
@@ -5487,7 +5491,7 @@ dqk41(double(*fcn)(double* x), const double a, const double b,
     //                        approximation to the integral j
     //
     //               resasc - double precision
-    //                        approximation to the integal of abs(f-i/(b-a))
+    //                        approximation to the integral of abs(f-i/(b-a))
     //                        over (a,b)
     //
     // ***references  (none)
@@ -5942,7 +5946,7 @@ dqk61(double(*fcn)(double* x), const double a, const double b,
     //
     //            wgk   - weights of the 61-point kronrod rule
     //
-    //            wg    - weigths of the 30-point gauss rule
+    //            wg    - weights of the 30-point gauss rule
     //
     //
     //  gauss quadrature weights and kronron quadrature abscissae and weights

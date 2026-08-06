@@ -22,7 +22,7 @@ __all__ = [
 
 
 class MultiUFunc:
-    def __init__(self, ufunc_or_ufuncs, doc=None, *,
+    def __init__(self, ufunc_or_ufuncs, name=None, doc=None, *,
                  force_complex_output=False, **default_kwargs):
         if not isinstance(ufunc_or_ufuncs, np.ufunc):
             if isinstance(ufunc_or_ufuncs, collections.abc.Mapping):
@@ -44,17 +44,20 @@ class MultiUFunc:
             if len(seen_input_types) > 1:
                 raise ValueError("All ufuncs must take the same input types.")
 
+        self.__name__ = name
         self._ufunc_or_ufuncs = ufunc_or_ufuncs
         self.__doc = doc
         self.__force_complex_output = force_complex_output
         self._default_kwargs = default_kwargs
         self._resolve_out_shapes = None
+        self._finalize_out = None
         self._key = None
         self._ufunc_default_args = lambda *args, **kwargs: ()
         self._ufunc_default_kwargs = lambda *args, **kwargs: {}
+        self.__text_signature__ = doc.split("\n\n")[0] if doc else None
 
     @property
-    def __doc__(self):
+    def __doc__(self):  # pyrefly:ignore[bad-override]
         return self.__doc
 
     def _override_key(self, func):
@@ -75,6 +78,9 @@ class MultiUFunc:
                 """Resolve to output shapes based on relevant inputs."""
         func.__name__ = "resolve_out_shapes"
         self._resolve_out_shapes = func
+
+    def _override_finalize_out(self, func):
+        self._finalize_out = func
 
     def _resolve_ufunc(self, **kwargs):
         """Resolve to a ufunc based on keyword arguments."""
@@ -100,7 +106,8 @@ class MultiUFunc:
         if (self._resolve_out_shapes is not None):
             ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
             ufunc_out_shapes = self._resolve_out_shapes(*args[:-ufunc.nin],
-                                                        *ufunc_arg_shapes, ufunc.nout)
+                                                        *ufunc_arg_shapes, ufunc.nout,
+                                                        **kwargs)
 
             ufunc_arg_dtypes = tuple(ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
                                      else np.dtype(type(ufunc_arg))
@@ -127,30 +134,35 @@ class MultiUFunc:
 
             ufunc_kwargs['out'] = out
 
-        return ufunc(*ufunc_args, **ufunc_kwargs)
+        out = ufunc(*ufunc_args, **ufunc_kwargs)
+        if (self._finalize_out is not None):
+            out = self._finalize_out(out)
+
+        return out
 
 
 sph_legendre_p = MultiUFunc(
     sph_legendre_p,
+    "sph_legendre_p",
     r"""sph_legendre_p(n, m, theta, *, diff_n=0)
 
     Spherical Legendre polynomial of the first kind.
 
     Parameters
     ----------
-    n : ArrayLike[int]
+    n : array_like of ints
         Degree of the spherical Legendre polynomial. Must have ``n >= 0``.
-    m : ArrayLike[int]
+    m : array_like of ints
         Order of the spherical Legendre polynomial.
-    theta : ArrayLike[float]
+    theta : array_like
         Input value.
-    diff_n : Optional[int]
+    diff_n : int, optional
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``. Default is 0.
+        to order `diff_n`. Default is 0.
 
     Returns
     -------
-    p : ndarray or tuple[ndarray]
+    ndarray or tuple of ndarray
         Spherical Legendre polynomial with ``diff_n`` derivatives.
 
     Notes
@@ -179,16 +191,39 @@ def _(diff_n):
     return diff_n
 
 
+@sph_legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 sph_legendre_p_all = MultiUFunc(
     sph_legendre_p_all,
+    "sph_legendre_p_all",
     """sph_legendre_p_all(n, m, theta, *, diff_n=0)
 
     All spherical Legendre polynomials of the first kind up to the
-    specified degree ``n`` and order ``m``.
+    specified degree `n`, order `m`, and all derivatives up
+    to order `diff_n`.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Parameters
+    ----------
+    n : int
+        Degree of the spherical Legendre polynomials. Must have ``n >= 0``.
+    m : int
+        Order of the spherical Legendre polynomials.
+    theta : array_like
+        Input value.
+    diff_n : int, optional
+        A non-negative integer. Compute and return all derivatives up
+        to order `diff_n`. Default is 0.
+
+    Returns
+    -------
+    ndarray
+        Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
+        ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
+        order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
+        ``-m <= k <= m``.
 
     See Also
     --------
@@ -210,45 +245,62 @@ def _(diff_n):
 
 @sph_legendre_p_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [()] + (diff_n + 1) * [(0, 1)]}
+    return {'axes': [()] + [(0, 1, -1)]}
 
 
 @sph_legendre_p_all._override_resolve_out_shapes
-def _(n, m, theta_shape, nout):
+def _(n, m, theta_shape, nout, diff_n):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + theta_shape,)
+    return ((n + 1, 2 * abs(m) + 1) + theta_shape + (diff_n + 1,),)
+
+
+@sph_legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 assoc_legendre_p = MultiUFunc(
     assoc_legendre_p,
+    "assoc_legendre_p",
     r"""assoc_legendre_p(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     Associated Legendre polynomial of the first kind.
 
+    Defined as
+
+    .. math::
+
+        P_n^m(z) = (-1)^m (1 - z^2)^{m/2}
+            \frac{d^m}{dz^m} P_n(z)
+
+    where :math:`P_n` is the Legendre polynomial.
+
+    This definition includes the Condon-Shortley phase :math:`(-1)^m`.
+
     Parameters
     ----------
-    n : ArrayLike[int]
+    n : array_like of ints
         Degree of the associated Legendre polynomial. Must have ``n >= 0``.
-    m : ArrayLike[int]
-        order of the associated Legendre polynomial.
-    z : ArrayLike[float | complex]
+    m : array_like of ints
+        Order of the associated Legendre polynomial.
+    z : array_like
         Input value.
-    branch_cut : Optional[ArrayLike[int]]
+    branch_cut : array_like of ints, optional
         Selects branch cut. Must be 2 (default) or 3.
         2: cut on the real axis ``|z| > 1``
         3: cut on the real axis ``-1 < z < 1``
-    norm : Optional[bool]
+    norm : bool, optional
         If ``True``, compute the normalized associated Legendre polynomial.
         Default is ``False``.
-    diff_n : Optional[int]
+    diff_n : int, optional
         A non-negative integer. Compute and return all derivatives up
         to order ``diff_n``. Default is 0.
 
     Returns
     -------
-    p : ndarray or tuple[ndarray]
+    ndarray or tuple of ndarray
         Associated Legendre polynomial with ``diff_n`` derivatives.
 
     Notes
@@ -259,6 +311,23 @@ assoc_legendre_p = MultiUFunc(
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
+
+    Examples
+    --------
+    Evaluate :math:`P_2^1(z)` on :math:`[-1, 1]`:
+
+    >>> import numpy as np
+    >>> from scipy.special import assoc_legendre_p
+    >>> z = np.linspace(-1, 1, 11)
+    >>> expected = -3 * z * np.sqrt(1 - z**2)
+    >>> np.allclose(assoc_legendre_p(2, 1, z), expected)
+    True
+
+    Compute the normalized associated Legendre polynomial:
+
+    >>> scale = np.sqrt(5/12)
+    >>> np.allclose(assoc_legendre_p(2, 1, z, norm=True), scale * expected)
+    True
     """, branch_cut=2, norm=False, diff_n=0
 )
 
@@ -279,16 +348,46 @@ def _(branch_cut, norm, diff_n):
     return branch_cut,
 
 
+@assoc_legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 assoc_legendre_p_all = MultiUFunc(
     assoc_legendre_p_all,
+    "assoc_legendre_p_all",
     """assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     All associated Legendre polynomials of the first kind up to the
-    specified degree ``n`` and order ``m``.
+    specified degree `n`, order `m`, and all derivatives up
+    to order `diff_n`.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Parameters
+    ----------
+    n : int
+        Degree of the associated Legendre polynomials. Must have ``n >= 0``.
+    m : int
+        Order of the associated Legendre polynomials.
+    z : array_like
+        Input value.
+    branch_cut : array_like of ints, optional
+        Selects branch cut. Must be 2 (default) or 3.
+        2: cut on the real axis ``|z| > 1``
+        3: cut on the real axis ``-1 < z < 1``
+    norm : bool, optional
+        If ``True``, compute the normalized associated Legendre polynomials.
+        Default is ``False``.
+    diff_n : int, optional
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``. Default is 0.
+
+    Returns
+    -------
+    ndarray
+        Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
+        ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
+        order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
+        ``-m <= k <= m``.
 
     See Also
     --------
@@ -319,39 +418,47 @@ def _(branch_cut, norm, diff_n):
 
 @assoc_legendre_p_all._override_ufunc_default_kwargs
 def _(branch_cut, norm, diff_n):
-    return {'axes': [(), ()] + (diff_n + 1) * [(0, 1)]}
+    return {'axes': [(), ()] + [(0, 1, -1)]}
 
 
 @assoc_legendre_p_all._override_resolve_out_shapes
-def _(n, m, z_shape, branch_cut_shape, nout):
+def _(n, m, z_shape, branch_cut_shape, nout, **kwargs):
+    diff_n = kwargs['diff_n']
+
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if not isinstance(m, numbers.Integral) or (m < 0):
         raise ValueError("m must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1)
-                   + np.broadcast_shapes(z_shape, branch_cut_shape),)
+    return ((n + 1, 2 * abs(m) + 1) +
+        np.broadcast_shapes(z_shape, branch_cut_shape) + (diff_n + 1,),)
+
+
+@assoc_legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 legendre_p = MultiUFunc(
     legendre_p,
+    "legendre_p",
     """legendre_p(n, z, *, diff_n=0)
 
     Legendre polynomial of the first kind.
 
     Parameters
     ----------
-    n : ArrayLike[int]
+    n : array_like of ints
         Degree of the Legendre polynomial. Must have ``n >= 0``.
-    z : ArrayLike[float]
+    z : array_like
         Input value.
-    diff_n : Optional[int]
+    diff_n : int, optional
         A non-negative integer. Compute and return all derivatives up
         to order ``diff_n``. Default is 0.
 
     Returns
     -------
-    p : ndarray or tuple[ndarray]
+    p : ndarray or tuple of ndarray
         Legendre polynomial with ``diff_n`` derivatives.
 
     See Also
@@ -363,6 +470,21 @@ legendre_p = MultiUFunc(
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Evaluate the Legendre polynomial :math:`P_3` at :math:`z = 0.5`:
+
+    >>> import numpy as np
+    >>> from scipy.special import legendre_p
+    >>> np.allclose(legendre_p(3, 0.5), -0.4375)
+    True
+
+    Compute the value and first derivative with respect to ``z``:
+
+    >>> p, dp = legendre_p(3, 0.5, diff_n=1)
+    >>> np.allclose([p, dp], [-0.4375, 0.375])
+    True
     """, diff_n=0
 )
 
@@ -381,15 +503,35 @@ def _(diff_n):
     return diff_n
 
 
+@legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 legendre_p_all = MultiUFunc(
     legendre_p_all,
+    "legendre_p_all",
     """legendre_p_all(n, z, *, diff_n=0)
 
-    All Legendre polynomials of the first kind up to the
-    specified degree ``n``.
+    All Legendre polynomials of the first kind up to the specified degree
+    `n` and all derivatives up to order `diff_n`.
 
-    Output shape is ``(n + 1, ...)``. The entry at ``j``
-    corresponds to degree ``j`` for all  ``0 <= j <= n``.
+    Parameters
+    ----------
+    n : int
+        Degree of the Legendre polynomials. Must have ``n >= 0``.
+    z : array_like
+        Input value.
+    diff_n : int, optional
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``. Default is 0.
+
+    Returns
+    -------
+    ndarray
+        Output shape is ``(diff_n + 1, n + 1, ...)``. The entry at ``(i, j)``
+        corresponds to the ``i``-th derivative and degree ``j`` for all
+        ``0 <= i <= diff_n`` and ``0 <= j <= n``.
 
     See Also
     --------
@@ -411,21 +553,29 @@ def _(diff_n):
 
 @legendre_p_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [()] + (diff_n + 1) * [(0,)]}
+    return {'axes': [(), (0, -1)]}
 
 
 @legendre_p_all._override_resolve_out_shapes
-def _(n, z_shape, nout):
+def _(n, z_shape, nout, diff_n):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    return nout * ((n + 1,) + z_shape,)
+    return nout * ((n + 1,) + z_shape + (diff_n + 1,),)
+
+
+@legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 sph_harm_y = MultiUFunc(
     sph_harm_y,
+    "sph_harm_y",
     r"""sph_harm_y(n, m, theta, phi, *, diff_n=0)
 
-    Spherical harmonics. They are defined as
+    Spherical harmonics.
+
+    They are defined as
 
     .. math::
 
@@ -436,24 +586,24 @@ sph_harm_y = MultiUFunc(
 
     Parameters
     ----------
-    n : ArrayLike[int]
+    n : array_like of ints
         Degree of the harmonic. Must have ``n >= 0``. This is
         often denoted by ``l`` (lower case L) in descriptions of
         spherical harmonics.
-    m : ArrayLike[int]
+    m : array_like of ints
         Order of the harmonic.
-    theta : ArrayLike[float]
+    theta : array_like
         Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
-    phi : ArrayLike[float]
+    phi : array_like
         Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
-    diff_n : Optional[int]
+    diff_n : int, optional
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``. Default is 0.
+        to order `diff_n`. Default is 0.
 
     Returns
     -------
-    y : ndarray[complex] or tuple[ndarray[complex]]
-       Spherical harmonics with ``diff_n`` derivatives.
+    ndarray or tuple of ndarray
+       Spherical harmonics with `diff_n` derivatives.
 
     Notes
     -----
@@ -499,23 +649,53 @@ def _(diff_n):
     return diff_n
 
 
-@sph_harm_y._override_ufunc_default_kwargs
-def _(diff_n):
-    if (diff_n > 0):
-        return {'axes': [(), ()] + [tuple(range(2, 2 + i)) for i in range(diff_n + 1)]}
+@sph_harm_y._override_finalize_out
+def _(out):
+    if (out.shape[-1] == 1):
+        return out[..., 0, 0]
 
-    return {}
+    if (out.shape[-1] == 2):
+        return out[..., 0, 0], out[..., [1, 0], [0, 1]]
+
+    if (out.shape[-1] == 3):
+        return (out[..., 0, 0], out[..., [1, 0], [0, 1]],
+            out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]])
 
 
 sph_harm_y_all = MultiUFunc(
     sph_harm_y_all,
+    "sph_harm_y_all",
     """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
 
-    All spherical harmonics up to the specified degree ``n`` and order ``m``.
+    All spherical harmonics up to the specified degree `n`, order `m`,
+    and all derivatives up to order `diff_n`.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Parameters
+    ----------
+    n : int
+        Degree of the harmonics. Must have ``n >= 0``. This is
+        often denoted by ``l`` (lower case L) in descriptions of
+        spherical harmonics.
+    m : int
+        Order of the harmonics.
+    theta : array_like
+        Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
+    phi : array_like
+        Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
+    diff_n : int, optional
+        A non-negative integer. Compute and return all derivatives up
+        to order `diff_n`. Default is 0.
+
+    Returns
+    -------
+    ndarray or tuple of ndarray
+        Returns a tuple of length ``diff_n + 1`` (if ``diff_n > 0``). The first
+        entry corresponds to the spherical harmonics, the second entry
+        (if ``diff_n >= 1``) to the gradient, and the third entry
+        (if ``diff_n >= 2``)  to the Hessian matrix. Each entry is an array of
+        shape ``(n + 1, 2 * m + 1, ...)``, where the entry at ``(i, j)``
+        corresponds to degree ``i`` and order ``j`` for all ``0 <= i <= n``
+        and ``-m <= j <= m``.
 
     See Also
     --------
@@ -537,14 +717,28 @@ def _(diff_n):
 
 @sph_harm_y_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [(), ()] + [tuple(range(axis)) for axis in range(2, diff_n + 3)]}
+    return {'axes': [(), ()] + [(0, 1, -2, -1)]}
 
 
 @sph_harm_y_all._override_resolve_out_shapes
-def _(n, m, theta_shape, phi_shape, nout):
+def _(n, m, theta_shape, phi_shape, nout, **kwargs):
+    diff_n = kwargs['diff_n']
+
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return tuple(diff_ndims * (2,) + (n + 1, 2 * abs(m) + 1)
-                 + np.broadcast_shapes(theta_shape, phi_shape)
-                 for diff_ndims in range(nout))
+    return ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(theta_shape, phi_shape) +
+        (diff_n + 1, diff_n + 1),)
+
+
+@sph_harm_y_all._override_finalize_out
+def _(out):
+    if (out.shape[-1] == 1):
+        return out[..., 0, 0]
+
+    if (out.shape[-1] == 2):
+        return out[..., 0, 0], out[..., [1, 0], [0, 1]]
+
+    if (out.shape[-1] == 3):
+        return (out[..., 0, 0], out[..., [1, 0], [0, 1]],
+            out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]])

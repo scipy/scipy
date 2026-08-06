@@ -83,8 +83,8 @@ Rewriting commit history
 
    Do this only for your own feature branches.
 
-There's an embarrassing typo in a commit you made? Or perhaps the you
-made several false starts you would like the posterity not to see.
+There's an embarrassing typo in a commit you made? Or perhaps you
+made several false starts you would like posterity not to see.
 
 This can be done via *interactive rebasing*.
 
@@ -169,11 +169,11 @@ Deleting a branch on github_
    git checkout main
    # delete branch locally
    git branch -D my-unwanted-branch
-   # delete branch on github
+   # delete branch on GitHub
    git push origin :my-unwanted-branch
 
 (Note the colon ``:`` before ``test-branch``.  See also:
-https://github.com/guides/remove-a-remote-branch
+https://github.com/guides/remove-a-remote-branch)
 
 
 Several people sharing a single repository
@@ -185,7 +185,7 @@ share it via github_.
 
 First fork SciPy into your account, as from :ref:`forking`.
 
-Then, go to your forked repository github page, say
+Then, go to your forked repository GitHub page, say
 ``https://github.com/your-user-name/scipy``
 
 Click on the 'Admin' button, and add anyone else to the repo as a

@@ -77,3 +77,90 @@ subroutine <prefix>gbtrs(ab,kl,ku,b,ipiv,trans,n,nrhs,ldab,ldb,info) ! in :Band:
     integer intent(out):: info
 
 end subroutine <prefix>gbtrs
+
+
+subroutine <prefix2>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,iwork,info)
+    ! ?GBCON estimates the reciprocal of the condition number of a real
+    ! general band matrix A, in either the 1-norm or the infinity-norm,
+    ! using the LU factorization computed by ?GBTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as
+    ! RCOND = 1 / ( norm(A) * norm(inv(A)) ).
+    threadsafe
+    callstatement {F_INT i;for(i=0;i\<n;++ipiv[i++]);(*f2py_func)(norm,&n,&kl,&ku,ab,&ldab,ipiv,&anorm,&rcond,work,iwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype2>*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer depend(ab),intent(hide) :: n=shape(ab,1)
+    integer intent(in),check(kl>=0) :: kl
+    integer intent(in),check(ku>=0) :: ku
+    <ftype2> dimension(ldab,n),intent(in) :: ab
+    integer optional,intent(in),check(ldab >= (2*kl+ku+1)),depend(ab,kl,ku) :: ldab=2*kl+ku+1
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(hide, cache), dimension(3*n), depend(n) :: work
+    integer intent(hide, cache), dimension(n), depend(n) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2>gbcon
+
+
+subroutine <prefix2c>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,rwork,info)
+    ! ?GBCON estimates the reciprocal of the condition number of a complex
+    ! general band matrix A, in either the 1-norm or the infinity-norm,
+    ! using the LU factorization computed by ?GBTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as
+    ! RCOND = 1 / ( norm(A) * norm(inv(A)) ).
+    threadsafe
+    callstatement {F_INT i;for(i=0;i\<n;++ipiv[i++]);(*f2py_func)(norm,&n,&kl,&ku,ab,&ldab,ipiv,&anorm,&rcond,work,rwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype2c>*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2c>*, <ctype2>*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer depend(ab),intent(hide) :: n=shape(ab,1)
+    integer intent(in),check(kl >= 0) :: kl
+    integer intent(in),check(ku >= 0) :: ku
+    <ftype2c> dimension(ldab,n),intent(in) :: ab
+    integer optional,intent(in),depend(ab),check(ldab >= (2*kl+ku+1)),depend(ab,kl,ku) :: ldab=2*kl+ku+1
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2c> intent(hide, cache), dimension(2*n), depend(n) :: work
+    <ftype2> intent(hide, cache), dimension(n), depend(n) :: rwork
+    integer intent(out) :: info
+end subroutine <prefix2c>gbcon
+
+
+function <prefix>langb(norm,n,kl,ku,ab,ldab,work) result(n2)
+    ! ?LANGB  returns the value of the one norm,  or the Frobenius norm, or
+    ! the  infinity norm,  or the element of  largest absolute value  of an
+    ! n by n band matrix  A,  with kl sub-diagonals and ku super-diagonals.
+    !
+    ! ?LANGB = ( max(abs(A(i,j))), NORM = 'M' or 'm'
+    !          (
+    !          ( norm1(A),         NORM = '1', 'O' or 'o'
+    !          (
+    !          ( normI(A),         NORM = 'I' or 'i'
+    !          (
+    !          ( normF(A),         NORM = 'F', 'f', 'E' or 'e'
+    !
+    ! where  norm1  denotes the  one norm of a matrix (maximum column sum),
+    ! normI  denotes the  infinity norm  of a matrix  (maximum row sum) and
+    ! normF  denotes the  Frobenius norm of a matrix (square root of sum of
+    ! squares).  Note that  max(abs(A(i,j)))  is not a consistent matrix norm.
+    threadsafe
+    <ftypereal> <prefix>langb, n2
+    callstatement <prefix>langb_return_value = (*f2py_func)(norm, &n, &kl, &ku, ab, &ldab, work)
+    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype>*, F_INT*, <ctypereal>*
+    intent(c) <prefix>langb
+    fortranname F_FUNC(<prefix>langb,<S,C,D,Z>LANGB)
+
+    character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e') :: norm
+    integer depend(ab),intent(hide) :: n=shape(ab,1)
+    integer intent(in),check(kl>=0) :: kl
+    integer intent(in),check(ku>=0) :: ku
+    <ftype> dimension(ldab,n),intent(in) :: ab
+    integer optional,intent(in),depend(ab),check(ldab >= (kl+ku+1)),depend(ab,kl,ku) :: ldab=kl+ku+1
+    <ftypereal> intent(hide,cache),depend(n),dimension(n+1) :: work
+end function <prefix>langb
+

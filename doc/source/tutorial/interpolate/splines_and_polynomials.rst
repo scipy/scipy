@@ -19,7 +19,7 @@ A polynomial of degree :math:`k` can be thought of as a linear combination of
 In some applications, it is useful to consider alternative (if formally
 equivalent) bases. Two popular bases, implemented in `scipy.interpolate` are
 B-splines (`BSpline`) and Bernstein polynomials (`BPoly`).
-B-splines are often used for, for example, non-parametric regression problems,
+B-splines are often used, for example, in non-parametric regression problems,
 and Bernstein polynomials are used for constructing Bezier curves.
 
 `PPoly` objects represent piecewise polynomials in the 'usual' power basis.
@@ -75,9 +75,9 @@ the ``dspl`` object, we can find the zeros of the derivative of ``spl``:
     >>> dspl.roots() / np.pi
     array([-0.45480801,  0.50000034,  1.50000099,  2.5000016 ,  3.46249993])
 
-This agrees well with roots :math:`\pi/2 + \pi\,n` of
+This agrees well with the roots :math:`\pi/2 + \pi\,n` of
 :math:`\cos(x) = \sin'(x)`.
-Note that by default it computed the roots *extrapolated* to the outside of
+Note that by default it computes the roots *extrapolated* to the outside of
 the interpolation interval :math:`0 \leqslant x \leqslant 10`, and that
 the extrapolated results (the first and last values) are much less accurate.
 We can switch off the extrapolation and limit the root-finding to the
@@ -86,7 +86,7 @@ interpolation interval:
     >>> dspl.roots(extrapolate=False) / np.pi
     array([0.50000034,  1.50000099,  2.5000016])
 
-In fact, the ``root`` method is a special case of a more general ``solve``
+In fact, the ``roots`` method is a special case of a more general ``solve``
 method which finds for a given constant :math:`y` the solutions of the
 equation :math:`f(x) = y` , where :math:`f(x)` is the piecewise polynomial:
 
@@ -106,7 +106,7 @@ example, we compute an approximation to the complete elliptic integral
     1.8540746773013719
 
 To this end, we tabulate the integrand and interpolate it using the monotone
-PCHIP interpolant (we could as well used a `CubicSpline`):
+PCHIP interpolant (we could as well have used a `CubicSpline`):
 
     >>> from scipy.interpolate import PchipInterpolator
     >>> x = np.linspace(0, np.pi/2, 70)
@@ -121,7 +121,7 @@ and integrate
 which is indeed close to the value computed by `scipy.special.ellipk`.
 
 All piecewise polynomials can be constructed with N-dimensional ``y`` values.
-If ``y.ndim > 1``, it is understood as a stack of 1D ``y`` values, which are
+If ``y.ndim > 1``, it is interpreted as a stack of 1D ``y`` values, which are
 arranged along the interpolation axis (with the default value of 0).
 The latter is specified via the ``axis`` argument, and the invariant is that
 ``len(x) == y.shape[axis]``. As an example, we extend the elliptic integral
@@ -199,14 +199,17 @@ of :math:`1, x, \cdots, x^k`.
 B-spline basis elements
 -----------------------
 
+The b-spline basis is used in a variety of applications which include interpolation,
+regression and curve representation.
 B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
 of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
 
-The b-spline basis is generally more computationally stable than the power basis
-and is useful for a variety of applications which include interpolation, regression
-and curve representation. The main feature is that these basis elements are
-*localized* and equal to zero outside of an interval defined by the *knot array*.
+The properties of b-splines are well described in the literature (see, for example,
+references listed in the `BSpline` docstring). For our purposes, it is enough to know
+that a b-spline function is uniquely defined by an array of coefficients and
+an array of the so-called *knots*, which may or may not coincide with the data points,
+``x``.
 
 Specifically, a b-spline basis element of degree ``k`` (e.g. ``k=3`` for cubics)
 is defined by :math:`k+2` knots and is zero outside of these knots.
@@ -286,3 +289,49 @@ contains basis elements evaluated at ``xnew[j]``:
  [0.    0.111 0.556 0.333 0.    0.    0.   ]
  [0.    0.    0.125 0.75  0.125 0.    0.   ]]
 
+
+Bernstein polynomials, ``BPoly``
+================================
+
+For :math:`t \in [0, 1]`, Bernstein basis polynomials of degree :math:`k` are defined via
+
+.. math::
+
+    b(t; k, a) = C_k^a t^a (1-t)^{k - a}
+
+where :math:`C_k^a` is the binomial coefficient, and :math:`a=0, 1, \dots, k`, so that
+there are :math:`k+1` basis polynomials of degree :math:`k`.
+
+A ``BPoly`` object represents a *piecewise* Bernstein polynomial in terms of
+breakpoints, ``x``, and coefficients, ``c``: ``c[a, j]`` gives the coefficient for
+:math:`b(t; k, a)` for ``t`` on the interval between ``x[j]`` and ``x[j+1]``.
+
+The user interface of `BPoly` objects is very similar to that of `PPoly` objects:
+both can be evaluated, differentiated and integrated.
+
+One additional feature of `BPoly` objects is the alternative constructor,
+`BPoly.from_derivatives`, which constructs a `BPoly` object from data values and derivatives.
+Specifically, ``b = BPoly.from_derivatives(x, y)`` returns a callable that interpolates
+the provided values, ``b(x[i]) == y[i])``, and has the provided derivatives,
+``b(x[i], nu=j) == y[i][j]``.
+
+This operation is similar to `CubicHermiteSpline`, but it is more flexible in that
+it can handle varying numbers of derivatives at different data points; i.e., the ``y``
+argument can be a list of arrays of different lengths. See `BPoly.from_derivatives`
+for further discussion and examples.
+
+
+Conversion between bases
+========================
+
+In principle, all three bases for piecewise polynomials (the power basis, the Bernstein
+basis, and b-splines) are equivalent, and a polynomial in one basis can be converted
+into a different basis. One reason for converting between bases is that not all bases
+implement all operations. For instance, root-finding is only implemented for `PPoly`,
+and therefore to find roots of a `BSpline` object, you need to convert to `PPoly` first.
+See methods `PPoly.from_bernstein_basis`, `PPoly.from_spline`,
+`BPoly.from_power_basis`, and `BSpline.from_power_basis` for details about conversion.
+
+In floating-point arithmetic, though, conversions always incur some precision loss.
+Whether this is significant is problem-dependent, so it is therefore recommended to
+exercise caution when converting between bases.

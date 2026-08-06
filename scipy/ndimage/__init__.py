@@ -39,6 +39,7 @@ Filters
    sobel
    uniform_filter - Multidimensional uniform filter
    uniform_filter1d - 1-D uniform filter along the given axis
+   vectorized_filter
 
 Fourier filters
 ===============
@@ -151,22 +152,13 @@ Morphology
 
 # bring in the public functionality from private namespaces
 
-# mypy: ignore-errors
-
 from ._support_alternative_backends import *
 
 # adjust __all__ and do not leak implementation details
 from . import _support_alternative_backends
 __all__ = _support_alternative_backends.__all__
-del _support_alternative_backends, _ndimage_api, _dispatchers  # noqa: F821
+del _support_alternative_backends, _ndimage_api, _delegators  # noqa: F821  # pyrefly:ignore[unbound-name]
 
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import filters
-from . import fourier
-from . import interpolation
-from . import measurements
-from . import morphology
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal, assert_allclose
 
-from scipy.sparse import diags, csgraph
+from scipy.sparse import diags_array, csgraph
 from scipy.linalg import eigh
 
 from scipy.sparse.linalg import LaplacianNd
@@ -61,7 +61,7 @@ class TestLaplacianNd:
 
     def test_1d_with_graph_laplacian(self):
         n = 6
-        G = diags(np.ones(n - 1), 1, format='dia')
+        G = diags_array(np.ones(n - 1), offsets=1, format='dia')
         Lf = csgraph.laplacian(G, symmetrized=True, form='function')
         La = csgraph.laplacian(G, symmetrized=True, form='array')
         grid_shape = (n,)
@@ -107,6 +107,11 @@ class TestLaplacianNd:
             ev = lap.eigenvectors(m)
             r = lap.toarray() @ ev - ev @ np.diag(e)
             assert_allclose(r, np.zeros_like(r), atol=atol)
+        # test orthogonality
+        assert_allclose(eigenvectors @ eigenvectors.T, np.eye(n), atol=atol)
+        # test full eigendecomposition
+        L = eigenvectors @ np.diag(eigenvalues) @ eigenvectors.T
+        assert_allclose(L, lap.toarray(), atol=atol)
 
     @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
     @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
@@ -167,7 +172,7 @@ class TestLaplacianNd:
         with pytest.raises(ValueError, match="Unknown value 'robin'"):
             LaplacianNd(grid_shape=(6, ), boundary_conditions='robin')
 
-            
+
 class TestSakurai:
     """
     Sakurai tests

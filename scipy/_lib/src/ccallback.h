@@ -22,6 +22,8 @@
 #include <Python.h>
 #include <setjmp.h>
 
+#include "scipy_config.h"
+
 /* Default behavior */
 #define CCALLBACK_DEFAULTS 0x0
 /* Whether calling ccallback_obtain is enabled */
@@ -65,10 +67,7 @@ struct ccallback {
 /*
  * Thread-local storage
  */
-
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 4)))
-
-static __thread ccallback_t *_active_ccallback = NULL;
+static SCIPY_TLS ccallback_t *_active_ccallback = NULL;
 
 static void *ccallback__get_thread_local(void)
 {
@@ -88,105 +87,6 @@ static ccallback_t *ccallback_obtain(void)
 {
     return (ccallback_t *)ccallback__get_thread_local();
 }
-
-#elif defined(_MSC_VER)
-
-static __declspec(thread) ccallback_t *_active_ccallback = NULL;
-
-static void *ccallback__get_thread_local(void)
-{
-    return (void *)_active_ccallback;
-}
-
-static int ccallback__set_thread_local(void *value)
-{
-    _active_ccallback = value;
-    return 0;
-}
-
-/*
- * Obtain a pointer to the current ccallback_t structure.
- */
-static ccallback_t *ccallback_obtain(void)
-{
-    return (ccallback_t *)ccallback__get_thread_local();
-}
-
-#else
-
-/* Fallback implementation with Python thread API */
-
-static void *ccallback__get_thread_local(void)
-{
-    PyObject *local_dict, *capsule;
-    void *callback_ptr;
-
-    local_dict = PyThreadState_GetDict();
-    if (local_dict == NULL) {
-        Py_FatalError("scipy/ccallback: failed to get local thread state");
-    }
-
-    capsule = PyDict_GetItemString(local_dict, "__scipy_ccallback");
-    if (capsule == NULL) {
-        return NULL;
-    }
-
-    callback_ptr = PyCapsule_GetPointer(capsule, NULL);
-    if (callback_ptr == NULL) {
-        Py_FatalError("scipy/ccallback: invalid callback state");
-    }
-
-    return callback_ptr;
-}
-
-static int ccallback__set_thread_local(void *value)
-{
-    PyObject *local_dict;
-
-    local_dict = PyThreadState_GetDict();
-    if (local_dict == NULL) {
-        Py_FatalError("scipy/ccallback: failed to get local thread state");
-    }
-
-    if (value == NULL) {
-        return PyDict_DelItemString(local_dict, "__scipy_ccallback");
-    }
-    else {
-        PyObject *capsule;
-        int ret;
-
-        capsule = PyCapsule_New(value, NULL, NULL);
-        if (capsule == NULL) {
-            return -1;
-        }
-        ret = PyDict_SetItemString(local_dict, "__scipy_ccallback", capsule);
-        Py_DECREF(capsule);
-        return ret;
-    }
-}
-
-/*
- * Obtain a pointer to the current ccallback_t structure.
- */
-static ccallback_t *ccallback_obtain(void)
-{
-    PyGILState_STATE state;
-    ccallback_t *callback_ptr;
-
-    state = PyGILState_Ensure();
-
-    callback_ptr = (ccallback_t *)ccallback__get_thread_local();
-    if (callback_ptr == NULL) {
-        Py_FatalError("scipy/ccallback: failed to get thread local state");
-    }
-
-    PyGILState_Release(state);
-
-    return callback_ptr;
-}
-
-#endif
-
 
 /*
  * Set Python error status indicating a signature mismatch.
@@ -265,7 +165,7 @@ fail:
 static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signatures,
                              PyObject *callback_obj, int flags)
 {
-    static PyTypeObject *lowlevelcallable_type = NULL;
+    static SCIPY_TLS PyTypeObject *lowlevelcallable_type = NULL;
     PyObject *callback_obj2 = NULL;
     PyObject *capsule = NULL;
 
@@ -309,14 +209,14 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
     }
     else if (capsule != NULL ||
              (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-              PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0)))) {
+              PyCapsule_CheckExact(PyTuple_GetItem(callback_obj, 0)))) {
         /* PyCapsule in LowLevelCallable (or parse result from above) */
         void *ptr, *user_data;
         ccallback_signature_t *sig;
         const char *name;
 
         if (capsule == NULL) {
-            capsule = PyTuple_GET_ITEM(callback_obj, 0);
+            capsule = PyTuple_GetItem(callback_obj, 0);
         }
 
         name = PyCapsule_GetName(capsule);

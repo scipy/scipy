@@ -16,11 +16,11 @@ py3.extension_module('_direct',
 
 py3.extension_module('_minpack',
   [
-    '__minpack.h',
-    '__minpack.c',
+    '_minpackmodule.c',
+    'src/minpack.c',
   ],
-  include_directories: '../_lib/src',
-  dependencies: np_dep,
+  include_directories: 'src/',
+  dependencies: [np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -34,7 +34,7 @@ rectangular_lsap = static_library('rectangular_lsap',
 )
 
 py3.extension_module('_lsap',
-  ['_lsap.c'],
+  ['_lsapmodule.c'],
   link_with: rectangular_lsap,
   include_directories: '../_lib/src',
   dependencies: np_dep,
@@ -55,7 +55,7 @@ rootfind_lib = static_library('rootfind',
 )
 
 py3.extension_module('_zeros',
-  'zeros.c',
+  '_zerosmodule.c',
   link_with: rootfind_lib,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -63,19 +63,16 @@ py3.extension_module('_zeros',
   subdir: 'scipy/optimize'
 )
 
+
 py3.extension_module('_lbfgsb',
   [
-    'lbfgsb_src/lbfgsb.f',
-    'lbfgsb_src/linpack.f',
-    'lbfgsb_src/timer.f',
-    f2py_gen.process('lbfgsb_src/lbfgsb.pyf'),
+    '_lbfgsbmodule.c',
+    'src/lbfgsb.c',
   ],
-  fortran_args: fortran_ignore_warnings,
+  dependencies: [lapack_dep, np_dep],
+  include_directories: ['src/'],
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
-  override_options: ['b_lto=false'],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -88,27 +85,6 @@ py3.extension_module('_moduleTNC',
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/optimize'
-)
-
-py3.extension_module('_cobyla',
-  [f2py_gen.process('cobyla/cobyla.pyf'), 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
-  c_args: [Wno_unused_variable],
-  fortran_args: fortran_ignore_warnings,
-  link_args: version_link_args,
-  dependencies: [fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/optimize'
-)
-
-py3.extension_module('_slsqp',
-  [f2py_gen.process('slsqp/slsqp.pyf'), 'slsqp/slsqp_optmz.f'],
-  fortran_args: fortran_ignore_warnings,
-  link_args: version_link_args,
-  dependencies: [fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -145,9 +121,8 @@ _dummy_init_optimize = fs.copyfile('__init__.py')
 
 # Copying this .pxd file is only needed because of a Cython bug, see
 # discussion on SciPy PR gh-18810.
-cython_optimize_pxd = [
-  fs.copyfile('cython_optimize.pxd'),
-]
+cython_optimize_pxd = fs.copyfile('cython_optimize.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 opt_gen = generator(cython,
   arguments : cython_args,
@@ -163,10 +138,13 @@ py3.extension_module('_bglu_dense',
   subdir: 'scipy/optimize'
 )
 
-py3.extension_module('_cython_nnls',
-  opt_gen.process('_cython_nnls.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
+py3.extension_module('_slsqplib',
+  [
+    '_slsqpmodule.c',
+    'src/slsqp.c',
+    'src/nnls.c'
+  ],
+  dependencies: [lapack_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -177,16 +155,13 @@ subdir('_trlib')
 subdir('_trustregion_constr')
 subdir('cython_optimize')
 subdir('_shgo_lib')
-subdir('_highs')
+subdir('_highspy')
 subdir('tests')
 
-py3.install_sources(
-  ['lbfgsb_src/README'],
-  subdir: 'scipy/optimize'
-)
 
 py3.install_sources([
   '__init__.py',
+  '__init__.pxd',
   '_basinhopping.py',
   '_bracket.py',
   '_chandrupatla.py',
@@ -232,19 +207,8 @@ py3.install_sources([
   '_trustregion_ncg.py',
   '_tstutils.py',
   '_zeros_py.py',
-  'cobyla.py',
   'cython_optimize.pxd',
   'elementwise.py',
-  'lbfgsb.py',
-  'linesearch.py',
-  'minpack.py',
-  'minpack2.py',
-  'moduleTNC.py',
-  'nonlin.py',
-  'optimize.py',
-  'slsqp.py',
-  'tnc.py',
-  'zeros.py'
 ],
   subdir: 'scipy/optimize'
 )

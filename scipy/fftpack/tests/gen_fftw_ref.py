@@ -34,12 +34,12 @@ filename = 'fftw_single_ref'
 d = {'sizes': SZ}
 for type in [1, 2, 3, 4]:
     for sz in SZ:
-        d['dct_%d_%d' % (type, sz)] = data[type][sz]
+        d[f'dct_{type}_{sz}'] = data[type][sz]
 
 d['sizes'] = SZ
 for type in [5, 6, 7, 8]:
     for sz in SZ:
-        d['dst_%d_%d' % (type-4, sz)] = data[type][sz]
+        d[f'dst_{type-4}_{sz}'] = data[type][sz]
 np.savez(filename, **d)
 
 
@@ -50,12 +50,12 @@ filename = 'fftw_double_ref'
 d = {'sizes': SZ}
 for type in [1, 2, 3, 4]:
     for sz in SZ:
-        d['dct_%d_%d' % (type, sz)] = data[type][sz]
+        d[f'dct_{type}_{sz}'] = data[type][sz]
 
 d['sizes'] = SZ
 for type in [5, 6, 7, 8]:
     for sz in SZ:
-        d['dst_%d_%d' % (type-4, sz)] = data[type][sz]
+        d[f'dst_{type-4}_{sz}'] = data[type][sz]
 np.savez(filename, **d)
 
 # generate long double precision data
@@ -65,10 +65,10 @@ filename = 'fftw_longdouble_ref'
 d = {'sizes': SZ}
 for type in [1, 2, 3, 4]:
     for sz in SZ:
-        d['dct_%d_%d' % (type, sz)] = data[type][sz]
+        d[f'dct_{type}_{sz}'] = data[type][sz]
 
 d['sizes'] = SZ
 for type in [5, 6, 7, 8]:
     for sz in SZ:
-        d['dst_%d_%d' % (type-4, sz)] = data[type][sz]
+        d[f'dst_{type-4}_{sz}'] = data[type][sz]
 np.savez(filename, **d)

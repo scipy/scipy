@@ -52,10 +52,22 @@ r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 
 
 class ArffError(OSError):
+    """
+    Base exception for errors when reading ARFF files.
+
+    Raised when an ARFF file cannot be read due to file access issues,
+    corruption, or unsupported features.
+    """
     pass
 
 
 class ParseArffError(ArffError):
+    """
+    Exception for syntax and parsing errors in ARFF files.
+
+    Raised when an ARFF file has invalid syntax, malformed attributes,
+    or data that doesn't match the expected format.
+    """
     pass
 
 
@@ -64,7 +76,7 @@ class ParseArffError(ArffError):
 # ----------
 class Attribute:
 
-    type_name = None
+    type_name: str | None = None
 
     def __init__(self, name):
         self.name = name
@@ -475,10 +487,10 @@ def split_data_line(line, dialect=None):
     # Remove the line end if any
     if line[-1] == '\n':
         line = line[:-1]
-    
+
     # Remove potential trailing whitespace
     line = line.strip()
-    
+
     sniff_line = line
 
     # Add a delimiter if none is present, so that the csv.Sniffer
@@ -653,9 +665,28 @@ def read_header(ofile):
 
 
 class MetaData:
-    """Small container to keep useful information on a ARFF dataset.
+    """
+    Small container to keep useful information on an ARFF dataset.
 
     Knows about attributes names and types.
+
+    Parameters
+    ----------
+    rel : str
+        Name of the relation.
+    attr : list of Attribute
+        Attributes of the dataset.
+
+    Methods
+    -------
+    names
+    types
+
+    Notes
+    -----
+    Also maintains the list of attributes in order, i.e., doing for i in
+    meta, where meta is an instance of MetaData, will return the
+    different attribute names in the order they were defined.
 
     Examples
     --------
@@ -669,17 +700,6 @@ class MetaData:
         meta.names()
         # Getting attribute type
         types = meta.types()
-
-    Methods
-    -------
-    names
-    types
-
-    Notes
-    -----
-    Also maintains the list of attributes in order, i.e., doing for i in
-    meta, where meta is an instance of MetaData, will return the
-    different attribute names in the order they were defined.
     """
     def __init__(self, rel, attr):
         self.name = rel

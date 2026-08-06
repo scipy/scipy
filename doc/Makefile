@@ -52,7 +52,9 @@ clean:
 
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
-SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
+# `set -o pipefail` is specific to bash
+SHELL = /bin/bash
+SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" | tail -c11 2>/dev/null)
 GITVER ?= $(shell (cd ..; set -o pipefail && git rev-parse HEAD 2>/dev/null | cut -c1-10) || echo Unknown)
 
 version-check:
@@ -74,11 +76,11 @@ dist:
 	install -d build
 	rm -rf build/env
 	$(PYTHON) -mvenv --system-site-packages build/env
-	$(CURDIR)/build/env/bin/python -mpip install -r ../requirements/doc.txt
-	$(CURDIR)/build/env/bin/python -mpip install ..
+	pushd ..
+	$(CURDIR)/build/env/bin/python -mpip install --group doc
+	$(CURDIR)/build/env/bin/python -mpip install .
+	popd
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
-
-doc-dist: VERSIONWARNING=-t versionwarning
 
 doc-dist: html
 	-test -d build/htmlhelp || make htmlhelp-build
@@ -107,19 +109,10 @@ upload:
 # Basic Sphinx generation rules for different formats
 #------------------------------------------------------------------------------
 
-html: version-check convert-notebooks html-build
+html: version-check html-build
 html-build:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -WT --keep-going $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html $(FILES)
-
-convert-notebooks:
-	mkdir -p source/_contents
-	for file in source/tutorial/stats/*.md; do \
-		basename=$$(basename $$file .md); \
-		output_name="source/_contents/$${basename}.ipynb"; \
-		$(PYTHON) -m jupytext --output "$$output_name"  $$file; \
-	done
-
+	$(SPHINXBUILD) -WT --keep-going -b html $(ALLSPHINXOPTS) build/html $(FILES)
 
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees

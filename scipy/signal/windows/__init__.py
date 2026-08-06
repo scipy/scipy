@@ -9,7 +9,7 @@ The suite of window functions for filtering and spectral estimation.
 .. autosummary::
    :toctree: generated/
 
-   get_window              -- Return a window of a given length and type.
+   get_window              -- Convenience function for creating various windows.
 
    barthann                -- Bartlett-Hann window
    bartlett                -- Bartlett window
@@ -40,9 +40,6 @@ The suite of window functions for filtering and spectral estimation.
 """
 
 from ._windows import *
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import windows
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',

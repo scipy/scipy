@@ -111,7 +111,6 @@ def test_linear_definite():
     n = 90
 
     # Test linear pos.def. system
-    np.random.seed(1234)
     A = np.arange(n*n).reshape(n, n)
     A = A + n*n * np.diag(1 + np.arange(n))
     assert_(np.linalg.eigvals(A).min() > 0)

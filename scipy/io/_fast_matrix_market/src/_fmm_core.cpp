@@ -175,7 +175,7 @@ void write_header_only(write_cursor& cursor) {
 ////////////////////////////////////////////////
 
 
-PYBIND11_MODULE(_fmm_core, m) {
+PYBIND11_MODULE(_fmm_core, m, py::mod_gil_not_used()) {
     m.doc() = R"pbdoc(
         fast_matrix_market
     )pbdoc";

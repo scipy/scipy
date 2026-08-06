@@ -66,10 +66,13 @@ def get_poly_vinit(kind, dtype):
         poly_vinit = _vinit_dict.get(dtype)
 
     if poly_vinit is None:
-        _poly_dict[dtype] = np.empty((MAXDIM,), dtype=dtype)
-        _vinit_dict[dtype] = np.empty((MAXDIM, MAXDEG), dtype=dtype)
+        poly = np.empty((MAXDIM,), dtype=dtype)
+        vinit = np.empty((MAXDIM, MAXDEG), dtype=dtype)
 
-        _initialize_direction_numbers(_poly_dict[dtype], _vinit_dict[dtype], dtype)
+        _initialize_direction_numbers(poly, vinit, dtype)
+
+        _poly_dict[dtype] = poly
+        _vinit_dict[dtype] = vinit
 
         if kind == 'poly':
             poly_vinit = _poly_dict.get(dtype)
@@ -165,7 +168,7 @@ cdef int bit_length(uint_32_64 n) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int low_0_bit(uint_32_64 x) noexcept nogil:
+cdef int low_0_bit(cnp.uint64_t x) noexcept nogil:
     """Get the position of the right-most 0 bit for an integer.
 
     Examples:
@@ -191,10 +194,11 @@ cdef int low_0_bit(uint_32_64 x) noexcept nogil:
         Position of the right-most 0 bit.
 
     """
-    cdef int i = 0
-    while x & (1 << i) != 0:
+    cdef int i = 1
+    while x & 1UL:
+        x >>= 1
         i += 1
-    return i + 1
+    return i
 
 
 @cython.boundscheck(False)
@@ -439,3 +443,9 @@ def _test_find_index(p_cumulative, size, value):
     # type: (np.ndarray, int, float) -> int
     """Wrapper for testing in python"""
     return _find_index(p_cumulative, size, value)
+
+
+def _test_low_0_bit(cnp.uint64_t x):
+    # type: (int,) -> int
+    """Wrapper for testing in python"""
+    return low_0_bit(x)

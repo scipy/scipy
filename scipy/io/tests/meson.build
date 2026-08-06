@@ -1,18 +1,3 @@
-py3.extension_module('_test_fortran',
-  [
-    f2py_gen.process('test_fortran.pyf'),
-    '_test_fortran.f'
-  ],
-  c_args: [Wno_unused_variable],
-  fortran_args: fortran_ignore_warnings,
-  link_args: version_link_args,
-  dependencies: [lapack_dep, fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/io/tests',
-  install_tag: 'tests'
-)
-
 py3.install_sources([
     '__init__.py',
     'test_fortran.py',
@@ -62,6 +47,7 @@ py3.install_sources([
     'data/fortran-si4-1x1x7.dat',
     'data/fortran-si4-1x3x5.dat',
     'data/invalid_pointer.sav',
+    'data/identification.sav',
     'data/null_pointer.sav',
     'data/scalar_byte.sav',
     'data/scalar_byte_descr.sav',

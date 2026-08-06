@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import issparse
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 from scipy.sparse.csgraph._tools import (
     csgraph_to_dense, csgraph_from_dense,
@@ -32,13 +32,18 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
 
     if issparse(csgraph):
         if csr_output:
-            csgraph = csr_matrix(csgraph, dtype=DTYPE, copy=copy_if_sparse)
+            if csgraph.format == "bsr":
+                csgraph = csgraph.tocsr(copy=copy_if_sparse)
+                csgraph.eliminate_zeros()
+                csgraph = csgraph.astype(dtype, copy=False)
+            else:
+                csgraph = csgraph.tocsr(copy=copy_if_sparse).astype(dtype, copy=False)
         else:
             csgraph = csgraph_to_dense(csgraph, null_value=null_value_out)
     elif np.ma.isMaskedArray(csgraph):
         if dense_output:
             mask = csgraph.mask
-            csgraph = np.array(csgraph.data, dtype=DTYPE, copy=copy_if_dense)
+            csgraph = np.array(csgraph.data, dtype=dtype, copy=copy_if_dense)
             csgraph[mask] = null_value_out
         else:
             csgraph = csgraph_from_masked(csgraph)
@@ -50,7 +55,7 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
                                                 nan_null=nan_null,
                                                 infinity_null=infinity_null)
             mask = csgraph.mask
-            csgraph = np.asarray(csgraph.data, dtype=DTYPE)
+            csgraph = np.asarray(csgraph.data, dtype=dtype)
             csgraph[mask] = null_value_out
         else:
             csgraph = csgraph_from_dense(csgraph, null_value=null_value_in,

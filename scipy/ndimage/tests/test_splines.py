@@ -2,14 +2,12 @@
 import pytest
 
 import numpy as np
-from scipy._lib._array_api import assert_almost_equal
-
+from scipy._lib._array_api import (
+    assert_almost_equal, xp_assert_close, make_xp_test_case,
+)
 from scipy import ndimage
 
-from scipy.conftest import array_api_compatible
-skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 def get_spline_knot_values(order):
@@ -58,6 +56,7 @@ def make_spline_knot_matrix(xp, n, order, mode='mirror'):
     return xp.asarray(matrix / knot_values_sum)
 
 
+@make_xp_test_case(ndimage.spline_filter1d)  # type:ignore[attr-defined]
 @pytest.mark.parametrize('order', [0, 1, 2, 3, 4, 5])
 @pytest.mark.parametrize('mode', ['mirror', 'grid-wrap', 'reflect'])
 def test_spline_filter_vs_matrix_solution(order, mode, xp):
@@ -70,3 +69,17 @@ def test_spline_filter_vs_matrix_solution(order, mode, xp):
     matrix = make_spline_knot_matrix(xp, n, order, mode=mode)
     assert_almost_equal(eye, spline_filter_axis_0 @ matrix)
     assert_almost_equal(eye, spline_filter_axis_1 @ matrix.T)
+
+
+@make_xp_test_case(ndimage.spline_filter1d)  # type:ignore[attr-defined]
+@xfail_xp_backends("cupy", reason="CuPy spline_filter1d has the same aliasing bug")
+@pytest.mark.parametrize('order', [2, 3, 4, 5])
+@pytest.mark.parametrize('n', [2, 3, 4, 5])
+def test_spline_filter_reflect_small_n(order, n, xp):
+    # Regression test for gh-24550: the causal reflect initialization had an
+    # aliasing bug where c[0] was read back after mutation via c[n-1-i].
+    # For large n the error is negligible, but for small n it is significant.
+    eye = xp.eye(n, dtype=xp.float64)
+    filtered = ndimage.spline_filter1d(eye, axis=0, order=order, mode='reflect')
+    matrix = make_spline_knot_matrix(xp, n, order, mode='reflect')
+    xp_assert_close(filtered @ matrix, eye, atol=1e-12)

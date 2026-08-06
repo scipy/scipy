@@ -359,8 +359,8 @@ class Xdist(Benchmark):
               ['euclidean', 'minkowski', 'cityblock',
                'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
                'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
-               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulczynski1',
-               'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
+               'braycurtis', 'mahalanobis', 'yule', 'dice',
+               'rogerstanimoto', 'russellrao', 'sokalsneath',
                'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
@@ -392,8 +392,8 @@ class SingleDist(Benchmark):
     params = (['euclidean', 'minkowski', 'cityblock',
                'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
                'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
-               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulczynski1',
-               'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
+               'braycurtis', 'mahalanobis', 'yule', 'dice',
+               'rogerstanimoto', 'russellrao', 'sokalsneath',
                'minkowski-P3'])
     param_names = ['metric']
 
@@ -425,8 +425,8 @@ class XdistWeighted(Benchmark):
         [10, 20, 100],
         ['euclidean', 'minkowski', 'cityblock', 'sqeuclidean', 'cosine',
          'correlation', 'hamming', 'jaccard', 'chebyshev', 'canberra',
-         'braycurtis', 'yule', 'dice', 'kulczynski1', 'rogerstanimoto',
-         'russellrao', 'sokalmichener', 'sokalsneath', 'minkowski-P3'])
+         'braycurtis', 'yule', 'dice', 'rogerstanimoto',
+         'russellrao', 'sokalsneath', 'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
@@ -454,8 +454,8 @@ class XdistWeighted(Benchmark):
 class SingleDistWeighted(Benchmark):
     params = (['euclidean', 'minkowski', 'cityblock', 'sqeuclidean', 'cosine',
                'correlation', 'hamming', 'jaccard', 'chebyshev', 'canberra',
-               'braycurtis', 'yule', 'dice', 'kulczynski1', 'rogerstanimoto',
-               'russellrao', 'sokalmichener', 'sokalsneath', 'minkowski-P3'])
+               'braycurtis', 'yule', 'dice', 'rogerstanimoto',
+               'russellrao', 'sokalsneath', 'minkowski-P3'])
     param_names = ['metric']
 
     def setup(self, metric):

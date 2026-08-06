@@ -92,8 +92,16 @@ class BarrierSubproblem:
             c_eq = np.full(self.n_eq, 0.)
             c_ineq = np.full(self.n_ineq, 0.)
         else:
-            f = self.fun(x)
             c_eq, c_ineq = self.constr(x)
+
+            if np.any(c_ineq[self.enforce_feasibility] >= 0):
+                # Set f = inf explicitly so that the actual objective function is not
+                # called with infeasible values.
+                #
+                # The iteration will fail and the trust region will be reduced.
+                f = np.inf
+            else:
+                f = self.fun(x)
 
         # Return objective function and constraints
         return (self._compute_function(f, c_ineq, s),
@@ -158,11 +166,11 @@ class BarrierSubproblem:
         else:
             if sps.issparse(J_eq) or sps.issparse(J_ineq):
                 # It is expected that J_eq and J_ineq
-                # are already `csr_matrix` because of
+                # are already `csr_array` because of
                 # the way ``BoxConstraint``, ``NonlinearConstraint``
                 # and ``LinearConstraint`` are defined.
-                J_eq = sps.csr_matrix(J_eq)
-                J_ineq = sps.csr_matrix(J_ineq)
+                J_eq = sps.csr_array(J_eq)
+                J_ineq = sps.csr_array(J_ineq)
                 return self._assemble_sparse_jacobian(J_eq, J_ineq, s)
             else:
                 S = np.diag(s)
@@ -203,8 +211,8 @@ class BarrierSubproblem:
         new_indices[~mask] = indices
         new_data[mask] = s
         new_data[~mask] = data
-        J = sps.csr_matrix((new_data, new_indices, new_indptr),
-                           (n_eq + n_ineq, n_vars + n_ineq))
+        J = sps.csr_array((new_data, new_indices, new_indptr),
+                          (n_eq + n_ineq, n_vars + n_ineq))
         return J
 
     def lagrangian_hessian_x(self, z, v):
@@ -300,7 +308,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
     # variables. Represents ``tau`` from [1]_ p.885, formula (3.18).
     BOUNDARY_PARAMETER = 0.995
     # BARRIER_DECAY_RATIO controls the decay of the barrier parameter
-    # and of the subproblem toloerance. Represents ``theta`` from [1]_ p.879.
+    # and of the subproblem tolerance. Represents ``theta`` from [1]_ p.879.
     BARRIER_DECAY_RATIO = 0.2
     # TRUST_ENLARGEMENT controls the enlargement on trust radius
     # after each iteration

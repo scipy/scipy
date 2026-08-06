@@ -5,10 +5,12 @@ __all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
 
 
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
-from ._sparsetools import csc_tocsr, expandptr
+from ._sparsetools import csr_tocsc, expandptr
 from ._sputils import upcast
 
 from ._compressed import _cs_matrix
@@ -49,9 +51,9 @@ class _csc_base(_cs_matrix):
         indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csc_tocsr(M, N,
-                  self.indptr.astype(idx_dtype),
-                  self.indices.astype(idx_dtype),
+        csr_tocsc(N, M,
+                  self.indptr.astype(idx_dtype, copy=False),
+                  self.indices.astype(idx_dtype, copy=False),
                   self.data,
                   indptr,
                   indices,
@@ -100,7 +102,7 @@ class _csc_base(_cs_matrix):
         if i < 0:
             i += M
         if i < 0 or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         return self._get_submatrix(minor=i).tocsr()
 
     def _getcol(self, i):
@@ -112,7 +114,7 @@ class _csc_base(_cs_matrix):
         if i < 0:
             i += N
         if i < 0 or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         return self._get_submatrix(major=i, copy=True)
 
     def _get_intXarray(self, row, col):
@@ -132,7 +134,10 @@ class _csc_base(_cs_matrix):
         return self._major_index_fancy(col)._minor_slice(row)
 
     def _get_arrayXint(self, row, col):
-        return self._get_submatrix(major=col)._minor_index_fancy(row)
+        res = self._get_submatrix(major=col)._minor_index_fancy(row)
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_arrayXslice(self, row, col):
         return self._major_slice(col)._minor_index_fancy(row)
@@ -149,6 +154,15 @@ class _csc_base(_cs_matrix):
 def isspmatrix_csc(x):
     """Is `x` of csc_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -162,13 +176,24 @@ def isspmatrix_csc(x):
     Examples
     --------
     >>> from scipy.sparse import csc_array, csc_matrix, coo_matrix, isspmatrix_csc
-    >>> isspmatrix_csc(csc_matrix([[5]]))
+    >>> isspmatrix_csc(csc_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_csc(csc_array([[5]]))
+    >>> isspmatrix_csc(csc_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_csc(coo_matrix([[5]]))
+    >>> isspmatrix_csc(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_csc` is being replaced by `self.format == "csc" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_csc function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, csc_matrix)
 
 
@@ -202,23 +227,32 @@ class csc_array(_csc_base, sparray):
 
     Attributes
     ----------
+    data : ndarray
+        CSC format data array of the array
+    indices : ndarray
+        CSC format index array of the array
+    indptr : ndarray
+        CSC format index pointer array of the array
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        CSC format data array of the array
-    indices
-        CSC format index array of the array
-    indptr
-        CSC format index pointer array of the array
-    has_sorted_indices
-    has_canonical_format
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'csc'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : csc_array
+        The transpose of the array
+    mT : csc_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -265,12 +299,21 @@ class csc_array(_csc_base, sparray):
            [0, 0, 5],
            [2, 3, 6]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class csc_matrix(spmatrix, _csc_base):
     """
     Compressed Sparse Column matrix.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         csc_matrix(D)
@@ -297,23 +340,32 @@ class csc_matrix(spmatrix, _csc_base):
 
     Attributes
     ----------
+    data : ndarray
+        CSC format data array of the matrix
+    indices : ndarray
+        CSC format index array of the matrix
+    indptr : ndarray
+        CSC format index pointer array of the matrix
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        CSC format data array of the matrix
-    indices
-        CSC format index array of the matrix
-    indptr
-        CSC format index pointer array of the matrix
-    has_sorted_indices
-    has_canonical_format
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'csc'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : csc_matrix
+        The transpose of the matrix
+    mT : csc_matrix
+        The matrix transpose
 
     Notes
     -----

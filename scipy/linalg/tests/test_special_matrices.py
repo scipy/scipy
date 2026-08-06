@@ -8,11 +8,15 @@ from pytest import raises as assert_raises
 from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
-                          companion, kron, block_diag,
+                          companion, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
+                                   make_xp_pytest_param,
+                                   xp_assert_close)
 
 
 class TestToeplitz:
@@ -96,20 +100,21 @@ class TestHadamard:
         assert_raises(ValueError, hadamard, 5)
 
 
+@make_xp_test_case(leslie)
 class TestLeslie:
+    @pytest.mark.parametrize("f, s, msg", [([[1, 1], [2, 2]], [3, 4, 5], "f and s"),
+                                           ([1, 2], [1, 2], "f and s"),
+                                           ([1.], [], "s must be at least 1.")])
+    def test_bad_shapes(self, f, s, msg, xp):
+        with assert_raises(ValueError, match=msg):
+            leslie(xp.asarray(f), xp.asarray(s))
 
-    def test_bad_shapes(self):
-        assert_raises(ValueError, leslie, [[1, 1], [2, 2]], [3, 4, 5])
-        assert_raises(ValueError, leslie, [3, 4, 5], [[1, 1], [2, 2]])
-        assert_raises(ValueError, leslie, [1, 2], [1, 2])
-        assert_raises(ValueError, leslie, [1], [])
-
-    def test_basic(self):
-        a = leslie([1, 2, 3], [0.25, 0.5])
-        expected = array([[1.0, 2.0, 3.0],
-                          [0.25, 0.0, 0.0],
-                          [0.0, 0.5, 0.0]])
-        assert_array_equal(a, expected)
+    def test_basic(self, xp):
+        a = leslie(xp.asarray([1., 2., 3.]), xp.asarray([0.25, 0.5]))
+        expected = xp.asarray([[1.0, 2.0, 3.0],
+                               [0.25, 0.0, 0.0],
+                               [0.0, 0.5, 0.0]])
+        xp_assert_equal(a, expected)
 
 
 class TestCompanion:
@@ -143,96 +148,75 @@ class TestCompanion:
         assert_array_equal(c, expected)
 
 
+@make_xp_test_case(block_diag)
 class TestBlockDiag:
-    def test_basic(self):
-        x = block_diag(eye(2), [[1, 2], [3, 4], [5, 6]], [[1, 2, 3]])
-        assert_array_equal(x, [[1, 0, 0, 0, 0, 0, 0],
-                               [0, 1, 0, 0, 0, 0, 0],
-                               [0, 0, 1, 2, 0, 0, 0],
-                               [0, 0, 3, 4, 0, 0, 0],
-                               [0, 0, 5, 6, 0, 0, 0],
-                               [0, 0, 0, 0, 1, 2, 3]])
+    def test_basic(self, xp):
+        dtype = xp.asarray(1).dtype
+        x = block_diag(xp.eye(2, dtype=dtype), xp.asarray([[1, 2], [3, 4], [5, 6]]),
+                       xp.asarray([[1, 2, 3]]))
+        xp_assert_equal(x, xp.asarray([[1, 0, 0, 0, 0, 0, 0],
+                                       [0, 1, 0, 0, 0, 0, 0],
+                                       [0, 0, 1, 2, 0, 0, 0],
+                                       [0, 0, 3, 4, 0, 0, 0],
+                                       [0, 0, 5, 6, 0, 0, 0],
+                                       [0, 0, 0, 0, 1, 2, 3]]))
 
-    def test_dtype(self):
-        x = block_diag([[1.5]])
-        assert_equal(x.dtype, float)
+    def test_dtype(self, xp):
+        x = block_diag(xp.asarray([[1.5]]))
+        assert x.dtype == xpx.default_dtype(xp)
 
-        x = block_diag([[True]])
-        assert_equal(x.dtype, bool)
+        x = block_diag(xp.asarray([[True]]))
+        assert x.dtype == xp.bool
 
-    def test_mixed_dtypes(self):
-        actual = block_diag([[1]], [[1j]])
-        desired = np.array([[1, 0], [0, 1j]])
-        assert_array_equal(actual, desired)
+    def test_mixed_dtypes(self, xp):
+        actual = block_diag(xp.asarray([[1.]]), xp.asarray([[1j]]))
+        desired = xp.asarray([[1, 0], [0, 1j]])
+        xp_assert_equal(actual, desired)
 
-    def test_scalar_and_1d_args(self):
-        a = block_diag(1)
-        assert_equal(a.shape, (1, 1))
-        assert_array_equal(a, [[1]])
+    def test_scalar_and_1d_args(self, xp):
+        a = block_diag(xp.asarray(1))
+        assert a.shape == (1, 1)
+        xp_assert_equal(a, xp.asarray([[1]]))
 
-        a = block_diag([2, 3], 4)
-        assert_array_equal(a, [[2, 3, 0], [0, 0, 4]])
-
-    def test_bad_arg(self):
-        assert_raises(ValueError, block_diag, [[[1]]])
+        a = block_diag(xp.asarray([2, 3]), xp.asarray(4))
+        xp_assert_equal(a, xp.asarray([[2, 3, 0], [0, 0, 4]]))
 
     def test_no_args(self):
         a = block_diag()
-        assert_equal(a.ndim, 2)
-        assert_equal(a.nbytes, 0)
+        assert a.ndim == 2
+        assert a.nbytes == 0
 
-    def test_empty_matrix_arg(self):
+    def test_empty_matrix_arg(self, xp):
         # regression test for gh-4596: check the shape of the result
         # for empty matrix inputs. Empty matrices are no longer ignored
         # (gh-4908) it is viewed as a shape (1, 0) matrix.
-        a = block_diag([[1, 0], [0, 1]],
-                       [],
-                       [[2, 3], [4, 5], [6, 7]])
-        assert_array_equal(a, [[1, 0, 0, 0],
-                               [0, 1, 0, 0],
-                               [0, 0, 0, 0],
-                               [0, 0, 2, 3],
-                               [0, 0, 4, 5],
-                               [0, 0, 6, 7]])
+        dtype = xp.asarray(1).dtype
+        a = block_diag(xp.asarray([[1, 0], [0, 1]]),
+                       xp.asarray([], dtype=dtype),
+                       xp.asarray([[2, 3], [4, 5], [6, 7]]))
+        xp_assert_equal(a, xp.asarray([[1, 0, 0, 0],
+                                       [0, 1, 0, 0],
+                                       [0, 0, 0, 0],
+                                       [0, 0, 2, 3],
+                                       [0, 0, 4, 5],
+                                       [0, 0, 6, 7]]))
 
-    def test_zerosized_matrix_arg(self):
+    @pytest.mark.skip_xp_backends("dask.array", reason="dask/dask#11800")
+    def test_zerosized_matrix_arg(self, xp):
         # test for gh-4908: check the shape of the result for
         # zero-sized matrix inputs, i.e. matrices with shape (0,n) or (n,0).
         # note that [[]] takes shape (1,0)
-        a = block_diag([[1, 0], [0, 1]],
-                       [[]],
-                       [[2, 3], [4, 5], [6, 7]],
-                       np.zeros([0, 2], dtype='int32'))
-        assert_array_equal(a, [[1, 0, 0, 0, 0, 0],
-                               [0, 1, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0],
-                               [0, 0, 2, 3, 0, 0],
-                               [0, 0, 4, 5, 0, 0],
-                               [0, 0, 6, 7, 0, 0]])
-
-
-class TestKron:
-
-    def test_basic(self):
-
-        a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
-        assert_array_equal(a, array([[1, 1, 1, 2, 2, 2],
-                                     [3, 3, 3, 4, 4, 4]]))
-
-        m1 = array([[1, 2], [3, 4]])
-        m2 = array([[10], [11]])
-        a = kron(m1, m2)
-        expected = array([[10, 20],
-                          [11, 22],
-                          [30, 40],
-                          [33, 44]])
-        assert_array_equal(a, expected)
-
-    def test_empty(self):
-        m1 = np.empty((0, 2))
-        m2 = np.empty((1, 3))
-        a = kron(m1, m2)
-        assert_allclose(a, np.empty((0, 6)))
+        dtype = xp.asarray(1).dtype
+        a = block_diag(xp.asarray([[1, 0], [0, 1]]),
+                       xp.asarray([[]], dtype=dtype),
+                       xp.asarray([[2, 3], [4, 5], [6, 7]]),
+                       xp.zeros([0, 2], dtype=dtype))
+        xp_assert_equal(a, xp.asarray([[1, 0, 0, 0, 0, 0],
+                                       [0, 1, 0, 0, 0, 0],
+                                       [0, 0, 0, 0, 0, 0],
+                                       [0, 0, 2, 3, 0, 0],
+                                       [0, 0, 4, 5, 0, 0],
+                                       [0, 0, 6, 7, 0, 0]]))
 
 
 class TestHelmert:
@@ -499,8 +483,7 @@ def test_invpascal():
         # precision when n is greater than 18.  Instead we'll cast both to
         # object arrays, and then multiply.
         e = ip.astype(object).dot(p.astype(object))
-        assert_array_equal(e, eye(n), err_msg="n=%d  kind=%r exact=%r" %
-                                              (n, kind, exact))
+        assert_array_equal(e, eye(n), err_msg=f"n={n}  kind={kind!r} exact={exact!r}")
 
     kinds = ['symmetric', 'lower', 'upper']
 
@@ -532,19 +515,23 @@ def test_dft():
     assert_array_almost_equal(mx, fx)
 
 
-def test_fiedler():
-    f = fiedler([])
-    assert_equal(f.size, 0)
-    f = fiedler([123.])
-    assert_array_equal(f, np.array([[0.]]))
-    f = fiedler(np.arange(1, 7))
-    des = np.array([[0, 1, 2, 3, 4, 5],
-                    [1, 0, 1, 2, 3, 4],
-                    [2, 1, 0, 1, 2, 3],
-                    [3, 2, 1, 0, 1, 2],
-                    [4, 3, 2, 1, 0, 1],
-                    [5, 4, 3, 2, 1, 0]])
-    assert_array_equal(f, des)
+@make_xp_test_case(fiedler)
+def test_fiedler(xp):
+    f = fiedler(xp.asarray([]))
+    assert xp_size(f) == 0
+    assert f.shape == (0, 0)
+
+    f = fiedler(xp.asarray([123.]))
+    xp_assert_equal(f, xp.asarray([[0.]]))
+
+    f = fiedler(xp.arange(1, 7))
+    des = xp.asarray([[0, 1, 2, 3, 4, 5],
+                      [1, 0, 1, 2, 3, 4],
+                      [2, 1, 0, 1, 2, 3],
+                      [3, 2, 1, 0, 1, 2],
+                      [4, 3, 2, 1, 0, 1],
+                      [5, 4, 3, 2, 1, 0]])
+    xp_assert_equal(f, des)
 
 
 def test_fiedler_companion():
@@ -552,6 +539,7 @@ def test_fiedler_companion():
     assert_equal(fc.size, 0)
     fc = fiedler_companion([1.])
     assert_equal(fc.size, 0)
+    assert_equal(fc.shape, (0, 0))
     fc = fiedler_companion([1., 2.])
     assert_array_equal(fc, np.array([[-2.]]))
     fc = fiedler_companion([1e-12, 2., 3.])
@@ -580,11 +568,6 @@ class TestConvolutionMatrix:
         with pytest.raises(ValueError, match='n must be a positive integer'):
             convolution_matrix([1, 2, 3], 0)
 
-    def test_bad_first_arg(self):
-        # first arg must be a 1d array, otherwise ValueError
-        with pytest.raises(ValueError, match='one-dimensional'):
-            convolution_matrix(1, 4)
-
     def test_empty_first_arg(self):
         # first arg must have at least one value
         with pytest.raises(ValueError, match=r'len\(a\)'):
@@ -610,3 +593,25 @@ class TestConvolutionMatrix:
             A = convolution_matrix(a, nv, mode)
         y2 = A @ v
         assert_array_almost_equal(y1, y2)
+
+
+@pytest.mark.parametrize('f, args',
+                         [make_xp_pytest_param(circulant, ()),
+                          make_xp_pytest_param(companion, ()),
+                          make_xp_pytest_param(convolution_matrix, (5, 'same')),
+                          make_xp_pytest_param(fiedler, ()),
+                          make_xp_pytest_param(fiedler_companion, ()),
+                          make_xp_pytest_param(hankel, (np.arange(9),)),
+                          make_xp_pytest_param(leslie, (np.arange(9,
+                                                                  dtype=np.float64),)),
+                          make_xp_pytest_param(toeplitz, (np.arange(9),)),])
+def test_batch(f, args, xp):
+    rng = np.random.default_rng(283592436523456)
+    batch_shape = (2, 3)
+    m = 10
+    A = rng.random(batch_shape + (m,))
+
+    res = f(xp.asarray(A), *list(map(xp.asarray, args)))
+    ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
+    ref = xp.asarray(ref.reshape(A.shape[:-1] + ref.shape[-2:]))
+    xp_assert_close(res, ref)

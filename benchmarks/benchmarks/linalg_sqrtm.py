@@ -12,22 +12,18 @@ with safe_import():
 class Sqrtm(Benchmark):
     params = [
         ['float64', 'complex128'],
-        [64, 256],
-        [32, 64, 256]
+        [16, 32, 64, 256, 512],
     ]
-    param_names = ['dtype', 'n', 'blocksize']
+    param_names = ['dtype', 'n']
 
-    def setup(self, dtype, n, blocksize):
+    def setup(self, dtype, n):
         n = int(n)
+        rng = np.random.default_rng(1742808411247533)
         dtype = np.dtype(dtype)
-        blocksize = int(blocksize)
-        A = np.random.rand(n, n)
+        A = rng.uniform(size=[n, n])
         if dtype == np.complex128:
-            A = A + 1j*np.random.rand(n, n)
+            A = A + 1j*rng.uniform(size=[n, n])
         self.A = A
 
-        if blocksize > n:
-            raise NotImplementedError()
-
-    def time_sqrtm(self, dtype, n, blocksize):
-        scipy.linalg.sqrtm(self.A, disp=False, blocksize=blocksize)
+    def time_sqrtm(self, dtype, n):
+        scipy.linalg.sqrtm(self.A)

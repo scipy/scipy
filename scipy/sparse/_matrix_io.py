@@ -18,7 +18,7 @@ def save_npz(file, matrix, compressed=True):
         where the data will be saved. If file is a string, the ``.npz``
         extension will be appended to the file name if it is not already
         there.
-    matrix: spmatrix or sparray
+    matrix : spmatrix or sparray
         The sparse matrix or array to save.
         Supported formats: ``csc``, ``csr``, ``bsr``, ``dia`` or ``coo``.
     compressed : bool, optional
@@ -36,21 +36,21 @@ def save_npz(file, matrix, compressed=True):
 
     >>> import numpy as np
     >>> import scipy as sp
-    >>> sparse_matrix = sp.sparse.csc_matrix([[0, 0, 3], [4, 0, 0]])
-    >>> sparse_matrix
-    <Compressed Sparse Column sparse matrix of dtype 'int64'
+    >>> sparse_array = sp.sparse.csc_array([[0, 0, 3], [4, 0, 0]])
+    >>> sparse_array
+    <Compressed Sparse Column sparse array of dtype 'int64'
         with 2 stored elements and shape (2, 3)>
-    >>> sparse_matrix.toarray()
+    >>> sparse_array.toarray()
     array([[0, 0, 3],
            [4, 0, 0]], dtype=int64)
 
-    >>> sp.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
-    >>> sparse_matrix = sp.sparse.load_npz('/tmp/sparse_matrix.npz')
+    >>> sp.sparse.save_npz('/tmp/sparse_array.npz', sparse_array)
+    >>> sparse_array = sp.sparse.load_npz('/tmp/sparse_array.npz')
 
-    >>> sparse_matrix
-    <Compressed Sparse Column sparse matrix of dtype 'int64'
+    >>> sparse_array
+    <Compressed Sparse Column sparse array of dtype 'int64'
         with 2 stored elements and shape (2, 3)>
-    >>> sparse_matrix.toarray()
+    >>> sparse_array.toarray()
     array([[0, 0, 3],
            [4, 0, 0]], dtype=int64)
     """
@@ -60,9 +60,15 @@ def save_npz(file, matrix, compressed=True):
     elif matrix.format == 'dia':
         arrays_dict.update(offsets=matrix.offsets)
     elif matrix.format == 'coo':
-        arrays_dict.update(row=matrix.row, col=matrix.col)
+        if matrix.ndim == 2:
+            # TODO: After a few releases, switch 2D case to save with coords only.
+            arrays_dict.update(row=matrix.row, col=matrix.col)
+        else:
+            arrays_dict.update(coords=matrix.coords)
     else:
-        msg = f'Save is not implemented for sparse matrix of format {matrix.format}.'
+        msg = (f'Save is not implemented for sparse matrix of format {matrix.format}; '
+               'convert to a supported format with e.g. .tocsr() or '
+               '.tocoo() before saving.')
         raise NotImplementedError(msg)
     arrays_dict.update(
         format=matrix.format.encode('ascii'),
@@ -126,10 +132,10 @@ def load_npz(file):
            [4, 0, 0]], dtype=int64)
 
     In this example we force the result to be csr_array from csr_matrix
-    >>> sparse_matrix = sp.sparse.csc_matrix([[0, 0, 3], [4, 0, 0]])
-    >>> sp.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
-    >>> tmp = sp.sparse.load_npz('/tmp/sparse_matrix.npz')
-    >>> sparse_array = sp.sparse.csr_array(tmp)
+    >>> sparse_matrix = sp.sparse.csc_matrix([[0, 0, 3], [4, 0, 0]])  # doctest: +SKIP
+    >>> sp.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)  # doctest: +SKIP
+    >>> tmp = sp.sparse.load_npz('/tmp/sparse_matrix.npz')  # doctest: +SKIP
+    >>> sparse_array = sp.sparse.csr_array(tmp)  # doctest: +SKIP
     """
     with np.load(file, **PICKLE_KWARGS) as loaded:
         sparse_format = loaded.get('format')
@@ -157,9 +163,10 @@ def load_npz(file):
             return cls((loaded['data'], loaded['indices'], loaded['indptr']),
                        shape=loaded['shape'])
         elif sparse_format == 'dia':
-            return cls((loaded['data'], loaded['offsets']),
-                       shape=loaded['shape'])
+            return cls((loaded['data'], loaded['offsets']), shape=loaded['shape'])
         elif sparse_format == 'coo':
+            if 'coords' in loaded:
+                return cls((loaded['data'], loaded['coords']), shape=loaded['shape'])
             return cls((loaded['data'], (loaded['row'], loaded['col'])),
                        shape=loaded['shape'])
         else:

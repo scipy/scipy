@@ -245,8 +245,8 @@ class VarReader4:
 
         Returns
         -------
-        arr : ``scipy.sparse.coo_matrix``
-            with dtype ``float`` and shape read from the sparse matrix data
+        arr : coo_array
+            with dtype ``float`` and shape read from the sparse array data
 
         Notes
         -----
@@ -276,7 +276,7 @@ class VarReader4:
         else:
             V = np.ascontiguousarray(tmp[:,2],dtype='complex')
             V.imag = tmp[:,3]
-        return scipy.sparse.coo_matrix((V,(I,J)), dims)
+        return scipy.sparse.coo_array((V,(I,J)), dims)
 
     def shape_from_header(self, hdr):
         '''Read the shape of the array described by the header.

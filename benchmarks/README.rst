@@ -12,21 +12,21 @@ Usage
 
 Airspeed Velocity manages building and Python environments by itself,
 unless told otherwise. Some of the benchmarking features in
-``dev.py`` also tell ASV to use the SciPy compiled by
-``dev.py``. To run the benchmarks, you do not need to install a
+``spin`` also tell ASV to use the SciPy compiled by
+``spin``. To run the benchmarks, you do not need to install a
 development version of SciPy to your current Python environment.
 
 Run a benchmark against currently checked-out SciPy version (don't record the
 result)::
 
-    python dev.py bench --submodule sparse.Arithmetic
+    spin bench --submodule sparse.Arithmetic
 
 Compare change in benchmark results with another branch::
 
-    python dev.py bench --compare main --submodule sparse.Arithmetic
+    spin bench --compare main --submodule sparse.Arithmetic
 
 Run ASV commands directly (note, this will not set env vars for ``ccache``
-and disabling BLAS/LAPACK multi-threading, as ``dev.py`` does)::
+and disabling BLAS/LAPACK multi-threading, as ``spin`` does)::
 
     cd benchmarks
     asv run --skip-existing-commits --steps 10 ALL
@@ -38,6 +38,26 @@ Command-line help is available as usual via ``asv --help`` and
 ``asv run --help``.
 
 .. _ASV documentation: https://asv.readthedocs.io/
+
+
+Array API benchmarks
+--------------------
+Like `spin test`, `spin bench` also supports Array API.
+The below will repeat selected tests for all installed Array API backends,
+and show results side by side::
+
+  spin bench -b all
+
+Unlike `spin test`, `spin bench` disregards the ``SCIPY_DEVICE`` flag. Instead, if a
+CUDA device is installed for backends that support both CPU and GPU (e.g. JAX, PyTorch),
+the benchmark will be run on both CPU and GPU and the results will be shown side by
+side.
+
+The JAX backend is compiled with `jax.jit` when supported; JIT warmup times are excluded
+from the benchmark results.
+
+When writing Array API benchmarks, you should subclass ``common.XPBenchmark`` instead of
+``common.Benchmark``. See docstring of ``XPBenchmark`` for details and examples.
 
 
 Writing benchmarks

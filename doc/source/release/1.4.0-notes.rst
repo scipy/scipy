@@ -26,7 +26,7 @@ Highlights of this release
 - a new submodule, `scipy.fft`, now supersedes `scipy.fftpack`; this
   means support for ``long double`` transforms, faster multi-dimensional
   transforms, improved algorithm time complexity, release of the global
-  intepreter lock, and control over threading behavior
+  interpreter lock, and control over threading behavior
 - support for ``pydata/sparse`` arrays in `scipy.sparse.linalg`
 - substantial improvement to the documentation and functionality of
   several `scipy.special` functions, and some new additions
@@ -64,7 +64,7 @@ return value is a complex array, half the size of the full ``fft`` output.
 This is different from the output of ``fftpack`` which returned a real array 
 representing complex components packed together.
 - the inverse real to real transforms (``idct`` and ``idst``) are normalized 
-for ``norm=None`` in thesame way as ``ifft``. This means the identity 
+for ``norm=None`` in the same way as ``ifft``. This means the identity 
 ``idct(dct(x)) == x`` is now ``True`` for all norm modes.
 - does not include the convolutions or pseudo-differential operators
 from ``fftpack``.

@@ -120,7 +120,7 @@ Exercise
 #. Rebuild SciPy. Note that an extension module (a ``.so`` or ``.pyd`` file)
    has been added to the ``build/scipy/optimize/`` directory.
 
-#. Time it, e.g. by dropping into IPython with ``python dev.py ipython`` and then:
+#. Time it, e.g. by dropping into IPython with ``spin ipython`` and then:
 
    ::
 
@@ -167,7 +167,7 @@ Exercise
     Recreating the annotated ``.html`` file shows that most of the
     Python interaction has disappeared.
 
-#. Rebuild SciPy, open an fresh IPython console, and ``%timeit``:
+#. Rebuild SciPy, open a fresh IPython console, and ``%timeit``:
 
 ::
 

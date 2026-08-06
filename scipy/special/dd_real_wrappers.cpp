@@ -5,7 +5,7 @@
  */
 
 #include "dd_real_wrappers.h"
-#include "xsf/cephes/dd_real.h"
+#include <xsf/cephes/dd_real.h>
 
 using xsf::cephes::detail::double_double;
 

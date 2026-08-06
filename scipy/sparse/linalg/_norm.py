@@ -19,15 +19,15 @@ def _sparse_frobenius_norm(x):
 
 def norm(x, ord=None, axis=None):
     """
-    Norm of a sparse matrix
+    Norm of a sparse matrix.
 
     This function is able to return one of seven different matrix norms,
     depending on the value of the ``ord`` parameter.
 
     Parameters
     ----------
-    x : a sparse matrix
-        Input sparse matrix.
+    x : a sparse array
+        Input sparse array.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
         `inf` object.
@@ -41,11 +41,12 @@ def norm(x, ord=None, axis=None):
     Returns
     -------
     n : float or ndarray
+        The selected norm of `x`.
 
     Notes
     -----
     Some of the ord are not implemented because some associated functions like,
-    _multi_svd_norm, are not yet available for sparse matrix.
+    _multi_svd_norm, are not yet available for sparse array.
 
     This docstring is modified based on numpy.linalg.norm.
     https://github.com/numpy/numpy/blob/main/numpy/linalg/linalg.py
@@ -53,7 +54,7 @@ def norm(x, ord=None, axis=None):
     The following norms can be calculated:
 
     =====  ============================
-    ord    norm for sparse matrices
+    ord    norm for sparse arrays
     =====  ============================
     None   Frobenius norm
     'fro'  Frobenius norm
@@ -69,7 +70,7 @@ def norm(x, ord=None, axis=None):
 
     The Frobenius norm is given by [1]_:
 
-        :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
+    :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
 
     References
     ----------
@@ -78,7 +79,7 @@ def norm(x, ord=None, axis=None):
 
     Examples
     --------
-    >>> from scipy.sparse import *
+    >>> from scipy.sparse import csr_array, diags_array
     >>> import numpy as np
     >>> from scipy.sparse.linalg import norm
     >>> a = np.arange(9) - 4
@@ -90,7 +91,7 @@ def norm(x, ord=None, axis=None):
            [-1, 0, 1],
            [ 2, 3, 4]])
 
-    >>> b = csr_matrix(b)
+    >>> b = csr_array(b)
     >>> norm(b)
     7.745966692414834
     >>> norm(b, 'fro')
@@ -107,7 +108,7 @@ def norm(x, ord=None, axis=None):
     The matrix 2-norm or the spectral norm is the largest singular
     value, computed approximately and with limitations.
 
-    >>> b = diags([-1, 1], [0, 1], shape=(9, 10))
+    >>> b = diags_array([-1, 1], offsets=[0, 1], shape=(9, 10))
     >>> norm(b, 2)
     1.9753...
     """
@@ -119,11 +120,12 @@ def norm(x, ord=None, axis=None):
     if axis is None and ord in (None, 'fro', 'f'):
         return _sparse_frobenius_norm(x)
 
-    # Some norms require functions that are not implemented for all types.
-    x = x.tocsr()
+    # DIA format doesn't support .max() or .min() methods.
+    if x.format == 'dia':
+        x = x.tocsr()
 
     if axis is None:
-        axis = (0, 1)
+        axis = tuple(range(x.ndim))
     elif not isinstance(axis, tuple):
         msg = "'axis' must be None, an integer or a tuple of integers"
         try:
@@ -134,7 +136,7 @@ def norm(x, ord=None, axis=None):
             raise TypeError(msg)
         axis = (int_axis,)
 
-    nd = 2
+    nd = x.ndim
     if len(axis) == 2:
         row_axis, col_axis = axis
         if not (-nd <= row_axis < nd and -nd <= col_axis < nd):
@@ -143,23 +145,24 @@ def norm(x, ord=None, axis=None):
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
         if ord == 2:
-            # Only solver="lobpcg" supports all numpy dtypes
-            _, s, _ = svds(x, k=1, solver="lobpcg")
+            _, s, _ = svds(x, k=1, solver="arpack", rng=None)
             return s[0]
-        elif ord == -2:
+        if ord == -2:
             raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
-        elif ord == 1:
-            return abs(x).sum(axis=row_axis).max(axis=col_axis)[0,0]
-        elif ord == np.inf:
-            return abs(x).sum(axis=col_axis).max(axis=row_axis)[0,0]
-        elif ord == -1:
-            return abs(x).sum(axis=row_axis).min(axis=col_axis)[0,0]
-        elif ord == -np.inf:
-            return abs(x).sum(axis=col_axis).min(axis=row_axis)[0,0]
-        elif ord in (None, 'f', 'fro'):
+        if ord in (None, 'f', 'fro'):
             # The axis order does not matter for this norm.
             return _sparse_frobenius_norm(x)
+        if np.can_cast(x.dtype, float):
+            x = x.astype(float, copy=False)
+        if ord == 1:
+            return abs(x).sum(axis=row_axis).max()
+        elif ord == np.inf:
+            return abs(x).sum(axis=col_axis).max()
+        elif ord == -1:
+            return abs(x).sum(axis=row_axis).min()
+        elif ord == -np.inf:
+            return abs(x).sum(axis=col_axis).min()
         else:
             raise ValueError("Invalid norm order for matrices.")
     elif len(axis) == 1:
@@ -167,29 +170,32 @@ def norm(x, ord=None, axis=None):
         if not (-nd <= a < nd):
             message = f'Invalid axis {axis!r} for an array with shape {x.shape!r}'
             raise ValueError(message)
+        if ord == 0:
+            return x.count_nonzero(axis=a)
+        if np.can_cast(x.dtype, float):
+            x = x.astype(float, copy=False)
         if ord == np.inf:
-            M = abs(x).max(axis=a)
-        elif ord == -np.inf:
-            M = abs(x).min(axis=a)
-        elif ord == 0:
-            # Zero norm
-            M = (x != 0).sum(axis=a)
-        elif ord == 1:
+            return _ravel(abs(x).max(axis=a))
+        if ord == -np.inf:
+            return _ravel(abs(x).min(axis=a))
+        if ord == 1:
             # special case for speedup
-            M = abs(x).sum(axis=a)
-        elif ord in (2, None):
-            M = sqrt(abs(x).power(2).sum(axis=a))
-        else:
-            try:
-                ord + 1
-            except TypeError as e:
-                raise ValueError('Invalid norm order for vectors.') from e
-            M = np.power(abs(x).power(ord).sum(axis=a), 1 / ord)
-        if hasattr(M, 'toarray'):
-            return M.toarray().ravel()
-        elif hasattr(M, 'A'):
-            return M.A.ravel()
-        else:
-            return M.ravel()
+            return _ravel(abs(x).sum(axis=a))
+        if ord in (2, None):
+            return _ravel(sqrt(abs(x).power(2).sum(axis=a)))
+        try:
+            ord + 1
+        except TypeError as e:
+            raise ValueError('Invalid norm order for vectors.') from e
+        return np.power(abs(x).power(ord).sum(axis=a), 1 / ord)
     else:
         raise ValueError("Improper number of dimensions to norm.")
+
+
+def _ravel(M):
+    if hasattr(M, 'toarray'):
+        return M.toarray().ravel()
+    elif hasattr(M, 'A'):
+        return M.A.ravel()
+    else:
+        return M.ravel()

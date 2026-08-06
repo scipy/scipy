@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_normaltest.ipynb
+.. notebooklite:: hypothesis_normaltest.md
    :new_tab: True
 ```
 
 (hypothesis_normaltest)=
+
++++
+
 # Normal test
 
 The {func}`scipy.stats.normaltest` function tests the null hypothesis that a
@@ -121,7 +126,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 plot(ax)
 ax.hist(res.null_distribution, np.linspace(0, 25, 50),
         density=True)
-ax.legend(['aymptotic approximation (many observations)',
+ax.legend(['asymptotic approximation (many observations)',
            'Monte Carlo approximation (11 observations)'])
 ax.set_xlim(0, 14)
 plt.show()

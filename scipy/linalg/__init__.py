@@ -21,8 +21,7 @@ Linear algebra functions.
 .. seealso::
 
    `numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__
-   for more linear algebra functions. Note that
-   although `scipy.linalg` imports most of them, identically named
+   for more linear algebra functions. Note that identically named
    functions from `scipy.linalg` may offer more or slightly differing
    functionality.
 
@@ -46,7 +45,6 @@ Basics
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
    pinvh - Pseudo-inverse of hermitian matrix
-   kron - Kronecker product of two arrays
    khatri_rao - Khatri-Rao product of two arrays
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation
@@ -221,12 +219,6 @@ from ._procrustes import *
 from ._decomp_update import *
 from ._sketches import *
 from ._decomp_cossin import *
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import (
-    decomp, decomp_cholesky, decomp_lu, decomp_qr, decomp_svd, decomp_schur,
-    basic, misc, special_matrices, matfuncs,
-)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

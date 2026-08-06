@@ -1,10 +1,9 @@
-#include "qhull_src/src/qhull_ra.h"
+#include <libqhull_r/qhull_ra.h>
 
-
-/* This is a patched version of qhull_src/src/user_r.c:qh_new_qhull,
+/* This is a patched version of subprojects/qhull_r/libqhull_r/user_r.c:qh_new_qhull,
    with an additional "feaspoint" argument.
 
-   See qhull_src/README.scipy
+   See scipy/spatial/qhull_misc_README.txt
 */
 int qh_new_qhull_scipy(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc,
                 char *qhull_cmd, FILE *outfile, FILE *errfile, coordT* feaspoint) {

@@ -3,6 +3,7 @@ import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
@@ -21,14 +22,16 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
     return atol, rtol
 
 
+@xp_capabilities(np_only=True)
 def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use BIConjugate Gradient iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the BIConjugate Gradient method.
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -39,49 +42,60 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+    M : {sparse array, ndarray, LinearOperator}
+        Preconditioner for `A`. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
 
     Returns
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
 
+    Notes
+    -----
+    The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
+    condition number than `A`, see [1]_ .
+
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia,
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] "Biconjugate gradient method", Wikipedia,
+           https://en.wikipedia.org/wiki/Biconjugate_gradient_method
+
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import bicg
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
     >>> b = np.array([2., 4., -1.])
     >>> x, exitCode = bicg(A, b, atol=1e-5)
     >>> print(exitCode)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
     True
-
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('bicg', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     n = len(b)
     dotprod = np.vdot if np.iscomplexobj(x) else np.dot
@@ -102,7 +116,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
 
         z = psolve(r)
         ztilde = rpsolve(rtilde)
@@ -110,7 +124,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         rho_cur = dotprod(rtilde, z)
 
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            return postprocess, -10
+            return x, -10
 
         if iteration > 0:
             beta = rho_cur / rho_prev
@@ -127,7 +141,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         rv = dotprod(ptilde, q)
 
         if rv == 0:
-            return postprocess(x), -11
+            return x, -11
 
         alpha = rho_cur / rv
         x += alpha*p
@@ -140,18 +154,20 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
              callback=None):
-    """Use BIConjugate Gradient STABilized iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the BIConjugate Gradient STABilized method.
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -162,53 +178,64 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+    M : {sparse array, ndarray, LinearOperator}
+        Preconditioner for `A`. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
 
     Returns
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
 
+    Notes
+    -----
+    The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
+    condition number than `A`, see [1]_ .
+
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia,
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] "Biconjugate gradient stabilized method",
+           Wikipedia, https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
+
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import bicgstab
     >>> R = np.array([[4, 2, 0, 1],
     ...               [3, 0, 0, 2],
     ...               [0, 1, 1, 1],
     ...               [0, 2, 1, 0]])
-    >>> A = csc_matrix(R)
+    >>> A = csc_array(R)
     >>> b = np.array([-1, -0.5, -1, 2])
     >>> x, exit_code = bicgstab(A, b, atol=1e-5)
     >>> print(exit_code)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
     True
-
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('bicgstab', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     n = len(b)
 
@@ -233,15 +260,15 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
 
         rho = dotprod(rtilde, r)
         if np.abs(rho) < rhotol:  # rho breakdown
-            return postprocess(x), -10
+            return x, -10
 
         if iteration > 0:
             if np.abs(omega) < omegatol:  # omega breakdown
-                return postprocess(x), -11
+                return x, -11
 
             beta = (rho / rho_prev) * (alpha / omega)
             p -= omega*v
@@ -255,14 +282,14 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         v = matvec(phat)
         rv = dotprod(rtilde, v)
         if rv == 0:
-            return postprocess(x), -11
+            return x, -11
         alpha = rho / rv
         r -= alpha*v
         s[:] = r[:]
 
         if np.linalg.norm(s) < atol:
             x += alpha*phat
-            return postprocess(x), 0
+            return x, 0
 
         shat = psolve(s)
         t = matvec(shat)
@@ -277,18 +304,21 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use Conjugate Gradient iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric,
+    positive-definite `A`.
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        ``A`` must represent a hermitian, positive definite matrix.
-        Alternatively, ``A`` can be a linear operator which can
+        `A` must represent a hermitian, positive definite matrix.
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -299,52 +329,64 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+    M : {sparse array, ndarray, LinearOperator}
+        Preconditioner for `A`. `M` must represent a hermitian, positive definite
+        matrix. It should approximate the inverse of `A` (see Notes).
+        Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
 
     Returns
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
 
+    Notes
+    -----
+    The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
+    condition number than `A`, see [2]_.
+
+    References
+    ----------
+    .. [1] "Conjugate Gradient Method, Wikipedia,
+           https://en.wikipedia.org/wiki/Conjugate_gradient_method
+    .. [2] "Preconditioner",
+           Wikipedia, https://en.wikipedia.org/wiki/Preconditioner
+
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import cg
     >>> P = np.array([[4, 0, 1, 0],
     ...               [0, 5, 0, 0],
     ...               [1, 0, 3, 2],
     ...               [0, 0, 2, 4]])
-    >>> A = csc_matrix(P)
+    >>> A = csc_array(P)
     >>> b = np.array([-1, -0.5, -1, 2])
     >>> x, exit_code = cg(A, b, atol=1e-5)
     >>> print(exit_code)    # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
     True
-
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     n = len(b)
 
@@ -362,7 +404,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
 
         z = psolve(r)
         rho_cur = dotprod(r, z)
@@ -385,17 +427,19 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Conjugate Gradient Squared method.
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real-valued N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -406,53 +450,64 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+    M : {sparse array, ndarray, LinearOperator}
+        Preconditioner for ``A``. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
 
     Returns
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
 
+    Notes
+    -----
+    The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
+    condition number than `A`, see [1]_.
+
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia,
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] "Conjugate gradient squared", Wikipedia,
+           https://en.wikipedia.org/wiki/Conjugate_gradient_squared_method
+
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import cgs
     >>> R = np.array([[4, 2, 0, 1],
     ...               [3, 0, 0, 2],
     ...               [0, 1, 1, 1],
     ...               [0, 2, 1, 0]])
-    >>> A = csc_matrix(R)
+    >>> A = csc_array(R)
     >>> b = np.array([-1, -0.5, -1, 2])
     >>> x, exit_code = cgs(A, b)
     >>> print(exit_code)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
     True
-
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('cgs', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     n = len(b)
 
@@ -479,11 +534,11 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     for iteration in range(maxiter):
         rnorm = np.linalg.norm(r)
         if rnorm < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
 
         rho_cur = dotprod(rtilde, r)
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            return postprocess, -10
+            return x, -10
 
         if iteration > 0:
             beta = rho_cur / rho_prev
@@ -508,7 +563,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
         rv = dotprod(rtilde, vhat)
 
         if rv == 0:  # Dot product breakdown
-            return postprocess(x), -11
+            return x, -11
 
         alpha = rho_cur / rv
         q[:] = u[:]
@@ -531,26 +586,27 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=None,
           callback=None, callback_type=None):
     """
-    Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
+    Solve ``Ax = b`` with the Generalized Minimal RESidual method.
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
         Starting guess for the solution (a vector of zeros by default).
-    atol, rtol : float
+    rtol, atol : float
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
@@ -562,9 +618,9 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         Maximum number of iterations (restart cycles).  Iteration will stop
         after maxiter steps even if the specified tolerance has not been
         achieved. See `callback_type`.
-    M : {sparse matrix, ndarray, LinearOperator}
-        Inverse of the preconditioner of A.  M should approximate the
-        inverse of A and be easy to solve for (see Notes).  Effective
+    M : {sparse array, ndarray, LinearOperator}
+        Inverse of the preconditioner of `A`.  `M` should approximate the
+        inverse of `A` and be easy to solve for (see Notes).  Effective
         preconditioning dramatically improves the rate of convergence,
         which implies that fewer iterations are needed to reach a given
         error tolerance.  By default, no preconditioner is used.
@@ -613,9 +669,9 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import gmres
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
     >>> x, exitCode = gmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
@@ -644,7 +700,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     if callback is None:
         callback_type = None
 
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     matvec = A.matvec
     psolve = M.matvec
     n = len(b)
@@ -653,7 +709,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     atol, _ = _get_atol_rtol('gmres', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     eps = np.finfo(x.dtype.char).eps
 
@@ -692,7 +748,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         if iteration == 0:
             r = b - matvec(x) if x.any() else b.copy()
             if np.linalg.norm(r) < atol:  # Are we done?
-                return postprocess(x), 0
+                return x, 0
 
         v[0, :] = psolve(r)
         tmp = np.linalg.norm(v[0, :])
@@ -773,7 +829,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
 
         # Legacy exit
         if callback_type == 'legacy' and inner_iter == maxiter:
-            return postprocess(x), 0 if rnorm <= atol else maxiter
+            return x, 0 if rnorm <= atol else maxiter
 
         if callback_type == 'x':
             callback(x)
@@ -793,16 +849,18 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         ptol = presid * min(ptol_max_factor, atol / rnorm)
 
     info = 0 if (rnorm <= atol) else maxiter
-    return postprocess(x), info
+    return x, info
 
 
+@xp_capabilities(np_only=True)
 def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         callback=None):
-    """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Quasi-Minimal Residual method.
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real-valued N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
@@ -811,16 +869,16 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
         Starting guess for the solution.
-    atol, rtol : float, optional
+    rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M1 : {sparse matrix, ndarray, LinearOperator}
+    M1 : {sparse array, ndarray, LinearOperator}
         Left preconditioner for A.
-    M2 : {sparse matrix, ndarray, LinearOperator}
+    M2 : {sparse array, ndarray, LinearOperator}
         Right preconditioner for A. Used together with the left
         preconditioner M1.  The matrix M1@A@M2 should have better
         conditioned than A alone.
@@ -832,7 +890,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
@@ -845,9 +903,9 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import qmr
-    >>> A = csc_matrix([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
+    >>> A = csc_array([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
     >>> b = np.array([2., 4., -1.])
     >>> x, exitCode = qmr(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
@@ -856,13 +914,13 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     True
     """
     A_ = A
-    A, M, x, b, postprocess = make_system(A, None, x0, b)
+    A, M, x, b = make_system(A, None, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('qmr', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     if M1 is None and M2 is None:
         if hasattr(A_, 'psolve'):
@@ -919,11 +977,11 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
         if np.abs(rho) < rhotol:  # rho breakdown
-            return postprocess(x), -10
+            return x, -10
         if np.abs(xi) < xitol:  # xi breakdown
-            return postprocess(x), -15
+            return x, -15
 
         v[:] = vtilde[:]
         v *= (1 / rho)
@@ -934,7 +992,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         delta = dotprod(z, y)
 
         if np.abs(delta) < deltatol:  # delta breakdown
-            return postprocess(x), -13
+            return x, -13
 
         ytilde = M2.matvec(y)
         ztilde = M1.rmatvec(z)
@@ -951,11 +1009,11 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         ptilde = A.matvec(p)
         epsilon = dotprod(q, ptilde)
         if np.abs(epsilon) < epsilontol:  # epsilon breakdown
-            return postprocess(x), -14
+            return x, -14
 
         beta = epsilon / delta
         if np.abs(beta) < betatol:  # beta breakdown
-            return postprocess(x), -11
+            return x, -11
 
         vtilde[:] = ptilde[:]
         vtilde -= beta*v
@@ -974,7 +1032,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         gamma = 1 / np.sqrt(1 + theta**2)
 
         if np.abs(gamma) < gammatol:  # gamma breakdown
-            return postprocess(x), -12
+            return x, -12
 
         eta *= -(rho_prev / beta) * (gamma / gamma_prev)**2
 
@@ -997,4 +1055,4 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter

@@ -5,34 +5,47 @@ Generic test utilities.
 
 import inspect
 import os
+import platform
 import re
 import shutil
 import subprocess
 import sys
 import sysconfig
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from importlib.util import module_from_spec, spec_from_file_location
+from typing import TYPE_CHECKING
 
 import numpy as np
 import scipy
 
-try:
-    # Need type: ignore[import-untyped] for mypy >= 1.6
-    import cython  # type: ignore[import-untyped]
-    from Cython.Compiler.Version import (  # type: ignore[import-untyped]
+if TYPE_CHECKING:
+    import cython
+    from Cython.Compiler.Version import (
         version as cython_version,
     )
-except ImportError:
-    cython = None
 else:
-    from scipy._lib import _pep440
-    required_version = '3.0.8'
-    if _pep440.parse(cython_version) < _pep440.Version(required_version):
-        # too old or wrong cython, skip Cython API tests
+    try:
+        import cython
+        from Cython.Compiler.Version import (
+            version as cython_version,
+        )
+    except ImportError:
         cython = None
+    else:
+        from scipy._external.packaging_version import version
+        required_version = '3.2.0'
+        if version.parse(cython_version) < version.Version(required_version):
+            # too old or wrong cython, skip Cython API tests
+            cython = None
 
 
-__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL']
+__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL',
+           'IS_WASM']
+
+
+IS_WASM = (sys.platform == "emscripten"
+           or platform.machine() in ("wasm32", "wasm64"))
 
 
 IS_MUSL = False
@@ -95,8 +108,12 @@ class PytestTester:
 
         pytest_args = ['--showlocals', '--tb=short']
 
-        if extra_argv:
-            pytest_args += list(extra_argv)
+        if extra_argv is None:
+            extra_argv = []
+        pytest_args += extra_argv
+        if any(arg == "-m" or arg == "--markers" for arg in extra_argv):
+            # Likely conflict with default --mode=fast
+            raise ValueError("Must specify -m before --")
 
         if verbose and int(verbose) > 1:
             pytest_args += ["-" + "v"*(int(verbose)-1)]
@@ -284,6 +301,9 @@ def _test_cython_extension(tmp_path, srcdir):
     except FileNotFoundError:
         pytest.skip("No usable 'meson' found")
 
+    # Make safe for being called by multiple threads within one test
+    tmp_path = tmp_path / str(threading.get_ident())
+
     # build the examples in a temporary directory
     mod_name = os.path.split(srcdir)[1]
     shutil.copytree(srcdir, tmp_path / mod_name)
@@ -330,10 +350,11 @@ def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
     """
     Run a given function concurrently across a given number of threads.
 
-    This is equivalent to using a ThreadPoolExecutor, but using the threading
-    primitives instead. This function ensures that the closure passed by
-    parameter gets called concurrently by setting up a barrier before it gets
-    called before any of the threads.
+    This function ensures that the closure passed by parameter gets called
+    concurrently by setting up a barrier before it gets called before any of the
+    threads.
+
+    Returns a list of values returned by the worker threads.
 
     Arguments
     ---------
@@ -346,21 +367,22 @@ def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
         Variable number of positional arguments to pass to the function.
     **kwargs: dict
         Keyword arguments to pass to the function.
+
     """
     barrier = threading.Barrier(n_workers)
 
     def closure(i, *args, **kwargs):
         barrier.wait()
-        fn(i, *args, **kwargs)
+        return fn(i, *args, **kwargs)
 
-    workers = []
-    for i in range(0, n_workers):
-        workers.append(threading.Thread(
-            target=closure,
-            args=(i,) + args, kwargs=kwargs))
+    with ThreadPoolExecutor(max_workers=n_workers) as tpe:
+        try:
+            futures = []
+            for i in range(0, n_workers):
+                futures.append(tpe.submit(closure, i, *args, **kwargs))
+        finally:
+            if len(futures) < n_workers:
+                # to avoid deadlocks if spawning failed for some reason
+                barrier.abort()
 
-    for worker in workers:
-        worker.start()
-
-    for worker in workers:
-        worker.join()
+    return [f.result() for f in futures]

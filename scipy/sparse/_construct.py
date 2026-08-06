@@ -3,16 +3,19 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
-           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
-           'diags_array', 'block_array', 'eye_array', 'random_array']
+__all__ = ['kron', 'kronsum', 'hstack', 'vstack', 'block_diag',
+           'diags_array', 'block_array', 'eye_array', 'random_array',
+           'expand_dims', 'permute_dims', 'swapaxes', 'matrix_transpose',
+           'spdiags', 'eye', 'identity', 'bmat', 'rand', 'random', 'diags']
 
 import numbers
 import math
+import os
+from warnings import warn
 import numpy as np
 
-from scipy._lib._util import check_random_state, rng_integers
-from ._sputils import upcast, get_index_dtype, isscalarlike
+from scipy._lib._util import check_random_state, rng_integers, _transition_to_rng
+from ._sputils import upcast, get_index_dtype, isscalarlike, isintlike
 
 from ._sparsetools import csr_hstack
 from ._bsr import bsr_matrix, bsr_array
@@ -24,9 +27,239 @@ from ._dia import dia_matrix, dia_array
 from ._base import issparse, sparray
 
 
+def expand_dims(A, /, *, axis=0):
+    """
+    Add trivial axes to an array. Shape gets a ``1`` inserted at position `axis`.
+
+    Parameters
+    ----------
+    A : sparse array
+        Input array.
+    axis : int
+        Position in the expanded axes where the new axis (or axes) is placed.
+        For a dimension ``N`` array, a valid axis is an integer on the
+        closed-interval ``[-N-1, N]``. Negative values work from the end of
+        the shape. ``0`` prepends an axis, as does ``-N-1``. ``-1`` appends
+        an axis, as does ``N``. The new axis has shape ``1`` and indices are
+        created with the value ``0``.
+
+    Returns
+    -------
+    out : sparse array
+        An expanded copy output in COO format with the same dtype as `A`.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N-1, N]`` axis,
+        where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_array, expand_dims
+    >>> A = csr_array([[1, 2], [2, 0]])
+    >>> A.shape
+    (2, 2)
+    >>> expand_dims(A, axis=1).shape
+    (2, 1, 2)
+
+    """
+    if not isintlike(axis):
+        raise ValueError(f"Invalid axis {axis}. Must be an integer.")
+    idx = axis if axis >= 0 else axis + A.ndim + 1
+    if idx < 0 or idx > A.ndim:
+        raise ValueError(f"Invalid axis {axis} for N={A.ndim}. Must be in [-N-1, N].")
+
+    newA = A.tocoo(copy=True)
+    new_coord = np.zeros_like(newA.coords[0])
+
+    newA.coords = newA.coords[:idx] + (new_coord,) + newA.coords[idx:]
+    newA._shape = newA.shape[:idx] + (1,) + newA.shape[idx:]
+    if A.format == "coo":
+        newA.has_canonical_format = A.has_canonical_format
+    return newA
+
+
+def swapaxes(A, axis1, axis2):
+    """Interchange two axes of an array.
+
+    Parameters
+    ----------
+    A : sparse array
+        Input array.
+    axis1 : int
+        First axis.
+    axis2 : int
+        Second axis.
+
+    Returns
+    -------
+    a_swapped : sparse array in COO format
+        A copy of the input array with the two identified axes swapped.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N, N-1]`` axis,
+        where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_array, swapaxes
+    >>> A = coo_array([[[1, 2, 3], [2, 0, 0]]])
+    >>> A.shape
+    (1, 2, 3)
+    >>> swapaxes(A, 1, 2).shape
+    (1, 3, 2)
+
+    """
+    axes = np.arange(A.ndim)
+    try:
+        axes[[axis1, axis2]] = axes[[axis2, axis1]]
+    except IndexError as err:
+        # original msg looks like: "index -4 is out of bounds for axis 0 with size 2"
+        msg = str(err)
+        msg = msg.removeprefix('index ').split(' axis ', 1)[0]
+        # Final error is: "Invalid axis: -4 is out of bounds for ndim=2"
+        raise ValueError(f"Invalid axis: {msg} ndim={A.ndim}")
+
+    axes = tuple(axes)
+    return permute_dims(A, axes=axes, copy=True)
+
+
+def permute_dims(A, axes=None, copy=False):
+    """Permute the axes of the sparse array `A` to the order `axes`.
+
+    Parameters
+    ----------
+    A : sparse array
+        Input array.
+    axes : tuple or list of ints, optional
+        If specified, it must be a tuple or list which contains a permutation
+        of ``[0, 1, ..., N-1]`` where ``N`` is ``A.ndim``. The ith
+        axis of the returned array will correspond to the axis numbered ``axes[i]``
+        of the input. If not specified, defaults to ``range(A.ndim)[::-1]``,
+        which reverses the order of the axes.
+    copy : bool, optional (default: False)
+        Whether to return the permutation as a copy. If False, an in-place
+        permutation is provided if possible depending on format.
+
+    Returns
+    -------
+    out : sparse array in COO format
+        A copy of `A` with permuted axes.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N, N-1]`` axis,
+        where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_array, permute_dims
+    >>> A = coo_array([[[1, 2, 3], [2, 0, 0]]])
+    >>> A.shape
+    (1, 2, 3)
+    >>> permute_dims(A, axes=(1, 2, 0)).shape
+    (2, 3, 1)
+
+    """
+    ndim = A.ndim
+    if axes is None:
+        axes = tuple(range(ndim)[::-1])
+    elif len(axes) != ndim:
+        raise ValueError(f"Incorrect number of axes: {ndim} instead of {A.ndim}")
+
+    # -------------This is from _sputils.validateaxis which almost does what we want
+    # TODO stop _sputils.validateaxis from returning `None` when len(axes)==ndim
+    if not isinstance(axes, tuple | list):
+        # If not a tuple, check that the provided axes is actually
+        # an integer and raise a TypeError similar to NumPy's
+        if not np.issubdtype(np.dtype(type(axes)), np.integer):
+            raise TypeError(f'axis must be an integer/tuple of ints, not {type(axes)}')
+        axes = (axes,)
+
+    canon_axes = []
+    for ax in axes:
+        if not isintlike(ax):
+            raise TypeError(f"axis must be an integer. (given {ax})")
+        if ax < 0:
+            ax += ndim
+        if ax < 0 or ax >= ndim:
+            raise ValueError("axis out of range for ndim")
+        canon_axes.append(ax)
+
+    if len(canon_axes) != len(set(canon_axes)):
+        raise ValueError("duplicate value in axis")
+    # -------------End of code from  _sputils.validateaxis
+    axes = canon_axes
+    if axes == list(range(ndim)):
+        return A if not copy else A.copy()
+
+    A = A.tocoo(copy=copy)
+    A._shape = tuple(A.shape[idx] for idx in axes)
+    A.coords = tuple(A.coords[idx] for idx in axes)
+    A.has_canonical_format = False  # data usually no longer sorted
+    return A
+
+
+def matrix_transpose(A):
+    """Return the matrix transpose of `A`.
+
+    Parameters
+    ----------
+    A : sparse array
+        Input array.
+
+    Returns
+    -------
+    sparse array
+        The matrix transpose of `A`.
+
+    See Also
+    --------
+    coo_array.mT : equivalent attribute
+    coo_array.T : full transposition reversing all dimensions
+    numpy.matrix_transpose : equivalent function in NumPy
+
+    Notes
+    -----
+    This is equivalent to ``A.T`` for 2-D arrays, and interprets
+    greater dimensional `A` as a stack of 2-D arrays on which
+    to perform the transpose.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import coo_array, matrix_transpose
+    >>> data = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+    >>> array = coo_array(data)
+    >>> array.T.toarray()
+    array([[[1, 5],
+            [3, 7]],
+    <BLANKLINE>
+           [[2, 6],
+            [4, 8]]])
+    >>> matrix_transpose(array).toarray()
+    array([[[1, 3],
+            [2, 4]],
+    <BLANKLINE>
+           [[5, 7],
+            [6, 8]]])
+    """
+    return A.mT
+
+
 def spdiags(data, diags, m=None, n=None, format=None):
     """
     Return a sparse matrix from diagonals.
+
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use `dia_array` to take advantage
+        of the sparse array functionality. (See Notes below.)
 
     Parameters
     ----------
@@ -41,22 +274,27 @@ def spdiags(data, diags, m=None, n=None, format=None):
     m, n : int, tuple, optional
         Shape of the result. If `n` is None and `m` is a given tuple,
         the shape is this tuple. If omitted, the matrix is square and
-        its shape is len(data[0]).
+        its shape is ``len(data[0])``.
     format : str, optional
         Format of the result. By default (format=None) an appropriate sparse
         matrix format is returned. This choice is subject to change.
 
-    .. warning::
-
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``diags_array`` to take advantage
-        of the sparse array functionality.
+    Returns
+    -------
+    new_matrix : sparse matrix
+        `dia_matrix` format with values in ``data`` on diagonals from ``diags``.
 
     See Also
     --------
-    diags_array : more convenient form of this function
-    diags : matrix version of diags_array
+    diags_array : more convenient form of this function.
+    diags : matrix version of diags_array.
     dia_matrix : the sparse DIAgonal format.
+
+    Notes
+    -----
+    This function can be replaced by an equivalent call to `dia_matrix` as::
+
+        dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
     Examples
     --------
@@ -64,13 +302,25 @@ def spdiags(data, diags, m=None, n=None, format=None):
     >>> from scipy.sparse import spdiags
     >>> data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
     >>> diags = np.array([0, -1, 2])
-    >>> spdiags(data, diags, 4, 4).toarray()
+    >>> spdiags(data, diags, 4, 4).toarray()  # doctest: +SKIP
     array([[1, 0, 3, 0],
            [1, 2, 0, 4],
            [0, 2, 3, 0],
            [0, 0, 3, 4]])
-
     """
+    msg = """`spdiags` is being replaced by `diags_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     if m is None and n is None:
         m = n = len(data[0])
     elif n is None:
@@ -88,7 +338,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         Sequence of arrays containing the array diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
-        Diagonals to set:
+        Diagonals to set (repeated offsets are not allowed):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
@@ -100,24 +350,41 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         appropriate sparse array format is returned. This choice is
         subject to change.
     dtype : dtype, optional
-        Data type of the array.
+        Data type of the array.  If `dtype` is None, the output
+        data type is determined by the data type of the input diagonals.
+
+    Returns
+    -------
+    new_array : dia_array
+        `dia_array` holding the values in `diagonals` offset from the main diagonal
+        as indicated in `offsets`.
+
+    See Also
+    --------
+    dia_array : constructor for the sparse DIAgonal format.
 
     Notes
     -----
-    The result from `diags_array` is the sparse equivalent of::
+    Repeated diagonal offsets are disallowed.
+
+    The result from ``diags_array`` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    Repeated diagonal offsets are disallowed.
+    ``diags_array`` differs from `dia_array` in the way it handles off-diagonals.
+    Specifically, `dia_array` assumes the data input includes padding
+    (ignored values) at the start/end of the rows for positive/negative
+    offset, while ``diags_array`` assumes the input data has no padding.
+    Each value in the input `diagonals` is used.
 
     .. versionadded:: 1.11
 
     Examples
     --------
     >>> from scipy.sparse import diags_array
-    >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
+    >>> diagonals = [[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0], [1.0, 2.0]]
     >>> diags_array(diagonals, offsets=[0, -1, 2]).toarray()
     array([[1., 0., 1., 0.],
            [1., 2., 0., 2.],
@@ -127,7 +394,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     Broadcasting of scalars is supported (but shape needs to be
     specified):
 
-    >>> diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4)).toarray()
+    >>> diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4)).toarray()
     array([[-2.,  1.,  0.,  0.],
            [ 1., -2.,  1.,  0.],
            [ 0.,  1., -2.,  1.],
@@ -137,7 +404,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     If only one diagonal is wanted (as in `numpy.diag`), the following
     works as well:
 
-    >>> diags_array([1, 2, 3], offsets=1).toarray()
+    >>> diags_array([1.0, 2.0, 3.0], offsets=1).toarray()
     array([[ 0.,  1.,  0.,  0.],
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
@@ -166,7 +433,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
 
     # Determine data type, if omitted
     if dtype is None:
-        dtype = np.common_type(*diagonals)
+        dtype = np.result_type(*diagonals)
 
     # Construct data array
     m, n = shape
@@ -183,15 +450,15 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         k = max(0, offset)
         length = min(m + offset, n - offset, K)
         if length < 0:
-            raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
+            raise ValueError(f"Offset {offset} (index {j}) out of bounds")
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
         except ValueError as e:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
-                    "Diagonal length (index %d: %d at offset %d) does not "
-                    "agree with array size (%d, %d)." % (
-                    j, len(diagonal), offset, m, n)) from e
+                    f"Diagonal length (index {j}: {len(diagonal)} at"
+                    f" offset {offset}) does not agree with array size ({m}, {n})."
+                ) from e
             raise
 
     return dia_array((data_arr, offsets), shape=(m, n)).asformat(format)
@@ -204,7 +471,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``diags_array`` to take advantage
+        You are encouraged to use `diags_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -213,7 +480,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         Sequence of arrays containing the matrix diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
-        Diagonals to set:
+        Diagonals to set (repeated offsets are not allowed):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
@@ -225,7 +492,14 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         appropriate sparse matrix format is returned. This choice is
         subject to change.
     dtype : dtype, optional
-        Data type of the matrix.
+        Data type of the matrix.  If `dtype` is None, the output
+        data type is determined by the data type of the input diagonals.
+
+    Returns
+    -------
+    new_matrix : dia_matrix
+        `dia_matrix` holding the values in `diagonals` offset from the main diagonal
+        as indicated in `offsets`.
 
     See Also
     --------
@@ -234,24 +508,27 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
 
     Notes
     -----
-    This function differs from `spdiags` in the way it handles
-    off-diagonals.
+    Repeated diagonal offsets are disallowed.
 
-    The result from `diags` is the sparse equivalent of::
+    The result from ``diags`` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    Repeated diagonal offsets are disallowed.
+    ``diags`` differs from `dia_matrix` in the way it handles off-diagonals.
+    Specifically, `dia_matrix` assumes the data input includes padding
+    (ignored values) at the start/end of the rows for positive/negative
+    offset, while ``diags`` assumes the input data has no padding.
+    Each value in the input `diagonals` is used.
 
     .. versionadded:: 0.11
 
     Examples
     --------
     >>> from scipy.sparse import diags
-    >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
-    >>> diags(diagonals, [0, -1, 2]).toarray()
+    >>> diagonals = [[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0], [1.0, 2.0]]
+    >>> diags(diagonals, [0, -1, 2]).toarray()  # doctest: +SKIP
     array([[1., 0., 1., 0.],
            [1., 2., 0., 2.],
            [0., 2., 3., 0.],
@@ -260,7 +537,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     Broadcasting of scalars is supported (but shape needs to be
     specified):
 
-    >>> diags([1, -2, 1], [-1, 0, 1], shape=(4, 4)).toarray()
+    >>> diags([1.0, -2.0, 1.0], [-1, 0, 1], shape=(4, 4)).toarray()  # doctest: +SKIP
     array([[-2.,  1.,  0.,  0.],
            [ 1., -2.,  1.,  0.],
            [ 0.,  1., -2.,  1.],
@@ -270,20 +547,33 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     If only one diagonal is wanted (as in `numpy.diag`), the following
     works as well:
 
-    >>> diags([1, 2, 3], 1).toarray()
+    >>> diags([1.0, 2.0, 3.0], 1).toarray()  # doctest: +SKIP
     array([[ 0.,  1.,  0.,  0.],
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
     """
+    msg = """`diags` is being replaced by `diags_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
     return dia_matrix(A).asformat(format)
 
 
 def identity(n, dtype='d', format=None):
-    """Identity matrix in sparse format
+    """Identity matrix in sparse format.
 
-    Returns an identity matrix with shape (n,n) using a given
+    Returns an identity matrix with shape ``(n, n)`` using a given
     sparse format and dtype. This differs from `eye_array` in
     that it has a square shape with ones only on the main diagonal.
     It is thus the multiplicative identity. `eye_array` allows
@@ -292,7 +582,7 @@ def identity(n, dtype='d', format=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``eye_array`` to take advantage
+        You are encouraged to use `eye_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -304,14 +594,24 @@ def identity(n, dtype='d', format=None):
     format : str, optional
         Sparse format of the result, e.g., format="csr", etc.
 
+    Returns
+    -------
+    new_matrix : sparse matrix
+        A square sparse matrix with ones on the main diagonal and zeros elsewhere.
+
+    See Also
+    --------
+    eye_array : Sparse array of chosen shape with ones on a specified diagonal.
+    eye : Sparse matrix of chosen shape with ones on a specified diagonal.
+
     Examples
     --------
     >>> import scipy as sp
-    >>> sp.sparse.identity(3).toarray()
+    >>> sp.sparse.identity(3).toarray()  # doctest: +SKIP
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sp.sparse.identity(3, dtype='int8', format='dia')
+    >>> sp.sparse.identity(3, dtype='int8', format='dia')  # doctest: +SKIP
     <DIAgonal sparse matrix of dtype 'int8'
         with 3 stored elements (1 diagonals) and shape (3, 3)>
     >>> sp.sparse.eye_array(3, dtype='int8', format='dia')
@@ -319,11 +619,24 @@ def identity(n, dtype='d', format=None):
         with 3 stored elements (1 diagonals) and shape (3, 3)>
 
     """
+    msg = """`identity` is being replaced by `eye_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     return eye(n, n, dtype=dtype, format=format)
 
 
 def eye_array(m, n=None, *, k=0, dtype=float, format=None):
-    """Identity matrix in sparse array format
+    """Sparse array of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Return a sparse array with ones on diagonal.
     Specifically a sparse array (m x n) where the kth diagonal
@@ -331,7 +644,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
 
     Parameters
     ----------
-    m : int or tuple of ints
+    m : int
         Number of rows requested.
     n : int, optional
         Number of columns. Default: `m`.
@@ -341,6 +654,11 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
         Data type of the array
     format : str, optional (default: "dia")
         Sparse format of the result, e.g., format="csr", etc.
+
+    Returns
+    -------
+    new_array : sparse array
+        Sparse array of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Examples
     --------
@@ -397,10 +715,16 @@ def _eye(m, n, k, dtype, format, as_sparray=True):
 
 
 def eye(m, n=None, k=0, dtype=float, format=None):
-    """Sparse matrix with ones on diagonal
+    """Sparse matrix of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Returns a sparse matrix (m x n) where the kth diagonal
     is all ones and everything else is zeros.
+
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use `eye_array` to take advantage
+        of the sparse array functionality.
 
     Parameters
     ----------
@@ -415,46 +739,79 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     format : str, optional
         Sparse format of the result, e.g., format="csr", etc.
 
-    .. warning::
+    Returns
+    -------
+    new_matrix : sparse matrix
+        Sparse matrix of chosen shape with ones on the kth diagonaland zeros elsewhere.
 
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``eye_array`` to take advantage
-        of the sparse array functionality.
+    See Also
+    --------
+    eye_array : Sparse array of chosen shape with ones on a specified diagonal.
 
     Examples
     --------
     >>> import numpy as np
     >>> import scipy as sp
-    >>> sp.sparse.eye(3).toarray()
+    >>> sp.sparse.eye(3).toarray()  # doctest: +SKIP
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sp.sparse.eye(3, dtype=np.int8)
+    >>> sp.sparse.eye(3, dtype=np.int8)  # doctest: +SKIP
     <DIAgonal sparse matrix of dtype 'int8'
         with 3 stored elements (1 diagonals) and shape (3, 3)>
 
     """
+    msg = """`eye` is being replaced by `eye_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     return _eye(m, n, k, dtype, format, False)
 
 
 def kron(A, B, format=None):
-    """kronecker product of sparse matrices A and B
+    """Sparse representation of the Kronecker product of `A` and `B`.
+
+    Computes the Kronecker product, a composite sparse array
+    made of blocks consisting of the second input array multiplied
+    by each element of the first input array.
+
+    .. warning::
+
+        `kron` is switching to the sparse array interface.
+
+        For the case where no input arrays are sparse, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Control the sparse return class by making at least one input sparse,
+        e.g., ``kron(coo_matrix(A), B)``, or ``kron(coo_array(A), B)``.
+        That removes any deprecation warnings as well.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
-    A : sparse or dense matrix
-        first matrix of the product
-    B : sparse or dense matrix
-        second matrix of the product
+    A : sparse or dense array
+        first array of the product
+    B : sparse or dense array
+        second array of the product
     format : str, optional (default: 'bsr' or 'coo')
         format of the result (e.g. "csr")
-        If None, choose 'bsr' for relatively dense array and 'coo' for others
+        If None, choose 'bsr' for relatively dense 2D arrays and 'coo' for others
 
     Returns
     -------
-    kronecker product in a sparse format.
-    Returns a sparse matrix unless either A or B is a
-    sparse array in which case returns a sparse array.
+    sparse matrix or array
+        kronecker product in a sparse format. Returns a sparse matrix unless either
+        `A` or `B` is a sparse array in which case returns a sparse array.
 
     Examples
     --------
@@ -475,100 +832,175 @@ def kron(A, B, format=None):
            [15, 20,  0,  0]])
 
     """
-    # TODO: delete next 10 lines and replace _sparse with _array when spmatrix removed
+    # TODO: delete this if-clause and replace _sparse with _array when spmatrix removed
     if isinstance(A, sparray) or isinstance(B, sparray):
         # convert to local variables
         bsr_sparse = bsr_array
         csr_sparse = csr_array
         coo_sparse = coo_array
-    else:  # use spmatrix
+    elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):  # use default
+        msg = """`kron` is switching to the sparse array interface.
+
+        For the case where input arrays are numpy arrays, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Recover the sparse matrix return value by making one input a sparse matrix.
+        For example, kron(coo_matrix(A), B).
+        Avoid this message for sparse array output by using kron(coo_array(A), B).
+        For more information, see the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        This function will be changed no earlier than v2.1.
+        """
+        prefixes = (os.path.dirname(__file__),)
+        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
+        bsr_sparse = bsr_matrix
+        csr_sparse = csr_matrix
+        coo_sparse = coo_matrix
+    else:
         bsr_sparse = bsr_matrix
         csr_sparse = csr_matrix
         coo_sparse = coo_matrix
 
     B = coo_sparse(B)
-    if B.ndim != 2:
-        raise ValueError(f"kron requires 2D input arrays. `B` is {B.ndim}D.")
 
-    # B is fairly dense, use BSR
-    if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
-        A = csr_sparse(A,copy=True)
-        if A.ndim != 2:
-            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
-        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
+    # B is 2D and fairly dense, and format aligns with bsr, compute using BSR
+    if (
+        (format is None or format == "bsr") and
+        B.ndim == 2 and 2*B.nnz >= math.prod(B.shape)
+    ):
+        if not hasattr(A, 'ndim') or A.ndim != 2:
+            # CSR routes thru COO in constructor so can make COO to check ndim
+            A = coo_sparse(A)
+        if A.ndim == 2:
+            A = csr_sparse(A, copy=True)
+            output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
-        if A.nnz == 0 or B.nnz == 0:
-            # kronecker product is the zero matrix
-            return coo_sparse(output_shape).asformat(format)
+            if A.nnz == 0 or B.nnz == 0:
+                # kronecker product is the zero matrix
+                dtype = upcast(A.dtype, B.dtype)
+                return coo_sparse(output_shape, dtype=dtype).asformat(format)
 
-        B = B.toarray()
-        data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
-        data = data * B
+            B = B.toarray()
+            data = A.data.repeat(B.size).reshape(-1, B.shape[0], B.shape[1])
+            data = data * B
 
-        return bsr_sparse((data,A.indices,A.indptr), shape=output_shape)
+            return bsr_sparse((data, A.indices, A.indptr), shape=output_shape)
     else:
-        # use COO
-        A = coo_sparse(A)
-        if A.ndim != 2:
-            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
-        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
+        A = coo_sparse(A)  # no copy needed as we use np.repeat below
 
-        if A.nnz == 0 or B.nnz == 0:
-            # kronecker product is the zero matrix
-            return coo_sparse(output_shape).asformat(format)
+    # compute using COO (convert to desired format just before return)
+    if coo_sparse is coo_matrix:
+        output_shape = (A.shape[0] * B.shape[0], A.shape[1] * B.shape[1])
+        ndim_diff = 0
+    else:
+        ndim_diff = A.ndim - B.ndim
+        A_shape = A.shape if ndim_diff >= 0 else (1,) * (-ndim_diff) + A.shape
+        B_shape = B.shape if ndim_diff <= 0 else (1,) * ndim_diff + B.shape
+        output_shape = tuple(a * b for a, b in zip(A_shape, B_shape))
 
-        # expand entries of a into blocks
-        row = A.row.repeat(B.nnz)
-        col = A.col.repeat(B.nnz)
-        data = A.data.repeat(B.nnz)
+    if A.nnz == 0 or B.nnz == 0:
+        # kronecker product is the zero matrix
+        dtype = upcast(A.dtype, B.dtype)
+        return coo_sparse(output_shape, dtype=dtype).asformat(format)
 
-        if max(A.shape[0]*B.shape[0], A.shape[1]*B.shape[1]) > np.iinfo('int32').max:
-            row = row.astype(np.int64)
-            col = col.astype(np.int64)
+    # expand entries of a into blocks
+    data = A.data.repeat(B.nnz)
+    idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
+    coords = [np.asarray(co, dtype=idx_dtype).repeat(B.nnz) for co in A.coords]
+    if ndim_diff < 0:
+        new_co = np.zeros_like(coords[0])
+        coords = [new_co] + [new_co.copy() for _ in range(-ndim_diff - 1)] + coords
 
-        row *= B.shape[0]
-        col *= B.shape[1]
+    # The last B.ndim coords need to be updated. Any previous columns in B are from
+    # prepending (1,)s, so coord from A is what we need (B coord axis is all 0)
+    for co, B_shape_i in zip(coords[-B.ndim:], B.shape):
+        co *= B_shape_i
 
-        # increment block indices
-        row,col = row.reshape(-1,B.nnz),col.reshape(-1,B.nnz)
-        row += B.row
-        col += B.col
-        row,col = row.reshape(-1),col.reshape(-1)
+    # increment block indices
+    coords[-B.ndim:] = [(co.reshape(-1, B.nnz) + Bco).ravel()
+                        for co, Bco in zip(coords[-B.ndim:], B.coords)]
+    # compute block entries
+    data = (data.reshape(-1, B.nnz) * B.data).ravel()
 
-        # compute block entries
-        data = data.reshape(-1,B.nnz) * B.data
-        data = data.reshape(-1)
-
-        return coo_sparse((data,(row,col)), shape=output_shape).asformat(format)
+    return coo_sparse((data, tuple(coords)), shape=output_shape).asformat(format)
 
 
 def kronsum(A, B, format=None):
-    """kronecker sum of square sparse matrices A and B
+    """Kronecker sum of square sparse matrices `A` and `B`.
 
     Kronecker sum of two sparse matrices is a sum of two Kronecker
-    products kron(I_n,A) + kron(B,I_m) where A has shape (m,m)
-    and B has shape (n,n) and I_m and I_n are identity matrices
-    of shape (m,m) and (n,n), respectively.
+    products ``kron(I_n,A) + kron(B,I_m)`` where `A` has shape ``(m, m)``
+    and `B` has shape ``(n, n)`` and ``I_m`` and ``I_n`` are identity matrices
+    of shape ``(m, m)`` and ``(n, n)``, respectively.
+
+    .. warning::
+
+        `kronsum` is switching to the sparse array interface.
+
+        For the case where no input arrays are sparse, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Control the sparse return class by making at least one input sparse,
+        e.g., ``kronsum(coo_matrix(A), B)``, or ``kronsum(coo_array(A), B)``.
+        That removes any deprecation warnings as well.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
-    A
-        square matrix
-    B
-        square matrix
+    A : sparse matrix or array
+        Square matrix
+    B : sparse array or array
+        Square matrix
     format : str
         format of the result (e.g. "csr")
 
     Returns
     -------
-    kronecker sum in a sparse matrix format
+    sparse matrix or array
+        kronecker sum in a sparse format. Returns a sparse matrix unless either
+        `A` or `B` is a sparse array in which case returns a sparse array.
+
+    Examples
+    --------
+    `kronsum` can be used to construct a finite difference discretization of the 2D
+    Laplacian from a 1D discretization.
+
+    >>> from scipy.sparse import diags_array, kronsum
+    >>> from matplotlib import pyplot as plt
+    >>> import numpy as np
+    >>> ex = np.ones(10)
+    >>> D_x = diags_array([ex, -ex[1:]], offsets=[0, -1])  # 1D first derivative
+    >>> D_xx = D_x.T @ D_x  # 1D second derivative
+    >>> L = kronsum(D_xx, D_xx)  # 2D Laplacian
+    >>> plt.spy(L.toarray())
+    >>> plt.show()
 
     """
-    # TODO: delete next 8 lines and replace _sparse with _array when spmatrix removed
+    # TODO: delete this if-clause and replace _sparse with _array when spmatrix removed
     if isinstance(A, sparray) or isinstance(B, sparray):
         # convert to local variables
         coo_sparse = coo_array
         identity_sparse = eye_array
+    elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):  # use default
+        msg = """`kronsum` is switching to the sparse array interface.
+
+        For the case where input arrays are numpy arrays, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Recover the sparse matrix return value by making one input a sparse matrix.
+        For example, kronsum(coo_matrix(A), B).
+        Avoid this message for sparse array output by using kronsum(coo_array(A), B).
+        For more information, see the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        This function will be changed no earlier than v2.1.
+        """
+        prefixes = (os.path.dirname(__file__),)
+        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
+        coo_sparse = coo_matrix
+        identity_sparse = identity
     else:
         coo_sparse = coo_matrix
         identity_sparse = identity
@@ -670,12 +1102,11 @@ def _stack_along_minor_axis(blocks, axis):
     #   abundance of caution.
     sum_dim = sum(b._shape_as_2d[axis] for b in blocks)
     nnz = sum(len(b.indices) for b in blocks)
-    idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
+    idx_dtype = get_index_dtype(indptr_list, maxval=max(sum_dim - 1, nnz))
     stack_dim_cat = np.array([b._shape_as_2d[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
-        indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
-        indices_cat = (np.concatenate([b.indices for b in blocks])
-                       .astype(idx_dtype))
+        indptr_cat = np.concatenate(indptr_list, dtype=idx_dtype)
+        indices_cat = np.concatenate([b.indices for b in blocks], dtype=idx_dtype)
         indptr = np.empty(constant_dim + 1, dtype=idx_dtype)
         indices = np.empty_like(indices_cat)
         data = np.empty_like(data_cat)
@@ -697,11 +1128,11 @@ def _stack_along_minor_axis(blocks, axis):
 
 def hstack(blocks, format=None, dtype=None):
     """
-    Stack sparse matrices horizontally (column wise)
+    Stack sparse matrices horizontally (column wise).
 
     Parameters
     ----------
-    blocks
+    blocks : sequence of sparse matrices or arrays
         sequence of sparse matrices with compatible shapes
     format : str
         sparse format of the result (e.g., "csr")
@@ -727,9 +1158,9 @@ def hstack(blocks, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, hstack
-    >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5], [6]])
+    >>> from scipy.sparse import coo_array, hstack
+    >>> A = coo_array([[1, 2], [3, 4]])
+    >>> B = coo_array([[5], [6]])
     >>> hstack([A,B]).toarray()
     array([[1, 2, 5],
            [3, 4, 6]])
@@ -744,11 +1175,11 @@ def hstack(blocks, format=None, dtype=None):
 
 def vstack(blocks, format=None, dtype=None):
     """
-    Stack sparse arrays vertically (row wise)
+    Stack sparse arrays vertically (row wise).
 
     Parameters
     ----------
-    blocks
+    blocks : sequence of sparse matrices or arrays
         sequence of sparse arrays with compatible shapes
     format : str, optional
         sparse format of the result (e.g., "csr")
@@ -766,7 +1197,7 @@ def vstack(blocks, format=None, dtype=None):
 
         If you want a sparse array built from blocks that are not sparse
         arrays, use ``block(vstack(blocks))`` or convert one block
-        e.g. `blocks[0] = csr_array(blocks[0])`.
+        e.g. ``blocks[0] = csr_array(blocks[0])``.
 
     See Also
     --------
@@ -792,16 +1223,16 @@ def vstack(blocks, format=None, dtype=None):
 
 def bmat(blocks, format=None, dtype=None):
     """
-    Build a sparse array or matrix from sparse sub-blocks
+    Build a sparse array or matrix from sparse sub-blocks.
 
-    Note: `block_array` is preferred over `bmat`. They are the same function
-    except that `bmat` can return a deprecated sparse matrix.
-    `bmat` returns a coo_matrix if none of the inputs are a sparse array.
+    Note: `block_array` is preferred over ``bmat``. They are the same function
+    except that ``bmat`` returns a deprecated sparse matrix when none of the
+    inputs are sparse arrays.
 
     .. warning::
 
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``block_array`` to take advantage
+        This function returns a sparse matrix when no inputs are sparse arrays.
+        You are encouraged to use `block_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -856,7 +1287,7 @@ def bmat(blocks, format=None, dtype=None):
 
 def block_array(blocks, *, format=None, dtype=None):
     """
-    Build a sparse array from sparse sub-blocks
+    Build a sparse array from sparse sub-blocks.
 
     Parameters
     ----------
@@ -874,6 +1305,7 @@ def block_array(blocks, *, format=None, dtype=None):
     Returns
     -------
     block : sparse array
+        Sparse array formed from specified blocks.
 
     See Also
     --------
@@ -904,7 +1336,7 @@ def _block(blocks, format, dtype, return_spmatrix=False):
     blocks = np.asarray(blocks, dtype='object')
 
     if blocks.ndim != 2:
-        raise ValueError('blocks must be 2-D')
+        raise ValueError('blocks must be 2-D, and some must be sparse')
 
     M,N = blocks.shape
 
@@ -920,7 +1352,7 @@ def _block(blocks, format, dtype, return_spmatrix=False):
         # stack along rows (axis 0):
         A = _compressed_sparse_stack(blocks[:, 0], 0, return_spmatrix)
         if dtype is not None:
-            A = A.astype(dtype)
+            A = A.astype(dtype, copy=False)
         return A
     elif (format in (None, 'csc') and
           all(issparse(b) and b.format == 'csc' for b in blocks.flat)
@@ -933,7 +1365,7 @@ def _block(blocks, format, dtype, return_spmatrix=False):
         # stack along columns (axis 1):
         A = _compressed_sparse_stack(blocks[0, :], 1, return_spmatrix)
         if dtype is not None:
-            A = A.astype(dtype)
+            A = A.astype(dtype, copy=False)
         return A
 
     block_mask = np.zeros(blocks.shape, dtype=bool)
@@ -976,7 +1408,8 @@ def _block(blocks, format, dtype, return_spmatrix=False):
     shape = (row_offsets[-1], col_offsets[-1])
 
     data = np.empty(nnz, dtype=dtype)
-    idx_dtype = get_index_dtype(maxval=max(shape))
+    idx_dtype = get_index_dtype([b.coords[0] for b in blocks[block_mask]],
+                                maxval=max(shape))
     row = np.empty(nnz, dtype=idx_dtype)
     col = np.empty(nnz, dtype=idx_dtype)
 
@@ -999,6 +1432,19 @@ def block_diag(mats, format=None, dtype=None):
     """
     Build a block diagonal sparse matrix or array from provided matrices.
 
+    .. warning::
+
+        `block_diag` is switching to the sparse array interface.
+
+        For the case where no input arrays are sparse, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Control the sparse return class by making at least one input sparse,
+        e.g., ``block_diag([coo_matrix(A), B])``, or ``block_diag([coo_array(A), B])``.
+        That removes any deprecation warnings as well.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        Handling of this no sparse input case will change no earlier than v2.1.
+
     Parameters
     ----------
     mats : sequence of matrices or arrays
@@ -1016,15 +1462,15 @@ def block_diag(mats, format=None, dtype=None):
         If at least one input is a sparse array, the output is a sparse array.
         Otherwise the output is a sparse matrix.
 
-    Notes
-    -----
-
-    .. versionadded:: 0.11.0
-
     See Also
     --------
     block_array
     diags_array
+
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -1038,16 +1484,33 @@ def block_diag(mats, format=None, dtype=None):
            [0, 0, 5, 0],
            [0, 0, 6, 0],
            [0, 0, 0, 7]])
-
     """
     if any(isinstance(a, sparray) for a in mats):
         container = coo_array
+    elif all(isinstance(a, np.ndarray) for a in mats):  # use default
+        msg = """`block_diag` is switching to the sparse array interface.
+
+        For the case where input arrays are numpy arrays, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Recover the sparse matrix return value by making one input a sparse matrix.
+        For example, block_diag([coo_matrix(A), B]).
+        Avoid this message for sparse array output using block_diag([coo_array(A), B]).
+        For more information, see the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        This function will be changed no earlier than v2.1.
+        """
+        prefixes = (os.path.dirname(__file__),)
+        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
+        container = coo_matrix
     else:
         container = coo_matrix
 
     row = []
     col = []
     data = []
+    idx_arrays = []  # track idx_dtype of incoming sparse arrays
     r_idx = 0
     c_idx = 0
     for a in mats:
@@ -1055,6 +1518,8 @@ def block_diag(mats, format=None, dtype=None):
             a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()
+            if not idx_arrays and a.coords[0].dtype == np.int64:
+                idx_arrays.append(a.coords[0])
             nrows, ncols = a._shape_as_2d
             row.append(a.row + r_idx)
             col.append(a.col + c_idx)
@@ -1067,34 +1532,27 @@ def block_diag(mats, format=None, dtype=None):
             data.append(a.ravel())
         r_idx += nrows
         c_idx += ncols
-    row = np.concatenate(row)
-    col = np.concatenate(col)
+    idx_dtype = get_index_dtype(idx_arrays, maxval=max(r_idx, c_idx))
+    row = np.concatenate(row, dtype=idx_dtype)
+    col = np.concatenate(col, dtype=idx_dtype)
     data = np.concatenate(data)
-    return container((data, (row, col)),
-                      shape=(r_idx, c_idx),
-                      dtype=dtype).asformat(format)
+    new_shape = (r_idx, c_idx)
+
+    return container((data, (row, col)), shape=new_shape, dtype=dtype).asformat(format)
 
 
+@_transition_to_rng("random_state")
 def random_array(shape, *, density=0.01, format='coo', dtype=None,
-                 random_state=None, data_sampler=None):
-    """Return a sparse array of uniformly random numbers in [0, 1)
+                 rng=None, data_sampler=None):
+    """Return a sparse array of uniformly random numbers in [0, 1).
 
     Returns a sparse array with the given shape and density
     where values are generated uniformly randomly in the range [0, 1).
 
-    .. warning::
-
-        Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
-        ``np.random.default_rng``) for ``random_state`` will lead to much
-        faster execution times.
-
-        A much slower implementation is used by default for backwards
-        compatibility.
-
     Parameters
     ----------
-    shape : int or tuple of ints
-        shape of the array
+    shape : tuple of int
+        shape of the array.
     density : real, optional (default: 0.01)
         density of the generated matrix: density equal to one means a full
         matrix, density of 0 means a matrix with no non-zero items.
@@ -1102,34 +1560,28 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional (default: np.float64)
         type of the returned matrix values.
-    random_state : {None, int, `Generator`, `RandomState`}, optional
-        A random number generator to determine nonzero structure. We recommend using
-        a `numpy.random.Generator` manually provided for every call as it is much
-        faster than RandomState.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
-        - If `None` (or `np.random`), the `numpy.random.RandomState`
-          singleton is used.
-        - If an int, a new ``Generator`` instance is used,
-          seeded with the int.
-        - If a ``Generator`` or ``RandomState`` instance then
-          that instance is used.
-
-        This random state will be used for sampling `indices` (the sparsity
+        This random state will be used for sampling ``indices`` (the sparsity
         structure), and by default for the data values too (see `data_sampler`).
-
     data_sampler : callable, optional (default depends on dtype)
-        Sampler of random data values with keyword arg `size`.
-        This function should take a single keyword argument `size` specifying
+        Sampler of random data values with keyword arg ``size``.
+        This function should take a single keyword argument ``size`` specifying
         the length of its returned ndarray. It is used to generate the nonzero
         values in the matrix after the locations of those values are chosen.
         By default, uniform [0, 1) random values are used unless `dtype` is
         an integer (default uniform integers from that dtype) or
         complex (default uniform over the unit square in the complex plane).
-        For these, the `random_state` rng is used e.g. ``rng.uniform(size=size)``.
+        For these, the `rng` is used e.g. ``rng.uniform(size=size)``.
 
     Returns
     -------
     res : sparse array
+        Random sparse array.
 
     Examples
     --------
@@ -1142,53 +1594,61 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
 
     Default sampling uniformly from [0, 1):
 
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng)
 
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
     >>> S = sp.sparse.random_array((3, 4), density=0.25,
-    ...                            random_state=rng, data_sampler=rvs)
+    ...                            rng=rng, data_sampler=rvs)
     >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
+    Providing a sampler for uint values:
+
+    >>> def random_uint32_to_100(size=None):
+    ...     return rng.integers(100, size=size, dtype=np.uint32)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng,
+    ...                            data_sampler=random_uint32_to_100)
+
     Building a custom distribution.
     This example builds a squared normal from np.random:
 
-    >>> def np_normal_squared(size=None, random_state=rng):
-    ...     return random_state.standard_normal(size) ** 2
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
-    ...                      data_sampler=np_normal_squared)
+    >>> def np_normal_squared(size=None, rng=rng):
+    ...     return rng.standard_normal(size) ** 2
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng,
+    ...                            data_sampler=np_normal_squared)
 
     Or we can build it from sp.stats style rvs functions:
 
-    >>> def sp_stats_normal_squared(size=None, random_state=rng):
+    >>> def sp_stats_normal_squared(size=None, rng=rng):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
-    ...     return std_normal(size=size, random_state=random_state) ** 2
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
-    ...                      data_sampler=sp_stats_normal_squared)
+    ...     return std_normal(size=size, random_state=rng) ** 2
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng,
+    ...                            data_sampler=sp_stats_normal_squared)
 
     Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):
-    ...         return random_state.standard_normal(size) ** 2
+    ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X().rvs
     >>> S = sp.sparse.random_array((3, 4), density=0.25,
-    ...                            random_state=rng, data_sampler=Y)
+    ...                            rng=rng, data_sampler=Y)
     """
-    # Use the more efficient RNG by default.
-    if random_state is None:
-        random_state = np.random.default_rng()
-    data, ind = _random(shape, density, format, dtype, random_state, data_sampler)
+    data, ind = _random(shape, density, format, dtype, rng, data_sampler)
+
+    # downcast, if safe, before calling coo_constructor
+    idx_dtype = get_index_dtype(maxval=max(shape))
+    ind = tuple(np.asarray(co, dtype=idx_dtype) for co in ind)
     return coo_array((data, ind), shape=shape).asformat(format)
 
 
 def _random(shape, density=0.01, format=None, dtype=None,
-            random_state=None, data_sampler=None):
+            rng=None, data_sampler=None):
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
 
@@ -1197,7 +1657,7 @@ def _random(shape, density=0.01, format=None, dtype=None,
     # Number of non zero values
     size = int(round(density * tot_prod))
 
-    rng = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     if data_sampler is None:
         if np.issubdtype(dtype, np.integer):
@@ -1214,10 +1674,12 @@ def _random(shape, density=0.01, format=None, dtype=None,
         else:
             data_sampler = rng.uniform
 
+    idx_dtype = get_index_dtype(maxval=max(shape))
     # rng.choice uses int64 if first arg is an int
-    if tot_prod < np.iinfo(np.int64).max:
+    if tot_prod <= np.iinfo(np.int64).max:
         raveled_ind = rng.choice(tot_prod, size=size, replace=False)
         ind = np.unravel_index(raveled_ind, shape=shape, order='F')
+        ind = tuple(np.asarray(co, idx_dtype) for co in ind)
     else:
         # for ravel indices bigger than dtype max, use sets to remove duplicates
         ndim = len(shape)
@@ -1225,31 +1687,23 @@ def _random(shape, density=0.01, format=None, dtype=None,
         while len(seen) < size:
             dsize = size - len(seen)
             seen.update(map(tuple, rng_integers(rng, shape, size=(dsize, ndim))))
-        ind = tuple(np.array(list(seen)).T)
+        ind = tuple(np.array(list(seen), dtype=idx_dtype).T)
 
     # size kwarg allows eg data_sampler=partial(np.random.poisson, lam=5)
     vals = data_sampler(size=size).astype(dtype, copy=False)
     return vals, ind
 
 
+@_transition_to_rng("random_state", position_num=5)
 def random(m, n, density=0.01, format='coo', dtype=None,
-           random_state=None, data_rvs=None):
+           rng=None, data_rvs=None):
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
     .. warning::
 
-        Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
-        ``np.random.default_rng``) for ``random_state`` will lead to much
-        faster execution times.
-
-        A much slower implementation is used by default for backwards
-        compatibility.
-
-    .. warning::
-
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``random_array`` to take advantage of the
+        You are encouraged to use `random_array` to take advantage of the
         sparse array functionality.
 
     Parameters
@@ -1263,15 +1717,11 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-          singleton is used.
-        - If `seed` is an int, a new ``RandomState`` instance is used,
-          seeded with `seed`.
-        - If `seed` is already a ``Generator`` or ``RandomState`` instance then
-          that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
         This random state will be used for sampling the sparsity structure, but
         not necessarily for sampling the values of the structurally nonzero
@@ -1288,6 +1738,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Returns
     -------
     res : sparse matrix
+        Random sparse matrix.
 
     See Also
     --------
@@ -1301,13 +1752,14 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> import scipy as sp
     >>> import numpy as np
     >>> rng = np.random.default_rng()
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng)  # doctest: +SKIP
 
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
-    >>> S.toarray()
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
+    ...                      data_rvs=rvs)  # doctest: +SKIP
+    >>> S.toarray()  # doctest: +SKIP
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
@@ -1315,28 +1767,42 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Building a custom distribution.
     This example builds a squared normal from np.random:
 
-    >>> def np_normal_squared(size=None, random_state=rng):
-    ...     return random_state.standard_normal(size) ** 2
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
-    ...                      data_rvs=np_normal_squared)
+    >>> def np_normal_squared(size=None, rng=rng):
+    ...     return rng.standard_normal(size) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
+    ...                      data_rvs=np_normal_squared)  # doctest: +SKIP
 
     Or we can build it from sp.stats style rvs functions:
 
-    >>> def sp_stats_normal_squared(size=None, random_state=rng):
+    >>> def sp_stats_normal_squared(size=None, rng=rng):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
-    ...     return std_normal(size=size, random_state=random_state) ** 2
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
-    ...                      data_rvs=sp_stats_normal_squared)
+    ...     return std_normal(size=size, random_state=rng) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
+    ...                      data_rvs=sp_stats_normal_squared)  # doctest: +SKIP
 
     Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):
-    ...         return random_state.standard_normal(size) ** 2
+    ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
+    ...                      data_rvs=Y.rvs)  # doctest: +SKIP
     """
+    msg = """`random` is being replaced by `random_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
     if n is None:
         n = m
     m, n = int(m), int(n)
@@ -1346,18 +1812,19 @@ def random(m, n, density=0.01, format='coo', dtype=None,
             return data_rvs(size)
     else:
         data_rvs_kw = None
-    vals, ind = _random((m, n), density, format, dtype, random_state, data_rvs_kw)
+    vals, ind = _random((m, n), density, format, dtype, rng, data_rvs_kw)
     return coo_matrix((vals, ind), shape=(m, n)).asformat(format)
 
 
-def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+@_transition_to_rng("random_state", position_num=5)
+def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     """Generate a sparse matrix of the given shape and density with uniformly
     distributed values.
 
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``random_array`` to take advantage
+        You are encouraged to use `random_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -1371,19 +1838,16 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
     res : sparse matrix
+        Random sparse matrix.
 
     Notes
     -----
@@ -1397,14 +1861,27 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     Examples
     --------
     >>> from scipy.sparse import rand
-    >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
-    >>> matrix
+    >>> matrix = rand(3, 4, density=0.25, format="csr", rng=42)  # doctest: +SKIP
+    >>> matrix  # doctest: +SKIP
     <Compressed Sparse Row sparse matrix of dtype 'float64'
         with 3 stored elements and shape (3, 4)>
-    >>> matrix.toarray()
+    >>> matrix.toarray()  # doctest: +SKIP
     array([[0.05641158, 0.        , 0.        , 0.65088847],  # random
            [0.        , 0.        , 0.        , 0.14286682],
            [0.        , 0.        , 0.        , 0.        ]])
 
     """
-    return random(m, n, density, format, dtype, random_state)
+    msg = """`rand` is being replaced by `random_array`.
+
+    This function returns an outdated sparse matrix object. The sparse matrix
+    classes (*_matrix) are being deprecated in favor of sparse arrays (*_array),
+    which have a NumPy-compatible API, e.g. `*` is elementwise multiplication.
+    For more information, see the spmatrix to sparray migration guide
+    https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+    This function will be removed no earlier than v2.2.
+    """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
+    return random(m, n, density, format, dtype, rng)

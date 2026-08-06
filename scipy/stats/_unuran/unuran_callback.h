@@ -2,7 +2,7 @@
 #include "ccallback.h"
 #include "unuran.h"
 
-#define UNURAN_THUNK(CAST_FUNC, FUNCNAME, LEN)                                              \
+#define UNURAN_THUNK(CAST_FUNC, FUNCNAME);                                                  \
     PyGILState_STATE gstate = PyGILState_Ensure();                                          \
     /* If an error has occurred, return INFINITY. */                                        \
     if (PyErr_Occurred()) return UNUR_INFINITY;                                             \
@@ -18,21 +18,17 @@
         goto done;                                                                          \
     }                                                                                       \
                                                                                             \
-    funcname = Py_BuildValue("s#", FUNCNAME, LEN);                                          \
+    funcname = Py_BuildValue("s", FUNCNAME);                                                \
     if (funcname == NULL) {                                                                 \
         error = 1;                                                                          \
         goto done;                                                                          \
     }                                                                                       \
                                                                                             \
-    arg1 = PyTuple_New(2);                                                                  \
+    arg1 = PyTuple_Pack(2, argobj, funcname);                                               \
     if (arg1 == NULL) {                                                                     \
         error = 1;                                                                          \
         goto done;                                                                          \
     }                                                                                       \
-                                                                                            \
-    PyTuple_SET_ITEM(arg1, 0, argobj);                                                      \
-    PyTuple_SET_ITEM(arg1, 1, funcname);                                                    \
-    argobj = NULL; funcname = NULL;                                                         \
                                                                                             \
     res = PyObject_CallObject(callback->py_function, arg1);                                 \
     if (res == NULL) {                                                                      \
@@ -116,30 +112,30 @@ int release_unuran_callback(ccallback_t *callback) {
 
 double pmf_thunk(int x, const struct unur_distr *distr)
 {
-    UNURAN_THUNK(PyLong_FromLong, "pmf", 3);
+    UNURAN_THUNK(PyLong_FromLong, "pmf");
 }
 
 double pdf_thunk(double x, const struct unur_distr *distr)
 {
-    UNURAN_THUNK(PyFloat_FromDouble, "pdf", 3);
+    UNURAN_THUNK(PyFloat_FromDouble, "pdf");
 }
 
 double dpdf_thunk(double x, const struct unur_distr *distr)
 {
-    UNURAN_THUNK(PyFloat_FromDouble, "dpdf", 4);
+    UNURAN_THUNK(PyFloat_FromDouble, "dpdf");
 }
 
 double logpdf_thunk(double x, const struct unur_distr *distr)
 {
-    UNURAN_THUNK(PyFloat_FromDouble, "logpdf", 6);
+    UNURAN_THUNK(PyFloat_FromDouble, "logpdf");
 }
 
 double cont_cdf_thunk(double x, const struct unur_distr *distr)
 {
-    UNURAN_THUNK(PyFloat_FromDouble, "cdf", 3);
+    UNURAN_THUNK(PyFloat_FromDouble, "cdf");
 }
 
 double discr_cdf_thunk(int x, const struct unur_distr *distr)
 {
-    UNURAN_THUNK(PyLong_FromLong, "cdf", 3);
+    UNURAN_THUNK(PyLong_FromLong, "cdf");
 }

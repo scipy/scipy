@@ -4,7 +4,7 @@
 Chi-squared Distribution
 ========================
 
-This is the gamma distribution with :math:`L=0.0` and :math:`S=2.0` and :math:`\alpha=\nu/2` where :math:`\nu` is called the degrees of freedom. If :math:`Z_{1}\ldots Z_{\nu}` are all standard normal distributions, then :math:`W=\sum_{k}Z_{k}^{2}` has (standard) chi-square distribution with :math:`\nu` degrees of freedom.
+This is the gamma distribution with :math:`L=0.0` and :math:`S=2.0` and :math:`\alpha=\nu/2` where :math:`\nu` is called the degrees of freedom. If :math:`Z_{1}, \ldots, Z_{\nu}` are all standard normal distributions, then :math:`W=\sum_{k}Z_{k}^{2}` has (standard) chi-square distribution with :math:`\nu` degrees of freedom.
 
 The standard form (most often used in standard form only) has support :math:`x\geq0`.
 

@@ -9,7 +9,7 @@ Introduction
 
 This code of conduct applies to all spaces managed by the SciPy project,
 including all public and private mailing lists, issue trackers, wikis, blogs,
-Twitter, and any other communication channel used by our community. The SciPy
+and any other communication channel used by our community. The SciPy
 project does not organize in-person events, however, events related to our
 community should have a code of conduct similar in spirit to this one.
 

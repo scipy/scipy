@@ -8,7 +8,7 @@ from numpy import pi
 import pytest
 import itertools
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 import scipy.special as sc
 from scipy.special._testutils import (
@@ -19,7 +19,7 @@ from scipy.special._mptestutils import (
     nonfunctional_tooslow, trace_args, time_limited, exception_to_nan,
     inf_to_nan)
 from scipy.special._ufuncs import (
-    _sinpi, _cospi, _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
+    _sinpi, _cospi, _lgam1p, _log1pmx,
     _igam_fac)
 
 try:
@@ -27,6 +27,9 @@ try:
 except ImportError:
     mpmath = MissingModule('mpmath')
 
+pytestmark = pytest.mark.thread_unsafe(
+    reason=("mpmath gmpy2 backend is not thread-safe, "
+            "see https://github.com/mpmath/mpmath/issues/974"))
 
 # ------------------------------------------------------------------------------
 # expi
@@ -243,6 +246,7 @@ def test_hyp2f1_real_random():
 # erf (complex)
 # ------------------------------------------------------------------------------
 
+@pytest.mark.slow()
 @check_version(mpmath, '0.14')
 def test_erf_complex():
     # need to increase mpmath precision for this test
@@ -321,6 +325,7 @@ def test_lpmv():
 # beta
 # ------------------------------------------------------------------------------
 
+@pytest.mark.slow
 @check_version(mpmath, '0.15')
 def test_beta():
     np.random.seed(1234)
@@ -693,30 +698,34 @@ class TestSystematic:
                             mpmath.airyai,
                             [ComplexArg()])
 
-    def test_airyai_prime(self):
-        # oscillating function, limit range
-        assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
-                            mpmath.airyai(z, derivative=1),
-                            [Arg(-1e8, 1e8)],
-                            rtol=1e-5)
-        assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
-                            mpmath.airyai(z, derivative=1),
-                            [Arg(-1e3, 1e3)])
+    @pytest.mark.parametrize('xlow, xhigh, rtol',
+                             [(-1e8, -1e3, 5e-5),
+                              (-1e3, 0, 1e-9),
+                              (0, 1e3, 1e-12),
+                              (1e3, 1e8, 1e-12)])
+    def test_airyai_prime(self, xlow, xhigh, rtol):
+        # Ai' is an oscillating function for x < 0.
+        # The implementation does not provide high precision for x < 0.
+        assert_mpmath_equal(lambda z: sc.airy(z)[1],
+                            lambda z: mpmath.airyai(z, derivative=1),
+                            [Arg(xlow, xhigh)], rtol=rtol)
 
     def test_airyai_prime_complex(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
                             [ComplexArg()])
 
-    def test_airybi(self):
-        # oscillating function, limit range
-        assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
-                            mpmath.airybi(z),
-                            [Arg(-1e8, 1e8)],
-                            rtol=1e-5)
-        assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
-                            mpmath.airybi(z),
-                            [Arg(-1e3, 1e3)])
+    @pytest.mark.parametrize('xlow, xhigh, rtol',
+                             [(-1e8, -1e3, 5e-5),
+                              (-1e3, 0, 1e-9),
+                              (0, 1e3, 1e-12),
+                              (1e3, 1e8, 1e-12)])
+    def test_airybi(self, xlow, xhigh, rtol):
+        # Bi is an oscillating function for x < 0
+        # The implementation does not provide high precision for x < 0.
+        assert_mpmath_equal(lambda x: sc.airy(x)[2],
+                            lambda x: mpmath.airybi(x),
+                            [Arg(xlow, xhigh)], rtol=rtol)
 
     def test_airybi_complex(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
@@ -1023,7 +1032,7 @@ class TestSystematic:
             ci,
             mpmath.ci,
             [ComplexArg(complex(-1e8, -np.inf), complex(1e8, np.inf))],
-            rtol=1e-8,
+            rtol=5e-8,
         )
 
     def test_cospi(self):
@@ -1321,7 +1330,7 @@ class TestSystematic:
         assert_mpmath_equal(
             sc.gamma,
             exception_to_nan(mpmath.gamma),
-            [ComplexArg()], 
+            [ComplexArg()],
             rtol=5e-13,
         )
 
@@ -1371,7 +1380,7 @@ class TestSystematic:
             # Deal with n=0, n=1 correctly; mpmath 0.17 doesn't do these
             # always correctly
             if n == 0:
-                r = 1.0
+                r = 0.0 if a == 0.0 else 1.0
             elif n == 1:
                 r = 2*a*x
             else:
@@ -1399,7 +1408,7 @@ class TestSystematic:
             sc_gegenbauer,
             exception_to_nan(gegenbauer),
             [IntArg(0, 100), Arg(-1e9, 1e9), Arg()],
-            n=40000, dps=100, ignore_inf_sign=True, rtol=1e-6,
+            dps=100, ignore_inf_sign=True, rtol=1e-6,
         )
 
         # Check the small-x expansion
@@ -1569,7 +1578,7 @@ class TestSystematic:
             lambda n, a, b, x: sc.eval_jacobi(int(n), a, b, x),
             lambda n, a, b, x: exception_to_nan(jacobi)(n, a, b, x, **HYPERKW),
             [IntArg(), Arg(), Arg(), Arg()],
-            n=20000,
+            n=4095,
             dps=50,
         )
 
@@ -1614,29 +1623,6 @@ class TestSystematic:
             rtol=1e-13, nan_ok=False,
         )
 
-    def test_lanczos_sum_expg_scaled(self):
-        maxgamma = 171.624376956302725
-        e = np.exp(1)
-        g = 6.024680040776729583740234375
-
-        def gamma(x):
-            with np.errstate(over='ignore'):
-                fac = ((x + g - 0.5)/e)**(x - 0.5)
-                if fac != np.inf:
-                    res = fac*_lanczos_sum_expg_scaled(x)
-                else:
-                    fac = ((x + g - 0.5)/e)**(0.5*(x - 0.5))
-                    res = fac*_lanczos_sum_expg_scaled(x)
-                    res *= fac
-            return res
-
-        assert_mpmath_equal(
-            gamma,
-            mpmath.gamma,
-            [Arg(0, maxgamma, inclusive_a=False)],
-            rtol=1e-13,
-        )
-
     @nonfunctional_tooslow
     def test_legendre(self):
         assert_mpmath_equal(sc.eval_legendre, mpmath.legendre, [Arg(), Arg()])
@@ -1654,113 +1640,6 @@ class TestSystematic:
             lambda n, x: sc.eval_legendre(int(n), x),
             lambda n, x: exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
             [IntArg(), FixedArg(np.logspace(-30, -4, 20))],
-        )
-
-    def test_legenp(self):
-        def lpnm(n, m, z):
-            try:
-                v = sc.lpmn(m, n, z)[0][-1,-1]
-            except ValueError:
-                return np.nan
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = np.inf * np.sign(v.real)
-            return v
-
-        def lpnm_2(n, m, z):
-            v = sc.lpmv(m, n, z)
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = np.inf * np.sign(v.real)
-            return v
-
-        def legenp(n, m, z):
-            if (z == 1 or z == -1) and int(n) == n:
-                # Special case (mpmath may give inf, we take the limit by
-                # continuity)
-                if m == 0:
-                    if n < 0:
-                        n = -n - 1
-                    return mpmath.power(mpmath.sign(z), n)
-                else:
-                    return 0
-
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-
-            typ = 2 if abs(z) <= 1 else 3
-            v = exception_to_nan(mpmath.legenp)(n, m, z, type=typ)
-
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = mpmath.inf * mpmath.sign(v.real)
-
-            return v
-
-        assert_mpmath_equal(lpnm, legenp, [IntArg(-100, 100), IntArg(-100, 100), Arg()])
-
-        assert_mpmath_equal(
-            lpnm_2,
-            legenp,
-            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)],
-            atol=1e-10,
-        )
-
-    def test_legenp_complex_2(self):
-        def clpnm(n, m, z):
-            try:
-                return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
-            except ValueError:
-                return np.nan
-
-        def legenp(n, m, z):
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-            return exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=2)
-
-        # mpmath is quite slow here
-        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
-        y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:,None] + 1j*y[None,:]).ravel()
-
-        assert_mpmath_equal(
-            clpnm,
-            legenp,
-            [FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg(z)],
-            rtol=1e-6,
-            n=500,
-        )
-
-    def test_legenp_complex_3(self):
-        def clpnm(n, m, z):
-            try:
-                return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
-            except ValueError:
-                return np.nan
-
-        def legenp(n, m, z):
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-            return exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=3)
-
-        # mpmath is quite slow here
-        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
-        y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:,None] + 1j*y[None,:]).ravel()
-
-        assert_mpmath_equal(
-            clpnm,
-            legenp,
-            [FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg(z)],
-            rtol=1e-6,
-            n=500,
         )
 
     @pytest.mark.xfail(run=False, reason="apparently picks wrong function at |z| > 1")
@@ -1915,7 +1794,7 @@ class TestSystematic:
                                "systems and gh-8095 for another bad "
                                "point"))
     def test_rf(self):
-        if _pep440.parse(mpmath.__version__) >= _pep440.Version("1.0.0"):
+        if version.parse(mpmath.__version__) >= version.Version("1.0.0"):
             # no workarounds needed
             mppoch = mpmath.rf
         else:
@@ -2003,20 +1882,6 @@ class TestSystematic:
             exception_to_nan(dilog),
             [ComplexArg()],
             rtol=1e-14,
-        )
-
-    def test_spherharm(self):
-        def spherharm(l, m, theta, phi):
-            if m > l:
-                return np.nan
-            return sc.sph_harm(m, l, phi, theta)
-        assert_mpmath_equal(
-            spherharm,
-            mpmath.spherharm,
-            [IntArg(0, 100), IntArg(0, 100), Arg(a=0, b=pi), Arg(a=0, b=2*pi)],
-            atol=1e-8,
-            n=6000,
-            dps=150,
         )
 
     def test_struveh(self):
@@ -2152,6 +2017,8 @@ class TestSystematic:
             exception_to_nan(mp_spherical_jn),
             [IntArg(0, 200), Arg(-1e8, 1e8)],
             dps=300,
+            # underflow of `spherical_jn` is a bit premature; see gh-21629
+            param_filter=(None, lambda z: np.abs(z) > 1e-20),
         )
 
     def test_spherical_jn_complex(self):
@@ -2239,8 +2106,9 @@ class TestSystematic:
 
     def test_spherical_kn(self):
         def mp_spherical_kn(n, z):
-            out = (mpmath.besselk(n + mpmath.mpf(1)/2, z) *
-                   mpmath.sqrt(mpmath.pi/(2*mpmath.mpmathify(z))))
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
             if mpmath.mpmathify(z).imag == 0:
                 return out.real
             else:

@@ -2,7 +2,7 @@ from functools import partial
 
 import numpy as np
 import scipy.fft
-from scipy.fft import _fftlog, _pocketfft, set_backend
+from scipy.fft import _fftlog, _duccfft, set_backend
 from scipy.fft.tests import mock_backend
 
 from numpy.testing import assert_allclose, assert_equal
@@ -20,10 +20,10 @@ np_funcs = (np.fft.fft, np.fft.fft2, np.fft.fftn,
             np.fft.ifft, np.fft.ifft2, np.fft.ifftn,
             np.fft.rfft, np.fft.rfft2, np.fft.rfftn,
             np.fft.irfft, np.fft.irfft2, np.fft.irfftn,
-            np.fft.hfft, _pocketfft.hfft2, _pocketfft.hfftn,  # np has no hfftn
-            np.fft.ihfft, _pocketfft.ihfft2, _pocketfft.ihfftn,
-            _pocketfft.dct, _pocketfft.idct, _pocketfft.dctn, _pocketfft.idctn,
-            _pocketfft.dst, _pocketfft.idst, _pocketfft.dstn, _pocketfft.idstn,
+            np.fft.hfft, _duccfft.hfft2, _duccfft.hfftn,  # np has no hfftn
+            np.fft.ihfft, _duccfft.ihfft2, _duccfft.ihfftn,
+            _duccfft.dct, _duccfft.idct, _duccfft.dctn, _duccfft.idctn,
+            _duccfft.dst, _duccfft.idst, _duccfft.dstn, _duccfft.idstn,
             # must provide required kwargs for fht, ifht
             partial(_fftlog.fht, dln=2, mu=0.5),
             partial(_fftlog.ifht, dln=2, mu=0.5))
@@ -53,17 +53,17 @@ mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
          mock_backend.fht, mock_backend.ifht)
 
 
-@pytest.mark.parametrize("func, np_func, mock", zip(funcs, np_funcs, mocks))
+@pytest.mark.parametrize("func, np_func, mock", list(zip(funcs, np_funcs, mocks)))
 def test_backend_call(func, np_func, mock):
     x = np.arange(20).reshape((10,2))
     answer = np_func(x.astype(np.float64))
     assert_allclose(func(x), answer, atol=1e-10)
 
     with set_backend(mock_backend, only=True):
-        mock.number_calls = 0
+        mock.number_calls.c = 0
         y = func(x)
         assert_equal(y, mock.return_value)
-        assert_equal(mock.number_calls, 1)
+        assert_equal(mock.number_calls.c, 1)
 
     assert_allclose(func(x), answer, atol=1e-10)
 
@@ -83,7 +83,7 @@ plan_mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
               mock_backend.ihfft, mock_backend.ihfft2, mock_backend.ihfftn)
 
 
-@pytest.mark.parametrize("func, mock", zip(plan_funcs, plan_mocks))
+@pytest.mark.parametrize("func, mock", list(zip(plan_funcs, plan_mocks)))
 def test_backend_plan(func, mock):
     x = np.arange(20).reshape((10, 2))
 
@@ -91,8 +91,8 @@ def test_backend_plan(func, mock):
         func(x, plan='foo')
 
     with set_backend(mock_backend, only=True):
-        mock.number_calls = 0
+        mock.number_calls.c = 0
         y = func(x, plan='foo')
         assert_equal(y, mock.return_value)
-        assert_equal(mock.number_calls, 1)
-        assert_equal(mock.last_args[1]['plan'], 'foo')
+        assert_equal(mock.number_calls.c, 1)
+        assert_equal(mock.last_args.l[1]['plan'], 'foo')

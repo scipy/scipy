@@ -12,9 +12,12 @@ for information about the Matrix Market format.
 import io
 import os
 
+from warnings import warn
+
 import numpy as np
-import scipy.sparse
+from scipy.sparse import coo_array, issparse, coo_matrix
 from scipy.io import _mmio
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['mminfo', 'mmread', 'mmwrite']
 
@@ -65,7 +68,7 @@ try:
             PARALLELISM = num_threads
 
         def get_version(self):
-            return _fmm_version
+            return _fmm_version()
 
         def set_additional_attributes(self):
             pass
@@ -194,6 +197,8 @@ def _get_read_cursor(source, parallelism=None):
             source = bz2.BZ2File(path, 'rb')
             ret_stream_to_close = source
         else:
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"The source file does not exist: {path}")
             return _fmm_core.open_read_file(path, parallelism), ret_stream_to_close
 
     # Stream object.
@@ -227,6 +232,8 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None,
     try:
         target = os.fspath(target)
         # It's a file path
+        if target[-4:] != '.mtx':
+            target += '.mtx'
         return _fmm_core.open_write_file(str(target), h, parallelism, precision)
     except TypeError:
         pass
@@ -291,7 +298,7 @@ def _validate_symmetry(symmetry):
     return symmetry
 
 
-def mmread(source):
+def mmread(source, *, spmatrix=_NoValue):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -300,11 +307,20 @@ def mmread(source):
     source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse matrix. Otherwise return sparse array.
+
+        .. deprecated:: 1.18.0
+            The default value for `spmatrix` is changing to False in v2.1.
+            That means the default return value will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Returns
     -------
-    a : ndarray or coo_matrix
-        Dense or sparse matrix depending on the matrix format in the
+    a : ndarray or coo_array
+        Dense or sparse array depending on the matrix format in the
         Matrix Market file.
 
     Notes
@@ -328,11 +344,11 @@ def mmread(source):
     ...  4 4 7.0
     ... '''
 
-    ``mmread(source)`` returns the data as sparse matrix in COO format.
+    ``mmread(source)`` returns the data as sparse array in COO format.
 
-    >>> m = mmread(StringIO(text))
+    >>> m = mmread(StringIO(text), spmatrix=False)
     >>> m
-    <COOrdinate sparse matrix of dtype 'float64'
+    <COOrdinate sparse array of dtype 'float64'
         with 7 stored elements and shape (5, 5)>
     >>> m.toarray()
     array([[0., 0., 0., 0., 0.],
@@ -348,7 +364,7 @@ def mmread(source):
     >>> import threadpoolctl
     >>>
     >>> with threadpoolctl.threadpool_limits(limits=2):
-    ...     m = mmread(StringIO(text))
+    ...     m = mmread(StringIO(text), spmatrix=False)
 
     """
     cursor, stream_to_close = _get_read_cursor(source)
@@ -359,11 +375,25 @@ def mmread(source):
             stream_to_close.close()
         return mat
     else:
-        from scipy.sparse import coo_matrix
         triplet, shape = _read_body_coo(cursor, generalize_symmetry=True)
         if stream_to_close:
             stream_to_close.close()
-        return coo_matrix(triplet, shape=shape)
+
+        if spmatrix is _NoValue:
+            msg = """The default value for `spmatrix` is changing to `False` in v2.1.
+             That means the default return type will be a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            spmatrix = True
+
+        if spmatrix:
+            return coo_matrix(triplet, shape=shape)
+        return coo_array(triplet, shape=shape)
 
 
 def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"):
@@ -388,10 +418,6 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         values. If symmetry is 'AUTO' the symmetry type of 'a' is either
         determined or set to 'general', at mmwrite's discretion.
 
-    Returns
-    -------
-    None
-
     Notes
     -----
     .. versionchanged:: 1.12.0
@@ -401,7 +427,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     --------
     >>> from io import BytesIO
     >>> import numpy as np
-    >>> from scipy.sparse import coo_matrix
+    >>> from scipy.sparse import coo_array
     >>> from scipy.io import mmwrite
 
     Write a small NumPy array to a matrix market file.  The file will be
@@ -447,7 +473,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     ``'array'``.
 
     >>> target = BytesIO()
-    >>> mmwrite(target, coo_matrix(a), precision=3)
+    >>> mmwrite(target, coo_array(a), precision=3)
     >>> print(target.getvalue().decode('latin1'))
     %%MatrixMarket matrix coordinate real general
     %
@@ -513,18 +539,17 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         a = _apply_field(a, field, no_pattern=True)
         _fmm_core.write_body_array(cursor, a)
 
-    elif scipy.sparse.issparse(a):
+    elif issparse(a):
         # Write sparse scipy matrices
         a = a.tocoo()
 
         if symmetry is not None and symmetry != "general":
             # A symmetric matrix only specifies the elements below the diagonal.
             # Ensure that the matrix satisfies this requirement.
-            from scipy.sparse import coo_array
             lower_triangle_mask = a.row >= a.col
             a = coo_array((a.data[lower_triangle_mask],
-                          (a.row[lower_triangle_mask],
-                           a.col[lower_triangle_mask])), shape=a.shape)
+                              (a.row[lower_triangle_mask],
+                               a.col[lower_triangle_mask])), shape=a.shape)
 
         data = _apply_field(a.data, field)
         _fmm_core.write_body_coo(cursor, a.shape, a.row, a.col, data)
