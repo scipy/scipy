@@ -2542,6 +2542,56 @@ def _penalty_matrix_banded(t):
     return omega_banded
 
 
+def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
+    """`make_smoothing_spline` path for a user-provided knot vector ``t``.
+
+    Solves the penalized least-squares problem in the cubic B-spline basis
+    on ``t`` via the normal equations,
+
+        (X^T W X + lam * Omega) c = X^T W y,
+
+    with ``Omega`` from `_penalty_matrix_banded`. Both matrices are 7-banded
+    symmetric, so the system is solved with a banded Cholesky factorization.
+    Assumes ``x``, ``y`` and ``w`` are already validated by the caller.
+    """
+    if lam is None:
+        raise NotImplementedError(
+            "automatic GCV selection of `lam` is not supported with user knots, "
+            "pass `lam` explicitly")
+    if np.ndim(lam) != 0:
+        raise NotImplementedError(
+            "array-valued `lam` is not supported with user-provided knots yet."
+        )
+    if lam < 0.:
+        raise ValueError('Regularization parameter should be non-negative')
+    if np.ndim(y) > 1:
+        raise NotImplementedError(
+            "batched `y` is not supported with user-provided knots yet; "
+            "`y` must be 1-D")
+    t = np.ascontiguousarray(t, dtype=float)
+    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+        raise ValueError("`t` must be a 1-D non-decreasing array")
+    if x[0] < t[3] or x[-1] > t[-4]:
+        raise ValueError(
+            "all `x` values must lie within the base interval "
+            f"[t[3], t[-4]] = [{t[3]}, {t[-4]}]")
+
+    m = len(t) - 4
+    X = BSpline.design_matrix(x, t, 3)
+
+    omega = _penalty_matrix_banded(t)
+    XtWX = X.T @ X.multiply(w[:, None])
+    XtWy = X.T @ (w * y)
+    XtWX_banded = np.zeros((4, m))
+    for i in range(4):
+        # Convert to LAPACK symmetric lower-banded storage,
+        # as accepted by solveh_banded.
+        XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
+    c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+    c = np.ascontiguousarray(c)
+    return BSpline.construct_fast(xp.asarray(t), xp.asarray(c), 3, axis=axis)
+
+
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     r"""
@@ -2697,31 +2747,6 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
 
-    user_knots = t is not None
-
-    if user_knots:
-        if lam is None:
-            raise NotImplementedError(
-                "automatic GCV selection of `lam` is not supported with user knots, "
-                "pass `lam` explicitly")
-        if np.ndim(lam) != 0:
-            raise NotImplementedError(
-                "array-valued `lam` is not supported with user-provided knots yet."
-            )
-        if lam < 0.:
-            raise ValueError('Regularization parameter should be non-negative')
-        if np.ndim(y) > 1:
-            raise NotImplementedError(
-                "batched `y` is not supported with user-provided knots yet; "
-                "`y` must be 1-D")
-        t = np.ascontiguousarray(t, dtype=float)
-        if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
-            raise ValueError("`t` must be a 1-D non-decreasing array")
-        if x[0] < t[3] or x[-1] > t[-4]:
-            raise ValueError(
-                "all `x` values must lie within the base interval "
-                f"[t[3], t[-4]] = [{t[3]}, {t[-4]}]")
-
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
 
@@ -2735,12 +2760,18 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
         if any(w <= 0):
             raise ValueError('Invalid vector of weights')
 
-    if not user_knots:
-        t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
     n = x.shape[0]
 
     if n <= 4:
         raise ValueError('``x`` and ``y`` length must be at least 5')
+
+    if t is not None:
+        # user-provided knots: penalized least squares in the B-spline
+        # basis on ``t``. The construction is described in the companion
+        # report, https://github.com/aadya940/scipy-bspline-testing
+        return _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp)
+
+    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
 
     # Internals assume that the data axis is the zero-th axis
     axis = normalize_axis_index(axis, y.ndim)
@@ -2761,41 +2792,21 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     # move from B-spline basis to the basis of natural splines using equations
     # (2.1.7) [4]
     # central elements
-    if not user_knots:
-        # Only transform `X` to a different basis if
-        # `t` is None.
-        X = np.zeros((5, n))
-        for i in range(1, 4):
-            X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
+    X = np.zeros((5, n))
+    for i in range(1, 4):
+        X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
 
-        # first elements
-        X[1, 1] = X_bspl[0, 0]
-        X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
-                    X_bspl[1, 1] + X_bspl[1, 2])
-        X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
+    # first elements
+    X[1, 1] = X_bspl[0, 0]
+    X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
+                X_bspl[1, 1] + X_bspl[1, 2])
+    X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
 
-        # last elements
-        X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
-        X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
-                    (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
-        X[3, -2] = X_bspl[-1, -1]
-    else:
-        X = X_bspl
-
-    if user_knots:
-        omega = _penalty_matrix_banded(t)
-        XtWX = X.T @ (X.multiply(w[:, None]))
-        XtWy = X.T @ (w[:, None] * y.reshape((n, -1)))
-        XtWX_banded = np.zeros((4, len(t) - 4))
-        for i in range(4):
-            # Convert to LAPACK symmetric lower-banded storage,
-            # as accepted by solveh_banded.
-            XtWX_banded[i, : len(t) - 4 - i] = XtWX.diagonal(-i)
-        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
-        c = np.ascontiguousarray(c.reshape((len(t) - 4, *y_shape1)))
-        return BSpline.construct_fast(
-            xp.asarray(t), xp.asarray(c), 3, axis=axis
-        )
+    # last elements
+    X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
+    X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
+                (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
+    X[3, -2] = X_bspl[-1, -1]
 
     # create penalty matrix and divide it by vector of weights: W^{-1} E
     wE = np.zeros((5, n))
