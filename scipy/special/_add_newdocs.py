@@ -859,7 +859,7 @@ add_newdoc("eval_sh_jacobi",
     .. math::
 
         G_n^{(p, q)}(x)
-          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
+          = \frac{\Gamma{n+1}\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
 
     where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi
     polynomial. See 22.5.2 in [AS]_ (or equivalently [DLMF]_) for details.
