@@ -3569,7 +3569,8 @@ def zeta(x, q=None, out=None):
     q : array_like of float, optional
         Input data, must be real.  Defaults to Riemann zeta. When `q` is
         ``None``, complex inputs `x` are supported. If `q` is not ``None``,
-        then currently only real inputs `x` with ``x >= 1`` are supported,
+        then currently only real inputs `x` (complex dtypes are
+        allowed but `x` must have zero imaginary part) with ``x >= 1`` are supported,
         except when ``q = 1.0`` (corresponding to the Riemann zeta function).
 
     out : ndarray, optional
