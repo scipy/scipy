@@ -63,14 +63,20 @@
 // If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
+extern const char *_beta_pdf_doc;
+extern const char *_beta_ppf_doc;
 extern const char *_binom_ppf_doc;
 extern const char *_cospi_doc;
 extern const char *_bivariate_normal_sf_doc;
+extern const char *_cauchy_isf_doc;
+extern const char *_cauchy_ppf_doc;
 extern const char *_cosine_cdf_doc;
 extern const char *_cosine_invcdf_doc;
 extern const char *_sinpi_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_igam_fac_doc;
+extern const char *_invgauss_isf_doc;
+extern const char *_invgauss_ppf_doc;
 extern const char *_kolmogc_doc;
 extern const char *_kolmogci_doc;
 extern const char *_kolmogp_doc;
@@ -319,6 +325,18 @@ _special_ufuncs_module_exec(PyObject *module)
     if (_import_array() < 0) { return -1; }
     if (_import_umath() < 0) { return -1; }
 
+    PyObject *_beta_pdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(beta_pdf_float),
+                           static_cast<xsf::numpy::ddd_d>(beta_pdf_double)},
+                          "_beta_pdf", _beta_pdf_doc);
+    PyModule_AddObjectRef(module, "_beta_pdf", _beta_pdf);
+
+    PyObject *_beta_ppf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(beta_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(beta_ppf_double)},
+                          "_beta_ppf", _beta_ppf_doc);
+    PyModule_AddObjectRef(module, "_beta_ppf", _beta_ppf);
+
     PyObject *_binom_ppf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(binom_ppf_float),
          static_cast<xsf::numpy::ddd_d>(binom_ppf_double)},
@@ -330,6 +348,18 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
         "_bivariate_normal_sf", _bivariate_normal_sf_doc);
     PyModule_AddObjectRef(module, "_bivariate_normal_sf", _bivariate_normal_sf);
+
+    PyObject *_cauchy_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(cauchy_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(cauchy_isf_double)},
+                          "_cauchy_isf", _cauchy_isf_doc);
+    PyModule_AddObjectRef(module, "_cauchy_isf", _cauchy_isf);
+
+    PyObject *_cauchy_ppf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(cauchy_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(cauchy_ppf_double)},
+                          "_cauchy_ppf", _cauchy_ppf_doc);
+    PyModule_AddObjectRef(module, "_cauchy_ppf", _cauchy_ppf);
 
     PyObject *_cosine_cdf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::cosine_cdf), static_cast<xsf::numpy::d_d>(xsf::cosine_cdf)},
@@ -353,6 +383,18 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(xsf::gen_harmonic)},
                            "_gen_harmonic", _gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_gen_harmonic", _gen_harmonic);
+
+    PyObject *_invgauss_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(invgauss_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(invgauss_isf_double)},
+                          "_invgauss_isf", _invgauss_isf_doc);
+    PyModule_AddObjectRef(module, "_invgauss_isf", _invgauss_isf);
+
+    PyObject *_invgauss_ppf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(invgauss_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(invgauss_ppf_double)},
+                          "_invgauss_ppf", _invgauss_ppf_doc);
+    PyModule_AddObjectRef(module, "_invgauss_ppf", _invgauss_ppf);
 
     PyObject *_kolmogc = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::cpu::kolmogc), static_cast<xsf::numpy::d_d>(xsf::cpu::kolmogc)},

@@ -301,42 +301,6 @@
             "cephes_yn_wrap": "pd->d"
         }
     },
-    "_beta_pdf": {
-        "boost_special_functions.h++": {
-            "beta_pdf_float": "fff->f",
-            "beta_pdf_double": "ddd->d"
-        }
-    },
-    "_beta_ppf": {
-        "boost_special_functions.h++": {
-            "beta_ppf_float": "fff->f",
-            "beta_ppf_double": "ddd->d"
-        }
-    },
-    "_invgauss_ppf": {
-        "boost_special_functions.h++": {
-            "invgauss_ppf_float": "fff->f",
-            "invgauss_ppf_double": "ddd->d"
-        }
-    },
-    "_invgauss_isf": {
-        "boost_special_functions.h++": {
-            "invgauss_isf_float": "fff->f",
-            "invgauss_isf_double": "ddd->d"
-        }
-    },
-    "_cauchy_ppf": {
-        "boost_special_functions.h++": {
-            "cauchy_ppf_float": "fff->f",
-            "cauchy_ppf_double": "ddd->d"
-        }
-    },
-    "_cauchy_isf": {
-        "boost_special_functions.h++": {
-            "cauchy_isf_float": "fff->f",
-            "cauchy_isf_double": "ddd->d"
-        }
-    },
     "_ncx2_pdf": {
         "boost_special_functions.h++": {
             "ncx2_pdf_float": "fff->f",

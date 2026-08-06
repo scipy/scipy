@@ -77,13 +77,19 @@ import re
 import textwrap
 
 special_ufuncs = [
+    "_beta_pdf",
+    "_beta_ppf",
     "_binom_ppf",
     "_bivariate_normal_sf",
+    "_cauchy_isf",
+    "_cauchy_ppf",
     "_cosine_cdf",
     "_cosine_invcdf",
     "_cospi",
     "_gen_harmonic",
     "_igam_fac",
+    "_invgauss_isf",
+    "_invgauss_ppf",
     "_iv_ratio",
     "_iv_ratio_c",
     "_kolmogc",
