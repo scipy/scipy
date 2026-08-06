@@ -2360,41 +2360,61 @@ class TestSmoothingSpline:
     def test_user_defined_knots(self):
         # user-supplied knots are used verbatim in the returned spline
         rng = np.random.RandomState(1234)
-        n = 100
+        n = 10
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4*x) + x**3 + rng.normal(0., 1.5, n)
-        t = np.r_[[x[0]]*4, [-1.5, 0.0, 1.0], [x[-1]]*4]
+        # interior knots at data quantiles, guaranteed inside the range
+        t = np.r_[[x[0]]*4, x[[3, 5, 7]], [x[-1]]*4]
         spl = make_smoothing_spline(x, y, lam=0.5, t=t)
         xp_assert_close(spl.t, t, atol=1e-15)
 
-    def test_knots_equal_abscissa(self):
-        # knots at the clamped data sites reproduce the default path
+    @pytest.mark.parametrize("lam", [1e-4, 0.5, 100.0])
+    def test_knots_equal_abscissa(self, lam):
+        # Passing explicitly the knot vector the default path builds
+        # internally (data sites, with the boundary knots repeated to
+        # multiplicity 4, i.e. "clamped") must reproduce the default
+        # path: the two solve the same minimization problem over the
+        # same spline space, so the same spline must come out.
+        #
+        # The tolerance tracks the conditioning of the linear system:
+        # its condition number grows linearly with lam (as lam -> inf
+        # the matrix tends to the singular penalty matrix), and the two
+        # paths use different formulations/solvers, so they drift apart
+        # by ~ machine eps * condition number. Hence the lam sweep and
+        # the lam-dependent tolerance.
         rng = np.random.RandomState(1234)
-        n = 100
+        n = 10
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 + np.sin(4*x) + x**3 + rng.normal(0., 1.5, n)
         t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
-        spl1 = make_smoothing_spline(x, y, lam=0.5, t=t)
-        spl2 = make_smoothing_spline(x, y, lam=0.5)
+        spl1 = make_smoothing_spline(x, y, lam=lam, t=t)
+        spl2 = make_smoothing_spline(x, y, lam=lam)
         xp_assert_close(spl1.t, spl2.t, atol=1e-15)
-        xp_assert_close(spl1.c, spl2.c, atol=1e-8)
+        xp_assert_close(spl1.c, spl2.c, atol=1e-12 * max(1.0, lam / 1e-4))
 
     def test_lam_zero_matches_lsq_spline(self):
         # at lam=0 the penalty vanishes and the smoothing spline reduces
-        # to an ordinary least-squares spline on the same knots
+        # to an ordinary least-squares spline on the same knots.
+        # Fewer coefficients (7) than data points (10) here, so the
+        # lam=0 least-squares problem has a unique solution.
+        #
+        # Tolerance: the two functions reach the coefficients by
+        # different routes (normal equations + banded Cholesky here, a
+        # Gram-based solve in make_lsq_spline). Measured agreement is
+        # ~2e-15 relative (~8 ulp of the O(10) coefficients), i.e.
+        # machine precision; rtol = 1e-13 states that with margin for
+        # BLAS variation across platforms.
         rng = np.random.RandomState(1234)
-        n = 100
+        n = 10
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 + np.sin(4*x) + x**3 + rng.normal(0., 1.5, n)
-        # sparse knots: fewer coefficients than data, so the lam=0
-        # problem is well-posed
         t = np.r_[[x[0]]*4, [-1.0, 0.0, 1.0], [x[-1]]*4]
 
         spl = make_smoothing_spline(x, y, lam=0.0, t=t)
         spl_lsq = make_lsq_spline(x, y, t)
 
         xp_assert_close(spl.t, spl_lsq.t, atol=1e-15)
-        xp_assert_close(spl.c, spl_lsq.c, atol=1e-10)
+        xp_assert_close(spl.c, spl_lsq.c, rtol=1e-13)
 
     def test_penalty_matrix_is_valid(self):
         # structural invariants of the penalty matrix

@@ -2467,10 +2467,39 @@ def _coeff_of_divided_diff(x):
 
 
 def _penalty_matrix_banded(t):
-    """
-    Omega is ``C.T @ R @ C`` in (4, m), symmetric lower banded storage,
-    ``C = D1 @ D2`` where `Di` is de-boor derivative reduction. ``R``
-    is the mass matrix of linear B-Splines on ``t``.
+    r"""Penalty matrix of a cubic smoothing spline on the knot vector ``t``.
+
+    Computes the matrix form of the second-derivative penalty
+    :math:`\int (f''(u))^2 du`, i.e.
+    :math:`\Omega_{ij} = \int B_i''(u) B_j''(u) du` for the cubic
+    B-spline basis on ``t``, exactly and without numerical integration:
+
+    1. ``C = D2 @ D1`` expresses the second derivative of each cubic
+       B-spline in the basis of linear B-splines ("hat functions") on the
+       same knots; ``D1`` and ``D2`` apply de Boor's derivative formula
+       (stated and explained in the docstring of ``deboor_derivative``
+       below) once each.
+    2. ``R`` is the mass (Gram) matrix of the hat functions,
+       ``R[p, q] = integral(N_p * N_q)``, which is tridiagonal with the
+       closed-form entries ``(t[p+2] - t[p]) / 3`` on the diagonal and
+       ``(t[p+2] - t[p+1]) / 6`` off it.
+    3. ``Omega = C.T @ R @ C``, returned in LAPACK symmetric
+       lower-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
+       accepted by ``scipy.linalg.solveh_banded``.
+
+    ``Omega`` depends on ``t`` only (no data enters), is symmetric
+    positive semi-definite, and its null space is the straight lines,
+    which have zero curvature. This null space is why the assembled
+    system ``X.T @ W @ X + lam * Omega`` grows ill-conditioned as
+    ``lam`` grows (condition number proportional to ``lam``): in two
+    directions of coefficient space only the data term contributes,
+    while all others scale with ``lam``.
+
+    The full derivation with worked examples, the validation against
+    ``fda::bsplinepen`` and other independent constructions, and a
+    conditioning analysis are in the companion report (steps 1-3 above
+    are its eqs. (4)-(5), (8)-(9) and (11) respectively):
+    https://github.com/aadya940/scipy-bspline-testing
     """
     order = 4 # assuming a cubic spline
     m = len(t) - order # number of coefficients
@@ -2495,9 +2524,10 @@ def _penalty_matrix_banded(t):
 
         Notes
         -----
-        Row :math:`j` holds :math:`+c_j` in column :math:`j` and
-        :math:`-c_j` in column :math:`j - 1`, with
-        :math:`c_j = (m - 1) / (\tau_{j+m-1} - \tau_j)`.
+        Row :math:`j` holds :math:`+d_j` in column :math:`j` and
+        :math:`-d_j` in column :math:`j - 1`, where
+        :math:`d_j = (m - 1) / (\tau_{j+m-1} - \tau_j)` is the factor
+        multiplying the coefficient difference in the formula above.
 
         For a clamped knot vector the denominator vanishes at
         :math:`j = 0` and :math:`j = N`, where the repeated boundary knots
@@ -2605,7 +2635,7 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
-def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
+def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
 
@@ -2680,29 +2710,21 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
     :math:`X^T W X` where :math:`X` is a design matrix is not a positive
     defined matrix) a ValueError is raised.
 
-    When ``t`` is given, the returned spline minimizes
+    When ``t`` is given, the returned spline minimizes the same
+    objective over all cubic splines on the knot vector ``t``
+    (sometimes called an O'Sullivan penalized spline [5]_). No boundary
+    conditions are imposed. If the knots contain all data sites, the
+    minimizer is the natural smoothing spline of the default path;
+    for other knot vectors, the boundary behavior is determined by the
+    objective alone.
 
-    .. math::
-
-        \sum_{i=1}^n w_i (y_i - f(x_i))^2 + \lambda \int (f''(u))^2 du
-
-    over all cubic splines on the knot vector ``t``, a penalized
-    least-squares spline (in the statistics literature, an O'Sullivan
-    penalized spline). No boundary conditions are imposed: the boundary
-    behavior is whatever minimizes the objective. In particular the
-    solution is not, in general, a natural spline, and extrapolation
-    beyond the base interval continues the boundary polynomial pieces,
-    which may diverge quickly; for the special case of knots at the
-    data sites the minimizer coincides with the natural smoothing
-    spline of the default path.
-
-    With user-supplied knots, the following are not (yet) supported and
-    raise an error: automatic selection of ``lam`` by GCV (``lam`` must
-    be given explicitly), array-valued ``lam``, and batched ``y``
-    (``y`` must be 1-D).
-
-    The penalty matrix is computed exactly, in closed form, from the
-    knot vector alone; see [5] for the derivation and validation.
+    For large ``lam`` the linear system solved internally becomes
+    increasingly ill-conditioned: its condition number grows
+    proportionally to ``lam``, since in the limit the system matrix
+    approaches the singular penalty matrix, whose null space is the
+    straight lines. The achievable accuracy therefore degrades as
+    ``eps * cond``. This is intrinsic to the problem, and reference
+    implementations exhibit the same behavior.
 
     References
     ----------
@@ -2722,9 +2744,10 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0, t=None):
         BSc thesis, 2022.
         `<https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
         Russian)
-    .. [5] A. Chinubhai, "An Exact Penalty Matrix for Cubic Smoothing
-        Splines on Arbitrary Knot Vectors", 2026.
-        `<https://gist.github.com/aadya940/XXXXXXXX>`_
+    .. [5] M. P. Wand and J. T. Ormerod, "On semiparametric regression
+        with O'Sullivan penalised splines", Australian & New Zealand
+        Journal of Statistics, vol. 50, no. 2, pp. 179-198, 2008.
+        :doi:`10.1111/j.1467-842X.2008.00507.x`
 
     Examples
     --------
