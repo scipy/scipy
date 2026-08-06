@@ -12,7 +12,7 @@ platforms = [
   { platform = "linux-64", cuda = "13.0" },
 ]
 preview = ["pixi-build"]
-requires-pixi = ">=0.71.0"
+requires-pixi = ">=0.74.0"
 
 
 ### SciPy Package Definition ###
@@ -23,6 +23,13 @@ version = "*"
 
 [package.build.config]
 compilers = ["c", "cxx"]
+
+[workspace.build-variants]
+# NOTE: this is necessary for now to get all source packages in the ASAN env to use clang
+c_compiler = ["clang"]
+cxx_compiler = ["clangxx"]
+c_compiler_version = ["21"]
+cxx_compiler_version = ["21"]
 
 [workspace.target.win.build-variants]
 c_compiler = ["clang-cl"] 
@@ -245,6 +252,11 @@ features = ["build-deps", "build-clang-22"]
 [environments.gha-update]
 # tasks: gha-update
 features = ["gha-update", "default-platforms"]
+no-default-feature = true
+
+[environments.asan]
+features = ["asan-build-deps", "run-deps", "test-deps", "asan"]
+solve-group = "asan"
 no-default-feature = true
 
 
@@ -852,6 +864,87 @@ description = "Build SciPy with system libs (e.g. boost, qhull)"
 cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
+
+
+[feature.asan]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
+
+[feature.asan.dependencies]
+spin = "*"
+
+python.flags = ["asan"]
+python.git = "https://github.com/python/cpython"
+python.subdirectory = "Tools/pixi-packages"
+python.rev = "847d099efa4785658ba9bd3163e35cb4ae742f6d"
+
+numpy.flags = ["asan"]
+numpy.git = "https://github.com/numpy/numpy"
+numpy.subdirectory = "pixi-packages/asan"
+numpy.rev = "0a545fc96ce7ca9866b7529acda8119151011ffa"
+
+gmpy2 = {
+  git = "https://github.com/gmpy2/gmpy2",
+  tag = "v2.3.1",
+  package = {
+    version = "2.3.1",
+    build = {
+      backend.name = "pixi-build-python",
+      config = {
+        compilers = ["c"],
+        ignore-pypi-mapping = false,
+      }
+    },
+    host-dependencies = {
+      gmp = "*",
+      mpfr = "*",
+      mpc = "*",
+      python = {
+        flags = ["asan"],
+        git = "https://github.com/python/cpython",
+        subdirectory = "Tools/pixi-packages",
+        rev = "847d099efa4785658ba9bd3163e35cb4ae742f6d",
+      },
+    },
+  },
+}
+
+[feature.asan-build-deps.dependencies]
+clangxx = "21.*"
+ccache = "*"
+pkg-config = "*"
+ninja = "*"
+meson = "*"
+meson-python = "*"
+cython = "*"
+pythran = "*"
+pybind11 = "*"
+# needed at build-time as well as run-time
+numpy = "*"
+blas-devel = { version = "*", build = "*openblas" }
+
+
+[feature.asan.tasks.build-asan]
+# `use-pythran=false` needed with py316dev due to https://github.com/serge-sans-paille/gast/issues/110
+cmd = "spin build --asan --build-dir=build-asan --setup-args=-Duse-pythran=false --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = {
+  ASAN_OPTIONS = "detect_leaks=0:strict_init_order=true:use_sigaltstack=0",
+  CC = "clang",
+  CXX = "clang++",
+}
+description = "Build SciPy, NumPy, and CPython with address sanitizer"
+
+[feature.asan.tasks.test-asan]
+cmd = "spin test --no-build --build-dir=build-asan --no-capture -m 'not fail_asan and not slow'"
+depends-on = "build-asan"
+env.ASAN_OPTIONS = "detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0:$ASAN_OPTIONS"
+description = "Test SciPy with address sanitizer"
+
+[feature.asan.target.osx-arm64.tasks.test-asan]
+cmd = "spin test --no-build --build-dir=build-asan --no-capture -m 'not fail_asan and not slow'"
+depends-on = "build-asan"
+# include `quarantine_size_mb=64` to avoid hang with large memory usage
+env.ASAN_OPTIONS = "quarantine_size_mb=64:detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0:$ASAN_OPTIONS"
+description = "Test SciPy with address sanitizer"
 
 
 ### Alternative python versions ###
