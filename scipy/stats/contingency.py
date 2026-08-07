@@ -435,7 +435,7 @@ def _chi2_contingency_2d(observed, *, correction=True, lambda_=1, xp=None):
 
     # Validate the sizes and shapes of the arguments.
     if xp_size(observed) == 0:
-        nan = xp.full(batch_shape, xp.nan, dtype=dtype)
+        nan = xp.full(batch_shape, xp.nan, dtype=dtype, device=device)
         return Power_divergenceResult(nan, nan)
 
     rowsum = xp.sum(observed, axis=-1, keepdims=True)
