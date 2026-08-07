@@ -2957,7 +2957,7 @@ def _penalty_matrix_banded(t):
     return omega_banded
 
 
-def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
+def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
     """`make_smoothing_spline` path for a user-provided knot vector ``t``.
 
     Solves the penalized least-squares problem in the cubic B-spline basis
@@ -2975,7 +2975,8 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
             "pass `lam` explicitly")
     if np.ndim(lam) != 0:
         raise NotImplementedError(
-            "array-valued `lam` is not supported with user-provided knots yet."
+            "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
+            f"got an array of shape {np.shape(lam)}."
         )
     if lam < 0.:
         raise ValueError('Regularization parameter should be non-negative')
@@ -2992,18 +2993,37 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
         raise ValueError(
             "`t` must contain at least 8 knots (a cubic spline needs at "
             f"least one basis interval); got {len(t)}")
-    # interior knots may repeat (each repetition reduces continuity there),
-    # but multiplicity > 4 would make some basis functions identically zero
-    _, counts = np.unique(t, return_counts=True)
-    if np.any(counts > 4):
+    if not (t[0] == t[3] and t[-4] == t[-1]):
         raise ValueError(
-            "knots in `t` must not have multiplicity greater than 4")
+            "`t` must be clamped: the first 4 and last 4 knots must each "
+            "be equal (boundary knots repeated to multiplicity 4). "
+            "Without clamping, the penalty integrates over regions the "
+            "data cannot constrain and straight lines are penalized.")
+    # Interior multiplicity 3 allows kinks in f', which have infinite
+    # penalty but are invisible to Omega, so they would come for free.
+    vals, counts = np.unique(t, return_counts=True)
+    if counts[0] != 4 or counts[-1] != 4:
+        raise ValueError(
+            "boundary knots in `t` must have multiplicity exactly 4")
+    if np.any(counts[1:-1] > 2):
+        raise ValueError(
+            "interior knots in `t` must not have multiplicity greater "
+            "than 2: the penalty, the integral of (f'')^2, is only defined "
+            "for functions with a continuous first derivative, which "
+            "requires interior multiplicity at most 2")
     if x[0] < t[3] or x[-1] > t[-4]:
         raise ValueError(
             "all `x` values must lie within the base interval "
             f"[t[3], t[-4]] = [{t[3]}, {t[-4]}]")
 
     m = len(t) - 4
+    if lam == 0 and m > len(x):
+        raise ValueError(
+            "with `lam=0` the fit is an unpenalized least-squares problem, "
+            "which needs at least as many data points as basis functions; "
+            f"got {len(x)} points and {m} = len(t) - 4 basis functions. "
+            "Use fewer knots, or pass `lam` > 0.")
+
     X = BSpline.design_matrix(x, t, 3)
 
     omega = _penalty_matrix_banded(t)
@@ -3014,9 +3034,21 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
         # Convert to LAPACK symmetric lower-banded storage,
         # as accepted by solveh_banded.
         XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
-    c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+    try:
+        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+    except LinAlgError as e:
+        raise ValueError(
+            "the system `X^T W X + lam * Omega` is not positive definite, so "
+            "the coefficients are not uniquely determined. Two causes are "
+            "possible: some knots of `t` have no `x` values nearby (use "
+            "fewer knots, or pass a larger `lam`), or `lam` is so large that "
+            "the system is numerically singular, since its condition number "
+            "grows proportionally to `lam` (use a smaller `lam`; the fit at "
+            "such `lam` is already indistinguishable from its straight-line "
+            "limit).") from e
     c = np.ascontiguousarray(c)
-    return BSpline.construct_fast(xp.asarray(t), xp.asarray(c), 3, axis=axis)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
+    return BSpline.construct_fast(t, c, 3, axis=axis)
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
@@ -3057,17 +3089,20 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     lam : float, (:math:`\lambda \geq 0`), optional
         Regularization parameter. If ``lam`` is None, then it is found from
         the GCV criteria. Default is None.
+    t : array_like, shape (nt,), optional
+        Knot vector. Must be non-decreasing, with all ``x`` values inside
+        the base interval ``[t[3], t[-4]]``; boundary knots must be
+        repeated 4 times (clamped), and interior knots may repeat only to
+        multiplicity 2 (higher multiplicity would allow kinks or jumps,
+        for which the penalty :math:`\int (f'')^2` is not defined).
+        ``t`` can only be passed when ``lam``
+        is given explicitly. Default is None, in which case a clamped knot
+        vector at the data sites is used,
+        ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
     axis : int, optional
         The data axis. Default is zero.
         The assumption is that ``y.shape[axis] == n``, and all other axes of ``y``
         are batching axes.
-    t : array_like, shape (nt,), optional
-        Knot vector. Must be non-decreasing, with all ``x`` values inside
-        the base interval ``[t[3], t[-4]]``; boundary knots are typically
-        repeated 4 times (clamped). ``t`` can only be passed when ``lam``
-        is given explicitly. Default is None, in which case a clamped knot
-        vector at the data sites is used,
-        ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
 
     Returns
     -------
@@ -3187,17 +3222,18 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     if n <= 4:
         raise ValueError('``x`` and ``y`` length must be at least 5')
 
+    # Internals assume that the data axis is the zero-th axis
+    axis = normalize_axis_index(axis, y.ndim)
+    y = np.moveaxis(y, axis, 0)
+
     if t is not None:
         # user-provided knots: penalized least squares in the B-spline
         # basis on ``t``. The construction is described in the companion
         # report, https://github.com/aadya940/scipy-bspline-testing
-        return _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp)
+        return _make_smoothing_spline_user_knots(x, y, w, lam, t, axis,
+                                                 xp=xp, device=device)
 
     t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
-
-    # Internals assume that the data axis is the zero-th axis
-    axis = normalize_axis_index(axis, y.ndim)
-    y = np.moveaxis(y, axis, 0)
 
     # flatten the trailing axes of y to simplify further manipulations
     y_shape1 = y.shape[1:]
