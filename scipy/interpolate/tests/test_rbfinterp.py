@@ -548,7 +548,7 @@ class _TestRBFInterpolator:
     def test_degree_validation_llc(self, xp):
         # patch_lazy_xp_functions returns a JIT-wrapped verion of RBFInterpolator which
         # tries to serialise the arguments via pickle which raises a different error
-        # so a locally imported version for this test 
+        # so a locally imported version for this test
         from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
         llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
                            signature="double (double)")
