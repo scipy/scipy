@@ -444,9 +444,9 @@ lsq(
     }
 
     // Recover A and b from Lf and gradx
-    for (int64_t i = 0; i < (ld+2)*ld; i++) { buffer[i] = 0.0; }
+    for (int64_t i = 0; i < (int64_t)(ld+2)*ld; i++) { buffer[i] = 0.0; }
     double* restrict wA = buffer;
-    double* restrict wb = &buffer[ld*(ld+1)];
+    double* restrict wb = &buffer[(int64_t)ld*(ld+1)];
 
     // Depending on augmented, wA is either the full array or the top-left block.
 
@@ -477,35 +477,35 @@ lsq(
     if (augment) { n++; }
 
     // Get the equality constraints if given.
-    double* restrict wE = &buffer[n*(n+1) + n];
-    double* restrict wf = &buffer[n*(n+1) + n + n*meq];
+    double* restrict wE = &buffer[(int64_t)n*(n+1) + n];
+    double* restrict wf = &buffer[(int64_t)n*(n+1) + n + (int64_t)n*meq];
     if (meq > 0)
     {
         for (int64_t j = 0; j < n-1; j++)
         {
             for (int64_t i = 0; i < meq; i++)
             {
-                wE[i + j*meq] = C[i + j*m];
+                wE[i + (int64_t)j*meq] = C[i + (int64_t)j*m];
             }
         }
         if (augment)
         {
             // n is incremented hence all Ceq is now in wE. Add the extra column.
-            for (int64_t i = 0; i < meq; i++) { wE[i + (n-1)*meq] = -d[i]; }
+            for (int64_t i = 0; i < meq; i++) { wE[i + (int64_t)(n-1)*meq] = -d[i]; }
 
         } else  {
             // If not augmented then handle j = n - 1 that is skipped.
-            for (int64_t i = 0; i < meq; i++) { wE[i + (n-1)*meq] = C[i + (n-1)*m]; }
+            for (int64_t i = 0; i < meq; i++) { wE[i + (int64_t)(n-1)*meq] = C[i + (int64_t)(n-1)*m]; }
 
         }
         for (int64_t i = 0; i < meq; i++) { wf[i] = -d[i]; }
     }
 
     // Get the inequality constraints if given. First zero out wG and wh.
-    double* restrict wG = &buffer[n*(n+1) + n + n*meq + meq];
-    double* restrict wh = &buffer[n*(n+1) + n + n*meq + meq + (mineq + 2*n)*ld];
+    double* restrict wG = &buffer[(int64_t)n*(n+1) + n + (int64_t)n*meq + meq];
+    double* restrict wh = &buffer[(int64_t)n*(n+1) + n + (int64_t)n*meq + meq + ((int64_t)mineq + 2*n)*ld];
     // Zero out wG and wh
-    for (int64_t i = 0; i < (mineq + 2*n)*(ld + 1); i++) { wG[i] = 0.0; }
+    for (int64_t i = 0; i < ((int64_t)mineq + 2*n)*(ld + 1); i++) { wG[i] = 0.0; }
 
     // Convert the bounds on x to +I and -I blocks in G.
     // Augment h by xl and -xu.
@@ -553,7 +553,7 @@ lsq(
         {
             for (int64_t i = 0; i < mineq; i++)
             {
-                wG[i + j*n_wG_rows] = C[meq + i + j*m];
+                wG[i + (int64_t)j*n_wG_rows] = C[meq + i + (int64_t)j*m];
             }
         }
     }
@@ -563,7 +563,7 @@ lsq(
     {
         for (int64_t i = 0; i < mineq; i++)
         {
-            wG[i + orign*n_wG_rows] = fmax(-d[meq + i], 0.0);
+            wG[i + (int64_t)orign*n_wG_rows] = fmax(-d[meq + i], 0.0);
         }
     }
 
@@ -573,7 +573,7 @@ lsq(
     {
         if (!isnan(xl[i]))
         {
-            wG[nrow + i*n_wG_rows] = 1.0;
+            wG[nrow + (int64_t)i*n_wG_rows] = 1.0;
             nrow++;
         }
     }
@@ -581,7 +581,7 @@ lsq(
     {
         if (!isnan(xu[i]))
         {
-            wG[nrow + i*n_wG_rows] = -1.0;
+            wG[nrow + (int64_t)i*n_wG_rows] = -1.0;
             nrow++;
         }
     }
