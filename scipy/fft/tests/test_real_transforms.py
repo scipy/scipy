@@ -241,3 +241,35 @@ def test_array_like(func):
          [[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]]]
     xp_assert_close(func(x), func(np.asarray(x)))
+
+
+@pytest.mark.parametrize("func", [dct, idct])
+def test_dct1_requires_at_least_two_points(func):
+    # DCT-I uses a length 2*(N-1) FFT, so N == 1 reached the backend as a
+    # zero-length FFT and raised a bare RuntimeError. It should be reported
+    # as a ValueError, whether the short length comes from the input itself
+    # or from `n`.
+    x = np.arange(8.0)
+    with pytest.raises(ValueError, match="DCT type 1"):
+        func(x, type=1, n=1)
+    with pytest.raises(ValueError, match="DCT type 1"):
+        func(np.array([5.0]), type=1)
+    # Other types accept a single point, and DCT-I accepts two.
+    for type in (2, 3, 4):
+        assert func(x, type=type, n=1).shape == (1,)
+    assert func(x, type=1, n=2).shape == (2,)
+
+
+@pytest.mark.parametrize("func", [dctn, idctn])
+def test_dctn1_requires_at_least_two_points(func):
+    x = np.arange(8.0)
+    with pytest.raises(ValueError, match="DCT type 1"):
+        func(x, type=1, s=[1])
+
+
+@pytest.mark.parametrize("func", [dst, idst, dstn, idstn])
+def test_dst1_allows_single_point(func):
+    # DST-I uses a length 2*(N+1) FFT and stays well defined for N == 1.
+    x = np.arange(8.0)
+    kwargs = {"s": [1]} if func in (dstn, idstn) else {"n": 1}
+    assert func(x, type=1, **kwargs).shape == (1,)
