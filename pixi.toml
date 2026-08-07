@@ -465,6 +465,9 @@ cffi = "*"
 pyfftw = "*"
 pytest = "*"
 psutil = "*"
+# peak_finding calls scipy.datasets.electrocardiogram() in setup(), so a missing
+# pooch is an asv failure rather than a skip
+pooch = "*"
 
 # used in .circleci/config.yml
 # which does not yet use `spin bench`
