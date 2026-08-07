@@ -2582,24 +2582,27 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         ft = np.zeros((input.ndim,) + input.shape, dtype=np.int32)
 
     _nd_image.euclidean_feature_transform(input, sampling, ft)
-    # if requested, calculate the distance transform
-    if return_distances:
-        dt = ft - np.indices(input.shape, dtype=ft.dtype)
-        dt = dt.astype(np.float64)
-        if sampling is not None:
-            for ii in range(len(sampling)):
-                dt[ii, ...] *= sampling[ii]
-        np.multiply(dt, dt, dt)
-        if dt_inplace:
-            dt = np.add.reduce(dt, axis=0)
-            if distances.shape != dt.shape:
-                raise RuntimeError('distances array has wrong shape')
-            if distances.dtype.type != np.float64:
-                raise RuntimeError('distances array must be float64')
-            np.sqrt(dt, distances)
-        else:
-            dt = np.add.reduce(dt, axis=0)
-            dt = np.sqrt(dt)
+    if ft.ravel()[0] == -1:  # no background
+        ft = np.full_like(ft, -1)
+        dt = np.full(input.shape, np.inf)
+    else:  # if requested, calculate the distance transform
+        if return_distances:
+            dt = ft - np.indices(input.shape, dtype=ft.dtype)
+            dt = dt.astype(np.float64)
+            if sampling is not None:
+                for ii in range(len(sampling)):
+                    dt[ii, ...] *= sampling[ii]
+            np.multiply(dt, dt, dt)
+            if dt_inplace:
+                dt = np.add.reduce(dt, axis=0)
+                if distances.shape != dt.shape:
+                    raise RuntimeError('distances array has wrong shape')
+                if distances.dtype.type != np.float64:
+                    raise RuntimeError('distances array must be float64')
+                np.sqrt(dt, distances)
+            else:
+                dt = np.add.reduce(dt, axis=0)
+                dt = np.sqrt(dt)
 
     # construct and return the result
     result = []
