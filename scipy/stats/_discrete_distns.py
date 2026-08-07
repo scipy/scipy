@@ -1649,11 +1649,88 @@ class poisson_binom_gen(rv_discrete):
         p = np.stack(args, dtype=np.float64, axis=-1)
         return _poisson_binom_cdf(k, p)
 
+    def _ppf(self, q, *args):
+        # Override to avoid np.vectorize which fails for >64 shape params.
+        # The support is finite [0, N], so we search for the smallest k
+        # where cdf(k) >= q using the native _cdf.
+        #
+        # When called from ppf(), q and each arg have already been broadcast
+        # and reduced to matching shapes. We need to compute cdf over the
+        # full support for each element and find where cdf >= q.
+        q = np.asarray(q, dtype=np.float64)
+        N = len(args)
+        p = np.stack(args, dtype=np.float64, axis=-1)
+
+        scalar_input = q.ndim == 0
+        q = np.atleast_1d(q)
+        p = np.broadcast_to(p, q.shape + (N,))
+
+        # Compute cdf for all k in [0, N] for each element in the batch
+        result = np.empty(q.shape, dtype=np.float64)
+        ks = np.arange(N + 1, dtype=np.int64)
+
+        if q.ndim == 1:
+            for i in range(q.size):
+                # cdf for this single set of probabilities
+                p_i = p[i]  # shape (N,)
+                args_i = tuple(p_i)
+                cdf_vals = _poisson_binom_cdf(ks, p_i)
+                result[i] = np.searchsorted(cdf_vals, q[i], side='left')
+        else:
+            for idx in np.ndindex(q.shape):
+                p_i = p[idx]  # shape (N,)
+                cdf_vals = _poisson_binom_cdf(ks, p_i)
+                result[idx] = np.searchsorted(cdf_vals, q[idx], side='left')
+
+        if scalar_input:
+            return result.squeeze()
+        return result
+
+    def _entropy(self, *args):
+        # Override to avoid np.vectorize which fails for >64 shape params.
+        # Direct summation: H = -sum(pmf(k) * log(pmf(k))) over support.
+        N = len(args)
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        ks = np.arange(N + 1, dtype=np.int64)
+        pmf_vals = _poisson_binom_pmf(ks, p)
+        return np.sum(entr(pmf_vals), axis=0)
+
+    def _munp(self, n, *args):
+        # Override to avoid generic_moment (which uses np.vectorize and
+        # fails for >64 shape params). Direct summation over finite support.
+        N = len(args)
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        ks = np.arange(N + 1, dtype=np.int64)
+        pmf_vals = _poisson_binom_pmf(ks, p)
+        return np.sum(ks**n * pmf_vals, axis=0)
+
+    def _attach_methods(self):
+        # Override to avoid creating vectorized wrappers that fail for >64
+        # shape params. We replace vecentropy and generic_moment with
+        # non-vectorized callables that handle arbitrary N directly.
+        super()._attach_methods()
+        # Replace the vectorized entropy with a direct callable.
+        # Use a lambda so it is not detected as a bound method by
+        # inspect.ismethod (which would trigger refguide_check).
+        _entropy_func = self._entropy
+        self.vecentropy = lambda *args: _entropy_func(*args)
+        # Replace generic_moment similarly.
+        _munp_func = self._munp
+        self.generic_moment = lambda n, *args: _munp_func(n, *args)
+        self.generic_moment.nin = self.numargs + 1
+
     def _stats(self, *args, **kwds):
         p = np.stack(args, axis=0)
         mean = np.sum(p, axis=0)
         var = np.sum(p * (1-p), axis=0)
-        return (mean, var, None, None)
+        # Compute skewness and kurtosis directly to avoid falling back to _munp
+        # for stats(moments='sk') which would otherwise work but is slower.
+        q = 1 - p
+        skew_num = np.sum(p * q * (q - p), axis=0)
+        skew = skew_num / var**1.5
+        kurt_num = np.sum(p * q * (1 - 6*p*q), axis=0)
+        kurt = kurt_num / var**2
+        return (mean, var, skew, kurt)
 
     def __call__(self, *args, **kwds):
         return poisson_binomial_frozen(self, *args, **kwds)
