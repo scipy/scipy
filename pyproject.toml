@@ -156,8 +156,8 @@ coverage = [
 ]
 
 bench = [
-    # https://github.com/airspeed-velocity/asv/issues/1537
-    "asv==0.6.4",
+    # pinned to the current release; bump deliberately rather than drifting
+    "asv==0.6.6",
     "pyfftw",
     "cffi", 
 ]
