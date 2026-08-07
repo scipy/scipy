@@ -756,7 +756,7 @@ def _set_mem_rlimit(max_mem=None):
         # on macOS may raise: current limit exceeds maximum limit
         pass
 
-def _run_asv(cmd):
+def _run_asv(cmd, mem_limit=True):
     # Always use ccache, if installed
     PATH = os.environ['PATH']
     EXTRA_PATH = os.pathsep.join([
@@ -771,10 +771,11 @@ def _run_asv(cmd):
     env['MKL_NUM_THREADS'] = '1'
 
     # Limit memory usage
-    try:
-        _set_mem_rlimit()
-    except (ImportError, RuntimeError):
-        pass
+    if mem_limit:
+        try:
+            _set_mem_rlimit()
+        except (ImportError, RuntimeError):
+            pass
 
     util.run(cmd, cwd='benchmarks', env=env)
 
@@ -842,11 +843,20 @@ def _dirty_git_working_dir():
     '--dry-run/--no-dry-run', '-n', default=True,
     help="Run benchmarks without saving results to disk. "
 )
+@click.option(
+    '--mem-limit/--no-mem-limit', default=True,
+    help="Try to cap the benchmark address space at 70% of total memory; enabling "
+         "only attempts it, and it is silently skipped if psutil is missing or the "
+         "platform rejects the limit (macOS never applies it). Disable on small "
+         "machines: the cap is on virtual address space, which thread stacks and "
+         "BLAS/FFT pools exhaust well before actual memory."
+)
 @meson.build_option
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, dry_run, build, build_dir, *args, **kwargs):
+          commits, array_api_backend, dry_run, mem_limit, build, build_dir,
+          *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -914,7 +924,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             bold=True, fg="bright_green"
         )
         cmd = ['asv', 'run', '--show-stderr', '--python=same'] + bench_args
-        _run_asv(cmd)
+        _run_asv(cmd, mem_limit=mem_limit)
     else:
         # Ensure that we don't have uncommitted changes
         commit_a, commit_b = [_commit_to_sha(c) for c in commits]
@@ -929,7 +939,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
         cmd_compare = [
             'asv', 'continuous', '--factor', '1.05'
         ] + bench_args + [commit_a, commit_b]
-        _run_asv(cmd_compare)
+        _run_asv(cmd_compare, mem_limit=mem_limit)
 
 
 def configure_scipy_openblas(blas_variant='32'):

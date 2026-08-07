@@ -170,6 +170,10 @@ jobs:
           command: pixi run -e bench asv machine --machine CircleCI
 
       - run:
+          name: report available memory and address space limit
+          command: pixi run -e bench python -c "import psutil, resource; print(psutil.virtual_memory(), resource.getrlimit(resource.RLIMIT_AS))"
+
+      - run:
           name: run asv
           no_output_timeout: 30m
           # shell: /home/circleci/.pixi/bin/pixi run -e bench spin run /bin/bash -eo pipefail
@@ -181,7 +185,9 @@ jobs:
           #   export OPENBLAS_NUM_THREADS=1
           #   time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
           #   asv --config asv.conf.json publish
-          command: pixi run bench --quick -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
+          # --no-mem-limit: the 4 GB container makes spin's RLIMIT_AS cap bind, and
+          # it caps address space, which FFT/BLAS thread pools exhaust on their own
+          command: pixi run bench --quick --no-mem-limit -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
 
       - store_artifacts:
           path: benchmarks/html
