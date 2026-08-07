@@ -1112,7 +1112,7 @@ class bradford_gen(rv_continuous):
     `bradford` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
- 
+
     References
     ----------
     .. [1] "Bradford Distribution / Bradford Law of Scattering", Statistics How To,
