@@ -415,6 +415,138 @@ const char *_ncf_variance_doc = R"(
 
     )";
 
+const char *_nct_isf_doc = R"(
+    _nct_isf(x, v, l)
+
+    Inverse survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_kurtosis_excess_doc = R"(
+    _nct_kurtosis_excess(v, l)
+
+    Kurtosis excess of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_mean_doc = R"(
+    _nct_mean(v, l)
+
+    Mean of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_pdf_doc = R"(
+    _nct_pdf(x, v, l)
+
+    Probability density function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_sf_doc = R"(
+    _nct_sf(x, v, l)
+
+    Survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_skewness_doc = R"(
+    _nct_skewness(v, l)
+
+    Skewness of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_variance_doc = R"(
+    _nct_variance(v, l)
+
+    Variance of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_ncx2_isf_doc = R"(
     _ncx2_isf(x, k, l)
 

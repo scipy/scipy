@@ -95,6 +95,13 @@ extern const char *_ncf_pdf_doc;
 extern const char *_ncf_sf_doc;
 extern const char *_ncf_skewness_doc;
 extern const char *_ncf_variance_doc;
+extern const char *_nct_isf_doc;
+extern const char *_nct_kurtosis_excess_doc;
+extern const char *_nct_mean_doc;
+extern const char *_nct_pdf_doc;
+extern const char *_nct_sf_doc;
+extern const char *_nct_skewness_doc;
+extern const char *_nct_variance_doc;
 extern const char *_ncx2_isf_doc;
 extern const char *_ncx2_pdf_doc;
 extern const char *_ncx2_sf_doc;
@@ -492,6 +499,48 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::ddd_d>(ncf_variance_double)},
                           "_ncf_variance", _ncf_variance_doc);
     PyModule_AddObjectRef(module, "_ncf_variance", _ncf_variance);
+
+    PyObject *_nct_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nct_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(nct_isf_double)},
+                          "_nct_isf", _nct_isf_doc);
+    PyModule_AddObjectRef(module, "_nct_isf", _nct_isf);
+
+    PyObject *_nct_kurtosis_excess =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nct_kurtosis_excess_float),
+                           static_cast<xsf::numpy::dd_d>(nct_kurtosis_excess_double)},
+                          "_nct_kurtosis_excess", _nct_kurtosis_excess_doc);
+    PyModule_AddObjectRef(module, "_nct_kurtosis_excess", _nct_kurtosis_excess);
+
+    PyObject *_nct_mean =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nct_mean_float),
+                           static_cast<xsf::numpy::dd_d>(nct_mean_double)},
+                          "_nct_mean", _nct_mean_doc);
+    PyModule_AddObjectRef(module, "_nct_mean", _nct_mean);
+
+    PyObject *_nct_pdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nct_pdf_float),
+                           static_cast<xsf::numpy::ddd_d>(nct_pdf_double)},
+                          "_nct_pdf", _nct_pdf_doc);
+    PyModule_AddObjectRef(module, "_nct_pdf", _nct_pdf);
+
+    PyObject *_nct_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nct_sf_float),
+                           static_cast<xsf::numpy::ddd_d>(nct_sf_double)},
+                          "_nct_sf", _nct_sf_doc);
+    PyModule_AddObjectRef(module, "_nct_sf", _nct_sf);
+
+    PyObject *_nct_skewness =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nct_skewness_float),
+                           static_cast<xsf::numpy::dd_d>(nct_skewness_double)},
+                          "_nct_skewness", _nct_skewness_doc);
+    PyModule_AddObjectRef(module, "_nct_skewness", _nct_skewness);
+
+    PyObject *_nct_variance =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nct_variance_float),
+                           static_cast<xsf::numpy::dd_d>(nct_variance_double)},
+                          "_nct_variance", _nct_variance_doc);
+    PyModule_AddObjectRef(module, "_nct_variance", _nct_variance);
 
     PyObject *_ncx2_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(ncx2_isf_float),
