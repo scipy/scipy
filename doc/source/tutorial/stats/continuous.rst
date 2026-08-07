@@ -83,19 +83,19 @@ so that a normal distribution has a kurtosis of zero.
 Median and mode
 ---------------
 
-The median, :math:`m_{n}` is defined as the point at which half of the density is on one side
+The median, :math:`x_{median}` is defined as the point at which half of the density is on one side
 and half on the other. In other words, :math:`F\left(m_{n}\right)=\frac{1}{2}` so that
 
 .. math::
 
-     m_{n}=G\left(\frac{1}{2}\right).
+     x_{median}=G\left(\frac{1}{2}\right).
 
-In addition, the mode, :math:`m_{d}`, is defined as the value for which the probability density function
+In addition, the mode, :math:`x_{mode}`, is defined as the value for which the probability density function
 reaches its peak
 
 .. math::
 
-     m_{d}=\arg\max_{x}f\left(x\right).
+     x_{mode}=\arg\max_{x}f\left(x\right).
 
 
 Fitting data
