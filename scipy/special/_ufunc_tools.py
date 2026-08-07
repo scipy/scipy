@@ -49,7 +49,7 @@ def _with_cache_optimization(
     Notes
     -----
     There is a common pattern in ufunc kernels exemplified by the situation
-    where some of the arguments are used to compute coeffients of an expansion
+    where some of the arguments are used to compute coefficients of an expansion
     that is taken over one or more of the other arguments. A classic example is
     Mathieu functions, which compute coefficients corresponding to the shape
     parameter q and order m which in principle could be reused for varying

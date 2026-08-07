@@ -35,7 +35,6 @@ def use_reflection(sign_n_even=None, reflection_fun=None):
     return decorator
 
 
-@use_reflection(+1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_jn(n, z, derivative=False):
     r"""Spherical Bessel function of the first kind or its derivative.
 
@@ -70,9 +69,10 @@ def spherical_jn(n, z, derivative=False):
     The derivative is computed using the relations [3]_,
 
     .. math::
-        j_n'(z) = j_{n-1}(z) - \frac{n + 1}{z} j_n(z).
-
-        j_0'(z) = -j_1(z)
+        \begin{align}
+        j_n'(z) &= j_{n-1}(z) - \frac{n + 1}{z} j_n(z),\\
+        j_0'(z) &= -j_1(z).
+        \end{align}
 
 
     .. versionadded:: 0.18.0
@@ -126,7 +126,6 @@ def spherical_jn(n, z, derivative=False):
         return _spherical_jn(n, z)
 
 
-@use_reflection(-1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_yn(n, z, derivative=False):
     r"""Spherical Bessel function of the second kind or its derivative.
 
@@ -160,9 +159,10 @@ def spherical_yn(n, z, derivative=False):
     The derivative is computed using the relations [3]_,
 
     .. math::
-        y_n' = y_{n-1} - \frac{n + 1}{z} y_n.
-
-        y_0' = -y_1
+        \begin{align}
+        y_n'(z) &= y_{n-1}(z) - \frac{n + 1}{z} y_n(z),\\
+        y_0'(z) &= -y_1(z).
+        \end{align}
 
 
     .. versionadded:: 0.18.0
@@ -216,7 +216,6 @@ def spherical_yn(n, z, derivative=False):
         return _spherical_yn(n, z)
 
 
-@use_reflection(+1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_in(n, z, derivative=False):
     r"""Modified spherical Bessel function of the first kind or its derivative.
 
@@ -249,9 +248,10 @@ def spherical_in(n, z, derivative=False):
     The derivative is computed using the relations [2]_,
 
     .. math::
-        i_n' = i_{n-1} - \frac{n + 1}{z} i_n.
-
-        i_1' = i_0
+        \begin{align}
+        i_n'(z) &= i_{n-1}(z) - \frac{n + 1}{z} i_n(z),\\
+        i_1'(z) &= i_0(z).
+        \end{align}
 
 
     .. versionadded:: 0.18.0
@@ -345,9 +345,10 @@ def spherical_kn(n, z, derivative=False):
     The derivative is computed using the relations [2]_,
 
     .. math::
-        k_n' = -k_{n-1} - \frac{n + 1}{z} k_n.
-
-        k_0' = -k_1
+        \begin{align}
+        k_n'(z) &= -k_{n-1}(z) - \frac{n + 1}{z} k_n(z),\\
+        k_0'(z) &= -k_1(z).
+        \end{align}
 
 
     .. versionadded:: 0.18.0

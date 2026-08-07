@@ -1,14 +1,7 @@
 /*
  * Templated loops for `linalg.solve`
  */
-#include "Python.h"
-#include <iostream>
-#include "numpy/arrayobject.h"
-#include "numpy/npy_math.h"
-#include "scipy_blas_defines.h"
-#include "_npymath.hh"
-#include "_common_array_utils.hh"
-
+#pragma once
 
 namespace sp_linalg {
 
@@ -273,8 +266,10 @@ inline void solve_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = maxa * maxinva > 1./ detail::numeric_limits<real_type>::eps;
-    status.rcond = maxa * maxinva;
+    double cond = (double)maxa * (double)maxinva;
+    double rcond = 1.0 / cond;
+    status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
+    status.rcond = rcond;
 }
 
 
@@ -488,7 +483,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     CBLAS_INT buf_size_a = overwrite_a ? 0 : n*n;
     CBLAS_INT buf_size_b = overwrite_b ? 0 : n*nrhs;
     CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
-    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork; 
+    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork;
 
     T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
@@ -501,7 +496,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
      * ^          ^         ^          ^      ^
      * scratch    data      data_b     work2  work
      *
-     * - scrach & data are for A (lhs)
+     * - scratch & data are for A (lhs)
      * - data_b is for b (rhs)
      * - work2 is for the tridiag solver, trcon's work array
      * - work is for all other LAPACK functions

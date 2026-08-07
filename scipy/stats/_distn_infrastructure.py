@@ -3993,7 +3993,8 @@ for method_name in _remove_scale_methods:
     doc = FunctionDoc(method)
     doc['Parameters'] = [p for p in doc['Parameters'] if p.name != 'scale']
     doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
-    method.__doc__ = str(doc)
+    method.__doc__ = doc
+del method_name, method, doc  # pyrefly:ignore[unbound-name]
 
 
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,

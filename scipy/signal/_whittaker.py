@@ -8,7 +8,7 @@ from scipy.special import binom
 
 def _solveh_banded(ab, b, calc_logdet=False):
     """
-    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the 
+    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the
     Hermitian positive-definite banded matrix defined by `ab`.
 
     Same as scipy.linalg.solveh_banded(lower=True, check_finite=False), but:
@@ -47,7 +47,7 @@ def _solveh_banded(ab, b, calc_logdet=False):
         # We assume lower=True and real arrays
         d = a1[0, :]
         e = a1[1, :-1]
-        # ptsv uses LDL', returnes d=diag(D), du=diag(L, -1)
+        # ptsv uses LDL', returns d=diag(D), du=diag(L, -1)
         d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
         if calc_logdet and info == 0:
             logdet = np.log(d).sum()
@@ -75,13 +75,13 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
 
     In econometrics, the WH graduation of order 2 is referred to as the
     Hodrick-Prescott filter [4]_.
-    
+
     Parameters
     ----------
     signal : array_like
         A one-dimensional array of length ``order + 1`` representing equidistant data
         points of a signal, e.g. a time series with constant time lag.
-    
+
     lamb : str or float, optional
         Smoothing or penalty parameter, default is ``"reml"`` which minimizes the
         restricted maximum likelihood (REML) criterion to find the parameter ``lamb``.
@@ -219,7 +219,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
         if weights.shape != signal.shape:
             msg = "Input array weights must have the same shape as the signal array."
             raise ValueError(msg)
-        
+
     if weights is None:
         if not np.isfinite(signal).all():
             raise ValueError("Input array signal must be finite.")
@@ -260,7 +260,7 @@ def _polynomial_fit(y, lamb, order=2, weights=None, calc_logdet=False):
     poly = np.polynomial.Polynomial.fit(x=x_range, y=y, deg=order - 1, w=weights)
     if calc_logdet:
         # For large lambda, log|W + lambda D'D| ~ log|lambda D'D|
-        # (with determinant understood as product of non-zero eigenvalues). 
+        # (with determinant understood as product of non-zero eigenvalues).
         logdet_DtD = _logdet_difference_matrix(order=order, n=n)
         logdet = (n - order) * np.log(lamb) + logdet_DtD
     else:
@@ -271,10 +271,10 @@ def _polynomial_fit(y, lamb, order=2, weights=None, calc_logdet=False):
 def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False, warn_user=True):
     """
     Solve the WH optimization problem via the normal equations.
-    
+
     A @ x = y
     A = I + lamb * P = I + lamb * D' @ D
-    D = difference matrix of order=`order` 
+    D = difference matrix of order=`order`
 
     With weights W = diag(weights):
     A = W + lamb * P
@@ -383,14 +383,14 @@ def _logdet_difference_matrix(order, n):
         return np.log(n)
     logdet = 0.0
     for i in range(1, p+1):
-        logdet += np.log(binom(n + i - 1, 2*i - 1) / binom(2*i, i)) 
+        logdet += np.log(binom(n + i - 1, 2*i - 1) / binom(2*i, i))
     logdet += np.log(binom(2*p, p))
     return logdet
 
 
 def _reml(lamb, y, order, weights=None):
     """Calculate the restricted maximum likelihood (REML).
-    
+
     Parameters
     ----------
     lamb : penalty
@@ -415,7 +415,7 @@ def _reml(lamb, y, order, weights=None):
     logdet_DtD = _logdet_difference_matrix(order=order, n=n)
     residual = y - x
     # Eq. 12 of Biessy gives the REML criterion:
-    # REML(lambda, sigma) = (log of restriced maximum likelihood)
+    # REML(lambda, sigma) = (log of restricted maximum likelihood)
     #     = -1/2 ((y - theta) W (y - theta) / sigma^2 + lambda theta D'D theta / sigma^2
     #             - log|lambda D'D| + log|(W + lambda D'D)| + (n - p) log(sigma^2)
     #             + const

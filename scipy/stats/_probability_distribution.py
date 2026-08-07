@@ -341,7 +341,7 @@ class _ProbabilityDistribution(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def lmoment(self, order, kind, *, method):
+    def lmoment(self, order, *, standardize, method):
         r"""L-moment or L-moment ratio of positive integer order.
 
         The L-moment of order :math:`n` of a continuous random variable :math:`X` is:
@@ -1250,7 +1250,7 @@ class _ProbabilityDistribution(ABC):
         >>> X.cdf(-0.25, 0.25) == X.cdf(0.25) - X.cdf(-0.25)
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1458,7 +1458,7 @@ class _ProbabilityDistribution(ABC):
         >>> X.ccdf(-0.25, 0.25) == X.cdf(-0.25) + X.ccdf(0.25)
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1657,7 +1657,7 @@ class _ProbabilityDistribution(ABC):
         >>> np.allclose(X.logcdf(0.), np.log(X.cdf(0.)))
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1851,7 +1851,7 @@ class _ProbabilityDistribution(ABC):
         >>> np.allclose(X.logccdf(0.), np.log(X.ccdf(0.)))
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod

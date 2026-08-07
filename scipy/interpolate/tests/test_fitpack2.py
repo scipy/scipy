@@ -1,5 +1,6 @@
 # Created by Pearu Peterson, June 2003
 import itertools
+import os
 import sys
 import warnings
 
@@ -18,7 +19,7 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
 
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 from scipy.interpolate import make_splrep, NdBSpline
 from scipy.interpolate._regrid import (_regrid,
@@ -406,6 +407,7 @@ class TestUnivariateSpline:
         with pytest.warns(UserWarning, match=msg):
             UnivariateSpline(x, y, k=1)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # UnivariateSpline
@@ -459,7 +461,7 @@ class TestUnivariateSpline:
         # than C-order which would give sorted x = [1,2,3,4,5,6]
 
         # The F-order flattened x is not monotonic, so FITPACK returns ier=10
-        # and emits a UserWarning about erronous input.
+        # and emits a UserWarning about erroneous input.
         with pytest.warns(UserWarning, match="x\\[0\\]<x\\[1\\]<"):
             InterpolatedUnivariateSpline(x_2d, y_2d)
 
@@ -744,6 +746,92 @@ class TestSmoothBivariateSpline:
                                      bbox=bbox.tolist(), w=w.tolist(),
                                      kx=1, ky=1)
         xp_assert_close(spl1(0.1, 0.5), spl2(0.1, 0.5))
+
+
+def _contiguous(a):
+    """C-contiguous reference layout."""
+    return np.ascontiguousarray(a, dtype=np.float64)
+
+
+def _strided(a):
+    """Return a non-contiguous view of `a`, interleaved with NaN. A read that
+    wrongly assumes C-contiguity picks up a NaN; a correct strided read does
+    not."""
+    a = np.asarray(a, dtype=np.float64)
+    v = np.stack([a, np.full_like(a, np.nan)], axis=-1)[..., 0]
+    assert not v.flags["C_CONTIGUOUS"]
+    return v
+
+
+# Builders for the non-contiguous-input sweep below. Each applies `prep` to
+# every array input and returns the fit evaluated at fixed points (flattened).
+# Data is regenerated identically per call (fixed seed) so the only difference
+# between two calls is `prep`.
+def _scattered_data():
+    rng = np.random.default_rng(0)
+    src = rng.uniform(-5, 5, (400, 2))
+    x, y = src[:, 0].copy(), src[:, 1].copy()
+    return x, y, x ** 2 + y
+
+
+def _sphere_scattered_data():
+    rng = np.random.default_rng(0)
+    theta = rng.uniform(0.1, np.pi - 0.1, 200)
+    phi = rng.uniform(0.1, 2 * np.pi - 0.1, 200)
+    return theta, phi, np.sin(theta) * np.cos(phi)
+
+
+def _fit_smooth_bivariate(prep):
+    x, y, z = _scattered_data()
+    return SmoothBivariateSpline(prep(x), prep(y), prep(z), kx=2, ky=2).ev(x, y)
+
+
+def _fit_lsq_bivariate(prep):
+    x, y, z = _scattered_data()
+    t = np.linspace(-4, 4, 3)
+    return LSQBivariateSpline(prep(x), prep(y), prep(z), prep(t), prep(t),
+                              kx=2, ky=2).ev(x, y)
+
+
+def _fit_rect_bivariate(prep):
+    gx, gy = np.linspace(0, 1, 12), np.linspace(0, 1, 14)
+    gz = np.sin(gx[:, None]) * np.cos(gy[None, :])
+    spl = RectBivariateSpline(prep(gx), prep(gy), prep(gz))
+    return spl(np.linspace(0.1, 0.9, 5), np.linspace(0.1, 0.9, 5)).ravel()
+
+
+def _fit_smooth_sphere(prep):
+    theta, phi, r = _sphere_scattered_data()
+    spl = SmoothSphereBivariateSpline(prep(theta), prep(phi), prep(r), s=2.0)
+    return spl.ev(theta, phi)
+
+
+def _fit_lsq_sphere(prep):
+    theta, phi, r = _sphere_scattered_data()
+    tt = np.linspace(0, np.pi, 5)[1:-1]
+    tp = np.linspace(0, 2 * np.pi, 5)[1:-1]
+    return LSQSphereBivariateSpline(prep(theta), prep(phi), prep(r),
+                                    prep(tt), prep(tp)).ev(theta, phi)
+
+
+def _fit_rect_sphere(prep):
+    u = np.linspace(0, np.pi, 14)[1:-1]
+    v = np.linspace(0, 2 * np.pi, 14, endpoint=False)
+    rg = np.sin(u[:, None]) * np.cos(v[None, :])
+    return RectSphereBivariateSpline(prep(u), prep(v), prep(rg))(u, v).ravel()
+
+
+@pytest.mark.parametrize("fit", [
+    pytest.param(_fit_smooth_bivariate, id="SmoothBivariateSpline"),
+    pytest.param(_fit_lsq_bivariate, id="LSQBivariateSpline"),
+    pytest.param(_fit_rect_bivariate, id="RectBivariateSpline"),
+    pytest.param(_fit_smooth_sphere, id="SmoothSphereBivariateSpline"),
+    pytest.param(_fit_lsq_sphere, id="LSQSphereBivariateSpline"),
+    pytest.param(_fit_rect_sphere, id="RectSphereBivariateSpline"),
+])
+def test_bivariate_spline_noncontiguous_input(fit):
+    # The FITPACK C bindings read x/y/z/w buffers assuming C-contiguity.
+    xp_assert_close(fit(_strided), fit(_contiguous))
 
 
 class TestLSQSphereBivariateSpline:
@@ -1395,6 +1483,54 @@ class TestRectBivariateSpline:
             Interpolator(GridPosLats, nonGridPosLons)
         assert "y must be strictly increasing" in str(exc_info.value)
 
+    def test_grid_sparse_meshgrid(self):
+        # gh-25730
+        x = np.arange(-10.0, 10.0)
+        y = np.arange(-20.0, 20.0)
+        lut = RectBivariateSpline(x, y, np.hypot(x[:, None], y[None, :]), s=0)
+
+        xi = np.linspace(-10.0, 10.0, 25)
+        yi = np.linspace(-20.0, 20.0, 30)
+        xs, ys = np.meshgrid(xi, yi, sparse=True, indexing="ij")
+        assert xs.ndim == 2 and ys.ndim == 2
+
+        xp_assert_close(lut(xs, ys), lut(xi, yi), atol=1e-14)
+
+    def test_grid_sparse_meshgrid_values(self):
+        # gh-25730
+        # The snippet from the issue, without its denominator so that no nans
+        # enter the fit. Reference values obtained by running it on scipy 1.16.1.
+        x = np.arange(-10, 10)
+        y = np.arange(-20, 20)
+        x_mesh, y_mesh = np.meshgrid(x, y)
+        z = np.sin(np.sqrt(x_mesh**2 + y_mesh**2))
+
+        xi = np.linspace(-10, 10, endpoint=True, num=3)
+        yi = np.linspace(-20, 20, endpoint=True, num=3)
+        xs, ys = np.meshgrid(xi, yi, sparse=True)
+
+        expected = np.array([
+            [-3.61178317e-01, 9.12945251e-01, 5.94013869e-02],
+            [-5.44021111e-01, -2.15105711e-16, 4.12118485e-01],
+            [4.97086683e-01, 1.49877210e-01, 8.23386213e-01],
+        ])
+        xp_assert_close(RectBivariateSpline(y, x, z, s=0)(ys, xs), expected, atol=1e-14)
+
+    def test_not_increasing_input_2d(self):
+        # gh-25730
+        x = np.arange(5.0)
+        y = np.arange(6.0)
+        lut = RectBivariateSpline(x, y, np.hypot(x[:, None], y[None, :]), s=0)
+
+        decreasing = np.array([3.0, 1.0, 4.0])
+        with assert_raises(ValueError) as exc_info:
+            lut(decreasing[:, None], y[None, :])
+        assert "x must be strictly increasing" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            lut(x[:, None], decreasing[None, :])
+        assert "y must be strictly increasing" in str(exc_info.value)
+
     def _sample_large_2d_data(self, nx, ny):
         rng = np.random.default_rng(1)
         x = np.arange(nx)
@@ -1403,56 +1539,86 @@ class TestRectBivariateSpline:
 
         return x, y, z.astype(np.float64)
 
+    # Thin wrapper used as the ``RectBivariateSpline`` entry in the
+    # ``spl_apis`` parametrize dimension of ``test_spline_large_2d`` and
+    # ``test_spline_large_2d_maxit``.  A standalone callable is required
+    # because ``RectBivariateSpline.__call__`` cannot be passed directly as a
+    # parametrize value alongside ``_ndbspline_call_like_bivariate``.
+    def _RectBivariateSplineEval(spl, x, y):
+        return spl(x, y)
+
     @pytest.mark.slow()
+    @pytest.mark.timeout(timeout=os.getenv("WINDOWS_CI_LONG_TIMEOUT", None))
     @pytest.mark.parametrize('shape', [(350, 850), (2000, 170)])
     @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
                                         (1, 7e-3, 1e-4),
                                         (3, 2e-2, 1e-4)])
-    def test_spline_large_2d(self, shape, s_tols):
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
+                                           _RectBivariateSplineEval),
+                                          (_regrid,
+                                           _ndbspline_call_like_bivariate)))
+    def test_spline_large_2d(self, shape, s_tols, spl_apis):
         # Reference - https://github.com/scipy/scipy/issues/17787
+        #
+        # ``spl_apis`` is intentionally a parametrize dimension
+        # so that pytest-timeout's ``--timeout`` limit is applied
+        # individually to each (API, shape, s_tols) combination.  If both APIs
+        # were called sequentially inside a single test function they would
+        # share one timeout budget, making it much easier to exceed the limit
+        # on slow platforms (e.g. Windows CI) and triggering the
+        # ``--timeout-method=thread`` worker crash described in gh-25142.
         nx, ny = shape
         s, atol, rtol = s_tols
         x, y, z = self._sample_large_2d_data(nx, ny)
 
-        spl = RectBivariateSpline(x, y, z, s=s)
-        z_spl = spl(x, y)
+        spl_construct, spl_eval = spl_apis
+
+        spl = spl_construct(x, y, z, s=s)
+        z_spl = spl_eval(spl, x, y)
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
-        spl_custom = _regrid(x, y, z, s=s)
-        z_spl_custom = _ndbspline_call_like_bivariate(spl_custom, x, y)
-        assert(not np.isnan(z_spl_custom).any())
-        xp_assert_close(z_spl_custom, z, atol=atol, rtol=rtol)
-
     @pytest.mark.xslow()
-    @pytest.mark.skipif(sys.platform == "win32", reason="Fails intermittently "
-                                                        "on Windows;"
-                                                        "investigation pending.")
     @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system "
                                                      "due to large input data")
     @pytest.mark.parametrize("k", [3, 4])
-    def test_spline_large_2d_maxit(self, k):
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
+                                           _RectBivariateSplineEval),
+                                          (_regrid,
+                                           _ndbspline_call_like_bivariate)))
+    def test_spline_large_2d_maxit(self, k, spl_apis):
         # Reference - for https://github.com/scipy/scipy/issues/17787
+        #
+        # ``spl_apis`` is intentionally a parametrize dimension
+        # for the same reason as in ``test_spline_large_2d``: so
+        # that pytest-timeout's ``--timeout`` limit is applied individually to
+        # each (API, k) combination instead of being shared across both APIs
+        # in a single call, which would risk a ``--timeout-method=thread``
+        # worker crash on Windows CI (see gh-25142).
         nx, ny = 1000, 1700
         s, atol, rtol = 2, 2e-2, 1e-12
         x, y, z = self._sample_large_2d_data(nx, ny)
 
-        spl = RectBivariateSpline(x, y, z, s=s,
-                                  maxit=25, kx=k, ky=k)
-        z_spl = spl(x, y)
+        spl_construct, spl_eval = spl_apis
+
+        spl = spl_construct(x, y, z, s=s,
+                            maxit=30, kx=k, ky=k)
+        z_spl = spl_eval(spl, x, y)
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
-        spl_custom = _regrid(x, y, z, s=s,
-                                                 maxit=30, kx=k, ky=k)
-        z_spl_custom = _ndbspline_call_like_bivariate(spl_custom, x, y)
-        assert(not np.isnan(z_spl_custom).any())
-        xp_assert_close(z_spl_custom, z, atol=atol, rtol=rtol)
-
-    def test_spline_synthetic_data(self):
+    @pytest.mark.parametrize("spl_apis", ((RectBivariateSpline,
+                                           _RectBivariateSplineEval),
+                                          (_regrid,
+                                           _ndbspline_call_like_bivariate)))
+    def test_spline_synthetic_data(self, spl_apis):
         """
         Test regrid with synthetic smooth data (mixed frequencies + noise).
         """
+        # ``spl_apis`` is parametrized for consistency with
+        # ``test_spline_large_2d`` and ``test_spline_large_2d_maxit``,
+        # ensuring both APIs are exercised under the same test structure.
+        #
         # Create strictly-increasing axes and smooth test surface
         nx, ny = 64, 64
         kx, ky = 3, 3
@@ -1470,17 +1636,12 @@ class TestRectBivariateSpline:
             + 0.05 * rng.normal(size=(nx, ny))
         ).astype(float)
 
-        # Test RectBivariateSpline
-        spl = RectBivariateSpline(x, y, z, kx=kx, ky=ky, s=s)
-        z_spl = spl(x, y)
+        spl_construct, spl_eval = spl_apis
+
+        spl = spl_construct(x, y, z, kx=kx, ky=ky, s=s)
+        z_spl = spl_eval(spl, x, y)
         assert not np.isnan(z_spl).any()
         xp_assert_close(z_spl, z, atol=0.1, rtol=0.1)
-
-        # Test regrid
-        spl_custom = _regrid(x, y, z, kx=kx, ky=ky, s=s)
-        z_spl_custom = _ndbspline_call_like_bivariate(spl_custom, x, y)
-        assert not np.isnan(z_spl_custom).any()
-        xp_assert_close(z_spl_custom, z, atol=0.1, rtol=0.1)
 
 
 class TestRectSphereBivariateSpline:
@@ -1663,7 +1824,7 @@ class TestRectSphereBivariateSpline:
 
     def test_pole_continuity_gh_14591(self):
         # regression test for https://github.com/scipy/scipy/issues/14591
-        # with pole_continuty=(True, True), the internal work array size
+        # with pole_continuity=(True, True), the internal work array size
         # was too small, leading to a FITPACK data validation error.
 
         # The reproducer in gh-14591 was using a NetCDF4 file with

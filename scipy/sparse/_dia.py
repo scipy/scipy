@@ -5,6 +5,8 @@ __docformat__ = "restructuredtext en"
 __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
+import os
+from warnings import warn
 
 from .._lib._util import _prune_array, copy_if_needed
 from ._matrix import spmatrix
@@ -59,6 +61,7 @@ class _dia_base(_data_matrix):
                     if not copy:
                         copy = copy_if_needed
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
+                    getdtype(self.data.dtype)  # check that dtype is supported
                     offsets = np.array(arg1[1],
                                        dtype=self._get_index_dtype(maxval=max(shape)),
                                        copy=copy)
@@ -160,7 +163,7 @@ class _dia_base(_data_matrix):
             row_sums = np.zeros((num_rows, 1), dtype=res_dtype)
             one = np.ones(num_cols, dtype=res_dtype)
             dia_matvec(num_rows, num_cols, len(self.offsets),
-                       self.data.shape[1], self.offsets, 
+                       self.data.shape[1], self.offsets,
                        self.data.astype(res_dtype), one, row_sums)
 
             row_sums = self._ascontainer(row_sums)
@@ -502,13 +505,24 @@ def isspmatrix_dia(x):
     Examples
     --------
     >>> from scipy.sparse import dia_array, dia_matrix, coo_matrix, isspmatrix_dia
-    >>> isspmatrix_dia(dia_matrix([[5]]))
+    >>> isspmatrix_dia(dia_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_dia(dia_array([[5]]))
+    >>> isspmatrix_dia(dia_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_dia(coo_matrix([[5]]))
+    >>> isspmatrix_dia(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_dia` is being replaced by `self.format == "dia" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_dia function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, dia_matrix)
 
 

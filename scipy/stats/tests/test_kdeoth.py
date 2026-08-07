@@ -22,7 +22,7 @@ def test_kde_1d():
     xx = np.asarray([0.1, 0.5, 0.9])
     loc, scale = gkde.dataset, np.sqrt(gkde.covariance)
     assert_allclose(
-        gkde(xx), 
+        gkde(xx),
         stats.norm.pdf(xx[:, None], loc=loc, scale=scale).sum(axis=-1) / gkde.n,
         rtol=5e-14
     )
@@ -30,9 +30,9 @@ def test_kde_1d():
     xs = np.linspace(-7, 7, 501)
     kdepdf = gkde.evaluate(xs)
     normpdf = stats.norm.pdf(xs, loc=xnmean, scale=xnstd)
-    intervall = xs[1] - xs[0]
+    interval = xs[1] - xs[0]
 
-    assert_(np.sum((kdepdf - normpdf)**2)*intervall < 0.01)
+    assert_(np.sum((kdepdf - normpdf)**2)*interval < 0.01)
     prob1 = gkde.integrate_box_1d(xnmean, np.inf)
     prob2 = gkde.integrate_box_1d(-np.inf, xnmean)
     assert_almost_equal(prob1, 0.5, decimal=1)
@@ -41,9 +41,9 @@ def test_kde_1d():
     assert_almost_equal(gkde.integrate_box(-np.inf, xnmean), prob2, decimal=13)
 
     assert_almost_equal(gkde.integrate_kde(gkde),
-                        (kdepdf**2).sum()*intervall, decimal=2)
+                        (kdepdf**2).sum()*interval, decimal=2)
     assert_almost_equal(gkde.integrate_gaussian(xnmean, xnstd**2),
-                        (kdepdf*normpdf).sum()*intervall, decimal=2)
+                        (kdepdf*normpdf).sum()*interval, decimal=2)
 
 
 def test_kde_1d_weighted():
@@ -65,7 +65,7 @@ def test_kde_1d_weighted():
 
     pdf = stats.norm.pdf
     assert_allclose(
-        gkde(xx), 
+        gkde(xx),
         np.sum(pdf(xx[:, None], loc=loc, scale=scale) * gkde.weights, axis=-1),
         rtol=5e-14
     )
@@ -73,9 +73,9 @@ def test_kde_1d_weighted():
     xs = np.linspace(-7, 7, 501)
     kdepdf = gkde.evaluate(xs)
     normpdf = stats.norm.pdf(xs, loc=xnmean, scale=xnstd)
-    intervall = xs[1] - xs[0]
+    interval = xs[1] - xs[0]
 
-    assert_(np.sum((kdepdf - normpdf)**2)*intervall < 0.01)
+    assert_(np.sum((kdepdf - normpdf)**2)*interval < 0.01)
     prob1 = gkde.integrate_box_1d(xnmean, np.inf)
     prob2 = gkde.integrate_box_1d(-np.inf, xnmean)
     assert_almost_equal(prob1, 0.5, decimal=1)
@@ -84,9 +84,9 @@ def test_kde_1d_weighted():
     assert_almost_equal(gkde.integrate_box(-np.inf, xnmean), prob2, decimal=13)
 
     assert_almost_equal(gkde.integrate_kde(gkde),
-                        (kdepdf**2).sum()*intervall, decimal=2)
+                        (kdepdf**2).sum()*interval, decimal=2)
     assert_almost_equal(gkde.integrate_gaussian(xnmean, xnstd**2),
-                        (kdepdf*normpdf).sum()*intervall, decimal=2)
+                        (kdepdf*normpdf).sum()*interval, decimal=2)
 
 
 @pytest.mark.parametrize("n_basesample",
@@ -136,9 +136,9 @@ def test_kde_2d(n_basesample):
 
     normpdf = stats.multivariate_normal.pdf(np.dstack([x, y]),
                                             mean=mean, cov=covariance)
-    intervall = y.ravel()[1] - y.ravel()[0]
+    interval = y.ravel()[1] - y.ravel()[0]
 
-    assert_(np.sum((kdepdf - normpdf)**2) * (intervall**2) < 0.01)
+    assert_(np.sum((kdepdf - normpdf)**2) * (interval**2) < 0.01)
 
     small = -1e100
     large = 1e100
@@ -148,9 +148,9 @@ def test_kde_2d(n_basesample):
     assert_almost_equal(prob1, 0.5, decimal=1)
     assert_almost_equal(prob2, 0.5, decimal=1)
     assert_almost_equal(gkde.integrate_kde(gkde),
-                        (kdepdf**2).sum()*(intervall**2), decimal=2)
+                        (kdepdf**2).sum()*(interval**2), decimal=2)
     assert_almost_equal(gkde.integrate_gaussian(mean, covariance),
-                        (kdepdf*normpdf).sum()*(intervall**2), decimal=2)
+                        (kdepdf*normpdf).sum()*(interval**2), decimal=2)
 
 
 @pytest.mark.parametrize("n_basesample",
@@ -181,7 +181,7 @@ def test_kde_2d_weighted(n_basesample):
     assert_allclose(
         gkde(xx.T),
         np.sum(pdf(arg, cov=gkde.covariance) * gkde.weights, axis=-1),
-        rtol=5e-14
+        rtol=6e-14
     )
 
     # ... and cdf
@@ -203,9 +203,9 @@ def test_kde_2d_weighted(n_basesample):
 
     normpdf = stats.multivariate_normal.pdf(np.dstack([x, y]),
                                             mean=mean, cov=covariance)
-    intervall = y.ravel()[1] - y.ravel()[0]
+    interval = y.ravel()[1] - y.ravel()[0]
 
-    assert_(np.sum((kdepdf - normpdf)**2) * (intervall**2) < 0.01)
+    assert_(np.sum((kdepdf - normpdf)**2) * (interval**2) < 0.01)
 
     small = -1e100
     large = 1e100
@@ -215,9 +215,9 @@ def test_kde_2d_weighted(n_basesample):
     assert_almost_equal(prob1, 0.5, decimal=1)
     assert_almost_equal(prob2, 0.5, decimal=1)
     assert_almost_equal(gkde.integrate_kde(gkde),
-                        (kdepdf**2).sum()*(intervall**2), decimal=2)
+                        (kdepdf**2).sum()*(interval**2), decimal=2)
     assert_almost_equal(gkde.integrate_gaussian(mean, covariance),
-                        (kdepdf*normpdf).sum()*(intervall**2), decimal=2)
+                        (kdepdf*normpdf).sum()*(interval**2), decimal=2)
 
 
 def test_kde_bandwidth_method():

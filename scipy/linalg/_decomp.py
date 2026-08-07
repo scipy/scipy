@@ -225,7 +225,31 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
-    # accommodate empty arrays
+    if b is not None:
+        b1 = _asarray_validated(b, check_finite=check_finite)
+        _deprecate_dtypes("eig", b1)
+
+        a1, b1 = _ensure_dtype_cdsz(a1, b1)  # NB: makes a1.dtype == b1.dtype, if needed
+        b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
+
+        if len(b1.shape) < 2 or b1.shape[-1] != b1.shape[-2]:
+            raise ValueError('expected square matrix')
+
+        if a1.shape[-1] != b1.shape[-1]:
+            raise ValueError('a and b must have the same shape')
+
+        # broadcast batch dimensions of b1 and a1
+        batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
+        a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
+        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+
+        # check if we can work in-place (a1 might have been broadcast by b1)
+        overwrite_a = overwrite_a and (a1.ndim == 2)
+
+        overwrite_b = overwrite_b or (_datacopied(b1, b))
+        overwrite_b = overwrite_b and (b1.ndim == 2) and (b1.flags["F_CONTIGUOUS"])
+
+    # accommodate empty arrays, do so after potential upcasting of `a` due to `b`
     if a1.shape[-1] == 0 or a1.shape[-2] == 0:
         batch_shape = a1.shape[:-2]
         w_n, vr_n = eig(np.eye(2, dtype=a1.dtype))
@@ -252,30 +276,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     else:
         # b is not None: generalized eigenvalue problem
-
-        b1 = _asarray_validated(b, check_finite=check_finite)
-        _deprecate_dtypes("eig", b1)
-
-        a1, b1 = _ensure_dtype_cdsz(a1, b1)  # NB: makes a1.dtype == b1.dtype, if needed
-        b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
-
-        if len(b1.shape) < 2 or b1.shape[-1] != b1.shape[-2]:
-            raise ValueError('expected square matrix')
-
-        if a1.shape[-1] != b1.shape[-1]:
-            raise ValueError('a and b must have the same shape')
-
-        # broadcast batch dimensions of b1 and a1
-        batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-        a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
-
-        # check if we can work in-place (a1 might have been broadcast by b1)
-        overwrite_a = overwrite_a and (a1.ndim == 2)
-
-        overwrite_b = overwrite_b or (_datacopied(b1, b))
-        overwrite_b = overwrite_b and (b1.ndim == 2) and (b1.flags["F_CONTIGUOUS"])
-
         w, beta, vl, vr, err_lst = _batched_linalg._eig(
             a1, left, right, overwrite_a, overwrite_b, b1
         )

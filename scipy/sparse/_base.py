@@ -398,11 +398,11 @@ class _spbase(SparseABC):
     def T(self):
         """Transpose."""
         return self.transpose()
-    
+
     @property
     def mT(self):
         """Matrix transpose.
-        
+
         See Also
         --------
         scipy.sparse.matrix_transpose : equivalent function
@@ -1754,6 +1754,18 @@ sparray.__doc__ = _spbase.__doc__
 def isspmatrix(x):
     """Is `x` of a sparse matrix type?
 
+    .. warning::
+
+        scipy.sparse is switching to the sparse array interface.
+
+        The ``isspmatrix`` function returns ``False`` for sparse arrays.
+        It will remain after the switch to sparse arrays (sparray).
+        So this is a future proof way to check for sparray vs spmatrix.
+        If you just want to check for sparse, use ``issparse(A)``.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        The switch to sparse arrays will occur no earlier than v2.2.
+
     Parameters
     ----------
     x
@@ -1768,7 +1780,7 @@ def isspmatrix(x):
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csr_array, csr_matrix, isspmatrix
-    >>> isspmatrix(csr_matrix([[5]]))
+    >>> isspmatrix(csr_matrix([[5]]))  # doctest: +SKIP
     True
     >>> isspmatrix(csr_array([[5]]))
     False

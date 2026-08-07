@@ -525,7 +525,7 @@ def _solve_continuous_are(a, b, q, r, e, s, balanced):
     u00 = u[:m, :m]
     u10 = u[m:, :m]
 
-    # Solve via back-substituion after checking the condition of u00
+    # Solve via back-substitution after checking the condition of u00
     up, ul, uu = lu(u00)
     if 1/cond(uu) < np.spacing(1.):
         raise LinAlgError('Failed to find a finite solution.')
@@ -743,7 +743,7 @@ def _solve_discrete_are(a, b, q, r, e, s, balanced):
     u00 = u[:m, :m]
     u10 = u[m:, :m]
 
-    # Solve via back-substituion after checking the condition of u00
+    # Solve via back-substitution after checking the condition of u00
     up, ul, uu = lu(u00)
 
     if 1/cond(uu) < np.spacing(1.):

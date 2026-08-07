@@ -29,7 +29,7 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
-                                   is_numpy, xp_default_dtype, is_array_api_strict,
+                                   is_numpy, is_array_api_strict,
                                    is_jax, is_lazy_array)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
@@ -40,7 +40,7 @@ from scipy._lib._array_api_no_0d import (
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-distcont = dict(distcont)  # type: ignore
+distcont = dict(distcont)
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -875,7 +875,7 @@ class TestAnsari:
     def test_dtypes(self, dtype, n, ties, xp):
         if is_jax(xp) and dtype != 'float64':
             pytest.xfail("p-value calculation works natively with 'float64 only")
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(78587342806484)
         x, y = rng.integers(6, size=(2, n)) if ties else rng.random(size=(2, n))
         method = {'method': 'exact' if ((n <= 55) and not ties) else 'asymptotic'}
@@ -1315,6 +1315,10 @@ class TestBinomTest:
         xp_assert_equal(res.low, ref.low)
         xp_assert_equal(res.high, ref.high)
 
+    @pytest.mark.xfail_xp_backends(
+        "array_api_strict",
+        reason="https://github.com/data-apis/array-api-strict/pull/223",
+    )
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("method", ['exact', 'wilson', 'wilsoncc'])
@@ -1541,7 +1545,7 @@ class TestFligner:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_data(self, dtype, xp):
         # numbers from R: fligner.test in package stats
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x1 = xp.arange(5, dtype=dtype)
         res = stats.fligner(x1, x1**2)
         ref = (xp.asarray(3.2282229927203536, dtype=dtype),
@@ -1634,7 +1638,7 @@ def mood_cases_with_ties():
 @make_xp_test_case(stats.mood)
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
-                             mood_cases_with_ties())
+                             list(mood_cases_with_ties()))
     def test_against_SAS(self, x, y, alternative, stat_expect, p_expect, xp):
         """
         Example code used to generate SAS output:
@@ -1678,7 +1682,7 @@ class TestMood:
                                            .1538788064889380))])
     def test_against_SAS_2(self, dtype, alternative, expected, xp):
         # Code to run in SAS in above function
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
              101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
         y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
@@ -1796,7 +1800,7 @@ class TestMood:
 
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     def test_mood_alternative(self, dtype, xp):
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
 
         rng = np.random.RandomState(0)
         x = stats.norm.rvs(scale=0.75, size=100, random_state=rng)
@@ -2213,7 +2217,7 @@ class TestWilcoxon:
         x = rng.random(size=size).tolist()
         res = stats.wilcoxon(xp.asarray(x), method=stats.PermutationMethod())
         ref = stats.wilcoxon(x, method='exact')  # all backends test against NumPy
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         xp_assert_equal(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
         xp_assert_equal(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
 

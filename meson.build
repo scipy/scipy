@@ -1,7 +1,7 @@
 project(
   'scipy',
   'c', 'cpp', 'cython',
-  version: run_command(['tools/gitversion.py'], check: true).stdout().strip(),
+  version: run_command(['tools/building/gitversion.py'], check: true).stdout().strip(),
   license: 'BSD-3',
   meson_version: '>= 1.5.0',
   default_options: [
@@ -16,7 +16,7 @@ project(
 
 fs = import('fs')
 
-meson.add_dist_script('tools/trim_sdist_content.py')
+meson.add_dist_script('tools/building/trim_sdist_content.py')
 
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
@@ -47,8 +47,8 @@ cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
-  if not cc.version().version_compare('>=9.1')
-    error('SciPy requires GCC >= 9.1')
+  if not cc.version().version_compare('>=10.3')
+    error('SciPy requires GCC >= 10.3')
   endif
 elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
   if not cc.version().version_compare('>=15.0')
@@ -74,7 +74,7 @@ add_project_arguments(_global_c_args, language : 'c')
 
 # We need -lm for all C code (assuming it uses math functions, which is safe to
 # assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
-# guaranteed to depend on it. For Fortran code, Meson already adds `-lm`.
+# guaranteed to depend on it.
 m_dep = cc.find_library('m', required : false)
 if m_dep.found()
   add_project_link_arguments('-lm', language : 'c')
@@ -83,29 +83,7 @@ endif
 if host_machine.system() == 'os400'
   # IBM i system, needed to avoid build errors - see gh-17193
   add_project_arguments('-D__STDC_FORMAT_MACROS', language : 'cpp')
-  add_project_link_arguments('-Wl,-bnotextro', language : ['c', 'cpp', 'fortran'])
-endif
-
-if not get_option('_without-fortran')
-  # Adding at project level causes many spurious -lgfortran flags.
-  add_languages('fortran', native: false)
-  ff = meson.get_compiler('fortran')
-  if ff.get_id() == 'gcc'
-    # -std=legacy is not supported by all Fortran compilers, but very useful with
-    # gfortran since it avoids a ton of warnings that we don't care about.
-    # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
-    add_project_arguments('-std=legacy', language: 'fortran')
-  endif
-
-  if ff.has_argument('-Wno-conversion')
-    add_project_arguments('-Wno-conversion', language: 'fortran')
-  endif
-
-  if ff.get_id() == 'llvm-flang'
-    add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: ['fortran'])
-    # -Wall warnings are visible because Meson's warning_level defaults to 1 (-Wall)
-    # LLVM tracking issue: https://github.com/llvm/llvm-project/issues/89888
-  endif
+  add_project_link_arguments('-Wl,-bnotextro', language : ['c', 'cpp'])
 endif
 
 if cc.get_id() == 'clang-cl'
@@ -119,10 +97,19 @@ if cpp.get_id() == 'msvc'
   add_project_arguments('/bigobj', language: 'cpp')
 endif
 
+# Silence GCC -Wpsabi notes about ABI changes (e.g., the GCC 10.1 ABI changes
+# for passing parameter passing for argument of type ‘std::pair<double, double>`).
+# These notes are informational; SciPy is built against a single compiler ABI.
+if meson.get_compiler('cpp').get_id() == 'gcc'
+  # global rather than project-wide, because it silences a few warnings from
+  # within subprojects/highs as well
+  add_global_arguments('-Wno-psabi', language: 'cpp')
+endif
+
 if host_machine.system() == 'darwin'
   if cc.has_link_argument('-Wl,-dead_strip')
     # Allow linker to strip unused symbols
-    add_project_link_arguments('-Wl,-dead_strip', language : ['c', 'cpp', 'fortran'])
+    add_project_link_arguments('-Wl,-dead_strip', language : ['c', 'cpp'])
   endif
 endif
 
@@ -147,25 +134,6 @@ elif cc.get_id() in ['intel-cl', 'intel-llvm-cl']
 endif
 add_global_arguments(_intel_cflags, language: ['c', 'cpp'])
 
-if not get_option('_without-fortran')
-  _intel_fflags = []
-  if ff.get_id() in ['intel', 'intel-llvm']
-    _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
-    minus0_arg = ['-assume', 'minus0']
-    if ff.has_multi_arguments(minus0_arg)
-      _intel_fflags += minus0_arg
-    endif
-  elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
-    # Intel Fortran on Windows does things differently, so deal with that
-    # (also specify dynamic linking and the right name mangling)
-    _intel_fflags = ff.get_supported_arguments(
-      '/fp:strict', '/MD', '/names:lowercase', '/assume:underscore',
-      '/assume:minus0'
-    )
-  endif
-  add_global_arguments(_intel_fflags, language: 'fortran')
-endif
-
 # Hide symbols when building on Linux with GCC. For Python extension modules,
 # we only need `PyInit_*` to be public, anything else may cause problems. So we
 # use a linker script to avoid exporting those symbols (this is in addition to
@@ -173,7 +141,7 @@ endif
 # C++ code. See gh-15996 for details.
 version_link_args = []
 if cc.get_id() != 'clang-cl'
-  _linker_script = meson.project_source_root() / 'scipy/_build_utils/link-version-pyinit.map'
+  _linker_script = meson.project_source_root() / 'tools/building/link-version-pyinit.map'
   vscript_link_args = ['-Wl,--version-script=' + _linker_script]
   # Note that FreeBSD only accepts version scripts when -shared is passed,
   # hence we need to pass that to `cc.links` explicitly (flag is already
@@ -183,8 +151,8 @@ if cc.get_id() != 'clang-cl'
   endif
 endif
 
-generate_f2pymod = find_program('tools/generate_f2pymod.py')
-tempita = find_program('scipy/_build_utils/tempita.py')
+generate_f2pymod = find_program('tools/building/generate_f2pymod.py')
+tempita = find_program('tools/building/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran
@@ -192,7 +160,7 @@ if use_pythran
 endif
 
 # Subprojects
-if not fs.exists('subprojects/array_api_compat/array_api_compat/README.md')
+if not fs.exists('subprojects/array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('subprojects/array_api_extra/README.md')

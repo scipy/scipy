@@ -12,7 +12,7 @@ from scipy.signal._arraytools import _validate_fs
 from .windows import get_window
 from . import _sigtools
 
-from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
+from scipy._lib._array_api import array_namespace, xp_size, xp_device, xp_result_device
 import scipy._external.array_api_extra as xpx
 
 
@@ -288,7 +288,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     window : str or tuple of str and parameter values, optional
         Desired window to use. Default is ``'hamming'``. The window will be symmetric,
         unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
-        ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
+        ``'hamming_periodic'``) Consult `~scipy.signal.get_window` for a list of windows
         and required parameters.
     pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         Toggles the zero frequency bin (or DC gain) to be in the passband (``True``) or
@@ -482,7 +482,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     nyq = 0.5 * fs
 
-    cutoff = xp.asarray(cutoff, dtype=xp_default_dtype(xp))
+    cutoff = xp.asarray(cutoff, dtype=xpx.default_dtype(xp))
     cutoff = xpx.atleast_nd(cutoff, ndim=1, xp=xp) / float(nyq)
 
     # Check for invalid input.
@@ -534,7 +534,10 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     # Insert 0 and/or 1 at the ends of cutoff so that the length of cutoff
     # is even, and each pair in cutoff corresponds to passband.
-    cutoff = xp.concat((xp.zeros(int(pass_zero)), cutoff, xp.ones(int(pass_nyquist))))
+    device = xp_device(cutoff)
+    cutoff = xp.concat((xp.zeros(int(pass_zero), device=device),
+                        cutoff,
+                        xp.ones(int(pass_nyquist), device=device)))
 
 
     # `bands` is a 2-D array; each row gives the left and right edges of
@@ -543,7 +546,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     # Build up the coefficients.
     alpha = 0.5 * (numtaps - 1)
-    m = xp.arange(0, numtaps, dtype=cutoff.dtype) - alpha
+    m = xp.arange(0, numtaps, dtype=cutoff.dtype, device=device) - alpha
     h = 0
     for j in range(bands.shape[0]):
         left, right = bands[j, 0], bands[j, 1]
@@ -551,7 +554,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         h -= left * xpx.sinc(left * m, xp=xp)
 
     # Get and apply the window function.
-    win = get_window(window, numtaps, fftbins=False, xp=xp)
+    win = get_window(window, numtaps, fftbins=False, xp=xp, device=device)
     h *= win
 
     # Now handle scaling if desired.
@@ -608,7 +611,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     window : str or (str, float) or float, or None, optional
         Desired window to use. Default is ``'hamming'``. The window will be symmetric,
         unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
-        ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
+        ``'hamming_periodic'``) Consult `~scipy.signal.get_window` for a list of windows
         and required parameters. If ``None``, no window function is applied.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
@@ -677,6 +680,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     """
     xp = array_namespace(freq, gain)
+    device = xp_result_device(freq, gain)
     freq, gain = xp.asarray(freq), xp.asarray(gain)
 
     fs = _validate_fs(fs, allow_none=True)
@@ -732,11 +736,11 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     if xp.any(d == 0):
         # Tweak any repeated values in freq so that interp works.
         freq = xp.asarray(freq, copy=True)
-        eps = xp.finfo(xp_default_dtype(xp)).eps * nyq
+        eps = xp.finfo(xpx.default_dtype(xp)).eps * nyq
         for k in range(freq.shape[0] - 1):
             if freq[k] == freq[k + 1]:
-                freq[k] = freq[k] - eps
-                freq[k + 1] = freq[k + 1] + eps
+                freq = xpx.at(freq)[k].set(freq[k] - eps)
+                freq = xpx.at(freq)[k + 1].set(freq[k + 1] + eps)
         # Check if freq is strictly increasing after tweak
         d = freq[1:] - freq[:-1]
         if xp.any(d <= 0):
@@ -747,8 +751,8 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)
     fx = np.interp(x, np.asarray(freq), np.asarray(gain))  # XXX array-api-extra#193
-    x = xp.asarray(x)
-    fx = xp.asarray(fx)
+    x = xp.asarray(x, device=device)
+    fx = xp.asarray(fx, device=device)
 
     # Adjust the phases of the coefficients so that the first `ntaps` of the
     # inverse FFT are the desired filter coefficients.
@@ -763,7 +767,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     if window is not None:
         # Create the window to apply to the filter coefficients.
-        wind = get_window(window, numtaps, fftbins=False, xp=xp)
+        wind = get_window(window, numtaps, fftbins=False, xp=xp, device=device)
     else:
         wind = 1
 
@@ -772,7 +776,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     out = out_full[:numtaps] * wind
 
     if ftype == 3:
-        out[xp_size(out) // 2] = 0.0
+        out = xpx.at(out)[xp_size(out) // 2].set(0.0)
 
     return out
 
@@ -927,6 +931,7 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
 
     """
     xp = array_namespace(bands, desired, weight)
+    device = xp_result_device(bands, desired, weight)
     bands = np.asarray(bands)
     desired = np.asarray(desired)
     if weight is not None:
@@ -949,7 +954,7 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     bands = np.asarray(bands).copy()
     result = _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
                               maxiter, grid_density)
-    return xp.asarray(result)
+    return xp.asarray(result, device=device)
 
 
 def firls(numtaps, bands, desired, *, weight=None, fs=None):
@@ -1063,6 +1068,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
 
     """
     xp = array_namespace(bands, desired)
+    device = xp_result_device(bands, desired, weight)
     bands = np.asarray(bands)
     desired = np.asarray(desired)
 
@@ -1169,7 +1175,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
 
     # make coefficients symmetric (linear phase)
     coeffs = np.hstack((a[:0:-1], 2 * a[0], a[1:]))
-    return xp.asarray(coeffs)
+    return xp.asarray(coeffs, device=device)
 
 
 def _dhtm(mag, xp):
@@ -1183,11 +1189,11 @@ def _dhtm(mag, xp):
     """
     # Adapted based on code by Niranjan Damera-Venkata,
     # Brian L. Evans and Shawn R. McCaslin (see refs for `minimum_phase`)
-    sig = xp.zeros(mag.shape[0])
+    sig = xp.zeros(mag.shape[0], device=xp_device(mag))
     # Leave Nyquist and DC at 0, knowing np.abs(fftfreq(N)[midpt]) == 0.5
     midpt = mag.shape[0] // 2
-    sig[1:midpt] = 1
-    sig[midpt+1:] = -1
+    sig = xpx.at(sig)[1:midpt].set(1.0)
+    sig = xpx.at(sig)[midpt+1:].set(-1.0)
     # eventually if we want to support complex filters, we will need a
     # np.abs() on the mag inside the log, and should remove the .real
     recon = xp.real(ifft(mag * xp.exp(fft(sig * ifft(xp.log(mag))))))
@@ -1370,7 +1376,8 @@ def minimum_phase(h,
         raise ValueError(f'n_fft must be at least len(h)=={len(h)}')
 
     if method == 'hilbert':
-        w = xp.arange(n_fft, dtype=xp.float64) * (2 * xp.pi / n_fft * n_half)
+        w = (xp.arange(n_fft, dtype=xp.float64, device=xp_device(h))
+             * (2 * xp.pi / n_fft * n_half))
         H = xp.real(fft(h, n_fft) * xp.exp(1j * w))
         dp = max(H) - 1
         ds = 0 - min(H)
@@ -1394,7 +1401,7 @@ def minimum_phase(h,
         # lmin[n] = 2u[n] - d[n]
         # i.e., double the positive frequencies and zero out the negative ones;
         # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
-        win = xp.zeros(n_fft, dtype=h_temp.dtype)
+        win = xp.zeros(n_fft, dtype=h_temp.dtype, device=xp_device(h_temp))
         win = xpx.at(win)[0].set(1)
         stop = n_fft // 2
         win = xpx.at(win)[1:stop].set(2)
@@ -1428,8 +1435,8 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         circularly symmetric 2-D windows. Each element should be a string or tuple of
         string and parameter values. The generated windows will be symmetric, unless a
         suffix ``'_periodic'`` is appended to the window name (e.g.,
-        ``'hamming_perodic'``). Consult `~scipy.signal.get_window` for a list of windows
-        and required parameters.
+        ``'hamming_periodic'``). Consult `~scipy.signal.get_window` for a list of
+        windows and required parameters.
     fc : float or 1-D array_like, optional
         Cutoff frequency of the filter in the same units as `fs`. This defines
         the frequency at which the filter's gain drops to approximately -6 dB

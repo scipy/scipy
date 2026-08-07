@@ -324,7 +324,7 @@ def differential_entropy(
     xp = array_namespace(values)
     values = xp_promote(values, force_floating=True, xp=xp)
     values = xp.moveaxis(values, axis, -1)
-    n = values.shape[-1]  # type: ignore[union-attr]
+    n = values.shape[-1]
 
     if window_length is None:
         window_length = math.floor(math.sqrt(n) + 0.5)
@@ -365,7 +365,7 @@ def differential_entropy(
 
     # avoid dtype changes due to data-apis/array-api-compat#152
     # can be removed when data-apis/array-api-compat#152 is resolved
-    return xp.astype(res, values.dtype)  # type: ignore[union-attr]
+    return xp.astype(res, values.dtype)
 
 
 def _pad_along_last_axis(X, m, *, xp):

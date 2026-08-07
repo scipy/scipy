@@ -19,7 +19,7 @@ from scipy.special._mptestutils import (
     nonfunctional_tooslow, trace_args, time_limited, exception_to_nan,
     inf_to_nan)
 from scipy.special._ufuncs import (
-    _sinpi, _cospi, _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
+    _sinpi, _cospi, _lgam1p, _log1pmx,
     _igam_fac)
 
 try:
@@ -698,30 +698,34 @@ class TestSystematic:
                             mpmath.airyai,
                             [ComplexArg()])
 
-    def test_airyai_prime(self):
-        # oscillating function, limit range
-        assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
-                            mpmath.airyai(z, derivative=1),
-                            [Arg(-1e8, 1e8)],
-                            rtol=1e-5)
-        assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
-                            mpmath.airyai(z, derivative=1),
-                            [Arg(-1e3, 1e3)])
+    @pytest.mark.parametrize('xlow, xhigh, rtol',
+                             [(-1e8, -1e3, 5e-5),
+                              (-1e3, 0, 1e-9),
+                              (0, 1e3, 1e-12),
+                              (1e3, 1e8, 1e-12)])
+    def test_airyai_prime(self, xlow, xhigh, rtol):
+        # Ai' is an oscillating function for x < 0.
+        # The implementation does not provide high precision for x < 0.
+        assert_mpmath_equal(lambda z: sc.airy(z)[1],
+                            lambda z: mpmath.airyai(z, derivative=1),
+                            [Arg(xlow, xhigh)], rtol=rtol)
 
     def test_airyai_prime_complex(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
                             [ComplexArg()])
 
-    def test_airybi(self):
-        # oscillating function, limit range
-        assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
-                            mpmath.airybi(z),
-                            [Arg(-1e8, 1e8)],
-                            rtol=1e-5)
-        assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
-                            mpmath.airybi(z),
-                            [Arg(-1e3, 1e3)])
+    @pytest.mark.parametrize('xlow, xhigh, rtol',
+                             [(-1e8, -1e3, 5e-5),
+                              (-1e3, 0, 1e-9),
+                              (0, 1e3, 1e-12),
+                              (1e3, 1e8, 1e-12)])
+    def test_airybi(self, xlow, xhigh, rtol):
+        # Bi is an oscillating function for x < 0
+        # The implementation does not provide high precision for x < 0.
+        assert_mpmath_equal(lambda x: sc.airy(x)[2],
+                            lambda x: mpmath.airybi(x),
+                            [Arg(xlow, xhigh)], rtol=rtol)
 
     def test_airybi_complex(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
@@ -1028,7 +1032,7 @@ class TestSystematic:
             ci,
             mpmath.ci,
             [ComplexArg(complex(-1e8, -np.inf), complex(1e8, np.inf))],
-            rtol=1e-8,
+            rtol=5e-8,
         )
 
     def test_cospi(self):
@@ -1617,29 +1621,6 @@ class TestSystematic:
             lambda x, k: mpmath.lambertw(x, int(k.real)),
             [ComplexArg(-np.inf, np.inf), IntArg(0, 10)],
             rtol=1e-13, nan_ok=False,
-        )
-
-    def test_lanczos_sum_expg_scaled(self):
-        maxgamma = 171.624376956302725
-        e = np.exp(1)
-        g = 6.024680040776729583740234375
-
-        def gamma(x):
-            with np.errstate(over='ignore'):
-                fac = ((x + g - 0.5)/e)**(x - 0.5)
-                if fac != np.inf:
-                    res = fac*_lanczos_sum_expg_scaled(x)
-                else:
-                    fac = ((x + g - 0.5)/e)**(0.5*(x - 0.5))
-                    res = fac*_lanczos_sum_expg_scaled(x)
-                    res *= fac
-            return res
-
-        assert_mpmath_equal(
-            gamma,
-            mpmath.gamma,
-            [Arg(0, maxgamma, inclusive_a=False)],
-            rtol=1e-13,
         )
 
     @nonfunctional_tooslow

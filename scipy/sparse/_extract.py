@@ -53,6 +53,19 @@ def tril(A, k=0, format=None):
         - k > 0 is above the main diagonal
         - k < 0 is below the main diagonal
 
+    .. warning::
+
+        `tril` is switching to the sparse array interface.
+
+        For the case where no input arrays are sparse, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Control the sparse return class by making at least one input sparse,
+        e.g., ``tril(coo_matrix(A))``, or ``tril(coo_array(A))``.
+        That removes any deprecation warnings as well.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        Handling of this no sparse input case will change no earlier than v2.1.
+
     Parameters
     ----------
     A : dense or sparse array or matrix
@@ -114,7 +127,7 @@ def tril(A, k=0, format=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
@@ -139,6 +152,19 @@ def triu(A, k=0, format=None):
         - k = 0 corresponds to the main diagonal
         - k > 0 is above the main diagonal
         - k < 0 is below the main diagonal
+
+    .. warning::
+
+        `triu` is switching to the sparse array interface.
+
+        For the case where no input arrays are sparse, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Control the sparse return class by making at least one input sparse,
+        e.g., ``triu(coo_matrix(A))``, or ``triu(coo_array(A))``.
+        That removes any deprecation warnings as well.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -202,7 +228,7 @@ def triu(A, k=0, format=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)

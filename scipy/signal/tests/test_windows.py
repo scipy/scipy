@@ -742,7 +742,7 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
 
     @skip_xp_backends(np_only=True)
-    def test_degenerate_signle_samples(self, xp):
+    def test_degenerate_single_samples(self, xp):
         # Single samples
         w = windows.dpss(1, 1.)
         xp_assert_equal(w, [1.])
@@ -1057,8 +1057,6 @@ class TestCosine:
 )
 def test_windowfunc_basics(window, window_name, params, xp):
     window = getattr(windows, window_name)
-    if is_jax(xp) and window_name in ['taylor', 'chebwin']:
-        pytest.skip(reason=f'{window_name = }: item assignment')
     if window_name in ['dpss']:
         if is_cupy(xp):
             pytest.skip(reason='dpss window is not implemented for cupy')
@@ -1164,8 +1162,6 @@ _winstr = ['barthann',
 )
 @make_xp_test_case(get_window)
 def test_not_needs_params(xp, window, winstr):
-    if is_jax(xp) and winstr in ['taylor']:
-        pytest.skip(reason=f'{winstr}: item assignment')
     win = get_window(winstr, 7, xp=xp)
     assert win.shape[0] == 7
 

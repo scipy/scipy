@@ -159,7 +159,7 @@ To illustrate:
 In this example, we evaluated a batch of :math:`n=5` functions on a
 three-dimensional grid. In general, multiple batching dimensions are allowed, and the
 shape of the result follows by appending the batching shape (in this example, ``(5,)``)
-to the shape of the input ``x`` (in this example, `(1,)``).
+to the shape of the input ``x`` (in this example, ``(1,)``).
 
 
 .. _tutorial-interpolate_cartesian-grids:
