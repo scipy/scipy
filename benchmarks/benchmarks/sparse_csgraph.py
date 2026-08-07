@@ -2,10 +2,23 @@
 import numpy as np
 import scipy.sparse
 
-from .common import Benchmark, safe_import
+from .common import Benchmark, get_mem_info, safe_import
 
 with safe_import():
     from scipy.sparse.csgraph import laplacian, connected_components
+
+
+def _require_memory(nbytes):
+    """Skip rather than get OOM-killed on machines that can't fit the benchmark."""
+    try:
+        available = get_mem_info()["memavailable"]
+    except Exception:
+        # without psutil we can't tell; run it rather than skipping everywhere
+        return
+    if nbytes > available:
+        raise NotImplementedError(
+            f"needs ~{nbytes / 1e9:.1f} GB, only {available / 1e9:.1f} GB available"
+        )
 
 
 class Laplacian(Benchmark):
@@ -44,6 +57,9 @@ class StronglyConnectedComponents(Benchmark):
                 rng=rng,
             )
         elif kind == "single_scc":
+            # ~4.0 GB peak RSS measured; the headroom is needed because asv itself
+            # shares the cgroup, so CircleCI's 4.3 GB "available" still gets OOM-killed
+            _require_memory(6 * (100 * n) * 8)
             # Hamiltonian cycle (one giant SCC) plus random edges.
             perm = rng.permutation(n)
             row = np.concatenate([perm, rng.integers(0, n, size=99 * n)])
