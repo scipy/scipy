@@ -3106,6 +3106,17 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
     55 and there are no ties, otherwise a normal approximation for the
     p-value is used.
 
+    When ``x`` and ``y`` are lazy arrays (e.g. JAX arrays inside
+    ``jax.jit``), ``method='auto'`` is not permitted and one of
+    ``'asymptotic'``, ``'exact'``, or a `PermutationMethod` instance
+    must be specified. ``method='exact'`` is implemented in NumPy and
+    updates a module-level cache of exact null-distribution values on
+    first use for each ``(n, m)``; that cache update is a side effect
+    in the sense of the JAX sequencing-effects model [4]_, and can
+    produce surprising behaviour under traced or JIT-compiled call
+    sites. For maximally JIT-friendly use, prefer
+    ``method='asymptotic'``.
+
     References
     ----------
     .. [1] Ansari, A. R. and Bradley, R. A. (1960) Rank-sum tests for
@@ -3115,6 +3126,8 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
            Section 5.8.2.
     .. [3] Nathaniel E. Helwig "Nonparametric Dispersion and Equality
            Tests" at http://users.stat.umn.edu/~helwig/notes/npde-Notes.pdf
+    .. [4] "Sequencing side-effects in JAX",
+           https://docs.jax.dev/en/latest/jep/10657-sequencing-effects.html
 
     Examples
     --------
