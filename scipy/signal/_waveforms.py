@@ -6,9 +6,9 @@
 #   Added sweep_poly()
 import math
 import numpy as np
-from numpy import zeros, pi, sqrt, cos, polyval, polyint
+from numpy import pi, sqrt, cos, polyval, polyint
 
-from scipy._lib._array_api import array_namespace, xp_device, xp_promote
+from scipy._lib._array_api import array_namespace, np_compat, xp_device, xp_promote
 import scipy._external.array_api_extra as xpx
 
 
@@ -588,7 +588,7 @@ def _sweep_poly_phase(t, poly):
     return phase
 
 
-def unit_impulse(shape, idx=None, dtype=float):
+def unit_impulse(shape, idx=None, dtype=float, *, xp=None, device=None):
     r"""
     Unit impulse signal (discrete delta function) or unit basis vector.
 
@@ -605,6 +605,10 @@ def unit_impulse(shape, idx=None, dtype=float):
     dtype : data-type, optional
         The desired data-type for the array, e.g., ``numpy.int8``.  Default is
         ``numpy.float64``.
+    xp : array_namespace, optional
+        The namespace for the return array. Default is None, where NumPy is used.
+    device : device, optional
+        The device for the return array. Default is None.
 
     Returns
     -------
@@ -679,7 +683,11 @@ def unit_impulse(shape, idx=None, dtype=float):
     >>> plt.show()
 
     """
-    out = zeros(shape, dtype)
+    if xp is None:
+        xp = np_compat
+    if isinstance(dtype, type):
+        dtype = getattr(xp, np.dtype(dtype).name)
+    out = xp.zeros(shape, dtype=dtype, device=device)
 
     shape = np.atleast_1d(shape)
 
@@ -690,5 +698,5 @@ def unit_impulse(shape, idx=None, dtype=float):
     elif not hasattr(idx, "__iter__"):
         idx = (idx,) * len(shape)
 
-    out[idx] = 1
+    out = xpx.at(out)[idx].set(1)
     return out

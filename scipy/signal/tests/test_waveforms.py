@@ -10,7 +10,7 @@ from scipy._lib._array_api import (
 )
 
 import scipy.signal._waveforms as waveforms
-from scipy.signal import chirp, gausspulse, square, sawtooth  # type:ignore[attr-defined]
+from scipy.signal import chirp, gausspulse, square, sawtooth, unit_impulse  # type:ignore[attr-defined]
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -409,42 +409,54 @@ class TestGaussPulse:
         for actual_i, expected_i in zip(actual, expected):
             xp_assert_close(actual_i, expected_i, atol=1e-15)
 
+@make_xp_test_case(unit_impulse)
 class TestUnitImpulse:
 
-    def test_no_index(self):
-        xp_assert_equal(waveforms.unit_impulse(7),
-                        np.asarray([1.0, 0, 0, 0, 0, 0, 0]))
-        xp_assert_equal(waveforms.unit_impulse((3, 3)),
-                        np.asarray([[1.0, 0, 0], [0, 0, 0], [0, 0, 0]]))
+    def test_no_index(self, xp):
+        xp_assert_equal(unit_impulse(7, xp=xp),
+                        xp.asarray([1.0, 0, 0, 0, 0, 0, 0], dtype=xp.float64))
+        xp_assert_equal(unit_impulse((3, 3), xp=xp),
+                        xp.asarray([[1.0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                                   dtype=xp.float64))
 
-    def test_index(self):
-        xp_assert_equal(waveforms.unit_impulse(10, 3),
-                        np.asarray([0.0, 0, 0, 1, 0, 0, 0, 0, 0, 0]))
-        xp_assert_equal(waveforms.unit_impulse((3, 3), (1, 1)),
-                        np.asarray([[0.0, 0, 0], [0, 1, 0], [0, 0, 0]]))
+    def test_index(self, xp):
+        xp_assert_equal(
+            unit_impulse(10, 3, xp=xp),
+            xp.asarray([0.0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=xp.float64)
+        )
+        xp_assert_equal(
+            unit_impulse((3, 3), (1, 1), xp=xp),
+            xp.asarray([[0.0, 0, 0], [0, 1, 0], [0, 0, 0]], dtype=xp.float64)
+        )
 
         # Broadcasting
-        imp = waveforms.unit_impulse((4, 4), 2)
-        xp_assert_equal(imp, np.asarray([[0.0, 0, 0, 0],
+        imp = unit_impulse((4, 4), 2, xp=xp)
+        xp_assert_equal(imp, xp.asarray([[0.0, 0, 0, 0],
                                          [0.0, 0, 0, 0],
                                          [0.0, 0, 1, 0],
-                                         [0.0, 0, 0, 0]]))
+                                         [0.0, 0, 0, 0]], dtype=xp.float64))
 
-    def test_mid(self):
-        xp_assert_equal(waveforms.unit_impulse((3, 3), 'mid'),
-                        np.asarray([[0.0, 0, 0], [0, 1, 0], [0, 0, 0]]))
-        xp_assert_equal(waveforms.unit_impulse(9, 'mid'),
-                        np.asarray([0.0, 0, 0, 0, 1, 0, 0, 0, 0]))
+    def test_mid(self, xp):
+        xp_assert_equal(
+            unit_impulse((3, 3), 'mid', xp=xp),
+            xp.asarray([[0.0, 0, 0], [0, 1, 0], [0, 0, 0]], dtype=xp.float64)
+        )
+        xp_assert_equal(
+            unit_impulse(9, 'mid', xp=xp),
+            xp.asarray([0.0, 0, 0, 0, 1, 0, 0, 0, 0], dtype=xp.float64)
+        )
 
-    def test_dtype(self):
-        imp = waveforms.unit_impulse(7)
-        assert np.issubdtype(imp.dtype, np.floating)
-
-        imp = waveforms.unit_impulse(5, 3, dtype=int)
-        assert np.issubdtype(imp.dtype, np.integer)
-
-        imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
-        assert np.issubdtype(imp.dtype, np.complexfloating)
+    @pytest.mark.parametrize("dtype_name", [
+        "float32", "float64", "int64", "complex128"
+    ])
+    def test_dtype(self, dtype_name, xp):
+        dtype = getattr(xp, dtype_name)
+        imp = unit_impulse(7, dtype=dtype, xp=xp)
+        assert imp.dtype == dtype
+        imp = unit_impulse(5, 3, dtype=dtype, xp=xp)
+        assert imp.dtype == dtype
+        imp = unit_impulse((5, 2), (3, 1), dtype=dtype, xp=xp)
+        assert imp.dtype == dtype
 
 
 @make_xp_test_case(sawtooth)
