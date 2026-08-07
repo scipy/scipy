@@ -876,8 +876,13 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if quick:
         bench_args = ['--quick'] + bench_args
 
+    if dry_run and compare:
+        raise click.ClickException(
+        "--dry-run cannot be used together with --compare."
+        )
+
     if dry_run:
-        bench_args = ['--dry-run'] + bench_args
+        bench_args = ["--dry-run"] + bench_args
 
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
