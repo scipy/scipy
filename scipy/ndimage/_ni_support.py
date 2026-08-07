@@ -55,6 +55,10 @@ def _extend_mode_to_code(mode, is_filter=False):
         return 4
     elif mode == 'grid-constant':
         return 6
+    elif mode == 'antireflect':
+        return 7
+    elif mode == 'antimirror':
+        return 8
     else:
         raise RuntimeError('boundary mode not supported')
 

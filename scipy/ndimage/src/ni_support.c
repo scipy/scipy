@@ -285,6 +285,29 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
                 *dst++ = *src++;
             }
             break;
+        /* -a-b-c-d-d-c-b-a|abcd|-d-c-b-a-a-b-c-d */
+        case NI_EXTEND_ANTIREFLECT:
+            src = first;
+            dst = first - 1;
+            while (size_before && src < last) {
+                *dst-- = -(*src++);
+                --size_before;
+            }
+            src = last - 1;
+            while (size_before--) {
+                *dst-- = -(*src--);
+            }
+            src = last - 1;
+            dst = last;
+            while (size_after && src >= first) {
+                *dst++ = -(*src--);
+                --size_after;
+            }
+            src = first;
+            while (size_after--) {
+                *dst++ = -(*src++);
+            }
+            break;
         /* cbabcdcb|abcd|cbabcdcb */
         case NI_EXTEND_MIRROR:
             src = first + 1;
@@ -306,6 +329,29 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
             src = first + 1;
             while (size_after--) {
                 *dst++ = *src++;
+            }
+            break;
+        /* -c-b-a-b-c-d-c-b|abcd|-c-b-a-b-c-d-c-b */
+        case NI_EXTEND_ANTIMIRROR:
+            src = first + 1;
+            dst = first - 1;
+            while (size_before && src < last) {
+                *dst-- = -(*src++);
+                --size_before;
+            }
+            src = last - 2;
+            while (size_before--) {
+                *dst-- = -(*src--);
+            }
+            src = last - 2;
+            dst = last;
+            while (size_after && src >= first) {
+                *dst++ = -(*src--);
+                --size_after;
+            }
+            src = first + 1;
+            while (size_after--) {
+                *dst++ = -(*src++);
             }
             break;
         /* kkkkkkkk|abcd]kkkkkkkk */
