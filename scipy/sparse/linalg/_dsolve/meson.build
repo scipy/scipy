@@ -204,6 +204,7 @@ superlu_lib = static_library('superlu_lib',
     superlu_config,
   ],
   c_args: _superlu_lib_c_args,
+  dependencies: [blas_dep],
   include_directories: ['SuperLU/SRC'],
   gnu_symbol_visibility: 'hidden',
 )
@@ -213,7 +214,7 @@ py3.extension_module('_superlu',
   link_with: [superlu_lib],
   include_directories: ['SuperLU/SRC'],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [blas_dep, np_dep],
   install: true,
   subdir: 'scipy/sparse/linalg/_dsolve'
 )

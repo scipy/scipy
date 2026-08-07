@@ -1,3 +1,4 @@
+import os
 import re
 from contextlib import contextmanager
 import functools
@@ -7,39 +8,23 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
-import os
 import sys
 import textwrap
 from types import ModuleType
-from typing import Literal, TypeVar
+from typing import Literal
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
-                                   is_marray, xp_size, xp_result_device, xp_result_type)
+                                   is_marray, xp_size, xp_result_device, xp_result_type,
+                                   xp_capabilities, xp_isscalar)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
 from numpy.exceptions import AxisError
 
 
-np_long: type
-np_ulong: type
-
-try:
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            r".*In the future `np\.long` will be defined as.*",
-            FutureWarning,
-        )
-        np_long = np.long  # type: ignore[attr-defined]
-        np_ulong = np.ulong  # type: ignore[attr-defined]
-except AttributeError:
-        np_long = np.int_
-        np_ulong = np.uint
-
-IntNumber = int | np.integer
-DecimalNumber = float | np.floating | np.integer
+type IntNumber = int | np.integer
+type DecimalNumber = float | np.floating | np.integer
 
 copy_if_needed: bool | None = None
 
@@ -47,7 +32,7 @@ copy_if_needed: bool | None = None
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
 # See gh-23913
 #
-# PEP 649/749 allows for underfined annotations at runtime, and added the
+# PEP 649/749 allows for undefined annotations at runtime, and added the
 # `annotation_format` parameter to handle these cases.
 # `annotationlib.Format.FORWARDREF` is the closest to previous behavior,
 # returning ForwardRef objects fornew undefined annotations cases.
@@ -63,10 +48,8 @@ else:
     wrapped_inspect_signature = inspect.signature
 
 
-_RNG: type = np.random.Generator | np.random.RandomState
-SeedType: type = IntNumber | _RNG | None
-
-GeneratorType = TypeVar("GeneratorType", bound=_RNG)
+type _RNG = np.random.Generator | np.random.RandomState
+type SeedType = IntNumber | _RNG | None
 
 
 def _lazyselect(condlist, choicelist, arrays, default=0):
@@ -546,6 +529,53 @@ class _FunctionWrapper:
         return self.f(x, *self.args)
 
 
+@xp_capabilities()
+def _item_for_scalar_function(x, xp=None):
+    """
+    Extract a value from objects with a single value.
+    e.g. 1.0, [1.0], array(1.0), array([1.0]), etc.
+    1.0 -> 1.0
+    np.array([1.0]) -> np.float64(1.0)
+    [1.0] -> 1.0
+    np.array([1.0]) -> np.array(1.0)
+    """
+    if xp_isscalar(x):
+        return x
+
+    # Handle plain Python containers by unwrapping recursively
+    if isinstance(x, (list, tuple)):
+        if len(x) != 1:
+            raise ValueError(
+                f"can only convert a sequence of size 1 to a Python scalar,"
+                f" got size {len(x)}"
+            )
+        return _item_for_scalar_function(x[0])
+
+    # assume we're an xp array object from here
+    # such as np.float64([1.0]), np.array(1.0)
+    sz = xp_size(x)
+    if sz != 1:
+        raise ValueError(
+            f"can only convert an array of size 1 to a 0D array, got size {x.size}"
+        )
+
+    # supply xp to save checking what namespace we're dealing with
+    xp = xp or array_namespace(x)
+
+    # extract the scalar
+    if x.ndim > 1:
+        # Deprecationwarning added in 2.0
+        warnings.warn(
+            "Returning arrays with more than one dimension is deprecated when using"
+            " ScalarFunction.",
+            DeprecationWarning,
+            skip_file_prefixes=(os.path.dirname(__file__),)
+        )
+    if x.ndim != 0:
+        x = xp.reshape(x, (-1,))[0]
+    return x
+
+
 class _ScalarFunctionWrapper:
     """
     Object to wrap scalar user function, allowing picklability
@@ -562,15 +592,13 @@ class _ScalarFunctionWrapper:
         self.nfev += 1
 
         # Make sure the function returns a true scalar
-        if not np.isscalar(fx):
-            _dt = getattr(fx, "dtype", np.dtype(np.float64))
-            try:
-                fx = _dt.type(np.asarray(fx).item())
-            except (TypeError, ValueError) as e:
-                raise ValueError(
-                    "The user-provided objective function "
-                    "must return a scalar value."
-                ) from e
+        try:
+            fx = _item_for_scalar_function(fx)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                "The user-provided objective function "
+                "must return a scalar value."
+            ) from e
         return fx
 
 class MapWrapper:
@@ -598,11 +626,14 @@ class MapWrapper:
             self.pool = pool
             self._mapfunc = self.pool
         else:
-            from multiprocessing import get_context, get_start_method
+            from multiprocessing import (
+                get_all_start_methods, get_context, get_start_method
+            )
 
             method = get_start_method(allow_none=True)
 
-            if method is None and os.name=='posix' and sys.version_info < (3, 14):
+            if (method is None and sys.version_info < (3, 14)
+                    and 'forkserver' in get_all_start_methods()):
                 # Python 3.13 and older used "fork" on posix, which can lead to
                 # deadlocks. This backports that fix to older Python versions.
                 method = 'forkserver'
@@ -964,8 +995,8 @@ class _RichResult(dict):
         except KeyError as e:
             raise AttributeError(name) from e
 
-    __setattr__ = dict.__setitem__  # type: ignore[assignment]
-    __delattr__ = dict.__delitem__  # type: ignore[assignment]
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
     def __repr__(self):
         order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
@@ -1051,6 +1082,28 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     return s
 
 
+
+def _deprecate_dtypes(func_name, *arrays):
+    """
+    A temporary helper for deprecating non-LAPACK dtypes.
+    """
+    # XXX Once the deprecation expires, merge
+    # linalg/lapack.py::_normalize_lapack_dtype and _normalize_lapack_dtype1, and
+    # simplify _ensure_dtype_cdsz
+    for a in arrays:
+        if a is None:
+            continue
+        if a.dtype.char not in np.typecodes['AllInteger'] + 'fdFD':
+            msg = (f"Calling {func_name} with arguments of dtype={a.dtype} "
+                   f"({a.dtype.char = }) is deprecated in SciPy 1.18.0 and "
+                    "will be removed in SciPy 2.1.0. Please cast array inputs to "
+                    "one of np.float{32,64} or np.complex{64,128} manually."
+            )
+            import warnings
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+            return
+
+
 _batch_note = """
 The documentation is written assuming array arguments are of specified
 "core" shapes. However, array argument(s) of this function may have additional
@@ -1121,6 +1174,10 @@ def _apply_over_batch(*argdefs):
                 batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
                 core_shapes.append(shape[-ndim:] if ndim > 0 else ())
 
+            # complain on dtypes
+            if is_numpy(xp):
+                _deprecate_dtypes(f.__name__, *arrays)
+
             # Early exit if call is not batched
             if not any(batch_shapes):
                 return f(*arrays, *other_args, **kwargs)
@@ -1144,7 +1201,7 @@ def _apply_over_batch(*argdefs):
             # Main loop
             results = []
             for index in np.ndindex(batch_shape):
-                result = f(*((array[index] if array is not None else None)
+                result = f(*((array[*index, ...] if array is not None else None)
                              for array in arrays), *other_args, **kwargs)
                 # Assume `result` is either a tuple or single array. This is easily
                 # generalized by allowing the contributor to pass an `unpack_result`

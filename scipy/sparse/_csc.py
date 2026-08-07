@@ -5,6 +5,8 @@ __all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
 
 
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
@@ -152,6 +154,15 @@ class _csc_base(_cs_matrix):
 def isspmatrix_csc(x):
     """Is `x` of csc_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -165,13 +176,24 @@ def isspmatrix_csc(x):
     Examples
     --------
     >>> from scipy.sparse import csc_array, csc_matrix, coo_matrix, isspmatrix_csc
-    >>> isspmatrix_csc(csc_matrix([[5]]))
+    >>> isspmatrix_csc(csc_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_csc(csc_array([[5]]))
+    >>> isspmatrix_csc(csc_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_csc(coo_matrix([[5]]))
+    >>> isspmatrix_csc(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_csc` is being replaced by `self.format == "csc" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_csc function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, csc_matrix)
 
 
@@ -283,6 +305,15 @@ class csc_array(_csc_base, sparray):
 class csc_matrix(spmatrix, _csc_base):
     """
     Compressed Sparse Column matrix.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         csc_matrix(D)

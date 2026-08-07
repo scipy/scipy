@@ -48,6 +48,7 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     overwrite_a : bool, optional
         Allow overwriting data in `A` (may enhance performance). The default
         is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems

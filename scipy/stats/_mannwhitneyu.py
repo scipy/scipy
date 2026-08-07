@@ -235,7 +235,7 @@ def mwu_result_object(statistic, pvalue, zstatistic=None):
 
 @xp_capabilities(
     cpu_only=True,  # exact calculation only implemented in NumPy
-    skip_backends=[('cupy', 'needs rankdata'), ('dask.array', 'needs rankdata')],
+    skip_backends=[('dask.array', 'needs rankdata')],
     jax_jit=False,  # the exact null distribution is NumPy-only
     marray=True,
     extra_note=("Only ``method='asymptotic'`` is compatible with MArray input."

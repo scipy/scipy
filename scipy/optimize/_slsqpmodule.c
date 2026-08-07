@@ -7,7 +7,7 @@ static PyObject* slsqp_error;
 
 #include <math.h>
 #include "src/slsqp.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 // A simple destructor for buffer attached to a NumPy array via a capsule.
 static void

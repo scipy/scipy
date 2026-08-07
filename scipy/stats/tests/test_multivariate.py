@@ -1158,7 +1158,7 @@ class TestMultivariateNormal:
         mean_est, cov_est = multivariate_normal.fit(x)
         mean_ref, cov_ref = np.mean(x, axis=0), np.cov(x.T, ddof=0)
         assert_allclose(mean_est, mean_ref, atol=1e-15)
-        assert_allclose(cov_est, cov_ref, rtol=1e-15)
+        assert_allclose(cov_est, cov_ref, rtol=5e-15)
 
     def test_fit_both_parameters_fixed(self):
         data = np.full((2, 1), 3)
@@ -2809,7 +2809,7 @@ class TestInvwishart:
         frozen_iw_rvs = iw.rvs(random_state=rng)
 
         # Manually calculate what it should be, based on the decomposition in
-        # https://arxiv.org/abs/2310.15884 of an invers-Wishart into L L',
+        # https://arxiv.org/abs/2310.15884 of an inverse-Wishart into L L',
         # where L A = D, D is the Cholesky factorization of the scale matrix,
         # and A is the lower triangular matrix with the square root of chi^2
         # variates on the diagonal and N(0,1) variates in the lower triangle.

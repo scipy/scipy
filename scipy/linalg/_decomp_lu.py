@@ -5,7 +5,7 @@ from warnings import warn
 from numpy import asarray, asarray_chkfinite
 import numpy as np
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
@@ -33,7 +33,8 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     a : (M, N) array_like
         Matrix to decompose
     overwrite_a : bool, optional
-        Whether to overwrite data in A (may increase performance)
+        Whether to overwrite data in ``a`` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -157,6 +158,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
         =====  =========
     overwrite_b : bool, optional
         Whether to overwrite data in b (may increase performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -194,6 +196,8 @@ def _lu_solve(lu, piv, b, trans, overwrite_b, check_finite):
         b1 = asarray_chkfinite(b)
     else:
         b1 = asarray(b)
+
+    _deprecate_dtypes("lu_solve", lu, b)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
@@ -237,7 +241,8 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
     permute_l : bool, optional
         Perform the multiplication P*L (Default: do not permute)
     overwrite_a : bool, optional
-        Whether to overwrite data in a (may improve performance)
+        Whether to overwrite data in a (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -309,6 +314,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     """
     a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
+    _deprecate_dtypes("lu", a1)
     if a1.ndim < 2:
         raise ValueError('The input array must be at least two-dimensional.')
 

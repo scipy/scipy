@@ -1,8 +1,10 @@
+/*
+ * Templated loops for `linalg.lu` and `linalg.det`
+ */
 #pragma once
-#include <cstring>
-#include <cstdint>
-#include <type_traits>
-#include "npy_cblas.h"
+
+namespace sp_linalg {
+
 
 constexpr int LU_MAX_NDIM = 64;
 
@@ -378,3 +380,6 @@ int det_dispatch(LU_Context &ctx, T *a_dat, T *det_out, T *scratch, CBLAS_INT *s
 
     return 0;
 }
+
+
+} // namespace sp_linalg

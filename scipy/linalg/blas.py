@@ -27,7 +27,7 @@ This module contains low-level functions from the BLAS library.
 .. warning::
 
    These functions do little to no error checking.
-   It is possible to cause crashes by mis-using them,
+   It is possible to cause crashes by misusing them,
    so prefer using the higher-level routines in `scipy.linalg`.
 
 .. note::
@@ -159,6 +159,7 @@ BLAS Level 2 functions
    chpr2
    cspmv
    cspr
+   csymv
    csyr
    ctbmv
    ctbsv
@@ -179,6 +180,7 @@ BLAS Level 2 functions
    zhpr2
    zspmv
    zspr
+   zsymv
    zsyr
    ztbmv
    ztbsv
@@ -236,25 +238,29 @@ import numpy as np
 import functools
 from scipy.__config__ import CONFIG
 
-HAS_LP64 = CONFIG['Build Dependencies']['blas']['has lp64']
+# If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
+# keeping `linalg.blas` as LP64.
+HAS_LP64 = not bool(CONFIG['Build Dependencies']['blas']['cython blas ilp64'])
 HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
 del CONFIG
 
-_fblas = None
 if HAS_LP64:
     from scipy.linalg import _fblas
+else:
+    _fblas = None
 
-_fblas_64 = None
 if HAS_ILP64:
     from scipy.linalg import _fblas_64
+else:
+    _fblas_64 = None
 
 if not (HAS_LP64 or HAS_ILP64):
     raise RuntimeError("SciPy needs either LP64 or ILP64 BLAS.")
 
 if HAS_LP64:
-    from scipy.linalg._fblas import *  # noqa: E402, F403
+    from scipy.linalg._fblas import *  # noqa: F403
 else:
-    from scipy.linalg._fblas_64 import *  # noqa: E402, F403
+    from scipy.linalg._fblas_64 import *  # noqa: F403
 
 # all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to
 
@@ -485,7 +491,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     prefix (here, ``d-`` because ``a`` is double precision real):
 
     >>> x_gemv
-    <fortran function dgemv>
+    <fblas function dgemv>
 
     The BLAS variant information is also available from the ``typecode`` attribute:
 
@@ -502,7 +508,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     the ``dtype=`` argument:
 
     >>> LA.get_blas_funcs('gemv', dtype=np.float32)
-    <fortran function sgemv>
+    <fblas function sgemv>
 
     The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
     and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):
