@@ -2642,6 +2642,42 @@ class TestSmoothingSpline:
         xx = np.linspace(x[0], x[-1], 101)
         assert np.all(np.isfinite(spl(xx)))
 
+        # the penalty matrix for a duplicated break matches
+        # fda::bsplinepen exactly (integer-valued for these knots).
+        # Reproduce in R (see test_penalty_matrix_matches_R for setup):
+        #   basis <- create.bspline.basis(rangeval=c(0,1), norder=4,
+        #                                 breaks=c(0, 0.5, 0.5, 1))
+        #   print(bsplinepen(basis, Lfdobj=2))
+        t2 = np.r_[[0.]*4, [0.5, 0.5], [1.]*4]
+        m2 = len(t2) - 4
+        ab = _penalty_matrix_banded(t2)
+        omega = np.zeros((m2, m2))
+        for i in range(4):
+            omega += np.diag(ab[i, :m2 - i], -i)
+            if i > 0:
+                omega += np.diag(ab[i, :m2 - i], i)
+        omega_R = np.array([
+            [  96., -144.,   24.,   24.,    0.,    0.],
+            [-144.,  288., -144.,    0.,    0.,    0.],
+            [  24., -144.,  192.,  -96.,    0.,   24.],
+            [  24.,    0.,  -96.,  192., -144.,   24.],
+            [   0.,    0.,    0., -144.,  288., -144.],
+            [   0.,    0.,   24.,   24., -144.,   96.]])
+        xp_assert_close(omega, omega_R, atol=1e-12)
+
+    def test_duplicate_data_sites_rejected(self):
+        # duplicate x values are rejected on both code paths (the
+        # ascending-x check runs before dispatch), so conflicting y
+        # values at a repeated site cannot reach the solver. Users with
+        # tied data must aggregate it first (e.g. average y per site).
+        x = np.array([0., 1., 1., 2., 3., 4.])
+        y = np.array([1., 2., 5., 3., 4., 5.])    # different y at the tie
+        t = np.r_[[0.]*4, [2.0], [4.]*4]
+        with assert_raises(ValueError, match="ascending"):
+            make_smoothing_spline(x, y, lam=0.5)
+        with assert_raises(ValueError, match="ascending"):
+            make_smoothing_spline(x, y, lam=0.5, t=t)
+
 ################################
 # NdBSpline tests
 def bspline2(xy, t, c, k):
