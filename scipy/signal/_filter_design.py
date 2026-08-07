@@ -4,6 +4,7 @@ import cmath
 import operator
 import warnings
 import builtins
+import os
 
 from math import pi
 
@@ -744,7 +745,8 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
             in Reference [2]_ (similar to the algorithm implemented in Matlab).
         ``"unwrap"``
             Compute the system frequency response using `freqz`, unwrap the
-            phase, and then directly compute the finite difference derivative versus frequency.
+            phase, and then directly compute the finite difference derivative versus
+            frequency.
 
         .. versionadded:: 1.19.0
 
@@ -772,16 +774,18 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
     is set to 0 at those frequencies.
 
     Some particularly ill-conditioned filters can result in non-sensical group delay
-    calculations even far away from distinct frequency response discontinuities when using
-    the default convolution algorithm. In these cases, the brute force method of computing
-    the derivative of the unwrapped frequency response phase versus frequency can provide more useful
-    results. Note when using this method, however, that the computed group delay is directly
-    affected by the density of the requested output frequencies - denser frequency distributions
-    will provide more accurate results. Unlike the nominal convolution algorithm, this unwrapping
-    method cannot be used to compute the group delay at a single frequency, and will be inaccurate
+    calculations even far away from distinct frequency response discontinuities when
+    using the default convolution algorithm. In these cases, the brute force method of
+    computing the derivative of the unwrapped frequency response phase versus frequency
+    can provide more useful results. Note when using this method, however, that the
+    computed group delay is directly affected by the density of the requested output
+    frequencies - denser frequency distributions will provide more accurate results.
+    Unlike the nominal convolution algorithm, this unwrapping method cannot be used to
+    compute the group delay at a single frequency, and will be inaccurate
     for very sparse frequency output requests.
 
-    For additional details on numerical computation of the group delay refer to [1]_ or [2]_.
+    For additional details on numerical computation of the group delay refer to
+    [1]_ or [2]_.
 
     .. versionadded:: 0.16.0
 
@@ -809,13 +813,15 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
 
     >>> import warnings
     >>> b2, a2 = signal.ellip(7, 0.02, 60.0, 10.0, fs=1280)
-    >>> with warnings.catch_warnings(action='ignore'):      # ignore warnings for example plotting
+    >>> # ignore warnings for example plotting
+    >>> with warnings.catch_warnings(action='ignore'):
     ...     w2_c, gd2_c = signal.group_delay((b2, a2), w=2048, fs=1280)
     >>> w2_u, gd2_u = signal.group_delay((b2, a2), w=2048, fs=1280, method='unwrap')
     >>> wf2, h2 = signal.freqz(b2, a2, 2048, fs=1280)
 
-    Plot results to compare. Both group delay calculation methods perform well for the Chebychev filter,
-    but the convolution algorithm fails on the narrowband elliptical filter.
+    Plot results to compare. Both group delay calculation methods perform well for the
+    Chebychev filter, but the convolution algorithm fails on the narrowband elliptical
+    filter.
 
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
@@ -877,21 +883,22 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
         # check for near singularities in denominator
         near_singular = np.absolute(den) < 10 * EPSILON
         if np.any(near_singular):
-            warnings.warn(
-                "The filter's group delay denominator is extremely small at frequencies "
-                f"[{', '.join(f'{ws:.3f}' for ws in w[near_singular])}], "
-                "around which a singularity may be present. If the group delay calculation using the 'convolve' method "
-                "is producing unreasonable results where the filter frequency response is continuous, the 'unwrap'"
-                "method may provide better results.",
-                stacklevel=2
-            )
+            msg = (f"The filter's group delay denominator is extremely small at "
+                   f"frequencies [{', '.join(f'{ws:.3f}' for ws in w[near_singular])}],"
+                   f" around which a singularity may be present. If the group delay "
+                   f"calculation using the 'convolve' method is producing unreasonable "
+                   f"results where the filter frequency response is continuous, the "
+                   f"'unwrap' method may provide better results.",)
+            warnings.warn(msg, skip_file_prefixes=(os.path.dirname(__file__),))
 
     elif method == 'unwrap':
         _, H = freqz(system[0], system[1], worN=w)
         gd = -np.gradient(np.unwrap(np.angle(H)), w)
 
     else:
-        raise ValueError(f"group delay method must be one of ('convolve', 'unwrap'), got {method=!r}")
+        msg = (f"group delay method must be one of ('convolve', 'unwrap'), "
+               f"got {method=!r}")
+        raise ValueError(msg)
 
     # check for singularities
     singular = ~np.isfinite(gd)

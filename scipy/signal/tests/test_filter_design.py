@@ -5162,7 +5162,7 @@ class TestGroupDelay:
         wd = np.hstack([wd[high] - 2.*pi, wd[~high]])       # redistribute to [-pi, pi)
         gd = np.hstack([gd[high], gd[~high]])
         gdtest = np.interp(wref, wd, gd)
-        delta = gdtest - gdref
+        # delta = gdtest - gdref TODO: EITHER USE OR REMOVE
         xp_assert_close(gdtest, gdref, atol=1e-3, rtol=1e-4)
 
     def test_fs_validation(self):
@@ -5174,8 +5174,8 @@ class TestGroupDelay:
                 group_delay((1, 1), fs=None, **kw)
 
     def test_method_equivalence(self, xp):
-        # test a few different variations of user provided arguments and verify the available methods produce
-        # similar answers
+        # test a few different variations of user provided arguments and verify
+        # the available methods produce similar answers
         argsets = [dict(w=2048),
                    dict(w=np.linspace(0., 2.*xp.pi, 4096)),
                    dict(whole=False),
@@ -5191,14 +5191,16 @@ class TestGroupDelay:
 
             wu, gu = group_delay((b, a), method='unwrap', **kwarg)
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore', category=UserWarning)   # not relevant to this check and causes test to fail
+                warnings.simplefilter('ignore', category=UserWarning)
+                # not relevant to this check and causes test to fail
                 wc, gc = group_delay((b, a), **kwarg)
 
             # check returned frequency array
             xp_assert_close(wc, wu)
 
             # check returned group delay array
-            #   Add a check to filter out frequencies at or right next to the nyquist frequency where a discontinuity
+            #   Add a check to filter out frequencies at or right next to the nyquist
+            # frequency where a discontinuity
             #   occurs and the two methods are expected to produce different results
             filt = np.ones(wu.shape, dtype=bool)
             if kwarg.get('whole', False):
@@ -5214,8 +5216,9 @@ class TestGroupDelay:
         fs = 1280
         b, a = ellip(7, 0.02, 60.0, 10.0, fs=1280)
 
-        # filter out warning which cause test to fail, but are not relevant to whether well behaved portions (frequency
-        # ranges) of thefilter produce reasonable values
+        # filter out warning which cause test to fail, but are not relevant to
+        # whether well behaved portions (frequency ranges) of thefilter produce
+        # reasonable values
         if method == "convolve":
             ctx = pytest.warns(UserWarning, match=".*singular")
         else:
@@ -5227,7 +5230,8 @@ class TestGroupDelay:
         # check ~linear phase portion of filter for reasonable values
         low_freq = w < 5.
         approx_value = 2. / (5 / fs * (2. * np.pi))
-        xp_assert_close(gd[low_freq], approx_value * np.ones(gd[low_freq].shape), atol=10., rtol=0.1)
+        xp_assert_close(gd[low_freq], approx_value * np.ones(gd[low_freq].shape),
+                        atol=10., rtol=0.1)
 
     def test_invalid_method_throws_value_error(self):
         with assert_raises(ValueError):
