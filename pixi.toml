@@ -449,8 +449,7 @@ description = "Launch IPython (array-api-cpu env)"
 ### Benchmarking ###
 
 [feature.bench-common.dependencies]
-# https://github.com/airspeed-velocity/asv/issues/1537
-asv = "==0.6.4"
+asv = ">=0.6.6"
 
 [feature.bench.tasks.bench]
 cmd = "spin bench --no-build"

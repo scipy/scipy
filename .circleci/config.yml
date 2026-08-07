@@ -178,6 +178,8 @@ jobs:
           no_output_timeout: 30m
           command: |
             export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
+            # asv>=0.6.5 drops PYTHONPATH from sys.path without this (gh-23611)
+            export ASV_PYTHONPATH=$PYTHONPATH
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
