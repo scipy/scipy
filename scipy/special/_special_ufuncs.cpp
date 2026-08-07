@@ -73,6 +73,9 @@ extern const char *_cauchy_ppf_doc;
 extern const char *_cosine_cdf_doc;
 extern const char *_cosine_invcdf_doc;
 extern const char *_sinpi_doc;
+extern const char *_skewnorm_cdf_doc;
+extern const char *_skewnorm_isf_doc;
+extern const char *_skewnorm_ppf_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_igam_fac_doc;
 extern const char *_invgauss_isf_doc;
@@ -634,6 +637,24 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::F_F>(xsf::sinpi), static_cast<xsf::numpy::D_D>(xsf::sinpi)},
                           "_sinpi", _sinpi_doc);
     PyModule_AddObjectRef(module, "_sinpi", _sinpi);
+
+    PyObject *_skewnorm_cdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(skewnorm_cdf_float),
+                           static_cast<xsf::numpy::dddd_d>(skewnorm_cdf_double)},
+                          "_skewnorm_cdf", _skewnorm_cdf_doc);
+    PyModule_AddObjectRef(module, "_skewnorm_cdf", _skewnorm_cdf);
+
+    PyObject *_skewnorm_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(skewnorm_isf_float),
+                           static_cast<xsf::numpy::dddd_d>(skewnorm_isf_double)},
+                          "_skewnorm_isf", _skewnorm_isf_doc);
+    PyModule_AddObjectRef(module, "_skewnorm_isf", _skewnorm_isf);
+
+    PyObject *_skewnorm_ppf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(skewnorm_ppf_float),
+                           static_cast<xsf::numpy::dddd_d>(skewnorm_ppf_double)},
+                          "_skewnorm_ppf", _skewnorm_ppf_doc);
+    PyModule_AddObjectRef(module, "_skewnorm_ppf", _skewnorm_ppf);
 
     PyObject *_zeta =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::zeta), static_cast<xsf::numpy::Ff_F>(xsf::zeta),
