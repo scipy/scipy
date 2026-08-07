@@ -35,7 +35,6 @@ def use_reflection(sign_n_even=None, reflection_fun=None):
     return decorator
 
 
-@use_reflection(+1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_jn(n, z, derivative=False):
     r"""Spherical Bessel function of the first kind or its derivative.
 
@@ -127,7 +126,6 @@ def spherical_jn(n, z, derivative=False):
         return _spherical_jn(n, z)
 
 
-@use_reflection(-1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_yn(n, z, derivative=False):
     r"""Spherical Bessel function of the second kind or its derivative.
 
@@ -218,7 +216,6 @@ def spherical_yn(n, z, derivative=False):
         return _spherical_yn(n, z)
 
 
-@use_reflection(+1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_in(n, z, derivative=False):
     r"""Modified spherical Bessel function of the first kind or its derivative.
 

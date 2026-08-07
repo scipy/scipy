@@ -112,7 +112,7 @@ the function will fail when running inside ``jax.jit``.
 Additional caveats may be listed in the docstring of the function.
 
 Some functions also note support for `MArray <https://mdhaber.github.io/marray/tutorial.html>`__,
-a library that add a "missing data" awareness to the array library of your choice. MArray
+a library that adds "missing data" awareness to the array library of your choice. MArray
 is not an independent array library; rather, it wraps the namespace of an array API
 compatible library to add "mask" support. Consequently, where MArray support is noted,
 it is supported in conjunction with all backend/device combinations marked as supported
@@ -271,7 +271,7 @@ relevant restrictions for SciPy developers are:
 * Within the JIT, value based control flow with Python ``if`` statements is not permitted.
   Only static properties of arrays such as their ``shape`` and ``dtype`` are permitted to be
   used with ``if``. `xp.where <https://data-apis.org/array-api/2024.12/API_specification/generated/array_api.where.html#where>`_
-  and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ are
+  and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_
   provide some basic control flow that works with the JIT.
 
 * Within the JIT, the shapes of output arrays cannot depend dynamically on the *values* in input arrays.
@@ -317,7 +317,7 @@ See `Common Gotchas in JAX <https://docs.jax.dev/en/latest/notebooks/Common_Gotc
 * `xp.where <https://data-apis.org/array-api/2024.12/API_specification/generated/array_api.where.html#where>`_
   and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ provide a level of basic control flow that works with the JIT
   and in some cases these can be used to replace the value dependent use of ``if``. In
-  some cases its also possible to wrap code using ``if`` within a pure function and use
+  some cases it's also possible to wrap code using ``if`` within a pure function and use
   ``lazy_apply``.
 
 **JAX Eager:**
@@ -338,7 +338,7 @@ into enabling eager-only support.
 A note on MArray support
 ````````````````````````
 MArray wraps array API compatible namespaces, so it is common for an array API compatible
-function to execute *without warnings or errors* provided MArray input. **This does
+function to execute *without warnings or errors* provided MArray input. **This does not
 necessarily mean that the function supports MArray input.** The mask of MArrays is used
 to denote missing values; therefore, to consider a function compatible with MArray,
 numerical output with masked input must equal the numerical output expected if the
@@ -411,7 +411,7 @@ for integers and real and complex floating point numbers which differ from the
 ``int64``, ``float64``, ``complex128`` defaults used by NumPy. Our aim is to
 have array API supporting SciPy functions with array inputs have behavior which
 is independent of the default dtype to the extent that this is practical. This means
-that any when using array creation functions from the ``xp`` namespace such as ``xp.zeros``
+that when using array creation functions from the ``xp`` namespace such as ``xp.zeros``
 or ``xp.arange``, one should take care to explicitly set a dtype with the ``dtype``
 kwarg; otherwise, the result will depend on the default dtype.
 
@@ -464,7 +464,7 @@ behave with respect to :ref:`default dtypes <dev-arrayapi_default_dtype>`.
 Should they respect default dtype or should the output dtype be fixed across
 backends and defaults? Should there be a ``dtype`` kwarg for controlling the output
 dtype or is being able to apply ``xp.astype`` on the output sufficient?
-Since there is not yet a consistent pattern to follow, for now its
+Since there is not yet a consistent pattern to follow, for now it's
 important to clearly document how such functions behave with respect to the
 default dtype in the :ref:`extra_note <dev-arrayapi_extra_note>` described below.
 
@@ -495,7 +495,7 @@ signature::
       # Extra note to inject into the docstring
       extra_note=None,
       # Dictionary mapping method names to dictionaries of method
-      # specific capabilities for use when when xp_capabilities is
+      # specific capabilities for use when xp_capabilities is
       # applied to a class with varying capabilities per method
       method_capabilities=None,
       # Whether the function supports MArrays (used only in documentation)
@@ -536,7 +536,7 @@ implementations is set up, where functions are replaced with wrappers
 that perform delegation. In this case, ``xp_capabilities`` is not always
 applied as a decorator with ``@`` syntax, but may instead be applied
 programmatically on the wrappers. When working on array API standard
-support within a module, its important to be aware of how such delegation
+support within a module, it's important to be aware of how such delegation
 is set up, if any, and how ``xp_capabilities`` is being applied. A common
 practice currently is to have a file, ``_support_alternative_backends.py``
 within a module that sets up such delegation. See for instance
@@ -927,7 +927,7 @@ strict checks to enforce this. If one had accidentally written::
       ...
 
 without using ``make_xp_pytest_param`` then running this test would result
-in an error with the the message::
+in an error with the message::
 
   ERROR scipy/my_module/tests/test_foo.py::test_foo[numpy] - UserWarning: test uses `xp`
   fixture without drawing from `xp_capabilities`  but is not explicitly marked with ``pytest.mark...
@@ -935,8 +935,8 @@ in an error with the the message::
 Since ``xp_capabilities`` is used to declare alternative backend support for the
 purpose of both testing and documentation, this strict check in the ``xp``
 fixture ensures that documentation of tested array API capabilities does not
-become out-of-date. There may be cases where one intentionally does cannot or
-does not want to use ``make_xp_test_case`` or an equivalent, such as for private
+become out-of-date. There may be cases where one cannot or intentionally does
+not want to use ``make_xp_test_case`` or an equivalent, such as for private
 functions which do not have associated ``xp_capabilities`` entries. To bypass
 the strict checks, one can explicitly mark a test with
 ``@pytest.mark.uses_xp_capabilities(False)``. An optional ``reason`` string can
@@ -1030,7 +1030,7 @@ backend which are actually unrelated to ``f`` but are instead due to bugs
 outside ``f`` exposed by other parts of the test body. To avoid such situations,
 we recommend as a general practice to attempt to isolate use of the alternative
 backend only to the function ``f`` being tested with a caveat that there are
-situations where or it is necessary or desired to do otherwise: see the section
+situations where it is necessary or desired to do otherwise: see the section
 on :ref:`backend isolation <dev-arrayapi_backend_isolation>` below for more
 information.
 
@@ -1099,7 +1099,7 @@ Running tests
 `````````````
 
 After applying these markers, either through ``make_xp_test_case`` or one of its
-equvilents, or directly,
+equivalents, or directly,
 ``spin test`` can be used with the option ``-b`` or ``--array-api-backend``::
 
   spin test -b numpy -b torch -s cluster
@@ -1197,7 +1197,7 @@ vectorized root finding function like `scipy.optimize.elementwise.find_root`.
 When testing such a function on alternative backends, isolating use of the
 alternative backend only to ``find_root`` by using an input callable ``f`` (the
 function for which roots are sought) that converts to and from NumPy would not
-be desirable since since ``find_root`` and ``f`` are so tightly coupled in this
+be desirable since ``find_root`` and ``f`` are so tightly coupled in this
 case. In other cases, a function ``h`` used in the tests of a function ``g`` may
 be known to be so simple and rock solid that there is no point in going through
 the trouble of backend isolation. Maintainers are free to use their discretion to
@@ -1280,8 +1280,8 @@ functions with a decorator that disables ``compute()`` and ``persist()`` and ens
 that exceptions and warnings are raised eagerly. Similarly as for the JAX JIT,
 ``make_xp_test_case`` and friends will automatically do this when the associated
 ``xp_capabilities`` entry has ``allow_dask_compute=False``. The same warning about
-requiring ``lazy_xp_modules`` applies for tests Dask works with lazy evaluation just
-as it does for tests of the JAX JIT.
+requiring ``lazy_xp_modules`` applies to tests of lazy evaluation with Dask, just
+as it does to tests of the JAX JIT.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
@@ -1294,7 +1294,7 @@ one can pass a tuple of the form ``tuple[type, str]`` as an entry of
 the argument ``func`` of ``make_xp_pytest_param``. The tuple
 ``(A, "f")`` signifies that one is testing the method ``A.f`` of the
 class ``A``. Such a tuple is used rather than simply ``A.f``
-in order allow unambiguous specification of what is being tested in
+in order to allow unambiguous specification of what is being tested in
 cases where a method is inherited from a parent class.::
 
   @make_xp_test_case((Foo, "bar"))

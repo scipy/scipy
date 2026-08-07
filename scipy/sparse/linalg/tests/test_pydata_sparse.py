@@ -58,6 +58,7 @@ def matrices(sparse_cls):
     return A_dense, A_sparse, b
 
 
+@pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
 def test_isolve_gmres(matrices):
     # Several of the iterative solvers use the same
     # isolve.utils.make_system wrapper code, so test just one of them.
@@ -68,6 +69,7 @@ def test_isolve_gmres(matrices):
     assert_allclose(A_sparse @ x, b)
 
 
+@pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
 def test_lsmr(matrices):
     A_dense, A_sparse, b = matrices
     res0 = splin.lsmr(A_dense, b)
@@ -88,6 +90,7 @@ def test_lsqr(matrices):
     assert_allclose(res[0], res0[0], atol=1e-5)
 
 
+@pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
 def test_eigs(matrices):
     A_dense, A_sparse, v0 = matrices
 
@@ -114,6 +117,7 @@ def test_eigs(matrices):
         assert_allclose(v, v_dense)
 
 
+@pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
 def test_svds(matrices):
     A_dense, A_sparse, v0 = matrices
 
@@ -246,27 +250,23 @@ def test_expm_multiply(matrices):
 
 def test_eq(same_matrix):
     sp_sparse, pd_sparse = same_matrix
-    # temporary splint until pydata sparse support sparray equality
-    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
+    sp_sparse = sp.coo_array(sp_sparse).asformat(sp_sparse.format)
     assert (sp_sparse == pd_sparse).all()
 
 
 def test_ne(same_matrix):
     sp_sparse, pd_sparse = same_matrix
-    # temporary splint until pydata sparse support sparray equality
-    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
+    sp_sparse = sp.coo_array(sp_sparse).asformat(sp_sparse.format)
     assert not (sp_sparse != pd_sparse).any()
 
 
 def test_ge(same_matrix):
     sp_sparse, pd_sparse = same_matrix
-    # temporary splint until pydata sparse support sparray equality
-    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
+    sp_sparse = sp.coo_array(sp_sparse).asformat(sp_sparse.format)
     assert (sp_sparse >= pd_sparse).all()
 
 
 def test_gt(same_matrix):
     sp_sparse, pd_sparse = same_matrix
-    # temporary splint until pydata sparse support sparray equality
-    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
+    sp_sparse = sp.coo_array(sp_sparse).asformat(sp_sparse.format)
     assert not (sp_sparse > pd_sparse).any()

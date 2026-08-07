@@ -81,13 +81,7 @@ jobs:
 
       - run:
           name: setup Python venv
-          command: |
-            pip install numpy cython pybind11 pythran ninja meson
-            pip install  --group doc
-            # asv upper bound due to issue in gh-23611, remove when that is resolved
-            pip install mpmath gmpy2 "asv<0.6.5" pooch threadpoolctl spin marray
-            # extra benchmark deps
-            pip install pyfftw cffi pytest
+          command: pip install pytest --group build --group dev-cli --group doc --group bench --group test-mp --group optional-runtime-deps --group test-array-types
 
       - run:
           name: clear ccache stats
@@ -161,6 +155,22 @@ jobs:
           at: ~/
 
       - check-skip
+
+      - run:
+          name: Check-not-docs-only
+          command: |
+            # If the latest commit was tagged with [docs only], don't run
+            # the benchmarks.
+            # In the following, --skip=1 is needed to skip the merge commit
+            # that occurred in the build_scipy job.
+            export git_log=$(git log --skip=1 --max-count=1 --pretty=format:"%B" | tr "\n" " ")
+            echo "Got commit message:"
+            echo "${git_log}"
+            if [[ -v CIRCLE_PULL_REQUEST ]] && ([[ "$git_log" == *"[docs only]"* ]]); then
+              echo "[docs only] detected, so benchmarks skipped. Exiting job ${CIRCLE_JOB} for PR ${CIRCLE_PULL_REQUEST}."
+              circleci-agent step halt;
+            fi
+
       - apt-install
 
       - run:
@@ -202,8 +212,7 @@ jobs:
           name: smoke-docs
           no_output_timeout: 35m
           command: |
-            pip install matplotlib hypothesis
-            pip install scipy-doctest
+            pip install --group test-docs
             spin smoke-docs
 
       - run:

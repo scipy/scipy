@@ -33,7 +33,6 @@ dependencies:
   - hypothesis
   - array-api-strict>=2.3.1
   # For type annotations
-  - mypy
   - pyrefly
   - typing_extensions
   - types-psutil

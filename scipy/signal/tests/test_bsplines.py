@@ -2,9 +2,10 @@
 import math
 import numpy as np
 
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     assert_almost_equal, xp_assert_close, xp_assert_equal, make_xp_test_case,
-    xp_default_dtype, array_namespace, _xp_copy_to_numpy
+    array_namespace, _xp_copy_to_numpy
 )
 import pytest
 from pytest import raises
@@ -378,7 +379,7 @@ class TestSepfir2d:
 def test_cspline2d(xp):
     rng = np.random.RandomState(181819142)
     image = rng.rand(71, 73)
-    image = xp.asarray(image, dtype=xp_default_dtype(xp))
+    image = xp.asarray(image, dtype=xpx.default_dtype(xp))
     result = signal.cspline2d(image, 8.0)
     assert array_namespace(result) == xp
 
@@ -387,6 +388,6 @@ def test_cspline2d(xp):
 def test_qspline2d(xp):
     rng = np.random.RandomState(181819143)
     image = rng.rand(71, 73)
-    image = xp.asarray(image, dtype=xp_default_dtype(xp))
+    image = xp.asarray(image, dtype=xpx.default_dtype(xp))
     result = signal.qspline2d(image)
     assert array_namespace(result) == xp
