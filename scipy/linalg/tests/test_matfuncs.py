@@ -88,6 +88,17 @@ class TestSignM:
         signm(a)
         #XXX: what would be the correct result?
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_signm_dtype_preservation(self, dtype):
+        # gh-25657: signm upcast float32/complex64 for defective matrices
+        # (the iterative fall-through branch) while the non-defective branch
+        # preserved dtype. Output dtype must depend on input dtype, not values.
+        non_defective = np.array([[2, 1], [0, 3]], dtype=dtype)  # distinct eigs
+        defective = np.array([[2, 1], [0, 2]], dtype=dtype)      # repeated eig
+        assert signm(non_defective).dtype == dtype
+        assert signm(defective).dtype == dtype
+
 
 class TestLogM:
     @pytest.mark.filterwarnings("ignore:.*inaccurate.*:RuntimeWarning")
@@ -491,6 +502,7 @@ class TestSqrtM:
         M = np.array([[2, 4], [0, -2]], dtype=np.int64)
         assert sqrtm(M).dtype == np.complex128
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_float_in_float_out(self):
         M = np.eye(10, dtype=np.float16)
         assert sqrtm(M).dtype == np.float32
@@ -502,6 +514,7 @@ class TestSqrtM:
             M = np.eye(10, dtype=np.float128)
             assert sqrtm(M).dtype == np.float64
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_float_in_comp_out(self):
         M = np.array([[2, 4], [0, -2]], dtype=np.float16)
         assert sqrtm(M).dtype == np.complex64
@@ -513,6 +526,7 @@ class TestSqrtM:
             M = np.array([[2, 4], [0, -2]], dtype=np.float128)
             assert sqrtm(M).dtype == np.complex128
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_comp_in_comp_out(self):
         M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
         assert sqrtm(M).dtype == np.complex64
@@ -574,6 +588,12 @@ class TestSqrtM:
         with pytest.warns(LinAlgWarning, match="Matrix is singular."):
             res = sqrtm(a)
             assert np.isinf(res[0, 1:]).all()
+
+    def test_scalar_input(self):
+        assert_allclose(sqrtm(4), [[2.0]])
+
+    def test_1d_single_element_input(self):
+        assert_allclose(sqrtm([4]), [[2.0]])
 
 
 class TestFractionalMatrixPower:

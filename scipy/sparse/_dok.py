@@ -6,6 +6,8 @@ __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 
 import itertools
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
@@ -19,7 +21,7 @@ _NoValue = object()
 
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
-    _allow_nd = (1, 2)
+    _allow_nd: tuple[int, ...] = (1, 2)
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _spbase.__init__(self, arg1, maxprint=maxprint)
@@ -60,7 +62,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 self.dtype = getdtype(d.dtype)
             self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
-    def update(self, val):
+    def update(self, val):  # pyrefly:ignore[bad-override]
         """Update values from a dict, sparse dok or iterable of 2-tuples like
         ``.items()``.
 
@@ -638,6 +640,15 @@ class _dok_base(_spbase, IndexMixin, dict):
 def isspmatrix_dok(x):
     """Is `x` of dok_array type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -651,13 +662,24 @@ def isspmatrix_dok(x):
     Examples
     --------
     >>> from scipy.sparse import dok_array, dok_matrix, coo_matrix, isspmatrix_dok
-    >>> isspmatrix_dok(dok_matrix([[5]]))
+    >>> isspmatrix_dok(dok_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_dok(dok_array([[5]]))
+    >>> isspmatrix_dok(dok_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_dok(coo_matrix([[5]]))
+    >>> isspmatrix_dok(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_dok` is being replaced by `self.format == "dok" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_dok function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, dok_matrix)
 
 
@@ -727,6 +749,15 @@ class dok_matrix(spmatrix, _dok_base):
 
     This is an efficient structure for constructing sparse
     matrices incrementally.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         dok_matrix(D)

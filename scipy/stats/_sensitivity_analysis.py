@@ -295,7 +295,7 @@ def sobol_indices(
         If a callable, its signature must be::
 
             func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
-            -> Tuple[np.ndarray, np.ndarray]
+            -> tuple[np.ndarray, np.ndarray]
 
         with ``f_A, f_B`` of shape ``(s, n)`` and ``f_AB`` of shape
         ``(d, s, n)``.
@@ -607,7 +607,7 @@ def sobol_indices(
             "saltelli_2010": saltelli_2010,
         }
         try:
-            method = method.lower()  # type: ignore[assignment]
+            method = method.lower()
             indices_method_ = indices_methods[method]
         except KeyError as exc:
             message = (

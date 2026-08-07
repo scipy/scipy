@@ -12,7 +12,7 @@ from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
                                    is_lazy_array, _count_nonmasked, is_marray,
-                                   _masked_apply)
+                                   _masked_apply, xp_device)
 import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
@@ -122,9 +122,9 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     np.float64(316.6441136688085)
     >>> res.pvalue
     np.float64(2.778946959815902e-67)
-    
+
     The large value of the statistic and small p-value may be taken as evidence that
-    ``x`` and ``y`` were not sampled from the same distribution. 
+    ``x`` and ``y`` were not sampled from the same distribution.
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
@@ -181,7 +181,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
 
     # compute test statistic w distributed asympt. as chisquare with df=r
     g_diff = xp.mean(gx, axis=-1, keepdims=True) - xp.mean(gy, axis=-1, keepdims=True)
-    w = n*xp.matmul(xp.matrix_transpose(g_diff), xp.matmul(est_cov_inv, g_diff))
+    w = n*xp.matmul(g_diff.mT, xp.matmul(est_cov_inv, g_diff))
     w = w[..., 0, 0]
 
     # apply small-sample correction
@@ -432,7 +432,7 @@ def _psi1_mod(x, *, xp=None):
     def _ed2(y):
         z = y**2 / 4
         z_ = np.asarray(z)
-        b = xp.asarray(kv(1/4, z_) + kv(3/4, z_))
+        b = xp.asarray(kv(1/4, z_) + kv(3/4, z_), device=xp_device(z))
         return xp.exp(-z) * (y/2)**(3/2) * b / math.sqrt(np.pi)
 
     def _ed3(y):
@@ -440,7 +440,8 @@ def _psi1_mod(x, *, xp=None):
         z_ = np.asarray(z)
         c = xp.exp(-z) / math.sqrt(np.pi)
         kv_terms = xp.asarray(2*kv(1/4, z_)
-                              + 3*kv(3/4, z_) - kv(5/4, z_))
+                              + 3*kv(3/4, z_) - kv(5/4, z_),
+                              device=xp_device(z))
         return c * (y/2)**(5/2) * kv_terms
 
     def _Ak(k, x):
@@ -498,7 +499,8 @@ def _cdf_cvm_inf(x, *, xp=None):
         u = math.exp(gammaln(k + 0.5) - gammaln(k+1)) / (xp.pi**1.5 * xp.sqrt(x))
         y = 4*k + 1
         q = y**2 / (16*x)
-        b = xp.asarray(kv(0.25, np.asarray(q)), dtype=u.dtype)  # not automatic?
+        b = xp.asarray(kv(0.25, np.asarray(q)), dtype=u.dtype,  # not automatic?
+                       device=xp_device(q))
         return u * math.sqrt(y) * xp.exp(-q) * b
 
     tot = xp.zeros_like(x, dtype=x.dtype)
@@ -684,9 +686,11 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     rvs = xp_promote(rvs, force_floating=True, xp=xp)
     vals = xp.sort(rvs, axis=-1)
     cdfvals = _masked_apply(cdf, args=(vals, *args), xp=xp)
-    n_count = xp.asarray(_count_nonmasked(rvs, axis=-1, xp=xp), dtype=rvs.dtype)
+    n_count = xp.asarray(_count_nonmasked(rvs, axis=-1, xp=xp), dtype=rvs.dtype,
+                         device=xp_device(rvs))
 
-    u = (2*xp.arange(1, n_length+1, dtype=rvs.dtype) - 1)/(2*n_count[..., xp.newaxis])
+    u = ((2*xp.arange(1, n_length+1, dtype=rvs.dtype, device=xp_device(rvs)) - 1)
+         / (2*n_count[..., xp.newaxis]))
     w = 1/(12*n_count) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
@@ -1645,7 +1649,9 @@ def _pval_cvm_2samp_exact(s, m, n):
 
 def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     # compute expected value and variance of T (eq. 11 and 14 in [2])
-    nx, ny = xp.asarray(nx, dtype=t.dtype), xp.asarray(ny, dtype=t.dtype)
+    device = xp_device(t)
+    nx, ny = (xp.asarray(nx, dtype=t.dtype, device=device),
+              xp.asarray(ny, dtype=t.dtype, device=device))
     et = (1 + 1 / N) / 6
     vt = (N + 1) * (4 * k * N - 3 * (nx ** 2 + ny ** 2) - 2 * k)
     vt = vt / (45 * N ** 2 * 4 * k)
@@ -1663,11 +1669,10 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     return p
 
 
-@xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
-                                ('dask.array', 'needs rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'needs rankdata')],
                  cpu_only=True, jax_jit=False,  # due to p-value calculation
                  marray=True,
-                 extra_note="Only `method='exact'` is compatible with MArray.")
+                 extra_note="Only `method='exact'` is compatible with MArray input.")
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
@@ -1822,8 +1827,12 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     ry = r[..., length_x:]
 
     # compute U (eq. 10 in [2])
-    u = (count_x * xp.sum((rx - xp.arange(1, length_x+1, dtype=dtype))**2, axis=-1)
-         + count_y * xp.sum((ry - xp.arange(1, length_y+1, dtype=dtype))**2, axis=-1))
+    u = (count_x * xp.sum(
+             (rx - xp.arange(1, length_x+1, dtype=dtype, device=xp_device(rx)))**2,
+             axis=-1)
+         + count_y * xp.sum(
+             (ry - xp.arange(1, length_y+1, dtype=dtype, device=xp_device(ry)))**2,
+             axis=-1))
 
     # compute T (eq. 9 in [2])
     k, N = count_x*count_y, count_x + count_y
@@ -1834,7 +1843,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
             u, count_x, count_y = u.data, count_x.data, count_y.data
         p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
         mask = {'mask': t.mask} if is_marray(xp) else {}
-        p = xp.asarray(p, dtype=dtype, **mask)
+        p = xp.asarray(p, dtype=dtype, device=xp_device(t), **mask)
     else:
         p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
 

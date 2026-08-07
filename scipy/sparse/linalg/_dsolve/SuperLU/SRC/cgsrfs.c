@@ -148,7 +148,7 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 #define ITMAX 5
     
     /* Table of constant values */
-    int    ione = 1, nrow = A->nrow;
+    slu_blasint    ione = 1, nrow = A->nrow;
     singlecomplex ndone = {-1., 0.};
     singlecomplex done = {1., 0.};
     
@@ -402,7 +402,8 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    clacon2_(&nrow, &work[A->nrow], work, &ferr[j], &kase, isave);
+	    int nrow_int = (int)nrow;
+	    clacon2_(&nrow_int, &work[A->nrow], work, &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 
 	    if (kase == 1) {

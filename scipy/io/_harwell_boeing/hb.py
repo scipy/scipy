@@ -75,15 +75,18 @@ class HBInfo:
         nnon_zeros = m.nnz
 
         if fmt is None:
-            # +1 because HB use one-based indexing (Fortran), and we will write
-            # the indices /pointer as such
-            pointer_fmt = IntFormat.from_number(np.max(pointer+1))
-            indices_fmt = IntFormat.from_number(np.max(indices+1))
+            # +1 because HB uses one-based (Fortran) indexing.
+            # initial=1 supplies np.max's identity so empty indices/values
+            # (nnz == 0) still yield a valid format.
+            pointer_fmt = IntFormat.from_number(np.max(pointer + 1, initial=1))
+            indices_fmt = IntFormat.from_number(np.max(indices + 1, initial=1))
 
             if values.dtype.kind in np.typecodes["AllFloat"]:
-                values_fmt = ExpFormat.from_number(-np.max(np.abs(values)))
+                values_fmt = ExpFormat.from_number(
+                    -np.max(np.abs(values), initial=np.float64(1)))
             elif values.dtype.kind in np.typecodes["AllInteger"]:
-                values_fmt = IntFormat.from_number(-np.max(np.abs(values)))
+                values_fmt = IntFormat.from_number(
+                    -np.max(np.abs(values), initial=1))
             else:
                 message = f"type {values.dtype.kind} not implemented yet"
                 raise NotImplementedError(message)
@@ -194,7 +197,7 @@ class HBInfo:
             raise ValueError(
                 f"Unexpected value {nelementals} for nltvl (last entry of line 3)"
             )
-        
+
         # Fourth line
         line = fid.readline().strip("\n")
 
@@ -472,7 +475,7 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
         If ``True``, return sparse matrix. Otherwise return sparse array.
 
         .. deprecated:: 1.18.0
-            The default value for `spmatrix` is changing to False in v1.20.
+            The default value for `spmatrix` is changing to False in v2.1.
             That means the default return value will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
             on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
@@ -497,8 +500,8 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_array, eye
-    >>> data = csr_array(eye(3))  # create a sparse array
+    >>> from scipy.sparse import csr_array, eye_array
+    >>> data = csr_array(eye_array(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
     <Compressed Sparse Column sparse array of dtype 'float64'
@@ -519,7 +522,7 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
             data = _get_matrix(f)
 
     if spmatrix is _NoValue:
-        msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+        msg = """The default value for `spmatrix` is changing to `False` in v2.1.
             That means the default return type will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
@@ -562,8 +565,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_array, eye
-    >>> data = csr_array(eye(3))  # create a sparse array
+    >>> from scipy.sparse import csr_array, eye_array
+    >>> data = csr_array(eye_array(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
     <Compressed Sparse Column sparse array of dtype 'float64'

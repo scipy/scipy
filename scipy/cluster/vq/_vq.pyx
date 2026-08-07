@@ -10,7 +10,7 @@ Translated to Cython by David Warde-Farley, October 2009.
 cimport cython
 import numpy as np
 cimport numpy as np
-from scipy.linalg.cython_blas cimport dgemm, sgemm
+from scipy.linalg.cython_blas cimport blas_int, dgemm, sgemm
 
 from libc.math cimport sqrt
 
@@ -36,8 +36,8 @@ cdef inline vq_type vec_sqr(int n, vq_type *p) noexcept:
     return result
 
 
-cdef inline void cal_M(int nobs, int ncodes, int nfeat, vq_type *obs,
-                       vq_type *code_book, vq_type *M) noexcept:
+cdef inline void cal_M(blas_int nobs, blas_int ncodes, blas_int nfeat,
+                       vq_type *obs, vq_type *code_book, vq_type *M) noexcept:
     """
     Calculate M = obs * code_book.T
     """

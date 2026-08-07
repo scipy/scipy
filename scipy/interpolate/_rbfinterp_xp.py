@@ -26,12 +26,14 @@ In general, we would prefer less code duplication. The main blocker ATM is
 that pythran cannot compile functions with an xp= argument where xp is numpy.
 """
 from numpy.linalg import LinAlgError
+from scipy._lib._array_api import xp_device
 from ._rbfinterp_common import _monomial_powers_impl
 
 
-def _monomial_powers(ndim, degree, xp):
+def _monomial_powers(ndim, degree, xp, device=None):
     out = _monomial_powers_impl(ndim, degree)
-    out = xp.asarray(out)
+    # `out` is a NumPy array; convert onto the data's device (gh-22680)
+    out = xp.asarray(out, device=device)
     if out.shape[0] == 0:
         out = xp.reshape(out, (0, ndim))
     return out
@@ -97,31 +99,32 @@ def linear(r, xp):
 
 def thin_plate_spline(r, xp):
     # NB: changed w.r.t. pythran, vectorized
-    return xp.where(r == 0, 0, r**2 * xp.log(r))
+    return xp.where(r == 0, 0, xp.square(r) * xp.log(r))
 
 
 def cubic(r, xp):
-    return r**3
+    # CuPy 14.0.1: r**2 is much slower than square(r)
+    return xp.square(r) * r
 
 
 def quintic(r, xp):
-    return -r**5
+    return -xp.square(xp.square(r)) * r
 
 
 def multiquadric(r, xp):
-    return -xp.sqrt(r**2 + 1)
+    return -xp.sqrt(xp.square(r) + 1)
 
 
 def inverse_multiquadric(r, xp):
-    return 1.0 / xp.sqrt(r**2 + 1.0)
+    return 1.0 / xp.sqrt(xp.square(r) + 1.0)
 
 
 def inverse_quadratic(r, xp):
-    return 1.0 / (r**2 + 1.0)
+    return 1.0 / (xp.square(r) + 1.0)
 
 
 def gaussian(r, xp):
-    return xp.exp(-r**2)
+    return xp.exp(-xp.square(r))
 
 
 NAME_TO_FUNC = {
@@ -201,11 +204,11 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
     lhs = xp.concat(
         [
          xp.concat((out_kernels, out_poly), axis=1),
-         xp.concat((out_poly.T, xp.zeros((r, r))), axis=1)
+         xp.concat((out_poly.T, xp.zeros((r, r), device=xp_device(y))), axis=1)
         ]
-    , axis=0) + xp.diag(xp.concat([smoothing, xp.zeros(r)]))
+    , axis=0) + xp.diag(xp.concat([smoothing, xp.zeros(r, device=xp_device(y))]))
 
-    rhs = xp.concat([d, xp.zeros((r, s))], axis=0)
+    rhs = xp.concat([d, xp.zeros((r, s), device=xp_device(d))], axis=0)
 
     return lhs, rhs, shift, scale
 

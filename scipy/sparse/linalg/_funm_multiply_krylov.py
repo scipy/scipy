@@ -164,7 +164,7 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     assume_a : str, optional
         Indicate the structure of ``A``. The algorithm will use this information
         to select the appropriated code path. The available options are
-        'hermitian'/'her' and 'general'/'gen'. If ommited, then it is assumed
+        'hermitian'/'her' and 'general'/'gen'. If omitted, then it is assumed
         that ``A`` has a 'general' structure.
     t : float, optional
         The value to scale the matrix ``A`` with. The default is ``t = 1.0``

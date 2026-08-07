@@ -46,7 +46,7 @@ __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
 
 class LinearTimeInvariant:
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __new__(cls, *system, **kwargs):
         """Create a new object, don't allow direct instances."""

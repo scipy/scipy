@@ -89,7 +89,7 @@ class _spbase(SparseABC):
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
-    _allow_nd = (2,)
+    _allow_nd: tuple[int, ...] = (2,)
 
     @property
     def ndim(self) -> int:
@@ -398,11 +398,11 @@ class _spbase(SparseABC):
     def T(self):
         """Transpose."""
         return self.transpose()
-    
+
     @property
     def mT(self):
         """Matrix transpose.
-        
+
         See Also
         --------
         scipy.sparse.matrix_transpose : equivalent function
@@ -693,7 +693,7 @@ class _spbase(SparseABC):
         """
         return self.tocsr().power(n, dtype=dtype)
 
-    def _broadcast_to(self, shape, copy=False):
+    def _broadcast_to(self, shape, /, copy=False):
         if self.shape == shape:
             return self.copy() if copy else self
         else:
@@ -1186,7 +1186,7 @@ class _spbase(SparseABC):
         nz_mask = A.data != 0
         return tuple(idx[nz_mask] for idx in A.coords)
 
-    def _getcol(self, j):
+    def _getcol(self, j, /):
         """Returns a copy of column j of the array, as an (m x 1) sparse
         array (column vector).
         """
@@ -1754,6 +1754,18 @@ sparray.__doc__ = _spbase.__doc__
 def isspmatrix(x):
     """Is `x` of a sparse matrix type?
 
+    .. warning::
+
+        scipy.sparse is switching to the sparse array interface.
+
+        The ``isspmatrix`` function returns ``False`` for sparse arrays.
+        It will remain after the switch to sparse arrays (sparray).
+        So this is a future proof way to check for sparray vs spmatrix.
+        If you just want to check for sparse, use ``issparse(A)``.
+        For more general information about sparrays, see
+        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+        The switch to sparse arrays will occur no earlier than v2.2.
+
     Parameters
     ----------
     x
@@ -1768,7 +1780,7 @@ def isspmatrix(x):
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csr_array, csr_matrix, isspmatrix
-    >>> isspmatrix(csr_matrix([[5]]))
+    >>> isspmatrix(csr_matrix([[5]]))  # doctest: +SKIP
     True
     >>> isspmatrix(csr_array([[5]]))
     False

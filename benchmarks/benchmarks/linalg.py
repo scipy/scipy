@@ -19,7 +19,7 @@ def random(size):
 class Bench(Benchmark):
     params = [
         [20, 100, 500, 1000],
-        ['contig', 'nocont'],
+        ['contig', 'nocont', 'fcontig'],
         ['numpy', 'scipy']
     ]
     param_names = ['size', 'contiguous', 'module']
@@ -39,12 +39,15 @@ class Bench(Benchmark):
             a[i, i] = 10*(.1+a[i, i])
         b = random([size])
 
-        if contig != 'contig':
+        if contig == 'nocont':
             a = a[-1::-1, -1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
+        elif contig == 'fcontig':
+            a = np.asfortranarray(a)
 
         self.a = a
         self.b = b
+        self.a_pos = a @ a.T + size * np.eye(size)
 
     def time_solve(self, size, contig, module):
         if module == 'numpy':
@@ -90,22 +93,12 @@ class Bench(Benchmark):
         else:
             sl.svd(self.a)
 
-    # Retain old benchmark results (remove this if changing the benchmark)
-    time_det.version = (
-        "87e530ee50eb6b6c06c7a8abe51c2168e133d5cbd486f4c1c2b9cedc5a078325"
-    )
-    time_eigvals.version = (
-        "9d68d3a6b473df9bdda3d3fd25c7f9aeea7d5cee869eec730fb2a2bcd1dfb907"
-    )
-    time_inv.version = (
-        "20beee193c84a5713da9749246a7c40ef21590186c35ed00a4fe854cce9e153b"
-    )
-    time_solve.version = (
-        "1fe788070f1c9132cbe78a47fdb4cce58266427fc636d2aa9450e3c7d92c644c"
-    )
-    time_svd.version = (
-        "0ccbda456d096e459d4a6eefc6c674a815179e215f83931a81cfa8c18e39d6e3"
-    )
+    def time_cholesky(self, size, contig, module):
+        if module == 'numpy':
+            nl.cholesky(self.a_pos)
+        else:
+            sl.cholesky(self.a_pos)
+
 
 
 class BatchedSolveBench(Benchmark):

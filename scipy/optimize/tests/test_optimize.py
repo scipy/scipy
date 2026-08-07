@@ -20,9 +20,10 @@ from numpy.testing import (assert_allclose, assert_equal,
                            assert_no_warnings,
                            assert_array_less)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 
-import scipy
 from scipy._lib._gcutils import assert_deallocated
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
@@ -1674,7 +1675,7 @@ class TestOptimizeSimple(CheckOptimize):
                     callback()
             callback_interface = Callback()
         else:
-            def callback_interface(xk, *args):  # type: ignore[misc]
+            def callback_interface(xk, *args):
                 callback()
 
         def callback():
@@ -2668,8 +2669,9 @@ class TestBrute:
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
                                   full_output=True, finish=None)
 
+        workers = 1 if IS_WASM else 2
         resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
-                                   full_output=True, finish=None, workers=2)
+                                   full_output=True, finish=None, workers=workers)
 
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
@@ -2694,6 +2696,7 @@ class TestBrute:
 
 
 @pytest.mark.fail_slow(20)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -3000,9 +3003,6 @@ eb_data = setup_test_equal_bounds()
 
 # This test is about handling fixed variables, not the accuracy of the solvers
 @pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
-@pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name'] ==
-                   "intel-llvm",
-                   reason="Failures due to floating point issues, not logic")
 @pytest.mark.parametrize('method', eb_data["methods"])
 @pytest.mark.parametrize('kwds', eb_data["kwds"])
 @pytest.mark.parametrize('bound_type', eb_data["bound_types"])
@@ -3118,6 +3118,23 @@ def test_all_bounds_equal(method):
         assert res.nfev == 1
         message = "All independent variables were fixed by bounds at values"
         assert res.message.startswith(message)
+
+
+@pytest.mark.parametrize('method', eb_data["methods"])
+def test_all_bounds_equal_writable(method):
+    # When all bounds have lb == ub, _optimize_result_for_equal_bounds
+    # must pass a writable x0 to the objective. Previously, x0 was
+    # assigned directly from bounds.lb, which is a non-writable view
+    # produced by np.broadcast_to in _validate_bounds.
+    def f(x):
+        assert x.flags.writeable, "x passed to objective is not writable"
+        return np.linalg.norm(x)
+
+    bounds = [(1, 1), (2, 2)]
+    x0 = (1.0, 3.0)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method)
+    assert res.success
+    assert res.x.flags.writeable
 
 
 def test_eb_constraints():
@@ -3406,6 +3423,7 @@ def test_gh12513_trustregion_exact_infinite_loop():
     assert abs(fun(res.x)) < 1e-5
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
 @pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
                                          coo_array, csr_array, csc_array])
@@ -3432,7 +3450,11 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nhev == res_sparse.nhev
 
 
-@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize('workers', [
+    None,
+    pytest.param(2, marks=pytest.mark.xfail(
+        IS_WASM, reason="cannot create process pool in Pyodide/WASM")),
+])
 @pytest.mark.parametrize(
     'method',
     ['l-bfgs-b',
@@ -3466,7 +3488,7 @@ class TestWorkers:
         res_default = optimize.minimize(
             rosen, self.x0, method=method, **kwds
         )
-        assert_equal(res.x, res_default.x)
+        assert_allclose(res.x, res_default.x, rtol=1e-15)
         assert_equal(res.nfev, res_default.nfev)
 
     def test_equal_bounds(self, workers, method):
@@ -3531,11 +3553,11 @@ class TestAnnotations:
     ])
     def test_callable_annotations(self, method):
         kwds = {'jac': None, 'hess': None, 'callback': callable_annotated}
-        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg', 
+        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg',
                       'trust-ncg', 'trust-krylov', 'trust-exact', 'trust-constr']:
             #  methods that require a callable jac
             kwds['jac'] = rosen_der_annotated
-        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact', 
+        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact',
                       'trust-krylov', 'trust-constr']:
             kwds['hess'] = rosen_hess_annotated
         optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)
@@ -3592,6 +3614,7 @@ class TestAnnotations:
         assert res.success, f"Unexpected error: {res.message}"
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 def test_multiprocessing_too_many_open_files_23080():
     # https://github.com/scipy/scipy/issues/23080
     x0 = np.array([0.9, 0.9])

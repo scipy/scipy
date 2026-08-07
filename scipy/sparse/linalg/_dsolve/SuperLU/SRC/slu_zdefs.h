@@ -264,17 +264,17 @@ extern void    zcheck_tempv(int, doublecomplex *);
 
 /*! \brief BLAS */
 
-extern void zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
-extern void zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
-extern void zgemm_(const char*, const char*, const int*, const int*, const int*,
-                  const doublecomplex*, const doublecomplex*, const int*, const doublecomplex*,
-		  const int*, const doublecomplex*, doublecomplex*, const int*);
-extern void ztrsv_(char*, char*, char*, int*, doublecomplex*, int*,
-                  doublecomplex*, int*);
-extern void ztrsm_(char*, char*, char*, char*, int*, int*,
-                  doublecomplex*, doublecomplex*, int*, doublecomplex*, int*);
-extern void zgemv_(char *, int *, int *, doublecomplex *, doublecomplex *a, int *,
-                  doublecomplex *, int *, doublecomplex *, doublecomplex *, int *);
+extern void zcopy_(slu_blasint *, doublecomplex *, slu_blasint *, doublecomplex *, slu_blasint *);
+extern void zaxpy_(slu_blasint *, doublecomplex *, doublecomplex *, slu_blasint *, doublecomplex *, slu_blasint *);
+extern void zgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
+                  const doublecomplex*, const doublecomplex*, const slu_blasint*, const doublecomplex*,
+		  const slu_blasint*, const doublecomplex*, doublecomplex*, const slu_blasint*);
+extern void ztrsv_(char*, char*, char*, slu_blasint*, doublecomplex*, slu_blasint*,
+                  doublecomplex*, slu_blasint*);
+extern void ztrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
+                  doublecomplex*, doublecomplex*, slu_blasint*, doublecomplex*, slu_blasint*);
+extern void zgemv_(char *, slu_blasint *, slu_blasint *, doublecomplex *, doublecomplex *a, slu_blasint *,
+                  doublecomplex *, slu_blasint *, doublecomplex *, doublecomplex *, slu_blasint *);
 
 extern void zusolve(int, int, doublecomplex*, doublecomplex*);
 extern void zlsolve(int, int, doublecomplex*, doublecomplex*);

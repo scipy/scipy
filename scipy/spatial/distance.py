@@ -432,9 +432,9 @@ def directed_hausdorff(u, v, rng=0):
 
 def minkowski(u, v, p=2, w=None):
     """
-    Compute the Minkowski distance between two 1-D arrays.
+    Compute the Minkowski distance between two arrays.
 
-    The Minkowski distance between 1-D arrays `u` and `v`,
+    The Minkowski distance between arrays `u` and `v`,
     is defined as
 
     .. math::
@@ -446,9 +446,9 @@ def minkowski(u, v, p=2, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
     p : scalar
         The order of the norm of the difference :math:`{\\|u-v\\|}_p`. Note
@@ -460,7 +460,7 @@ def minkowski(u, v, p=2, w=None):
 
     Returns
     -------
-    minkowski : double
+    minkowski : float or ndarray
         The Minkowski distance between vectors `u` and `v`.
 
     Examples
@@ -480,8 +480,8 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = _asarray(u, order='C')
+    v = _asarray(v, order='C')
     if p <= 0:
         raise ValueError("p must be greater than 0")
     u_v = u - v
@@ -497,15 +497,15 @@ def minkowski(u, v, p=2, w=None):
         else:
             root_w = np.power(w, 1/p)
         u_v = root_w * u_v
-    dist = norm(u_v, ord=p)
+    dist = norm(u_v, ord=p, axis=-1)
     return dist
 
 
 def euclidean(u, v, w=None):
     """
-    Computes the Euclidean distance between two 1-D arrays.
+    Computes the Euclidean distance between two arrays.
 
-    The Euclidean distance between 1-D arrays `u` and `v`, is defined as
+    The Euclidean distance between arrays `u` and `v`, is defined as
 
     .. math::
 
@@ -515,9 +515,9 @@ def euclidean(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -525,7 +525,7 @@ def euclidean(u, v, w=None):
 
     Returns
     -------
-    euclidean : double
+    euclidean : float or ndarray
         The Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -542,7 +542,7 @@ def euclidean(u, v, w=None):
 
 def sqeuclidean(u, v, w=None):
     """
-    Compute the squared Euclidean distance between two 1-D arrays.
+    Compute the squared Euclidean distance between two arrays.
 
     The squared Euclidean distance between `u` and `v` is defined as
 
@@ -552,9 +552,9 @@ def sqeuclidean(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -562,7 +562,7 @@ def sqeuclidean(u, v, w=None):
 
     Returns
     -------
-    sqeuclidean : double
+    sqeuclidean : float or ndarray
         The squared Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -582,14 +582,14 @@ def sqeuclidean(u, v, w=None):
     if not (hasattr(v, "dtype") and np.issubdtype(v.dtype, np.inexact)):
         vtype = np.float64
 
-    u = _validate_vector(u, dtype=utype)
-    v = _validate_vector(v, dtype=vtype)
+    u = _asarray(u, dtype=utype, order='C')
+    v = _asarray(v, dtype=vtype, order='C')
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
         w = _validate_weights(w)
         u_v_w = w * u_v
-    return np.dot(u_v, u_v_w)
+    return np.vecdot(u_v, u_v_w)
 
 
 def correlation(u, v, w=None, centered=True):
@@ -2317,7 +2317,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
 
     The triangle inequality states that for any three points ``i``, ``j``, and ``k``:
     ``D[i,k] <= D[i,j] + D[j,k]``
-    
+
     Parameters
     ----------
     D : array_like
@@ -2333,7 +2333,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         `throw` is True to identify the offending variable.
     warning : bool, optional
         If True, a warning message is raised instead of throwing an exception.
-        
+
     Returns
     -------
     valid : bool

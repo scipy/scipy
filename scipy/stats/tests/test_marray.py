@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 from scipy import stats
 
-from scipy._lib._array_api import xp_assert_close, _count_nonmasked
+from scipy._external.packaging_version import version
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _count_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
 from scipy._lib._array_api import SCIPY_ARRAY_API, is_torch
 from scipy.stats._stats_py import _xp_mean, _xp_var
@@ -245,7 +246,7 @@ def test_ttests(f, kwargs, alternative, axis, masked_slice, xp):
      make_xp_pytest_param(stats.kurtosistest, tuple()),
      make_xp_pytest_param(stats.normaltest, tuple()),
      make_xp_pytest_param(stats.jarque_bera, tuple()),
-     make_xp_pytest_param(stats.cramervonmises, (stats.norm.cdf,)),
+     make_xp_pytest_param(stats.cramervonmises, (stats.norm.cdf,)),  # type:ignore[attr-defined]
 ])
 @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
 @pytest.mark.parametrize('axis', [0, 1, None])
@@ -371,6 +372,10 @@ def test_ttest_ind_from_stats(alternative, equal_var, xp):
     assert res.pvalue.shape == shape
 
 
+@pytest.mark.skipif(
+    version.parse(np.__version__) < version.parse("2.1"),
+    reason="no `__array_namespace_info__`",
+)
 def test_length_nonmasked_marray_iterable_axis_raises():
     xp = marray._get_namespace(np)
 

@@ -8,6 +8,8 @@ __all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
 from bisect import bisect_left
 
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
@@ -490,6 +492,15 @@ def _prepare_index_for_memoryview(i, j, x=None):
 def isspmatrix_lil(x):
     """Is `x` of lil_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -503,13 +514,24 @@ def isspmatrix_lil(x):
     Examples
     --------
     >>> from scipy.sparse import lil_array, lil_matrix, coo_matrix, isspmatrix_lil
-    >>> isspmatrix_lil(lil_matrix([[5]]))
+    >>> isspmatrix_lil(lil_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_lil(lil_array([[5]]))
+    >>> isspmatrix_lil(lil_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_lil(coo_matrix([[5]]))
+    >>> isspmatrix_lil(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_lil` is being replaced by `self.format == "lil" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_lil function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, lil_matrix)
 
 
@@ -594,6 +616,15 @@ class lil_matrix(spmatrix, _lil_base):
     Note that inserting a single item can take linear time in the worst case;
     to construct the matrix efficiently, make sure the items are pre-sorted by
     index, per row.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         lil_matrix(D)

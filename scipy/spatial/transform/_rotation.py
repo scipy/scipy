@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
-from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
+from collections.abc import Iterator, Sequence
+from types import EllipsisType, GenericAlias, ModuleType
 
 import numpy as np
 
@@ -37,7 +37,7 @@ def select_backend(xp: ModuleType, cython_compatible: bool):
     return backend_registry.get(xp, xp_backend)
 
 
-def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
+def _promote(*args: ArrayLike, xp: ModuleType) -> Array:
     """Promote arrays to float64 for numpy, else according to the Array API spec.
 
     The return array dtype follows the following rules:
@@ -81,7 +81,6 @@ rotation_extra_note = """The methods ``as_davenport``, ``apply``, and ``align_ve
         "apply": dict(
             skip_backends=[
                 ("dask.array", "missing linalg.cross/det functions and .mT attribute"),
-                ("cupy", "missing .mT attribute in cupy<14.*"),
             ],
         ),
         "__getitem__": dict(
@@ -403,7 +402,7 @@ class Rotation:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(
         self,
@@ -426,7 +425,7 @@ class Rotation:
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = select_backend(xp, cython_compatible=quat.ndim < 3)
+        self._backend: ModuleType = select_backend(xp, cython_compatible=quat.ndim < 3)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -925,7 +924,7 @@ class Rotation:
         """  # noqa: E501
         xp = array_namespace(axes)
         axes, angles = _promote(axes, angles, xp=xp)
-        cython_compatible = axes.ndim < 3 and angles.ndim < 2
+        cython_compatible = axes.ndim < 3 and angles.ndim < 2  # type:ignore[union-attr]
         backend = select_backend(xp, cython_compatible=cython_compatible)
         quat = backend.from_davenport(axes, order, angles, degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
@@ -1512,7 +1511,7 @@ class Rotation:
         return mrp
 
     @staticmethod
-    def concatenate(rotations: Rotation | Iterable[Rotation]) -> Rotation:
+    def concatenate(rotations: Rotation | Sequence[Rotation]) -> Rotation:
         """Concatenate a sequence of `Rotation` objects into a single object.
 
         This is useful if you want to, for example, take the mean of a set of
@@ -1585,7 +1584,9 @@ class Rotation:
               expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
-        ``self.as_matrix() @ vectors``.
+        ``(self.as_matrix() @ vectors[..., np.newaxis])[..., 0]``.
+        For a single rotation, this is the same as
+        ``vectors @ self.as_matrix().T``.
 
         Parameters
         ----------
@@ -1710,7 +1711,7 @@ class Rotation:
             return result[0, ...]
         return result
 
-    def __mul__(self, other: Rotation) -> Rotation | NotImplementedType:
+    def __mul__(self, other: Rotation) -> Rotation:
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
@@ -2145,7 +2146,9 @@ class Rotation:
         # to the follow-up PR that adds general Array API support for Rotations.
         return create_group(cls, group, axis=axis)
 
-    def __getitem__(self, indexer: int | slice | EllipsisType | None) -> Rotation:
+    def __getitem__(
+        self, indexer: int | slice | EllipsisType | Array | None
+    ) -> Rotation:
         """Extract rotation(s) at given index(es) from object.
 
         Create a new `Rotation` instance containing a subset of rotations
@@ -2216,9 +2219,9 @@ class Rotation:
         # TODO: This special case handling is mainly a result of Array API limitations.
         # Ideally we would get rid of them altogether and converge to [indexer, ...]
         # indexing.
-        if is_array and indexer.dtype == self._xp.bool:
+        if is_array and indexer.dtype == self._xp.bool:  # type:ignore[union-attr]
             return Rotation(self._quat[indexer], normalize=False)
-        if is_array and self._xp.isdtype(indexer.dtype, "integral"):
+        if is_array and self._xp.isdtype(indexer.dtype, "integral"):  # type:ignore[union-attr]
             # xp.take is implementation-defined for zero-dim arrays, hence we raise
             # pre-emptively to have consistent behavior across frameworks.
             if self._quat.shape[0] == 0:
@@ -2226,7 +2229,7 @@ class Rotation:
             return Rotation(self._xp.take(self._quat, indexer, axis=0), normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
-    def __setitem__(self, indexer: int | slice | EllipsisType | None, value: Rotation):
+    def __setitem__(self, indexer: int | slice | EllipsisType, value: Rotation):
         """Set rotation(s) at given index(es) from object.
 
         Parameters
@@ -2566,7 +2569,7 @@ class Rotation:
         xp = array_namespace(a)
         a, b, weights = _promote(a, b, weights, xp=xp)
         cython_compatible = (
-            (a.ndim < 3) & (b.ndim < 3) & (weights is None or weights.ndim < 2)
+            (a.ndim < 3) & (b.ndim < 3) & (weights is None or weights.ndim < 2)  # type:ignore[union-attr]
         )
         backend = select_backend(xp, cython_compatible=cython_compatible)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
@@ -2826,7 +2829,7 @@ class Slerp:
         # We cannot error out on invalid indices for jit compiled code. To not produce
         # an index error, we set the index to 0 in case it is out of bounds, and later
         # set the result to nan.
-        invalid_ind = (ind < 0) | (ind > len(self.rotations) - 1)
+        invalid_ind: Array = (ind < 0) | (ind > len(self.rotations) - 1)
         if is_lazy_array(invalid_ind):
             ind = xpx.at(ind, invalid_ind).set(0)
         elif xp.any(invalid_ind):
