@@ -297,6 +297,60 @@ const char *_landau_isf_doc = R"(
     scalar or ndarray
     )";
 
+const char *_ncx2_isf_doc = R"(
+    _ncx2_isf(x, k, l)
+
+    Inverse survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncx2_pdf_doc = R"(
+    _ncx2_pdf(x, k, l)
+
+    Probability density function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncx2_sf_doc = R"(
+    _ncx2_sf(x, k, l)
+
+    Survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_lgam1p_doc = R"(
     Internal function, do not use.
     )";
