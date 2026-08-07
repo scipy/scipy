@@ -155,7 +155,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     -----
     If a matrix is not modified, the original matrix (not a copy) is returned.
 
-    The :ref:`tutorial_signal_state_space_representation` section of the
+    The :ref:`tutorial_signal-StateSpaceRepresentation` section of the
     :ref:`user_guide` presents the corresponding definitions of continuous-time and
     disrcete time state space systems.
 
@@ -270,7 +270,7 @@ def ss2tf(A, B, C, D, input=0):
     except in the case where each of `A`, `B`, `C`, and `D` has integer dtype, in which
     case the resulting dtype will be the default floating point dtype of ``float64``.
 
-    The :ref:`tutorial_signal_state_space_representation` section of the
+    The :ref:`tutorial_signal-StateSpaceRepresentation` section of the
     :ref:`user_guide` presents the corresponding definitions of continuous-time and
     disrcete time state space systems.
 

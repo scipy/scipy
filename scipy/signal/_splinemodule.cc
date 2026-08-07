@@ -50,7 +50,7 @@ static char doc_FIRsepsym2d[] = "sepfir2d(input, hrow, hcol)\n"
 "\n"
 "    Examples\n"
 "    --------\n"
-"    Examples are given :ref:`in the tutorial <tutorial-signal-bsplines>`.\n"
+"    Examples are given :ref:`in the tutorial <tutorial_signal-BSplines>`.\n"
 "\n";
 
 static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
