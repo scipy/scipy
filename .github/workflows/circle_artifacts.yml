@@ -15,7 +15,7 @@ jobs:
       name: circleci-redirector
       deployment: false
     if: >
-      github.repository == 'scipy/scipy'
+      github.repository == 'aadya940/scipy'
       && github.event.context == 'ci/circleci: build_docs'
     name: Run CircleCI artifacts redirector
     permissions:
