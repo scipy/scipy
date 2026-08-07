@@ -62,6 +62,11 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         Jacobian will be estimated numerically.
         `jac` can also be a callable returning the Jacobian of `fun`. In
         this case, it must accept the same arguments as `fun`.
+        Only methods ``'hybr'`` and ``'lm'`` use the `jac` argument; all
+        other methods do not and issue a ``RuntimeWarning`` if it is
+        provided. For the methods that use the `jac` argument, when it is
+        not provided (or ``False``), the Jacobian is estimated by
+        forward-difference approximations.
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
         options.
