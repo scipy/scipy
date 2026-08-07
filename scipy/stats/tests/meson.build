@@ -18,6 +18,7 @@ py3.install_sources([
     'test_entropy.py',
     'test_fast_gen_inversion.py',
     'test_fit.py',
+    'test_grenander.py',
     'test_hypotests.py',
     'test_kdeoth.py',
     'test_marray.py',
