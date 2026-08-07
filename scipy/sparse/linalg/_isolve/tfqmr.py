@@ -3,6 +3,7 @@ import numpy as np
 from scipy._lib._array_api import xp_capabilities
 from .iterative import _get_atol_rtol
 from .utils import make_system
+from scipy._lib._util import (_validate_int)
 
 
 __all__ = ['tfqmr']
@@ -110,6 +111,8 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     ndofs = A.shape[0]
     if maxiter is None:
         maxiter = min(10000, ndofs * 10)
+    # Check maxiter if a value is given
+    _validate_int(maxiter, 'maxiter', minimum=1)
 
     if x0 is None:
         r = b.copy()
