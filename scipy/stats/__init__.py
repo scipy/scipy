@@ -42,6 +42,14 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
    rv_discrete
    rv_histogram
 
+Distribution constructors
+-------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   pearson           -- Pearson system distribution from moments
+
 Continuous distributions
 ------------------------
 
@@ -600,6 +608,7 @@ from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
 from ._stats_py import *
 from ._variation import variation
 from .distributions import *
+from ._continuous_distns import pearson
 from ._morestats import *
 from ._multicomp import *
 from ._binomtest import binomtest
