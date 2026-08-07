@@ -14,7 +14,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, is_numpy,
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
-    _xp_copy_to_numpy, xp_assert_close_nulp
+    xp_assert_close_nulp, _xp_copy_to_numpy
 )
 import scipy._external.array_api_extra as xpx
 
@@ -4935,21 +4935,13 @@ class TestIIRFilter:
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 @make_xp_test_case(group_delay)
 class TestGroupDelay:
-    def test_identity_filter(self, xp):
-        w, gd = group_delay((1, xp.asarray(1)))
+    @pytest.mark.parametrize("method", ["convolve", "unwrap"])
+    def test_identity_filter(self, method, xp):
+        w, gd = group_delay((1, xp.asarray(1.)), method=method)
         assert_array_almost_equal(w, xp.pi * xp.arange(512, dtype=w.dtype) / 512)
         assert_array_almost_equal(gd, xp.zeros(512))
 
-        w, gd = group_delay((1, xp.asarray(1)), whole=True)
-        assert_array_almost_equal(w, 2 * xp.pi * xp.arange(512, dtype=w.dtype) / 512)
-        assert_array_almost_equal(gd, xp.zeros(512))
-
-    def test_identity_filter_unwrap_method(self, xp):
-        w, gd = group_delay((1, xp.asarray(1)), method='unwrap')
-        assert_array_almost_equal(w, xp.pi * xp.arange(512, dtype=w.dtype) / 512)
-        assert_array_almost_equal(gd, xp.zeros(512))
-
-        w, gd = group_delay((1, xp.asarray(1)), whole=True, method='unwrap')
+        w, gd = group_delay((1, xp.asarray(1)), whole=True, method=method)
         assert_array_almost_equal(w, 2 * xp.pi * xp.arange(512, dtype=w.dtype) / 512)
         assert_array_almost_equal(gd, xp.zeros(512))
 
@@ -4973,9 +4965,9 @@ class TestGroupDelay:
         N = 100
         b = firwin(N + 1, 0.1)
         b = xp.asarray(b)
-        w, gd = group_delay((b, 1), method='unwrap')
-        wf, H = freqz(b, 1)
-        passband = np.abs(H) > 0.1
+        _, gd = group_delay((b, 1), method='unwrap')
+        _, H = freqz(b, 1)
+        passband = xp.abs(H) > 0.1
         xp_assert_close(gd[passband], xp.ones_like(gd[passband])*(0.5 * N), rtol=5e-7)
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
@@ -4997,9 +4989,10 @@ class TestGroupDelay:
         # Test this same filter against points from matlab using the unwrap method
         b, a = butter(4, 0.1)
         b, a = map(xp.asarray, (b, a))
-        w = xp.linspace(0, xp.pi, num=10, endpoint=False)
         wd, gd = group_delay((b, a), w=4096, method='unwrap')
-        gd_at_matlab_points = np.interp(w, wd, gd)
+        w = np.linspace(0, xp.pi, num=10, endpoint=False)
+        gd_at_matlab_points = np.interp(w, _xp_copy_to_numpy(wd), _xp_copy_to_numpy(gd))
+        gd_at_matlab_points = xp.asarray(gd_at_matlab_points)
         matlab_gd = xp.asarray([8.249313898506037, 11.958947880907104,
                                 2.452325615326005, 1.048918665702008,
                                 0.611382575635897, 0.418293269460578,
@@ -5054,8 +5047,9 @@ class TestGroupDelay:
         b, a = butter(4, 4800, fs=96000)
         b, a = map(xp.asarray, (b, a))
         wd, gd = group_delay((b, a), w=4096, fs=96000, method='unwrap')
-        w = xp.linspace(0, 96000 / 2, num=10, endpoint=False)
-        gd_at_check_points = np.interp(w, wd, gd)
+        w = np.linspace(0, 96000 / 2, num=10, endpoint=False)
+        gd_at_check_points = np.interp(w, _xp_copy_to_numpy(wd), _xp_copy_to_numpy(gd))
+        gd_at_check_points = xp.asarray(gd_at_check_points)
         norm_gd = xp.asarray([8.249313898506037, 11.958947880907104,
                               2.452325615326005, 1.048918665702008,
                               0.611382575635897, 0.418293269460578,
@@ -5078,21 +5072,21 @@ class TestGroupDelay:
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(gd, [0])
 
-    def test_w_or_N_types_unwrap_method(self, xp):
+    def test_w_or_N_types_unwrap_method(self):  # scalars are np-only
         # Measure at 8 equally-spaced points
         for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
             w, gd = group_delay((1, 1), N, method='unwrap')
-            assert_array_almost_equal(w, pi * np.arange(8) / 8)
-            assert_array_almost_equal(gd, np.zeros(8))
+            xp_assert_close(w, pi * np.arange(8) / 8)
+            xp_assert_close(gd, np.zeros(8))
 
         # Measure at frequency 8-9 rad/sec -- derivative calculation fails with a single
         # data point so must provide at least 2
         # also cannot provide complex array_like because not accepted by freqz
         for w in ([8.0, 9.0],):
             w_out, gd = group_delay((1, 1), w, method='unwrap')
-            assert_array_almost_equal(w_out, [8, 9])
-            assert_array_almost_equal(gd, [0, 0])
+            xp_assert_close(w_out, [8, 9])
+            xp_assert_close(gd, [0, 0])
 
     @pytest.mark.xfail(DEFAULT_F32, reason="with torch/float32, the rtol is ~1e-7")
     @xfail_xp_backends("cupy", reason="inaccurate")
@@ -5158,10 +5152,13 @@ class TestGroupDelay:
 
         wd, gd = group_delay((b, a), 2**14, whole=True, method='unwrap')
 
+        wd = _xp_copy_to_numpy(wd)
+        gd = _xp_copy_to_numpy(gd)
         high = wd >= pi
         wd = np.hstack([wd[high] - 2.*pi, wd[~high]])       # redistribute to [-pi, pi)
         gd = np.hstack([gd[high], gd[~high]])
         gdtest = np.interp(wref, wd, gd)
+        gdtest = xp.asarray(gdtest)
         # delta = gdtest - gdref TODO: EITHER USE OR REMOVE
         xp_assert_close(gdtest, gdref, atol=1e-3, rtol=1e-4)
 
@@ -5177,13 +5174,13 @@ class TestGroupDelay:
         # test a few different variations of user provided arguments and verify
         # the available methods produce similar answers
         argsets = [dict(w=2048),
-                   dict(w=np.linspace(0., 2.*xp.pi, 4096)),
+                   dict(w=xp.linspace(0., 2.*xp.pi, 4096)),
                    dict(whole=False),
                    dict(whole=False, fs=100),
                    dict(whole=True),
                    dict(whole=True, fs=100),
                    dict(w=2048, fs=100),
-                   dict(w=np.linspace(0., 2.*xp.pi, 4096), fs=100)]
+                   dict(w=xp.linspace(0., 2.*xp.pi, 4096), fs=100)]
         for kwarg in argsets:
             fs = kwarg.get('fs', 2. * xp.pi)
             b, a = butter(4, fs*0.05, fs=fs)
@@ -5202,9 +5199,9 @@ class TestGroupDelay:
             #   Add a check to filter out frequencies at or right next to the nyquist
             # frequency where a discontinuity
             #   occurs and the two methods are expected to produce different results
-            filt = np.ones(wu.shape, dtype=bool)
+            filt = xp.ones(wu.shape, dtype=xp.bool)
             if kwarg.get('whole', False):
-                i_nyquist = np.where(np.isclose(wu, fs/2.))[0][0]
+                i_nyquist = xp.nonzero(xpx.isclose(wu, fs/2., xp=xp))[0][0]
                 filt[i_nyquist-1:i_nyquist+2] = False
             xp_assert_close(gc[filt], gu[filt], atol=1e-3, rtol=5e-3)
 

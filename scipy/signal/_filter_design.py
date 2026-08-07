@@ -745,8 +745,8 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
             in Reference [2]_ (similar to the algorithm implemented in Matlab).
         ``"unwrap"``
             Compute the system frequency response using `freqz`, unwrap the
-            phase, and then directly compute the finite difference derivative versus
-            frequency.
+            phase, and then directly compute the finite difference derivative
+            versus frequency.
 
         .. versionadded:: 1.19.0
 
@@ -888,11 +888,11 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
                    f" around which a singularity may be present. If the group delay "
                    f"calculation using the 'convolve' method is producing unreasonable "
                    f"results where the filter frequency response is continuous, the "
-                   f"'unwrap' method may provide better results.",)
+                   f"'unwrap' method may provide better results.")
             warnings.warn(msg, skip_file_prefixes=(os.path.dirname(__file__),))
 
     elif method == 'unwrap':
-        _, H = freqz(system[0], system[1], worN=w)
+        _, H = freqz(b, a, worN=w)
         gd = -np.gradient(np.unwrap(np.angle(H)), w)
 
     else:
@@ -908,7 +908,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi, *, method='convolve'):
         warnings.warn(
             "The group delay is singular at frequencies "
             f"[{', '.join(f'{ws:.3f}' for ws in w[singular])}], setting to 0",
-            stacklevel=2
+            skip_file_prefixes=(os.path.dirname(__file__),)
         )
 
     w = w * (fs / (2 * xp.pi))      # convert back to user specified frequency
