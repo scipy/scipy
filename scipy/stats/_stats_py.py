@@ -3720,6 +3720,7 @@ def trim_mean(a, proportiontocut, axis=0):
         See `Trimming and winsorization transition guide
         <https://docs.scipy.org/doc/scipy/tutorial/stats/outliers.html>`_ for the
         reasoning.
+        
     """
     xp = array_namespace(a)
 
