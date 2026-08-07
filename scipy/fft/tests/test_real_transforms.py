@@ -10,8 +10,6 @@ from scipy._lib._array_api import (xp_copy, xp_assert_close, make_xp_test_case,
                                    make_xp_pytest_param)
 import scipy._external.array_api_extra as xpx
 
-skip_xp_backends = pytest.mark.skip_xp_backends
-
 SQRT_2 = math.sqrt(2)
 
 # scipy.fft wraps the fftpack versions but with normalized inverse transforms.

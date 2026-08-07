@@ -14,7 +14,6 @@ import pytest
 
 from scipy import ndimage
 
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 class TestNdimageFourier:

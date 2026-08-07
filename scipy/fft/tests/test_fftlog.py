@@ -8,10 +8,9 @@ from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 
 from scipy._lib._array_api import (
-    xp_assert_close, xp_assert_less, make_xp_test_case, make_xp_pytest_param
+    xp_assert_close, xp_assert_less, make_xp_test_case
 )
 
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 @make_xp_test_case(fht, fhtoffset)
@@ -189,16 +188,12 @@ def test_fht_exact(n, xp):
 
     xp_assert_close(A, At)
 
-@skip_xp_backends(np_only=True,
-                  reason='array-likes only supported for NumPy backend')
-@pytest.mark.parametrize(
-    "op", [make_xp_pytest_param(fht), make_xp_pytest_param(ifht)]
-)
-def test_array_like(xp, op):
+@pytest.mark.parametrize("op", [fht, ifht])
+def test_array_like(op):  # array-like is np only
     x = [[[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]]]
-    xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))
+    xp_assert_close(op(x, 1.0, 2.0), op(np.asarray(x), 1.0, 2.0))
 
 @pytest.mark.parametrize('n', [128, 129])
 @make_xp_test_case(fhtoffset, fht)
