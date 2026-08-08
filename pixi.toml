@@ -23,6 +23,7 @@ version = "*"
 
 [package.build.config]
 compilers = ["c", "cxx"]
+extra-input-globs = ["**/meson.build", "**/meson.options", "!build/**", "!build-install/**"]
 
 [workspace.target.win.build-variants]
 c_compiler = ["clang-cl"] 
@@ -46,6 +47,14 @@ openblas = "*"
 
 ### Environments ###
 # We include one build task (and a corresponding environment) per solve group
+
+[environments.editable]
+features = ["editable-scipy", "test-deps", "ipython-dep", "ipython-task"]
+no-default-feature = true
+
+[feature.editable-scipy]
+dependencies.scipy.path = "."
+dev.scipy.path = "."
 
 [environments.build]
 # tasks: build
