@@ -893,6 +893,10 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             ctx.invoke(build_cmd, build_dir=build_dir)
 
         meson._set_pythonpath(build_dir)
+        # asv>=0.6.5 strips PYTHONPATH from the benchmark process' sys.path unless
+        # ASV_PYTHONPATH is set (gh-23611, airspeed-velocity/asv#1537). Only set it
+        # here: `asv continuous` below builds its own envs, which this would shadow.
+        os.environ['ASV_PYTHONPATH'] = os.environ['PYTHONPATH']
 
         p = util.run(
             ['python', '-c', 'import scipy as sp; print(sp.__version__)'],
