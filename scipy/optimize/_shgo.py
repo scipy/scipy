@@ -76,7 +76,9 @@ def shgo(
         another specified number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
-        complex. Default is 1.
+        complex. Default is 1. Note that if any of the `options` stopping
+        criteria (``maxiter``, ``maxfev``, ``maxev``, ``minhgrd``,
+        ``f_min``) are set, `iters` is ignored in favor of those criteria.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
@@ -105,18 +107,23 @@ def shgo(
         criteria are met. However, the default algorithm does not require any
         to be specified:
 
-        maxfev : int (L)
-            Maximum number of function evaluations in the feasible domain.
+        maxfev : int
+            Maximum number of function evaluations in the feasible domain
+            (global sampling phase only; this value is not passed to the
+            local minimizer).
             (Note only methods that support this option will terminate
             the routine at precisely exact specified value. Otherwise the
             criterion will only terminate during a global iteration)
         f_min : float
             Specify the minimum objective function value, if it is known.
+            When set, enables an early-stop check that terminates once a
+            sampled point comes within `f_tol` of this value.
         f_tol : float
             Precision goal for the value of f in the stopping
-            criterion. Note that the global routine will also
-            terminate if a sampling point in the global routine is
-            within this tolerance.
+            criterion. Only takes effect when `f_min` is also specified;
+            without `f_min`, `f_tol` has no effect on early stopping.
+            When enabled, the global routine will also terminate if a
+            sampling point is within this tolerance of `f_min`.
         maxiter : int
             Maximum number of iterations to perform.
         maxev : int
@@ -130,9 +137,11 @@ def shgo(
             iteration. The rank of this group has a one-to-one correspondence
             with the number of locally convex subdomains in the objective
             function (after adequate sampling points each of these subdomains
-            contain a unique global minimum). If the difference in the hgr is 0
-            between iterations for ``maxhgrd`` specified iterations the
-            algorithm will terminate.
+            contain a unique global minimum). If the difference in the hgr is
+            <= ``minhgrd`` for one iteration, the algorithm will terminate.
+            Currently only effective when `minimize_every_iter` is enabled
+            (its default); when `minimize_every_iter` is ``False``,
+            ``minhgrd`` has no effect on early stopping.
 
         Objective function knowledge:
 
