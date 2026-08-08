@@ -95,6 +95,15 @@ extern const char *_landau_sf_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
+extern const char *_nbinom_cdf_doc;
+extern const char *_nbinom_isf_doc;
+extern const char *_nbinom_kurtosis_excess_doc;
+extern const char *_nbinom_mean_doc;
+extern const char *_nbinom_pmf_doc;
+extern const char *_nbinom_ppf_doc;
+extern const char *_nbinom_sf_doc;
+extern const char *_nbinom_skewness_doc;
+extern const char *_nbinom_variance_doc;
 extern const char *_ncf_isf_doc;
 extern const char *_ncf_kurtosis_excess_doc;
 extern const char *_ncf_mean_doc;
@@ -488,6 +497,60 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::ddd_d>(landau_sf_double)},
                           "_landau_sf", _landau_sf_doc);
     PyModule_AddObjectRef(module, "_landau_sf", _landau_sf);
+
+    PyObject *_nbinom_cdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_cdf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_cdf_double)},
+                          "_nbinom_cdf", _nbinom_cdf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_cdf", _nbinom_cdf);
+
+    PyObject *_nbinom_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_isf_double)},
+                          "_nbinom_isf", _nbinom_isf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_isf", _nbinom_isf);
+
+    PyObject *_nbinom_kurtosis_excess =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nbinom_kurtosis_excess_float),
+                           static_cast<xsf::numpy::dd_d>(nbinom_kurtosis_excess_double)},
+                          "_nbinom_kurtosis_excess", _nbinom_kurtosis_excess_doc);
+    PyModule_AddObjectRef(module, "_nbinom_kurtosis_excess", _nbinom_kurtosis_excess);
+
+    PyObject *_nbinom_mean =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nbinom_mean_float),
+                           static_cast<xsf::numpy::dd_d>(nbinom_mean_double)},
+                          "_nbinom_mean", _nbinom_mean_doc);
+    PyModule_AddObjectRef(module, "_nbinom_mean", _nbinom_mean);
+
+    PyObject *_nbinom_pmf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_pmf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_pmf_double)},
+                          "_nbinom_pmf", _nbinom_pmf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_pmf", _nbinom_pmf);
+
+    PyObject *_nbinom_ppf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_ppf_double)},
+                          "_nbinom_ppf", _nbinom_ppf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_ppf", _nbinom_ppf);
+
+    PyObject *_nbinom_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_sf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_sf_double)},
+                          "_nbinom_sf", _nbinom_sf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_sf", _nbinom_sf);
+
+    PyObject *_nbinom_skewness =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nbinom_skewness_float),
+                           static_cast<xsf::numpy::dd_d>(nbinom_skewness_double)},
+                          "_nbinom_skewness", _nbinom_skewness_doc);
+    PyModule_AddObjectRef(module, "_nbinom_skewness", _nbinom_skewness);
+
+    PyObject *_nbinom_variance =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nbinom_variance_float),
+                           static_cast<xsf::numpy::dd_d>(nbinom_variance_double)},
+                          "_nbinom_variance", _nbinom_variance_doc);
+    PyModule_AddObjectRef(module, "_nbinom_variance", _nbinom_variance);
 
     PyObject *_ncf_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(ncf_isf_float),
