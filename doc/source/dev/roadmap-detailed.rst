@@ -431,6 +431,12 @@ functions, and spheroidal wave functions. Three possible ways to handle this:
 3. Add clear warnings to the documentation about the limits of the existing
    implementations.
 
+As of 2023, the `XSF library <https://github.com/scipy/xsf>`__ is being
+developed to provide standalone C++ special-function implementations for use
+in SciPy and other scientific Python projects. See the `XSF roadmap
+<https://github.com/scipy/xsf/issues/220>`__ for current priorities and plans
+to migrate functions from ``scipy.special`` internals into XSF.
+
 
 stats
 `````
