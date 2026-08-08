@@ -1331,7 +1331,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     ----------
     %(input)s
     weights : ndarray
-        array of weights, same number of dimensions as input
+        The correlation kernel; same number of dimensions as input
     %(output)s
     %(mode_reflect)s
     %(cval)s
@@ -1401,7 +1401,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     ----------
     %(input)s
     weights : array_like
-        Array of weights, same number of dimensions as input
+        The convolution kernel; same number of dimensions as input
     %(output)s
     %(mode_reflect)s
     cval : scalar, optional
