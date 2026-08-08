@@ -1,14 +1,17 @@
 import warnings
+import functools
+
 import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
-from scipy._lib._array_api import xp_capabilities
+
+from scipy._lib._array_api import xp_capabilities, xp_copy, xp_vector_norm
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 
-def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
+def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5, xp=np):
     """
     A helper function to handle tolerance normalization
     """
@@ -17,7 +20,7 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
                "if set, `atol` must be a real, non-negative number.")
         raise ValueError(msg)
 
-    atol = max(float(atol), float(rtol) * float(b_norm))
+    atol = xp.maximum(xp.asarray(atol), xp.asarray(rtol * b_norm))
 
     return atol, rtol
 
@@ -89,7 +92,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp, batched = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('bicg', bnrm2, atol, rtol)
@@ -229,7 +232,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp, batched = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('bicgstab', bnrm2, atol, rtol)
@@ -307,7 +310,12 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         return x, maxiter
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "data-dependent branching"),
+        ("jax.numpy", "data-dependent branching"),
+    ]
+)
 def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric,
@@ -355,6 +363,14 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     -----
     The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
     condition number than `A`, see [2]_.
+    
+    `A`, `b`, `x0`, and `M` may have additional "batch" dimensions prepended to
+    the core shape. In this case, the array is treated as a
+    batch of slices of the core shape; see :ref:`linalg_batch`.
+    The core shape of `A` and `M`  is ``(N, N)``,
+    while the core shape of `b` and `x0` is ``(N,)``.
+    'Column vector' input of shape ``(N, 1)`` is restricted to
+    the un-batched case.
 
     References
     ----------
@@ -380,44 +396,59 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
-    bnrm2 = np.linalg.norm(b)
+    A, M, x, b, xp, batched = make_system(A, M, x0, b, nd_support=True)
+    bnrm2 = xp_vector_norm(b, axis=-1, xp=xp)
 
-    atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol)
+    atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol, xp=xp)
 
-    if bnrm2 == 0:
+    if not xp.any(bnrm2):
         return b, 0
 
-    n = len(b)
-
     if maxiter is None:
-        maxiter = n*10
+        maxiter = b.shape[-1] * 10
 
-    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
+    dotprod = functools.partial(xp.vecdot, axis=-1)
 
     matvec = A.matvec
     psolve = M.matvec
-    r = b - matvec(x) if x.any() else b.copy()
+    r = b - matvec(x) if xp.any(x) else xp_copy(b, xp=xp)
 
     # Dummy value to initialize var, silences warnings
     rho_prev, p = None, None
 
     for iteration in range(maxiter):
-        if np.linalg.norm(r) < atol:  # Are we done?
+        converged = xp_vector_norm(r, axis=-1, xp=xp) < atol
+        if xp.all(converged):
             return x, 0
 
         z = psolve(r)
         rho_cur = dotprod(r, z)
+
         if iteration > 0:
-            beta = rho_cur / rho_prev
+            if not batched:
+                beta = rho_cur / rho_prev
+            else:
+                beta = xp.zeros_like(rho_cur)
+                mask = ~converged
+                beta[mask] = rho_cur[mask] / rho_prev[mask]
+                beta = beta[..., xp.newaxis]
+
             p *= beta
             p += z
         else:  # First spin
-            p = np.empty_like(r)
-            p[:] = z[:]
+            p = xp_copy(z, xp=xp)
 
         q = matvec(p)
-        alpha = rho_cur / dotprod(p, q)
+        c = dotprod(p, q)
+
+        if not batched:
+            alpha = rho_cur / c
+        else:
+            alpha = xp.zeros_like(rho_cur)
+            mask = ~converged
+            alpha[mask] = rho_cur[mask] / c[mask]
+            alpha = alpha[..., xp.newaxis]
+
         x += alpha*p
         r -= alpha*q
         rho_prev = rho_cur
@@ -501,7 +532,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp, batched = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('cgs', bnrm2, atol, rtol)
@@ -700,7 +731,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     if callback is None:
         callback_type = None
 
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp, batched = make_system(A, M, x0, b)
     matvec = A.matvec
     psolve = M.matvec
     n = len(b)
@@ -914,7 +945,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     True
     """
     A_ = A
-    A, M, x, b = make_system(A, None, x0, b)
+    A, M, x, b, xp, batched = make_system(A, None, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('qmr', bnrm2, atol, rtol)

@@ -95,7 +95,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp, batched = make_system(A, M, x0, b)
 
     dotprod = vdot if iscomplexobj(A) else inner
     matvec = A.matvec
