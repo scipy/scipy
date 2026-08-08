@@ -676,3 +676,110 @@ def test_fewer_points_than_dimensions_gh17436():
     message = "Number of dimensions is greater than number of samples..."
     with pytest.raises(ValueError, match=message):
         stats.gaussian_kde(rvs)
+
+
+def test_kde_sheather_jones_basic():
+    # Test that bw_method='sheather-jones' produces a KDE without error and that
+    # the bandwidth is a positive finite number.
+    rng = np.random.default_rng(42)
+    xn = rng.normal(0, 1, 200)
+    gkde = stats.gaussian_kde(xn, bw_method='sheather-jones')
+    assert np.isfinite(gkde.factor)
+    assert gkde.factor > 0
+
+    # Verify value against {locfit} silverman pilot bandwidth from R
+    h = gkde.factor * np.std(xn, ddof=1)
+    
+    # locfit from R result (using silverman as initial bandwidth)
+    # Note: locfit uses a slightly different definition of pilot bandwidth due
+    # to binned approximations
+    expected_h_locfit = 0.3251302
+    assert_allclose(h, expected_h_locfit, rtol=1e-2)
+    
+    # Exact closed-form analytical solution from original R code
+    expected_h_exact = 0.3254563
+    assert_allclose(h, expected_h_exact, rtol=1e-5)
+
+    # Verify that the KDE integrates to approximately 1
+    xs = np.linspace(-5, 5, 1000)
+    integral = np.trapezoid(gkde(xs), xs)
+    assert_allclose(integral, 1.0, atol=1e-2)
+
+
+def test_kde_sheather_jones_string_accepted():
+    # Verify 'sheather-jones' is accepted in both constructor and set_bandwidth
+    x1 = np.array([-7, -5, 1, 4, 5.])
+    kde = stats.gaussian_kde(x1, bw_method='sheather-jones')
+    assert np.isfinite(kde.factor)
+
+    # Also accepted via set_bandwidth
+    kde2 = stats.gaussian_kde(x1)
+    kde2.set_bandwidth(bw_method='sheather-jones')
+    assert np.isfinite(kde2.factor)
+
+
+def test_kde_sheather_jones_1d_only():
+    # Verify that 'sheather-jones' raises ValueError for multivariate data
+    rng = np.random.default_rng(42)
+    xn_2d = rng.normal(size=(2, 50))
+    message = "Sheather-Jones bandwidth selection is only supported"
+    with pytest.raises(ValueError, match=message):
+        stats.gaussian_kde(xn_2d, bw_method='sheather-jones')
+
+
+def test_kde_sheather_jones_weighted_raises():
+    # Verify that 'sheather-jones' raises NotImplementedError for weighted data
+    rng = np.random.default_rng(42)
+    xn = rng.normal(0, 1, 50)
+    wn = rng.random(50)
+    message = "Sheather-Jones bandwidth selection is not implemented"
+    with pytest.raises(NotImplementedError, match=message):
+        stats.gaussian_kde(xn, bw_method='sheather-jones', weights=wn)
+
+
+def test_kde_sheather_jones_small_dataset():
+    # Verify value against {locfit} silverman pilot bandwidth from R
+    x = np.array([
+        50, 31, 32, 21, 33, 30, 26, 29, 53, 54,
+        30, 34, 57, 59, 51, 32, 31, 31, 33, 32,
+        27, 50, 41, 29, 51, 41, 43, 22, 57, 38,
+        60, 28, 22, 28, 45, 33, 35, 46, 27, 56,
+        26, 37, 48, 54, 40, 25, 29, 22, 31, 24,
+    ])
+    kde = stats.gaussian_kde(x, bw_method='sheather-jones')
+    
+    # R locfit sj method returns absolute bandwidth (h), so we compare against 
+    # kde.factor * np.std(x, ddof=1)
+    h = kde.factor * np.std(x, ddof=1)
+    
+    # locfit from R result (using silverman as initial bandwidth)
+    expected_h = 4.288694
+    assert_allclose(h, expected_h, rtol=1e-2)
+
+    # Exact closed-form analytical solution from original R code
+    expected_h_exact = 4.306058
+    assert_allclose(h, expected_h_exact, rtol=1e-5)
+
+def test_kde_sheather_jones_set_bandwidth():
+    # Verify that switching to SJ via set_bandwidth after construction works
+    rng = np.random.default_rng(42)
+    xn = rng.normal(0, 1, 100)
+
+    kde = stats.gaussian_kde(xn)
+    scott_factor = kde.factor
+
+    kde.set_bandwidth(bw_method='sheather-jones')
+    sj_factor = kde.factor
+
+    # SJ factor should be different from Scott's
+    assert sj_factor != scott_factor
+    assert np.isfinite(sj_factor)
+    assert sj_factor > 0
+
+def test_kde_sheather_jones_error_message():
+    # Verify the error message for invalid bw_method strings includes
+    # 'sheather-jones'
+    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    message = "'sheather-jones'"
+    with pytest.raises(ValueError, match=message):
+        stats.gaussian_kde(x, bw_method='wrongstring')
