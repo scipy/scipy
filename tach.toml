@@ -189,7 +189,7 @@ depends_on = ["scipy._lib", "scipy.integrate"]
 
 [[modules]]
 path = "scipy.special._precompute"
-depends_on = ["scipy.special", "scipy.optimize", "scipy.integrate"]
+depends_on = ["scipy.special"]
 
 ###
 
