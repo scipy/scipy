@@ -1412,17 +1412,16 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
         }
     }
 
-    // 2D: return tuple of np.int64 scalars; N-d: return tuple of int64 arrays
+    // 2D: return tuple of int scalars; N-d: return tuple of int64 arrays
     if (ndim == 2) {
-        PyArray_Descr *descr = PyArray_DescrFromType(NPY_INT64);
-        PyObject *lb_obj = PyArray_Scalar(&lb_data[0], descr, NULL);
-        PyObject *ub_obj = PyArray_Scalar(&ub_data[0], descr, NULL);
-        Py_DECREF(descr);
+        // TODO: use PyLong_FromInt64 from py314+
+        PyObject *lb_obj = PyLong_FromSsize_t((Py_ssize_t)lb_data[0]);
+        PyObject *ub_obj = PyLong_FromSsize_t((Py_ssize_t)ub_data[0]);
         Py_DECREF(ap_lb); Py_DECREF(ap_ub);
-        return Py_BuildValue("(NN)", lb_obj, ub_obj);
+        return Py_BuildValue("NN", lb_obj, ub_obj);
     }
 
-    return Py_BuildValue("(NN)", (PyObject *)ap_lb, (PyObject *)ap_ub);
+    return Py_BuildValue("NN", (PyObject *)ap_lb, (PyObject *)ap_ub);
 }
 
 
