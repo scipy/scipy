@@ -1468,6 +1468,54 @@ class TestMakeDistribution:
         assert_allclose(Y.icdf(p), Z.icdf(p))
         assert_allclose(Y.iccdf(p), Z.iccdf(p))
 
+    @pytest.mark.parametrize("n", [10, np.asarray([10., 11., 12.])])
+    @pytest.mark.parametrize("p", [0.4, np.asarray([0.4, 0.5, 0.6])])
+    def test_custom_discrete(self, n, p):
+        rng = np.random.default_rng(5875373614)
+
+        class MyBinomial:
+            @property
+            def __make_distribution_version__(self):
+                return "1.16.0"
+
+            @property
+            def parameters(self):
+                return {'n': {'domain': 'discrete',
+                              'endpoints': (0., np.inf),
+                              'inclusive': (True, False)},
+                        'p': {'domain': 'continuous',
+                              'endpoints': (0., 1.),
+                              'inclusive': (True, True)}}
+
+            @property
+            def support(self):
+                return {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+
+            def pmf(self, x, n, p):
+                return special.binom(n, x) * p**x * (1 - p)**(n - x)
+
+        Binomial = stats.make_distribution(MyBinomial())
+
+        X = Binomial(n=n, p=p)
+        Y = stats.Binomial(n=n, p=p)
+
+        x = Y.sample(shape=10, rng=rng)
+        p = rng.random(x.shape)
+
+        assert_allclose(X.support(), Y.support())
+        assert_allclose(X.entropy(), Y.entropy())
+        assert_allclose(X.median(), Y.median())
+        assert_allclose(X.logpdf(x), Y.logpdf(x))
+        assert_allclose(X.pdf(x), Y.pdf(x))
+        assert_allclose(X.logpmf(x), Y.logpmf(x))
+        assert_allclose(X.pmf(x), Y.pmf(x))
+        assert_allclose(X.logcdf(x), Y.logcdf(x))
+        assert_allclose(X.cdf(x), Y.cdf(x))
+        assert_allclose(X.logccdf(x), Y.logccdf(x))
+        assert_allclose(X.ccdf(x), Y.ccdf(x))
+        assert_allclose(X.icdf(p), Y.icdf(p))
+        assert_allclose(X.iccdf(p), Y.iccdf(p))
+
     def test_input_validation(self):
         message = '`levy_stable` is not supported.'
         with pytest.raises(NotImplementedError, match=message):
@@ -1480,6 +1528,24 @@ class TestMakeDistribution:
         message = "The argument must be an instance of..."
         with pytest.raises(ValueError, match=message):
             stats.make_distribution(object())
+
+        message = "If specified, the `domain` value..."
+        class MyTestDistribution:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'n': {'domain': 'other', 'endpoints': (0, np.inf)}}
+            support = {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+            def pmf(self, x, n):
+                return np.full_like(x, 1/n)
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(MyTestDistribution())(n=10)
+
+        message = "The argument of `make_distribution` must implement either..."
+        class MyTestDistribution:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'n': {'endpoints': (0, np.inf)}}
+            support = {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(MyTestDistribution())(n=10)
 
     def test_repr_str_docs(self):
         from scipy.stats._distribution_infrastructure import _distribution_names
