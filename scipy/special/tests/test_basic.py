@@ -685,6 +685,36 @@ class TestCephes:
         assert_equal(cephes.mathieu_modcem2(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modsem2(10000, 1.5, 1.3), (np.nan, np.nan))
 
+    @pytest.mark.parametrize("m", [np.inf, np.nan, 1e18, -1.0, 1.5])
+    @pytest.mark.parametrize("q", [1.0, np.inf, -np.inf, np.nan])
+    def test_mathieu_non_finite_args(self, m, q):
+        assert_equal(mathieu_cem(m, q, 1.3), (np.nan, np.nan))
+        assert_equal(mathieu_sem(m, q, 1.3), (np.nan, np.nan))
+        assert_equal(special.mathieu_a(m, q), np.nan)
+        assert_equal(special.mathieu_b(m, q), np.nan)
+
+    @pytest.mark.parametrize("m", range(6))
+    def test_mathieu_cv_nan_q(self, m):
+        assert_equal(special.mathieu_a(float(m), np.nan), np.nan)
+        assert_equal(special.mathieu_b(float(max(m, 1)), np.nan), np.nan)
+
+    @pytest.mark.parametrize("m", [0, 5, 10, 40])
+    @pytest.mark.parametrize("q", [1e3, 1e4])
+    def test_mathieu_cv_large_q(self, m, q):
+        from scipy.linalg import eigh_tridiagonal
+        n = 10*(m + 25) + int(10*np.log10(q))
+        j = np.arange(n, dtype=float)
+        if m % 2:
+            d0, e0, r = 1.0 + q, q, 2*j + 1
+        else:
+            d0, e0, r = 0.0, np.sqrt(2)*q, 2*j
+        D = np.concatenate([[d0], r[1:]**2])
+        E = np.concatenate([[e0], np.full(n - 2, q)])
+        ref = eigh_tridiagonal(
+            D, E, select='i', select_range=(m//2, m//2), eigvals_only=True
+        )[0]
+        assert_allclose(special.mathieu_a(m, q), ref, rtol=1e-11)
+
     def test_mathieu_ticket_1847(self):
         # Regression test --- this call had some out-of-bounds access
         # and could return nan occasionally
