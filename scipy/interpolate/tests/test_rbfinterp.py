@@ -504,6 +504,10 @@ class _TestRBFInterpolator:
 
         xp_assert_close(yitp_llc, yipt, atol=1e-14)
 
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
     @skip_xp_backends('numpy', reason="error should only raise on non-numpy backends")
     def test_custom_kernel_raises_error_with_alt_backends(self, xp):
         # patch_lazy_xp_functions returns a JIT-wrapped verion of RBFInterpolator which
@@ -523,7 +527,12 @@ class _TestRBFInterpolator:
         with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
             _RBFInterpolator(x, y, kernel=llc, degree=0, epsilon=1.0)
 
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
     def test_degree_validation(self):
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
         llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
                            signature="double (double)")
 
@@ -538,7 +547,7 @@ class _TestRBFInterpolator:
             self.build(x, y, kernel='linear', degree=-2, epsilon=1.0)
 
         with pytest.raises(ValueError, match="`degree` must be at least -1."):
-            self.build(x, y, kernel=llc, degree=-2, epsilon=1.0)
+            _RBFInterpolator(x, y, kernel=llc, degree=-2, epsilon=1.0)
 
     @pytest.mark.skipif(
         CONFIG['Compilers']['pythran'] == {},
