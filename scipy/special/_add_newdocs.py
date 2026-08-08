@@ -859,20 +859,22 @@ add_newdoc("eval_sh_jacobi",
     .. math::
 
         G_n^{(p, q)}(x)
-          = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
+          = \frac{\Gamma{n+1}\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
 
-    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
-    See 22.5.2 in [AS]_ (or equivalently [DLMF]_)  for details.
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi
+    polynomial. See 22.5.2 in [AS]_ (or equivalently [DLMF]_) for details.
+    Note that here, in contrast to `eval_sh_legendre`, `eval_sh_chebyt`,
+    and `eval_sh_chebyu`, not only the argument is shifted.
 
     Parameters
     ----------
-    n : int
+    n : float
         Degree of the polynomial. If not an integer, the result is
         determined via the relation to `binom` and `eval_jacobi`.
     p : float
-        Parameter
+        Parameter, must satisfy :math:`p - q > -1`.
     q : float
-        Parameter
+        Parameter, must be greater than 0.
     x : array_like
         Points at which to evaluate the polynomial.
     out : ndarray, optional
