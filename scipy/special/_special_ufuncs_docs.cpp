@@ -297,6 +297,256 @@ const char *_landau_isf_doc = R"(
     scalar or ndarray
     )";
 
+const char *_ncf_isf_doc = R"(
+    _ncf_isf(x, v1, v2, l)
+
+    Inverse survival function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_kurtosis_excess_doc = R"(
+    _ncf_kurtosis_excess(v1, v2, l)
+
+    Kurtosis excess of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_mean_doc = R"(
+    _ncf_mean(v1, v2, l)
+
+    Mean of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_pdf_doc = R"(
+    _ncf_pdf(x, v1, v2, l)
+
+    Probability density function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_sf_doc = R"(
+    _ncf_sf(x, v1, v2, l)
+
+    Survival function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_skewness_doc = R"(
+    _ncf_skewness(v1, v2, l)
+
+    Skewness of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_variance_doc = R"(
+    _ncf_variance(v1, v2, l)
+
+    Variance of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_isf_doc = R"(
+    _nct_isf(x, v, l)
+
+    Inverse survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_kurtosis_excess_doc = R"(
+    _nct_kurtosis_excess(v, l)
+
+    Kurtosis excess of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_mean_doc = R"(
+    _nct_mean(v, l)
+
+    Mean of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_pdf_doc = R"(
+    _nct_pdf(x, v, l)
+
+    Probability density function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_sf_doc = R"(
+    _nct_sf(x, v, l)
+
+    Survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_skewness_doc = R"(
+    _nct_skewness(v, l)
+
+    Skewness of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_variance_doc = R"(
+    _nct_variance(v, l)
+
+    Variance of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_ncx2_isf_doc = R"(
     _ncx2_isf(x, k, l)
 
@@ -3373,6 +3623,72 @@ const char *cosm1_doc = R"(
 
 const char *_sinpi_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_skewnorm_cdf_doc = R"(
+    _skewnorm_cdf(x, l, sc, sh)
+
+    Cumulative density function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_skewnorm_isf_doc = R"(
+    _skewnorm_isf(x, l, sc, sh)
+
+    Inverse survival function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_skewnorm_ppf_doc = R"(
+    _skewnorm_ppf(x, l, sc, sh)
+
+    Percent point function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
     )";
 
 const char *sindg_doc = R"(
