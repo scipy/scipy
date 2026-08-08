@@ -249,7 +249,7 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
 
 
 @xp_capabilities()
-def softmax(x, axis=None):
+def softmax(x, axis=None, beta=1.0):
     r"""Compute the softmax function.
 
     The softmax function transforms each element of a collection by
@@ -266,6 +266,9 @@ def softmax(x, axis=None):
     axis : int or tuple of ints, optional
         Axis to compute values along. Default is None and softmax will be
         computed over the entire array `x`.
+    beta : float, optional
+        Reciprocal temperature parameter for adjusting softmax weights.
+        Default is 1.0 softmax weights will not be adjusted.
 
     Returns
     -------
@@ -278,7 +281,7 @@ def softmax(x, axis=None):
     The formula for the softmax function :math:`\sigma(x)` for a vector
     :math:`x = \{x_0, x_1, ..., x_{n-1}\}` is
 
-    .. math:: \sigma(x)_j = \frac{e^{x_j}}{\sum_k e^{x_k}}
+    .. math:: \sigma(x)_j = \frac{\beta e^{x_j}}{\sum_k \beta e^{x_k}}
 
     The `softmax` function is the gradient of `logsumexp`.
 
@@ -340,10 +343,11 @@ def softmax(x, axis=None):
     array([ 1.,  1.,  1.])
 
     """
-    xp = array_namespace(x)
+    xp = array_namespace(x, beta)
     x = xp.asarray(x)
+    beta = xp.asarray(beta, dtype=x.dtype)
     x_max = xp.max(x, axis=axis, keepdims=True)
-    exp_x_shifted = xp.exp(x - x_max)
+    exp_x_shifted = xp.exp(beta * (x - x_max))
     return exp_x_shifted / xp.sum(exp_x_shifted, axis=axis, keepdims=True)
 
 
