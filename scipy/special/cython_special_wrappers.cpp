@@ -27,7 +27,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/loggamma.h>
-#include <xsf/mathieu.h>
+#include <xsf/mathieu_legacy.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/sici.h>
