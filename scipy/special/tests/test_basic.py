@@ -1287,14 +1287,8 @@ class TestKelvin:
 
 class TestBernoulli:
     def test_bernoulli(self):
-        brn = special.bernoulli(5)
-        assert_allclose(brn, array([1.0000,
-                                    -0.5000,
-                                    0.1667,
-                                    0.0000,
-                                    -0.0333,
-                                    0.0000]),
-                        atol=1.5e-4, rtol=0)
+        brn = special.bernoulli(10)
+        assert_equal(brn, array([1, -1/2, 1/6, 0, -1/30, 0, 1/42, 0, -1/30, 0, 5/66]))
 
 
 class TestBeta:
