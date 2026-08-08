@@ -1,4 +1,5 @@
 import pytest
+import pickle
 import numpy as np
 
 from scipy._lib._testutils import IS_WASM
@@ -15,6 +16,8 @@ from scipy.optimize._differentiable_functions import (ScalarFunction,
                                                       IdentityVectorFunction)
 from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.optimize._hessian_update_strategy import BFGS
+from scipy._lib._array_api import make_xp_test_case, array_namespace
+from scipy._lib._array_api_no_0d import xp_assert_close
 
 
 class ExScalarFunction:
@@ -30,14 +33,16 @@ class ExScalarFunction:
 
     def grad(self, x):
         self.ngev += 1
-        return np.array([4*x[0]-1, 4*x[1]])
+        xp = array_namespace(x)
+        return xp.stack([4*x[0]-1, 4*x[1]])
 
     def hess(self, x):
         self.nhev += 1
-        return 4*np.eye(2)
+        xp = array_namespace(x)
+        return 4 * xp.eye(2)
 
 
-class TestScalarFunction(TestCase):
+class TestScalarFunction:
 
     def test_finite_difference_grad(self):
         ex = ExScalarFunction()
@@ -135,6 +140,18 @@ class TestScalarFunction(TestCase):
     @pytest.mark.fail_slow(5.0)
     def test_workers(self):
         x0 = np.array([2.0, 0.3])
+        ex = ExScalarFunction()
+
+        # checking that the wrapped function is pickleable is a useful sentinel
+        # for deeper problems.
+        # When using a mapper the tests hang if ScalarFunction._wrapped_fun isn't
+        # pickleable
+        approx = ScalarFunction(ex.fun, x0, (), '2-point',
+                                ex.hess, None, (-np.inf, np.inf),
+                                )
+        pkl = pickle.dumps(approx._wrapped_fun)
+        _o = pickle.loads(pkl)
+
         ex = ExScalarFunction()
         ex2 = ExScalarFunction()
         with MapWrapper(1 if IS_WASM else 2) as mapper:
@@ -454,6 +471,90 @@ class TestScalarFunction(TestCase):
         assert fx.dtype == np.float32
         # check that the round trip cast works as intended
         assert_equal(fx, fun(x0))
+
+    @make_xp_test_case(
+        (ScalarFunction, "fun")
+    )
+    def test_xp_fun(self, xp):
+        dtypes = [xp.float32, xp.float64]
+
+        for dtype in dtypes:
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            x0 = xp.asarray([3.0, 4.0], dtype=dtype)
+            sf = ScalarFunction(
+                ex.fun,
+                x0,
+                (),
+                ex.grad,
+                ex.hess,
+            )
+            y = ex2.fun(xp.asarray([3.0, 4.0], dtype=xp.float64))
+            xp_assert_close(
+                sf.fun(x0),
+                y,
+                check_namespace=True,
+                check_dtype=False
+            )
+            assert sf.fun(x0).dtype == dtype
+
+    @make_xp_test_case(
+        (ScalarFunction, "grad")
+    )
+    def test_xp_grad(self, xp):
+        dtypes = [xp.float32, xp.float64]
+
+        for dtype in dtypes:
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            x0 = xp.asarray([3.0, 4.0], dtype=dtype)
+            sf = ScalarFunction(
+                ex.fun,
+                x0,
+                (),
+                ex.grad,
+                ex.hess,
+            )
+            y = ex2.grad(xp.asarray([3.0, 4.0], dtype=dtype))
+            xp_assert_close(
+                sf.grad(x0),
+                y,
+            )
+
+            sf = ScalarFunction(
+                ex.fun,
+                x0,
+                (),
+                '2-point',
+                ex.hess,
+            )
+            xp_assert_close(
+                sf.grad(x0),
+                y,
+            )
+
+    @make_xp_test_case(
+        (ScalarFunction, "hess")
+    )
+    def test_xp_hess(self, xp):
+        dtypes = [xp.float32, xp.float64]
+
+        for dtype in dtypes:
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            x0 = xp.asarray([3.0, 4.0], dtype=dtype)
+            sf = ScalarFunction(
+                ex.fun,
+                x0,
+                (),
+                '3-point',
+                ex.hess,
+            )
+            y = ex2.hess(xp.asarray([3.0, 4.0], dtype=dtype))
+            xp_assert_close(
+                sf.hess(x0),
+                y,
+            )
 
 
 class ExVectorialFunction:

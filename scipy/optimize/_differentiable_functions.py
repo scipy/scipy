@@ -5,9 +5,9 @@ import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
-from scipy._lib._array_api import array_namespace, xp_copy
+from scipy._lib._array_api import (array_namespace, xp_copy, xp_capabilities)
 from scipy._external import array_api_extra as xpx
-from scipy._lib._util import _ScalarFunctionWrapper
+from scipy._lib._util import _ScalarFunctionWrapper, xp_array_equal
 
 
 FD_METHODS = ('2-point', '3-point', 'cs')
@@ -18,11 +18,12 @@ class _ScalarGradWrapper:
     Wrapper class for gradient calculation
     """
     def __init__(
-            self,
-            grad,
-            fun=None,
-            args=None,
-            finite_diff_options=None,
+        self,
+        grad,
+        fun=None,
+        args=None,
+        finite_diff_options=None,
+        x0=None,
     ):
         self.fun = fun
         self.grad = grad
@@ -31,12 +32,17 @@ class _ScalarGradWrapper:
         self.ngev = 0
         # number of function evaluations consumed by finite difference
         self.nfev = 0
+        self._xp = array_namespace(x0)
 
     def __call__(self, x, f0=None, **kwds):
         # Send a copy because the user may overwrite it.
         # The user of this class might want `x` to remain unchanged.
         if callable(self.grad):
-            g = np.atleast_1d(self.grad(np.copy(x), *self.args))
+            g = xpx.atleast_nd(
+                self.grad(xp_copy(x, xp=self._xp), *self.args),
+                ndim=1,
+                xp=self._xp
+            )
         elif self.grad in FD_METHODS:
             g, dct = approx_derivative(
                 self.fun,
@@ -48,6 +54,15 @@ class _ScalarGradWrapper:
 
         self.ngev += 1
         return g
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        self.__dict__.update(state)
 
 
 class _ScalarHessWrapper:
@@ -71,9 +86,10 @@ class _ScalarHessWrapper:
         self.nhev = 0
         self.H = None
         self._hess_func = None
+        self._xp = array_namespace(x0)
 
         if callable(hess):
-            self.H = hess(np.copy(x0), *args)
+            self.H = hess(xp_copy(x0, xp=self._xp), *args)
             self.nhev += 1
 
             if sps.issparse(self.H):
@@ -84,7 +100,14 @@ class _ScalarHessWrapper:
             else:
                 # dense
                 self._hess_func = "dense_callable"
-                self.H = np.atleast_2d(np.asarray(self.H))
+                if self.H is None:
+                    self.H = []
+
+                self.H = xpx.atleast_nd(
+                    self._xp.asarray(self.H),
+                    ndim=2,
+                    xp=self._xp
+                )
         elif hess in FD_METHODS:
                 self._hess_func = "fd_hess"
 
@@ -99,7 +122,7 @@ class _ScalarHessWrapper:
             case "fd_hess":
                 _h = self._fd_hess
 
-        return _h(np.copy(x), f0=f0)
+        return _h(xp_copy(x, xp=self._xp), f0=f0)
 
     def _fd_hess(self, x, f0=None, **kwds):
         self.H, dct = approx_derivative(
@@ -115,8 +138,14 @@ class _ScalarHessWrapper:
 
     def _dense_callable(self, x, **kwds):
         self.nhev += 1
-        self.H = np.atleast_2d(
-            np.asarray(self.hess(x, *self.args))
+        _h = self.hess(x, *self.args)
+        if _h is None:
+            _h = []
+        _h = self._xp.asarray(_h)
+        self.H = xpx.atleast_nd(
+            _h,
+            ndim=2,
+            xp=self._xp
         )
         return self.H
 
@@ -125,6 +154,26 @@ class _ScalarHessWrapper:
         self.H = self.hess(x, *self.args)
         return self.H
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        self.__dict__.update(state)
+
+
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "would need lazy_xp_function to avoid dask.compute"),
+        (
+            "jax.numpy",
+            "needs jax control flow logic (if -> xp.where) and conversion to be "
+            "functionally pure"
+        ),
+    ]
+)
 class ScalarFunction:
     """Scalar function and its derivatives.
 
@@ -242,7 +291,7 @@ class ScalarFunction:
             _dtype = _x.dtype
 
         # original arguments
-        self._wrapped_fun = _ScalarFunctionWrapper(fun, args)
+        self._wrapped_fun = _ScalarFunctionWrapper(fun, args, x0=_x)
         self._orig_fun = fun
         self._orig_grad = grad
         self._orig_hess = hess
@@ -288,6 +337,7 @@ class ScalarFunction:
             fun=self._wrapped_fun,
             args=args,
             finite_diff_options=finite_diff_options,
+            x0=x0
         )
         self._update_grad()
 
@@ -356,6 +406,7 @@ class ScalarFunction:
             self.f_updated = False
             self.g_updated = False
             self.H_updated = False
+        return True
 
     def _update_fun(self):
         if not self.f_updated:
@@ -372,7 +423,7 @@ class ScalarFunction:
         if not self.g_updated:
             if self._orig_grad in FD_METHODS:
                 self._update_fun()
-            self.g = self._wrapped_grad(self.x, f0=self.f)
+            self.g = self._wrapped_grad(self.x, f0=self.f, xp=self.xp)
             self.g_updated = True
 
     def _update_hess(self):
@@ -389,25 +440,25 @@ class ScalarFunction:
             self.H_updated = True
 
     def fun(self, x):
-        if not np.array_equal(x, self.x):
+        if not xp_array_equal(x, self.x, xp=self.xp):
             self._update_x(x)
         self._update_fun()
         return self.f
 
     def grad(self, x):
-        if not np.array_equal(x, self.x):
+        if not xp_array_equal(x, self.x, xp=self.xp):
             self._update_x(x)
         self._update_grad()
         return self.g
 
     def hess(self, x):
-        if not np.array_equal(x, self.x):
+        if not xp_array_equal(x, self.x, xp=self.xp):
             self._update_x(x)
         self._update_hess()
         return self.H
 
     def fun_and_grad(self, x):
-        if not np.array_equal(x, self.x):
+        if not xp_array_equal(x, self.x, xp=self.xp):
             self._update_x(x)
         self._update_fun()
         self._update_grad()

@@ -1,17 +1,20 @@
 """Routines for numerical differentiation."""
 import functools
 import numpy as np
-from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, spmatrix, find, csc_array, csr_array, csr_matrix
 from ._group_columns import group_dense, group_sparse
-from scipy._lib._array_api import array_namespace, xp_result_type
-from scipy._lib._util import MapWrapper
+from scipy._lib._array_api import (
+    array_namespace, xp_result_type, xp_copy, xp_capabilities,
+    xp_size, xp_vector_norm
+)
+from scipy._lib._util import MapWrapper, xp_array_equal
+from scipy._external.array_api_compat import is_numpy_namespace
 from scipy._external import array_api_extra as xpx
 
 
-def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
+def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub, xp=None):
     """Adjust final difference scheme to the presence of bounds.
 
     Parameters
@@ -42,19 +45,21 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
         Whether to switch to one-sided scheme. Informative only for
         ``scheme='2-sided'``.
     """
+    xp = xp or array_namespace(x0)
+
     if scheme == '1-sided':
-        use_one_sided = np.ones_like(h, dtype=bool)
+        use_one_sided = xp.ones_like(h, dtype=xp.bool)
     elif scheme == '2-sided':
-        h = np.abs(h)
-        use_one_sided = np.zeros_like(h, dtype=bool)
+        h = xp.abs(h)
+        use_one_sided = xp.zeros_like(h, dtype=xp.bool)
     else:
         raise ValueError("`scheme` must be '1-sided' or '2-sided'.")
 
-    if np.all((lb == -np.inf) & (ub == np.inf)):
+    if xp.all((lb == -xp.inf) & (ub == xp.inf)):
         return h, use_one_sided
 
     h_total = h * num_steps
-    h_adjusted = h.copy()
+    h_adjusted = xp_copy(h, xp=xp)
 
     lower_dist = x0 - lb
     upper_dist = ub - x0
@@ -62,7 +67,7 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     if scheme == '1-sided':
         x = x0 + h_total
         violated = (x < lb) | (x > ub)
-        fitting = np.abs(h_total) <= np.maximum(lower_dist, upper_dist)
+        fitting = xp.abs(h_total) <= xp.maximum(lower_dist, upper_dist)
         h_adjusted[violated & fitting] *= -1
 
         forward = (upper_dist >= lower_dist) & ~fitting
@@ -73,25 +78,34 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
         central = (lower_dist >= h_total) & (upper_dist >= h_total)
 
         forward = (upper_dist >= lower_dist) & ~central
-        h_adjusted[forward] = np.minimum(
+        h_adjusted[forward] = xp.minimum(
             h[forward], 0.5 * upper_dist[forward] / num_steps)
         use_one_sided[forward] = True
 
         backward = (upper_dist < lower_dist) & ~central
-        h_adjusted[backward] = -np.minimum(
+        h_adjusted[backward] = -xp.minimum(
             h[backward], 0.5 * lower_dist[backward] / num_steps)
         use_one_sided[backward] = True
 
-        min_dist = np.minimum(upper_dist, lower_dist) / num_steps
-        adjusted_central = (~central & (np.abs(h_adjusted) <= min_dist))
+        min_dist = xp.minimum(upper_dist, lower_dist) / num_steps
+        adjusted_central = (~central & (xp.abs(h_adjusted) <= min_dist))
         h_adjusted[adjusted_central] = min_dist[adjusted_central]
         use_one_sided[adjusted_central] = False
 
     return h_adjusted, use_one_sided
 
 
+@xp_capabilities(
+    skip_backends=[
+        (
+            "jax.numpy",
+            "needs jax control flow logic (if -> xp.where) and conversion to be "
+            "functionally pure"
+        ),
+    ]
+)
 @functools.lru_cache
-def _eps_for_method(x0_dtype, f0_dtype, method):
+def _eps_for_method(x0_dtype, f0_dtype, method, xp):
     """
     Calculates relative EPS step to use for a given data type
     and numdiff step method.
@@ -100,51 +114,71 @@ def _eps_for_method(x0_dtype, f0_dtype, method):
 
     Parameters
     ----------
-    f0_dtype: np.dtype
-        dtype of function evaluation
+    f0_dtype: dtype
+        function evaluation
 
-    x0_dtype: np.dtype
-        dtype of parameter vector
+    x0_dtype: dtype
+        parameter vector
 
     method: {'2-point', '3-point', 'cs'}
+
+    xp: array-namespace
 
     Returns
     -------
     EPS: float
-        relative step size. May be np.float16, np.float32, np.float64
+        relative step size. May be xp.float16, xp.float32, xp.float64
 
     Notes
     -----
-    The default relative step will be np.float64. However, if x0 or f0 are
-    smaller floating point types (np.float16, np.float32), then the smallest
+    The default relative step will be xp.float64. However, if x0 or f0 are
+    smaller floating point types (xp.float16, xp.float32), then the smallest
     floating point type is chosen.
     """
-    # the default EPS value
-    EPS = np.finfo(np.float64).eps
+    # the default EPS value. Normally we want this to be 64 bit, but torch
+    # has a 32 bit default.
+    out_dtype = xpx.default_dtype(xp)
+    EPS = xp.finfo(out_dtype).eps
+
+    bits = {}
+    for _bits in (16, 32, 64):
+        if hasattr(xp, f"float{_bits}"):
+            bits[_bits] = getattr(xp, f"float{_bits}")
 
     x0_is_fp = False
-    if np.issubdtype(x0_dtype, np.inexact):
+    if xp.isdtype(x0_dtype, 'real floating'):
         # if you're a floating point type then over-ride the default EPS
-        EPS = np.finfo(x0_dtype).eps
-        x0_itemsize = np.dtype(x0_dtype).itemsize
+        EPS = xp.finfo(x0_dtype).eps
+        x0_size = xp.finfo(x0_dtype).bits
+        out_dtype = bits[x0_size]
         x0_is_fp = True
 
-    if np.issubdtype(f0_dtype, np.inexact):
-        f0_itemsize = np.dtype(f0_dtype).itemsize
+    if xp.isdtype(f0_dtype, 'real floating'):
+        f0_size = xp.finfo(f0_dtype).bits
         # choose the smallest itemsize between x0 and f0
-        if x0_is_fp and f0_itemsize < x0_itemsize:
-            EPS = np.finfo(f0_dtype).eps
+        if x0_is_fp and f0_size < x0_size:
+            EPS = xp.finfo(f0_dtype).eps
+            out_dtype = bits[f0_size]
 
     if method in ["2-point", "cs"]:
-        return EPS**0.5
+        return xp.asarray(EPS**0.5, dtype=out_dtype)
     elif method in ["3-point"]:
-        return EPS**(1/3)
+        return xp.asarray(EPS**(1/3), dtype=out_dtype)
     else:
         raise RuntimeError("Unknown step method, should be one of "
                            "{'2-point', '3-point', 'cs'}")
 
 
-def _compute_absolute_step(rel_step, x0, f0, method):
+@xp_capabilities(
+    skip_backends=[
+        (
+            "jax.numpy",
+            "needs jax control flow logic (if -> xp.where) and conversion to be "
+            "functionally pure"
+        ),
+    ]
+)
+def _compute_absolute_step(rel_step, x0, f0, method, xp=None):
     """
     Computes an absolute step from a relative step for finite difference
     calculation.
@@ -157,6 +191,7 @@ def _compute_absolute_step(rel_step, x0, f0, method):
         Parameter vector
     f0 : np.ndarray or scalar
     method : {'2-point', '3-point', 'cs'}
+    xp : array-namespace
 
     Returns
     -------
@@ -174,12 +209,15 @@ def _compute_absolute_step(rel_step, x0, f0, method):
     """
     # this is used instead of np.sign(x0) because we need
     # sign_x0 to be 1 when x0 == 0.
-    sign_x0 = (x0 >= 0).astype(x0.dtype) * 2 - 1
+    xp = xp or array_namespace(x0)
+    gte0 = (x0 >= 0)
+    sign_x0 = xp.astype(gte0, x0.dtype) * 2 - 1
 
-    rstep = _eps_for_method(x0.dtype, f0.dtype, method)
-    default_abs_step = (
-        rstep * sign_x0 * np.maximum(1.0, np.abs(x0))
-    ).astype(x0.dtype)
+    rstep = _eps_for_method(x0.dtype, f0.dtype, method, xp=xp)
+    default_abs_step = xp.astype(
+        rstep * sign_x0 * xp.maximum(xp.asarray(1.0, dtype=x0.dtype), xp.abs(x0)),
+        x0.dtype
+    )
 
     if rel_step is None:
         abs_step = default_abs_step
@@ -187,14 +225,13 @@ def _compute_absolute_step(rel_step, x0, f0, method):
         # User has requested specific relative steps.
         # Don't multiply by max(1, abs(x0) because if x0 < 1 then their
         # requested step is not used.
-        abs_step = (
-            rel_step * sign_x0 * np.abs(x0)
-        ).astype(x0.dtype)
+        _abs_step = rel_step * sign_x0 * xp.abs(x0)
+        abs_step = xp.asarray(_abs_step, dtype=x0.dtype)
 
         # however we don't want an abs_step of 0, which can happen if
         # rel_step is 0, or x0 is 0. Instead, substitute a realistic step
         dx = ((x0 + abs_step) - x0)
-        abs_step = np.where(
+        abs_step = xp.where(
             dx == 0,
             default_abs_step,
             abs_step
@@ -203,7 +240,7 @@ def _compute_absolute_step(rel_step, x0, f0, method):
     return abs_step
 
 
-def _prepare_bounds(bounds, x0):
+def _prepare_bounds(bounds, x0, xp=None):
     """
     Prepares new-style bounds from a two-tuple specifying the lower and upper
     limits for values in x0. If a value is not bound then the lower/upper bound
@@ -214,12 +251,11 @@ def _prepare_bounds(bounds, x0):
     >>> _prepare_bounds([(0, 1, 2), (1, 2, np.inf)], [0.5, 1.5, 2.5])
     (array([0., 1., 2.]), array([ 1.,  2., inf]))
     """
-    lb, ub = (np.asarray(b, dtype=float) for b in bounds)
-    if lb.ndim == 0:
-        lb = np.resize(lb, x0.shape)
+    xp = xp or array_namespace(x0)
 
-    if ub.ndim == 0:
-        ub = np.resize(ub, x0.shape)
+    lb, ub = (xp.asarray(b, dtype=x0.dtype) for b in bounds)
+    lb = xp.broadcast_to(lb, x0.shape)
+    ub = xp.broadcast_to(ub, x0.shape)
 
     return lb, ub
 
@@ -285,6 +321,16 @@ def group_columns(A, order=0):
     return groups
 
 
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "would need lazy_xp_function to avoid dask.compute"),
+        (
+            "jax.numpy",
+            "needs jax control flow logic (if -> xp.where) and conversion to be "
+            "functionally pure"
+        ),
+    ]
+)
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
                       as_linear_operator=False, args=(), kwargs=None,
@@ -536,13 +582,18 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
-    lb, ub = _prepare_bounds(bounds, x0)
+    # cast the bounds to the relevant array_namespace
+    lb, ub = _prepare_bounds(bounds, x0, xp=xp)
 
     if lb.shape != x0.shape or ub.shape != x0.shape:
         raise ValueError("Inconsistent shapes between bounds and `x0`.")
 
-    if as_linear_operator and not (np.all(np.isinf(lb))
-                                   and np.all(np.isinf(ub))):
+    if not is_numpy_namespace(xp) and (sparsity is not None):
+        raise RuntimeError("as_linear_operator and sparsity are not yet supported by"
+                           "non-numpy array namespaces")
+
+    if as_linear_operator and not (xp.all(xp.isinf(lb))
+                                   and xp.all(xp.isinf(ub))):
         raise ValueError("Bounds not supported when "
                          "`as_linear_operator` is True.")
 
@@ -564,36 +615,37 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         f0 = fun_wrapped(x0)
         nfev = 1
     else:
-        f0 = np.atleast_1d(f0)
+        f0 = xpx.atleast_nd(f0, ndim=1, xp=xp)
         if f0.ndim > 1:
             raise ValueError("`f0` passed has more than 1 dimension.")
 
-    if np.any((x0 < lb) | (x0 > ub)):
+    if xp.any((x0 < lb) | (x0 > ub)):
         raise ValueError("`x0` violates bound constraints.")
 
     if as_linear_operator:
         if rel_step is None:
-            rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
+            rel_step = _eps_for_method(x0.dtype, f0.dtype, method, xp=xp)
 
         J, _ = _linear_operator_difference(fun_wrapped, x0,
                                            f0, rel_step, method)
     else:
         # by default we use rel_step
         if abs_step is None:
-            h = _compute_absolute_step(rel_step, x0, f0, method)
+            h = _compute_absolute_step(rel_step, x0, f0, method, xp=xp)
         else:
             # user specifies an absolute step
-            sign_x0 = (x0 >= 0).astype(x0.dtype) * 2 - 1
+            sign_x0 = xp.astype(x0 >= 0., x0.dtype) * 2 - 1
             h = abs_step
 
             # cannot have a zero step. This might happen if x0 is very large
             # or small. In which case fall back to relative step.
             dx = ((x0 + h) - x0)
-            h = np.where(dx == 0,
-                         _eps_for_method(x0.dtype, f0.dtype, method) *
-                         sign_x0 * np.maximum(1.0, np.abs(x0)),
+            h = xp.where(dx == 0,
+                         _eps_for_method(x0.dtype, f0.dtype, method, xp=xp) *
+                         sign_x0 *
+                         xp.maximum(xp.asarray(1.0, dtype=x0.dtype), xp.abs(x0)),
                          h)
-            h = h.astype(x0.dtype)
+            h = xp.astype(h, x0.dtype)
 
         if method == '2-point':
             h, use_one_sided = _adjust_scheme_to_bounds(
@@ -624,8 +676,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                     structure = np.atleast_2d(structure)
                 groups = np.atleast_1d(groups)
                 J, _nfev = _sparse_difference(fun_wrapped, x0, f0, h,
-                                             use_one_sided, structure,
-                                             groups, method, mf)
+                                              use_one_sided, structure,
+                                              groups, method, mf, xp=xp)
 
     if full_output:
         nfev += _nfev
@@ -635,18 +687,19 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         return J
 
 
-def _linear_operator_difference(fun, x0, f0, h, method):
-    m = f0.size
-    n = x0.size
+def _linear_operator_difference(fun, x0, f0, h, method, xp=None):
+    m = xp_size(f0)
+    n = xp_size(x0)
 
-    result_dtype = xp_result_type(x0, f0, force_floating=True, xp=np)
+    xp = xp or array_namespace(x0)
+    result_dtype = xp_result_type(x0, f0, force_floating=True, xp=xp)
 
     if method == '2-point':
         # nfev = 1
         def matvec(p):
-            if np.array_equal(p, np.zeros_like(p)):
-                return np.zeros(m, dtype=result_dtype)
-            dx = h / norm(p)
+            if xp_array_equal(p, xp.zeros_like(p), xp):
+                return xp.zeros(m, dtype=result_dtype)
+            dx = h / xp_vector_norm(p, xp=xp)
             x = x0 + dx*p
             df = fun(x) - f0
             return df / dx
@@ -654,9 +707,9 @@ def _linear_operator_difference(fun, x0, f0, h, method):
     elif method == '3-point':
         # nfev = 2
         def matvec(p):
-            if np.array_equal(p, np.zeros_like(p)):
-                return np.zeros(m, dtype=result_dtype)
-            dx = 2*h / norm(p)
+            if xp_array_equal(p, xp.zeros_like(p), xp):
+                return xp.zeros(m, dtype=result_dtype)
+            dx = 2*h / xp_vector_norm(p, xp=xp)
             x1 = x0 - (dx/2)*p
             x2 = x0 + (dx/2)*p
             f1 = fun(x1)
@@ -667,28 +720,30 @@ def _linear_operator_difference(fun, x0, f0, h, method):
     elif method == 'cs':
         # nfev = 1
         def matvec(p):
-            if np.array_equal(p, np.zeros_like(p)):
-                return np.zeros(m, dtype=result_dtype)
-            dx = h / norm(p)
+            if xp_array_equal(p, xp.zeros_like(p), xp):
+                return xp.zeros(m, dtype=result_dtype)
+            dx = h / xp_vector_norm(p, xp=xp)
             x = x0 + dx*p*1.j
             f1 = fun(x)
-            df = f1.imag
+            df = xp.imag(f1)
             return df / dx
     else:
         raise RuntimeError("Never be here.")
 
-    return LinearOperator(shape=(m, n), matvec=matvec, dtype=result_dtype), 0
+    return LinearOperator(shape=(m, n), matvec=matvec, dtype=result_dtype, xp=xp), 0
 
 
-def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
-    m = f0.size
-    n = x0.size
+def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers, xp=None):
+    m = xp_size(f0)
+    n = xp_size(x0)
     nfev = 0
 
+    xp = xp or array_namespace(x0)
+
     # h should have same dtype as x0
-    result_type = xp_result_type(x0, f0, force_floating=True, xp=np)
+    result_type = xp_result_type(x0, f0, force_floating=True, xp=xp)
     # output dtype should be the same as df_dx
-    J_transposed = np.empty((n, m), dtype=result_type)
+    J_transposed = xp.empty((n, m), dtype=result_type)
 
     if method == '2-point':
         def x_generator2(x0, h):
@@ -699,7 +754,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
                 # I also considered creating all the vectors at once, but that
                 # means assembling a very large N x N array. It's therefore a
                 # trade-off between N array copies or creating an NxN array.
-                x1 = np.copy(x0)
+                x1 = xp_copy(x0, xp=xp)
                 x1[i] = x0[i] + h[i]
                 yield x1
 
@@ -714,8 +769,8 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
     elif method == '3-point':
         def x_generator3(x0, h, use_one_sided):
             for i, one_sided in enumerate(use_one_sided):
-                x1 = np.copy(x0)
-                x2 = np.copy(x0)
+                x1 = xp_copy(x0, xp=xp)
+                x2 = xp_copy(x0, xp=xp)
                 if one_sided:
                     x1[i] = x0[i] + h[i]
                     x2[i] = x0[i] + 2*h[i]
@@ -746,43 +801,49 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
         df_dx = [delf / delx for delf, delx in zip(df, dx)]
         nfev += 2 * len(df_dx)
     elif method == 'cs':
+        bits = xp.finfo(x0).bits
+        xc_dtype = getattr(xp, f"complex{bits*2}")
+
         def x_generator_cs(x0, h):
             for i in range(n):
-                xc = x0.astype(complex, copy=True)
-                xc[i] += h[i] * 1.j
+                xc = xp.astype(x0, xc_dtype)
+                xc[i] += h[i] * 1.0j
                 yield xc
 
         f_evals = iter(workers(fun, x_generator_cs(x0, h)))
-        df_dx = [f1.imag / hi for f1, hi in zip(f_evals, h)]
+        df_dx = [xp.imag(f1) / hi for f1, hi in zip(f_evals, h)]
         nfev += len(df_dx)
     else:
         raise RuntimeError("Never be here.")
 
     for i, v in enumerate(df_dx):
-        J_transposed[i] = v
+        J_transposed[i, ...] = v
 
     if m == 1:
-        J_transposed = np.ravel(J_transposed)
-
-    return J_transposed.T, nfev
+        # flatten the array
+        return xp.reshape(J_transposed, (-1,)), nfev
+    else:
+        # fun(x0) has more than 1-dimension
+        return J_transposed.T, nfev
 
 
 def _sparse_difference(fun, x0, f0, h, use_one_sided,
-                       structure, groups, method, workers):
-    m = f0.size
-    n = x0.size
+                       structure, groups, method, workers, xp=None):
+    xp = xp or array_namespace(x0)
+    m = xp.size(f0)
+    n = xp_size(x0)
     row_indices = []
     col_indices = []
     fractions = []
-    result_type = xp_result_type(x0, f0, force_floating=True, xp=np)
+    result_type = xp_result_type(x0, f0, force_floating=True, xp=xp)
 
-    n_groups = np.max(groups) + 1
+    n_groups = xp.max(groups) + 1
     nfev = 0
 
     def e_generator():
         # Perturb variables which are in the same group simultaneously.
         for group in range(n_groups):
-            yield np.equal(group, groups)
+            yield xp.equal(group, groups)
 
     def x_generator2():
         e_gen = e_generator()
@@ -795,8 +856,8 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
         e_gen = e_generator()
         for e in e_gen:
             h_vec = h * e
-            x1 = x0.copy()
-            x2 = x0.copy()
+            x1 = xp_copy(x0, xp=xp)
+            x2 = xp_copy(x0, xp=xp)
 
             mask_1 = use_one_sided & e
             x1[mask_1] += h_vec[mask_1]
@@ -827,7 +888,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     for e in e_generator():
         # The result is written to columns which correspond to perturbed
         # variables.
-        cols, = np.nonzero(e)
+        cols, = xp.nonzero(e)
         # Find all non-zero elements in selected columns of Jacobian.
         i, j, _ = find(structure[:, cols])
         # Restore column indices in the full array.
@@ -846,7 +907,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             mask_1 = use_one_sided & e
             mask_2 = ~use_one_sided & e
 
-            dx = np.zeros(n, dtype=x0.dtype)
+            dx = xp.zeros(n, dtype=x0.dtype)
             dx[mask_1] = x2[mask_1] - x0[mask_1]
             dx[mask_2] = x2[mask_2] - x1[mask_2]
 
@@ -855,7 +916,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             nfev += 2
 
             mask = use_one_sided[j]
-            df = np.empty(m, dtype=f0.dtype)
+            df = xp.empty(m, dtype=f0.dtype)
 
             rows = i[mask]
             df[rows] = -3 * f0[rows] + 4 * f1[rows] - f2[rows]
@@ -876,9 +937,9 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
         col_indices.append(j)
         fractions.append(df[i] / dx[j])
 
-    row_indices = np.hstack(row_indices)
-    col_indices = np.hstack(col_indices)
-    fractions = np.hstack(fractions)
+    row_indices = xp.concat(row_indices, axis=0)
+    col_indices = xp.concat(col_indices, axis=0)
+    fractions = xp.concat(fractions, axis=0)
 
     if isinstance(structure, spmatrix):
         return csr_matrix(
@@ -900,20 +961,31 @@ class _Fun_Wrapper:
         self.x0 = x0
         self.args = args
         self.kwargs = kwargs
+        self._xp = array_namespace(x0)
 
     def __call__(self, x):
         # send user function same fp type as x0. (but only if cs is not being
         # used
-        xp = array_namespace(self.x0)
-
-        if xp.isdtype(x.dtype, "real floating"):
-            x = xp.astype(x, self.x0.dtype)
-
-        f = np.atleast_1d(self.fun(x, *self.args, **self.kwargs))
+        if self._xp.isdtype(x.dtype, "real floating"):
+            x = self._xp.astype(x, self.x0.dtype)
+        f = xpx.atleast_nd(
+            self.fun(x, *self.args, **self.kwargs),
+            ndim=1,
+            xp=self._xp
+        )
         if f.ndim > 1:
             raise RuntimeError("`fun` return value has "
                                "more than 1 dimension.")
         return f
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        self.__dict__.update(state)
 
 
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),

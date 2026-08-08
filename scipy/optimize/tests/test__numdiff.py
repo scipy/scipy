@@ -8,9 +8,12 @@ from pytest import raises as assert_raises
 
 from scipy._lib._testutils import IS_WASM
 
-from scipy._lib._util import MapWrapper, _ScalarFunctionWrapper
+from scipy._lib._util import (MapWrapper, _ScalarFunctionWrapper,
+                              _item_for_scalar_function)
 from scipy.sparse import csr_array, csc_array, lil_array
-from scipy._lib._array_api import xp_result_type
+from scipy._lib._array_api import (xp_result_type, make_xp_test_case, array_namespace,
+                                   xp_assert_close)
+from scipy._external import array_api_extra as xpx
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
@@ -46,40 +49,50 @@ def test_group_columns():
     assert_equal(groups_1, groups_2)
 
 
-def test_correct_fp_eps():
+@make_xp_test_case(
+    _eps_for_method
+)
+def test_correct_fp_eps(xp):
     # check that relative step size is correct for FP size
-    EPS = np.finfo(np.float64).eps
+    EPS = xp.finfo(xp.float64).eps
     relative_step = {"2-point": EPS**0.5,
-                    "3-point": EPS**(1/3),
+                     "3-point": EPS**(1/3),
                      "cs": EPS**0.5}
     for method in ['2-point', '3-point', 'cs']:
-        assert_allclose(
-            _eps_for_method(np.float64, np.float64, method),
-            relative_step[method])
-        assert_allclose(
-            _eps_for_method(np.complex128, np.complex128, method),
-            relative_step[method]
+        x = _eps_for_method(xp.float64, xp.float64, method, xp=xp)
+        y = xp.asarray(relative_step[method], dtype=xp.float64)
+        xp_assert_close(
+            x,
+            y,
         )
+        assert x.dtype == xp.float64
 
     # check another FP size
-    EPS = np.finfo(np.float32).eps
+    EPS = xp.finfo(xp.float32).eps
     relative_step = {"2-point": EPS**0.5,
                     "3-point": EPS**(1/3),
                      "cs": EPS**0.5}
 
     for method in ['2-point', '3-point', 'cs']:
-        assert_allclose(
-            _eps_for_method(np.float64, np.float32, method),
-            relative_step[method]
+        x = _eps_for_method(xp.float64, xp.float32, method, xp=xp)
+        y = xp.asarray(relative_step[method], dtype=xp.float32)
+        xp_assert_close(
+            x,
+            y
         )
-        assert_allclose(
-            _eps_for_method(np.float32, np.float64, method),
-            relative_step[method]
+        assert x.dtype == xp.float32
+        x = _eps_for_method(xp.float32, xp.float64, method, xp=xp)
+        xp_assert_close(
+            x,
+            y
         )
-        assert_allclose(
-            _eps_for_method(np.float32, np.float32, method),
-            relative_step[method]
+        assert x.dtype == xp.float32
+        x = _eps_for_method(xp.float32, xp.float32, method, xp=xp)
+        xp_assert_close(
+            x,
+            y
         )
+        assert x.dtype == xp.float32
 
 
 class TestAdjustSchemeToBounds:
@@ -156,39 +169,106 @@ class TestAdjustSchemeToBounds:
         assert_equal(one_sided, np.array([False, True]))
 
 
-class TestApproxDerivativesDense:
+@make_xp_test_case(
+    approx_derivative
+)
+def test_xp_smoke(xp):
+    # a quick smoke test to check approx_derivative with different array-api
+    dtypes = [xp.float32, xp.float64]
+
+    def fun(x):
+        return xp.asarray(2*(x[0]**2 + x[1]**2 - 1) - x[0], dtype=x.dtype)
+
+    def grad(x):
+        return xp.stack([4*x[0]-1, 4*x[1]])
+
+    def hess(x):
+        return 4 * xp.eye(2, dtype=x.dtype)
+
+    for dtype, method, abs_step in product(
+        dtypes,
+        ['2-point', '3-point'],
+        [False, True]
+    ):
+        x0 = xp.asarray([3.0, 4.0], dtype=dtype)
+        f0 = fun(x0)
+
+        # we don't need to check specified rel_steps, as this is tested by
+        # test__compute_absolute_step
+        if abs_step:
+            _h = _compute_absolute_step(None, x0, f0, method, xp=xp)
+        else:
+            _h = None
+
+        g = approx_derivative(fun, x0, method=method, abs_step=_h)
+        xp_assert_close(g, grad(x0))
+
+        h = approx_derivative(grad, x0, method=method, abs_step=_h)
+        xp_assert_close(h, hess(x0))
+
+        # test bounds setting. If we set a lb/ub equal to x0, then
+        # _adjust_scheme_to_bounds is exercised.
+        _b = xp.asarray([3.0, 4.0], dtype=dtype)
+        g = approx_derivative(fun, x0, bounds=(-xp.inf, _b), method=method, abs_step=_h)
+        xp_assert_close(g, grad(x0))
+
+        h = approx_derivative(grad, x0, bounds=(_b, xp.inf), method=method, abs_step=_h)
+        xp_assert_close(h, hess(x0))
+
+
+class TestFunctions:
     def fun_scalar_scalar(self, x):
-        return np.sinh(x)
+        xp = array_namespace(x)
+        return xp.sinh(x)
 
     def jac_scalar_scalar(self, x):
-        return np.cosh(x)
+        xp = array_namespace(x)
+        return xp.cosh(x)
 
     def fun_scalar_vector(self, x):
-        return np.array([x[0]**2, np.tan(x[0]), np.exp(x[0])])
+        xp = array_namespace(x)
+        return xp.stack([x[0] ** 2, xp.tan(x[0]), xp.exp(x[0])])
 
     def jac_scalar_vector(self, x):
-        return np.array(
-            [2 * x[0], np.cos(x[0]) ** -2, np.exp(x[0])]).reshape(-1, 1)
+        xp = array_namespace(x)
+        return xp.reshape(
+            xp.stack([2 * x[0], xp.cos(x[0]) ** -2, xp.exp(x[0])]),
+            (-1, 1)
+        )
 
     def fun_vector_scalar(self, x):
-        return np.sin(x[0] * x[1]) * np.log(x[0])
+        xp = array_namespace(x)
+        return xp.sin(x[0] * x[1]) * xp.log(x[0])
+
+    def jac_vector_scalar(self, x):
+        xp = array_namespace(x)
+        return xp.stack([
+            x[1] * xp.cos(x[0] * x[1]) * xp.log(x[0]) +
+            xp.sin(x[0] * x[1]) / x[0],
+            x[0] * xp.cos(x[0] * x[1]) * xp.log(x[0])],
+        )
+
+    def fun_vector_vector(self, x):
+        xp = array_namespace(x)
+        return xp.stack([
+            x[0] * xp.sin(x[1]),
+            x[1] * xp.cos(x[0]),
+            x[0] ** 3 * x[1] ** -0.5]
+        )
+
+    def jac_vector_vector(self, x):
+        xp = array_namespace(x)
+        return xp.stack([
+            [xp.sin(x[1]), x[0] * xp.cos(x[1])],
+            [-x[1] * xp.sin(x[0]), xp.cos(x[0])],
+            [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]],
+        )
+
+
+class TestApproxDerivativesDense(TestFunctions):
 
     def wrong_dimensions_fun(self, x):
         return np.array([x**2, np.tan(x), np.exp(x)])
-
-    def jac_vector_scalar(self, x):
-        return np.array([
-            x[1] * np.cos(x[0] * x[1]) * np.log(x[0]) +
-            np.sin(x[0] * x[1]) / x[0],
-            x[0] * np.cos(x[0] * x[1]) * np.log(x[0])
-        ])
-
-    def fun_vector_vector(self, x):
-        return np.array([
-            x[0] * np.sin(x[1]),
-            x[1] * np.cos(x[0]),
-            x[0] ** 3 * x[1] ** -0.5
-        ])
 
     def fun_vector_vector_with_arg(self, x, arg):
         """Used to test passing custom arguments with check_derivative()"""
@@ -197,13 +277,6 @@ class TestApproxDerivativesDense:
             x[0] * np.sin(x[1]),
             x[1] * np.cos(x[0]),
             x[0] ** 3 * x[1] ** -0.5
-        ])
-
-    def jac_vector_vector(self, x):
-        return np.array([
-            [np.sin(x[1]), x[0] * np.cos(x[1])],
-            [-x[1] * np.sin(x[0]), np.cos(x[0])],
-            [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]
         ])
 
     def jac_vector_vector_with_arg(self, x, arg):
@@ -245,44 +318,55 @@ class TestApproxDerivativesDense:
         xp = np.asarray(x).item()
         return math.exp(xp)
 
-    def test_scalar_scalar(self):
-        x0 = 1.0
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_scalar_scalar(self, xp):
+        x0 = _item_for_scalar_function(xp.asarray(1.0, dtype=xp.float64))
         jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_scalar_scalar, x0)
         jac_diff_4 = approx_derivative(self.fun_scalar_scalar, x0,
                                        method='cs')
-        jac_true = self.jac_scalar_scalar(x0)
-        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
-        assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
-        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+        jac_true = xpx.atleast_nd(self.jac_scalar_scalar(x0), ndim=1, xp=xp)
+        xp_assert_close(jac_diff_2, jac_true, rtol=1e-6)
+        xp_assert_close(jac_diff_3, jac_true, rtol=1e-9)
+        xp_assert_close(jac_diff_4, jac_true, rtol=1e-12)
 
-    def test_scalar_scalar_abs_step(self):
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_scalar_scalar_abs_step(self, xp):
         # can approx_derivative use abs_step?
-        x0 = 1.0
+        x0 = _item_for_scalar_function(xp.asarray(1.0, dtype=xp.float64))
         jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
                                        method='2-point', abs_step=1.49e-8)
         jac_diff_3 = approx_derivative(self.fun_scalar_scalar, x0,
                                        abs_step=1.49e-8)
         jac_diff_4 = approx_derivative(self.fun_scalar_scalar, x0,
                                        method='cs', abs_step=1.49e-8)
-        jac_true = self.jac_scalar_scalar(x0)
-        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
-        assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
-        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+        jac_true = xpx.atleast_nd(self.jac_scalar_scalar(x0), ndim=1, xp=xp)
+        xp_assert_close(jac_diff_2, jac_true, rtol=1e-6)
+        xp_assert_close(jac_diff_3, jac_true, rtol=1e-9)
+        xp_assert_close(jac_diff_4, jac_true, rtol=1e-12)
 
-    def test_scalar_vector(self):
-        x0 = 0.5
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_scalar_vector(self, xp):
+        x0 = _item_for_scalar_function(xp.asarray(0.5, dtype=xp.float64))
         with MapWrapper(1 if IS_WASM else 2) as mapper:
             jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
                                            method='2-point', workers=mapper)
         jac_diff_3 = approx_derivative(self.fun_scalar_vector, x0, workers=map)
         jac_diff_4 = approx_derivative(self.fun_scalar_vector, x0,
                                        method='cs', workers=None)
-        jac_true = self.jac_scalar_vector(np.atleast_1d(x0))
-        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
-        assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
-        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+        jac_true = self.jac_scalar_vector(
+            xpx.atleast_nd(x0, ndim=1, xp=xp)
+        )
+        xp_assert_close(jac_diff_2, jac_true, rtol=1e-6)
+        xp_assert_close(jac_diff_3, jac_true, rtol=1e-9)
+        xp_assert_close(jac_diff_4, jac_true, rtol=1e-12)
 
     @pytest.mark.fail_slow(5.0)
     def test_workers_evaluations_and_nfev(self):
@@ -320,44 +404,54 @@ class TestApproxDerivativesDense:
         assert_equal(md3, d3)
         assert_equal(md4, d4)
 
-    def test_vector_scalar(self):
-        x0 = np.array([100.0, -0.5])
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_vector_scalar(self, xp):
+        x0 = xp.asarray([100.0, -0.5], dtype=xp.float64)
         jac_diff_2 = approx_derivative(self.fun_vector_scalar, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_vector_scalar, x0)
         jac_diff_4 = approx_derivative(self.fun_vector_scalar, x0,
                                        method='cs')
         jac_true = self.jac_vector_scalar(x0)
-        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
-        assert_allclose(jac_diff_3, jac_true, rtol=1e-7)
-        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+        xp_assert_close(jac_diff_2, jac_true, rtol=1e-6)
+        xp_assert_close(jac_diff_3, jac_true, rtol=1e-7)
+        xp_assert_close(jac_diff_4, jac_true, rtol=1e-12)
 
-    def test_vector_scalar_abs_step(self):
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_vector_scalar_abs_step(self, xp):
         # can approx_derivative use abs_step?
-        x0 = np.array([100.0, -0.5])
+        x0 = xp.asarray([100.0, -0.5], dtype=xp.float64)
         jac_diff_2 = approx_derivative(self.fun_vector_scalar, x0,
                                        method='2-point', abs_step=1.49e-8)
         jac_diff_3 = approx_derivative(self.fun_vector_scalar, x0,
                                        abs_step=1.49e-8, rel_step=np.inf)
         jac_diff_4 = approx_derivative(self.fun_vector_scalar, x0,
                                        method='cs', abs_step=1.49e-8)
-        jac_true = self.jac_vector_scalar(x0)
-        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
-        assert_allclose(jac_diff_3, jac_true, rtol=3e-9)
-        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+        jac_true = xp.asarray(self.jac_vector_scalar([100.0, -0.5]))
+        xp_assert_close(jac_diff_2, jac_true, rtol=1e-6)
+        xp_assert_close(jac_diff_3, jac_true, rtol=3e-9)
+        xp_assert_close(jac_diff_4, jac_true, rtol=1e-12)
 
-    def test_vector_vector(self):
-        x0 = np.array([-100.0, 0.2])
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_vector_vector(self, xp):
+        x0 = xp.asarray([-100.0, 0.2], dtype=xp.float64)
         jac_diff_2 = approx_derivative(self.fun_vector_vector, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_vector_vector, x0)
         with MapWrapper(1 if IS_WASM else 2) as mapper:
             jac_diff_4 = approx_derivative(self.fun_vector_vector, x0,
                                            method='cs', workers=mapper)
-        jac_true = self.jac_vector_vector(x0)
-        assert_allclose(jac_diff_2, jac_true, rtol=1e-5)
-        assert_allclose(jac_diff_3, jac_true, rtol=1e-6)
-        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+        output = self.jac_vector_vector(np.array([-100.0, 0.2]))
+        jac_true = xp.asarray(output, dtype=xp.float64)
+        xp_assert_close(jac_diff_2, jac_true, rtol=1e-5)
+        xp_assert_close(jac_diff_3, jac_true, rtol=1e-6)
+        xp_assert_close(jac_diff_4, jac_true, rtol=2e-8)
 
     def test_wrong_dimensions(self):
         x0 = 1.0
@@ -367,15 +461,18 @@ class TestApproxDerivativesDense:
         assert_raises(ValueError, approx_derivative,
                       self.wrong_dimensions_fun, x0, f0=f0)
 
-    def test_custom_rel_step(self):
-        x0 = np.array([-0.1, 0.1])
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_custom_rel_step(self, xp):
+        x0 = xp.asarray([-0.1, 0.1], dtype=xp.float64)
         jac_diff_2 = approx_derivative(self.fun_vector_vector, x0,
                                        method='2-point', rel_step=1e-4)
         jac_diff_3 = approx_derivative(self.fun_vector_vector, x0,
                                        rel_step=1e-4)
-        jac_true = self.jac_vector_vector(x0)
-        assert_allclose(jac_diff_2, jac_true, rtol=1e-2)
-        assert_allclose(jac_diff_3, jac_true, rtol=1e-4)
+        jac_true = xp.asarray(self.jac_vector_vector([-0.1, 0.1]))
+        xp_assert_close(jac_diff_2, jac_true, rtol=1e-2)
+        xp_assert_close(jac_diff_3, jac_true, rtol=1e-4)
 
     def test_options(self):
         x0 = np.array([1.0, 1.0])
@@ -395,41 +492,49 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
 
-    def test_with_bounds_2_point(self):
-        lb = -np.ones(2)
-        ub = np.ones(2)
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_with_bounds_2_point(self, xp):
+        lb = -xp.ones(2)
+        ub = xp.ones(2)
 
-        x0 = np.array([-2.0, 0.2])
+        x0 = xp.asarray([-2.0, 0.2], dtype=xp.float64)
         assert_raises(ValueError, approx_derivative,
                       self.fun_vector_vector, x0, bounds=(lb, ub))
 
-        x0 = np.array([-1.0, 1.0])
+        x0 = xp.asarray([-1.0, 1.0], dtype=xp.float64)
         jac_diff = approx_derivative(self.fun_vector_vector, x0,
                                      method='2-point', bounds=(lb, ub))
-        jac_true = self.jac_vector_vector(x0)
-        assert_allclose(jac_diff, jac_true, rtol=1e-6)
+        jac_true = xp.asarray(self.jac_vector_vector([-1.0, 1.0]))
+        xp_assert_close(jac_diff, jac_true, rtol=1e-6)
 
-    def test_with_bounds_3_point(self):
-        lb = np.array([1.0, 1.0])
-        ub = np.array([2.0, 2.0])
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_with_bounds_3_point(self, xp):
+        lb = xp.asarray([1.0, 1.0], dtype=xp.float64)
+        ub = xp.asarray([2.0, 2.0], dtype=xp.float64)
 
-        x0 = np.array([1.0, 2.0])
-        jac_true = self.jac_vector_vector(x0)
+        x0 = xp.asarray([1.0, 2.0], dtype=xp.float64)
+        jac_true = xp.asarray(
+            self.jac_vector_vector(np.array([1.0, 2.0])), dtype=xp.float64
+        )
 
         jac_diff = approx_derivative(self.fun_vector_vector, x0)
-        assert_allclose(jac_diff, jac_true, rtol=1e-9)
+        xp_assert_close(jac_diff, jac_true, rtol=1e-9)
 
         jac_diff = approx_derivative(self.fun_vector_vector, x0,
-                                     bounds=(lb, np.inf))
-        assert_allclose(jac_diff, jac_true, rtol=1e-9)
+                                     bounds=(lb, xp.inf))
+        xp_assert_close(jac_diff, jac_true, rtol=1e-9)
 
         jac_diff = approx_derivative(self.fun_vector_vector, x0,
-                                     bounds=(-np.inf, ub))
-        assert_allclose(jac_diff, jac_true, rtol=1e-9)
+                                     bounds=(-xp.inf, ub))
+        xp_assert_close(jac_diff, jac_true, rtol=1e-9)
 
         jac_diff = approx_derivative(self.fun_vector_vector, x0,
                                      bounds=(lb, ub))
-        assert_allclose(jac_diff, jac_true, rtol=1e-9)
+        xp_assert_close(jac_diff, jac_true, rtol=1e-9)
 
     def test_tight_bounds(self):
         x0 = np.array([10.0, 10.0])
@@ -697,47 +802,13 @@ class TestApproxDerivativeSparse:
         assert_(accuracy < 1e-9)
 
 
-class TestApproxDerivativeLinearOperator:
+class TestApproxDerivativeLinearOperator(TestFunctions):
 
-    def fun_scalar_scalar(self, x):
-        return np.sinh(x)
-
-    def jac_scalar_scalar(self, x):
-        return np.cosh(x)
-
-    def fun_scalar_vector(self, x):
-        return np.array([x[0]**2, np.tan(x[0]), np.exp(x[0])])
-
-    def jac_scalar_vector(self, x):
-        return np.array(
-            [2 * x[0], np.cos(x[0]) ** -2, np.exp(x[0])]).reshape(-1, 1)
-
-    def fun_vector_scalar(self, x):
-        return np.sin(x[0] * x[1]) * np.log(x[0])
-
-    def jac_vector_scalar(self, x):
-        return np.array([
-            x[1] * np.cos(x[0] * x[1]) * np.log(x[0]) +
-            np.sin(x[0] * x[1]) / x[0],
-            x[0] * np.cos(x[0] * x[1]) * np.log(x[0])
-        ])
-
-    def fun_vector_vector(self, x):
-        return np.array([
-            x[0] * np.sin(x[1]),
-            x[1] * np.cos(x[0]),
-            x[0] ** 3 * x[1] ** -0.5
-        ])
-
-    def jac_vector_vector(self, x):
-        return np.array([
-            [np.sin(x[1]), x[0] * np.cos(x[1])],
-            [-x[1] * np.sin(x[0]), np.cos(x[0])],
-            [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]
-        ])
-
-    def test_scalar_scalar(self):
-        x0 = 1.0
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_scalar_scalar(self, xp):
+        x0 = _item_for_scalar_function(xp.asarray(1.0, dtype=xp.float64))
         jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
                                        method='2-point',
                                        as_linear_operator=True)
@@ -750,15 +821,21 @@ class TestApproxDerivativeLinearOperator:
         rng = np.random.default_rng(11290049580398)
         for i in range(10):
             p = rng.uniform(-10, 10, size=(1,))
-            assert_allclose(jac_diff_2.dot(p), jac_true*p,
+            p = xp.asarray(p, dtype=x0.dtype)
+
+            xp_assert_close(jac_diff_2.dot(p), jac_true*p,
                             rtol=1e-5)
-            assert_allclose(jac_diff_3.dot(p), jac_true*p,
+            xp_assert_close(jac_diff_3.dot(p), jac_true*p,
                             rtol=5e-6)
-            assert_allclose(jac_diff_4.dot(p), jac_true*p,
+            xp_assert_close(jac_diff_4.dot(p), jac_true*p,
                             rtol=5e-6)
 
-    def test_scalar_vector(self):
-        x0 = 0.5
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_scalar_vector(self, xp):
+        x0 = _item_for_scalar_function(xp.asarray(0.5, dtype=xp.float64))
+
         jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
                                        method='2-point',
                                        as_linear_operator=True)
@@ -767,19 +844,26 @@ class TestApproxDerivativeLinearOperator:
         jac_diff_4 = approx_derivative(self.fun_scalar_vector, x0,
                                        method='cs',
                                        as_linear_operator=True)
-        jac_true = self.jac_scalar_vector(np.atleast_1d(x0))
+
+        jac_true = self.jac_scalar_vector(
+            xpx.atleast_nd(xp.asarray(x0, dtype=xp.float64), ndim=1, xp=xp)
+        )
         rng = np.random.default_rng(11290049580398)
         for i in range(10):
             p = rng.uniform(-10, 10, size=(1,))
-            assert_allclose(jac_diff_2.dot(p), jac_true.dot(p),
+            p = xp.asarray(p, dtype=x0.dtype)
+            xp_assert_close(jac_diff_2.dot(p), xp.tensordot(jac_true, p, axes=1),
                             rtol=1e-5)
-            assert_allclose(jac_diff_3.dot(p), jac_true.dot(p),
+            xp_assert_close(jac_diff_3.dot(p), xp.tensordot(jac_true, p, axes=1),
                             rtol=5e-6)
-            assert_allclose(jac_diff_4.dot(p), jac_true.dot(p),
+            xp_assert_close(jac_diff_4.dot(p), xp.tensordot(jac_true, p, axes=1),
                             rtol=5e-6)
 
-    def test_vector_scalar(self):
-        x0 = np.array([100.0, -0.5])
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_vector_scalar(self, xp):
+        x0 = xp.asarray([100.0, -0.5], dtype=xp.float64)
         jac_diff_2 = approx_derivative(self.fun_vector_scalar, x0,
                                        method='2-point',
                                        as_linear_operator=True)
@@ -788,19 +872,26 @@ class TestApproxDerivativeLinearOperator:
         jac_diff_4 = approx_derivative(self.fun_vector_scalar, x0,
                                        method='cs',
                                        as_linear_operator=True)
-        jac_true = self.jac_vector_scalar(x0)
+        jac_true = xp.asarray(self.jac_vector_scalar([100.0, -0.5]))
         rng = np.random.default_rng(11290049580398)
         for i in range(10):
             p = rng.uniform(-10, 10, size=x0.shape)
-            assert_allclose(jac_diff_2.dot(p), np.atleast_1d(jac_true.dot(p)),
+            p = xp.asarray(p, dtype=x0.dtype)
+            expected = xpx.atleast_nd(
+                xp.tensordot(jac_true, p, axes=1), ndim=1, xp=xp
+            )
+            xp_assert_close(jac_diff_2.dot(p), expected,
                             rtol=1e-5)
-            assert_allclose(jac_diff_3.dot(p), np.atleast_1d(jac_true.dot(p)),
+            xp_assert_close(jac_diff_3.dot(p), expected,
                             rtol=5e-6)
-            assert_allclose(jac_diff_4.dot(p), np.atleast_1d(jac_true.dot(p)),
+            xp_assert_close(jac_diff_4.dot(p), expected,
                             rtol=1e-7)
 
-    def test_vector_vector(self):
-        x0 = np.array([-100.0, 0.2])
+    @make_xp_test_case(
+        approx_derivative
+    )
+    def test_vector_vector(self, xp):
+        x0 = xp.asarray([-100.0, 0.2], dtype=xp.float64)
         jac_diff_2 = approx_derivative(self.fun_vector_vector, x0,
                                        method='2-point',
                                        as_linear_operator=True)
@@ -809,13 +900,20 @@ class TestApproxDerivativeLinearOperator:
         jac_diff_4 = approx_derivative(self.fun_vector_vector, x0,
                                        method='cs',
                                        as_linear_operator=True)
-        jac_true = self.jac_vector_vector(x0)
+        jac_true = xp.asarray(self.jac_vector_vector([-100.0, 0.2]))
         rng = np.random.default_rng(11290049580398)
         for i in range(10):
             p = rng.uniform(-10, 10, size=x0.shape)
-            assert_allclose(jac_diff_2.dot(p), jac_true.dot(p), rtol=1e-5)
-            assert_allclose(jac_diff_3.dot(p), jac_true.dot(p), rtol=1e-6)
-            assert_allclose(jac_diff_4.dot(p), jac_true.dot(p), rtol=1e-7)
+            p = xp.asarray(p, dtype=x0.dtype)
+            expected = xpx.atleast_nd(
+                xp.tensordot(jac_true, p, axes=1), ndim=1, xp=xp
+            )
+            x = jac_diff_2.dot(p)
+            xp_assert_close(x, expected, rtol=1e-5)
+            x = jac_diff_3.dot(p)
+            xp_assert_close(x, expected, rtol=1e-6)
+            x = jac_diff_4.dot(p)
+            xp_assert_close(x, expected, rtol=1.5e-7)
 
     def test_exception(self):
         x0 = np.array([-100.0, 0.2])
@@ -877,71 +975,80 @@ def test_absolute_step_sign():
     assert_allclose(grad, [-1.0, 1.0])
 
 
-def test__compute_absolute_step():
+@make_xp_test_case(
+    _compute_absolute_step
+)
+def test__compute_absolute_step(xp):
     # tests calculation of absolute step from rel_step
     methods = ['2-point', '3-point', 'cs']
 
-    x0 = np.array([1e-5, 0, 1, 1e5])
+    x0 = xp.asarray([1e-5, 0, 1, 1e5], dtype=xp.float64)
 
-    EPS = np.finfo(np.float64).eps
+    EPS = xp.finfo(xp.float64).eps
     relative_step = {
         "2-point": EPS**0.5,
         "3-point": EPS**(1/3),
         "cs": EPS**0.5
     }
-    f0 = np.array(1.0)
+    f0 = xp.asarray(1.0, dtype=xp.float64)
 
     for method in methods:
         rel_step = relative_step[method]
-        correct_step = np.array([rel_step,
-                                 rel_step * 1.,
-                                 rel_step * 1.,
-                                 rel_step * np.abs(x0[3])])
+        correct_step = xp.stack(
+            [xp.asarray(rel_step),
+             xp.asarray(rel_step * 1.),
+             xp.asarray(rel_step * 1.),
+             xp.asarray(rel_step * xp.abs(x0[3]))],
+        )
 
-        abs_step = _compute_absolute_step(None, x0, f0, method)
-        assert_allclose(abs_step, correct_step)
+        abs_step = _compute_absolute_step(None, x0, f0, method, xp=xp)
+        xp_assert_close(abs_step, correct_step)
 
-        sign_x0 = (-x0 >= 0).astype(float) * 2 - 1
-        abs_step = _compute_absolute_step(None, -x0, f0, method)
-        assert_allclose(abs_step, sign_x0 * correct_step)
+        sign_x0 = xp.astype(-x0 >= 0, xp.float64) * 2 - 1
+        abs_step = _compute_absolute_step(None, -x0, f0, method, xp=xp)
+        xp_assert_close(abs_step, sign_x0 * correct_step)
 
     # if a relative step is provided it should be used
-    rel_step = np.array([0.1, 1, 10, 100])
-    correct_step = np.array([rel_step[0] * x0[0],
-                             relative_step['2-point'],
-                             rel_step[2] * 1.,
-                             rel_step[3] * np.abs(x0[3])])
+    rel_step = xp.asarray([0.1, 1, 10, 100], dtype=xp.float64)
+    correct_step = xp.stack(
+        [xp.asarray(rel_step[0] * x0[0]),
+         xp.asarray(relative_step['2-point']),
+         xp.asarray(rel_step[2] * 1.),
+         xp.asarray(rel_step[3] * xp.abs(x0[3]))],
+    )
 
     abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
-    assert_allclose(abs_step, correct_step)
+    xp_assert_close(abs_step, correct_step)
 
-    sign_x0 = (-x0 >= 0).astype(float) * 2 - 1
+    sign_x0 = xp.astype(-x0 >= 0, xp.float64) * 2 - 1
     abs_step = _compute_absolute_step(rel_step, -x0, f0, '2-point')
-    assert_allclose(abs_step, sign_x0 * correct_step)
+    xp_assert_close(abs_step, sign_x0 * correct_step)
 
     # the dtype of absolute step should be the same as x0
     #def _compute_absolute_step(rel_step, x0, f0, method):
-    x0 = np.array([1e-5, 0, 1, 1e5], dtype=np.float32)
+    x0 = xp.asarray([1e-5, 0, 1, 1e5], dtype=xp.float32)
     abs_step = _compute_absolute_step(None, x0, f0, '3-point')
-    assert abs_step.dtype == np.float32
+    assert abs_step.dtype == xp.float32
     abs_step = _compute_absolute_step(None, x0, f0, '2-point')
-    assert abs_step.dtype == np.float32
+    assert abs_step.dtype == xp.float32
 
-    x0 = np.array([0.1, 0, 1, 50], dtype=np.float16)
-    abs_step = _compute_absolute_step(None, x0, f0, '3-point')
-    assert abs_step.dtype == np.float16
-    abs_step = _compute_absolute_step(None, x0, f0, '2-point')
-    assert abs_step.dtype == np.float16
+    # check for 16-bit x0 and f0
+    if hasattr(xp, "float16"):
+        x0 = xp.asarray([0.1, 0, 1, 50], dtype=xp.float16)
+        abs_step = _compute_absolute_step(None, x0, f0, '3-point')
+        assert abs_step.dtype == xp.float16
+        abs_step = _compute_absolute_step(None, x0, f0, '2-point')
+        assert abs_step.dtype == xp.float16
 
-    x0 = np.array([1e-3, 0, 1, 10], dtype=np.float64)
-    f0 = np.array(1.0, dtype=np.float16)
-    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
-    assert abs_step.dtype == np.float64
+        x0 = xp.asarray([1e-3, 0, 1, 10], dtype=xp.float64)
+        f0 = xp.asarray(1.0, dtype=xp.float16)
+        abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+        assert abs_step.dtype == xp.float64
 
-    x0 = np.array([1e-5, 0, 1, 1e5], dtype=np.float32)
-    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
-    assert abs_step.dtype == np.float32
+        x0 = xp.asarray([1e-5, 0, 1, 1e5], dtype=xp.float32)
+        abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+        assert abs_step.dtype == xp.float32
 
-    x0 = np.array([1e-3, 0, 1, 10], dtype=np.float16)
-    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
-    assert abs_step.dtype == np.float16
+        x0 = xp.asarray([1e-3, 0, 1, 10], dtype=xp.float16)
+        abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+        assert abs_step.dtype == xp.float16
