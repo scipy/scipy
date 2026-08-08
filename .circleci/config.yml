@@ -52,7 +52,7 @@ jobs:
     <<: *defaults
     environment:
       CCACHE_DIR: /home/circleci/.ccache
-      CCACHE_MAXSIZE: "250M"
+      CCACHE_MAXSIZE: "1G"
     steps:
       - checkout
       - check-skip
@@ -67,15 +67,16 @@ jobs:
             git submodule init
             git submodule update
 
-      - restore_cache:
-          keys:
-              - pip-{{ .Branch }}
-              - pip
+      - run:
+          name: ccache cache key (one new cache per day)
+          command: date +%F > .ccache-date
 
       - restore_cache:
           keys:
-              - ccache-{{ .Branch }}
-              - ccache
+              - ccache-{{ .Branch }}-{{ checksum ".ccache-date" }}
+              - ccache-{{ .Branch }}-
+              - ccache-main-
+              - ccache-
 
       - run:
           name: clear ccache stats
@@ -87,24 +88,25 @@ jobs:
 
       - run:
           name: ccache performance
-          command: |
-            pixi exec ccache --evict-older-than 1d
-            pixi exec ccache -s
+          command: pixi exec ccache -s
 
       - save_cache:
-          key: pip-{{ .Branch }}
-          paths:
-            - ~/.cache/pip
-
-      - save_cache:
-          key: ccache-{{ .Branch }}
+          key: ccache-{{ .Branch }}-{{ checksum ".ccache-date" }}
           paths:
             - ~/.ccache
+
+      # every downstream job restores this from cache; shipping it in the
+      # workspace as well makes those restores collide file-by-file
+      - run:
+          name: drop the pixi env from the workspace
+          command: rm -rf ~/repo/.pixi
 
       - persist_to_workspace:
           root: ~/
           paths:
-            - .
+            # not "." -- that would also ship ~/.ccache, which is separately
+            # cached and unused downstream
+            - repo
 
 # Build docs and distribution-ready tree
   build_docs_dist:
@@ -116,11 +118,12 @@ jobs:
       - check-skip
       - pixi/pixi_setup:
           env: "docs"
-      
+
       - run:
           name: build docs
           no_output_timeout: 25m
-          command: pixi run --skip-deps docs doc-dist
+          # tee: the check below greps this file, and greps clean if it is absent
+          command: pixi run --skip-deps docs doc-dist 2>&1 | tee sphinx_log.txt
 
       - run:
           name: Check sphinx log for warnings (which are treated as errors)
@@ -179,18 +182,18 @@ jobs:
       - run:
           name: run asv
           no_output_timeout: 30m
-          # shell: /home/circleci/.pixi/bin/pixi run -e bench spin run /bin/bash -eo pipefail
-          # command: |
-          #   cd benchmarks
-          #   asv machine --machine CircleCI
-          #   export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
-          #   export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-          #   export OPENBLAS_NUM_THREADS=1
-          #   time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
-          #   asv --config asv.conf.json publish
-          # --no-mem-limit: the 4 GB container makes spin's RLIMIT_AS cap bind, and
-          # it caps address space, which FFT/BLAS thread pools exhaust on their own
-          command: pixi run bench --quick --no-mem-limit -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
+          # --no-mem-limit: spin caps RLIMIT_AS at 70% of RAM, but that is address
+          # space, which FFT/BLAS thread pools exhaust well before actual memory
+          # --no-dry-run: `asv publish` below needs the results on disk
+          # DistributionsAll is skipped for wall time, not because it is slow:
+          # 1754 parameter combinations for 13s of compute, so ~5 min of the
+          # job is asv spawning one process per combination
+          command: pixi run bench --quick --no-mem-limit --no-dry-run -t '^((?!BenchGlobal|QuadraticAssignment|DistributionsAll).)*$'
+
+      - run:
+          name: publish benchmark html
+          working_directory: benchmarks
+          command: pixi run -e bench asv publish
 
       - store_artifacts:
           path: benchmarks/html
@@ -221,7 +224,7 @@ jobs:
       - run:
           name: smoke-tutorials
           no_output_timeout: 10m
-          command: | 
+          command: |
             sudo apt-get update
             sudo apt-get install -y wamerican-small
             pixi run --skip-deps smoke-tutorials

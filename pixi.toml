@@ -478,6 +478,9 @@ description = "Build SciPy (benchmarking env)"
 
 [feature.bench.tasks.bench]
 cmd = "spin bench --no-build"
+# without ALLOW_BENCH_IMPORT_ERRORS=0 a benchmark module that fails to import is
+# silently skipped rather than failing; OPENBLAS/MKL threads are set by spin
+env = { SCIPY_ALLOW_BENCH_IMPORT_ERRORS = "0", SCIPY_GLOBAL_BENCH_NUMTRIALS = "1" }
 depends-on = "build"
 description = "Run ASV benchmarks"
 

@@ -263,9 +263,10 @@ class CsrHstack(Benchmark):
         num_cols = int(1e5)
         density = 2e-3
         nnz_per_row = int(density*num_cols)
-        # sparray's int64 indices make it ~1/3 heavier than spmatrix's int32
+        # measured 3.0/4.0 GB: hstack doubles nnz, and sparray's int64 indices
+        # make it ~1/3 heavier than spmatrix's int32
         bytes_per_nnz = 40 if sparse_type == "sparray" else 30
-        require_memory(int(1.2 * bytes_per_nnz * 2 * num_rows * nnz_per_row))
+        require_memory(bytes_per_nnz * 2 * num_rows * nnz_per_row)
         self.mat = random_sparse(num_rows, num_cols, nnz_per_row, sparse_type)
 
     def time_csr_hstack(self, sparse_type, num_rows):
