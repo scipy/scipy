@@ -79,7 +79,11 @@ import textwrap
 special_ufuncs = [
     "_beta_pdf",
     "_beta_ppf",
+    "_binom_cdf",
+    "_binom_isf",
+    "_binom_pmf",
     "_binom_ppf",
+    "_binom_sf",
     "_bivariate_normal_sf",
     "_cauchy_isf",
     "_cauchy_ppf",
