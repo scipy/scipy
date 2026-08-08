@@ -353,7 +353,7 @@ description = "Run SciPy-specific checks"
 [feature.smoke-docs.dependencies]
 hypothesis = "*"
 matplotlib = "*"
-scipy-doctest = "*"
+scipy-doctest = ">=2.2"
 
 [feature.smoke-docs.tasks.smoke-docs]
 cmd = "spin smoke-docs --no-build"
@@ -423,7 +423,7 @@ jupytext = "*"
 pooch = "*"
 jupyterlite-sphinx = "*"
 jupyterlite-pyodide-kernel = "*"
-scipy-doctest = "*"
+scipy-doctest = ">=2.2"
 linkify-it-py = "*"
 make = "*"
 
