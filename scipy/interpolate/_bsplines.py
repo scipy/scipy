@@ -3056,10 +3056,6 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     lam : float, (:math:`\lambda \geq 0`), optional
         Regularization parameter. If ``lam`` is None, then it is found from
         the GCV criteria. Default is None.
-    axis : int, optional
-        The data axis. Default is zero.
-        The assumption is that ``y.shape[axis] == n``, and all other axes of ``y``
-        are batching axes.
     t : array_like, shape (nt,), optional
         Knot vector. Must be non-decreasing, with all ``x`` values inside
         the base interval ``[t[3], t[-4]]``; boundary knots are typically
@@ -3067,6 +3063,10 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
         is given explicitly. Default is None, in which case a clamped knot
         vector at the data sites is used,
         ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
+    axis : int, optional
+        The data axis. Default is zero.
+        The assumption is that ``y.shape[axis] == n``, and all other axes of ``y``
+        are batching axes.
 
     Returns
     -------
