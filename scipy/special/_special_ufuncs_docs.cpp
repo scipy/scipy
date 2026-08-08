@@ -3625,6 +3625,72 @@ const char *_sinpi_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_skewnorm_cdf_doc = R"(
+    _skewnorm_cdf(x, l, sc, sh)
+
+    Cumulative density function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_skewnorm_isf_doc = R"(
+    _skewnorm_isf(x, l, sc, sh)
+
+    Inverse survival function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_skewnorm_ppf_doc = R"(
+    _skewnorm_ppf(x, l, sc, sh)
+
+    Percent point function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *sindg_doc = R"(
     sindg(x, out=None)
 
