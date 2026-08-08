@@ -27,7 +27,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/loggamma.h>
-#include <xsf/mathieu.h>
+#include <xsf/mathieu_legacy.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/sici.h>
@@ -717,6 +717,59 @@ double boost_bdtrik(double y, double n, double p) { return bdtrik_double(y, n, p
 
 double boost_bdtrin(double k, double y, double p) { return bdtrin_double(k, y, p); }
 
+float boost_betainc_float(float a, float b, float x) { return ibeta_float(a, b, x); }
+
+double boost_betainc_double(double a, double b, double x) { return ibeta_double(a, b, x); }
+
+float boost_betaincc_float(float a, float b, float x) { return ibetac_float(a, b, x); }
+
+double boost_betaincc_double(double a, double b, double x) { return ibetac_double(a, b, x); }
+
+float boost_betainccinv_float(float a, float b, float y) { return ibetac_inv_float(a, b, y); }
+
+double boost_betainccinv_double(double a, double b, double y) { return ibetac_inv_double(a, b, y); }
+
+float boost_betaincinv_float(float a, float b, float y) { return ibeta_inv_float(a, b, y); }
+
+double boost_betaincinv_double(double a, double b, double y) { return ibeta_inv_double(a, b, y); }
+
+float boost_btdtria_float(float p, float b, float x) { return ibeta_inva_float(p, b, x); }
+
+double boost_btdtria_double(double p, double b, double x) { return ibeta_inva_double(p, b, x); }
+
+float boost_btdtrib_float(float a, float p, float x) { return ibeta_invb_float(a, p, x); }
+
+double boost_btdtrib_double(double a, double p, double x) { return ibeta_invb_double(a, p, x); }
+
+float boost_chdtriv_float(float p, float x) { return chdtriv_float(p, x); }
+
+double boost_chdtriv_double(double p, double x) { return chdtriv_double(p, x); }
+
+float boost_chndtr_float(float x, float df, float nc) { return ncx2_cdf_float(x, df, nc); }
+
+double boost_chndtr_double(double x, double df, double nc) { return ncx2_cdf_double(x, df, nc); }
+
+float boost_chndtridf_float(float x, float p, float nc)
+{
+    return ncx2_find_degrees_of_freedom_float(x, p, nc);
+}
+
+double boost_chndtridf_double(double x, double p, double nc)
+{
+    return ncx2_find_degrees_of_freedom_double(x, p, nc);
+}
+
+float boost_chndtrinc_float(float x, float df, float p) { return ncx2_find_noncentrality_float(x, df, p); }
+
+double boost_chndtrinc_double(double x, double df, double p)
+{
+    return ncx2_find_noncentrality_double(x, df, p);
+}
+
+float boost_chndtrix_float(float p, float df, float nc) { return ncx2_ppf_float(p, df, nc); }
+
+double boost_chndtrix_double(double p, double df, double nc) { return ncx2_ppf_double(p, df, nc); }
+
 float boost_erfinv_float(float x) { return erfinv_float(x); }
 
 double boost_erfinv_double(double x) { return erfinv_double(x); }
@@ -781,6 +834,14 @@ double boost_nctdtrinc(double df, double p, double t)
 float boost_nctdtrit_float(float df, float nc, float p) { return nct_ppf_float(df, nc, p); }
 
 double boost_nctdtrit_double(double df, double nc, double p) { return nct_ppf_double(df, nc, p); }
+
+float boost_pdtrik_float(float p, float m) { return pdtrik_float(p, m); }
+
+double boost_pdtrik_double(double p, double m) { return pdtrik_double(p, m); }
+
+float boost_powm1_float(float x, float y) { return powm1_float(x, y); }
+
+double boost_powm1_double(double x, double y) { return powm1_double(x, y); }
 
 float boost_stdtr_float(float df, float t) { return t_cdf_float(df, t); }
 

@@ -1,3 +1,41 @@
+const char *_beta_pdf_doc = R"(
+    _beta_pdf(x, a, b)
+
+    Probability density function of beta distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    a, b : array_like
+           Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_beta_ppf_doc = R"(
+    _beta_ppf(x, a, b)
+
+    Percent point function of beta distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    a, b : array_like
+           Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_binom_ppf_doc = R"(
     _binom_ppf(x, n, p)
 
@@ -24,6 +62,46 @@ const char *_cospi_doc = R"(
 
 const char *_bivariate_normal_sf_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_cauchy_isf_doc = R"(
+    _cauchy_isf(p, loc, scale)
+
+    Inverse survival function of the Cauchy distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probabilities
+    loc : array_like
+        Location parameter of the distribution.
+    scale : array_like
+        Scale parameter of the distribution.
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_cauchy_ppf_doc = R"(
+    _cauchy_ppf(p, loc, scale)
+
+    Percent point function (i.e. quantile) of the Cauchy distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probabilities
+    loc : array_like
+        Location parameter of the distribution.
+    scale : array_like
+        Scale parameter of the distribution.
+
+    Returns
+    -------
+    scalar or ndarray
+
     )";
 
 const char *_cosine_cdf_doc = R"(
@@ -74,6 +152,44 @@ const char *_igam_fac_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_invgauss_isf_doc = R"(
+    _invgauss_isf(x, mu, s)
+
+    Inverse survival function of inverse gaussian distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    mu : array_like
+        Positive, real-valued parameters
+    s : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_invgauss_ppf_doc = R"(
+    _invgauss_ppf(x, mu)
+
+    Percent point function of inverse gaussian distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    mu : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_kolmogc_doc = R"(
     Internal function, do not use.
     )";
@@ -84,6 +200,405 @@ const char *_kolmogci_doc = R"(
 
 const char *_kolmogp_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_landau_pdf_doc = R"(
+    _landau_pdf(x, loc, scale)
+
+    Probability density function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_cdf_doc = R"(
+    _landau_cdf(x, loc, scale)
+
+    Cumulative distribution function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_sf_doc = R"(
+    _landau_sf(x, loc, scale)
+
+    Survival function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_ppf_doc = R"(
+    _landau_ppf(p, loc, scale)
+
+    Percent point function of the Landau distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Real-valued argument between 0 and 1
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_isf_doc = R"(
+    _landau_isf(p, loc, scale)
+
+    Inverse survival function of the Landau distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Real-valued argument between 0 and 1
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_ncf_isf_doc = R"(
+    _ncf_isf(x, v1, v2, l)
+
+    Inverse survival function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_kurtosis_excess_doc = R"(
+    _ncf_kurtosis_excess(v1, v2, l)
+
+    Kurtosis excess of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_mean_doc = R"(
+    _ncf_mean(v1, v2, l)
+
+    Mean of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_pdf_doc = R"(
+    _ncf_pdf(x, v1, v2, l)
+
+    Probability density function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_sf_doc = R"(
+    _ncf_sf(x, v1, v2, l)
+
+    Survival function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_skewness_doc = R"(
+    _ncf_skewness(v1, v2, l)
+
+    Skewness of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_variance_doc = R"(
+    _ncf_variance(v1, v2, l)
+
+    Variance of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_isf_doc = R"(
+    _nct_isf(x, v, l)
+
+    Inverse survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_kurtosis_excess_doc = R"(
+    _nct_kurtosis_excess(v, l)
+
+    Kurtosis excess of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_mean_doc = R"(
+    _nct_mean(v, l)
+
+    Mean of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_pdf_doc = R"(
+    _nct_pdf(x, v, l)
+
+    Probability density function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_sf_doc = R"(
+    _nct_sf(x, v, l)
+
+    Survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_skewness_doc = R"(
+    _nct_skewness(v, l)
+
+    Skewness of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_variance_doc = R"(
+    _nct_variance(v, l)
+
+    Variance of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncx2_isf_doc = R"(
+    _ncx2_isf(x, k, l)
+
+    Inverse survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncx2_pdf_doc = R"(
+    _ncx2_pdf(x, k, l)
+
+    Probability density function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncx2_sf_doc = R"(
+    _ncx2_sf(x, k, l)
+
+    Survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
     )";
 
 const char *_lgam1p_doc = R"(
@@ -440,6 +955,57 @@ const char *chdtri_doc = R"(
     1.0
 
     )";
+
+const char *chdtriv_doc = R"doc(
+    chdtriv(p, x, out=None)
+
+    Inverse to `chdtr` with respect to `v`.
+
+    Returns `v` such that ``chdtr(v, x) == p``.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability that the Chi square random variable is less than
+        or equal to `x`.
+    x : array_like
+        Nonnegative input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Degrees of freedom.
+
+    See Also
+    --------
+    chdtr, chdtrc, chdtri
+
+    Notes
+    -----
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [2] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It inverts `chdtr`.
+
+    >>> p, x = 0.5, 1
+    >>> sc.chdtr(sc.chdtriv(p, x), x)
+    0.5000000000000003
+    >>> v = 1
+    >>> sc.chdtriv(sc.chdtr(v, x), x)
+    1.0
+
+    )doc";
 
 const char *erfcinv_doc = R"(
     erfcinv(y, out=None)
@@ -1387,6 +1953,58 @@ const char *pdtrc_doc = R"(
 
     )";
 
+const char *pdtrik_doc = R"doc(
+    pdtrik(p, m, out=None)
+
+    Inverse of `pdtr` with respect to `k`.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability
+    m : array_like
+        Shape parameter (nonnegative, real)
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        The number of occurrences `k` such that ``pdtr(k, m) = p``
+
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtri : inverse of `pdtr` with respect to `m`
+
+    Notes
+    -----
+    This function relies on the ``gamma_q_inva`` function from the Boost
+    Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    Compute the CDF for several values of `k`:
+
+    >>> k = [1, 2, 3]
+    >>> p = sc.pdtr(k, 2)
+    >>> p
+    array([0.40600585, 0.67667642, 0.85712346])
+
+    Compute the inverse. We recover the values of `k`, as expected:
+
+    >>> sc.pdtrik(p, 2)
+    array([1., 2., 3.])
+
+    )doc";
+
 const char *poch_doc = R"(
     poch(z, m, out=None)
 
@@ -1448,6 +2066,72 @@ const char *poch_doc = R"(
     20.52958193377696
 
     )";
+
+const char *powm1_doc = R"doc(
+    powm1(x, y, out=None)
+
+    Computes ``x**y - 1``.
+
+    This function is useful when `y` is near 0, or when `x` is near 1.
+
+    The function is implemented for real types only (unlike ``numpy.power``,
+    which accepts complex inputs).
+
+    Parameters
+    ----------
+    x : array_like
+        The base. Must be a real type (i.e. integer or float, not complex).
+    y : array_like
+        The exponent. Must be a real type (i.e. integer or float, not complex).
+
+    Returns
+    -------
+    array_like
+        Result of the calculation
+
+    Notes
+    -----
+    .. versionadded:: 1.10.0
+
+    The underlying code is implemented for single precision and double
+    precision floats only.  Unlike `numpy.power`, integer inputs to
+    `powm1` are converted to floating point, and complex inputs are
+    not accepted.
+
+    Note the following edge cases:
+
+    * ``powm1(x, 0)`` returns 0 for any ``x``, including 0, ``inf``
+      and ``nan``.
+    * ``powm1(1, y)`` returns 0 for any ``y``, including ``nan``
+      and ``inf``.
+
+    This function wraps the ``powm1`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import powm1
+
+    >>> x = np.array([1.2, 10.0, 0.9999999975])
+    >>> y = np.array([1e-9, 1e-11, 0.1875])
+    >>> powm1(x, y)
+    array([ 1.82321557e-10,  2.30258509e-11, -4.68749998e-10])
+
+    It can be verified that the relative errors in those results
+    are less than 2.5e-16.
+
+    Compare that to the result of ``x**y - 1``, where the
+    relative errors are all larger than 8e-8:
+
+    >>> x**y - 1
+    array([ 1.82321491e-10,  2.30258035e-11, -4.68750039e-10])
+
+    )doc";
 
 const char *round_doc = R"(
     round(x, out=None)
@@ -2100,6 +2784,435 @@ const char *beta_doc = R"(
     0.25
     )";
 
+const char *betainc_doc = R"doc(
+    betainc(a, b, x, out=None)
+
+    Regularized incomplete beta function.
+
+    Computes the regularized incomplete beta function, defined as [1]_:
+
+    .. math::
+
+        I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \int_0^x
+        t^{a-1}(1-t)^{b-1}dt,
+
+    for :math:`0 \leq x \leq 1`.
+
+    This function is the cumulative distribution function for the beta
+    distribution; its range is [0, 1].
+
+    Parameters
+    ----------
+    a, b : array_like
+           Positive, real-valued parameters.
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the regularized incomplete beta function.
+
+    See Also
+    --------
+    beta : beta function
+    betaincinv : inverse of the regularized incomplete beta function
+    betaincc : complement of the regularized incomplete beta function
+    scipy.stats.beta : beta distribution
+
+    Notes
+    -----
+    The term *regularized* in the name of this function refers to the
+    scaling of the function by the gamma function terms shown in the
+    formula.  When not qualified as *regularized*, the name *incomplete
+    beta function* often refers to just the integral expression,
+    without the gamma terms.  One can use the function `beta` from
+    `scipy.special` to get this "nonregularized" incomplete beta
+    function by multiplying the result of ``betainc(a, b, x)`` by
+    ``beta(a, b)``.
+
+    ``betainc(a, b, x)`` is treated as a two parameter family of functions
+    of a single variable `x`, rather than as a function of three variables.
+    This impacts only the limiting cases ``a = 0``, ``b = 0``, ``a = inf``,
+    ``b = inf``.
+
+    In general
+
+    .. math::
+
+        \lim_{(a, b) \rightarrow (a_0, b_0)} \mathrm{betainc}(a, b, x)
+
+    is treated as a pointwise limit in ``x``. Thus for example,
+    ``betainc(0, b, 0)`` equals ``0`` for ``b > 0``, although it would be
+    indeterminate when considering the simultaneous limit ``(a, x) -> (0+, 0+)``.
+
+    This function wraps the ``ibeta`` routine from the
+    Boost Math C++ library [2]_.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+
+    Let :math:`B(a, b)` be the `beta` function.
+
+    >>> import scipy.special as sc
+
+    The coefficient in terms of `gamma` is equal to
+    :math:`1/B(a, b)`. Also, when :math:`x=1`
+    the integral is equal to :math:`B(a, b)`.
+    Therefore, :math:`I_{x=1}(a, b) = 1` for any :math:`a, b`.
+
+    >>> sc.betainc(0.2, 3.5, 1.0)
+    1.0
+
+    It satisfies
+    :math:`I_x(a, b) = x^a F(a, 1-b, a+1, x)/ (aB(a, b))`,
+    where :math:`F` is the hypergeometric function `hyp2f1`:
+
+    >>> a, b, x = 1.4, 3.1, 0.5
+    >>> x**a * sc.hyp2f1(a, 1 - b, a + 1, x)/(a * sc.beta(a, b))
+    0.8148904036225295
+    >>> sc.betainc(a, b, x)
+    0.8148904036225296
+
+    This functions satisfies the relationship
+    :math:`I_x(a, b) = 1 - I_{1-x}(b, a)`:
+
+    >>> sc.betainc(2.2, 3.1, 0.4)
+    0.49339638807619446
+    >>> 1 - sc.betainc(3.1, 2.2, 1 - 0.4)
+    0.49339638807619446
+
+    )doc";
+
+const char *betaincc_doc = R"doc(
+    betaincc(a, b, x, out=None)
+
+    Complement of the regularized incomplete beta function.
+
+    Computes the complement of the regularized incomplete beta function,
+    defined as [1]_:
+
+    .. math::
+
+        \bar{I}_x(a, b) = 1 - I_x(a, b)
+                        = 1 - \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \int_0^x
+                                  t^{a-1}(1-t)^{b-1}dt,
+
+    for :math:`0 \leq x \leq 1`.
+
+    Parameters
+    ----------
+    a, b : array_like
+           Positive, real-valued parameters.
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the complement of the regularized incomplete beta function.
+
+    See Also
+    --------
+    betainc : regularized incomplete beta function
+    betaincinv : inverse of the regularized incomplete beta function
+    betainccinv :
+        inverse of the complement of the regularized incomplete beta function
+    beta : beta function
+    scipy.stats.beta : beta distribution
+
+    Notes
+    -----
+    .. versionadded:: 1.11.0
+
+    Like `betainc`, ``betaincc(a, b, x)`` is treated as a two parameter
+    family of functions of a single variable `x`, rather than as a function of
+    three variables. See the `betainc` docstring for more info on how this
+    impacts limiting cases.
+
+    This function wraps the ``ibetac`` routine from the
+    Boost Math C++ library [2]_.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import betaincc, betainc
+
+    The naive calculation ``1 - betainc(a, b, x)`` loses precision when
+    the values of ``betainc(a, b, x)`` are close to 1:
+
+    >>> 1 - betainc(0.5, 8, [0.9, 0.99, 0.999])
+    array([2.0574632e-09, 0.0000000e+00, 0.0000000e+00])
+
+    By using ``betaincc``, we get the correct values:
+
+    >>> betaincc(0.5, 8, [0.9, 0.99, 0.999])
+    array([2.05746321e-09, 1.97259354e-17, 1.96467954e-25])
+
+    )doc";
+
+const char *betainccinv_doc = R"doc(
+    betainccinv(a, b, y, out=None)
+
+    Inverse of the complemented regularized incomplete beta function.
+
+    Computes :math:`x` such that:
+
+    .. math::
+
+        y = 1 - I_x(a, b) = 1 - \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
+        \int_0^x t^{a-1}(1-t)^{b-1}dt,
+
+    where :math:`I_x` is the normalized incomplete beta function `betainc`
+    and :math:`\Gamma` is the `gamma` function [1]_.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Positive, real-valued parameters
+    y : array_like
+        Real-valued input
+    out : ndarray, optional
+        Optional output array for function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the inverse of the regularized incomplete beta function
+
+    See Also
+    --------
+    betainc : regularized incomplete beta function
+    betaincc : complement of the regularized incomplete beta function
+
+    Notes
+    -----
+    .. versionadded:: 1.11.0
+
+    This function wraps the ``ibetac_inv`` routine from the
+    Boost Math C++ library [2]_.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import betainccinv, betaincc
+
+    This function is the inverse of `betaincc` for fixed
+    values of :math:`a` and :math:`b`.
+
+    >>> a, b = 1.2, 3.1
+    >>> y = betaincc(a, b, 0.2)
+    >>> betainccinv(a, b, y)
+    0.2
+
+    >>> a, b = 7, 2.5
+    >>> x = betainccinv(a, b, 0.875)
+    >>> betaincc(a, b, x)
+    0.875
+
+    )doc";
+
+const char *betaincinv_doc = R"doc(
+    betaincinv(a, b, y, out=None)
+
+    Inverse of the regularized incomplete beta function.
+
+    Computes :math:`x` such that:
+
+    .. math::
+
+        y = I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
+        \int_0^x t^{a-1}(1-t)^{b-1}dt,
+
+    where :math:`I_x` is the normalized incomplete beta function `betainc`
+    and :math:`\Gamma` is the `gamma` function [1]_.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Positive, real-valued parameters
+    y : array_like
+        Real-valued input
+    out : ndarray, optional
+        Optional output array for function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the inverse of the regularized incomplete beta function
+
+    See Also
+    --------
+    betainc : regularized incomplete beta function
+    gamma : gamma function
+
+    Notes
+    -----
+    This function wraps the ``ibeta_inv`` routine from the
+    Boost Math C++ library [2]_.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    This function is the inverse of `betainc` for fixed
+    values of :math:`a` and :math:`b`.
+
+    >>> a, b = 1.2, 3.1
+    >>> y = sc.betainc(a, b, 0.2)
+    >>> sc.betaincinv(a, b, y)
+    0.2
+    >>>
+    >>> a, b = 7.5, 0.4
+    >>> x = sc.betaincinv(a, b, 0.5)
+    >>> sc.betainc(a, b, x)
+    0.5
+
+    )doc";
+
+const char *btdtria_doc = R"doc(
+    btdtria(p, b, x, out=None)
+
+    Inverse of `betainc` with respect to `a`.
+
+    This is the inverse of the beta cumulative distribution function, `betainc`,
+    considered as a function of `a`, returning the value of `a` for which
+    `betainc(a, b, x) = p`, or
+
+    .. math::
+        p = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
+
+    Parameters
+    ----------
+    p : array_like
+        Cumulative probability, in [0, 1].
+    b : array_like
+        Shape parameter (`b` > 0).
+    x : array_like
+        The quantile, in [0, 1].
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    a : scalar or ndarray
+        The value of the shape parameter `a` such that `betainc(a, b, x) = p`.
+
+    See Also
+    --------
+    betainc : Regularized incomplete beta function
+    betaincinv : Inverse of the regularized incomplete beta function
+    btdtrib : Inverse of the beta cumulative distribution function, with respect to `b`.
+
+    Notes
+    -----
+    This function wraps the ``ibeta_inva`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    This function is the inverse of `betainc` for fixed
+    values of :math:`b` and :math:`x`.
+
+    >>> a, b, x = 1.2, 3.1, 0.2
+    >>> y = sc.betainc(a, b, x)
+    >>> sc.btdtria(y, b, x)
+    1.2
+
+    )doc";
+
+const char *btdtrib_doc = R"doc(
+    btdtria(a, p, x, out=None)
+
+    Inverse of `betainc` with respect to `b`.
+
+    This is the inverse of the beta cumulative distribution function, `betainc`,
+    considered as a function of `b`, returning the value of `b` for which
+    `betainc(a, b, x) = p`, or
+
+    .. math::
+        p = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
+
+    Parameters
+    ----------
+    a : array_like
+        Shape parameter (`a` > 0).
+    p : array_like
+        Cumulative probability, in [0, 1].
+    x : array_like
+        The quantile, in [0, 1].
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    b : scalar or ndarray
+        The value of the shape parameter `b` such that `betainc(a, b, x) = p`.
+
+    See Also
+    --------
+    betainc : Regularized incomplete beta function
+    betaincinv : Inverse of the regularized incomplete beta function with
+                 respect to `x`.
+    btdtria : Inverse of the beta cumulative distribution function, with respect to `a`.
+
+    Notes
+    -----
+    Wrapper for the `ibeta_invb` routine from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+    >>> a, b, x = 1.2, 3.1, 0.2
+    >>> y = sc.betainc(a, b, x)
+
+    `btdtrib` is the inverse of `betainc` for fixed values of :math:`a` and
+    :math:`x`:
+
+    >>> sc.btdtrib(a, y, x)
+    3.1
+
+    )doc";
+
+
 const char *betaln_doc = R"(
     betaln(a, b, out=None)
 
@@ -2180,6 +3293,263 @@ const char *cbrt_doc = R"(
     array([-2.        , -1.44224957,  0.5       ,  1.1       ])
     )";
 
+const char *chndtr_doc = R"(
+    chndtr(x, df, nc, out=None)
+
+    Non-central chi-squared cumulative distribution function.
+
+    The cumulative distribution function is given by
+
+    .. math::
+
+        F_{\nu,\lambda}(x)
+        = \sum_{j=0}^{\infty}
+          e^{-\lambda / 2}
+          \frac{(\lambda / 2)^j}{j!}
+          F_{\chi^2_{\nu + 2j}}(x),
+
+    where :math:`\nu > 0` is the degrees of freedom (``df``), :math:`\lambda \geq 0`
+    is the non-centrality parameter (``nc``), and :math:`F_{\chi^2_{\nu + 2j}}` is the
+    CDF of the central chi-squared distribution with :math:`\nu + 2j` degrees of
+    freedom.
+
+    Parameters
+    ----------
+    x : array_like
+        Upper bound of the integral; must satisfy ``x >= 0``.
+    df : array_like
+        Degrees of freedom; must satisfy ``df > 0``.
+    nc : array_like
+        Non-centrality parameter; must satisfy ``nc >= 0``.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    cdf : scalar or ndarray
+        Value of the non-central chi-squared cumulative distribution function.
+
+    See Also
+    --------
+    chndtrix: Noncentral Chi Squared distribution quantile
+    chndtridf: Inverse of `chndtr` with respect to `df`
+    chndtrinc: Inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2: Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`. ``scipy.stats.ncx2.cdf`` is equivalent to `chndtr`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    Compute the noncentral chi squared distribution CDF at one point.
+
+    >>> x = 4.0
+    >>> df = 1.0
+    >>> nc = 5.0
+    >>> sc.chndtr(x, df, nc)
+    0.40667858759710945
+
+    Plot the noncentral chi squared distribution CDF for different parameters.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 40, 1000)
+    >>> plt.plot(x, sc.chndtr(x, 1, 5), label=r"$df=1,\ nc=5$")
+    >>> plt.plot(x, sc.chndtr(x, 5, 10), label=r"$df=5,\ nc=10$")
+    >>> plt.legend()
+    >>> plt.show()
+
+    )";
+
+const char *chndtridf_doc = R"(
+    chndtridf(x, p, nc, out=None)
+
+    Inverse to `chndtr` vs `df`.
+
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
+
+    Parameters
+    ----------
+    x : array_like
+        Upper bound of the integral; must satisfy ``x >= 0``
+    p : array_like
+        Probability; must satisfy ``0 <= p < 1``
+    nc : array_like
+        Non-centrality parameter; must satisfy ``nc >= 0``
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    df : scalar or ndarray
+        Degrees of freedom
+
+    See Also
+    --------
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtrix : inverse of `chndtr` with respect to `x`
+    chndtrinc : inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtridf, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtridf` is the inverse of `chndtr` with respect to `df`:
+
+    >>> chndtridf(x, p, nc)
+    5.0
+
+    )";
+
+const char *chndtrinc_doc = R"(
+    chndtrinc(x, df, p, out=None)
+
+    Inverse of `chndtr` with respect to `nc`.
+
+    Finds the non-centrality parameter `nc` such that
+
+    .. math::
+
+        \operatorname{chndtr}(x, df, nc) = p.
+
+    Parameters
+    ----------
+    x : array_like
+        Upper bound of the integral; must satisfy ``x >= 0``.
+    df : array_like
+        Degrees of freedom; must satisfy ``df > 0``.
+    p : array_like
+        Probability; must satisfy ``0 <= p < 1``.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    nc : scalar or ndarray
+        Non-centrality parameter.
+
+    See Also
+    --------
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtridf : Inverse of `chndtr` with respect to `df`
+    chndtrinc : Inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtrinc, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtrinc` is the inverse of `chndtr` with respect to `nc`:
+
+    >>> chndtrinc(x, df, p)
+    10.0
+
+    )";
+
+const char *chndtrix_doc = R"(
+    chndtrix(p, df, nc, out=None)
+
+    Inverse to `chndtr` vs `x`.
+
+    Calculated using a search to find a value for `x` that produces the
+    desired value of `p`.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability; must satisfy ``0 <= p < 1``
+    df : array_like
+        Degrees of freedom; must satisfy ``df > 0``
+    nc : array_like
+        Non-centrality parameter; must satisfy ``nc >= 0``
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Value so that the probability a non-central Chi square random variable
+        with `df` degrees of freedom and non-centrality, `nc`, is greater than
+        `x` equals `p`.
+
+    See Also
+    --------
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtridf : inverse of `chndtr` with respect to `cdf`
+    chndtrinc : inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`. ``scipy.stats.ncx2.ppf`` is equivalent to `chndtrix`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtrix, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtrix` is the inverse of `chndtr` with respect to `x`:
+
+    >>> chndtrix(p, df, nc)
+    3.0
+
+    )";
+
+
 const char *cosdg_doc = R"(
     cosdg(x, out=None)
 
@@ -2253,6 +3623,72 @@ const char *cosm1_doc = R"(
 
 const char *_sinpi_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_skewnorm_cdf_doc = R"(
+    _skewnorm_cdf(x, l, sc, sh)
+
+    Cumulative density function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_skewnorm_isf_doc = R"(
+    _skewnorm_isf(x, l, sc, sh)
+
+    Inverse survival function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_skewnorm_ppf_doc = R"(
+    _skewnorm_ppf(x, l, sc, sh)
+
+    Percent point function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
     )";
 
 const char *sindg_doc = R"(

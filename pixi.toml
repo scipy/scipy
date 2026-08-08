@@ -912,3 +912,4 @@ gha-tools = "*"
 
 [feature.gha-update.tasks.gha-update]
 cmd = "gha-tools autoupdate ./.github/workflows/ ./.github/ccache/ --write --pin all -s specific"
+description = "Update GitHub Actions version pins"
