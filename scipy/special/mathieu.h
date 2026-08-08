@@ -218,7 +218,7 @@ struct mathieu_coeffs {
         double s = 0.0;
         double scale = 0.0;
 
-        for (std::size_t k = 0; k < X.size(); ++k) {
+        for (decltype(X.size()) k = 0; k < X.size(); ++k) {
             double term;
             if constexpr (FuncParity == Even) {
                 term = X[k];
