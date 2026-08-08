@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <xsf/third_party/kokkos/mdspan.hpp>
 
 namespace special {

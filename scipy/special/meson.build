@@ -228,8 +228,7 @@ python_sources = [
   'cython_special.pxd',
   'cython_special.pyi',
   '_ufunc_tools.py',
-  '_mathieu.py',
-  '_ufunc_tools.py'
+  '_mathieu.py'
 ]
 
 py3.install_sources(
