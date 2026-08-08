@@ -141,6 +141,9 @@ jobs:
 
   run_benchmarks:
     <<: *defaults
+    # 8 GB rather than medium's 4 GB, so the memory-hungry sparse and stats
+    # benchmarks run instead of being skipped or OOM-killed
+    resource_class: large
     steps:
       - attach_workspace:
           at: ~/
