@@ -59,7 +59,7 @@ jobs:
       - merge
 
       - pixi/pixi_setup:
-          env: "bench"
+          env: "build"
 
       - run:
           name: update submodules
@@ -84,7 +84,7 @@ jobs:
 
       - run:
           name: build SciPy
-          command: pixi run build-bench
+          command: pixi run build
 
       - run:
           name: ccache performance
@@ -172,6 +172,7 @@ jobs:
           env: "bench"
 
       - run:
+          name: register CI machine with asv
           working_directory: benchmarks
           command: pixi run -e bench asv machine --machine CircleCI
 
@@ -180,7 +181,7 @@ jobs:
           command: pixi run -e bench python -c "import psutil, resource; print(psutil.virtual_memory(), resource.getrlimit(resource.RLIMIT_AS))"
 
       - run:
-          name: run asv
+          name: run asv benchmarks
           no_output_timeout: 30m
           # --no-mem-limit: spin caps RLIMIT_AS at 70% of RAM, but that is address
           # space, which FFT/BLAS thread pools exhaust well before actual memory

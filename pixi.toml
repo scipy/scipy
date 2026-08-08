@@ -78,8 +78,8 @@ features = ["run-deps", "test-deps", "ipython-dep", "ipython-task"]
 solve-group = "default"
 
 [environments.bench]
-# tasks: bench, build-bench
-features = ["run-deps", "build-deps", "bench-common", "bench", "default-platforms"]
+# tasks: bench
+features = ["run-deps", "bench-common", "bench", "default-platforms"]
 solve-group = "default"
 
 [environments.build-debug]
@@ -468,13 +468,6 @@ psutil = "*"
 # peak_finding calls scipy.datasets.electrocardiogram() in setup(), so a missing
 # pooch is an asv failure rather than a skip
 pooch = "*"
-
-# used in .circleci/config.yml
-# which does not yet use `spin bench`
-[feature.bench.tasks.build-bench]
-cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
-description = "Build SciPy (benchmarking env)"
 
 [feature.bench.tasks.bench]
 cmd = "spin bench --no-build"
