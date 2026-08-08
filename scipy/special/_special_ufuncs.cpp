@@ -65,7 +65,11 @@
 
 extern const char *_beta_pdf_doc;
 extern const char *_beta_ppf_doc;
+extern const char *_binom_cdf_doc;
+extern const char *_binom_isf_doc;
+extern const char *_binom_pmf_doc;
 extern const char *_binom_ppf_doc;
+extern const char *_binom_sf_doc;
 extern const char *_cospi_doc;
 extern const char *_bivariate_normal_sf_doc;
 extern const char *_cauchy_isf_doc;
@@ -357,11 +361,35 @@ _special_ufuncs_module_exec(PyObject *module)
                           "_beta_ppf", _beta_ppf_doc);
     PyModule_AddObjectRef(module, "_beta_ppf", _beta_ppf);
 
+    PyObject *_binom_cdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(binom_cdf_float),
+                           static_cast<xsf::numpy::ddd_d>(binom_cdf_double)},
+                          "_binom_cdf", _binom_cdf_doc);
+    PyModule_AddObjectRef(module, "_binom_cdf", _binom_cdf);
+
+    PyObject *_binom_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(binom_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(binom_isf_double)},
+                          "_binom_isf", _binom_isf_doc);
+    PyModule_AddObjectRef(module, "_binom_isf", _binom_isf);
+
+    PyObject *_binom_pmf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(binom_pmf_float),
+                           static_cast<xsf::numpy::ddd_d>(binom_pmf_double)},
+                          "_binom_pmf", _binom_pmf_doc);
+    PyModule_AddObjectRef(module, "_binom_pmf", _binom_pmf);
+
     PyObject *_binom_ppf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(binom_ppf_float),
          static_cast<xsf::numpy::ddd_d>(binom_ppf_double)},
         "_binom_ppf", _binom_ppf_doc);
     PyModule_AddObjectRef(module, "_binom_ppf", _binom_ppf);
+
+    PyObject *_binom_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(binom_sf_float),
+                           static_cast<xsf::numpy::ddd_d>(binom_sf_double)},
+                          "_binom_sf", _binom_sf_doc);
+    PyModule_AddObjectRef(module, "_binom_sf", _binom_sf);
 
     PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),

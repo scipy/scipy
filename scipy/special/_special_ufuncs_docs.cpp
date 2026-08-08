@@ -36,6 +36,66 @@ const char *_beta_ppf_doc = R"(
 
     )";
 
+const char *_binom_cdf_doc = R"(
+    _binom_cdf(x, n, p)
+
+    Cumulative density function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_binom_isf_doc = R"(
+    _binom_isf(x, n, p)
+
+    Inverse survival function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_binom_pmf_doc = R"(
+    _binom_pmf(x, n, p)
+
+    Probability mass function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_binom_ppf_doc = R"(
     _binom_ppf(x, n, p)
 
@@ -55,6 +115,26 @@ const char *_binom_ppf_doc = R"(
     scalar or ndarray
 
 )";
+
+const char *_binom_sf_doc = R"(
+    _binom_sf(x, n, p)
+
+    Survival function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
 
 const char *_cospi_doc = R"(
     Internal function, do not use.
