@@ -1,10 +1,10 @@
 /* Compute eigenvectors and eigenvalues of symmetric tridiagonal matrices for
- * use in special function kernels. Wraps LAPACK dstevd.
+ * use in special function kernels. Wraps LAPACK dstevr.
  */
 
 #pragma once
 
-#include <new>
+#include <exception>
 #include <vector>
 #include <xsf/error.h>
 
@@ -15,7 +15,7 @@ namespace special {
 struct eigvalsh_tridiagonal {
   std::vector<double> work;
   std::vector<CBLAS_INT> iwork;
-  std::vector<CBLAS_INT> isuppz{2};
+  std::vector<CBLAS_INT> isuppz = std::vector<CBLAS_INT>(2);
   std::vector<double> W;
 
   sf_error_t operator()(std::vector<double> &D, std::vector<double> &E,
@@ -48,7 +48,7 @@ struct eigvalsh_tridiagonal {
 
     try {
       W.resize(N);
-    } catch (const std::bad_alloc &) {
+    } catch (const std::exception &) {
       return SF_ERROR_MEMORY;
     }
 
@@ -74,7 +74,7 @@ struct eigvalsh_tridiagonal {
     try {
       work.resize(lwork);
       iwork.resize(liwork);
-    } catch (const std::bad_alloc &) {
+    } catch (const std::exception &) {
       return SF_ERROR_MEMORY;
     }
 
@@ -99,7 +99,7 @@ struct eigvalsh_tridiagonal {
 struct eigh_tridiagonal {
   std::vector<double> work;
   std::vector<CBLAS_INT> iwork;
-  std::vector<CBLAS_INT> isuppz{2};
+  std::vector<CBLAS_INT> isuppz = std::vector<CBLAS_INT>(2);
   std::vector<double> W;
 
   sf_error_t operator()(std::vector<double> &D, std::vector<double> &E,
@@ -134,7 +134,7 @@ struct eigh_tridiagonal {
     try {
       W.resize(N);
       Z.resize(N);
-    } catch (const std::bad_alloc &) {
+    } catch (const std::exception &) {
       return SF_ERROR_MEMORY;
     }
 
@@ -159,7 +159,7 @@ struct eigh_tridiagonal {
     try {
       work.resize(lwork);
       iwork.resize(liwork);
-    } catch (const std::bad_alloc &) {
+    } catch (const std::exception &) {
       return SF_ERROR_MEMORY;
     }
 
