@@ -4,7 +4,7 @@
  * https://github.com/scipy/xsf/pull/99), whose code has been refactored by
  * Scipy developers so that only parts fit for xsf as a library of simple
  * numerical kernels which can be used on both CPU and GPU are included in
- * xsf. The below code uses dstevd from LAPACK to calculate eigenvalues and
+ * xsf. The below code uses dstevr from LAPACK to calculate eigenvalues and
  * eigenvectors of symmetric tridiagonal recurrence matrices, and thus is not
  * fit for xsf.
  *
@@ -32,7 +32,9 @@
 #pragma once
 
 #include <algorithm>
-#include <new>
+#include <cmath>
+#include <exception>
+#include <limits>
 #include <vector>
 
 #include <xsf/error.h>
@@ -66,12 +68,12 @@ struct mathieu_cv {
         auto constexpr Odd = Parity::Odd;
 
         if constexpr (FuncParity == Even) {
-            if ((m < 0) || (m != std::floor(m))) {
+            if (!std::isfinite(m) || (m != std::floor(m)) || (m < 0) || !std::isfinite(q)) {
                 xsf::set_error("mathieu_a", SF_ERROR_DOMAIN, NULL);
                 return std::numeric_limits<double>::quiet_NaN();
             }
         } else {
-            if ((m <= 0) || (m != std::floor(m)) || std::isnan(q)) {
+            if (!std::isfinite(m) || (m != std::floor(m)) || (m <= 0) || !std::isfinite(q)) {
                 xsf::set_error("mathieu_b", SF_ERROR_DOMAIN, NULL);
                 return std::numeric_limits<double>::quiet_NaN();
             }
@@ -85,41 +87,35 @@ struct mathieu_cv {
             return xsf::sem_cva(m, q);
         }
 
-        auto int_m = static_cast<CBLAS_INT>(m);
-        auto N = int_m + 25;
+        double q_d = static_cast<double>(q);
+
+        auto int_m = static_cast<int>(m);
+        auto N = get_partial_sum_N(int_m, q_d);
+        constexpr const char *name = (FuncParity == Even) ? "mathieu_a" : "mathieu_b";
 
         try {
             // Make sure allocation actually succeeds.
             D.resize(N);
             E.resize(N - 1);
-        } catch (const std::bad_alloc &) {
-            if constexpr (FuncParity == Even) {
-                xsf::set_error("mathieu_a", SF_ERROR_MEMORY, NULL);
-            } else {
-                xsf::set_error("mathieu_b", SF_ERROR_MEMORY, NULL);
-            }
+        } catch (const std::exception &) {
+            xsf::set_error(name, SF_ERROR_MEMORY, NULL);
             return std::numeric_limits<T>::quiet_NaN();
         }
 
         // Generate recurrence matrix.
         if (int_m % 2) {
-            make_matrix<FuncParity, Odd>(q, as_mdspan(D), as_mdspan(E));
+            make_matrix<FuncParity, Odd>(q_d, as_mdspan(D), as_mdspan(E));
         } else {
-            make_matrix<FuncParity, Even>(q, as_mdspan(D), as_mdspan(E));
+            make_matrix<FuncParity, Even>(q_d, as_mdspan(D), as_mdspan(E));
         }
 
         auto idx = cv_index<FuncParity>(int_m);
         double eigenvalue;
         auto status = solver(D, E, idx, eigenvalue);
         if (status != SF_ERROR_OK) {
-            if constexpr (FuncParity == Even) {
-                xsf::set_error("mathieu_a", status, NULL);
-            } else {
-                xsf::set_error("mathieu_b", status, NULL);
-            }
+            xsf::set_error(name, status, NULL);
             return std::numeric_limits<double>::quiet_NaN();
         }
-
         // Pull out the characteristic value from among the eigenvalues.
         return static_cast<T>(eigenvalue);
     }
@@ -181,7 +177,7 @@ struct mathieu_coeffs {
             // Make sure allocation actually succeeds.
             D.resize(N);
             E.resize(N - 1);
-        } catch (const std::bad_alloc &) {
+        } catch (const std::exception &) {
             return SF_ERROR_MEMORY;
         }
 
@@ -238,19 +234,19 @@ struct mathieu_coeffs {
         double anchor;
         constexpr double threshold = 100.0 * std::numeric_limits<double>::epsilon();
         if (scale != 0 && std::abs(s) > threshold * scale) {
-          /* the computation of s was well-conditioned, we can use it as the anchor to get the
-           * correct sign. */
+            /* the computation of s was well-conditioned, we can use it as the anchor to get the
+             * correct sign. */
             anchor = s;
         } else {
-          /* since the computation of s was not well-conditioned, we rely on
-           * https://dlmf.nist.gov/28.4#ii, https://dlmf.nist.gov/28.4#iii,
-           * and https://dlmf.nist.gov/28.4#v which together imply that the first
-           * nonzero coefficient will have the desired sign for q > 0, and give a rule
-           * for determining the sign in terms of m when q < 0.
-           * There may be cases where neither choice of anchor is well-conditioned,
-           * but this should work well enough for cases that typically appear in
-           * applications.
-           */
+            /* since the computation of s was not well-conditioned, we rely on
+             * https://dlmf.nist.gov/28.4#ii, https://dlmf.nist.gov/28.4#iii,
+             * and https://dlmf.nist.gov/28.4#v which together imply that the first
+             * nonzero coefficient will have the desired sign for q > 0, and give a rule
+             * for determining the sign in terms of m when q < 0.
+             * There may be cases where neither choice of anchor is well-conditioned,
+             * but this should work well enough for cases that typically appear in
+             * applications.
+             */
             anchor = sign_X0<FuncParity>(m, q) * X[0];
         }
         if (std::signbit(anchor)) {
@@ -287,14 +283,20 @@ struct mathieu_xem {
         double x_d = static_cast<double>(x);
         double out_d, out_diff_d;
 
-        if ((m < 0) || m != std::floor(m) || std::isnan(q) || std::isnan(x)) {
+        constexpr const char *name = (FuncParity == Even) ? "mathieu_cem" : "mathieu_sem";
+
+        if ((m < 0) || !std::isfinite(m) || m != std::floor(m) || !std::isfinite(q) || std::isnan(x)) {
             out = std::numeric_limits<T>::quiet_NaN();
             out_diff = std::numeric_limits<T>::quiet_NaN();
-            if constexpr (FuncParity == Even) {
-                xsf::set_error("mathieu_cem", SF_ERROR_DOMAIN, NULL);
-            } else {
-                xsf::set_error("mathieu_sem", SF_ERROR_DOMAIN, NULL);
-            }
+            xsf::set_error(name, SF_ERROR_DOMAIN, NULL);
+            last_m = -1; // invalidate cache upon error
+            return;
+        }
+
+        if (m > 100000) {
+            out = std::numeric_limits<T>::quiet_NaN();
+            out_diff = std::numeric_limits<T>::quiet_NaN();
+            xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
             last_m = -1; // invalidate cache upon error
             return;
         }
@@ -317,11 +319,7 @@ struct mathieu_xem {
             if (N > 100000) {
                 out = std::numeric_limits<T>::quiet_NaN();
                 out_diff = std::numeric_limits<T>::quiet_NaN();
-                if constexpr (FuncParity == Even) {
-                    xsf::set_error("mathieu_cem", SF_ERROR_NO_RESULT, NULL);
-                } else {
-                    xsf::set_error("mathieu_sem", SF_ERROR_NO_RESULT, NULL);
-                }
+                xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
                 last_m = -1; // invalidate cache upon error
                 return;
             }
@@ -330,11 +328,7 @@ struct mathieu_xem {
                 // Make sure allocation actually succeeds.
                 coefs.resize(N);
             } catch (const std::bad_alloc &) {
-                if constexpr (FuncParity == Even) {
-                    xsf::set_error("mathieu_cem", SF_ERROR_MEMORY, NULL);
-                } else {
-                    xsf::set_error("mathieu_sem", SF_ERROR_MEMORY, NULL);
-                }
+                xsf::set_error(name, SF_ERROR_MEMORY, NULL);
                 return;
             }
 
