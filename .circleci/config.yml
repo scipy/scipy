@@ -119,7 +119,7 @@ jobs:
       - pixi/pixi_setup:
           env: "docs"
 
-      # TODO REMOVE: prove the sphinx 9.1 docs build works once upstream fixes land
+      # TODO REMOVE: prove the sphinx 9.1 docs build works once upstream fixes are released
       - run:
           name: install unreleased sphinx and numpydoc fixes
           command: |
