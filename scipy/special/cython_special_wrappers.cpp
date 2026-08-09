@@ -756,6 +756,10 @@ float boost_btdtrib_float(float a, float p, float x) { return ibeta_invb_float(a
 
 double boost_btdtrib_double(double a, double p, double x) { return ibeta_invb_double(a, p, x); }
 
+float boost_chdtriv_float(float p, float x) { return chdtriv_float(p, x); }
+
+double boost_chdtriv_double(double p, double x) { return chdtriv_double(p, x); }
+
 float boost_chndtr_float(float x, float df, float nc) { return ncx2_cdf_float(x, df, nc); }
 
 double boost_chndtr_double(double x, double df, double nc) { return ncx2_cdf_double(x, df, nc); }
@@ -845,6 +849,14 @@ double boost_nctdtrinc(double df, double p, double t)
 float boost_nctdtrit_float(float df, float nc, float p) { return nct_ppf_float(df, nc, p); }
 
 double boost_nctdtrit_double(double df, double nc, double p) { return nct_ppf_double(df, nc, p); }
+
+float boost_pdtrik_float(float p, float m) { return pdtrik_float(p, m); }
+
+double boost_pdtrik_double(double p, double m) { return pdtrik_double(p, m); }
+
+float boost_powm1_float(float x, float y) { return powm1_float(x, y); }
+
+double boost_powm1_double(double x, double y) { return powm1_double(x, y); }
 
 float boost_stdtr_float(float df, float t) { return t_cdf_float(df, t); }
 
