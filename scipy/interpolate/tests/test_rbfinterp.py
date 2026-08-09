@@ -478,8 +478,7 @@ class _TestRBFInterpolator:
         CONFIG['Compilers']['pythran'] == {},
         reason = "LLC kernels are not supported in the no-pythran build"
     )
-    def test_custom_kernel(self):
-        # Make sure custom kernels work match builtin
+    def test_custom_kernel(self):  # LowLevelCallable is NumPy only
         llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
                                signature="double (double)")
 
@@ -527,27 +526,56 @@ class _TestRBFInterpolator:
         with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
             _RBFInterpolator(x, y, kernel=llc, degree=0, epsilon=1.0)
 
-    @pytest.mark.skipif(
-        CONFIG['Compilers']['pythran'] == {},
-        reason = "LLC kernels are not supported in the no-pythran build"
-    )
     def test_degree_validation(self):
-        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
-        llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
-                           signature="double (double)")
-
         seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
-
-        x = 3*seq.random(50)
-        xitp = 3*seq.random(50)
-        x, xitp = np.asarray(x), np.asarray(xitp)
+        x = np.asarray(3*seq.random(50))
         y = _1d_test_function(x, np)
 
         with pytest.raises(ValueError, match="`degree` must be at least -1."):
             self.build(x, y, kernel='linear', degree=-2, epsilon=1.0)
 
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
+    def test_degree_validation_llc_degree(self):
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
+        llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
+                           signature="double (double)")
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+        x = np.asarray(3*seq.random(50))
+        y = _1d_test_function(x, np)
+
         with pytest.raises(ValueError, match="`degree` must be at least -1."):
             _RBFInterpolator(x, y, kernel=llc, degree=-2, epsilon=1.0)
+
+    def test_invalid_kernel_type(self):
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+        x = np.asarray(3*seq.random(50))
+        y = _1d_test_function(x, np)
+
+        with pytest.raises(ValueError,
+                           match="The kernel must be a string or a LowLevelCallable"):
+            self.build(x, y, kernel=42, degree=0, epsilon=1.0)
+
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
+    def test_llc_wrong_signature(self):
+        import ctypes
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
+        wrong = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double, ctypes.c_double)(
+            lambda x, y: x
+        )
+        llc = LowLevelCallable(wrong)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+        x = np.asarray(3*seq.random(50))
+        y = _1d_test_function(x, np)
+
+        with pytest.raises(ValueError,
+                           match='LowLevelCallable kernel must have signature'):
+            _RBFInterpolator(x, y, kernel=llc, degree=0, epsilon=1.0)
 
     @pytest.mark.skipif(
         CONFIG['Compilers']['pythran'] == {},
