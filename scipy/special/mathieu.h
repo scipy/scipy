@@ -243,6 +243,10 @@ struct mathieu_coeffs {
              * but this should work well enough for cases that typically appear in
              * applications.
              */
+            if (X[0] == 0.0) {
+                // neither anchor will suffice to get the correct sign.
+                return SF_ERROR_NO_RESULT;
+            }
             anchor = sign_X0<FuncParity>(m, q) * X[0];
         }
         if (std::signbit(anchor)) {
