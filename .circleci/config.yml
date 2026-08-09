@@ -125,7 +125,7 @@ jobs:
           command: |
             pixi exec uv pip install --python .pixi/envs/docs/bin/python --no-deps \
               "sphinx @ git+https://github.com/larsoner/sphinx.git@fix" \
-              "numpydoc @ git+https://github.com/larsoner/numpydoc.git@fix/sphinx10-autodoc-options"
+              "numpydoc @ git+https://github.com/numpy/numpydoc.git@main"
             pixi run --skip-deps -e docs python -c "import sphinx, numpydoc; print('sphinx', sphinx.__version__, '| numpydoc', numpydoc.__version__)"
 
       - run:
