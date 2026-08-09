@@ -5,6 +5,8 @@ import re
 import numpy as np
 import warnings
 
+from packaging import version
+
 
 def _parse_core_ndims(signature):
     """Return tuple of num core dims per input from gufunc signature."""
@@ -194,7 +196,12 @@ def _with_cache_optimization(
 
         out_tuple = _normalize_out(out, ufunc.nout)
 
-        if out is None and is_elementwise and where is not True:
+        if (
+                out is None
+                and is_elementwise
+                and where is not True
+                and version.parse(np.__version__) >= version.parse("2.4.0")
+        ):
             # The transposed path always passes ``out`` to the ufunc, so NumPy
             # can't issue this warning itself. Match its wording.
             warnings.warn(

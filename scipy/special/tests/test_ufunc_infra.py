@@ -3,6 +3,7 @@ import pytest
 
 from numpy.testing import assert_equal
 from numpy._core._exceptions import UFuncTypeError
+from packaging import version
 # ufunc using special._ufuncs_tools._with_cache_optimization
 from scipy.special import mathieu_sem
 # raw ufunc without cache optimization
@@ -156,7 +157,10 @@ class TestWithCacheOptimization:
         # scalar) and the transposed path (m batched). gh-25127
         q = 3.0
         x = [10.0, 20.0, 30.0]
-        with pytest.warns(UserWarning, match="'where' used without 'out'"):
+        if version.parse(np.__version__) >= version.parse("2.4.0"):
+            with pytest.warns(UserWarning, match="'where' used without 'out'"):
+                res0, res1 = mathieu_sem(m, q, x, where=where)
+        else:
             res0, res1 = mathieu_sem(m, q, x, where=where)
 
         mask = np.broadcast_to(where, (3,))
