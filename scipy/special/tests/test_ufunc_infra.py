@@ -147,3 +147,67 @@ class TestWithCacheOptimization:
         expected0, expected1 = _mathieu_sem(m, q, x, signature=signature)
         assert_equal((res0, res1), (expected0, expected1))
         assert res0.dtype == res1.dtype == expected0.dtype == expected1.dtype
+
+    @pytest.mark.parametrize("m", [2.0, [2.0, 2.0, 2.0]])
+    @pytest.mark.parametrize("where", [[True, False, True], False])
+    def test_where_without_out(self, m, where):
+        # ``where`` must be honored whether or not the arguments participating
+        # in the cache have batch dimensions, i.e. on both the fast path (m
+        # scalar) and the transposed path (m batched). gh-25127
+        q = 3.0
+        x = [10.0, 20.0, 30.0]
+        with pytest.warns(UserWarning, match="'where' used without 'out'"):
+            res0, res1 = mathieu_sem(m, q, x, where=where)
+
+        mask = np.broadcast_to(where, (3,))
+        expected0, expected1 = mathieu_sem(m, q, x)
+        assert_equal(res0[mask], expected0[mask])
+        assert_equal(res1[mask], expected1[mask])
+
+    def test_where_broadcasts_like_ufunc(self):
+        rng = np.random.default_rng(1234)
+        m = rng.integers(1, 20, (5, 1))
+        q = rng.uniform(0, 10, (1, 4))
+        x = rng.uniform(0, 90, (5, 4))
+        where = rng.choice([True, False], size=(5, 4))
+
+        out = [np.full((5, 4), np.nan) for _ in range(2)]
+        expected = [np.full((5, 4), np.nan) for _ in range(2)]
+        mathieu_sem(m, q, x, out=tuple(out), where=where)
+        _mathieu_sem(m, q, x, out=tuple(expected), where=where)
+        assert_equal(out, expected)
+
+    def test_out_with_none_entry(self):
+        # A None entry means "allocate this output for me", as for a plain
+        # ufunc.
+        m = [[1, 3, 4]]
+        q = [[2, 2, 2]]
+        x = [[30, 60, 90]]
+        out0 = np.full((3, 3), np.nan)
+        expected0 = np.full((3, 3), np.nan)
+        res0, res1 = mathieu_sem(m, q, x, out=(out0, None))
+        exp0, exp1 = _mathieu_sem(m, q, x, out=(expected0, None))
+        assert res0 is out0
+        assert_equal((res0, res1), (exp0, exp1))
+
+    def test_out_invalid(self):
+        m = [[1, 3, 4]]
+        q = [[2, 2, 2]]
+        x = [[30, 60, 90]]
+        out0 = np.full((3, 3), np.nan)
+        # mathieu_sem has two outputs, so a bare array is not acceptable.
+        with pytest.raises(TypeError, match="must be a tuple of arrays"):
+            mathieu_sem(m, q, x, out=out0)
+        with pytest.raises(TypeError, match="must be a tuple of arrays"):
+            mathieu_sem(m, q, x, out=[out0, out0.copy()])
+        with pytest.raises(ValueError, match="exactly 2 entries"):
+            mathieu_sem(m, q, x, out=(out0,))
+
+    def test_unexpected_kwarg_names_wrapper(self):
+        with pytest.raises(TypeError, match="mathieu_sem"):
+            mathieu_sem(1, 2, 3, not_a_ufunc_kwarg=True)
+
+    def test_wrapper_metadata(self):
+        assert mathieu_sem.__module__ == "scipy.special"
+        assert mathieu_sem.__qualname__ == "mathieu_sem"
+        assert mathieu_sem.ufunc is _mathieu_sem
