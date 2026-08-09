@@ -163,7 +163,7 @@ bench = [
 ]
 
 doc = [
-    "sphinx>=5.0.0,<8.2.0",
+    "sphinx>=8.2.0,<8.3.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
