@@ -15,17 +15,27 @@ def _parse_core_ndims(signature):
 def _resolve_alloc_order(args, order):
     """Determine contiguity of output when using in-ufunc caching.
 
-    Since we hijack the iteration order, 'K' isn't really possible
-    so it's just treated like 'A'.
+    We hijack the ufunc iteration order, so NumPy's own layout logic can't be
+    reused; this reproduces its rules for 'A' and 'K' from the inputs directly.
 
     """
     order = order.upper() if order is not None else "K"
     if order in ('K', 'A'):
-        # If all inputs are F-contiguous, return F-contiguous.
-        # Otherwise, default to C.
-        if all(arg.flags.f_contiguous for arg in args):
-            return 'F'
-        return 'C'
+        if order == 'A':
+            # NumPy: F if every input is F-contiguous, C otherwise.
+            if all(arg.flags.f_contiguous for arg in args):
+                return 'F'
+            return 'C'
+        if order == 'K':
+            # NumPy: F only if every input is genuinely Fortran ordered. Arrays
+            # which are both C and F contiguous (1-D, or shapes with a single
+            # non-unit dimension) don't by themselves make the output F ordered.
+            if (
+                    all(arg.flags.f_contiguous for arg in args)
+                    and any(not arg.flags.c_contiguous for arg in args)
+            ):
+                return 'F'
+            return 'C'
     return order  # Returns 'C' or 'F'
 
 
