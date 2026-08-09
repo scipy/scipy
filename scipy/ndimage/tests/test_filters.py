@@ -3322,7 +3322,6 @@ class TestVectorizedFilter:
 
 # cost is Hypothesis engine overhead per example, not `median_filter`; lengths past ~50
 # can't reach the `lim = (size - 1) // 2` boundary fuzzed here, so they only add cost
-@pytest.mark.fail_slow(5)
 @settings(max_examples=50)
 @given(x=npst.arrays(dtype=np.float64,
                      shape=st.integers(min_value=1, max_value=200)),
