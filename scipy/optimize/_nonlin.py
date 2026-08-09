@@ -210,7 +210,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     # Solver tolerance selection
     gamma = 0.9
     eta_max = 0.9999
-    eta_treshold = 0.1
+    eta_threshold = 0.1
     eta = 1e-3
 
     for n in range(maxiter):
@@ -244,7 +244,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Adjust forcing parameters for inexact methods
         eta_A = gamma * Fx_norm_new**2 / Fx_norm**2
-        if gamma * eta**2 < eta_treshold:
+        if gamma * eta**2 < eta_threshold:
             eta = min(eta_max, eta_A)
         else:
             eta = min(eta_max, max(eta_A, gamma*eta**2))

@@ -1,8 +1,7 @@
-#pragma once
 /*
- * Templated loops for linalg.eig
+ * Templated loops for `linalg.eig`
  */
-
+#pragma once
 
 namespace sp_linalg {
 
@@ -168,7 +167,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
             goto done;
         }
 
-        // copy-and-tranpose W, VR and VL slices from temp buffers to the output;
+        // copy-and-transpose W, VR and VL slices from temp buffers to the output;
         if constexpr (detail::type_traits<T>::is_complex) {
             memcpy(ptr_W, wr, n*sizeof(T));
             ptr_W += n;
@@ -365,9 +364,9 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
             goto done;
         }
 
-        // copy-and-tranpose W, VR and VL slices from temp buffers to the output;
+        // copy-and-transpose W, VR and VL slices from temp buffers to the output;
         if constexpr (detail::type_traits<T>::is_complex) {
-            // alphar and beta are complex and compatible with the W array 
+            // alphar and beta are complex and compatible with the W array
             memcpy(ptr_W, alphar, n*sizeof(T));
             ptr_W += n;
 
@@ -422,7 +421,7 @@ _eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm,
 ) {
     int info;
     if (ap_Bm == NULL) {
-        // sanity check: B and beta are either both NULL or both not NULL (for a generalized eig problem) 
+        // sanity check: B and beta are either both NULL or both not NULL (for a generalized eig problem)
         if (ap_beta != NULL) { return -222; }
 
         info = _reg_eig<T>(ap_Am, ap_w, ap_vl, ap_vr, overwrite_a, vec_status);

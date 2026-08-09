@@ -541,11 +541,11 @@ class CovViaDiagonal(Covariance):
         positive_diagonal[i_zero] = 1  # ones don't affect determinant
         self._log_pdet = np.sum(np.log(positive_diagonal), axis=-1)
 
-        psuedo_reciprocals = 1 / np.sqrt(positive_diagonal)
-        psuedo_reciprocals[i_zero] = 0
+        pseudo_reciprocals = 1 / np.sqrt(positive_diagonal)
+        pseudo_reciprocals[i_zero] = 0
 
         self._sqrt_diagonal = np.sqrt(diagonal)
-        self._LP = psuedo_reciprocals
+        self._LP = pseudo_reciprocals
         self._rank = positive_diagonal.shape[-1] - i_zero.sum(axis=-1)
         self._covariance = np.apply_along_axis(np.diag, -1, diagonal)
         self._i_zero = i_zero
@@ -615,10 +615,10 @@ class CovViaEigendecomposition(Covariance):
         positive_eigenvalues[i_zero] = 1  # ones don't affect determinant
         self._log_pdet = np.sum(np.log(positive_eigenvalues), axis=-1)
 
-        psuedo_reciprocals = 1 / np.sqrt(positive_eigenvalues)
-        psuedo_reciprocals[i_zero] = 0
+        pseudo_reciprocals = 1 / np.sqrt(positive_eigenvalues)
+        pseudo_reciprocals[i_zero] = 0
 
-        self._LP = eigenvectors * psuedo_reciprocals
+        self._LP = eigenvectors * pseudo_reciprocals
         self._LA = eigenvectors * np.sqrt(eigenvalues)
         self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
         self._w = eigenvalues

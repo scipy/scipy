@@ -5,7 +5,6 @@ The following functions still need tests:
 
 - ncfdtridfn
 - ncfdtridfd
-- nctdtridf
 
 """
 import itertools
@@ -568,7 +567,7 @@ class TestNoncentralTFunctions:
 
     # def nct_cdf(df, nc, x):
     #     df, nc, x = map(mp.mpf, (df, nc, x))
-        
+
     #     def f(df, nc, x):
     #         phi = mp.ncdf(-nc)
     #         y = x * x / (x * x + df)
@@ -695,9 +694,18 @@ class TestNoncentralTFunctions:
         (0.98, -3.8, 15, 0.9999990264591945),
         (9.8, 38, 15, 2.252076291604796e-09),
     ])
-    def test_inverses(self, df, nc, x, expected_cdf):
+    def test_nctdtrit_nctdtrinc(self, df, nc, x, expected_cdf):
         assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)
         assert_allclose(sp.nctdtrinc(df, expected_cdf, x), nc, rtol=1e-10)
+
+    @pytest.mark.parametrize("df, nc, x, expected_cdf", [
+        (3000, 3, 0.1, 0.0018657780826323328),
+        (0.98, -3.8, 15, 0.9999990264591945),
+        (98, 0.38, 0.0015, 0.35252817848596313),
+        (980, 0.38, 1.5, 0.8684247068517293)
+    ])
+    def test_nctdtridf_accuracy(self, df, nc, x, expected_cdf):
+        assert_allclose(sp.nctdtridf(expected_cdf, nc, x), df, rtol=1e-10)
 
     def test_nctdtrinc_gh19896(self):
         # test that gh-19896 is resolved.
@@ -740,7 +748,7 @@ class TestNegativeBinomialFunctions:
         [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
          (-1, 1, -1), (1, -1, -1), (-1, -1, -1),
          (1, 1.1, 0.9), (1, 0.9, 1.1)]
-    )  
+    )
     def test_domain_error_nbdtrin(self, args):
         with sp.errstate(domain="raise"):
             with pytest.raises(sp.SpecialFunctionError, match="domain"):
@@ -750,7 +758,7 @@ class TestNegativeBinomialFunctions:
         [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
          (-1, 1, -1), (1, -1, -1), (-1, -1, -1),
          (1, 0.9, 1.1)]
-    )  
+    )
     def test_domain_error_nbdtrik(self, args):
         with sp.errstate(domain="raise"):
             with pytest.raises(sp.SpecialFunctionError, match="domain"):
@@ -765,7 +773,7 @@ class TestNegativeBinomialFunctions:
          (500, 0.9999999998603178, 0.1, 15, 1e-8),
          (0, 1.0000000000000006e-10, 0.1, 10, 5e-16)])
     def test_inverses(self, k, y, p, n, rtol):
-        # The following code was used to generate the values. 
+        # The following code was used to generate the values.
         # import mpmath
         # import scipy
         # mpmath.mp.dps = 1000
@@ -823,11 +831,11 @@ class TestNoncentralChiSquaredFunctions:
     # from mpmath import mp
     #
     # mp.dps = 400
-    # 
+    #
     # def noncentral_chi_squared_cdf(x, df, nc):
     #    x, df, nc = map(mp.mpf, (x, df, nc))
     #    def term(i):
-    #        return mp.exp(-nc/2) * (nc/2)**i / mp.factorial(i) * 
+    #        return mp.exp(-nc/2) * (nc/2)**i / mp.factorial(i) *
     #               mp.gammainc(df/2 + i, 0, x/2, regularized=True)
     #    return float(mp.nsum(term, [0, mp.inf]))
 
@@ -866,7 +874,7 @@ class TestNoncentralChiSquaredFunctions:
     @pytest.mark.parametrize("args",
         [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
          (-1, 1, -1), (1, -1, -1), (-1, -1, -1)]
-    )  
+    )
     def test_domain_error(self, args, fun):
         with sp.errstate(domain="raise"):
             with pytest.raises(sp.SpecialFunctionError, match="domain"):

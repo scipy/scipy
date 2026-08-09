@@ -415,8 +415,7 @@ def lfiltic_signature(b, a, y, x=None):
 
 
 def lombscargle_signature(
-    x, y, freqs, precenter=False, normalize=False, *,
-    weights=None, floating_mean=False
+    x, y, freqs, *, normalize=False, weights=None, floating_mean=False
 ):
     return array_namespace(x, y, freqs, weights)
 
@@ -487,7 +486,7 @@ def savgol_filter_signature(x, *args, **kwds):
 
 
 def sawtooth_signature(t, width=1):
-    return array_namespace(t)
+    return array_namespace(t, width)
 
 
 def sepfir2d_signature(input, hrow, hcol):

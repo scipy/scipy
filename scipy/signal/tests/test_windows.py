@@ -742,7 +742,7 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
 
     @skip_xp_backends(np_only=True)
-    def test_degenerate_signle_samples(self, xp):
+    def test_degenerate_single_samples(self, xp):
         # Single samples
         w = windows.dpss(1, 1.)
         xp_assert_equal(w, [1.])

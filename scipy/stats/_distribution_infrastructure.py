@@ -50,7 +50,7 @@ _NO_CACHE = "no_cache"
 #  Add distribution-specific tests - just enough to confirm that distribution is the
 #    one it is supposed to be; maybe check finite vs undefined vs infinite moments.
 #  `_tanhsinh` special case when there are no abscissae between the limits
-#     example: cdf of uniform betweeen 1.0 and np.nextafter(1.0, np.inf)
+#     example: cdf of uniform between 1.0 and np.nextafter(1.0, np.inf)
 #  implement symmetric distribution (take advantage of symmetry)
 #  implement composite distribution (for using different implementations depending on
 #    shape parameters - e.g. t distribution with df = np.inf delegates to normal)
@@ -342,7 +342,7 @@ class _Interval(_Domain):
             - NaN ('nan').
         min, max : ndarray
             The endpoints of the domain.
-        squeezed_based_shape : tuple of ints
+        squeezed_base_shape : tuple of ints
             See _RealParameter.draw.
         rng : np.Generator
             The Generator used for drawing random values.
@@ -372,7 +372,7 @@ class _Interval(_Domain):
             z[~i] = max
 
         elif type_ == 'out':
-            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitary; we just want
+            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitrary; we just want
             zr = max_nn + uniform(1, 5, size=shape)  # some numbers outside domain
             i = rng.random(size=n) < 0.5
             z[i] = zr[i]
@@ -819,7 +819,7 @@ class _Parameterization:
         ----------
         sizes : iterable of shape tuples
             The size of the array to be generated for each parameter in the
-            parameterization. Note that the order of sizes is arbitary; the
+            parameterization. Note that the order of sizes is arbitrary; the
             size of the array generated for a specific parameter is not
             controlled individually as written.
         rng : NumPy Generator
@@ -840,7 +840,7 @@ class _Parameterization:
             A dictionary of parameter name/value pairs.
         """
         # ENH: be smart about the order. The domains of some parameters
-        # depend on others. If the relationshp is simple (e.g. a < b < c),
+        # depend on others. If the relationships is simple (e.g. a < b < c),
         # we can draw values in order a, b, c.
         parameter_values = {}
 
@@ -1305,7 +1305,7 @@ def _generate_example(dist_family):
 
     p = 0.32
     x = round(X.icdf(p), 2)
-    y = round(X.icdf(2 * p), 2)  # noqa: F841
+    y = round(X.icdf(2 * p), 2)
 
     example = f"""
     To use the distribution class, it must be instantiated using keyword
@@ -1507,7 +1507,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     """
     __array_priority__ = 1
-    _parameterizations = []  # type: ignore[var-annotated]
+    _parameterizations = []
 
     ### Initialization
 
@@ -3439,7 +3439,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             raise ValueError(message)
 
         try:
-            import matplotlib.pyplot as plt  # noqa: F401, E402
+            import matplotlib.pyplot as plt
         except ModuleNotFoundError as exc:
             message = ("`matplotlib` must be installed to use "
                        f"`{self.__class__.__name__}.plot`.")
@@ -4435,7 +4435,7 @@ class TransformedDistribution(ContinuousDistribution):
 class TruncatedDistribution(TransformedDistribution):
     """Truncated distribution."""
     # TODO:
-    # - consider avoiding catastropic cancellation by using appropriate tail
+    # - consider avoiding catastrophic cancellation by using appropriate tail
     # - if the mode of `_dist` is within the support, it's still the mode
     # - rejection sampling might be more efficient than inverse transform
 

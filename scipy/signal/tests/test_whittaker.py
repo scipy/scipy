@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy.signal import whittaker_henderson  # type: ignore[attr-defined]
+from scipy.signal import whittaker_henderson
 from scipy.signal._whittaker import (
     _logdet_difference_matrix, _polynomial_fit, _reml, _solveh_banded, _solve_WH_banded,
 )
@@ -22,8 +22,8 @@ def _solve_WH_order2_fast(y, lamb):
     # Convert penalty to convention of Weinert (2007), i.e. A = lambda I + D'D.
     # Note that Weinert denotes the difference matrix M instead of D.
     lamb = 1 / lamb
-    # A = LDL' decompositon, i.e. L is unit lower triangular and banded
-    # (bandwith=2) and D diagonal.
+    # A = LDL' decomposition, i.e. L is unit lower triangular and banded
+    # (bandwidth=2) and D diagonal.
     # First subdiagonal of L is (-e_1, .., -e_{n-1}) and 2nd subdiagonal
     # (f_1, .., f_{n-2}). Diagonal of D is (d_1, .., d_n).
     # The equation A @ x = lamb * y becomes
@@ -132,7 +132,7 @@ def test_polynomial_fit(calc_logdet, lamb):
 
     if not calc_logdet:
         assert logdet == 0
-    
+
     poly2, logdet2 = _polynomial_fit(
         y, lamb, weights=1.23 * np.ones(n), calc_logdet=calc_logdet
     )
@@ -199,7 +199,7 @@ def test_whittaker_small_data():
         ]) / (1 + 6 * la)) @ y
     assert_allclose(wh.x, res, atol=1e-15)
     assert wh.lamb == la
-    
+
     y = np.arange(4)
     wh = whittaker_henderson(y, order=2, lamb=la)
     la2 = la ** 2
@@ -262,7 +262,7 @@ def test_whittaker_limit_infinity_penalty(weights, order):
     assert_allclose(wh.x, poly(x_poly), rtol=10**(-6 + order), atol=1e-5)
     if order == 2:
         # Linear interpolation:
-        # As the sine is positive fom 0 to pi and negative from pi to 2*pi, we expect
+        # As the sine is positive from 0 to pi and negative from pi to 2*pi, we expect
         # a negative slope.
         assert np.diff(wh.x)[0] < 0
 

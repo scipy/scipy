@@ -13,13 +13,12 @@ import gzip
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_, assert_allclose)
 import pytest
-from pytest import raises as assert_raises, warns as assert_warns
+from pytest import raises as assert_raises
 
 import numpy as np
 from numpy import array
 from scipy.sparse import issparse, eye_array, coo_array, csc_array, sparray
 
-import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
 import scipy.io.matlab._byteordercodes as boc
 from scipy.io.matlab._miobase import (matdims, MatWriteError, MatReadError,
@@ -1176,6 +1175,7 @@ def test_logical_sparse():
                         [False, False, False, False]])
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_empty_sparse():
     # Can we read empty sparse matrices?
     sio = BytesIO()
@@ -1380,17 +1380,6 @@ def test_write_multiple_matlab_opaque():
         assert data[name][0]['_TypeSystem'] == "MCOS"
         assert data[name][0]['_ObjectMetadata'].dtype == np.uint32
         assert data[name][0]['_ObjectMetadata'][4, 0] == expected_id
-
-
-def test_deprecation():
-    """Test that access to previous attributes still works."""
-    # This should be accessible immediately from scipy.io import
-    with assert_warns(DeprecationWarning):
-        scipy.io.matlab.mio5_params.MatlabOpaque
-
-    # These should be importable but warn as well
-    with assert_warns(DeprecationWarning):
-        from scipy.io.matlab.miobase import MatReadError  # noqa: F401
 
 
 def test_gh_17992(tmp_path):

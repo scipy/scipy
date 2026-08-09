@@ -2809,7 +2809,7 @@ class TestInvwishart:
         frozen_iw_rvs = iw.rvs(random_state=rng)
 
         # Manually calculate what it should be, based on the decomposition in
-        # https://arxiv.org/abs/2310.15884 of an invers-Wishart into L L',
+        # https://arxiv.org/abs/2310.15884 of an inverse-Wishart into L L',
         # where L A = D, D is the Cholesky factorization of the scale matrix,
         # and A is the lower triangular matrix with the square root of chi^2
         # variates on the diagonal and N(0,1) variates in the lower triangle.

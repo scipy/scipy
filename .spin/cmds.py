@@ -113,7 +113,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
             cflags_unwanted = ('-O0', '-O1', '-O2')
         meson_args = meson_args + (f"-Dbuildtype={buildtype}", )
         if 'CFLAGS' in os.environ.keys():
-            # Check that CFLAGS doesn't contain something that supercedes -O0
+            # Check that CFLAGS doesn't contain something that supersedes -O0
             # for a plain debug build (conda envs tend to set -O2)
             cflags = os.environ['CFLAGS'].split()
             for flag in cflags_unwanted:
@@ -212,7 +212,7 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     `spin test -m full`
 
     For more, see `pytest --help`.
-    """  # noqa: E501
+    """
 
     build_dir = os.path.abspath(kwargs['build_dir'])
     site_package_dir = get_site_packages(build_dir)
@@ -367,53 +367,6 @@ def working_dir(new_dir):
     finally:
         os.chdir(current_dir)
 
-@click.command(context_settings={"ignore_unknown_options": True})
-@meson.build_dir_option
-@click.pass_context
-def mypy(ctx, build_dir):
-    """🦆 Run Mypy tests for SciPy
-    """
-    if is_editable_install():
-        click.secho(
-            "Error: Mypy does not work (well) for editable installs",
-            fg="bright_red",
-        )
-        raise SystemExit(1)
-    else:
-        click.secho(
-                "Invoking `build` prior to running mypy tests:",
-                bold=True, fg="bright_green"
-            )
-        ctx.invoke(build)
-
-    try:
-        import mypy.api
-    except ImportError as e:
-        raise RuntimeError(
-            "Mypy not found. Please install it by running "
-            "pip install -r requirements/dev.txt from the repo root"
-        ) from e
-
-    build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
-    config = os.path.join(root, "mypy.ini")
-    check_path = PROJECT_MODULE
-    install_dir = meson._get_site_packages(build_dir)
-
-    with working_dir(install_dir):
-        os.environ['MYPY_FORCE_COLOR'] = '1'
-        click.secho(f"mypy.api.run --config-file {config} {check_path}",
-                    bold=True, fg="bright_blue")
-        report, errors, status = mypy.api.run([
-            "--config-file",
-            str(config),
-            check_path,
-        ])
-    print(report, end='')
-    print(errors, end='', file=sys.stderr)
-    if status:
-        raise SystemExit(status)
-
 @spin.util.extend_command(test, doc="")
 def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     """🔧 Run doctests of objects in the public API.
@@ -446,7 +399,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
      - This command only doctests public objects: those which are accessible
        from the top-level `__init__.py` file.
 
-    """  # noqa: E501
+    """
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
     if (
         not importlib.util.find_spec("scipy_doctest")
@@ -496,7 +449,7 @@ def refguide_check(ctx, build_dir, *args, **kwargs):
     install_dir = meson._get_site_packages(build_dir)
 
     cmd = [f'{sys.executable}',
-            os.path.join(root, 'tools', 'refguide_check.py')]
+            os.path.join(root, 'tools', 'refguide', 'refguide_check.py')]
 
     if ctx.params["verbose"]:
         cmd += ['-vvv']
@@ -508,7 +461,7 @@ def refguide_check(ctx, build_dir, *args, **kwargs):
     util.run(cmd)
 
     cmd_numpydoc_lint =  [f'{sys.executable}',
-        os.path.join('tools', 'numpydoc_lint.py')
+        os.path.join('tools', 'linting', 'numpydoc_lint.py')
     ]
     util.run(cmd_numpydoc_lint)
 
@@ -545,7 +498,7 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
      - This command only doctests public objects: those which are accessible
        from the top-level `__init__.py` file.
 
-    """  # noqa: E501
+    """
 
     click.secho(
         "Invoking `build` prior to running tests for tutorials:",
@@ -586,7 +539,10 @@ def notes(ctx_obj, version_args):
         sys.argv = version_args
         log_start = sys.argv[0]
         log_end = sys.argv[1]
-    cmd = ["python", "tools/write_release_and_log.py", f"{log_start}", f"{log_end}"]
+    cmd = [
+        "python", "tools/release/write_release_and_log.py",
+        f"{log_start}", f"{log_end}"
+    ]
     click.secho(' '.join(cmd), bold=True, fg="bright_blue")
     util.run(cmd)
 
@@ -605,7 +561,7 @@ def authors(ctx_obj, revision_args):
         sys.argv = revision_args
         start_revision = sys.argv[0]
         end_revision = sys.argv[1]
-    cmd = ["python", "tools/authors.py", f"{start_revision}..{end_revision}"]
+    cmd = ["python", "tools/release/authors.py", f"{start_revision}..{end_revision}"]
     click.secho(' '.join(cmd), bold=True, fg="bright_blue")
     util.run(cmd)
 
@@ -627,11 +583,12 @@ def authors(ctx_obj, revision_args):
 @click.pass_context
 def lint(ctx, fix, diff_against, files, all, no_cython):
     """🔦 Run linter on modified files and check for
-    disallowed Unicode characters and possibly-invalid test names."""
+    disallowed Unicode characters, possibly-invalid test names, and
+    array-creation calls that omit `device=`."""
     cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
-        os.path.join('tools', 'lint.py'),
+        os.path.join('tools', 'linting', 'lint.py'),
         f'--diff-against={diff_against}'
     ]
     if files != "":
@@ -645,14 +602,19 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     util.run(cmd_lint)
 
     cmd_unicode = cmd_prefix + [
-        os.path.join('tools', 'check_unicode.py')
+        os.path.join('tools', 'linting', 'check_unicode.py')
     ]
     util.run(cmd_unicode)
 
     cmd_check_test_name = cmd_prefix + [
-        os.path.join('tools', 'check_test_name.py')
+        os.path.join('tools', 'linting', 'check_test_name.py')
     ]
     util.run(cmd_check_test_name)
+
+    cmd_check_device = cmd_prefix + [
+        os.path.join('tools', 'linting', 'check_nondefault_device.py')
+    ]
+    util.run(cmd_check_device)
 
 
 @click.command()
@@ -744,16 +706,19 @@ def check(ctx, xp_markers, installed_files, symbol_hiding, loaded_sharedlibs, no
 
     if xp_markers:
         os.environ['SCIPY_ARRAY_API'] = '1'
-        cmd = [sys.executable, os.path.join('tools', 'check_xp_untested.py')]
+        cmd = [sys.executable, os.path.join('tools', 'linting', 'check_xp_untested.py')]
         util.run(cmd)
 
     if installed_files:
-        cmd = [sys.executable, os.path.join('tools', 'check_installation.py'),
-               install_dir]
+        cmd = [
+            sys.executable,
+            os.path.join('tools', 'linting', 'check_installation.py'),
+            install_dir,
+        ]
         util.run(cmd)
 
     if symbol_hiding:
-        script = os.path.join(os.path.abspath('tools'),
+        script = os.path.join(os.path.abspath('tools'), 'linting',
                               'check_pyext_symbol_hiding.sh')
         util.run([script, install_dir])
 
@@ -945,7 +910,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
         cmd = ['asv', 'run', '--show-stderr', '--python=same'] + bench_args
         _run_asv(cmd)
     else:
-        # Ensure that we don't have uncommited changes
+        # Ensure that we don't have uncommitted changes
         commit_a, commit_b = [_commit_to_sha(c) for c in commits]
 
         if commit_b == 'HEAD' and _dirty_git_working_dir():
@@ -964,7 +929,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
 def configure_scipy_openblas(blas_variant='32'):
     """Create scipy-openblas.pc and scipy/_distributor_init_local.py
 
-    Requires a pre-installed scipy-openblas32 wheel from PyPI.
+    Requires a pre-installed scipy-openblas{32,64} wheel from PyPI.
     """
     basedir = os.getcwd()
     pkg_config_fname = os.path.join(basedir, "scipy-openblas.pc")

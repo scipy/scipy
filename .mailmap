@@ -1,9 +1,9 @@
 #
-# Canonical author name mapping for git and tools/authors.py, in format:
+# Canonical author name mapping for git and tools/release/authors.py, in format:
 #
 #     Canonical Name <canonical.email@somewhere> Alias Name <alias.email@somewhere>
 #
-# The email address parts should match what is in git log. The tools/authors.py does
+# The email address parts should match what is in git log. The tools/release/authors.py does
 # not care about them, so it is possible to leave the email part empty, but in this
 # case git commands won't recognize the alias.
 #

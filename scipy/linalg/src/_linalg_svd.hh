@@ -1,21 +1,20 @@
+/*
+ * Templated loops for `linalg.svd`
+ */
 #pragma once
-#include "scipy_blas_defines.h"
-#include "_npymath.hh"
-#include "_common_array_utils.hh"
-
 
 namespace sp_linalg {
 
 /*
  * SVD size helper: if A.shape == (m, n),
  * U is either (m, m) or (m, k) and Vh is either (n, n) or (k, n)
- */ 
+ */
 int
 u_vh_shapes(npy_intp m, npy_intp n, char jobz,
             npy_intp *u_shape0, npy_intp *u_shape1,
             npy_intp *vh_shape0, npy_intp *vh_shape1
 ){
-    npy_intp k = m < n ? m : n; 
+    npy_intp k = m < n ? m : n;
 
     switch(jobz) {
         case('N') :
@@ -99,9 +98,9 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     /*
      * Allocate memory and chop the buffer into parts
      *
-     *    lwork     data_size         
+     *    lwork     data_size
      * |----------|-----------|----------|------|
-     * ^          ^           ^          ^      
+     * ^          ^           ^          ^
      * work       data        buf_U     buf_Vh
      *
      * Here
@@ -185,7 +184,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             goto done;
         }
 
-        // copy-and-tranpose U and Vh slices from temp buffers to the output;
+        // copy-and-transpose U and Vh slices from temp buffers to the output;
         // Also advance the output pointers: U, S, Vh are C-contiguous by construction
         if (jobz != 'N') {
             copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
@@ -262,9 +261,9 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     /*
      * Allocate memory and chop the buffer into parts
      *
-     *    lwork     data_size         
+     *    lwork     data_size
      * |----------|-----------|----------|------|
-     * ^          ^           ^          ^      
+     * ^          ^           ^          ^
      * work       data        buf_U     buf_Vh
      *
      * Here
@@ -332,7 +331,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             goto done;
         }
 
-        // copy-and-tranpose U and Vh slices from temp buffers to the output;
+        // copy-and-transpose U and Vh slices from temp buffers to the output;
         // Also advance the output pointers: U, S, Vh are C-contiguous by construction
         if (jobz != 'N') {
             copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);

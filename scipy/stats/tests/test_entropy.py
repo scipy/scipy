@@ -5,7 +5,7 @@ from pytest import raises as assert_raises
 import numpy as np
 
 from scipy import stats
-from scipy.stats import norm, expon  # type: ignore[attr-defined]
+from scipy.stats import norm, expon
 from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)

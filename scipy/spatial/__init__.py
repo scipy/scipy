@@ -109,15 +109,12 @@ Warnings / Errors used in :mod:`scipy.spatial`
 """  # noqa: E501
 
 from ._kdtree import *
-from ._ckdtree import *  # type: ignore[import-not-found]
+from ._ckdtree import *
 from ._qhull import *
 from ._spherical_voronoi import SphericalVoronoi
 from ._plotutils import *
 from ._procrustes import procrustes
 from ._geometric_slerp import geometric_slerp
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import ckdtree, kdtree, qhull
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
