@@ -2974,7 +2974,8 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, xp):
             "pass `lam` explicitly")
     if np.ndim(lam) != 0:
         raise NotImplementedError(
-            "array-valued `lam` is not supported with user-provided knots yet."
+            "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
+            f"got an array of shape {np.shape(lam)}."
         )
     if lam < 0.:
         raise ValueError('Regularization parameter should be non-negative')

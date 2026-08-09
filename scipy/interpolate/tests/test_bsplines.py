@@ -2456,6 +2456,23 @@ def data_file(basename):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)),
                         'data', basename)
 
+# knot vector, x, y values for invalid case tests.
+_x_err = np.linspace(-2.0, 2.0, 100)
+_y_err = _x_err**2 + np.sin(4 * _x_err)
+_t_good = np.r_[[-2.0]*4, [-1.0, 0.0, 1.0], [2.0]*4]
+_t_unsorted = np.r_[[-2.0]*4, [0.0, -1.0, 1.0], [2.0]*4]  # interior swapped
+_t_short = np.r_[[-2.0]*3, [2.0]*3]                       # only 6 knots
+_t_narrow = np.r_[[0.0]*4, [0.5], [1.0]*4]                # data outside [0, 1]
+_t_mult5 = np.r_[[-2.0]*4, [0.0]*5, [2.0]*4]              # multiplicity 5
+
+def _dense_omega(ab, m):
+    """Reconstruct dense symmetric Omega from (4, m) lower-banded storage."""
+    omega = np.zeros((m, m))
+    for i in range(4):
+        omega += np.diag(ab[i, :m - i], -i)
+        if i > 0:
+            omega += np.diag(ab[i, :m - i], i)
+    return omega
 
 @make_xp_test_case(make_smoothing_spline)
 class TestSmoothingSpline:
@@ -2611,18 +2628,11 @@ class TestSmoothingSpline:
 
     @pytest.mark.parametrize("lam", [1e-4, 0.5, 100.0])
     def test_knots_equal_abscissa(self, lam):
-        # Passing explicitly the knot vector the default path builds
-        # internally (data sites, with the boundary knots repeated to
-        # multiplicity 4, i.e. "clamped") must reproduce the default
-        # path: the two solve the same minimization problem over the
-        # same spline space, so the same spline must come out.
-        #
-        # The tolerance tracks the conditioning of the linear system:
-        # its condition number grows linearly with lam (as lam -> inf
-        # the matrix tends to the singular penalty matrix), and the two
-        # paths use different formulations/solvers, so they drift apart
-        # by ~ machine eps * condition number. Hence the lam sweep and
-        # the lam-dependent tolerance.
+        # Explicitly passing the knot vector the default path builds
+        # internally must reproduce the default path exactly.
+        # Tolerance: the two paths use different solvers and drift apart
+        # by ~eps * cond, and cond grows linearly with lam, hence the
+        # lam sweep with lam-dependent tolerance.
         rng = np.random.RandomState(1234)
         n = 10
         x = np.sort(rng.random_sample(n) * 4 - 2)
@@ -2634,17 +2644,10 @@ class TestSmoothingSpline:
         xp_assert_close(spl1.c, spl2.c, atol=1e-12 * max(1.0, lam / 1e-4))
 
     def test_lam_zero_matches_lsq_spline(self):
-        # at lam=0 the penalty vanishes and the smoothing spline reduces
-        # to an ordinary least-squares spline on the same knots.
-        # Fewer coefficients (7) than data points (10) here, so the
-        # lam=0 least-squares problem has a unique solution.
-        #
-        # Tolerance: the two functions reach the coefficients by
-        # different routes (normal equations + banded Cholesky here, a
-        # Gram-based solve in make_lsq_spline). Measured agreement is
-        # ~2e-15 relative (~8 ulp of the O(10) coefficients), i.e.
-        # machine precision; rtol = 1e-13 states that with margin for
-        # BLAS variation across platforms.
+        # at lam=0 the smoothing spline reduces to an ordinary
+        # least-squares spline on the same knots (7 coefficients < 10
+        # data points, so the solution is unique). The two routes agree
+        # to ~8 ulp; rtol leaves margin for BLAS variation.
         rng = np.random.RandomState(1234)
         n = 10
         x = np.sort(rng.random_sample(n) * 4 - 2)
@@ -2664,12 +2667,7 @@ class TestSmoothingSpline:
         ab = _penalty_matrix_banded(t)
         assert ab.shape == (4, m)
 
-        # reconstruct dense symmetric Omega from lower-banded storage
-        omega = np.zeros((m, m))
-        for i in range(4):
-            omega += np.diag(ab[i, :m - i], -i)
-            if i > 0:
-                omega += np.diag(ab[i, :m - i], i)
+        omega = _dense_omega(ab, m)
 
         # constants and straight lines have zero curvature: Omega must
         # NOT penalize them (they span its null space)
@@ -2678,9 +2676,8 @@ class TestSmoothingSpline:
         xp_assert_close(omega @ greville, np.zeros(m), atol=1e-11)
 
     def test_penalty_matrix_matches_R(self):
-        # Penalty matrix vs. R's fda::bsplinepen (values generated with
-        # fda 6.x). Complete session to reproduce, starting from
-        # `sudo apt-get install r-base`, then run `R` and enter:
+        # Penalty matrix vs. R's fda::bsplinepen (values generated
+        # with R 4.5.2, fda 6.3.0). To reproduce, in R:
         #
         #   install.packages("fda")
         #   library(fda)
@@ -2693,15 +2690,10 @@ class TestSmoothingSpline:
         # References:
         # https://www.rdocumentation.org/packages/fda/versions/6.2.0/topics/bsplinepen
         t = np.r_[[0.] * 3, np.arange(6.), [5.] * 3]   # clamped, uniform breaks 0..5
-        m = len(t) - 4                                  # = 8
+        m = len(t) - 4
         ab = _penalty_matrix_banded(t)
 
-        # reconstruct dense symmetric Omega from (4, m) lower-banded storage
-        omega = np.zeros((m, m))
-        for i in range(4):
-            omega += np.diag(ab[i, :m - i], -i)
-            if i > 0:
-                omega += np.diag(ab[i, :m - i], i)
+        omega = _dense_omega(ab, m)
 
         omega_R = np.array([
             [ 12.  , -16.5 ,  3.5  ,  1.   ,  0.   ,  0.   ,  0.  ,   0.  ],
@@ -2719,17 +2711,16 @@ class TestSmoothingSpline:
         # Full fitted spline (not just the penalty matrix) vs R's
         # fda::smooth.basis (method="chol", the default), with user knots
         # away from the data sites, the only external oracle exercising
-        # the user-knots path itself. Complete R session to reproduce,
-        # starting from `sudo apt-get install r-base` and, in R,
-        # install.packages("fda"):
+        # the user-knots path itself. Values generated with R 4.5.2,
+        # fda 6.3.0. To reproduce, in R:
         #
+        #   install.packages("fda")
         #   library(fda)
         #   x <- seq(0, 10, by = 1)
         #   y <- c(1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9)
         #   basis <- create.bspline.basis(rangeval = c(0, 10),
         #                                 breaks = c(0, 2.5, 5, 7.5, 10),
-        #                                 norder = 4)  # norder = degree + 1
-        #   # Lfdobj = 2: penalize the second derivative, i.e. curvature
+        #                                 norder = 4)
         #   fdp <- fdPar(basis, Lfdobj = 2, lambda = 0.5)
         #   fit <- smooth.basis(x, y, fdp)
         #   xtest <- c(0, 0.5, 1.7, 3.3, 5, 6.8, 8.1, 9.4, 10)
@@ -2748,19 +2739,16 @@ class TestSmoothingSpline:
         # vs base R's smooth.spline at knots = clamped data sites.
         # smooth.spline internally rescales x to [0, 1]; its reported
         # lambda maps to ours as lam = lambda_R * (x range)**3.
-        # Reproduce with `sudo apt-get install r-base`, then run `R`
-        # (smooth.spline is in the built-in stats package, nothing more
-        # to install) and enter:
+        # Values generated with R 4.5.2 (smooth.spline is in the
+        # built-in stats package). To reproduce, in R:
         #   x <- seq(0, 10, by = 1)
         #   y <- c(1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9)
         #   sfit <- smooth.spline(x, y, all.knots = TRUE, spar = 0.5)
         #   print(sfit$lambda, digits = 13)    # 2.678534932760e-03
         #   print(predict(sfit, x)$y, digits = 13)
-        # Tolerance is limited to ~2e-5 by smooth.spline itself: on the
-        # identical rescaled problem with the identical lambda,
-        # fda::smooth.basis differs from smooth.spline by the same 2.1e-5
-        # (this implementation matches fda to ~4e-13), so the deviation is
-        # internal to smooth.spline, not to this comparison.
+        # The ~2e-5 tolerance is smooth.spline's own deviation: fda
+        # solving the identical problem differs from it by the same
+        # amount, while this implementation matches fda to ~4e-13.
         x = np.arange(11.0)
         y = np.array([1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9])
         t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
@@ -2775,16 +2763,14 @@ class TestSmoothingSpline:
     def test_matches_julia_smoothing_splines(self):
         # vs Julia's SmoothingSplines.jl (Reinsch algorithm) at
         # knots = clamped data sites. Its lambda parametrization matches
-        # this function's directly (no rescaling). Reproduce with:
+        # this function's directly (no rescaling). Values generated with
+        # Julia 1.12.6, SmoothingSplines.jl 0.3.2. To reproduce, in Julia:
         #   using Pkg; Pkg.add("SmoothingSplines")
         #   using SmoothingSplines
         #   X = collect(0.0:1.0:10.0)
         #   Y = [1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9]
         #   spl = fit(SmoothingSpline, X, Y, 0.5)
         #   predict(spl)     # printed with digits=12
-        # Install Julia as:
-        # https://julialang.org/downloads or
-        #  `curl -fsSL https://install.julialang.org | sh`
         x = np.arange(11.0)
         y = np.array([1.2, 0.8, 2.1, 1.9, 3.2, 2.8, 4.1, 3.7, 5.0, 4.6, 5.9])
         t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
@@ -2800,8 +2786,8 @@ class TestSmoothingSpline:
         # knots = clamped data sites. csaps minimizes
         # p*sum((y - f)^2) + (1-p)*integral(f''^2), so its parameter maps
         # to this function's as lam = (1 - p)/p (verified exact).
-        # Reproduce with (`sudo apt install octave`, then in octave
-        # `pkg install -forge splines`):
+        # Values generated with Octave 11.1.0, splines package 1.3.5
+        # (`pkg install -forge splines`). To reproduce, in Octave:
         #
         #   pkg load splines
         #   x = 0:1:10;
@@ -2818,55 +2804,38 @@ class TestSmoothingSpline:
                             5.067125662266, 5.691724669597])
         xp_assert_close(spl(x), oc_vals, atol=1e-10)
 
-    def test_user_defined_knots_invalid_cases(self):
-        rng = np.random.RandomState(1234)
-        n = 100
-        x = np.sort(rng.random_sample(n) * 4 - 2)
-        y = x**2 + np.sin(4*x) + x**3 + rng.normal(0., 1.5, n)
-        t = np.r_[[x[0]]*4, [-1.0, 0.0, 1.0], [x[-1]]*4]
-
-        # lam is required with user knots (GCV not supported yet)
-        with assert_raises(NotImplementedError, match="pass `lam` explicitly"):
-            make_smoothing_spline(x, y, t=t)
-
-        # array-valued lam is not supported with user knots
-        with assert_raises(NotImplementedError, match="array-valued"):
-            make_smoothing_spline(x, y, t=t, lam=np.ones(5))
-
-        # negative lam
-        with assert_raises(ValueError, match="non-negative"):
-            make_smoothing_spline(x, y, t=t, lam=-1.0)
-
-        # batched y is not supported with user knots
-        with assert_raises(NotImplementedError, match="1-D"):
-            make_smoothing_spline(x, np.c_[y, y], t=t, lam=0.5)
-
-        # t must be non-decreasing
-        t_bad = t.copy()
-        t_bad[5], t_bad[6] = t_bad[6], t_bad[5]
-        with assert_raises(ValueError, match="non-decreasing"):
-            make_smoothing_spline(x, y, t=t_bad, lam=0.5)
-
-        # all data must lie within the knot support [t[3], t[-4]]
-        t_short = np.r_[[0.0]*4, [0.5], [1.0]*4]   # covers [0, 1], data does not fit
-        with assert_raises(ValueError, match="within the base interval"):
-            make_smoothing_spline(x, y, t=t_short, lam=0.5)
-
-        # non-finite knots are rejected before any further checks
-        for t_bad in (np.r_[[x[0]]*4, [0.0, np.inf], [x[-1]]*4],
-                      np.r_[[x[0]]*4, [0.0], [np.inf]*4],
-                      np.r_[[x[0]]*4, [0.0, np.nan], [x[-1]]*4]):
-            with assert_raises(ValueError, match="infs or nans"):
-                make_smoothing_spline(x, y, t=t_bad, lam=0.5)
-
-        # too few knots: a cubic spline needs at least 8
-        with assert_raises(ValueError, match="at least 8 knots"):
-            make_smoothing_spline(x, y, t=np.r_[[x[0]]*3, [x[-1]]*3], lam=0.5)
-
-        # knot multiplicity above 4 makes basis functions identically zero
-        t_mult5 = np.r_[[x[0]]*4, [0.0]*5, [x[-1]]*4]
-        with assert_raises(ValueError, match="multiplicity"):
-            make_smoothing_spline(x, y, t=t_mult5, lam=0.5)
+    @pytest.mark.parametrize("y, kwargs, err, match", [
+        pytest.param(_y_err, dict(t=_t_good), NotImplementedError,
+                     "pass `lam` explicitly", id="no-lam"),
+        pytest.param(_y_err, dict(t=_t_good, lam=np.ones(5)),
+                     NotImplementedError, "must be a scalar", id="array-lam"),
+        pytest.param(_y_err, dict(t=_t_good, lam=-1.0),
+                     ValueError, "non-negative", id="negative-lam"),
+        pytest.param(np.c_[_y_err, _y_err], dict(t=_t_good, lam=0.5),
+                     NotImplementedError, "1-D", id="batched-y"),
+        pytest.param(_y_err, dict(t=_t_unsorted, lam=0.5),
+                     ValueError, "non-decreasing", id="unsorted-t"),
+        pytest.param(_y_err, dict(t=_t_short, lam=0.5),
+                     ValueError, "at least 8 knots", id="too-few-knots"),
+        pytest.param(_y_err, dict(t=_t_narrow, lam=0.5),
+                     ValueError, "within the base interval",
+                     id="data-outside-t"),
+        pytest.param(_y_err, dict(t=np.r_[[-2.0]*4, [0.0, np.inf], [2.0]*4],
+                                  lam=0.5),
+                     ValueError, "infs or nans", id="inf-interior"),
+        pytest.param(_y_err, dict(t=np.r_[[-2.0]*4, [0.0], [np.inf]*4],
+                                  lam=0.5),
+                     ValueError, "infs or nans", id="inf-boundary"),
+        pytest.param(_y_err, dict(t=np.r_[[-2.0]*4, [0.0, np.nan], [2.0]*4],
+                                  lam=0.5),
+                     ValueError, "infs or nans", id="nan-in-t"),
+        pytest.param(_y_err, dict(t=_t_mult5, lam=0.5),
+                     ValueError, "multiplicity", id="multiplicity-over-4"),
+    ])
+    def test_user_defined_knots_invalid_cases(self, y, kwargs, err, match):
+        # invalid inputs on the user-knots path raise with a clear message
+        with assert_raises(err, match=match):
+            make_smoothing_spline(_x_err, y, **kwargs)
 
     def test_duplicate_interior_knots(self):
         # interior knots may repeat: each repetition reduces continuity
@@ -2892,11 +2861,7 @@ class TestSmoothingSpline:
         t2 = np.r_[[0.]*4, [0.5, 0.5], [1.]*4]
         m2 = len(t2) - 4
         ab = _penalty_matrix_banded(t2)
-        omega = np.zeros((m2, m2))
-        for i in range(4):
-            omega += np.diag(ab[i, :m2 - i], -i)
-            if i > 0:
-                omega += np.diag(ab[i, :m2 - i], i)
+        omega = _dense_omega(ab, m2)
         omega_R = np.array([
             [  96., -144.,   24.,   24.,    0.,    0.],
             [-144.,  288., -144.,    0.,    0.,    0.],
