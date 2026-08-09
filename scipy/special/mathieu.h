@@ -79,19 +79,16 @@ struct mathieu_cv {
             }
         }
 
+        constexpr const char *name = (FuncParity == Even) ? "mathieu_a" : "mathieu_b";
         if (m > 500) {
-            // Fallback to Zhang and Jin implementation for very high order.
-            if constexpr (FuncParity == Even) {
-                return xsf::cem_cva(m, q);
-            }
-            return xsf::sem_cva(m, q);
+            xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
+            return std::numeric_limits<double>::quiet_NaN();
         }
 
         double q_d = static_cast<double>(q);
 
         auto int_m = static_cast<int>(m);
         auto N = get_partial_sum_N(int_m, q_d);
-        constexpr const char *name = (FuncParity == Even) ? "mathieu_a" : "mathieu_b";
 
         try {
             // Make sure allocation actually succeeds.
@@ -292,7 +289,7 @@ struct mathieu_xem {
             return;
         }
 
-        if (m > 100000) {
+        if (m > 500) {
             out = std::numeric_limits<T>::quiet_NaN();
             out_diff = std::numeric_limits<T>::quiet_NaN();
             xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
@@ -315,7 +312,7 @@ struct mathieu_xem {
         if (q_d != last_q || int_m != last_m) {
             // Chooses
             auto N = get_partial_sum_N(int_m, q_d);
-            if (N > 100000) {
+            if (N > 10000) {
                 out = std::numeric_limits<T>::quiet_NaN();
                 out_diff = std::numeric_limits<T>::quiet_NaN();
                 xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
