@@ -76,7 +76,9 @@ def shgo(
         another specified number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
-        complex. Default is 1.
+        complex. Default is 1. This value is ignored if any of ``maxiter``,
+        ``maxfev``, ``maxev``, ``minhgrd``, or ``f_min`` in ``options`` is set
+        to a value other than ``None``.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
