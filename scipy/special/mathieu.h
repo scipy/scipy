@@ -80,7 +80,7 @@ struct mathieu_cv {
         }
 
         constexpr const char *name = (FuncParity == Even) ? "mathieu_a" : "mathieu_b";
-        if (m > 500) {
+        if (m > 20000) {
             xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
             return std::numeric_limits<double>::quiet_NaN();
         }
@@ -293,7 +293,7 @@ struct mathieu_xem {
             return;
         }
 
-        if (m > 500) {
+        if (m > 20000) {
             out = std::numeric_limits<T>::quiet_NaN();
             out_diff = std::numeric_limits<T>::quiet_NaN();
             xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
@@ -316,7 +316,7 @@ struct mathieu_xem {
         if (q_d != last_q || int_m != last_m) {
             // Chooses
             auto N = get_partial_sum_N(int_m, q_d);
-            if (N > 10000) {
+            if (N > 20000) {
                 out = std::numeric_limits<T>::quiet_NaN();
                 out_diff = std::numeric_limits<T>::quiet_NaN();
                 xsf::set_error(name, SF_ERROR_NO_RESULT, NULL);
