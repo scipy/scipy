@@ -119,6 +119,15 @@ jobs:
       - pixi/pixi_setup:
           env: "docs"
 
+      # TODO REMOVE: prove the sphinx 9.1 docs build works once upstream fixes land
+      - run:
+          name: install unreleased sphinx and numpydoc fixes
+          command: |
+            pixi exec uv pip install --python .pixi/envs/docs/bin/python --no-deps \
+              "sphinx @ git+https://github.com/larsoner/sphinx.git@fix" \
+              "numpydoc @ git+https://github.com/larsoner/numpydoc.git@fix/sphinx10-autodoc-options"
+            pixi run --skip-deps -e docs python -c "import sphinx, numpydoc; print('sphinx', sphinx.__version__, '| numpydoc', numpydoc.__version__)"
+
       - run:
           name: build docs
           no_output_timeout: 25m
