@@ -132,7 +132,6 @@ double sign_X0(int m, double q) {
     if (q > 0.0) {
         return 1.0;
     }
-    // q < 0
     int exponent;
 
     if (m % 2) {
@@ -232,13 +231,13 @@ struct mathieu_coeffs {
         }
 
         double anchor;
-        constexpr double threshold = 100.0 * std::numeric_limits<double>::epsilon();
+        double threshold = 8 * static_cast<double>(X.size()) * std::numeric_limits<double>::epsilon();
         if (scale != 0 && std::abs(s) > threshold * scale) {
-            /* the computation of s was well-conditioned, we can use it as the anchor to get the
+            /* the computation of s was well-resolved, we can use it as the anchor to get the
              * correct sign. */
             anchor = s;
         } else {
-            /* since the computation of s was not well-conditioned, we rely on
+            /* since the computation of s was not well-resolved, we rely on
              * https://dlmf.nist.gov/28.4#ii, https://dlmf.nist.gov/28.4#iii,
              * and https://dlmf.nist.gov/28.4#v which together imply that the first
              * nonzero coefficient will have the desired sign for q > 0, and give a rule
@@ -327,8 +326,11 @@ struct mathieu_xem {
             try {
                 // Make sure allocation actually succeeds.
                 coefs.resize(N);
-            } catch (const std::bad_alloc &) {
+            } catch (const std::exception &) {
+                out = std::numeric_limits<T>::quiet_NaN();
+                out_diff = std::numeric_limits<T>::quiet_NaN();
                 xsf::set_error(name, SF_ERROR_MEMORY, NULL);
+                last_m = -1; // invalidate cache upon error
                 return;
             }
 
