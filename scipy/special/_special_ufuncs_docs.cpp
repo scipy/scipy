@@ -377,6 +377,178 @@ const char *_landau_isf_doc = R"(
     scalar or ndarray
     )";
 
+const char *_nbinom_cdf_doc = R"(
+    _nbinom_cdf(x, r, p)
+
+    Cumulative density function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_isf_doc = R"(
+    _nbinom_isf(x, r, p)
+
+    Inverse survival function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_kurtosis_excess_doc = R"(
+    _nbinom_kurtosis_excess(r, p)
+
+    Kurtosis excess of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_mean_doc = R"(
+    _nbinom_mean(r, p)
+
+    Mean of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_pmf_doc = R"(
+    _nbinom_pmf(x, r, p)
+
+    Probability mass function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_ppf_doc = R"(
+    _nbinom_ppf(x, r, p)
+
+    Percent point function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_sf_doc = R"(
+    _nbinom_sf(x, r, p)
+
+    Survival function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_skewness_doc = R"(
+    _nbinom_skewness(r, p)
+
+    Skewness of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_variance_doc = R"(
+    _nbinom_variance(r, p)
+
+    Variance of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_ncf_isf_doc = R"(
     _ncf_isf(x, v1, v2, l)
 
