@@ -3,6 +3,7 @@
 
 import re
 import numpy as np
+import warnings
 
 
 def _parse_core_ndims(signature):
@@ -53,11 +54,30 @@ def _allocate_out(args, shape, dtype, order, subok):
     return np.empty(shape, dtype=dtype, order=order)
 
 
-def _get_prototype(args):
-    """Find the input argument with the highest __array_priority__."""
-    if not args:
-        return None
-    return
+def _normalize_out(out, nout):
+    """Validate ``out`` and return it as a tuple of length ``nout``.
+
+    Entries may be None, meaning that output should be allocated for the user,
+    matching the behavior of a plain ufunc.
+
+    """
+    if out is None:
+        return (None,)*nout
+    if not isinstance(out, tuple):
+        if nout > 1:
+            raise TypeError("'out' must be a tuple of arrays")
+        out_tuple = (out,)
+    else:
+        out_tuple = out
+    if len(out_tuple) != nout:
+        raise ValueError(
+            f"The 'out' tuple must have exactly {nout} entries: one per "
+            f"ufunc output"
+        )
+    for entry in out_tuple:
+        if entry is not None and not isinstance(entry, np.ndarray):
+            raise TypeError("return arrays must be of ArrayType")
+    return out_tuple
 
 
 def _with_cache_optimization(
@@ -67,6 +87,7 @@ def _with_cache_optimization(
         docstring,
         ufunc,
         cache_arg_indices,
+        module="scipy.special",
 ):
     """Helper to ensure optimal iteration order for ufuncs that use caching.
 
@@ -86,6 +107,8 @@ def _with_cache_optimization(
     cache_arg_indices : list[int]
        Arguments to ufunc which are used in the kernel to compute an output
        which is being cached for reuse when iterating over other arguments.
+    module : str, optional
+       Value to use for the ``__module__`` attribute of the wrapper.
 
     Returns
     -------
@@ -146,14 +169,18 @@ def _with_cache_optimization(
             subok=True,
             signature=None,
     ):
-        args = [np.asanyarray(arg) if subok else np.asarray(arg) for arg in args]
+        asarray = np.asanyarray if subok else np.asarray
+        args = [asarray(arg) for arg in args]
         kwargs = dict(casting=casting, subok=subok)
+
+        # ``where`` is normalized once, up front, so that the fast path and the
+        # transposed path below agree on its meaning. ``True`` is the "no mask"
+        # sentinel and is not forwarded, matching a plain ufunc call.
+        if is_elementwise and where is not True:
+            where = asarray(where)
+            kwargs["where"] = where
         if out is not None:
             kwargs["out"] = out
-            if is_elementwise:
-                if not isinstance(where, bool):
-                    where = np.asanyarray(where) if subok else np.asarray(where)
-                kwargs["where"] = where
         if signature is not None:
             kwargs["signature"] = signature
         if dtype is not None:
@@ -165,18 +192,30 @@ def _with_cache_optimization(
             kwargs["order"] = order
             return ufunc(*args, **kwargs)
 
+        out_tuple = _normalize_out(out, ufunc.nout)
+
+        if out is None and is_elementwise and where is not True:
+            # The transposed path always passes ``out`` to the ufunc, so NumPy
+            # can't issue this warning itself. Match its wording.
+            warnings.warn(
+                "'where' used without 'out', expect unitialized memory in "
+                "output. If this is intentional, use out=None.",
+                UserWarning,
+                stacklevel=3,
+            )
+
         # To get batch_shapes, need to exclude core dimensions. Again, the core
         # dimensions won't participate in broadcasting.
         batch_shapes = [
             arg.shape[:-core_ndims[i]] if core_ndims[i] > 0 else arg.shape
             for i, arg in enumerate(args)
         ]
-        if is_elementwise and not isinstance(where, bool):
+        if is_elementwise and where is not True:
             batch_shapes.append(where.shape)
 
-        if out is not None:
-            out_sample = out[0] if isinstance(out, tuple) else out
-            batch_shapes.append(out_sample.shape)
+        batch_shapes.extend(
+            entry.shape for entry in out_tuple if entry is not None
+        )
 
         batch_shape = np.broadcast_shapes(*batch_shapes)
         batch_ndim = len(batch_shape)
@@ -221,57 +260,46 @@ def _with_cache_optimization(
                 axes=sorted_batch_axes,
             )
 
-        # Handle output array (use provided 'out' or pre-allocate)
-        if out is not None:
-            out_final = out
-            if ufunc.nout == 1:
-                # a view of the provided output array with axes sorted as needed.
-                out_t = np.transpose(out_final, axes=sorted_batch_axes)
-            else:
-                out_t = tuple(
-                    np.transpose(x, axes=sorted_batch_axes) for x in out_final
-                )
-        else:
-            # Respect users choice of order, and preserve F-contiguity is all inputs
-            # are F-contiguous and order="K" or "A". This departs from the typical
-            # meaning of order = "K", which enables NumPy's clever logic to determine
-            # a cache friendly iteration order. This is because we hijack the iteration
-            # order for the benefit of in-ufunc caches.
+        # Allocate any outputs the user didn't supply. A plain ufunc allocates
+        # for each None entry of ``out`` too.
+        if any(entry is None for entry in out_tuple):
+            # Respect the user's choice of order. _resolve_alloc_order
+            # reproduces NumPy's layout rules from the untransposed inputs,
+            # since we hijack the iteration order for the benefit of in-ufunc
+            # caches and so can't let NumPy pick the layout itself.
             alloc_order = _resolve_alloc_order(args, order)
             if dtype is not None:
-                out_dtype = np.dtype(dtype)
+                out_dtypes = (np.dtype(dtype),)*ufunc.nout
             else:
                 resolve_kwargs = {"casting": casting}
                 if signature is not None:
                     resolve_kwargs["signature"] = signature
-                input_dtypes = tuple(arg.dtype for arg in args_t) + (None,)*ufunc.nout
-                out_dtype = ufunc.resolve_dtypes(
+                given_dtypes = tuple(
+                    None if entry is None else entry.dtype for entry in out_tuple
+                )
+                input_dtypes = tuple(arg.dtype for arg in args_t) + given_dtypes
+                out_dtypes = ufunc.resolve_dtypes(
                     input_dtypes, **resolve_kwargs
-                )[-1]
-            if ufunc.nout == 1:
-                out_final = _allocate_out(
-                    args, batch_shape, out_dtype, alloc_order, subok
-                )
-                # a view of the output array with axes sorted as needed.
-                out_t = np.transpose(out_final, axes=sorted_batch_axes)
-            else:
-                out_final = tuple(
-                    _allocate_out(
-                        args, batch_shape, out_dtype, alloc_order, subok
-                    )
-                    for _ in range(ufunc.nout)
-                )
-                out_t = tuple(
-                    np.transpose(x, axes=sorted_batch_axes) for x in out_final
-                )
-        kwargs["out"] = out_t
+                )[ufunc.nin:]
+            outputs = tuple(
+                _allocate_out(args, batch_shape, out_dtype, alloc_order, subok)
+                if entry is None else entry
+                for entry, out_dtype in zip(out_tuple, out_dtypes)
+            )
+        else:
+            outputs = out_tuple
+
+        # Views of the output arrays with axes sorted as needed.
+        kwargs["out"] = tuple(
+            np.transpose(x, axes=sorted_batch_axes) for x in outputs
+        )
         kwargs["order"] = "C"
 
-        # Set out to the above view, but return the C contiguous output.
-        # This avoids having non-contiguous output.
+        # Set out to the above views, but return the untransposed outputs. This
+        # avoids having non-contiguous output.
         ufunc(*args_t, **kwargs)
 
-        return out_final
+        return outputs[0] if ufunc.nout == 1 else outputs
 
     # Do some metaprogramming with exec so that the arg names and func
     # name are as expected.
@@ -300,13 +328,17 @@ def _with_cache_optimization(
     signature_kwargs = ", ".join(kwarg_defs)
     call_kwargs = ", ".join(kwarg_calls)
     code = (
-        f"""def {name}({arg_str}, /, out=None, *, {signature_kwargs}, **kwargs):
-            return _wrapper({arg_str}, {call_kwargs}, **kwargs)
+        f"""def {name}({arg_str}, /, out=None, *, {signature_kwargs}):
+            return _wrapper({arg_str}, {call_kwargs})
         """
         )
     namespace = {"_wrapper": _wrapper}
     exec(code, namespace)
     wrapper = namespace[name]
     wrapper.__doc__ = docstring
+    # The exec namespace has no __name__, so __module__ would otherwise be None,
+    # which confuses Sphinx, inspect, and pickling by reference.
+    wrapper.__module__ = module
+    wrapper.__qualname__ = name
     wrapper.ufunc = ufunc
     return wrapper
