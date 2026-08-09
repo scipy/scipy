@@ -417,6 +417,11 @@ math implement by a few of the metrics.
 
 special
 ```````
+Development of many special-function implementations now takes place in the
+`XSF project <https://github.com/scipy/xsf>`__, which provides C++ kernels used
+by SciPy. See the `XSF roadmap <https://github.com/scipy/xsf/issues/220>`__ for
+current plans for this work.
+
 Though there are still a lot of functions that need improvements in precision,
 probably the only show-stoppers are hypergeometric functions, parabolic cylinder
 functions, and spheroidal wave functions. Three possible ways to handle this:
