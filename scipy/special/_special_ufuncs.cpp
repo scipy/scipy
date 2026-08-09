@@ -81,6 +81,12 @@ extern const char *_skewnorm_cdf_doc;
 extern const char *_skewnorm_isf_doc;
 extern const char *_skewnorm_ppf_doc;
 extern const char *_gen_harmonic_doc;
+extern const char *_hypergeom_pmf_doc;
+extern const char *_hypergeom_cdf_doc;
+extern const char *_hypergeom_sf_doc;
+extern const char *_hypergeom_mean_doc;
+extern const char *_hypergeom_variance_doc;
+extern const char *_hypergeom_skewness_doc;
 extern const char *_igam_fac_doc;
 extern const char *_invgauss_isf_doc;
 extern const char *_invgauss_ppf_doc;
@@ -440,6 +446,42 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(xsf::gen_harmonic)},
                            "_gen_harmonic", _gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_gen_harmonic", _gen_harmonic);
+
+    PyObject *_hypergeom_pmf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(hypergeom_pmf_float),
+                           static_cast<xsf::numpy::dddd_d>(hypergeom_pmf_double)},
+                          "_hypergeom_pmf", _hypergeom_pmf_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_pmf", _hypergeom_pmf);
+
+    PyObject *_hypergeom_cdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(hypergeom_cdf_float),
+                           static_cast<xsf::numpy::dddd_d>(hypergeom_cdf_double)},
+                          "_hypergeom_cdf", _hypergeom_cdf_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_cdf", _hypergeom_cdf);
+
+    PyObject *_hypergeom_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(hypergeom_sf_float),
+                           static_cast<xsf::numpy::dddd_d>(hypergeom_sf_double)},
+                          "_hypergeom_sf", _hypergeom_sf_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_sf", _hypergeom_sf);
+
+    PyObject *_hypergeom_mean =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(hypergeom_mean_float),
+                           static_cast<xsf::numpy::ddd_d>(hypergeom_mean_double)},
+                          "_hypergeom_mean", _hypergeom_mean_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_mean", _hypergeom_mean);
+
+    PyObject *_hypergeom_variance =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(hypergeom_variance_float),
+                           static_cast<xsf::numpy::ddd_d>(hypergeom_variance_double)},
+                          "_hypergeom_variance", _hypergeom_variance_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_variance", _hypergeom_variance);
+
+    PyObject *_hypergeom_skewness =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(hypergeom_skewness_float),
+                           static_cast<xsf::numpy::ddd_d>(hypergeom_skewness_double)},
+                          "_hypergeom_skewness", _hypergeom_skewness_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_skewness", _hypergeom_skewness);
 
     PyObject *_invgauss_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(invgauss_isf_float),
