@@ -436,6 +436,9 @@ def test_whittaker_reml(weights):
         (np.ones((2, 10)), 100, 2, None, ValueError, "greater than order"),
         #no support for lamb="reml" yet for 2D WH signals
         (np.ones((10, 10)), "reml", 2, None, NotImplementedError, "reml"),
+        (np.ones((10, 10)), 100, (2, 3), None, TypeError, "order must be an integer"),
+        # reject a 0D signal
+        (5.0, 1, 2, None, ValueError, "must be 1D or 2D"),
     ]
 )
 def test_wh_2d_raises(signal, lamb, order, weights, err, msg):
@@ -448,10 +451,10 @@ def test_wh_2d_raises(signal, lamb, order, weights, err, msg):
         [
             (np.random.default_rng(42).standard_normal((20, 15)), 100, 2),
             (np.random.default_rng(42).standard_normal((20, 20)), (100, 50), 2),
-            (np.random.default_rng(42).standard_normal((20, 20)), 100, (2, 3)),
         ],
 )
 def test_wh_2d_output_prop(signal, lamb, order):
+    """Basic sanity check on the 2D solver output."""
     res = whittaker_henderson(signal, lamb=lamb, order=order)
     assert res.x.shape == signal.shape
     assert np.isfinite(res.x).all()
@@ -465,7 +468,7 @@ def test_wh_2d_1d_consistency():
     assert_allclose(res_1d.x, res_2d.x.ravel(), atol=1e-6)
 
 def test_wh_2d_flat_signal():
-    # return unchanged if signal is constant
+    """Tests to check if return is unchanged if signal is constant"""
     signal = np.ones((10, 10))
     res = whittaker_henderson(signal, lamb=100, order=2)
     assert_allclose(res.x, signal)
@@ -486,7 +489,7 @@ def test_wh_2d_small_lamb(lamb, rtol, atol):
         assert not np.may_share_memory(res.x, signal)
 
 def test_wh_2d_lamb_inf():
-    # for a very large lamb, op must approach a flat surface
+    """Tests that for a very large lamb, output must approach a flat surface"""
     rng = np.random.default_rng(42)
     signal = rng.standard_normal((20, 20))
     res = whittaker_henderson(signal, lamb=1e10, order=2)
@@ -497,12 +500,12 @@ def test_wh_2d_lamb_inf():
     assert res_rough < signal_rough * 1e-3
 
 def test_wh_2d_lamb_return():
-    # check if function returns correct value of lamb
+    """Tests to check if function returns correct value of lamb"""
     res = whittaker_henderson(np.ones((10, 10)), lamb=50, order=2)
     assert res.lamb == 50
 
 def test_wh_2d_uniform_weights():
-    # uniform weight and no weights should return same result
+    """Tests to check if uniform weight and no weights should return same result"""
     rng = np.random.default_rng(42)
     signal = rng.standard_normal((20, 20))
     res_no_weights = whittaker_henderson(signal, lamb=100, order=2)
@@ -511,7 +514,7 @@ def test_wh_2d_uniform_weights():
     assert_allclose(res_no_weights.x, res_weights.x, atol=1e-6)
 
 def test_wh_2d_weight_interpolation():
-    # zero-weight region must smoothly interpolate, not get zeroed
+    """Tests to see that a zero-weight region must smoothly interpolate, not get zeroed"""
     rng = np.random.default_rng(42)
     signal = rng.standard_normal((20, 20))
     weights = np.ones((20, 20))
@@ -525,7 +528,7 @@ def test_wh_2d_weight_interpolation():
     [(10, 10), (5, 20), (20, 5), (30, 30)]
 )
 def test_wh_2d_shapes(shape):
-    # check ability of smoother to handle different non-square shapes
+    """Tests the ability of smoother to handle different non-square shapes"""
     rng = np.random.default_rng(42)
     signal = rng.standard_normal(shape)
     res = whittaker_henderson(signal, lamb=100, order=2)
