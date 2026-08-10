@@ -1009,9 +1009,20 @@ class SHGO:
                          f' (minimum growth = {self.minhgrd})')
         return self.stop_global
 
-    def stopping_criteria(self):
+    def stopping_criteria(self, between_it=True):
         """
         Various stopping criteria ran every iteration
+
+        Parameters
+        ----------
+        between_it : bool
+            The homology growth criterion (``minhgrd``) tracks the growth
+            of the homology group rank *between* outer sampling
+            iterations. It is stateful, so it must only be evaluated from
+            `iterate_all`'s outer loop, once per iteration. Pass
+            ``between_it=False`` for calls made from within a single
+            iteration (e.g. from `minimise_pool`) so that they don't
+            consume the growth this criterion is meant to measure.
 
         Returns
         -------
@@ -1029,7 +1040,7 @@ class SHGO:
             self.finite_time()
         if self.f_min_true is not None:
             self.finite_precision()
-        if self.minhgrd is not None:
+        if self.minhgrd is not None and between_it:
             self.finite_homology_growth()
         return self.stop_global
 
@@ -1222,7 +1233,7 @@ class SHGO:
 
         while not self.stop_l_iter:
             # Global stopping criteria:
-            self.stopping_criteria()
+            self.stopping_criteria(between_it=False)
 
             # Note first iteration is outside loop:
             if force_iter:
