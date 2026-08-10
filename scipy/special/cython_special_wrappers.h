@@ -213,6 +213,11 @@ double xsf_struve_h(double v, double z);
 
 double xsf_struve_l(double v, double z);
 
+double special_mathieu_a(double m, double q);
+double special_mathieu_b(double m, double q);
+void special_mathieu_cem(double m, double q, double x, double* out, double* out_diff);
+void special_mathieu_sem(double m, double q, double x, double* out, double* out_diff);
+
 // Exp
 
 double xsf_expm1(double x);
