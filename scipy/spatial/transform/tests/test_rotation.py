@@ -1343,7 +1343,7 @@ def test_mean(xp, ndim: int):
     axes = xp.reshape(axes, (1,) * (ndim - 1) + (6, 3))
     thetas = xp.linspace(0, xp.pi / 2, 100)
     desired = xp.asarray(0.0)[()]
-    atol = 1.5e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
+    atol = 1e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
     for t in thetas:
         r_mean = Rotation.from_rotvec(t * axes).mean()
         assert r_mean.shape == ()
@@ -1382,7 +1382,7 @@ def test_mean_axis(xp, ndim: int):
 def test_mean_compare_axis(xp):
     # Create a random set of rotations and compare the mean over an axis with the
     # mean without axis of the sliced quaternion
-    atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 1.5e-6
+    atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 1e-6
     rng = np.random.default_rng(0)
     q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
     r = Rotation.from_quat(q)
