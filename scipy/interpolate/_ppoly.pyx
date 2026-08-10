@@ -12,7 +12,7 @@ cimport cython
 cimport libc.stdlib
 cimport libc.math
 
-from scipy.linalg.cython_lapack cimport dgeev
+from scipy.linalg.cython_lapack cimport blas_int, dgeev
 
 include "_poly_common.pxi"
 
@@ -745,8 +745,9 @@ cdef int croots_poly1(const double[:,:,::1] c, double y, int ci, int cj,
     cdef double *a
     cdef double *work
     cdef double a0, a1, a2, d, br, bi, cc
-    cdef int lwork, n, i, j, order
-    cdef int nworkspace, info
+    cdef int n, i, j
+    cdef blas_int order, lwork, info
+    cdef int nworkspace
 
     n = c.shape[0]
 

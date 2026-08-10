@@ -2,7 +2,7 @@ import math
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import xp_copy
+from scipy._lib._array_api import xp_copy, xp_device
 
 
 def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
@@ -193,7 +193,8 @@ def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
         # If the bracket is no longer valid, report failure (unless a function
         # tolerance is met, as detected above).
         i = (xp.sign(work.f1) == xp.sign(work.f2)) & ~stop
-        NaN = xp.asarray(xp.nan, dtype=work.xmin.dtype)
+        NaN = xp.asarray(xp.nan, dtype=work.xmin.dtype,
+                         device=xp_device(work.xmin))
         work.xmin[i], work.fmin[i], work.status[i] = NaN, NaN, eim._ESIGNERR
         stop[i] = True
 
@@ -418,7 +419,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None
     func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
-    phi = xp.asarray(0.5 + 0.5*5**0.5, dtype=dtype)[()]  # golden ratio
+    phi = xp.asarray(0.5 + 0.5*5**0.5, dtype=dtype,
+                     device=xp_device(x1))[()]  # golden ratio
     status = xp.full_like(x1, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 3  # three function evaluations performed above
     fatol = xp.finfo(dtype).smallest_normal if fatol is None else fatol

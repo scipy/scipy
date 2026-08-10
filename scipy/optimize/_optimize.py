@@ -41,7 +41,9 @@ from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng,
                               wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_device, xp_promote
+)
 from scipy._external import array_api_extra as xpx
 
 
@@ -235,7 +237,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         derivatives (`fun`, `jac` functions).
     bounds : sequence, optional
         Bounds on variables. 'new-style' bounds are required.
-    eps : float or ndarray
+    epsilon : float or ndarray
         If ``jac is None`` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     finite_diff_rel_step : None or array_like, optional
@@ -388,7 +390,7 @@ def rosen(x):
     return r
 
 
-@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
+@xp_capabilities()
 def rosen_der(x):
     """
     The derivative (i.e. gradient) of the Rosenbrock function.
@@ -422,10 +424,10 @@ def rosen_der(x):
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
     der = xp.zeros_like(x)
-    der[1:-1] = (200 * (xm - xm_m1**2) -
-                 400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm))
-    der[0] = -400 * x[0] * (x[1] - x[0]**2) - 2 * (1 - x[0])
-    der[-1] = 200 * (x[-1] - x[-2]**2)
+    der = xpx.at(der)[1:-1].set(200 * (xm - xm_m1**2) -
+                                400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm))
+    der = xpx.at(der)[0].set(-400 * x[0] * (x[1] - x[0]**2) - 2 * (1 - x[0]))
+    der = xpx.at(der)[-1].set(200 * (x[-1] - x[-2]**2))
     return der
 
 
@@ -465,14 +467,14 @@ def rosen_hess(x):
 
     H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp)
          - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
-    diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
+    diagonal = xp.zeros(x.shape[0], dtype=x.dtype, device=xp_device(x))
     diagonal = xpx.at(diagonal)[0].set(1200 * x[0]**2 - 400 * x[1] + 2)
     diagonal = xpx.at(diagonal)[-1].set(200)
     diagonal = xpx.at(diagonal)[1:-1].set(202 + 1200 * x[1:-1]**2 - 400 * x[2:])
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
-@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
+@xp_capabilities()
 def rosen_hess_prod(x, p):
     """
     Product of the Hessian matrix of the Rosenbrock function with a vector.
@@ -508,12 +510,12 @@ def rosen_hess_prod(x, p):
     x = xp_promote(x, force_floating=True, xp=xp)
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
     p = xp.asarray(p, dtype=x.dtype)
-    Hp = xp.zeros(x.shape[0], dtype=x.dtype)
-    Hp[0] = (1200 * x[0]**2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1]
-    Hp[1:-1] = (-400 * x[:-2] * p[:-2] +
-                (202 + 1200 * x[1:-1]**2 - 400 * x[2:]) * p[1:-1] -
-                400 * x[1:-1] * p[2:])
-    Hp[-1] = -400 * x[-2] * p[-2] + 200*p[-1]
+    Hp = xp.zeros(x.shape[0], dtype=x.dtype, device=xp_device(x))
+    Hp = xpx.at(Hp)[0].set((1200 * x[0]**2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1])
+    Hp = xpx.at(Hp)[1:-1].set(-400 * x[:-2] * p[:-2] +
+                              (202 + 1200 * x[1:-1]**2 - 400 * x[2:]) * p[1:-1] -
+                              400 * x[1:-1] * p[2:])
+    Hp = xpx.at(Hp)[-1].set(-400 * x[-2] * p[-2] + 200*p[-1])
     return Hp
 
 

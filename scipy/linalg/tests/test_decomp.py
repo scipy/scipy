@@ -1,6 +1,5 @@
 import itertools
 import platform
-import sys
 import warnings
 
 import numpy as np
@@ -18,7 +17,6 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           subspace_angles, hadamard, eigvalsh_tridiagonal,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
-
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
@@ -31,12 +29,12 @@ from numpy import (array, diag, full, linalg, argsort, zeros, arange,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy.sparse._sputils import matrix
 
-from scipy._lib._testutils import check_free_memory
+from scipy._lib._testutils import IS_WASM, check_free_memory
 from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.__config__ import CONFIG
 
-IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
+from .test_basic import parametrize_overwrite_arg
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -380,13 +378,24 @@ class TestEig:
         A = np.arange(6).reshape(3, 2)
         assert_raises(ValueError, eig, A)
 
-    def test_shape_mismatch(self):
+    @pytest.mark.parametrize("n_a", [0, 2, 3])
+    @pytest.mark.parametrize("n_b", [0, 2, 3])
+    def test_shape_mismatch(self, n_a, n_b):
         """Check that passing arrays of with different shapes
         raises a ValueError."""
-        A = eye(2)
-        B = np.arange(9.0).reshape(3, 3)
-        assert_raises(ValueError, eig, A, B)
-        assert_raises(ValueError, eig, B, A)
+        A = np.arange(n_a * n_a).reshape(n_a, n_a)
+        B = np.eye(n_b)
+
+        if n_a != n_b:
+            with pytest.raises(ValueError, match="a and b must have"):
+                eig(A, B)
+            with pytest.raises(ValueError, match="a and b must have"):
+                eig(B, A)
+
+        else: # Verify correctness of solution
+            w, v = eig(A, B)
+            assert_allclose(A @ v, B @ v @ np.diag(w), atol=1e-14)
+
 
     def test_gh_11577(self):
         # https://github.com/scipy/scipy/issues/11577
@@ -417,12 +426,14 @@ class TestEig:
             assert np.isclose(D, 4.0, atol=1e-14).any()
             assert np.isclose(D, 8.0, atol=1e-14).any()
 
-    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-    def test_empty(self, dt):
-        a = np.empty((0, 0), dtype=dt)
-        w, vr = eig(a)
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty((0, 0), dtype=dt_b)
+        w, vr = eig(a, b)
 
-        w_n, vr_n = eig(np.eye(2, dtype=dt))
+        w_n, vr_n = eig(np.eye(2, dtype=dt_a), np.eye(2, dtype=dt_b))
 
         assert w.shape == (0,)
         assert w.dtype == w_n.dtype  #eigvals(np.eye(2, dtype=dt)).dtype
@@ -431,7 +442,7 @@ class TestEig:
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
 
-        w, vr = eig(a, homogeneous_eigvals=True)
+        w, vr = eig(a, b, homogeneous_eigvals=True)
         assert w.shape == (2, 0)
         assert w.dtype == w_n.dtype
 
@@ -468,6 +479,78 @@ class TestEig:
                         assert_allclose(res[k][i, j], ref[k])
                 else:
                     assert_allclose(res[i, j], ref)
+
+    @pytest.mark.parametrize("dtyp", [int, float, complex])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    def test_overwrite_reg(self, dtyp, order, ndim, overwrite_a):
+        n = 3
+        a = np.arange(n*n).reshape(n, n)
+        a = a.astype(dtype=dtyp, order=order)
+
+        if ndim == 3:
+            a = np.stack([a, 2*a])
+
+        a_ref = a.copy()
+
+        w, v = eig(a, overwrite_a=overwrite_a)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and
+            (a.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace
+
+    @pytest.mark.parametrize("dtyp_a", [int, float, complex])
+    @pytest.mark.parametrize("dtyp_b", [int, float, complex])
+    @pytest.mark.parametrize("order_a", ["C", "F"])
+    @pytest.mark.parametrize("order_b", ["C", "F"])
+    @pytest.mark.parametrize("ndim_a", [2, 3])
+    @pytest.mark.parametrize("ndim_b", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("overwrite_b", [True, False])
+    def test_overwrite_gen(
+        self, dtyp_a, dtyp_b, order_a, order_b, ndim_a, ndim_b, overwrite_a, overwrite_b
+    ):
+        n = 3
+        a = np.arange(n*n).reshape(n, n)
+        a = a.astype(dtype=dtyp_a, order=order_a)
+
+        b = np.arange(n*n).reshape(n, n)
+        b = b.astype(dtype=dtyp_b, order=order_b)
+
+        if ndim_a == 3:
+            a = np.stack([a, 2*a])
+        if ndim_b == 3:
+            b = np.stack([b, 2*b])
+
+        a_ref = a.copy()
+        b_ref = b.copy()
+
+        w, v = eig(a, b, overwrite_a=overwrite_a, overwrite_b=overwrite_b)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and (a.dtype == np.result_type(a, b)) and
+            (a.ndim == 2) and (b.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        b_inplace = (
+            overwrite_b and
+            (b.dtype != int) and (b.dtype == np.result_type(a, b)) and
+            (a.ndim == 2) and (b.ndim == 2) and
+            b.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace, 'A'
+        assert (b == b_ref).all() != b_inplace, 'B'
 
 
 class TestEigBanded:
@@ -978,6 +1061,7 @@ class TestEigh:
         w, z = eigh(a, b)
 
     @skip_xp_invalid_arg
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_eigh_of_sparse(self):
         # This tests the rejection of inputs that eigh cannot currently handle.
         import scipy.sparse
@@ -1259,6 +1343,52 @@ class TestSVD_GESDD:
         assert_allclose(s, np.empty((0,)))
 
         assert s.dtype == s0.dtype
+
+    @pytest.mark.parametrize("dtyp", [int, float, complex])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("full_matrices", [True, False])
+    @pytest.mark.parametrize("mn", [(3, 5), (5, 3)])
+    def test_overwrite(self, dtyp, order, ndim, overwrite_a, full_matrices, mn):
+        m, n = mn
+        a = np.arange(m*n).reshape(m, n)
+        a = a.astype(dtype=dtyp, order=order)
+
+        if ndim == 3:
+            a = np.stack([a, 2*a])
+
+        a_ref = a.copy()
+
+        u, s, vh = svd(
+            a,
+            lapack_driver=self.lapack_driver,
+            full_matrices=full_matrices,
+            overwrite_a=overwrite_a,
+            compute_uv=True
+        )
+
+        # check that the result is correct
+        if full_matrices:
+            diag_s = diagsvd(s, m, n)
+        else:
+            if ndim == 2:
+                diag_s = np.diag(s)
+            else:
+                diag_s = np.stack([np.diag(x) for x in s])
+
+        assert_allclose(u @ diag_s @ vh, a_ref, atol=1e-12)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and
+            (a.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace
+
 
 class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
@@ -2090,6 +2220,98 @@ class TestQR:
         assert_array_almost_equal(q @ r, a, decimal=decimal)
         assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]), decimal=decimal)
 
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("mode", ["raw", "r", "economic", "full"])
+    @pytest.mark.parametrize("pivoting", [True, False])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("shape", [(4, 3), (3, 4), (2, 4, 3), (2, 3, 4)])
+    def test_overwrite_args(self, dtype, overwrite_kw, mode, pivoting, order, shape):
+        rng = np.random.default_rng(seed=42)
+
+        if order == "F":
+            # ensure slices are F-ordered, which is not the case
+            # for > 2D F-ordered arrays.
+            shape = (*shape[:-2], shape[-1], shape[-2])
+            a = rng.normal(size=shape).astype(dtype)
+            a = np.swapaxes(a, -2, -1)
+        else:
+            a = rng.normal(size=shape).astype(dtype)
+
+        a_ref = np.copy(a)
+        out = qr(a, mode=mode, pivoting=pivoting, **overwrite_kw)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        overwrite_a = (
+            overwrite_a and
+            (len(shape) == 2) and
+            (order == "F") and
+            dtype is not int
+        )
+
+        # Check if the result is actually correct & check overwrite behavior
+        if mode == "raw":
+            # if overwrite is enabled `a` will contain `q_raw`
+            (q_raw, tau), r, *other = out
+
+            if a_ref.ndim > 2:
+                for i in range(a_ref.shape[0]):
+                    or_un_gqr = get_lapack_funcs(
+                        ("orgqr",), (q_raw[0, :, :],), ilp64="preferred"
+                    )[0]
+                    q, _, _ = or_un_gqr(q_raw[i, :, :np.min(shape[-2:])], tau[i, :])
+
+                    if pivoting:
+                        jpvt = other[0]
+                        assert_allclose(
+                            q @ r[i, :, :], a_ref[i, :, :][:, jpvt[i, :]], atol=1e-12
+                        )
+                    else:
+                        assert_allclose(q @ r[i, :, :], a_ref[i, :, :], atol=1e-12)
+            else:
+                or_un_gqr = get_lapack_funcs(("orgqr",), (q_raw,), ilp64="preferred")[0]
+                q, _, _ = or_un_gqr(q_raw[:, :np.min(shape[-2:])], tau)
+
+                if pivoting:
+                    jpvt = other[0]
+                    assert_allclose(q @ r, a_ref[:, jpvt], atol=1e-12)
+                else:
+                    assert_allclose(q @ r, a_ref, atol=1e-12)
+
+            assert overwrite_a == np.shares_memory(a, q_raw)
+
+        elif mode == "r":
+            # `a` is identical to `r` is overwrite is enabled
+            _, r_ref, *other = qr(a_ref, mode="full", pivoting=pivoting)
+
+            assert_allclose(out[0], r_ref, atol=1e-12)
+            if pivoting:
+                assert_allclose(out[-1], other[0])
+
+            assert overwrite_a == np.shares_memory(a, out[0])
+
+        elif mode == "economic" or mode == "full":
+            # `q` is a (cropped version of) `a` if overwrite is enabled for "economic".
+            # For "full" `a` contains `r`.
+
+            if pivoting:
+                jpvt = out[-1]
+                if a_ref.ndim > 2:
+                    for i in range(a_ref.shape[0]):
+                        assert_allclose(
+                            out[0][i, :, :] @ out[1][i, :, :], a_ref[i][:, jpvt[i, :]],
+                            atol=1e-12
+                        )
+                else:
+                    assert_allclose(out[0] @ out[1], a_ref[:, jpvt], atol=1e-12)
+            else:
+                assert_allclose(out[0] @ out[1], a_ref, atol=1e-12)
+
+
+            assert overwrite_a == np.shares_memory(
+                a, out[0 if mode == "economic" else 1]
+            )
+
 
 class TestRQ:
     def test_simple(self):
@@ -2235,6 +2457,21 @@ class TestRQ:
         assert_allclose(r, np.empty((m, k)))
         assert_allclose(q, np.empty((k, n)))
 
+    @pytest.mark.parametrize("supply_lwork", [True, False])
+    def test_lwork_deprecation(self, supply_lwork):
+        rng = np.random.default_rng(seed=12345)
+        m, n = 2, 2
+
+        a = rng.normal(size=(m, n))
+
+        if supply_lwork:
+            with pytest.warns(DeprecationWarning, match="scipy.linalg.rq: the `lwork`"):
+                r, q = rq(a, lwork=None)
+        else:
+            r, q = rq(a)
+
+        assert_allclose(a, r @ q, atol=1e-12)
+
 
 class TestSchur:
 
@@ -2362,6 +2599,24 @@ class TestSchur:
         # are counted.
         sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
         assert sdim == 2 if all_real else sdim == 1
+
+    @pytest.mark.parametrize("supply_lwork", [True, False])
+    def test_deprecation(self, supply_lwork):
+        rng = np.random.default_rng(seed=12345)
+
+        n = 3
+        a = rng.normal(size=(n, n))
+
+        if supply_lwork:
+            with pytest.warns(
+                DeprecationWarning,
+                match="scipy.linalg.schur: the `lwork`",
+            ):
+                t, z = schur(a, lwork=None)
+        else:
+            t, z = schur(a)
+
+        self.check_schur(a, t, z, rtol=1e-14, atol=5e-15)
 
 
 class TestHessenberg:
@@ -2638,6 +2893,25 @@ class TestQZ:
         assert_array_almost_equal(Q @ Q.T, eye(n))
         assert_array_almost_equal(Z @ Z.T, eye(n))
         assert_(np.all(diag(BB) >= 0))
+
+    @pytest.mark.parametrize("supply_lwork", [True, False])
+    def test_deprecation(self, supply_lwork):
+        rng = np.random.default_rng(seed=12345)
+
+        n = 5
+        a = rng.normal(size=(n, n))
+        b = rng.normal(size=(n, n))
+
+        if supply_lwork:
+            with pytest.warns(DeprecationWarning, match="scipy.linalg.qz: the `lwork`"):
+                aa, bb, q, z = qz(a, b, lwork=None)
+        else:
+            aa, bb, q, z = qz(a, b)
+
+        assert_allclose(q @ aa @ z.T, a, atol=1e-12)
+        assert_allclose(q @ bb @ z.T, b, atol=1e-12)
+        assert_allclose(q @ q.T, np.eye(n), atol=1e-12)
+        assert_allclose(z @ z.T, np.eye(n), atol=1e-12)
 
 
 class TestOrdQZ:
@@ -3179,10 +3453,10 @@ def test_subspace_angles():
     # From MATLAB function "subspace", which effectively only returns the
     # last value that we calculate
     x = np.array(
-        [[0.537667139546100, 0.318765239858981, 3.578396939725760, 0.725404224946106],  # noqa: E501
-         [1.833885014595086, -1.307688296305273, 2.769437029884877, -0.063054873189656],  # noqa: E501
+        [[0.537667139546100, 0.318765239858981, 3.578396939725760, 0.725404224946106],
+         [1.833885014595086, -1.307688296305273, 2.769437029884877, -0.063054873189656],
          [-2.258846861003648, -0.433592022305684, -1.349886940156521, 0.714742903826096],  # noqa: E501
-         [0.862173320368121, 0.342624466538650, 3.034923466331855, -0.204966058299775]])  # noqa: E501
+         [0.862173320368121, 0.342624466538650, 3.034923466331855, -0.204966058299775]])
     expected = 1.481454682101605
     assert_allclose(subspace_angles(x[:, :2], x[:, 2:])[0], expected,
                     rtol=1e-12)

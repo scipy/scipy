@@ -1,9 +1,10 @@
-# mypy: disable-error-code="attr-defined"
 import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_copy, xp_promote, xp_capabilities
+from scipy._lib._array_api import (xp_result_device, array_namespace,
+                                   xp_copy, xp_promote,
+                                   xp_capabilities, xp_device)
 import scipy._external.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
@@ -41,8 +42,13 @@ def _derivative_iv(f, x, args, kwargs, tolerances, maxiter, order, initial_step,
     if order_int != order or order <= 0:
         raise ValueError('`order` must be a positive integer.')
 
-    step_direction = xp.asarray(step_direction)
-    initial_step = xp.asarray(initial_step)
+    # scalars and host data land on the device of `x`; arrays keep their own
+    # device, so that a device mismatch raises in `broadcast_arrays` below
+    step_direction = xp.asarray(step_direction,
+                                device=xp_result_device(step_direction, x))
+    initial_step = xp.asarray(initial_step,
+                              device=xp_result_device(initial_step, x))
+
     temp = xp.broadcast_arrays(x, step_direction, initial_step)
     x, step_direction, initial_step = temp
 
@@ -475,18 +481,19 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
         # Note - no need to be careful about dtypes until we allocate `x_eval`
 
         if work.nit == 0:
-            hc = h / c**xp.arange(n, dtype=work.dtype)
+            hc = h / c**xp.arange(n, dtype=work.dtype, device=xp_device(work.x))
             hc = xp.concat((-xp.flip(hc, axis=-1), hc), axis=-1)
         else:
             hc = xp.concat((-h, h), axis=-1) / c**(n-1)
 
         if work.nit == 0:
-            hr = h / d**xp.arange(2*n, dtype=work.dtype)
+            hr = h / d**xp.arange(2*n, dtype=work.dtype, device=xp_device(work.x))
         else:
             hr = xp.concat((h, h/d), axis=-1) / c**(n-1)
 
         n_new = 2*n if work.nit == 0 else 2  # number of new abscissae
-        x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype)
+        x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype,
+                          device=xp_device(work.x))
         il, ic, ir = work.il, work.ic, work.ir
         x_eval = xpx.at(x_eval)[ir].set(work.x[ir][:, xp.newaxis] + hr[ir])
         x_eval = xpx.at(x_eval)[ic].set(work.x[ic][:, xp.newaxis] + hc[ic])
@@ -539,7 +546,8 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
         else:
             fo = xp.concat((work_fo[:, 0:1], work_fo[:, -2*n:]), axis=-1)
 
-        work.fs = xp.zeros((ic.shape[0], work.fs.shape[-1] + 2*n_new), dtype=work.dtype)
+        work.fs = xp.zeros((ic.shape[0], work.fs.shape[-1] + 2*n_new),
+                           dtype=work.dtype, device=xp_device(work.x))
         work.fs = xpx.at(work.fs)[ic].set(work_fc)
         work.fs = xpx.at(work.fs)[io].set(work_fo)
 
@@ -715,8 +723,9 @@ def _derivative_weights(work, n, xp):
 
         diff_state.right = weights
 
-    return (xp.asarray(diff_state.central, dtype=work.dtype),
-            xp.asarray(diff_state.right, dtype=work.dtype))
+    device = xp_device(work.x)
+    return (xp.asarray(diff_state.central, dtype=work.dtype, device=device),
+            xp.asarray(diff_state.right, dtype=work.dtype, device=device))
 
 
 @xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
@@ -927,7 +936,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
         raise ValueError(message)
 
     m = x0.shape[0]
-    i = xp.arange(m)
+    i = xp.arange(m, device=xp_device(x0))
 
     def wrapped(x):
         p = () if x.ndim == x0.ndim else (x.shape[-1],)  # number of abscissae

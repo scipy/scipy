@@ -49,14 +49,6 @@ CONFIG = _cleanup(
                 "args": r"@CPP_COMP_ARGS@",
                 "linker args": r"@CPP_COMP_LINK_ARGS@",
             },
-            "fortran": {
-                "name": "@FORTRAN_COMP@",
-                "linker": r"@FORTRAN_COMP_LINKER_ID@",
-                "version": "@FORTRAN_COMP_VERSION@",
-                "commands": r"@FORTRAN_COMP_CMD_ARRAY@",
-                "args": r"@FORTRAN_COMP_ARGS@",
-                "linker args": r"@FORTRAN_COMP_LINK_ARGS@",
-            },
             "pythran": {
                 "version": r"@PYTHRAN_VERSION@",
                 "include directory": r"@PYTHRAN_INCDIR@"
@@ -88,6 +80,7 @@ CONFIG = _cleanup(
                 "openblas configuration": r"@BLAS_OPENBLAS_CONFIG@",
                 "pc file directory": r"@BLAS_PCFILEDIR@",
                 "has ilp64": bool(r"@BLAS_HAS_ILP64@".lower().replace('false', '')),
+                "cython blas ilp64": bool(r"@BLAS_CYTHON_ILP64@".lower().replace('false', '')),
             },
             "lapack": {
                 "name": "@LAPACK_NAME@",

@@ -27,7 +27,7 @@ This module contains low-level functions from the BLAS library.
 .. warning::
 
    These functions do little to no error checking.
-   It is possible to cause crashes by mis-using them,
+   It is possible to cause crashes by misusing them,
    so prefer using the higher-level routines in `scipy.linalg`.
 
 .. note::
@@ -159,6 +159,7 @@ BLAS Level 2 functions
    chpr2
    cspmv
    cspr
+   csymv
    csyr
    ctbmv
    ctbsv
@@ -179,6 +180,7 @@ BLAS Level 2 functions
    zhpr2
    zspmv
    zspr
+   zsymv
    zsyr
    ztbmv
    ztbsv
@@ -236,25 +238,29 @@ import numpy as np
 import functools
 from scipy.__config__ import CONFIG
 
-# TODO: fold HAS_LP64 into __config__, allow for _fblas not being available
-from scipy.linalg import _fblas
-HAS_LP64 = True
-
-try:
-    from scipy.linalg import _cblas
-except ImportError:
-    _cblas = None
-
+# If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
+# keeping `linalg.blas` as LP64.
+HAS_LP64 = not bool(CONFIG['Build Dependencies']['blas']['cython blas ilp64'])
 HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
 del CONFIG
-_fblas_64 = None
+
+if HAS_LP64:
+    from scipy.linalg import _fblas
+else:
+    _fblas = None
+
 if HAS_ILP64:
     from scipy.linalg import _fblas_64
+else:
+    _fblas_64 = None
 
-# Expose all functions (only fblas --- cblas is an implementation detail)
-empty_module = None
-from scipy.linalg._fblas import *  # noqa: E402, F403
-del empty_module
+if not (HAS_LP64 or HAS_ILP64):
+    raise RuntimeError("SciPy needs either LP64 or ILP64 BLAS.")
+
+if HAS_LP64:
+    from scipy.linalg._fblas import *  # noqa: F403
+else:
+    from scipy.linalg._fblas_64 import *  # noqa: F403
 
 # all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to
 
@@ -351,10 +357,9 @@ def find_best_blas_type(arrays=(), dtype=None):
     return prefix, dtype, prefer_fortran
 
 
-def _get_funcs(names, arrays, dtype,
-               lib_name, fmodule, cmodule,
-               fmodule_name, cmodule_name, alias,
-               ilp64="preferred"):
+def _get_funcs(
+    names, arrays, dtype, lib_name, fmodule, fmodule_name, alias, ilp64="preferred"
+):
     """
     Return available BLAS/LAPACK functions.
 
@@ -364,31 +369,21 @@ def _get_funcs(names, arrays, dtype,
     funcs = []
     unpack = False
     dtype = np.dtype(dtype)
-    module1 = (cmodule, cmodule_name)
-    module2 = (fmodule, fmodule_name)
 
     if isinstance(names, str):
         names = (names,)
         unpack = True
 
-    prefix, dtype, prefer_fortran = find_best_blas_type(arrays, dtype)
-
-    if prefer_fortran:
-        module1, module2 = module2, module1
+    prefix, dtype, _ = find_best_blas_type(arrays, dtype)
 
     for name in names:
         func_name = prefix + name
         func_name = alias.get(func_name, func_name)
-        func = getattr(module1[0], func_name, None)
-        module_name = module1[1]
-        if func is None:
-            func = getattr(module2[0], func_name, None)
-            module_name = module2[1]
+        func = getattr(fmodule, func_name, None)
         if func is None:
             raise ValueError(
                 f'{lib_name} function {func_name} could not be found')
-        func.module_name, func.typecode = module_name, prefix
-        func.dtype = dtype
+        func.module_name, func.typecode, func.dtype = fmodule_name, prefix, dtype
         if not ilp64:
             func.int_dtype = np.dtype(np.intc)
         else:
@@ -496,7 +491,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     prefix (here, ``d-`` because ``a`` is double precision real):
 
     >>> x_gemv
-    <fortran function dgemv>
+    <fblas function dgemv>
 
     The BLAS variant information is also available from the ``typecode`` attribute:
 
@@ -513,7 +508,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     the ``dtype=`` argument:
 
     >>> LA.get_blas_funcs('gemv', dtype=np.float32)
-    <fortran function sgemv>
+    <fblas function sgemv>
 
     The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
     and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):
@@ -525,16 +520,16 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
         if ilp64 == 'preferred':
             ilp64 = HAS_ILP64
         else:
-            raise ValueError("Invalid value for 'ilp64'")
+            raise ValueError(f"Invalid value for {ilp64 = }.")
 
     if not ilp64:
-        return _get_funcs(names, arrays, dtype,
-                          "BLAS", _fblas, _cblas, "fblas", "cblas",
-                          _blas_alias, ilp64=False)
+        return _get_funcs(
+            names, arrays, dtype, "BLAS", _fblas, "fblas", _blas_alias, ilp64=False
+        )
     else:
         if not HAS_ILP64:
             raise RuntimeError("BLAS ILP64 routine requested, but Scipy "
                                "compiled only with 32-bit BLAS")
-        return _get_funcs(names, arrays, dtype,
-                          "BLAS", _fblas_64, None, "fblas_64", None,
-                          _blas_alias, ilp64=True)
+        return _get_funcs(
+            names, arrays, dtype, "BLAS", _fblas_64, "fblas_64", _blas_alias, ilp64=True
+        )

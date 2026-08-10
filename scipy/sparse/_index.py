@@ -26,7 +26,7 @@ class IndexMixin:
     """
     This class provides common dispatching and validation logic for indexing.
     """
-    def __getitem__(self, key):
+    def __getitem__(self, key, /):
         index, new_shape, _, _ = _validate_indices(key, self.shape, self.format)
         if len(new_shape) > 2:
             raise IndexError("Indexing that leads to >2D is not supported by "
@@ -124,7 +124,7 @@ class IndexMixin:
             return res.reshape(new_shape)
         return res
 
-    def __setitem__(self, key, x):
+    def __setitem__(self, key, x, /):
         index, new_shape, _, _ = _validate_indices(key, self.shape, self.format)
 
         # 1D array

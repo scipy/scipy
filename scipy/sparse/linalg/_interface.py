@@ -120,6 +120,9 @@ class LinearOperator:
         and where ``V`` is a dense matrix with dimensions ``(..., M, K)``.
     dtype : dtype
         Data type of the matrix or matrices.
+    xp : array_namespace, optional
+        A namespace compatible with the array API standard for use in array operations.
+        Default: ``numpy``.
 
     Attributes
     ----------
@@ -197,7 +200,7 @@ class LinearOperator:
     __array_ufunc__ = None
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     ndim: int
 
@@ -229,7 +232,8 @@ class LinearOperator:
         """
         xp = np_compat if xp is None else xp
         if dtype is not None:
-            dtype = xp.empty(0, dtype=dtype).dtype
+            # throwaway 0-size array to canonicalize `dtype`; no array in scope
+            dtype = xp.empty(0, dtype=dtype).dtype  # skip device check
 
         shape = tuple(shape)
         if len(shape) < 2:
@@ -264,7 +268,8 @@ class LinearOperator:
         """
         if self.dtype is None:
             xp = self._xp
-            v = xp.zeros(self.shape[-1], dtype=xp.int8)
+            # dtype probe; user callables define the operator, no device to match
+            v = xp.zeros(self.shape[-1], dtype=xp.int8)  # skip device check
             try:
                 matvec_v = xp.asarray(self.matvec(v))
             except (OverflowError, TypeError, RuntimeError):
@@ -272,7 +277,7 @@ class LinearOperator:
             else:
                 self.dtype = matvec_v.dtype
 
-    def _matmat(self, X):
+    def _matmat(self, X, /):
         """Default matrix-matrix multiplication handler.
 
         If ``self`` is a linear operator of shape ``(..., M, N)``,
@@ -329,7 +334,7 @@ class LinearOperator:
             msg = (
                 f"Calling {func_name} on 'column vectors' of shape "
                 f"`({inner_dim}, 1)` was deprecated in SciPy 1.18.0 and will no "
-                f"longer be possible in SciPy 1.20.0. "
+                f"longer be possible in SciPy 2.1.0. "
                 f"Please call {matmat_func_name} instead for identical behaviour."
             )
             warnings.warn(
@@ -349,7 +354,7 @@ class LinearOperator:
 
         y = self._rmatvec(x) if adjoint else self._matvec(x)
 
-        broadcasted_dims = xpx.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
+        broadcasted_dims = xp.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
         if row_vector:
             y = xp.reshape(y, (*broadcasted_dims, outer_dim))
         elif column_vector:
@@ -515,7 +520,7 @@ class LinearOperator:
         """
         return self._shared_matmat(X, adjoint=True)
 
-    def _rmatmat(self, X):
+    def _rmatmat(self, X, /):
         """Default implementation of `_rmatmat`; defers to `rmatvec` or `adjoint`."""
         if type(self)._adjoint == LinearOperator._adjoint:
             xp = self._xp
@@ -555,7 +560,9 @@ class LinearOperator:
     def _check_matching_namespace(self, x):
         xp_x = getattr(x, "_xp", None)
         if xp_x is None:
-            xp_x = array_namespace(x, self._xp.empty(0), sparse_ok=True)
+            # `empty(0)` is a throwaway used only to resolve the namespace
+            xp_x = array_namespace(x, self._xp.empty(0),  # skip device check
+                                   sparse_ok=True)
         if xp_x != self._xp:
             msg = (
                 f"Mismatched array namespaces."
@@ -673,7 +680,7 @@ class LinearOperator:
     def rdot(self, x):
         """Multi-purpose multiplication method from the right.
 
-        .. note ::
+        .. note::
 
             This method returns ``x A``.
             To perform adjoint multiplication instead, use one of
@@ -976,7 +983,7 @@ class _SumLinearOperator(LinearOperator):
         *B_broadcast_dims, B_M, B_N = B.shape
         if (A_M, A_N) != (B_M, B_N):
             raise ValueError(f"cannot add {A} and {B}: shape mismatch")
-        broadcasted_dims = xpx.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
+        broadcasted_dims = xp.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
         self.args = (A, B)
         super().__init__(_get_dtype([A, B], xp=xp), (*broadcasted_dims, A_M, A_N), xp)
 

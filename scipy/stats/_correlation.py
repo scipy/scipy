@@ -3,7 +3,8 @@ import math
 from scipy import stats, special
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
-                                   is_numpy, _share_masks, _count_nonmasked, is_marray)
+                                   is_numpy, _share_masks, _count_nonmasked, is_marray,
+                                   xp_device)
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
                                    _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
@@ -51,12 +52,13 @@ def _xi_std(r, l, y_continuous, xp):
     # "Suppose that X and Y are independent and Y is continuous. Then
     # √n·ξn(X, Y) → N(0, 2/5) in distribution as n → ∞"
     if y_continuous:  # [1] Theorem 2.1
-        return xp.asarray(math.sqrt(2 / 5) / math.sqrt(n), dtype=r.dtype)
+        return xp.asarray(math.sqrt(2 / 5) / math.sqrt(n), dtype=r.dtype,
+                          device=xp_device(r))
 
     # "Suppose that X and Y are independent. Then √n·ξn(X, Y)
     # converges to N(0, τ²) in distribution as n → ∞
     # [1] Eq. 2.2 and surrounding math
-    i = xp.arange(1, n + 1, dtype=r.dtype)
+    i = xp.arange(1, n + 1, dtype=r.dtype, device=xp_device(r))
     u = xp.sort(r, axis=-1)
     v = xp.cumulative_sum(u, axis=-1)
     an = 1 / n**4 * xp.sum((2*n - 2*i + 1) * u**2, axis=-1)
@@ -88,8 +90,7 @@ def _unpack(res, _):
     return res.statistic, res.pvalue
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no take_along_axis'),
-                                ('cupy', 'no rankdata (xp.repeats limitation)')])
+@xp_capabilities(skip_backends=[('dask.array', 'no take_along_axis')])
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
 def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
@@ -248,6 +249,7 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
 
 @xp_capabilities(cpu_only=True, exceptions=['jax.numpy'], marray=True,
     skip_backends=[('dask.array', 'not supported by rankdata (take_along_axis)')],
+    extra_note='Only the default `method` is compatible with MArray input.'
 )
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
@@ -387,8 +389,7 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
 
 
 @xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
-                                ("jax.numpy", "non-concrete boolean indexing"),
-                                ('cupy', 'no rankdata (xp.repeats limitation)')],
+                                ("jax.numpy", "non-concrete boolean indexing")],
                  marray=True)
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
@@ -629,7 +630,8 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
 
     xp = array_namespace(y, x)
     y, x = xp_promote(y, x, force_floating=True, xp=xp)
-    x = xp.arange(y.shape[-1], dtype=y.dtype) if x is None else x
+    x = (xp.arange(y.shape[-1], dtype=y.dtype, device=xp_device(y))
+         if x is None else x)
     y, x = xp.broadcast_arrays(y, x)
     x, y = _share_masks(x, y, xp=xp)
 
@@ -641,7 +643,10 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     deltay = y[..., :, xp.newaxis] - y[..., xp.newaxis, :]
 
     if pfun == 'theilslopes':
-        i = xp.astype(xp.triu(xp.ones(deltax.shape[-2:]), k=1), xp.bool)
+        i = xp.astype(
+            xp.triu(xp.ones(deltax.shape[-2:], device=xp_device(deltax)), k=1),
+            xp.bool,
+        )
         if is_numpy(xp):
             deltax, deltay = deltax[..., i], deltay[..., i]
         else:
@@ -715,7 +720,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     Ru = xp.minimum(xp.astype(xp.round((nt - z*sigma)/2.), xp.int64),
                     xp.astype(nt, xp.int64)-1)
     Rl = xp.maximum(xp.astype(xp.round((nt + z*sigma)/2.), xp.int64) - 1,
-                    xp.asarray(0, dtype=xp.int64))
+                    xp.asarray(0, dtype=xp.int64, device=xp_device(nt)))
     R = xp.concat((xpx.atleast_nd(Rl, ndim=1), xpx.atleast_nd(Ru, ndim=1)), axis=-1)
     slopes = xp.sort(slopes, axis=-1)
     delta = xp.take_along_axis(slopes, R, axis=-1)

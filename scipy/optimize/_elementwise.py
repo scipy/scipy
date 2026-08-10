@@ -420,7 +420,7 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
     ...     return (x - c)**2 + 2
 
     First, we must find a valid bracket. The function is unimodal,
-    so `bracket_minium` will easily find a bracket.
+    so `bracket_minimum` will easily find a bracket.
 
     >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
@@ -682,7 +682,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     >>> res_root.x
     array([1.8932892 , 2.        , 2.09455148])
 
-    """  # noqa: E501
+    """
 
     res = _bracket_root(f, xl0, xr0=xr0, xmin=xmin, xmax=xmax, factor=factor,
                         args=args, kwargs=kwargs, maxiter=maxiter, 
@@ -843,7 +843,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     ...     return (x - c)**2 + 2
 
     First, we must find a valid bracket. The function is unimodal,
-    so `bracket_minium` will easily find a bracket.
+    so `bracket_minimum` will easily find a bracket.
 
     >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
@@ -883,7 +883,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     >>> res_minimum.f_x
     array([2., 2., 2.])
 
-    """  # noqa: E501
+    """
 
     res = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
                            factor=factor, args=args, kwargs=kwargs, maxiter=maxiter,

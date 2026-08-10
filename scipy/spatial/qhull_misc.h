@@ -5,7 +5,7 @@
 #define QHULL_MISC_H_
 
 /* for CBLAS_INT only*/
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 #define qhull_misc_lib_check() QHULL_LIB_CHECK
 

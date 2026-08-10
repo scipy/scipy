@@ -23,13 +23,13 @@ at the top-level directory.
 #include <stdlib.h>
 #include "slu_sdefs.h"
 
-extern void sswap_(int *, float [], int *, float [], int *);
-extern void saxpy_(int *, float *, float [], int *, float [], int *);
-extern void scopy_(int *, float [], int *, float [], int *);
-extern float sasum_(int *, float *, int *);
-extern float snrm2_(int *, float *, int *);
-extern double dnrm2_(int *, double [], int *);
-extern int isamax_(int *, float [], int *);
+extern void sswap_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
+extern void saxpy_(slu_blasint *, float *, float [], slu_blasint *, float [], slu_blasint *);
+extern void scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
+extern float sasum_(slu_blasint *, float *, slu_blasint *);
+extern float snrm2_(slu_blasint *, float *, slu_blasint *);
+extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
+extern slu_blasint isamax_(slu_blasint *, float [], slu_blasint *);
 
 #if 0
 static float *A;  /* used in _compare_ only */
@@ -73,7 +73,7 @@ int ilu_sdrop_row(
     register int i, k, m1;
     register int nzlc; /* number of nonzeros in column last+1 */
     int_t xlusup_first, xlsub_first;
-    int m, n; /* m x n is the size of the supernode */
+    slu_blasint m, n; /* m x n is the size of the supernode */
     int r = 0; /* number of dropped rows */
     register float *temp;
     register float *lusup = (float *) Glu->lusup;
@@ -87,8 +87,8 @@ int ilu_sdrop_row(
     float zero = 0.0;
     float one = 1.0;
     float none = -1.0;
-    int i_1 = 1;
-    int inc_diag; /* inc_diag = m + 1 */
+    slu_blasint i_1 = 1;
+    slu_blasint inc_diag; /* inc_diag = m + 1 */
     int nzp = 0;  /* number of zero pivots */
     float alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
 
@@ -193,7 +193,7 @@ int ilu_sdrop_row(
 	    }
 	    else /* by quick select */
 	    {
-		int len = m1 - n + 1;
+		slu_blasint len = m1 - n + 1;
 		scopy_(&len, swork, &i_1, swork2, &i_1);
 		tol = sqselect(len, swork2, quota - n);
 #if 0
