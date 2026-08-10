@@ -17,7 +17,7 @@ from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _workers_wrapper,
-                              _item_for_scalar_function)
+                              _item_for_scalar_function, _apply_over_batch)
 import scipy._external.array_api_extra as xpx
 from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
@@ -229,6 +229,23 @@ def test_rng_integers():
     assert np.max(arr) == 4
     assert np.min(arr) == 0
     assert arr.shape == (100, )
+
+@_apply_over_batch(('a',2))
+def _batch_single_output(a):
+    return a[0]
+
+@_apply_over_batch(('a',2))
+def _batch_multiple_output(a):
+    return a[0], a[1]
+
+
+@pytest.mark.parametrize('shape', [(2,2),(2,2,2)])
+def test_apply_over_batch(shape):
+    a = np.ones(shape)
+    res = _batch_single_output(a)
+    assert isinstance(res, np.ndarray)
+    res = _batch_multiple_output(a)
+    assert isinstance(res, tuple)
 
 
 class TestValidateInt:

@@ -1219,7 +1219,8 @@ def _apply_over_batch(*argdefs):
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
             # contributor to pass an `pack_result` callable to the decorator factory.
-            return results[0] if len(results) == 1 else results
+
+            return results[0] if len(results) == 1 else tuple(results)
 
         doc = FunctionDoc(wrapper)
         doc['Extended Summary'].append(_batch_note.rstrip())
