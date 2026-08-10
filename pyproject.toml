@@ -156,14 +156,15 @@ coverage = [
 ]
 
 bench = [
-    # https://github.com/airspeed-velocity/asv/issues/1537
-    "asv==0.6.4",
+    # 0.6.6 regressed per-benchmark overhead ~7x, which pushes the CircleCI
+    # benchmark job past its time limit; revisit when that is fixed upstream
+    "asv==0.6.5",
     "pyfftw",
     "cffi", 
 ]
 
 doc = [
-    "sphinx>=5.0.0,<8.2.0",
+    "sphinx>=8.2.0,<8.3.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",

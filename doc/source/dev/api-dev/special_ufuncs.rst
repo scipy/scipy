@@ -17,11 +17,13 @@ with Python. If the primary code is in Fortran then it is necessary to
 write a C wrapper around the code; for examples of such wrappers see
 ``specfun_wrappers.c``.
 
-After implementing the scalar function, register the new function by
-adding an entry to ``functions.json``. The docstring in
-``generate_ufuncs.py`` explains the format. Also add documentation for
-the new function by adding an entry to ``add_newdocs.py``; look in the
-file for examples.
+After implementing the scalar function, create the ufunc in
+``_special_ufuncs.cpp`` using ``xsf::numpy::ufunc``. Add the ufunc's
+docstring to ``_special_ufuncs_docs.cpp``, and add its name to the
+``special_ufuncs`` list in ``_generate_pyx.py``. For a public function,
+also add wrappers to ``cython_special_wrappers.cpp`` and
+``cython_special_wrappers.h``, and add the function to
+``cython_special.pyx``. Look in these files for examples.
 
 When writing the parameters section of the documentation for ufuncs,
 the type of an argument should be ``array_like``. Discussion of

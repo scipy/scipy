@@ -41,7 +41,6 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   CCACHE_MAXSIZE: "350M"
-  PIXI_CACHE_DIR: "${{ github.workspace }}/.cache/rattler"
   # Enable persistent cache
   # https://docs.jax.dev/en/latest/config_options.html
   JAX_COMPILATION_CACHE_DIR: "${{ github.workspace }}/.cache/scipy_jax_cache"
@@ -58,11 +57,7 @@ jobs:
 
   pytorch_gpu:
     name: PyTorch, JAX, CuPy GPU
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:24.04
+    runs-on: "cirun-scipy-onprem-gpu--${{ github.run_id }}"
     steps:
       - name: Checkout scipy repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -70,26 +65,15 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Cache pixi
-        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
-        with:
-          path: ${{ env.PIXI_CACHE_DIR }}
-          # Cache hit if lock file did not change. Otherwise, redownload packages.
-          key: ${{ runner.os }}-gpu-pixi-1-${{ hashFiles('pixi.lock') }}
-
-      - name: Get week number for ccache key rotation
-        id: ccache-week
-        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
-
       - name: Setup compiler cache
-        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.CCACHE_DIR }}
-          # Note: go back to `github.run_id` after migrating away from Cirrus
-          # As a workaround for broken `restore-key` behavior, we need a fixed `key`;
-          # this will reduce the hit % when sources change, but a weekly refresh will
-          # ensure that it won't change by much.
-          key: ${{ runner.os }}-gpu-ccache-1-${{ steps.ccache-week.outputs.week }}-${{ hashFiles('.github/workflows/pixi.lock') }}
+          # Use a per-run key so newly generated cache entries are saved.
+          # The restore prefix below retrieves the most recent prior cache.
+          key: ${{ runner.os }}-gpu-ccache-1-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-ccache-1-
 
       - name: Define default CuPy cache path
         run: |
@@ -98,19 +82,20 @@ jobs:
           echo "CUPY_CACHE_DIR=$HOME/.cupy/kernel_cache" >> $GITHUB_ENV
 
       - name: Cache CuPy kernels
-        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.CUPY_CACHE_DIR }}
-          # Note: go back to `github.run_id` after migrating away from Cirrus
-          # (fallback lookup is broken there, so we need an exact hit on key)
-          key: ${{ runner.os }}-gpu-cupy-1-${{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-gpu-cupy-1-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-cupy-1-
 
       - name: Cache JAX kernels
-        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.JAX_COMPILATION_CACHE_DIR }}
-          # Note: go back to `github.run_id` after migrating away from Cirrus
-          key: ${{ runner.os }}-gpu-jax-1-${{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-gpu-jax-1-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-jax-1-
 
       - name: run nvidia-smi
         run: nvidia-smi
@@ -121,7 +106,8 @@ jobs:
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
           pixi-version: v0.71.0
-          cache: false
+          cache: true
+          cache-key: gpu-pixi-1-
           environments: >-
             build-cuda
             torch-cuda
