@@ -3,6 +3,7 @@ import os
 from os.path import relpath, dirname
 import re
 import sys
+import importlib.machinery
 import warnings
 from docutils import nodes
 from docutils.parsers.rst import Directive
@@ -575,5 +576,48 @@ class LegacyDirective(Directive):
         return [admonition_node]
 
 
+_EXT_SUFFIXES = tuple(importlib.machinery.EXTENSION_SUFFIXES)
+
+
+def _extension_origin(mod):
+    origin = getattr(getattr(mod, "__spec__", None), "origin", "") or ""
+    return origin if origin.endswith(_EXT_SUFFIXES) else ""
+
+
+def _note_extension_dependency(app, what, name, obj, options, lines):
+    """Rebuild pages when the extension module holding the docstring changes.
+
+    Sphinx records the Python source of the module an object is documented from,
+    and only falls back to the compiled module when that has no source at all. So
+    for anything re-exported into a pure-Python package -- ``scipy.special``
+    re-exporting ``loggamma`` from ``_special_ufuncs*.so``, say -- it records
+    ``scipy/special/__init__.py``, and rebuilding the extension never invalidates
+    the page. See gh-23440.
+    """
+    # an object that knows its own module is authoritative; scanning past it
+    # matches any extension that merely imports the object (gh-23440 review).
+    # This branch is redundant once sphinx-doc/sphinx#14594 is our minimum; the
+    # fallback below is not, as Sphinx cannot attribute a __module__-less object.
+    if modname := getattr(obj, "__module__", None):
+        if origin := _extension_origin(sys.modules.get(modname)):
+            app.env.note_dependency(origin)
+        return
+    # ufuncs carry no __module__, so fall back to locating the providing submodule
+    parent, _, attr = name.rpartition(".")
+    if not parent:
+        return
+    # an alias is exposed under a name the submodule does not know it by (digamma/psi)
+    attrs = {attr, getattr(obj, "__name__", "")} - {""}
+    prefix = parent + "."
+    for sub_name, sub in list(sys.modules.items()):
+        if sub_name.startswith(prefix) and any(
+            getattr(sub, a, None) is obj for a in attrs
+        ):
+            if origin := _extension_origin(sub):
+                app.env.note_dependency(origin)
+                return
+
+
 def setup(app):
     app.add_directive("legacy", LegacyDirective)
+    app.connect("autodoc-process-docstring", _note_extension_dependency)
