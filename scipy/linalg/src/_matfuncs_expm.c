@@ -1,9 +1,9 @@
 #include "_common_array_utils.h"
 
-static float snorm1(float*, float*, const Py_ssize_t);
-static double dnorm1(double*, double*, const Py_ssize_t);
-static float cnorm1(SCIPY_C*, float*, const Py_ssize_t);
-static double znorm1(SCIPY_Z*, double*, const Py_ssize_t);
+static float snorm1_col_major(float*, float*, const Py_ssize_t);
+static double dnorm1_col_major(double*, double*, const Py_ssize_t);
+static float cnorm1_col_major(SCIPY_C*, float*, const Py_ssize_t);
+static double znorm1_col_major(SCIPY_Z*, double*, const Py_ssize_t);
 static float snorm1est(float*, CBLAS_INT);
 static double dnorm1est(double*, CBLAS_INT);
 static float cnorm1est(SCIPY_C*, CBLAS_INT);
@@ -15,56 +15,56 @@ static double znorm1est(SCIPY_Z*, CBLAS_INT);
  *******************************************************************************/
 
  static float
-snorm1(float* A, float* work, const Py_ssize_t n)
+snorm1_col_major(float* A, float* work, const Py_ssize_t n)
 {
     Py_ssize_t i, j;
     float temp = 0.0;
     // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { work[i] = fabsf(A[i]); }
+    for (i = 0; i < n; i++) { work[i] = fabsf(A[i*n]); }
     // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[j] += fabsf(A[i*n + j]); } }
+    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[i] += fabsf(A[i*n + j]); } }
     temp = 0.0;
     for (i = 0; i < n; i++) { if (work[i] > temp) { temp = work[i]; } }
     return temp;
 }
 
 static double
-dnorm1(double* A, double* work, const Py_ssize_t n)
+dnorm1_col_major(double* A, double* work, const Py_ssize_t n)
 {
     Py_ssize_t i, j;
     double temp = 0.0;
     // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { work[i] = fabs(A[i]); }
+    for (i = 0; i < n; i++) { work[i] = fabs(A[i*n]); }
     // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[j] += fabs(A[i*n + j]); } }
+    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[i] += fabs(A[i*n + j]); } }
     temp = 0.0;
     for (i = 0; i < n; i++) { if (work[i] > temp) { temp = work[i]; } }
     return temp;
 }
 
 static float
-cnorm1(SCIPY_C* A, float* work, const Py_ssize_t n)
+cnorm1_col_major(SCIPY_C* A, float* work, const Py_ssize_t n)
 {
     Py_ssize_t i, j;
     float temp = 0.0;
     // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { work[i] = cabsf(A[i]); }
+    for (i = 0; i < n; i++) { work[i] = cabsf(A[i*n]); }
     // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[j] += cabsf(A[i*n + j]); } }
+    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[i] += cabsf(A[i*n + j]); } }
     temp = 0.0;
     for (i = 0; i < n; i++) { if (work[i] > temp) { temp = work[i]; } }
     return temp;
 }
 
 static double
-znorm1(SCIPY_Z* A, double* work, const Py_ssize_t n)
+znorm1_col_major(SCIPY_Z* A, double* work, const Py_ssize_t n)
 {
     Py_ssize_t i, j;
     double temp = 0.0;
     // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { work[i] = cabs(A[i]); }
+    for (i = 0; i < n; i++) { work[i] = cabs(A[i*n]); }
     // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[j] += cabs(A[i*n + j]); } }
+    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[i] += cabs(A[i*n + j]); } }
     temp = 0.0;
     for (i = 0; i < n; i++) { if (work[i] > temp) { temp = work[i]; } }
     return temp;
@@ -245,8 +245,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &dbl0, &Am[1*n*n], &n);
     BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[2*n*n], &n);
     BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[3*n*n], &n);
-    d4 = powf(snorm1(&Am[2*n*n], work_arr, n), 0.25);
-    d6 = powf(snorm1(&Am[3*n*n], work_arr, n), 1.0/6.0);
+    d4 = powf(snorm1_col_major(&Am[2*n*n], work_arr, n), 0.25);
+    d6 = powf(snorm1_col_major(&Am[3*n*n], work_arr, n), 1.0/6.0);
     eta0 = fmaxf(d4, d6);
     eta1 = eta0;
 
@@ -297,7 +297,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d8 = powf(snorm1(&Am[4*n*n], work_arr, n), 0.125);
+        d8 = powf(snorm1_col_major(&Am[4*n*n], work_arr, n), 0.125);
     } else {
         test = snorm1est(&Am[0], 8);
         // If memory error in s1normest
@@ -354,7 +354,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d10 = powf(snorm1(&Am[4*n*n], work_arr, n), 0.1);
+        d10 = powf(snorm1_col_major(&Am[4*n*n], work_arr, n), 0.1);
     } else {
         test = snorm1est(&Am[0], 10);
         // If memory error in s1normest
@@ -462,8 +462,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &dbl0, &Am[1*n*n], &n);
     BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[2*n*n], &n);
     BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[3*n*n], &n);
-    d4 = pow(dnorm1(&Am[2*n*n], work_arr, n), 0.25);
-    d6 = pow(dnorm1(&Am[3*n*n], work_arr, n), 1.0/6.0);
+    d4 = pow(dnorm1_col_major(&Am[2*n*n], work_arr, n), 0.25);
+    d6 = pow(dnorm1_col_major(&Am[3*n*n], work_arr, n), 1.0/6.0);
     eta0 = fmax(d4, d6);
     eta1 = eta0;
 
@@ -514,7 +514,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d8 = pow(dnorm1(&Am[4*n*n], work_arr, n), 0.125);
+        d8 = pow(dnorm1_col_major(&Am[4*n*n], work_arr, n), 0.125);
     } else {
         test = dnorm1est(&Am[0], 8);
         // If memory error in d1normest
@@ -571,7 +571,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d10 = pow(dnorm1(&Am[4*n*n], work_arr, n), 0.1);
+        d10 = pow(dnorm1_col_major(&Am[4*n*n], work_arr, n), 0.1);
     } else {
         test = dnorm1est(&Am[0], 10);
         // If memory error in d1normest
@@ -682,8 +682,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &cdbl0, &Am[1*n*n], &n);
     BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[2*n*n], &n);
     BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[3*n*n], &n);
-    d4 = powf(cnorm1(&Am[2*n*n], work_arr, n), 0.25);
-    d6 = powf(cnorm1(&Am[3*n*n], work_arr, n), 1.0/6.0);
+    d4 = powf(cnorm1_col_major(&Am[2*n*n], work_arr, n), 0.25);
+    d6 = powf(cnorm1_col_major(&Am[3*n*n], work_arr, n), 1.0/6.0);
     eta0 = fmaxf(d4, d6);
     eta1 = eta0;
 
@@ -734,7 +734,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d8 = powf(cnorm1(&Am[4*n*n], work_arr, n), 0.125);
+        d8 = powf(cnorm1_col_major(&Am[4*n*n], work_arr, n), 0.125);
     } else {
         test = cnorm1est(&Am[0], 8);
         // If memory error in c1normest
@@ -791,7 +791,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d10 = powf(cnorm1(&Am[4*n*n], work_arr, n), 0.1);
+        d10 = powf(cnorm1_col_major(&Am[4*n*n], work_arr, n), 0.1);
     } else {
         test = cnorm1est(&Am[0], 10);
         // If memory error in c1normest
@@ -909,8 +909,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &cdbl0, &Am[1*n*n], &n);
     BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[2*n*n], &n);
     BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[3*n*n], &n);
-    d4 = pow(znorm1(&Am[2*n*n], work_arr, n), 0.25);
-    d6 = pow(znorm1(&Am[3*n*n], work_arr, n), 1.0/6.0);
+    d4 = pow(znorm1_col_major(&Am[2*n*n], work_arr, n), 0.25);
+    d6 = pow(znorm1_col_major(&Am[3*n*n], work_arr, n), 1.0/6.0);
     eta0 = fmax(d4, d6);
     eta1 = eta0;
 
@@ -961,7 +961,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d8 = pow(znorm1(&Am[4*n*n], work_arr, n), 0.125);
+        d8 = pow(znorm1_col_major(&Am[4*n*n], work_arr, n), 0.125);
     } else {
         test = znorm1est(&Am[0], 8);
         // If memory error in z1normest
@@ -1020,7 +1020,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d10 = pow(znorm1(&Am[4*n*n], work_arr, n), 0.1);
+        d10 = pow(znorm1_col_major(&Am[4*n*n], work_arr, n), 0.1);
     } else {
         test = znorm1est(&Am[0], 10);
         // If memory error in z1normest
