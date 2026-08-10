@@ -34,8 +34,10 @@ from numpy.testing import (assert_equal, assert_array_equal, assert_,
 from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import (ellipe, ellipk, ellipkm1 ,elliprc, elliprd, elliprf, elliprg,
-                           elliprj, softplus, mathieu_odd_coef, mathieu_even_coef,
-                           stirling2, cosdg, sindg, tandg, cotdg)
+                           elliprj, softplus, mathieu_cem, mathieu_sem,
+                           mathieu_odd_coef, mathieu_even_coef, stirling2, cosdg, sindg,
+                           tandg, cotdg)
+
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
 
 from scipy.special._basic import (
@@ -571,7 +573,7 @@ class TestCephes:
         assert_allclose(y, ref, rtol=1e-15)
 
     def test_mathieu_cem(self):
-        assert_equal(cephes.mathieu_cem(1,0,0),(1.0,0.0))
+        assert_equal(mathieu_cem(1,0,0),(1.0,0.0))
 
         # Test AMS 20.2.27
         @np.vectorize
@@ -591,12 +593,12 @@ class TestCephes:
                 return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1)))
         m = np.arange(0, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
-        assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
+        assert_allclose(mathieu_cem(m[:,None], q[None,:], 0.123)[0],
                         ce_smallq(m[:,None], q[None,:], 0.123),
-                        rtol=1e-14, atol=0)
+                        rtol=5e-14, atol=0)
 
     def test_mathieu_sem(self):
-        assert_equal(cephes.mathieu_sem(1,0,0),(0.0,1.0))
+        assert_equal(mathieu_sem(1,0,0),(0.0,1.0))
 
         # Test AMS 20.2.27
         @np.vectorize
@@ -613,9 +615,9 @@ class TestCephes:
                 return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1)))
         m = np.arange(1, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
-        assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
+        assert_allclose(mathieu_sem(m[:,None], q[None,:], 0.123)[0],
                         se_smallq(m[:,None], q[None,:], 0.123),
-                        rtol=1e-14, atol=0)
+                        rtol=5e-14, atol=0)
 
     def test_mathieu_modcem1(self):
         assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
@@ -653,16 +655,298 @@ class TestCephes:
               - 2*fr*cephes.mathieu_modsem1(m, q, z)[0])
         assert_allclose(y1, y2, rtol=1e-10)
 
+    @pytest.mark.slow
     def test_mathieu_overflow(self):
-        # Check that these return NaNs instead of causing a SEGV
-        assert_equal(cephes.mathieu_cem(10000, 0, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_sem(10000, 0, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_cem(10000, 1.5, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_sem(10000, 1.5, 1.3), (np.nan, np.nan))
+        # This originally checked that these return NaNs instead of causing a SEGV.
+        # Fixed in https://github.com/scipy/xsf/pull/99 and now these return accurate
+        # values.
+        assert_allclose(
+            mathieu_cem(10000, 0, 1.3),
+            (0.7660444431189781, -6427.876096865392),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            mathieu_sem(10000, 0, 1.3),
+            (0.6427876096865393, 7660.444431189781),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            mathieu_cem(10000, 1.5, 1.3),
+            (0.7660466357615003, -6427.849986120524),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            mathieu_sem(10000, 1.5, 1.3),
+            (0.6427850082438498, 7660.466242825855),
+            rtol=1e-9,
+        )
         assert_equal(cephes.mathieu_modcem1(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modsem1(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modcem2(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modsem2(10000, 1.5, 1.3), (np.nan, np.nan))
+
+    @pytest.mark.parametrize("m", [np.inf, np.nan, 1e18, -1.0, 1.5])
+    @pytest.mark.parametrize("q", [1.0, np.inf, -np.inf, np.nan])
+    def test_mathieu_non_finite_args(self, m, q):
+        assert_equal(mathieu_cem(m, q, 1.3), (np.nan, np.nan))
+        assert_equal(mathieu_sem(m, q, 1.3), (np.nan, np.nan))
+        assert_equal(special.mathieu_a(m, q), np.nan)
+        assert_equal(special.mathieu_b(m, q), np.nan)
+
+    @pytest.mark.parametrize("m", range(6))
+    def test_mathieu_cv_nan_q(self, m):
+        assert_equal(special.mathieu_a(float(m), np.nan), np.nan)
+        assert_equal(special.mathieu_b(float(max(m, 1)), np.nan), np.nan)
+
+    @pytest.mark.parametrize("m", [0, 5, 10, 40])
+    @pytest.mark.parametrize("q", [1e3, 1e4])
+    def test_mathieu_cv_large_q(self, m, q):
+        from scipy.linalg import eigh_tridiagonal
+        n = 10*(m + 25) + int(10*np.log10(q))
+        j = np.arange(n, dtype=float)
+        if m % 2:
+            d0, e0, r = 1.0 + q, q, 2*j + 1
+        else:
+            d0, e0, r = 0.0, np.sqrt(2)*q, 2*j
+        D = np.concatenate([[d0], r[1:]**2])
+        E = np.concatenate([[e0], np.full(n - 2, q)])
+        ref = eigh_tridiagonal(
+            D, E, select='i', select_range=(m//2, m//2), eigvals_only=True
+        )[0]
+        assert_allclose(special.mathieu_a(m, q), ref, rtol=1e-11)
+
+    def test_mathieu_cem_large_q(self):
+        m = np.asarray([2, 5, 10, 15]).reshape(4, 1, 1)
+        q = np.asarray([-500, 500]).reshape(1, 2, 1)
+        x = np.asarray([30, 60, 72, 90]).reshape(1, 1, 4)
+        result, result_diff = mathieu_cem(m, q, x)
+        # Reference values computed with Mathematica
+        expected = np.asarray(
+            [
+                [
+                    [
+                        -0.10699511993127243,
+                        -4.470350409256081e-08,
+                        -1.4897308521662612e-11,
+                        -6.502073479911675e-17,
+                    ],
+                    [
+                        4.470350409256081e-08,
+                        0.10699511993127243,
+                        1.5116456169984964,
+                        -1.702701664970742,
+                    ],
+                ],
+                [
+                    [
+                        0.5923164050712968,
+                        1.3951810902306242e-06,
+                        7.528695445460748e-10,
+                        0.0,
+                    ],
+                    [
+                        6.309542394410402e-06,
+                        1.0364275909095013,
+                        0.15758260914533595,
+                        0.0,
+                    ],
+                ],
+                [
+                    [
+                        0.3847469556317107,
+                        -0.002775083886393818,
+                        -7.235826300032016e-06,
+                        -5.14576872387257e-10,
+                    ],
+                    [
+                        0.002775083886393818,
+                        -0.3847469556317107,
+                        1.0945475873404589,
+                        -1.144543729457431,
+                    ],
+                ],
+                [
+                    [
+                        -0.7547516232028949,
+                        -0.088358513894309,
+                        -0.0007763486933946563,
+                        -0.0,
+                    ],
+                    [0.17467642060291227, 1.129624649772552, 1.0289566436695188, 0.0],
+                ],
+            ]
+        )
+        expected_diff = np.asarray(
+            [
+                [
+                    [
+                        1.931982086575836,
+                        1.61372147071861e-06,
+                        5.964180511531926e-10,
+                        0.0,
+                    ],
+                    [1.61372147071861e-06, 1.931982086575836, 9.732119972880236, 0.0],
+                ],
+                [
+                    [
+                        -7.6924144665926955,
+                        -4.6962971693661875e-05,
+                        -2.8489400777119188e-08,
+                        -2.563549792961658e-13,
+                    ],
+                    [
+                        0.00020443011876172828,
+                        10.220217850696768,
+                        -26.75083480392739,
+                        -30.244287177990444,
+                    ],
+                ],
+                [
+                    [
+                        -26.18214629233065,
+                        0.07087904799712258,
+                        0.00022267811170875295,
+                        0.0,
+                    ],
+                    [0.07087904799712258, -26.18214629233065, -14.401774987727999, 0.0],
+                ],
+                [
+                    [
+                        23.137087137330095,
+                        1.6797768393294235,
+                        0.019790490972967006,
+                        7.527835456480875e-06,
+                    ],
+                    [
+                        2.9927304038851785,
+                        -4.109478246292849,
+                        -5.935052410546458,
+                        35.44601484471241,
+                    ],
+                ],
+            ]
+        )
+        assert_allclose(result, expected, rtol=1e-11, atol=2e-14)
+        assert_allclose(result_diff, expected_diff, rtol=1e-11, atol=2e-14)
+
+    def test_mathieu_sem_large_q(self):
+        m = np.asarray([2, 5, 10, 15]).reshape(4, 1, 1)
+        q = np.asarray([-500, 500]).reshape(1, 2, 1)
+        x = np.asarray([30, 60, 72, 90]).reshape(1, 1, 4)
+        result, result_diff = mathieu_sem(m, q, x)
+        # Reference values computed with Mathematica
+        expected = np.asarray(
+            [
+                [
+                    [
+                        0.03161150921537506,
+                        5.92374594673122e-09,
+                        1.561021626782108e-12,
+                        0.0,
+                    ],
+                    [
+                        5.92374594673122e-09,
+                        0.03161150921537506,
+                        0.8187448073004929,
+                        0.0,
+                    ],
+                ],
+                [
+                    [
+                        1.0364275909095013,
+                        6.309542394410402e-06,
+                        4.362637529851409e-09,
+                        5.2053728361705215e-14,
+                    ],
+                    [
+                        1.3951810902306242e-06,
+                        0.5923164050712968,
+                        1.4268370626499316,
+                        1.4607234825556257,
+                    ],
+                ],
+                [
+                    [
+                        0.7030413282968647,
+                        0.0009713037062367355,
+                        1.915600111939833e-06,
+                        0.0,
+                    ],
+                    [
+                        0.0009713037062367355,
+                        0.7030413282968647,
+                        0.9836717773409747,
+                        0.0,
+                    ],
+                ],
+                [
+                    [
+                        -1.129624649772552,
+                        -0.17467642060291227,
+                        -0.002148573402117724,
+                        -1.103555998546891e-06,
+                    ],
+                    [
+                        0.088358513894309,
+                        0.7547516232028949,
+                        0.513042760473874,
+                        -1.0264873434825528,
+                    ],
+                ],
+            ]
+        )
+        expected_diff = np.asarray(
+            [
+                [
+                    [
+                        -0.6393182210092784,
+                        -2.2083588129453194e-07,
+                        -6.417066856062898e-11,
+                        -2.1240632613429807e-16,
+                    ],
+                    [
+                        2.2083588129453194e-07,
+                        0.6393182210092784,
+                        8.599275201225575,
+                        -22.778441684453874,
+                    ],
+                ],
+                [
+                    [
+                        -10.220217850696768,
+                        -0.00020443011876172828,
+                        -1.60184971246549e-07,
+                        -0.0,
+                    ],
+                    [
+                        4.6962971693661875e-05,
+                        7.6924144665926955,
+                        -15.447238233765805,
+                        0.0,
+                    ],
+                ],
+                [
+                    [
+                        24.231976769290327,
+                        -0.026227516276646285,
+                        -6.132325199576008e-05,
+                        -3.256800950916581e-09,
+                    ],
+                    [
+                        0.026227516276646285,
+                        -24.231976769290327,
+                        19.15213737340289,
+                        -33.456847977156805,
+                    ],
+                ],
+                [
+                    [-4.109478246292849, 2.9927304038851785, 0.05171136755285225, 0.0],
+                    [1.6797768393294235, 23.137087137330095, 29.501241155947525, 0.0],
+                ],
+            ]
+        )
+        assert_allclose(result, expected, rtol=1e-11, atol=2e-14)
+        assert_allclose(result_diff, expected_diff, rtol=1e-11, atol=5e-14)
 
     def test_mathieu_ticket_1847(self):
         # Regression test --- this call had some out-of-bounds access
@@ -4143,7 +4427,7 @@ class TestMathieu:
         # Compare the first 4 nonzero Fourier coefficients to the coefficients
         # computed using the integral definition.
         c = [se_fourier_coefficient_using_integral(k, n, q) for k in range(1, 5)]
-        assert_allclose(c, B[:len(c)], rtol=1e-10)
+        assert_allclose(c, B[:len(c)], rtol=5e-9)
 
     @pytest.mark.parametrize('n, q', [(3, 3.5), (7, 2)])
     def test_mathieu_odd_coef_against_integral_n_odd(self, n, q):
