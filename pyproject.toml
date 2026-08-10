@@ -156,8 +156,9 @@ coverage = [
 ]
 
 bench = [
-    # https://github.com/airspeed-velocity/asv/issues/1537
-    "asv==0.6.4",
+    # 0.6.6 regressed per-benchmark overhead ~7x, which pushes the CircleCI
+    # benchmark job past its time limit; revisit when that is fixed upstream
+    "asv==0.6.5",
     "pyfftw",
     "cffi", 
 ]
