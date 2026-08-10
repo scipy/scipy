@@ -685,7 +685,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     """
 
     res = _bracket_root(f, xl0, xr0=xr0, xmin=xmin, xmax=xmax, factor=factor,
-                        args=args, kwargs=kwargs, maxiter=maxiter, 
+                        args=args, kwargs=kwargs, maxiter=maxiter,
                         preserve_shape=preserve_shape)
     res.bracket = res.xl, res.xr
     res.f_bracket = res.fl, res.fr
@@ -702,7 +702,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
                    ('jax.numpy', 'JAX arrays do not support item assignment.'),
                    ('torch', 'data-apis/array-api-compat#271')])
 def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
-                    factor=None, args=(), kwargs=None, maxiter=1000, 
+                    factor=None, args=(), kwargs=None, maxiter=1000,
                     preserve_shape=False):
     """Bracket the minimum of a unimodal, real-valued function of a real variable.
 

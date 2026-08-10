@@ -129,11 +129,11 @@ def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
     """
     res = _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
                            fatol, frtol, maxiter, callback, preserve_shape)
-    (func, args, kwargs, xatol, xrtol, 
+    (func, args, kwargs, xatol, xrtol,
      fatol, frtol, maxiter, callback, preserve_shape) = res
 
     # Initialization
-    temp = eim._initialize(func, (a, b), args, kwargs=kwargs, 
+    temp = eim._initialize(func, (a, b), args, kwargs=kwargs,
                            preserve_shape=preserve_shape)
 
     func, xs, fs, args, shape, dtype, xp = temp
@@ -280,7 +280,7 @@ def _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
     if preserve_shape not in {True, False}:
         raise ValueError(message)
 
-    return (func, args, kwargs, xatol, xrtol, 
+    return (func, args, kwargs, xatol, xrtol,
             fatol, frtol, maxiter, callback, preserve_shape)
 
 
@@ -408,12 +408,12 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None
     """
     res = _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
                            fatol, frtol, maxiter, callback, preserve_shape)
-    (func, args, kwargs, xatol, xrtol, 
+    (func, args, kwargs, xatol, xrtol,
      fatol, frtol, maxiter, callback, preserve_shape) = res
 
     # Initialization
     xs = (x1, x2, x3)
-    temp = eim._initialize(func, xs, args, kwargs=kwargs, 
+    temp = eim._initialize(func, xs, args, kwargs=kwargs,
                            preserve_shape=preserve_shape)
 
     func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8

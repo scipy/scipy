@@ -5,10 +5,11 @@ import math
 import numpy as np
 from numpy.testing import assert_allclose
 
+from scipy._external import array_api_extra as xpx
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
-                                   is_numpy, make_xp_test_case, xp_default_dtype)
+                                   is_numpy, make_xp_test_case)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
 from scipy.integrate._tanhsinh import _pair_cache
@@ -361,7 +362,7 @@ class TestTanhSinh:
             return xp.stack([x, xp.sin(10 * x), xp.cos(30 * x), x * xp.sin(100 * x)])
 
         ref = quad_vec(lambda x: f(x, np), 0, 1)
-        ref = xp.asarray(ref[0], dtype=xp_default_dtype(xp))
+        ref = xp.asarray(ref[0], dtype=xpx.default_dtype(xp))
         ref = xp.moveaxis(xp.broadcast_to(ref, (*batch_shape, *ref.shape)), -1, 0)
 
         def g(x, p):  # p is unused; just want to test its shape

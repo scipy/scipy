@@ -515,7 +515,7 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor,
     if preserve_shape not in {True, False}:
         raise ValueError(message)
 
-    return (func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, 
+    return (func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs,
             maxiter, xp, preserve_shape)
 
 
@@ -629,9 +629,9 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     """
     callback = None  # works; I just don't want to test it
 
-    temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, 
+    temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor,
                                args, kwargs, maxiter, preserve_shape)
-    (func, xm0, xl0, xr0, xmin, xmax, factor, 
+    (func, xm0, xl0, xr0, xmin, xmax, factor,
      args, kwargs, maxiter, xp, preserve_shape) = temp
 
     xs = (xl0, xm0, xr0)
