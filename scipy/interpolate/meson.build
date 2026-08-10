@@ -89,14 +89,6 @@ py3.install_sources([
     '_regrid.py',
     '_rgi.py',
     '_ndbspline.py',
-    'dfitpack.py',
-    'fitpack.py',
-    'fitpack2.py',
-    'interpolate.py',
-    'ndgriddata.py',
-    'interpnd.py',
-    'polyint.py',
-    'rbf.py'
   ],
   subdir: 'scipy/interpolate'
 )
