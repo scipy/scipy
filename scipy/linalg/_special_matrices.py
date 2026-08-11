@@ -159,7 +159,7 @@ def circulant(c):
 
 
 @xp_capabilities(np_only=True)
-@_apply_over_batch(("c", 1), ("r", 1))
+@_apply_over_batch(("c", 1), ("r", 1), signature="(i),(j)->(i,j)")
 def hankel(c, r=None):
     r"""
     Construct a Hankel matrix.

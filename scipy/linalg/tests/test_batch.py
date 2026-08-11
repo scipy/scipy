@@ -190,7 +190,7 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((4, 4), dtype=dtype, rng=rng)
         A = np.asarray([np.triu(A, k) for k in range(-3, 3)]).reshape((2, 3, 4, 4))
-        self.batch_test(linalg.bandwidth, A, n_out=2)
+        self.batch_test(linalg.bandwidth, A, n_out=2, test_zero_size=True)
 
     @pytest.mark.parametrize('fun_n_out', [(linalg.cholesky, 1), (linalg.ldl, 3),
                                            (linalg.cho_factor, 2)])
@@ -200,7 +200,8 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
         A = A + 4*np.eye(4, dtype=dtype)  # ensure positive definite for Cholesky
-        self.batch_test(fun, A, n_out=n_out)
+        test_zero_size = (fun != linalg.ldl)
+        self.batch_test(fun, A, n_out=n_out, test_zero_size=test_zero_size)
 
     @pytest.mark.parametrize('compute_uv', [False, True])
     @pytest.mark.parametrize('full_matrices', [False, True])
@@ -211,13 +212,15 @@ class TestBatch:
         n_out = 3 if compute_uv else 1
         self.batch_test(
             linalg.svd, A, n_out=n_out,
-            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
+            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices),
+            test_zero_size=True
         )
 
         A = get_random((5, 3, 2, 0), dtype=dtype, rng=rng)
         self.batch_test(
             linalg.svd, A, n_out=n_out,
-            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
+            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices),
+            test_zero_size=True
         )
 
     @pytest.mark.parametrize('fun', [linalg.polar, linalg.rq])
@@ -234,7 +237,8 @@ class TestBatch:
         rng = np.random.default_rng(12345)
         a = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         self.batch_test(lambda x: linalg.qr(x, mode=mode, pivoting=pivoting), a,
-                        n_out=(1 if mode == 'r' else 2) + 1 if pivoting else 0)
+                        n_out=(1 if mode == 'r' else 2) + 1 if pivoting else 0,
+            test_zero_size=True)
 
     @pytest.mark.parametrize('pivoting', [True, False])
     @pytest.mark.parametrize('dtype', floating)
@@ -409,7 +413,7 @@ class TestBatch:
     def test_svdvals(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
-        self.batch_test(fun, A)
+        self.batch_test(fun, A, test_zero_size=True)
 
     @pytest.mark.parametrize('fun_n_out', [(linalg.orthogonal_procrustes, 2),
                                            (linalg.khatri_rao, 1),
@@ -691,15 +695,6 @@ class TestBatch:
         message = "Batch support for sparse arrays is not available."
         with pytest.raises(NotImplementedError, match=message):
             linalg.clarkson_woodruff_transform(A, sketch_size=3, rng=rng)
-
-
-    @pytest.mark.parametrize('f, args', [
-        (linalg.toeplitz, (np.ones((0, 4)),)),
-    ])
-    def test_zero_size_batch(self, f, args):
-        message = "does not support zero-size batches."
-        with pytest.raises(ValueError, match=message):
-            f(*args)
 
 
 @pytest.mark.parametrize(

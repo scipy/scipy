@@ -64,16 +64,6 @@ def _check_format_errors_warnings(routine_name, err_lst):
     raise LinAlgError(mesg)
 
 
-def _eig_signature(a, b=None, left=False, right=True, overwrite_a=False,
-                   overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
-    inputs = "(i,i),(i,i)"
-    outputs = "(2,i)" if homogeneous_eigvals else "(i)"
-    outputs = outputs + ",(i,i)" if left else outputs
-    outputs = outputs + ",(i,i)" if right else outputs
-    return f"{inputs}->{outputs}"
-
-
-@_apply_over_batch(('a', 2), ('b', 2), signature=_eig_signature)
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
         overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
     r"""
@@ -886,8 +876,8 @@ def _eigvals_signature(a, b=None, overwrite_a=False, overwrite_b=False,
 
 
 @_apply_over_batch(('a', 2), ('b', 2), signature=_eigvals_signature)
-def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
-            homogeneous_eigvals=False):
+def eigvals(a, b=None, overwrite_a=False, overwrite_b=False,
+            check_finite=True, homogeneous_eigvals=False):
     r"""
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
