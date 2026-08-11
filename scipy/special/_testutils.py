@@ -1,7 +1,7 @@
 import os
 import functools
 import operator
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 import numpy as np
 from numpy.testing import assert_
@@ -25,7 +25,7 @@ def check_version(module, min_ver):
     if type(module) is MissingModule:
         return pytest.mark.skip(reason=f"{module.name} is not installed")
     return pytest.mark.skipif(
-        _pep440.parse(module.__version__) < _pep440.Version(min_ver),
+        version.parse(module.__version__) < version.Version(min_ver),
         reason=f"{module.__name__} version >= {min_ver} required"
     )
 

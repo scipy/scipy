@@ -17,18 +17,18 @@ given where :math:`L=0.0` and :math:`S=1.0.` The nonstandard forms can be obtain
 ======================================  =============================================================================  =========================================================================================================================================
 Function Name                           Standard Function                                                              Transformation
 ======================================  =============================================================================  =========================================================================================================================================
-Cumulative Distribution Function (CDF)  :math:`F\left(x\right)`                                                        :math:`F\left(x;L,S\right)=F\left(\frac{\left(x-L\right)}{S}\right)`
-Probability Density Function (PDF)      :math:`f\left(x\right)=F^{\prime}\left(x\right)`                               :math:`f\left(x;L,S\right)=\frac{1}{S}f\left(\frac{\left(x-L\right)}{S}\right)`
+Cumulative Distribution Function (CDF)  :math:`F\left(x\right)`                                                        :math:`F\left(x;L,S\right)=F\left(\frac{x-L}{S}\right)`
+Probability Density Function (PDF)      :math:`f\left(x\right)=F^{\prime}\left(x\right)`                               :math:`f\left(x;L,S\right)=\frac{1}{S}f\left(\frac{x-L}{S}\right)`
 Percent Point Function (PPF)            :math:`G\left(q\right)=F^{-1}\left(q\right)`                                   :math:`G\left(q;L,S\right)=L+SG\left(q\right)`
 Probability Sparsity Function (PSF)     :math:`g\left(q\right)=G^{\prime}\left(q\right)`                               :math:`g\left(q;L,S\right)=Sg\left(q\right)`
-Hazard Function (HF)                    :math:`h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}`          :math:`h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{\left(x-L\right)}{S}\right)`
-Cumulative Hazard Function (CHF)        :math:`H_{a}\left(x\right)=` :math:`\log\frac{1}{1-F\left(x\right)}`           :math:`H_{a}\left(x;L,S\right)=H_{a}\left(\frac{\left(x-L\right)}{S}\right)`
-Survival Function (SF)                  :math:`S\left(x\right)=1-F\left(x\right)`                                      :math:`S\left(x;L,S\right)=S\left(\frac{\left(x-L\right)}{S}\right)`
+Hazard Function (HF)                    :math:`h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}`          :math:`h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{x-L}{S}\right)`
+Cumulative Hazard Function (CHF)        :math:`H_{a}\left(x\right)=` :math:`\log\frac{1}{1-F\left(x\right)}`           :math:`H_{a}\left(x;L,S\right)=H_{a}\left(\frac{x-L}{S}\right)`
+Survival Function (SF)                  :math:`S\left(x\right)=1-F\left(x\right)`                                      :math:`S\left(x;L,S\right)=S\left(\frac{x-L}{S}\right)`
 Inverse Survival Function (ISF)         :math:`Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)`  :math:`Z\left(\alpha;L,S\right)=L+SZ\left(\alpha\right)`
 Moment Generating Function (MGF)        :math:`M_{Y}\left(t\right)=E\left[e^{Yt}\right]`                               :math:`M_{X}\left(t\right)=e^{Lt}M_{Y}\left(St\right)`
 Random Variates                         :math:`Y=G\left(U\right)`                                                      :math:`X=L+SY`
 (Differential) Entropy                  :math:`h\left[Y\right]=-\int f\left(y\right)\log f\left(y\right)dy`            :math:`h\left[X\right]=h\left[Y\right]+\log S`
-(Non-central) Moments                   :math:`\mu_{n}^{\prime}=E\left[Y^{n}\right]`                                   :math:`E\left[X^{n}\right]=L^{n}\sum_{k=0}^{N}\left(\begin{array}{c} n\\ k\end{array}\right)\left(\frac{S}{L}\right)^{k}\mu_{k}^{\prime}`
+(Non-central) Moments                   :math:`\mu_{n}^{\prime}=E\left[Y^{n}\right]`                                   :math:`E\left[X^{n}\right]=\sum_{k=0}^{n}\left(\begin{array}{c} n\\ k\end{array}\right)L^{n-k}S^{k}\mu_{k}^{\prime}`
 Central Moments                         :math:`\mu_{n}=E\left[\left(Y-\mu\right)^{n}\right]`                           :math:`E\left[\left(X-\mu_{X}\right)^{n}\right]=S^{n}\mu_{n}`
 mean (mode, median), var                :math:`\mu,\,\mu_{2}`                                                          :math:`L+S\mu,\, S^{2}\mu_{2}`
 skewness                                :math:`\gamma_{1}=\frac{\mu_{3}}{\left(\mu_{2}\right)^{3/2}}`                  :math:`\gamma_{1}`
@@ -90,8 +90,8 @@ and half on the other. In other words, :math:`F\left(m_{n}\right)=\frac{1}{2}` s
 
      m_{n}=G\left(\frac{1}{2}\right).
 
-In addition, the mode, :math:`m_{d}` , is defined as the value for which the probability density function
-reaches it's peak
+In addition, the mode, :math:`m_{d}`, is defined as the value for which the probability density function
+reaches its peak
 
 .. math::
 
@@ -106,7 +106,7 @@ common. Alternatively, some distributions have well-known minimum
 variance unbiased estimators. These will be chosen by default, but the
 likelihood function will always be available for minimizing.
 
-If :math:`f\left(x;\boldsymbol{\theta}\right)` is the PDF of a random-variable where :math:`\boldsymbol{\theta}` is a vector of parameters ( *e.g.* :math:`L` and :math:`S` ), then for a collection of :math:`N` independent samples from this distribution, the joint distribution the
+If :math:`f\left(x;\boldsymbol{\theta}\right)` is the PDF of a random-variable where :math:`\boldsymbol{\theta}` is a vector of parameters ( *e.g.* :math:`L` and :math:`S` ), then for a collection of :math:`N` independent samples from this distribution, the joint distribution of the
 random vector :math:`\mathbf{x}` is
 
 .. math::
@@ -133,7 +133,7 @@ be fit by replacing :math:`x_{i}` with :math:`\left(x_{i}-L\right)/S` in the log
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} l_{\mathbf{x}}\left(L,S;\boldsymbol{\theta}\right) & = & N\log S-\sum_{i=1}^{N}\log f\left(\frac{x_{i}-L}{S};\boldsymbol{\theta}\right)\\  & = & N\log S+l_{\frac{\mathbf{x}-S}{L}}\left(\boldsymbol{\theta}\right)\end{eqnarray*}
+    \begin{eqnarray*} l_{\mathbf{x}}\left(L,S;\boldsymbol{\theta}\right) & = & N\log S-\sum_{i=1}^{N}\log f\left(\frac{x_{i}-L}{S};\boldsymbol{\theta}\right)\\  & = & N\log S+l_{\frac{\mathbf{x}-L}{S}}\left(\boldsymbol{\theta}\right)\end{eqnarray*}
 
 If desired, sample estimates for :math:`L` and :math:`S` (not necessarily maximum likelihood estimates) can be obtained from
 samples estimates of the mean and variance using

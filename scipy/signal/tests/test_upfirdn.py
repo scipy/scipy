@@ -38,12 +38,12 @@ from itertools import product
 from pytest import raises as assert_raises
 import pytest
 
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_assert_close, array_namespace, _xp_copy_to_numpy, is_cupy,
     make_xp_test_case
 )
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 from scipy.signal import upfirdn, firwin
 from scipy.signal._upfirdn import _output_len, _upfirdn_modes
 from scipy.signal._upfirdn_apply import _pad_test
@@ -281,12 +281,12 @@ class TestUpfirdn:
 
     @pytest.mark.parametrize(
         'size, h_len, mode, dtype',
-        product(
+        list(product(
             [8],
             [4, 5, 26],  # include cases with h_len > 2*size
             _upfirdn_modes,
             ["float32", "float64", "complex64", "complex128"],
-        )
+        ))
     )
     def test_modes(self, size, h_len, mode, dtype, xp):
         if is_cupy(xp) and mode != "constant":

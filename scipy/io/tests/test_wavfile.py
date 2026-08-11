@@ -5,8 +5,8 @@ import threading
 import warnings
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_, assert_array_equal,
-                           break_cycles, IS_PYPY)
+from numpy.testing import assert_equal, assert_, assert_array_equal
+
 import pytest
 from pytest import raises, warns
 
@@ -345,10 +345,10 @@ class Nonseekable:
 
     def seekable(self):
         return False
-    
+
     def read(self, size=-1, /):
         return self.fp.read(size)
-    
+
     def close(self):
         self.fp.close()
 
@@ -487,12 +487,6 @@ def test_write_roundtrip(realfile, mmap, rate, channels, dt_str, tmpdir):
         with pytest.raises(ValueError, match='read-only'):
             data2[0] = 0
 
-    if realfile and mmap and IS_PYPY and sys.platform == 'win32':
-        # windows cannot remove a dead file held by a mmap but not collected
-        # in PyPy; since the filename gets reused in this test, clean this up
-        break_cycles()
-        break_cycles()
-
 
 @pytest.mark.parametrize("dtype", [np.float16])
 def test_wavfile_dtype_unsupported(tmpdir, dtype):
@@ -506,15 +500,15 @@ def test_wavfile_dtype_unsupported(tmpdir, dtype):
 def test_seek_emulating_reader_invalid_seek():
     # Dummy data for the reader
     reader = wavfile.SeekEmulatingReader(BytesIO(b'\x00\x00'))
-    
+
     # Test SEEK_END with an invalid whence value
     with pytest.raises(UnsupportedOperation):
         reader.seek(0, 5)  # Invalid whence value
-    
+
     # Test with negative seek value
     with pytest.raises(UnsupportedOperation):
         reader.seek(-1, 0)  # Negative position with SEEK_SET
-    
+
     # Test SEEK_END with valid parameters (should not raise)
     pos = reader.seek(0, os.SEEK_END)  # Valid usage
     assert pos == 2, f"Failed to seek to end, got position {pos}"

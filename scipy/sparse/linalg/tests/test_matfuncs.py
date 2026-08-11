@@ -31,7 +31,7 @@ def _burkardt_13_power(n, p):
 
     Parameters
     ----------
-    n : integer greater than 1
+    n : int greater than 1
         Order of the square matrix to be returned.
     p : non-negative integer
         Power of the matrix.

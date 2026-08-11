@@ -4,22 +4,25 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
+import math
 import numpy as np
-from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
-    exp, cos, sin, polyval, polyint
+from numpy import zeros, pi, sqrt, cos, polyval, polyint
+
+from scipy._lib._array_api import array_namespace, xp_device, xp_promote
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
 
 
-def sawtooth(t, width=1):
+def sawtooth(t, width=1.):
     """
     Return a periodic sawtooth or triangle waveform.
 
     The sawtooth waveform has a period ``2*pi``, rises from -1 to 1 on the
     interval 0 to ``width*2*pi``, then drops from 1 to -1 on the interval
-    ``width*2*pi`` to ``2*pi``. `width` must be in the interval [0, 1].
+    ``width*2*pi`` to ``2*pi``. `width` must be in the interval ``[0, 1]``.
 
     Note that this is not band-limited.  It produces an infinite number
     of harmonics, which are aliased back and forth across the frequency
@@ -32,9 +35,9 @@ def sawtooth(t, width=1):
     width : array_like, optional
         Width of the rising ramp as a proportion of the total cycle.
         Default is 1, producing a rising ramp, while 0 produces a falling
-        ramp.  `width` = 0.5 produces a triangle wave.
+        ramp.  ``width=0.5`` produces a triangle wave.
         If an array, causes wave shape to change over time, and must be the
-        same length as t.
+        same length as `t`.
 
     Returns
     -------
@@ -52,32 +55,28 @@ def sawtooth(t, width=1):
     >>> plt.plot(t, signal.sawtooth(2 * np.pi * 5 * t))
 
     """
-    t, w = asarray(t), asarray(width)
-    w = asarray(w + (t - t))
-    t = asarray(t + (w - w))
-    y = zeros(t.shape, dtype="d")
+    xp = array_namespace(t, width)
+    t, w = xp_promote(t, width, broadcast=True, force_floating=True, xp=xp)
+    y = xp.zeros_like(t)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    place(y, mask1, nan)
+    y = xpx.at(y, mask1).set(xp.nan)
 
     # take t modulo 2*pi
-    tmod = mod(t, 2 * pi)
+    tmod = t % (2*xp.pi)
 
-    # on the interval 0 to width*2*pi function is
-    #  tmod / (pi*w) - 1
-    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
-    tsub = extract(mask2, tmod)
-    wsub = extract(mask2, w)
-    place(y, mask2, tsub / (pi * wsub) - 1)
+    # on the interval 0 to width*2*pi function is tmod / (pi*w) - 1
+    mask2 = ~mask1 & (tmod < w*2*xp.pi)
+    one = xp.asarray(1, dtype=t.dtype, device=xp_device(t))
+    safe_w = xp.where(w == 0, one, w)
+    y = xp.where(mask2, (tmod - xp.pi*safe_w)/(xp.pi*safe_w), y)
 
-    # on the interval width*2*pi to 2*pi function is
-    #  (pi*(w+1)-tmod) / (pi*(1-w))
+    # on the interval width*2*pi to 2*pi function is (pi*(w+1)-tmod) / (pi*(1-w))
+    mask3 = ~(mask1 | mask2)
+    safe_1mw = xp.where(w == 1, one, 1 - w)
+    y = xp.where(mask3, (xp.pi*(w + 1) - tmod)/(xp.pi*safe_1mw), y)
 
-    mask3 = (1 - mask1) & (1 - mask2)
-    tsub = extract(mask3, tmod)
-    wsub = extract(mask3, w)
-    place(y, mask3, (pi * (wsub + 1) - tsub) / (pi * (1 - wsub)))
     return y
 
 
@@ -87,7 +86,7 @@ def square(t, duty=0.5):
 
     The square wave has a period ``2*pi``, has value +1 from 0 to
     ``2*pi*duty`` and -1 from ``2*pi*duty`` to ``2*pi``. `duty` must be in
-    the interval [0,1].
+    the interval ``[0,1]``.
 
     Note that this is not band-limited.  It produces an infinite number
     of harmonics, which are aliased back and forth across the frequency
@@ -130,33 +129,34 @@ def square(t, duty=0.5):
     >>> plt.ylim(-1.5, 1.5)
 
     """
-    t, w = asarray(t), asarray(duty)
-    w = asarray(w + (t - t))
-    t = asarray(t + (w - w))
-    y = zeros(t.shape, dtype="d")
+    xp = array_namespace(t, duty)
+    t, w = xp_promote(t, duty, xp=xp, force_floating=True, broadcast=True)
+
+    y = xp.zeros_like(t)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    place(y, mask1, nan)
+    y = xpx.at(y, mask1).set(xp.nan)
 
     # on the interval 0 to duty*2*pi function is 1
-    tmod = mod(t, 2 * pi)
-    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
-    place(y, mask2, 1)
+    tmod = t % (2 * xp.pi)
+    mask2 = ~mask1 & (tmod < w*2*xp.pi)
+    y = xpx.at(y, mask2).set(1)
 
-    # on the interval duty*2*pi to 2*pi function is
-    #  (pi*(w+1)-tmod) / (pi*(1-w))
-    mask3 = (1 - mask1) & (1 - mask2)
-    place(y, mask3, -1)
+    # on the interval duty*2*pi to 2*pi function is -1
+    mask3 = ~(mask1 | mask2)
+    y = xpx.at(y, mask3).set(-1)
     return y
 
 
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
     """
-    Return a Gaussian modulated sinusoid:
+    Return a Gaussian modulated sinusoid.
 
-        ``exp(-a t^2) exp(1j*2*pi*fc*t).``
+    The formula for the returned signal is given by::
+
+        exp(-a t^2) exp(1j*2*pi*fc*t)
 
     If `retquad` is True, then return the real and imaginary parts
     (in-phase and quadrature).
@@ -165,7 +165,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 
     Parameters
     ----------
-    t : ndarray or the string 'cutoff'
+    t : ndarray or 'cutoff'
         Input array.
     fc : float, optional
         Center frequency (e.g. Hz).  Default is 1000.
@@ -188,11 +188,11 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     Returns
     -------
     yI : ndarray
-        Real part of signal.  Always returned.
+        Real part of signal. Always returned.
     yQ : ndarray
-        Imaginary part of signal.  Only returned if `retquad` is True.
+        Imaginary part of signal. Only returned if `retquad` is True.
     yenv : ndarray
-        Envelope of signal.  Only returned if `retenv` is True.
+        Envelope of signal. Only returned if `retenv` is True.
 
     Examples
     --------
@@ -221,7 +221,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # fdel = fc*bw/2:  g(fdel) = ref --- solve this for a
     #
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
-    a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
+    a = -(pi * fc * bw) ** 2 / (4.0 * math.log(ref))
 
     if isinstance(t, str):
         if t == 'cutoff':  # compute cut_off point
@@ -231,13 +231,16 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                 raise ValueError("Reference level for time cutoff must "
                                  "be < 0 dB")
             tref = pow(10.0, tpr / 20.0)
-            return sqrt(-log(tref) / a)
+            return sqrt(-math.log(tref) / a)
         else:
             raise ValueError("If `t` is a string, it must be 'cutoff'")
 
-    yenv = exp(-a * t * t)
-    yI = yenv * cos(2 * pi * fc * t)
-    yQ = yenv * sin(2 * pi * fc * t)
+    xp = array_namespace(t)
+    t = xp_promote(t, xp=xp, force_floating=True)
+
+    yenv = xp.exp(-a * t * t)
+    yI = yenv * xp.cos(2 * xp.pi * fc * t)
+    yQ = yenv * xp.sin(2 * xp.pi * fc * t)
     if not retquad and not retenv:
         return yI
     if not retquad and retenv:
@@ -414,41 +417,45 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, *,
     magnitude of the real-valued cosine function is only 1/2.
     """
     # 'phase' is computed in _chirp_phase, to make testing easier.
-    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero) + np.deg2rad(phi)
-    return np.exp(1j*phase) if complex else np.cos(phase)
+    xp = array_namespace(t)
+    t = xp_promote(t, xp=xp, force_floating=True)
+    # possibly use `xpx.deg2rad(phi)` in the future, see
+    # https://github.com/data-apis/array-api-extra/issues/876
+    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero, xp=xp) + phi * xp.pi / 180
+    return xp.exp(1j*phase) if complex else xp.cos(phase)
 
 
-def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
+def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True, *, xp=None):
     """
     Calculate the phase used by `chirp` to generate its output.
 
     See `chirp` for a description of the arguments.
 
     """
-    t = asarray(t)
+    xp = array_namespace(t) if xp is None else xp
     f0 = float(f0)
     t1 = float(t1)
     f1 = float(f1)
     if method in ['linear', 'lin', 'li']:
         beta = (f1 - f0) / t1
-        phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
+        phase = 2 * xp.pi * (f0 * t + 0.5 * beta * t * t)
 
     elif method in ['quadratic', 'quad', 'q']:
         beta = (f1 - f0) / (t1 ** 2)
         if vertex_zero:
-            phase = 2 * pi * (f0 * t + beta * t ** 3 / 3)
+            phase = 2 * xp.pi * (f0 * t + beta * t ** 3 / 3)
         else:
-            phase = 2 * pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
+            phase = 2 * xp.pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
 
     elif method in ['logarithmic', 'log', 'lo']:
         if f0 * f1 <= 0.0:
             raise ValueError("For a logarithmic chirp, f0 and f1 must be "
                              "nonzero and have the same sign.")
         if f0 == f1:
-            phase = 2 * pi * f0 * t
+            phase = 2 * xp.pi * f0 * t
         else:
-            beta = t1 / log(f1 / f0)
-            phase = 2 * pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
+            beta = t1 / math.log(f1 / f0)
+            phase = 2 * xp.pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
 
     elif method in ['hyperbolic', 'hyp']:
         if f0 == 0 or f1 == 0:
@@ -456,12 +463,12 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
                              "nonzero.")
         if f0 == f1:
             # Degenerate case: constant frequency.
-            phase = 2 * pi * f0 * t
+            phase = 2 * xp.pi * f0 * t
         else:
             # Singular point: the instantaneous frequency blows up
             # when t == sing.
             sing = -f1 * t1 / (f0 - f1)
-            phase = 2 * pi * (-sing * f0) * log(np.abs(1 - t/sing))
+            phase = 2 * xp.pi * (-sing * f0) * xp.log(xp.abs(1 - t/sing))
 
     else:
         raise ValueError("method must be 'linear', 'quadratic', 'logarithmic', "
@@ -486,14 +493,14 @@ def sweep_poly(t, poly, phi=0):
         The desired frequency expressed as a polynomial.  If `poly` is
         a list or ndarray of length n, then the elements of `poly` are
         the coefficients of the polynomial, and the instantaneous
-        frequency is
+        frequency is::
 
-          ``f(t) = poly[0]*t**(n-1) + poly[1]*t**(n-2) + ... + poly[n-1]``
+            f(t) = poly[0]*t**(n-1) + poly[1]*t**(n-2) + ... + poly[n-1]
 
         If `poly` is an instance of numpy.poly1d, then the
-        instantaneous frequency is
+        instantaneous frequency is::
 
-          ``f(t) = poly(t)``
+            f(t) = poly(t)
 
     phi : float, optional
         Phase offset, in degrees, Default: 0.

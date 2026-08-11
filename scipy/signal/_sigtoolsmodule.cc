@@ -7,7 +7,6 @@ is granted under the SciPy License.
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #include "numpy/ndarrayobject.h"
-#include "npy_2_compat.h"
 
 #include "_sigtools.hh"
 #include <stdlib.h>
@@ -472,7 +471,8 @@ static double wate(double freq, double *fx, double *wtx, int lband, int jtype)
 
 static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
                      double *response, double *weight, int type, int maxiter,
-                     int grid_density, int *niter_out) {
+                     int grid_density, int *niter_out, int *ngrid_out,
+                     int *nfcns_out) {
 
   int jtype, nbands, nfilt, lgrid, nz;
   int neg, nodd, nm1;
@@ -567,6 +567,15 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
     ngrid = j - 1;
     if (neg == nodd) {
 	if (grid[ngrid] > (0.5-delf)) --ngrid;
+    }
+
+    /* Need at least nfcns+1 grid points for the extremal frequencies;
+       a too-narrow band yields fewer and overruns the arrays (gh-24495). */
+    if (ngrid < nfcns + 1) {
+	*ngrid_out = ngrid;
+	*nfcns_out = nfcns;
+	free(tempstor);
+	return -3;
     }
 
     /*
@@ -840,6 +849,7 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     double oldvalue, *dptr, fs = 1.0;
     char mystr[255];
     int niter = -1;
+    int ngrid = -1, nfcns = -1;
 
     if (!PyArg_ParseTuple(args, "iOOO|idii", &numtaps, &bands, &des, &weight,
                           &type, &fs, &maxiter, &grid_density)) {
@@ -904,7 +914,7 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
                     (double *)PyArray_DATA(a_bands),
                     (double *)PyArray_DATA(a_des),
                     (double *)PyArray_DATA(a_weight),
-                    type, maxiter, grid_density, &niter);
+                    type, maxiter, grid_density, &niter, &ngrid, &nfcns);
     if (err < 0) {
         if (err == -1) {
             snprintf(mystr, sizeof(mystr), "Failure to converge at iteration %d, try reducing transition band width.\n", niter);
@@ -913,6 +923,15 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
         }
         else if (err == -2) {
             PyErr_NoMemory();
+            goto fail;
+        }
+        else if (err == -3) {
+            snprintf(mystr, sizeof(mystr),
+                "Band edges are too close together to build the dense "
+                "frequency grid: it has only %d point(s) but at least %d "
+                "(one per extremal frequency) are required. Widen the bands, "
+                "reduce numtaps, or increase grid_density.", ngrid, nfcns + 1);
+            PyErr_SetString(PyExc_ValueError, mystr);
             goto fail;
         }
     }
@@ -1016,35 +1035,43 @@ static struct PyMethodDef toolbox_module_methods[] = {
 	{NULL, NULL, 0, NULL}		/* sentinel */
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_sigtools",
-    NULL,
-    -1,
-    toolbox_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+static int module_exec(PyObject *module) {
+    (void)module;  /* unused */
+
+    if (_import_array() < 0) { return -1; }
+
+    scipy_signal__sigtools_linear_filter_module_init();
+
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot sigtools_slots[] = {
+    {Py_mod_exec, (void *)module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    /* signal that this module supports running without an active GIL */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
 };
+
+
+static struct PyModuleDef moduledef = {
+    /* m_base     */ PyModuleDef_HEAD_INIT,
+    /* m_name     */ "_sigtools",
+    /* m_doc      */ NULL,
+    /* m_size     */ 0,
+    /* m_methods  */ toolbox_module_methods,
+    /* m_slots    */ sigtools_slots,
+    /* m_traverse */ NULL,
+    /* m_clear    */ NULL,
+    /* m_free     */ NULL
+};
+
 
 PyMODINIT_FUNC
 PyInit__sigtools(void)
 {
-    PyObject *module;
-
-    import_array();
-
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    scipy_signal__sigtools_linear_filter_module_init();
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }

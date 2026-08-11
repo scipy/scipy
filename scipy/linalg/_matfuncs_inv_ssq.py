@@ -48,8 +48,7 @@ class _MatrixM1PowerOperator(LinearOperator):
             raise ValueError('expected p to be a non-negative integer')
         self._A = A
         self._p = p
-        self.ndim = A.ndim
-        self.shape = A.shape
+        super().__init__(dtype=A.dtype, shape=A.shape)
 
     def _matvec(self, x):
         for i in range(self._p):
@@ -127,7 +126,7 @@ def _unwindk(z):
 
     Returns
     -------
-    unwinding_number : integer
+    unwinding_number : int
         The scalar unwinding number of z.
 
     References
@@ -163,7 +162,7 @@ def _briggs_helper_function(a, k):
     ----------
     a : complex
         A complex number.
-    k : integer
+    k : int
         A nonnegative integer.
 
     Returns

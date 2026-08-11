@@ -2,15 +2,20 @@ import pickle
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
+from scipy.__config__ import CONFIG
+
+from scipy import LowLevelCallable
 from scipy._lib._array_api import xp_assert_close, make_xp_test_case
+from scipy.interpolate._rbfinterp_np import _get_kernel_capsule
+from scipy.interpolate.tests import _rbfinterp_kernel_pythran
 from scipy.stats.qmc import Halton
-from scipy.spatial import cKDTree  # type: ignore[attr-defined]
+from scipy.spatial import cKDTree
 from scipy.interpolate._rbfinterp import (
     _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, RBFInterpolator,
     _get_backend
     )
 from scipy.interpolate import _rbfinterp_pythran
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -55,7 +60,8 @@ def _is_conditionally_positive_definite(kernel, m):
         seq = Halton(ndim, scramble=False, seed=np.random.RandomState())
         for _ in range(ntests):
             x = 2*seq.random(nx) - 1
-            A = _rbfinterp_pythran._kernel_matrix(x, kernel)
+            capsule = _get_kernel_capsule(kernel)
+            A = _rbfinterp_pythran._kernel_matrix(x, capsule)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
@@ -262,7 +268,11 @@ class _TestRBFInterpolator:
 
         y = _1d_test_function(x, xp)
         ytrue = _1d_test_function(xitp, xp)
-        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+
+        # Matern 1_2 is C0 so "rough" kernel need more smoothing
+        epsilon = 5.0 if not kernel == 'matern1_2' else 3.0
+
+        yitp = self.build(x, y, epsilon=epsilon, kernel=kernel)(xitp)
 
         mse = xp.mean((yitp - ytrue)**2)
         assert mse < 1.0e-4
@@ -280,7 +290,11 @@ class _TestRBFInterpolator:
 
         y = _2d_test_function(x, xp)
         ytrue = _2d_test_function(xitp, xp)
-        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+
+        # Matern 1_2 is C0 so "rough" kernel need more smoothing
+        epsilon = 5.0 if not kernel == 'matern1_2' else 3.0
+
+        yitp = self.build(x, y, epsilon=epsilon, kernel=kernel)(xitp)
 
         mse = xp.mean((yitp - ytrue)**2)
         assert mse < 2.0e-4
@@ -460,6 +474,135 @@ class _TestRBFInterpolator:
 
         xp_assert_close(yitp1, yitp2, atol=1e-16)
 
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
+    def test_custom_kernel(self):  # LowLevelCallable is NumPy only
+        llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
+                               signature="double (double)")
+
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+        x, xitp = np.asarray(x), np.asarray(xitp)
+        y = _1d_test_function(x, np)
+
+        with pytest.raises(ValueError, match="`degree` must be specified"):
+            self.build(x, y, kernel=llc, epsilon=1.0)
+
+        with pytest.raises(ValueError, match="`epsilon` must be specified"):
+            self.build(x, y, kernel=llc, degree=0)
+
+        interp_llc = self.build(x, y, kernel=llc, degree=0, epsilon=1.0)
+        interp = self.build(x, y, kernel='linear', degree=0, epsilon=1.0)
+
+        yitp_llc = interp_llc(xitp)
+        yipt = interp(xitp)
+
+        xp_assert_close(yitp_llc, yipt, atol=1e-14)
+
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
+    @skip_xp_backends('numpy', reason="error should only raise on non-numpy backends")
+    def test_custom_kernel_raises_error_with_alt_backends(self, xp):
+        # patch_lazy_xp_functions returns a JIT-wrapped verion of RBFInterpolator which
+        # tries to serialise the arguments via pickle which raises a different error
+        # so a locally imported version for this test
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
+        llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
+                           signature="double (double)")
+
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+        x, xitp = xp.asarray(x), xp.asarray(xitp)
+        y = _1d_test_function(x, xp)
+
+        with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
+            _RBFInterpolator(x, y, kernel=llc, degree=0, epsilon=1.0)
+
+    def test_degree_validation(self):
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+        x = np.asarray(3*seq.random(50))
+        y = _1d_test_function(x, np)
+
+        with pytest.raises(ValueError, match="`degree` must be at least -1."):
+            self.build(x, y, kernel='linear', degree=-2, epsilon=1.0)
+
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
+    def test_degree_validation_llc_degree(self):
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
+        llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
+                           signature="double (double)")
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+        x = np.asarray(3*seq.random(50))
+        y = _1d_test_function(x, np)
+
+        with pytest.raises(ValueError, match="`degree` must be at least -1."):
+            _RBFInterpolator(x, y, kernel=llc, degree=-2, epsilon=1.0)
+
+    def test_invalid_kernel_type(self):
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+        x = np.asarray(3*seq.random(50))
+        y = _1d_test_function(x, np)
+
+        with pytest.raises(ValueError,
+                           match="The kernel must be a string or a LowLevelCallable"):
+            self.build(x, y, kernel=42, degree=0, epsilon=1.0)
+
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
+    def test_llc_wrong_signature(self):
+        import ctypes
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
+        wrong = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double, ctypes.c_double)(
+            lambda x, y: x
+        )
+        llc = LowLevelCallable(wrong)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+        x = np.asarray(3*seq.random(50))
+        y = _1d_test_function(x, np)
+
+        with pytest.raises(ValueError,
+                           match='LowLevelCallable kernel must have signature'):
+            _RBFInterpolator(x, y, kernel=llc, degree=0, epsilon=1.0)
+
+    @pytest.mark.skipif(
+        CONFIG['Compilers']['pythran'] == {},
+        reason = "LLC kernels are not supported in the no-pythran build"
+    )
+    @skip_xp_backends('numpy', reason="error should only raise on non-numpy backends")
+    def test_degree_validation_llc(self, xp):
+        # patch_lazy_xp_functions returns a JIT-wrapped verion of RBFInterpolator which
+        # tries to serialise the arguments via pickle which raises a different error
+        # so a locally imported version for this test
+        from scipy.interpolate._rbfinterp import RBFInterpolator as _RBFInterpolator
+        llc = LowLevelCallable(_rbfinterp_kernel_pythran.my_kernel,
+                           signature="double (double)")
+
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
+
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+        x, xitp = xp.asarray(x), xp.asarray(xitp)
+        y = _1d_test_function(x, xp)
+
+        with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
+            _RBFInterpolator(x, y, kernel=llc, epsilon=1.0)
+
+        with pytest.raises(ValueError, match="LowLevelCallable kernels are only"):
+            _RBFInterpolator(x, y, kernel=llc, degree=-2, epsilon=1.0)
+
 
 @make_xp_test_case(RBFInterpolator)
 class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
@@ -515,8 +658,23 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
 
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
+    def test_singular(self):
+        # regression test for https://github.com/scipy/scipy/issues/23761
+        # The input is singular in floating-point, make sure the singularity is detected
+        points = np.array(
+            [[2.0, 0.0],
+             [0.0, 0.0],
+             [0.0, 1.0735703551645039e-302],
+             [0.5, 3.0]]
+        )
+        values = np.array([0.0, 0.0, 0.0, 1.0])
+
+        with pytest.raises(LinAlgError, match="Singular matrix"):
+            RBFInterpolator(points, values.reshape(-1, 1))
+
 
 @skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
+@make_xp_test_case(RBFInterpolator)
 class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
     # RBFInterpolator using 20 nearest neighbors.
     def build(self, *args, **kwargs):
@@ -540,6 +698,7 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
 
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # RbfInterpolator

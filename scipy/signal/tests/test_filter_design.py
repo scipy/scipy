@@ -5,17 +5,17 @@ import os
 
 from itertools import product
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
-    assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
+    assert_array_almost_equal, xp_size, is_numpy,
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
     _xp_copy_to_numpy, xp_assert_close_nulp
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from numpy import array, spacing, sin, pi
 from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
@@ -48,7 +48,7 @@ except ImportError:
 def mpmath_check(min_ver):
     return pytest.mark.skipif(
         mpmath is None
-        or _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
+        or version.parse(mpmath.__version__) < version.Version(min_ver),
         reason=f"mpmath version >= {min_ver} required",
     )
 
@@ -215,7 +215,6 @@ class TestTf2zpk:
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
 
-
 @make_xp_test_case(zpk2tf)
 class TestZpk2Tf:
 
@@ -287,6 +286,44 @@ class TestZpk2Tf:
         a_ref = xp.asarray([1, -3, 2])
         xp_assert_close(b, b_ref, check_dtype=False)
         xp_assert_close(a, a_ref, check_dtype=False)
+
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
+    def test_zpk2tf_int_truncation(self, xp):
+        # regression test for gh-24382
+        z =  xp.asarray([[ 1, 2.], [ 0., -1.]], dtype=xp.float64)
+        p = xp.asarray([3., 4.], dtype=xp.float64)
+        k = 2.5
+
+        b, a = zpk2tf(z, p, k)
+
+        # reference values from scipy 1.15.3
+        b_ref = xp.asarray([[ 2.5, -7.5,  5. ], [ 2.5,  2.5,  0. ]], dtype=xp.float64)
+        a_ref = xp.asarray([ 1., -7., 12.], dtype=xp.float64)
+
+        xp_assert_close(b, b_ref, atol=1e-14)
+        xp_assert_close(a, a_ref, atol=1e-14)
+
+    @skip_xp_backends("jax.numpy",
+                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
+    def test_zpk2tf_complex_k_multi_dim_z(self, xp):
+        # Regression test for gh-24395
+        k = 1j
+        z = xp.asarray([[1., 2.], [0., -1.]])
+        p = xp.asarray([3., 4.])
+
+        b, a = zpk2tf(z, p, k)
+
+        b1, a1 = zpk2tf(z[0, :], p, k)
+        b2, a2 = zpk2tf(z[1, :], p, k)
+
+        xp_assert_close(a, a1)
+        xp_assert_close(a, a2)
+        xp_assert_close(b[0, :], b1)
+        xp_assert_close(b[1, :], b2)
+        assert xp.isdtype(b.dtype, 'complex floating')
 
 
 @make_xp_test_case(sos2zpk)
@@ -780,7 +817,7 @@ class TestFreqz:
             w, h = freqz(xp.ones(2), a, worN=0)
             assert w.shape == (0,)
             assert h.shape == (0,)
-            hdt = xp.complex128 if xp_default_dtype(xp) == xp.float64 else xp.complex64
+            hdt = xp.complex128 if xpx.default_dtype(xp) == xp.float64 else xp.complex64
             assert h.dtype == hdt
 
     def test_basic2(self, xp):
@@ -1061,7 +1098,7 @@ class TestFreqz:
             w, h = freqz(xp.ones(2), a, worN=0, include_nyquist=True)
             assert w.shape == (0,)
             assert h.shape == (0,)
-            hdt = xp.complex128 if xp_default_dtype(xp) == xp.float64 else xp.complex64
+            hdt = xp.complex128 if xpx.default_dtype(xp) == xp.float64 else xp.complex64
             assert h.dtype == hdt
 
         w1, h1 = freqz(xp.asarray([1.0]), worN=8, whole = True, include_nyquist=True)
@@ -1080,7 +1117,7 @@ class TestFreqz:
                               (False, True, 257),
                               (True, False, 257),
                               (True, True, 257)])
-    
+
     @xfail_xp_backends("cupy", reason="XXX: CuPy's version suspect")
     def test_17289(self, whole, nyquist, worN, xp):
         d = xp.asarray([0.0, 1.0])
@@ -1128,6 +1165,7 @@ class TestFreqz_sos:
         with assert_raises(ValueError):
             freqz_sos(sos[:0, ...])
 
+    @make_xp_test_case(sosfreqz)
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
         N = 500
@@ -1538,7 +1576,7 @@ class TestNormalize:
         # The test on b works for decimal=14 but the one for a does not. For
         # the sake of consistency, both of these are decimal=13. If something
         # breaks on another platform, it is probably fine to relax this lower.
-        decimal = 13 if xp_default_dtype(xp) == xp.float64 else 5
+        decimal = 13 if xpx.default_dtype(xp) == xp.float64 else 5
         assert_array_almost_equal(b_matlab, b_output, decimal=decimal)
         assert_array_almost_equal(a_matlab, a_output, decimal=decimal)
 
@@ -1568,7 +1606,7 @@ class TestLp2lp:
 @make_xp_test_case(lp2hp)
 class TestLp2hp:
 
-    def test_basic(self, xp):
+    def test_denominator_order_greater_than_numerator_order(self, xp):
         b = xp.asarray([0.25059432325190018])
         a = xp.asarray(
             [1, 0.59724041654134863, 0.92834805757524175, 0.25059432325190018]
@@ -1579,11 +1617,18 @@ class TestLp2hp:
             a_hp, xp.asarray([1, 1.1638e5, 2.3522e9, 1.2373e14]), rtol=1e-4
         )
 
+    def test_numerator_order_greater_than_denominator_order(self, xp):
+        b = xp.asarray([1.0, 2.0, 3.0])
+        a = xp.asarray([1.0])
+        b_hp, a_hp = lp2hp(b, a, 2.0)
+        xp_assert_close(b_hp, xp.asarray([3.0, 4.0, 4.0]))
+        xp_assert_close(a_hp, xp.asarray([1.0, 0.0, 0.0]))
+
 
 @make_xp_test_case(lp2bp)
 class TestLp2bp:
 
-    def test_basic(self, xp):
+    def test_denominator_order_greater_than_numerator_order(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 2, 2, 1])
         b_bp, a_bp = lp2bp(b, a, 2*math.pi*4000, 2*math.pi*2000)
@@ -1594,16 +1639,30 @@ class TestLp2bp:
                         1.3965e18, 1.0028e22, 2.5202e26]), rtol=1e-4
         )
 
+    def test_numerator_order_greater_than_denominator_order(self, xp):
+        b = xp.asarray([1.0, 2.0, 3.0])
+        a = xp.asarray([1.0])
+        b_bp, a_bp = lp2bp(b, a, 2.0, 3.0)
+        xp_assert_close(b_bp, xp.asarray([1/9, 2/3, 35/9, 8/3, 16/9]))
+        xp_assert_close(a_bp, xp.asarray([1.0, 0.0, 0.0]))
+
 
 @make_xp_test_case(lp2bs)
 class TestLp2bs:
 
-    def test_basic(self, xp):
+    def test_denominator_order_greater_than_numerator_order(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 1])
         b_bs, a_bs = lp2bs(b, a, 0.41722257286366754, 0.18460575326152251)
         assert_array_almost_equal(b_bs, xp.asarray([1, 0, 0.17407]), decimal=5)
         assert_array_almost_equal(a_bs, xp.asarray([1, 0.18461, 0.17407]), decimal=5)
+
+    def test_numerator_order_greater_than_denominator_order(self, xp):
+        b = xp.asarray([1.0, 2.0, 3.0])
+        a = xp.asarray([1.0])
+        b_bs, a_bs = lp2bs(b, a, 2.0, 3.0)
+        xp_assert_close(b_bs, xp.asarray([3.0, 6.0, 33.0, 24.0, 48.0]))
+        xp_assert_close(a_bs, xp.asarray([1.0, 0.0, 8.0, 0.0, 16.0]))
 
 
 @make_xp_test_case(bilinear)
@@ -2481,7 +2540,7 @@ class TestEllipord:
 # Currently the filter functions tested below (bessel, butter, cheby1, cheby2,
 # and ellip) all return float64 (or complex128) output regardless of input
 # dtype. Therefore reference arrays in these tests are all given an explicit 64
-# bit dtype, because the output will not match the xp_default_dtype when the
+# bit dtype, because the output will not match the default dtype when the
 # default dtype is float32. Although the output arrays and all internal
 # calculations are in 64 bit precision, tolerances are still loosened for the
 # float32 case when results are impacted by reduced precision in the inputs.
@@ -3366,7 +3425,7 @@ class TestCheby1:
             rtol=0, atol=5e-14 if not DEFAULT_F32 else 1e-7
         )
 
-        b, a = cheby1(4, 1, xp.asarray([0.4, 0.7]), btype='band')
+        b, a = cheby1(4, 1, xp.asarray([0.4, 0.7]), btype='bandpass')
         assert_array_almost_equal(
             b, xp.asarray([0.0084, 0, -0.0335, 0, 0.0502, 0,
                            -0.0335, 0, 0.0084], dtype=xp.float64),
@@ -4774,7 +4833,7 @@ class TestIIRDesign:
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
-            iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
+            iirfilter(1, 1, btype="lowpass", fs=np.array([10, 20]))
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
@@ -4814,37 +4873,37 @@ class TestIIRFilter:
     def test_int_inputs(self, xp):
         # Using integer frequency arguments and large N should not produce
         # numpy integers that wraparound to negative numbers
-        k = iirfilter(24, xp.asarray(100), btype='low', analog=True, ftype='bessel',
+        k = iirfilter(24, xp.asarray(100), btype='lowpass', analog=True, ftype='bessel',
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
         assert math.isclose(k,  k2)
         # if fs is specified then the normalization of Wn to have
         # 0 <= Wn <= 1 should not cause an integer overflow
         # the following line should not raise an exception
-        iirfilter(20, xp.asarray([1000000000, 1100000000]), btype='bp',
+        iirfilter(20, xp.asarray([1000000000, 1100000000]), btype='bandpass',
                       analog=False, fs=6250000000)
 
     def test_invalid_wn_size(self):
         # low and high have 1 Wn, band and stop have 2 Wn
-        assert_raises(ValueError, iirfilter, 1, [0.1, 0.9], btype='low')
-        assert_raises(ValueError, iirfilter, 1, [0.2, 0.5], btype='high')
-        assert_raises(ValueError, iirfilter, 1, 0.2, btype='bp')
-        assert_raises(ValueError, iirfilter, 1, 400, btype='bs', analog=True)
+        assert_raises(ValueError, iirfilter, 1, [0.1, 0.9], btype='lowpass')
+        assert_raises(ValueError, iirfilter, 1, [0.2, 0.5], btype='highpass')
+        assert_raises(ValueError, iirfilter, 1, 0.2, btype='bandpass')
+        assert_raises(ValueError, iirfilter, 1, 400, btype='bandstop', analog=True)
 
     def test_invalid_wn_range(self):
         # For digital filters, 0 <= Wn <= 1
-        assert_raises(ValueError, iirfilter, 1, 2, btype='low')
-        assert_raises(ValueError, iirfilter, 1, [0.5, 1], btype='band')
-        assert_raises(ValueError, iirfilter, 1, [0., 0.5], btype='band')
-        assert_raises(ValueError, iirfilter, 1, -1, btype='high')
-        assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
-        assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
+        assert_raises(ValueError, iirfilter, 1, 2, btype='lowpass')
+        assert_raises(ValueError, iirfilter, 1, [0.5, 1], btype='bandstop')
+        assert_raises(ValueError, iirfilter, 1, [0., 0.5], btype='bandstop')
+        assert_raises(ValueError, iirfilter, 1, -1, btype='highpass')
+        assert_raises(ValueError, iirfilter, 1, [1, 2], btype='bandstop')
+        assert_raises(ValueError, iirfilter, 1, [10, 20], btype='bandstop')
 
         # analog=True with non-positive critical frequencies
         with pytest.raises(ValueError, match="must be greater than 0"):
-            iirfilter(2, 0, btype='low', analog=True)
+            iirfilter(2, 0, btype='lowpass', analog=True)
         with pytest.raises(ValueError, match="must be greater than 0"):
-            iirfilter(2, -1, btype='low', analog=True)
+            iirfilter(2, -1, btype='lowpass', analog=True)
         with pytest.raises(ValueError, match="must be greater than 0"):
             iirfilter(2, [0, 100], analog=True)
         with pytest.raises(ValueError, match="must be greater than 0"):
@@ -4858,7 +4917,8 @@ class TestIIRFilter:
     def test_analog_sos(self, xp):
         # first order Butterworth filter with Wn = 1 has tf 1/(s+1)
         sos = xp.asarray([[0., 0., 1., 0., 1., 1.]])
-        sos2 = iirfilter(N=1, Wn=xp.asarray(1), btype='low', analog=True, output='sos')
+        sos2 = iirfilter(N=1, Wn=xp.asarray(1), btype='lowpass', analog=True,
+                         output='sos')
         assert_array_almost_equal(sos, sos2)
 
     def test_wn1_ge_wn0(self):

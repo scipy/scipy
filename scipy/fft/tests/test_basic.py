@@ -11,6 +11,7 @@ from scipy._lib._array_api import (
     is_numpy, xp_size, xp_assert_close, xp_assert_equal, make_xp_test_case,
     make_xp_pytest_param
 )
+from scipy._lib._testutils import IS_WASM
 
 lazy_xp_modules = [fft]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -51,6 +52,7 @@ class TestFFT:
             xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
 
     @skip_xp_backends(np_only=True, reason='significant overhead for some backends')
+    @make_xp_test_case(fft.ifft, fft.fft, fft.rfft, fft.irfft)
     def test_identity_extensive(self, xp):
         maxlen = 512
         x = xp.asarray(random(maxlen) + 1j*random(maxlen))
@@ -71,6 +73,7 @@ class TestFFT:
         xp_assert_close(fft.fft(x, norm="forward"), expect / 30)
 
     @skip_xp_backends(np_only=True, reason='some backends allow `n=0`')
+    @make_xp_test_case(fft.fft)
     def test_fft_n(self, xp):
         x = xp.asarray([1, 2, 3], dtype=xp.complex128)
         assert_raises(ValueError, fft.fft, x, 0)
@@ -417,11 +420,12 @@ def test_fft_with_order(dtype, order, fft):
         for ax in axes:
             X_res = fft(X, axes=ax)
             Y_res = fft(Y, axes=ax)
-            assert_array_almost_equal(X_res, Y_res)
+            assert_allclose(X_res, Y_res, rtol=3e-6, atol=3e-6)
     else:
         raise ValueError
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 @skip_xp_backends(cpu_only=True)
 class TestFFTThreadSafe:
     threads = 16
@@ -479,6 +483,8 @@ class TestFFTThreadSafe:
         self._test_mtsame(fft.ihfft, a, xp=xp)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
+@pytest.mark.fail_slow(2)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)

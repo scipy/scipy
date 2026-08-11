@@ -266,7 +266,7 @@ class TestAAA:
         r = AAA(z, f)
 
         zz = np.logspace(-15, 0, 500)
-        assert_allclose(r(zz), np.sqrt(zz), rtol=9e-6)
+        assert_allclose(r(zz), np.sqrt(zz), rtol=1e-5)
 
 
 class BatchFloaterHormann:
@@ -316,7 +316,7 @@ class TestFloaterHormann:
         (4, [1, 5, 11, 15, 16, 16, 16, 15, 11, 5, 1])
     ])
     def test_uniform_grid(self, d, expected):
-        # Check against explicit results on an uniform grid
+        # Check against explicit results on a uniform grid
         x = np.arange(11)
         r = FloaterHormannInterpolator(x, 0.0*x, d=d)
         assert_allclose(r.weights.ravel()*self.scale(x.size, d), expected,

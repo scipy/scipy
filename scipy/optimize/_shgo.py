@@ -1478,10 +1478,7 @@ class SHGO:
         """
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        if self.n_sampled == 0:
-            self.C = self.sampling_function(n, dim)
-        else:
-            self.C = self.sampling_function(n, dim)
+        self.C = self.sampling_function(n, dim)
         # Distribute over bounds
         for i in range(len(self.bounds)):
             self.C[:, i] = (self.C[:, i] *

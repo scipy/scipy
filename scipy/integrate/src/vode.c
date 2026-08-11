@@ -316,7 +316,7 @@ dvjust(double* restrict yh, const int ldyh, const int iord, vode_common_struct_t
                 // Add correction terms to YH array.
                 int nqp1 = S->nq + 1;
                 for (int j = 2; j < nqp1; j++) {
-                    daxpy_(&S->n, &S->el[j], &yh[0 + (lp1 - 1) * ldyh], &(int){1}, &yh[0 + j * ldyh], &(int){1});
+                    BLAS_FUNC(daxpy)(&(CBLAS_INT){S->n}, &S->el[j], &yh[0 + (lp1 - 1) * ldyh], &(CBLAS_INT){1}, &yh[0 + j * ldyh], &(CBLAS_INT){1});
                 }
             } else {
                 // Order decrease
@@ -562,8 +562,8 @@ dvindy(
 
     // Scale by H**(-K)
     double r = pow(S->h, -k);
-    int int1 = 1;
-    dscal_(&S->n, &r, dky, &int1);
+    CBLAS_INT int1 = 1;
+    BLAS_FUNC(dscal)(&(CBLAS_INT){S->n}, &r, dky, &int1);
 
     return;
 }
@@ -584,17 +584,17 @@ dvindy(
  * @param iersl  Error flag: 0=success, 1=singular matrix (miter=3)
  */
 static void
-dvsol(vode_common_struct_t* S, double* restrict wm, int* restrict iwm, double* restrict x, int* iersl)
+dvsol(vode_common_struct_t* S, double* restrict wm, CBLAS_INT* restrict iwm, double* restrict x, int* iersl)
 {
     *iersl = 0;
-    int ier = 0;
-    int int1 = 1;
+    CBLAS_INT ier = 0;
+    CBLAS_INT int1 = 1;
 
     switch (S->miter)
     {
         case 1:
         case 2: {
-            dgetrs_("N", &S->n, &int1, &wm[2], &S->n, &iwm[30], x, &S->n, &ier);
+            BLAS_FUNC(dgetrs)("N", &(CBLAS_INT){S->n}, &int1, &wm[2], &(CBLAS_INT){S->n}, &iwm[30], x, &(CBLAS_INT){S->n}, &ier);
             break;
         }
         case 3: {
@@ -619,10 +619,10 @@ dvsol(vode_common_struct_t* S, double* restrict wm, int* restrict iwm, double* r
         }
         case 4:
         case 5: {
-            int ml = iwm[0];
-            int mu = iwm[1];
-            int meband = 2 * ml + mu + 1;
-            dgbtrs_("N", &S->n, &ml, &mu, &int1, &wm[2], &meband, &iwm[30], x, &S->n, &ier);
+            CBLAS_INT ml = iwm[0];
+            CBLAS_INT mu = iwm[1];
+            CBLAS_INT meband = 2 * ml + mu + 1;
+            BLAS_FUNC(dgbtrs)("N", &(CBLAS_INT){S->n}, &ml, &mu, &int1, &wm[2], &meband, &iwm[30], x, &(CBLAS_INT){S->n}, &ier);
             break;
         }
     }
@@ -731,7 +731,7 @@ dvjac(
     double* restrict ftem,
     double* restrict savf,
     double* restrict wm,
-    int* restrict iwm,
+    CBLAS_INT* restrict iwm,
     vode_func_t f,
     vode_jac_t jac,
     int* ierpj,
@@ -757,13 +757,13 @@ dvjac(
         S->nje += 1;
         S->nslj = S->nst;
         S->jcur = 1;
-        int lenp = S->n * S->n;
+        CBLAS_INT lenp = S->n * S->n;
         for (int i = 0; i < lenp; i++) {
             wm[i + 2] = 0.0;
         }
         jac(S->n, S->tn, y, 0, 0, &wm[2], S->n, rpar, ipar);
         if (S->jsv == 1) {
-            dcopy_(&lenp, &wm[2], &(int){1}, &wm[S->locjs - 1], &(int){1});
+            BLAS_FUNC(dcopy)(&lenp, &wm[2], &(CBLAS_INT){1}, &wm[S->locjs - 1], &(CBLAS_INT){1});
         }
     }
 
@@ -790,30 +790,30 @@ dvjac(
             j1 += S->n;
         }
         S->nfe += S->n;
-        int lenp = S->n * S->n;
+        CBLAS_INT lenp = S->n * S->n;
         if (S->jsv == 1) {
-            dcopy_(&lenp, &wm[2], &(int){1}, &wm[S->locjs - 1], &(int){1});
+            BLAS_FUNC(dcopy)(&lenp, &wm[2], &(CBLAS_INT){1}, &wm[S->locjs - 1], &(CBLAS_INT){1});
         }
     }
 
     if ((jok == 1) && ((S->miter == 1) || (S->miter == 2))) {
         S->jcur = 0;
-        int lenp = S->n * S->n;
-        dcopy_(&lenp, &wm[S->locjs - 1], &(int){1}, &wm[2], &(int){1});
+        CBLAS_INT lenp = S->n * S->n;
+        BLAS_FUNC(dcopy)(&lenp, &wm[S->locjs - 1], &(CBLAS_INT){1}, &wm[2], &(CBLAS_INT){1});
     }
 
     if ((S->miter == 1) || (S->miter == 2)) {
         // Multiply Jacobian by scalar, add identity, and do LU factorization.
-        int lenp = S->n * S->n;
-        dscal_(&lenp, &(double){-hrl1}, &wm[2], &(int){1});
+        CBLAS_INT lenp = S->n * S->n;
+        BLAS_FUNC(dscal)(&lenp, &(double){-hrl1}, &wm[2], &(CBLAS_INT){1});
         int j = 2;
         for (int i = 0; i < S->n; i++) {
             wm[j] += 1.0;
             j += S->n + 1;
         }
         S->nlu += 1;
-        int ier = 0;
-        dgetrf_(&S->n, &S->n, &wm[2], &S->n, &iwm[30], &ier);
+        CBLAS_INT ier = 0;
+        BLAS_FUNC(dgetrf)(&(CBLAS_INT){S->n}, &(CBLAS_INT){S->n}, &wm[2], &(CBLAS_INT){S->n}, &iwm[30], &ier);
         if (ier != 0) {
             *ierpj = 1;
         }
@@ -848,12 +848,12 @@ dvjac(
     }
 
     // Set constants for MITER = 4 or 5.
-    int ml = iwm[0];
-    int mu = iwm[1];
-    int ml3 = ml + 3;
-    int mband = ml + mu + 1;
-    int meband = mband + ml;
-    int lenp = meband * S->n;
+    CBLAS_INT ml = iwm[0];
+    CBLAS_INT mu = iwm[1];
+    int ml3 = (int)ml + 3;
+    CBLAS_INT mband = ml + mu + 1;
+    CBLAS_INT meband = mband + ml;
+    CBLAS_INT lenp = meband * S->n;
 
     if ((jok == -1) && (S->miter == 4)) {
         // If JOK = -1 and MITER = 4, call JAC to evaluate Jacobian.
@@ -863,12 +863,12 @@ dvjac(
         for (int i = 0; i < lenp; i++) {
             wm[i + 2] = 0.0;
         }
-        jac(S->n, S->tn, y, ml, mu, &wm[ml3 - 1], meband, rpar, ipar);
+        jac(S->n, S->tn, y, (int)ml, (int)mu, &wm[ml3 - 1], (int)meband, rpar, ipar);
         if (S->jsv == 1) {
             // Call DACOPY equivalent - copy banded matrix
             for (int ic = 0; ic < S->n; ic++) {
-                dcopy_(&mband, &wm[ml3 - 1 + ic * meband], &(int){1},
-                       &wm[S->locjs - 1 + ic * mband], &(int){1});
+                BLAS_FUNC(dcopy)(&mband, &wm[ml3 - 1 + ic * meband], &(CBLAS_INT){1},
+                       &wm[S->locjs - 1 + ic * mband], &(CBLAS_INT){1});
             }
         }
     }
@@ -878,8 +878,8 @@ dvjac(
         S->nje += 1;
         S->nslj = S->nst;
         S->jcur = 1;
-        int mba = int_min(mband, S->n);
-        int meb1 = meband - 1;
+        int mba = int_min((int)mband, S->n);
+        int meb1 = (int)meband - 1;
         double srur = wm[0];
         double fac = dvnorm(S->n, savf, ewt);
         double r0 = 1000.0 * fabs(S->h) * S->uround * (double)(S->n) * fac;
@@ -896,9 +896,9 @@ dvjac(
                 double yjj = y[jj];
                 double r = fmax(srur * fabs(yjj), r0 / ewt[jj]);
                 fac = 1.0 / r;
-                int i1 = int_max(jj - mu, 0);
-                int i2 = int_min(jj + ml, S->n - 1);
-                int ii = (jj + 1) * meb1 - ml + 2;
+                int i1 = int_max(jj - (int)mu, 0);
+                int i2 = int_min(jj + (int)ml, S->n - 1);
+                int ii = (jj + 1) * meb1 - (int)ml + 2;
                 for (int i = i1; i <= i2; i++) {
                     wm[ii + i] = (ftem[i] - savf[i]) * fac;
                 }
@@ -908,7 +908,7 @@ dvjac(
         if (S->jsv == 1) {
             // Call DACOPY equivalent
             for (int ic = 0; ic < S->n; ic++) {
-                dcopy_(&mband, &wm[ml3 - 1 + ic * meband], &(int){1}, &wm[S->locjs - 1 + ic * mband], &(int){1});
+                BLAS_FUNC(dcopy)(&mband, &wm[ml3 - 1 + ic * meband], &(CBLAS_INT){1}, &wm[S->locjs - 1 + ic * mband], &(CBLAS_INT){1});
             }
         }
     }
@@ -917,21 +917,21 @@ dvjac(
         S->jcur = 0;
         // Call DACOPY equivalent
         for (int ic = 0; ic < S->n; ic++) {
-            dcopy_(&mband, &wm[S->locjs - 1 + ic * mband], &(int){1}, &wm[ml3 - 1 + ic * meband], &(int){1});
+            BLAS_FUNC(dcopy)(&mband, &wm[S->locjs - 1 + ic * mband], &(CBLAS_INT){1}, &wm[ml3 - 1 + ic * meband], &(CBLAS_INT){1});
         }
     }
 
     // Multiply Jacobian by scalar, add identity, and do LU decomposition.
     double con = -hrl1;
-    dscal_(&lenp, &con, &wm[2], &(int){1});
-    int ii = mband + 1;
+    BLAS_FUNC(dscal)(&lenp, &con, &wm[2], &(CBLAS_INT){1});
+    int ii = (int)mband + 1;
     for (int i = 0; i < S->n; i++) {
         wm[ii] += 1.0;
         ii += meband;
     }
     S->nlu += 1;
-    int ier = 0;
-    dgbtrf_(&S->n, &S->n, &ml, &mu, &wm[2], &meband, &iwm[30], &ier);
+    CBLAS_INT ier = 0;
+    BLAS_FUNC(dgbtrf)(&(CBLAS_INT){S->n}, &(CBLAS_INT){S->n}, &ml, &mu, &wm[2], &meband, &iwm[30], &ier);
     if (ier != 0) {
         *ierpj = 1;
     }
@@ -949,7 +949,7 @@ dvnlsd(
     double* restrict savf,
     double* restrict ewt,
     double* acor,
-    int* restrict iwm,
+    CBLAS_INT* restrict iwm,
     double* restrict wm,
     vode_func_t f,
     vode_jac_t jac,
@@ -998,7 +998,7 @@ dvnlsd(
     while (1) {
         m = 0;
         delp = 0.0;
-        dcopy_(&S->n, yh, &(int){1}, y, &(int){1});
+        BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, yh, &(CBLAS_INT){1}, y, &(CBLAS_INT){1});
         f(S->n, S->tn, y, savf, rpar, ipar);
         S->nfe += 1;
 
@@ -1042,7 +1042,7 @@ dvnlsd(
                 for (int i = 0; i < S->n; i++) {
                     y[i] = yh[i] + savf[i];
                 }
-                dcopy_(&S->n, savf, &(int){1}, acor, &(int){1});
+                BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, savf, &(CBLAS_INT){1}, acor, &(CBLAS_INT){1});
             } else {
                 // Chord iteration: solve linear system
                 // Fortran lines 2917-2928
@@ -1056,10 +1056,10 @@ dvnlsd(
                 }
                 if ((S->meth == 2) && (S->rc != 1.0)) {
                     double cscale = 2.0 / (1.0 + S->rc);
-                    dscal_(&S->n, &cscale, y, &(int){1});
+                    BLAS_FUNC(dscal)(&(CBLAS_INT){S->n}, &cscale, y, &(CBLAS_INT){1});
                 }
                 del = dvnorm(S->n, y, ewt);
-                daxpy_(&S->n, &(double){1.0}, y, &(int){1}, acor, &(int){1});
+                BLAS_FUNC(daxpy)(&(CBLAS_INT){S->n}, &(double){1.0}, y, &(CBLAS_INT){1}, acor, &(CBLAS_INT){1});
                 for (int i = 0; i < S->n; i++) {
                     y[i] = yh[i] + acor[i];
                 }
@@ -1199,7 +1199,7 @@ dvstep(
     double* savf,
     double* restrict acor,
     double* restrict wm,
-    int* restrict iwm,
+    CBLAS_INT* restrict iwm,
     vode_func_t f,
     vode_jac_t jac,
     double* restrict rpar,
@@ -1209,7 +1209,7 @@ dvstep(
     const int kfc = -3, kfh = -7, mxncf = 10;
     const double addon = 1.0e-6, bias1 = 6.0, bias2 = 6.0, bias3 = 10.0, etacf = 0.25, etamin = 0.1, etamxf = 0.2,
                  etamx1 = 1.0e4, etamx2 = 10.0, etamx3 = 10.0, onepsm = 1.00001, thresh = 1.5;
-    int int1 = 1;
+    CBLAS_INT int1 = 1;
 
     // Local variables
     double told, r, dsm, flotl, ddn, dup, cnquot;
@@ -1398,7 +1398,7 @@ dvstep(
             r = 1.0;
             for (j = 1; j < S->l; j++) {
                 r *= S->eta;
-                dscal_(&S->n, &r, &yh[j * ldyh], &int1);
+                BLAS_FUNC(dscal)(&(CBLAS_INT){S->n}, &r, &yh[j * ldyh], &int1);
             }
             S->h = S->hscal * S->eta;
             S->hscal = S->h;
@@ -1603,13 +1603,13 @@ dvstep(
 
         // Update YH array
         for (j = 0; j < S->l; j++) {
-            daxpy_(&S->n, &S->el[j], acor, &int1, &yh[j * ldyh], &int1);
+            BLAS_FUNC(daxpy)(&(CBLAS_INT){S->n}, &S->el[j], acor, &int1, &yh[j * ldyh], &int1);
         }
 
         S->nqwait--;
 
         if ((S->l != S->lmax) && (S->nqwait == 1)) {
-            dcopy_(&S->n, acor, &int1, &yh[(S->lmax - 1) * ldyh], &int1);
+            BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, acor, &int1, &yh[(S->lmax - 1) * ldyh], &int1);
             S->conp = S->tq[4];
         }
 
@@ -1674,7 +1674,7 @@ dvstep(
                         // Label 620: Choose order increase
                         S->eta = etaqp1;
                         S->newq = S->nq + 1;
-                        dcopy_(&S->n, acor, &int1, &yh[(S->lmax - 1) * ldyh], &int1);
+                        BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, acor, &int1, &yh[(S->lmax - 1) * ldyh], &int1);
                     } else {
                         // Label 610: Choose order decrease
                         S->eta = S->etaqm1;
@@ -1718,7 +1718,7 @@ dvstep(
 
         // Label 700: Scale ACOR
         r = 1.0 / S->tq[1];
-        dscal_(&S->n, &r, acor, &int1);
+        BLAS_FUNC(dscal)(&(CBLAS_INT){S->n}, &r, acor, &int1);
 
         // Exit the retry loop - step successful
         break;
@@ -1764,7 +1764,7 @@ dvstep(
  * @param iwork  Integer work array
  */
 static void
-dvode_set_optional_output(vode_common_struct_t* S, double* rwork, int* iwork)
+dvode_set_optional_output(vode_common_struct_t* S, double* rwork, CBLAS_INT* iwork)
 {
     rwork[10] = S->hu;
     rwork[11] = S->hnew;
@@ -1824,7 +1824,7 @@ dvode(
     int* iopt,
     double* restrict rwork,
     int lrw,
-    int* restrict iwork,
+    CBLAS_INT* restrict iwork,
     int liw,
     vode_jac_t jac,
     int mf,
@@ -1847,7 +1847,7 @@ dvode(
     int ihit;
 
     // BLAS/LAPACK interface
-    int int1 = 1;
+    CBLAS_INT int1 = 1;
 
     // ===================================================================
     // Block A: Initial validation on every call
@@ -2006,7 +2006,7 @@ dvode(
             lenwm = 2 + S->n;
         } else {  // MITER == 4 or 5
             mband = ml + mu + 1;
-            int lenp = (mband + ml) * S->n;
+            CBLAS_INT lenp = (mband + ml) * S->n;
             int lenj = mband * S->n;
             lenwm = 2 + lenp + jco * lenj;
             S->locjs = lenp + 2;
@@ -2056,7 +2056,7 @@ dvode(
             S->jstart = -1;
             if (S->nq > S->maxord) {
                 // MAXORD was reduced below NQ. Copy YH(*,MAXORD+2) into SAVF.
-                dcopy_(&S->n, &rwork[S->lwm], &int1, &rwork[S->lsavf], &int1);
+                BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lwm], &int1, &rwork[S->lsavf], &int1);
             }
             // Reload WM(1) = RWORK(LWM), since LWM may have changed.
             if (S->miter > 0) {
@@ -2107,7 +2107,7 @@ dvode(
         S->nfe = 1;
 
         // Load the initial value vector in YH.
-        dcopy_(&S->n, y, &int1, &rwork[S->lyh], &int1);
+        BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, y, &int1, &rwork[S->lyh], &int1);
 
         // Load and invert the EWT array. (H is temporarily set to 1.0.)
         S->nq = 1;
@@ -2142,7 +2142,7 @@ dvode(
 
         // Load H with H0 and scale YH(*,2) by H0.
         S->h = h0;
-        dscal_(&S->n, &h0, &rwork[lf0], &int1);
+        BLAS_FUNC(dscal)(&(CBLAS_INT){S->n}, &h0, &rwork[lf0], &int1);
     }
 
     // ===================================================================
@@ -2184,7 +2184,7 @@ dvode(
                 }
                 if ((S->tn - *tout) * S->h >= zero) {
                     // Already at or past TOUT
-                    dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+                    BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
                     *t = S->tn;
                     *istate = 2;
                     dvode_set_optional_output(S, rwork, iwork);
@@ -2219,7 +2219,7 @@ dvode(
                 hmx = fabs(S->tn) + fabs(S->h);
                 ihit = (fabs(S->tn - tcrit) <= hun * S->uround * hmx);
                 if (ihit) {
-                    dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+                    BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
                     *t = S->tn;
                     *istate = 2;
                     dvode_set_optional_output(S, rwork, iwork);
@@ -2242,7 +2242,7 @@ dvode(
                 hmx = fabs(S->tn) + fabs(S->h);
                 ihit = (fabs(S->tn - tcrit) <= hun * S->uround * hmx);
                 if (ihit) {
-                    dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+                    BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
                     *t = S->tn;
                     *istate = 2;
                     dvode_set_optional_output(S, rwork, iwork);
@@ -2264,7 +2264,7 @@ dvode(
         // Check for too many steps
         if ((S->nst - nslast) >= S->mxstep) {
             // ISTATE = -1: Maximum number of steps exceeded
-            dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+            BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
             *t = S->tn;
             *istate = -1;
             dvode_set_optional_output(S, rwork, iwork);
@@ -2278,7 +2278,7 @@ dvode(
         for (i = 0; i < S->n; i++) {
             if (rwork[S->lewt + i] <= zero) {
                 // ISTATE = -6: EWT(i) became zero
-                dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+                BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
                 *t = S->tn;
                 *istate = -6;
                 dvode_set_optional_output(S, rwork, iwork);
@@ -2298,7 +2298,7 @@ dvode(
                 return;
             }
             // ISTATE = -2: Too much accuracy requested
-            dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+            BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
             *t = S->tn;
             *istate = -2;
             rwork[13] = tolsf;
@@ -2341,7 +2341,7 @@ dvode(
 
                 case 2:
                     // ITASK=2: One-step mode, always return
-                    dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+                    BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
                     *t = S->tn;
                     *istate = 2;
                     dvode_set_optional_output(S, rwork, iwork);
@@ -2350,7 +2350,7 @@ dvode(
                 case 3:
                     // ITASK=3: Stop at mesh point at or beyond TOUT
                     if ((S->tn - *tout) * S->h >= zero) {
-                        dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+                        BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
                         *t = S->tn;
                         *istate = 2;
                         dvode_set_optional_output(S, rwork, iwork);
@@ -2370,7 +2370,7 @@ dvode(
                     hmx = fabs(S->tn) + fabs(S->h);
                     ihit = (fabs(S->tn - tcrit) <= hun * S->uround * hmx);
                     if (ihit) {
-                        dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+                        BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
                         *t = tcrit;
                         *istate = 2;
                         dvode_set_optional_output(S, rwork, iwork);
@@ -2387,7 +2387,7 @@ dvode(
                     // ITASK=5: One step without passing TCRIT
                     hmx = fabs(S->tn) + fabs(S->h);
                     ihit = (fabs(S->tn - tcrit) <= hun * S->uround * hmx);
-                    dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+                    BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
                     *t = S->tn;
                     if (ihit) {
                         *t = tcrit;
@@ -2414,7 +2414,7 @@ dvode(
             iwork[15] = imxer;
 
             // Set outputs and return
-            dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+            BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
             *t = S->tn;
             *istate = -4;
             dvode_set_optional_output(S, rwork, iwork);
@@ -2439,7 +2439,7 @@ dvode(
             iwork[15] = imxer;
 
             // Set outputs and return
-            dcopy_(&S->n, &rwork[S->lyh], &int1, y, &int1);
+            BLAS_FUNC(dcopy)(&(CBLAS_INT){S->n}, &rwork[S->lyh], &int1, y, &int1);
             *t = S->tn;
             *istate = -5;
             dvode_set_optional_output(S, rwork, iwork);

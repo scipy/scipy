@@ -218,7 +218,7 @@ def lobpcg(
         Whether to return iterative eigenvalue history.
     retResidualNormsHistory : bool, default: False
         Whether to return iterative history of residual norms.
-    restartControl : int, optional.
+    restartControl : int, optional
         Iterations restart if the residuals jump ``2**restartControl`` times
         compared to the smallest recorded in ``retResidualNormsHistory``.
         The default is ``restartControl=20``, making the restarts rare for
@@ -376,7 +376,7 @@ def lobpcg(
 
     The traditional callable `LinearOperator` is no longer
     necessary but still supported as the input to `lobpcg`.
-    Specifying ``matmat=A_matmat`` explicitly improves performance. 
+    Specifying ``matmat=A_matmat`` explicitly improves performance.
 
     >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat, dtype=np.int16)
     >>> eigenvalues, _ = lobpcg(A_lo, X, maxiter=80)
@@ -397,7 +397,7 @@ def lobpcg(
     and ``largest=False`` parameter
 
     >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=90)
-    >>> print(eigenvalues)  
+    >>> print(eigenvalues)
     [1. 2. 3.]
 
     The next example illustrates computing 3 smallest eigenvalues of
@@ -547,6 +547,7 @@ def lobpcg(
                     raise ValueError(
                         f"The shape {A.shape} of the primary matrix\n"
                         f"defined by a callable object is wrong.\n"
+                        f"Expected {(n, n)}."
                     )
             elif issparse(A):
                 A = A.toarray()

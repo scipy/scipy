@@ -23,7 +23,7 @@ In addition to making use of NumPy protocols like ``__array_function__``, we can
 make use of these protocols in SciPy as well.  That will make it possible to
 (re)implement SciPy functions like, e.g., those in ``scipy.signal`` for Dask
 or GPU arrays (see
-`NEP 18 - use outside of NumPy <http://www.numpy.org/neps/nep-0018-array-function-protocol.html#use-outside-of-numpy>`__).  NumPy's features in this areas are still evolving,
+`NEP 18 - use outside of NumPy <http://www.numpy.org/neps/nep-0018-array-function-protocol.html#use-outside-of-numpy>`__).  NumPy's features in these areas are still evolving,
 see e.g. `NEP 37 - A dispatch protocol for NumPy-like modules <https://numpy.org/neps/nep-0037-array-module.html>`__,
 and SciPy is an important "client" for those features.
 

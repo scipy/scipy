@@ -3,6 +3,7 @@ import math
 import warnings
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import importlib
 from itertools import product
 from math import gcd
 
@@ -12,6 +13,7 @@ import numpy as np
 from numpy.exceptions import ComplexWarning
 
 from scipy import fft as sp_fft
+from scipy._lib._testutils import IS_WASM
 from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
@@ -26,17 +28,22 @@ from scipy.signal.windows import hann
 from scipy.signal._signaltools import _filtfilt_gust, _compute_factors, _group_poles
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
-
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy, xp_size, xp_default_dtype, array_namespace, make_xp_test_case,
-    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy
+    xp_copy, xp_size, array_namespace, make_xp_test_case,
+    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy, xp_device
 )
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 lazy_xp_modules = [signal]
+
+try:
+    CUPY_VERSION = importlib.metadata.version('cupy')
+except ImportError:
+    CUPY_VERSION = None
 
 
 @make_xp_test_case(convolve)
@@ -508,7 +515,6 @@ class TestConvolve2d:
 @make_xp_test_case(fftconvolve)
 class TestFFTConvolve:
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_real(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -523,14 +529,13 @@ class TestFFTConvolve:
 
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_real_axes(self, axes, xp):
         a = xp.asarray([1, 2, 3])
         expected = xp.asarray([1, 4, 10, 12, 9.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -556,8 +561,8 @@ class TestFFTConvolve:
         a = xp.asarray([1 + 1j, 2 + 2j, 3 + 3j])
         expected = xp.asarray([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -605,8 +610,8 @@ class TestFFTConvolve:
                           [8, 26, 56, 54, 36],
                           [16, 40, 73, 60, 36]])
 
-        a = xp.asarray(np.tile(a, [2, 1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 1]))
+        a = xp.tile(a, (2, 1, 1))
+        expected = xp.tile(expected, (2, 1, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -659,8 +664,8 @@ class TestFFTConvolve:
             [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
             ])
 
-        a = xp.asarray(np.tile(a, [2, 1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 1]))
+        a = xp.tile(a, (2, 1, 1))
+        expected = xp.tile(expected, (2, 1, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -668,7 +673,6 @@ class TestFFTConvolve:
         out = fftconvolve(a, a, axes=axes)
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_real_same_mode(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -692,7 +696,6 @@ class TestFFTConvolve:
             out = fftconvolve(b, a, 'same', axes=axes)
         xp_assert_close(out, expected_2, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, -1, [1], [-1]])
     def test_real_same_mode_axes(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -700,10 +703,10 @@ class TestFFTConvolve:
         expected_1 = xp.asarray([35., 41., 47.])
         expected_2 = xp.asarray([9., 20., 25., 35., 41., 47., 39., 28., 2.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected_1 = xp.asarray(np.tile(expected_1, [2, 1]))
-        expected_2 = xp.asarray(np.tile(expected_2, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected_1 = xp.tile(expected_1, (2, 1))
+        expected_2 = xp.tile(expected_2, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -714,7 +717,6 @@ class TestFFTConvolve:
         out = fftconvolve(b, a, 'same', axes=axes)
         xp_assert_close(out, expected_2, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_valid_mode_real(self, axes, xp):
         # See gh-5897
@@ -738,7 +740,6 @@ class TestFFTConvolve:
             out = fftconvolve(b, a, 'valid', axes=axes)
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, [1]])
     def test_valid_mode_real_axes(self, axes, xp):
         # See gh-5897
@@ -746,9 +747,9 @@ class TestFFTConvolve:
         b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -784,9 +785,9 @@ class TestFFTConvolve:
         b = xp.asarray([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
         expected = xp.asarray([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -798,16 +799,15 @@ class TestFFTConvolve:
         xp_assert_close(out, expected, atol=1.5e-6)
 
     @skip_xp_backends("jax.numpy", reason="mapped axes must have same shape")
-    @skip_xp_backends("torch", reason="dtypes do not match")
     def test_valid_mode_ignore_nonaxes(self, xp):
         # See gh-5897
         a = xp.asarray([3, 2, 1])
         b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (1, 1))
+        expected = xp.tile(expected, (2, 1))
 
         out = fftconvolve(a, b, 'valid', axes=1)
         xp_assert_close(out, expected, atol=1.5e-6)
@@ -897,9 +897,9 @@ class TestFFTConvolve:
         expected = xp.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
-        a = xp.asarray(np.tile(a, [2, 1, 3, 1, 1]))
-        b = xp.asarray(np.tile(b, [2, 1, 1, 4, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 3, 4, 1]))
+        a = xp.tile(a, (2, 1, 3, 1, 1))
+        b = xp.tile(b, (2, 1, 1, 4, 1))
+        expected = xp.tile(expected, (2, 1, 3, 4, 1))
 
         out = fftconvolve(a, b, 'full', axes=axes)
         xp_assert_close(out, expected, rtol=1e-10, atol=1e-10)
@@ -1284,12 +1284,9 @@ class TestMedFilt:
         a = np.lib.stride_tricks.as_strided(a, strides=(16,))
         xp_assert_close(signal.medfilt(a, 1),  xp.asarray([5.]))
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reason="chunk assignment does not work on jax immutable arrays"
-    )
     @pytest.mark.parametrize("dtype", ["uint8", "float32", "float64"])
     @make_xp_test_case(signal.medfilt2d)
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_medfilt2d_parallel(self, dtype, xp):
         dtype = getattr(xp, dtype)
         in_typed = xp.asarray(self.IN, dtype=dtype)
@@ -1342,7 +1339,7 @@ class TestMedFilt:
             # Store each result in the output as it arrives.
             for future in as_completed(futures):
                 data, Mslice, Nslice = future.result()
-                output[Mslice, Nslice] = data
+                output = xpx.at(output)[Mslice, Nslice].set(data)
 
         xp_assert_equal(output, expected)
 
@@ -1379,7 +1376,7 @@ class TestResample:
         # window.shape must equal to sig.shape[0]
         sig = xp.arange(128, dtype=xp.float64)
         num = 256
-        win = signal.get_window(('kaiser', 8.0), 160, xp=xp)
+        win = signal.get_window(('kaiser', 8.0), 160, xp=xp, device=xp_device(sig))
         assert_raises(ValueError, signal.resample, sig, num, window=win)
         assert_raises(ValueError, signal.resample, sig, num, domain='INVALID')
 
@@ -1405,6 +1402,17 @@ class TestResample:
         xp_assert_equal(x1, x_ref)
         xp_assert_equal(x0, x_ref)
 
+    @skip_xp_backends("cupy",
+                      reason="delegated to cupyx, whose time vector is float64")
+    @make_xp_test_case(signal.resample)
+    def test_t_dtype(self, xp):
+        # the returned time vector follows `t`'s precision
+        for dtype in (xp.float32, xp.float64):
+            x = xp.arange(16, dtype=dtype)
+            t = xp.arange(16, dtype=dtype)
+            _, t_new = signal.resample(x, 32, t=t)
+            assert t_new.dtype == dtype
+
     @pytest.mark.parametrize('window', (None, 'hamming'))
     @pytest.mark.parametrize('N', (20, 19))
     @pytest.mark.parametrize('num', (100, 101, 10, 11))
@@ -1412,7 +1420,7 @@ class TestResample:
     def test_rfft(self, N, num, window, xp):
         # Make sure the speed up using rfft gives the same result as the normal
         # way using fft
-        dt_r = xp_default_dtype(xp)
+        dt_r = xpx.default_dtype(xp)
         dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
 
         x = xp.linspace(0, 10, N, endpoint=False)
@@ -1504,11 +1512,12 @@ class TestResample:
         # Sinusoids, windowed to avoid edge artifacts
         t = xp.arange(rate, dtype=xp.float64) / float(rate)
         freqs = xp.asarray((1., 10., 40.))[:, xp.newaxis]
-        x = xp.sin(2 * xp.pi * freqs * t) * hann(rate, xp=xp)
+        x = xp.sin(2 * xp.pi * freqs * t) * hann(rate, xp=xp, device=xp_device(t))
 
         for rate_to in rates_to:
             t_to = xp.arange(rate_to, dtype=xp.float64) / float(rate_to)
-            y_tos = xp.sin(2 * xp.pi * freqs * t_to) * hann(rate_to, xp=xp)
+            y_tos = (xp.sin(2 * xp.pi * freqs * t_to)
+                     * hann(rate_to, xp=xp, device=xp_device(t_to)))
             if method == 'fft':
                 y_resamps = signal.resample(x, rate_to, axis=-1)
             else:
@@ -1722,8 +1731,8 @@ class TestOrderFilt:
         xp_assert_equal(actual, expect)
 
     def test_doc_example(self, xp):
-        x = xp.reshape(xp.arange(25, dtype=xp_default_dtype(xp)), (5, 5))
-        domain = xp.eye(3, dtype=xp_default_dtype(xp))
+        x = xp.reshape(xp.arange(25, dtype=xpx.default_dtype(xp)), (5, 5))
+        domain = xp.eye(3, dtype=xpx.default_dtype(xp))
 
         # minimum of elements 1,3,9 (zero-padded) on phone pad
         # 7,5,3 on numpad
@@ -1733,7 +1742,7 @@ class TestOrderFilt:
              [0., 5., 6., 7., 0.],
              [0., 10., 11., 12., 0.],
              [0., 0., 0., 0., 0.]],
-            dtype=xp_default_dtype(xp)
+            dtype=xpx.default_dtype(xp)
         )
         xp_assert_close(signal.order_filter(x, domain, 0), expected)
 
@@ -1755,7 +1764,7 @@ class TestOrderFilt:
              [10, 11, 12, 13, 8],
              [15, 16, 17, 18, 13],
              [0, 15, 16, 17, 18]],
-            dtype=xp_default_dtype(xp)
+            dtype=xpx.default_dtype(xp)
         )
         xp_assert_close(signal.order_filter(x, domain, 1), expected)
 
@@ -2188,7 +2197,6 @@ class _TestLinearFilter:
                             else self.dtype)
         assert xp_size(zf) == 0
 
-    @skip_xp_backends('jax.numpy', reason='jax does not support inplace ops')
     @pytest.mark.parametrize('a', (1, [1], [1, .5, 1.5], 2, [2], [2, 1, 3]),
                              ids=str)
     @make_xp_test_case(lfiltic)
@@ -2196,7 +2204,7 @@ class _TestLinearFilter:
         # Test for #22470: lfiltic does not handle `a[0] != 1`
         # and, more in general, test that lfiltic behaves consistently with lfilter
         if is_cupy(xp) and isinstance(a, int | float):
-            pytest.skip('cupy does not supoprt scalar filter coefficients')
+            pytest.skip('cupy does not support scalar filter coefficients')
         x = self.generate(6, xp)  # arbitrary input
         b = self.convert_dtype([.5, 1., .2], xp)  # arbitrary b
         a = self.convert_dtype(a, xp)
@@ -2205,7 +2213,7 @@ class _TestLinearFilter:
         K = M + N if is_cupy(xp) else max(N, M)
         # compute reference initial conditions as final conditions of lfilter
         y1, zi_1 = lfilter(b, a, x, zi=self.generate(K, xp))
-        # copute initial conditions from lfiltic
+        # compute initial conditions from lfiltic
         zi_2 = lfiltic(b, a, xp.flip(y1), xp.flip(x))
         # compare lfiltic's output with reference
         assert_array_almost_equal(zi_1, zi_2)
@@ -2341,6 +2349,25 @@ def test_lfilter_bad_object(xp):
 def test_lfilter_notimplemented_input(xp):
     # Should not crash, gh-7991
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
+
+
+def test_lfilter_empty_input():
+    """Verify that unchanged `zi` is returned for an empty input `x`
+
+    This test ensures correct special handling for empty inputs,
+    to prevent leaking internal state as reported in gh-22571.
+    """
+    b = np.array([1.0, 0.5])
+    a = np.array([1.0, -0.5])
+    x = np.array([])
+    zi = np.array([0.25])
+
+    y, zf = lfilter(b, a, x, zi=zi)
+    assert y.shape == (0,)
+    xp_assert_equal(zf, zi)
+
+    y_no_zi = lfilter(b, a, x)
+    assert y_no_zi.shape == (0,)
 
 
 @pytest.mark.parametrize('dt', ["uint8", "int8", "uint16", "int16",
@@ -2768,18 +2795,39 @@ class TestCorrelate2d:
 @make_xp_test_case(lfilter_zi)
 class TestLFilterZI:
 
+    def test_exceptions(self, xp):
+        """Raise all exceptions in `lfilter_zi`. """
+        with pytest.raises(ValueError, match="^Numerator `b` and Denominator `a` must"):
+             lfilter_zi(b=xp.eye(3), a=1)  # b must be 1-d array
+        with pytest.raises(ValueError, match="^Numerator `b` and Denominator `a` must"):
+             lfilter_zi(b=1, a=xp.eye(3))  # a must be 1-d array
+        with pytest.raises(ValueError, match="^First coefficient of parameter `a` "):
+            lfilter_zi(b=1, a=xp.asarray([0, 0, 0]))
+        with pytest.raises(ValueError, match="^Filter not stable due to sum"):
+            lfilter_zi(b=1, a=xp.asarray([-1, 1, -2, 2]))
+
     @skip_xp_backends(np_only=True, reason='list inputs are numpy specific')
     def test_array_like(self, xp):
         zi_expected = xp.asarray([5.0, -1.0])
         zi = lfilter_zi([1.0, 0.0, 2.0], [1.0, -1.0, 0.5])
         assert_array_almost_equal(zi, zi_expected)
 
-    def test_basic(self, xp):
-        a = xp.asarray([1.0, -1.0, 0.5])
-        b = xp.asarray([1.0, 0.0, 2.0])
-        zi_expected = xp.asarray([5.0, -1.0])
+    @skip_xp_backends("dask.array", reason="FutureWarning emitted")
+    @pytest.mark.parametrize('b, a, zi_expected,',[
+        ([1., 0., 2.],     [1., -1., 0.5],   [5., -1.]),
+        ([1., 2., 3., 4.], [1.,],            [9.,  7.,  4.]),
+        ([1., 9.],         [1., 2., 3., 4.], [0. ,-7., -4.])])
+    def test_basic(self, b, a, zi_expected, xp):
+        b, a, zi_expected = (xp.asarray(v_) for v_ in (b, a, zi_expected))
+
         zi = lfilter_zi(b, a)
         assert_array_almost_equal(zi, zi_expected)
+
+        y = lfilter(b, a, xp.ones(9), zi=zi)[0]  # test for constant filter response
+
+        fill_value = xp.sum(b) / xp.sum(a)
+        y_expected = xp.full_like(y, fill_value=float(fill_value))
+        assert_array_almost_equal(y, y_expected)
 
     def test_scale_invariance(self, xp):
         # Regression test.  There was a bug in which b was not correctly
@@ -2798,10 +2846,7 @@ class TestLFilterZI:
         assert signal.lfilter_zi(b, a).dtype == dtype
 
 
-@make_xp_test_case(filtfilt, sosfiltfilt)
-class TestFiltFilt:
-    filtfilt_kind = 'tf'
-
+class _TestFiltFilt:
     def filtfilt(self, zpk, x, axis=-1, padtype='odd', padlen=None,
                  method='pad', irlen=None, xp=None):
         if self.filtfilt_kind == 'tf':
@@ -2813,21 +2858,13 @@ class TestFiltFilt:
             sos = xp.asarray(sos)
             return sosfiltfilt(sos, x, axis, padtype, padlen)
 
-    @skip_xp_backends('torch', reason='negative strides')
     def test_basic(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         zpk = tf2zpk(xp.asarray([1., 2, 3]), xp.asarray([1., 2, 3]))
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
         atol= 4e-9 if is_cupy(xp) else 5.28e-11
         xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=atol)
 
-    @skip_xp_backends('torch', reason='negative strides')
     def test_sine(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         rate = 2000
         t = xp.linspace(0, 1.0, rate + 1)
         # A signal with low frequency and a high frequency.
@@ -2837,7 +2874,7 @@ class TestFiltFilt:
 
         zpk = butter(8, xp.asarray(0.125), output='zpk')
         # r is the magnitude of the largest pole.
-        r = np.abs(zpk[1]).max()
+        r = float(xp.max(xp.abs(zpk[1])))
         eps = 1e-5
         # n estimates the number of steps for the
         # transient to decay by a factor of eps.
@@ -2846,14 +2883,14 @@ class TestFiltFilt:
         # High order lowpass filter...
         y = self.filtfilt(zpk, x, padlen=n, xp=xp)
         # Result should be just xlow.
-        err = np.abs(y - xlow).max()
+        err = float(xp.max(xp.abs(y - xlow)))
         assert err < 1e-4
 
         # A 2D case.
-        x2d = xp.asarray(np.vstack([xlow, xlow + xhigh]))
+        x2d = xp.stack((xlow, xlow + xhigh))
         y2d = self.filtfilt(zpk, x2d, padlen=n, axis=1, xp=xp)
         assert y2d.shape == x2d.shape
-        err = np.abs(y2d - xlow).max()
+        err = float(xp.max(xp.abs(y2d - xlow)))
         assert err < 1e-4
 
         # Use the previous result to check the use of the axis keyword.
@@ -2861,11 +2898,7 @@ class TestFiltFilt:
         y2dt = self.filtfilt(zpk, x2d.T, padlen=n, axis=0, xp=xp)
         xp_assert_equal(y2d, y2dt.T)
 
-    @skip_xp_backends('torch', reason='negative strides')
     def test_axis(self, xp):
-        if is_jax(xp) and self.filtfilt_kind == 'sos':
-            pytest.skip(reason='sosfilt works in-place')
-
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
         x = xp.asarray(x)
@@ -2880,67 +2913,61 @@ class TestFiltFilt:
         )
         xp_assert_equal(y0, xp.asarray(np.swapaxes(y2, 0, 2)))
 
-    @skip_xp_backends(np_only=True,
-                      reason='python scalars in array_namespace are np-only')
-    def test_acoeff(self, xp):
-        if self.filtfilt_kind != 'tf':
-            return  # only necessary for TF
-        # test for 'a' coefficient as single number
-        out = signal.filtfilt(
-            xp.asarray([.5, .5]), 1, xp.arange(10, dtype=xp.float64)
-        )
-        xp_assert_close(out, xp.arange(10, dtype=xp.float64), rtol=1e-14, atol=1e-14)
 
-    @skip_xp_backends(np_only=True, reason='_filtfilt_gust is np-only')
-    def test_gust_simple(self, xp):
-        if self.filtfilt_kind != 'tf':
-            pytest.skip('gust only implemented for TF systems')
-        # The input array has length 2.  The exact solution for this case
-        # was computed "by hand".
-        x = xp.asarray([1.0, 2.0])
-        b = xp.asarray([0.5])
-        a = xp.asarray([1.0, -0.5])
-        y, z1, z2 = _filtfilt_gust(b, a, x)
-        xp_assert_close(z1[0], 0.3*x[0] + 0.2*x[1])
-        xp_assert_close(z2[0], 0.2*x[0] + 0.3*x[1])
-        xp_assert_close(y,
-                        xp.asarray([z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
-                                    0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
-        )
+@make_xp_test_case(filtfilt)
+class TestFiltFilt(_TestFiltFilt):
+    filtfilt_kind = 'tf'
 
-    @skip_xp_backends(np_only=True,
-                      reason='python scalars in array_namespace are np-only')
     def test_gust_scalars(self, xp):
-        if self.filtfilt_kind != 'tf':
-            pytest.skip('gust only implemented for TF systems')
         # The filter coefficients are both scalars, so the filter simply
         # multiplies its input by b/a.  When it is used in filtfilt, the
         # factor is (b/a)**2.
-        x = xp.arange(12)
+        x = xp.arange(12, dtype=xp.float64)
         b = 3.0
         a = 2.0
         y = filtfilt(b, a, x, method="gust")
         expected = (b/a)**2 * x
         xp_assert_close(y, expected)
 
+    def test_gust_simple(self):  # _filtfilt_gust is np-only
+        # The input array has length 2.  The exact solution for this case
+        # was computed "by hand".
+        x = np.asarray([1.0, 2.0])
+        b = np.asarray([0.5])
+        a = np.asarray([1.0, -0.5])
+        y, z1, z2 = _filtfilt_gust(b, a, x)
+        xp_assert_close(z1[0], 0.3*x[0] + 0.2*x[1])
+        xp_assert_close(z2[0], 0.2*x[0] + 0.3*x[1])
+        xp_assert_close(y,
+                        np.asarray([z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
+                                    0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
+        )
 
-@make_xp_test_case(sosfiltfilt, filtfilt)
-class TestSOSFiltFilt(TestFiltFilt):
+    def test_acoeff(self, xp):
+        # test for 'a' coefficient as single number
+        out = signal.filtfilt(
+            xp.asarray([.5, .5]), 1, xp.arange(10, dtype=xp.float64)
+        )
+        xp_assert_close(out, xp.arange(10, dtype=xp.float64), rtol=1e-14, atol=1e-14)
+
+
+@make_xp_test_case(sosfiltfilt)
+class TestSOSFiltFilt(_TestFiltFilt):
     filtfilt_kind = 'sos'
 
-    @skip_xp_backends('jax.numpy', reason='sosfilt works in-place')
-    @skip_xp_backends('torch', reason='negative strides')
     def test_equivalence(self, xp):
         """Test equivalence between sosfiltfilt and filtfilt"""
-        x = np.random.RandomState(0).randn(1000)
-        x = xp.asarray(x)
+        x_np = np.random.RandomState(0).randn(1000)
+        x = xp.asarray(x_np)
         for order in range(1, 6):
             zpk = signal.butter(order, 0.35, output='zpk')
             b, a = zpk2tf(*zpk)
             sos = zpk2sos(*zpk)
 
-            b, a, sos = map(xp.asarray, (b, a, sos))
-            y = filtfilt(b, a, x)
+            # copy: NumPy filtfilt output has negative strides, which torch
+            # cannot convert (pytorch/pytorch#59786)
+            y = filtfilt(b, a, x_np).copy()
+            b, a, sos, y = map(xp.asarray, (b, a, sos, y))
             y_sos = sosfiltfilt(sos, x)
             xp_assert_close(y, y_sos, atol=1e-12, err_msg=f'order={order}')
 
@@ -3062,9 +3089,8 @@ def test_choose_conv_method_2(xp):
                 assert choose_conv_method(x, h, mode=mode) == 'direct'
 
 
-@skip_xp_backends(np_only=True)
 @pytest.mark.fail_slow(10)
-def test_filtfilt_gust(xp):
+def test_filtfilt_gust():
     # Design a filter.
     z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')
 
@@ -3247,6 +3273,25 @@ class TestDecimate:
         yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k),
                                  u)[::2]
 
+        xp_assert_close(yzp, yzpref, rtol=1e-10, atol=1e-13)
+
+    def test_complex_zeros_real_poles_iir_dlti(self):  # np only as dlti
+        # A complex filter whose poles are real but zeros are complex must
+        # still take the (complex-capable) lfilter path. Previously the guard
+        # tested ``system.poles`` twice and never ``system.zeros``, so such a
+        # filter was forced through ``zpk2sos`` and raised.
+        system = signal.dlti([0.5j], [0.5], 1.0)
+        rng = np.random.default_rng(1234)
+        u = rng.standard_normal(200)
+
+        z, p, k = system.zeros, system.poles, system.gain
+
+        ynzp = signal.decimate(u, 2, ftype=system, zero_phase=False)
+        ynzpref = signal.lfilter(*signal.zpk2tf(z, p, k), u)[::2]
+        xp_assert_close(ynzp, ynzpref, rtol=1e-10, atol=1e-13)
+
+        yzp = signal.decimate(u, 2, ftype=system, zero_phase=True)
+        yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k), u)[::2]
         xp_assert_close(yzp, yzpref, rtol=1e-10, atol=1e-13)
 
     @skip_xp_backends(np_only=True, reason="dlti")
@@ -3433,6 +3478,15 @@ class TestHilbert2:
         x1a = signal.hilbert2(xp.reshape(x, (1, 6)))
         xp_assert_close(x0a, x1a.T)
 
+    def test_even_length_nyquist(self, xp):
+        """gh-25176: for a separable signal `hilbert2` is the outer product of
+        the 1-D analytic signals (checks the even-length Nyquist bin). """
+        a = xp.asarray([1.0, 2.0, 3.0, 4.0])
+        b = xp.asarray([4.0, 3.0, 2.0, 1.0, 5.0, 2.0])
+        x = xp.reshape(a, (-1, 1)) * xp.reshape(b, (1, -1))
+        expected = xp.reshape(hilbert(a), (-1, 1)) * xp.reshape(hilbert(b), (1, -1))
+        xp_assert_close(hilbert2(x), expected)
+
     def test_parameter_N(self, xp):
         """Compare passing tuple to single int. """
         x = xp.zeros((5, 5))
@@ -3440,29 +3494,33 @@ class TestHilbert2:
         x1_a = hilbert2(x, N=(4, 4))
         xp_assert_equal(x1_a, x0_a)
 
+    @xfail_xp_backends(
+        "cupy",
+        CUPY_VERSION and CUPY_VERSION < "14",
+        reason="Bug in cupy implementation fixed in 14.0.0, see cupy#9396"
+    )
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    @skip_xp_backends("cupy", reason="Bug in cupy implementation, see cupy#9396")
     def test_quadrant_values(self, shape, xp):
         """Compare desired and calculated values in Fourier space. """
         x_f = xp.ones(shape, dtype=xp.complex128)  # FFT of input signal
-        x_f[0 , 0] += 7
+        x_f = xpx.at(x_f)[0, 0].add(7)
         x = xp.real(sp_fft.ifft2(x_f))  # x.imag is zero
 
         x_as = hilbert2(x)
         x_as_f = sp_fft.fft2(x_as)
 
-        # Create slices for bins with purely positive and purely negative frequencies
-        # (can be verified with `sp_fft.fftfreq()`):
-        f0_pos, f0_neg = slice(1, (shape[0] + 1) // 2), slice((shape[0] + 1) // 2, None)
-        f1_pos, f1_neg = slice(1, (shape[1] + 1) // 2), slice((shape[1] + 1) // 2, None)
-        # Verify all values:
-        atol = 1e-12  # for x of dtype complex128
-        xp_assert_close(x_as_f[f0_pos, f1_pos], x_f[f0_pos, f1_pos] * 4, atol=atol)
-        xp_assert_close(x_as_f[0, f1_pos], x_f[0, f1_pos] * 2, atol=atol)
-        xp_assert_close(x_as_f[f0_pos, 0], x_f[f0_pos, 0] * 2, atol=atol)
-        xp_assert_close(x_as_f[0, 0], x_f[0, 0], atol=atol)
-        zz_as_f = x_as_f[f0_neg, f1_neg]  # check for zeroed orthants
-        xp_assert_close(zz_as_f, xp.zeros_like(zz_as_f), atol=atol)
+        # per-axis 1-D Hilbert factor (DC 1, positive 2, even Nyquist 1,
+        # negative 0); the 2-D factor is the outer product
+        def _factor(n):
+            f = xp.zeros(n, dtype=xp.float64)
+            f = xpx.at(f)[0].set(1.0)
+            f = xpx.at(f)[1:(n + 1) // 2].set(2.0)
+            if n % 2 == 0:
+                f = xpx.at(f)[n // 2].set(1.0)
+            return f
+        h = (xp.reshape(_factor(shape[0]), (-1, 1))
+             * xp.reshape(_factor(shape[1]), (1, -1)))
+        xp_assert_close(x_as_f, x_f * h, atol=1e-12)  # for x of dtype complex128
 
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
     def test_zero_analytic_signal(self, shape, xp):
@@ -3471,8 +3529,8 @@ class TestHilbert2:
         c0 = shape[0] // 2
         c1 = shape[1] // 2
         x_f = xp.zeros(shape)
-        x_f[c0 - 1, c1 + 1] = 1.0
-        x_f[c0 + 1, c1 - 1] = 1.0
+        x_f = xpx.at(x_f)[c0 - 1, c1 + 1].set(1.0)
+        x_f = xpx.at(x_f)[c0 + 1, c1 - 1].set(1.0)
         x_f = sp_fft.ifftshift(x_f)
         x = xp.real(sp_fft.ifft2(x_f))
         assert xp.sum(abs(x)) > 0.0
@@ -3519,7 +3577,7 @@ class TestEnvelope:
     @staticmethod
     def assert_close(actual, desired, msg, xp):
         a_r_tol = ({'atol': 1e-12, 'rtol': 1e-12}
-                   if xp_default_dtype(xp) == xp.float64
+                   if xpx.default_dtype(xp) == xp.float64
                    else {'atol': 1e-5, 'rtol': 1e-5}
         )
 
@@ -3553,10 +3611,9 @@ class TestEnvelope:
             # noinspection PyTypeChecker
             envelope(xp.ones(4), residual='undefined')
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_parameters(self, xp):
         """Ensure that the various parametrizations produce compatible results. """
-        dt_r = xp_default_dtype(xp)
+        dt_r = xpx.default_dtype(xp)
         dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
 
         Z = xp.asarray([4.0, 2, 2, 3, 0], dtype=dt_r)
@@ -3602,7 +3659,7 @@ class TestEnvelope:
 
         # compare complex analytic signal to real version
         Z_a = xp.asarray(Z, copy=True)
-        Z_a[1:] *= 2
+        Z_a = xpx.at(Z_a)[1:].multiply(2)
         z_a = sp_fft.ifft(Z_a, n=n)  # analytic signal of Z
         self.assert_close(xp.real(z_a), z,
                           msg="Reference analytic signal error", xp=xp)
@@ -3612,7 +3669,6 @@ class TestEnvelope:
         self.assert_close(sp_fft.fft(zr_a), xp.asarray(Zr_a, dtype=dt_c),
                           msg="Complex residual calculation error", xp=xp)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize(
         "               Z,        bp_in,     Ze2_desired,      Zr_desired",
         [([1, 0, 2, 2, 0],    (1, None), [4, 2, 0, 0, 0], [1, 0, 0, 0, 0]),
@@ -3649,13 +3705,12 @@ class TestEnvelope:
                           msg="Residual calculation error (residual='all')", xp=xp)
 
         if bp_in[1] is not None:
-            Zr_desired[bp_in[1]:] = 0
+            Zr_desired = xpx.at(Zr_desired)[bp_in[1]:].set(0)
         self.assert_close(Ze2_lp, Ze2_desired,
                           msg="Envelope calculation error (residual='lowpass')", xp=xp)
         self.assert_close(Zr_lp, Zr_desired,
                           msg="Residual calculation error (residual='lowpass')", xp=xp)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize(
         "               Z,        bp_in,         Ze2_desired,         Zr_desired",
         [([0, 5, 0, 5, 0], (None, None),    [5, 0, 10, 0, 5],    [0, 0, 0, 0, 0]),
@@ -3681,10 +3736,9 @@ class TestEnvelope:
         self.assert_close(Zr, Zr_desired,
                           msg="Residual calculation error", xp=xp)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_axis_parameter(self, xp):
         """Test for multi-channel envelope calculations. """
-        dt_r = xp_default_dtype(xp)
+        dt_r = xpx.default_dtype(xp)
         dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
 
         z = sp_fft.irfft(xp.asarray([[1.0, 0, 2, 2, 0], [7, 0, 4, 4, 0]], dtype=dt_r))
@@ -3705,10 +3759,9 @@ class TestEnvelope:
             Yr, Zr_desired, msg="Transposed 2d residual calc. error", xp=xp
         )
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_axis_parameter_complex(self, xp):
         """Test for multi-channel envelope calculations with complex values. """
-        dt_r = xp_default_dtype(xp)
+        dt_r = xpx.default_dtype(xp)
         dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
         inp = xp.asarray([[1.0, 5, 0, 5, 2], [1, 10, 0, 10, 2]], dtype=dt_r)
         z = sp_fft.ifft(sp_fft.ifftshift(inp, axes=1))
@@ -3728,7 +3781,6 @@ class TestEnvelope:
         )
         self.assert_close(Yr, Zr_des,  msg="Transposed 2d residual calc. error", xp=xp)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize('X', [[4, 0, 0, 1, 2], [4, 0, 0, 2, 1, 2]])
     def test_compare_envelope_hilbert(self, X, xp):
         """Compare output of `envelope()` and `hilbert()`. """
@@ -3773,8 +3825,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 
-    @skip_xp_backends(np_only=True)
-    def test_compute_factors(self, xp):
+    def test_compute_factors(self):
         factors, poly = _compute_factors([1, 2, 3], [3, 2, 1])
         assert len(factors) == 3
         assert_almost_equal(factors[0], np.poly([2, 2, 3]))
@@ -3793,8 +3844,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(factors[5], np.poly([1, 1, 1, 2, 2]))
         assert_almost_equal(poly, np.poly([1, 1, 1, 2, 2, 3]))
 
-    @skip_xp_backends(np_only=True)
-    def test_group_poles(self, xp):
+    def test_group_poles(self):
         unique, multiplicity = _group_poles(
             [1.0, 1.001, 1.003, 2.0, 2.003, 3.0], 0.1, 'min')
         xp_assert_close(unique, [1.0, 2.0, 3.0])
@@ -4248,7 +4298,7 @@ class TestVectorstrength:
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        rtol_kw = {'rtol': 2e-6} if xp_default_dtype(xp) == xp.float32 else {}
+        rtol_kw = {'rtol': 2e-6} if xpx.default_dtype(xp) == xp.float32 else {}
         xp_assert_close(phase, 2 * xp.pi * targ_phase, **rtol_kw)
 
     def test_partial_1dperiod(self, xp):
@@ -4335,7 +4385,6 @@ class TestVectorstrength:
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank1(self, dt, xp):
         dt = getattr(xp, dt)
         x = xp.linspace(0, 5, 6, dtype=dt)
@@ -4368,7 +4417,6 @@ class TestSOSFilt:
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
 
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank2(self, dt, xp):
         dt = getattr(xp, dt)
         shape = (4, 3)
@@ -4389,14 +4437,15 @@ class TestSOSFilt:
         sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=0)
-        assert_array_almost_equal(y_r2_a0, y)
+        # JAX complex64 needs slightly relaxed tolerance here.
+        dec = {'decimal': 5} if dt == xp.complex64 and is_jax(xp) else {}
+        assert_array_almost_equal(y_r2_a0, y, **dec)
 
         sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=1)
-        assert_array_almost_equal(y_r2_a1, y)
+        assert_array_almost_equal(y_r2_a1, y, **dec)
 
-    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank3(self, dt, xp):
         dt = getattr(xp, dt)
         shape = (4, 3, 2)
@@ -4427,7 +4476,7 @@ class TestSOSFilt:
         a, b, sos = map(xp.asarray, (a, b, sos))
         return a, b, sos
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions(self, dt, xp):
         a, b, sos = self._get_ab_sos(xp)
 
@@ -4453,8 +4502,8 @@ class TestSOSFilt:
         xp_assert_close(y, xp.ones(8), check_dtype=False)
         xp_assert_close(zf, zi, check_dtype=False)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_2(self, dt, xp):
         dt = getattr(xp, dt)
         x = xp.ones(8, dtype=dt)
@@ -4477,7 +4526,7 @@ class TestSOSFilt:
         xp_assert_close(y[0, 0], xp.ones(8), check_dtype=False)
         xp_assert_close(zf[:, 0, 0, :], zi, check_dtype=False)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_3d_axis1(self, dt, xp):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
 
@@ -4530,7 +4579,6 @@ class TestSOSFilt:
         xp_assert_close(y, y_tf, rtol=1e-10, atol=1e-13)
 
     @skip_xp_backends('torch', reason='issues a RuntimeWarning')
-    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_bad_zi_shape(self, dt, xp):
         dt = getattr(xp, dt)
         # The shape of zi is checked before using any values in the
@@ -4540,11 +4588,11 @@ class TestSOSFilt:
         zi = xp.empty((4, 3, 3, 2))  # Correct shape is (4, 3, 2, 3)
         with pytest.raises(ValueError, match='should be all ones'):
             sosfilt(sos, x, zi=zi, axis=1)
-        sos[:, 3] = 1.
+        sos = xpx.at(sos)[:, 3].set(1.)
         with pytest.raises(ValueError, match='Invalid zi shape'):
             sosfilt(sos, x, zi=zi, axis=1)
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi(self, dt, xp):
         dt = getattr(xp, dt)
         sos = signal.butter(6, 0.2, output='sos')
@@ -4559,6 +4607,7 @@ class TestSOSFilt:
         xp_assert_close(y, ss * xp.ones_like(y), rtol=1e-13)
 
     @skip_xp_backends(np_only=True)
+    @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi_2(self, dt, xp):
         # zi as array-like
         dt = getattr(xp, dt)
@@ -4605,7 +4654,7 @@ class TestDeconvolve:
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
     def test_divisor_greater_signal(self, xp):
-        """Return signal as `remainder` when ``len(divisior) > len(signal)``. """
+        """Return signal as `remainder` when ``len(divisor) > len(signal)``. """
         sig, div = xp.asarray([0, 1, 2]), xp.asarray([0, 1, 2, 4, 5])
         quotient, remainder = signal.deconvolve(sig, div)
         xp_assert_equal(remainder, sig)
@@ -4655,7 +4704,7 @@ class TestDetrend:
         # regression test for https://github.com/scipy/scipy/issues/18675
         rng = np.random.RandomState(12345)
         x = rng.rand(10)
-        x = xp.asarray(x, dtype=xp_default_dtype(xp))
+        x = xp.asarray(x, dtype=xpx.default_dtype(xp))
         if isinstance(bp, np.ndarray) and not is_jax(xp):
             # JAX expects a static array for bp, so don't call xp.asarray
             # for JAX.
@@ -4669,7 +4718,7 @@ class TestDetrend:
             -1.11128506e-01, -1.69470553e-01,  1.14710683e-01,  6.35468419e-02,
             3.53533144e-01, -3.67877935e-02, -2.00417675e-02, -1.94362049e-01])
 
-        atol = 3e-7 if xp_default_dtype(xp) == xp.float32 else 1e-14
+        atol = 3e-7 if xpx.default_dtype(xp) == xp.float32 else 1e-14
         xp_assert_close(res, res_scipy_191, atol=atol)
 
 

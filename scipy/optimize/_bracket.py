@@ -1,12 +1,12 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_ravel, xp_promote
+from scipy._lib._array_api import array_namespace, xp_device, xp_ravel, xp_promote
 
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
 
-def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
+def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter):
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
@@ -54,10 +54,10 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     # Calculate the default value of xr0 if a value has not been supplied.
     # Be careful to ensure xr0 is not larger than xmax.
     if xr0_not_supplied:
-        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, 1.0)
+        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.ones_like(xmax))
         xr0 = xp.astype(xr0, xl0.dtype, copy=False)
 
-    maxiter = xp.asarray(maxiter)
+    maxiter = xp.asarray(maxiter, device=xp_device(xl0))
     message = '`maxiter` must be a non-negative integer.'
     if (not xp.isdtype(maxiter.dtype, "numeric") or maxiter.shape != tuple()
             or xp.isdtype(maxiter.dtype, "complex floating")):
@@ -66,11 +66,11 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not maxiter == maxiter_int or maxiter < 0:
         raise ValueError(message)
 
-    return func, xl0, xr0, xmin, xmax, factor, args, maxiter, xp
+    return func, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter, xp
 
 
 def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
-                  args=(), maxiter=1000):
+                  args=(), kwargs=None, maxiter=1000):
     """Bracket the root of a monotonic scalar function of one variable
 
     This function works elementwise when `xl0`, `xr0`, `xmin`, `xmax`, `factor`, and
@@ -102,6 +102,8 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         bracketed requires arguments that are not broadcastable with these
         arrays, wrap that callable with `func` such that `func` accepts
         only `x` and broadcastable arrays.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `func`. See `args`.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform.
 
@@ -171,11 +173,11 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # - allow factor < 1?
 
     callback = None  # works; I just don't want to test it
-    temp = _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter)
-    func, xl0, xr0, xmin, xmax, factor, args, maxiter, xp = temp
+    temp = _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter)
+    func, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter, xp = temp
 
     xs = (xl0, xr0)
-    temp = eim._initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args, kwargs=kwargs)
     func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     xl0, xr0 = xs
     xmin = xp_ravel(xp.astype(xp.broadcast_to(xmin, shape), dtype, copy=False), xp=xp)
@@ -208,7 +210,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     factor = xp.astype(factor, dtype, copy=False)
     factor = xp.concat((factor, factor))
 
-    active = xp.arange(2*n)
+    active = xp.arange(2*n, device=xp_device(x))
     args = [xp.concat((arg, arg)) for arg in args]
 
     # This is needed due to inner workings of `eim._loop`.
@@ -414,7 +416,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
                      xp)
 
 
-def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
+def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter):
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
@@ -480,7 +482,7 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
         xr0 = xm0 + xp.minimum((xmax - xm0)/16, 0.5)
         xr0 = xp.astype(xr0, xm0.dtype, copy=False)
 
-    maxiter = xp.asarray(maxiter)
+    maxiter = xp.asarray(maxiter, device=xp_device(xm0))
     message = '`maxiter` must be a non-negative integer.'
     if (not xp.isdtype(maxiter.dtype, "numeric") or maxiter.shape != tuple()
             or xp.isdtype(maxiter.dtype, "complex floating")):
@@ -489,11 +491,11 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not maxiter == maxiter_int or maxiter < 0:
         raise ValueError(message)
 
-    return func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter, xp
+    return func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter, xp
 
 
 def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
-                     factor=None, args=(), maxiter=1000):
+                     factor=None, args=(), kwargs=None, maxiter=1000):
     """Bracket the minimum of a unimodal scalar function of one variable
 
     This function works elementwise when `xm0`, `xl0`, `xr0`, `xmin`, `xmax`,
@@ -529,6 +531,8 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         callable to be bracketed requires arguments that are not broadcastable
         with these arrays, wrap that callable with `func` such that `func`
         accepts only ``x`` and broadcastable arrays.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform. The number
         of function evaluations is three greater than the number of iterations.
@@ -593,14 +597,15 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     `xmax`. This cautious approach ensures that a minimum near but distinct from
     the boundary isn't missed while also detecting whether or not the `xmax` is
     a minimizer when `xmax` is reached after a finite number of steps.
-    """  # noqa: E501
+    """
     callback = None  # works; I just don't want to test it
 
-    temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter)
-    func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter, xp = temp
+    temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax,
+                               factor, args, kwargs, maxiter)
+    func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter, xp = temp
 
     xs = (xl0, xm0, xr0)
-    temp = eim._initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args, kwargs=kwargs)
     func, xs, fs, args, shape, dtype, xp = temp
 
     xl0, xm0, xr0 = xs

@@ -1,12 +1,13 @@
 import logging
-import sys
 import warnings
 
 import numpy as np
 import time
 from multiprocessing import Pool
-from numpy.testing import assert_allclose, IS_PYPY
+from numpy.testing import assert_allclose
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises, warns
 from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
                             rosen_der, rosen_hess, NonlinearConstraint, OptimizeWarning)
@@ -745,8 +746,6 @@ class TestShgoArguments:
         """Test single function constraint passing"""
         SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
 
-    @pytest.mark.xfail(IS_PYPY and sys.platform == 'win32',
-            reason="Failing and fix in PyPy not planned (see gh-18632)")
     def test_10_finite_time(self):
         """Test single function constraint passing"""
         options = {'maxtime': 1e-15}
@@ -839,6 +838,7 @@ class TestShgoArguments:
         np.testing.assert_allclose(res_new_bounds.x, res_old_bounds.x)
 
     @pytest.mark.fail_slow(10)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_19_parallelization(self):
         """Test the functionality to add custom sampling methods to shgo"""
 

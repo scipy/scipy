@@ -41,13 +41,20 @@ def _fpknot(const double[::1] x,
 static PyObject*
 py_fpknot(PyObject* self, PyObject *args)
 {
-    PyObject *py_x = NULL, *py_t = NULL, *py_residuals = NULL;
+    PyObject *py_x = NULL, *py_t = NULL, *py_residuals = NULL, *py_periodic = NULL;
     int k;
 
-    if(!PyArg_ParseTuple(args, "OOiO", &py_x, &py_t, &k, &py_residuals)) {
+    if(!PyArg_ParseTuple(args, "OOiOO", &py_x, &py_t, &k, &py_residuals, &py_periodic)) {
         return NULL;
     }
 
+    int periodic = PyObject_IsTrue(py_periodic);
+    if (periodic < 0) {
+        return NULL;
+    }
+    bool is_periodic = periodic != 0;
+
+    
     if (!(check_array(py_x, 1, NPY_DOUBLE) &&
           check_array(py_t, 1, NPY_DOUBLE) &&
           check_array(py_residuals, 1, NPY_DOUBLE))
@@ -62,9 +69,17 @@ py_fpknot(PyObject* self, PyObject *args)
     npy_intp len_x = PyArray_DIM(a_x, 0);
     npy_intp len_r = PyArray_DIM(a_residuals, 0);
 
-    if (len_x != len_r) {
-        std::string msg = ("len(x) = " + std::to_string(len_x) + " != " +
-                          std::to_string(len_r) + " = len(residuals)");
+    bool error_condition_1 = (is_periodic && (len_x != len_r + 1));
+    bool error_condition_2 = (!is_periodic && (len_x != len_r));
+    if( error_condition_1 || error_condition_2 ) {
+        std::string msg;
+        if (error_condition_1) {
+            msg = ("len(x) = " + std::to_string(len_x) + " != " +
+                               std::to_string(len_r + 1) + " = len(residuals) + 1");
+        } else {
+            msg = ("len(x) = " + std::to_string(len_x) + " != " +
+                   std::to_string(len_r) + " = len(residuals)");
+        }
         PyErr_SetString(PyExc_ValueError, msg.c_str());
         return NULL;
     }
@@ -75,7 +90,8 @@ py_fpknot(PyObject* self, PyObject *args)
             static_cast<const double *>(PyArray_DATA(a_x)), PyArray_DIM(a_x, 0),
             static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
             k,
-            static_cast<const double *>(PyArray_DATA(a_residuals))
+            static_cast<const double *>(PyArray_DATA(a_residuals)),
+            is_periodic
         );
         return PyFloat_FromDouble(new_knot);
     }
@@ -83,6 +99,102 @@ py_fpknot(PyObject* self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
     };
+}
+
+/*
+*/
+static PyObject*
+py_fpback_clamped(PyObject* self, PyObject *args)
+{
+    PyObject *py_R = NULL, *py_y = NULL, *py_yw = NULL;
+    PyObject *py_x = NULL, *py_t = NULL, *py_w = NULL;
+    PyObject *py_ci = NULL, *py_cf = NULL;
+    Py_ssize_t nc_free;
+    int k;
+    int extrapolate = 0;   // default is False
+
+    if(!PyArg_ParseTuple(args, "OnOOOiOO|pOOO", &py_R, &nc_free, &py_x, &py_y, &py_t, &k, &py_w, &py_yw,
+         &extrapolate, &py_ci, &py_cf)) {
+        return NULL;
+    }
+
+    if (!(check_array(py_R, 2, NPY_DOUBLE) && check_array(py_yw, 2, NPY_DOUBLE))) {
+        return NULL;
+    }
+
+    PyArrayObject *a_R = (PyArrayObject *)py_R;
+    PyArrayObject *a_y = (PyArrayObject *)py_y;
+    PyArrayObject *a_yw = (PyArrayObject *)py_yw;
+    PyArrayObject *a_x = (PyArrayObject *)py_x;
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+    PyArrayObject *a_w = (PyArrayObject *)py_w;
+    PyArrayObject *a_ci = (py_ci == Py_None) ? NULL : (PyArrayObject *)py_ci;
+    PyArrayObject *a_cf = (py_cf == Py_None) ? NULL : (PyArrayObject *)py_cf;
+
+    // check consistency of array sizes
+    Py_ssize_t m = PyArray_DIM(a_R, 0);
+    Py_ssize_t m_ = PyArray_DIM(a_x, 0);
+    Py_ssize_t nz = PyArray_DIM(a_R, 1);
+
+    if (PyArray_DIM(a_yw, 0) != m) {
+        std::string msg = ("len(y) = " + std::to_string(PyArray_DIM(a_yw, 0)) + " != " +
+                  std::to_string(m) + " = m");
+        PyErr_SetString(PyExc_ValueError, msg.c_str());
+        return NULL;
+    }
+    if (nc_free > m) {
+        std::string msg = "nc_free = " + std::to_string(nc_free) + " > m = " + std::to_string(m);
+        PyErr_SetString(PyExc_ValueError, msg.c_str());
+        return NULL;
+    }
+
+    // allocate the output buffer
+    npy_intp dims[2];
+    dims[1] = PyArray_DIM(a_yw, 1);
+    if ((a_cf == NULL) || (a_ci == NULL)) {
+        dims[0] = nc_free + 1;
+    } 
+    else {
+        dims[0] = nc_free + 2;
+    }
+    PyArrayObject *a_c = (PyArrayObject *)PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+    npy_intp dims1[1] = {m_};
+    PyArrayObject *a_residuals = (PyArrayObject *)PyArray_SimpleNew(1, dims1, NPY_DOUBLE);
+    if (a_c == NULL || a_residuals == NULL) {
+        Py_XDECREF(a_c);
+        Py_XDECREF(a_residuals);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    double fp = 0.0;
+
+    const double *ci_ptr = (a_ci != NULL) ? static_cast<const double *>(PyArray_DATA(a_ci)) : nullptr;
+    const double *cf_ptr = (a_cf != NULL) ? static_cast<const double *>(PyArray_DATA(a_cf)) : nullptr;
+
+    try {
+        // heavy lifting happens here
+        fitpack::fpback_clamped(static_cast<const double *>(PyArray_DATA(a_R)), m, nz,
+                        nc_free, static_cast<const double *>(PyArray_DATA(a_x)), m_,
+                        static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
+                        k, static_cast<const double *>(PyArray_DATA(a_w)),
+                        extrapolate,
+                        static_cast<const double *>(PyArray_DATA(a_yw)),
+                        static_cast<const double *>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),
+                        static_cast<double *>(PyArray_DATA(a_c)),
+                        &fp,
+                        static_cast<double *>(PyArray_DATA(a_residuals)),
+                        ci_ptr,
+                        cf_ptr
+                    );
+    }
+    catch (const std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+
+    return Py_BuildValue("(NNN)", PyArray_Return(a_c),
+        PyArray_Return(a_residuals), PyFloat_FromDouble(fp));
 }
 
 
@@ -122,11 +234,6 @@ py_fpback(PyObject* self, PyObject *args)
     if (PyArray_DIM(a_yw, 0) != m) {
         std::string msg = ("len(y) = " + std::to_string(PyArray_DIM(a_yw, 0)) + " != " +
                   std::to_string(m) + " = m");
-        PyErr_SetString(PyExc_ValueError, msg.c_str());
-        return NULL;
-    }
-    if (nc > m) {
-        std::string msg = "nc = " + std::to_string(nc) + " > m = " + std::to_string(m);
         PyErr_SetString(PyExc_ValueError, msg.c_str());
         return NULL;
     }
@@ -203,7 +310,7 @@ py_fpbacp(PyObject* self, PyObject *args)
     Py_ssize_t m = PyArray_DIM(a_x, 0);
     Py_ssize_t len_t = PyArray_DIM(a_t, 0);
 
-    int64_t nc = len_t - k - 1;
+    Py_ssize_t nc = len_t - k - 1;
 
     // allocate the output buffer
     npy_intp dims[2] = {nc, PyArray_DIM(a_y, 1)};
@@ -1454,6 +1561,8 @@ static PyMethodDef DierckxMethods[] = {
      "fpknot replacement"},
     {"fpback", py_fpback, METH_VARARGS,
      "backsubstitution, triangular matrix"},
+    {"fpback_clamped", py_fpback_clamped, METH_VARARGS,
+     "backsubstitution, triangular matrix, clamp_values passed."},
     {"fpbacp", py_fpbacp, METH_VARARGS,
      "backsubstitution for periodic splines, triangular matrix"},
     {"qr_reduce", (PyCFunction)py_qr_reduce, METH_VARARGS | METH_KEYWORDS,
@@ -1494,31 +1603,41 @@ static PyMethodDef DierckxMethods[] = {
 
 
 
+static int dierckx_module_exec(PyObject *module)
+{
+    if (_import_array() < 0) { return -1; }
+    return 0;
+}
+
+
+static PyModuleDef_Slot dierckx_module_slots[] = {
+    {Py_mod_exec, (void *)dierckx_module_exec},
+    // signal that this module can be imported in isolated subinterpreters
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL}
+};
+
+
+// Designated initializers require C++20; MSVC /std:c++17 rejects them.
 static struct PyModuleDef dierckxmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_dierckx",   /* name of module */
-    NULL, //spam_doc, /* module documentation, may be NULL */
-    -1,       /* size of per-interpreter state of the module,
-                 or -1 if the module keeps state in global variables. */
-    DierckxMethods
+    PyModuleDef_HEAD_INIT,                /* m_base */
+    "_dierckx",                           /* m_name */
+    NULL,                                 /* m_doc */
+    0,                                    /* m_size */
+    DierckxMethods,                       /* m_methods */
+    dierckx_module_slots,                 /* m_slots */
+    NULL,                                 /* m_traverse */
+    NULL,                                 /* m_clear */
+    NULL                                  /* m_free */
 };
 
 
 PyMODINIT_FUNC
 PyInit__dierckx(void)
 {
-    PyObject *module;
-
-    import_array();
-
-    module = PyModule_Create(&dierckxmodule);
-    if (module == NULL) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&dierckxmodule);
 }

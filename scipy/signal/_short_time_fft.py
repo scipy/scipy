@@ -90,7 +90,7 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int,
             The window must be a real- or complex-valued 1d array.
         hop : int
             The increment in samples by which the window is shifted in each step.
-        desired_dual: np.ndarray | None
+        desired_dual : np.ndarray | None
             The desired dual window must be a 1d array of the same length as `win`.
             If set to ``None`` (default), then `desired_dual` is assumed to be the
             rectangular window, i.e., ``np.ones_like(win)``.
@@ -234,7 +234,7 @@ class ShortTimeFFT:
 
     The `~ShortTimeFFT.stft` is represented by a complex-valued matrix S[q,p]
     where the p-th column represents an FFT with the window centered at the
-    time t[p] = p * `delta_t` = p * `hop` * `T` where `T` is  the sampling
+    time t[p] = p * `delta_t` = p * `hop` * `T` where `T` is the sampling
     interval of the input signal. The q-th row represents the values at the
     frequency f[q] = q * `delta_f` with `delta_f` = 1 / (`mfft` * `T`) being
     the bin width of the FFT.
@@ -248,7 +248,7 @@ class ShortTimeFFT:
 
     By default, the so-called canonical dual window is used. It is the window with
     minimal energy among all possible dual windows. `from_win_equals_dual` and
-    `~scipy.signal.closest_STFT_dual_window` provide means for utilizing alterantive
+    `~scipy.signal.closest_STFT_dual_window` provide means for utilizing alternative
     dual windows. Note that `win` is also always a dual window of `dual_win`.
 
     Due to the convention of time t = 0 being at the first sample of the input
@@ -275,7 +275,7 @@ class ShortTimeFFT:
     fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
         Mode of FFT to be used (default 'onesided').
         See property `fft_mode` for details.
-    mfft: int | None
+    mfft : int | None
         Length of the FFT used, if a zero padded FFT is desired.
         If ``None`` (default), the length of the window `win` is used.
     dual_win : np.ndarray | None
@@ -296,7 +296,7 @@ class ShortTimeFFT:
     -----
     A typical STFT application is the creation of various types of time-frequency
     plots, often subsumed under the term "spectrogram". Note that this term is also
-    used to explecitly refer to the absolute square of a STFT [11]_, as done in
+    used to explicitly refer to the absolute square of a STFT [11]_, as done in
     :meth:`spectrogram`.
 
     The STFT can also be used for filtering and filter banks as discussed in [12]_.
@@ -392,7 +392,7 @@ class ShortTimeFFT:
     >>> np.allclose(Sx01, Sx)  # Compare with SFT of complete signal
     True
 
-    It is also possible to calculate the `itsft` for signal parts:
+    It is also possible to calculate the `istft` for signal parts:
 
     >>> y_p = SFT.istft(Sx, N//3, N//2)
     >>> np.allclose(y_p, x[N//3:N//2])
@@ -426,7 +426,7 @@ class ShortTimeFFT:
         ('onesided', -1, 1.), np.ndarray([])
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, win: np.ndarray, hop: int, fs: float, *,
                  fft_mode: FFT_MODE_TYPE = 'onesided',
@@ -552,15 +552,15 @@ class ShortTimeFFT:
 
         The method `get_window` is used to create a window of length
         `nperseg`. The parameter names `noverlap`, and `nperseg` are used here,
-        since they more inline with other classical STFT libraries.
+        since they are more in line with other classical STFT libraries.
 
         Parameters
         ----------
         win_param: Union[str, tuple, float],
             Parameters passed to `get_window`. For windows with no parameters,
             it may be a string (e.g., ``'hann'``), for parametrized windows a
-            tuple, (e.g., ``('gaussian', 2.)``) or a single float specifying
-            the shape parameter of a kaiser window (i.e. ``4.``  and
+            tuple (e.g., ``('gaussian', 2.)``) or a single float specifying
+            the shape parameter of a kaiser window (i.e. ``4.`` and
             ``('kaiser', 4.)`` are equal. See `get_window` for more details.
         fs : float
             Sampling frequency of input signal. Its relation to the
@@ -585,7 +585,7 @@ class ShortTimeFFT:
             If ``None`` (default), the length of the window `win` is used.
         scale_to : 'magnitude', 'psd' | None
             If not ``None`` (default) the window function is scaled, so each
-            STFT column represents  either a 'magnitude' or a power spectral
+            STFT column represents either a 'magnitude' or a power spectral
             density ('psd') spectrum. This parameter sets the property
             `scaling` to the same value. See method `scale_to` for details.
         phase_shift : int | None
@@ -629,7 +629,7 @@ class ShortTimeFFT:
         An instance is created were window and dual window are equal as well as being
         closest to the parameter `desired_win` in the least-squares sense, i.e.,
         minimizing ``abs(win-desired_win)**2``. Hence, `win` has the same length as
-        `desired_win`. Then a scaling factor is applied accoring to the `scale_to`
+        `desired_win`. Then a scaling factor is applied according to the `scale_to`
         parameter.
 
         All other parameters have the identical meaning as in the initializer.
@@ -651,7 +651,7 @@ class ShortTimeFFT:
         fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
             Mode of FFT to be used (default 'onesided').
             See property `fft_mode` for details.
-        mfft: int | None
+        mfft : int | None
             Length of the FFT used, if a zero padded FFT is desired.
             If ``None`` (default), the length of the window `win` is used.
         scale_to : 'magnitude' | 'psd' | 'unitary' | None
@@ -688,7 +688,7 @@ class ShortTimeFFT:
         :math:`E_x=T\sum_k |x[k]|^2` of a signal is also preserved. This is also
         illustrated in the example below.
 
-        Thie reason of distinguishing between no scaling (i.e., parameter `scale_to` is
+        The reason of distinguishing between no scaling (i.e., parameter `scale_to` is
         ``None``) and unitary scaling (i.e., ``scale_to = 'unitary'``) is due to the
         utilized FFT function not being unitary (i.e., using the default value
         ``'backward'`` for the `~scipy.fft.fft` parameter `norm`).
@@ -799,7 +799,7 @@ class ShortTimeFFT:
         m_num: Number of samples in window `win`.
         m_num_mid: Center index of window `win`.
         mfft: Length of input for the FFT used - may be larger than `m_num`.
-        hop: ime increment in signal samples for sliding window.
+        hop: Time increment in signal samples for sliding window.
         win: Window function as real- or complex-valued 1d array.
         numpy.ndarray.setflags: Modify array flags.
         ShortTimeFFT: Class this property belongs to.
@@ -910,7 +910,7 @@ class ShortTimeFFT:
         See Also
         --------
         delta_f: Width of the frequency bins of the STFT.
-        f: Frequencies values of the STFT.
+        f: Frequency values of the STFT.
         f_pts: Width of the frequency bins of the STFT.
         onesided_fft: True if a one-sided FFT is used.
         scaling: Normalization applied to the window function
@@ -947,7 +947,7 @@ class ShortTimeFFT:
         See Also
         --------
         f_pts: Number of points along the frequency axis.
-        f: Frequencies values of the STFT.
+        f: Frequency values of the STFT.
         m_num: Number of samples in window `win`.
         ShortTimeFFT: Class this property belongs to.
         """
@@ -976,13 +976,13 @@ class ShortTimeFFT:
 
         The window function can be scaled by calling the `scale_to` method,
         or it is set by the initializer parameter ``scale_to``. Note that a
-        window cannot to be scaled to be `unitary`.  Use `from_win_equals_dual`
+        window cannot be scaled to be `unitary`.  Use `from_win_equals_dual`
         to create a unitary `ShortTimeFFT` instance.
 
         See Also
         --------
-        fac_magnitude: Scaling factor for to a magnitude spectrum.
-        fac_psd: Scaling factor for to  a power spectral density spectrum.
+        fac_magnitude: Scaling factor for a magnitude spectrum.
+        fac_psd: Scaling factor for a power spectral density spectrum.
         fft_mode: Mode of utilized FFT
         scale_to: Scale window to obtain 'magnitude' or 'psd' scaling.
         from_win_equals_dual: Class-method for creating a unitary instance.
@@ -994,7 +994,7 @@ class ShortTimeFFT:
         """Scale window to obtain 'magnitude' or 'psd' scaling for the STFT.
 
         The window of a 'magnitude' spectrum has an integral of one, i.e., unit
-        area for non-negative windows. This ensures that absolute the values of
+        area for non-negative windows. This ensures that the absolute values of
         spectrum does not change if the length of the window changes (given
         the input signal is stationary).
 
@@ -1006,15 +1006,20 @@ class ShortTimeFFT:
         `fac_magnitude` and `fac_psd` show the scaling factors required to
         scale the STFT values to a magnitude or a psd spectrum.
 
-        Note that a window cannot to be scaled to be `unitary`. Use
+        Note that a window cannot be scaled to be `unitary`. Use
         `from_win_equals_dual` to create a unitary `ShortTimeFFT` instance.
 
         This method is called, if the initializer parameter `scale_to` is set.
 
+        Parameters
+        ----------
+        scaling : {'magnitude', 'psd'}
+            The scaling type to which the window is scaled.
+
         See Also
         --------
-        fac_magnitude: Scaling factor for to  a magnitude spectrum.
-        fac_psd: Scaling factor for to  a power spectral density spectrum.
+        fac_magnitude: Scaling factor for a magnitude spectrum.
+        fac_psd: Scaling factor for a power spectral density spectrum.
         fft_mode: Mode of utilized FFT
         scaling: Normalization applied to the window function.
         ShortTimeFFT: Class this method belongs to.
@@ -1053,7 +1058,7 @@ class ShortTimeFFT:
         See Also
         --------
         delta_f: Width of the frequency bins of the STFT.
-        f: Frequencies values of the STFT.
+        f: Frequency values of the STFT.
         mfft: Length of input for the FFT used
         ShortTimeFFT: Class this property belongs to.
         """
@@ -1091,7 +1096,7 @@ class ShortTimeFFT:
             'edge': dict(mode='edge'),
             'even': dict(mode='reflect', reflect_type='even'),
             'odd': dict(mode='reflect', reflect_type='odd'),
-           }  # typing of pad_kws is needed to make mypy happy
+        }  # typing of pad_kws is needed to make pyrefly happy
 
         n, n1 = x.shape[-1], (p1 - p0) * self.hop
         k0 = p0 * self.hop - self.m_num_mid + k_off  # start sample
@@ -1154,7 +1159,7 @@ class ShortTimeFFT:
         --------
         delta_f: Width of the frequency bins of the STFT.
         delta_t: Time increment of STFT
-        f: Frequencies values of the STFT.
+        f: Frequency values of the STFT.
         invertible: Check if STFT is invertible.
         :meth:`~ShortTimeFFT.istft`: Inverse short-time Fourier transform.
         p_range: Determine and validate slice index range.
@@ -1203,7 +1208,7 @@ class ShortTimeFFT:
             last value of `x` is used. 'even' pads by reflecting the
             signal on the first or last sample and 'odd' additionally
             multiplies it with -1.
-        axis: int
+        axis : int
             The axis of `x` over which to compute the STFT.
             If not given, the last axis is used.
 
@@ -1313,6 +1318,12 @@ class ShortTimeFFT:
             one-dimensional `x`, a complex 2d array is returned, with axis 0
             representing frequency and axis 1 the time slices.
 
+        See Also
+        --------
+        :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
+        stft_detrend: STFT with a trend subtracted from each segment.
+        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
+
         Notes
         -----
         The cross-spectrogram may be interpreted as the time-frequency analogon of the
@@ -1321,7 +1332,7 @@ class ShortTimeFFT:
         interpreted as a coherence spectrogram ``Cxy := abs(Sxy)**2 / (Sxx*Syy)``,
         which is the time-frequency analogon to `~coherence`.
 
-        If the STFT is parametrized to be a unitary transform, i.e., utilitzing
+        If the STFT is parametrized to be a unitary transform, i.e., utilizing
         `~from_win_equals_dual`, then the value of the scalar product, hence also the
         energy, is preserved.
 
@@ -1382,12 +1393,6 @@ class ShortTimeFFT:
         The logarithmic scaling reveals the odd harmonics of the square wave,
         which are reflected at the Nyquist frequency of 10 Hz. This aliasing
         is also the main source of the noise artifacts in the plot.
-
-        See Also
-        --------
-        :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
-        stft_detrend: STFT with a trend subtracted from each segment.
-        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         Sx = self.stft_detrend(x, detr, p0, p1, k_offset=k_offset,
                                padding=padding, axis=axis)
@@ -1454,23 +1459,35 @@ class ShortTimeFFT:
             -> np.ndarray:
         """Inverse short-time Fourier transform.
 
-        It returns an array of dimension ``S.ndim - 1``  which is real
-        if `onesided_fft` is set, else complex. If the STFT is not
-        `invertible`, or the parameters are out of bounds  a ``ValueError`` is
-        raised.
-
         Parameters
         ----------
-        S
+        S : ndarray
             A complex valued array where `f_axis` denotes the frequency
-            values and the `t-axis` dimension the temporal values of the
+            values and the `t_axis` dimension the temporal values of the
             STFT values.
-        k0, k1
+        k0, k1 : int, optional
             The start and the end index of the reconstructed signal. The
             default (``k0 = 0``, ``k1 = None``) assumes that the maximum length
             signal should be reconstructed.
-        f_axis, t_axis
+        f_axis, t_axis : int, optional
             The axes in `S` denoting the frequency and the time dimension.
+
+        Returns
+        -------
+        ndarray
+            Array of dimension ``S.ndim - 1``  which is real if `onesided_fft` is set,
+            else complex.
+
+        Raises
+        ------
+        ValueError
+            If the STFT is not invertible, or the parameters are out of bounds.
+
+        See Also
+        --------
+        invertible: Check if STFT is invertible.
+        :meth:`~ShortTimeFFT.stft`: Perform Short-time Fourier transform.
+        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
 
         Notes
         -----
@@ -1485,12 +1502,6 @@ class ShortTimeFFT:
 
         The :ref:`tutorial_stft` section of the :ref:`user_guide` discussed the
         slicing behavior by means of an example.
-
-        See Also
-        --------
-        invertible: Check if STFT is invertible.
-        :meth:`~ShortTimeFFT.stft`: Perform Short-time Fourier transform.
-        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         if f_axis == t_axis:
             raise ValueError(f"{f_axis=} may not be equal to {t_axis=}!")
@@ -1549,7 +1560,7 @@ class ShortTimeFFT:
 
         See Also
         --------
-        fac_psd: Scaling factor for to a power spectral density spectrum.
+        fac_psd: Scaling factor for a power spectral density spectrum.
         scale_to: Scale window to obtain 'magnitude' or 'psd' scaling.
         scaling: Normalization applied to the window function.
         ShortTimeFFT: Class this property belongs to.
@@ -1571,7 +1582,7 @@ class ShortTimeFFT:
 
         See Also
         --------
-        fac_magnitude: Scaling factor for to a magnitude spectrum.
+        fac_magnitude: Scaling factor for a magnitude spectrum.
         scale_to: Scale window to obtain 'magnitude' or 'psd' scaling.
         scaling: Normalization applied to the window function.
         ShortTimeFFT: Class this property belongs to.
@@ -1611,7 +1622,7 @@ class ShortTimeFFT:
         --------
         m_num: Number of samples in window `win`.
         mfft: Length of input for the FFT used - may be larger than `m_num`.
-        hop: ime increment in signal samples for sliding window.
+        hop: Time increment in signal samples for sliding window.
         win: Window function as real- or complex-valued 1d array.
         ShortTimeFFT: Class this property belongs to.
         """
@@ -1727,6 +1738,11 @@ class ShortTimeFFT:
         n : int
             Number of samples of input signal (must be ≥ half of the window length).
 
+        Returns
+        -------
+        int
+            First sample index after signal end not touched by a time slice.
+
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1750,6 +1766,16 @@ class ShortTimeFFT:
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
 
+        Parameters
+        ----------
+        n : int
+            Number of samples of input.
+
+        Returns
+        -------
+        int
+            Index of first non-overlapping upper time slice for `n` sample input.
+
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1768,6 +1794,16 @@ class ShortTimeFFT:
         being negative.
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
+
+        Parameters
+        ----------
+        n : int
+            Number of samples of input signal
+
+        Returns
+        -------
+        p_num : int
+            Number of time slices for input signal with `n` samples.
 
         See Also
         --------
@@ -1839,11 +1875,6 @@ class ShortTimeFFT:
         p_ub : int
             Lowest index of time slice of which the end sticks out past the signal end.
 
-        Notes
-        -----
-        Note that the return values are cached together with the parameter `n` to avoid
-        unnecessary recalculations.
-
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1854,6 +1885,11 @@ class ShortTimeFFT:
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         p_range: Determine and validate slice index range.
         ShortTimeFFT: Class this method belongs to.
+
+        Notes
+        -----
+        Note that the return values are cached together with the parameter `n` to avoid
+        unnecessary recalculations.
         """
         if not (n >= (m2p := self.m_num - self.m_num_mid)):
             raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
@@ -1914,11 +1950,6 @@ class ShortTimeFFT:
         p1_ : int
             End of interval (last value is p1-1).
 
-        Notes
-        -----
-        A ``ValueError`` is raised if ``p_min <= p0 < p1 <= p_max(n)`` does not
-        hold.
-
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1929,6 +1960,11 @@ class ShortTimeFFT:
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         upper_border_begin: Where post-padding effects start.
         ShortTimeFFT: Class this property belongs to.
+
+        Notes
+        -----
+        A ``ValueError`` is raised if ``p_min <= p0 < p1 <= p_max(n)`` does not
+        hold.
         """
         p_max = self.p_max(n)  # shorthand
         p0_ = self.p_min if p0 is None else p0
@@ -1944,26 +1980,26 @@ class ShortTimeFFT:
         """Times of STFT for an input signal with `n` samples.
 
         Returns a 1d array with times of the `~ShortTimeFFT.stft` values with
-        the same  parametrization. Note that the slices are
+        the same parametrization. Note that the slices are
         ``delta_t = hop * T`` time units apart.
 
         Parameters
         ----------
-        n
-            Number of sample of the input signal.
-        p0
+        n : int
+            Number of samples of the input signal.
+        p0 : int, optional
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
             slice.
-        p1
+        p1 : int, optional
             The end of the array. If ``None`` then `p_max(n)` is used.
-        k_offset
+        k_offset : int
             Index of first sample (t = 0) in `x`.
 
-        Notes
-        -----
-        Note that the returned array is cached together with the method's call
-        parameters to avoid unnecessary recalculations.
+        Returns
+        -------
+        t : ndarray
+            1D array of times of the STFT slices from `p0` to `p1` - 1.
 
         See Also
         --------
@@ -1973,6 +2009,11 @@ class ShortTimeFFT:
         T: Sampling interval of input signal and of the window (``1/fs``).
         fs: Sampling frequency (being ``1/T``)
         ShortTimeFFT: Class this method belongs to.
+
+        Notes
+        -----
+        Note that the returned array is cached together with the method's call
+        parameters to avoid unnecessary recalculations.
         """
         if not (n > 0 and isinstance(n, int | np.integer)):
             raise ValueError(f"Parameter {n=} is not a positive integer!")
@@ -1988,15 +2029,28 @@ class ShortTimeFFT:
         return return_value
 
     def nearest_k_p(self, k: int, left: bool = True) -> int:
-        """Return nearest sample index k_p for which t[k_p] == t[p] holds.
+        """Return nearest sample index k_p for which ``t[k_p] == t[p]`` holds.
 
-        The nearest next smaller time sample p (where t[p] is the center
-        position of the window of the p-th slice) is p_k = k // `hop`.
+        The nearest next smaller time sample p (where ``t[p]`` is the center
+        position of the window of the p-th slice) is ``p_k = k // hop``.
         If `hop` is a divisor of `k` then `k` is returned.
-        If `left` is set then p_k * `hop` is returned else (p_k+1) * `hop`.
+        If `left` is set then ``p_k * hop`` is returned else ``(p_k+1) * hop``.
 
         This method can be used to slice an input signal into chunks for
         calculating the STFT and iSTFT incrementally.
+
+        Parameters
+        ----------
+        k : int
+            Sample index for which the nearest slice center index is sought.
+        left : bool, optional
+            If ``True`` then the nearest smaller index is returned, else the
+            nearest larger index is returned. Defaults to ``True``.
+
+        Returns
+        -------
+        int
+            Nearest sample index k_p for which ``t[k_p] == t[p]`` holds.
 
         See Also
         --------
@@ -2022,7 +2076,7 @@ class ShortTimeFFT:
         --------
         delta_t: Time increment of STFT.
         f_pts: Number of points along the frequency axis.
-        f: Frequencies values of the STFT.
+        f: Frequency values of the STFT.
         mfft: Length of the input for FFT used.
         T: Sampling interval.
         t: Times of STFT for an input signal with `n` samples.
@@ -2037,7 +2091,7 @@ class ShortTimeFFT:
         See Also
         --------
         delta_f: Width of the frequency bins of the STFT.
-        f: Frequencies values of the STFT.
+        f: Frequency values of the STFT.
         mfft: Length of the input for FFT used.
         ShortTimeFFT: Class this property belongs to.
         """
@@ -2059,7 +2113,7 @@ class ShortTimeFFT:
 
     @property
     def f(self) -> np.ndarray:
-        """Frequencies values of the STFT.
+        """Frequency values of the STFT.
 
         A 1d array of length `f_pts` with `delta_f` spaced entries is returned.
         This array is calculated lazily.
@@ -2152,13 +2206,7 @@ class ShortTimeFFT:
 
     def extent(self, n: int, axes_seq: Literal['tf', 'ft'] = 'tf',
                center_bins: bool = False) -> tuple[float, float, float, float]:
-        """Return minimum and maximum values time-frequency values.
-
-        A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
-        ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
-        of the time-frequency domain of the `~ShortTimeFFT.stft`.
-        That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
-        with the same name.
+        """Return minimum and maximum time-frequency values.
 
         Parameters
         ----------
@@ -2166,11 +2214,20 @@ class ShortTimeFFT:
             Number of samples in input signal.
         axes_seq : {'tf', 'ft'}
             Return time extent first and then frequency extent or vice versa.
-        center_bins: bool
+        center_bins : bool
             If set (default ``False``), the values of the time slots and
-            frequency bins are moved from the side the middle. This is useful,
+            frequency bins are moved from the side to the middle. This is useful,
             when plotting the `~ShortTimeFFT.stft` values as step functions,
             i.e., with no interpolation.
+
+        Returns
+        -------
+        tuple
+            A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
+            ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
+            of the time-frequency domain of the `~ShortTimeFFT.stft`.
+            That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
+            with the same name.
 
         See Also
         --------
@@ -2184,7 +2241,7 @@ class ShortTimeFFT:
         STFT.
         The left plot, where ``(t0, t1, f0, f1) = (0, 3, 0, 4)`` is passed as parameter
         ``extent`` to `~matplotlib.pyplot.imshow`, shows the standard behavior of the
-        time and frequency values being at the lower edge of the corrsponding bin.
+        time and frequency values being at the lower edge of the corresponding bin.
         The right plot, with ``(t0, t1, f0, f1) = (-0.5, 2.5, -0.5, 3.5)``, shows that
         the bins are centered over the respective values when passing
         ``center_bins=True``.

@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 import pytest
@@ -5,10 +7,12 @@ import pytest
 from scipy import stats
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._array_api import xp_assert_equal, make_xp_test_case
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import xp_assert_equal, make_xp_test_case, xp_result_type
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+@pytest.mark.filterwarnings("ignore: `tiecorrect` is deprecated")
 class TestTieCorrect:
 
     def test_empty(self):
@@ -78,16 +82,14 @@ class TestTieCorrect:
 @make_xp_test_case(stats.rankdata)
 class TestRankData:
 
-    def desired_dtype(self, method='average', has_nans=False, *, xp):
-        if has_nans:
-            return xp.asarray(1.).dtype
-        return xp.asarray(1.).dtype if method=='average' else xp.asarray(1).dtype
+    def desired_dtype(self, x, *, xp):
+        return xp_result_type(x, force_floating=True, xp=xp)
 
     def test_empty(self, xp):
         """stats.rankdata of empty array should return an empty array."""
         a = xp.asarray([], dtype=xp.int64)
         r = rankdata(a)
-        xp_assert_equal(r, xp.asarray([], dtype=self.desired_dtype(xp=xp)))
+        xp_assert_equal(r, xp.asarray([], dtype=self.desired_dtype(a, xp=xp)))
 
     def test_list(self):
         # test that NumPy still accepts lists
@@ -103,18 +105,18 @@ class TestRankData:
         a = xp.empty(shape, dtype=xp.int64)
         r = rankdata(a, axis=axis)
         expected_shape = (0,) if axis is None else shape
-        xp_assert_equal(r, xp.empty(expected_shape, dtype=self.desired_dtype(xp=xp)))
+        xp_assert_equal(r, xp.empty(expected_shape, dtype=self.desired_dtype(a, xp=xp)))
 
     def test_one(self, xp):
         """Check stats.rankdata with an array of length 1."""
         data = [100]
         a = xp.asarray(data, dtype=xp.int64)
         r = rankdata(a)
-        xp_assert_equal(r, xp.asarray([1.0], dtype=self.desired_dtype(xp=xp)))
+        xp_assert_equal(r, xp.asarray([1.0], dtype=self.desired_dtype(a, xp=xp)))
 
     def test_basic(self, xp):
         """Basic tests of stats.rankdata."""
-        desired_dtype = self.desired_dtype(xp=xp)
+        desired_dtype = xpx.default_dtype(xp)
 
         data = [100, 10, 50]
         expected = xp.asarray([3.0, 1.0, 2.0], dtype=desired_dtype)
@@ -177,23 +179,25 @@ class TestRankData:
     def test_large_uint(self, xp):
         data = xp.asarray([2**60, 2**60+1], dtype=xp.uint64)
         r = rankdata(data)
-        xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp)))
+        desired_dtype = self.desired_dtype(data, xp=xp)
+        xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=desired_dtype))
 
     def test_large_int(self, xp):
         data = xp.asarray([2**60, 2**60+1], dtype=xp.int64)
         r = rankdata(data)
-        xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp)))
+        desired_dtype = self.desired_dtype(data, xp=xp)
+        xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=desired_dtype))
 
         data = xp.asarray([2**60, -2**60+1], dtype=xp.int64)
         r = rankdata(data)
-        xp_assert_equal(r, xp.asarray([2.0, 1.0], dtype=self.desired_dtype(xp=xp)))
+        xp_assert_equal(r, xp.asarray([2.0, 1.0], dtype=desired_dtype))
 
     @pytest.mark.parametrize('n', [10000, 100000, 1000000])
     def test_big_tie(self, n, xp):
         data = xp.ones(n)
         r = rankdata(data)
         expected_rank = 0.5 * (n + 1)
-        ref = xp.asarray(expected_rank * data, dtype=self.desired_dtype(xp=xp))
+        ref = xp.asarray(expected_rank * data, dtype=self.desired_dtype(data, xp=xp))
         xp_assert_equal(r, ref)
 
     def test_axis(self, xp):
@@ -213,8 +217,8 @@ class TestRankData:
     @pytest.mark.parametrize("method", methods)
     def test_size_0_axis(self, axis, method, xp):
         shape = (3, 0)
-        desired_dtype = self.desired_dtype(method, xp=xp)
         data = xp.zeros(shape)
+        desired_dtype = self.desired_dtype(data, xp=xp)
         r = rankdata(data, method=method, axis=axis)
         assert_equal(r.shape, shape)
         assert_equal(r.dtype, desired_dtype)
@@ -299,7 +303,7 @@ class TestRankData:
                             [np.nan, np.nan, np.nan],
                             [1, 2.5, 2.5]])
 
-    _rankdata_cases = (
+    _rankdata_cases: Sequence[tuple[list[int], str, np.ndarray | list[float]]] = (
         # values, method, expected
         ([], 'average', []),
         ([], 'min', []),
@@ -343,6 +347,7 @@ class TestRankData:
     @pytest.mark.parametrize('case', _rankdata_cases)
     def test_cases(self, case, xp):
         values, method, expected = case
+        values = xp.asarray(values)
         r = rankdata(xp.asarray(values), method=method)
-        ref = xp.asarray(expected, dtype=self.desired_dtype(method, xp=xp))
+        ref = xp.asarray(expected, dtype=self.desired_dtype(values, xp=xp))
         xp_assert_equal(r, ref)

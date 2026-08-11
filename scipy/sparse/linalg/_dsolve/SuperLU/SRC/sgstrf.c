@@ -13,10 +13,11 @@ at the top-level directory.
  * \brief Computes an LU factorization of a general sparse matrix
  *
  * <pre>
- * -- SuperLU routine (version 3.0) --
+ * -- SuperLU routine (version 7.0.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
+ * August 2024
  * 
  * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  *
@@ -283,8 +284,8 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
         relax_snode(n, etree, relax, marker, relax_end); 
     }
     
-    ifill (perm_r, m, EMPTY);
-    ifill (marker, m * NO_MARKER, EMPTY);
+    ifill (perm_r, m, SLU_EMPTY);
+    ifill (marker, m * NO_MARKER, SLU_EMPTY);
     supno[0] = -1;
     xsup[0]  = xlsub[0] = xusub[0] = xlusup[0] = 0;
     w_def    = panel_size;
@@ -296,7 +297,7 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
      */
     for (jcol = 0; jcol < min_mn; ) {
 
-	if ( relax_end[jcol] != EMPTY ) { /* start of a relaxed snode */
+	if ( relax_end[jcol] != SLU_EMPTY ) { /* start of a relaxed snode */
    	    kcol = relax_end[jcol];	  /* end of the relaxed snode */
 	    panel_histo[kcol-jcol+1]++;
 
@@ -348,7 +349,7 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
 	     */
 	    panel_size = w_def;
 	    for (k = jcol + 1; k < SUPERLU_MIN(jcol+panel_size, min_mn); k++) 
-		if ( relax_end[k] != EMPTY ) {
+		if ( relax_end[k] != SLU_EMPTY ) {
 		    panel_size = k - jcol;
 		    break;
 		}
@@ -418,7 +419,7 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
         /* if k == m, then all the row permutations are complete and
            we can short circuit looking through the rest of the vector */
         for (i = 0; i < m && k < m; ++i) {
-            if (perm_r[i] == EMPTY) {
+            if (perm_r[i] == SLU_EMPTY) {
                 perm_r[i] = k;
                 ++k;
             }

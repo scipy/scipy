@@ -1,11 +1,8 @@
 import numpy as np
 import operator
-import warnings
-import numbers
 from . import (linear_sum_assignment, OptimizeResult)
 from ._optimize import _check_unknown_options
 
-from scipy._lib._util import check_random_state
 import itertools
 
 QUADRATIC_ASSIGNMENT_METHODS = ['faq', '2opt']
@@ -68,19 +65,6 @@ def quadratic_assignment(A, B, method="faq", options=None):
             `numpy.random.Generator` is created using entropy from the
             operating system. Types other than `numpy.random.Generator` are
             passed to `numpy.random.default_rng` to instantiate a ``Generator``.
-
-            .. versionchanged:: 1.15.0
-                As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
-                transition from use of `numpy.random.RandomState` to
-                `numpy.random.Generator` is occurring. Supplying
-                `np.random.RandomState` to this function will now emit a
-                `DeprecationWarning`. In SciPy 1.17 its use will raise an exception.
-                In addition relying on global state using `np.random.seed`
-                will emit a `FutureWarning`. In SciPy 1.17 the global random number
-                generator will no longer be used.
-                Use of an int-like seed will raise a `FutureWarning`, in SciPy 1.17 it
-                will be normalized via `np.random.default_rng` rather than
-                `np.random.RandomState`.
 
         For method-specific options, see
         :func:`show_options('quadratic_assignment') <show_options>`.
@@ -202,35 +186,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     if method not in methods:
         raise ValueError(f"method {method} must be in {methods}.")
 
-    _spec007_transition(options.get("rng", None))
     res = methods[method](A, B, **options)
     return res
-
-
-def _spec007_transition(rng):
-    if isinstance(rng, np.random.RandomState):
-        warnings.warn(
-            "Use of `RandomState` with `quadratic_assignment` is deprecated"
-            " and will result in an exception in SciPy 1.17",
-            DeprecationWarning,
-            stacklevel=2
-        )
-    if ((rng is None or rng is np.random) and
-            np.random.mtrand._rand._bit_generator._seed_seq is None):
-        warnings.warn(
-            "The NumPy global RNG was seeded by calling `np.random.seed`."
-            " From SciPy 1.17, this function will no longer use the global RNG.",
-            FutureWarning,
-            stacklevel=2
-        )
-    if isinstance(rng, numbers.Integral | np.integer):
-        warnings.warn(
-            "The behavior when the rng option is an integer is changing: the value"
-            " will be normalized using np.random.default_rng beginning in SciPy 1.17,"
-            " and the resulting Generator will be used to generate random numbers.",
-            FutureWarning,
-            stacklevel=2
-        )
 
 
 def _calc_score(A, B, perm):
@@ -446,7 +403,7 @@ def _quadratic_assignment_faq(A, B,
     if msg is not None:
         raise ValueError(msg)
 
-    rng = check_random_state(rng)
+    rng = np.random.default_rng(rng)
     n = len(A)  # number of vertices in graphs
     n_seeds = len(partial_match)  # number of seeds
     n_unseed = n - n_seeds
@@ -674,7 +631,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
 
     """
     _check_unknown_options(unknown_options)
-    rng = check_random_state(rng)
+    rng = np.random.default_rng(rng)
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     N = len(A)

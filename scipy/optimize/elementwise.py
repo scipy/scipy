@@ -33,6 +33,6 @@ Minimization
    bracket_minimum
 
 """
-from ._elementwise import find_root, find_minimum, bracket_root, bracket_minimum  # noqa: F401, E501
+from ._elementwise import find_root, find_minimum, bracket_root, bracket_minimum
 
 __all__ = ["find_root", "find_minimum", "bracket_root", "bracket_minimum"]
