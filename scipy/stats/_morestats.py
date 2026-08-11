@@ -4307,7 +4307,6 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     choice of `ties`.
 
     """
-    np = array_namespace(*samples)
     n_samples = len(samples)
 
     if n_samples < 2:

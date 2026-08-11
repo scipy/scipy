@@ -4,6 +4,7 @@ from numpy.testing import (assert_equal, assert_array_equal,
                            assert_allclose)
 import pytest
 from pytest import raises as assert_raises
+from  scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._util import _apply_over_batch
@@ -287,9 +288,8 @@ class TestChi2Contingency2d:
     def test_against_ref(self, correction, lambda_, shape, xp):
         rng = np.random.default_rng(735847239109239455)
         observed = rng.integers(10, size=shape)
-        dtype = xp.float64
+        dtype = xpx.default_dtype(xp)
         ref = _chi2_contingency_ref(observed, correction=correction, lambda_=lambda_)
-
         res = _chi2_contingency_2d(xp.asarray(observed, dtype=dtype),
                                    correction=correction, lambda_=lambda_)
         xp_assert_close(res[0], xp.asarray(ref[0], dtype=dtype))
