@@ -2,7 +2,7 @@
 import math
 import numpy as np
 import pytest
-from scipy._lib._array_api import is_cupy, xp_assert_close, xp_default_dtype, concat_1d
+from scipy._lib._array_api import is_cupy, xp_assert_close, concat_1d
 import scipy._external.array_api_extra as xpx
 
 from scipy.signal._spline import (
@@ -409,7 +409,7 @@ class TestSymIIR:
             xp.asarray(-1),
             xp.asarray(1),
         )
-        expected = symiirorder1(xp.astype(s, xp_default_dtype(xp)), 0.5, 0.5)
+        expected = symiirorder1(xp.astype(s, xpx.default_dtype(xp)), 0.5, 0.5)
         out = symiirorder1(s, 0.5, 0.5)
         xp_assert_close(out, expected)
 
@@ -421,6 +421,6 @@ class TestSymIIR:
             xp.asarray(-1),
             xp.asarray(1),
         )
-        expected = symiirorder2(xp.astype(s, xp_default_dtype(xp)), 0.5, xp.pi / 3.0)
+        expected = symiirorder2(xp.astype(s, xpx.default_dtype(xp)), 0.5, xp.pi / 3.0)
         out = symiirorder2(s, 0.5, xp.pi / 3.0)
         xp_assert_close(out, expected)

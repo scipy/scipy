@@ -909,9 +909,9 @@ if not (HAS_LP64 or HAS_ILP64):
     raise RuntimeError("SciPy needs either LP64 or ILP64 LAPACK.")
 
 if HAS_LP64:
-    from scipy.linalg._flapack import *  # noqa: E402, F403
+    from scipy.linalg._flapack import *  # noqa: F403
 else:
-    from scipy.linalg._flapack_64 import *  # noqa: E402, F403
+    from scipy.linalg._flapack_64 import *  # noqa: F403
 
 
 __all__ = ['get_lapack_funcs']
@@ -938,9 +938,9 @@ def backtickrepl(m):
         return f"with bounds ``{m.group('b')}``\n"
 
 
-for routine in [ssyevr, dsyevr, cheevr, zheevr,  # type: ignore[name-defined]  # pyrefly:ignore[unknown-name]
-                ssyevx, dsyevx, cheevx, zheevx,  # type: ignore[name-defined]  # pyrefly:ignore[unknown-name]
-                ssygvd, dsygvd, chegvd, zhegvd]:  # type: ignore[name-defined]  # pyrefly:ignore[unknown-name]
+for routine in [ssyevr, dsyevr, cheevr, zheevr,  # pyrefly:ignore[unknown-name]
+                ssyevx, dsyevx, cheevx, zheevx,  # pyrefly:ignore[unknown-name]
+                ssygvd, dsygvd, chegvd, zhegvd]:  # pyrefly:ignore[unknown-name]
     if routine.__doc__:
         routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
         routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)

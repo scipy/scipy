@@ -29,7 +29,9 @@ import numpy as np
 from . import _fitpack
 from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, empty, iinfo, asarray)
 
-from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
+from scipy._lib._array_api import (
+    array_namespace, concat_1d, xp_capabilities, xp_device
+)
 
 
 dfitpack_int = np.int32
@@ -783,7 +785,7 @@ def splder(tck, n=1, xp=None):
                 c = (c[1:-1-k, ...] - c[:-2-k, ...]) * k / dt
                 # Pad coefficient array to same size as knots (FITPACK
                 # convention)
-                c = concat_1d(xp, c, xp.zeros((k,) + c.shape[1:]))
+                c = concat_1d(xp, c, xp.zeros((k,) + c.shape[1:], device=xp_device(c)))
                 # Adjust knots
                 t = t[1:-1]
                 k -= 1
@@ -817,7 +819,7 @@ def splantider(tck, n=1, *, xp=None):
         c = xp.cumulative_sum(c[:-k-1, ...] * dt, axis=0) / (k + 1)
         c = concat_1d(
             xp,
-            xp.zeros((1,) + c.shape[1:]),
+            xp.zeros((1,) + c.shape[1:], device=xp_device(c)),
             c,
             xp.stack([c[-1, ...]] * (k+2)),
         )

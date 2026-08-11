@@ -1,11 +1,11 @@
-duccfft_threads = []
+duccfft_args = []
 fft_deps = []
 if is_windows
   if is_mingw
     # mingw-w64 does not implement pthread_pfork, needed by ducc_fft
     # Disable threading completely, because of freezes using threading for
     # mingw-w64 gcc: https://github.com/mreineck/pocketfft/issues/1
-    duccfft_threads += ['-DDUCC0_NO_LOWLEVEL_THREADING']
+    duccfft_args += ['-DDUCC0_NO_LOWLEVEL_THREADING']
   else
     if thread_dep.found()
       # Use native Windows threading for MSVC/Clang. `pthreads` is probably not
@@ -14,7 +14,6 @@ if is_windows
       # progress (see comment on gh-16957).  The ducc FFT sources
       # will include `<threads>` anyway.
       fft_deps += [thread_dep]
-      duccfft_threads += []
     endif
   endif
 else
@@ -23,10 +22,15 @@ else
   endif
 endif
 
+if cc.get_id() == 'gcc' and cc.sizeof('void*') == 4
+  # Disable SIMD, segfaults on Linux i686, see scipy#25572
+  duccfft_args += ['-DDUCC0_NO_SIMD']
+endif
+
 py3.extension_module(
     'pyduccfft',
     'pyduccfft.cxx',
-    cpp_args: duccfft_threads,
+    cpp_args: duccfft_args,
     dependencies: [fft_deps, pybind11_dep, duccfft_dep],
     link_args: version_link_args,
     install: true,

@@ -12,8 +12,7 @@ _ufuncs_pxi_pxd_sources = [
 ]
 
 ufuncs_sources = [
-  '_cosine.c',
-  'xsf_wrappers.cpp',
+  'cython_special_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]
@@ -34,9 +33,9 @@ ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep, lapack_dep],
   link_args: version_link_args,
-  cpp_args: ufuncs_cpp_args,
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1'] + ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
 )
@@ -95,11 +94,13 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
+    boost_math_dep,
     xsf_dep,
     np_dep,
+    lapack_dep
   ],
   link_args: version_link_args,
   link_with: cdflib_lib,
@@ -157,16 +158,14 @@ py3.extension_module('_ellip_harm_2',
 py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
-    '_cosine.c',
-    'xsf_wrappers.cpp',
+    'cython_special_wrappers.cpp',
     'sf_error.cc',
-    'dd_real_wrappers.cpp'
-  ],
+    'dd_real_wrappers.cpp'],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep, lapack_dep],
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
@@ -226,15 +225,10 @@ python_sources = [
   '_support_alternative_backends.py',
   '_testutils.py',
   '_ufuncs.pyi',
-  'add_newdocs.py',
-  'basic.py',
   'cython_special.pxd',
   'cython_special.pyi',
-  'orthogonal.py',
-  'sf_error.py',
-  'specfun.py',
-  'spfun_stats.py',
-  '_ufunc_tools.py'
+  '_ufunc_tools.py',
+  '_mathieu.py'
 ]
 
 py3.install_sources(

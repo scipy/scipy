@@ -10,10 +10,11 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 from hypothesis import strategies as st
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.extra.numpy as npst
 from pytest import raises as assert_raises
 from scipy import ndimage
+from scipy._lib._testutils import IS_WASM
 from scipy._lib._array_api import (
     assert_almost_equal,
     assert_array_almost_equal,
@@ -2495,7 +2496,7 @@ def test_orders_gauss(xp):
 )
 def test_valid_origins1(xp):
     """Regression test for #1311."""
-    
+
     def func(x):
         return xp.mean(x)
 
@@ -2519,7 +2520,7 @@ def test_valid_origins1(xp):
         make_xp_pytest_param(ndimage.median_filter),
         make_xp_pytest_param(ndimage.minimum_filter1d),
     ],
-)    
+)
 def test_valid_origins2(xp, filter_func):
     """Regression test for #1311."""
     data = xp.asarray([1, 2, 3, 4, 5], dtype=xp.float64)
@@ -2840,6 +2841,7 @@ def test_gaussian_radius_invalid(xp):
         ndimage.gaussian_filter1d(xp.zeros(8), sigma=1, radius=1.1)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 @uses_output_array
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):
@@ -3318,8 +3320,11 @@ class TestVectorizedFilter:
         xp_assert_close(res, ref)
 
 
+# cost is Hypothesis engine overhead per example, not `median_filter`; lengths past ~50
+# can't reach the `lim = (size - 1) // 2` boundary fuzzed here, so they only add cost
+@settings(max_examples=50)
 @given(x=npst.arrays(dtype=np.float64,
-                     shape=st.integers(min_value=1, max_value=1000)),
+                     shape=st.integers(min_value=1, max_value=200)),
        size=st.integers(min_value=1, max_value=50),
        mode=st.sampled_from(["constant", "mirror", "wrap", "reflect",
                              "nearest"]),

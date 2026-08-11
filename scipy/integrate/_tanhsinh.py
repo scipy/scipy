@@ -1,11 +1,10 @@
-# mypy: disable-error-code="attr-defined"
 import math
 import numpy as np
 from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
-                                   xp_promote, xp_capabilities)
+                                   xp_promote, xp_capabilities, xp_device)
 
 
 __all__ = ['nsum']
@@ -354,30 +353,34 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
     # Define variables we'll need
     nit, nfev = 0, 1  # one function evaluation performed above
     zero = -xp.inf if log else 0
-    pi = xp.asarray(xp.pi, dtype=dtype)[()]
+    device = xp_device(a)
+    pi = xp.asarray(xp.pi, dtype=dtype, device=device)[()]
     maxiter = maxlevel - minlevel + 1
     eps = xp.finfo(dtype).eps
     if rtol is None:
         rtol = 0.75*math.log(eps) if log else eps**0.75
 
-    Sn = xp_ravel(xp.full(shape, zero, dtype=dtype))  # latest integral estimate
+    # latest integral estimate
+    Sn = xp_ravel(xp.full(shape, zero, dtype=dtype, device=device))
     Sn[xp.isnan(a) | xp.isnan(b) | xp.isnan(fs[0])] = xp.nan
     Sk = xp.reshape(xp.empty_like(Sn), (-1, 1))[:, 0:0]  # all integral estimates
-    aerr = xp_ravel(xp.full(shape, xp.nan, dtype=dtype))  # absolute error
-    status = xp_ravel(xp.full(shape, eim._EINPROGRESS, dtype=xp.int32))
-    h0 = _get_base_step(dtype, xp)
+    aerr = xp_ravel(xp.full(shape, xp.nan, dtype=dtype,  # absolute error
+                            device=device))
+    status = xp_ravel(xp.full(shape, eim._EINPROGRESS, dtype=xp.int32,
+                              device=device))
+    h0 = _get_base_step(dtype, xp, device=device)
     h0 = xp.real(h0) # base step
 
     # For term `d4` of error estimate ([1] Section 5), we need to keep the
     # most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
     # sum. Here, we initialize these variables.
-    xr0 = xp_ravel(xp.full(shape, -xp.inf, dtype=dtype))
-    fr0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype))
-    wr0 = xp_ravel(xp.zeros(shape, dtype=dtype))
-    xl0 = xp_ravel(xp.full(shape, xp.inf, dtype=dtype))
-    fl0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype))
-    wl0 = xp_ravel(xp.zeros(shape, dtype=dtype))
-    d4 = xp_ravel(xp.zeros(shape, dtype=dtype))
+    xr0 = xp_ravel(xp.full(shape, -xp.inf, dtype=dtype, device=device))
+    fr0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype, device=device))
+    wr0 = xp_ravel(xp.zeros(shape, dtype=dtype, device=device))
+    xl0 = xp_ravel(xp.full(shape, xp.inf, dtype=dtype, device=device))
+    fl0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype, device=device))
+    wl0 = xp_ravel(xp.zeros(shape, dtype=dtype, device=device))
+    d4 = xp_ravel(xp.zeros(shape, dtype=dtype, device=device))
 
     work = _RichResult(
         Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi, eps=eps,
@@ -433,13 +436,13 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
 
     def check_termination(work):
         """Terminate due to convergence or encountering non-finite values"""
-        stop = xp.zeros(work.Sn.shape, dtype=bool)
+        stop = xp.zeros(work.Sn.shape, dtype=bool, device=xp_device(work.Sn))
 
         # Terminate before first iteration if integration limits are equal
         if work.nit == 0:
             i = xp_ravel(work.a == work.b)  # ravel singleton dimension
-            zero = xp.asarray(-xp.inf if log else 0.)
-            zero = xp.full(work.Sn.shape, zero, dtype=Sn.dtype)
+            zero = xp.full(work.Sn.shape, -xp.inf if log else 0., dtype=Sn.dtype,
+                           device=xp_device(work.Sn))
             zero[xp.isnan(Sn)] = xp.nan
             work.Sn[i] = zero[i]
             work.aerr[i] = zero[i]
@@ -494,7 +497,7 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
     return res
 
 
-def _get_base_step(dtype, xp):
+def _get_base_step(dtype, xp, device=None):
     # Compute the base step length for the provided dtype. Theoretically, the
     # Euler-Maclaurin sum is infinite, but it gets cut off when either the
     # weights underflow or the abscissae cannot be distinguished from the
@@ -513,7 +516,7 @@ def _get_base_step(dtype, xp):
     # results in a base step size close to `1`, which is what [1] uses (and I
     # used here until I found [2] and these ideas settled).
     h0 = tmax / _N_BASE_STEPS
-    return xp.asarray(h0, dtype=dtype)[()]
+    return xp.asarray(h0, dtype=dtype, device=device)[()]
 
 
 _N_BASE_STEPS = 8
@@ -535,7 +538,12 @@ def _compute_pair(k, h0, xp):
 
     # For iterations after the first, "....the integrand function needs to be
     # evaluated only at the odd-indexed abscissas at each level."
-    j = xp.arange(max+1) if k == 0 else xp.arange(1, max+1, 2)
+    # Float `j` so that `j * h` is a legal promotion under the array API standard;
+    # `j` isn't used elsewhere and promotion would otherwise be implicit.
+    if k == 0:
+        j = xp.arange(max+1, dtype=h.dtype, device=xp_device(h0))
+    else:
+        j = xp.arange(1, max+1, 2, dtype=h.dtype, device=xp_device(h0))
     jh = j * h
 
     # "In this case... the weights wj = u1/cosh(u2)^2, where..."
@@ -561,8 +569,8 @@ def _pair_cache(k, h0, xp, work):
     # `index` records the indices that correspond with each level:
     # `xjc[index[k]:index[k+1]` extracts the level `k` abscissae.
     if not isinstance(h0, type(work.pair_cache.h0)) or h0 != work.pair_cache.h0:
-        work.pair_cache.xjc = xp.empty(0)
-        work.pair_cache.wj = xp.empty(0)
+        work.pair_cache.xjc = xp.empty(0, device=xp_device(h0))
+        work.pair_cache.wj = xp.empty(0, device=xp_device(h0))
         work.pair_cache.indices = [0]
 
     xjcs = [work.pair_cache.xjc]
@@ -759,7 +767,7 @@ def _estimate_error(work, xp):
     Snm2 = work.Sk[..., -2]
     Snm1 = work.Sk[..., -1]
 
-    e1 = xp.asarray(work.eps)[()]
+    e1 = xp.asarray(work.eps, device=xp_device(work.Sn))[()]
 
     if work.log:
         log_e1 = xp.log(e1)
@@ -1181,8 +1189,8 @@ def nsum(f, a, b, *, step=1, args=(), kwargs=None,
     # Prepare result arrays
     S = xp.empty_like(a)
     E = xp.empty_like(a)
-    status = xp.zeros(len(a), dtype=xp.int32)
-    nfev = xp.ones(len(a), dtype=xp.int32)  # one function evaluation above
+    status = xp.zeros(len(a), dtype=xp.int32, device=xp_device(a))
+    nfev = xp.ones(len(a), dtype=xp.int32, device=xp_device(a))  # one func eval above
 
     # Branch for direct sum evaluation / integral approximation / invalid input
     i0 = ~valid_abstep                     # invalid
@@ -1289,7 +1297,7 @@ def _direct(f, a, b, step, args, constants, xp, inclusive=True):
     # elementwise algorithms.
     a2, b2, step2 = a[:, xp.newaxis], b[:, xp.newaxis], step[:, xp.newaxis]
     args2 = [arg[:, xp.newaxis] for arg in args]
-    ks = a2 + xp.arange(max_steps, dtype=dtype) * step2
+    ks = a2 + xp.arange(max_steps, dtype=dtype, device=xp_device(a)) * step2
     i_nan = ks >= (b2 + inclusive_adjustment*step2/2)
     ks[i_nan] = xp.nan
     fs = f(ks, *args2)
@@ -1308,11 +1316,12 @@ def _direct(f, a, b, step, args, constants, xp, inclusive=True):
 def _integral_bound(f, a, b, step, args, constants, xp):
     # Estimate the sum with integral approximation
     dtype, log, _, _, rtol, atol, maxterms = constants
-    log2 = xp.asarray(math.log(2), dtype=dtype)
+    device = xp_device(a)
+    log2 = xp.asarray(math.log(2), dtype=dtype, device=device)
 
     # Get a lower bound on the sum and compute effective absolute tolerance
     lb = tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
-    tol = xp.broadcast_to(xp.asarray(atol), lb.integral.shape)
+    tol = xp.broadcast_to(xp.asarray(atol, device=device), lb.integral.shape)
     if log:
         tol = special.logsumexp(xp.stack((tol, rtol + lb.integral)), axis=0)
     else:
@@ -1330,7 +1339,8 @@ def _integral_bound(f, a, b, step, args, constants, xp):
 
     # Find the location of a term that is less than the tolerance (if possible)
     log2maxterms = math.floor(math.log2(maxterms)) if maxterms else 0
-    n_steps = xp.concat((2**xp.arange(0, log2maxterms), xp.asarray([maxterms])))
+    n_steps = xp.concat((2**xp.arange(0, log2maxterms, device=xp_device(a)),
+                         xp.asarray([maxterms], device=xp_device(a))))
     n_steps = xp.astype(n_steps, dtype)
     nfev = len(n_steps) * 2
     ks = a2 + n_steps * step2
@@ -1366,7 +1376,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
     right = tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
 
     # Calculate the full estimate and error from the pieces
-    fk = fks[xp.arange(len(fks)), nt]
+    fk = fks[xp.arange(len(fks), device=xp_device(a)), nt]
 
     # fb = f(b, *args), but some functions return NaN at infinity.
     # instead of 0 like they must (for the sum to be convergent).

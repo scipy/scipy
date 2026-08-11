@@ -1305,7 +1305,7 @@ def _generate_example(dist_family):
 
     p = 0.32
     x = round(X.icdf(p), 2)
-    y = round(X.icdf(2 * p), 2)  # noqa: F841
+    y = round(X.icdf(2 * p), 2)
 
     example = f"""
     To use the distribution class, it must be instantiated using keyword
@@ -1507,7 +1507,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     """
     __array_priority__ = 1
-    _parameterizations = []  # type: ignore[var-annotated]
+    _parameterizations = []
 
     ### Initialization
 
@@ -3439,7 +3439,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             raise ValueError(message)
 
         try:
-            import matplotlib.pyplot as plt  # noqa: F401, E402
+            import matplotlib.pyplot as plt
         except ModuleNotFoundError as exc:
             message = ("`matplotlib` must be installed to use "
                        f"`{self.__class__.__name__}.plot`.")

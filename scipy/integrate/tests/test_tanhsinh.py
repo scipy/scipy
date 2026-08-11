@@ -1,4 +1,3 @@
-# mypy: disable-error-code="attr-defined"
 import os
 import pytest
 import math

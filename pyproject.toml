@@ -27,7 +27,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.19.0.dev0"
+version = "2.0.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -156,14 +156,15 @@ coverage = [
 ]
 
 bench = [
-    # https://github.com/airspeed-velocity/asv/issues/1537
-    "asv==0.6.4",
+    # 0.6.6 regressed per-benchmark overhead ~7x, which pushes the CircleCI
+    # benchmark job past its time limit; revisit when that is fixed upstream
+    "asv==0.6.5",
     "pyfftw",
     "cffi", 
 ]
 
 doc = [
-    "sphinx>=5.0.0,<8.2.0",
+    "sphinx>=8.2.0,<8.3.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
@@ -185,7 +186,6 @@ dev-cli = [
 
 typecheck = [
     # type checkers
-    "mypy==2.1.0",
     "pyrefly==1.1.1",
     # typing deps
     "typing_extensions",
@@ -199,7 +199,11 @@ typecheck = [
     "dask",
     "matplotlib",
     "pybind11",
+    # circular dependency issues, https://github.com/scipy/scipy/issues/19783
+    # "scikit-umfpack",
     "sphinx",
+    "sympy",
+    "uarray",
 ]
 
 lint = [
@@ -266,11 +270,25 @@ PKG_CONFIG_PATH = "{project}"
 # do this instead (which will override this setting)
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
 
+[tool.cibuildwheel.pyodide]
+before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
+repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
+test-requires = ["pytest", "pytest-split", "hypothesis", "threadpoolctl", "pooch"]
+test-command = "bash {project}/tools/wheels/cibw_test_command_pyodide.sh"
+[tool.cibuildwheel.pyodide.config-settings]
+setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
+
+[tool.cibuildwheel.pyodide.environment]
+PKG_CONFIG_PATH = "$(pwd)/.blis/lib/pkgconfig:$(pwd)/.blis/share/pkgconfig"
+# Stop Ninja from moving long link commands into a response file,
+# which the pyodide-build pywasmcross wrapper does not read. See:
+# https://github.com/pyodide/pyodide-build/issues/398
+MESON_RSP_THRESHOLD = "131072"
+
 [tool.spin.commands]
 "Build & Develop" = [
   ".spin/cmds.py:build",
   ".spin/cmds.py:test",
-  ".spin/cmds.py:mypy",
   ".spin/cmds.py:lint",
   ".spin/cmds.py:check",
   "spin.cmds.pip.install"
