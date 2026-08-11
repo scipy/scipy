@@ -276,12 +276,8 @@ def hadamard(n, dtype=int):
     return H
 
 
-<<<<<<< HEAD
-@_apply_over_batch(("f", 1), ("s", 1), signature="(i),(j)->(i,i)")
-=======
 @xp_capabilities()
-@_apply_over_batch(("f", 1), ("s", 1))
->>>>>>> upstream/main
+@_apply_over_batch(("f", 1), ("s", 1), signature="(i),(j)->(i,i)")
 def leslie(f, s):
     """
     Create a Leslie matrix.
@@ -1114,7 +1110,6 @@ def fiedler_companion(a):
     return c
 
 
-<<<<<<< HEAD
 def _convolution_matrix_signature(a, n, mode='full'):
     if mode == 'full':
         return f"(m)->(m+{n}-1,{n})"

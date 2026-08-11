@@ -615,17 +615,13 @@ def test_batch(f, args, xp):
 
     res = f(xp.asarray(A), *list(map(xp.asarray, args)))
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
-<<<<<<< HEAD
-    ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
-    assert_allclose(res, ref)
+
+    ref = xp.asarray(ref.reshape(A.shape[:-1] + ref.shape[-2:]))
+    xp_assert_close(res, ref)
 
     # test zero-size batch
     batch_shape = (0,)
     A = rng.random(batch_shape + (m,))
     res = f(A, *args)
     ref = np.empty(batch_shape + ref.shape[-2:])
-    assert_allclose(res, ref)
-=======
-    ref = xp.asarray(ref.reshape(A.shape[:-1] + ref.shape[-2:]))
     xp_assert_close(res, ref)
->>>>>>> upstream/main
