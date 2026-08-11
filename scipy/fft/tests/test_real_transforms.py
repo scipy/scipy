@@ -273,3 +273,21 @@ def test_dst1_allows_single_point(func):
     x = np.arange(8.0)
     kwargs = {"s": [1]} if func in (dstn, idstn) else {"n": 1}
     assert func(x, type=1, **kwargs).shape == (1,)
+
+
+@pytest.mark.parametrize("func", [dct, idct, dst, idst])
+@pytest.mark.parametrize("type", [1, 2, 3, 4])
+def test_empty_input_rejected(func, type):
+    # The `tmp.shape[axis] < 1` guard in `_r2r` was not covered by tests.
+    # It applies to every transform and type, and is only reachable when
+    # `n` is None, since `_fix_shape_1d` handles the length otherwise.
+    with pytest.raises(ValueError, match="invalid number of data points"):
+        func(np.array([]), type=type)
+
+
+@pytest.mark.parametrize("func", [dct, idct, dst, idst])
+def test_nonpositive_n_rejected(func):
+    x = np.arange(8.0)
+    for n in (0, -1):
+        with pytest.raises(ValueError, match="invalid number of data points"):
+            func(x, n=n)
