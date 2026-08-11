@@ -548,6 +548,7 @@ def mean(
         w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
         K = (q * w).mT @ q
 
+    K = K / xp.prod(xp.asarray(q.shape[len(keep_axes) :], device=device))
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
