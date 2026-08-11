@@ -16,7 +16,7 @@ from typing import Literal
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
                                    is_marray, xp_size, xp_result_device, xp_result_type,
-                                   xp_capabilities, xp_isscalar)
+                                   xp_capabilities, xp_isscalar, xp_device)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -1113,7 +1113,9 @@ as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
 
 def output_from_signature(arrays, batch_shape, core_shapes, signature):
-    dtype = np.result_type(*arrays)
+    xp = array_namespace(*arrays)
+    dtype = xp.result_type(*arrays)
+    device = xp_device(arrays[0]) if len(arrays) else None
 
     # parse more efficiently with regex?
     inputs, outputs = signature.split("->")
@@ -1137,7 +1139,8 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     for output in outputs:
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
-        results.append(np.empty(batch_shape + out_core_shape, dtype=dtype))
+        results.append(xp.empty(batch_shape + out_core_shape,
+                                dtype=dtype, device=device))
     return results[0] if len(results) == 1 else results
 
 

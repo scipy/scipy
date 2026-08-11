@@ -75,14 +75,14 @@ class TestBatch:
         n_batch = len(batch_shape)
         zero_size_in = [np.empty((0,) + array.shape[n_batch:], dtype=array.dtype)
                         for array in arrays]
-        if test_zero_size:
+        if test_zero_size is True:
             zero_size_out = fun(*zero_size_in, **kwargs)
             zero_size_out = (zero_size_out,) if n_out == 1 else zero_size_out
             for res_k, ref_k in zip(zero_size_out, ref):
                 ref_k = np.empty((0,) + ref_k.shape, dtype=ref_k.dtype)
                 np.testing.assert_equal(res_k, ref_k)
                 # assert res_k.dtype == ref_k.dtype
-        else:
+        elif test_zero_size is False:
             fun_name = fun.__name__.lstrip('_')
             message = f"`{fun_name}` does not support zero-size batches."
             with pytest.raises(ValueError, match=message):
@@ -213,14 +213,14 @@ class TestBatch:
         self.batch_test(
             linalg.svd, A, n_out=n_out,
             kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices),
-            test_zero_size=True
+            test_zero_size=None
         )
 
         A = get_random((5, 3, 2, 0), dtype=dtype, rng=rng)
         self.batch_test(
             linalg.svd, A, n_out=n_out,
             kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices),
-            test_zero_size=True
+            test_zero_size=None
         )
 
     @pytest.mark.parametrize('fun', [linalg.polar, linalg.rq])
@@ -238,7 +238,7 @@ class TestBatch:
         a = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         self.batch_test(lambda x: linalg.qr(x, mode=mode, pivoting=pivoting), a,
                         n_out=(1 if mode == 'r' else 2) + 1 if pivoting else 0,
-            test_zero_size=True)
+            test_zero_size=None)
 
     @pytest.mark.parametrize('pivoting', [True, False])
     @pytest.mark.parametrize('dtype', floating)
@@ -413,7 +413,7 @@ class TestBatch:
     def test_svdvals(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
-        self.batch_test(fun, A, test_zero_size=True)
+        self.batch_test(fun, A, test_zero_size=None)
 
     @pytest.mark.parametrize('fun_n_out', [(linalg.orthogonal_procrustes, 2),
                                            (linalg.khatri_rao, 1),
