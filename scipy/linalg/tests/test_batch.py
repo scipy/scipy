@@ -30,7 +30,7 @@ class TestBatch:
     # Test batch support for most linalg functions
 
     def batch_test(self, fun, arrays, *, core_dim=2, n_out=1, kwargs=None, dtype=None,
-                   broadcast=True, check_kwargs=True, test_zero_size=False):
+                   broadcast=True, check_kwargs=True, test_zero_size=True):
         # Check that all outputs of batched call `fun(A, **kwargs)` are the same
         # as if we loop over the separate vectors/matrices in `A`. Also check
         # that `fun` accepts `A` by position or keyword and that results are
@@ -94,13 +94,14 @@ class TestBatch:
     def test_expm_cond(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = rng.random((5, 3, 4, 4)).astype(dtype)
-        self.batch_test(linalg.expm_cond, A)
+        self.batch_test(linalg.expm_cond, A, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_issymmetric(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
-        res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3))
+        res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3),
+                              test_zero_size=False)
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to issymmetric
 
@@ -108,7 +109,8 @@ class TestBatch:
     def test_ishermitian(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
-        res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3))
+        res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3),
+                              test_zero_size=False)
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to ishermitian
 
@@ -116,8 +118,7 @@ class TestBatch:
     def test_diagsvd(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = rng.random((5, 3, 4)).astype(dtype)
-        res1 = self.batch_test(linalg.diagsvd, A, kwargs=dict(M=6, N=4), core_dim=1,
-                               test_zero_size=True)
+        res1 = self.batch_test(linalg.diagsvd, A, kwargs=dict(M=6, N=4), core_dim=1)
         # test that `M, N` can be passed by position
         res2 = linalg.diagsvd(A, 6, 4)
         np.testing.assert_equal(res1, res2)
@@ -136,25 +137,26 @@ class TestBatch:
         if fun == linalg.sqrtm:
             A = A + 3*np.eye(4, dtype=dtype)
 
-        self.batch_test(fun, A, test_zero_size=True)
+        self.batch_test(fun, A)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_null_space(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
-        self.batch_test(linalg.null_space, A)
+        self.batch_test(linalg.null_space, A, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_funm(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin), test_zero_size=True)
+        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin))
 
     @pytest.mark.parametrize('dtype', floating)
     def test_fractional_matrix_power(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5})
+        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5},
+                               test_zero_size=False)
         # test that `t` can be passed by position
         res2 = linalg.fractional_matrix_power(A, 1.5)
         np.testing.assert_equal(res1, res2)
@@ -165,7 +167,7 @@ class TestBatch:
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 3*np.eye(4)  # avoid complex output for real input
-        res1 = self.batch_test(linalg.logm, A)
+        res1 = self.batch_test(linalg.logm, A, test_zero_size=False)
         # test that `disp` can be passed by position
         res2 = linalg.logm(A)
         for res1i, res2i in zip(res1, res2):
@@ -175,22 +177,22 @@ class TestBatch:
     def test_pinv(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.pinv, A, n_out=2, kwargs=dict(return_rank=True),
-                        test_zero_size=True)
+        self.batch_test(linalg.pinv, A, n_out=2, kwargs=dict(return_rank=True))
 
     @pytest.mark.parametrize('dtype', floating)
     def test_matrix_balance(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.matrix_balance, A, n_out=2)
-        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs={'separate':True})
+        self.batch_test(linalg.matrix_balance, A, n_out=2, test_zero_size=False)
+        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs={'separate':True},
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_bandwidth(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((4, 4), dtype=dtype, rng=rng)
         A = np.asarray([np.triu(A, k) for k in range(-3, 3)]).reshape((2, 3, 4, 4))
-        self.batch_test(linalg.bandwidth, A, n_out=2, test_zero_size=True)
+        self.batch_test(linalg.bandwidth, A, n_out=2)
 
     @pytest.mark.parametrize('fun_n_out', [(linalg.cholesky, 1), (linalg.ldl, 3),
                                            (linalg.cho_factor, 2)])
@@ -228,7 +230,7 @@ class TestBatch:
     def test_polar_qr_rq(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, A, n_out=2)
+        self.batch_test(fun, A, n_out=2, test_zero_size=False)
 
     @pytest.mark.parametrize('pivoting', [True, False])
     @pytest.mark.parametrize('dtype', floating)
@@ -330,7 +332,7 @@ class TestBatch:
     def test_schur_lu(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, A, n_out=2)
+        self.batch_test(fun, A, n_out=2, test_zero_size=False)
 
     @pytest.mark.parametrize('calc_q', [False, True])
     @pytest.mark.parametrize('dtype', floating)
@@ -338,7 +340,8 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         n_out = 2 if calc_q else 1
-        self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q))
+        self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q),
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('eigvals_only', [False, True])
     @pytest.mark.parametrize('dtype', floating)
@@ -347,13 +350,14 @@ class TestBatch:
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         n_out = 1 if eigvals_only else 2
         self.batch_test(linalg.eig_banded, A, n_out=n_out,
-                        kwargs=dict(eigvals_only=eigvals_only))
+                        kwargs=dict(eigvals_only=eigvals_only),
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_eigvals_banded(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.eigvals_banded, A)
+        self.batch_test(linalg.eigvals_banded, A, test_zero_size=False)
 
     @pytest.mark.parametrize("include_B", [False, True])
     @pytest.mark.parametrize("left", [False, True])
@@ -369,8 +373,7 @@ class TestBatch:
         args = (A, B) if include_B else (A,)
         kwargs = dict(left=left, right=right, homogeneous_eigvals=homogeneous_eigvals)
         n_out = 1 + left + right
-        self.batch_test(linalg.eig, args, n_out=n_out, kwargs=kwargs,
-                        test_zero_size=True)
+        self.batch_test(linalg.eig, args, n_out=n_out, kwargs=kwargs)
 
     @pytest.mark.parametrize('two_in', [False, True])
     @pytest.mark.parametrize('fun_n_nout', [(linalg.eigh, 1), (linalg.eigh, 2),
@@ -384,7 +387,7 @@ class TestBatch:
         B = B + 4*np.eye(4).astype(dtype)  # needs to be positive definite
         args = (A, B) if two_in else (A,)
         kwargs = dict(eigvals_only=True) if (n_out == 1 and fun==linalg.eigh) else {}
-        self.batch_test(fun, args, n_out=n_out, kwargs=kwargs, test_zero_size=True)
+        self.batch_test(fun, args, n_out=n_out, kwargs=kwargs)
 
     @pytest.mark.parametrize('compute_expm', [False, True])
     @pytest.mark.parametrize('dtype', floating)
@@ -394,14 +397,15 @@ class TestBatch:
         E = get_random((2, 1, 4, 4), dtype=dtype, rng=rng)
         n_out = 2 if compute_expm else 1
         self.batch_test(linalg.expm_frechet, (A, E), n_out=n_out,
-                        kwargs=dict(compute_expm=compute_expm))
+                        kwargs=dict(compute_expm=compute_expm),
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_subspace_angles(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((1, 3, 4, 3), dtype=dtype, rng=rng)
         B = get_random((2, 1, 4, 3), dtype=dtype, rng=rng)
-        self.batch_test(linalg.subspace_angles, (A, B))
+        self.batch_test(linalg.subspace_angles, (A, B), test_zero_size=False)
         # just to show that A and B don't need to be broadcastable
         M, N, K = 4, 5, 3
         A = get_random((1, 3, M, N), dtype=dtype, rng=rng)
@@ -427,7 +431,7 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         B = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, (A, B), n_out=n_out)
+        self.batch_test(fun, (A, B), n_out=n_out, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_cossin(self, dtype):
@@ -453,7 +457,7 @@ class TestBatch:
         A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
         B = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
         C = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
-        self.batch_test(linalg.solve_sylvester, (A, B, C))
+        self.batch_test(linalg.solve_sylvester, (A, B, C), test_zero_size=False)
 
     @pytest.mark.parametrize('fun', [linalg.solve_continuous_are,
                                      linalg.solve_discrete_are])
@@ -470,9 +474,9 @@ class TestBatch:
         r = r + 5*np.eye(5)
         e = np.eye(5)
         s = np.zeros((5, 5))
-        self.batch_test(fun, (a, b, q, r))
-        self.batch_test(fun, (a, b, q, r, e))
-        self.batch_test(fun, (a, b, q, r, e, s))
+        self.batch_test(fun, (a, b, q, r), test_zero_size=False)
+        self.batch_test(fun, (a, b, q, r, e), test_zero_size=False)
+        self.batch_test(fun, (a, b, q, r, e, s), test_zero_size=False)
 
         res = fun(a, b, q, r)
         ref = fun(a, b, q, r, s=s)
@@ -483,14 +487,14 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         T, Z = linalg.schur(A)
-        self.batch_test(linalg.rsf2csf, (T, Z), n_out=2)
+        self.batch_test(linalg.rsf2csf, (T, Z), n_out=2, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_cholesky_banded(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         ab = get_random((5, 4, 3, 6), dtype=dtype, rng=rng)
         ab[..., -1, :] = 10  # make diagonal dominant
-        self.batch_test(linalg.cholesky_banded, ab)
+        self.batch_test(linalg.cholesky_banded, ab, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_block_diag(self, dtype):
@@ -505,7 +509,7 @@ class TestBatch:
         b2 = np.broadcast_to(b, (2, 3, 3, 6))
         c2 = np.broadcast_to(c, (2, 3, 3, 2))
         ref = self.batch_test(linalg.block_diag, (a2, b2, c2),
-                              check_kwargs=False, broadcast=False, test_zero_size=True)
+                              check_kwargs=False, broadcast=False)
 
         # Check that `block_diag` broadcasts the batch shapes as expected.
         res = linalg.block_diag(a, b, c)
@@ -520,7 +524,8 @@ class TestBatch:
         fun, n_out = fun_n_out
         d = get_random((3, 4, 5), dtype=dtype, rng=rng)
         e = get_random((3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False)
+        self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False,
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
@@ -686,7 +691,8 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
         self.batch_test(linalg.clarkson_woodruff_transform, A,
-                        kwargs=dict(sketch_size=3, rng=311224))
+                        kwargs=dict(sketch_size=3, rng=311224),
+                        test_zero_size=False)
 
     def test_clarkson_woodruff_transform_sparse(self):
         rng = np.random.default_rng(8342310302941288912051)
