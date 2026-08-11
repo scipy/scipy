@@ -1,7 +1,7 @@
 
 .. _continuous-gumbel_r:
 
-Gumbel (LogWeibull, Fisher-Tippetts, Type I Extreme Value) Distribution
+Gumbel (LogWeibull, Fisher-Tippett, Type I Extreme Value) Distribution
 =======================================================================
 
 One of a class of extreme value distributions (right-skewed).
