@@ -173,6 +173,12 @@ def test__item_for_scalar_function(xp):
         _item_for_scalar_function(x)
 
 
+def test_optimize_result_repr_with_empty_dict():
+    result = optimize.OptimizeResult(options={})
+
+    assert repr(result) == " options: {}"
+
+
 def test_rng_integers():
     rng = np.random.RandomState()
 
