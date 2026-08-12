@@ -7,11 +7,12 @@ Continuous Statistical Distributions
 Overview
 ========
 
-All distributions will have location (L) and Scale (S) parameters
+All distributions will have location (L) and scale (S) parameters
 along with any shape parameters needed, the names for the shape
 parameters will vary. Standard form for the distributions will be
-given where :math:`L=0.0` and :math:`S=1.0.` The nonstandard forms can be obtained for the various functions using
-(note :math:`U` is a standard uniform random variate).
+given where :math:`L=0.0` and :math:`S=1.0.` Nonstandard forms use the
+transformations in the table below. For the Random Variates transformation, :math:`U` is a
+standard uniform random variate.
 
 
 ======================================  =============================================================================  =========================================================================================================================================
@@ -113,14 +114,14 @@ random vector :math:`\mathbf{x}` is
 
      f\left(\mathbf{x};\boldsymbol{\theta}\right)=\prod_{i=1}^{N}f\left(x_{i};\boldsymbol{\theta}\right).
 
-The maximum likelihood estimate of the parameters :math:`\boldsymbol{\theta}` are the parameters which maximize this function with :math:`\mathbf{x}` fixed and given by the data:
+The maximum likelihood estimate of the parameters :math:`\boldsymbol{\theta}` is the parameter value that maximizes this function with :math:`\mathbf{x}` fixed and given by the data:
 
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} \boldsymbol{\theta}_{es} & = & \arg\max_{\boldsymbol{\theta}}f\left(\mathbf{x};\boldsymbol{\theta}\right)\\  & = & \arg\min_{\boldsymbol{\theta}}l_{\mathbf{x}}\left(\boldsymbol{\theta}\right).\end{eqnarray*}
+    \begin{eqnarray*} \hat{\boldsymbol{\theta}} & = & \arg\max_{\boldsymbol{\theta}}f\left(\mathbf{x};\boldsymbol{\theta}\right)\\  & = & \arg\min_{\boldsymbol{\theta}}l_{\mathbf{x}}\left(\boldsymbol{\theta}\right).\end{eqnarray*}
 
-Where
+The negative log-likelihood is
 
 .. math::
    :nowrap:
@@ -135,8 +136,8 @@ be fit by replacing :math:`x_{i}` with :math:`\left(x_{i}-L\right)/S` in the log
 
     \begin{eqnarray*} l_{\mathbf{x}}\left(L,S;\boldsymbol{\theta}\right) & = & N\log S-\sum_{i=1}^{N}\log f\left(\frac{x_{i}-L}{S};\boldsymbol{\theta}\right)\\  & = & N\log S+l_{\frac{\mathbf{x}-L}{S}}\left(\boldsymbol{\theta}\right)\end{eqnarray*}
 
-If desired, sample estimates for :math:`L` and :math:`S` (not necessarily maximum likelihood estimates) can be obtained from
-samples estimates of the mean and variance using
+If desired, estimates for :math:`L` and :math:`S` (not necessarily maximum likelihood estimates) can be obtained from
+sample estimates of the mean and variance using
 
 .. math::
    :nowrap:
@@ -170,8 +171,9 @@ References
 -  Eric Weisstein's world of mathematics http://mathworld.wolfram.com/,
    http://mathworld.wolfram.com/topics/StatisticalDistributions.html
 
--  Documentation to Regress+ by Michael McLaughlin item Engineering and
-   Statistics Handbook (NIST),
+-  Documentation for Regress+ by Michael McLaughlin
+
+-  Engineering and Statistics Handbook (NIST),
    https://www.itl.nist.gov/div898/handbook/
 
 -  Documentation for DATAPLOT from NIST,
@@ -196,7 +198,7 @@ Symbol                                                           Description    
 :math:`\psi\left(z\right)`                                       digamma function                                                                        :math:`\frac{d}{dz} \log\left(\Gamma\left(z\right)\right)`
 :math:`\psi_{n}\left(z\right)`                                   polygamma function                                                                      :math:`\frac{d^{n+1}}{dz^{n+1}}\log\left(\Gamma\left(z\right)\right)`
 :math:`I_{\nu}\left(y\right)`                                    modified Bessel function of the first kind
-:math:`\mathrm{Ei}(\mathrm{z})`                                  exponential integral                                                                    :math:`-\int_{-x}^\infty \frac{e^{-t}}{t} dt`
+:math:`\mathrm{Ei}(z)`                                           exponential integral                                                                    :math:`-\int_{-z}^\infty \frac{e^{-t}}{t} dt`
 :math:`\zeta\left(n\right)`                                      Riemann zeta function                                                                   :math:`\sum_{k=1}^{\infty} \frac{1}{k^{n}}`
 :math:`\zeta\left(n,z\right)`                                    Hurwitz zeta function                                                                   :math:`\sum_{k=0}^{\infty} \frac{1}{\left(k+z\right)^{n}}`
 :math:`\,{}_{p}F_{q}(a_{1},\ldots,a_{p};b_{1},\ldots,b_{q};z)`   Hypergeometric function                                                                 :math:`\sum_{n=0}^{\infty} {\frac{(a_{1})_{n}\cdots(a_{p})_{n}}{(b_{1})_{n}\cdots(b_{q})_{n}}} \,{\frac{z^{n}}{n!}}`
