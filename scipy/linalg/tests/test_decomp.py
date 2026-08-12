@@ -449,6 +449,7 @@ class TestEig:
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
 
+
     @pytest.mark.parametrize("include_B", [False, True])
     @pytest.mark.parametrize("left", [False, True])
     @pytest.mark.parametrize("right", [False, True])

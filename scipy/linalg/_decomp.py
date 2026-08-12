@@ -822,8 +822,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
-            homogeneous_eigvals=False):
+def eigvals(a, b=None, overwrite_a=False, overwrite_b=False,
+            check_finite=True, homogeneous_eigvals=False):
     r"""
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
