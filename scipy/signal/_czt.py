@@ -6,6 +6,8 @@ import cmath
 import numbers
 import numpy as np
 from numpy import pi, arange
+from scipy._lib._array_api import xp_result_type
+from scipy._external.array_api_compat import numpy as np_compat
 from scipy.fft import fft, ifft, next_fast_len
 
 __all__ = ['czt', 'zoom_fft', 'CZT', 'ZoomFFT', 'czt_points']
@@ -27,7 +29,7 @@ def _validate_sizes(n, m):
     return m
 
 
-def czt_points(m, w=None, a=1+0j):
+def czt_points(m, w=None, a=1+0j, *, xp=None, device=None):
     """
     Return the points at which the chirp z-transform is computed.
 
@@ -40,6 +42,10 @@ def czt_points(m, w=None, a=1+0j):
         Defaults to equally spaced points around the entire unit circle.
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
+    xp : array_namespace, optional
+        The namespace for the return array. Default is None, where NumPy is used.
+    device : device, optional
+        The device for the return array. Default is None.
 
     Returns
     -------
@@ -74,18 +80,23 @@ def czt_points(m, w=None, a=1+0j):
     >>> plt.axis('equal')
     >>> plt.show()
     """
+    if xp is None:
+        xp = np_compat
+
     m = _validate_sizes(1, m)
 
-    k = arange(m)
-
-    a = 1.0 * a  # at least float
+    a = xp.asarray(a, device=device)
+    w = xp.asarray(w, device=device) if w is not None else None
+    dtype = xp_result_type(a, w, xp.float64, force_floating=True, xp=xp)
+    a = xp.astype(a, dtype)
+    w = xp.astype(w, dtype) if w is not None else None
+    k = xp.arange(m, device=device, dtype=xp.float64)
 
     if w is None:
         # Nothing specified, default to FFT
-        return a * np.exp(2j * pi * k / m)
+        return a * xp.exp(2j * xp.pi * k / m)
     else:
         # w specified
-        w = 1.0 * w  # at least float
         return a * w**-k
 
 

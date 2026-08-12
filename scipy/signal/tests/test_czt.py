@@ -4,7 +4,7 @@
 A unit test module for czt.py
 '''
 import pytest
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import is_numpy, make_xp_test_case, xp_assert_close
 from scipy.fft import fft
 from scipy.signal import (czt, zoom_fft, czt_points, CZT, ZoomFFT)
 import numpy as np
@@ -164,24 +164,43 @@ def test_czt_math(impulse, m, w, a):
                     czt_points(m=m, w=w, a=a)**-2, rtol=1e-10)
 
 
-def test_int_args():
+def test_czt_int_args():
     # Integer argument `a` was producing all 0s
     xp_assert_close(abs(czt([0, 1], m=10, a=2)), 0.5*np.ones(10), rtol=1e-15)
-    xp_assert_close(czt_points(11, w=2),
-                    1/(2**np.arange(11, dtype=np.complex128)), rtol=1e-30)
 
 
-def test_czt_points():
+@make_xp_test_case(czt_points)
+def test_czt_points_int_args(xp):
+    xp_assert_close(czt_points(11, w=2, xp=xp),
+                    1/(2**xp.arange(11, dtype=xp.complex128)), rtol=1e-14)
+
+
+@make_xp_test_case(czt_points)
+def test_czt_points(xp):
     for N in (1, 2, 3, 8, 11, 100, 101, 10007):
-        xp_assert_close(czt_points(N), np.exp(2j*np.pi*np.arange(N)/N),
-                        rtol=1e-30)
+        xp_assert_close(czt_points(N, xp=xp),
+                        xp.exp(2j*xp.pi*xp.arange(N, dtype=xp.float64)/N),
+                        rtol=1e-14)
 
-    xp_assert_close(czt_points(7, w=1), np.ones(7, dtype=np.complex128), rtol=1e-30)
-    xp_assert_close(czt_points(11, w=2.),
-                    1/(2**np.arange(11, dtype=np.complex128)), rtol=1e-30)
+    xp_assert_close(czt_points(7, w=1, xp=xp),
+                    xp.ones(7, dtype=xp.complex128), rtol=1e-30)
+    xp_assert_close(czt_points(11, w=2, xp=xp),
+                    1/(2**xp.arange(11, dtype=xp.complex128)), rtol=1e-14)
 
-    func = CZT(12, m=11, w=2., a=1)
-    xp_assert_close(func.points(), 1/(2**np.arange(11)), rtol=1e-30)
+    if is_numpy(xp):
+        func = CZT(12, m=11, w=2., a=1)
+        xp_assert_close(func.points(), 1/(2**np.arange(11)), rtol=1e-30)
+
+
+@make_xp_test_case(czt_points)
+def test_czt_points_dtype(xp):
+    for name in ("int32", "int64", "float32", "float64",
+                 "complex64", "complex128"):
+        dtype = getattr(xp, name)
+        value = xp.asarray(1, dtype=dtype)
+        expected = (xp.complex128 if xp.isdtype(dtype, "complex floating")
+                    else xp.float64)
+        assert czt_points(7, w=value, a=value, xp=xp).dtype == expected
 
 
 @pytest.mark.parametrize('cls, args', [(CZT, (100,)), (ZoomFFT, (100, 0.2))])

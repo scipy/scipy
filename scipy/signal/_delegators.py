@@ -113,8 +113,8 @@ def correlation_lags_signature(in1_len, in2_len, mode='full'):
     return np
 
 
-def czt_points_signature(m, w=None, a=(1+0j)):
-    return np
+def czt_points_signature(m, w=None, a=(1+0j), *, xp=None, device=None):
+    return np if xp is None else xp
 
 
 def gammatone_signature(
