@@ -1469,7 +1469,7 @@ lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
 def _pinv_signature(*args, **kwargs):
-    return "(i,i)->(i,i),()" if kwargs.get('return_rank') else "(i,i)->(i,i)"
+    return "(i,j)->(i,j),()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
 
 
 @_apply_over_batch(('a', 2), signature=_pinv_signature)

@@ -1141,7 +1141,7 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
                                 for l in output.split(',') if l])
         results.append(xp.empty(batch_shape + out_core_shape,
                                 dtype=dtype, device=device))
-    return results[0] if len(results) == 1 else results
+    return results[0] if len(results) == 1 else tuple(results)
 
 
 def _apply_over_batch(*argdefs, signature=None):
@@ -1254,7 +1254,7 @@ def _apply_over_batch(*argdefs, signature=None):
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
             # contributor to pass an `pack_result` callable to the decorator factory.
-            return results[0] if len(results) == 1 else results
+            return results[0] if len(results) == 1 else tuple(results)
 
         doc = FunctionDoc(wrapper)
         batch_note = _batch_note.rstrip()
