@@ -781,17 +781,12 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
                 }
 
                 case Eigh_driver::EVR : {
-                    // `isuppz` is only used in the conditions above, else just copy everything
-                    // if ((range == 'A') || (range == 'I' && iu - il == N - 1)) {
-                    //     copy_eigenvectors_isuppz(slice_ptr_Z, buff_Z, isuppz, N, M, intm);
-                    // } else {
+                    // XXX: `isuppz` is currently being ignored due to issues at low precision.
                     if (!overwrite_a) {
                         copy_slice_F_to_C(slice_ptr_Z, buff_Z, N, M);
                     } else {
-                        // XXX: also account for `isuppz` when `overwrite_a` is enabled
                         memcpy(slice_ptr_Z, buff_Z, intn * intm * sizeof(T)); // NB. data should remain in F-order, but switches buffers
                     }
-                    // }
                     break;
                 }
 
