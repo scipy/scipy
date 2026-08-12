@@ -245,7 +245,7 @@ def _xp_or_default(xp, desired):
 
 def _convert_scalar_to_array(x, xp):
     __tracebackhide__ = True  # Hide traceback for py.test
-    
+
     if isinstance(x, (list, tuple)) or type(x) in (
         int,
         float,
@@ -264,7 +264,7 @@ def xp_assert_equal(actual, desired, *, check_dtype=True,
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
 
-    return xpt.assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype, 
+    return xpt.assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
 
@@ -276,8 +276,8 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_dtype=True,
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
 
-    return xpt.assert_close(actual, desired,rtol=rtol, atol=atol, 
-                            err_msg=err_msg, check_dtype=check_dtype, 
+    return xpt.assert_close(actual, desired,rtol=rtol, atol=atol,
+                            err_msg=err_msg, check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
 
@@ -291,8 +291,8 @@ def xp_assert_close_nulp(actual, desired, *, nulp=1,
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
 
-    return xpt.assert_close_nulp(actual, desired, nulp=nulp, 
-                            check_dtype=check_dtype, 
+    return xpt.assert_close_nulp(actual, desired, nulp=nulp,
+                            check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
 def _assert_less(
@@ -309,7 +309,7 @@ def _assert_less(
 
 
 def xp_assert_less(actual, desired, *, check_dtype=True,
-                   check_shape=True, check_0d=True, 
+                   check_shape=True, check_0d=True,
                    err_msg='', verbose=True, xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
 
