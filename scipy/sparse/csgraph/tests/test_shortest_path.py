@@ -201,6 +201,96 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
     assert_array_almost_equal(SP, min_d_ans)
 
 
+@pytest.mark.parametrize('directed, SP_ans',
+                         ((True, directed_SP),
+                          (False, undirected_SP)))
+@pytest.mark.parametrize('indices', ([0, 2, 4], [0, 4], [3, 4], [0, 0]))
+def test_bellman_ford_indices_min_only(directed, SP_ans, indices):
+    SP_ans = np.array(SP_ans)
+    indices = np.array(indices, dtype=np.int64)
+    min_d_ans = SP_ans[indices].min(axis=0)
+
+    SP, pred = bellman_ford(directed_G,
+                            directed=directed,
+                            indices=indices,
+                            min_only=True,
+                            return_predecessors=True)
+    assert_array_almost_equal(SP, min_d_ans)
+    assert pred.shape == (SP_ans.shape[0],)
+    SP = bellman_ford(directed_G,
+                      directed=directed,
+                      indices=indices,
+                      min_only=True,
+                      return_predecessors=False)
+    assert_array_almost_equal(SP, min_d_ans)
+
+
+def test_bellman_ford_min_only_negative():
+    # min_only on a graph with negative edge weights
+    indices = [0, 1, 2]
+    SP = bellman_ford(directed_negative_weighted_G, directed=True,
+                      indices=indices, min_only=True)
+    assert_allclose(SP, np.array(directed_negative_weighted_SP)[indices].min(axis=0))
+
+
+@pytest.mark.parametrize('directed', (True, False))
+@pytest.mark.parametrize('n', (10, 30))
+def test_bellman_ford_min_only_random(directed, n):
+    rng = np.random.default_rng(12345)
+    # random graph with edges only from i to j with i < j, so no cycles
+    # and no negative cycles even with negative weights
+    dense = np.zeros((n, n))
+    iu = np.triu_indices(n, k=1)
+    keep = rng.random(iu[0].size) < 0.3
+    iu = (iu[0][keep], iu[1][keep])
+    if directed:
+        dense[iu] = rng.uniform(-1, 1, size=iu[0].size)
+    else:
+        dense[iu] = rng.uniform(0, 1, size=iu[0].size)
+        dense = np.maximum(dense, dense.T)
+    G = scipy.sparse.csr_array(dense)
+    v = np.arange(n)
+    rng.shuffle(v)
+    indices = v[:n // 2]
+    full = bellman_ford(G, directed=directed, indices=indices)
+    min_only = bellman_ford(G, directed=directed, indices=indices,
+                            min_only=True)
+    assert_allclose(min_only, full.min(axis=0))
+    full_d, full_p = bellman_ford(G, directed=directed, indices=indices,
+                                  return_predecessors=True)
+    min_d, min_p = bellman_ford(G, directed=directed, indices=indices,
+                                min_only=True, return_predecessors=True)
+    assert_allclose(min_d, full_d.min(axis=0))
+
+
+@pytest.mark.parametrize('directed', (True, False))
+def test_shortest_path_min_only(directed):
+    SP_ans = np.array(directed_SP if directed else undirected_SP)
+    indices = [0, 2, 4]
+    min_d_ans = SP_ans[indices].min(axis=0)
+
+    for method in ('D', 'BF', 'auto'):
+        SP = shortest_path(directed_G, method=method, directed=directed,
+                           indices=indices, min_only=True)
+        assert_array_almost_equal(SP, min_d_ans)
+        # min_only without indices still returns a single row
+        SP_all = shortest_path(directed_G, method=method, directed=directed,
+                               min_only=True)
+        assert_array_almost_equal(SP_all, SP_ans.min(axis=0))
+
+    for method in ('FW', 'J'):
+        assert_raises(ValueError, shortest_path, directed_G, method=method,
+                      directed=directed, indices=indices, min_only=True)
+
+
+def test_shortest_path_min_only_negative_auto():
+    # method='auto' with negative weights must fall back to BF, not J
+    indices = [0, 1, 2]
+    SP = shortest_path(directed_negative_weighted_G, method='auto',
+                       directed=True, indices=indices, min_only=True)
+    assert_allclose(SP, np.array(directed_negative_weighted_SP)[indices].min(axis=0))
+
+
 @pytest.mark.parametrize('n', (10, 100, 1000))
 def test_dijkstra_min_only_random(n):
     rng = np.random.default_rng(7345782358920239234)

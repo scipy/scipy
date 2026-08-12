@@ -56,6 +56,12 @@ New features
 ``scipy.sparse`` improvements
 =============================
 
+- `scipy.sparse.csgraph.bellman_ford` and `scipy.sparse.csgraph.shortest_path`
+  now support a ``min_only`` argument, matching
+  `scipy.sparse.csgraph.dijkstra`. When ``min_only=True``, a vector of the
+  shortest distances from any of the ``indices`` is returned instead of the
+  full distance matrix. See `gh-25480 <https://github.com/scipy/scipy/issues/25480>`__.
+
 
 
 ``scipy.spatial`` improvements

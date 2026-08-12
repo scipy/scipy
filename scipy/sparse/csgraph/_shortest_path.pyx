@@ -57,10 +57,11 @@ def shortest_path(csgraph, method='auto',
                   return_predecessors=False,
                   unweighted=False,
                   overwrite=False,
-                  indices=None):
+                  indices=None,
+                  bint min_only=False):
     """
     shortest_path(csgraph, method='auto', directed=True, return_predecessors=False,
-                  unweighted=False, overwrite=False, indices=None)
+                  unweighted=False, overwrite=False, indices=None, min_only=False)
 
     Perform a shortest-path graph search on a positive directed or
     undirected graph.
@@ -116,6 +117,14 @@ def shortest_path(csgraph, method='auto',
     indices : array_like or int, optional
         If specified, only compute the paths from the points at the given
         indices. Incompatible with method == 'FW'.
+    min_only : bool, optional
+        If False (default), for every node in the graph, find the shortest path
+        from every node in indices.
+        If True, for every node in the graph, find the shortest path from any
+        of the nodes in indices (which can be substantially faster).
+        Incompatible with methods ``'FW'`` and ``'J'``.
+
+        .. versionadded:: 2.0.0
 
     Returns
     -------
@@ -258,13 +267,21 @@ def shortest_path(csgraph, method='auto',
 
         if indices is not None or Nk < N * N / 4:
             if np.any(edges < 0):
-                method = 'J'
+                if min_only:
+                    method = 'BF'
+                else:
+                    method = 'J'
             else:
                 method = 'D'
         else:
-            method = 'FW'
+            if min_only:
+                method = 'BF' if np.any(edges < 0) else 'D'
+            else:
+                method = 'FW'
 
     if method == 'FW':
+        if min_only:
+            raise ValueError("Cannot specify min_only with method == 'FW'.")
         if indices is not None:
             raise ValueError("Cannot specify indices with method == 'FW'.")
         return floyd_warshall(csgraph, directed,
@@ -275,14 +292,18 @@ def shortest_path(csgraph, method='auto',
     elif method == 'D':
         return dijkstra(csgraph, directed,
                         return_predecessors=return_predecessors,
-                        unweighted=unweighted, indices=indices)
+                        unweighted=unweighted, indices=indices,
+                        min_only=min_only)
 
     elif method == 'BF':
         return bellman_ford(csgraph, directed,
                             return_predecessors=return_predecessors,
-                            unweighted=unweighted, indices=indices)
+                            unweighted=unweighted, indices=indices,
+                            min_only=min_only)
 
     elif method == 'J':
+        if min_only:
+            raise ValueError("Cannot specify min_only with method == 'J'.")
         return johnson(csgraph, directed,
                        return_predecessors=return_predecessors,
                        unweighted=unweighted, indices=indices)
@@ -873,10 +894,11 @@ cdef int _dijkstra_multi_separate(
 
 def bellman_ford(csgraph, directed=True, indices=None,
                  return_predecessors=False,
-                 unweighted=False):
+                 unweighted=False,
+                 bint min_only=False):
     """
     bellman_ford(csgraph, directed=True, indices=None, return_predecessors=False,
-                 unweighted=False)
+                 unweighted=False, min_only=False)
 
     Compute the shortest path lengths using the Bellman-Ford algorithm.
 
@@ -905,17 +927,29 @@ def bellman_ford(csgraph, directed=True, indices=None,
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
         find the path such that the number of edges is minimized.
+    min_only : bool, optional
+        If False (default), for every node in the graph, find the shortest path
+        from every node in indices.
+        If True, for every node in the graph, find the shortest path from any
+        of the nodes in indices (which can be substantially faster).
+
+        .. versionadded:: 2.0.0
 
     Returns
     -------
-    dist_matrix : ndarray
-        The N x N matrix of distances between graph nodes. dist_matrix[i,j]
+    dist_matrix : ndarray, shape ([n_indices, ]n_nodes,)
+        The matrix of distances between graph nodes. If min_only=False,
+        dist_matrix has shape (n_indices, n_nodes) and dist_matrix[i, j]
         gives the shortest distance from point i to point j along the graph.
-
-    predecessors : ndarray, shape (n_indices, n_nodes,)
-        Returned only if ``return_predecessors=True``.
-        If `indices` is None then ``n_indices = n_nodes`` and the shape of
-        the matrix becomes ``(n_nodes, n_nodes)``.
+        If min_only=True, dist_matrix has shape (n_nodes,) and contains for
+        a given node the shortest path to that node from any of the nodes
+        in indices.
+    predecessors : ndarray, shape ([n_indices, ]n_nodes,)
+        If ``min_only=False``, this has shape ``(n_indices, n_nodes)``,
+        otherwise it has shape ``(n_nodes,)``.
+        If `indices` is None and ``min_only=False`` then ``n_indices = n_nodes``
+        and the shape of the matrix becomes ``(n_nodes, n_nodes)``.
+        Returned only if return_predecessors == True.
         The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
         information on the shortest paths from point i: each entry
@@ -981,20 +1015,31 @@ def bellman_ford(csgraph, directed=True, indices=None,
         indices[indices < 0] += N
         if np.any(indices < 0) or np.any(indices >= N):
             raise ValueError("indices out of range 0...N")
-    return_shape = indices.shape + (N,)
+    if min_only:
+        return_shape = (N,)
+    else:
+        return_shape = indices.shape + (N,)
     indices = np.atleast_1d(indices).reshape(-1)
 
     # ------------------------------
     # initialize dist_matrix for output
-    dist_matrix = np.empty((len(indices), N), dtype=DTYPE)
-    dist_matrix.fill(np.inf)
-    dist_matrix[np.arange(len(indices)), indices] = 0
+    if min_only:
+        dist_matrix = np.full((1, N), np.inf, dtype=DTYPE)
+        dist_matrix[0, indices] = 0
+    else:
+        dist_matrix = np.empty((len(indices), N), dtype=DTYPE)
+        dist_matrix.fill(np.inf)
+        dist_matrix[np.arange(len(indices)), indices] = 0
 
     # ------------------------------
     # initialize predecessors for output
     if return_predecessors:
-        predecessor_matrix = np.empty((len(indices), N), dtype=ITYPE)
-        predecessor_matrix.fill(NULL_IDX)
+        if min_only:
+            predecessor_matrix = np.empty((1, N), dtype=ITYPE)
+            predecessor_matrix.fill(NULL_IDX)
+        else:
+            predecessor_matrix = np.empty((len(indices), N), dtype=ITYPE)
+            predecessor_matrix.fill(NULL_IDX)
     else:
         predecessor_matrix = np.empty((0, N), dtype=ITYPE)
 
