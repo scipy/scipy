@@ -98,7 +98,6 @@ def biteopt(
     the Styblinski-Tang function
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
 
-    >>> import numpy as np
     >>> from scipy.optimize import biteopt, Bounds
     >>> def styblinski_tang(pos):
     ...     x, y = pos
@@ -110,17 +109,16 @@ def biteopt(
 
     For reproducible results, pass a seed to `rng`:
 
-    >>> rng = np.random.default_rng(1234)
-    >>> result = biteopt(styblinski_tang, bounds, rng=rng)
+    >>> result = biteopt(styblinski_tang, bounds, rng=1)
     >>> result.x, result.fun, result.nfev
-    array([-2.90353404, -2.90353406]), -78.33233140754282, 2000
+    array([-2.90353402, -2.90353405]), -78.33233140754281, 2000
 
     To stop the optimization early once a target objective value is reached,
     pass `f_min`:
 
-    >>> result = biteopt(styblinski_tang, bounds, f_min=-70, rng=rng)
+    >>> result = biteopt(styblinski_tang, bounds, f_min=-70, rng=1)
     >>> result.x, result.fun, result.nfev
-    array([-3.06877089, -3.06877089]), -77.33495993486557, 31
+    array([-2.67348466, -2.67348466]), -76.64070151847848, 38
     """
     if not callable(func):
         raise TypeError("func must be callable")
