@@ -78,7 +78,7 @@ def make_system(A, M, x0, b, nd_support=False):
     if (N := A.shape[-2]) != A.shape[-1]:
         raise ValueError(
             f"expected square matrix or batch of square matrices, "
-            f"but got shape={(A.shape,)}"
+            f"but got shape={A.shape}"
         )
 
     xp = A._xp
