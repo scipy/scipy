@@ -58,7 +58,8 @@ Call for Contributions
 
 We appreciate and welcome contributions. Small improvements or fixes are always appreciated; issues labeled as "good
 first issue" may be a good starting point. Have a look at `our contributing
-guide <https://scipy.github.io/devdocs/dev/index.html>`__.
+guide <https://scipy.github.io/devdocs/dev/index.html>`__ and familiarize yourself
+with `our AI policy <https://scipy.github.io/devdocs/dev/conduct/ai_policy.html>`__.
 
 Writing code isn’t the only way to contribute to SciPy. You can also:
 
