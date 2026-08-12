@@ -227,7 +227,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             data = [_get_from_last_axis(sample, i, xp=xp) for sample in data]
             return unpaired_statistic(*data, axis=axis)
 
-        data_iv = [xp.arange(n)]
+        data_iv = [xp.arange(n, device=xp_device(data_iv[0]))]
 
     confidence_level_float = float(confidence_level)
 
@@ -1487,7 +1487,7 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     for indices in _batch_generator(perm_generator, batch=batch):
         # Creating a tensor from a list of numpy.ndarrays is extremely slow...
         indices = np.asarray(indices)
-        indices = xp.asarray(indices)
+        indices = xp.asarray(indices, device=xp_device(data))
 
         # `indices` is 2D: each row is a permutation of the indices.
         # We use it to index `data` along its last axis, which corresponds
@@ -1542,7 +1542,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     null_distribution = []
 
     for indices in batched_perm_generator:
-        indices = xp.asarray(indices)
+        indices = xp.asarray(indices, device=xp_device(data[0]))
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
         # for samples, and the last is for observations. Swap the first two
@@ -2309,7 +2309,7 @@ class PermutationMethod(ResamplingMethod):
         self._random_state = val
 
     @property
-    def rng(self):  # noqa: F811
+    def rng(self):
         return self._rng
 
     def __init__(self, n_resamples=9999, batch=None, random_state=None, *, rng=None):
@@ -2400,7 +2400,7 @@ class BootstrapMethod(ResamplingMethod):
         self._random_state = val
 
     @property
-    def rng(self):  # noqa: F811
+    def rng(self):
         return self._rng
 
     def __init__(self, n_resamples=9999, batch=None, random_state=None,

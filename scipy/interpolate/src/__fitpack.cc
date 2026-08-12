@@ -1154,7 +1154,7 @@ fpbacp( /* inputs*/
  *
  */
 pair_t
-_split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals)
+_split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals, bool periodic)
 {
     /*
      * c  search for knot interval t(number+k) <= x <= t(number+k+1) where
@@ -1169,8 +1169,17 @@ _split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals
 
     std::vector<double> fparts;
     double fpart = 0.0;
+    int64_t m = x.nelem;
+    // FITPACK performs the split using only the first m-1 elements of x
+    // Refer:
+    // https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L546
+    // and,
+    // https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L348
+    if (periodic) {
+        m--;
+    }
 
-    for(int64_t i=0; i < x.nelem; i++) {
+    for(int64_t i=0; i < m; i++) {
         double xv = x(i);
         double rv = residuals(i);
         fpart += rv;
@@ -1218,7 +1227,8 @@ double
 fpknot(const double *x_ptr, int64_t m,
        const double *t_ptr, int64_t len_t,
        int k,
-       const double *residuals_ptr)
+       const double *residuals_ptr,
+       bool periodic)
 {
     auto x = ConstRealArray1D(x_ptr, m);
     auto t = ConstRealArray1D(t_ptr, len_t);
@@ -1226,7 +1236,7 @@ fpknot(const double *x_ptr, int64_t m,
 
     std::vector<double> fparts;
     std::vector<int64_t> ix;
-    std::tie(fparts, ix) = _split(x, t, k, residuals);
+    std::tie(fparts, ix) = _split(x, t, k, residuals, periodic);
 
     int64_t idx_max = -101;
     double fpart_max = -1e100;
