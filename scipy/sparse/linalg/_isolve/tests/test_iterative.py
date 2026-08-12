@@ -352,7 +352,6 @@ def test_maxiter(case, xp, batch_A, batch_b):
         x, info = case.solver.impl(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
 
     empty = batch_A == (0,) or batch_b == (0, 1)
-    # TODO: is this correct?
     if not empty:
         assert len(residuals) == 1
         assert info == 1
@@ -387,7 +386,7 @@ def test_convergence(case, xp, batch_A, batch_b):
 
     if case.convergence:
         assert info == 0
-        fudge_factor = 1.01 if not is_numpy(xp) else 1
+        fudge_factor = 1.01
         _assert_success(A=A, x=x, b=b, xp=xp, rtol=fudge_factor * rtol)
     else:
         assert info != 0
