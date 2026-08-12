@@ -185,7 +185,7 @@ class TestArrayAPI:
             ):
                 xp_assert_equal(y, x, **options)
 
-        y = xp.broadcast_to(xp.asarray(1, dtype=dtype), shape)
+        y = xp.full(shape, 1, dtype=dtype)
         y = y if shape else y[()]
         options = dict(zip(kwarg_names, [True, False, False]))
         if y.dtype == x.dtype:
