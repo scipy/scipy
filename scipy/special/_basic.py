@@ -2104,7 +2104,6 @@ _BERNOULLI_EVEN = [1.0,
                    -7.950212504588525e+302,
                    1.3352784187354634e+306]
 
-count = 0
 def bernoulli(n):
     """Bernoulli numbers ``B_0`` through ``B_n`` (inclusive).
 
