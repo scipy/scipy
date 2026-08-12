@@ -204,7 +204,7 @@ class TestInputValidation:
 
     def test_func_returns_non_scalar(self):
         # The objective function must return a scalar; if it returns an array
-        # or other non-scalar that cannot be converted to a single value, 
+        # or other non-scalar that cannot be converted to a single value,
         # it must raise a ValueError.
         def non_scalar(x):
             return np.array([1.0, 2.0])

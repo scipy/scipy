@@ -70,7 +70,7 @@ def biteopt(
     and dynamically tracks their efficiency, favouring whichever works best for
     the current objective function. This contrasts with classical
     Differential Evolution, which uses a single fixed strategy throughout.
-    
+
     BiteOpt targets low- to medium-dimensional continuous problems with finite box
     bounds and requires no gradient information. Because the search is
     stochastic, results depend on the random stream; pass `rng` for
