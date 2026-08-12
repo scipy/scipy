@@ -1776,86 +1776,6 @@ add_newdoc(
     """)
 '''
 
-add_newdoc("hyp1f1",
-    r"""
-    hyp1f1(a, b, x, out=None)
-
-    Confluent hypergeometric function 1F1.
-
-    The confluent hypergeometric function is defined by the series
-
-    .. math::
-
-       {}_1F_1(a; b; x) = \sum_{k = 0}^\infty \frac{(a)_k}{(b)_k k!} x^k.
-
-    See [DLMF]_ for more details. Here :math:`(\cdot)_k` is the
-    Pochhammer symbol; see `poch`.
-
-    Parameters
-    ----------
-    a, b : array_like
-        Real parameters
-    x : array_like
-        Real or complex argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the confluent hypergeometric function
-
-    See Also
-    --------
-    hyperu : another confluent hypergeometric function
-    hyp0f1 : confluent hypergeometric limit function
-    hyp2f1 : Gaussian hypergeometric function
-
-    Notes
-    -----
-    For real values, this function uses the ``hyp1f1`` routine from the C++ Boost
-    library [2]_, for complex values a C translation of the specfun
-    Fortran library [3]_.
-
-    References
-    ----------
-    .. [DLMF] NIST Digital Library of Mathematical Functions
-              https://dlmf.nist.gov/13.2#E2
-    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-    .. [3] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    It is one when `x` is zero:
-
-    >>> sc.hyp1f1(0.5, 0.5, 0)
-    1.0
-
-    It is singular when `b` is a nonpositive integer.
-
-    >>> sc.hyp1f1(0.5, -1, 0)
-    inf
-
-    It is a polynomial when `a` is a nonpositive integer.
-
-    >>> a, b, x = -1, 0.5, np.array([1.0, 2.0, 3.0, 4.0])
-    >>> sc.hyp1f1(a, b, x)
-    array([-1., -3., -5., -7.])
-    >>> 1 + (a / b) * x
-    array([-1., -3., -5., -7.])
-
-    It reduces to the exponential function when ``a = b``.
-
-    >>> sc.hyp1f1(2, 2, [1, 2, 3, 4])
-    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
-    >>> np.exp([1, 2, 3, 4])
-    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
-
-    """)
-
 add_newdoc("kn",
     r"""
     kn(n, x, out=None)
@@ -3021,4 +2941,3 @@ add_newdoc("_stirling2_inexact",
     r"""
     Internal function, do not use.
     """)
-
