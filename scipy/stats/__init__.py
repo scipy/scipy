@@ -630,13 +630,6 @@ from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
 from ._quantile import quantile, estimated_cdf
 
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import (
-    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, stats
-)
-
-
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
 from scipy._lib._testutils import PytestTester

@@ -3,22 +3,22 @@ from scipy._lib._util import DecimalNumber, IntNumber
 
 
 def _cy_wrapper_centered_discrepancy(
-        sample: np.ndarray, 
-        iterative: bool, 
+        sample: np.ndarray,
+        iterative: bool,
         workers: IntNumber,
 ) -> float: ...
 
 
 def _cy_wrapper_wrap_around_discrepancy(
         sample: np.ndarray,
-        iterative: bool, 
+        iterative: bool,
         workers: IntNumber,
 ) -> float: ...
 
 
 def _cy_wrapper_mixture_discrepancy(
         sample: np.ndarray,
-        iterative: bool, 
+        iterative: bool,
         workers: IntNumber,
 ) -> float: ...
 

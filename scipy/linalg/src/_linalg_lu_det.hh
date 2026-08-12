@@ -1,8 +1,7 @@
+/*
+ * Templated loops for `linalg.lu` and `linalg.det`
+ */
 #pragma once
-#include <cstring>
-#include <cstdint>
-#include <type_traits>
-#include "scipy_blas_defines.h"
 
 namespace sp_linalg {
 
