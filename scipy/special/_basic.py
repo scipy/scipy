@@ -2111,7 +2111,8 @@ def bernoulli(n):
     Parameters
     ----------
     n : int
-        Index of the last Bernoulli number to return.
+        Index of the last Bernoulli number to return. Non-integer values are cast to
+        integers.  Must be non-negative.
 
     Returns
     -------
@@ -2152,10 +2153,10 @@ def bernoulli(n):
     res[:2*i + 1:2] = _BERNOULLI_EVEN[:i + 1]
     if n > 0:
         res[1] = -0.5
-    if n >= 2*len_bernoulli_even:
-        res[2*len_bernoulli_even::4] = -np.inf
-        if n >= 2*len(_BERNOULLI_EVEN) + 2:
-            res[2*len_bernoulli_even + 2::4] = np.inf
+    if n >= (twice_len_bernoulli_even := 2*len_bernoulli_even):
+        res[twice_len_bernoulli_even::4] = -np.inf
+        if n >= twice_len_bernoulli_even + 2:
+            res[twice_len_bernoulli_even + 2::4] = np.inf
     return res
 
 

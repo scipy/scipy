@@ -14,6 +14,7 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
+import fractions
 import functools
 import itertools
 import operator
@@ -1568,11 +1569,31 @@ class TestKelvin:
                                      20.53068]),
                         atol=1.5e-4, rtol=0)
 
+def _fraction_to_float(fraction):
+    """
+    Convert a Fraction to a float, returning +/-inf on overflow.
+    """
+    try:
+        return float(fraction)
+    except OverflowError:
+        return math.inf if fraction > 0 else -math.inf
 
 class TestBernoulli:
     def test_bernoulli(self):
         brn = special.bernoulli(10)
         assert_equal(brn, array([1, -1/2, 1/6, 0, -1/30, 0, 1/42, 0, -1/30, 0, 5/66]))
+
+    def test_triangle_algorithm(self):
+        N = 269
+        refb_triangle_algorithm = [fractions.Fraction(1, i+1) for i in range(N + 1)]
+        for m in reversed(range(N)):
+            for n in range(N - m):
+                refb_triangle_algorithm[n+1+m] = (m+1)*(refb_triangle_algorithm[n+m] -
+                                                        refb_triangle_algorithm[n+m+1])
+        refb_triangle_algorithm[1] *= -1  # change from B^+ to B^-
+        ref = [_fraction_to_float(b) for b in refb_triangle_algorithm]
+        res = special.bernoulli(N)
+        assert_equal(res, ref)
 
 
 class TestBeta:
