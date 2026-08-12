@@ -81,9 +81,9 @@ def biteopt(
     bounds and requires no gradient information. Because the search is
     stochastic, results depend on the random stream; pass `rng` for
     reproducible runs. BiteOpt has proven to be very competitive especially
-    for nonlinear least squares problems [2].
+    for nonlinear least squares problems [2]_.
 
-    .. versionadded:: 1.19.0
+    .. versionadded:: 2.0.0
 
     References
     ----------
@@ -109,6 +109,7 @@ def biteopt(
     array([-2.90353406, -2.90353401]), -78.3323279095383, 2000  # may vary
 
     For reproducible results, pass a seed to `rng`:
+
     >>> rng = np.random.default_rng(1234)
     >>> result = biteopt(styblinski_tang, bounds, rng=rng)
     >>> result.x, result.fun, result.nfev
@@ -116,6 +117,7 @@ def biteopt(
 
     To stop the optimization early once a target objective value is reached,
     pass `f_min`:
+
     >>> result = biteopt(styblinski_tang, bounds, f_min=-70, rng=rng)
     >>> result.x, result.fun, result.nfev
     array([-3.06877089, -3.06877089]), -77.33495993486557, 31  # may vary
