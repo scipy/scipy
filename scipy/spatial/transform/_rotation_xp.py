@@ -550,7 +550,7 @@ def mean(
 
     # Relying on the eigh decomposition to normalize for us instead of dividing by N is
     # numerically worse. See #25891
-    K = K / xp.prod(xp.asarray(q.shape[len(keep_axes) :], device=device))
+    K /= xp.prod(xp.asarray(q.shape[len(keep_axes) :], device=device), dtype=K.dtype)
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
