@@ -198,7 +198,17 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
             R = np.empty_like(a1, shape=batch_shape + (K, N))
 
         if pivoting:
-            Rj = R, np.arange(N, dtype=np.int64 if HAS_ILP64 else np.int32)
+            if np.any(batch_shape == 0):
+                jpvt = np.empty(
+                    batch_shape + (N,), dtype=np.int64 if HAS_ILP64 else np.int32
+                )
+            else:
+                jpvt = np.tile(
+                    np.arange(N, dtype=np.int64 if HAS_ILP64 else np.int32),
+                    batch_shape + (1,),
+                )
+            Rj = R, jpvt
+
         else:
             Rj = R,
 

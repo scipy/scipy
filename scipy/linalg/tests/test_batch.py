@@ -215,14 +215,14 @@ class TestBatch:
         self.batch_test(
             linalg.svd, A, n_out=n_out,
             kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices),
-            test_zero_size=None
+            test_zero_size=True
         )
 
         A = get_random((5, 3, 2, 0), dtype=dtype, rng=rng)
         self.batch_test(
             linalg.svd, A, n_out=n_out,
             kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices),
-            test_zero_size=None
+            test_zero_size=True
         )
 
     @pytest.mark.parametrize('fun', [linalg.polar, linalg.rq])
@@ -240,7 +240,7 @@ class TestBatch:
         a = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         self.batch_test(lambda x: linalg.qr(x, mode=mode, pivoting=pivoting), a,
                         n_out=(1 if mode == 'r' else 2) + 1 if pivoting else 0,
-            test_zero_size=None)
+            test_zero_size=True)
 
     @pytest.mark.parametrize('pivoting', [True, False])
     @pytest.mark.parametrize('dtype', floating)
@@ -417,7 +417,7 @@ class TestBatch:
     def test_svdvals(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
-        self.batch_test(fun, A, test_zero_size=None)
+        self.batch_test(fun, A, test_zero_size=True)
 
     @pytest.mark.parametrize('fun_n_out', [(linalg.orthogonal_procrustes, 2),
                                            (linalg.khatri_rao, 1),
