@@ -44,7 +44,7 @@ def biteopt(
         ``1000 * n``, where ``n`` is the number of variables inferred from
         ``bounds``.
     depth : int, optional
-        Algorithm depth ``M``. ``1`` selects the plain BiteOpt algorithm, while
+        Algorithm depth. ``1`` selects the plain BiteOpt algorithm, while
         values ``> 1`` select the deeper BiteOptDeep variant. Expected range is
         ``[1, 36]``. Default is 1.
     f_min : float, optional
@@ -113,14 +113,14 @@ def biteopt(
     >>> rng = np.random.default_rng(1234)
     >>> result = biteopt(styblinski_tang, bounds, rng=rng)
     >>> result.x, result.fun, result.nfev
-    array([-2.90353404, -2.90353406]), -78.33233140754282, 2000. # may vary
+    array([-2.90353404, -2.90353406]), -78.33233140754282, 2000
 
     To stop the optimization early once a target objective value is reached,
     pass `f_min`:
 
     >>> result = biteopt(styblinski_tang, bounds, f_min=-70, rng=rng)
     >>> result.x, result.fun, result.nfev
-    array([-3.06877089, -3.06877089]), -77.33495993486557, 31  # may vary
+    array([-3.06877089, -3.06877089]), -77.33495993486557, 31
     """
     if not callable(func):
         raise TypeError("func must be callable")
