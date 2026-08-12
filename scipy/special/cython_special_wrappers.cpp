@@ -801,6 +801,8 @@ float boost_fdtri_float(float dfn, float dfd, float p) { return f_ppf_float(dfn,
 
 double boost_fdtri_double(double dfn, double dfd, double p) { return f_ppf_double(dfn, dfd, p); }
 
+double boost_hyp1f1_double(double a, double b, double x) { return hyp1f1_double(a, b, x); }
+
 float boost_log_gammainc_float(float a, float x) { return lgamma_p_float(a, x); }
 
 double boost_log_gammainc_double(double a, double x) { return lgamma_p_double(a, x); }
@@ -865,5 +867,4 @@ double boost_stdtr_double(double df, double t) { return t_cdf_double(df, t); }
 float boost_stdtrit_float(float df, float p) { return t_ppf_float(df, p); }
 
 double boost_stdtrit_double(double df, double p) { return t_ppf_double(df, p); }
-
 

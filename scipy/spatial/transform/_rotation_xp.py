@@ -548,6 +548,9 @@ def mean(
         w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
         K = (q * w).mT @ q
 
+    # Relying on the eigh decomposition to normalize for us instead of dividing by N is
+    # numerically worse. See #25891
+    K /= xp.prod(xp.asarray(q.shape[len(keep_axes) :], device=device), dtype=K.dtype)
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
