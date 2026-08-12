@@ -597,7 +597,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     `xmax`. This cautious approach ensures that a minimum near but distinct from
     the boundary isn't missed while also detecting whether or not the `xmax` is
     a minimizer when `xmax` is reached after a finite number of steps.
-    """  # noqa: E501
+    """
     callback = None  # works; I just don't want to test it
 
     temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax,

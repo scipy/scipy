@@ -5,6 +5,8 @@ __docformat__ = "restructuredtext en"
 __all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
@@ -281,10 +283,7 @@ class _csr_base(_cs_matrix):
         return res
 
     def _get_arrayXslice(self, row, col):
-        if col.step not in (1, None):
-            col = np.arange(*col.indices(self.shape[1]))
-            return self._get_arrayXarray(row, col)
-        return self._major_index_fancy(row)._get_submatrix(minor=col)
+        return self._major_index_fancy(row)._minor_slice(col)
 
     def _set_int(self, idx, x):
         self._set_many(0, idx, x)
@@ -319,13 +318,24 @@ def isspmatrix_csr(x):
     Examples
     --------
     >>> from scipy.sparse import csr_array, csr_matrix, coo_matrix, isspmatrix_csr
-    >>> isspmatrix_csr(csr_matrix([[5]]))
+    >>> isspmatrix_csr(csr_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_csr(csr_array([[5]]))
+    >>> isspmatrix_csr(csr_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_csr(coo_matrix([[5]]))
+    >>> isspmatrix_csr(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_csr` is being replaced by `self.format == "csr" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_csr function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, csr_matrix)
 
 

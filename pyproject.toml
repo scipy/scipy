@@ -156,14 +156,15 @@ coverage = [
 ]
 
 bench = [
-    # https://github.com/airspeed-velocity/asv/issues/1537
-    "asv==0.6.4",
+    # 0.6.6 regressed per-benchmark overhead ~7x, which pushes the CircleCI
+    # benchmark job past its time limit; revisit when that is fixed upstream
+    "asv==0.6.5",
     "pyfftw",
     "cffi", 
 ]
 
 doc = [
-    "sphinx>=5.0.0,<8.2.0",
+    "sphinx>=8.2.0,<8.3.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
@@ -270,14 +271,10 @@ PKG_CONFIG_PATH = "{project}"
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
 
 [tool.cibuildwheel.pyodide]
-# cibuildwheel 4.1.0 pins pyodide-build 0.35.0. Override to 0.36.0 to fix the
-# cross-build NumPy meson dependency detection. TODO: drop this once it makes
-# it to a released version of cibuildwheel
-dependency-versions = "packages: pyodide-build==0.36.0"
 before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
-test-command = "python -m pytest -vra --pyargs scipy -m 'not slow'"
-
+test-requires = ["pytest", "pytest-split", "hypothesis", "threadpoolctl", "pooch"]
+test-command = "bash {project}/tools/wheels/cibw_test_command_pyodide.sh"
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
 

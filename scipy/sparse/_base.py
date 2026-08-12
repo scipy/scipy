@@ -398,11 +398,11 @@ class _spbase(SparseABC):
     def T(self):
         """Transpose."""
         return self.transpose()
-    
+
     @property
     def mT(self):
         """Matrix transpose.
-        
+
         See Also
         --------
         scipy.sparse.matrix_transpose : equivalent function
@@ -1780,7 +1780,7 @@ def isspmatrix(x):
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csr_array, csr_matrix, isspmatrix
-    >>> isspmatrix(csr_matrix([[5]]))
+    >>> isspmatrix(csr_matrix([[5]]))  # doctest: +SKIP
     True
     >>> isspmatrix(csr_array([[5]]))
     False
