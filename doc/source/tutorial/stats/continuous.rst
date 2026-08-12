@@ -114,7 +114,7 @@ random vector :math:`\mathbf{x}` is
 
      f\left(\mathbf{x};\boldsymbol{\theta}\right)=\prod_{i=1}^{N}f\left(x_{i};\boldsymbol{\theta}\right).
 
-The maximum likelihood estimate of the parameters :math:`\boldsymbol{\theta}` is the parameter value that maximizes this function with :math:`\mathbf{x}` fixed and given by the data:
+The maximum likelihood estimate of the parameter :math:`\boldsymbol{\theta}` is the (vector) value that maximizes this function with :math:`\mathbf{x}` fixed and given by the data:
 
 .. math::
    :nowrap:
