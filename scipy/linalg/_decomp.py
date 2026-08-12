@@ -870,12 +870,6 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-def _eigvals_signature(a, b=None, overwrite_a=False, overwrite_b=False,
-                       check_finite=True, homogeneous_eigvals=False):
-    return "(i,i),(i,i)->(2,i)" if homogeneous_eigvals else "(i,i),(i,i)->(i)"
-
-
-@_apply_over_batch(('a', 2), ('b', 2), signature=_eigvals_signature)
 def eigvals(a, b=None, overwrite_a=False, overwrite_b=False,
             check_finite=True, homogeneous_eigvals=False):
     r"""
