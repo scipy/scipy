@@ -15,6 +15,7 @@ def biteopt(
     bounds: Iterable | Bounds,
     *,
     args: tuple = (),
+    callback: Callable[[np.ndarray], object] | None = None,
     maxfun: int | None = None,
     depth: int = 1,
     f_min: float = -np.inf,
@@ -33,6 +34,11 @@ def biteopt(
         ``(min, max)`` pairs for each element in ``x``. Bounds must be finite.
     args : tuple, optional
         Additional fixed parameters passed to the objective function.
+    callback : callable, optional
+        Called after each objective evaluation as ``callback(x)``, where ``x``
+        is the point that was just evaluated. If the callback raises
+        `StopIteration`, the optimization stops early and returns with
+        ``success=False``.
     maxfun : int, optional
         Maximum number of objective function evaluations. Default is
         ``1000 * n``, where ``n`` is the number of variables inferred from
@@ -116,6 +122,8 @@ def biteopt(
     """
     if not callable(func):
         raise TypeError("func must be callable")
+    if callback is not None and not callable(callback):
+        raise TypeError("callback must be callable")
 
     if not isinstance(bounds, Bounds):
         if isinstance(bounds, (list, tuple)):
@@ -213,6 +221,17 @@ def biteopt(
             1, # only one attempt, the best result is returned
             generator.bit_generator.capsule,
             f_min,
+            callback,
+        )
+
+    if result.get("callback_stopped", False):
+        return OptimizeResult(
+            x=np.asarray(result["x"]),
+            fun=result["fun"],
+            nfev=result["nfev"],
+            success=False,
+            status=99,
+            message="`callback` raised `StopIteration`.",
         )
 
     # BiteOpt is a fixed-budget stochastic optimizer. Its only intrinsic success

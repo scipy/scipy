@@ -141,6 +141,57 @@ class TestSolver:
             biteopt(objective, self.default_bounds, rng=0)
 
 
+class TestCallback:
+    def setup_method(self):
+        self.default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
+
+    def test_callback_called_once_per_evaluation(self):
+        class CountingCallback:
+            def __init__(self):
+                self.n_calls = 0
+
+            def __call__(self, x):
+                self.n_calls += 1
+                assert x.shape == (2,)
+
+        callback = CountingCallback()
+        res = biteopt(rosen, self.default_bounds, maxfun=200, rng=0,
+                      callback=callback)
+
+        assert callback.n_calls == res.nfev
+
+    def test_callback_stopiteration_stops_early(self):
+        stop_after = 10
+
+        class StopAfter:
+            def __init__(self, stop_after):
+                self.stop_after = stop_after
+                self.n_calls = 0
+
+            def __call__(self, x):
+                self.n_calls += 1
+                if self.n_calls == self.stop_after:
+                    raise StopIteration
+
+        callback = StopAfter(stop_after)
+        res_full = biteopt(rosen, self.default_bounds, maxfun=1000, rng=0)
+        res = biteopt(rosen, self.default_bounds, maxfun=1000, rng=0,
+                      callback=callback)
+
+        assert callback.n_calls == stop_after
+        assert res.success is False
+        assert res.message.startswith("`callback` raised `StopIteration`")
+        assert res.nfev >= stop_after
+        assert res.nfev < res_full.nfev
+
+    def test_callback_exception_propagates(self):
+        def callback(x):
+            raise ValueError("callback error")
+
+        with pytest.raises(ValueError, match="callback error"):
+            biteopt(rosen, self.default_bounds, rng=0, callback=callback)
+
+
 class TestInputValidation:
     def setup_method(self):
         self.default_bounds = [(-5.0, 5.0), (-5.0, 5.0)]
@@ -149,6 +200,11 @@ class TestInputValidation:
     def test_func_not_callable(self, not_callable):
         with pytest.raises(TypeError, match="func must be callable"):
             biteopt(not_callable, self.default_bounds)
+
+    @pytest.mark.parametrize("not_callable", [42, "callback", [1, 2, 3]])
+    def test_callback_not_callable(self, not_callable):
+        with pytest.raises(TypeError, match="callback must be callable"):
+            biteopt(rosen, self.default_bounds, callback=not_callable)
 
     def test_bounds_invalid_type(self):
         with pytest.raises(ValueError, match="bounds must be a sequence"):

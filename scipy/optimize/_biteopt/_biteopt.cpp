@@ -23,8 +23,26 @@ uint32_t numpy_rng_adapter(void* rng_data) {
 }
 
 // Context threaded through biteopt as the objective's ``void* data``.
+//
+// Callback design: the optional ``callback`` is invoked once per objective
+// *evaluation* (from the trampoline), passing the point that was just
+// evaluated. This deliberately does NOT implement SciPy's newer
+// ``callback(intermediate_result=...)`` convention: that interface fires once
+// per *iteration* with the best-so-far incumbent, whereas biteopt exposes no
+// per-iteration hook and the point handed to the trampoline is a trial
+// candidate that is usually not the incumbent. Feeding those trial points into
+// an ``intermediate_result`` would report a non-monotonic ``fun`` and an ``x``
+// that is not "best so far", so we keep the simpler ``callback(x)``
+// contract (matching ``scipy.optimize.direct``).
 struct CallbackContext {
     py::object func;        // the user-supplied Python objective
+    py::object callback;    // optional user callback called per evaluation
+    bool callback_stopped = false;  // callback raised StopIteration
+    // Mutable stop threshold read by biteopt each iteration (passed as f_minp).
+    // NaN disables it (all comparisons with NaN are false); a finite value
+    // enables early stop at that cost; the trampoline flips it to +inf to
+    // request a graceful stop after a StopIteration from the callback.
+    double f_stop_value = std::numeric_limits<double>::quiet_NaN();
     std::exception_ptr eptr;  // first exception raised by the objective, if any
 };
 
@@ -43,7 +61,7 @@ double trampoline(int N, const double* x, void* data) {
     // (no Python), and the captured exception is re-raised once biteopt_minimize
     // returns. For very large maxfun this delays the raise, but the wasted
     // iterations do no real work.
-    if (ctx->eptr) {
+    if (ctx->eptr || ctx->callback_stopped) {
         return std::numeric_limits<double>::quiet_NaN();
     }
 
@@ -56,7 +74,39 @@ double trampoline(int N, const double* x, void* data) {
         // corrupt biteopt's internal buffers. The cost is passed straight
         // through; biteopt sanitizes any NaN itself.
         py::array_t<double> arr(static_cast<size_t>(N), x);
-        return ctx->func(arr).cast<double>();
+        const double fx = ctx->func(arr).cast<double>();
+
+        // Invoke the optional user callback with the just-evaluated point.
+        // StopIteration is the sanctioned "please stop" signal across SciPy
+        // optimizers, so we treat it specially: instead of letting it propagate
+        // as an error (which the outer catch would capture and re-raise), we
+        // record the request and arm the stop threshold so biteopt winds down
+        // gracefully. This mirrors SciPy's ``_call_callback_maybe_halt``, which
+        // converts a callback StopIteration into a clean early termination
+        // (surfaced as ``success=False`` on the Python side).
+        // Any OTHER exception from the callback is a genuine error: it falls
+        // through to the outer catch and is re-raised verbatim, exactly like an
+        // exception raised by the objective itself.
+        if (!ctx->callback.is_none()) {
+            try {
+                ctx->callback(arr);
+            } catch (py::error_already_set& e) {
+                if (e.matches(PyExc_StopIteration)) {
+                    // Graceful stop: remember it and set the early-stop
+                    // threshold to +inf so biteopt's next
+                    // ``getBestCost() <= f_minp`` check trips and the run exits
+                    // without unwinding an exception through biteopt's
+                    // (non-exception-safe) core. Later trampoline entries
+                    // short-circuit at the top of this function.
+                    ctx->callback_stopped = true;
+                    ctx->f_stop_value = std::numeric_limits<double>::infinity();
+                } else {
+                    throw;
+                }
+            }
+        }
+
+        return fx;
     } catch (...) {
         // Capture the live Python exception (or any C++ exception, e.g. a
         // failed cast) and stop feeding biteopt real values.
@@ -73,7 +123,8 @@ py::object minimize(
     int depth,
     int attc,
     py::object bit_generator,
-    py::object f_min
+    py::object f_min,
+    py::object callback
 ) {
     const int N = static_cast<int>(lb.shape(0));
 
@@ -85,16 +136,17 @@ py::object minimize(
         throw py::error_already_set();
     }
 
-    // Optional early-stopping threshold: biteopt stops once the best objective
-    // value reaches f_min. A null pointer disables the criterion.
-    double f_min_value = f_min.cast<double>();
-    double* f_minp = nullptr;
-    if (std::isfinite(f_min_value)) {
-        f_minp = &f_min_value;
-    }
-
     CallbackContext ctx;
     ctx.func = func;
+    ctx.callback = callback;
+    // A finite f_min enables biteopt's early-stop threshold; otherwise it stays
+    // NaN (disabled). If callback(x) raises StopIteration the trampoline flips
+    // ctx.f_stop_value to +inf, so biteopt stops at its next threshold check
+    // without unwinding exceptions through biteopt internals.
+    double f_min_value = f_min.cast<double>();
+    if (std::isfinite(f_min_value)) {
+        ctx.f_stop_value = f_min_value;
+    }
 
     // Let biteopt write the best parameters straight into the output array's
     // buffer, avoiding an intermediate vector and a copy.
@@ -115,7 +167,7 @@ py::object minimize(
     const int evals = biteopt_minimize(
         N, &trampoline, &ctx, lb.data(), ub.data(),
         x_out.mutable_data(), &best_f, iter, depth, attc,
-        /*stopc=*/0, &numpy_rng_adapter, bitgen, f_minp
+        /*stopc=*/0, &numpy_rng_adapter, bitgen, &ctx.f_stop_value
     );
 
     // biteopt has returned and its objects have destructed normally; now it is
@@ -129,6 +181,7 @@ py::object minimize(
     result["x"] = x_out;
     result["fun"] = best_f;
     result["nfev"] = evals;
+    result["callback_stopped"] = ctx.callback_stopped;
     return result;
 }
 
@@ -139,7 +192,7 @@ PYBIND11_MODULE(_biteopt, m, py::mod_gil_not_used()) {
         "minimize", &minimize,
         py::arg("func"), py::arg("lb"), py::arg("ub"),
         py::arg("iter"), py::arg("depth"), py::arg("attc"),
-        py::arg("bit_generator"), py::arg("f_min")
+        py::arg("bit_generator"), py::arg("f_min"), py::arg("callback")
     );
     // Free-threading: minimize() uses only per-call state and holds the bit
     // generator's lock around the run (see _biteopt_py.py), so it carries no
