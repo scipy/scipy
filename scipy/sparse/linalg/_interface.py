@@ -247,13 +247,30 @@ class LinearOperator:
         self._xp = xp
 
     def __getstate__(self):
-        state = self.__dict__.copy()
-        state["_xp"] = state["_xp"].empty(0)
+        # Start with __dict__ (present unless a subclass suppresses it).
+        state = getattr(self, '__dict__', {}).copy()
+        # Also collect __slots__ attributes from every class in the MRO so
+        # that subclasses that store their state in __slots__ are pickled
+        # correctly.  Skip the standard bookkeeping slots and _xp, which is
+        # handled separately below.
+        _skip = {'__dict__', '__weakref__', '_xp'}
+        for cls in type(self).__mro__:
+            for slot in getattr(cls, '__slots__', ()):
+                if slot not in _skip and slot not in state:
+                    try:
+                        state[slot] = getattr(self, slot)
+                    except AttributeError:
+                        pass  # slot declared but not yet assigned
+        state["_xp"] = self._xp.empty(0)
         return state
 
     def __setstate__(self, state):
         self._xp = array_namespace(state.pop("_xp"))
-        self.__dict__.update(state)
+        # Restore all attributes: use setattr so that __slots__ on subclasses
+        # are populated correctly (self.__dict__.update would silently drop
+        # slot attributes).
+        for key, value in state.items():
+            setattr(self, key, value)
 
     def _init_dtype(self):
         """Determine the dtype by executing `matvec` on an `int8` test vector.

@@ -952,6 +952,34 @@ def test_pickle(xp):
         for k in A.__dict__:
             assert getattr(A, k) == getattr(B, k)
 
+
+def test_pickle_subclass_with_slots():
+    # GH-25871: __getstate__/__setstate__ must preserve __slots__ attributes
+    # from subclasses, not only __dict__ attributes.
+    import pickle
+
+    class DiagonalOperator(interface.LinearOperator):
+        __slots__ = ['_diagonal']
+
+        def __init__(self, diagonal):
+            diagonal = np.asarray(diagonal, dtype=np.float64)
+            self._diagonal = diagonal
+            super().__init__(dtype=diagonal.dtype, shape=(len(diagonal),) * 2)
+
+        def _matvec(self, x):
+            return self._diagonal * x
+
+    op = DiagonalOperator([1.0, 2.0, 3.0])
+    assert hasattr(op, '_diagonal')
+
+    op2 = pickle.loads(pickle.dumps(op))
+    assert hasattr(op2, '_diagonal'), (
+        "__slots__ attribute lost after pickle round-trip"
+    )
+    np.testing.assert_array_equal(op._diagonal, op2._diagonal)
+    np.testing.assert_array_equal(op2.matvec(np.ones(3)), [1.0, 2.0, 3.0])
+
+
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
     "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
