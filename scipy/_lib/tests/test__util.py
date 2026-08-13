@@ -17,7 +17,7 @@ from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _workers_wrapper,
-                              _item_for_scalar_function)
+                              _item_for_scalar_function, _RichResult)
 import scipy._external.array_api_extra as xpx
 from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
@@ -625,3 +625,18 @@ class TestTransitionToRNG:
         res3 = method(self, **{arg_name: None})
         assert_equal(res2, res1)
         assert_equal(res3, res1)
+
+
+def test_rich_result_empty_dict_value():
+    # Regression test for gh-25893: _RichResult with an empty-dict value
+    # crashed with ValueError when printed because _dict_formatter called
+    # max() on the empty key set.
+    res = _RichResult(options={})
+    assert repr(res) is not None  # must not raise
+    assert "{}" in repr(res)
+
+    # Same via the public OptimizeResult alias
+    from scipy.optimize import OptimizeResult
+    res2 = OptimizeResult(options={})
+    assert repr(res2) is not None  # must not raise
+    assert "{}" in repr(res2)
