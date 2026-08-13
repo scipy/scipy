@@ -2,7 +2,10 @@
 name = "scipy"
 description = "Fundamental algorithms for scientific computing in Python."
 authors = ["SciPy Developers <scipy-dev@python.org>"]
-channels = ["https://prefix.dev/conda-forge"]
+channels = [
+  "https://conda.anaconda.org/conda-forge/label/rust_dev",
+  "https://prefix.dev/conda-forge",
+]
 platforms = [
   "linux-64",
   "osx-arm64",
@@ -22,7 +25,7 @@ name = "pixi-build-python"
 version = "*"
 
 [package.build.config]
-compilers = ["c", "cxx"]
+compilers = ["c", "cxx", "rust"]
 
 [workspace.target.win.build-variants]
 c_compiler = ["clang-cl"] 
@@ -296,7 +299,11 @@ blas-devel = "*"
 # which we sometimes want to avoid,
 # e.g. when using Intel oneAPI
 [feature.build-deps-compilers]
-dependencies.pythran = "*"  # https://github.com/conda-forge/pythran-feedstock/issues/77
+dependencies = {
+  rust = "*",
+  pythran = "*",  # https://github.com/conda-forge/pythran-feedstock/issues/77
+}
+activation.env.CARGO_PKG_VERSION = "0.30.1"  # hacky workaround until we have https://github.com/mesonbuild/meson/pull/15837
 # minimally-activated gxx and clangxx on linux and osx respectively
 target.unix.dependencies.cxx-compiler = "2.*"
 target.linux.activation.env = {
