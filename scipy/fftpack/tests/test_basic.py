@@ -1,5 +1,8 @@
 # Created by Pearu Peterson, September 2002
 
+import subprocess
+import sys
+
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less)
 import pytest
@@ -144,6 +147,23 @@ class _TestFFTBase:
     def test_invalid_sizes(self):
         assert_raises(ValueError, fft, [])
         assert_raises(ValueError, fft, [[1,1],[2,2]], -5)
+
+
+def test_convolve_z_empty_input_does_not_crash():
+    code = """
+import numpy as np
+from scipy.fftpack import convolve
+
+result = convolve.convolve_z(np.zeros(0), np.zeros(0), np.zeros(0))
+assert result.shape == (0,)
+assert result.dtype == np.float64
+"""
+    result = subprocess.run(
+        [sys.executable, '-c', code],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 class TestDoubleFFT(_TestFFTBase):

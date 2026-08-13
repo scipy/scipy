@@ -108,6 +108,9 @@ def convolve_z(inout, omega_real, omega_imag, overwrite_x=False):
         raise ValueError(
             "inout and omega must be 1-dimensional arrays of the same length")
 
+    if n == 0:
+        return X_arr
+
     r2r_fftpack(X_arr, None, True, True, out=X_arr)
 
     X[0] *= wr[0] + wi[0]
