@@ -2596,6 +2596,13 @@ class TestOptimizeResultAttributes:
             # gh13001, OptimizeResult.message should be a str
             assert isinstance(res.message, str)
 
+    def test_repr_with_empty_dict_value(self):
+        # gh-25893: _dict_formatter raised ValueError on empty dict values
+        res = optimize.OptimizeResult(options={})
+        r = repr(res)
+        assert 'options' in r
+        assert '{}' in r
+
 
 def f1(z, *params):
     x, y = z
