@@ -289,8 +289,10 @@ static PyObject *rank_filter(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  PyArrayObject *in_arr = (PyArrayObject *)PyArray_FROM_OTF(
-      in_arr_obj, NPY_NOTYPE, NPY_ARRAY_IN_ARRAY);
+  // The filter dereferences the buffers directly, so the input must be in
+  // native byte order.
+  PyArrayObject *in_arr = (PyArrayObject *)PyArray_FROM_OF(
+      in_arr_obj, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_NOTSWAPPED);
   if (in_arr == NULL) {
     return NULL;
   }

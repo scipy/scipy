@@ -3449,3 +3449,26 @@ def test_rank_filter_1d_output_dtype(in_dtype, out_dtype):
 
     assert result is out
     xp_assert_equal(out, expected)
+
+
+@pytest.mark.parametrize('dtype', [np.float64, np.float32, np.int64,
+                                   np.int32, np.uint16])
+@pytest.mark.parametrize('swap_input, swap_output',
+                         [(True, False), (False, True), (True, True)],
+                         ids=['input', 'output', 'both'])
+def test_rank_filter_1d_byte_order(dtype, swap_input, swap_output):
+    # The 1-D fast path dereferences the buffers directly, so non-native byte
+    # order has to be converted rather than reinterpreted.
+    native = np.dtype(dtype)
+    swapped = native.newbyteorder()
+
+    values = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3]
+    data = np.asarray(values, dtype=swapped if swap_input else native)
+    expected = ndimage.median_filter(np.asarray(values, dtype=native), size=3)
+
+    out = np.zeros(len(values), dtype=swapped if swap_output else native)
+    ndimage.median_filter(data, size=3, output=out)
+    xp_assert_equal(out.astype(native), expected)
+
+    # ... and the same without an explicit output array
+    xp_assert_equal(ndimage.median_filter(data, size=3).astype(native), expected)
