@@ -1,0 +1,11 @@
+[package]
+name = "_levyst"
+version = "0.0.0"
+
+[lib]
+name = "_levyst"
+path = "scipy/stats/_levy_stable/src/levyst.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.29.0", features = ["extension-module"] }

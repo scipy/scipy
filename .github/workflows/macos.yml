@@ -66,10 +66,10 @@ jobs:
 
   test_accelerate:
     name: Accelerate, full, py3.14/npAny, spin
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+    # needs: get_commit_message
+    # if: >
+    #   needs.get_commit_message.outputs.message == 1
+    #   && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: macos-15
     strategy:
       matrix:

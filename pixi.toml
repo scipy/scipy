@@ -2,7 +2,10 @@
 name = "scipy"
 description = "Fundamental algorithms for scientific computing in Python."
 authors = ["SciPy Developers <scipy-dev@python.org>"]
-channels = ["https://prefix.dev/conda-forge"]
+channels = [
+  "https://conda.anaconda.org/conda-forge/label/rust_dev",
+  "https://prefix.dev/conda-forge",
+]
 platforms = [
   "linux-64",
   "osx-arm64",
@@ -22,7 +25,7 @@ name = "pixi-build-python"
 version = "*"
 
 [package.build.config]
-compilers = ["c", "cxx"]
+compilers = ["c", "cxx", "rust"]
 
 [workspace.target.win.build-variants]
 c_compiler = ["clang-cl"] 
@@ -279,6 +282,7 @@ blas-devel = "*"
 [feature.build-deps.target.unix.dependencies]
 c-compiler = "*"
 cxx-compiler = "*"
+rust = "*"
 
 [feature.build-deps.target.win-64.dependencies]
 clang-cl_win-64 = "*"
