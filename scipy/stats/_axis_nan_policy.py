@@ -640,6 +640,12 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if override['nan_propagation'] and (is_lazy_array(x) or contains_nan):
                     nan_out = xp.any(xp.isnan(x), axis=-1)
+                    # this could be
+                    # (xp.where(nan_out, xp.nan, res_i) for res_i in res)
+                    # but `ttest_ind` stores its `alternative`` as a scalar integer
+                    # in the test result. That is sort of a hack and could be improved
+                    # at some point, but in the meantime, leave "all" Python scalars -
+                    # which is just the `alternative` of `ttest_ind` AFAICT - alone.
                     res = ((xp.where(nan_out, xp.nan, res_i) if hasattr(res_i, 'shape')
                             else res_i) for res_i in res)
 

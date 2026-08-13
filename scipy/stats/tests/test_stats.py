@@ -5583,7 +5583,7 @@ class TestTTestInd:
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-        # check that nan in input array result in nan output
+        # check that nan in input array results in nan output
         anan = xp.asarray([[1, np.nan], [-1, 1]])
         res = stats.ttest_ind(anan, xp.zeros((2, 2)))
         xp_assert_equal(res.statistic, xp.asarray([0, xp.nan]))
@@ -6179,7 +6179,7 @@ class TestTTestIndMore:
             xp_assert_equal(t, xp.asarray(xp.nan))
             xp_assert_equal(p, xp.asarray(xp.nan))
 
-            # check that nan in input array result in nan output
+            # check that nan in input array results in nan output
             anan = xp.asarray([[1, xp.nan], [-1, 1]])
             t, p = stats.ttest_ind(anan, xp.zeros((2, 2)), equal_var=False)
             xp_assert_equal(t, xp.asarray([0., np.nan]))
@@ -6385,7 +6385,7 @@ class TestTTest1Samp:
                 # integers and floats. This is part of a larger dtype instability issue
                 # for integer outputs of stats functions; skip for now.
 
-                # check that nan in input array result in nan output
+                # check that nan in input array results in nan output
                 anan = xp.asarray([[1., np.nan], [-1., 1.]])
                 res = stats.ttest_1samp(anan, 0.)
                 xp_assert_equal(res.statistic, xp.asarray([0., xp.nan]))
