@@ -189,6 +189,8 @@ New features
   ``keepdims`` argument.
 - `scipy.stats.binomtest` now supports batching of ``k``, ``n``, and ``p``.
 
+- `scipy.stats.contingency.margins` and `scipy.stats.contingency.expected_freq`
+  now support the array API standard.
 
 *********************************
 Python Array API Standard Support
