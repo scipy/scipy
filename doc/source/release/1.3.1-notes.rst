@@ -1,0 +1,70 @@
+==========================
+SciPy 1.3.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.3.1 is a bug-fix release with no new features
+compared to 1.3.0.
+
+Authors
+=======
+
+* Matt Haberland
+* Geordie McBain
+* Yu Feng
+* Evgeni Burovski
+* Sturla Molden
+* Tapasweni Pathak
+* Eric Larson
+* Peter Bell
+* Carlos Ramos Carreño +
+* Ralf Gommers
+* David Hagen
+* Antony Lee
+* Ayappan P
+* Tyler Reddy
+* Pauli Virtanen
+
+A total of 15 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.3.1
+-----------------------
+
+* `#5040 <https://github.com/scipy/scipy/issues/5040>`__: BUG: Empty data handling of (c)KDTrees
+* `#9901 <https://github.com/scipy/scipy/issues/9901>`__: lsoda fails to detect stiff problem when called from solve_ivp
+* `#10206 <https://github.com/scipy/scipy/issues/10206>`__: sparse matrices indexing with scipy 1.3
+* `#10232 <https://github.com/scipy/scipy/issues/10232>`__: Exception in loadarff with quoted nominal attributes in scipy...
+* `#10292 <https://github.com/scipy/scipy/issues/10292>`__: DOC/REL: Some sections of the release notes are not nested correctly. 
+* `#10303 <https://github.com/scipy/scipy/issues/10303>`__: BUG: optimize: `linprog` failing TestLinprogSimplexBland::test_unbounded_below_no_presolve_corrected 
+* `#10376 <https://github.com/scipy/scipy/issues/10376>`__: TST: Travis CI fails (with pytest 5.0 ?)
+* `#10384 <https://github.com/scipy/scipy/issues/10384>`__: CircleCI doc build failing on new warnings
+* `#10398 <https://github.com/scipy/scipy/issues/10398>`__: Scipy 1.3.0 build broken in AIX
+* `#10501 <https://github.com/scipy/scipy/issues/10501>`__: BUG: scipy.spatial.HalfspaceIntersection works incorrectly
+* `#10514 <https://github.com/scipy/scipy/issues/10514>`__: BUG: cKDTree GIL handling is incorrect
+* `#10535 <https://github.com/scipy/scipy/issues/10535>`__: TST: master branch CI failures 
+* `#10572 <https://github.com/scipy/scipy/issues/10572>`__: BUG: ckdtree query_ball_point errors on discontiguous input
+* `#10597 <https://github.com/scipy/scipy/issues/10597>`__: BUG: No warning on PchipInterpolator changing from bernstein base to local power base
+
+Pull requests for 1.3.1
+-----------------------
+
+* `#10071 <https://github.com/scipy/scipy/pull/10071>`__: DOC: reconstruct SuperLU permutation matrices avoiding SparseEfficiencyWarning
+* `#10196 <https://github.com/scipy/scipy/pull/10196>`__: Fewer checks on xdata for curve_fit.
+* `#10207 <https://github.com/scipy/scipy/pull/10207>`__: BUG: Compressed matrix indexing should return a scalar
+* `#10233 <https://github.com/scipy/scipy/pull/10233>`__: Fix for ARFF reader regression (#10232)
+* `#10306 <https://github.com/scipy/scipy/pull/10306>`__: BUG: optimize: Fix for 10303
+* `#10309 <https://github.com/scipy/scipy/pull/10309>`__: BUG: Pass jac=None directly to lsoda
+* `#10377 <https://github.com/scipy/scipy/pull/10377>`__: TST, MAINT: adjustments for pytest 5.0
+* `#10379 <https://github.com/scipy/scipy/pull/10379>`__: BUG: sparse: set writeability to be forward-compatible with numpy>=1.17
+* `#10426 <https://github.com/scipy/scipy/pull/10426>`__: MAINT: Fix doc build bugs
+* `#10431 <https://github.com/scipy/scipy/pull/10431>`__: Update numpy version for AIX
+* `#10457 <https://github.com/scipy/scipy/pull/10457>`__: BUG: Allow ckdtree to accept empty data input
+* `#10503 <https://github.com/scipy/scipy/pull/10503>`__: BUG: spatial/qhull: get HalfspaceIntersection.dual_points from the correct array
+* `#10516 <https://github.com/scipy/scipy/pull/10516>`__: BUG: Use nogil contexts in cKDTree
+* `#10520 <https://github.com/scipy/scipy/pull/10520>`__: DOC: Proper .rst formatting for deprecated features and Backwards incompatible changes
+* `#10540 <https://github.com/scipy/scipy/pull/10540>`__: MAINT: Fix Travis and Circle 
+* `#10573 <https://github.com/scipy/scipy/pull/10573>`__: BUG: Fix query_ball_point with discontiguous input
+* `#10600 <https://github.com/scipy/scipy/pull/10600>`__: BUG: interpolate: fix broken conversions between PPoly/BPoly objects

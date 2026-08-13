@@ -1,0 +1,146 @@
+from . cimport sf_error
+
+from libc.math cimport NAN, isnan, isinf, isfinite
+
+cdef extern from "cdflib.h" nogil:
+    cdef struct TupleDDI:
+        double d1
+        double d2
+        int i1
+
+    cdef struct TupleDID:
+        double d1
+        int i1
+        double d2
+
+    cdef struct TupleDDID:
+        double d1
+        double d2
+        int i1
+        double d3
+
+    TupleDID cdff_which4(double, double, double, double);
+    TupleDID cdffnc_which3(double, double, double, double, double);
+    TupleDID cdffnc_which4(double, double, double, double, double);
+    TupleDID cdft_which3(double, double, double);
+
+
+cdef inline double get_result(
+        char *name,
+        char **argnames,
+        double result,
+        int status,
+        double bound,
+        int return_bound
+) noexcept nogil:
+    cdef char *arg
+    """Get result and perform error handling from cdflib output."""
+    if status < 0:
+        arg = argnames[-(status + 1)]
+        sf_error.error(name, sf_error.ARG,
+                       "Input parameter %s is out of range", arg)
+        return NAN
+    if status == 0:
+        return result
+    if status == 1:
+        sf_error.error(name, sf_error.OTHER,
+                       "Answer appears to be lower than lowest search bound (%g)", bound)
+        return bound if return_bound else NAN
+    if status == 2:
+        sf_error.error(name, sf_error.OTHER,
+                       "Answer appears to be higher than highest search bound (%g)", bound)
+        return bound if return_bound else NAN
+    if status == 3 or status == 4:
+        sf_error.error(name, sf_error.OTHER,
+                       "Two internal parameters that should sum to 1.0 do not.")
+        return NAN
+    if status == 10:
+        sf_error.error(name, sf_error.OTHER, "Computational error")
+        return NAN
+    sf_error.error(name, sf_error.OTHER, "Unknown error.")
+    return NAN
+
+
+cdef inline double fdtridfd(double dfn, double p, double f) noexcept nogil:
+    cdef:
+        double q = 1.0 - p
+        double result, bound
+        int status = 10
+        char *argnames[4]
+        TupleDID ret
+
+    if isnan(dfn) or isnan(p) or isnan(f):
+      return NAN
+
+    argnames[0] = "p"
+    argnames[1] = "q"
+    argnames[2] = "f"
+    argnames[3] = "dfn"
+
+    ret = cdff_which4(p, q, f, dfn)
+    result, status, bound = ret.d1, ret.i1, ret.d2
+    return get_result("fdtridfd", argnames, result, status, bound, 1)
+
+
+cdef inline double ncfdtridfd(double dfn, double p, double nc, double f) noexcept nogil:
+    cdef:
+        double q = 1.0 - p
+        double result, bound
+        int status = 10
+        char *argnames[5]
+        TupleDID ret
+
+    if isnan(dfn) or isnan(p) or isnan(nc) or isnan(f):
+      return NAN
+
+    argnames[0] = "p"
+    argnames[1] = "q"
+    argnames[2] = "f"
+    argnames[3] = "dfn"
+    argnames[4] = "nc"
+
+    ret = cdffnc_which4(p, q, f, dfn, nc)
+    result, status, bound = ret.d1, ret.i1, ret.d2
+    return get_result("ncfdtridfd", argnames, result, status, bound, 1)
+
+
+cdef inline double ncfdtridfn(double p, double dfd, double nc, double f) noexcept nogil:
+    cdef:
+        double q = 1.0 - p
+        double result, bound
+        int status = 10
+        char *argnames[5]
+        TupleDID ret
+
+    if isnan(p) or isnan(dfd) or isnan(nc) or isnan(f):
+      return NAN
+
+    argnames[0] = "p"
+    argnames[1] = "q"
+    argnames[2] = "f"
+    argnames[3] = "dfd"
+    argnames[4] = "nc"
+
+    ret = cdffnc_which3(p, q, f, dfd, nc)
+    result, status, bound = ret.d1, ret.i1, ret.d2
+    return get_result("ncfdtridfn", argnames, result, status, bound, 1)
+
+
+cdef inline double stdtridf(double p, double t) noexcept nogil:
+    cdef:
+        double q = 1.0 - p
+        double result, bound
+        int status = 10
+        char *argnames[3]
+        TupleDID ret
+
+    if isnan(p) or isnan(q) or isnan(t):
+        return NAN
+
+    argnames[0] = "p"
+    argnames[1] = "q"
+    argnames[2] = "t"
+
+    ret = cdft_which3(p, q, t)
+    result, status, bound = ret.d1, ret.i1, ret.d2
+    return get_result("stdtridf", argnames, result, status, bound, 1)

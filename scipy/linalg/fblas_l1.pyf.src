@@ -1,0 +1,480 @@
+!%f90 -*- f90 -*-
+! Signatures for f2py-wrappers of FORTRAN LEVEL 1 BLAS functions.
+!
+! Author: Pearu Peterson
+! Created: Jan-Feb 2002
+! Modified: Fabian Pedregosa, 2011
+!
+! Implemented:
+!
+!   rotg, rotmg, rot, rotm, swap, scal, copy, axpy, dot, dotu, dotc
+!   nrm2, asum, amax, iamax
+
+! NOTE: Avoiding wrappers hack does not work under 64-bit Gentoo system
+! with single precision routines, so they are removed.
+!
+! Shorthand notations
+!
+! <tchar=s,d,cs,zd>
+! <tchar2c=cs,zd>
+!
+! <prefix2=s,d>
+! <prefix2c=c,z>
+! <prefix3=s,sc>
+! <prefix4=d,dz>
+! <prefix6=s,d,c,z,c,z>
+!
+! <ftype2=real,double precision>
+! <ftype2c=complex,double complex>
+! <ftype3=real,complex>
+! <ftype4=double precision,double complex>
+! <ftypereal3=real,real>
+! <ftypereal4=double precision,double precision>
+! <ftype6=real,double precision,complex,double complex,\2,\3>
+! <ftype6creal=real,double precision,complex,double complex,\0,\1>
+!
+! <ctype2=float,double>
+! <ctype2c=complex_float,complex_double>
+! <ctype3=float,complex_float>
+! <ctype4=double,complex_double>
+! <ctypereal3=float,float>
+! <ctypereal4=double,double>
+! <ctype6=float,double,complex_float,complex_double,\2,\3>
+! <ctype6creal=float,double,complex_float,complex_double,\0,\1>
+!
+!
+! Level 1 BLAS
+!
+
+
+subroutine <prefix>rotg(a,b,c,s)
+  ! Computes the parameters for a Givens rotation.
+  !
+  ! Given the Cartesian coordinates (a, b) of a point, these routines return
+  ! the parameters c, s, r, and z associated with the Givens rotation. The
+  !  parameters c and s define a unitary matrix such that:
+  !
+  !                   ( c   s ) ( a )     ( r )
+  !                   (       ) (   )  =  (   )
+  !                   (-s   c ) ( b )  =  ( 0 )
+  !
+  ! The parameter z is defined such that if |a| > |b|, z is s; otherwise if c
+  ! is not 0 z is 1/c; otherwise z is 1.
+  !
+  !
+  ! Parameters
+  ! ----------
+  ! a : float or complex number
+  !    Provides the x-coordinate for the point.
+  !
+  ! b : float or complex number
+  !    Provides the y-coordinate.
+  !
+  ! Returns
+  ! -------
+  ! c, s :
+  !     Parameter c associated with the Givens rotation.
+  !
+  ! Notes
+  ! -----
+  !   Unlike the FORTRAN implementation, this function will not return
+  !   parameters r and z, as these can easily be computed from the
+  !   returned parameters.
+  !
+  callprotoargument <ctype>*,<ctype>*,<ctype>*,<ctype>*
+
+  <ftype> intent(in) :: a, b
+  <ftype> intent(out,out=c) :: c
+  <ftype> intent(out,out=s) :: s
+
+end subroutine <prefix>rotg
+
+subroutine <prefix2>rotmg(d1,d2,x1,y1,param)
+  ! Computes the parameters for a modified Givens rotation.
+  !
+  ! Given Cartesian coordinates (x1, y1) of an input vector, this
+  ! routine compute the components of a modified Givens
+  ! transformation matrix H that zeros the y-component of the
+  ! resulting vector:
+  !
+  !    [x]     [sqrt(d1) x1]
+  !    [ ] = H [           ]
+  !    [0]     [sqrt(d2) y1]
+  !
+
+  callstatement (*f2py_func)(&d1,&d2,&x1,&y1,param)
+  callprotoargument <ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*
+
+  <ftype2> intent(in) :: d1, d2, x1, y1
+  <ftype2> intent(out), dimension(5) :: param
+
+end subroutine <prefix2>rotmg
+
+
+subroutine <tchar>rot(n,x,offx,incx,y,offy,incy,c,s)
+  ! Applies a plane rotation with real cosine and complex sine to a
+  ! pair of complex vectors and returns the modified vectors.
+  !
+  ! x, y are input vectors and c, s are values that define a rotation:
+  !
+  !                [ c        s]
+  !                [           ]
+  !                [-conj(s)  c]
+  !
+  ! where c*c + s*conjg(s) = 1.0.
+  !
+
+  callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*
+
+  <ftype> dimension(*),intent(in,out,copy) :: x,y
+  <ftypereal> intent(in) :: c, s
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in), check(incy>0||incy<0) :: incy = 1
+  integer optional, intent(in), depend(x) :: offx=0
+  integer optional, intent(in), depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+  integer optional, intent(in), depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-1-offx)/abs(incx)+1
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end subroutine <tchar>rot
+
+
+subroutine <prefix2>rotm(n,x,offx,incx,y,offy,incy,param)
+  ! Performs rotation of points in the modified plane
+  !
+  ! Given two complex vectors x and y, each vector element of these vectors is
+  ! replaced as follows:
+  !
+  !      x(i) = H*x(i) + H*y(i)
+  !      y(i) = H*y(i) - H*x(i)
+  !
+  ! where H is a modified Givens transformation matrix whose values are stored
+  ! in the param(2) through param(5) array.
+
+  callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,param)
+  callprotoargument F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*
+
+  <ftype2> dimension(*), intent(in,out,copy) :: x, y
+  <ftype2> dimension(5), intent(in) :: param
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer optional, intent(in),depend(x) :: offx=0
+  integer optional, intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+  integer optional, intent(in),depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end subroutine <prefix2>rotm
+
+
+subroutine <prefix>swap(n,x,offx,incx,y,offy,incy)
+  ! Swap two arrays, `x` and `y`
+
+  callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
+
+  <ftype> dimension(*), intent(in,out) :: x, y
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer optional, intent(in),depend(x) :: offx=0
+  integer optional, intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+  integer optional, intent(in),depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end subroutine <prefix>swap
+
+
+subroutine <prefix>scal(n,a,x,offx,incx)
+  ! Computes the product of a vector by a scalar: y = a*x
+
+  callstatement (*f2py_func)(&n,&a,x+offx,&incx)
+  callprotoargument F_INT*,<ctype>*,<ctype>*,F_INT*
+
+  <ftype> intent(in):: a
+  <ftype> dimension(*), intent(in,out) :: x
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in), depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+  integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end subroutine <prefix>scal
+
+
+subroutine <tchar2c>scal(n,a,x,offx,incx)
+  ! Computes the product of a vector by a scalar, scales a complex
+  ! vector by a real constant
+  ! y = a*x
+
+  callstatement (*f2py_func)(&n,&a,x+offx,&incx)
+  callprotoargument F_INT*,<float,double>*,<complex_float, complex_double>*,F_INT*
+
+  <real,double precision> intent(in) :: a
+  <complex, double complex> dimension(*), intent(in,out,copy) :: x
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+  integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end subroutine <tchar2c>scal
+
+
+subroutine <prefix>copy(n,x,offx,incx,y,offy,incy)
+  ! Copy y <- x
+
+  callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
+
+  <ftype> dimension(*), intent(in) :: x
+  <ftype> dimension(*), intent(in,out) :: y
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer optional, intent(in),depend(x) :: offx=0
+  integer optional, intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+  integer optional, intent(in),depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end subroutine <prefix>copy
+
+
+subroutine <prefix>axpy(n,a,x,offx,incx,y,offy,incy)
+  ! Calculate z = a*x+y, where a is scalar.
+
+  callstatement (*f2py_func)(&n,&a,x+offx,&incx,y+offy,&incy)
+  callprotoargument F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*
+
+  <ftype> dimension(*), intent(in) :: x
+  <ftype> dimension(*), intent(in,out,out=z) :: y
+  <ftype> optional, intent(in):: a=<1.0,\0,(1.0\,0.0),\2>
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer optional, intent(in),depend(x) :: offx=0
+  integer optional, intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+  integer optional, intent(in),depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end subroutine <prefix>axpy
+
+
+function sdot(n,x,offx,incx,y,offy,incy) result (xy)
+  ! Computes a vector-vector dot product.
+
+  callstatement sdot_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument F_INT*,float*,F_INT*,float*,F_INT*
+  intent(c) sdot
+  fortranname F_FUNC(sdot,SDOT)
+
+  real dimension(*), intent(in) :: x
+  real dimension(*), intent(in) :: y
+  real sdot,xy
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer optional, intent(in),depend(x) :: offx=0
+  integer optional, intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+  integer optional, intent(in),depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end function sdot
+
+
+function ddot(n,x,offx,incx,y,offy,incy) result (xy)
+  ! Computes a vector-vector dot product.
+
+  callstatement ddot_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument F_INT*,double*,F_INT*,double*,F_INT*
+  intent(c) ddot
+  fortranname F_FUNC(ddot,DDOT)
+
+  double precision dimension(*), intent(in) :: x
+  double precision dimension(*), intent(in) :: y
+  double precision ddot,xy
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer optional, intent(in),depend(x) :: offx=0
+  integer optional, intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+  integer optional, intent(in),depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end function ddot
+
+
+subroutine <prefix2c>dotu(n,x,offx,incx,y,offy,incy,xy)
+
+  <ftype2c> optional,intent(out) :: xy
+  callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
+  fortranname <prefix2c>dotuwrp
+
+  <ftype2c> dimension(*),intent(in) :: x
+  <ftype2c> dimension(*),intent(in) :: y
+
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+
+  integer optional,intent(in),depend(x) :: offx=0
+  integer optional,intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+
+  integer optional,intent(in),depend(x,incx,offx,y,incy,offy) &
+       :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end subroutine <prefix2c>dotu
+
+
+subroutine <prefix2c>dotc(n,x,offx,incx,y,offy,incy,xy)
+
+  <ftype2c> optional,intent(out) :: xy
+  callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
+  fortranname <prefix2c>dotcwrp
+
+  <ftype2c> dimension(*),intent(in) :: x
+  <ftype2c> dimension(*),intent(in) :: y
+
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+
+  integer optional,intent(in),depend(x) :: offx=0
+  integer optional,intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+
+  integer optional,intent(in),depend(x,incx,offx,y,incy,offy) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end subroutine <prefix2c>dotc
+
+
+function <prefix3>nrm2(n,x,offx,incx) result(n2)
+
+  <ftypereal3> <prefix3>nrm2, n2
+
+  callstatement <prefix3>nrm2_return_value = (*f2py_func)(&n,x+offx,&incx)
+  callprotoargument F_INT*,<ctype3>*,F_INT*
+  intent(c) <prefix3>nrm2
+  fortranname F_FUNC(<prefix3>nrm2,<S,SC>NRM2)
+
+  <ftype3> dimension(*),intent(in) :: x
+
+  integer optional, intent(in),check(incx>0) :: incx = 1
+
+  integer optional,intent(in),depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+
+  integer optional,intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end function <prefix3>nrm2
+
+
+function <prefix4>nrm2(n,x,offx,incx) result(n2)
+
+  <ftypereal4> <prefix4>nrm2, n2
+
+  callstatement <prefix4>nrm2_return_value = (*f2py_func)(&n,x+offx,&incx)
+  callprotoargument F_INT*,<ctype4>*,F_INT*
+  intent(c) <prefix4>nrm2
+  fortranname F_FUNC(<prefix4>nrm2,<D,DZ>NRM2)
+
+  <ftype4> dimension(*),intent(in) :: x
+
+  integer optional, intent(in),check(incx>0) :: incx = 1
+
+  integer optional,intent(in),depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+
+  integer optional,intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end function <prefix4>nrm2
+
+
+function <prefix3>asum(n,x,offx,incx) result (s)
+  ! Computes the sum of magnitudes of the vector elements
+
+  callstatement <prefix3>asum_return_value = (*f2py_func)(&n,x+offx,&incx)
+  callprotoargument F_INT*,<ctype3>*,F_INT*
+  intent(c) <prefix3>asum
+  fortranname F_FUNC(<prefix3>asum,<S,SC>ASUM)
+
+  <ftype3> dimension(*), intent(in) :: x
+  <ftypereal3> <prefix3>asum,s
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in), depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+  integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end function <prefix3>asum
+
+
+function <prefix4>asum(n,x,offx,incx) result (s)
+  ! Computes the sum of magnitudes of the vector elements
+
+  callstatement <prefix4>asum_return_value = (*f2py_func)(&n,x+offx,&incx)
+  callprotoargument F_INT*,<ctype4>*,F_INT*
+  intent(c) <prefix4>asum
+  fortranname F_FUNC(<prefix4>asum,<D,DZ>ASUM)
+
+  <ftype4> dimension(*), intent(in) :: x
+  <ftypereal4> <prefix4>asum,s
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in), depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+  integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end function <prefix4>asum
+
+
+function i<prefix>amax(n,x,offx,incx) result(k)
+  ! Finds the index of the element with maximum absolute value.
+
+  callstatement i<prefix>amax_return_value = (*f2py_func)(&n,x+offx,&incx) - 1
+  callprotoargument F_INT*,<ctype>*,F_INT*
+
+  ! This is to avoid Fortran wrappers.
+  integer i<prefix>amax,k
+  fortranname F_FUNC(i<prefix>amax,I<S,D,C,Z>AMAX)
+  intent(c) i<prefix>amax
+  <ftype> dimension(*), intent(in) :: x
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in), depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+  integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end function i<prefix>amax
+

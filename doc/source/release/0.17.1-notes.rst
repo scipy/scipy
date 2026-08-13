@@ -1,0 +1,32 @@
+==========================
+SciPy 0.17.1 Release Notes
+==========================
+
+SciPy 0.17.1 is a bug-fix release with no new features compared to 0.17.0.
+
+
+Issues closed for 0.17.1
+------------------------
+
+- `#5817 <https://github.com/scipy/scipy/issues/5817>`__: BUG: skew, kurtosis return np.nan instead of "propagate"
+- `#5850 <https://github.com/scipy/scipy/issues/5850>`__: Test failed with sgelsy
+- `#5898 <https://github.com/scipy/scipy/issues/5898>`__: interpolate.interp1d crashes using float128
+- `#5953 <https://github.com/scipy/scipy/issues/5953>`__: Massive performance regression in cKDTree.query with L_inf distance...
+- `#6062 <https://github.com/scipy/scipy/issues/6062>`__: mannwhitneyu breaks backward compatibility in 0.17.0
+- `#6134 <https://github.com/scipy/scipy/issues/6134>`__: T test does not handle nans
+
+
+Pull requests for 0.17.1
+------------------------
+
+- `#5902 <https://github.com/scipy/scipy/pull/5902>`__: BUG: interpolate: make interp1d handle np.float128 again
+- `#5957 <https://github.com/scipy/scipy/pull/5957>`__: BUG: slow down with p=np.inf in 0.17 cKDTree.query
+- `#5970 <https://github.com/scipy/scipy/pull/5970>`__: Actually propagate nans through stats functions with nan_policy="propagate"
+- `#5971 <https://github.com/scipy/scipy/pull/5971>`__: BUG: linalg: fix lwork check in ``*gelsy``
+- `#6074 <https://github.com/scipy/scipy/pull/6074>`__: BUG: special: fixed violation of strict aliasing rules.
+- `#6083 <https://github.com/scipy/scipy/pull/6083>`__: BUG: Fix dtype for sum of linear operators
+- `#6100 <https://github.com/scipy/scipy/pull/6100>`__: BUG: Fix mannwhitneyu to be backward compatible
+- `#6135 <https://github.com/scipy/scipy/pull/6135>`__: Don't pass null pointers to LAPACK, even during workspace queries.
+- `#6148 <https://github.com/scipy/scipy/pull/6148>`__: stats: fix handling of nan values in T tests and kendalltau
+
+

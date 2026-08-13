@@ -1,0 +1,41 @@
+==========================
+SciPy 1.6.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.6.3 is a bug-fix release with no new features
+compared to 1.6.2.
+
+Authors
+=======
+
+* Peter Bell
+* Ralf Gommers
+* Matt Haberland
+* Peter Mahler Larsen
+* Tirth Patel
+* Tyler Reddy
+* Pamphile ROY +
+* Xingyu Liu +
+
+A total of 8 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.6.3
+-----------------------
+
+* `#13772 <https://github.com/scipy/scipy/issues/13772>`__: Divide by zero in distance.yule
+* `#13796 <https://github.com/scipy/scipy/issues/13796>`__: CI: prerelease_deps failures
+* `#13890 <https://github.com/scipy/scipy/issues/13890>`__: TST: spatial rotation failure in (1.6.3) wheels repo (ARM64)
+
+
+Pull requests for 1.6.3
+-----------------------
+
+* `#13755 <https://github.com/scipy/scipy/pull/13755>`__: CI: fix the matplotlib warning emitted during builing docs
+* `#13773 <https://github.com/scipy/scipy/pull/13773>`__: BUG: Divide by zero in yule dissimilarity of constant vectors
+* `#13799 <https://github.com/scipy/scipy/pull/13799>`__: CI/MAINT: deprecated np.typeDict
+* `#13819 <https://github.com/scipy/scipy/pull/13819>`__: substitute np.math.factorial with math.factorial
+* `#13895 <https://github.com/scipy/scipy/pull/13895>`__: TST: add random seeds in Rotation module

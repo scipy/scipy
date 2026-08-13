@@ -1,0 +1,77 @@
+==========================
+SciPy 1.5.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.5.2 is a bug-fix release with no new features
+compared to 1.5.1.
+
+Authors
+=======
+
+* Peter Bell
+* Tobias Biester +
+* Evgeni Burovski
+* Thomas A Caswell
+* Ralf Gommers
+* Sturla Molden
+* Andrew Nelson
+* ofirr +
+* Sambit Panda
+* Ilhan Polat
+* Tyler Reddy
+* Atsushi Sakai
+* Pauli Virtanen
+
+A total of 13 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.5.2
+-----------------------
+
+* `#3847 <https://github.com/scipy/scipy/issues/3847>`__: Crash of interpolate.splprep(task=-1)
+* `#7395 <https://github.com/scipy/scipy/issues/7395>`__: splprep segfaults if fixed knots are specified
+* `#10761 <https://github.com/scipy/scipy/issues/10761>`__: scipy.signal.convolve2d produces incorrect values for large arrays
+* `#11971 <https://github.com/scipy/scipy/issues/11971>`__: DOC: search in devdocs returns wrong link
+* `#12155 <https://github.com/scipy/scipy/issues/12155>`__: BUG: Fix permutation of distance matrices in scipy.stats.multiscale_graphcorr
+* `#12203 <https://github.com/scipy/scipy/issues/12203>`__: Unable to install on PyPy 7.3.1 (Python 3.6.9)
+* `#12316 <https://github.com/scipy/scipy/issues/12316>`__: negative scipy.spatial.distance.correlation
+* `#12422 <https://github.com/scipy/scipy/issues/12422>`__: BUG: slsqp: ValueError: failed to initialize intent(inout) array...
+* `#12428 <https://github.com/scipy/scipy/issues/12428>`__: stats.truncnorm.rvs() never returns a scalar in 1.5
+* `#12441 <https://github.com/scipy/scipy/issues/12441>`__: eigvalsh inconsistent eigvals= subset_by_index=
+* `#12445 <https://github.com/scipy/scipy/issues/12445>`__: DOC: scipy.linalg.eigh
+* `#12449 <https://github.com/scipy/scipy/issues/12449>`__: Warnings are not filtered in csr_matrix.sum()
+* `#12469 <https://github.com/scipy/scipy/issues/12469>`__: SciPy 1.9 exception in LSQSphereBivariateSpline
+* `#12487 <https://github.com/scipy/scipy/issues/12487>`__: BUG: optimize: incorrect result from approx_fprime
+* `#12493 <https://github.com/scipy/scipy/issues/12493>`__: CI: GitHub Actions for maintenance branches
+* `#12533 <https://github.com/scipy/scipy/issues/12533>`__: eigh gives incorrect results
+* `#12579 <https://github.com/scipy/scipy/issues/12579>`__: BLD, MAINT: distutils issues in wheels repo
+
+Pull requests for 1.5.2
+-----------------------
+
+* `#12156 <https://github.com/scipy/scipy/pull/12156>`__: BUG: Fix permutation of distance matrices in scipy.stats.multiscale_graphcorr
+* `#12238 <https://github.com/scipy/scipy/pull/12238>`__: BUG: Use 64-bit indexing in convolve2d to avoid overflow
+* `#12256 <https://github.com/scipy/scipy/pull/12256>`__: BLD: Build lsap as a single extension instead of extension +...
+* `#12320 <https://github.com/scipy/scipy/pull/12320>`__: BUG: spatial: avoid returning negative correlation distance
+* `#12383 <https://github.com/scipy/scipy/pull/12383>`__: ENH: Make cKDTree.tree more efficient
+* `#12392 <https://github.com/scipy/scipy/pull/12392>`__: DOC: update scipy-sphinx-theme
+* `#12430 <https://github.com/scipy/scipy/pull/12430>`__: BUG: truncnorm and geninvgauss never return scalars from rvs
+* `#12437 <https://github.com/scipy/scipy/pull/12437>`__: BUG: optimize: cast bounds to floats in new_bounds_to_old/old_bounds_to_new
+* `#12442 <https://github.com/scipy/scipy/pull/12442>`__: MAINT:linalg: Fix for input args of eigvalsh
+* `#12461 <https://github.com/scipy/scipy/pull/12461>`__: MAINT: sparse: write matrix/asmatrix wrappers without warning...
+* `#12478 <https://github.com/scipy/scipy/pull/12478>`__: BUG: fix array_like input defects and add tests for all functions...
+* `#12488 <https://github.com/scipy/scipy/pull/12488>`__: BUG: fix approx_derivative step size. Closes #12487
+* `#12500 <https://github.com/scipy/scipy/pull/12500>`__: CI: actions branch trigger fix
+* `#12501 <https://github.com/scipy/scipy/pull/12501>`__: CI: actions branch trigger fix
+* `#12504 <https://github.com/scipy/scipy/pull/12504>`__: BUG: cKDTreeNode use after free
+* `#12529 <https://github.com/scipy/scipy/pull/12529>`__: MAINT: allow graceful docs re-upload
+* `#12538 <https://github.com/scipy/scipy/pull/12538>`__: BUG:linalg: eigh type parameter handling corrected
+* `#12560 <https://github.com/scipy/scipy/pull/12560>`__: MAINT: truncnorm.rvs compatibility for \`Generator\`
+* `#12562 <https://github.com/scipy/scipy/pull/12562>`__: redo gh-12188: fix segfaults in splprep with fixed knots
+* `#12586 <https://github.com/scipy/scipy/pull/12586>`__: BLD: Add -std=c99 to sigtools to compile with C99
+* `#12590 <https://github.com/scipy/scipy/pull/12590>`__: CI: Add GCC 4.8 entry to travis build matrix
+* `#12591 <https://github.com/scipy/scipy/pull/12591>`__: BLD: fix cython error on master-branch cython

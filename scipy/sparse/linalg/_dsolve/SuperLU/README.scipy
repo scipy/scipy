@@ -1,0 +1,18 @@
+This directory contains a bundled version of SuperLU from
+https://github.com/xiaoyeli/superlu at
+commit 53afbff31d4a5340bb71aa15cf8a9186a7049c99.
+We use all .c and .h files except `mc64ad.c` which is license
+incompatible from the SRC folder and applied
+the patches from `scipychanges.patch` and `scipychanges_blas.patch`.
+
+To verify that the patch file is up-to-date, copy over the clean
+upstream sources, remove any files that aren't present upstream at all,
+and then apply it:
+
+```
+cp ~/code/tmp/superlu/SRC/* scipy/sparse/linalg/_dsolve/SuperLU/SRC/
+patch -p1 < scipy/sparse/linalg/_dsolve/SuperLU/scipychanges.patch
+patch -p1 < scipy/sparse/linalg/_dsolve/SuperLU/scipychanges_blas.patch
+```
+
+After that, `git diff` should show nothing changed.

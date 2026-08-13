@@ -1,0 +1,53 @@
+==========================
+SciPy 1.9.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.9.1 is a bug-fix release with no new features
+compared to 1.9.0. Notably, some important meson build
+fixes are included.
+
+Authors
+=======
+
+* Anirudh Dagar (1)
+* Ralf Gommers (12)
+* Matt Haberland (2)
+* Andrew Nelson (1)
+* Tyler Reddy (14)
+* Atsushi Sakai (1)
+* Eli Schwartz (1)
+* Warren Weckesser (2)
+
+A total of 8 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.9.1
+-----------------------
+
+* `#14517 <https://github.com/scipy/scipy/issues/14517>`__: scipy/linalg/tests/test_decomp.py::TestSchur::test_sort test...
+* `#16765 <https://github.com/scipy/scipy/issues/16765>`__: DOC: \`scipy.stats.skew\` no longer returns 0 on constant input
+* `#16787 <https://github.com/scipy/scipy/issues/16787>`__: BUG: Can't build 1.10 with mingw-w64 toolchain and numpy 1.21.6...
+* `#16813 <https://github.com/scipy/scipy/issues/16813>`__: BUG: scipy.interpolate interp1d extrapolate behaviour change...
+* `#16878 <https://github.com/scipy/scipy/issues/16878>`__: BUG: optimize.milp fails to execute when given exactly 3 constraints
+
+
+Pull requests for 1.9.1
+-----------------------
+
+* `#16709 <https://github.com/scipy/scipy/pull/16709>`__: BLD: make the way we count commits for version numbering more...
+* `#16736 <https://github.com/scipy/scipy/pull/16736>`__: REL: prep for SciPy 1.9.1
+* `#16749 <https://github.com/scipy/scipy/pull/16749>`__: BLD: install missing \`.pxd\` files, and update TODOs/FIXMEs...
+* `#16750 <https://github.com/scipy/scipy/pull/16750>`__: BLD: make OpenBLAS detection work with CMake
+* `#16755 <https://github.com/scipy/scipy/pull/16755>`__: TST: sparse.linalg: Loosen tolerance for the lobpcg test 'test_tolerance_float32'
+* `#16760 <https://github.com/scipy/scipy/pull/16760>`__: BLD: use a bit more idiomatic approach to constructing paths...
+* `#16768 <https://github.com/scipy/scipy/pull/16768>`__: DOC: stats.skew/kurtosis: returns NaN when input has only one...
+* `#16794 <https://github.com/scipy/scipy/pull/16794>`__: BLD/REL: on Windows use numpy 1.22.3 as the version to build...
+* `#16822 <https://github.com/scipy/scipy/pull/16822>`__: BUG/TST: linalg: Check the results of 'schur' more carefully.
+* `#16825 <https://github.com/scipy/scipy/pull/16825>`__: BUG: interpolate: fix "previous" and "next" extrapolate logic...
+* `#16862 <https://github.com/scipy/scipy/pull/16862>`__: BUG, DOC: Fix sphinx autosummary generation for \`odr\` and \`czt\`
+* `#16881 <https://github.com/scipy/scipy/pull/16881>`__: MAINT: optimize.milp: fix input validation when three constraints...
+* `#16901 <https://github.com/scipy/scipy/pull/16901>`__: MAINT: 1.9.1 backports
+* `#16904 <https://github.com/scipy/scipy/pull/16904>`__: BLD: update dependency ranges for meson-python and pybind11 for...

@@ -1,0 +1,37 @@
+==========================
+SciPy 0.16.1 Release Notes
+==========================
+
+SciPy 0.16.1 is a bug-fix release with no new features compared to 0.16.0.
+
+
+Issues closed for 0.16.1
+------------------------
+
+- `#5077 <https://github.com/scipy/scipy/issues/5077>`__: cKDTree not indexing properly for arrays with too many elements
+- `#5127 <https://github.com/scipy/scipy/issues/5127>`__: Regression in 0.16.0: solve_banded errors out in patsy test suite
+- `#5149 <https://github.com/scipy/scipy/issues/5149>`__: linalg tests apparently cause python to crash with numpy 1.10.0b1
+- `#5154 <https://github.com/scipy/scipy/issues/5154>`__: 0.16.0 fails to build on OS X; can't find Python.h
+- `#5173 <https://github.com/scipy/scipy/issues/5173>`__: failing stats.histogram test with numpy 1.10
+- `#5191 <https://github.com/scipy/scipy/issues/5191>`__: Scipy 0.16.x - TypeError: _asarray_validated() got an unexpected...
+- `#5195 <https://github.com/scipy/scipy/issues/5195>`__: tarballs missing documentation source
+- `#5363 <https://github.com/scipy/scipy/issues/5363>`__: FAIL: test_orthogonal.test_j_roots, test_orthogonal.test_js_roots
+
+
+Pull requests for 0.16.1
+------------------------
+
+- `#5088 <https://github.com/scipy/scipy/pull/5088>`__: BUG: fix logic error in cKDTree.sparse_distance_matrix
+- `#5089 <https://github.com/scipy/scipy/pull/5089>`__: BUG: Don't overwrite b in lfilter's FIR path
+- `#5128 <https://github.com/scipy/scipy/pull/5128>`__: BUG: solve_banded failed when solving 1x1 systems
+- `#5155 <https://github.com/scipy/scipy/pull/5155>`__: BLD: fix missing Python include for Homebrew builds.
+- `#5192 <https://github.com/scipy/scipy/pull/5192>`__: BUG: backport as_inexact kwarg to _asarray_validated
+- `#5203 <https://github.com/scipy/scipy/pull/5203>`__: BUG: fix uninitialized use in lartg 0.16 backport
+- `#5204 <https://github.com/scipy/scipy/pull/5204>`__: BUG: properly return error to fortran from ode_jacobian_function...
+- `#5207 <https://github.com/scipy/scipy/pull/5207>`__: TST: Fix TestCtypesQuad failure on Python 3.5 for Windows
+- `#5352 <https://github.com/scipy/scipy/pull/5352>`__: TST: sparse: silence warnings about boolean indexing
+- `#5355 <https://github.com/scipy/scipy/pull/5355>`__: MAINT: backports for 0.16.1 release
+- `#5356 <https://github.com/scipy/scipy/pull/5356>`__: REL: update Paver file to ensure sdist contents are OK for releases.
+- `#5382 <https://github.com/scipy/scipy/pull/5382>`__: 0.16.x backport: MAINT: work around a possible numpy ufunc loop...
+- `#5393 <https://github.com/scipy/scipy/pull/5393>`__: TST:special: bump tolerance levels for test_j_roots and test_js_roots
+- `#5417 <https://github.com/scipy/scipy/pull/5417>`__: MAINT: stats: move namedtuple creating outside function calls.
