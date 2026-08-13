@@ -41,6 +41,15 @@ class TestIsotonicRegression:
         # Only first 3 elements of r are changed.
         assert_allclose(r, [0, 6, 7, -1, -1, -1, -1, -1])
 
+    # related to gh-25886
+    @pytest.mark.parametrize("weights", [None, []])
+    @pytest.mark.parametrize("increasing", [True, False])
+    def test_empty_input(self, weights, increasing):
+        res = isotonic_regression([], weights=weights, increasing=increasing)
+        assert_equal(res.x, np.empty(0))
+        assert_equal(res.weights, np.empty(0))
+        assert_equal(res.blocks, [0])
+
     @pytest.mark.parametrize("y_dtype", [np.float64, np.float32, np.int64, np.int32])
     @pytest.mark.parametrize("w_dtype", [np.float64, np.float32, np.int64, np.int32])
     @pytest.mark.parametrize("w", [None, "ones"])
