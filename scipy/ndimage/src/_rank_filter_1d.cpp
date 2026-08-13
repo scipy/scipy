@@ -336,6 +336,14 @@ static PyObject *rank_filter(PyObject *self, PyObject *args) {
   if (rank_filter_status == -1) {
     PyErr_SetString(PyExc_MemoryError, "failed to allocate memory for rank filter");
   }
+  // NPY_ARRAY_INOUT_ARRAY2 implies NPY_ARRAY_WRITEBACKIFCOPY, so any temporary
+  // copy has to be flushed back explicitly. No-ops if no copy was made.
+  if (PyErr_Occurred()) {
+    PyArray_DiscardWritebackIfCopy(out_arr);
+  }
+  else {
+    PyArray_ResolveWritebackIfCopy(out_arr);
+  }
   Py_DECREF(in_arr);
   Py_DECREF(out_arr);
   if (PyErr_Occurred()) {
