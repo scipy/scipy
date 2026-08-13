@@ -5,7 +5,7 @@ import re
 import numpy as np
 import warnings
 
-from packaging import version
+from scipy._external.packaging_version import version
 
 
 def _parse_core_ndims(signature):

@@ -3,7 +3,7 @@ import pytest
 
 from numpy.testing import assert_equal
 from numpy._core._exceptions import UFuncTypeError
-from packaging import version
+from scipy._external.packaging_version import version
 # ufunc using special._ufuncs_tools._with_cache_optimization
 from scipy.special import mathieu_sem
 # raw ufunc without cache optimization
