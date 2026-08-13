@@ -34,7 +34,7 @@ from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.__config__ import CONFIG
 
-from .test_basic import parametrize_overwrite_arg
+from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -1370,6 +1370,99 @@ class TestEigh:
             assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
         else:
             assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("eigvals_only", [True, False])
+    @pytest.mark.parametrize("a_dtype", [int, float])
+    @pytest.mark.parametrize("a_order", ["C", "F"])
+    @pytest.mark.parametrize("driver", ["ev", "evd", "evr", "evd"])
+    def test_overwrite_regular(
+        self, overwrite_kw, eigvals_only, a_dtype, a_order, driver
+    ):
+        rng = np.random.default_rng(seed=12345)
+        n = 3
+
+        if a_dtype is not int:
+            a_base = rng.normal(size=(n, n))
+        else:
+            a_base = rng.integers(-10, 10, size=(n, n))
+        a = (a_base @ a_base.T).astype(a_dtype, order=a_order)
+        a_ref = a.copy()
+
+        # Solve and check correctness
+        if eigvals_only:
+            w_ref = eigh(a_ref, eigvals_only=True, driver=driver)
+            w_n = eigh(a, **overwrite_kw, eigvals_only=eigvals_only, driver=driver)
+            assert_allclose(w_ref, w_n, atol=1e-14)
+        else:
+            w_n, v_n = eigh(a, **overwrite_kw, eigvals_only=eigvals_only, driver=driver)
+            assert_allclose(a_ref @ v_n, v_n @ np.diag(w_n), atol=1e-14)
+
+
+        # Check overwrite behavior
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags["F_CONTIGUOUS"]
+
+        assert np.all(a == a_ref) != a_inplace
+        if not eigvals_only:
+            assert np.shares_memory(a, v_n) == a_inplace
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize("eigvals_only", [True, False])
+    @pytest.mark.parametrize("a_dtype", [int, float])
+    @pytest.mark.parametrize("a_order", ["C", "F"])
+    @pytest.mark.parametrize("b_dtype", [int, float])
+    @pytest.mark.parametrize("b_order", ["C", "F"])
+    @pytest.mark.parametrize("driver", ["gv", "gvd", "gvx"])
+    def test_overwrite_generalized(
+        self, overwrite_kw, overwrite_b_kw, eigvals_only,
+        a_dtype, a_order, b_dtype, b_order, driver
+    ):
+        rng = np.random.default_rng(seed=12345)
+        n = 3
+
+        if a_dtype is not int:
+            a_base = rng.normal(size=(n, n))
+        else:
+            a_base = rng.integers(-10, 10, size=(n, n))
+        a = (a_base @ a_base.T).astype(a_dtype, order=a_order)
+        a_ref = a.copy()
+
+        if b_dtype is not int:
+            b_base = rng.normal(size=(n, n))
+        else:
+            b_base = rng.integers(-10, 10, size=(n, n))
+        b = (b_base @ b_base.T).astype(b_dtype, order=b_order)
+        b_ref = b.copy()
+
+        # Solve and check correctness
+        if eigvals_only:
+            w_ref = eigh(a_ref, b_ref, eigvals_only=True, driver=driver)
+            w_n = eigh(
+                a, b, **overwrite_kw, **overwrite_b_kw,
+                eigvals_only=eigvals_only, driver=driver
+            )
+            assert_allclose(w_ref, w_n, atol=1e-14)
+        else:
+            w_n, v_n = eigh(
+                a, b, **overwrite_kw, **overwrite_b_kw,
+                eigvals_only=eigvals_only, driver=driver
+            )
+            assert_allclose(a_ref @ v_n, b_ref @ v_n @ np.diag(w_n), atol=1e-14)
+
+
+        # Check overwrite behavior
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags["F_CONTIGUOUS"]
+
+        assert np.all(a == a_ref) != a_inplace
+        if not eigvals_only:
+            assert np.shares_memory(a, v_n) == a_inplace
+
+        overwrite_b = overwrite_b_kw.get("overwrite_b", False)
+        b_inplace = overwrite_b and (b.dtype != int) and b.flags["F_CONTIGUOUS"]
+        assert np.all(b == b_ref) != b_inplace
 
 
 class TestSVD_GESDD:

@@ -927,14 +927,18 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (jobz != 'N') {
-        // XXX: account for `overwrite_x`
-        shape_1[ndim - 2] = N;
-        shape_1[ndim - 1] = M;
+        if (overwrite_a) {
+            Py_INCREF(ap_Am);
+            ap_Z = ap_Am;
+        } else {
+            shape_1[ndim - 2] = N;
+            shape_1[ndim - 1] = M;
 
-        ap_Z = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-        if (ap_Z == NULL) {
-            PyErr_NoMemory();
-            goto fail;
+            ap_Z = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
+            if (ap_Z == NULL) {
+                PyErr_NoMemory();
+                goto fail;
+            }
         }
     }
 
