@@ -11,21 +11,22 @@ class TestProcrustes:
     def get_data(self, xp):
         """creates inputs"""
         # an L
-        data1 = xp.asarray([[1, 3], [1, 2], [1, 1], [2, 1]])
+        data1 = xp.asarray([[1, 3], [1, 2], [1, 1], [2, 1]], dtype=xp.float64)
 
         # a larger, shifted, mirrored L
-        data2 = xp.asarray([[4, -2], [4, -4], [4, -6], [2, -6]])
+        data2 = xp.asarray([[4, -2], [4, -4], [4, -6], [2, -6]], dtype=xp.float64)
 
         # an L shifted up 1, right 1, and with point 4 shifted an extra .5
         # to the right
         # pointwise distance disparity with data1: 3*(2) + (1 + 1.5^2)
-        data3 = xp.asarray([[2, 4], [2, 3], [2, 2], [3, 2.5]])
+        data3 = xp.asarray([[2, 4], [2, 3], [2, 2], [3, 2.5]], dtype=xp.float64)
 
         # data4, data5 are standardized (trace(A*A') = 1).
         # procrustes should return an identical copy if they are used
         # as the first matrix argument.
-        shiftangle = xp.asarray(xp.pi / 8)
-        data4 = xp.asarray([[1., 0], [0, 1], [-1, 0], [0, -1]]) / math.sqrt(4)
+        data4 = xp.asarray([[1., 0], [0, 1], [-1, 0], [0, -1]],
+                           dtype=xp.float64) / math.sqrt(4)
+        shiftangle = xp.asarray(xp.pi / 8, dtype=xp.float64)
         data5 = xp.asarray([[xp.cos(shiftangle), xp.sin(shiftangle)],
                             [xp.cos(xp.pi / 2 - shiftangle),
                              xp.sin(xp.pi / 2 - shiftangle)],
@@ -45,7 +46,7 @@ class TestProcrustes:
         data1, data2, data3, data4, data5 = self.get_data(xp)
         a, b, disparity = procrustes(data1, data2)
         xp_assert_close(b, a)
-        xp_assert_close(disparity, 0., atol=1e-15)
+        xp_assert_close(disparity, xp.asarray(0., dtype=xp.float64), atol=1e-15)
 
         # if first mtx is standardized, leaves first mtx unchanged?
         m4, m5, disp45 = procrustes(data4, data5)
