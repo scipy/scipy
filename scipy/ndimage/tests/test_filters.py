@@ -3425,3 +3425,27 @@ def test_rank_filter_1d_output_writeback(make_output, dtype):
     assert unresolved == []
 
     xp_assert_equal(np.ascontiguousarray(out), reference)
+
+
+@pytest.mark.parametrize('in_dtype, out_dtype', [
+    (np.float64, np.float32),   # output itemsize smaller than the input's
+    (np.float32, np.float64),   # output itemsize larger than the input's
+    (np.float64, np.int64),     # same itemsize, different kind
+    (np.int64, np.float64),
+])
+def test_rank_filter_1d_output_dtype(in_dtype, out_dtype):
+    # The 1-D fast path reinterprets the output buffer using the input's dtype,
+    # so a differing output dtype must be converted rather than reinterpreted.
+    # Results must match the n-dimensional code path.
+    data = np.asarray([3, 1, 4, 1, 5, 9, 2, 6, 5, 3], dtype=in_dtype)
+
+    # reference: the same filter forced through the n-dimensional code path
+    expected = np.zeros((1, data.size), dtype=out_dtype)
+    ndimage.median_filter(data[np.newaxis, :], size=(1, 3), output=expected)
+    expected = expected[0]
+
+    out = np.zeros(data.size, dtype=out_dtype)
+    result = ndimage.median_filter(data, size=3, output=out)
+
+    assert result is out
+    xp_assert_equal(out, expected)
