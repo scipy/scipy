@@ -1,4 +1,5 @@
 from io import StringIO
+import pytest
 import tempfile
 
 import numpy as np
@@ -44,14 +45,16 @@ def assert_csc_almost_equal(r, l):
 
 
 class TestHBReader:
+    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_simple(self):
         m = hb_read(StringIO(SIMPLE), spmatrix=False)
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
         assert isinstance(m, sparray)
         m = hb_read(StringIO(SIMPLE), spmatrix=True)
         assert issparse(m) and not isinstance(m, sparray)
-        m = hb_read(StringIO(SIMPLE))  # default
-        assert issparse(m) and not isinstance(m, sparray)
+        with pytest.deprecated_call(match="The default value for `spmatrix"):
+            m = hb_read(StringIO(SIMPLE))  # default
+            assert issparse(m) and not isinstance(m, sparray)
 
 
 class TestHBReadWrite:
@@ -68,3 +71,10 @@ class TestHBReadWrite:
         for format in ('coo', 'csc', 'csr', 'bsr', 'dia', 'dok', 'lil'):
             arr = random_arr.asformat(format, copy=False)
             self.check_save_load(arr)
+
+    @pytest.mark.parametrize("dtype", [np.float64, np.int64])
+    def test_empty_roundtrip(self, dtype):
+        # gh-24082: nnz == 0 used to crash in HBInfo.from_data; the integer
+        # variant additionally exercised a mxtype/format inconsistency.
+        m = csc_array(np.zeros((2, 2), dtype=dtype))
+        self.check_save_load(m)

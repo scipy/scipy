@@ -123,6 +123,14 @@ def _set_doc(obj):
         obj.__doc__ = obj.__doc__ % _doc_parts
 
 
+def _set_doc_class(obj):
+    if obj.__doc__:
+        doc_parts = _doc_parts.copy()
+        doc_parts["params_basic"] = ""
+        doc_parts["params_extra"] = ""
+        obj.__doc__ = obj.__doc__ % doc_parts
+
+
 def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                  maxiter=None, f_tol=None, f_rtol=None, x_tol=None, x_rtol=None,
                  tol_norm=None, line_search='armijo', callback=None,
@@ -202,7 +210,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     # Solver tolerance selection
     gamma = 0.9
     eta_max = 0.9999
-    eta_treshold = 0.1
+    eta_threshold = 0.1
     eta = 1e-3
 
     for n in range(maxiter):
@@ -236,7 +244,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Adjust forcing parameters for inexact methods
         eta_A = gamma * Fx_norm_new**2 / Fx_norm**2
-        if gamma * eta**2 < eta_treshold:
+        if gamma * eta**2 < eta_threshold:
             eta = min(eta_max, eta_A)
         else:
             eta = min(eta_max, max(eta_A, gamma*eta**2))
@@ -420,7 +428,7 @@ class Jacobian:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, **kw):
         names = ["solve", "update", "matvec", "rmatvec", "rsolve",
@@ -441,13 +449,13 @@ class Jacobian:
     def aspreconditioner(self):
         return InverseJacobian(self)
 
-    def solve(self, v, tol=0):
+    def solve(self, v, /, tol=0):
         raise NotImplementedError
 
-    def update(self, x, F):
+    def update(self, x, F, /):
         pass
 
-    def setup(self, x, F, func):
+    def setup(self, x, F, func, /):
         self.func = func
         self.shape = (F.size, x.size)
         self.dtype = F.dtype
@@ -479,7 +487,7 @@ class InverseJacobian:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, jacobian):
         self.jacobian = jacobian
@@ -597,9 +605,9 @@ def asjacobian(J):
 
 class GenericBroyden(Jacobian):
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
-    def setup(self, x0, f0, func):
+    def setup(self, x0, f0, func, /):
         Jacobian.setup(self, x0, f0, func)
         self.last_f = f0
         self.last_x = x0
@@ -636,7 +644,7 @@ class LowRankMatrix:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, alpha, n, dtype):
         self.alpha = alpha
@@ -1403,7 +1411,7 @@ class KrylovJacobian(Jacobian):
     outer_k : int, optional
         Size of the subspace kept across LGMRES nonlinear iterations.
         See `scipy.sparse.linalg.lgmres` for details.
-    inner_kwargs : kwargs
+    kw : kwargs
         Keyword parameters for the "inner" Krylov solver
         (defined with `method`). Parameter names must start with
         the `inner_` prefix which will be stripped before passing on
@@ -1645,3 +1653,5 @@ linearmixing = _nonlin_wrapper('linearmixing', LinearMixing)
 diagbroyden = _nonlin_wrapper('diagbroyden', DiagBroyden)
 excitingmixing = _nonlin_wrapper('excitingmixing', ExcitingMixing)
 newton_krylov = _nonlin_wrapper('newton_krylov', KrylovJacobian)
+_set_doc_class(BroydenFirst)
+_set_doc_class(KrylovJacobian)

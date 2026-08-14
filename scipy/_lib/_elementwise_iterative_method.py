@@ -15,7 +15,7 @@
 import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
-from ._array_api import array_namespace, xp_size, xp_result_type
+from ._array_api import array_namespace, xp_size, xp_result_type, xp_device
 import scipy._external.array_api_extra as xpx
 
 _ESIGNERR = -1
@@ -145,7 +145,9 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     ----------
     work : _RichResult
         All variables that need to be retained between iterations. Must
-        contain attributes `nit`, `nfev`, and `success`. All arrays are
+        contain attributes `nit`, `nfev`, `success`, and `status` (an array
+        on the device of the input arrays, which anchors the device of the
+        result and bookkeeping arrays). All arrays are
         subject to being "compressed" if `preserve_shape is False`; nest
         arrays that should not be compressed inside another object (e.g.
         `dict` or `_RichResult`).
@@ -192,7 +194,6 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     preserve_shape : bool, default: False
         Whether to compress the attributes of `work` (to avoid unnecessary
         computation on elements that have already converged).
-
     Returns
     -------
     res : _RichResult
@@ -215,13 +216,16 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     cb_terminate = False
 
     # Initialize the result object and active element index array
+    device = xp_device(work.status)
     n_elements = math.prod(shape)
-    active = xp.arange(n_elements)  # in-progress element indices
-    res_dict = {i: xp.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
-    res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool)
-    res_dict['status'] = xp.full(n_elements, xp.asarray(_EINPROGRESS), dtype=xp.int32)
-    res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32)
-    res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32)
+    active = xp.arange(n_elements, device=device)  # in-progress element indices
+    res_dict = {i: xp.zeros(n_elements, dtype=dtype, device=device)
+                for i, j in res_work_pairs}
+    res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool, device=device)
+    res_dict['status'] = xp.full(n_elements, _EINPROGRESS, dtype=xp.int32,
+                                 device=device)
+    res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32, device=device)
+    res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32, device=device)
     res = _RichResult(res_dict)
     work.args = args
 
@@ -252,7 +256,7 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
         if preserve_shape:
             x = xp.reshape(x, (shape + (-1,)))
         f = func(x, *work.args)
-        f = xp.asarray(f, dtype=dtype)
+        f = xp.asarray(f, dtype=dtype, device=device)
         if preserve_shape:
             x = xp.reshape(x, x_shape)
             f = xp.reshape(f, x_shape)

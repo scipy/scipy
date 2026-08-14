@@ -30,7 +30,7 @@ class TestBatch:
     # Test batch support for most linalg functions
 
     def batch_test(self, fun, arrays, *, core_dim=2, n_out=1, kwargs=None, dtype=None,
-                   broadcast=True, check_kwargs=True):
+                   broadcast=True, check_kwargs=True, test_zero_size=True):
         # Check that all outputs of batched call `fun(A, **kwargs)` are the same
         # as if we loop over the separate vectors/matrices in `A`. Also check
         # that `fun` accepts `A` by position or keyword and that results are
@@ -72,19 +72,36 @@ class TestBatch:
             out_dtype = ref[k].dtype if dtype is None else dtype
             assert res[k].dtype == out_dtype
 
+        n_batch = len(batch_shape)
+        zero_size_in = [np.empty((0,) + array.shape[n_batch:], dtype=array.dtype)
+                        for array in arrays]
+        if test_zero_size is True:
+            zero_size_out = fun(*zero_size_in, **kwargs)
+            zero_size_out = (zero_size_out,) if n_out == 1 else zero_size_out
+            for res_k, ref_k in zip(zero_size_out, ref):
+                ref_k = np.empty((0,) + ref_k.shape, dtype=ref_k.dtype)
+                np.testing.assert_equal(res_k, ref_k)
+                # assert res_k.dtype == ref_k.dtype
+        elif test_zero_size is False:
+            fun_name = fun.__name__.lstrip('_')
+            message = f"`{fun_name}` does not support zero-size batches."
+            with pytest.raises(ValueError, match=message):
+                fun(*zero_size_in, **kwargs)
+
         return res2  # return original, non-tuplized result
 
     @pytest.mark.parametrize('dtype', floating)
     def test_expm_cond(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = rng.random((5, 3, 4, 4)).astype(dtype)
-        self.batch_test(linalg.expm_cond, A)
+        self.batch_test(linalg.expm_cond, A, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_issymmetric(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
-        res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3))
+        res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3),
+                              test_zero_size=False)
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to issymmetric
 
@@ -92,7 +109,8 @@ class TestBatch:
     def test_ishermitian(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
-        res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3))
+        res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3),
+                              test_zero_size=False)
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to ishermitian
 
@@ -125,7 +143,7 @@ class TestBatch:
     def test_null_space(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
-        self.batch_test(linalg.null_space, A)
+        self.batch_test(linalg.null_space, A, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_funm(self, dtype):
@@ -137,7 +155,8 @@ class TestBatch:
     def test_fractional_matrix_power(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5})
+        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5},
+                               test_zero_size=False)
         # test that `t` can be passed by position
         res2 = linalg.fractional_matrix_power(A, 1.5)
         np.testing.assert_equal(res1, res2)
@@ -148,7 +167,7 @@ class TestBatch:
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 3*np.eye(4)  # avoid complex output for real input
-        res1 = self.batch_test(linalg.logm, A)
+        res1 = self.batch_test(linalg.logm, A, test_zero_size=False)
         # test that `disp` can be passed by position
         res2 = linalg.logm(A)
         for res1i, res2i in zip(res1, res2):
@@ -164,8 +183,9 @@ class TestBatch:
     def test_matrix_balance(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.matrix_balance, A, n_out=2)
-        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs={'separate':True})
+        self.batch_test(linalg.matrix_balance, A, n_out=2, test_zero_size=False)
+        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs={'separate':True},
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_bandwidth(self, dtype):
@@ -182,7 +202,8 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
         A = A + 4*np.eye(4, dtype=dtype)  # ensure positive definite for Cholesky
-        self.batch_test(fun, A, n_out=n_out)
+        test_zero_size = (fun != linalg.ldl)
+        self.batch_test(fun, A, n_out=n_out, test_zero_size=test_zero_size)
 
     @pytest.mark.parametrize('compute_uv', [False, True])
     @pytest.mark.parametrize('full_matrices', [False, True])
@@ -193,21 +214,55 @@ class TestBatch:
         n_out = 3 if compute_uv else 1
         self.batch_test(
             linalg.svd, A, n_out=n_out,
-            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
+            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices),
+            test_zero_size=None
         )
 
         A = get_random((5, 3, 2, 0), dtype=dtype, rng=rng)
         self.batch_test(
             linalg.svd, A, n_out=n_out,
-            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
+            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices),
+            test_zero_size=None
         )
 
-    @pytest.mark.parametrize('fun', [linalg.polar, linalg.qr, linalg.rq])
+    @pytest.mark.parametrize('fun', [linalg.polar, linalg.rq])
     @pytest.mark.parametrize('dtype', floating)
     def test_polar_qr_rq(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, A, n_out=2)
+        self.batch_test(fun, A, n_out=2, test_zero_size=False)
+
+    @pytest.mark.parametrize('pivoting', [True, False])
+    @pytest.mark.parametrize('dtype', floating)
+    @pytest.mark.parametrize('mode', ['full', 'economic', 'r'])
+    def test_qr(self, mode, dtype, pivoting):
+        rng = np.random.default_rng(12345)
+        a = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        self.batch_test(lambda x: linalg.qr(x, mode=mode, pivoting=pivoting), a,
+                        n_out=(1 if mode == 'r' else 2) + 1 if pivoting else 0,
+            test_zero_size=None)
+
+    @pytest.mark.parametrize('pivoting', [True, False])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_raw(self, dtype, pivoting):
+        rng = np.random.default_rng(12345)
+        a = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        (q_raw, tau), r, *other = linalg.qr(a, mode="raw", pivoting=pivoting)
+
+        # return argument contains a tuple, hence `batch_test` is not applicable.
+        for i in range(a.shape[0]):
+            for j in range(a.shape[1]):
+                (q_raw_ij, tau_ij), r_ij, *other_ij = linalg.qr(
+                    a[i, j, :, :], mode="raw", pivoting=pivoting
+                )
+
+                assert_allclose(q_raw[i, j, :, :], q_raw_ij)
+                assert_allclose(tau[i, j, :], tau_ij)
+                assert_allclose(r[i, j, :, :], r_ij)
+
+                if pivoting:
+                    assert_allclose(other[0][i, j, :], other_ij[0])
+
 
     @pytest.mark.parametrize('cdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
@@ -277,7 +332,7 @@ class TestBatch:
     def test_schur_lu(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, A, n_out=2)
+        self.batch_test(fun, A, n_out=2, test_zero_size=False)
 
     @pytest.mark.parametrize('calc_q', [False, True])
     @pytest.mark.parametrize('dtype', floating)
@@ -285,7 +340,8 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         n_out = 2 if calc_q else 1
-        self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q))
+        self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q),
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('eigvals_only', [False, True])
     @pytest.mark.parametrize('dtype', floating)
@@ -294,13 +350,30 @@ class TestBatch:
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         n_out = 1 if eigvals_only else 2
         self.batch_test(linalg.eig_banded, A, n_out=n_out,
-                        kwargs=dict(eigvals_only=eigvals_only))
+                        kwargs=dict(eigvals_only=eigvals_only),
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_eigvals_banded(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.eigvals_banded, A)
+        self.batch_test(linalg.eigvals_banded, A, test_zero_size=False)
+
+    @pytest.mark.parametrize("include_B", [False, True])
+    @pytest.mark.parametrize("left", [False, True])
+    @pytest.mark.parametrize("right", [False, True])
+    @pytest.mark.parametrize("homogeneous_eigvals", [False, True])
+    @pytest.mark.parametrize("dtype", floating)
+    def test_eig(self, include_B, left, right, homogeneous_eigvals, dtype):
+        batch_shape = (3, 2)
+        core_shape = (4, 4)
+        rng = np.random.default_rng(3249823598235)
+        A = rng.random(batch_shape + core_shape).astype(dtype)
+        B = rng.random(batch_shape + core_shape).astype(dtype)
+        args = (A, B) if include_B else (A,)
+        kwargs = dict(left=left, right=right, homogeneous_eigvals=homogeneous_eigvals)
+        n_out = 1 + left + right
+        self.batch_test(linalg.eig, args, n_out=n_out, kwargs=kwargs)
 
     @pytest.mark.parametrize('two_in', [False, True])
     @pytest.mark.parametrize('fun_n_nout', [(linalg.eigh, 1), (linalg.eigh, 2),
@@ -324,14 +397,15 @@ class TestBatch:
         E = get_random((2, 1, 4, 4), dtype=dtype, rng=rng)
         n_out = 2 if compute_expm else 1
         self.batch_test(linalg.expm_frechet, (A, E), n_out=n_out,
-                        kwargs=dict(compute_expm=compute_expm))
+                        kwargs=dict(compute_expm=compute_expm),
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_subspace_angles(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((1, 3, 4, 3), dtype=dtype, rng=rng)
         B = get_random((2, 1, 4, 3), dtype=dtype, rng=rng)
-        self.batch_test(linalg.subspace_angles, (A, B))
+        self.batch_test(linalg.subspace_angles, (A, B), test_zero_size=False)
         # just to show that A and B don't need to be broadcastable
         M, N, K = 4, 5, 3
         A = get_random((1, 3, M, N), dtype=dtype, rng=rng)
@@ -343,7 +417,7 @@ class TestBatch:
     def test_svdvals(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
-        self.batch_test(fun, A)
+        self.batch_test(fun, A, test_zero_size=None)
 
     @pytest.mark.parametrize('fun_n_out', [(linalg.orthogonal_procrustes, 2),
                                            (linalg.khatri_rao, 1),
@@ -357,7 +431,7 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         B = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, (A, B), n_out=n_out)
+        self.batch_test(fun, (A, B), n_out=n_out, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_cossin(self, dtype):
@@ -383,7 +457,7 @@ class TestBatch:
         A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
         B = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
         C = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
-        self.batch_test(linalg.solve_sylvester, (A, B, C))
+        self.batch_test(linalg.solve_sylvester, (A, B, C), test_zero_size=False)
 
     @pytest.mark.parametrize('fun', [linalg.solve_continuous_are,
                                      linalg.solve_discrete_are])
@@ -400,9 +474,9 @@ class TestBatch:
         r = r + 5*np.eye(5)
         e = np.eye(5)
         s = np.zeros((5, 5))
-        self.batch_test(fun, (a, b, q, r))
-        self.batch_test(fun, (a, b, q, r, e))
-        self.batch_test(fun, (a, b, q, r, e, s))
+        self.batch_test(fun, (a, b, q, r), test_zero_size=False)
+        self.batch_test(fun, (a, b, q, r, e), test_zero_size=False)
+        self.batch_test(fun, (a, b, q, r, e, s), test_zero_size=False)
 
         res = fun(a, b, q, r)
         ref = fun(a, b, q, r, s=s)
@@ -413,14 +487,14 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         T, Z = linalg.schur(A)
-        self.batch_test(linalg.rsf2csf, (T, Z), n_out=2)
+        self.batch_test(linalg.rsf2csf, (T, Z), n_out=2, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_cholesky_banded(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         ab = get_random((5, 4, 3, 6), dtype=dtype, rng=rng)
         ab[..., -1, :] = 10  # make diagonal dominant
-        self.batch_test(linalg.cholesky_banded, ab)
+        self.batch_test(linalg.cholesky_banded, ab, test_zero_size=False)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_block_diag(self, dtype):
@@ -450,7 +524,8 @@ class TestBatch:
         fun, n_out = fun_n_out
         d = get_random((3, 4, 5), dtype=dtype, rng=rng)
         e = get_random((3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False)
+        self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False,
+                        test_zero_size=False)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
@@ -616,7 +691,8 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
         self.batch_test(linalg.clarkson_woodruff_transform, A,
-                        kwargs=dict(sketch_size=3, rng=311224))
+                        kwargs=dict(sketch_size=3, rng=311224),
+                        test_zero_size=False)
 
     def test_clarkson_woodruff_transform_sparse(self):
         rng = np.random.default_rng(8342310302941288912051)
@@ -625,14 +701,6 @@ class TestBatch:
         message = "Batch support for sparse arrays is not available."
         with pytest.raises(NotImplementedError, match=message):
             linalg.clarkson_woodruff_transform(A, sketch_size=3, rng=rng)
-
-    @pytest.mark.parametrize('f, args', [
-        (linalg.toeplitz, (np.ones((0, 4)),)),
-    ])
-    def test_zero_size_batch(self, f, args):
-        message = "does not support zero-size batches."
-        with pytest.raises(ValueError, match=message):
-            f(*args)
 
 
 @pytest.mark.parametrize(
@@ -704,4 +772,3 @@ def test_shapes_solve_like(func, core_shape):
     with pytest.raises(ValueError, match=pattern):
         # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
         func(a, b)
-

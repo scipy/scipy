@@ -24,7 +24,7 @@ lazy_xp_modules = [special]
 
 
 def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
-    """Skip tests for specific intersections of scipy.special functions 
+    """Skip tests for specific intersections of scipy.special functions
     vs. backends vs. dtypes vs. devices.
     Also suggest bespoke tweaks.
 
@@ -334,11 +334,11 @@ def test_repr(func):
 
 
 @pytest.mark.skipif(
-    version.parse(np.__version__) < version.parse("2.2"),
+    version.parse(np.__version__) < version.parse("2.2"),  # type:ignore[attr-defined]
     reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
 @pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
 def test_doc(func):
-    """xp_capabilities updates the docstring in place. 
+    """xp_capabilities updates the docstring in place.
     Make sure it does so exactly once, including when SCIPY_ARRAY_API is not set.
     """
     match = "has experimental support for Python Array API"

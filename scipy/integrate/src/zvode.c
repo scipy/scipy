@@ -645,18 +645,18 @@ zvindy(
  * @param iersl  Error flag: 0=success, 1=singular matrix (miter=3)
  */
 static void
-zvsol(zvode_common_struct_t* S, ZVODE_CPLX_TYPE* restrict wm, int* restrict iwm,
+zvsol(zvode_common_struct_t* S, ZVODE_CPLX_TYPE* restrict wm, CBLAS_INT* restrict iwm,
       ZVODE_CPLX_TYPE* restrict x, int* iersl)
 {
     *iersl = 0;
-    int ier = 0;
-    int int1 = 1;
+    CBLAS_INT ier = 0;
+    CBLAS_INT int1 = 1;
 
     switch (S->miter)
     {
         case 1:
         case 2: {
-            zgetrs_("N", &S->n, &int1, wm, &S->n, &iwm[30], x, &S->n, &ier);
+            BLAS_FUNC(zgetrs)("N", &(CBLAS_INT){S->n}, &int1, wm, &(CBLAS_INT){S->n}, &iwm[30], x, &(CBLAS_INT){S->n}, &ier);
             break;
         }
         case 3: {
@@ -695,10 +695,10 @@ zvsol(zvode_common_struct_t* S, ZVODE_CPLX_TYPE* restrict wm, int* restrict iwm,
         }
         case 4:
         case 5: {
-            int ml = iwm[0];
-            int mu = iwm[1];
-            int meband = 2 * ml + mu + 1;
-            zgbtrs_("N", &S->n, &ml, &mu, &int1, wm, &meband, &iwm[30], x, &S->n, &ier);
+            CBLAS_INT ml = iwm[0];
+            CBLAS_INT mu = iwm[1];
+            CBLAS_INT meband = 2 * ml + mu + 1;
+            BLAS_FUNC(zgbtrs)("N", &(CBLAS_INT){S->n}, &ml, &mu, &int1, wm, &meband, &iwm[30], x, &(CBLAS_INT){S->n}, &ier);
             break;
         }
     }
@@ -810,7 +810,7 @@ zvjac(
     ZVODE_CPLX_TYPE* restrict ftem,
     ZVODE_CPLX_TYPE* restrict savf,
     ZVODE_CPLX_TYPE* restrict wm,
-    int* restrict iwm,
+    CBLAS_INT* restrict iwm,
     zvode_func_t f,
     zvode_jac_t jac,
     int* ierpj,
@@ -836,13 +836,13 @@ zvjac(
         S->nje += 1;
         S->nslj = S->nst;
         S->jcur = 1;
-        int lenp = S->n * S->n;
+        CBLAS_INT lenp = S->n * S->n;
         for (int i = 0; i < lenp; i++) {
             wm[i] = ZVODE_cplx(0.0, 0.0);
         }
         jac(S->n, S->tn, y, 0, 0, wm, S->n, rpar, ipar);
         if (S->jsv == 1) {
-            zcopy_(&lenp, wm, &(int){1}, &wm[S->locjs - 1], &(int){1});
+            BLAS_FUNC(zcopy)(&lenp, wm, &(CBLAS_INT){1}, &wm[S->locjs - 1], &(CBLAS_INT){1});
         }
     }
 
@@ -876,23 +876,23 @@ zvjac(
             j1 += S->n;
         }
         S->nfe += S->n;
-        int lenp = S->n * S->n;
+        CBLAS_INT lenp = S->n * S->n;
         if (S->jsv == 1) {
-            zcopy_(&lenp, wm, &(int){1}, &wm[S->locjs - 1], &(int){1});
+            BLAS_FUNC(zcopy)(&lenp, wm, &(CBLAS_INT){1}, &wm[S->locjs - 1], &(CBLAS_INT){1});
         }
     }
 
     if ((jok == 1) && ((S->miter == 1) || (S->miter == 2))) {
         S->jcur = 0;
-        int lenp = S->n * S->n;
-        zcopy_(&lenp, &wm[S->locjs - 1], &(int){1}, wm, &(int){1});
+        CBLAS_INT lenp = S->n * S->n;
+        BLAS_FUNC(zcopy)(&lenp, &wm[S->locjs - 1], &(CBLAS_INT){1}, wm, &(CBLAS_INT){1});
     }
 
     if ((S->miter == 1) || (S->miter == 2)) {
         // Inline DZSCAL: Multiply Jacobian by scalar -HRL1 (real scalar × complex vector)
         // Use scalar * complex order to match Fortran: DA*ZX(I)
         double neg_hrl1 = -S->hrl1;
-        int lenp = S->n * S->n;
+        CBLAS_INT lenp = S->n * S->n;
         for (int i = 0; i < lenp; i++) {
 #if defined(_MSC_VER)
             wm[i] = _Cmulcr(wm[i], neg_hrl1);
@@ -910,8 +910,8 @@ zvjac(
             j += S->n + 1;
         }
         S->nlu += 1;
-        int ier = 0;
-        zgetrf_(&S->n, &S->n, wm, &S->n, &iwm[30], &ier);
+        CBLAS_INT ier = 0;
+        BLAS_FUNC(zgetrf)(&(CBLAS_INT){S->n}, &(CBLAS_INT){S->n}, wm, &(CBLAS_INT){S->n}, &iwm[30], &ier);
         if (ier != 0) {
             *ierpj = 1;
         }
@@ -964,12 +964,12 @@ zvjac(
     }
 
     // Set constants for MITER = 4 or 5.
-    int ml = iwm[0];
-    int mu = iwm[1];
-    int ml1 = ml + 1;
-    int mband = ml + mu + 1;
-    int meband = mband + ml;
-    int lenp = meband * S->n;
+    CBLAS_INT ml = iwm[0];
+    CBLAS_INT mu = iwm[1];
+    int ml1 = (int)ml + 1;
+    CBLAS_INT mband = ml + mu + 1;
+    CBLAS_INT meband = mband + ml;
+    CBLAS_INT lenp = meband * S->n;
 
     if ((jok == -1) && (S->miter == 4)) {
         // If JOK = -1 and MITER = 4, call JAC to evaluate Jacobian.
@@ -979,12 +979,12 @@ zvjac(
         for (int i = 0; i < lenp; i++) {
             wm[i] = ZVODE_cplx(0.0, 0.0);
         }
-        jac(S->n, S->tn, y, ml, mu, &wm[ml1 - 1], meband, rpar, ipar);
+        jac(S->n, S->tn, y, (int)ml, (int)mu, &wm[ml1 - 1], (int)meband, rpar, ipar);
         if (S->jsv == 1) {
             // Call ZACOPY equivalent - copy banded matrix
             for (int ic = 0; ic < S->n; ic++) {
-                zcopy_(&mband, &wm[ml1 - 1 + ic * meband], &(int){1},
-                       &wm[S->locjs - 1 + ic * mband], &(int){1});
+                BLAS_FUNC(zcopy)(&mband, &wm[ml1 - 1 + ic * meband], &(CBLAS_INT){1},
+                       &wm[S->locjs - 1 + ic * mband], &(CBLAS_INT){1});
             }
         }
     }
@@ -994,8 +994,8 @@ zvjac(
         S->nje += 1;
         S->nslj = S->nst;
         S->jcur = 1;
-        int mba = int_min(mband, S->n);
-        int meb1 = meband - 1;
+        int mba = int_min((int)mband, S->n);
+        int meb1 = (int)meband - 1;
         double fac = zvnorm(S->n, savf, ewt);
         double r0 = 1000.0 * fabs(S->h) * S->uround * (double)(S->n) * fac;
         if (r0 == 0.0) { r0 = 1.0; }
@@ -1013,9 +1013,9 @@ zvjac(
                 y[jj] = yh[jj];
                 double r = fmax(S->srur * cabs(y[jj]), r0 / ewt[jj]);
                 fac = 1.0 / r;
-                int i1 = int_max(jj - mu, 0);
-                int i2 = int_min(jj + ml, S->n - 1);
-                int ii = (jj + 1) * meb1 - ml;
+                int i1 = int_max(jj - (int)mu, 0);
+                int i2 = int_min(jj + (int)ml, S->n - 1);
+                int ii = (jj + 1) * meb1 - (int)ml;
                 for (int i = i1; i <= i2; i++) {
 #if defined(_MSC_VER)
                     wm[ii + i] = _Cmulcr(CMPLX_SUB(ftem[i], savf[i]), fac);
@@ -1029,7 +1029,7 @@ zvjac(
         if (S->jsv == 1) {
             // Call ZACOPY equivalent
             for (int ic = 0; ic < S->n; ic++) {
-                zcopy_(&mband, &wm[ml1 - 1 + ic * meband], &(int){1}, &wm[S->locjs - 1 + ic * mband], &(int){1});
+                BLAS_FUNC(zcopy)(&mband, &wm[ml1 - 1 + ic * meband], &(CBLAS_INT){1}, &wm[S->locjs - 1 + ic * mband], &(CBLAS_INT){1});
             }
         }
     }
@@ -1038,7 +1038,7 @@ zvjac(
         S->jcur = 0;
         // Call ZACOPY equivalent
         for (int ic = 0; ic < S->n; ic++) {
-            zcopy_(&mband, &wm[S->locjs - 1 + ic * mband], &(int){1}, &wm[ml1 - 1 + ic * meband], &(int){1});
+            BLAS_FUNC(zcopy)(&mband, &wm[S->locjs - 1 + ic * mband], &(CBLAS_INT){1}, &wm[ml1 - 1 + ic * meband], &(CBLAS_INT){1});
         }
     }
 
@@ -1052,7 +1052,7 @@ zvjac(
         wm[i] = neg_hrl1 * wm[i];
 #endif
     }
-    int ii = mband - 1;
+    int ii = (int)mband - 1;
     for (int i = 0; i < S->n; i++) {
 #if defined(_MSC_VER)
         wm[ii] = CMPLX_ADD(wm[ii], ZVODE_cplx(1.0, 0.0));
@@ -1062,8 +1062,8 @@ zvjac(
         ii += meband;
     }
     S->nlu += 1;
-    int ier = 0;
-    zgbtrf_(&S->n, &S->n, &ml, &mu, wm, &meband, &iwm[30], &ier);
+    CBLAS_INT ier = 0;
+    BLAS_FUNC(zgbtrf)(&(CBLAS_INT){S->n}, &(CBLAS_INT){S->n}, &ml, &mu, wm, &meband, &iwm[30], &ier);
     if (ier != 0) {
         *ierpj = 1;
     }
@@ -1123,7 +1123,7 @@ zvnlsd(
     ZVODE_CPLX_TYPE* restrict savf,
     double* restrict ewt,
     ZVODE_CPLX_TYPE* acor,
-    int* restrict iwm,
+    CBLAS_INT* restrict iwm,
     ZVODE_CPLX_TYPE* restrict wm,
     zvode_func_t f,
     zvode_jac_t jac,
@@ -1171,7 +1171,7 @@ zvnlsd(
     while (1) {
         m = 0;
         delp = 0.0;
-        zcopy_(&S->n, yh, &(int){1}, y, &(int){1});
+        BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, yh, &(CBLAS_INT){1}, y, &(CBLAS_INT){1});
         f(S->n, S->tn, y, savf, rpar, ipar);
         S->nfe += 1;
 
@@ -1367,9 +1367,9 @@ zvnlsd(
  * Complex Arithmetic Notes:
  * -------------------------
  * - YH, Y, SAVF, VSAV, ACOR, WM are complex arrays (ZVODE_CPLX_TYPE*)
- * - Rescaling uses zscal_() instead of dscal_()
- * - YH updates use zaxpy_() instead of daxpy_()
- * - Copying uses zcopy_() instead of dcopy_()
+ * - Rescaling uses BLAS_FUNC(zscal)() instead of BLAS_FUNC(dscal)()
+ * - YH updates use BLAS_FUNC(zaxpy)() instead of BLAS_FUNC(daxpy)()
+ * - Copying uses BLAS_FUNC(zcopy)() instead of BLAS_FUNC(dcopy)()
  * - Predictor step updates YH in-place (complex addition, needs MSVC guards)
  * - All norms computed by zvnorm() (handles complex magnitude via cabs)
  * - EWT remains real (double*) - error weights are always real
@@ -1426,7 +1426,7 @@ zvstep(
     ZVODE_CPLX_TYPE* savf,
     ZVODE_CPLX_TYPE* restrict acor,
     ZVODE_CPLX_TYPE* restrict wm,
-    int* restrict iwm,
+    CBLAS_INT* restrict iwm,
     zvode_func_t f,
     zvode_jac_t jac,
     ZVODE_CPLX_TYPE* restrict rpar,
@@ -1436,7 +1436,7 @@ zvstep(
     const int kfc = -3, kfh = -7, mxncf = 10;
     const double addon = 1.0e-6, bias1 = 6.0, bias2 = 6.0, bias3 = 10.0, etacf = 0.25, etamin = 0.1, etamxf = 0.2,
                  etamx1 = 1.0e4, etamx2 = 10.0, etamx3 = 10.0, onepsm = 1.00001, thresh = 1.5;
-    int int1 = 1;
+    CBLAS_INT int1 = 1;
 
     // Local variables
     double told, r, dsm, flotl, ddn, dup, cnquot;
@@ -1867,7 +1867,7 @@ zvstep(
         S->nqwait--;
 
         if ((S->l != S->lmax) && (S->nqwait == 1)) {
-            zcopy_(&S->n, acor, &int1, &yh[(S->lmax - 1) * ldyh], &int1);
+            BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, acor, &int1, &yh[(S->lmax - 1) * ldyh], &int1);
             S->conp = S->tq[4];
         }
 
@@ -1938,7 +1938,7 @@ zvstep(
                         // Label 620: Choose order increase
                         S->eta = etaqp1;
                         S->newq = S->nq + 1;
-                        zcopy_(&S->n, acor, &int1, &yh[(S->lmax - 1) * ldyh], &int1);
+                        BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, acor, &int1, &yh[(S->lmax - 1) * ldyh], &int1);
                     } else {
                         // Label 610: Choose order decrease
                         S->eta = S->etaqm1;
@@ -2035,7 +2035,7 @@ zvstep(
  * @param iwork  Integer work array
  */
 static void
-zvode_set_optional_output(zvode_common_struct_t* S, double* rwork, int* iwork)
+zvode_set_optional_output(zvode_common_struct_t* S, double* rwork, CBLAS_INT* iwork)
 {
     rwork[10] = S->hu;
     rwork[11] = S->hnew;
@@ -2065,7 +2065,7 @@ zvode_set_optional_output(zvode_common_struct_t* S, double* rwork, int* iwork)
  * - EWT workspace (LEWT) indexes into RWORK (error weights are real)
  * - All optional inputs still in RWORK/IWORK (tolerances, h0, hmax, etc. are real)
  * - Calls ZEWSET, ZVHIN, ZVSTEP instead of D* versions
- * - Initial Y copy and interpolation use zcopy_() instead of dcopy_()
+ * - Initial Y copy and interpolation use BLAS_FUNC(zcopy)() instead of BLAS_FUNC(dcopy)()
  *
  * @param S       Pointer to ZVODE common struct (maintains state between calls)
  * @param f       User function computing dy/dt (complex)
@@ -2108,7 +2108,7 @@ zvode(
     int lzw,
     double* restrict rwork,
     int lrw,
-    int* restrict iwork,
+    CBLAS_INT* restrict iwork,
     int liw,
     zvode_jac_t jac,
     int mf,
@@ -2131,7 +2131,7 @@ zvode(
     int ihit;
 
     // BLAS/LAPACK interface
-    int int1 = 1;
+    CBLAS_INT int1 = 1;
 
     // ===================================================================
     // Block A: Initial validation on every call
@@ -2292,7 +2292,7 @@ zvode(
             lenwm = S->n;
         } else {  // MITER == 4 or 5
             mband = ml + mu + 1;
-            int lenp = (mband + ml) * S->n;
+            CBLAS_INT lenp = (mband + ml) * S->n;
             int lenj = mband * S->n;
             lenwm = lenp + jco * lenj;
             S->locjs = lenp + 1;
@@ -2350,7 +2350,7 @@ zvode(
             S->jstart = -1;
             if (S->nq > S->maxord) {
                 // MAXORD was reduced below NQ. Copy YH(*,MAXORD+2) into SAVF.
-                zcopy_(&S->n, &zwork[S->lwm], &int1, &zwork[S->lsavf], &int1);
+                BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lwm], &int1, &zwork[S->lsavf], &int1);
             }
         }
     }
@@ -2397,7 +2397,7 @@ zvode(
         S->nfe = 1;
 
         // Load the initial value vector in YH.
-        zcopy_(&S->n, y, &int1, &zwork[S->lyh], &int1);
+        BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, y, &int1, &zwork[S->lyh], &int1);
 
         // Load and invert the EWT array. (H is temporarily set to 1.0.)
         S->nq = 1;
@@ -2481,7 +2481,7 @@ zvode(
                 }
                 if ((S->tn - *tout) * S->h >= zero) {
                     // Already at or past TOUT
-                    zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                    BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                     *t = S->tn;
                     *istate = 2;
                     zvode_set_optional_output(S, rwork, iwork);
@@ -2516,7 +2516,7 @@ zvode(
                 hmx = fabs(S->tn) + fabs(S->h);
                 ihit = (fabs(S->tn - tcrit) <= hun * S->uround * hmx);
                 if (ihit) {
-                    zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                    BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                     *t = tcrit;
                     *istate = 2;
                     zvode_set_optional_output(S, rwork, iwork);
@@ -2539,7 +2539,7 @@ zvode(
                 hmx = fabs(S->tn) + fabs(S->h);
                 ihit = (fabs(S->tn - tcrit) <= hun * S->uround * hmx);
                 if (ihit) {
-                    zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                    BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                     *t = tcrit;
                     *istate = 2;
                     zvode_set_optional_output(S, rwork, iwork);
@@ -2561,7 +2561,7 @@ zvode(
         // Check for too many steps
         if ((S->nst - nslast) >= S->mxstep) {
             // ISTATE = -1: Maximum number of steps exceeded
-            zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+            BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
             *t = S->tn;
             *istate = -1;
             zvode_set_optional_output(S, rwork, iwork);
@@ -2575,7 +2575,7 @@ zvode(
         for (i = 0; i < S->n; i++) {
             if (rwork[S->lewt + i] <= zero) {
                 // ISTATE = -6: EWT(i) became zero
-                zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                 *t = S->tn;
                 *istate = -6;
                 zvode_set_optional_output(S, rwork, iwork);
@@ -2597,7 +2597,7 @@ zvode(
                 return;
             }
             // ISTATE = -2: Too much accuracy requested
-            zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+            BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
             *t = S->tn;
             *istate = -2;
             rwork[13] = tolsf;
@@ -2652,7 +2652,7 @@ zvode(
 
                     case 2:
                         // One-step mode, return after each step
-                        zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                        BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                         *t = S->tn;
                         *istate = 2;
                         zvode_set_optional_output(S, rwork, iwork);
@@ -2663,7 +2663,7 @@ zvode(
                         if ((S->tn - *tout) * S->h < zero) {
                             continue;  // Continue integration
                         }
-                        zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                        BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                         *t = S->tn;
                         *istate = 2;
                         zvode_set_optional_output(S, rwork, iwork);
@@ -2674,7 +2674,7 @@ zvode(
                         hmx = fabs(S->tn) + fabs(S->h);
                         ihit = (fabs(S->tn - tcrit) <= hun * S->uround * hmx);
                         if (ihit) {
-                            zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                            BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                             *t = tcrit;
                             *istate = 2;
                             zvode_set_optional_output(S, rwork, iwork);
@@ -2701,7 +2701,7 @@ zvode(
                         // One step mode with TCRIT
                         hmx = fabs(S->tn) + fabs(S->h);
                         ihit = (fabs(S->tn - tcrit) <= hun * S->uround * hmx);
-                        zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                        BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                         *t = S->tn;
                         if (ihit) {
                             *t = tcrit;
@@ -2731,7 +2731,7 @@ zvode(
                     }
                     iwork[15] = imxer;
                 }
-                zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                 *t = S->tn;
                 *istate = -4;
                 zvode_set_optional_output(S, rwork, iwork);
@@ -2758,7 +2758,7 @@ zvode(
                     }
                     iwork[15] = imxer;
                 }
-                zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                 *t = S->tn;
                 *istate = -5;
                 zvode_set_optional_output(S, rwork, iwork);
@@ -2771,7 +2771,7 @@ zvode(
                 // KFLAG < -2: Fatal error from ZVSTEP
                 // ===================================================
                 S->kuth = 1;
-                zcopy_(&S->n, &zwork[S->lyh], &int1, y, &int1);
+                BLAS_FUNC(zcopy)(&(CBLAS_INT){S->n}, &zwork[S->lyh], &int1, y, &int1);
                 *t = S->tn;
                 *istate = S->kflag;
                 zvode_set_optional_output(S, rwork, iwork);

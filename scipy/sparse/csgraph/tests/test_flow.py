@@ -71,6 +71,7 @@ def test_simple_graph(method):
     assert_array_equal(res.flow.toarray(), expected_flow)
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('method', methods)
 def test_return_type(method):
     graph = csr_array([[0, 5], [0, 0]])

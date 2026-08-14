@@ -165,7 +165,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     The *p*-values are not adjusted for the possibility of ties. When
     ties are present, the reported  ``'exact'`` *p*-values may be somewhat
     larger (i.e. more conservative) than the true *p*-value [2]_. The
-    ``'asymptotic'``` *p*-values, however, tend to be smaller (i.e. less
+    ``'asymptotic'`` *p*-values, however, tend to be smaller (i.e. less
     conservative) than the ``'exact'`` *p*-values.
 
     References

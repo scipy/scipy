@@ -14,20 +14,31 @@ from numpy.testing import assert_, assert_equal
 
 import numpy as np
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, make_xp_test_case, xp_assert_close, xp_assert_equal, xp_ravel,
-    is_numpy,
+    SCIPY_ARRAY_API, SCIPY_DEVICE, is_torch, xp_assert_close, is_lazy_array,
+    xp_assert_equal, xp_ravel, is_numpy, make_xp_pytest_marks, is_jax_array,
 )
 from scipy._external import array_api_extra as xpx
 import scipy.sparse as sparse
 
 import scipy.sparse.linalg._interface as interface
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse._sputils import matrix
 from scipy._lib._gcutils import assert_deallocated
 
+pytestmark = make_xp_pytest_marks(
+    (LinearOperator, "__init__"),
+    (LinearOperator, "matvec"),
+    (LinearOperator, "matmat"),
+    (LinearOperator, "dot"),
+    (LinearOperator, "rdot"),
+    (LinearOperator, "rmatvec"),
+    (LinearOperator, "rmatmat"),
+    aslinearoperator
+)
 
 def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
     rng = np.random.default_rng(rng)
-    min = np.broadcast_to(min, ndim)  # so min and max can be scalars or array-like 
+    min = np.broadcast_to(min, ndim)  # so min and max can be scalars or array-like
     max = np.broadcast_to(max, ndim)
     batch_shape = tuple(rng.integers(min_, max_+1) for min_, max_ in zip(min, max))
     shapes = np.repeat([batch_shape], nshapes, axis=0)
@@ -37,7 +48,7 @@ def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
         column[rng.integers(1, nshapes):] = 1
     # permute elements between shapes (while preserving overall batch shape)
     shapes = list(rng.permuted(shapes, axis=0))
-    # potentially trim preceeding 1s from a shape
+    # potentially trim preceding 1s from a shape
     for i in range(len(shapes)):
         shape = shapes[i]
         j = np.where(shape != 1)[0][0] if np.any(shape != 1) else ndim
@@ -48,8 +59,10 @@ def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
     assert np.broadcast_shapes(*shapes) == batch_shape
     return [tuple(int(el) for el in shape) for shape in shapes]
 
-
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 class TestLinearOperator:
     def setup_method(self):
         self.A = np.array([[1,2,3],
@@ -64,23 +77,24 @@ class TestLinearOperator:
         def get_matvecs(A):
             return [{
                 'shape': A.shape,
+                'dtype': xp.float64,
                 'matvec': lambda x: A @ x,
                 'rmatvec': lambda x: xp.conj(A.T) @ x,
                 'rmatmat': lambda x: xp.conj(A.T) @ x,
                 'matmat': lambda x: A @ x
             }]
-        
+
         _asarray = partial(xp.asarray, dtype=xp.complex128)
 
         for matvecs in get_matvecs(_asarray(self.A)):
-            A = interface.LinearOperator(**matvecs)
+            A = interface.LinearOperator(**matvecs, xp=xp)
 
             assert A.args == ()
 
-            xp_assert_equal(A.matvec(xp.asarray([1,2,3])), _asarray([14,32]))
+            xp_assert_equal(A.matvec(_asarray([1,2,3])), _asarray([14,32]))
             with pytest.warns(FutureWarning, match="column vectors"):
                 xp_assert_equal(
-                    A.matvec(xp.asarray([[1],[2],[3]])),
+                    A.matvec(_asarray([[1],[2],[3]])),
                     _asarray([[14],[32]]),
                 )
             xp_assert_equal(A @ _asarray([1,2,3]), _asarray([14,32]))
@@ -112,9 +126,12 @@ class TestLinearOperator:
             xp_assert_equal((A*2) @ _asarray([[1],[1],[1]]), _asarray([[12],[30]]))
             xp_assert_equal((2j*A) @ _asarray([1,1,1]), _asarray([12j,30j]))
             xp_assert_equal((A+A) @ _asarray([1,1,1]), _asarray([12, 30]))
-            xp_assert_equal((A + A).rmatvec([1, 1]), _asarray([10, 14, 18]))
-            xp_assert_equal((A+A).H.matvec([1,1]), _asarray([10, 14, 18]))
-            xp_assert_equal((A+A).adjoint().matvec([1,1]), _asarray([10, 14, 18]))
+            xp_assert_equal((A + A).rmatvec(_asarray([1, 1])), _asarray([10, 14, 18]))
+            xp_assert_equal((A+A).H.matvec(_asarray([1,1])), _asarray([10, 14, 18]))
+            xp_assert_equal(
+                (A + A).adjoint().matvec(_asarray([1,1])),
+                _asarray([10, 14, 18]),
+            )
             xp_assert_equal((A+A) @ _asarray([[1],[1],[1]]), _asarray([[12], [30]]))
             xp_assert_equal(
                 (A+A).matmat(_asarray([[1],[1],[1]])),
@@ -140,11 +157,19 @@ class TestLinearOperator:
             z = A+A
             assert len(z.args) == 2 and z.args[0] is A and z.args[1] is A
             z = 2*A
-            assert len(z.args) == 2 and z.args[0] is A and z.args[1] == 2
+            assert len(z.args) == 2
+            if not is_lazy_array(xp.empty(0)):
+                # lazy_xp_function breaks object identity
+                assert z.args[0] is A and z.args[1] == 2
 
             array_object = type(xp.empty(0))
-            assert isinstance(A.matvec([1, 2, 3]), array_object)
-            with pytest.warns(FutureWarning, match="column vectors"):
+            assert isinstance(A.matvec(_asarray([1, 2, 3])), array_object)
+            ctx = (
+                pytest.warns(FutureWarning, match="column vectors")
+                if not is_jax_array(xp.empty(0))
+                else contextlib.nullcontext()
+            )
+            with ctx:
                 assert isinstance(A.matvec(_asarray([[1],[2],[3]])), array_object)
             assert isinstance(A @ _asarray([1,2,3]), array_object)
             assert isinstance(A @ _asarray([[1],[2],[3]]), array_object)
@@ -164,7 +189,9 @@ class TestLinearOperator:
             assert isinstance(A/2, interface._ScaledLinearOperator)
             assert isinstance(A/2j, interface._ScaledLinearOperator)
 
-            assert ((A * 3) / 3).args[0] is A  # check for simplification
+            if not is_lazy_array(xp.empty(0)):
+                # lazy_xp_function breaks object identity
+                assert ((A * 3) / 3).args[0] is A  # check for simplification
 
             # Test that prefactor is of _ScaledLinearOperator is not mutated
             # when the operator is multiplied by a number
@@ -173,7 +200,7 @@ class TestLinearOperator:
             C = A / 5
             xp_assert_equal(A @ _asarray([1, 2, 3]), result)
 
-            assert (2j*A).dtype == xp.complex128
+            assert (2j * A).dtype == xp.complex128
 
             # Test division by non-scalar
             msg = "Can only divide a linear operator by a scalar."
@@ -190,8 +217,8 @@ class TestLinearOperator:
 
         for matvecsA, matvecsB in product(get_matvecs(_asarray(self.A)),
                                           get_matvecs(_asarray(self.B))):
-            A = interface.LinearOperator(**matvecsA)
-            B = interface.LinearOperator(**matvecsB)
+            A = interface.LinearOperator(**matvecsA, xp=xp)
+            B = interface.LinearOperator(**matvecsB, xp=xp)
             AtimesB = _asarray(self.A @ self.B)
             X = _asarray([[1, 2], [3, 4]])
 
@@ -215,36 +242,47 @@ class TestLinearOperator:
             assert_raises(ValueError, lambda: A**2)
 
             z = A@B
-            assert len(z.args) == 2 and z.args[0] is A and z.args[1] is B
+            assert len(z.args) == 2
+            if not is_lazy_array(xp.empty(0)):
+                # lazy_xp_function breaks object identity
+                assert z.args[0] is A and z.args[1] is B
 
-        for matvecsC in get_matvecs(xp.asarray(self.C)):
-            C = interface.LinearOperator(**matvecsC)
-            X = xp.asarray([[1, 2], [3, 4]])
-            C_ = xp.asarray(self.C)
+        for matvecsC in get_matvecs(_asarray(self.C)):
+            C = interface.LinearOperator(**matvecsC, xp=xp)
+            X = _asarray([[1, 2], [3, 4]])
+            C_ = _asarray(self.C)
 
             xp_assert_equal(C.rmatmat(X), (C_).T @ X)
             xp_assert_equal((C**2).rmatmat(X), (C_ @ C_).T @ X)
 
-            xp_assert_equal((C**2)@[1,1], xp.asarray([17,37]))
-            xp_assert_equal((C**2).rmatvec([1, 1]), xp.asarray([22, 32]))
-            xp_assert_equal((C**2).H.matvec([1, 1]), xp.asarray([22, 32]))
-            xp_assert_equal((C**2).adjoint().matvec([1, 1]), xp.asarray([22, 32]))
-            xp_assert_equal((C**2).matmat([[1],[1]]), xp.asarray([[17],[37]]))
+            xp_assert_equal((C**2)@_asarray([1,1]), _asarray([17,37]))
+            xp_assert_equal((C**2).rmatvec(_asarray([1, 1])), _asarray([22, 32]))
+            xp_assert_equal((C**2).H.matvec(_asarray([1, 1])), _asarray([22, 32]))
+            xp_assert_equal(
+                (C**2).adjoint().matvec(_asarray([1, 1])),
+                _asarray([22, 32]),
+            )
+            xp_assert_equal((C**2).matmat(_asarray([[1],[1]])), _asarray([[17],[37]]))
 
             assert isinstance(C**2, interface._PowerLinearOperator)
 
+    @pytest.mark.skip_xp_backends(
+        "array_api_strict",
+        reason="https://github.com/data-apis/array-api-strict/issues/188",
+    )
     def test_matmul(self, xp):
-        A_ = xp.asarray(self.A, dtype=xp.complex128)
+        _asarray = partial(xp.asarray, dtype=xp.complex128)
+        A_ = _asarray(self.A)
         D = {'shape': A_.shape,
              'dtype': xp.complex128,
              'matvec': lambda x: xp.reshape(A_ @ x, (A_.shape[0],)),
              'rmatvec': lambda x: xp.reshape(xp.conj(A_.T) @ x, (A_.shape[1],)),
              'rmatmat': lambda x: xp.conj(A_.T) @ x,
              'matmat': lambda x: A_ @ x}
-        A = interface.LinearOperator(**D)
-        B = xp.asarray([[1 + 1j, 2, 3],
-                        [4, 5, 6],
-                        [7, 8, 9]])
+        A = interface.LinearOperator(**D, xp=xp)
+        B = _asarray([[1 + 1j, 2, 3],
+                      [4, 5, 6],
+                      [7, 8, 9]])
         b = B[0, ...]
 
         xp_assert_equal(operator.matmul(A, b), A * b)
@@ -295,10 +333,9 @@ class TestLinearOperator:
         A.rdot(xp.ones((3, 3)))
         with pytest.raises(ValueError, match=msg):
             A.rdot(xp.ones((4, 4)))
-        
+
 
 @pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
-@make_xp_test_case(interface.LinearOperator)
 class TestDotTests:
     """
     This class aims to help ensure correctness of the LinearOperator
@@ -372,7 +409,7 @@ class TestDotTests:
         *batch_shape, M, N = op.shape
 
         u_broadcast, v_broadcast = generate_broadcastable_shapes(
-            2, ndim=3, min=0, max=5
+            2, ndim=3, min=0, max=5, rng=63
         )
 
         for u_shape, v_shape in (
@@ -388,13 +425,13 @@ class TestDotTests:
                 v = v + (1j * rng.standard_normal(v_shape, dtype=dtype))
             u = xp.asarray(u)
             v = xp.asarray(v)
-    
+
             op_u = op.matvec(u)
             opH_v = op.rmatvec(v)
-    
+
             op_u_H_v = xp.vecdot(op_u, v, axis=-1)
             uH_opH_v = xp.vecdot(u, opH_v, axis=-1)
-    
+
             rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
             atol = 2e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
             xp_assert_close(op_u_H_v, uH_opH_v, rtol=rtol, atol=atol)
@@ -471,14 +508,14 @@ class TestDotTests:
         Tests batches of RHS via `args.batch_shape`.
         """
         def identity(x):
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(x, shape)
 
         shape = batch_shape + args.shape
         dtype = getattr(xp, args.op_dtype)
-        op = interface.LinearOperator(
+        op = interface.LinearOperator(  # type:ignore[call-arg]
             shape=shape, dtype=dtype,
-            matvec=identity, rmatvec=identity,
+            matvec=identity, rmatvec=identity, xp=xp,
         )
 
         self.check_matvec(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
@@ -509,10 +546,10 @@ class TestDotTests:
                 case -1:  # pad with zeros
                     x = pad_core_dim(x, target_size=M)
 
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(x, shape)
 
-        def rmv(x):            
+        def rmv(x):
             match np.sign(N - x.shape[-1]):
                 case 0:  # square
                     pass
@@ -521,15 +558,15 @@ class TestDotTests:
                 case -1:  # crop x to size
                     x = x[..., :N]
 
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
             return xp.broadcast_to(x, shape)
 
         shape = batch_shape + args.shape
         dtype = getattr(xp, args.op_dtype)
-        op = interface.LinearOperator(
-            shape=shape, dtype=dtype, matvec=mv, rmatvec=rmv
+        op = interface.LinearOperator(  # type:ignore[call-arg]
+            shape=shape, dtype=dtype, matvec=mv, rmatvec=rmv, xp=xp
         )
-        
+
         self.check_matvec(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
 
@@ -541,19 +578,19 @@ class TestDotTests:
         Tests batches of RHS via `args.batch_shape`.
         """
         def scale(x):
-            b = (3 + 2j) * x
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
-            return xp.broadcast_to(b, shape)
+            scale = (3 + 2j) / abs(3 + 2j)
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            return xp.broadcast_to(scale * x, shape)
 
         def r_scale(x):
-            b = (3 - 2j) * x
-            shape = (*xpx.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
-            return xp.broadcast_to(b, shape)
+            scale = (3 - 2j) / abs(3 - 2j)
+            shape = (*xp.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            return xp.broadcast_to(scale * x, shape)
 
         shape = batch_shape + args.shape
         dtype = getattr(xp, args.op_dtype)
-        op = interface.LinearOperator(
-            shape=shape, dtype=dtype, matvec=scale, rmatvec=r_scale
+        op = interface.LinearOperator(  # type:ignore[call-arg]
+            shape=shape, dtype=dtype, matvec=scale, rmatvec=r_scale, xp=xp
         )
         self.check_matvec(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
@@ -569,7 +606,7 @@ class TestDotTests:
 
             def __init__(self, dtype, shape, theta):
                 self._theta = theta
-                super().__init__(dtype, shape)
+                super().__init__(dtype, shape, xp=xp)
 
             def _matmat(self, X):
                 theta = self._theta
@@ -578,7 +615,7 @@ class TestDotTests:
                     [np.sin(theta),  np.cos(theta)]
                 ])
                 B = R @ X
-                shape = xpx.broadcast_shapes(batch_shape, X.shape[:-2]) + X.shape[-2:]
+                shape = xp.broadcast_shapes(batch_shape, X.shape[:-2]) + X.shape[-2:]
                 return xp.broadcast_to(B, shape)
 
             def _adjoint(self):
@@ -625,7 +662,6 @@ class TestDotTests:
         self.check_matmat(xp, op, data_dtype=data_dtype, complex_data=True)
 
 
-@make_xp_test_case(interface.LinearOperator)
 class TestAsLinearOperator:
     def make_cases(self, original, dtype, xp=None):
         cases = []
@@ -649,6 +685,7 @@ class TestAsLinearOperator:
                 super().__init__(
                     dtype=dtype,
                     shape=original.shape,
+                    xp=xp,
                 )
 
             def _matvec(self, x):
@@ -670,7 +707,8 @@ class TestAsLinearOperator:
                 return interface.LinearOperator(matvec=matvec,
                                                 rmatvec=rmatvec,
                                                 dtype=dtype,
-                                                shape=shape,)
+                                                shape=shape,
+                                                xp=xp,)
 
         class HasRmatmat(HasRmatvec):
             def _matmat(self, x):
@@ -685,7 +723,7 @@ class TestAsLinearOperator:
             cases.append((HasRmatvec(dtype), original))
             cases.append((HasAdjoint(dtype), original))
             cases.append((HasRmatmat(dtype), original))
-            
+
             cases.append((interface.aslinearoperator(original.T).T, original))
             cases.append((
                 interface.aslinearoperator(original.T).H,
@@ -697,7 +735,7 @@ class TestAsLinearOperator:
             )
 
             return cases
-        
+
         cases.append((matrix(original, dtype=dtype), original))
         cases.append((np.array(original, dtype=dtype), original))
         cases.append((sparse.csr_array(original, dtype=dtype), original))
@@ -706,7 +744,7 @@ class TestAsLinearOperator:
         cases.append((HasAdjoint(dtype), original))
         cases.append((HasRmatmat(dtype), original))
         return cases
-    
+
     def setup_method(self):
         self.cases = []
         make_cases = self.make_cases
@@ -800,8 +838,14 @@ class TestAsLinearOperator:
             assert_equal(A.dot(x1), A_array.dot(x1))
             assert_equal(A.dot(x2), A_array.dot(x2))
 
+    @pytest.mark.xfail_xp_backends('dask.array', reason=(
+        "dask does not support broadcast_shapes(). "
+        "See: https://github.com/data-apis/array-api-compat/issues/439"
+    ))
     @pytest.mark.parametrize("dtype", ["int64", "float64", "complex128"])
     def test_xp(self, dtype, xp):
+        if dtype == "int64" and is_torch(xp) and SCIPY_DEVICE != "cpu":
+            pytest.skip("\"addmm_cuda\" not implemented for 'Long'")
         dtype = getattr(xp, dtype)
         original = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=dtype)
         for M, A_array in self.make_cases(original, dtype, xp=xp):
@@ -838,25 +882,31 @@ class TestAsLinearOperator:
                 assert_equal(A.dtype, M.dtype)
 
             assert hasattr(A, 'args')
-            
 
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_repr(xp):
-    A = interface.LinearOperator(shape=(1, 1), matvec=lambda x: xp.asarray([1]))
+    A = interface.LinearOperator(shape=(1, 1), matvec=lambda x: xp.asarray([1]), xp=xp)
     repr_A = repr(A)
     assert 'unspecified dtype' not in repr_A, repr_A
 
-
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_identity(xp):
-    ident = interface.IdentityOperator((3, 3))
+    ident = interface.IdentityOperator((3, 3), xp=xp)
     xp_assert_equal(ident @ xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3]))
     xp_assert_equal(xp_ravel(ident.dot(xp.reshape(xp.arange(9), (3, 3)))), xp.arange(9))
 
     assert_raises(ValueError, ident.matvec, xp.asarray([1, 2, 3, 4]))
 
-
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_attributes(xp):
     A = interface.aslinearoperator(xp.reshape(xp.arange(16, dtype=xp.float64), (4, 4)))
 
@@ -865,7 +915,7 @@ def test_attributes(xp):
         assert x.shape == (3,) or x.shape == (3, 1)
         return xp.ones(4)
 
-    B = interface.LinearOperator(shape=(4, 3), matvec=always_four_ones)
+    B = interface.LinearOperator(shape=(4, 3), matvec=always_four_ones, xp=xp)
 
     ops = [A, B, A * B, A @ B, A.H, A.adjoint(), A + A, B + B, A**4]
     for op in ops:
@@ -873,25 +923,39 @@ def test_attributes(xp):
         assert hasattr(op, "shape")
         assert hasattr(op, "_matvec")
 
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def matvec_for_pickle(x):
     """ Needed for test_pickle as local functions are not pickleable """
     return x
 
-@make_xp_test_case(interface.LinearOperator)
+
+@pytest.mark.skip_xp_backends(
+    "array_api_strict",
+    reason="pickle-ability is not guaranteed by the standard"
+)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_pickle(xp):
     import pickle
 
     protocol_min = 0 if is_numpy(xp) else 2
     for protocol in range(protocol_min, pickle.HIGHEST_PROTOCOL + 1):
-        A = interface.LinearOperator((3, 3), matvec_for_pickle)
+        A = interface.LinearOperator((3, 3), matvec_for_pickle, xp=xp)
         s = pickle.dumps(A, protocol=protocol)
         B = pickle.loads(s)
 
         for k in A.__dict__:
             assert getattr(A, k) == getattr(B, k)
 
-
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_inheritance(xp):
     class Empty(interface.LinearOperator):
         pass
@@ -901,7 +965,7 @@ def test_inheritance(xp):
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
-            super().__init__(dtype=None, shape=(n, n))
+            super().__init__(dtype=None, shape=(n, n), xp=xp)
 
         def _matvec(self, x):
             return x
@@ -912,7 +976,7 @@ def test_inheritance(xp):
 
     class MatmatOnly(interface.LinearOperator):
         def __init__(self, A):
-            super().__init__(A.dtype, A.shape)
+            super().__init__(A.dtype, A.shape, xp=xp)
             self.A = A
 
         def _matmat(self, x):
@@ -921,8 +985,10 @@ def test_inheritance(xp):
     mm = MatmatOnly(xp.asarray(np.random.randn(5, 3)))
     assert mm.matvec(xp.asarray(np.random.randn(3))).shape == (5,)
 
-
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_dtypes_of_operator_sum(xp):
     # gh-6078
 
@@ -938,8 +1004,10 @@ def test_dtypes_of_operator_sum(xp):
     assert sum_real.dtype == xp.float64
     assert sum_complex.dtype == xp.complex128
 
-
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_no_double_init(xp):
     call_count = [0]
 
@@ -949,7 +1017,7 @@ def test_no_double_init(xp):
 
     # It should call matvec exactly once (in order to determine the
     # operator dtype)
-    interface.LinearOperator((2, 2), matvec=matvec)
+    interface.LinearOperator((2, 2), matvec=matvec, xp=xp)
     assert_equal(call_count[0], 1)
 
 
@@ -959,33 +1027,49 @@ COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 INEXACTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
 ALLDTYPES = INT_DTYPES + INEXACTDTYPES
 
-
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 @pytest.mark.parametrize("test_dtype", ALLDTYPES)
-# TODO: convert this test after adjusting implementation (use `xp_result_type`?)
-def test_determine_lo_dtype_from_matvec(test_dtype):
+def test_determine_lo_dtype_from_matvec(test_dtype, xp):
+    if "longdouble" in test_dtype.__name__ and not is_numpy(xp):
+        pytest.skip("longdoubles are only tested for `np`")
     # gh-19209
-    scalar = np.array(1, dtype=test_dtype)
+    scalar = xp.asarray(np.array(1, dtype=test_dtype))
     def mv(v):
-        return np.array([scalar * v[0], v[1]])
+        return xp.stack([scalar * v[0], v[1]])
 
-    lo = interface.LinearOperator((2, 2), matvec=mv)
-    assert lo.dtype == np.dtype(test_dtype)
+    lo = interface.LinearOperator((2, 2), matvec=mv, xp=xp)
+    # expected dtype depends on if mixed exact-inexact promotion is defined
+    # since dtype determination follows the following procedure:
+    # - take the dtype from calling `matvec` on an `int8`
+    # - unless that fails (e.g. via overflow or no mixed exact-inexact promotion),
+    #   in which case use the default integral dtype
+    expected = scalar.dtype
+    if xp.isdtype(expected, ("real floating", "complex floating")):
+        try:
+            xp.asarray(2) + xp.asarray(2.0)
+        except TypeError:
+            expected = xpx.default_dtype(xp, kind="integral")
+    assert lo.dtype == expected
 
 
-@make_xp_test_case(interface.LinearOperator)
 def test_determine_lo_dtype_for_int(xp):
     # gh-19209
     # test Python int larger than int8 max cast to some int
     def mv(v):
         return xp.asarray([128 * v[0], v[1]])
 
-    lo = interface.LinearOperator((2, 2), matvec=mv)
+    lo = interface.LinearOperator((2, 2), matvec=mv, xp=xp)
     assert xp.isdtype(lo.dtype, "integral")
 
-
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_adjoint_conjugate(xp):
-    X = xp.asarray([[1j]])
+    X = xp.asarray([[1j]], dtype=xp.complex128)
     A = interface.aslinearoperator(X)
 
     B = 1j * A
@@ -998,16 +1082,17 @@ def test_adjoint_conjugate(xp):
     xp_assert_equal(B.adjoint().dot(v), xp.vecdot(xp.conj(Y.T), v))
 
 
-@make_xp_test_case(interface.LinearOperator)
 def test_ndim(xp):
     X = xp.asarray([[1]])
     A = interface.aslinearoperator(X)
     assert A.ndim == 2
 
-
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.xfail_xp_backends('dask.array', reason=(
+    "dask does not support broadcast_shapes(). "
+    "See: https://github.com/data-apis/array-api-compat/issues/439"
+))
 def test_transpose_noconjugate(xp):
-    X = xp.asarray([[1j]])
+    X = xp.asarray([[1j]], dtype=xp.complex128)
     A = interface.aslinearoperator(X)
 
     B = 1j * A
@@ -1024,21 +1109,21 @@ def test_transpose_noconjugate(xp):
     "array_api_strict",
     reason="https://github.com/data-apis/array-api-strict/issues/188"
 )
-@make_xp_test_case(interface.LinearOperator)
 def test_transpose_multiplication(xp):
+    _asarray = partial(xp.asarray, dtype=xp.complex128)
     class MyMatrix(interface.LinearOperator):
         def __init__(self, A):
-            super().__init__(A.dtype, A.shape)
+            super().__init__(A.dtype, A.shape, xp=xp)
             self.A = A
         def _matmat(self, other): return self.A @ other
         def _rmatmat(self, other): return self.A.mT @ other
 
-    A = MyMatrix(xp.asarray([[1, 2], [3, 4]]))
-    X = xp.asarray([1, 2])
+    A = MyMatrix(_asarray([[1, 2], [3, 4]]))
+    X = _asarray([1, 2])
     X_T = X
-    B = xp.asarray([[10, 20], [30, 40]])
+    B = _asarray([[10, 20], [30, 40]])
     X2 = xp.reshape(X, (-1, 1))
-    Y = xp.asarray([[1, 2], [3, 4]])
+    Y = _asarray([[1, 2], [3, 4]])
 
     xp_assert_equal(A @ B, Y @ B)
     xp_assert_equal(B.T @ A, B.T @ Y)
@@ -1053,25 +1138,35 @@ def test_transpose_multiplication(xp):
 
 @pytest.mark.skip_xp_backends(np_only=True)
 def test_sparse_matmat_exception():
-    A = interface.LinearOperator((2, 2), matvec=lambda x: x)
     B = sparse.eye_array(2)
-    msg = "Unable to multiply a LinearOperator with a sparse matrix."
+    # well defined matmat via `aslinearoperator`
+    A = interface.aslinearoperator(sparse.eye_array(2))
+    assert isinstance(A @ B, sparse.sparray)
+    assert isinstance(B @ A, sparse.sparray)
+    xp_assert_equal((A @ B).toarray(), np.eye(2))
+    xp_assert_equal((B @ A).toarray(), np.eye(2))
+    # ill-defined matmat via default fallback to matvec
+    A = interface.LinearOperator((2, 2), matvec=lambda x: x)
+    msg = "Try wrapping the matrix with `aslinearoperator` first."
     with assert_raises(TypeError, match=msg):
         A @ B
     with assert_raises(TypeError, match=msg):
         B @ A
-    with assert_raises(ValueError):
-        A @ np.identity(4)
-    with assert_raises(ValueError):
-        np.identity(4) @ A
+    # after using `aslinearoperator`
+    B = interface.aslinearoperator(B)
+    assert isinstance(A @ B, interface.LinearOperator)
+    assert isinstance(B @ A, interface.LinearOperator)
+    xp_assert_equal((A @ B).matvec(np.ones(2)), np.ones(2))
 
 
-@make_xp_test_case(interface.LinearOperator)
+@pytest.mark.skip_xp_backends(
+    "jax.numpy", reason="remaining reference (due to lazy_xp_function?)"
+)
 def test_MatrixLinearOperator_refcycle(xp):
     # gh-10634
     # Test that MatrixLinearOperator can be automatically garbage collected
     A = xp.eye(2)
-    with assert_deallocated(interface.MatrixLinearOperator, A) as op:
+    with assert_deallocated(interface.MatrixLinearOperator, A, xp) as op:
         op.adjoint()
         del op
 
@@ -1083,7 +1178,6 @@ def test_MatrixLinearOperator_refcycle(xp):
 @pytest.mark.parametrize("batch_A", [(), (5,), (0,)])
 @pytest.mark.parametrize("batch_x", [(), (6, 1), (0, 1)])
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
-@make_xp_test_case(interface.LinearOperator)
 @pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
 @pytest.mark.skip_xp_backends(
     "array_api_strict",
@@ -1107,7 +1201,7 @@ def test_batch(left, operator_definition, batch_A, batch_x, dtype, xp):
         x_row = x_row + 1j * rng.random(x_row.shape)
         x_col = x_col + 1j * rng.random(x_col.shape)
         x_mat = x_mat + 1j * rng.random(x_mat.shape)
-    
+
     A_, x_row, x_col, x_mat = (xp.asarray(x) for x in (A_, x_row, x_col, x_mat))
 
     def matvec(A, x):
@@ -1139,6 +1233,7 @@ def test_batch(left, operator_definition, batch_A, batch_x, dtype, xp):
             shape=A_.shape, dtype=A_.dtype,
             matvec=lambda x: matvec(A_, x),
             rmatvec=lambda x: matvec(xp.conj(A_.mT), x),
+            xp=xp,
         )
     elif operator_definition == "__init__matmat":
         # A = interface.LinearOperator(shape=A_.shape, dtype=A_.dtype,
@@ -1150,14 +1245,14 @@ def test_batch(left, operator_definition, batch_A, batch_x, dtype, xp):
                 return matvec(A_, x)
             def _rmatvec(self, x):
                 return matvec(xp.conj(A_.mT), x)
-        A = MyLinearOperator(shape=A_.shape, dtype=A_.dtype)
+        A = MyLinearOperator(shape=A_.shape, dtype=A_.dtype, xp=xp)
     elif operator_definition == "subclass_matmat":
         class MyLinearOperator(interface.LinearOperator):
             def _matmat(self, X):
                 return matmat(A_, X)
             def _rmatmat(self, X):
                 return matmat(xp.conj(A_.mT), X)
-        A = MyLinearOperator(shape=A_.shape, dtype=A_.dtype)
+        A = MyLinearOperator(shape=A_.shape, dtype=A_.dtype, xp=xp)
 
     # Test matvec
     # a. with row vector (or batch of row vectors)

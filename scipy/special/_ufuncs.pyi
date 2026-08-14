@@ -43,6 +43,7 @@ __all__ = [
     'cosm1',
     'cotdg',
     'dawsn',
+    'digammainv',
     'ellipe',
     'ellipeinc',
     'ellipj',
@@ -148,6 +149,8 @@ __all__ = [
     'kve',
     'log1p',
     'log_expit',
+    'log_gammainc',
+    'log_gammaincc',
     'log_ndtr',
     'log_wright_bessel',
     'loggamma',
@@ -155,12 +158,10 @@ __all__ = [
     'lpmv',
     'mathieu_a',
     'mathieu_b',
-    'mathieu_cem',
     'mathieu_modcem1',
     'mathieu_modcem2',
     'mathieu_modsem1',
     'mathieu_modsem2',
-    'mathieu_sem',
     'modfresnelm',
     'modfresnelp',
     'modstruve',
@@ -254,19 +255,20 @@ class errstate:
 
 _cosine_cdf: np.ufunc
 _cosine_invcdf: np.ufunc
+_bivariate_normal_sf: np.ufunc
 _cospi: np.ufunc
 _ellip_harm: np.ufunc
-_factorial: np.ufunc
 _gen_harmonic: np.ufunc
 _igam_fac: np.ufunc
 _kolmogc: np.ufunc
 _kolmogci: np.ufunc
 _kolmogp: np.ufunc
 _lambertw: np.ufunc
-_lanczos_sum_expg_scaled: np.ufunc
 _lgam1p: np.ufunc
 _log1mexp: np.ufunc
 _log1pmx: np.ufunc
+_mathieu_cem: np.ufunc
+_mathieu_sem: np.ufunc
 _normalized_gen_harmonic: np.ufunc
 _riemann_zeta: np.ufunc
 _scaled_exp1: np.ufunc
@@ -283,10 +285,8 @@ _spherical_kn: np.ufunc
 _spherical_kn_d: np.ufunc
 _spherical_yn: np.ufunc
 _spherical_yn_d: np.ufunc
+_von_mises_cdf: np.ufunc
 _stirling2_inexact: np.ufunc
-_struve_asymp_large_z: np.ufunc
-_struve_bessel_series: np.ufunc
-_struve_power_series: np.ufunc
 _zeta: np.ufunc
 agm: np.ufunc
 airy: np.ufunc
@@ -325,6 +325,7 @@ cosdg: np.ufunc
 cosm1: np.ufunc
 cotdg: np.ufunc
 dawsn: np.ufunc
+digammainv: np.ufunc
 ellipe: np.ufunc
 ellipeinc: np.ufunc
 ellipj: np.ufunc
@@ -430,6 +431,8 @@ kv: np.ufunc
 kve: np.ufunc
 log1p: np.ufunc
 log_expit: np.ufunc
+log_gammainc: np.ufunc
+log_gammaincc: np.ufunc
 log_ndtr: np.ufunc
 log_wright_bessel: np.ufunc
 loggamma: np.ufunc
@@ -437,12 +440,10 @@ logit: np.ufunc
 lpmv: np.ufunc
 mathieu_a: np.ufunc
 mathieu_b: np.ufunc
-mathieu_cem: np.ufunc
 mathieu_modcem1: np.ufunc
 mathieu_modcem2: np.ufunc
 mathieu_modsem1: np.ufunc
 mathieu_modsem2: np.ufunc
-mathieu_sem: np.ufunc
 modfresnelm: np.ufunc
 modfresnelp: np.ufunc
 modstruve: np.ufunc
@@ -519,4 +520,3 @@ yn: np.ufunc
 yv: np.ufunc
 yve: np.ufunc
 zetac: np.ufunc
-

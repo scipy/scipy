@@ -5,8 +5,12 @@ from typing import Literal
 import numpy as np
 
 from scipy.linalg import solve, solve_banded
-from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
+from scipy._lib._array_api import (
+    array_namespace, xp_size, xp_capabilities, is_cupy, scipy_namespace_for,
+    xp_device, xp_result_device
+)
 from scipy._external.array_api_compat import numpy as np_compat
+import scipy._external.array_api_extra as xpx
 
 from . import PPoly
 from ._polyint import _isscalar
@@ -72,11 +76,12 @@ def prepare_input(x, y, axis, dydx=None, xp=None):
 
 
 @xp_capabilities(
-    cpu_only=True, jax_jit=False,
+    cpu_only=True,
+    jax_jit=False,
+    exceptions=["cupy"],
     skip_backends=[
-        ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
-    ]
+        ("dask.array", "https://github.com/data-apis/array-api-extra/issues/488")
+    ],
 )
 class CubicHermiteSpline(PPoly):
     """Piecewise cubic interpolator to fit values and first derivatives (C1 smooth).
@@ -104,6 +109,7 @@ class CubicHermiteSpline(PPoly):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Attributes
     ----------
@@ -169,17 +175,13 @@ class CubicHermiteSpline(PPoly):
         self.axis = axis
 
 
-# The commented out xp_capabilities below are probably right but since
-# this is untested, mark as np_only. TODO: convert the tests.
-#
-# @xp_capabilities(
-#     cpu_only=True, jax_jit=False,
-#     skip_backends=[
-#         ("dask.array",
-#          "https://github.com/data-apis/array-api-extra/issues/488")
-#     ]
-# )
-@xp_capabilities(np_only=True, reason="not tested")
+@xp_capabilities(
+    cpu_only=True, jax_jit=False, exceptions=["cupy"],
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class PchipInterpolator(CubicHermiteSpline):
     r"""PCHIP shape-preserving interpolator (C1 smooth).
 
@@ -200,9 +202,11 @@ class PchipInterpolator(CubicHermiteSpline):
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
-    extrapolate : bool, optional
-        Whether to extrapolate to out-of-bounds points based on first
-        and last intervals, or to return NaNs.
+    extrapolate : {bool, 'periodic', None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Methods
     -------
@@ -259,9 +263,6 @@ class PchipInterpolator(CubicHermiteSpline):
 
     """
 
-    # PchipInterpolator is not generic in scipy-stubs
-    __class_getitem__ = None
-
     def __init__(self, x, y, axis=0, extrapolate=None):
         xp = array_namespace(x, y)
         x, _, y, axis, _ = prepare_input(x, y, axis, xp=xp)
@@ -285,8 +286,8 @@ class PchipInterpolator(CubicHermiteSpline):
         mask2 = (xp.sign(m0) != xp.sign(m1)) & (xp.abs(d) > 3.*xp.abs(m0))
         mmm = (~mask) & mask2
 
-        d[mask] = 0.
-        d[mmm] = 3.*m0[mmm]
+        d = xpx.at(d)[mask].set(0.)
+        d = xpx.at(d)[mmm].set(3.*m0[mmm])
 
         return d
 
@@ -307,35 +308,45 @@ class PchipInterpolator(CubicHermiteSpline):
             x = x[:, None]
             y = y[:, None]
 
-        hk = x[1:] - x[:-1]
-        mk = (y[1:] - y[:-1]) / hk
+        hk = x[1:, ...] - x[:-1, ...]
+        mk = (y[1:, ...] - y[:-1, ...]) / hk
 
         if y.shape[0] == 2:
             # edge case: only have two points, use linear interpolation
             dk = xp.zeros_like(y)
-            dk[0] = mk
-            dk[1] = mk
+            dk = xpx.at(dk)[0, ...].set(mk[0, ...])
+            dk = xpx.at(dk)[1, ...].set(mk[0, ...])
             return xp.reshape(dk, y_shape)
 
         smk = xp.sign(mk)
-        condition = (smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0)
+        condition = ((smk[1:, ...] != smk[:-1, ...])
+                     | (mk[1:, ...] == 0) | (mk[:-1, ...] == 0))
 
-        w1 = 2*hk[1:] + hk[:-1]
-        w2 = hk[1:] + 2*hk[:-1]
+        w1 = 2*hk[1:, ...] + hk[:-1, ...]
+        w2 = hk[1:, ...] + 2*hk[:-1, ...]
 
         # values where division by zero occurs will be excluded
         # by 'condition' afterwards
         with np.errstate(divide='ignore', invalid='ignore'):
-            whmean = (w1/mk[:-1] + w2/mk[1:]) / (w1 + w2)
+            whmean = (w1/mk[:-1, ...] + w2/mk[1:, ...]) / (w1 + w2)
 
-        dk = np.zeros_like(y)
-        dk[1:-1][condition] = 0.0
-        dk[1:-1][~condition] = 1.0 / whmean[~condition]
+            dk = xp.zeros_like(y)
+            dk = xpx.at(dk)[1:-1, ...].set(
+                xp.where(condition, xp.zeros_like(whmean), 1.0 / whmean)
+            )
 
         # special case endpoints, as suggested in
         # Cleve Moler, Numerical Computing with MATLAB, Chap 3.6 (pchiptx.m)
-        dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1], xp=xp)
-        dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2], xp=xp)
+        dk = xpx.at(dk)[0, ...].set(
+            PchipInterpolator._edge_case(
+                hk[0, ...], hk[1, ...], mk[0, ...], mk[1, ...], xp=xp
+            )
+        )
+        dk = xpx.at(dk)[-1, ...].set(
+            PchipInterpolator._edge_case(
+                hk[-1, ...], hk[-2, ...], mk[-1, ...], mk[-2, ...], xp=xp
+            )
+        )
 
         return xp.reshape(dk, y_shape)
 
@@ -402,11 +413,14 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         return [P.derivative(nu)(x) for nu in der]
 
 
-@xp_capabilities(cpu_only=True, xfail_backends=[
-    ("dask.array", "lacks nd fancy indexing"),
-    ("jax.numpy", "immutable arrays"),
-    ("array_api_strict", "fancy indexing __setitem__"),
-])
+@xp_capabilities(
+    cpu_only=True,
+    jax_jit=False,
+    exceptions=["cupy"],
+    xfail_backends=[
+        ("dask.array", "lacks nd fancy indexing"),
+    ],
+)
 class Akima1DInterpolator(CubicHermiteSpline):
     r"""Akima "visually pleasing" interpolator (C1 smooth).
 
@@ -432,10 +446,11 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         .. versionadded:: 1.13.0
 
-    extrapolate : {bool, None}, optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
-        based on first and last intervals, or to return NaNs. If None,
-        ``extrapolate`` is set to False.
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), it is set to False.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Methods
     -------
@@ -520,9 +535,6 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    # PchipInterpolator is not generic in scipy-stubs
-    __class_getitem__ = None
-
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
@@ -549,19 +561,20 @@ class Akima1DInterpolator(CubicHermiteSpline):
             hk = xv[1:, ...] - xv[:-1, ...]
             mk = (y[1:, ...] - y[:-1, ...]) / hk
             t = xp.zeros_like(y)
-            t[...] = mk
+            t = xpx.at(t)[...].set(mk)
         else:
             # determine slopes between breakpoints
-            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:])
+            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:], dtype=x.dtype,
+                         device=xp_device(x))
             dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
-            m[2:-2, ...] = xp.diff(y, axis=0) / dx
+            m = xpx.at(m)[2:-2, ...].set(xp.diff(y, axis=0) / dx)
 
             # add two additional points on the left ...
-            m[1, ...] = 2. * m[2, ...] - m[3, ...]
-            m[0, ...] = 2. * m[1, ...] - m[2, ...]
+            m = xpx.at(m)[1, ...].set(2. * m[2, ...] - m[3, ...])
+            m = xpx.at(m)[0, ...].set(2. * m[1, ...] - m[2, ...])
             # ... and on the right
-            m[-2, ...] = 2. * m[-3, ...] - m[-4, ...]
-            m[-1, ...] = 2. * m[-2, ...] - m[-3, ...]
+            m = xpx.at(m)[-2, ...].set(2. * m[-3, ...] - m[-4, ...])
+            m = xpx.at(m)[-1, ...].set(2. * m[-2, ...] - m[-3, ...])
 
             # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
             # defined. This is the fill value:
@@ -587,14 +600,17 @@ class Akima1DInterpolator(CubicHermiteSpline):
             f12 = f1 + f2
 
             # These are the mask of where the slope at breakpoint is defined:
-            mmax = xp.max(f12) if xp_size(f12) > 0 else -xp.inf
-            ind = xp.nonzero(f12 > break_mult * mmax)
-
-            x_ind, y_ind = ind[0], ind[1:]
+            size_f12 = xp_size(f12)
+            # if the size is unknown, the `max` reduction is not guaranteed to work,
+            # so use the same fallback value as the known zero size case
+            mmax = xp.max(f12) if size_f12 is not None and size_f12 > 0 else -xp.inf
+            ind = f12 > break_mult * mmax
             # Set the slope at breakpoint
-            t[ind] = m[(x_ind + 1,) + y_ind] + (
-                (f2[ind] / f12[ind])
-                * (m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind])
+            t = xp.where(
+                ind,
+                m[1:-2, ...]
+                + (f2 / xp.where(ind, f12, 1)) * (m[2:-1, ...] - m[1:-2, ...]),
+                t,
             )
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
@@ -602,6 +618,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     def extend(self, c, x, right=True):
         """Extending a 1-D Akima interpolator is not yet implemented."""
+        # numpydoc ignore=PR01
         raise NotImplementedError("Extending a 1-D Akima interpolator is not "
                                   "yet implemented")
 
@@ -619,11 +636,12 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
 
 @xp_capabilities(
-    cpu_only=True, jax_jit=False,
+    cpu_only=True,
+    jax_jit=False,
+    exceptions=["cupy"],
     skip_backends=[
-        ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
-    ]
+        ("dask.array", "https://github.com/data-apis/array-api-extra/issues/488")
+    ],
 )
 class CubicSpline(CubicHermiteSpline):
     """Piecewise cubic interpolator to fit values (C2 smooth).
@@ -682,6 +700,7 @@ class CubicSpline(CubicHermiteSpline):
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), ``extrapolate`` is
         set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Attributes
     ----------
@@ -794,6 +813,18 @@ class CubicSpline(CubicHermiteSpline):
 
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
         xp = array_namespace(x, y)
+        if is_cupy(xp):
+            spx = scipy_namespace_for(xp)
+            xp_cubic_spline = spx.interpolate.CubicSpline(
+                x, y, axis=axis, bc_type=bc_type, extrapolate=extrapolate
+            )
+            self.__dict__.update(
+                PPoly._construct_from_xp(xp_cubic_spline, xp_external=xp).__dict__
+            )
+            return
+
+        # the NumPy round-trip must return the result on the inputs' device
+        device = xp_result_device(x, y)
         x, dx, y, axis, _ = prepare_input(x, y, axis, xp=np_compat)
         n = len(x)
 
@@ -959,7 +990,7 @@ class CubicSpline(CubicHermiteSpline):
                                      overwrite_b=True, check_finite=False)
                     s = s.reshape(b.shape)
 
-        x, y, s = map(xp.asarray, (x, y, s))
+        x, y, s = (xp.asarray(arr, device=device) for arr in (x, y, s))
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
 

@@ -1,9 +1,9 @@
 from scipy._lib._util import float_factorial
-from scipy._external.array_api_compat import numpy as np_compat
-from scipy._lib._array_api import array_namespace, xp_swapaxes, xp_device
+from scipy._lib._array_api import (array_namespace, xp_compat_namespace,
+                                   xp_swapaxes, xp_device)
 import scipy._external.array_api_extra as xpx
 
-from scipy.ndimage import convolve1d  # type: ignore[attr-defined]
+from scipy.ndimage import convolve1d
 from scipy.signal import _polyutils as _pu
 from ._arraytools import axis_slice
 
@@ -35,6 +35,14 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
         coefficients are ordered to be used in a convolution. With
         use='dot', the order is reversed, so the filter is applied by
         dotting the coefficients with the data set.
+    xp : array_namespace, optional
+        Optional array namespace.
+        Should be compatible with the array API standard, or supported by
+        array-api-compat.
+        Default: ``numpy``
+    device : any
+        optional device specification for output. Should match one of the
+        supported device specifications in ``xp``.
 
     Returns
     -------
@@ -118,8 +126,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     if use not in ['conv', 'dot']:
         raise ValueError("`use` must be 'conv' or 'dot'")
 
-    # cf windows/_windows.py
-    xp = np_compat if xp is None else array_namespace(xp.empty(0))
+    xp = xp_compat_namespace(xp)
 
     if deriv > polyorder:
         coeffs = xp.zeros(window_length, dtype=xp.float64, device=device)

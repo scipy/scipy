@@ -27,14 +27,14 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_device,
     xp_ravel,
-    _length_nonmasked,
+    _count_nonmasked,
     is_lazy_array,
 )
 
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
+from ._stats_py import (_get_pvalue, SignificanceResult,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency
 from . import distributions
@@ -235,7 +235,7 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -324,7 +324,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = _length_nonmasked(data, axis, xp=xp)
+    N = _count_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -341,7 +341,7 @@ def kstat(data, n=2, *, axis=None):
         raise ValueError("Should not be here.")
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -385,13 +385,32 @@ def kstatvar(data, n=2, *, axis=None):
     ----------
     .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
-    """  # noqa: E501
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(92366746)
+
+    As the sample size increases, the estimated variance of the k-statistic converges
+    to zero.
+
+    >>> for n in np.astype(np.logspace(1, 6, 6), int):
+    ...     x = rng.normal(size=n)
+    ...     kvar = stats.kstatvar(x, 1)
+    ...     print(f"{n=:<8}: {kvar=:.3g}")
+    n=10      : kvar=0.0954
+    n=100     : kvar=0.00974
+    n=1000    : kvar=0.000962
+    n=10000   : kvar=0.0001
+    n=100000  : kvar=9.94e-06
+    n=1000000 : kvar=9.99e-07
+    """
     xp = array_namespace(data)
     data = xp.asarray(data)
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = _length_nonmasked(data, axis, xp=xp)
+    N = _count_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
@@ -911,7 +930,7 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
         If this is set to True, the axes which are reduced are left
         in the result as dimensions with size one. With this option,
         the result will broadcast correctly against the input array.
-    nan_policy : {'propagate', 'omit', 'raise'
+    nan_policy : {'propagate', 'omit', 'raise'}
         Defines how to handle input NaNs.
 
         - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
@@ -1029,7 +1048,6 @@ def _boxcox_llf(data, axis=0, *, lmb):
         logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
-    res = xp.astype(res, data.dtype, copy=False)  # compensate for NumPy <2.0
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -1791,7 +1809,7 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
         l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`N` is the number of data points :math:`x`=``data`` and
+    where :math:`N` is the number of data points :math:`x` = ``data`` and
     :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
     input data :math:`x`.
     This corresponds to the *profile log-likelihood* of the original data :math:`x`
@@ -2187,7 +2205,7 @@ def _swilk(y, *, xp):
     if n == 3:
         # [2] Table 5 gives the first four digits
         c = math.sqrt(2) / 2
-        a = xp.asarray([-c, 0, c])
+        a = xp.asarray([-c, 0, c], device=xp_device(y))
         # [2] Corollary 4; discussed in https://github.com/scipy/scipy/issues/18322
         W = xp.clip(_swilk_w(y, a, xp=xp), 0.75, 1.)
         pvalue = xp.clip(1. - 6/np.pi * xp.acos(xp.sqrt(W)), 0., 1.)
@@ -2195,7 +2213,7 @@ def _swilk(y, *, xp):
 
     # Follows [4] section 2.2
     # could calculate half the coefficients and get the rest by antisymmetry
-    i = xp.arange(1, n + 1, dtype=y.dtype)
+    i = xp.arange(1, n + 1, dtype=y.dtype, device=xp_device(y))
     m = special.ndtri((i - 3 / 8) / (n + 1 / 4))
     u = n**(-0.5)
     mTm = xp.vecdot(m, m)
@@ -2342,7 +2360,7 @@ _anderson_warning_message = (
 tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
 p-value via Monte Carlo simulation. When `method` is specified, the result object will
 include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
-or `fit_result`. Beginning in 1.19.0, these other attributes will no longer be
+or `fit_result`. Beginning in 2.0.0, these other attributes will no longer be
 available, and a p-value will always be computed according to one of the available
 `method` options.""".replace('\n', ' '))
 
@@ -2379,7 +2397,7 @@ def anderson(x, dist='norm', *, method=None):
             specifying that the user must opt into a p-value calculation method.
             When `method` is specified, the object returned will include a ``pvalue``
             attribute, but no ``critical_value``, ``significance_level``, or
-            ``fit_result`` attributes. Beginning in 1.19.0, these other attributes will
+            ``fit_result`` attributes. Beginning in 2.0.0, these other attributes will
             no longer be available, and a p-value will always be computed according to
             one of the available `method` options.
 
@@ -2412,7 +2430,7 @@ def anderson(x, dist='norm', *, method=None):
         .. deprecated:: 1.17.0
             The tuple-unpacking behavior of the return object and attributes
             ``critical_values``, ``significance_level``, and ``fit_result`` are
-            deprecated. Beginning in SciPy 1.19.0, these features will no longer be
+            deprecated. Beginning in SciPy 2.0.0, these features will no longer be
             available, and the object returned will have attributes ``statistic`` and
             ``pvalue``.
 
@@ -2881,7 +2899,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
 
     if variant == _NoValue or midrank != _NoValue:
         message = ("Parameter `variant` has been introduced to replace `midrank`; "
-                   "`midrank` will be removed in SciPy 1.19.0. Specify `variant` to "
+                   "`midrank` will be removed in SciPy 2.0.0. Specify `variant` to "
                    "silence this warning. Note that the returned object will no longer "
                    "be unpackable as a tuple, and `critical_values` will be omitted.")
         warnings.warn(message, category=UserWarning, stacklevel=2)
@@ -3025,10 +3043,9 @@ class _ABW:
 _abw_state = threading.local()
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
-                 jax_jit=False, cpu_only=True)  # p-value is Cython
+@xp_capabilities(cpu_only=True, skip_backends=[('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
-def ansari(x, y, alternative='two-sided', *, axis=0):
+def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
@@ -3055,6 +3072,21 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
         If ``None``, the input will be raveled before computing the statistic.
+    method : {'auto', 'asymptotic', 'exact'} or `PermutationMethod` instance, optional
+        Selects the method used to calculate the *p*-value.
+        Default is 'auto'. The following options are available.
+
+        * ``'asymptotic'``: compares the standardized test statistic
+          against the normal distribution, correcting for ties.
+        * ``'exact'``: computes the exact *p*-value by comparing the observed
+          statistic against the exact distribution of the statistic under the
+          null hypothesis. No correction is made for ties.
+        * ``'auto'``: chooses ``'exact'`` when the size of both
+          samples is less than or equal to 55 and there are no ties;
+          chooses ``'asymptotic'`` otherwise.
+        * `PermutationMethod` instance. In this case, the p-value
+          is computed using `permutation_test` with the provided
+          configuration options and other appropriate settings.
 
     Returns
     -------
@@ -3143,6 +3175,15 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
+    methods = {'auto', 'asymptotic', 'exact'}
+    if str(method) not in methods and not isinstance(method, stats.PermutationMethod):
+        message = (f"`method` must be one of {methods} or "
+                   "an instance of `PermutationMethod`.")
+        raise ValueError(message)
+    if is_lazy_array(x) and method == 'auto':
+        message = ("`method` must be 'exact', 'asymptotic', or an instance of "
+                   "`PermutationMethod` when used with lazy arrays.")
+        raise ValueError(message)
 
     if not hasattr(_abw_state, 'a'):
         _abw_state.a = _ABW()
@@ -3157,33 +3198,47 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
 
     N = m + n
     xy = xp.concat([x, y], axis=-1)  # combine
-    rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    rank, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
-    exact = ((m < 55) and (n < 55) and not repeats)
-    if exact:
+
+    if method == "auto":
+        method = 'exact' if ((m < 55) and (n < 55) and not repeats) else 'asymptotic'
+
+    if method == 'exact':
         # np.vectorize converts to NumPy here, and we convert back to the result
         # type before returning
         cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
         sf = np.vectorize(_abw_state.a.sf, otypes=[np.float64])
-        if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(cdf(AB, n, m),
-                                    sf(AB, n, m))
-        elif alternative == 'greater':
-            # AB statistic is _smaller_ when ratio of scales is larger,
-            # so this is the opposite of the usual calculation
-            pval = cdf(AB, n, m)
-        else:
-            pval = sf(AB, n, m)
+        def get_ansari_pvalue(AB):
+            if alternative == 'two-sided':
+                pval = 2.0 * np.minimum(cdf(AB, n, m), sf(AB, n, m))
+            elif alternative == 'greater':
+                # AB statistic is _smaller_ when ratio of scales is larger,
+                # so this is the opposite of the usual calculation
+                pval = cdf(AB, n, m)
+            else:
+                pval = sf(AB, n, m)
+            return pval
+
+        pval = xpx.lazy_apply(get_ansari_pvalue, AB, shape=AB.shape)
         pval = xp.clip(xp.asarray(pval, dtype=dtype), max=1.0)
         AB = AB[()] if AB.ndim == 0 else AB
         pval = pval[()] if pval.ndim == 0 else pval
         return AnsariResult(AB, pval)
 
+    elif isinstance(method, stats.PermutationMethod):
+        def statistic(x, y, axis):
+            return ansari(x, y, axis=axis, method="asymptotic").statistic
+        alternative = dict(less='greater', greater='less').get(alternative, 'two-sided')
+        res = stats.permutation_test((x, y), statistic, axis=axis,
+                                     **method._asdict(), alternative=alternative)
+        return AnsariResult(AB, res.pvalue)
+
     mnAB = (n * (N + 1.0) ** 2 / 4.0 / N) if N % 2 else (n * (N + 2.0) / 4.0)
 
-    if repeats:   # adjust variance estimates
+    if is_lazy_array(repeats) or repeats:   # adjust variance estimates
         # compute np.sum(tj * rj**2,axis=0)
         fac = xp.sum(symrank**2, axis=-1)
         if N % 2:  # N odd
@@ -3196,7 +3251,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
             varAB = n * m * (N + 1.0) * (3 + N ** 2) / (48.0 * N ** 2)
         else:
             varAB = m * n * (N + 2) * (N - 2.0) / 48 / (N - 1.0)
-        varAB = xp.asarray(varAB, dtype=dtype)
+        varAB = xp.asarray(varAB, dtype=dtype, device=xp_device(AB))
 
     # Small values of AB indicate larger dispersion for the x sample.
     # Large values of AB indicate larger dispersion for the y sample.
@@ -3210,7 +3265,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
 def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
@@ -3298,7 +3353,7 @@ def bartlett(*samples, axis=0):
         samples = _broadcast_arrays(samples, axis=axis, xp=xp)
         samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp),
+    Ni = [xp.asarray(_count_nonmasked(sample, axis=-1, xp=xp),
                      dtype=sample.dtype, device=xp_device(sample))
           for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
@@ -3330,7 +3385,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3443,10 +3498,11 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     else:  # center == 'trimmed'
 
         def func(x):
-            # keepdims=True doesn't currently work for lazy arrays
+            # keepdims=True doesn't currently work for Dask
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    Nis = [sample.shape[-1] for sample in samples]
+    Nis = [_count_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+           for sample in samples]
     Ycis = [func(sample) for sample in samples]
     Ntot = sum(Nis)
 
@@ -3467,16 +3523,21 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 
     W = numer / denom
     W = xp.squeeze(W, axis=-1)
-    dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
+    dfd = xp.squeeze(dfd, axis=-1) if is_marray(xp) else dfd
+    device = xp_device(W)
+    dfn, dfd = (xp.asarray(dfn, dtype=W.dtype, device=device),
+                xp.asarray(dfd, dtype=W.dtype, device=device))
     pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
-    return LeveneResult(W[()], pval[()])
+    W = W[()] if W.ndim == 0 else W
+    pval = pval[()] if pval.ndim == 0 else pval
+    return LeveneResult(W, pval)
 
 
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
-                                ('cupy', 'no rankdata')])
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
+                 marray=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3604,8 +3665,11 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
             # keepdims=True doesn't currently work for lazy arrays
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    ni = [sample.shape[-1] for sample in samples]
+    lengths = [sample.shape[-1] for sample in samples]
+    ni = [_count_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+          for sample in samples]
     N = sum(ni)
+    ni = [xp.squeeze(ni_, axis=-1) for ni_ in ni] if is_marray(xp) else ni
 
     # Implementation follows [3] pg 355 F-K.
     Xibar = [func(sample) for sample in samples]
@@ -3615,14 +3679,14 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
-    splits = list(itertools.accumulate(ni, initial=0))
+    splits = list(itertools.accumulate(lengths, initial=0))
     Ai = [a_Ni[..., i:j] for i, j in zip(splits[:-1], splits[1:])]
     Aibar = [xp.mean(Ai_, axis=-1) for Ai_ in Ai]
     abar = xp.mean(a_Ni, axis=-1)
     V2 = xp.var(a_Ni, axis=-1, correction=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
 
-    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype, device=xp_device(statistic)))
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FlignerResult(statistic, pval)
 
@@ -3674,9 +3738,9 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     x = xp.sort(x, axis=-1)
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
-    _, a = _stats_py._rankdata(x, method='average', return_ties=True)
+    _, _, a = _stats_py._rankdata(x, method='average', return_ties=True)
 
-    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
+    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype, device=xp_device(a))
     a = xp.concat((a, zeros), axis=-1)
     a = xp.take_along_axis(a, i, axis=-1)
 
@@ -3702,7 +3766,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3810,7 +3874,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
-    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
 
     if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
@@ -3848,9 +3912,12 @@ def wilcoxon_outputs(kwds):
     return 2
 
 
-@xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
-                                ("cupy", "no rankdata")],
-                 cpu_only=True)  # null distribution is CPU only
+@xp_capabilities(skip_backends=[("dask.array", "no rankdata")],
+                 cpu_only=True,  # null distribution is CPU only
+                 marray=True,
+                 extra_note=("Only ``method='asymptotic'``/``zero_method='zsplit'`` is "
+                             "compatible with MArray input. "
+                             "``method='auto'`` is incompatible with JAX arrays."))
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -3979,7 +4046,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     configuration options and other appropriate settings.
 
     The presence of ties and zeros affects the resolution of ``method='auto'``
-    accordingly: exhasutive permutations are performed when ``len(d) <= 13``,
+    accordingly: exhaustive permutations are performed when ``len(d) <= 13``,
     and the asymptotic method is used otherwise. Note that they asymptotic
     method may not be very accurate even for ``len(d) > 14``; the threshold
     was chosen as a compromise between execution time and accuracy under the
@@ -4082,7 +4149,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     WilcoxonResult(statistic=6.0, pvalue=0.5)
 
     """
-    # replace approx by asymptotic to ensure backwards compatability
+    # replace approx by asymptotic to ensure backwards compatibility
     if method == "approx":
         method = "asymptotic"
     return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative,
@@ -4262,13 +4329,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     if nan_policy == 'propagate' and contains_nan:
         return MedianTestResult(np.nan, np.nan, np.nan, None)
 
-    if contains_nan:
-        grand_median = np.median(cdata[~np.isnan(cdata)])
-    else:
-        grand_median = np.median(cdata)
-    # When the minimum version of numpy supported by scipy is 1.9.0,
-    # the above if/else statement can be replaced by the single line:
-    #     grand_median = np.nanmedian(cdata)
+    grand_median = np.nanmedian(cdata)
 
     # Create the contingency table.
     table = np.zeros((2, len(data)), dtype=np.int64)
@@ -4325,7 +4386,7 @@ def _circfuncs_common(samples, period, xp=None):
     return samples, sin_samp, cos_samp
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4419,7 +4480,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return (res * (period / (2.0 * pi)) - low) % period + low
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4514,7 +4575,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4648,7 +4709,7 @@ class DirectionalStats:
                 f" mean_resultant_length={self.mean_resultant_length})")
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def directional_stats(samples, *, axis=0, normalize=True):
     """
     Computes sample statistics for directional data.
@@ -4814,7 +4875,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
     Returns
     -------
-    ps_adusted : array_like
+    ps_adjusted : array_like
         The adjusted p-values. If the null hypothesis is rejected where these
         fall below a specified level, the false discovery rate is controlled
         at that level.

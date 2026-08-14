@@ -319,12 +319,10 @@ cdef double[:, :] _compute_davenport_from_quat(
 @cython.wraparound(False)
 cdef inline void _compose_quat_single( # calculate p * q into r
     const double[:] p, const double[:] q, double[:] r
-) noexcept:
-    cdef double[:] cross = _cross3(p[:3], q[:3])
-
-    r[0] = p[3]*q[0] + q[3]*p[0] + cross[0]
-    r[1] = p[3]*q[1] + q[3]*p[1] + cross[1]
-    r[2] = p[3]*q[2] + q[3]*p[2] + cross[2]
+) noexcept nogil:
+    r[0] = p[3]*q[0] + q[3]*p[0] + p[1]*q[2] - p[2]*q[1]
+    r[1] = p[3]*q[1] + q[3]*p[1] + p[2]*q[0] - p[0]*q[2]
+    r[2] = p[3]*q[2] + q[3]*p[2] + p[0]*q[1] - p[1]*q[0]
     r[3] = p[3]*q[3] - p[0]*q[0] - p[1]*q[1] - p[2]*q[2]
 
 @cython.boundscheck(False)
@@ -580,7 +578,7 @@ def from_rotvec(rotvec, bint degrees=False):
     # If a single vector is given, convert it to a 2D 1 x 3 matrix but
     # set self._single to True so that we can return appropriate objects
     # in the `as_...` methods
-    cdef double[:, :] crotvec
+    cdef const double[:, :] crotvec
     if rotvec.shape == (3,):
         crotvec = rotvec[None, :]
         is_single = True
@@ -1075,7 +1073,7 @@ def reduce(double[:, :] quat, left=None, right=None):
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-def apply(double[:, :] quat, double[:, :] vectors, bint inverse=False) -> double[:, :]:
+def apply(double[:, :] quat, const double[:, :] vectors, bint inverse=False) -> double[:, :]:
     cdef Py_ssize_t n_vectors = len(vectors)
     cdef Py_ssize_t n_rotations = len(quat)
 

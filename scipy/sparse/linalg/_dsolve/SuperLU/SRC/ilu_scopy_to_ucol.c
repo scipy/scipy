@@ -26,7 +26,7 @@ at the top-level directory.
 int num_drop_U;
 #endif
 
-extern void scopy_(int *, float [], int *, float [], int *);
+extern void scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
 
 #if 0
 static float *A;  /* used in _compare_ only */
@@ -72,11 +72,11 @@ ilu_scopy_to_ucol(
     float    *ucol;
     int_t     *usub, *xusub;
     int_t     nzumax;
-    int       m; /* number of entries in the nonzero U-segments */
+    slu_blasint m; /* number of entries in the nonzero U-segments */
     register float d_max = 0.0, d_min = 1.0 / smach("Safe minimum");
     register double tmp;
     float zero = 0.0;
-    int i_1 = 1;
+    slu_blasint i_1 = 1;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;
@@ -101,7 +101,7 @@ ilu_scopy_to_ucol(
 
 	if ( ksupno != jsupno ) { /* Should go into ucol[] */
 	    kfnz = repfnz[krep];
-	    if ( kfnz != EMPTY ) {	/* Nonzero U-segment */
+	    if ( kfnz != SLU_EMPTY ) {	/* Nonzero U-segment */
 
 		fsupc = xsup[ksupno];
 		isub = xlsub[fsupc] + kfnz - fsupc;

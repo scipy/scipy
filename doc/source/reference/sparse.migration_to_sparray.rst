@@ -56,10 +56,10 @@ Overview and big picture
 
    -  ``issparse(A)`` returns ``True`` for any sparse array/matrix.
    -  ``isspmatrix(M)`` returns ``True`` for any sparse matrix.
-   -  ``isspmatrix_csr(M)`` checks for a sparse matrix with specific format.
-      It should be replaced with an array compatible version such as:
-   -  ``issparse(A) and A.format == 'csr'`` which checks for a CSR sparse
-      array/matrix.
+      A future proof idiom is ``issparse(A) and not isinstance(A, sparray)``
+   -  The ``isspmatrix*`` helpers (e.g. ``isspmatrix_csr``) are specific to
+      the legacy spmatrix API and should be avoided.
+      Use ``issparse(A) and A.format == 'csr'`` instead.
 
 -  Handling your software package API with sparse input/output:
 

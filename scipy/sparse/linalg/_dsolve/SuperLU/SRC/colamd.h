@@ -55,24 +55,25 @@ at the top-level directory.
 #ifndef COLAMD_H
 #define COLAMD_H
 
-#include "superlu_config.h"
 
 /* make it easy for C++ programs to include COLAMD */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined ( _LONGINT )
-#define DLONG
-#endif
-
-
 /* ========================================================================== */
 /* === Include files ======================================================== */
 /* ========================================================================== */
 
 #include <stdlib.h>
-    /*#include <stdint.h>*/
+//#include <inttypes.h>
+#include <stdint.h>
+#include "superlu_config.h"
+
+#if defined ( _LONGINT )
+#define DLONG
+#endif
+
 
 /* ========================================================================== */
 /* === COLAMD version ======================================================= */
@@ -175,9 +176,9 @@ extern "C" {
 #define SuiteSparse_long_idd "ld"
 #endif
 
-#if 1
+#if 0
 #define SuiteSparse_long long long int
-#else
+#else  // Sherry switch to this
 #define SuiteSparse_long int64_t
 #endif
 #define SuiteSparse_long_max LONG_MAX

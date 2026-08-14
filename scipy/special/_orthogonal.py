@@ -82,8 +82,44 @@ from scipy.special import airy
 
 # Local imports.
 # There is no .pyi file for _specfun
-from . import _specfun  # type: ignore
+from . import _specfun
 from . import _ufuncs
+
+
+__all__ = [
+    'legendre',
+    'chebyt',
+    'chebyu',
+    'chebyc',
+    'chebys',
+    'jacobi',
+    'laguerre',
+    'genlaguerre',
+    'hermite',
+    'hermitenorm',
+    'gegenbauer',
+    'sh_legendre',
+    'sh_chebyt',
+    'sh_chebyu',
+    'sh_jacobi',
+    'roots_legendre',
+    'roots_chebyt',
+    'roots_chebyu',
+    'roots_chebyc',
+    'roots_chebys',
+    'roots_jacobi',
+    'roots_laguerre',
+    'roots_genlaguerre',
+    'roots_hermite',
+    'roots_hermitenorm',
+    'roots_gegenbauer',
+    'roots_sh_legendre',
+    'roots_sh_chebyt',
+    'roots_sh_chebyu',
+    'roots_sh_jacobi',
+]
+
+
 _gam = _ufuncs.gamma
 
 _polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
@@ -223,9 +259,9 @@ def roots_jacobi(n, alpha, beta, mu=False):
     n : int
         Quadrature order.
     alpha : float
-        alpha must be > -1
+        alpha must be > -1.
     beta : float
-        beta must be > -1
+        beta must be > -1.
     mu : bool, optional
         If True, return the sum of the weights in addition to sample points and weights.
 
@@ -312,10 +348,13 @@ def jacobi(n, alpha, beta, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}P_n^{(\alpha, \beta)}
-          + (\beta - \alpha - (\alpha + \beta + 2)x)
-            \frac{d}{dx}P_n^{(\alpha, \beta)}
-          + n(n + \alpha + \beta + 1)P_n^{(\alpha, \beta)} = 0
+
+        \begin{aligned}
+        (1 - x^2)\frac{d^2}{dx^2} P_n^{(\alpha, \beta)}(x)
+        &+ \left(\beta - \alpha - (\alpha + \beta + 2)x\right)
+        \frac{d}{dx} P_n^{(\alpha, \beta)}(x) \\
+        &+ n(n + \alpha + \beta + 1) P_n^{(\alpha, \beta)}(x) = 0
+        \end{aligned}
 
     for :math:`\alpha, \beta > -1`; :math:`P_n^{(\alpha, \beta)}` is a
     polynomial of degree :math:`n`.
@@ -403,7 +442,7 @@ def jacobi(n, alpha, beta, monic=False):
 
 
 def roots_sh_jacobi(n, p1, q1, mu=False):
-    """Gauss-Jacobi (shifted) quadrature.
+    r"""Gauss-Jacobi (shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Jacobi (shifted)
     quadrature. The sample points are the roots of the nth degree
@@ -416,11 +455,11 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     p1 : float
-        (p1 - q1) must be > -1
+        (p1 - q1) must be > -1.
     q1 : float
-        q1 must be > 0
+        q1 must be > 0.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
@@ -442,6 +481,80 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The roots and weights obtained from the shifted Chebyshev polynomials of
+    the first and second kind are special cases of those obtained from the
+    shifted Jacobi polynomials for :math:`p=0, q=1/2` and :math:`p=2, q=3/2`,
+    respectively.
+
+    >>> from scipy.special import roots_sh_chebyt, roots_sh_chebyu, roots_sh_jacobi
+    >>> roots_sh_jacobi(5, 0, 0.5)  # doctest: +NORMALIZE_WHITESPACE
+    (array([0.02447174, 0.20610737, 0.5       , 0.79389263, 0.97552826]),
+     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
+    >>> roots_sh_chebyt(5)  # doctest: +NORMALIZE_WHITESPACE
+    (array([0.02447174, 0.20610737, 0.5       , 0.79389263, 0.97552826]),
+     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
+    >>> roots_sh_jacobi(5, 2, 1.5)  # doctest: +NORMALIZE_WHITESPACE
+    (array([0.0669873, 0.25     , 0.5      , 0.75     , 0.9330127]),
+     array([0.03272492, 0.09817477, 0.13089969, 0.09817477, 0.03272492]))
+    >>> roots_sh_chebyu(5)  # doctest: +NORMALIZE_WHITESPACE
+    (array([0.0669873, 0.25     , 0.5      , 0.75     , 0.9330127]),
+     array([0.03272492, 0.09817477, 0.13089969, 0.09817477, 0.03272492]))
+
+    Consider the specific case :math:`p=2, q=0.5`.
+
+    >>> p, q = 2, 0.5
+    >>> roots, weights, sum_of_weights = roots_sh_jacobi(5, p, q, mu=True)
+
+    Verify that the values in `roots` are roots of the shifted Jacobi
+    polynomial :math:`G^{1.5, -0.5}_5(x)`.
+
+    >>> from scipy.special import eval_sh_jacobi
+    >>> eval_sh_jacobi(5, p, q, roots)
+    array([-1.10114283e-18, -8.80914265e-20, -3.52365706e-19, -3.52365706e-19,
+           -6.34258271e-18])
+
+    All values are indeed very close to zero.
+
+    The sum of the weights is given by the integral from 0 to 1 of
+    :math:`(1-x)^{p-q}x^{q-1}` which evalutes to
+    :math:`\Gamma(q)\Gamma(p-q+1)/\Gamma(p+1)`.
+
+    >>> sum_of_weights
+    np.float64(1.1780972450961724)
+    >>> from math import gamma, pi
+    >>> gamma(q) * gamma(p-q+1) / gamma(p+1)
+    1.1780972450961726
+
+    Roots and weights obtained from the shifted Jacobi polynomial
+    :math:`G^{p, q}_n(x)` are used in Gauss-Jacobi quadrature where
+    the integral from 0 to 1 of :math:`f(x)(1-x)^{p-q}x^{q-1}` is evaluated.
+    Roots and weights for order :math:`n` are expected to yield the exact
+    result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.02147573103039911)
+
+    The exact result is :math:`7\pi/1024`.
+
+    >>> 7*pi/1024
+    0.021475731030398976
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to 1 of :math:`\cos(x)(1-x)^{p-q}x^{q-1}`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.1421634723142564)
+    >>> from scipy.integrate import quad
+    >>> quad(lambda x: np.cos(x) * (1-x)**(p-q) * x**(q-1), 0, 1)
+    (1.1421634722898315, 6.314033740295599e-10)
+
+    The two result agree better than indicated by the estimated absolute error given
+    by the second value in the last output.
 
     """
     if (p1-q1) <= -1 or q1 <= 0:
@@ -492,6 +605,38 @@ def sh_jacobi(n, p, q, monic=False):
     For fixed :math:`p, q`, the polynomials :math:`G_n^{(p, q)}` are
     orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
     x)^{p - q}x^{q - 1}`.
+
+    Examples
+    --------
+    Evaluate the shifted Jacobi polynomial :math:`G_3^{(2, 1)}` at
+    :math:`x = 0.5`:
+
+    >>> import numpy as np
+    >>> from scipy.special import binom, jacobi, sh_jacobi
+    >>> np.isclose(sh_jacobi(3, 2, 1)(0.5), -3/280)
+    True
+
+    The polynomial is related to the Jacobi polynomial
+    :math:`P_n^{(p - q, q - 1)}`:
+
+    >>> x = np.linspace(0, 1, 5)
+    >>> n, p, q = 3, 2, 1
+    >>> scale = 1 / binom(2*n + p - 1, n)
+    >>> np.allclose(sh_jacobi(n, p, q)(x),
+    ...             scale * jacobi(n, p - q, q - 1)(2*x - 1))
+    True
+
+    Plot :math:`G_3^{(p, 1)}` for several values of :math:`p`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for p in [1, 2, 3]:
+    ...     ax.plot(x, sh_jacobi(3, p, 1)(x), label=rf"$p={p}$")
+    >>> ax.set_title(r"Shifted Jacobi polynomials $G_3^{(p, 1)}$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
 
     """
     if n < 0:
@@ -554,6 +699,81 @@ def roots_genlaguerre(n, alpha, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_genlaguerre
+    >>> roots, weights = roots_genlaguerre(5, 1.5)
+    >>> roots
+    array([ 0.81763176,  2.47233393,  5.11600612,  9.04414651, 15.04988168])
+    >>> weights
+    array([3.96031087e-01, 6.94687948e-01, 2.23227600e-01, 1.52629335e-02,
+           1.30819389e-04])
+
+    Verify that the values in `roots` are roots of the generalized Laguerre
+    polynomial :math:`L^{1.5}_5(x)`.
+
+    >>> from scipy.special import eval_genlaguerre
+    >>> eval_genlaguerre(5, 1.5, roots)
+    array([-3.25585912e-16, -3.25585912e-16,  6.51171825e-16, -1.56281238e-14,
+            4.16749968e-14])
+
+    The values of :math:`L^{1.5}_5(x)` evaluated at the roots are indeed rather
+    close to zero. The increasing values for larger roots can be explained by the
+    increasing derivative of the generalized Laguerre polynomial at the roots.
+
+    Verify that the sum of the weights equals the integral from 0 to :math:`\infty`
+    of :math:`x^\alpha\exp(-x)` which for :math:`\alpha=1.5` evaluates to
+    :math:`3\sqrt{\pi}/4`.  There are two ways to obtain the sum of weights, both
+    yielding the expected result within numerical precision.
+
+    >>> sum(weights)
+    np.float64(1.3293403881791368)
+    >>> roots, weights, sum_of_weights = roots_genlaguerre(5, 1.5, mu=True)
+    >>> sum_of_weights
+    np.float64(1.329340388179137)
+    >>> from math import pi, sqrt
+    >>> 0.75*sqrt(pi)
+    1.329340388179137
+
+    Roots and weights obtained from the generalized Laguerre polynomial
+    :math:`L^\alpha_n(x)` are used in Gauss-Laguerre quadrature where the integral
+    from 0 to :math:`\infty` of :math:`f(x)x^\alpha\exp(-x)` is evaluated. Roots
+    and weights for order :math:`n` are expected to yield the exact result for
+    polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(287.88527781504445)
+
+    This result agrees with the exact value of :math:`10395\sqrt{\pi}/64` within
+    numerical precision.
+
+    >>> (10395/64)*sqrt(pi)
+    287.88527781504433
+
+    In general, Gauss-Laguerre quadrature will only yield an approximate
+    value of the integral. Consider the integral from 0 to :math:`\infty`
+    of :math:`\cos(x)x^{1.5}\exp(-x)`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(-0.20056731778593656)
+
+    Because of the small number of nodes, this result is rather imprecise.
+
+    >>> from scipy.integrate import quad
+    >>> import numpy as np
+    >>> quad(lambda x: np.cos(x) * x**1.5 * np.exp(-x), 0, np.inf)
+    (-0.2138889584997946, 1.480038372176226e-08)
+
+    Here, the first number refers to the result while the second one gives an estimate
+    of the absolute error. A better result can be obtained by means of Gauss-Laguerre
+    quadrature by choosing a larger number of nodes.
+
+    >>> roots, weights = roots_genlaguerre(50, 1.5)
+    >>> weights @ np.cos(roots)
+    np.float64(-0.21388895849684425)
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -589,9 +809,9 @@ def genlaguerre(n, alpha, monic=False):
     Defined to be the solution of
 
     .. math::
-        x\frac{d^2}{dx^2}L_n^{(\alpha)}
-          + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}
-          + nL_n^{(\alpha)} = 0,
+        x\frac{d^2}{dx^2}L_n^{(\alpha)}(x)
+          + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}(x)
+          + nL_n^{(\alpha)}(x) = 0,
 
     where :math:`\alpha > -1`; :math:`L_n^{(\alpha)}` is a polynomial
     of degree :math:`n`.
@@ -637,15 +857,13 @@ def genlaguerre(n, alpha, monic=False):
     hypergeometric function :math:`{}_1F_1`:
 
         .. math::
-            L_n^{(\alpha)} = \binom{n + \alpha}{n} {}_1F_1(-n, \alpha +1, x)
+            L_n^{(\alpha)}(x) = \binom{n + \alpha}{n} {}_1F_1(-n, \alpha +1, x)
 
     This can be verified, for example,  for :math:`n = \alpha = 3` over the
     interval :math:`[-1, 1]`:
 
     >>> import numpy as np
-    >>> from scipy.special import binom
-    >>> from scipy.special import genlaguerre
-    >>> from scipy.special import hyp1f1
+    >>> from scipy.special import binom, genlaguerre, hyp1f1
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> np.allclose(genlaguerre(3, 3)(x), binom(6, 3) * hyp1f1(-3, 4, x))
     True
@@ -657,9 +875,9 @@ def genlaguerre(n, alpha, monic=False):
     >>> x = np.arange(-4.0, 12.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-5.0, 10.0)
-    >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{\alpha}$')
+    >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{(\alpha)}$')
     >>> for alpha in np.arange(0, 5):
-    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf'$L_3^{(alpha)}$')
+    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf"$L_3^{{({alpha})}}$")
     >>> plt.legend(loc='best')
     >>> plt.show()
 
@@ -724,6 +942,58 @@ def roots_laguerre(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_laguerre
+    >>> roots, weights = roots_laguerre(5)
+    >>> roots
+    array([ 0.26356032,  1.41340306,  3.59642577,  7.08581001, 12.64080084])
+    >>> weights
+    array([5.21755611e-01, 3.98666811e-01, 7.59424497e-02, 3.61175868e-03,
+           2.33699724e-05])
+
+    Verify that the values in `roots` are roots of the Laguerre polynomial
+    :math:`L_5(x)`.
+
+    >>> from scipy.special import eval_laguerre
+    >>> eval_laguerre(5, roots)
+    array([-5.55111512e-17, -5.55111512e-17,  2.22044605e-16, -1.77635684e-15,
+           -5.68434189e-14])
+
+    The values of :math:`L_5(x)` evaluated at the roots are indeed rather close
+    to zero. The increasing values for larger roots can be explained by the
+    increasing derivative of the Laguerre polynomial at the roots.
+
+    Verify that the sum of the weights equals the integral from 0 to :math:`\infty`
+    of :math:`\exp(-x)` which evaluates to 1. There are two ways to obtain the
+    sum of weights, both resulting in 1 within numerical precision.
+
+    >>> sum(weights)
+    np.float64(0.9999999999999998)
+    >>> roots, weights, sum_of_weights = roots_laguerre(5, mu=True)
+    >>> sum_of_weights
+    np.float64(1.0)
+
+    Roots and weights obtained from the Laguerre polynomial :math:`L_n(x)`
+    are used in Gauss-Laguerre quadrature where the integral from 0 to
+    :math:`\infty` of :math:`f(x)\exp(-x)` is evaluated. Roots and weights
+    for order :math:`n` are expected to yield the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(24.000000000000014)
+
+    This result is indeed very close to the exact value of 24.
+
+    In general, Gauss-Laguerre quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to :math:`\infty` of :math:`\cos(x)\exp(-x)`
+    which evaluates to 1/2.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(0.5005384852176379)
+
     """
     return roots_genlaguerre(n, 0.0, mu=mu)
 
@@ -734,7 +1004,8 @@ def laguerre(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        x\frac{d^2}{dx^2}L_n + (1 - x)\frac{d}{dx}L_n + nL_n = 0;
+        x\frac{d^2}{dx^2}L_n(x) + (1 - x)\frac{d}{dx}L_n(x)
+          + nL_n(x) = 0;
 
     :math:`L_n` is a polynomial of degree :math:`n`.
 
@@ -884,6 +1155,74 @@ def roots_hermite(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import roots_hermite
+    >>> roots, weights = roots_hermite(5)
+    >>> roots
+    array([-2.02018287, -0.95857246,  0.        ,  0.95857246,  2.02018287])
+    >>> weights
+    array([0.01995324, 0.39361932, 0.94530872, 0.39361932, 0.01995324])
+
+    Verify that the values in `roots` are roots of the Hermite polynomial
+    :math:`H_5(x)`.
+
+    >>> from scipy.special import eval_hermite
+    >>> eval_hermite(5, roots)
+    array([ 2.63775533e-13,  5.02429587e-15,  0.00000000e+00, -5.02429587e-15,
+           -2.63775533e-13])
+
+    The values of :math:`H_5(x)` evaluated at the roots are indeed rather close
+    to zero. The increasing values for larger roots can be explained by the
+    increasing derivative of the Hermite polynomial at the roots.
+
+    Verify that the sum of the weights equals the integral from :math:`-\infty`
+    to :math:`\infty` of :math:`\exp(-x^2)` which evaluates to :math:`\sqrt{\pi}`.
+    There are two ways to obtain the sum of weights, both yielding the expected
+    result within numerical precision.
+
+    >>> sum(weights)
+    np.float64(1.7724538509055157)
+    >>> roots, weights, sum_of_weights = roots_hermite(5, mu=True)
+    >>> sum_of_weights
+    np.float64(1.7724538509055159)
+
+    >>> from math import exp, pi, sqrt
+    >>> sqrt(pi)
+    1.7724538509055159
+
+    Roots and weights obtained from the Hermite polynomial :math:`H_n(x)`
+    are used in Gauss-Hermite quadrature where the integral from :math:`-\infty`
+    to :math:`\infty` of :math:`f(x)\exp(-x^2)` is evaluated. Roots and weights
+    for order :math:`n` are expected to yield the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(1.3293403881791352)
+
+    This result is indeed very close to the exact value of :math:`3\sqrt{\pi}/4`.
+
+    >>> 0.75*sqrt(pi)
+    1.329340388179137
+
+    In general, Gauss-Hermite quadrature will only yield an approximate value of
+    the integral. Consider the integral from :math:`-\infty` to :math:`\infty` of
+    :math:`\cos(x)\exp(-x^2)` which evaluates to :math:`\sqrt{\pi}\exp(-1/4)`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.3803900759356564)
+    >>> sqrt(pi) * exp(-0.25)
+    1.380388447043143
+
+    In order to improve the accuracy obtained from Gauss-Hermite quadrature, a
+    large number of nodes can be chosen.
+
+    >>> roots, weights = roots_hermite(50)
+    >>> weights @ np.cos(roots)
+    np.float64(1.380388447043143)
 
     """
     m = int(n)
@@ -1136,7 +1475,7 @@ def _pbcf(n, theta):
     v0 = 1.0
     v1 = (1.0*ctp[3,:] + 6.0*ct) / 24.0
     v2 = (15.0*ctp[4,:] - 327.0*ctp[2,:] - 143.0) / 1152.0
-    v3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 36387.0*ctp[5,:] 
+    v3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 36387.0*ctp[5,:]
           + 238425.0*ctp[3,:] + 259290.0*ct) / 414720.0
     v4 = (-121260.0*ctp[10,:] + 551733.0*ctp[8,:] - 151958.0*ctp[6,:]
           - 57484425.0*ctp[4,:] - 132752238.0*ctp[2,:] - 12118727) / 39813120.0
@@ -1307,7 +1646,7 @@ def hermite(n, monic=False):
     Returns
     -------
     H : orthopoly1d
-        Hermite polynomial.
+        Physicist's Hermite polynomial.
 
     Notes
     -----
@@ -1369,18 +1708,18 @@ def roots_hermitenorm(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
@@ -1404,6 +1743,73 @@ def roots_hermitenorm(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import roots_hermitenorm
+    >>> roots, weights = roots_hermitenorm(5)
+    >>> roots
+    array([-2.85697001, -1.35562618,  0.        ,  1.35562618,  2.85697001])
+    >>> weights
+    array([0.02821815, 0.55666179, 1.33686841, 0.55666179, 0.02821815])
+
+    Verify that the values in `roots` are roots of the Hermite polynomial
+    :math:`He_5(x)`.
+
+    >>> from scipy.special import eval_hermitenorm
+    >>> eval_hermitenorm(5, roots)
+    array([ 1.59872116e-14, -5.32907052e-15,  0.00000000e+00,  5.32907052e-15,
+           -1.59872116e-14])
+
+    The values of :math:`He_5(x)` evaluated at the roots are indeed either zero
+    or rather close to it. The increasing values for larger roots can be explained
+    by the increasing derivative of the Hermite polynomial at the roots.
+
+    Verify that the sum of the weights equals the integral from :math:`-\infty`
+    to :math:`\infty` of :math:`\exp(-x^2/2)` which evaluates to :math:`\sqrt{2\pi}`.
+    There are two ways to obtain the sum of weights, both yielding the expected
+    result.
+
+    >>> sum(weights)
+    np.float64(2.5066282746310002)
+    >>> roots, weights, sum_of_weights = roots_hermitenorm(5, mu=True)
+    >>> sum_of_weights
+    np.float64(2.5066282746310002)
+    >>> from math import exp, pi, sqrt
+    >>> sqrt(2*pi)
+    2.5066282746310002
+
+    Roots and weights obtained from the Hermite polynomial :math:`He_n(x)`
+    are used in Gauss-Hermite quadrature where the integral from :math:`-\infty`
+    to :math:`\infty` of :math:`f(x)\exp(-x^2/2)` is evaluated. Roots and weights
+    for order :math:`n` are expected to yield the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(7.519884823892987)
+
+    This result is indeed very close to the exact value of :math:`3\sqrt{2\pi}`.
+
+    >>> 3*sqrt(2*pi)
+    7.519884823893001
+
+    In general, Gauss-Hermite quadrature will only yield an approximate value of
+    the integral. Consider the integral from :math:`-\infty` to :math:`\infty` of
+    :math:`\cos(x)\exp(-x^2/2)` which evaluates to :math:`\sqrt{2\pi}\exp(-1/2)`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.520412469197972)
+    >>> sqrt(2*pi) * exp(-0.5)
+    1.5203469010662807
+
+    In order to improve the accuracy obtained from Gauss-Hermite quadrature, a
+    large number of nodes can be chosen.
+
+    >>> roots, weights = roots_hermitenorm(50)
+    >>> weights @ np.cos(roots)
+    np.float64(1.5203469010662798)
 
     """
     m = int(n)
@@ -1432,7 +1838,7 @@ def roots_hermitenorm(n, mu=False):
 
 
 def hermitenorm(n, monic=False):
-    r"""Normalized (probabilist's) Hermite polynomial.
+    r"""Probabilist's Hermite polynomial.
 
     Defined by
 
@@ -1453,13 +1859,40 @@ def hermitenorm(n, monic=False):
     Returns
     -------
     He : orthopoly1d
-        Hermite polynomial.
+        Probabilist's Hermite polynomial.
 
     Notes
     -----
 
     The polynomials :math:`He_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2/2}`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import hermitenorm
+
+    >>> p_monic = hermitenorm(3)
+    >>> p_monic
+    poly1d([ 1.,  0., -3.,  0.])
+
+    Evaluate the probabilist's Hermite polynomial of degree 3 at x = 1:
+
+    >>> p_monic(1)
+    np.float64(-2.0)
+
+    Plot probabilist's Hermite polynomials of degree 0 to 4:
+
+    >>> x = np.linspace(-3, 3, 100)
+    >>> fig, ax = plt.subplots()
+    >>> for i in range(5):
+    ...     ax.plot(x, hermitenorm(i)(x), label=f"n={i}")
+    >>> plt.title(f"Probabilist's Hermite polynomials $He_n$")
+    >>> plt.xlabel("x")
+    >>> plt.ylabel(rf"$He_n(x)$")
+    >>> plt.legend(loc="best")
+    >>> plt.show()
 
     """
     if n < 0:
@@ -1499,9 +1932,9 @@ def roots_gegenbauer(n, alpha, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     alpha : float
-        alpha must be > -0.5
+        alpha must be > -0.5.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
@@ -1523,6 +1956,73 @@ def roots_gegenbauer(n, alpha, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    Special cases of Gauss-Gegenbauer quadrature are the Gauss-Chebyshev
+    first kind quadrature (:math:`\alpha=0`) and Gauss-Chebyshev second
+    kind quadrature (:math:`\alpha=1`). Therefore, roots and weights obtained
+    from `roots_gegenbauer` should agree with those obtained from `roots_chebyt`
+    and `roots_chebyu` for the appropriate values of :math:`\alpha`.
+
+    >>> from scipy.special import roots_chebyt, roots_chebyu, roots_gegenbauer
+    >>> roots_gegenbauer(5, 0)  # doctest: +NORMALIZE_WHITESPACE
+    (array([-0.95105652, -0.58778525,  0.        ,  0.58778525,  0.95105652]),
+     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
+    >>> roots_chebyt(5)  # doctest: +NORMALIZE_WHITESPACE
+    (array([-0.95105652, -0.58778525,  0.        ,  0.58778525,  0.95105652]),
+     array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853]))
+
+    >>> roots_gegenbauer(5, 1)  # doctest: +NORMALIZE_WHITESPACE
+    (array([-0.8660254, -0.5      ,  0.       ,  0.5      ,  0.8660254]),
+     array([0.13089969, 0.39269908, 0.52359878, 0.39269908, 0.13089969]))
+    >>> roots_chebyu(5)  # doctest: +NORMALIZE_WHITESPACE
+    (array([-8.66025404e-01, -5.00000000e-01,  6.12323400e-17,  5.00000000e-01,
+             8.66025404e-01]),
+     array([0.13089969, 0.39269908, 0.52359878, 0.39269908, 0.13089969]))
+
+    The sum of weights should equal the integral from -1 to 1 of
+    :math:`(1-x^2)^{\alpha-1/2}` which evaluates to
+    :math:`\sqrt{\pi}\Gamma(\alpha+1/2)/\Gamma(\alpha+1)`.
+
+    >>> alpha = 0.7
+    >>> roots, weights, sum_of_weights = roots_gegenbauer(5, alpha, mu=True)
+    >>> sum(weights)
+    np.float64(1.7910437497388674)
+    >>> sum_of_weights
+    np.float64(1.7910437497388672)
+    >>> from math import gamma, pi, sqrt
+    >>> sqrt(pi) * gamma(alpha+0.5) / gamma(alpha+1)
+    1.7910437497388667
+
+    Roots and weights obtained from the Gegenbauer polynomial :math:`C^\alpha_n(x)`
+    are used in Gauss-Gegenbauer quadrature where the integral from -1 to 1 of
+    :math:`f(x)(1-x^2)^{\alpha-1/2}` is evaluated. Roots and weights for order
+    :math:`n` are expected to yield the exact result for polynomials :math:`f(x)`
+    of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.29265420747367116)
+
+    This result is indeed very close to the exact value of
+    :math:`3\sqrt{\pi}\Gamma(\alpha+1/2)/4\Gamma(\alpha+3)`.
+
+    >>> (3*sqrt(pi)/4) * gamma(alpha+0.5) / gamma(alpha+3)
+    0.2926542074736711
+
+    In general, Gauss-Gegenbauer quadrature will only yield an approximate value of
+    the integral. Consider the integral from -1 to 1 of
+    :math:`\cos(x)(1-x^2)^{\alpha-1/2}` which evaluates to
+    :math:`2^\alpha\sqrt{\pi}\Gamma(\alpha+1/2)J_\alpha(1)` where :math:`J_\alpha`
+    is the Bessel function of first kind and order :math:`\alpha`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.5395778712347201)
+    >>> from scipy.special import jv
+    >>> 2**alpha * sqrt(pi) * gamma(alpha+0.5) *jv(alpha, 1)
+    np.float64(1.5395778706293377)
 
     """
     m = int(n)
@@ -1568,12 +2068,12 @@ def roots_gegenbauer(n, alpha, mu=False):
 def gegenbauer(n, alpha, monic=False):
     r"""Gegenbauer (ultraspherical) polynomial.
 
-    Defined to be the solution of
+    Defined to be the solution of the second-order linear ordinary differential equation
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}
-          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}
-          + n(n + 2\alpha)C_n^{(\alpha)} = 0
+        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}(x)
+          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}(x)
+          + n(n + 2\alpha)C_n^{(\alpha)}(x) = 0
 
     for :math:`\alpha > -1/2`; :math:`C_n^{(\alpha)}` is a polynomial
     of degree :math:`n`.
@@ -1595,8 +2095,8 @@ def gegenbauer(n, alpha, monic=False):
 
     Notes
     -----
-    The polynomials :math:`C_n^{(\alpha)}` are orthogonal over
-    :math:`[-1,1]` with weight function :math:`(1 - x^2)^{(\alpha -
+    The polynomials :math:`C_n^{(\alpha)}` are orthogonal on
+    :math:`[-1,1]` with respect to the weight function :math:`(1 - x^2)^{(\alpha -
     1/2)}`.
 
     Examples
@@ -1626,7 +2126,7 @@ def gegenbauer(n, alpha, monic=False):
     >>> ax.plot(x, y)
     >>> ax.set_title("Gegenbauer (ultraspherical) polynomial of degree 3")
     >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel("G_3(x)")
+    >>> ax.set_ylabel(r"$C_3^{(0.5)}(x)$")
     >>> plt.show()
 
     """
@@ -1686,6 +2186,65 @@ def roots_chebyt(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_chebyt
+    >>> roots, weights = roots_chebyt(5)
+    >>> roots
+    array([-0.95105652, -0.58778525,  0.        ,  0.58778525,  0.95105652])
+    >>> weights
+    array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853])
+
+    Verify that the values in `roots` are roots of the Chebyshev polynomial of
+    first kind :math:`T_5(x)`.
+
+    >>> from scipy.special import eval_chebyt
+    >>> eval_chebyt(5, roots)
+    array([ 8.8817842e-16,  0.0000000e+00,  0.0000000e+00,  0.0000000e+00,
+           -8.8817842e-16])
+
+    The values of :math:`T_5(x)` evaluated at the roots are indeed zero or
+    very close to it.
+
+    Verify that the sum of the weights equals the integral from -1 to 1 of
+    :math:`1/\sqrt{1-x^2}` which evaluates to :math:`\pi`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(3.141592653589793)
+    >>> roots, weights, sum_of_weights = roots_chebyt(5, mu=True)
+    >>> sum_of_weights
+    3.141592653589793
+
+    Roots and weights obtained from the Chebyshev polynomial of the first kind
+    :math:`T_n(x)` are used in Gauss-Chebyshev quadrature where the integral
+    from -1 to 1 of :math:`f(x)/\sqrt{1-x^2}` is evaluated. Roots and weights
+    for order :math:`n` are expected to yield the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(1.1780972450961724)
+
+    The exact result is :math:`3\pi/8`.
+
+    >>> from math import pi
+    >>> 3*pi/8
+    1.1780972450961724
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from -1 to 1 of :math:`\cos(x)/\sqrt{1-x^2}`
+    which evaluates to :math:`\pi J_0(1)`, where :math:`J_0` is the Bessel function
+    of first kind and order 0.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(2.4039394322872774)
+    >>> from scipy.special import jv
+    >>> pi*jv(0, 1)
+    np.float64(2.4039394306344133)
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1704,7 +2263,8 @@ def chebyt(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}T_n - x\frac{d}{dx}T_n + n^2T_n = 0;
+        (1 - x^2)\frac{d^2}{dx^2}T_n(x) - x\frac{d}{dx}T_n(x)
+          + n^2T_n(x) = 0;
 
     :math:`T_n` is a polynomial of degree :math:`n`.
 
@@ -1845,6 +2405,65 @@ def roots_chebyu(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_chebyu
+    >>> roots, weights = roots_chebyu(5)
+    >>> roots
+    array([-8.66025404e-01, -5.00000000e-01,  6.12323400e-17,  5.00000000e-01,
+            8.66025404e-01])
+    >>> weights
+    array([0.13089969, 0.39269908, 0.52359878, 0.39269908, 0.13089969])
+
+    Verify that the values in `roots` are roots of the Chebyshev polynomial of
+    second kind :math:`U_5(x)`.
+
+    >>> from scipy.special import eval_chebyu
+    >>> eval_chebyu(5, roots)
+    array([-1.33226763e-15, -1.77635684e-15,  3.67394040e-16, -8.88178420e-16,
+            1.33226763e-15])
+
+    The values of :math:`U_5(x)` evaluated at the roots are indeed very close to zero.
+
+    Verify that the sum of the weights equals the integral from -1 to 1 of
+    :math:`\sqrt{1-x^2}` which evaluates to :math:`\pi/2`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi/2` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(1.5707963267948966)
+    >>> roots, weights, sum_of_weights = roots_chebyu(5, mu=True)
+    >>> sum_of_weights
+    1.5707963267948966
+
+    Roots and weights obtained from the Chebyshev polynomial of the second kind
+    :math:`U_n(x)` are used in Gauss-Chebyshev quadrature where the integral from
+    -1 to 1 of :math:`f(x)\sqrt{1-x^2}` is evaluated. Roots and weights for order
+    :math:`n` are expected to yield the exact result for polynomials :math:`f(x)` of
+    a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.19634954084936204)
+
+    The exact result is :math:`\pi/16`.
+
+    >>> from math import pi
+    >>> pi/16
+    0.19634954084936207
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from -1 to 1 of :math:`\cos(x)\sqrt{1-x^2}`
+    which evaluates to :math:`\pi J_1(1)`, where :math:`J_1` is the Bessel function
+    of first kind and order 1.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.3824596877989561)
+    >>> from scipy.special import jv
+    >>> pi*jv(1, 1)
+    np.float64(1.3824596873841686)
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1864,8 +2483,8 @@ def chebyu(n, monic=False):
     Defined to be the solution of
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}U_n - 3x\frac{d}{dx}U_n
-          + n(n + 2)U_n = 0;
+        (1 - x^2)\frac{d^2}{dx^2}U_n(x) - 3x\frac{d}{dx}U_n(x)
+          + n(n + 2)U_n(x) = 0;
 
     :math:`U_n` is a polynomial of degree :math:`n`.
 
@@ -1926,7 +2545,7 @@ def chebyu(n, monic=False):
     .. math::
         U_{2n-1}(x) = 2 T_n(x)U_{n-1}(x)
 
-    where the :math:`T_n` are the Chebyshev polynomial of the first kind.
+    where :math:`T_n` is the Chebyshev polynomial of the first kind.
     Let's verify it for :math:`n = 2`:
 
     >>> from scipy.special import chebyt
@@ -1994,6 +2613,65 @@ def roots_chebyc(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_chebyc
+    >>> roots, weights = roots_chebyc(5)
+    >>> roots
+    array([-1.90211303, -1.1755705 ,  0.        ,  1.1755705 ,  1.90211303])
+    >>> weights
+    array([1.25663706, 1.25663706, 1.25663706, 1.25663706, 1.25663706])
+
+    Verify that the values in `roots` are roots of the Chebyshev polynomial of
+    first kind :math:`C_5(x)`.
+
+    >>> from scipy.special import eval_chebyc
+    >>> eval_chebyc(5, roots)
+    array([ 1.77635684e-15,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+           -1.77635684e-15])
+
+    The values of :math:`C_5(x)` evaluated at the roots are indeed zero or
+    very close to it.
+
+    Verify that the sum of the weights equals the integral from -2 to 2 of
+    :math:`1/\sqrt{1-(x/2)^2}` which evaluates to :math:`2\pi`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`2\pi` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(6.283185307179586)
+    >>> roots, weights, sum_of_weights = roots_chebyc(5, mu=True)
+    >>> sum_of_weights
+    6.283185307179586
+
+    Roots and weights obtained from the Chebyshev polynomial of the first kind
+    :math:`C_n(x)` are used in Gauss-Chebyshev quadrature where the integral
+    from -2 to 2 of :math:`f(x)/\sqrt{1-(x/2)^2}` is evaluated. Roots and
+    weights for order :math:`n` are expected to yield the exact result for polynomials
+    :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(37.69911184307752)
+
+    The exact result is :math:`12\pi`.
+
+    >>> from math import pi
+    >>> 12*pi
+    37.69911184307752
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from -2 to 2 of :math:`\cos(x)/\sqrt{1-(x/2)^2}`
+    which evaluates to :math:`2\pi J_0(2)`, where :math:`J_0` is the Bessel function
+    of first kind and order 0.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.4067504148408285)
+    >>> from scipy.special import jv
+    >>> 2*pi*jv(0, 2)
+    np.float64(1.4067472539132013)
+
     """
     x, w, m = roots_chebyt(n, True)
     x *= 2
@@ -2009,7 +2687,7 @@ def chebyc(n, monic=False):
     r"""Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
 
     Defined as :math:`C_n(x) = 2T_n(x/2)`, where :math:`T_n` is the
-    nth Chebychev polynomial of the first kind.
+    nth Chebyshev polynomial of the first kind.
 
     Parameters
     ----------
@@ -2038,6 +2716,33 @@ def chebyc(n, monic=False):
     .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
            Section 22. National Bureau of Standards, 1972.
 
+    Examples
+    --------
+    Evaluate the Chebyshev polynomial :math:`C_3` at :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebyc, chebyt
+    >>> np.isclose(chebyc(3)(1), -2.0)
+    True
+
+    The polynomial :math:`C_n` is a scaled Chebyshev polynomial of the
+    first kind:
+
+    >>> x = np.linspace(-2, 2, 5)
+    >>> np.allclose(chebyc(3)(x), 2 * chebyt(3)(x/2))
+    True
+
+    Plot :math:`C_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-2, 2, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, chebyc(n)(x), label=rf"$C_{n}$")
+    >>> ax.set_title(r"Chebyshev polynomials $C_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -2099,6 +2804,72 @@ def roots_chebys(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_chebys
+    >>> roots, weights = roots_chebys(5)
+    >>> roots
+    array([-1.73205081e+00, -1.00000000e+00,  1.22464680e-16,  1.00000000e+00,
+            1.73205081e+00])
+    >>> weights
+    array([0.26179939, 0.78539816, 1.04719755, 0.78539816, 0.26179939])
+
+    Verify that the values in `roots` are roots of the Chebyshev polynomial of
+    first kind :math:`S_5(x)`.
+
+    >>> from scipy.special import eval_chebys
+    >>> eval_chebys(5, roots)
+    array([-1.33226763e-15, -1.77635684e-15,  3.67394040e-16, -8.88178420e-16,
+            1.33226763e-15])
+
+    The values of :math:`S_5(x)` evaluated at the roots are indeed very close to zero.
+
+    Verify that the sum of the weights equals the integral from -2 to 2 of
+    :math:`\sqrt{1-(x/2)^2}` which evaluates to :math:`\pi`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(3.141592653589793)
+    >>> roots, weights, sum_of_weights = roots_chebys(5, mu=True)
+    >>> sum_of_weights
+    3.141592653589793
+
+    Roots and weights obtained from the Chebyshev polynomial of the second kind
+    :math:`S_n(x)` are used in Gauss-Chebyshev quadrature where the integral from
+    -2 to 2 of :math:`f(x)\sqrt{1-(x/2)^2}` is evaluated. Roots and weights for
+    order :math:`n` are expected to yield the exact result for polynomials :math:`f(x)`
+    of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(6.283185307179585)
+
+    The exact result is :math:`2\pi`.
+
+    >>> from math import pi
+    >>> 2*pi
+    6.283185307179586
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from -2 to 2 of :math:`\cos(x)\sqrt{1-(x/2)^2}`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(1.8118352216010754)
+
+    Check against the result of `scipy.integrate.quad`.
+
+    >>> from scipy.integrate import quad
+    >>> result, abserror = quad(lambda x: np.cos(x) * np.sqrt(1-(x/2)**2), -2, 2)
+    >>> result
+    1.8118344191919165
+
+    The latter result has an estimated absolute error of
+
+    >>> abserror
+    1.5300099409643053e-08
+
     """
     x, w, m = roots_chebyu(n, True)
     x *= 2
@@ -2114,7 +2885,7 @@ def chebys(n, monic=False):
     r"""Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
 
     Defined as :math:`S_n(x) = U_n(x/2)` where :math:`U_n` is the
-    nth Chebychev polynomial of the second kind.
+    nth Chebyshev polynomial of the second kind.
 
     Parameters
     ----------
@@ -2136,13 +2907,40 @@ def chebys(n, monic=False):
     Notes
     -----
     The polynomials :math:`S_n(x)` are orthogonal over :math:`[-2, 2]`
-    with weight function :math:`\sqrt{1 - (x/2)}^2`.
+    with weight function :math:`\sqrt{1 - (x/2)^2}`.
 
     References
     ----------
     .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
            Section 22. National Bureau of Standards, 1972.
 
+    Examples
+    --------
+    Evaluate the Chebyshev polynomial of the second kind :math:`S_3` at :math:`x = 1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebys, chebyu
+    >>> np.isclose(chebys(3)(1), -1.0)
+    True
+
+    The polynomial :math:`S_n` is a scaled Chebyshev polynomial of the
+    second kind:
+
+    >>> x = np.linspace(-2, 2, 5)
+    >>> np.allclose(chebys(3)(x), chebyu(3)(x/2))
+    True
+
+    Plot :math:`S_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-2, 2, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, chebys(n)(x), label=rf"$S_{n}$")
+    >>> ax.set_title(r"Chebyshev polynomials $S_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -2182,18 +2980,18 @@ def roots_sh_chebyt(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
@@ -2204,6 +3002,68 @@ def roots_sh_chebyt(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import roots_sh_chebyt
+    >>> roots, weights = roots_sh_chebyt(5)
+    >>> roots
+    array([0.02447174, 0.20610737, 0.5       , 0.79389263, 0.97552826])
+    >>> weights
+    array([0.62831853, 0.62831853, 0.62831853, 0.62831853, 0.62831853])
+
+    Verify that the values in `roots` are roots of the shifted Chebyshev
+    polynomial of the first kind :math:`T^*_5(x)=T_5(2x-1)`.
+
+    >>> from scipy.special import eval_chebyt, eval_sh_chebyt
+    >>> eval_chebyt(5, 2*roots-1)
+    array([8.8817842e-16, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
+           8.8817842e-16])
+    >>> eval_sh_chebyt(5, roots)
+    array([8.8817842e-16, 0.0000000e+00, 0.0000000e+00, 0.0000000e+00,
+           8.8817842e-16])
+
+    The values of :math:`T_5(2x-1)` and of :math:`T^*_5(x)` evaluated at the
+    roots are indeed zero or very close to it.
+
+    Verify that the sum of the weights equals the integral from 0 to 1 of
+    :math:`1/\sqrt{x-x^2}` which evaluates to :math:`\pi`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(3.141592653589793)
+    >>> roots, weights, sum_of_weights = roots_sh_chebyt(5, mu=True)
+    >>> sum_of_weights
+    3.141592653589793
+
+    Roots and weights obtained from the shifted Chebyshev polynomial of the
+    first kind :math:`T^*_n(x)` are used in Gauss-Chebyshev quadrature where
+    the integral from 0 to 1 of :math:`f(x)/\sqrt{x-x^2}` is evaluated.
+    Roots and weights for order :math:`n` are expected to yield the exact
+    result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.8590292412159591)
+
+    The exact result is :math:`35\pi/128`.
+
+    >>> from math import cos, pi
+    >>> 35*pi/128
+    0.859029241215959
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to 1 of :math:`\cos(x)/\sqrt{x-x^2}`
+    which evaluates to :math:`\pi\cos(1/2) J_0(1/2)`, where :math:`J_0` is the Bessel
+    function of first kind and order 0.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(2.5873677615532227)
+    >>> from scipy.special import jv
+    >>> pi * cos(0.5) * jv(0, 0.5)
+    np.float64(2.587367761551782)
 
     """
     xw = roots_chebyt(n, mu)
@@ -2233,6 +3093,35 @@ def sh_chebyt(n, monic=False):
     -----
     The polynomials :math:`T^*_n` are orthogonal over :math:`[0, 1]`
     with weight function :math:`(x - x^2)^{-1/2}`.
+
+    Examples
+    --------
+    Evaluate the shifted Chebyshev polynomial of the first kind :math:`T^*_3` at
+    :math:`x = 0.75`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebyt, sh_chebyt
+    >>> np.isclose(sh_chebyt(3)(0.75), -1.0)
+    True
+
+    The polynomial :math:`T^*_n` is the Chebyshev polynomial
+    :math:`T_n` shifted from :math:`[-1, 1]` to :math:`[0, 1]`:
+
+    >>> x = np.linspace(0, 1, 5)
+    >>> np.allclose(sh_chebyt(3)(x), chebyt(3)(2*x - 1))
+    True
+
+    Plot :math:`T^*_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, sh_chebyt(n)(x), label=rf"$T^*_{n}$")
+    >>> ax.set_title(r"Shifted Chebyshev polynomials $T^*_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
 
     """
     base = sh_jacobi(n, 0.0, 0.5, monic=monic)
@@ -2284,6 +3173,71 @@ def roots_sh_chebyu(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_sh_chebyu
+    >>> roots, weights = roots_sh_chebyu(5)
+    >>> roots
+    array([0.0669873, 0.25     , 0.5      , 0.75     , 0.9330127])
+    >>> weights
+    array([0.03272492, 0.09817477, 0.13089969, 0.09817477, 0.03272492])
+
+    Verify that the values in `roots` are roots of the shifted Chebyshev
+    polynomial of the second kind :math:`U^*_5(x)=U_5(2x-1)`.
+
+    >>> from scipy.special import eval_chebyu, eval_sh_chebyu
+    >>> eval_chebyu(5, 2*roots-1)
+    array([-1.33226763e-15, -1.77635684e-15,  0.00000000e+00,  0.00000000e+00,
+            3.99680289e-15])
+    >>> eval_sh_chebyu(5, roots)
+    array([-1.33226763e-15, -1.77635684e-15,  0.00000000e+00,  0.00000000e+00,
+            3.99680289e-15])
+
+    The values of :math:`U_5(2x-1)` and :math:`U^*_5(x)` evaluated at the roots
+    are indeed zero or very close to it.
+
+    Verify that the sum of the weights equals the integral from 0 to 1 of
+    :math:`\sqrt{x-x^2}` which evaluates to :math:`\pi/8`. There are two ways
+    to obtain the sum of weights, both resulting in :math:`\pi/8` within numerical
+    precision.
+
+    >>> sum(weights)
+    np.float64(0.39269908169872403)
+    >>> roots, weights, sum_of_weights = roots_sh_chebyu(5, mu=True)
+    >>> sum_of_weights
+    np.float64(0.3926990816987241)
+    >>> from math import pi
+    >>> pi/8
+    0.39269908169872414
+
+    Roots and weights obtained from the shifted Chebyshev polynomial of the
+    second kind :math:`U^*_n(x)` are used in Gauss-Chebyshev quadrature where
+    the integral from 0 to 1 of :math:`f(x)\sqrt{x-x^2}` is evaluated.
+    Roots and weights for order :math:`n` are expected to yield the exact
+    result for polynomials :math:`f(x)` of a maximal order of :math:`2n-1`.
+
+    >>> f = lambda x: x**4
+    >>> weights @ f(roots)
+    np.float64(0.06442719309119692)
+
+    The exact result is :math:`21\pi/1024`.
+
+    >>> 21*pi/1024
+    0.06442719309119693
+
+    In general, Gauss-Chebyshev quadrature will only yield an approximate value of the
+    integral. Consider the integral from 0 to 1 of :math:`\cos(x)\sqrt{x-x^2}`.
+
+    >>> import numpy as np
+    >>> weights @ np.cos(roots)
+    np.float64(0.33396790828677264)
+    >>> from scipy.integrate import quad
+    >>> quad(lambda x: np.cos(x) * np.sqrt(x-x*x), 0, 1)
+    (0.3339679082866854, 1.4951873072988064e-11)
+
+    The two results agree better than the estimated absolute error, i.e. the second
+    value in the last output.
+
     """
     x, w, m = roots_chebyu(n, True)
     x = (x + 1) / 2
@@ -2319,6 +3273,35 @@ def sh_chebyu(n, monic=False):
     The polynomials :math:`U^*_n` are orthogonal over :math:`[0, 1]`
     with weight function :math:`(x - x^2)^{1/2}`.
 
+    Examples
+    --------
+    Evaluate the shifted Chebyshev polynomial of the second kind :math:`U^*_3` at
+    :math:`x = 0.75`:
+
+    >>> import numpy as np
+    >>> from scipy.special import chebyu, sh_chebyu
+    >>> np.isclose(sh_chebyu(3)(0.75), -1.0)
+    True
+
+    The polynomial :math:`U^*_n` is the Chebyshev polynomial
+    :math:`U_n` shifted from :math:`[-1, 1]` to :math:`[0, 1]`:
+
+    >>> x = np.linspace(0, 1, 5)
+    >>> np.allclose(sh_chebyu(3)(x), chebyu(3)(2*x - 1))
+    True
+
+    Plot :math:`U^*_n` for several values of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 400)
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(4):
+    ...     ax.plot(x, sh_chebyu(n)(x), label=rf"$U^*_{n}$")
+    >>> ax.set_title(r"Shifted Chebyshev polynomials $U^*_n$")
+    >>> ax.set_xlabel("x")
+    >>> ax.legend(loc="best")
+    >>> plt.show()
+
     """
     base = sh_jacobi(n, 2.0, 1.5, monic=monic)
     if monic:
@@ -2343,18 +3326,18 @@ def roots_legendre(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        quadrature order.
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
+        Weights.
     mu : float
-        Sum of the weights
+        Sum of the weights.
 
     See Also
     --------
@@ -2547,6 +3530,32 @@ def roots_sh_legendre(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+
+    Compute nodes and weights for a 7th-order shifted Gauss-Legendre quadrature:
+
+    >>> from scipy.special import roots_sh_legendre, eval_sh_legendre
+    >>> x, w = roots_sh_legendre(7)
+    >>> x
+    array([0.02544604, 0.12923441, 0.29707742, 0.5, 0.70292258, 0.87076559,
+        0.97455396])
+    >>> w
+    array([0.06474248, 0.1398527, 0.19091503, 0.20897959, 0.19091503, 0.1398527,
+        0.06474248])
+
+    Verify that ``x`` are the roots of the degree-7 shifted Legendre polynomial:
+
+    >>> eval_sh_legendre(7, x)
+    array([5.55111512e-16, 1.11022302e-16,  3.33066907e-16,  0.00000000e+00,
+        -2.22044605e-16, -1.11022302e-16, -1.85962357e-15])
+
+    The sum of the weights for shifted Gauss-Legendre quadrature is always 1:
+
+    >>> x, w, mu = roots_sh_legendre(10, mu=True)
+    >>> mu
+    1.0  # Sum of weights of shifted Gauss-Legendre quadrature is always 1
 
     """
     x, w = roots_legendre(n)

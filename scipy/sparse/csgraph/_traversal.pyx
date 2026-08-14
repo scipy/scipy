@@ -11,6 +11,7 @@ cimport numpy as np
 from scipy.sparse.csgraph._validation import validate_graph
 from scipy.sparse.csgraph._tools import reconstruct_path
 
+from libcpp.vector cimport vector
 cimport cython
 
 np.import_array()
@@ -58,8 +59,9 @@ def connected_components(csgraph, directed=True, connection='weak',
 
     References
     ----------
-    .. [1] D. J. Pearce, "An Improved Algorithm for Finding the Strongly
-           Connected Components of a Directed Graph", Technical Report, 2005
+    .. [1] Robert E. Tarjan and Uri Zwick, "Finding strong components using
+           depth-first search", European Journal of Combinatorics, 119,
+           2024, :doi:`10.1016/j.ejc.2023.103815`
 
     Examples
     --------
@@ -102,7 +104,6 @@ def connected_components(csgraph, directed=True, connection='weak',
                              dense_output=False)
 
     labels = np.empty(csgraph.shape[0], dtype=ITYPE)
-    labels.fill(NULL_IDX)
 
     if directed:
         n_components = _connected_components_directed(csgraph.indices,
@@ -398,7 +399,8 @@ cdef unsigned int _breadth_first_directed2(
     #                tree.  Should be initialized to NULL_IDX
     # Returns:
     #  n_nodes: the number of nodes in the breadth-first tree
-    cdef unsigned int i, pnode, cnode
+    cdef Py_ssize_t i
+    cdef unsigned int pnode, cnode
     cdef unsigned int i_nl, i_nl_end
 
     node_list[0] = head_node
@@ -451,7 +453,8 @@ cdef unsigned int _breadth_first_undirected2(
     #                tree.  Should be initialized to NULL_IDX
     # Returns:
     #  n_nodes: the number of nodes in the breadth-first tree
-    cdef unsigned int i, pnode, cnode
+    cdef Py_ssize_t i
+    cdef unsigned int pnode, cnode
     cdef unsigned int i_nl, i_nl_end
 
     node_list[0] = head_node
@@ -608,7 +611,8 @@ cdef unsigned int _depth_first_directed2(
         np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
         np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
         np.ndarray[ITYPE_t, ndim=1, mode='c'] flag) noexcept:
-    cdef unsigned int i, i_nl_end, cnode, pnode
+    cdef Py_ssize_t i
+    cdef unsigned int i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
 
@@ -670,7 +674,8 @@ cdef unsigned int _depth_first_undirected2(
         np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
         np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
         np.ndarray[ITYPE_t, ndim=1, mode='c'] flag) noexcept:
-    cdef unsigned int i, i_nl_end, cnode, pnode
+    cdef Py_ssize_t i
+    cdef unsigned int i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
 
@@ -722,6 +727,12 @@ cdef unsigned int _depth_first_undirected2(
     return i_nl_end
 
 
+cdef inline int _dfs_node(int v) noexcept nogil:
+    """Decode a DFS stack entry to a node index (clear the sign/lead bit)."""
+    return v & 0x7FFFFFFF
+
+
+# Author: Sebastiano Vigna  -- <sebastiano.vigna@gmail.com>
 def _connected_components_directed(
         np.ndarray[int32_or_int64, ndim=1, mode='c'] indices,
         np.ndarray[int32_or_int64, ndim=1, mode='c'] indptr,
@@ -729,6 +740,8 @@ def _connected_components_directed(
     return _connected_components_directed2(indices, indptr, labels)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef int _connected_components_directed2(
         np.ndarray[int32_or_int64, ndim=1, mode='c'] indices,
         np.ndarray[int32_or_int64, ndim=1, mode='c'] indptr,
@@ -736,120 +749,140 @@ cdef int _connected_components_directed2(
     """
     Uses an iterative version of Tarjan's algorithm to find the
     strongly connected components of a directed graph represented as a
-    sparse array (scipy.sparse.csc_array or scipy.sparse.csr_array).
+    CSR sparse array (scipy.sparse.csr_array).
 
-    The algorithmic complexity is for a graph with E edges and V
-    vertices is O(E + V).
-    The storage requirement is 2*V integer arrays.
+    The algorithmic complexity for a graph with E edges and V vertices
+    is O(E + V). The storage requirement is an array of V elements
+    (int32 or int64, matching the CSR index type) tracking successor
+    positions, plus two int32 stacks whose combined length never exceeds
+    V, and is much smaller in practice.
 
-    Uses an iterative version of the algorithm described here:
-    http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
+    The algorithm uses all improvements described by Tarjan and Zwick in
+    their recent survey [1]_, plus some further tricks used in the Rust
+    implementation of the WebGraph framework [2]_.
 
-    For more details of the memory optimisations used see here:
-    http://www.timl.id.au/SCC
+    References
+    ----------
+    .. [1] Robert E. Tarjan and Uri Zwick, "Finding strong components using
+           depth-first search", European Journal of Combinatorics, 119,
+           2024, :doi:`10.1016/j.ejc.2023.103815`
+    .. [2] Tommaso Fontana, Sebastiano Vigna, and Stefano Zacchiroli,
+           "WebGraph: The next generation (is in Rust)", Companion
+           Proceedings of the ACM Web Conference 2024, pp. 686--689, 2024.
     """
-    cdef int v, w, index, low_v, low_w, label, j
-    cdef int SS_head, root, stack_head, f, b
     DEF VOID = -1
-    DEF END = -2
     cdef int N = labels.shape[0]
-    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] SS, lowlinks, stack_f, stack_b
+    if N == 0:
+        return 0
 
-    lowlinks = labels
-    SS = np.ndarray((N,), dtype=ITYPE)
-    stack_b = np.ndarray((N,), dtype=ITYPE)
-    stack_f = SS
+    cdef int v, w, j, parent, top
+    cdef int NONLEAD = <int>0x80000000  # sign bit: marks stack entry as non-lead
+    cdef int index = N        # timestamp counter, decreasing
+    cdef int n_comp = 0       # number of emitted components
+    cdef int root_hl = 0      # high_link of current DFS-tree root
+    cdef bint done = False    # set True on early exit to break outer loop
 
-    # The stack of nodes which have been backtracked and are in the current SCC
-    SS.fill(VOID)
-    SS_head = END
+    # Iterative Tarjan's algorithm using reverse timestamps and
+    # encoding a bit stack of lead nodes in the sign bit of the DFS stack.
+    #
+    # Timestamps decrease from N to 1 for discovered nodes.  Component
+    # numbers increase from 0 for emitted SCCs.  Unvisited nodes have
+    # high_link = 0, distinguished from component 0 via succ_pos == VOID.
+    # labels doubles as the high_link array.
+    #
+    # Decreasing timestamps make renumbering at the end unnecessary. The
+    # "lead" flag is materialized in an array in Tarjan & Zwick's survey,
+    # but a stack parallel to the DFS stack is sufficient.
+    #
+    # succ_pos[v]: position in successor list for node v (int32 or int64,
+    #     matching indptr); VOID = unvisited.
+    #
+    # dfs_stack[]: DFS path; the sign bit encodes the "lead" flag
+    #     (non-negative = candidate SCC root).
+    #
+    # comp_stack[]: nodes popped from DFS but not yet assigned to an SCC.
 
-    # The array containing the lowlinks of nodes not yet assigned an SCC. Shares
-    # memory with the labels array, since they are not used at the same time.
-    lowlinks.fill(VOID)
+    cdef vector[int32_or_int64] succ_pos
+    cdef vector[int] dfs_stack
+    cdef vector[int] comp_stack
+    succ_pos.assign(N, VOID)
+    dfs_stack.reserve(N)
+    comp_stack.reserve(N)
 
-    # The DFS stack. Stored with both forwards and backwards pointers to allow
-    # us to move a node up to the top of the stack, as we only need to visit
-    # each node once. stack_f shares memory with SS, as nodes aren't put on the
-    # SS stack until after they've been popped from the DFS stack.
-    stack_head = END
-    stack_f.fill(VOID)
-    stack_b.fill(VOID)
+    labels[:] = 0
 
-    index = 0
-    # Count SCC labels backwards so as not to class with lowlinks values.
-    label = N - 1
     for v in range(N):
-        if lowlinks[v] == VOID:
-            # DFS-stack push
-            stack_head = v
-            stack_f[v] = END
-            stack_b[v] = END
-            while stack_head != END:
-                v = stack_head
-                if lowlinks[v] == VOID:
-                    lowlinks[v] = index
-                    index += 1
+        if succ_pos[v] != VOID:
+            continue                       # already visited
 
-                    # Add successor nodes
-                    for j in range(indptr[v], indptr[v+1]):
-                        w = indices[j]
-                        if lowlinks[w] == VOID:
-                            with cython.boundscheck(False):
-                                # DFS-stack push
-                                if stack_f[w] != VOID:
-                                    # w is already inside the stack,
-                                    # so excise it.
-                                    f = stack_f[w]
-                                    b = stack_b[w]
-                                    if b != END:
-                                        stack_f[b] = f
-                                    if f != END:
-                                        stack_b[f] = b
+        # ---- Init: new DFS tree rooted at v ----
+        root_hl = index
 
-                                stack_f[w] = stack_head
-                                stack_b[w] = END
-                                stack_b[stack_head] = w
-                                stack_head = w
+        # ---- Previsit v ----
+        dfs_stack.push_back(v)             # lead = True (non-negative)
+        labels[v] = index
+        index -= 1
+        succ_pos[v] = indptr[v]
 
+        while not dfs_stack.empty():
+            v = _dfs_node(dfs_stack.back())
+
+            if succ_pos[v] < indptr[v + 1]:
+                # ---- Advance to next successor ----
+                w = indices[succ_pos[v]]
+                succ_pos[v] += 1
+
+                if succ_pos[w] == VOID:
+                    # ---- Previsit w (tree arc) ----
+                    dfs_stack.push_back(w)             # lead = True (non-negative)
+                    labels[w] = index
+                    index -= 1
+                    succ_pos[w] = indptr[w]
                 else:
-                    # DFS-stack pop
-                    stack_head = stack_f[v]
-                    if stack_head >= 0:
-                        stack_b[stack_head] = END
-                    stack_f[v] = VOID
-                    stack_b[v] = VOID
+                    # ---- Revisit (cross / back arc) ----
+                    if labels[v] < labels[w]:
+                        dfs_stack[dfs_stack.size() - 1] = v | NONLEAD
+                        labels[v] = labels[w]
+                        # Early exit: the whole graph is one SCC
+                        if labels[v] == root_hl and index == 0:
+                            labels[v] = n_comp
+                            for j in range(<int>comp_stack.size()):
+                                labels[comp_stack[j]] = n_comp
+                            for j in range(<int>dfs_stack.size() - 1):
+                                labels[_dfs_node(dfs_stack[j])] = n_comp
+                            n_comp += 1
+                            dfs_stack.clear()
+                            comp_stack.clear()
+                            done = True
+                            break
+            else:
+                # ---- Postvisit v ----
+                if dfs_stack.back() >= 0:
+                    # v is an SCC root: pop its members from comp stack
+                    dfs_stack.pop_back()
+                    while not comp_stack.empty():
+                        top = comp_stack.back()
+                        if labels[v] < labels[top]:
+                            break
+                        labels[top] = n_comp
+                        comp_stack.pop_back()
+                        index += 1
+                    labels[v] = n_comp
+                    index += 1
+                    n_comp += 1
+                else:
+                    # Not a root: push v onto comp stack, propagate
+                    dfs_stack.pop_back()
+                    comp_stack.push_back(v)
+                    if not dfs_stack.empty():
+                        parent = _dfs_node(dfs_stack.back())
+                        if labels[parent] < labels[v]:
+                            dfs_stack[dfs_stack.size() - 1] = parent | NONLEAD
+                            labels[parent] = labels[v]
+        if done:
+            break
 
-                    root = 1 # True
-                    low_v = lowlinks[v]
-                    for j in range(indptr[v], indptr[v+1]):
-                        low_w = lowlinks[indices[j]]
-                        if low_w < low_v:
-                            low_v = low_w
-                            root = 0 # False
-                    lowlinks[v] = low_v
-
-                    if root: # Found a root node
-                        index -= 1
-                        # while S not empty and rindex[v] <= rindex[top[S]
-                        while SS_head != END and lowlinks[v] <= lowlinks[SS_head]:
-                            w = SS_head        # w = pop(S)
-                            SS_head = SS[w]
-                            SS[w] = VOID
-
-                            labels[w] = label  # rindex[w] = c
-                            index -= 1         # index = index - 1
-                        labels[v] = label  # rindex[v] = c
-                        label -= 1         # c = c - 1
-                    else:
-                        SS[v] = SS_head  # push(S, v)
-                        SS_head = v
-
-    # labels count down from N-1 to zero. Modify them so they
-    # count upward from 0
-    labels *= -1
-    labels += (N - 1)
-    return (N - 1) - label
+    return n_comp
 
 
 def _connected_components_undirected(

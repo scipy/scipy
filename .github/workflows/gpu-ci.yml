@@ -40,7 +40,11 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
-  PIXI_CACHE_DIR: "${{ github.workspace }}/.cache/rattler"
+  CCACHE_MAXSIZE: "350M"
+  # Enable persistent cache
+  # https://docs.jax.dev/en/latest/config_options.html
+  JAX_COMPILATION_CACHE_DIR: "${{ github.workspace }}/.cache/scipy_jax_cache"
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -53,38 +57,45 @@ jobs:
 
   pytorch_gpu:
     name: PyTorch, JAX, CuPy GPU
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:24.04
+    runs-on: "cirun-scipy-onprem-gpu--${{ github.run_id }}"
     steps:
       - name: Checkout scipy repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
-
-      - name: Cache pixi
-        uses: cirruslabs/cache@v4 #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
-        with:
-          path: ${{ env.PIXI_CACHE_DIR }}
-          # Cache hit if lock file did not change. If it did, still restore the cache,
-          # since most packages will still be the same - the cache save will
-          # then happen at the end (in case the lock file didn't change,
-          # nothing is saved at the end of a job).
-          key: ${{ runner.os }}-gpu-pixi-${{ hashFiles('.github/workflows/pixi.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-gpu-pixi
+          persist-credentials: false
 
       - name: Setup compiler cache
-        uses: cirruslabs/cache@v4 #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.CCACHE_DIR }}
-          # Make primary key unique by using `run_id`, this ensures the cache
-          # is always saved at the end.
-          key: ${{ runner.os }}-gpu-ccache-${{ github.run_id }}
+          # Use a per-run key so newly generated cache entries are saved.
+          # The restore prefix below retrieves the most recent prior cache.
+          key: ${{ runner.os }}-gpu-ccache-1-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-gpu-ccache
+            ${{ runner.os }}-gpu-ccache-1-
+
+      - name: Define default CuPy cache path
+        run: |
+          # We don't want to change the directory, and $HOME isn't available in
+          # `env:` above
+          echo "CUPY_CACHE_DIR=$HOME/.cupy/kernel_cache" >> $GITHUB_ENV
+
+      - name: Cache CuPy kernels
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.CUPY_CACHE_DIR }}
+          key: ${{ runner.os }}-gpu-cupy-1-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-cupy-1-
+
+      - name: Cache JAX kernels
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.JAX_COMPILATION_CACHE_DIR }}
+          key: ${{ runner.os }}-gpu-jax-1-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-jax-1-
 
       - name: run nvidia-smi
         run: nvidia-smi
@@ -92,10 +103,11 @@ jobs:
       - name: run nvidia-smi --query
         run: nvidia-smi --query
 
-      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.55.0
-          cache: false
+          pixi-version: v0.71.0
+          cache: true
+          cache-key: gpu-pixi-1-
           environments: >-
             build-cuda
             torch-cuda
@@ -108,8 +120,13 @@ jobs:
       - name: Run PyTorch GPU tests
         run: pixi run --skip-deps test-torch-cuda -v
 
-      - name: Run JAX GPU tests
-        run: pixi run --skip-deps test-jax-cuda -v
-
       - name: Run CuPy tests
         run: pixi run --skip-deps test-cupy -v
+
+      - name: Run JAX GPU tests
+        env:
+          # Give 10% of GPU memory to each pytest worker to ensure fairness.
+          XLA_PYTHON_CLIENT_MEM_FRACTION: .10
+          # Minimum compile time to store entry to cache
+          JAX_PERSISTENT_CACHE_MIN_COMPILE_TIME_SECS: "0"
+        run: pixi run --skip-deps test-jax-cuda -v -j 4 -- --dist worksteal

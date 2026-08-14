@@ -227,7 +227,7 @@ class CensoredData:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, uncensored=None, *, left=None, right=None,
                  interval=None):

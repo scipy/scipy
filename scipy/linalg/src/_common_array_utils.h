@@ -5,92 +5,93 @@
 #include "Python.h"
 #include <math.h>
 #include "numpy/arrayobject.h"
+#include "scipy_blas_defines.h"
+#include "scipy_complex_support.h"
 
 #if defined(_MSC_VER)
-    #include <complex.h>
     #define SCIPY_Z _Dcomplex
     #define SCIPY_C _Fcomplex
     #define CPLX_Z(real, imag) (_Cbuild(real, imag))
     #define CPLX_C(real, imag) (_FCbuild(real, imag))
 #else
-    #include <complex.h>
     #define SCIPY_Z double complex
     #define SCIPY_C float complex
-    #define CPLX_Z(real, imag) (real + imag*I)
-    #define CPLX_C(real, imag) (real + imag*I)
+    #define CPLX_Z(real, imag) CMPLX(real, imag)
+    #define CPLX_C(real, imag) CMPLXF(real, imag)
 #endif
 
+
 // BLAS and LAPACK functions used
-void saxpy_(int* n, float* sa, float* sx, int* incx, float* sy, int* incy);
-void scopy_(int* n, float* dx, int* incx, float* dy, int* incy);
-void sgees_(char* jobvs, char* sort, int (*select)(float*, float*), int* n, float* a, int* lda, int* sdim, float* wr, float* wi, float* vs, int* ldvs, float* work, int* lwork, int* bwork, int* info);
-void sgemm_(char* transa, char* transb, int* m, int* n, int* k, float* alpha, float* a, int* lda, float* b, int* ldb, float* beta, float* c, int* ldc);
-void sgemv_(char* trans, int* m, int* n, float* alpha, float* a, int* lda, float* x, int* incx, float* beta, float* y, int* incy);
-void sgetrf_(int* m, int* n, float* a, int* lda, int* ipiv, int* info);
-void sgetrs_(char* trans, int* n, int* nrhs, float* a, int* lda, int* ipiv, float* b, int* ldb, int* info);
-void slacn2_(int* n, float* v, float* x, int* isgn, float* est, int* kase, int* isave);
-void slanv2_(float* a, float* b, float* c, float* d, float* rt1r, float* rt1i, float* rt2r, float* rt2i, float* cs, float* sn);
-void sscal_(int* n, float* sa, float* sx, int* incx);
-void strsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, float* a, int* lda, float* b, int* ldb, float* c, int* ldc, float* scale, int* info);
-// void strsyl3_(char* trana, char* tranb, int* isgn, int* m, int* n, float* a, int* lda, float* b, int* ldb, float* c, int* ldc, float* scale, int* iwork, int* liwork, float* swork, int* ldswork, int* info);
+void BLAS_FUNC(saxpy)(CBLAS_INT* n, float* sa, float* sx, CBLAS_INT* incx, float* sy, CBLAS_INT* incy);
+void BLAS_FUNC(scopy)(CBLAS_INT* n, float* dx, CBLAS_INT* incx, float* dy, CBLAS_INT* incy);
+void BLAS_FUNC(sgees)(char* jobvs, char* sort, int (*select)(float*, float*), CBLAS_INT* n, float* a, CBLAS_INT* lda, CBLAS_INT* sdim, float* wr, float* wi, float* vs, CBLAS_INT* ldvs, float* work, CBLAS_INT* lwork, CBLAS_INT* bwork, CBLAS_INT* info);
+void BLAS_FUNC(sgemm)(char* transa, char* transb, CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* k, float* alpha, float* a, CBLAS_INT* lda, float* b, CBLAS_INT* ldb, float* beta, float* c, CBLAS_INT* ldc);
+void BLAS_FUNC(sgemv)(char* trans, CBLAS_INT* m, CBLAS_INT* n, float* alpha, float* a, CBLAS_INT* lda, float* x, CBLAS_INT* incx, float* beta, float* y, CBLAS_INT* incy);
+void BLAS_FUNC(sgetrf)(CBLAS_INT* m, CBLAS_INT* n, float* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(sgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, float* a, CBLAS_INT* lda, CBLAS_INT* ipiv, float* b, CBLAS_INT* ldb, CBLAS_INT* info);
+void BLAS_FUNC(slacn2)(CBLAS_INT* n, float* v, float* x, CBLAS_INT* isgn, float* est, CBLAS_INT* kase, CBLAS_INT* isave);
+void BLAS_FUNC(slanv2)(float* a, float* b, float* c, float* d, float* rt1r, float* rt1i, float* rt2r, float* rt2i, float* cs, float* sn);
+void BLAS_FUNC(sscal)(CBLAS_INT* n, float* sa, float* sx, CBLAS_INT* incx);
+void BLAS_FUNC(strsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, float* a, CBLAS_INT* lda, float* b, CBLAS_INT* ldb, float* c, CBLAS_INT* ldc, float* scale, CBLAS_INT* info);
+// void BLAS_FUNC(strsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, float* a, CBLAS_INT* lda, float* b, CBLAS_INT* ldb, float* c, CBLAS_INT* ldc, float* scale, CBLAS_INT* iwork, CBLAS_INT* liwork, float* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
 
-void daxpy_(int* n, double* sa, double* sx, int* incx, double* sy, int* incy);
-void dcopy_(int* n, double* dx, int* incx, double* dy, int* incy);
-void dgees_(char* jobvs, char* sort, int (*select)(double*, double*), int* n, double* a, int* lda, int* sdim, double* wr, double* wi, double* vs, int* ldvs, double* work, int* lwork, int* bwork, int* info);
-void dgemm_(char* transa, char* transb, int* m, int* n, int* k, double* alpha, double* a, int* lda, double* b, int* ldb, double* beta, double* c, int* ldc);
-void dgemv_(char* trans, int* m, int* n, double* alpha, double* a, int* lda, double* x, int* incx, double* beta, double* y, int* incy);
-void dgetrf_(int* m, int* n, double* a, int* lda, int* ipiv, int* info);
-void dgetrs_(char* trans, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b, int* ldb, int* info);
-void dlacn2_(int* n, double* v, double* x, int* isgn, double* est, int* kase, int* isave);
-void dlanv2_(double* a, double* b, double* c, double* d, double* rt1r, double* rt1i, double* rt2r, double* rt2i, double* cs, double* sn);
-void dscal_(int* n, double* sa, double* sx, int* incx);
-void dtrsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, double* a, int* lda, double* b, int* ldb, double* c, int* ldc, double* scale, int* info);
-// void dtrsyl3_(char* trana, char* tranb, int* isgn, int* m, int* n, double* a, int* lda, double* b, int* ldb, double* c, int* ldc, double* scale, int* iwork, int* liwork, double* swork, int* ldswork, int* info);
+void BLAS_FUNC(daxpy)(CBLAS_INT* n, double* sa, double* sx, CBLAS_INT* incx, double* sy, CBLAS_INT* incy);
+void BLAS_FUNC(dcopy)(CBLAS_INT* n, double* dx, CBLAS_INT* incx, double* dy, CBLAS_INT* incy);
+void BLAS_FUNC(dgees)(char* jobvs, char* sort, int (*select)(double*, double*), CBLAS_INT* n, double* a, CBLAS_INT* lda, CBLAS_INT* sdim, double* wr, double* wi, double* vs, CBLAS_INT* ldvs, double* work, CBLAS_INT* lwork, CBLAS_INT* bwork, CBLAS_INT* info);
+void BLAS_FUNC(dgemm)(char* transa, char* transb, CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* k, double* alpha, double* a, CBLAS_INT* lda, double* b, CBLAS_INT* ldb, double* beta, double* c, CBLAS_INT* ldc);
+void BLAS_FUNC(dgemv)(char* trans, CBLAS_INT* m, CBLAS_INT* n, double* alpha, double* a, CBLAS_INT* lda, double* x, CBLAS_INT* incx, double* beta, double* y, CBLAS_INT* incy);
+void BLAS_FUNC(dgetrf)(CBLAS_INT* m, CBLAS_INT* n, double* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(dgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, double* a, CBLAS_INT* lda, CBLAS_INT* ipiv, double* b, CBLAS_INT* ldb, CBLAS_INT* info);
+void BLAS_FUNC(dlacn2)(CBLAS_INT* n, double* v, double* x, CBLAS_INT* isgn, double* est, CBLAS_INT* kase, CBLAS_INT* isave);
+void BLAS_FUNC(dlanv2)(double* a, double* b, double* c, double* d, double* rt1r, double* rt1i, double* rt2r, double* rt2i, double* cs, double* sn);
+void BLAS_FUNC(dscal)(CBLAS_INT* n, double* sa, double* sx, CBLAS_INT* incx);
+void BLAS_FUNC(dtrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, double* a, CBLAS_INT* lda, double* b, CBLAS_INT* ldb, double* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* info);
+// void BLAS_FUNC(dtrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, double* a, CBLAS_INT* lda, double* b, CBLAS_INT* ldb, double* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* iwork, CBLAS_INT* liwork, double* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
 
-void caxpy_(int* n, SCIPY_C* sa, SCIPY_C* sx, int* incx, SCIPY_C* sy, int* incy);
-void ccopy_(int* n, SCIPY_C* dx, int* incx, SCIPY_C* dy, int* incy);
-void cgees_(char* jobvs, char* sort, int (*select)(SCIPY_C), int* n, SCIPY_C* a, int* lda, int* sdim, SCIPY_C* w, SCIPY_C* vs, int* ldvs, SCIPY_C* work, int* lwork, float* rwork, int* bwork, int* info);
-void cgemm_(char* transa, char* transb, int* m, int* n, int* k, SCIPY_C* alpha, SCIPY_C* a, int* lda, SCIPY_C* b, int* ldb, SCIPY_C* beta, SCIPY_C* c, int* ldc);
-void cgemv_(char* trans, int* m, int* n, SCIPY_C* alpha, SCIPY_C* a, int* lda, SCIPY_C* x, int* incx, SCIPY_C* beta, SCIPY_C* y, int* incy);
-void cgetrf_(int* m, int* n, SCIPY_C* a, int* lda, int* ipiv, int* info);
-void cgetrs_(char* trans, int* n, int* nrhs, SCIPY_C* a, int* lda, int* ipiv, SCIPY_C* b, int* ldb, int* info);
-void clacn2_(int* n, SCIPY_C* v, SCIPY_C* x, float* est, int* kase, int* isave);
-void crot_(int* n, SCIPY_C* cx, int* incx, SCIPY_C* cy, int* incy, float* c, SCIPY_C* s);
-void csscal_(int* n, float* sa, SCIPY_C* sx, int* incx);
-void ctrsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_C* a, int* lda, SCIPY_C* b, int* ldb, SCIPY_C* c, int* ldc, float* scale, int* info);
-// void ctrsyl3_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_C* a, int* lda, SCIPY_C* b, int* ldb, SCIPY_C* c, int* ldc, float* scale, float* swork, int* ldswork, int* info);
+void BLAS_FUNC(caxpy)(CBLAS_INT* n, SCIPY_C* sa, SCIPY_C* sx, CBLAS_INT* incx, SCIPY_C* sy, CBLAS_INT* incy);
+void BLAS_FUNC(ccopy)(CBLAS_INT* n, SCIPY_C* dx, CBLAS_INT* incx, SCIPY_C* dy, CBLAS_INT* incy);
+void BLAS_FUNC(cgees)(char* jobvs, char* sort, int (*select)(SCIPY_C), CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda, CBLAS_INT* sdim, SCIPY_C* w, SCIPY_C* vs, CBLAS_INT* ldvs, SCIPY_C* work, CBLAS_INT* lwork, float* rwork, CBLAS_INT* bwork, CBLAS_INT* info);
+void BLAS_FUNC(cgemm)(char* transa, char* transb, CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* k, SCIPY_C* alpha, SCIPY_C* a, CBLAS_INT* lda, SCIPY_C* b, CBLAS_INT* ldb, SCIPY_C* beta, SCIPY_C* c, CBLAS_INT* ldc);
+void BLAS_FUNC(cgemv)(char* trans, CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* alpha, SCIPY_C* a, CBLAS_INT* lda, SCIPY_C* x, CBLAS_INT* incx, SCIPY_C* beta, SCIPY_C* y, CBLAS_INT* incy);
+void BLAS_FUNC(cgetrf)(CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(cgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, SCIPY_C* a, CBLAS_INT* lda, CBLAS_INT* ipiv, SCIPY_C* b, CBLAS_INT* ldb, CBLAS_INT* info);
+void BLAS_FUNC(clacn2)(CBLAS_INT* n, SCIPY_C* v, SCIPY_C* x, float* est, CBLAS_INT* kase, CBLAS_INT* isave);
+void BLAS_FUNC(crot)(CBLAS_INT* n, SCIPY_C* cx, CBLAS_INT* incx, SCIPY_C* cy, CBLAS_INT* incy, float* c, SCIPY_C* s);
+void BLAS_FUNC(csscal)(CBLAS_INT* n, float* sa, SCIPY_C* sx, CBLAS_INT* incx);
+void BLAS_FUNC(ctrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda, SCIPY_C* b, CBLAS_INT* ldb, SCIPY_C* c, CBLAS_INT* ldc, float* scale, CBLAS_INT* info);
+// void BLAS_FUNC(ctrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda, SCIPY_C* b, CBLAS_INT* ldb, SCIPY_C* c, CBLAS_INT* ldc, float* scale, float* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
 
-void zaxpy_(int* n, SCIPY_Z* sa, SCIPY_Z* sx, int* incx, SCIPY_Z* sy, int* incy);
-void zcopy_(int* n, SCIPY_Z* dx, int* incx, SCIPY_Z* dy, int* incy);
-void zgees_(char* jobvs, char* sort, int (*select)(SCIPY_Z), int* n, SCIPY_Z* a, int* lda, int* sdim, SCIPY_Z* w, SCIPY_Z* vs, int* ldvs, SCIPY_Z* work, int* lwork, double* rwork, int* bwork, int* info);
-void zgemm_(char* transa, char* transb, int* m, int* n, int* k, SCIPY_Z* alpha, SCIPY_Z* a, int* lda, SCIPY_Z* b, int* ldb, SCIPY_Z* beta, SCIPY_Z* c, int* ldc);
-void zgemv_(char* trans, int* m, int* n, SCIPY_Z* alpha, SCIPY_Z* a, int* lda, SCIPY_Z* x, int* incx, SCIPY_Z* beta, SCIPY_Z* y, int* incy);
-void zgetrf_(int* m, int* n, SCIPY_Z* a, int* lda, int* ipiv, int* info);
-void zgetrs_(char* trans, int* n, int* nrhs, SCIPY_Z* a, int* lda, int* ipiv, SCIPY_Z* b, int* ldb, int* info);
-void zlacn2_(int* n, SCIPY_Z* v, SCIPY_Z* x, double* est, int* kase, int* isave);
-void zrot_(int* n, SCIPY_Z* cx, int* incx, SCIPY_Z* cy, int* incy, double* c, SCIPY_Z* s);
-void zdscal_(int* n, double* sa, SCIPY_Z* sx, int* incx);
-void ztrsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_Z* a, int* lda, SCIPY_Z* b, int* ldb, SCIPY_Z* c, int* ldc, double* scale, int* info);
-// void ztrsyl3_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_Z* a, int* lda, SCIPY_Z* b, int* ldb, SCIPY_Z* c, int* ldc, double* scale, double* swork, int* ldswork, int* info);
+void BLAS_FUNC(zaxpy)(CBLAS_INT* n, SCIPY_Z* sa, SCIPY_Z* sx, CBLAS_INT* incx, SCIPY_Z* sy, CBLAS_INT* incy);
+void BLAS_FUNC(zcopy)(CBLAS_INT* n, SCIPY_Z* dx, CBLAS_INT* incx, SCIPY_Z* dy, CBLAS_INT* incy);
+void BLAS_FUNC(zgees)(char* jobvs, char* sort, int (*select)(SCIPY_Z), CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, CBLAS_INT* sdim, SCIPY_Z* w, SCIPY_Z* vs, CBLAS_INT* ldvs, SCIPY_Z* work, CBLAS_INT* lwork, double* rwork, CBLAS_INT* bwork, CBLAS_INT* info);
+void BLAS_FUNC(zgemm)(char* transa, char* transb, CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* k, SCIPY_Z* alpha, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* beta, SCIPY_Z* c, CBLAS_INT* ldc);
+void BLAS_FUNC(zgemv)(char* trans, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* alpha, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* x, CBLAS_INT* incx, SCIPY_Z* beta, SCIPY_Z* y, CBLAS_INT* incy);
+void BLAS_FUNC(zgetrf)(CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(zgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, SCIPY_Z* a, CBLAS_INT* lda, CBLAS_INT* ipiv, SCIPY_Z* b, CBLAS_INT* ldb, CBLAS_INT* info);
+void BLAS_FUNC(zlacn2)(CBLAS_INT* n, SCIPY_Z* v, SCIPY_Z* x, double* est, CBLAS_INT* kase, CBLAS_INT* isave);
+void BLAS_FUNC(zrot)(CBLAS_INT* n, SCIPY_Z* cx, CBLAS_INT* incx, SCIPY_Z* cy, CBLAS_INT* incy, double* c, SCIPY_Z* s);
+void BLAS_FUNC(zdscal)(CBLAS_INT* n, double* sa, SCIPY_Z* sx, CBLAS_INT* incx);
+void BLAS_FUNC(ztrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* info);
+// void BLAS_FUNC(ztrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale, double* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
 
 /**
  *  These functions are used to measure the bandwidth of an (n x m) matrix
  *  stored in row-major (C) format.
  */
 static inline void
-bandwidth_s(float* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_s(const float* restrict data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
+    int64_t lb = 0, ub = 0;
+    for (int64_t r = n-1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
             if (data[r*m + c] != 0.0f) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
+    for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t c = m-1; c > r + ub; c--) {
             if (data[r*m + c] != 0.0f) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
@@ -101,19 +102,19 @@ bandwidth_s(float* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, 
 
 
 static inline void
-bandwidth_d(double* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_d(const double* restrict data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
+    int64_t lb = 0, ub = 0;
+    for (int64_t r = n-1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
             if (data[r*m + c] != 0.0) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
+    for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t c = m-1; c > r + ub; c--) {
             if (data[r*m + c] != 0.0) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
@@ -124,28 +125,23 @@ bandwidth_d(double* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band,
 
 
 static inline void
-bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_c(const SCIPY_C* restrict data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-#if defined(_MSC_VER)
-            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { lb = r - c; break; }
-#else
-            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { lb = r - c; break; }
-#endif
+    float* fdata = (float*)data;
+    int64_t lb = 0, ub = 0;
+    for (int64_t r = n-1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
+            int64_t idx = (r*m + c) * 2;
+            if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
-#if defined(_MSC_VER)
-            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { ub = c - r; break; }
-#else
-            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { ub = c - r; break; }
-#endif
+    for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t c = m-1; c > r + ub; c--) {
+            int64_t idx = (r*m + c) * 2;
+            if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
     }
@@ -155,28 +151,23 @@ bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band
 
 
 static inline void
-bandwidth_z(SCIPY_Z* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_z(const SCIPY_Z* restrict data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-#if defined(_MSC_VER)
-            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { lb = r - c; break; }
-#else
-            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { lb = r - c; break; }
-#endif
+    double* ddata = (double*)data;
+    int64_t lb = 0, ub = 0;
+    for (int64_t r = n-1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
+            int64_t idx = (r*m + c) * 2;
+            if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
-#if defined(_MSC_VER)
-            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { ub = c - r; break; }
-#else
-            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { ub = c - r; break; }
-#endif
+    for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t c = m-1; c > r + ub; c--) {
+            int64_t idx = (r*m + c) * 2;
+            if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
     }

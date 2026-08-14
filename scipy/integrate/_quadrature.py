@@ -2,14 +2,13 @@ import numpy as np
 import math
 import warnings
 from collections import namedtuple
-from collections.abc import Callable
 
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
 from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type, xp_copy,
                                    xp_capabilities, xp_promote, xp_swapaxes, is_numpy,
-                                   xp_size,
+                                   xp_size, xp_device,
                                    is_lazy_array)
 import scipy._external.array_api_extra as xpx
 
@@ -20,8 +19,7 @@ __all__ = ['fixed_quad', 'romb',
            'qmc_quad', 'cumulative_simpson']
 
 
-@xp_capabilities(skip_backends=[('jax.numpy',
-                                 "JAX arrays do not support item assignment")])
+@xp_capabilities()
 def trapezoid(y, x=None, dx=1.0, axis=-1):
     r"""
     Integrate along the given axis using the composite trapezoidal rule.
@@ -177,7 +175,7 @@ def _cached_roots_legendre(n):
     return _cached_roots_legendre.cache[n]
 
 
-_cached_roots_legendre.cache = dict()
+_cached_roots_legendre.cache = dict()  # type:ignore[attr-defined]  # pyrefly:ignore[missing-attribute]
 
 
 @xp_capabilities()
@@ -243,7 +241,9 @@ def fixed_quad(func, a, b, args=(), n=5):
     xp = array_namespace(a, b)
     a, b = xp_promote(a, b, force_floating=True, xp=xp)
     x, w = _cached_roots_legendre(n)
-    x, w = xp.asarray(x, dtype=a.dtype), xp.asarray(w, dtype=a.dtype)
+    device = xp_device(a)
+    x = xp.asarray(x, dtype=a.dtype, device=device)
+    w = xp.asarray(w, dtype=a.dtype, device=device)
     x = xp.real(x)
     if not is_lazy_array(a) and (xp.isinf(a) or xp.isinf(b)):
         raise ValueError("Gaussian quadrature is only available for "
@@ -349,7 +349,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = xp.concat((xp.full(tuple(shape), initial, dtype=res.dtype), res),
+        res = xp.concat((xp.full(tuple(shape), initial, dtype=res.dtype,
+                                 device=xp_device(res)), res),
                         axis=axis)
 
     return res
@@ -528,12 +529,7 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
     return result
 
 
-def _cumulatively_sum_simpson_integrals(
-    y: np.ndarray,
-    dx: np.ndarray,
-    integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
-    xp
-) -> np.ndarray:
+def _cumulatively_sum_simpson_integrals(y, dx, integration_func, xp):
     """Calculate cumulative sum of Simpson integrals.
     Takes as input the integration function to be used.
     The integration_func is assumed to return the cumulative sum using
@@ -547,12 +543,12 @@ def _cumulatively_sum_simpson_integrals(
 
     shape = list(sub_integrals_h1.shape)
     shape[-1] += 1
-    sub_integrals = xp.empty(shape, dtype=xp.result_type(y, dx))
-    sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
-    sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
+    sub_integrals = xp.empty(shape, dtype=xp.result_type(y, dx), device=xp_device(y))
+    sub_integrals = xpx.at(sub_integrals)[..., :-1:2].set(sub_integrals_h1[..., ::2])
+    sub_integrals = xpx.at(sub_integrals)[..., 1::2].set(sub_integrals_h2[..., ::2])
     # Integral over last subinterval can only be calculated from
     # formula for h2
-    sub_integrals[..., -1] = sub_integrals_h2[..., -1]
+    sub_integrals = xpx.at(sub_integrals)[..., -1].set(sub_integrals_h2[..., -1])
     res = xp.cumulative_sum(sub_integrals, axis=-1)
     return res
 
@@ -595,8 +591,7 @@ def _cumulative_simpson_unequal_intervals(y: np.ndarray, dx: np.ndarray) -> np.n
     return x21/6 * (coeff1*f1 + coeff2*f2 + coeff3*f3)
 
 
-@xp_capabilities(allow_dask_compute=1,
-                 skip_backends=[("jax.numpy", "item assignment")])
+@xp_capabilities(allow_dask_compute=1, jax_jit=False)
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     r"""
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
@@ -752,7 +747,10 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         )
 
     else:
-        dx = xp_promote(xp.asarray(dx), force_floating=True, xp=xp)
+        # `dx` is a scalar on the default device; place it on the input's device
+        # so it does not clash with `y` downstream (see gh-22680).
+        dx = xp.asarray(dx, device=xp_device(y))
+        dx = xp_promote(dx, force_floating=True, xp=xp)
         final_dx_shape = tupleset(original_shape, axis, original_shape[axis] - 1)
         alt_input_dx_shape = tupleset(original_shape, axis, 1)
         message = ("If provided, `dx` must either be a scalar or have the same "
@@ -766,6 +764,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         )
 
     if initial is not None:
+        initial = xp.asarray(initial, device=xp_device(y))
         initial = xp_promote(initial, force_floating=True, xp=xp)
         alt_initial_input_shape = tupleset(original_shape, axis, 1)
         message = ("If provided, `initial` must either be a scalar or have the "
@@ -861,7 +860,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     slice_all = (slice(None),) * nd
     slice0 = tupleset(slice_all, axis, 0)
     slicem1 = tupleset(slice_all, axis, -1)
-    h = Ninterv * xp.asarray(dx, dtype=xp.float64)
+    h = Ninterv * xp.asarray(dx, dtype=xp.float64, device=xp_device(y))
     R[(0, 0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = slice_all
     start = stop = step = Ninterv
@@ -1314,8 +1313,8 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         message = ("A lower limit was equal to an upper limit, so the value "
                    "of the integral is zero by definition.")
         warnings.warn(message, stacklevel=2)
-        zero = xp.asarray(-xp.inf if log else 0, dtype=a.dtype)
-        return QMCQuadResult(zero, xp.asarray(0., dtype=a.dtype))
+        zero = xp.asarray(-xp.inf if log else 0, dtype=a.dtype, device=xp_device(a))
+        return QMCQuadResult(zero, xp.asarray(0., dtype=a.dtype, device=xp_device(a)))
 
     i_swap = b < a
     sign = (-1)**(xp.count_nonzero(i_swap, axis=-1))  # odd # of swaps -> negative
@@ -1329,11 +1328,12 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     A = xp.prod(b - a)
     dA = A / n_points
 
-    estimates = xp.zeros(n_estimates, dtype=a.dtype)
+    device = xp_device(a)
+    estimates = xp.zeros(n_estimates, dtype=a.dtype, device=device)
     rngs = _rng_spawn(qrng.rng, n_estimates)
     for i in range(n_estimates):
         # Generate integral estimate
-        sample = xp.asarray(qrng.random(n_points), dtype=a.dtype)
+        sample = xp.asarray(qrng.random(n_points), dtype=a.dtype, device=device)
         # The rationale for transposing is that this allows users to easily
         # unpack `x` into separate variables, if desired. This is consistent
         # with the `xx` array passed into the `scipy.integrate.nquad` `func`.

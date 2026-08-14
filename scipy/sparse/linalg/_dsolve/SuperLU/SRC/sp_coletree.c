@@ -166,15 +166,13 @@ void finalize_disjoint_sets (
 /*
  * Nonsymmetric elimination tree
  */
-int
-sp_coletree(
-	    int_t *acolst, int_t *acolend, /* column start and end past 1 */
-	    int_t *arow,                 /* row indices of A */
-	    int nr, int nc,            /* dimension of A */
-	    int *parent	               /* parent in elim tree */
-	    )
+int sp_coletree(
+                const int_t *acolst, const int_t *acolend, /* column start and end past 1 */
+                const int_t *arow,                 /* row indices of A */
+                int nr, int nc,            /* dimension of A */
+                int *parent)               /* parent in elim tree */
 {
-	int	*root;			/* root of subtee of etree 	*/
+	int	*root;			/* root of subtree of etree 	*/
 	int     *firstcol;		/* first nonzero col in each row*/
 	int	rset, cset;             
 	int	row, col;
@@ -275,8 +273,8 @@ static
  * Depth-first search from vertex n.  No recursion.
  * This routine was contributed by Cédric Doucet, CEDRAT Group, Meylan, France.
  */
-void nr_etdfs (int n, int *parent,
-	       int *first_kid, int *next_kid,
+void nr_etdfs (int n, const int *parent,
+	       const int *first_kid, const int *next_kid,
 	       int *post, int postnum)
 {
     int current = n, first, next;
@@ -391,13 +389,11 @@ int *TreePostorder(
 /*
  * Symmetric elimination tree
  */
-int
-sp_symetree(
-	    int *acolst, int *acolend, /* column starts and ends past 1 */
-	    int *arow,            /* row indices of A */
-	    int n,                /* dimension of A */
-	    int *parent	    /* parent in elim tree */
-	    )
+int sp_symetree(
+                const int *acolst, const int *acolend, /* column starts and ends past 1 */
+                const int *arow,            /* row indices of A */
+                int n,                /* dimension of A */
+                int *parent)    /* parent in elim tree */
 {
 	int	*root;		    /* root of subtree of etree 	*/
 	int	rset, cset;             

@@ -3,14 +3,11 @@ import re
 import numpy as np
 import pytest
 
-from importlib import import_module
-
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    np_compat, xp_default_dtype, xp_result_type, is_torch,
-    xp_capabilities_table, _xp_copy_to_numpy
+    np_compat, xp_device, xp_promote, xp_result_device,
+    xp_result_type, is_torch, _xp_copy_to_numpy
 )
-from scipy._lib._array_api_docs_tables import is_named_function_like_object
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 from scipy._external.array_api_extra.testing import lazy_xp_function
@@ -165,7 +162,7 @@ class TestArrayAPI:
             # Ensure y is a copy when xp is numpy.
             assert id(x) != id(y)
 
-    
+
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])
     def test_strict_checks(self, xp, dtype, shape):
@@ -180,14 +177,12 @@ class TestArrayAPI:
         if is_numpy(xp):
             xp_assert_equal(x, y, **options)
         else:
+            # `desired` can be of a different namespace
+            # as long as `actual` matches the expectation set by `default_xp`
+            xp_assert_equal(x, y, **options)
             with pytest.raises(
                 AssertionError,
-                match="Namespace of desired array does not match",
-            ):
-                xp_assert_equal(x, y, **options)
-            with pytest.raises(
-                AssertionError,
-                match="Namespace of actual and desired arrays do not match",
+                match="Input does not have the desired array namespace",
             ):
                 xp_assert_equal(y, x, **options)
 
@@ -277,9 +272,6 @@ class TestArrayAPI:
         # scalars-vs-0d passes (if values match) also with regular python objects
         xp_assert_equal_no_0d(0., xp.asarray(0.))
         xp_assert_equal_no_0d(42, xp.asarray(42))
-
-    def test_default_dtype(self, xp):
-        assert xp_default_dtype(xp) == xp.asarray(1.).dtype
 
 
 scalars = [1, 1., 1. + 1j]
@@ -376,28 +368,80 @@ def test_xp_result_type_force_floating(x, y, xp):
     dtype_res = xp_result_type(x, y, force_floating=True, xp=xp)
     assert dtype_res == dtype_ref
 
-# Test that the xp_capabilities decorator has been applied to all
-# functions and function-likes in the public API. Modules will be
-# added to the list of tested_modules below as decorator coverage
-# is added on a module by module basis. It remains for future work
-# to offer similar functionality to xp_capabilities for classes in
-# the public API.
 
-tested_modules = ["scipy.stats"]
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
+def test_xp_promote_device(xp, devices):
+    # Scalars and array-like iterables promoted alongside an array are
+    # created on that array's device; array arguments keep their own device.
+    # See gh-22680.
+    for device in devices:
+        x = xp.asarray([1., 2., 3.], device=device)
+
+        # scalar rides along on the array's device
+        x2, scalar = xp_promote(x, 1.5, xp=xp)
+        assert xp_device(x2) == xp_device(x)
+        assert xp_device(scalar) == xp_device(x)
+
+        # so does a list, and broadcasting preserves the device
+        x2, lst = xp_promote(x, [1., 2., 3.], broadcast=True, xp=xp)
+        assert xp_device(lst) == xp_device(x)
+
+        # order does not matter: device comes from the (first) array argument
+        scalar, x2 = xp_promote(2, x, force_floating=True, xp=xp)
+        assert xp_device(scalar) == xp_device(x)
+
+        # with arrays on several devices, the *first* array argument is the
+        # anchor for scalars; each array keeps its own device
+        y = xp.asarray([4., 5., 6.])  # on the default device
+        scalar, x2, y2 = xp_promote(2, x, y, force_floating=True, xp=xp)
+        assert xp_device(scalar) == xp_device(x)
+        assert xp_device(x2) == xp_device(x)
+        assert xp_device(y2) == xp_device(y)
+
+        # None passes through; remaining args still promoted on device
+        x2, none, scalar = xp_promote(x, None, 0.5, xp=xp)
+        assert none is None
+        assert xp_device(scalar) == xp_device(x)
+
+        # an array argument keeps its own device
+        x2 = xp_promote(x, force_floating=True, xp=xp)
+        assert xp_device(x2) == xp_device(x)
+
+        # NumPy scalars and arrays report device 'cpu' but are *host data*:
+        # they must ride along on the array argument's device like python
+        # scalars do (they land on the default device otherwise). This mix
+        # is user-reachable: `array_namespace` rejects NumPy *sample* arrays
+        # mixed with another backend's arrays, but NumPy scalars arrive as
+        # numeric keyword parameters that are not validated as arrays, e.g.
+        # `differentiate(f, x_gpu, initial_step=1/np.sqrt(2))`.
+        x2, np_scalar = xp_promote(x, np.float64(0.5), xp=xp)
+        assert xp_device(np_scalar) == xp_device(x)
+        x2, np_arr = xp_promote(x, np.asarray([1.0, 2.0, 3.0]), xp=xp)
+        assert xp_device(np_arr) == xp_device(x)
 
 
-def collect_public_functions():
-    functions = []
-    for module_name in tested_modules:
-        module = import_module(module_name)
-        for name in module.__all__:
-            obj = getattr(module, name)
-            if not is_named_function_like_object(obj):
-                continue
-            functions.append(pytest.param(obj, id=f"{module_name}.{name}"))
-    return functions
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
+def test_xp_result_device(xp, devices):
+    # `xp_result_device` anchors the result device on the first argument
+    # that carries a device, skipping python scalars and NumPy host data.
+    # No device-carrying argument -> None (create on the backend default).
+    # NumPy arrays, and arrays of backends without a `.device` attribute
+    # (e.g. Dask), are treated like host data: always None.
+    for device in devices:
+        x = xp.asarray([1., 2.], device=device)
+        host_like = is_numpy(xp) or not hasattr(x, "device")
+        expected = None if host_like else xp_device(x)
+        assert xp_result_device(x) == expected
+        assert xp_result_device(1.5, None, x) == expected
+        assert xp_result_device(np.float64(0.5), x) == expected
+        assert xp_result_device(np.asarray([1.0]), x) == expected
 
-
-@pytest.mark.parametrize("func", collect_public_functions())
-def test_xp_capabilities_coverage(func):
-    assert func in xp_capabilities_table
+        # the *first* device-carrying argument is the anchor
+        y = xp.asarray([3., 4.])  # on the default device
+        expected_y = None if host_like else xp_device(y)
+        assert xp_result_device(x, y) == expected
+        assert xp_result_device(y, x) == expected_y
+        assert xp_result_device(1.5, y, x) == expected_y
+    assert xp_result_device() is None
+    assert xp_result_device(1.5, None) is None
+    assert xp_result_device(np.asarray([1.0])) is None

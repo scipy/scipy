@@ -117,11 +117,11 @@ class Test_RealInterval:
     @pytest.mark.slow
     @given(a=strategies.one_of(
         strategies.decimals(allow_nan=False),
-        strategies.characters(whitelist_categories="L"),  # type: ignore[arg-type]
+        strategies.characters(whitelist_categories="L"),
         strategies.sampled_from(list(_Domain.symbols))),
            b=strategies.one_of(
         strategies.decimals(allow_nan=False),
-        strategies.characters(whitelist_categories="L"),  # type: ignore[arg-type]
+        strategies.characters(whitelist_categories="L"),
         strategies.sampled_from(list(_Domain.symbols))),
            inclusive_a=strategies.booleans(),
            inclusive_b=strategies.booleans(),
@@ -288,7 +288,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_complement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -302,7 +302,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_icomplement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -1131,11 +1131,11 @@ class TestAttributes:
 
 
 class TestMakeDistribution:
-    @pytest.mark.parametrize('i, distdata', enumerate(distcont + distdiscrete))
+    @pytest.mark.parametrize('i, distdata', list(enumerate(distcont + distdiscrete)))
     def test_rv_generic(self, i, distdata):
         distname = distdata[0]
 
-        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
+        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz',
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
                 'vonmises_line'}  # continuous
@@ -1159,7 +1159,8 @@ class TestMakeDistribution:
         skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance
                          'johnsonsb', 'ksone', 'kstwo',  # tolerance
                          'nchypergeom_wallenius'}  # tolerance
-        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang',  # tolerance
+                        'dlaplace'}  # slight tolerance issue, but only for array shape
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
@@ -1169,6 +1170,7 @@ class TestMakeDistribution:
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
         rng = np.random.default_rng(7548723590230982)
         CustomDistribution = stats.make_distribution(dist)
+        params = {key: np.asarray([val, val]) for key, val in params.items()}
         X = CustomDistribution(**params)
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
@@ -1208,10 +1210,11 @@ class TestMakeDistribution:
             # old infrastructure convention for ppf(p=0) and isf(p=1) is different than
             # new infrastructure. Adjust reference values accordingly.
             a, _ = Y.support()
+            a, p = np.broadcast_arrays(a, p)
             ref_ppf = Y.ppf(p)
-            ref_ppf[p == 0] = a
+            ref_ppf[p == 0] = a[p == 0]
             ref_isf = Y.isf(p)
-            ref_isf[p == 1] = a
+            ref_isf[p == 1] = a[p == 1]
 
             assert_allclose(X.icdf(p), ref_ppf, rtol=rtol)
             assert_allclose(X.iccdf(p), ref_isf, rtol=rtol)
@@ -1229,7 +1232,7 @@ class TestMakeDistribution:
                 # of the support, and the new infrastructure is slow there (for now).
                 seed = 845298245687345
                 assert_allclose(X.sample(shape=10, rng=seed),
-                                Y.rvs(size=10,
+                                Y.rvs(size=p.shape,
                                       random_state=np.random.default_rng(seed)),
                                 rtol=rtol)
 
@@ -1306,7 +1309,7 @@ class TestMakeDistribution:
                 assert_allclose(X.lmoment(order, standardize=standardize),
                                 Y.lmoment(order, standardize=standardize))
 
-        # Confirm that the `sample` and `moment` methods are overriden as expected
+        # Confirm that the `sample` and `moment` methods are overridden as expected
         sample_formula = X.sample(shape=10, rng=0, method='formula')
         sample_inverse = X.sample(shape=10, rng=0, method='inverse_transform')
         assert_allclose(sample_formula, sample_inverse)
@@ -1492,6 +1495,54 @@ class TestMakeDistribution:
         assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
         assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
+
+    @pytest.mark.slow  # just in case
+    @settings(max_examples=20)  # no need for more
+    @given(data=strategies.data())
+    def test_draw_distribution(self, data):
+        # `draw_distribution_from_family` is a private function right now, but we will
+        # want that functionality to be public someday. It was broken for custom
+        # distributions because the `typical` parameter of the support was ignored.
+        # Check that this is resolved.
+        rng = np.random.default_rng(8465652168548465121)
+        u_typical = tuple(np.sort(rng.standard_normal(2)))
+        s_typical = tuple(np.sort(rng.random(2)*2))
+        x_typical = tuple(np.sort(rng.standard_normal(2)))
+
+        class MyNormal:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': u_typical},
+                          's': {'endpoints': (0, np.inf), 'typical': s_typical}}
+            support = {'endpoints': (-np.inf, np.inf), 'typical': x_typical}
+
+            def pdf(self, x, u, s):
+                return 1 / np.sqrt(2*np.pi) / s * np.exp(-((x-u)/s)**2/2)
+
+        family = stats.make_distribution(MyNormal())
+        proportions = (1.0, 0., 0., 0.)
+        tmp = draw_distribution_from_family(family, data, rng, proportions, min_side=1)
+        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
+        assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
+        assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
+        assert x_typical[0] < np.min(x) and np.max(x) < x_typical[1]
+
+    @pytest.mark.parametrize('p', [None, ()])
+    def test_no_parameters(self, p):
+        # To create a distribution without parameters, it is natural to try an empty
+        # dictionary (since a dictionary with entries is valid if there is only
+        # one parameterization), but that didn't work; only an empty tuple (no
+        # parameterizations) worked originally. Check that this is resolved.
+        class MyStandardNormal:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {} if p is None else p
+            support = {'endpoints': (-np.inf, np.inf)}
+
+            def pdf(self, x):
+                return 1 / np.sqrt(2*np.pi) * np.exp(-x**2/2)
+
+        StandardNormal = stats.make_distribution(MyStandardNormal())
+        X = StandardNormal()
+        assert X.support() == (-np.inf, np.inf)
 
 
 class TestTransforms:
@@ -2269,3 +2320,10 @@ class Test_logexpxmexpy:
         # operations involving NaNs should not produce warnings
         x = np.asarray(np.nan)
         assert_equal(_logexpxmexpy(x, x), x)
+
+
+def test_gh_25180():
+    lu = _LogUniform(log_a=np.float64(-0.28915434544814245),
+                     log_b=np.float64(0.3085224670197856))
+    actual = lu.mode(method='optimization')
+    assert np.isfinite(actual)
