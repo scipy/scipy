@@ -978,6 +978,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         return result
 
 
+@xp_capabilities(out_of_scope=True)
 class ClusterNode:
     """
     A tree node class for representing a cluster.

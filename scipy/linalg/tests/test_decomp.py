@@ -34,7 +34,7 @@ from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.__config__ import CONFIG
 
-from .test_basic import parametrize_overwrite_arg
+from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -448,6 +448,7 @@ class TestEig:
 
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
+
 
     @pytest.mark.parametrize("include_B", [False, True])
     @pytest.mark.parametrize("left", [False, True])
@@ -1118,24 +1119,351 @@ class TestEigh:
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
 
-    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-    def test_empty(self, dt):
-        a = np.empty((0, 0), dtype=dt)
-        w, v = eigh(a)
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [
+        None, int, float, np.float32, complex, np.complex64
+    ])
+    @pytest.mark.parametrize('shape', [(10, 0, 5, 5), (0, 0)])
+    def test_empty(self, dt_a, dt_b, shape):
+        a = np.empty(shape, dtype=dt_a)
+        b = np.empty(shape, dtype=dt_b) if dt_b is not None else None
 
-        w_n, v_n = eigh(np.eye(2, dtype=dt))
+        a_ref = np.eye(2, dtype=dt_a)
+        b_ref = np.eye(2, dtype=dt_b) if dt_b is not None else None
 
-        assert w.shape == (0,)
+        w, v = eigh(a, b)
+        w_n, v_n = eigh(a_ref, b_ref)
+
+        assert w.shape == shape[:-1]
         assert w.dtype == w_n.dtype
 
-        assert v.shape == (0, 0)
+        assert v.shape == shape
         assert v.dtype == v_n.dtype
 
-        w = eigh(a, eigvals_only=True)
-        assert_allclose(w, np.empty((0,)))
+        w = eigh(a, b, eigvals_only=True)
 
-        assert w.shape == (0,)
+        assert w.shape == shape[:-1]
         assert w.dtype == w_n.dtype
+
+    @pytest.mark.parametrize("dtype", [
+        np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [5, 20])
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("driver", ["ev", "evd", "evr", "evx", "gv", "gvd", "gvx"])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_random(self, dtype, n, lower, driver, order):
+        rng = np.random.default_rng(seed=42)
+        atol = 6e-5 if dtype in [np.float32, np.complex64] else 1e-12
+
+        v_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            v_base = v_base + 1j * rng.normal(size=(n, n))
+        v_base = v_base.astype(dtype)
+        v, _ = qr(v_base, mode="full")
+
+        w = np.sort(rng.normal(size=(n,))).astype(dtype)
+        a = v @ np.diag(w) @ np.conj(v.T)
+
+        if order == "C":
+            a = np.asfortranarray(a)
+
+        if driver[0] == "g":
+            b = np.diag(1 + np.arange(n))
+            b = b.astype(dtype, order=order)
+        else:
+            b = None
+
+        w_n, v_n = eigh(a, b, lower=lower, driver=driver)
+        assert w_n.dtype == np.finfo(dtype).dtype
+        assert v_n.dtype == dtype
+
+        if b is None:
+            assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+        else:
+            assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("dtype", [
+        np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [5, 20])
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("driver", ["ev", "evd", "evr", "evx", "gv", "gvd", "gvx"])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_subset_by_value(self, dtype, n, lower, driver, order):
+        rng = np.random.default_rng(seed=42)
+        vl, vu = -2, 2
+        atol = 8e-5 if dtype in [np.float32, np.complex64] else 1e-12
+
+        v_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            v_base = v_base + 1j * rng.normal(size=(n, n))
+        v_base = v_base.astype(dtype)
+        v, _ = qr(v_base, mode="full")
+
+        w = np.sort(rng.uniform(vl, vu, size=(n,))).astype(dtype)
+        w[0] = 5 * -np.abs(vl)
+        w[-1] = 5 * np.abs(vu)
+
+        a = v @ np.diag(w) @ np.conj(v.T)
+
+        if order == "F":
+            a = np.asfortranarray(a)
+
+        if driver[0] == "g":
+            b = np.eye(n, order=order, dtype=dtype)
+        else:
+            b = None
+
+        if driver not in ["evr", "evx", "gvx"]:
+            with pytest.raises(ValueError, match=f'"{driver}" cannot compute subsets'):
+                eigh(a, b, lower=lower, subset_by_value=(vl, vu), driver=driver)
+        else:
+            w_n, v_n = eigh(a, b, lower=lower, subset_by_value=(vl, vu), driver=driver)
+
+            assert w_n.shape[0] == n-2
+            assert np.all(vl < w_n) and np.all(w_n < vu)
+            assert v_n.shape == (n, n-2)
+
+            if b is None:
+                assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+            else:
+                assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("shape", [(5, 5), (2, 5, 5)])
+    @pytest.mark.parametrize("driver", ["evr", "evx", "gvx"])
+    def test_subset_by_value_error(self, shape, driver):
+        rng = np.random.default_rng(seed=42)
+        vl, vu = -2, 2
+        atol = 1e-12
+        n = shape[-1]
+
+        v_base = rng.normal(size=shape)
+        v, _ = qr(v_base, mode="full")
+
+        w_diag = np.sort(rng.uniform(0, vu, size=shape[:-1]))
+        w_diag[..., 0] = -5 * np.abs(vu)
+        w_diag[..., -1] = 5 * np.abs(vu)
+        w = np.zeros(shape)
+        w[..., np.arange(n), np.arange(n)] = w_diag
+
+        a = v @ w @ np.conj(v.swapaxes(-2, -1))
+
+        if driver[0] == "g":
+            b = np.zeros(shape)
+            b[..., np.arange(n), np.arange(n)] = 1
+        else:
+            b = None
+
+        if len(shape) > 2:
+            with pytest.raises(ValueError, match='`subset_by_value` not supported'):
+                eigh(a, b, subset_by_value=(vl, vu), driver=driver)
+        else: # Still check for correctness of the result
+            w_n, v_n = eigh(a, b, subset_by_value=(vl, vu), driver=driver)
+
+            assert w_n.shape[0] == shape[-1] - 2
+            assert np.all(vl < w_n) and np.all(w_n < vu)
+            assert v_n.shape == (*shape[:-1], shape[-1] - 2)
+
+            if b is None:
+                assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+            else:
+                assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("dtype", [
+        np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [5, 20])
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("driver", ["ev", "evd", "evr", "evx", "gv", "gvd", "gvx"])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_subset_by_index(self, dtype, n, lower, driver, order):
+        rng = np.random.default_rng(seed=42)
+        il, iu = 1, 4
+        atol = 6e-5 if dtype in [np.float32, np.complex64] else 1e-12
+
+        v_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            v_base = v_base + 1j * rng.normal(size=(n, n))
+        v_base = v_base.astype(dtype)
+        v, _ = qr(v_base, mode="full")
+
+        w = np.sort(rng.uniform(-2, 2, size=(n,))).astype(dtype)
+        a = v @ np.diag(w) @ np.conj(v.T)
+
+        if order == "C":
+            a = np.asfortranarray(a)
+
+        if driver[0] == "g":
+            b = np.eye(n, order=order, dtype=dtype)
+        else:
+            b = None
+
+        if driver not in ["evr", "evx", "gvx"]:
+            with pytest.raises(ValueError, match=f'"{driver}" cannot compute subsets'):
+                eigh(a, b, lower=lower, subset_by_index=[il, iu], driver=driver)
+        else:
+            w_n, v_n = eigh(a, b, lower=lower, subset_by_index=[il, iu], driver=driver)
+
+            assert w_n.shape == (iu - il + 1,)
+            assert v_n.shape == (n, iu - il + 1)
+
+            if b is None:
+                assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+            else:
+                assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("dtypes", [
+        (np.float32, np.float64), (np.complex64, np.complex128)
+    ])
+    @pytest.mark.parametrize("driver", ["gv", "gvd", "gvx"])
+    def test_b_upcast_a(self, dtypes, driver):
+        # Regression test to deal with the case where `b` upcasts `a` which would
+        # necessitate recomputing the `overwrite_a` flag in its entirety.
+        n = 5
+        rng = np.random.default_rng(seed=12345)
+        atol = 1e-14
+
+        dtype_a, dtype_b = dtypes
+
+        v_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype_b, np.complexfloating):
+            v_base = v_base + 1j * rng.normal(size=(n, n))
+        v_base = v_base.astype(dtype_b)
+        v, _ = qr(v_base, mode="full")
+
+        w = np.sort(rng.uniform(-2, 2, size=(n,))).astype(dtype_b)
+        a = (v @ np.diag(w) @ np.conj(v.T)).astype(dtype_a)
+        b = np.eye(n, dtype=dtype_b)
+
+        w_n, v_n = eigh(a, b, driver=driver)
+
+        # check correctness
+        assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+
+    @pytest.mark.parametrize("dtype", [
+        np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("driver", ["evr", "evx", "gvx"])
+    def test_subset_by_index_full(self, dtype, driver):
+        # Regression test to check if `subset_by_index` when requesting the full
+        # range is behaving correctly
+        n = 5
+        atol = 1e-14 if dtype in [np.float64, np.complex128] else 4e-5
+        rng = np.random.default_rng(seed=12345)
+
+        a_base = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            a_base = a_base + 1j * rng.normal(size=(n, n))
+        a_base = a_base.astype(dtype)
+        a = a_base @ np.conj(a_base.T)
+
+        if driver[0] == "g":
+            b = np.eye(5, dtype=dtype)
+        else:
+            b = None
+
+        w_n, v_n = eigh(a, b, driver=driver, subset_by_index=[0, n-1])
+
+        # Validate correctness
+        if b is not None:
+            assert_allclose(a @ v_n, b @ v_n @ np.diag(w_n), atol=atol)
+        else:
+            assert_allclose(a @ v_n, v_n @ np.diag(w_n), atol=atol)
+
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("eigvals_only", [True, False])
+    @pytest.mark.parametrize("a_dtype", [int, float])
+    @pytest.mark.parametrize("a_order", ["C", "F"])
+    @pytest.mark.parametrize("driver", ["ev", "evd", "evr", "evd"])
+    def test_overwrite_regular(
+        self, overwrite_kw, eigvals_only, a_dtype, a_order, driver
+    ):
+        rng = np.random.default_rng(seed=12345)
+        n = 3
+
+        if a_dtype is not int:
+            a_base = rng.normal(size=(n, n))
+        else:
+            a_base = rng.integers(-10, 10, size=(n, n))
+        a = (a_base @ a_base.T).astype(a_dtype, order=a_order)
+        a_ref = a.copy()
+
+        # Solve and check correctness
+        if eigvals_only:
+            w_ref = eigh(a_ref, eigvals_only=True, driver=driver)
+            w_n = eigh(a, **overwrite_kw, eigvals_only=eigvals_only, driver=driver)
+            assert_allclose(w_ref, w_n, atol=1e-14)
+        else:
+            w_n, v_n = eigh(a, **overwrite_kw, eigvals_only=eigvals_only, driver=driver)
+            assert_allclose(a_ref @ v_n, v_n @ np.diag(w_n), atol=1e-14)
+
+
+        # Check overwrite behavior
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags["F_CONTIGUOUS"]
+
+        assert np.all(a == a_ref) != a_inplace
+        if not eigvals_only:
+            assert np.shares_memory(a, v_n) == a_inplace
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize("eigvals_only", [True, False])
+    @pytest.mark.parametrize("a_dtype", [int, float])
+    @pytest.mark.parametrize("a_order", ["C", "F"])
+    @pytest.mark.parametrize("b_dtype", [int, float])
+    @pytest.mark.parametrize("b_order", ["C", "F"])
+    @pytest.mark.parametrize("driver", ["gv", "gvd", "gvx"])
+    def test_overwrite_generalized(
+        self, overwrite_kw, overwrite_b_kw, eigvals_only,
+        a_dtype, a_order, b_dtype, b_order, driver
+    ):
+        rng = np.random.default_rng(seed=12345)
+        n = 3
+
+        if a_dtype is not int:
+            a_base = rng.normal(size=(n, n))
+        else:
+            a_base = rng.integers(-10, 10, size=(n, n))
+        a = (a_base @ a_base.T).astype(a_dtype, order=a_order)
+        a_ref = a.copy()
+
+        if b_dtype is not int:
+            b_base = rng.normal(size=(n, n))
+        else:
+            b_base = rng.integers(-10, 10, size=(n, n))
+        b = (b_base @ b_base.T).astype(b_dtype, order=b_order)
+        b_ref = b.copy()
+
+        # Solve and check correctness
+        if eigvals_only:
+            w_ref = eigh(a_ref, b_ref, eigvals_only=True, driver=driver)
+            w_n = eigh(
+                a, b, **overwrite_kw, **overwrite_b_kw,
+                eigvals_only=eigvals_only, driver=driver
+            )
+            assert_allclose(w_ref, w_n, atol=1e-14)
+        else:
+            w_n, v_n = eigh(
+                a, b, **overwrite_kw, **overwrite_b_kw,
+                eigvals_only=eigvals_only, driver=driver
+            )
+            assert_allclose(a_ref @ v_n, b_ref @ v_n @ np.diag(w_n), atol=1e-14)
+
+
+        # Check overwrite behavior
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags["F_CONTIGUOUS"]
+
+        assert np.all(a == a_ref) != a_inplace
+        if not eigvals_only:
+            assert np.shares_memory(a, v_n) == a_inplace
+
+        overwrite_b = overwrite_b_kw.get("overwrite_b", False)
+        b_inplace = overwrite_b and (b.dtype != int) and b.flags["F_CONTIGUOUS"]
+        assert np.all(b == b_ref) != b_inplace
+
 
 class TestSVD_GESDD:
     lapack_driver = 'gesdd'
