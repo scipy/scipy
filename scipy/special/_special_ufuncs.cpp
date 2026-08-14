@@ -222,6 +222,7 @@ extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
 extern const char *hyp0f1_doc;
+extern const char *hyp1f1_doc;
 extern const char *hyp2f1_doc;
 extern const char *hyperu_doc;
 extern const char *i0_doc;
@@ -1295,6 +1296,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::fF_F>(xsf::hyp0f1), static_cast<xsf::numpy::dD_D>(xsf::hyp0f1)},
                           "hyp0f1", hyp0f1_doc);
     PyModule_AddObjectRef(module, "hyp0f1", hyp0f1);
+
+    PyObject *hyp1f1 = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(hyp1f1_float), static_cast<xsf::numpy::ddd_d>(hyp1f1_double),
+         static_cast<xsf::numpy::ffF_F>(xsf::hyp1f1), static_cast<xsf::numpy::ddD_D>(xsf::hyp1f1)},
+        "hyp1f1", hyp1f1_doc);
+    PyModule_AddObjectRef(module, "hyp1f1", hyp1f1);
 
     PyObject *hyp2f1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(xsf::hyp2f1), static_cast<xsf::numpy::dddd_d>(xsf::hyp2f1),
