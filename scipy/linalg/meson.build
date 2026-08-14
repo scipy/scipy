@@ -65,6 +65,8 @@ if needs_lp64_fblas
   # LAPACK auxiliaries).
   py3.extension_module('_fblas',
     [
+      'src/wrapper/wrapper_types.hpp',
+      'src/wrapper/wrapper_helpers.hpp',
       'src/blas/blas_calls.hpp',
       'src/blas/blas_helpers.hpp',
       'src/blas/blas_l1.cpp',
@@ -73,7 +75,27 @@ if needs_lp64_fblas
       'src/blas/blas_docs.cpp',
       'src/blas/blas_module.cpp',
     ],
-    include_directories: ['src/blas'],
+    include_directories: ['src/wrapper', 'src/blas'],
+    link_args: version_link_args,
+    dependencies: [np_dep, lapack_lp64_dep],
+    link_with: blas_lapack_wrapper_lib_lp64,
+    install: true,
+    subdir: 'scipy/linalg'
+  )
+
+  # C++ LAPACK wrappers. Built alongside the f2py `_flapack` while the port is in progress,
+  # so the two can be compared routine by routine.
+  py3.extension_module('_flapack_cpp',
+    [
+      'src/wrapper/wrapper_types.hpp',
+      'src/wrapper/wrapper_helpers.hpp',
+      'src/lapack/lapack_callback.hpp',
+      'src/lapack/lapack_calls.hpp',
+      'src/lapack/lapack_helpers.hpp',
+      'src/lapack/lapack_gen.cpp',
+      'src/lapack/lapack_module.cpp',
+    ],
+    include_directories: ['src/wrapper', 'src/lapack'],
     link_args: version_link_args,
     dependencies: [np_dep, lapack_lp64_dep],
     link_with: blas_lapack_wrapper_lib_lp64,
@@ -127,7 +149,26 @@ if use_ilp64
       'src/blas/blas_docs.cpp',
       'src/blas/blas_module.cpp',
     ],
-    include_directories: ['src/blas'],
+    include_directories: ['src/wrapper', 'src/blas'],
+    link_args: version_link_args,
+    dependencies: [np_dep, lapack_dep],
+    link_with: blas_lapack_wrapper_lib_ilp64,
+    install: true,
+    subdir: 'scipy/linalg'
+  )
+
+  # ILP64 sibling of `_flapack_cpp`, same sources; the module name follows -DHAVE_BLAS_ILP64.
+  py3.extension_module('_flapack_cpp_64',
+    [
+      'src/wrapper/wrapper_types.hpp',
+      'src/wrapper/wrapper_helpers.hpp',
+      'src/lapack/lapack_callback.hpp',
+      'src/lapack/lapack_calls.hpp',
+      'src/lapack/lapack_helpers.hpp',
+      'src/lapack/lapack_gen.cpp',
+      'src/lapack/lapack_module.cpp',
+    ],
+    include_directories: ['src/wrapper', 'src/lapack'],
     link_args: version_link_args,
     dependencies: [np_dep, lapack_dep],
     link_with: blas_lapack_wrapper_lib_ilp64,
