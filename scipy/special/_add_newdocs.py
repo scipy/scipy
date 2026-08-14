@@ -1007,6 +1007,37 @@ add_newdoc("eval_chebyt",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E11_2
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    Basic checks — T_n(x) = cos(n * arccos(x)) for x in [-1, 1]:
+
+    >>> sc.eval_chebyt(0, 0.5)
+    1.0
+    >>> sc.eval_chebyt(1, 0.5)
+    0.5
+    >>> sc.eval_chebyt(2, 0.5)
+    -0.5
+    >>> sc.eval_chebyt(3, 0.5)
+    -1.0
+
+    Array of degrees works too:
+
+    >>> sc.eval_chebyt(np.arange(5), 0.5)
+    array([ 1. ,  0.5, -0.5, -1. , -0.5])
+
+    Trig identity check — T_4(cos(π/4)) should equal cos(π):
+
+    >>> sc.eval_chebyt(4, np.cos(np.pi / 4))
+    -1.0
+
+    Non-integer n falls back to the hypergeometric definition:
+
+    >>> sc.eval_chebyt(1.5, 0.5)
+    0.0
+
     """)
 
 add_newdoc("eval_chebyu",
