@@ -41,6 +41,7 @@ numpy = "*"
 blas-devel = "*"
 
 [package.host-dependencies."if(host_platform == 'win-64')"]
+meson = "<1.12.0"  # scipy/scipy#25904
 openblas = "*"
 
 
@@ -58,12 +59,12 @@ features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
 solve-group = "default"
 
 [environments.smoke-docs]
-# tasks: smoke-docs
+# tasks: smoke-docs, smoke-tutorials
 features = ["run-deps", "test-deps", "smoke-docs", "default-platforms"]
 solve-group = "default"
 
 [environments.docs]
-# tasks: docs
+# tasks: docs, refguide-check
 features = ["docs", "marray"]
 solve-group = "default"
 
@@ -79,7 +80,7 @@ solve-group = "default"
 
 [environments.bench]
 # tasks: bench
-features = ["run-deps", "build-deps", "bench-common", "bench", "default-platforms"]
+features = ["run-deps", "bench-common", "bench", "default-platforms"]
 solve-group = "default"
 
 [environments.build-debug]
@@ -275,9 +276,14 @@ blas-devel = "*"
 
 ### Default building ###
 
-[feature.build-deps.dependencies]
+[feature.build-deps.target.unix.dependencies]
 c-compiler = "*"
 cxx-compiler = "*"
+
+[feature.build-deps.target.win-64.dependencies]
+clang-cl_win-64 = "*"
+
+[feature.build-deps.dependencies]
 ccache = "*"
 pkg-config = "*"
 ninja = "*"
@@ -289,7 +295,6 @@ pybind11 = "*"
 # needed at build-time as well as run-time
 numpy = "*"
 blas-devel = "*"
-
 
 [feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
@@ -349,12 +354,17 @@ description = "Run SciPy-specific checks"
 [feature.smoke-docs.dependencies]
 hypothesis = "*"
 matplotlib = "*"
-scipy-doctest = "*"
+scipy-doctest = ">=2.2"
 
 [feature.smoke-docs.tasks.smoke-docs]
 cmd = "spin smoke-docs --no-build"
 depends-on = "build"
 description = "Run doctests"
+
+[feature.smoke-docs.tasks.smoke-tutorials]
+cmd = "spin smoke-tutorials --no-build"
+depends-on = "build"
+description = "Run doctests on tutorials"
 
 
 [feature.fail-slow.dependencies]
@@ -402,7 +412,7 @@ scipy-stubs = "*"
 ### Documentation ###
 
 [feature.docs.dependencies]
-sphinx = "<8.2.0"
+sphinx = "8.2.*"
 intersphinx-registry = "*"
 pydata-sphinx-theme = "*"
 sphinx-copybutton = "*"
@@ -414,13 +424,18 @@ jupytext = "*"
 pooch = "*"
 jupyterlite-sphinx = "*"
 jupyterlite-pyodide-kernel = "*"
-scipy-doctest = "*"
+scipy-doctest = ">=2.2"
 linkify-it-py = "*"
 make = "*"
 
 
 [feature.docs.tasks.docs]
 cmd = "spin docs --no-build"
+depends-on = "build"
+description = "Build the documentation"
+
+[feature.docs.tasks.refguide-check]
+cmd = "spin refguide-check --no-build"
 depends-on = "build"
 description = "Build the documentation"
 
@@ -445,11 +460,20 @@ description = "Launch IPython (array-api-cpu env)"
 ### Benchmarking ###
 
 [feature.bench-common.dependencies]
-# https://github.com/airspeed-velocity/asv/issues/1537
-asv = "==0.6.4"
+asv = "==0.6.5"
+cffi = "*"
+pyfftw = "*"
+pytest = "*"
+psutil = "*"
+# peak_finding calls scipy.datasets.electrocardiogram() in setup(), so a missing
+# pooch is an asv failure rather than a skip
+pooch = "*"
 
 [feature.bench.tasks.bench]
 cmd = "spin bench --no-build"
+# without ALLOW_BENCH_IMPORT_ERRORS=0 a benchmark module that fails to import is
+# silently skipped rather than failing; OPENBLAS/MKL threads are set by spin
+env = { SCIPY_ALLOW_BENCH_IMPORT_ERRORS = "0", SCIPY_GLOBAL_BENCH_NUMTRIALS = "1" }
 depends-on = "build"
 description = "Run ASV benchmarks"
 
@@ -866,6 +890,7 @@ PYTHON_GIL = "0"
 
 [feature.build-freethreading.tasks.build-freethreading]
 cmd = "spin build --build-dir=build-freethreading --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
 description = "Build SciPy (freethreaded Python)"
 
 [feature.test-freethreading.tasks.test-freethreading]
@@ -906,4 +931,5 @@ description = "Build SciPy with clang-22 and -werror"
 gha-tools = "*"
 
 [feature.gha-update.tasks.gha-update]
-cmd = "gha-tools autoupdate ./.github/workflows/ --write --pin all -s specific"
+cmd = "gha-tools autoupdate ./.github/workflows/ ./.github/ccache/ --write --pin all -s specific"
+description = "Update GitHub Actions version pins"

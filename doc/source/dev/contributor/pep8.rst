@@ -14,7 +14,7 @@ compliance before pushing your code:
    automatically check for PEP8 compliance. In Spyder, for example,
    `enable Real-time code style analysis`_ in Tools |rarr| Preferences |rarr|
    Editor |rarr| Code Introspection/Analysis and "Automatically remove
-   trailing spaces when saving files" in in Tools |rarr| Preferences |rarr|
+   trailing spaces when saving files" in Tools |rarr| Preferences |rarr|
    Editor |rarr| Advanced Settings. This can help you fix PEP8 issues as you
    write your code.
 

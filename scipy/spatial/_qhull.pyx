@@ -2213,7 +2213,7 @@ def tsearch(tri, xi):
 
     .. deprecated:: 1.18.0
         `tsearch` is deprecated in favor of `Delaunay.find_simplex` and will be removed
-        in SciPy 1.22.0.
+        in SciPy 2.2.0.
 
     Parameters
     ----------
@@ -2259,7 +2259,7 @@ def tsearch(tri, xi):
 
     """
     msg = ("`tsearch` is deprecated in favor of `Delaunay.find_simplex` and will be "
-           "removed in SciPy 1.22.0.")
+           "removed in SciPy 2.2.0.")
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return tri.find_simplex(xi)
 

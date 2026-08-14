@@ -1,4 +1,4 @@
-.. The contents of this file previousy resided in file `reference/inex.rst`
+.. The contents of this file previously resided in file `reference/inex.rst`
 
 .. _design_conventions_modules:
 

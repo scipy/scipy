@@ -46,3 +46,5 @@ c7587c83744164f7b7c8e905de05b5955170acd4
 de0997b2ea6437404b65dea14d4fecfd06bb09e9
 # Cleanup for W lint rules
 9c742420ec223836608cab7d75d16f8ece5e0032
+# Move `spatial.distance` files into their own submodule dir
+e2ea689d1300111b8a640f3fbda24e13203f55fc

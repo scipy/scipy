@@ -65,15 +65,30 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
 
         gramians = matrix @ matrix.mT
         eye = xp.eye(3, dtype=matrix.dtype, device=device)
+        # float32 reduced precision compared to float64 requires a higher threshold
+        atol = 1e-12 if matrix.dtype == xp.float64 else 1e-6
         is_orthogonal = xp.all(
-            xpx.isclose(gramians, eye, atol=1e-12, xp=xp), axis=(-2, -1)
+            xpx.isclose(gramians, eye, atol=atol, xp=xp), axis=(-2, -1)
         )
 
         if lazy:
             # Lazy backends do not support non-concrete boolean indexing or any form of
             # computation without statically known shapes, so we always compute SVD and
             # use xp.where to select the result.
-            U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
+            # The results from orthogonal matrices are discarded, so we are free to
+            # change the inputs. We use this to our advantage:
+            # 1. the SVD of a diagonal matrix is significantly faster than the SVD of a
+            #    dense, generic matrix, so replacing orthogonal inputs with diagonal
+            #    matrices improves performance of the unnecessary SVDs.
+            # 2. The SVD of a matrix with three equal singular values is not
+            #    differentiable. Valid rotation matrices fall under this category, so
+            #    ironically, the unused results of the SVD produce NaN gradients that
+            #    can poison common autograd frameworks. Setting the value of the matrix
+            #    before the SVD breaks that chain and prevents NaN gradients. Note that
+            #    we do not guarantee gradients, but it is still a notable side-effect.
+            filler = xp.eye(3, dtype=matrix.dtype, device=device)
+            matrix_svd = xp.where(is_orthogonal[..., None, None], filler, matrix)
+            U, _, Vt = xp.linalg.svd(matrix_svd, full_matrices=False)
             matrix = xp.where(is_orthogonal[..., None, None], matrix, U @ Vt)
         elif not xp.all(is_orthogonal):
             # For eager frameworks, only compute SVD if needed.
@@ -154,7 +169,7 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
         raise ValueError(
             f"Expected `rot_vec` to have shape (..., 3), got {rotvec.shape}"
         )
-    rotvec = _deg2rad(rotvec) if degrees else rotvec
+    rotvec = xpx.deg2rad(rotvec, xp=xp) if degrees else rotvec
 
     angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
     half_angle = angle / 2
@@ -197,7 +212,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
     if degrees:
-        angles = _deg2rad(angles)
+        angles = xpx.deg2rad(angles, xp=xp)
 
     angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
 
@@ -256,7 +271,7 @@ def from_davenport(
         axes = xp.where(axes_not_orthogonal[..., None, None], xp.nan, axes)
 
     if degrees:
-        angles = _deg2rad(angles)
+        angles = xpx.deg2rad(angles, xp=xp)
 
     if (
         not broadcastable(axes.shape[:-1], cast(tuple[int, ...], angles.shape))
@@ -331,7 +346,7 @@ def as_rotvec(quat: Array, degrees: bool = False) -> Array:
     div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)
     scale = angle / div_norm
     if degrees:
-        scale = _rad2deg(scale)
+        scale = xpx.rad2deg(scale, xp=xp)
     rotvec = scale * quat[..., :3]
     return rotvec
 
@@ -380,7 +395,7 @@ def as_euler(
     angles = _get_angles(
         extrinsic, symmetric, sign, xp.pi / 2, a, b, c, d, suppress_warnings
     )
-    return _rad2deg(angles) if degrees else angles
+    return xpx.rad2deg(angles, xp=xp) if degrees else angles
 
 
 def as_davenport(
@@ -432,7 +447,7 @@ def as_davenport(
         suppress_warnings,
     )
     if degrees:
-        angles = _rad2deg(angles)
+        angles = xpx.rad2deg(angles, xp=xp)
     return angles
 
 
@@ -459,7 +474,7 @@ def approx_equal(
             )
         atol = 1e-8
     elif degrees:
-        atol = _deg2rad(atol)
+        atol *= np.pi / 180.0
 
     if not broadcastable(quat.shape, other.shape):
         raise ValueError(
@@ -533,6 +548,9 @@ def mean(
         w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
         K = (q * w).mT @ q
 
+    # Relying on the eigh decomposition to normalize for us instead of dividing by N is
+    # numerically worse. See #25891
+    K /= xp.prod(xp.asarray(q.shape[len(keep_axes) :], device=device), dtype=K.dtype)
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
@@ -1132,11 +1150,3 @@ def compose_quat(p: Array, q: Array) -> Array:
 def _split_rotation(q: Array, xp) -> tuple[Array, Array]:
     q = xpx.atleast_nd(q, ndim=2, xp=xp)
     return q[..., -1], q[..., :-1]
-
-
-def _deg2rad(angles: Array) -> Array:
-    return angles * (np.pi / 180.0)
-
-
-def _rad2deg(angles: Array) -> Array:
-    return angles * (180.0 / np.pi)

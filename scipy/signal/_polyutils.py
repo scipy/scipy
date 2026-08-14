@@ -31,7 +31,7 @@ def polyroots(coef, *, xp):
     """numpy.roots, best-effor replacement
     """
     if coef.shape[0] < 2:
-        return xp.asarray([], dtype=coef.dtype)
+        return xp.asarray([], dtype=coef.dtype, device=xp_device(coef))
 
     root_func = getattr(xp, 'roots', None)
     if root_func:
@@ -41,7 +41,7 @@ def polyroots(coef, *, xp):
 
     # companion matrix
     n = coef.shape[0]
-    a = xp.eye(n - 1, n - 1, k=-1, dtype=coef.dtype)
+    a = xp.eye(n - 1, n - 1, k=-1, dtype=coef.dtype, device=xp_device(coef))
     a[:, -1] = -xp.flip(coef[1:]) / coef[0]
 
     # non-symmetric eigenvalue problem is not in the spec but is available on e.g. torch
@@ -95,13 +95,13 @@ def _lstsq(a, b, xp=None, rcond=None):
         sing_val_mask = s > rcond
         s = xpx.apply_where(sing_val_mask, (s,), lambda x: 1. / x, fill_value=0.)
 
-        sigma = xp.eye(s.shape[0]) * s    # == np.diag(s)
+        sigma = xp.eye(s.shape[0], device=xp_device(a)) * s    # == np.diag(s)
         x = vt.T @ sigma @ u.T @ b
 
         rank = xp.count_nonzero(sing_val_mask)
 
         # XXX actually compute residuals, when there's a use case
-        residuals = xp.asarray([])
+        residuals = xp.asarray([], device=xp_device(a))
         return x, residuals, rank, s
 
 
@@ -117,7 +117,7 @@ def _poly1d(c_or_r, *, xp):
         raise ValueError("Polynomial must be 1d only.")
     c_or_r = _trim_zeros(c_or_r, trim='f')
     if c_or_r.shape[0] == 0:
-        c_or_r = xp.asarray([0], dtype=c_or_r.dtype)
+        c_or_r = xp.asarray([0], dtype=c_or_r.dtype, device=xp_device(c_or_r))
     return c_or_r
 
 
@@ -143,7 +143,8 @@ def poly(seq_of_zeros, *, xp):
     seq_of_zeros = xpx.atleast_nd(seq_of_zeros, ndim=1, xp=xp)
 
     if seq_of_zeros.shape[0] == 0:
-        return xp.asarray(1.0, dtype=xp.real(seq_of_zeros).dtype)
+        return xp.asarray(1.0, dtype=xp.real(seq_of_zeros).dtype,
+                          device=xp_device(seq_of_zeros))
 
     # prefer np.convolve etc, if available
     convolve_func = getattr(xp, 'convolve', None)
@@ -151,7 +152,7 @@ def poly(seq_of_zeros, *, xp):
         from scipy.signal import convolve as convolve_func
 
     dt = seq_of_zeros.dtype
-    a = xp.ones((1,), dtype=dt)
+    a = xp.ones((1,), dtype=dt, device=xp_device(seq_of_zeros))
     one = xp.ones_like(seq_of_zeros[0])
     for zero in seq_of_zeros:
         a = convolve_func(a, xp.stack((one, -zero)), mode='full')
