@@ -4,7 +4,7 @@
 Power Normal Distribution
 =========================
 
-A generalization of the normal distribution, with one shape parameter :math:`c>0` and support :math:`x\geq0`.
+A generalization of the normal distribution, with one shape parameter :math:`c>0` and support :math:`x \in \mathbb{R}`.
 
 .. math::
    :nowrap:
