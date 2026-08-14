@@ -3885,7 +3885,7 @@ def make_distribution(dist):
             If the value is a dictionary, it may have the following items, with default
             values used for entries which aren't present.
 
-            domain : {'continuous', 'discrete'}, default: 'continuous'
+            domain_type : {'continuous', 'discrete'}, default: 'continuous'
                 A string identifying whether the domain of the parameter is continuous
                 or discrete (i.e. accepts only integral values).
 
@@ -3921,7 +3921,7 @@ def make_distribution(dist):
         support : dict or tuple
             A dictionary describing the support of the distribution or a tuple
             describing the endpoints of the support. This behaves identically to
-            the values of the parameters dict described above. (``domain`` is
+            the values of the parameters dict described above. (``domain_type`` is
             inferred from whether ``pdf`` or ``pmf`` is defined.)
 
         The class **must** also define a ``pdf`` OR ``pmf`` method - not both - and
@@ -4091,10 +4091,10 @@ def make_distribution(dist):
     ...
     ...     @property
     ...     def parameters(self):
-    ...         return {'n': {'domain': 'discrete',
+    ...         return {'n': {'domain_type': 'discrete',
     ...                       'endpoints': (0., np.inf),
     ...                       'inclusive': (True, False)},
-    ...                 'p': {'domain': 'continuous',
+    ...                 'p': {'domain_type': 'continuous',
     ...                       'endpoints': (0., 1.),
     ...                       'inclusive': (True, True)}}
     ...
@@ -4260,9 +4260,9 @@ def _make_distribution_rv_generic(dist):
 
 def _get_domain_info(info):
     domain_info = {"endpoints": info} if isinstance(info, tuple) else info
-    domain_type_str = domain_info.pop("domain", "continuous")
+    domain_type_str = domain_info.pop("domain_type", "continuous")
     if domain_type_str not in {"discrete", "continuous"}:
-        message = ("If specified, the `domain` value of a parameter "
+        message = ("If specified, the `domain_type` value of a parameter "
                    "must be either 'continuous' or 'discrete'.")
         raise ValueError(message)
     domain_type = _IntegerInterval if domain_type_str == 'discrete' else _RealInterval

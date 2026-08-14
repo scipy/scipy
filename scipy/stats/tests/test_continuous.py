@@ -1480,10 +1480,10 @@ class TestMakeDistribution:
 
             @property
             def parameters(self):
-                return {'n': {'domain': 'discrete',
+                return {'n': {'domain_type': 'discrete',
                               'endpoints': (0., np.inf),
                               'inclusive': (True, False)},
-                        'p': {'domain': 'continuous',
+                        'p': {'domain_type': 'continuous',
                               'endpoints': (0., 1.),
                               'inclusive': (True, True)}}
 
@@ -1529,10 +1529,10 @@ class TestMakeDistribution:
         with pytest.raises(ValueError, match=message):
             stats.make_distribution(object())
 
-        message = "If specified, the `domain` value..."
+        message = "If specified, the `domain_type` value..."
         class MyTestDistribution:
             __make_distribution_version__ = "1.16.0"
-            parameters = {'n': {'domain': 'other', 'endpoints': (0, np.inf)}}
+            parameters = {'n': {'domain_type': 'other', 'endpoints': (0, np.inf)}}
             support = {'endpoints': (0, 'n'), 'inclusive': (True, True)}
             def pmf(self, x, n):
                 return np.full_like(x, 1/n)
