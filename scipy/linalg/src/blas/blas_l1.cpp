@@ -26,8 +26,8 @@ namespace blas{
             static constexpr Ctx<T> ctx("axpy", "OO|OOOOOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_IN(x, 1);
-            ARRAY_INOUT(y, 1, true);
+            ARRAY_IN(T, x, 1);
+            ARRAY_INOUT(T, y, 1, true);
 
             SCALAR_OPT(T, a, T(1));
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
@@ -52,7 +52,7 @@ namespace blas{
             static constexpr Ctx<T> ctx(tchar_fn<T>(), "nrm2", "O|OOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_IN(x, 1);
+            ARRAY_IN(T, x, 1);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx > 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
@@ -72,7 +72,7 @@ namespace blas{
             static constexpr Ctx<T> ctx(tchar_fn<T>(), "asum", "O|OOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_IN(x, 1);
+            ARRAY_IN(T, x, 1);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
@@ -92,7 +92,7 @@ namespace blas{
             static constexpr Ctx<T> ctx(iflavor<T>(), "amax", "O|OOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_IN(x, 1);
+            ARRAY_IN(T, x, 1);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
@@ -116,8 +116,8 @@ namespace blas{
             static constexpr Ctx<T> ctx("swap", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_INOUT(x, 1, true);
-            ARRAY_INOUT(y, 1, true);
+            ARRAY_INOUT(T, x, 1, true);
+            ARRAY_INOUT(T, y, 1, true);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
@@ -140,8 +140,8 @@ namespace blas{
             static constexpr Ctx<T> ctx("copy", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_IN(x, 1);
-            ARRAY_INOUT(y, 1, true);
+            ARRAY_IN(T, x, 1);
+            ARRAY_INOUT(T, y, 1, true);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
@@ -166,7 +166,7 @@ namespace blas{
 
             /* f2py processes a before x: a bad scalar wins over a bad array */
             SCALAR_REQ(T, a);
-            ARRAY_INOUT(x, 1, true);
+            ARRAY_INOUT(T, x, 1, true);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
@@ -198,7 +198,7 @@ namespace blas{
 
             SCALAR_FLAG(overwrite_x);
             SCALAR_REQ(A, a);
-            ARRAY_INOUT(x, 1, overwrite_x != 0);
+            ARRAY_INOUT(T, x, 1, overwrite_x != 0);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
@@ -218,8 +218,8 @@ namespace blas{
             static constexpr Ctx<T> ctx("dot", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_IN(x, 1);
-            ARRAY_IN(y, 1);
+            ARRAY_IN(T, x, 1);
+            ARRAY_IN(T, y, 1);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
@@ -242,8 +242,8 @@ namespace blas{
             static constexpr Ctx<T> ctx("dotu", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_IN(x, 1);
-            ARRAY_IN(y, 1);
+            ARRAY_IN(T, x, 1);
+            ARRAY_IN(T, y, 1);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
@@ -266,8 +266,8 @@ namespace blas{
             static constexpr Ctx<T> ctx("dotc", "OO|OOOOO", kwlist);
             PARSE_ARGS();
 
-            ARRAY_IN(x, 1);
-            ARRAY_IN(y, 1);
+            ARRAY_IN(T, x, 1);
+            ARRAY_IN(T, y, 1);
 
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy != 0, incy);
@@ -340,8 +340,8 @@ namespace blas{
 
             SCALAR_FLAG(overwrite_x);
             SCALAR_FLAG(overwrite_y);
-            ARRAY_INOUT(x, 1, overwrite_x != 0);
-            ARRAY_INOUT(y, 1, overwrite_y != 0);
+            ARRAY_INOUT(T, x, 1, overwrite_x != 0);
+            ARRAY_INOUT(T, y, 1, overwrite_y != 0);
 
             /* c and s are real also for the complex flavors (csrot/zdrot) */
             SCALAR_REQ(real_of_t<T>, c);
@@ -370,9 +370,9 @@ namespace blas{
 
             SCALAR_FLAG(overwrite_x);
             SCALAR_FLAG(overwrite_y);
-            ARRAY_INOUT(x, 1, overwrite_x != 0);
-            ARRAY_INOUT(y, 1, overwrite_y != 0);
-            ARRAY_IN(param, 1);
+            ARRAY_INOUT(T, x, 1, overwrite_x != 0);
+            ARRAY_INOUT(T, y, 1, overwrite_y != 0);
+            ARRAY_IN(T, param, 1);
             /* f2py fixed the length at array creation ("0-th dimension must be fixed to 5") */
             CHECKARRAY(len(param) == 5, param);
 
@@ -391,40 +391,40 @@ namespace blas{
 
 
         PyMethodDef l1_methods[] = {
-            BLAS_FAMILY(axpy),
-            BLAS_FAMILY(copy),
-            BLAS_FAMILY(rotg),
-            BLAS_FAMILY(scal),
-            BLAS_FAMILY(swap),
+            FAMILY(axpy),
+            FAMILY(copy),
+            FAMILY(rotg),
+            FAMILY(scal),
+            FAMILY(swap),
             /* Irregular function families are added individually */
-            BLAS_ROW2(csscal, scal_real, c64, f32),
-            BLAS_ROW2(zdscal, scal_real, c128, f64),
-            BLAS_ROW(isamax, iamax, f32),
-            BLAS_ROW(idamax, iamax, f64),
-            BLAS_ROW(icamax, iamax, c64),
-            BLAS_ROW(izamax, iamax, c128),
-            BLAS_ROW(snrm2,  nrm2, f32),
-            BLAS_ROW(dnrm2,  nrm2, f64),
-            BLAS_ROW(scnrm2, nrm2, c64),
-            BLAS_ROW(dznrm2, nrm2, c128),
-            BLAS_ROW(sasum,  asum, f32),
-            BLAS_ROW(dasum,  asum, f64),
-            BLAS_ROW(scasum, asum, c64),
-            BLAS_ROW(dzasum, asum, c128),
-            BLAS_ROW(sdot,   dot,  f32),
-            BLAS_ROW(ddot,   dot,  f64),
-            BLAS_ROW(cdotu,  dotu, c64),
-            BLAS_ROW(zdotu,  dotu, c128),
-            BLAS_ROW(cdotc,  dotc, c64),
-            BLAS_ROW(zdotc,  dotc, c128),
-            BLAS_ROW(srot,   rot,  f32),
-            BLAS_ROW(drot,   rot,  f64),
-            BLAS_ROW(csrot,  rot,  c64),
-            BLAS_ROW(zdrot,  rot,  c128),
-            BLAS_ROW(srotm,  rotm,  f32),
-            BLAS_ROW(drotm,  rotm,  f64),
-            BLAS_ROW(srotmg, rotmg, f32),
-            BLAS_ROW(drotmg, rotmg, f64),
+            ROW2(csscal, scal_real, c64, f32),
+            ROW2(zdscal, scal_real, c128, f64),
+            ROW(isamax, iamax, f32),
+            ROW(idamax, iamax, f64),
+            ROW(icamax, iamax, c64),
+            ROW(izamax, iamax, c128),
+            ROW(snrm2,  nrm2, f32),
+            ROW(dnrm2,  nrm2, f64),
+            ROW(scnrm2, nrm2, c64),
+            ROW(dznrm2, nrm2, c128),
+            ROW(sasum,  asum, f32),
+            ROW(dasum,  asum, f64),
+            ROW(scasum, asum, c64),
+            ROW(dzasum, asum, c128),
+            ROW(sdot,   dot,  f32),
+            ROW(ddot,   dot,  f64),
+            ROW(cdotu,  dotu, c64),
+            ROW(zdotu,  dotu, c128),
+            ROW(cdotc,  dotc, c64),
+            ROW(zdotc,  dotc, c128),
+            ROW(srot,   rot,  f32),
+            ROW(drot,   rot,  f64),
+            ROW(csrot,  rot,  c64),
+            ROW(zdrot,  rot,  c128),
+            ROW(srotm,  rotm,  f32),
+            ROW(drotm,  rotm,  f64),
+            ROW(srotmg, rotmg, f32),
+            ROW(drotmg, rotmg, f64),
             /* Sentinel */
             {nullptr, nullptr, 0, nullptr},
         };
