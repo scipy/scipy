@@ -521,6 +521,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
         a1, b1 = _ensure_dtype_cdsz(a1, b1) # Let `b1` and `a1` upcast each other
+        a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
         b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
 
         # Deal with the case where `b` could still upcast `a`, hence recompute the flag
@@ -822,8 +823,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
-            homogeneous_eigvals=False):
+def eigvals(a, b=None, overwrite_a=False, overwrite_b=False,
+            check_finite=True, homogeneous_eigvals=False):
     r"""
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 

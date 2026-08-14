@@ -1,8 +1,10 @@
 """
 Disjoint set data structure
 """
+from scipy._lib._array_api import xp_capabilities
 
 
+@xp_capabilities(out_of_scope=True)
 class DisjointSet:
     """Disjoint set data structure for incremental connectivity queries.
 
