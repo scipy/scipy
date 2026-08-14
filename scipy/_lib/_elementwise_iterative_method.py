@@ -56,8 +56,8 @@ def _initialize(func, xs, args, kwargs=None, complex_ok=False, multi_output_ok=F
         When ``preserve_shape=False`` (default), `func` may be passed
         arguments of any shape; `_scalar_optimization_loop` is permitted
         to reshape and compress arguments at will. When
-        ``preserve_shape=False``, arguments passed to `func` must have shape
-        `shape` or ``shape + (n,)``, where ``n`` is any integer.
+        ``preserve_shape=True``, arguments passed to `func` must have shape
+        ``shape + (n,)``, where ``n`` is any integer.
     xp : namespace
         Namespace of array arguments in `xs`.
 
