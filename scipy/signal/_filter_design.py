@@ -4730,6 +4730,28 @@ def buttap(N, *, xp=None, device=None):
     --------
     butter : Filter design function using this prototype
 
+    Examples
+    --------
+    Design a 3rd-order analog lowpass Butterworth filter prototype:
+
+    >>> from scipy import signal
+    >>> z, p, k = signal.buttap(3)
+
+    Butterworth prototypes have no zeros, so `z` is empty:
+
+    >>> z
+    array([], dtype=float64)
+
+    The poles lie on the unit circle in the left-half of the complex plane:
+
+    >>> p
+    array([-0.5+0.8660254j, -1.0+0.j        , -0.5-0.8660254j])
+
+    The system gain is normalized to 1:
+
+    >>> k
+    1.0
+
     """
     if xp is None:
         xp = np_compat
