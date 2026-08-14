@@ -1,10 +1,37 @@
+import os
+from warnings import warn
+
+
 class spmatrix:
     """This class provides a base class for all sparse matrix classes.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This class also serves as the namespace for SciPy sparse matrix types.
     It cannot be instantiated.  Most of the work is provided by subclasses.
     """
-    _allow_nd = (2,)
+    _allow_nd: tuple[int, ...] = (2,)
+
+    def __init__(self, *args, **kwargs):
+        msg = f"""{self.__class__.__name__} is being replaced by {self.format}_array.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The spmatrix classes will be removed no earlier than v2.2.
+        """
+        prefixes = (os.path.dirname(__file__),)
+        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+        super().__init__(*args, **kwargs)
 
     @property
     def _bsr_container(self):

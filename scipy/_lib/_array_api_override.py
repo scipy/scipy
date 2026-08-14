@@ -20,8 +20,8 @@ from scipy._external.array_api_compat import is_array_api_obj, is_jax_array
 from scipy._lib._sparse import SparseABC
 
 
-Array: type = Any  # To be changed to a Protocol later (see array-api#589)
-ArrayLike: type = Array | npt.ArrayLike
+type Array = Any  # To be changed to a Protocol later (see array-api#589)
+type ArrayLike = Array | npt.ArrayLike
 
 # To enable array API and strict array-like input validation
 SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
@@ -116,7 +116,7 @@ def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
     api_arrays = []
 
     for array in arrays:
-        arr_info = _validate_array_cls(type(array), sparse_ok=sparse_ok)
+        arr_info = _validate_array_cls(type(array), sparse_ok=sparse_ok)  # type:ignore[arg-type]
         if arr_info is _ArrayClsInfo.skip:
             pass
 

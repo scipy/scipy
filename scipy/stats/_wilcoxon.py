@@ -7,7 +7,7 @@ from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
 from scipy._lib._util import _get_nan
 from scipy._lib._array_api import (array_namespace, xp_promote, xp_size, is_jax,
-                                   is_marray, _count_nonmasked)
+                                   is_marray, _count_nonmasked, xp_device)
 import scipy._external.array_api_extra as xpx
 
 
@@ -146,7 +146,7 @@ def _wilcoxon_statistic(d, method, zero_method='wilcox', *, xp):
     n_nan = xp.astype(xp.count_nonzero(i_nan, axis=-1), dtype)
     count = _count_nonmasked(d, axis=-1) - n_nan
 
-    r, t = _rankdata(xp.abs(d), 'average', return_ties=True, xp=xp)
+    r, _, t = _rankdata(xp.abs(d), 'average', return_ties=True, xp=xp)
     r, t = xp.astype(r, dtype, copy=False), xp.astype(t, dtype, copy=False)
 
     r_plus = xp.sum(xp.astype(d > 0, dtype) * r, axis=-1)
@@ -264,7 +264,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             p = 2 * np.minimum(dist.sf(np.floor(r_plus_np)),
                                dist.cdf(np.ceil(r_plus_np)))
             p = np.clip(p, 0, 1)
-        p = xp.asarray(p, dtype=d.dtype)
+        p = xp.asarray(p, dtype=d.dtype, device=xp_device(d))
     else:  # `PermutationMethod` instance (already validated)
         p = stats.permutation_test(
             # permutation_test always uses `axis=-1` as `_wilcoxon_statistic` assumes

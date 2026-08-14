@@ -9,7 +9,10 @@ with safe_import():
     import scipy.interpolate as interpolate
 
 with safe_import():
-    from scipy.sparse import csr_matrix
+    from scipy.sparse import csr_array
+
+with safe_import():
+    from scipy.interpolate._regrid import _regrid
 
 
 class Leaks(Benchmark):
@@ -68,6 +71,29 @@ class BenchPPoly(Benchmark):
         self.pp(self.xp)
 
 
+class BenchBSpline(Benchmark):
+    param_names = ['npts']
+    params = [10, 100, 1000, 10000]
+
+    def setup(self, npts):
+        rng = np.random.default_rng(1234)
+        self.k = 3
+        self.n = 55
+
+        self.t = np.sort(rng.random(self.n + self.k + 1))
+        self.c = rng.random(self.n)
+
+        self.bspl = interpolate.BSpline(self.t, self.c, self.k)
+        self.xp = np.linspace(self.t[self.k], self.t[-self.k-1], npts)
+
+    def time_evaluation(self, npts):
+        self.bspl(self.xp)
+
+    def time_creation(self, npts):
+        interpolate.BSpline(self.t, self.c, self.k)
+
+
+
 class GridData(Benchmark):
     param_names = ['n_grids', 'method']
     params = [
@@ -100,8 +126,8 @@ class GridDataPeakMem(Benchmark):
 
         random_values = rng.random(num_nonzero, dtype=np.float32)
 
-        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)),
-                                   shape=shape, dtype=np.float32)
+        sparse_matrix = csr_array((random_values, (random_rows, random_cols)),
+                                  shape=shape, dtype=np.float32)
         sparse_matrix = sparse_matrix.toarray()
 
         self.coords = np.column_stack(np.nonzero(sparse_matrix))
@@ -249,6 +275,47 @@ class BivariateSpline(Benchmark):
     def time_lsq_bivariate_spline(self, n_samples):
         interpolate.LSQBivariateSpline(self.x, self.y, self.z,
                                        self.xknots.flat, self.yknots.flat)
+
+
+class RectBivariateSplineVsRegridPython(Benchmark):
+    """
+    Compare RectBivariateSpline vs regrid fit time.
+
+    Includes interpolation-like small s cases (where regrid tends
+    to be faster) and a moderate smoothing case.
+    """
+    param_names = ["size", "s"]
+    params = [
+        [(256, 512), (512, 512), (512, 1024)],
+        [1e-12, 3.0],
+    ]
+
+    def setup(self, size, s):
+        nx, ny = size
+        rng = np.random.default_rng(0)
+        self.x = np.linspace(0.0, 4.0, nx, dtype=float)
+        self.y = np.linspace(0.0, 4.0, ny, dtype=float)
+
+        X, Y = np.meshgrid(self.x, self.y, indexing="ij")
+        self.z = (
+            np.sin(X) * np.cos(Y)
+            + 0.2 * np.sin(2 * X + 0.5) * np.cos(1.5 * Y - 0.3)
+            + 0.05 * rng.normal(size=(nx, ny))
+        ).astype(float)
+        self.s = s
+        self.kx = 3
+        self.ky = 3
+
+    def time_rect_bivariate_spline(self, size, s):
+        interpolate.RectBivariateSpline(
+            self.x, self.y, self.z, kx=self.kx, ky=self.ky, s=self.s,
+            maxit=30
+        )
+
+    def time_regrid(self, size, s):
+        _regrid(
+            self.x, self.y, self.z, kx=self.kx, ky=self.ky, s=self.s
+        )
 
 
 class Interpolate(Benchmark):

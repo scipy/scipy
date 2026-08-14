@@ -2,14 +2,15 @@ import pytest
 
 from scipy._lib._array_api import np_compat as np
 from scipy._lib._array_api import (
-    array_namespace, make_xp_pytest_param, xp_assert_close, xp_capabilities
+    array_namespace, make_xp_pytest_param, xp_assert_close, xp_capabilities,
+    xp_result_device
 )
 
-local_capabilities_table = {}
+local_capabilities_table = {}  # type:ignore[var-annotated]
 
 # B is a child of A which inherits the method g which is array-agnostic
 # so long as the method f is supported. A.f does not support the JAX jit but
-# B.f does support the JAX jit. Test that this inheritence does not
+# B.f does support the JAX jit. Test that this inheritance does not
 # cause problems when testing with JAX jit.
 
 @xp_capabilities(
@@ -24,11 +25,13 @@ class A:
     def __init__(self, x):
         xp = array_namespace(x)
         self._xp = xp
+        # the NumPy round-trip must return results on the input's device
+        self._device = xp_result_device(x)
         self.x = np.asarray(x)
 
     def f(self, y):
         y = np.asarray(y)
-        return self._xp.asarray(np.matmul(self.x, y))
+        return self._xp.asarray(np.matmul(self.x, y), device=self._device)
 
     def g(self, y, z):
         return self.f(y) + self.f(z)

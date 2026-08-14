@@ -90,10 +90,10 @@ which differ: any two words with a Hamming distance equal to :math:`1/N`,
 where :math:`N` is the number of letters, are connected in the word ladder::
 
     >>> from scipy.spatial.distance import pdist, squareform
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> hamming_dist = pdist(word_bytes, metric='hamming')
     >>> # there are three characters in each word
-    >>> graph = csr_matrix(squareform(hamming_dist < 1.5 / 3))
+    >>> graph = csr_array(squareform(hamming_dist < 1.5 / 3))
 
 When comparing the distances, we don't use an equality because this can be
 unstable for floating point values. The inequality produces the desired

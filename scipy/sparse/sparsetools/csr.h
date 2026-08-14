@@ -1570,7 +1570,7 @@ int csr_sample_offsets(const I n_row,
                        const I n_col,
                        const I Ap[],
                        const I Aj[],
-                       const I n_samples,
+                       const npy_int64 n_samples,
                        const I Bi[],
                        const I Bj[],
                              I Bp[])

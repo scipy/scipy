@@ -5,9 +5,8 @@
 #              and Jake Vanderplas, August 2012
 
 import warnings
-from itertools import product
 import numpy as np
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
     _ensure_aligned_and_native, _ensure_dtype_cdsz,
@@ -16,7 +15,7 @@ from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import find_det_from_lu
+from ._batched_linalg import _det as _linalg_det
 from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -94,10 +93,12 @@ def solve(a, b, lower=False, overwrite_a=False,
         entries above the diagonal are ignored. If False (default), the
         calculation uses only the data in the upper triangle of `a`; entries
         below the diagonal are ignored.
-    overwrite_a : bool, default: False
-        Allow overwriting data in `a` (may enhance performance).
-    overwrite_b : bool, default: False
-        Allow overwriting data in `b` (may enhance performance).
+    overwrite_a : bool, optional
+        Allow overwriting data in `a` (may enhance performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
+    overwrite_b : bool, optional
+        Allow overwriting data in `b` (may enhance performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, default: True
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -200,6 +201,8 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    _deprecate_dtypes("linalg.solve", a1, b1)
+
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
@@ -305,6 +308,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         will not be referenced.
     overwrite_b : bool, optional
         Allow overwriting data in `b` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -420,8 +424,10 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         Right-hand side
     overwrite_ab : bool, optional
         Discard data in `ab` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         Discard data in `b` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -559,8 +565,10 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         Right-hand side
     overwrite_ab : bool, optional
         Discard data in `ab` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         Discard data in `b` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
     check_finite : bool, optional
@@ -923,6 +931,8 @@ def solve_circulant(c, b, singular='raise', tol=None,
     if nc != nb:
         raise ValueError(f'Shapes of c {c.shape} and b {b.shape} are incompatible')
 
+    _deprecate_dtypes('solve_circulant', c, b)
+
     # accommodate empty arrays
     if b.size == 0:
         dt = solve_circulant(np.arange(3, dtype=c.dtype),
@@ -1004,6 +1014,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
         Square matrix (or a batch of matrices) to be inverted.
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1074,6 +1085,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
             [3.  , 0.25]]])
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
+    _deprecate_dtypes("linalg.inv", a1)
 
     if a1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
@@ -1132,6 +1144,7 @@ def det(a, overwrite_a=False, check_finite=True):
         Input array to compute determinants for.
     overwrite_a : bool, optional
         Allow overwriting data in a (may enhance performance).
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1183,6 +1196,8 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # First we check and make arrays.
     a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
+    _deprecate_dtypes("linalg.det", a1)
+
     if a1.ndim < 2:
         raise ValueError('The input array must be at least two-dimensional.')
     if a1.shape[-1] != a1.shape[-2]:
@@ -1210,33 +1225,18 @@ def det(a, overwrite_a=False, check_finite=True):
             return a1
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
-    # Then check overwrite permission
-    if not _datacopied(a1, a):  # "a"  still alive through "a1"
-        if not overwrite_a:
-            # Data belongs to "a" so make a copy
-            a1 = a1.copy(order='C')
-        #  else: Do nothing we'll use "a" if possible
-    # else:  a1 has its own data thus free to scratch
+    det = _linalg_det(a1, overwrite_a)
 
-    # Then layout checks, might happen that overwrite is allowed but original
-    # array was read-only or non-C-contiguous.
-    if not (a1.flags['C_CONTIGUOUS'] and a1.flags['WRITEABLE']):
-        a1 = a1.copy(order='C')
-
-    if a1.ndim == 2:
-        det = find_det_from_lu(a1)
-        # Convert float, complex to NumPy scalars
-        return (np.float64(det) if np.isrealobj(det) else np.complex128(det))
-
-    # loop over the stacked array, and avoid overflows for single precision
+    # Promote single precision to double to prevent overflows
     # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
-    dtype_char = a1.dtype.char
-    if dtype_char in 'fF':
-        dtype_char = 'd' if dtype_char.islower() else 'D'
+    if det.dtype.char == 'f':
+        det = det.astype(np.float64)
+    elif det.dtype.char == 'F':
+        det = det.astype(np.complex128)
 
-    det = np.empty(a1.shape[:-2], dtype=dtype_char)
-    for ind in product(*[range(x) for x in a1.shape[:-2]]):
-        det[ind] = find_det_from_lu(a1[ind])
+    # Return scalar for 2D input
+    if det.ndim == 0:
+        return det[()]
     return det
 
 
@@ -1261,9 +1261,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         rank of a. Singular values smaller than
         ``cond * largest_singular_value`` are considered zero.
     overwrite_a : bool, optional
-        Discard data in `a` (may enhance performance). Default is False.
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
-        Discard data in `b` (may enhance performance). Default is False.
+        Whether to overwrite data in `b` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1282,8 +1284,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     x : (N,) or (..., N, K) ndarray
         Least-squares solution.
     residues : (K,) ndarray or float
-        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` (returns a
-        scalar if ``b`` is 1-D). Otherwise a (0,)-shaped array is returned.
+        If `lapack_driver` is ``'gelss'`` or ``'gelsd'`` this contains the square of
+        the 2-norm for each column in ``b - a x`` if ``M > N`` and ``rank == N``. If
+        the rank condition is violated, ``NaN`` is returned instead. If `lapack_driver`
+        if ``'gelsy'`` or ``M <= N`` a (0,)-shaped array is returned.
     rank : int
         Effective rank of `a`.
     s : (min(M, N),) ndarray or None
@@ -1390,6 +1394,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    _deprecate_dtypes("linalg.lstsq", a1, b1)
+
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # NB: makes a1.dtype == b1.dtype, if needed
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
@@ -1422,33 +1428,51 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
     b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
+    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
+    overwrite_b = (
+        overwrite_b and (b1.ndim == 2) and b1.flags["F_CONTIGUOUS"] and m >= n
+    ) # Only overwrite when overdetermined system, otherwise ldb will be > m
+
     if cond is None:
         cond = np.finfo(a1.dtype).eps
     else:
         cond = float(cond)
 
-    x, rank, S, err_lst = _batched_linalg._lstsq(a1, b1, cond, driver)
+    x, rank, S, err_lst = _batched_linalg._lstsq(
+        a1, b1, cond, driver, overwrite_a, overwrite_b
+    )
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
 
-    residuals = np.asarray([], dtype=x.dtype)
-    if m > n:
-        # can get the residuals from the GELSS/GELSD output instead, if _really_ wanted
-        res = b1 - a1 @ x
-        residuals = np.sum(res * res.conj(), axis=len(batch_shape))
+    x1 = x[..., :n, :]
+    if m > n and lapack_driver != "gelsy":
+        residuals = np.sum(x[..., n:, :] * x[..., n:, :].conj(), axis=-2)
+
+        # LAPACK makes no promises about residuals for non full-column rank, set to NaN
+        residuals[rank < n, :] = np.nan
+    else:
+        residuals = np.zeros(batch_shape + (0,), dtype=x.dtype)
 
     if b_is_1D:
-        x = x[..., 0]
-        if residuals.size > 0:
+        x1 = x1[..., 0]
+        if residuals.size > 0 and lapack_driver != "gelsy":
             residuals = residuals[..., 0]
 
-    return x, residuals, rank, S
+    if m <= n: # residuals are empty for under- and exactly determined problems
+        residuals = np.zeros(batch_shape + (0,), dtype=residuals.dtype)
+
+    return x1, residuals, rank, S
 
 
-lstsq.default_lapack_driver = 'gelsd'
+lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
+def _pinv_signature(*args, **kwargs):
+    return "(i,j)->(i,j),()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
+
+
+@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1587,7 +1611,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
         return B
 
 
-@_apply_over_batch(('a', 2))
+@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True):
     """
@@ -1712,6 +1736,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         This is passed to xGEBAL directly. Essentially, overwrites the result
         to the data. It might increase the space efficiency. See LAPACK manual
         for details. This is False by default.
+        See :ref:`tutorial_linalg_overwrite` for details.
 
     Returns
     -------

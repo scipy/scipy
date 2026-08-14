@@ -1,9 +1,10 @@
 """QR decomposition functions."""
 import numpy as np
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from scipy._lib.deprecation import _NoValue
 
+import os
 import warnings
 
 # Local imports
@@ -42,16 +43,15 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
     a : (..., M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
-        Whether data in `a` is overwritten (may improve performance if
-        `overwrite_a` is set to True by reusing the existing input data
-        structure rather than creating a new one.)
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
 
         .. deprecated:: 1.18.0
             This keyword is deprecated as well as no longer in use and will be
-            removed in 1.20.0.
+            removed in 2.1.0.
 
     mode : {'full', 'r', 'economic', 'raw'}, optional
         Determines what information is to be returned: either both Q and R
@@ -161,6 +161,8 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
     else:
         a1 = np.asarray(a)
 
+    _deprecate_dtypes("linalg.qr", a1)
+
     if a1.ndim < 2:
         raise ValueError("Expected at least a 2-D array")
 
@@ -173,10 +175,10 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
 
         else:
             warnings.warn(
-                "scipy.linalg: the `lwork` keyword is deprecated and no longer in use"
-                " as of SciPy 1.18.0 and will be removed in SciPy 1.20.0",
+                "scipy.linalg.qr: the `lwork` keyword is deprecated and no longer in"
+                "use as of SciPy 1.18.0 and will be removed in SciPy 2.1.0",
                 DeprecationWarning,
-                stacklevel=2
+                skip_file_prefixes=(os.path.dirname(__file__),)
             )
 
     # First normalize dtypes to ensure consistent return types
@@ -214,6 +216,7 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
         a1 = a1.copy()
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
+    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
 
     # heavy lifting
     Q, R, tau, jpvt, err_lst = _batched_linalg._qr(a1, overwrite_a, modeFlag, pivoting)
@@ -227,10 +230,12 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
     else:
         Rj = (R,)
 
-    if mode == "raw":
+    if modeFlag == modes["raw"]:
         Q = (Q, tau)
+    elif modeFlag == modes["economic"] and M < N:
+        Q = Q[..., :, :M]
 
-    if mode == "r":
+    if modeFlag == modes["r"]:
         return Rj
     else:
         return (Q,) + Rj
@@ -264,11 +269,13 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         Whether Q should be complex-conjugated. This might be faster
         than explicit conjugation.
     overwrite_a : bool, optional
-        Whether data in a is overwritten (may improve performance)
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_c : bool, optional
         Whether data in c is overwritten (may improve performance).
         If this is used, c must be big enough to keep the result,
         i.e. ``c.shape[0]`` = ``a.shape[0]`` if mode is 'left'.
+        See :ref:`tutorial_linalg_overwrite` for details.
 
     Returns
     -------
@@ -390,7 +397,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
 
 
 @_apply_over_batch(('a', 2))
-def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
+def rq(a, overwrite_a=False, lwork=_NoValue, mode='full', check_finite=True):
     """
     Compute RQ decomposition of a matrix.
 
@@ -402,10 +409,16 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     a : (M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
-        Whether data in a is overwritten (may improve performance)
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
+
+        .. deprecated:: 2.0.0
+            This keyword is deprecated as well as no longer in use and will be
+            removed in 2.2.0.
+
     mode : {'full', 'r', 'economic'}, optional
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
@@ -458,6 +471,16 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     if mode not in ['full', 'r', 'economic']:
         raise ValueError(
                  "Mode argument should be one of ['full', 'r', 'economic']")
+
+    if lwork is not _NoValue:
+        warnings.warn(
+            "scipy.linalg.rq: the `lwork` keyword is deprecated and no longer in use"
+            " as of SciPy 2.0.0 and will be removed in SciPy 2.2.0",
+            DeprecationWarning,
+            skip_file_prefixes=(os.path.dirname(__file__),)
+        )
+
+    lwork = None
 
     if check_finite:
         a1 = np.asarray_chkfinite(a)

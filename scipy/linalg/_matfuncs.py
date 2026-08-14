@@ -7,7 +7,7 @@ import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 
 # Local imports
 from scipy.linalg import LinAlgError, LinAlgWarning
@@ -17,7 +17,7 @@ from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._internal_matfuncs import recursive_schur_sqrtm, matrix_exponential
-from ._linalg_pythran import _funm_loops  # type: ignore[import-not-found]
+from ._linalg_pythran import _funm_loops
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
@@ -279,6 +279,8 @@ def expm(A):
 
     """
     a = np.asarray(A)
+    _deprecate_dtypes("expm", a)
+
     if a.size == 1 and a.ndim < 2:
         return np.array([[np.exp(a.item())]])
 
@@ -385,8 +387,9 @@ def sqrtm(A):
 
     """
     a = np.asarray(A)
+    _deprecate_dtypes('sqrtm', a)
     if a.size == 1 and a.ndim < 2:
-        return np.array([[np.exp(a.item())]])
+        return np.array([[np.sqrt(a.item())]])
 
     if a.ndim < 2:
         raise LinAlgError('The input array must be at least two-dimensional')
@@ -431,7 +434,7 @@ def sqrtm(A):
     return res
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def cosm(A):
     """
     Compute the matrix cosine.
@@ -472,7 +475,7 @@ def cosm(A):
         return expm(1j*A).real
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def sinm(A):
     """
     Compute the matrix sine.
@@ -513,7 +516,7 @@ def sinm(A):
         return expm(1j*A).imag
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def tanm(A):
     """
     Compute the matrix tangent.
@@ -553,7 +556,7 @@ def tanm(A):
     return _maybe_real(A, solve(cosm(A), sinm(A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def coshm(A):
     """
     Compute the hyperbolic matrix cosine.
@@ -593,7 +596,7 @@ def coshm(A):
     return _maybe_real(A, 0.5 * (expm(A) + expm(-A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def sinhm(A):
     """
     Compute the hyperbolic matrix sine.
@@ -633,7 +636,7 @@ def sinhm(A):
     return _maybe_real(A, 0.5 * (expm(A) - expm(-A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def tanhm(A):
     """
     Compute the hyperbolic matrix tangent.
@@ -673,7 +676,11 @@ def tanhm(A):
     return _maybe_real(A, solve(coshm(A), sinhm(A)))
 
 
-@_apply_over_batch(('A', 2))
+def _funm_signature(*args, **kwargs):
+    return "(i,i)->(i,i),()" if kwargs.get('return_rank') else "(i,i)->(i,i)"
+
+
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def funm(A, func, disp=True):
     """
     Evaluate a matrix function specified by a callable.
@@ -768,7 +775,7 @@ def funm(A, func, disp=True):
         return F, err
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def signm(A):
     """
     Matrix sign function.
@@ -824,7 +831,7 @@ def signm(A):
     # min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
     # c = 0.5/min_nonzero_sv
     c = 0.5/max_sv
-    S0 = A + c*np.identity(A.shape[0])
+    S0 = A + c*np.identity(A.shape[0], dtype=A.dtype)
     prev_errest = errest
     for i in range(100):
         iS0 = inv(S0)

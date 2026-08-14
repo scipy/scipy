@@ -2192,7 +2192,7 @@ void
 matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
 {
     int m = 0, s = 0, is_lower = 0;
-    npy_intp lband = 0, uband = 0;
+    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2349,7 +2349,7 @@ void
 matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
 {
     int m = 0, s = 0, is_lower = 0;
-    npy_intp lband = 0, uband = 0;
+    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2506,7 +2506,7 @@ void
 matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info)
 {
     int m = 0, s = 0, is_lower = 0;
-    npy_intp lband = 0, uband = 0;
+    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2711,7 +2711,7 @@ void
 matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info)
 {
     int m = 0, s = 0, is_lower = 0;
-    npy_intp lband = 0, uband = 0;
+    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
