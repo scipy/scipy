@@ -211,6 +211,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     float* restrict work_arr = &Am[6*n*n];
     float* restrict absA = &Am[5*n*n];
 
+    *m = 0;
+    *s = 0;
     dims[0] = n;
     dims[1] = n;
     theta[0] = 1.495585217958292e-002;
@@ -428,6 +430,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     double* restrict work_arr = &Am[6*n*n];
     double* restrict absA = &Am[5*n*n];
 
+    *m = 0;
+    *s = 0;
     dims[0] = n;
     dims[1] = n;
     theta[0] = 1.495585217958292e-002;
@@ -648,6 +652,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     float* restrict work_arr = (float*)&Am[6*n*n];
     float* restrict absA = (float*)&Am[5*n*n];
 
+    *m = 0;
+    *s = 0;
     dims[0] = n;
     dims[1] = n;
     theta[0] = 1.495585217958292e-002;
@@ -875,6 +881,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     double* restrict work_arr = (double*)&Am[6*n*n];
     double* restrict absA = (double*)&Am[5*n*n];
 
+    *m = 0;
+    *s = 0;
     dims[0] = n;
     dims[1] = n;
     theta[0] = 1.495585217958292e-002;
@@ -2191,8 +2199,6 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
 void
 matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
 {
-    int m = 0, s = 0, is_lower = 0;
-    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2226,6 +2232,8 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
     |                    MAIN nxn SLICE LOOP                             |
     ====================================================================*/
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        int m = 0, s = 0, is_lower = 0;
+        int64_t lband = 0, uband = 0;
         // See sqrtm for explanation of the loop and offset calculations
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
@@ -2348,8 +2356,6 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
 void
 matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
 {
-    int m = 0, s = 0, is_lower = 0;
-    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2383,6 +2389,8 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
     |                    MAIN nxn SLICE LOOP                             |
     ====================================================================*/
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        int m = 0, s = 0, is_lower = 0;
+        int64_t lband = 0, uband = 0;
         // See sqrtm for explanation of the loop and offset calculations
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
@@ -2505,8 +2513,6 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
 void
 matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info)
 {
-    int m = 0, s = 0, is_lower = 0;
-    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2540,6 +2546,8 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
     |                    MAIN nxn SLICE LOOP                             |
     ====================================================================*/
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        int m = 0, s = 0, is_lower = 0;
+        int64_t lband = 0, uband = 0;
         // See sqrtm for explanation of the loop and offset calculations
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
@@ -2710,8 +2718,6 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
 void
 matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info)
 {
-    int m = 0, s = 0, is_lower = 0;
-    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2744,6 +2750,8 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
     |                    MAIN nxn SLICE LOOP                             |
     ====================================================================*/
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        int m = 0, s = 0, is_lower = 0;
+        int64_t lband = 0, uband = 0;
         // See sqrtm for explanation of the loop and offset calculations
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
