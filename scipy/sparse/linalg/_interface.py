@@ -151,6 +151,7 @@ class LinearOperator:
     __call__
     __add__
     __truediv__
+    __pow__
     __rmul__
     __rmatmul__
 
@@ -169,11 +170,12 @@ class LinearOperator:
     It is assumed that `matmat`, `rmatvec`, and `rmatmat` would result in
     the same dtype of the output given an ``int8`` input as `matvec`.
 
-    `LinearOperator` instances can also be multiplied, added with each
-    other, and raised to integral powers, all lazily: the result of these
-    operations
-    is always a new, composite `LinearOperator`, that defers linear
-    operations to the original operators and combines the results.
+    `LinearOperator` instances can also be multiplied and added with each
+    other. Square instances can be raised to non-negative integer powers with
+    ``A ** p``, representing ``p`` repeated applications of ``A`` rather than
+    a matrix exponential. All of these operations are lazy: the result is a
+    new, composite `LinearOperator` that defers operations to the original
+    operators and combines the results.
 
     More details regarding how to subclass a `LinearOperator` and several
     examples of concrete `LinearOperator` instances can be found in the
@@ -193,6 +195,8 @@ class LinearOperator:
     array([ 2.,  3.])
     >>> A @ np.ones(2)
     array([ 2.,  3.])
+    >>> A ** 2 @ np.ones(2)
+    array([ 4.,  9.])
 
     """  # numpydoc ignore=PR01,PR02
 
