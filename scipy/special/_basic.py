@@ -1968,12 +1968,12 @@ def lqmn(m, n, z):
 
 
 def bernoulli(n):
-    """Bernoulli numbers B0..Bn (inclusive).
+    """Bernoulli numbers ``B_0`` through ``B_n`` (inclusive).
 
     Parameters
     ----------
     n : int
-        Indicated the number of terms in the Bernoulli series to generate.
+        Index of the last Bernoulli number to return.
 
     Returns
     -------
@@ -2002,7 +2002,7 @@ def bernoulli(n):
     >>> -n * zeta(1 - n)
     array([ 0.5       ,  0.16666667, -0.        , -0.03333333])
 
-    Note that, in the notation used in the wikipedia article,
+    Note that, in the notation used in the Wikipedia article,
     `bernoulli` computes ``B_n^-`` (i.e. it used the convention that
     ``B_1`` is -1/2).  The relation given above is for ``B_n^+``, so the
     sign of 0.5 does not match the output of ``bernoulli(4)``.

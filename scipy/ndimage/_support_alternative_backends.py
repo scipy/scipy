@@ -100,7 +100,8 @@ capabilities_dict = {
         cpu_only=True, allow_dask_compute=True, jax_jit=False
     ),
     "vectorized_filter": xp_capabilities(
-        cpu_only=True, allow_dask_compute=True, jax_jit=False
+        cpu_only=True, allow_dask_compute=True, jax_jit=False,
+        exceptions=["cupy"]
     ),
     "generate_binary_structure": xp_capabilities(out_of_scope=True),
     "map_coordinates": xp_capabilities(

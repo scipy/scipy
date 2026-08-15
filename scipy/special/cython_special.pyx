@@ -1132,14 +1132,14 @@ cdef extern from r"cython_special_wrappers.h":
     void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     npy_double special_ker(npy_double) nogil
     double special_kerp(double) nogil
-    npy_double _func_cem_cva_wrap "cem_cva_wrap"(npy_double, npy_double) nogil
-    npy_double _func_sem_cva_wrap "sem_cva_wrap"(npy_double, npy_double) nogil
-    void _func_cem_wrap "cem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_special_mathieu_a "special_mathieu_a"(npy_double, npy_double) nogil
+    npy_double _func_special_mathieu_b "special_mathieu_b"(npy_double, npy_double) nogil
+    void _func_special_mathieu_cem "special_mathieu_cem"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_mcm1_wrap "mcm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_mcm2_wrap "mcm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_msm1_wrap "msm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_msm2_wrap "msm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
-    void _func_sem_wrap "sem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    void _func_special_mathieu_sem "special_mathieu_sem"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_modified_fresnel_minus_wrap "modified_fresnel_minus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
     void _func_modified_fresnel_plus_wrap "modified_fresnel_plus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
     npy_double _func_oblate_aswfa_nocv_wrap "oblate_aswfa_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
@@ -1390,6 +1390,7 @@ cdef extern from r"cython_special_wrappers.h":
 
     double special_boxcox(double x, double lmbda) nogil
     double special_boxcox1p(double x, double lmbda) nogil
+    npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) nogil
     npy_cdouble special_chyp0f1(double v, npy_cdouble z) nogil
     double special_hyp0f1(double v, double z) nogil
     double special_hyperu(double a, double b, double x) nogil
@@ -1429,6 +1430,7 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_fdtrc_double(double dfn, double dfd, double x) nogil
     float boost_fdtri_float(float dfn, float dfd, float p) nogil
     double boost_fdtri_double(double dfn, double dfd, double p) nogil
+    double boost_hyp1f1_double(double a, double b, double x) nogil
     float boost_log_gammainc_float(float a, float x) nogil
     double boost_log_gammainc_double(double a, double x) nogil
     float boost_log_gammaincc_float(float a, float x) nogil
@@ -1685,9 +1687,6 @@ cdef _proto_fdtridfd_t *_proto_fdtridfd_t_var = &_func_fdtridfd
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
-
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_chyp1f1_wrap "chyp1f1_wrap"(npy_double, npy_double, npy_cdouble)nogil
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j0 "j0"(npy_double)nogil
@@ -2365,9 +2364,9 @@ cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.hyp1f1"""
     if Dd_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_hyp1f1_double)(x0, x1, x2)
+        return boost_hyp1f1_double(x0, x1, x2)
     elif Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_chyp1f1_wrap(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2)))
+        return _complexstuff.double_complex_from_npy_cdouble(chyp1f1_wrap(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2)))
 
 cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.hyp2f1"""
@@ -2650,15 +2649,15 @@ cpdef double lpmv(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double mathieu_a(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_a"""
-    return _func_cem_cva_wrap(x0, x1)
+    return _func_special_mathieu_a(x0, x1)
 
 cpdef double mathieu_b(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_b"""
-    return _func_sem_cva_wrap(x0, x1)
+    return _func_special_mathieu_b(x0, x1)
 
 cdef void mathieu_cem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_cem"""
-    _func_cem_wrap(x0, x1, x2, y0, y1)
+    _func_special_mathieu_cem(x0, x1, x2, y0, y1)
 
 def _mathieu_cem_pywrap(double x0, double x1, double x2):
     cdef double y0
@@ -2708,7 +2707,7 @@ def _mathieu_modsem2_pywrap(double x0, double x1, double x2):
 
 cdef void mathieu_sem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_sem"""
-    _func_sem_wrap(x0, x1, x2, y0, y1)
+    _func_special_mathieu_sem(x0, x1, x2, y0, y1)
 
 def _mathieu_sem_pywrap(double x0, double x1, double x2):
     cdef double y0

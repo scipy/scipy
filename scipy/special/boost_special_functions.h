@@ -571,7 +571,7 @@ Real call_hypergeometric_pFq(Real a, Real b, Real x)
 
 template<typename Real>
 static inline
-Real hyp1f1_wrap(Real a, Real b, Real x)
+Real hyp1f1_boost_wrap(Real a, Real b, Real x)
 {
     Real y;
 
@@ -631,19 +631,14 @@ Real hyp1f1_wrap(Real a, Real b, Real x)
 double
 hyp1f1_double(double a, double b, double x)
 {
-    return hyp1f1_wrap(a, b, x);
+    return hyp1f1_boost_wrap(a, b, x);
 }
 
-//
-// NOTE: It would be easy to also provide hyp1f1_float(...), but with the
-// current ufunc generation code, it would not be used.  The ufunc
-// generation code will implement the float types for the ufunc by
-// casting the floats to double and using the double implementation.
-// This is because we also have a complex version that is implemented
-// in a different file, and the ufunc generation code requires just one
-// kernel function per header when there are multiple headers (see the
-// comments in _generate_pyx.py).
-//
+float
+hyp1f1_float(float a, float b, float x)
+{
+    return static_cast<float>(hyp1f1_double(a, b, x));
+}
 
 // patch for boost::math::beta_distribution throwing exception for
 // x = 1, beta < 1 as well as x = 0, alpha < 1
