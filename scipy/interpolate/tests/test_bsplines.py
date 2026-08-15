@@ -2464,6 +2464,7 @@ _t_unsorted = np.r_[[-2.0]*4, [0.0, -1.0, 1.0], [2.0]*4]  # interior swapped
 _t_short = np.r_[[-2.0]*3, [2.0]*3]                       # only 6 knots
 _t_narrow = np.r_[[0.0]*4, [0.5], [1.0]*4]                # data outside [0, 1]
 _t_mult5 = np.r_[[-2.0]*4, [0.0]*5, [2.0]*4]              # multiplicity 5
+_t_unclamped = np.r_[[-4., -3.5, -3., -2.], [0.], [2., 3., 3.5, 4.]]  # not clamped
 
 def _dense_omega(ab, m):
     """Reconstruct dense symmetric Omega from (4, m) lower-banded storage."""
@@ -2831,11 +2832,50 @@ class TestSmoothingSpline:
                      ValueError, "infs or nans", id="nan-in-t"),
         pytest.param(_y_err, dict(t=_t_mult5, lam=0.5),
                      ValueError, "multiplicity", id="multiplicity-over-4"),
+        pytest.param(_y_err, dict(t=_t_unclamped, lam=0.5),
+                     ValueError, "must be clamped", id="unclamped-t"),
     ])
     def test_user_defined_knots_invalid_cases(self, y, kwargs, err, match):
         # invalid inputs on the user-knots path raise with a clear message
         with assert_raises(err, match=match):
             make_smoothing_spline(_x_err, y, **kwargs)
+
+    @pytest.mark.parametrize("axis", [0, -1])
+    def test_user_defined_knots_axis(self, axis):
+        # `y` is 1-D here, so any valid axis normalizes to 0; an
+        # un-normalized axis makes the resulting spline fail to evaluate
+        x = np.linspace(0.0, 1.0, 12)
+        y = np.sin(3 * x)
+        t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
+        spl = make_smoothing_spline(x, y, lam=0.5, t=t, axis=axis)
+        assert spl.axis == 0
+        ref = make_smoothing_spline(x, y, lam=0.5, t=t, axis=0)
+        xp_assert_close(spl(x), ref(x), atol=1e-14)
+
+    def test_more_knots_than_data_lam_zero(self):
+        # lam=0 is an unpenalized least-squares fit, so it needs at least
+        # as many data points as basis functions
+        x = np.linspace(-2.0, 2.0, 5)
+        y = 2.0 * x + 1.0
+        t = np.r_[[-2.0]*4, [-1.0, -0.5, 0.0, 0.5, 1.0], [2.0]*4]
+        with assert_raises(ValueError, match="at least as many data points"):
+            make_smoothing_spline(x, y, lam=0.0, t=t)
+
+        # the same knots are fine once the penalty is active: straight lines
+        # are in the null space of Omega, so the line is reproduced exactly
+        spl = make_smoothing_spline(x, y, lam=1e-3, t=t)
+        xp_assert_close(spl(x), y, atol=1e-10)
+
+    @pytest.mark.parametrize("lam", [0.0, 1.0])
+    def test_rank_deficient_system(self, lam):
+        # a quadruple interior knot splits the spline into two independent
+        # pieces, and starving one of them leaves its coefficients
+        # undetermined for any lam
+        t = np.r_[[0.0]*4, [0.5]*4, [1.0]*4]
+        x = np.r_[[0.1], np.linspace(0.5, 1.0, 11)]
+        y = np.sin(3 * x)
+        with assert_raises(ValueError, match="not positive definite"):
+            make_smoothing_spline(x, y, lam=lam, t=t)
 
     def test_duplicate_interior_knots(self):
         # interior knots may repeat: each repetition reduces continuity
