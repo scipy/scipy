@@ -94,7 +94,7 @@ class TestBatch:
     def test_expm_cond(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = rng.random((5, 3, 4, 4)).astype(dtype)
-        self.batch_test(linalg.expm_cond, A, test_zero_size=False)
+        self.batch_test(linalg.expm_cond, A)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_issymmetric(self, dtype):
@@ -142,8 +142,10 @@ class TestBatch:
     @pytest.mark.parametrize('dtype', floating)
     def test_null_space(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
-        A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
-        self.batch_test(linalg.null_space, A, test_zero_size=False)
+        # convention is for zero-size batch to have maximum nullity
+        # -> input matrix has rank 0.
+        A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng) * 0
+        self.batch_test(linalg.null_space, A)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_funm(self, dtype):
@@ -155,8 +157,7 @@ class TestBatch:
     def test_fractional_matrix_power(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5},
-                               test_zero_size=False)
+        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5})
         # test that `t` can be passed by position
         res2 = linalg.fractional_matrix_power(A, 1.5)
         np.testing.assert_equal(res1, res2)
@@ -167,7 +168,7 @@ class TestBatch:
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 3*np.eye(4)  # avoid complex output for real input
-        res1 = self.batch_test(linalg.logm, A, test_zero_size=False)
+        res1 = self.batch_test(linalg.logm, A)
         # test that `disp` can be passed by position
         res2 = linalg.logm(A)
         for res1i, res2i in zip(res1, res2):
@@ -180,12 +181,11 @@ class TestBatch:
         self.batch_test(linalg.pinv, A, n_out=2, kwargs=dict(return_rank=True))
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_matrix_balance(self, dtype):
+    @pytest.mark.parametrize('kwargs', [{}, {'separate':False}, {'separate':True}])
+    def test_matrix_balance(self, dtype, kwargs):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.matrix_balance, A, n_out=2, test_zero_size=False)
-        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs={'separate':True},
-                        test_zero_size=False)
+        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs=kwargs)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_bandwidth(self, dtype):
@@ -202,8 +202,7 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
         A = A + 4*np.eye(4, dtype=dtype)  # ensure positive definite for Cholesky
-        test_zero_size = (fun != linalg.ldl)
-        self.batch_test(fun, A, n_out=n_out, test_zero_size=test_zero_size)
+        self.batch_test(fun, A, n_out=n_out)
 
     @pytest.mark.parametrize('compute_uv', [False, True])
     @pytest.mark.parametrize('full_matrices', [False, True])
@@ -225,12 +224,23 @@ class TestBatch:
             test_zero_size=True
         )
 
-    @pytest.mark.parametrize('fun', [linalg.polar, linalg.rq])
+
     @pytest.mark.parametrize('dtype', floating)
-    def test_polar_qr_rq(self, fun, dtype):
+    @pytest.mark.parametrize('kwargs', [{}, {'side': 'left'}, {'side': 'right'}])
+    def test_polar(self, dtype, kwargs):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, A, n_out=2, test_zero_size=False)
+        self.batch_test(linalg.polar, A, kwargs=kwargs, n_out=2)
+
+
+    @pytest.mark.parametrize('dtype', floating)
+    @pytest.mark.parametrize('mode', ['full', 'economic', 'r'])
+    def test_rq(self, dtype, mode):
+        rng = np.random.default_rng(8342310302941288912051)
+        A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        n_out = (1 if mode == 'r' else 2)
+        self.batch_test(linalg.rq, A, n_out=n_out, kwargs={'mode':mode})
+
 
     @pytest.mark.parametrize('pivoting', [True, False])
     @pytest.mark.parametrize('dtype', floating)
@@ -340,8 +350,7 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         n_out = 2 if calc_q else 1
-        self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q),
-                        test_zero_size=False)
+        self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q))
 
     @pytest.mark.parametrize('eigvals_only', [False, True])
     @pytest.mark.parametrize('dtype', floating)
