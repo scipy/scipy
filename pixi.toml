@@ -25,7 +25,7 @@ version = "*"
 compilers = ["c", "cxx"]
 
 [workspace.target.win.build-variants]
-c_compiler = ["clang-cl"] 
+c_compiler = ["clang-cl"]
 cxx_compiler = ["clang-cl"]
 
 [package.host-dependencies]
@@ -819,6 +819,11 @@ array-api-strict = "*"
 cmd = "spin test --no-build --build-dir=build-cpu -b array_api_strict -m 'array_api_backends and not slow'"
 depends-on = "build-cpu"
 description = "Test with array-api-strict"
+
+[feature.array_api_strict-tasks.tasks.test-strict-device1]
+cmd = "spin test --no-build --build-dir=build-cpu -b array_api_strict_nondefault_device -m 'array_api_backends and not slow'"
+depends-on = "build-cpu"
+description = "Test with array-api-strict and non-default device"
 
 [feature.array_api_strict-tasks.tasks.bench-strict]
 # array-api-strict performance is useful as it is an thin opaque wrapper arouund numpy,
