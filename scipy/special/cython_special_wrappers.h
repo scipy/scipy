@@ -213,6 +213,11 @@ double xsf_struve_h(double v, double z);
 
 double xsf_struve_l(double v, double z);
 
+double special_mathieu_a(double m, double q);
+double special_mathieu_b(double m, double q);
+void special_mathieu_cem(double m, double q, double x, double* out, double* out_diff);
+void special_mathieu_sem(double m, double q, double x, double* out, double* out_diff);
+
 // Exp
 
 double xsf_expm1(double x);
@@ -426,6 +431,7 @@ float boost_fdtrc_float(float dfn, float dfd, float x);
 double boost_fdtrc_double(double dfn, double dfd, double x);
 float boost_fdtri_float(float dfn, float dfd, float p);
 double boost_fdtri_double(double dfn, double dfd, double p);
+double boost_hyp1f1_double(double a, double b, double x);
 float boost_log_gammainc_float(float a, float x);
 double boost_log_gammainc_double(double a, double x);
 float boost_log_gammaincc_float(float a, float x);

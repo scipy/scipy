@@ -265,7 +265,7 @@ class TestLineSearch:
                 s, fc, gc, fv, ofv, gv = line_search_wolfe2(
                     f, fprime, x, p, g0, f0, old_f, amax=smax)
             assert_equal(self.fcount.c, fc+gc)
-            params = dict(check_namespace=False, check_dtype=False)
+            params = dict(check_dtype=False)
             params["nulp"] = 50 if is_numpy(xp) else 100
             xp_assert_close_nulp(ofv, f(x), **params)
             xp_assert_close_nulp(fv, f(x + s*p), **params)

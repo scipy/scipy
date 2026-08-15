@@ -831,6 +831,156 @@ fail:
 
 
 static PyObject*
+_linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_Am = NULL;
+    PyArrayObject *ap_Bm = NULL;
+    PyArrayObject *ap_w = NULL;
+    PyArrayObject *ap_Z = NULL;
+    int overwrite_a = 0;
+    int overwrite_b = 0;
+    int eigvals_only = 0;
+    int lower = 0;
+    int vals_range = 0;
+    double vl = -std::numeric_limits<double>::infinity();
+    double vu = std::numeric_limits<double>::infinity();
+    int il = -1;
+    int iu = -1;
+    Eigh_driver lapack_driver;
+    int itype = 1;
+
+    int info = 0;
+    SliceStatusVec vec_status;
+
+    // Return objects
+    PyObject *ret_w;
+    PyObject *ret_Z;
+    PyObject *ret_lst;
+
+    if (!PyArg_ParseTuple(args, "O!ppipddiin|O!pi",
+        &PyArray_Type, (PyObject **)&ap_Am, &overwrite_a,
+        &eigvals_only, &vals_range, &lower,
+        &vl, &vu, &il, &iu, &lapack_driver,
+        &PyArray_Type, (PyArrayObject **)&ap_Bm, &overwrite_b, &itype)
+    ) {
+        return NULL;
+    }
+
+    /*
+     * Convert int input to char for LAPACK
+     *
+     * - `uplo`: what triangular part of the matrix to use
+     * - `jobz`: whether to compute eigenvectors, always applicable
+     * - `range`: for drivers `evr`, `evx` and `gvx` what eigenvalues to compute:
+     *      - 'A':  all eigenvalues, `N` in total, are returned unconditionally,
+     *              `il`, `iu`, `vl` and `vu` are still sentinel values
+     *      - 'V':  only eigenvalues `w_i` satisfying `vl < w_i <= vu` are returned, since the
+     *              number of eigenvalues satisfying this condition is unknown beforehand,
+     *              space for all `N` eigenvalues has to be allocated.
+     *              `il` and `iu` remain sentinel values.
+     *      - 'I':  when sorted in ascending order, return indices `il` to `iu` (inclusive),
+     *              not yet accounted for Fortran indexing, the number of eigenvalues is known
+     *              beforehand to be `iu - il + 1`, hence only that size should be allocated.
+     *              `vl` and `vu` remain sentinels
+     *
+     * The number of eigenvalues/eigenvectors to be found is denoted with `M`. In order to be
+     * able to return a properly sized array this is also returned to the python side.
+     */
+    char uplo = lower ? 'L' : 'U';
+    char jobz = eigvals_only ? 'N' : 'V';
+    char range = (vals_range == 0) ? 'A' : (vals_range == 1) ? 'V' : 'I';
+
+    // Sanity check `a`
+    if (!_check_dtype_and_flags(ap_Am, "eigh")) {
+        return NULL;
+    }
+
+
+    /*
+     * Allocation of return objects
+     *
+     * - `w` contains eigenvalues, always present, size (N,) per slice
+     * - `Z` contains eigenvectors, only required when `jobz == 'V'`, size (N, M) per slice
+     */
+    int typenum = PyArray_TYPE(ap_Am);
+    int ndim = PyArray_NDIM(ap_Am);
+    npy_intp *shape = PyArray_SHAPE(ap_Am);
+    npy_intp N = shape[ndim - 1];
+    if (shape[ndim - 2] != N) {
+        PyErr_SetString(PyExc_ValueError, "Expected a square matrix");
+        return NULL;
+    }
+
+    // `evr` does not return in place, so a new output array is always needed for `Z`
+    int w_typenum = typenum;
+    if (typenum == NPY_COMPLEX64) { w_typenum = NPY_FLOAT32; }
+    if (typenum == NPY_COMPLEX128) { w_typenum = NPY_FLOAT64; }
+
+    npy_intp shape_1[NPY_MAXDIMS];
+    for (int i = 0; i < ndim ; i++) { shape_1[i] = shape[i]; }
+
+    int M = (range == 'I') ? iu + 1 - il : N;
+    shape_1[ndim - 2] = M;
+    ap_w = (PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, w_typenum);
+    if (ap_w == NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+
+    if (jobz != 'N') {
+        if (overwrite_a) {
+            Py_INCREF(ap_Am);
+            ap_Z = ap_Am;
+        } else {
+            shape_1[ndim - 2] = N;
+            shape_1[ndim - 1] = M;
+
+            ap_Z = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
+            if (ap_Z == NULL) {
+                PyErr_NoMemory();
+                goto fail;
+            }
+        }
+    }
+
+    // Dispatch to actual implementation
+    // Pass in pointer to `M` to be able to return to python side
+    switch (typenum) {
+        case NPY_FLOAT32:
+            info = _eigh<float>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            break;
+        case NPY_FLOAT64:
+            info = _eigh<double>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            break;
+        case NPY_COMPLEX64:
+            info = _eigh<c64_t>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            break;
+        case NPY_COMPLEX128:
+            info = _eigh<c128_t>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            break;
+    }
+
+    if (info < 0) {
+        // Out-of-memory or scipy internal error
+        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.eigh.");
+        goto fail;
+    }
+
+    // regular return
+    ret_w = PyArray_Return(ap_w);
+    ret_Z = (jobz == 'V') ? PyArray_Return(ap_Z) : Py_None;
+    ret_lst = convert_vec_status(vec_status);
+
+    return Py_BuildValue("NNnN", ret_w, ret_Z, (Py_ssize_t)M, ret_lst);
+
+fail:
+    Py_XDECREF(ap_w);
+    Py_XDECREF(ap_Z);
+    return NULL;
+}
+
+
+
+static PyObject*
 _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
     PyArrayObject *ap_Cm = NULL;
@@ -1500,6 +1650,7 @@ static char doc_solve[] = ("Solve the linear system of equations.");
 static char doc_svd[] = ("SVD factorization.");
 static char doc_lstsq[] = ("linear least squares.");
 static char doc_eig[] = ("eigenvalue solver.");
+static char doc_eigh[] = ("eigenvalue solver for symmetric/hermitian matrices.");
 static char doc_cholesky[] = ("Cholesky factorization.");
 static char doc_qr[] = ("Compute the qr decomposition.");
 
@@ -1512,6 +1663,7 @@ static struct PyMethodDef module_methods[] = {
   {"_svd", _linalg_svd, METH_VARARGS, doc_svd},
   {"_lstsq", _linalg_lstsq, METH_VARARGS, doc_lstsq},
   {"_eig", _linalg_eig, METH_VARARGS, doc_eig},
+  {"_eigh", _linalg_eigh, METH_VARARGS, doc_eigh},
   {"_cholesky", _linalg_cholesky, METH_VARARGS, doc_cholesky},
   {"_qr", _linalg_qr, METH_VARARGS, doc_qr},
   {NULL, NULL, 0, NULL}
