@@ -38,7 +38,8 @@ from scipy.special import (ellipe, ellipk, ellipkm1 ,elliprc, elliprd, elliprf, 
                            mathieu_odd_coef, mathieu_even_coef, stirling2, cosdg, sindg,
                            tandg, cotdg)
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
+from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API,
+                                   make_xp_test_case)
 
 from scipy.special._basic import (
     _FACTORIALK_LIMITS_64BITS, _FACTORIALK_LIMITS_32BITS, _is_subdtype
@@ -4591,8 +4592,9 @@ class TestRiccati:
         assert_allclose(C, special.riccati_yn(n, x), atol=1.5e-8, rtol=0)
 
 
+@make_xp_test_case(softplus)
 class TestSoftplus:
-    def test_softplus(self):
+    def test_softplus(self, xp):
         # Test cases for the softplus function. Selected based on Eq.(10) of:
         # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision
         # Floating-Point Reliable. Retrieved from:
@@ -4617,11 +4619,14 @@ class TestSoftplus:
                [1.8425343736349797, 9.488245799395577e-15, 7.225195764021444e-08],
                [31.253760266045106, 27.758244090327832, 29.995959179643634],
                [73.26040086468937, 76.24944728617226, 37.83955519155184]]
+        ref = xp.asarray(ref)
+        a = xp.asarray(a)
 
         res = softplus(a)
-        assert_allclose(res, ref, rtol=2e-15)
+        xp_assert_close(res, ref, rtol=2e-15)
 
     def test_softplus_with_kwargs(self):
+        # NumPy only as standard does not define any kwargs for logaddexp
         x = np.arange(5) - 2
         out = np.ones(5)
         ref = out.copy()

@@ -10,6 +10,7 @@ from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
@@ -3639,6 +3640,7 @@ def zeta(x, q=None, out=None):
         return _ufuncs._zeta(x, q, out)
 
 
+@xp_capabilities()
 def softplus(x, **kwargs):
     r"""
     Compute the softplus function element-wise.
@@ -3669,4 +3671,6 @@ def softplus(x, **kwargs):
     >>> special.softplus([-1, 0, 1])
     array([0.31326169, 0.69314718, 1.31326169])
     """
-    return np.logaddexp(0, x, **kwargs)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    return xp.logaddexp(xp.asarray(0., device=xp_device(x)), x, **kwargs)
