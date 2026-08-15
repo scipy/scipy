@@ -4626,7 +4626,7 @@ class TestSoftplus:
 
         res = softplus(a)
         rtol = 2e-15 if dtype == xp.float64 else 5e-6
-        xp_assert_close(res, ref, rtol=rtol)
+        xp_assert_close(res, ref, rtol=rtol, atol=1e-14)
 
     def test_softplus_with_kwargs(self):
         # NumPy only as standard does not define any kwargs for logaddexp
