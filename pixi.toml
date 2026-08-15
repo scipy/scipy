@@ -41,6 +41,7 @@ numpy = "*"
 blas-devel = "*"
 
 [package.host-dependencies."if(host_platform == 'win-64')"]
+meson = "<1.12.0"  # scipy/scipy#25904
 openblas = "*"
 
 
@@ -459,8 +460,7 @@ description = "Launch IPython (array-api-cpu env)"
 ### Benchmarking ###
 
 [feature.bench-common.dependencies]
-# https://github.com/airspeed-velocity/asv/issues/1537
-asv = "==0.6.4"
+asv = "==0.6.5"
 cffi = "*"
 pyfftw = "*"
 pytest = "*"
