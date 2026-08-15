@@ -287,8 +287,12 @@ def _chdtr(xp, spsx):
         # The rest can be removed when google/jax#20507 is resolved
         mask = (v == 0) & (x > 0)  # JAX returns NaN
         res = xp.where(mask, 1., res)
-        mask = xp.isinf(v) & xp.isinf(x)  # JAX returns 1.0
-        return xp.where(mask, xp.nan, res)
+        # NaN elsewhere; see gh-24683. `x < 0` is a domain error, and NaN
+        # arguments must propagate (PyTorch's `gammainc` returns a number for
+        # `gammainc(inf, nan)`, `gammainc(nan, 0)`, and `gammainc(nan, inf)`).
+        i_nan = ((xp.isinf(v) & xp.isinf(x))  # JAX returns 1.0
+                 | (x < 0) | xp.isnan(v) | xp.isnan(x))
+        return xp.where(i_nan, xp.nan, res)
     return __chdtr
 
 
@@ -302,8 +306,17 @@ def _chdtrc(xp, spsx):
         return None
 
     def __chdtrc(v, x):
-        res = xp.where(x >= 0, gammaincc(v/2, x/2), 1)
-        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v) | (v < 0)
+        res = gammaincc(v / 2, x / 2)
+        # Can be removed when google/jax#20507 is resolved
+        mask = (v == 0) & (x > 0)  # JAX returns NaN
+        res = xp.where(mask, 0., res)
+        # `x < 0` is a domain error (it used to produce 1.0 here, but the
+        # reference `chdtrc` returns NaN since gh-22441); NaN arguments must
+        # propagate (PyTorch's `gammaincc` returns a number for
+        # `gammaincc(inf, nan)`, `gammaincc(nan, 0)`, `gammaincc(nan, inf)`).
+        # See gh-24683.
+        i_nan = ((x == 0) & (v == 0)) | (xp.isinf(v) & xp.isinf(x)) | (v < 0)
+        i_nan = i_nan | (x < 0) | xp.isnan(x) | xp.isnan(v)
         res = xp.where(i_nan, xp.nan, res)
         return res
     return __chdtrc

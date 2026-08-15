@@ -384,15 +384,15 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
     assert y.dtype == np.float32
 
 
-@make_xp_test_case(special.chdtr)
-def test_chdtr_gh21311(xp):
-    # the edge case behavior of generic chdtr was not right; see gh-21311
-    # be sure to test at least these cases
-    # should add `np.nan` into the mix when gh-21317 is resolved
-    x = np.asarray([-np.inf, -1., 0., 1., np.inf])
+@pytest.mark.parametrize('func', [special.chdtr, special.chdtrc])
+@make_xp_test_case(special.chdtr, special.chdtrc)
+def test_chdtr_gh21311(func, xp):
+    # the edge case behavior of generic chdtr/chdtrc was not right;
+    # see gh-21311 and gh-24683
+    x = np.asarray([-np.inf, -1., 0., 1., np.inf, np.nan])
     v = x.reshape(-1, 1)
-    ref = special.chdtr(v, x)
-    res = special.chdtr(xp.asarray(v), xp.asarray(x))
+    ref = func(v, x)
+    res = func(xp.asarray(v), xp.asarray(x))
     xp_assert_close(res, xp.asarray(ref))
 
 
