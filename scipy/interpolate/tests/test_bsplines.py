@@ -11,8 +11,9 @@ import sys
 import numpy as np
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, concat_1d, make_xp_test_case,
-    xp_ravel, _xp_copy_to_numpy, array_namespace, is_cupy
+    xp_ravel, xp_copy_to_numpy, array_namespace, is_cupy
 )
+from scipy._lib._array_api_no_0d import xp_assert_close as xp_assert_close_no_0d
 import scipy._external.array_api_extra as xpx
 from pytest import raises as assert_raises
 import pytest
@@ -134,7 +135,7 @@ class TestBSpline:
             c[0]*B_012(x, xp=xp) + c[1]*B_012(x-1, xp=xp) + c[2]*B_012(x-2, xp=xp),
             atol=1e-14
         )
-        x_np, t_np, c_np = map(_xp_copy_to_numpy, (x, t, c))
+        x_np, t_np, c_np = map(xp_copy_to_numpy, (x, t, c))
         splev_result = splev(x_np, (t_np, c_np, k))
         xp_assert_close(b(x), xp.asarray(splev_result), atol=1e-14)
 
@@ -144,15 +145,15 @@ class TestBSpline:
         t = xp.asarray([0]*(k+1) + [1]*(k+1))
         c = xp.asarray([1., 2., 3., 4.])
         bp = BPoly(
-            _xp_copy_to_numpy(xp.reshape(c, (-1, 1))),
-            _xp_copy_to_numpy(xp.asarray([0, 1])),
+            xp_copy_to_numpy(xp.reshape(c, (-1, 1))),
+            xp_copy_to_numpy(xp.asarray([0, 1])),
         )
         bspl = BSpline(t, c, k)
 
         xx = xp.linspace(-1., 2., 10)
         xp_assert_close(
             bspl(xx, extrapolate=True),
-            xp.asarray(bp(_xp_copy_to_numpy(xx), extrapolate=True)),
+            xp.asarray(bp(xp_copy_to_numpy(xx), extrapolate=True)),
             atol=1e-14,
         )
 
@@ -255,7 +256,7 @@ class TestBSpline:
                         b(xx[mask], extrapolate=False))
 
         # extrapolated values agree with FITPACK
-        xx_np, t_np, c_np = map(_xp_copy_to_numpy, (xx, t, c))
+        xx_np, t_np, c_np = map(xp_copy_to_numpy, (xx, t, c))
         splev_result = xp.asarray(splev(xx_np, (t_np, c_np, k), ext=0))
         xp_assert_close(b(xx, extrapolate=True), splev_result)
 
@@ -279,7 +280,7 @@ class TestBSpline:
         dt = t[-1] - t[0]
         xx = xp.linspace(t[k] - dt, t[n] + dt, 50)
         xy = t[k] + (xx - t[k]) % (t[n] - t[k])
-        xy_np, t_np, c_np = map(_xp_copy_to_numpy, (xy, t, c))
+        xy_np, t_np, c_np = map(xp_copy_to_numpy, (xy, t, c))
         atol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 2e-7
         xp_assert_close(
             b(xx), xp.asarray(splev(xy_np, (t_np, c_np, k))), atol=atol
@@ -351,7 +352,7 @@ class TestBSpline:
         xx = xp.linspace(-1, 4, 20)
         b = BSpline.basis_element(t=xp.asarray([0, 1, 2, 3]))
 
-        xx_np, t_np, c_np = map(_xp_copy_to_numpy, (xx, b.t, b.c))
+        xx_np, t_np, c_np = map(xp_copy_to_numpy, (xx, b.t, b.c))
         splev_result = xp.asarray(splev(xx_np, (t_np, c_np, b.k)))
         xp_assert_close(b(xx), splev_result, atol=1e-14)
 
@@ -429,7 +430,7 @@ class TestBSpline:
 
         # Test ``_fitpack._splint()``
         assert math.isclose(b.integrate(1, -1, extrapolate=False),
-                            _impl.splint(1, -1, map(_xp_copy_to_numpy, b.tck)),
+                            _impl.splint(1, -1, map(xp_copy_to_numpy, b.tck)),
                             abs_tol=1e-14)
 
     @xfail_xp_backends("cupy", reason="CuPy periodic extrapolation seems broken")
@@ -756,7 +757,7 @@ class TestInsert:
         y = xp.sin(x)**3
         spl = make_interp_spline(x, y, k=3)
 
-        tck = (_xp_copy_to_numpy(spl.t), _xp_copy_to_numpy(spl.c), spl.k)
+        tck = (xp_copy_to_numpy(spl.t), xp_copy_to_numpy(spl.c), spl.k)
         spl_1f = BSpline(*insert(xval, tck))     # FITPACK
         spl_1 = spl.insert_knot(xval)
 
@@ -796,7 +797,7 @@ class TestInsert:
 
         spl_1f = BSpline(
             *insert(
-                xval, (_xp_copy_to_numpy(spl.t), _xp_copy_to_numpy(spl.c), spl.k), m=m
+                xval, (xp_copy_to_numpy(spl.t), xp_copy_to_numpy(spl.c), spl.k), m=m
             )
         )
         spl_1 = spl.insert_knot(xval, m)
@@ -977,7 +978,7 @@ def _sum_basis_elements(x, t, c, k):
 
 def B_012(x, xp=np):
     """ A linear B-spline function B(x | 0, 1, 2)."""
-    x = np.atleast_1d(_xp_copy_to_numpy(x))
+    x = np.atleast_1d(xp_copy_to_numpy(x))
     result = np.piecewise(x, [(x < 0) | (x > 2),
                             (x >= 0) & (x < 1),
                             (x >= 1) & (x <= 2)],
@@ -987,7 +988,7 @@ def B_012(x, xp=np):
 
 def B_0123(x, der=0):
     """A quadratic B-spline function B(x | 0, 1, 2, 3)."""
-    x = np.atleast_1d(_xp_copy_to_numpy(x))
+    x = np.atleast_1d(xp_copy_to_numpy(x))
     conds = [x < 1, (x > 1) & (x < 2), x > 2]
     if der == 0:
         funcs = [lambda x: x*x/2.,
@@ -2813,11 +2814,15 @@ class TestNdBSpline:
 
         # now try the array xi : the output.shape is (3, 4) where 3
         # is the number of points in xi and 4 is the trailing dimension of c
-        assert bspl2_4(xi).shape == np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
-        xp_assert_close(bspl2_4(xi),
-                        xp.asarray(target, dtype=xp.float64)[:, None],
-                        check_shape=False,
-                        atol=5e-14)
+        expected_shape = np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
+        xp_assert_close(
+            bspl2_4(xi),
+            xp.broadcast_to(
+                xp.asarray(target, dtype=xp.float64)[:, None],
+                expected_shape
+            ),
+            atol=5e-14,
+        )
 
         # two trailing dimensions
         c2_22 = xp.reshape(c2_4, (6, 6, 2, 2))
@@ -2830,12 +2835,15 @@ class TestNdBSpline:
 
         # now try the array xi : the output shape is (3, 2, 2)
         # for 3 points in xi and c trailing dimensions being (2, 2)
-        assert (bspl2_22(xi).shape ==
-                np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:])
-        xp_assert_close(bspl2_22(xi),
-                        xp.asarray(target, dtype=xp.float64)[:, None, None],
-                        check_shape=False,
-                        atol=5e-14)
+        expected_shape = np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:]
+        xp_assert_close(
+            bspl2_22(xi),
+            xp.broadcast_to(
+                xp.asarray(target, dtype=xp.float64)[:, None, None],
+                expected_shape
+            ),
+            atol=5e-14,
+        )
 
     def test_2D_separable_2_complex(self, xp):
         # test `c` with c.dtype == complex, with and w/o trailing dims
@@ -4459,7 +4467,7 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         f = F(x, y[:, None], t, k, s)    # F expects y to be 2D
         f_d = F_dense(x, y, t, k, s)
         for p in [1, 10, 100]:
-            xp_assert_close(f(p), f_d(p), atol=1e-15)
+            xp_assert_close_no_0d(f(p), f_d(p), atol=1e-15)
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
     def test_fitpack_F_with_weights(self, k):
@@ -4475,7 +4483,7 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         f_d = F_dense(x, y, t, k, s)   # no weights
 
         for p in [1, 10, 100]:
-            xp_assert_close(fw(p), fw_d(p), atol=1e-15)
+            xp_assert_close_no_0d(fw(p), fw_d(p), atol=1e-15)
             assert not np.allclose(f_d(p), fw_d(p), atol=1e-15)
 
     def test_disc_matrix(self):
