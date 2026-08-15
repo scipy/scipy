@@ -6,10 +6,13 @@
 
 # cython: cpow=True
 
+import warnings
 
 import numpy as np
 import scipy.sparse
 from scipy._lib._util import copy_if_needed
+
+from scipy._lib.deprecation import _NoValue
 
 cimport numpy as np
 
@@ -1495,7 +1498,7 @@ cdef class cKDTree:
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.0,
-                               output_type='dok_matrix'):
+                               output_type=_NoValue):
         """
         sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
 
@@ -1527,7 +1530,7 @@ cdef class cKDTree:
                `output_type` will be deprecated at v2.0 and switch from
                'dok_matrix' to 'dok_array' in v2.2.
                The values 'dok_matrix' and 'coo_matrix' continue
-               to work, but will go away eventually.
+               to work now, but will go away too.
 
         Returns
         -------
@@ -1581,18 +1584,47 @@ cdef class cKDTree:
             sparse_distance_matrix(
                 self.cself, other.cself, p, max_distance, res.buf)
 
+        if output_type == _NoValue:
+            msg = """The default value for `output_type` will become `dok_array` in v2.2.
+             That means the default return type will become a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set `output_type="dok_array"`.
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            output_type = 'dok_matrix'
+
         if output_type == 'dict':
             return res.dict()
         elif output_type == 'ndarray':
             return res.ndarray()
-        elif output_type == 'dok_matrix':
-            return res.dok_matrix(self.n, other.n)
         elif output_type == 'dok_array':
             return res.dok_array(self.n, other.n)
-        elif output_type == 'coo_matrix':
-            return res.coo_matrix(self.n, other.n)
         elif output_type == 'coo_array':
             return res.coo_array(self.n, other.n)
+        elif output_type == 'dok_matrix':
+            msg = f"""The keyword output_type="dok_matrix" will not be supported in v2.2
+             Use output_type="dok_array".
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set to "dok_array" and wrap the return in dok_matrix().
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            return res.dok_matrix(self.n, other.n)
+        elif output_type == 'coo_matrix':
+            msg = f"""The keyword output_type="coo_matrix" will not be supported in v2.2
+             Use output_type="coo_array".
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set to "coo_array" and wrap the return in coo_matrix().
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            return res.coo_matrix(self.n, other.n)
         else:
             raise ValueError('Invalid output type')
 
