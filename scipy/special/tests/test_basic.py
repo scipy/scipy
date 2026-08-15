@@ -4594,7 +4594,8 @@ class TestRiccati:
 
 @make_xp_test_case(softplus)
 class TestSoftplus:
-    def test_softplus(self, xp):
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_softplus(self, dtype, xp):
         # Test cases for the softplus function. Selected based on Eq.(10) of:
         # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision
         # Floating-Point Reliable. Retrieved from:
@@ -4619,11 +4620,13 @@ class TestSoftplus:
                [1.8425343736349797, 9.488245799395577e-15, 7.225195764021444e-08],
                [31.253760266045106, 27.758244090327832, 29.995959179643634],
                [73.26040086468937, 76.24944728617226, 37.83955519155184]]
-        ref = xp.asarray(ref)
-        a = xp.asarray(a)
+        dtype = getattr(xp, dtype)
+        ref = xp.asarray(ref, dtype=dtype)
+        a = xp.asarray(a, dtype=dtype)
 
         res = softplus(a)
-        xp_assert_close(res, ref, rtol=2e-15)
+        rtol = 2e-15 if dtype == xp.float64 else 5e-6
+        xp_assert_close(res, ref, rtol=rtol)
 
     def test_softplus_with_kwargs(self):
         # NumPy only as standard does not define any kwargs for logaddexp

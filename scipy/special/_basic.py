@@ -3673,4 +3673,4 @@ def softplus(x, **kwargs):
     """
     xp = array_namespace(x)
     x = xp.asarray(x)
-    return xp.logaddexp(xp.asarray(0., device=xp_device(x)), x, **kwargs)
+    return xp.logaddexp(xp.asarray(0., dtype=x.dtype, device=xp_device(x)), x, **kwargs)
