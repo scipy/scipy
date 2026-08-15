@@ -5085,8 +5085,8 @@ class TestGroupDelay:
         # also cannot provide complex array_like because not accepted by freqz
         for w in ([8.0, 9.0],):
             w_out, gd = group_delay((1, 1), w, method='unwrap')
-            xp_assert_close(w_out, [8, 9])
-            xp_assert_close(gd, [0, 0])
+            xp_assert_close(w_out, [8., 9.])
+            xp_assert_close(gd, [0., 0.])
 
     @pytest.mark.xfail(DEFAULT_F32, reason="with torch/float32, the rtol is ~1e-7")
     @xfail_xp_backends("cupy", reason="inaccurate")
