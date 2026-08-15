@@ -5159,7 +5159,6 @@ class TestGroupDelay:
         gd = np.hstack([gd[high], gd[~high]])
         gdtest = np.interp(wref, wd, gd)
         gdtest = xp.asarray(gdtest)
-        # delta = gdtest - gdref TODO: EITHER USE OR REMOVE
         xp_assert_close(gdtest, gdref, atol=1e-3, rtol=1e-4)
 
     def test_fs_validation(self):
