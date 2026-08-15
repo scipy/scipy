@@ -212,7 +212,6 @@ static void
 pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    Py_ssize_t dims[2];
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     float normA, dbl1 = 1.0, dbl0 = 0.0;
@@ -225,8 +224,6 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
 
     *m = 0;
     *s = 0;
-    dims[0] = n;
-    dims[1] = n;
     theta[0] = 1.495585217958292e-002;
     theta[1] = 2.539398330063230e-001;
     theta[2] = 9.504178996162932e-001;
@@ -431,7 +428,6 @@ static void
 pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    Py_ssize_t dims[2];
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     double normA, dbl1 = 1.0, dbl0 = 0.0;
@@ -444,8 +440,6 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 
     *m = 0;
     *s = 0;
-    dims[0] = n;
-    dims[1] = n;
     theta[0] = 1.495585217958292e-002;
     theta[1] = 2.539398330063230e-001;
     theta[2] = 9.504178996162932e-001;
@@ -650,7 +644,6 @@ static void
 pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    Py_ssize_t dims[2];
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     float normA;
@@ -666,8 +659,6 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
 
     *m = 0;
     *s = 0;
-    dims[0] = n;
-    dims[1] = n;
     theta[0] = 1.495585217958292e-002;
     theta[1] = 2.539398330063230e-001;
     theta[2] = 9.504178996162932e-001;
@@ -879,7 +870,6 @@ static void
 pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    Py_ssize_t dims[2];
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     double normA;
@@ -895,8 +885,6 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
 
     *m = 0;
     *s = 0;
-    dims[0] = n;
-    dims[1] = n;
     theta[0] = 1.495585217958292e-002;
     theta[1] = 2.539398330063230e-001;
     theta[2] = 9.504178996162932e-001;
@@ -2226,10 +2214,10 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 2*n workspace.
+    // expm requires 6*n*n + 4*n workspace.
     // 5*n*n is for holding the powers of A
     // n*n for holding the absolute values of A
-    // 2*n is both for 1-norm calculations
+    // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
     float* restrict Am = malloc(sizeof(float)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
@@ -2383,10 +2371,10 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 2*n workspace.
+    // expm requires 6*n*n + 4*n workspace.
     // 5*n*n is for holding the powers of A
     // n*n for holding the absolute values of A
-    // 2*n is both for 1-norm calculations
+    // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
     double* restrict Am = malloc(sizeof(double)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
@@ -2540,10 +2528,10 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 2*n workspace.
+    // expm requires 6*n*n + 4*n workspace.
     // 5*n*n is for holding the powers of A
     // n*n for holding the absolute values of A
-    // 2*n is both for 1-norm calculations
+    // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
     SCIPY_C* restrict Am = malloc(sizeof(SCIPY_C)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
@@ -2744,10 +2732,10 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
     {
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
-    // expm requires 6*n*n + 2*n workspace.
+    // expm requires 6*n*n + 4*n workspace.
     // 5*n*n is for holding the powers of A
     // n*n for holding the absolute values of A
-    // 2*n is both for 1-norm calculations
+    // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
     SCIPY_Z* restrict Am = malloc(sizeof(SCIPY_Z)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
