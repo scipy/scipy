@@ -102,6 +102,10 @@ def mmread(source, *, spmatrix=_NoValue):
             on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
+        .. deprecated:: 2.0.0
+            The value `True` for `spmatrix` will no longer be supported in v2.2.
+            The spmatrix classes are deprecated and will be removed then.
+
     Returns
     -------
     a : ndarray or coo_array or coo_matrix
@@ -585,6 +589,10 @@ class MMFile:
                 on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
                 See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
+        .. deprecated:: 2.0.0
+            The value `True` for `spmatrix` will no longer be supported in v2.2.
+            The spmatrix classes are deprecated and will be removed then.
+
         Returns
         -------
         a : ndarray or coo_array or coo_matrix
@@ -612,6 +620,16 @@ class MMFile:
             prefixes = (os.path.dirname(__file__),)
             warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
             spmatrix = True
+        elif spmatrix is True:
+            msg = """The value `spmatrix=True` will no longer be supported in v2.2.
+             The spmatrix classes are deprecated and will be removed then.
+             The return value will always be a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
 
         if spmatrix and isinstance(data, coo_array):
             data = coo_matrix(data)
