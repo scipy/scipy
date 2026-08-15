@@ -59,7 +59,7 @@ __all__ = [
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_compat_namespace', 'xp_copy', 'xp_device',
+    'xp_compat_namespace', 'xp_copy', 'xp_copy_to_numpy', 'xp_device',
     'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
     'xp_result_type', 'xp_result_device', 'xp_promote',
@@ -158,13 +158,13 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     return _asarray(x, copy=True, xp=xp)
 
 
-def _xp_copy_to_numpy(x: Array) -> np.ndarray:
+def xp_copy_to_numpy(x: Array) -> np.ndarray:
     """Copies a possibly on device array to a NumPy array.
 
     This function is intended only for converting alternative backend
     arrays to numpy arrays within test code, to make it easier for use
     of the alternative backend to be isolated only to the function being
-    tested. `_xp_copy_to_numpy` should NEVER be used except in test code
+    tested. `xp_copy_to_numpy` should NEVER be used except in test code
     for the specific purpose mentioned above. In production code, attempts
     to copy device arrays to NumPy arrays should fail, or else functions
     may appear to be working on the GPU when they actually aren't.

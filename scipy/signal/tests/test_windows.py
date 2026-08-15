@@ -12,7 +12,7 @@ from scipy.signal.windows._windows import _WIN_FUNC_DATA, _WIN_FUNCS
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, SCIPY_DEVICE, is_numpy, make_xp_test_case,
-    make_xp_pytest_param, _xp_copy_to_numpy
+    make_xp_pytest_param, xp_copy_to_numpy
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -182,7 +182,7 @@ class TestTaylor:
         # scientific publication do not normalize the values. Normalizing
         # changes the sidelobe level from the desired value.
         w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
+        f_np = fft(xp_copy_to_numpy(w), N_fft)
 
         spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
 

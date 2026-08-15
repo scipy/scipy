@@ -51,7 +51,7 @@ from scipy.cluster.hierarchy._hierarchy_impl import (
 from scipy.spatial.distance import pdist
 from scipy._lib._array_api import (
     eager_warns, make_xp_test_case, xp_assert_equal,
-    xp_assert_close, make_xp_pytest_param, _xp_copy_to_numpy
+    xp_assert_close, make_xp_pytest_param, xp_copy_to_numpy
 )
 import scipy._external.array_api_extra as xpx
 
@@ -194,7 +194,7 @@ class TestLinkage:
         # supporting alt-backends must be tested with the xp fixture.
         X = xp.asarray([[-1, -1], [0, 0], [1, 1]])
         expected = xp.asarray(
-            linkage(_xp_copy_to_numpy(X), method=func.__name__, metric="euclidean")
+            linkage(xp_copy_to_numpy(X), method=func.__name__, metric="euclidean")
         )
         observed = func(X)
         xp_assert_close(observed, expected)

@@ -13,7 +13,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, is_numpy,
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
-    _xp_copy_to_numpy, xp_assert_close_nulp
+    xp_copy_to_numpy, xp_assert_close_nulp
 )
 from scipy._lib._array_api_no_0d import xp_assert_close as xp_assert_close_no_0d
 import scipy._external.array_api_extra as xpx
@@ -240,10 +240,10 @@ class TestZpk2Tf:
     def test_conj_pair(self, xp):
         # conjugate pairs give real-coeff num & den
         z = xp.asarray([1j, -1j, 2j, -2j])
-        z_np = _xp_copy_to_numpy(z)
+        z_np = xp_copy_to_numpy(z)
         # shouldn't need elements of pairs to be adjacent
         p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
-        p_np = _xp_copy_to_numpy(p)
+        p_np = xp_copy_to_numpy(p)
 
         k = 23
 
@@ -266,7 +266,7 @@ class TestZpk2Tf:
     def test_complexk(self, xp):
         # regression: z, p real, k complex k gave real b, a
         b, a = xp.asarray([1j, 1j]), xp.asarray([1.0, 2])
-        b_np, a_np = map(_xp_copy_to_numpy, (b, a))
+        b_np, a_np = map(xp_copy_to_numpy, (b, a))
         z_np, p_np, k_np = tf2zpk(b_np, a_np)
         z, p, k = map(xp.asarray, (z_np, p_np, k_np))
         xp_assert_close(k, xp.asarray(1j))
@@ -1980,7 +1980,7 @@ class TestButtord:
         rp = 3
         rs = 60
         N, Wn = buttord(xp.asarray(wp), ws, rp, rs, False)
-        b, a = butter(N, _xp_copy_to_numpy(Wn), 'lowpass', False)
+        b, a = butter(N, xp_copy_to_numpy(Wn), 'lowpass', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp < dB(h[w <= wp]))
@@ -1996,7 +1996,7 @@ class TestButtord:
         rp = 3
         rs = 70
         N, Wn = buttord(xp.asarray(wp), ws, rp, rs, False)
-        b, a = butter(N, _xp_copy_to_numpy(Wn), 'highpass', False)
+        b, a = butter(N, xp_copy_to_numpy(Wn), 'highpass', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp < dB(h[wp <= w]))
@@ -2012,7 +2012,7 @@ class TestButtord:
         rp = 3
         rs = 80
         N, Wn = buttord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = butter(N, _xp_copy_to_numpy(Wn), 'bandpass', False)
+        b, a = butter(N, xp_copy_to_numpy(Wn), 'bandpass', False)
         w, h = freqz(b, a)
         w /= np.pi
 
@@ -2035,7 +2035,7 @@ class TestButtord:
         rp = 3
         rs = 90
         N, Wn = buttord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = butter(N, _xp_copy_to_numpy(Wn), 'bandstop', False)
+        b, a = butter(N, xp_copy_to_numpy(Wn), 'bandstop', False)
         w, h = freqz(b, a)
         w /= np.pi
 
@@ -2054,7 +2054,7 @@ class TestButtord:
         rp = 3
         rs = 60
         N, Wn = buttord(xp.asarray(wp), ws, rp, rs, True)
-        b, a = butter(N, _xp_copy_to_numpy(Wn), 'lowpass', True)
+        b, a = butter(N, xp_copy_to_numpy(Wn), 'lowpass', True)
         w, h = freqs(b, a)
         assert np.all(-rp < dB(h[w <= wp]))
         assert np.all(dB(h[ws <= w]) < -rs)
@@ -2079,7 +2079,7 @@ class TestButtord:
         rs = 80
         fs = 44100
         N, Wn = buttord(xp.asarray(wp), xp.asarray(ws), rp, rs, False, fs=fs)
-        b, a = butter(N, _xp_copy_to_numpy(Wn), 'bandpass', False, fs=fs)
+        b, a = butter(N, xp_copy_to_numpy(Wn), 'bandpass', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
 
         assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
@@ -2135,7 +2135,7 @@ class TestCheb1ord:
         rp = 3
         rs = 60
         N, Wn = cheb1ord(xp.asarray(wp), ws, rp, rs, False)
-        b, a = cheby1(N, rp, _xp_copy_to_numpy(Wn), 'low', False)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'low', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[w <= wp]))
@@ -2151,7 +2151,7 @@ class TestCheb1ord:
         rp = 3
         rs = 70
         N, Wn = cheb1ord(xp.asarray(wp), ws, rp, rs, False)
-        b, a = cheby1(N, rp, _xp_copy_to_numpy(Wn), 'high', False)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'high', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[wp <= w]))
@@ -2166,7 +2166,7 @@ class TestCheb1ord:
         rp = 3
         rs = 80
         N, Wn = cheb1ord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = cheby1(N, rp, _xp_copy_to_numpy(Wn), 'band', False)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'band', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
@@ -2184,7 +2184,7 @@ class TestCheb1ord:
         rp = 3
         rs = 90
         N, Wn = cheb1ord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = cheby1(N, rp, _xp_copy_to_numpy(Wn), 'stop', False)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'stop', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
@@ -2199,7 +2199,7 @@ class TestCheb1ord:
         rp = 3
         rs = 70
         N, Wn = cheb1ord(wp, xp.asarray(ws), rp, rs, True)
-        b, a = cheby1(N, rp, _xp_copy_to_numpy(Wn), 'high', True)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'high', True)
         w, h = freqs(b, a)
         assert np.all(-rp - 0.1 < dB(h[wp <= w]))
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
@@ -2217,7 +2217,7 @@ class TestCheb1ord:
         rs = 60
         fs = 48000
         N, Wn = cheb1ord(wp, xp.asarray(ws), rp, rs, False, fs=fs)
-        b, a = cheby1(N, rp, _xp_copy_to_numpy(Wn), 'low', False, fs=fs)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'low', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
         assert np.all(-rp - 0.1 < dB(h[w <= wp]))
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
@@ -2270,7 +2270,7 @@ class TestCheb2ord:
         rp = 3
         rs = 60
         N, Wn = cheb2ord(wp, xp.asarray(ws), rp, rs, False)
-        b, a = cheby2(N, rs, _xp_copy_to_numpy(Wn), 'lp', False)
+        b, a = cheby2(N, rs, xp_copy_to_numpy(Wn), 'lp', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[w <= wp]))
@@ -2285,7 +2285,7 @@ class TestCheb2ord:
         rp = 3
         rs = 70
         N, Wn = cheb2ord(wp, xp.asarray(ws), rp, rs, False)
-        b, a = cheby2(N, rs, _xp_copy_to_numpy(Wn), 'hp', False)
+        b, a = cheby2(N, rs, xp_copy_to_numpy(Wn), 'hp', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[wp <= w]))
@@ -2300,7 +2300,7 @@ class TestCheb2ord:
         rp = 3
         rs = 80
         N, Wn = cheb2ord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = cheby2(N, rs, _xp_copy_to_numpy(Wn), 'bp', False)
+        b, a = cheby2(N, rs, xp_copy_to_numpy(Wn), 'bp', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
@@ -2319,7 +2319,7 @@ class TestCheb2ord:
         rp = 3
         rs = 90
         N, Wn = cheb2ord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = cheby2(N, rs, _xp_copy_to_numpy(Wn), 'bs', False)
+        b, a = cheby2(N, rs, xp_copy_to_numpy(Wn), 'bs', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
@@ -2335,7 +2335,7 @@ class TestCheb2ord:
         rp = 3
         rs = 80
         N, Wn = cheb2ord(xp.asarray(wp), xp.asarray(ws), rp, rs, True)
-        b, a = cheby2(N, rs, _xp_copy_to_numpy(Wn), 'bp', True)
+        b, a = cheby2(N, rs, xp_copy_to_numpy(Wn), 'bp', True)
         w, h = freqs(b, a)
         assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
@@ -2351,7 +2351,7 @@ class TestCheb2ord:
         rs = 70
         fs = 1000
         N, Wn = cheb2ord(wp, xp.asarray(ws), rp, rs, False, fs=fs)
-        b, a = cheby2(N, rs, _xp_copy_to_numpy(Wn), 'hp', False, fs=fs)
+        b, a = cheby2(N, rs, xp_copy_to_numpy(Wn), 'hp', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
         assert np.all(-rp - 0.1 < dB(h[wp <= w]))
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
@@ -2404,7 +2404,7 @@ class TestEllipord:
         rp = 3
         rs = 60
         N, Wn = ellipord(wp, xp.asarray(ws), rp, rs, False)
-        b, a = ellip(N, rp, rs, _xp_copy_to_numpy(Wn), 'lp', False)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'lp', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[w <= wp]))
@@ -2420,7 +2420,7 @@ class TestEllipord:
         rp = 3
         rs = 1000
         N, Wn = ellipord(wp, xp.asarray(ws), rp, rs, False)
-        sos = ellip(N, rp, rs, _xp_copy_to_numpy(Wn), 'lp', False, output='sos')
+        sos = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'lp', False, output='sos')
         w, h = freqz_sos(sos)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[w <= wp]))
@@ -2433,7 +2433,7 @@ class TestEllipord:
         rp = 3
         rs = 70
         N, Wn = ellipord(wp, xp.asarray(ws), rp, rs, False)
-        b, a = ellip(N, rp, rs, _xp_copy_to_numpy(Wn), 'hp', False)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'hp', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[wp <= w]))
@@ -2449,7 +2449,7 @@ class TestEllipord:
         rp = 3
         rs = 80
         N, Wn = ellipord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = ellip(N, rp, rs, _xp_copy_to_numpy(Wn), 'bp', False)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'bp', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
@@ -2467,7 +2467,7 @@ class TestEllipord:
         rp = 3
         rs = 90
         N, Wn = ellipord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = ellip(N, rp, rs, _xp_copy_to_numpy(Wn), 'bs', False)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'bs', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
@@ -2482,7 +2482,7 @@ class TestEllipord:
         rp = 3
         rs = 90
         N, Wn = ellipord(xp.asarray(wp), xp.asarray(ws), rp, rs, True)
-        b, a = ellip(N, rp, rs, _xp_copy_to_numpy(Wn), 'bs', True)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'bs', True)
         w, h = freqs(b, a)
         assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
         assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
@@ -2499,7 +2499,7 @@ class TestEllipord:
         rs = 90
         fs = 8000
         N, Wn = ellipord(xp.asarray(wp), xp.asarray(ws), rp, rs, False, fs=fs)
-        b, a = ellip(N, rp, rs, _xp_copy_to_numpy(Wn), 'bs', False, fs=fs)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'bs', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
         assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
         assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
@@ -2709,7 +2709,7 @@ class TestBessel:
             p1 = np.sort(bond_poles[N])
             z, p, k = besselap(N, 'delay', xp=xp)
             assert array_namespace(z) == array_namespace(p) == xp
-            p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
+            p2 = np.sort(np.concatenate(_cplxreal(xp_copy_to_numpy(p))))
             assert_array_almost_equal(xp.asarray(p2), xp.asarray(p1), decimal=10)
 
         # "Frequency Normalized Bessel Pole Locations"
@@ -2738,7 +2738,7 @@ class TestBessel:
             p1 = np.sort(bond_poles[N])
             z, p, k = besselap(N, 'mag', xp=xp)
             assert array_namespace(z) == array_namespace(p) == xp
-            p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
+            p2 = np.sort(np.concatenate(_cplxreal(xp_copy_to_numpy(p))))
             assert_array_almost_equal(xp.asarray(p2), xp.asarray(p1), decimal=10)
 
         # Compare to https://www.ranecommercial.com/legacy/note147.html
@@ -2978,7 +2978,7 @@ class TestBessel:
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='phase')
                 assert array_namespace(b) == array_namespace(a) == xp
                 w = np.linspace(0, w0, 100)
-                w, h = freqs(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a), w)
+                w, h = freqs(xp_copy_to_numpy(b), xp_copy_to_numpy(a), w)
                 phase = np.unwrap(np.angle(h))
                 xp_assert_close(
                     xp.asarray(phase[[0, -1]], dtype=xp.float64),
@@ -2995,7 +2995,7 @@ class TestBessel:
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='mag')
                 assert array_namespace(b) == array_namespace(a) == xp
                 w = [0.0, w0]
-                w, h = freqs(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a), w)
+                w, h = freqs(xp_copy_to_numpy(b), xp_copy_to_numpy(a), w)
                 mag = np.abs(h)
                 xp_assert_close(
                     xp.asarray(mag), xp.asarray([1, 1/math.sqrt(2)], dtype=xp.float64)
@@ -3010,7 +3010,7 @@ class TestBessel:
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='delay')
                 w = np.linspace(0, 10*w0, 1000)
-                w, h = freqs(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a), w)
+                w, h = freqs(xp_copy_to_numpy(b), xp_copy_to_numpy(a), w)
                 unwr_h = np.unwrap(np.angle(h))
                 delay = -np.diff(unwr_h) / np.diff(w)
                 assert math.isclose(delay[0], 1/w0, rel_tol=1e-4)
@@ -4633,7 +4633,7 @@ class TestIIRComb:
         freqs, response = freqz(b, a, 1000, fs=10000)
 
         # Find the notch using argrelextrema
-        comb_points = argrelextrema(abs(_xp_copy_to_numpy(response)), np.less)[0]
+        comb_points = argrelextrema(abs(xp_copy_to_numpy(response)), np.less)[0]
         comb_points = xp.asarray(comb_points)
 
         # Verify that the first notch sits at 1000 Hz
@@ -5109,7 +5109,7 @@ class TestGammatone:
             b, a = gammatone(1000, ftype, fs=fs, xp=xp)
 
             # Calculate the frequency response.
-            freqs, response = freqz(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a))
+            freqs, response = freqz(xp_copy_to_numpy(b), xp_copy_to_numpy(a))
 
             # Determine peak magnitude of the response
             # and corresponding frequency.
@@ -5131,7 +5131,7 @@ class TestGammatone:
     # imaginary parts.
     def test_iir_symmetry(self, xp):
         b, a = gammatone(440, 'iir', fs=24000, xp=xp)
-        z, p, k = tf2zpk(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a))
+        z, p, k = tf2zpk(xp_copy_to_numpy(b), xp_copy_to_numpy(a))
         z, p, k = map(xp.asarray, (z, p, k))
         xp_assert_equal(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
         xp_assert_equal(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))

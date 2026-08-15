@@ -33,7 +33,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, array_namespace, make_xp_test_case,
-    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy, xp_device
+    make_xp_pytest_param, SCIPY_DEVICE, xp_copy_to_numpy, xp_device
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -474,8 +474,8 @@ class TestConvolve2d:
         # Compare np.convolve, signal.convolve, signal.convolve2d
         a = xp.arange(5)
         b = xp.asarray([3.2, 1.4, 3])
-        a_np = _xp_copy_to_numpy(a)
-        b_np = _xp_copy_to_numpy(b)
+        a_np = xp_copy_to_numpy(a)
+        b_np = xp_copy_to_numpy(b)
 
         for mode in ['full', 'valid', 'same']:
             xp_assert_close(
@@ -1946,7 +1946,7 @@ class _TestLinearFilter:
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, -1], xp)
         a = self.convert_dtype([0.5, 0.5], xp)
-        a_np, b_np, x_np = map(_xp_copy_to_numpy, (a, b, x))
+        a_np, b_np, x_np = map(xp_copy_to_numpy, (a, b, x))
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
@@ -1964,13 +1964,13 @@ class _TestLinearFilter:
             zi = self.convert_dtype(xp.ones(zi_shape), xp)
             zi1 = self.convert_dtype([1], xp)
             y, zf = lfilter(b, a, x, axis, zi)
-            b_np, a_np, zi1_np = map(_xp_copy_to_numpy, (b, a, zi1))
+            b_np, a_np, zi1_np = map(xp_copy_to_numpy, (b, a, zi1))
             def lf0(w):
                 return lfilter(b_np, a_np, w, zi=zi1_np)[0]
             def lf1(w):
                 return lfilter(b_np, a_np, w, zi=zi1_np)[1]
-            y_r = np.apply_along_axis(lf0, axis, _xp_copy_to_numpy(x))
-            zf_r = np.apply_along_axis(lf1, axis, _xp_copy_to_numpy(x))
+            y_r = np.apply_along_axis(lf0, axis, xp_copy_to_numpy(x))
+            zf_r = np.apply_along_axis(lf1, axis, xp_copy_to_numpy(x))
             assert_array_almost_equal(y, xp.asarray(y_r))
             assert_array_almost_equal(zf, xp.asarray(zf_r))
 
@@ -1979,7 +1979,7 @@ class _TestLinearFilter:
         b = self.convert_dtype([1, 0, -1], xp)
         a = self.convert_dtype([1], xp)
 
-        a_np, b_np, x_np = map(_xp_copy_to_numpy, (a, b, x))
+        a_np, b_np, x_np = map(xp_copy_to_numpy, (a, b, x))
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
@@ -1991,15 +1991,15 @@ class _TestLinearFilter:
         b = self.convert_dtype([1, 0, -1], xp)
         a = self.convert_dtype([1], xp)
 
-        x_np, b_np, a_np = map(_xp_copy_to_numpy, (x, b, a))
+        x_np, b_np, a_np = map(xp_copy_to_numpy, (x, b, a))
         for axis in range(x.ndim):
             zi_shape = list(x.shape)
             zi_shape[axis] = 2
             zi = self.convert_dtype(xp.ones(zi_shape), xp)
             zi1 = self.convert_dtype([1, 1], xp)
-            zi1_np = _xp_copy_to_numpy(zi1)
+            zi1_np = xp_copy_to_numpy(zi1)
             y, zf = lfilter(b, a, x, axis, zi)
-            b_np, a_np, zi1_np = map(_xp_copy_to_numpy, (b, a, zi1))
+            b_np, a_np, zi1_np = map(xp_copy_to_numpy, (b, a, zi1))
             def lf0(w):
                 return lfilter(b_np, a_np, w, zi=zi1_np)[0]
             def lf1(w):
@@ -3822,7 +3822,7 @@ class TestPartialFractionExpansion:
         distance = xp.hypot(abs(p[:, None] - p_true),
                             abs(r[:, None] - r_true))
 
-        rows, cols = linear_sum_assignment(_xp_copy_to_numpy(distance))
+        rows, cols = linear_sum_assignment(xp_copy_to_numpy(distance))
         assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 

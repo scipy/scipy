@@ -6,7 +6,7 @@ import pytest
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_device, xp_promote, xp_result_device,
-    xp_result_type, is_torch, _xp_copy_to_numpy
+    xp_result_type, is_torch, xp_copy_to_numpy
 )
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
@@ -153,7 +153,7 @@ class TestArrayAPI:
         xp_dtype = getattr(xp, dtype)
         np_dtype = getattr(np, dtype)
         x = xp.asarray(data, dtype=xp_dtype)
-        y = _xp_copy_to_numpy(x)
+        y = xp_copy_to_numpy(x)
         assert isinstance(y, np.ndarray)
         assert y.dtype == np_dtype
         assert x.shape == y.shape
