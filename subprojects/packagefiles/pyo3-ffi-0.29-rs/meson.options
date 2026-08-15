@@ -1,10 +1,15 @@
 option(
   'extension_module',
   type : 'boolean',
-  value : true,   # <--- should be value : false perhaps when supported by meson-python??
+  value : true, # Opposite default as the PyO3 native build system.
   yield : true,
-  description : 'Build for a Python extension module: do not link libpython on Unix ' +
-                '(Meson analogue of PYO3_BUILD_EXTENSION_MODULE). Superprojects building ' +
-                'extensions with py.extension_module() should enable this; the extension ' +
-                'target itself provides the Python dependency. Leave false for embedding.',
+  description : 'Build for a Python extension module. Set to false for embedding. Analogue to PYO3_BUILD_EXTENSION_MODULE. ',
+)
+
+option(
+  'use_raw_dylib',
+  type : 'boolean',
+  value : true,
+  yield : true,
+  description : 'Rely on raw-dylib on Windows instead than linking to the Python library. Analogue to PYO3_USE_RAW_DYLIB',
 )

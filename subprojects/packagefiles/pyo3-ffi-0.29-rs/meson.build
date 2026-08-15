@@ -12,9 +12,11 @@ STABLE_ABI_MAX_MINOR = 15
 MINIMUM_SUPPORTED_VERSION_PYPY_MINOR = 11
 MAXIMUM_SUPPORTED_VERSION_PYPY_MINOR = 11
 
+extra_args = []
+extra_deps = []
 
 # Registers `pyo3`s config names as reachable cfg expressions.
-extra_args = [
+extra_args += [
   '--check-cfg', 'cfg(Py_LIMITED_API)',
   '--check-cfg', 'cfg(Py_GIL_DISABLED)',
   '--check-cfg', 'cfg(PyPy)',
@@ -102,9 +104,8 @@ else
   limited_api = false
 endif
 
-# Cumulative Py_3_X cfgs up to the interpreter version, or up to the abi3
-# floor when abi3 is in effect.  This is the equivalent of allow_limited_api
-# in py.extension_module() for C.
+# Emit cumulative 'Py_3_{minor}' cfgs up to the interpreter version,
+# or up to the abi3 floor when targeting the stable ABI.
 py_minor_version_max = py_minor_version
 if limited_api
   if is_pypy
@@ -115,15 +116,17 @@ if limited_api
   endif
 
   extra_args += ['--cfg', 'Py_LIMITED_API']
+  # Parse feature in the form 'abi3-py3{minor}' or 'abi3t-py3{minor}'
+  # to extract the minor version.
   foreach f : features
     if f.startswith('abi3-py3')
-      floor = f.substring(8).to_int()  # 'abi3-py312' -> 12
+      floor = f.substring(8).to_int()
     elif f.startswith('abi3t-py3')
       floor = f.substring(9).to_int()
     else
       continue
     endif
-    py_monor_version_max = floor < py_minor_version_max ? floor : py_minor_version_max
+    py_minor_version_max = floor < py_minor_version_max ? floor : py_minor_version_max
   endforeach
 endif
 
@@ -142,23 +145,21 @@ foreach flag : ['Py_DEBUG', 'Py_REF_DEBUG', 'Py_TRACE_REFS', 'COUNT_ALLOCS']
 endforeach
 
 
-extra_deps = []
-
 if is_windows
-  # Windows linking model.
-
+  # Windows: extension modules need to link to libpython.
   if is_pypy
     py_lib_name = f'libpypy3.@py_minor_version@-c'
   else
     py_lib_name = 'python' + abi + (py_debug ? '_d' : '')
   endif
-  
-  # rustc synthesizes the import information itself.
-  extra_args += ['--cfg', f'pyo3_dll="@py_lib_name@"']
+  if get_option('use_raw_dylib')
+    extra_args += ['--cfg', 'pyo3_use_raw_dylib', '--cfg', f'pyo3_dll="@py_lib_name@"']
+  else
+    extra_args += ['--link-lib', f'pythonXY:@py_lib_name@']
+    extra_deps += py.dependency()
+  endif
 else
   # Unix: extension modules never link libpython, only embedding links it.
-  #
-  # FIXME: Setting pyo3-ffi:extension_module should be done by meson-python.
   if not get_option('extension_module')
     extra_deps += py.dependency(embed : true)
   endif
