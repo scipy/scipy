@@ -172,8 +172,8 @@ class LinearOperator:
 
     `LinearOperator` instances can also be multiplied and added with each
     other. Square instances can be raised to non-negative integer powers with
-    ``A ** p``, representing ``p`` repeated applications of ``A`` rather than
-    a matrix exponential. All of these operations are lazy: the result is a
+    ``A ** p``, representing ``p`` repeated applications of ``A`` (rather than
+    a matrix exponential). All of these operations are lazy: the result is a
     new, composite `LinearOperator` that defers operations to the original
     operators and combines the results.
 
@@ -195,7 +195,7 @@ class LinearOperator:
     array([ 2.,  3.])
     >>> A @ np.ones(2)
     array([ 2.,  3.])
-    >>> A ** 2 @ np.ones(2)
+    >>> A**2 @ np.ones(2)
     array([ 4.,  9.])
 
     """  # numpydoc ignore=PR01,PR02
