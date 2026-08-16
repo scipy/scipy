@@ -27,7 +27,7 @@ kernelspec:
 SciPy provides an interface to many universal non-uniform random number
 generators to sample random variates from a wide variety of univariate
 continuous and discrete distributions. Implementations of a fast C library
-called [UNU.RAN](http://statmath.wu.ac.at/software/unuran/) are used
+called [UNU.RAN](https://statmath.wu.ac.at/software/unuran/) are used
 for speed and performance. Please look at [UNU.RAN's
 documentation](http://statmath.wu.ac.at/software/unuran/doc/unuran.html)
 for an in-depth explanation of these methods. It is heavily referred to
@@ -35,19 +35,22 @@ for writing this tutorial and the documentation of all the generators.
 
 ## Introduction
 
-Random variate generation is the small field of research that deals with
-algorithms to generate random variates from various distributions. It is
-common to assume that a uniform random number generator is available.
-This is a program that produces a sequence of independent and identically
-distributed continuous $U(0,1)$ random variates (i.e. uniform random variates
-on the interval $(0,1)$). Of course, real-world computers can never generate
-ideal random numbers and they cannot produce numbers of arbitrary precision
-but state-of-the-art uniform random number generators come close to this
-aim. Thus, random variate generation deals with the problem of transforming
-such a sequence of $U(0,1)$ random numbers into non-uniform random variates.
-These methods are universal and work in a black-box fashion.
+There exists a vast literature on the generation of random variates from
+discrete and continuous non-uniform probability distributions. These methods
+are typically tailored to a particular distribution, and the `rvs` method
+of well-known distributions in {mod}`scipy.stats` often relies on them.
 
-Some methods to do that are:
+The generators in {mod}`scipy.stats.sampling` are universal (or black-box):
+rather than being designed for one specific distribution, they work for large
+classes of univariate distributions described by a small set of inputs,
+such as a probability density function (PDF) or a cumulative distribution
+function (CDF). All of them assume a uniform random number generator is
+available, and work by transforming a stream of U(0,1) variates into
+variates of the target distribution. This makes them useful for sampling
+from custom distributions that {mod}`scipy.stats` does not implement,
+and to optimize performance depending on the use case (see below).
+
+These generators are based on important concepts:
 
 * The Inversion method: When the inverse $F^{-1}$ of the cumulative
   distribution function is known, then random variate generation is easy.
@@ -56,7 +59,9 @@ Some methods to do that are:
   are rarely available, one usually needs to rely on approximations of
   the inverse (e.g. {class}`scipy.special.ndtri`,
   {class}`scipy.special.stdtrit`). In general, the implementation of special
-  functions is quite slow compared to the inversion methods in UNU.RAN.
+  functions is quite slow compared to the inversion methods in UNU.RAN,
+  namely, `~.scipy.stats.sampling.NumericalInversePolynomial` and
+  `~.scipy.stats.sampling.NumericalInverseHermite`.
 * The Rejection Method: The rejection method, often called
   acceptance-rejection method, has been suggested by John von Neumann in
   1951[^1]. It involves computing an upper bound to the PDF (also called the
@@ -64,10 +69,13 @@ Some methods to do that are:
   variate, say $Y$, from this bound. Then a uniform random number can be
   drawn between $0$ and the value of the upper bound at $Y$. If this number
   is less than the PDF at $Y$, return the sample otherwise reject it. See
-  {class}`scipy.stats.sampling.TransformedDensityRejection`.
+  {class}`~.scipy.stats.sampling.TransformedDensityRejection`.
 * The Ratio-of-Uniforms Method: This is a type of acceptance-rejection
-  method which is uses minimal bounding rectangles to construct the hat
-  function. See {class}`scipy.stats.sampling.RatioUniforms`.
+  method which uses minimal bounding rectangles to construct the hat
+  function. See {class}`~.scipy.stats.sampling.SimpleRatioUniforms`.
+  Note that there is also {class}`~.scipy.stats.sampling.RatioUniforms`,
+  a pure Python implementation that is not *universal* in the sense that
+  the user needs to specify the bounding rectangle.
 * Inversion for Discrete Distributions: The difference compared to the
   continuous case is that $F$ is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
@@ -96,7 +104,7 @@ different methods is shown in the table below.
 
 Methods for continuous distributions  | Required Inputs | Optional Inputs | Setup Speed | Sampling Speed
 ------------------------------------- | --------------- | --------------- | ----------- | --------------
-{class}`~.stats.sampling.TransformedDensityRejection` | pdf, dpdf       | none            | slow        | fast
+{class}`stats.sampling.TransformedDensityRejection` | pdf, dpdf       | none            | slow        | fast
 {class}`scipy.stats.sampling.NumericalInverseHermite`     | cdf             | pdf, dpdf       | (very) slow | (very) fast
 {class}`scipy.stats.sampling.NumericalInversePolynomial`  | pdf             | cdf             | (very) slow | (very) fast
 {class}`scipy.stats.sampling.SimpleRatioUniforms`         | pdf             | none            | fast        | slow
@@ -109,7 +117,7 @@ where
 
 To apply the numerical inversion method NumericalInversePolynomial to a large
 number of continuous distributions in SciPy with minimal effort, take a look
-at {class}`scipy.stats.sampling.FastGeneratorInversion`.
+at {class}`~.scipy.stats.sampling.FastGeneratorInversion`.
 
 Methods for discrete distributions  | Required Inputs | Optional Inputs | Setup Speed | Sampling Speed
 ----------------------------------- | --------------- | --------------- | ----------- | --------------
@@ -268,7 +276,8 @@ plt.show()
   even for the same `random_state`:
 
   ```python
-    from scipy.stats.sampling import norm, TransformedDensityRejection
+    from scipy.stats import norm
+    from scipy.stats.sampling import TransformedDensityRejection
     from copy import copy
     dist = StandardNormal()
     urng1 = np.random.default_rng()
@@ -334,6 +343,8 @@ sampling_hinv
 sampling_srou
 ```
 
+Interested readers can also refer to [^4] for more information.
+
 ## References
 
 [^1]: Von Neumann, John. "13. various techniques used in connection with
@@ -344,3 +355,7 @@ sampling_srou
 [^3]: Leydold, Josef, Wolfgang Hörmann, and Halis Sak. "An R Interface to
        the UNU.RAN Library for Universal Random Variate Generators.",
        <https://cran.r-project.org/web/packages/Runuran/vignettes/Runuran.pdf>
+
+[^4]: Baumgarten, Christoph, and Tirth Patel. "Automatic random variate
+       generation in Python." SciPy Proceedings. 2022.
+       <https://proceedings.scipy.org/articles/majora-212e5952-007>
