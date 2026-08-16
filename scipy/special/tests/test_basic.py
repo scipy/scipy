@@ -1810,6 +1810,18 @@ class TestBetaInc:
         res = special.betainc(a, b, x)
         assert_allclose(res, reference, rtol=rtol)
 
+    def test_gh24566(self):
+        # test that betainc does not return NaN for these specific inputs
+        # As neither Mathematica nor mpmath are able to compute the result,
+        # we simply test that the result is not NaN
+        # Boost contains a more elaborate test that checks the monotonicity
+        # in this region, see
+        # https://github.com/boostorg/math/blob/64a8d75df2d570ab5eddde4bc383c66675d68611/test/test_ibeta.hpp#L492
+        value = 0.010000000000005001
+        a = 3.1622776601699636e16
+        b = 3.130654883566682e18
+        assert not np.isnan(special.betainc(a, b, value))
+
 
 class TestCombinatorics:
     def test_comb(self):
