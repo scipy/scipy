@@ -1117,7 +1117,8 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     dtype = xp.result_type(*arrays)
     device = xp_device(arrays[0]) if len(arrays) else None
 
-    # parse more efficiently with regex?
+    # ENH: parse more efficiently with regex.
+    # Preserve functions (e.g. max, min) and `eval` below.
     inputs, outputs = signature.split("->")
     inputs, outputs = inputs[1:-1].split("),("), outputs[1:-1].split("),(")
     input_dim_to_letter = {}
@@ -1134,7 +1135,6 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
             else:
                 letter_to_length[l] = length
 
-    # `eval` output shape specifications?
     results = []
     for output in outputs:
         out_core_shape = tuple([eval(l, letter_to_length)

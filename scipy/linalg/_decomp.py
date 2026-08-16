@@ -642,7 +642,13 @@ def _check_select(select, select_range, max_ev, max_len):
     return select, vl, vu, il, iu, max_ev
 
 
-@_apply_over_batch(('a_band', 2))
+def _eig_banded_signature(a_band, lower=False, eigvals_only=False,
+                          overwrite_a_band=False, select='a', select_range=None,
+                          max_ev=0, check_finite=True):
+    return "(i,j)->(j,)" if eigvals_only else "(i,j)->(j,),(j,j)"
+
+
+@_apply_over_batch(('a_band', 2), signature=_eig_banded_signature)
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
                select='a', select_range=None, max_ev=0, check_finite=True):
     """
@@ -1045,7 +1051,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
                 driver=driver)
 
 
-@_apply_over_batch(('a_band', 2))
+@_apply_over_batch(('a_band', 2), signature='(i,j)->(j,)')
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None, check_finite=True):
     """
@@ -1140,7 +1146,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                       select_range=select_range, check_finite=check_finite)
 
 
-@_apply_over_batch(('d', 1), ('e', 1))
+@_apply_over_batch(('d', 1), ('e', 1), signature='(i),(j)->(i)')
 def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
                          check_finite=True, tol=0., lapack_driver='auto'):
     """
@@ -1222,7 +1228,13 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
         check_finite=check_finite, tol=tol, lapack_driver=lapack_driver)
 
 
-@_apply_over_batch(('d', 1), ('e', 1))
+def eigh_tridiagonal_signature(d, e, eigvals_only=False, select='a',
+                               select_range=None, check_finite=True, tol=0.,
+                               lapack_driver='auto'):
+    return "(i,),(j,)->(i,)" if eigvals_only else "(i,),(j,)->(i,),(i,i)"
+
+
+@_apply_over_batch(('d', 1), ('e', 1), signature=eigh_tridiagonal_signature)
 def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
                      check_finite=True, tol=0., lapack_driver='auto'):
     """

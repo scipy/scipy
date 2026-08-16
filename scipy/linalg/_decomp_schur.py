@@ -19,7 +19,12 @@ __all__ = ['schur', 'rsf2csf']
 _double_precision = ['i', 'l', 'd']
 
 
-@_apply_over_batch(('a', 2))
+def _schur_signature(a, output='real', lwork=_NoValue, overwrite_a=False, sort=None,
+                     check_finite=True):
+    return "(i,i)->(i,i),(i,i),()" if sort else "(i,i)->(i,i),(i,i)"
+
+
+@_apply_over_batch(('a', 2), signature=_schur_signature)
 def schur(a, output='real', lwork=_NoValue, overwrite_a=False, sort=None,
           check_finite=True):
     """
@@ -270,7 +275,7 @@ def _castCopy(type, *arrays):
         return cast_arrays
 
 
-@_apply_over_batch(('T', 2), ('Z', 2))
+@_apply_over_batch(('T', 2), ('Z', 2), signature='(i,i),(i,i)->(i,i),(i,i)')
 def rsf2csf(T, Z, check_finite=True):
     """
     Convert real Schur form to complex Schur form.
