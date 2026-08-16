@@ -60,8 +60,8 @@ These generators are based on important concepts:
   the inverse (e.g. {class}`scipy.special.ndtri`,
   {class}`scipy.special.stdtrit`). In general, the implementation of special
   functions is quite slow compared to the inversion methods in UNU.RAN,
-  namely, `~.scipy.stats.sampling.NumericalInversePolynomial` and
-  `~.scipy.stats.sampling.NumericalInverseHermite`.
+  namely, `~scipy.stats.sampling.NumericalInversePolynomial` and
+  `~scipy.stats.sampling.NumericalInverseHermite`.
 * The Rejection Method: The rejection method, often called
   acceptance-rejection method, has been suggested by John von Neumann in
   1951[^1]. It involves computing an upper bound to the PDF (also called the
@@ -69,11 +69,11 @@ These generators are based on important concepts:
   variate, say $Y$, from this bound. Then a uniform random number can be
   drawn between $0$ and the value of the upper bound at $Y$. If this number
   is less than the PDF at $Y$, return the sample otherwise reject it. See
-  {class}`~.scipy.stats.sampling.TransformedDensityRejection`.
+  {class}`~scipy.stats.sampling.TransformedDensityRejection`.
 * The Ratio-of-Uniforms Method: This is a type of acceptance-rejection
   method which uses minimal bounding rectangles to construct the hat
-  function. See {class}`~.scipy.stats.sampling.SimpleRatioUniforms`.
-  Note that there is also {class}`~.scipy.stats.sampling.RatioUniforms`,
+  function. See {class}`~scipy.stats.sampling.SimpleRatioUniforms`.
+  Note that there is also {class}`~scipy.stats.sampling.RatioUniforms`,
   a pure Python implementation that is not *universal* in the sense that
   the user needs to specify the bounding rectangle.
 * Inversion for Discrete Distributions: The difference compared to the
@@ -104,7 +104,7 @@ different methods is shown in the table below.
 
 Methods for continuous distributions  | Required Inputs | Optional Inputs | Setup Speed | Sampling Speed
 ------------------------------------- | --------------- | --------------- | ----------- | --------------
-{class}`stats.sampling.TransformedDensityRejection` | pdf, dpdf       | none            | slow        | fast
+{class}`scipy.stats.sampling.TransformedDensityRejection` | pdf, dpdf       | none            | slow        | fast
 {class}`scipy.stats.sampling.NumericalInverseHermite`     | cdf             | pdf, dpdf       | (very) slow | (very) fast
 {class}`scipy.stats.sampling.NumericalInversePolynomial`  | pdf             | cdf             | (very) slow | (very) fast
 {class}`scipy.stats.sampling.SimpleRatioUniforms`         | pdf             | none            | fast        | slow
@@ -117,7 +117,7 @@ where
 
 To apply the numerical inversion method NumericalInversePolynomial to a large
 number of continuous distributions in SciPy with minimal effort, take a look
-at {class}`~.scipy.stats.sampling.FastGeneratorInversion`.
+at {class}`~scipy.stats.sampling.FastGeneratorInversion`.
 
 Methods for discrete distributions  | Required Inputs | Optional Inputs | Setup Speed | Sampling Speed
 ----------------------------------- | --------------- | --------------- | ----------- | --------------
@@ -177,7 +177,7 @@ rng = TransformedDensityRejection(dist, random_state=urng)
 
 As shown in the example, we first initialize a distribution object that
 contains an implementation of the methods required by the generator. In
-our case, we use the {class}`~.stats.sampling.TransformedDensityRejection` (TDR)
+our case, we use the {class}`~scipy.stats.sampling.TransformedDensityRejection` (TDR)
 method which requires a PDF and its derivative w.r.t. `x` (i.e. the variate).
 
 ```{note}
@@ -200,7 +200,7 @@ method which requires a PDF and its derivative w.r.t. `x` (i.e. the variate).
 ```
 
 In the above example, we have set up an object of the
-{class}`~.stats.sampling.TransformedDensityRejection` method to sample from a
+{class}`scipy.stats.sampling.TransformedDensityRejection` method to sample from a
 standard normal distribution. Now, we can start sampling from our
 distribution by calling the `rvs` method:
 
@@ -272,8 +272,8 @@ plt.show()
   random numbers differently than SciPy or NumPy, the resulting stream of RVs is
   different even for the same stream of uniform random numbers. For example, the
   random number stream of SciPy's {class}`scipy.stats.norm` and UNU.RAN's
-  {class}`~.stats.sampling.TransformedDensityRejection` would not be the same
-  even for the same `random_state`:
+  {class}`~scipy.stats.sampling.TransformedDensityRejection` would not be the
+  same even for the same `random_state`:
 
   ```python
     from scipy.stats import norm
@@ -298,7 +298,7 @@ rng.rvs((5, 3))
 ```
 
 Invalid and bad arguments are handled either by SciPy or by UNU.RAN. The
-latter throws a {class}`~.stats.sampling.UNURANError` that follows a common format:
+latter throws a {class}`~scipy.stats.sampling.UNURANError` that follows a common format:
 
 ```
 UNURANError: [objid: <object id>] <error code>: <reason> => <type of error>
