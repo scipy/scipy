@@ -3479,6 +3479,11 @@ class TestInvgauss:
         assert_allclose(dist.ppf(p), dist0.ppf(p))
         assert_allclose(dist.isf(p), dist0.isf(p))
 
+    def test_gh25096(self):
+        # Regression test for gh-25096: invgauss.ppf should not raise a warning
+        # for the given inputs
+        stats.invgauss.ppf(0.97969, 66.99652081)
+
 
 class TestLandau:
     @pytest.mark.parametrize('name', ['pdf', 'cdf', 'sf', 'ppf', 'isf'])
