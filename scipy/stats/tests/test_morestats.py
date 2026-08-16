@@ -21,6 +21,7 @@ from scipy.stats._morestats import (_abw_state, _get_As_weibull, _Avals_weibull,
                                     _yeojohnson_transform)
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
+from scipy.stats.contingency import _chi2_contingency_2d
 from scipy.stats._ansari_swilk_statistics import swilk
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
@@ -3693,7 +3694,7 @@ class TestMedianTest:
         y = xp.asarray([2., 4., 6., 8.])
 
         stat, p, m, tbl = stats.median_test(x, y, **kwargs)
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, **kwargs)
+        exp_stat, exp_p = _chi2_contingency_2d(tbl, **kwargs)
         xp_assert_equal(m, xp.asarray(4.))
         xp_assert_equal(tbl, xp.asarray([[1, 2], [4, 2]]))
         xp_assert_close(stat, exp_stat)
