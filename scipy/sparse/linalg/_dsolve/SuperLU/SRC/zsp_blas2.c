@@ -94,14 +94,12 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     SCformat *Lstore;
     NCformat *Ustore;
     doublecomplex   *Lval, *Uval;
-    slu_blasint incx = 1, incy = 1;
+    int incx = 1, incy = 1;
     doublecomplex temp;
     doublecomplex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
     doublecomplex comp_zero = {0.0, 0.0};
-    slu_blasint nrow;
-    int irow, jcol;
-    int fsupc;
-    slu_blasint nsupr, nsupc;
+    int nrow, irow, jcol;
+    int fsupc, nsupr, nsupc;
     int_t luptr, istart, i, k, iptr;
     doublecomplex *work;
     flops_t solve_ops;

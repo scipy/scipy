@@ -148,7 +148,7 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 #define ITMAX 5
     
     /* Table of constant values */
-    slu_blasint    ione = 1, nrow = A->nrow;
+    int    ione = 1, nrow = A->nrow;
     double ndone = -1.;
     double done = 1.;
     
@@ -405,8 +405,7 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    int nrow_int = (int)nrow;
-	    dlacon2_(&nrow_int, &work[A->nrow], work,
+	    dlacon2_(&nrow, &work[A->nrow], work,
 		    &iwork[A->nrow], &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 
