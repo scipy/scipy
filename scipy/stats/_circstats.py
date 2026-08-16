@@ -156,7 +156,8 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
     `circmedian` always finds all points *among the observations* (and their antipodes,
     in the ``'bisecting'`` case) that satisfy the chosen definition of a circular median
     and returns their circular mean. If the circular mean is poorly defined (i.e. the
-    circular variance is with a small tolerance of ``1.0``), `circmedian` returns NaN.
+    circular variance is withing a small tolerance of ``1.0``), `circmedian` returns
+    NaN.
 
     References
     ----------

@@ -4752,7 +4752,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         Axis along which the directional mean is computed.
     normalize : bool, default: True
         If True, normalize the input to ensure that each observation is a
-        unit vector. It the observations are already unit vectors, consider
+        unit vector. If the observations are already unit vectors, consider
         setting this to False to avoid unnecessary computation.
 
     Returns
