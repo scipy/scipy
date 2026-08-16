@@ -4163,7 +4163,7 @@ MedianTestResult = _make_tuple_bunch(
 )
 
 
-@xp_capabilities(skip_backends=[("dask.array", "untested")], jax_jit=False)
+@xp_capabilities(skip_backends=[("dask.array", "untested")])
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
@@ -4360,24 +4360,25 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # Check that no row or column of the table is all zero.
     # Such a table will result in NaN statistic and p-value.
     rowsums = xp.sum(table, axis=-1)
-    if batch_shape == () and not xp.isnan(grand_median) and rowsums[0] == 0:
-        raise ValueError(f"All values are below the grand median ({grand_median}).")
-    if batch_shape == () and not xp.isnan(grand_median) and rowsums[1] == 0:
-        raise ValueError(f"All values are above the grand median ({grand_median}).")
+    if not is_lazy_array(grand_median):
+        if batch_shape == () and not xp.isnan(grand_median) and rowsums[0] == 0:
+            raise ValueError(f"All values are below the grand median ({grand_median}).")
+        if batch_shape == () and not xp.isnan(grand_median) and rowsums[1] == 0:
+            raise ValueError(f"All values are above the grand median ({grand_median}).")
 
-    if batch_shape == () and (ties == "ignore" or nan_policy == 'omit'):
-        # We already checked that each sample has at least one value, but it
-        # is possible that all those values equal the grand median.  If `ties`
-        # is "ignore", that would result in a column of zeros in `table`.
-        # Similarly, observations in a sample could be omitted NaNs.
-        # We check for these cases here.
-        zero_cols = xp.nonzero(xp.all((table == 0), axis=0))[0]
-        if xp_size(zero_cols):
-            raise ValueError(
-                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
-                f"median ({grand_median!r}), so they are ignored, resulting in an "
-                f"empty sample."
-            )
+        if batch_shape == () and (ties == "ignore" or nan_policy == 'omit'):
+            # We already checked that each sample has at least one value, but it
+            # is possible that all those values equal the grand median.  If `ties`
+            # is "ignore", that would result in a column of zeros in `table`.
+            # Similarly, observations in a sample could be omitted NaNs.
+            # We check for these cases here.
+            zero_cols = xp.nonzero(xp.all((table == 0), axis=0))[0]
+            if xp_size(zero_cols):
+                raise ValueError(
+                    f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+                    f"median ({grand_median!r}), so they are ignored, resulting in an "
+                    f"empty sample."
+                )
 
     if any(array.shape[-1] == 0 for array in data):
         # if only some samples are empty, we have the grand_median and `table`,

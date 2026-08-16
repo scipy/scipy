@@ -3583,6 +3583,7 @@ class TestMedianTest:
         xp_assert_equal(res.statistic, nan)
         xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
+    @skip_xp_backends("jax.numpy", reason="JAX can't branch based on array values")
     def test_empty_when_ties_ignored(self, xp):
         # The grand median is 1, and all values in the first argument are
         # equal to the grand median.  With ties="ignore", those values are
@@ -3594,6 +3595,7 @@ class TestMedianTest:
         with pytest.raises(ValueError, match="All values in sample..."):
             stats.median_test(x, y, z, ties="ignore")
 
+    @skip_xp_backends("jax.numpy", reason="JAX can't branch based on array values")
     @pytest.mark.parametrize("ties", ['below', 'above'])
     def test_empty_contingency_row(self, ties, xp):
         # The grand median is 1, and with the default ties="below", all the
