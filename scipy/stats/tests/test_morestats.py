@@ -3564,152 +3564,165 @@ class TestCircFuncsNanPolicy:
         assert_raises(ValueError, test_func, x, high=360, nan_policy='foobar')
 
 
+@make_xp_test_case(stats.median_test)
 class TestMedianTest:
 
-    def test_bad_n_samples(self):
+    def test_bad_n_samples(self, xp):
         message = "median_test requires two or more samples."
         with pytest.raises(ValueError, match=message):
-            stats.median_test([1, 2, 3])
+            stats.median_test(xp.asarray([1, 2, 3]))
 
-    def test_empty_sample(self):
+    def test_empty_sample(self, xp):
         # Each sample must contain at least one value.
         message = "All axis-slices of one or more sample arguments..."
+        x = xp.asarray([])
+        y = xp.asarray([1, 2, 3])
         with pytest.warns(SmallSampleWarning, match=message):
-            res = stats.median_test([], [1, 2, 3])
-        assert_equal(res.statistic, np.nan)
-        assert_equal(res.pvalue, np.nan)
+            res = stats.median_test(x, y)
+        nan = xp.asarray(xp.nan, dtype=x.dtype)
+        xp_assert_equal(res.statistic, nan)
+        xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
-    def test_empty_when_ties_ignored(self):
+    def test_empty_when_ties_ignored(self, xp):
         # The grand median is 1, and all values in the first argument are
         # equal to the grand median.  With ties="ignore", those values are
         # ignored, which results in the first sample being (in effect) empty.
         # This should raise a ValueError.
-        assert_raises(ValueError, stats.median_test,
-                      [1, 1, 1, 1], [2, 0, 1], [2, 0], ties="ignore")
+        x = xp.asarray([1, 1, 1, 1])
+        y = xp.asarray([2, 0, 1])
+        z = xp.asarray([2, 0])
+        with pytest.raises(ValueError, match="All values in sample..."):
+            stats.median_test(x, y, z, ties="ignore")
 
-    def test_empty_contingency_row(self):
+    @pytest.mark.parametrize("ties", ['below', 'above'])
+    def test_empty_contingency_row(self, ties, xp):
         # The grand median is 1, and with the default ties="below", all the
         # values in the samples are counted as being below the grand median.
         # This would result a row of zeros in the contingency table, which is
         # an error.
-        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1])
+        x = xp.ones(3)
+        with pytest.raises(match=f"All values are {ties} the grand median"):
+            stats.median_test(x, x, ties=ties)
 
-        # With ties="above", all the values are counted as above the
-        # grand median.
-        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1],
-                      ties="above")
-
-    def test_bad_ties(self):
+    def test_bad_ties_nan_policy(self, xp):
+        x, y = xp.asarray([1, 2, 3]), xp.asarray([4, 5])
         message = "invalid 'ties' option 'foo'..."
-        with pytest.raises(ValueError, match=message):
-            stats.median_test([1, 2, 3], [4, 5], ties="foo")
 
-    def test_bad_nan_policy(self):
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(x, y, ties="foo")
+
         message = "nan_policy must be one of..."
         with pytest.raises(ValueError, match=message):
-            stats.median_test([1, 2, 3], [4, 5], nan_policy="foobar")
+            stats.median_test(x, y, nan_policy="foobar")
 
-    def test_simple(self):
-        x = [1, 2, 3]
-        y = [1, 2, 3]
+    def test_simple(self, xp):
+        x = xp.asarray([1., 2., 3.])
+        y = xp.asarray([1., 2., 3.])
         stat, p, med, tbl = stats.median_test(x, y)
 
         # The median is floating point, but this equality test should be safe.
-        assert_equal(med, 2.0)
+        xp_assert_equal(med, xp.asarray(2.0))
 
-        assert_array_equal(tbl, [[1, 1], [2, 2]])
+        xp_assert_equal(tbl, xp.asarray([[1, 1], [2, 2]]))
 
         # The expected values of the contingency table equal the contingency
         # table, so the statistic should be 0 and the p-value should be 1.
-        assert_equal(stat, 0)
-        assert_equal(p, 1)
+        xp_assert_equal(stat, xp.asarray(0.))
+        xp_assert_equal(p, xp.asarray(1.))
 
-    def test_ties_options(self):
+    def test_ties_options(self, xp):
         # Test the contingency table calculation.
-        x = [1, 2, 3, 4]
-        y = [5, 6]
-        z = [7, 8, 9]
+        x = xp.asarray([1., 2., 3., 4.])
+        y = xp.asarray([5., 6.])
+        z = xp.asarray([7., 8., 9.])
         # grand median is 5.
 
         # Default 'ties' option is "below".
         stat, p, m, tbl = stats.median_test(x, y, z)
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 1, 3], [4, 1, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 1, 0]]))
 
         stat, p, m, tbl = stats.median_test(x, y, z, ties="ignore")
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 1, 3], [4, 0, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 0, 0]]))
 
         stat, p, m, tbl = stats.median_test(x, y, z, ties="above")
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 2, 3], [4, 0, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 2, 3], [4, 0, 0]]))
 
-    def test_nan_policy_options(self):
-        x = [1, 2, np.nan]
-        y = [4, 5, 6]
-        mt1 = stats.median_test(x, y, nan_policy='propagate')
+    def test_nan_policy_options(self, xp):
+        x = xp.asarray([1., 2., np.nan])
+        y = xp.asarray([4., 5., 6.])
+
+        s, p, m, t = stats.median_test(x, y, nan_policy='propagate')
+        nan = xp.asarray(xp.nan)
+        xp_assert_equal(s, nan)
+        xp_assert_equal(p, nan)
+        xp_assert_equal(m, nan)
+        xp_assert_equal(t, xp.asarray([[0, 0], [0, 0]]))
+
+        if is_lazy_array(x):
+            message = "nan_policy='omit' is not supported for lazy arrays."
+            with pytest.raises(TypeError, match=message):
+                stats.median_test(x, y, nan_policy='omit')
+
+            message = "nan_policy='raise' is not supported for lazy arrays."
+            with pytest.raises(TypeError, match=message):
+                stats.median_test(x, y, nan_policy='raise')
+
+            return
+
         s, p, m, t = stats.median_test(x, y, nan_policy='omit')
-
-        assert_equal(mt1, (np.nan, np.nan, np.nan, np.zeros((2, 2))))
-        assert_allclose(s, 0.31250000000000006)
-        assert_allclose(p, 0.57615012203057869)
-        assert_equal(m, 4.0)
-        assert_equal(t, np.array([[0, 2], [2, 1]]))
+        xp_assert_close(s, xp.asarray(0.31250000000000006))
+        xp_assert_close(p, xp.asarray(0.57615012203057869))
+        xp_assert_equal(m, xp.asarray(4.0))
+        xp_assert_equal(t, xp.asarray([[0, 2], [2, 1]]))
 
         message = "The input contains nan values"
         with pytest.raises(ValueError, match=message):
             stats.median_test(x, y, nan_policy='raise')
 
-    def test_basic(self):
+    @pytest.mark.parametrize('kwargs', [{}, {'lambda_': 0}, {'correction': False}])
+    def test_basic(self, kwargs, xp):
         # median_test calls chi2_contingency to compute the test statistic
         # and p-value.  Make sure it hasn't screwed up the call...
 
-        x = [1, 2, 3, 4, 5]
-        y = [2, 4, 6, 8]
+        x = xp.asarray([1., 2., 3., 4., 5.])
+        y = xp.asarray([2., 4., 6., 8.])
 
-        stat, p, m, tbl = stats.median_test(x, y)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
-
-        stat, p, m, tbl = stats.median_test(x, y, lambda_=0)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, lambda_=0)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
-
-        stat, p, m, tbl = stats.median_test(x, y, correction=False)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
+        stat, p, m, tbl = stats.median_test(x, y, **kwargs)
+        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, **kwargs)
+        xp_assert_equal(m, xp.asarray(4.))
+        xp_assert_equal(tbl, xp.asarray([[1, 2], [4, 2]]))
+        xp_assert_close(stat, exp_stat)
+        xp_assert_close(p, exp_p)
 
     @pytest.mark.parametrize("correction", [False, True])
-    def test_result(self, correction):
-        x = [1, 2, 3]
-        y = [1, 2, 3]
+    def test_result(self, correction, xp):
+        x = xp.asarray([1, 2, 3])
+        res = stats.median_test(x, x, correction=correction)
+        assert res.statistic is res[0]
+        assert res.pvalue is res[1]
+        assert res.median is res[2]
+        assert res.table is res[3]
 
-        res = stats.median_test(x, y, correction=correction)
-        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
-
-    def test_multidimensional(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_multidimensional(self, dtype, xp):
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(723482348929883)
         x = rng.random((3, 15))
         y = rng.random(16)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+
         res = stats.median_test(x, y)
-        for i, xi in enumerate(x):
+        for i in range(3):
+            xi = x[i, ...]
             ref = stats.median_test(xi, y)
-            assert_equal(res.statistic[i, ...], ref.statistic)
-            assert_equal(res.pvalue[i, ...], ref.pvalue)
-            assert_equal(res.median[i, ...], ref.median)
-            assert_equal(res.table[i, ...], ref.table)
+            xp_assert_close(res.statistic[i], ref.statistic)
+            xp_assert_close(res.pvalue[i], ref.pvalue)
+            xp_assert_close(res.median[i], ref.median)
+            xp_assert_equal(res.table[i, ...], ref.table)
 
 
 @make_xp_test_case(stats.directional_stats)
