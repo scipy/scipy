@@ -4875,7 +4875,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
     Parameters
     ----------
-    ps : 1D array_like
+    ps : array_like
         The p-values to adjust. Elements must be real numbers between 0 and 1.
     axis : int
         The axis along which to perform the adjustment. The adjustment is
