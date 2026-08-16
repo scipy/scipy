@@ -95,7 +95,7 @@ def _maybe_real(A, B, tol=None):
 # Matrix functions.
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature='(i,i)->(i,i)')
 def fractional_matrix_power(A, t):
     """
     Compute the fractional power of a matrix.
@@ -143,7 +143,7 @@ def fractional_matrix_power(A, t):
     return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature='(i,i)->(i,i)')
 def logm(A):
     """
     Compute matrix logarithm.

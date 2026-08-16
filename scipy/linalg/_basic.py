@@ -1705,7 +1705,11 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
         return B
 
 
-@_apply_over_batch(('A', 2))
+def _matrix_balance_signature(*args, **kwargs):
+    return "(i,i)->(i,i),(2,i)" if kwargs.get('separate') else "(i,i)->(i,i)"
+
+
+@_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """

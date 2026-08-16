@@ -1216,9 +1216,7 @@ def _apply_over_batch(*argdefs, signature=None):
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
-            # We can't support zero-size batches right now because without data with
-            # which to call the function, the decorator doesn't even know the *number*
-            # of outputs, let alone their core shapes or dtypes.
+            # Handle zero-size batches
             if math.prod(batch_shape) == 0:
                 sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:

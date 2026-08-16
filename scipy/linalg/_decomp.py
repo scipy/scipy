@@ -1415,7 +1415,11 @@ def _check_info(info, driver, positive='did not converge (LAPACK info=%d)'):
         raise LinAlgError(("%s " + positive) % (driver, info,))
 
 
-@_apply_over_batch(('a', 2))
+def _hessenberg_signature(a, calc_q=False, overwrite_a=False, check_finite=True):
+    return "(i,i)->(i,i),(i,i)" if calc_q else "(i,i)->(i,i)"
+
+
+@_apply_over_batch(('a', 2), signature=_hessenberg_signature)
 def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     """
     Compute Hessenberg form of a matrix.
