@@ -34,6 +34,7 @@ at the top-level directory.
 #include <assert.h>
 #include "superlu_enum_consts.h"
 
+#include "scipy_slu_config.h"
 
 /***********************************************************************
  * Macros
