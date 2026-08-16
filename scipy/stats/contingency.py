@@ -24,11 +24,12 @@ Functions for creating and analyzing contingency tables.
 from functools import reduce
 import math
 import numpy as np
-from ._stats_py import power_divergence, _untabulate
+from ._stats_py import power_divergence, _untabulate, Power_divergenceResult
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
-from scipy._lib._array_api import xp_capabilities
+from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_result_type,
+                                   xp_size, xp_device)
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 
@@ -176,14 +177,14 @@ def chi2_contingency(observed, correction=True, lambda_=None, *, method=None):
         `scipy.stats.power_divergence` for details.
     method : ResamplingMethod, optional
         Defines the method used to compute the p-value. Compatible only with
-        `correction=False`,  default `lambda_`, and two-way tables.
-        If `method` is an instance of `PermutationMethod`/`MonteCarloMethod`,
-        the p-value is computed using
+        ``correction=False``,  default `lambda_`, and two-way tables.
+        If `method` is an instance of `scipy.stats.PermutationMethod` or
+        `scipy.stats.MonteCarloMethod`, the p-value is computed using
         `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
         provided configuration options and other appropriate settings.
         Otherwise, the p-value is computed as documented in the notes.
-        Note that if `method` is an instance of `MonteCarloMethod`, the ``rvs``
-        attribute must be left unspecified; Monte Carlo samples are always drawn
+        Note that if `method` is an instance of `scipy.stats.MonteCarloMethod`, the
+        ``rvs`` attribute must be left unspecified; Monte Carlo samples are always drawn
         using the ``rvs`` method of `scipy.stats.random_table`.
 
         .. versionadded:: 1.15.0
@@ -420,6 +421,45 @@ def _chi2_monte_carlo_method(observed, expected, method):
 
     return stats.monte_carlo_test(observed.ravel(), rvs, statistic,
                                   alternative='greater', **method)
+
+
+@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+def _chi2_contingency_2d(observed, *, correction=True, lambda_=1, xp=None):
+    # vectorized implementation of chi2_contingency for batches of 2D tables
+    # (chi2_contingency works for ND tables, so it can't be vectorized)
+    xp = array_namespace(observed) if xp is None else xp
+    dtype = xp_result_type(observed.dtype, force_floating=True, xp=xp)
+    device = xp_device(observed)
+    batch_shape = observed.shape[:-2]
+    table_shape = observed.shape[-2:]
+
+    # Validate the sizes and shapes of the arguments.
+    if xp_size(observed) == 0:
+        nan = xp.full(batch_shape, xp.nan, dtype=dtype, device=device)
+        return Power_divergenceResult(nan, nan)
+
+    rowsum = xp.sum(observed, axis=-1, keepdims=True)
+    colsum = xp.sum(observed, axis=-2, keepdims=True)
+    tablesum = xp.sum(rowsum, axis=-2, keepdims=True)
+    with np.errstate(invalid='ignore', divide='ignore'):  # NaN is a valid result
+        expected = rowsum * colsum / tablesum
+    dof = math.prod(table_shape) - sum(table_shape) + 1
+    ddof = sum(table_shape) - 2
+    if dof == 0:
+        return (xp.zeros(batch_shape, dtype=dtype, device=device)[()],
+                xp.ones(batch_shape, dtype=dtype, device=device)[()])
+    elif correction and dof == 1:
+        diff = expected - observed
+        direction = xp.sign(diff)
+        half = xp.asarray(0.5, dtype=diff.dtype, device=device)
+        magnitude = xp.minimum(half, xp.abs(diff))
+        observed = observed + magnitude * direction
+
+    observed = xp.reshape(observed, batch_shape + (-1,))
+    expected = xp.reshape(expected, batch_shape + (-1,))
+
+    return stats.power_divergence(observed, expected, lambda_=lambda_,
+                                  ddof=ddof, axis=-1)
 
 
 @xp_capabilities(np_only=True)

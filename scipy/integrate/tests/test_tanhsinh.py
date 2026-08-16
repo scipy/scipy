@@ -1,4 +1,3 @@
-# mypy: disable-error-code="attr-defined"
 import os
 import pytest
 import math
@@ -6,6 +5,7 @@ import math
 import numpy as np
 from numpy.testing import assert_allclose
 
+from scipy._external import array_api_extra as xpx
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
@@ -158,6 +158,15 @@ class TestTanhSinh:
         message = '`f` must be callable.'
         with pytest.raises(ValueError, match=message):
             _tanhsinh(42, zero, f_b)
+
+        message = "The shape of the array returned by `func`..."
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(lambda x: xp.ones(3), xp.zeros(2), xp.ones(2))
+
+        message = "When `preserve_shape=True`, the array returned by `func`..."
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(lambda x: xp.ones((3, 4, 5)), xp.zeros(2), xp.ones(2),
+                      preserve_shape=True)
 
         message = '...must be True or False.'
         with pytest.raises(ValueError, match=message):
@@ -346,17 +355,23 @@ class TestTanhSinh:
         ref_flags = xp.asarray([0, -2, -3], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
-    def test_preserve_shape(self, xp):
+    @pytest.mark.parametrize('batch_shape', [(), (2,), (2, 3)])
+    def test_preserve_shape(self, xp, batch_shape):
         # Test `preserve_shape` option
         def f(x, xp):
-            return xp.stack([xp.stack([x, xp.sin(10 * x)]),
-                             xp.stack([xp.cos(30 * x), x * xp.sin(100 * x)])])
+            return xp.stack([x, xp.sin(10 * x), xp.cos(30 * x), x * xp.sin(100 * x)])
 
         ref = quad_vec(lambda x: f(x, np), 0, 1)
-        res = _tanhsinh(lambda x: f(x, xp), xp.asarray(0), xp.asarray(1),
-                        preserve_shape=True)
-        dtype = xp.asarray(0.).dtype
-        xp_assert_close(res.integral, xp.asarray(ref[0], dtype=dtype))
+        ref = xp.asarray(ref[0], dtype=xpx.default_dtype(xp))
+        ref = xp.moveaxis(xp.broadcast_to(ref, (*batch_shape, *ref.shape)), -1, 0)
+
+        def g(x, p):  # p is unused; just want to test its shape
+            assert x.shape[:-1] == p.shape[:-1] == batch_shape
+            return f(x, xp)
+        res = _tanhsinh(g, xp.zeros(batch_shape), xp.ones(batch_shape),
+                        args=(xp.asarray(2),), preserve_shape=True)
+
+        xp_assert_close(res.integral, ref)
 
     def test_convergence(self, xp):
         # demonstrate that number of accurate digits doubles each iteration
@@ -694,7 +709,7 @@ class TestTanhSinh:
         def f(x, c):
             return x**c
 
-        res = _tanhsinh(f, a, b, args=29)
+        res = _tanhsinh(f, a, b, args=xp.asarray(29.))
         xp_assert_close(res.integral, xp.asarray(1/30))
 
         # Test NaNs
@@ -755,6 +770,20 @@ class TestTanhSinh:
         assert res.success
         assert res.maxlevel < 5
         xp_assert_close(res.integral, ref.integral, rtol=1e-15)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**p + c
+
+        a = xp.zeros((), dtype=xp.float32)
+        b = xp.ones((), dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = _tanhsinh(f, a, b, args=(c,), kwargs={'p': p})
+        ref = b**(p+1) / (p+1) + c
+        xp_assert_close(res.integral, ref)
 
 
 @make_xp_test_case(nsum)
@@ -1156,3 +1185,18 @@ class TestNSum:
 
         res = nsum(f, 1, np.inf)
         assert_allclose(res.sum, ref)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**-p + c
+
+        a = xp.ones((), dtype=xp.float32)
+        b = xp.full((), 10, dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = nsum(f, a, b, args=(c,), kwargs={'p': p})
+        x = xp.arange(1, 11, dtype=xp.float32)
+        ref = xp.sum(f(x, c[..., xp.newaxis], p=p[..., xp.newaxis]), axis=-1)
+        xp_assert_close(res.sum, ref)

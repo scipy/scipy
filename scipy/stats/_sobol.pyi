@@ -3,7 +3,7 @@ from scipy._lib._util import IntNumber
 from typing import Literal
 
 def _initialize_v(
-    v : np.ndarray, 
+    v : np.ndarray,
     dim : IntNumber,
     bits: IntNumber
 ) -> None: ...
@@ -48,7 +48,7 @@ _MAXDIM: Literal[21201]
 _MAXDEG: Literal[18]
 
 def _test_find_index(
-    p_cumulative: np.ndarray, 
-    size: int, 
+    p_cumulative: np.ndarray,
+    size: int,
     value: float
     ) -> int: ...

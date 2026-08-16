@@ -22,7 +22,7 @@ passing a pointer to a variable in which to store the computed result. Unlike
 return values, struct complex arguments work without segfaulting.
 */
 
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #include "fortran_defs.h"
 
 #ifdef HAVE_BLAS_ILP64
@@ -45,10 +45,19 @@ typedef double _Complex double_complex;
 typedef float _Complex float_complex;
 #endif
 
+/* four prototypes copy-pasted from numpy/npy_cblas_base.h */
+void CBLAS_FUNC(cblas_cdotu_sub)(const CBLAS_INT N, const void *X, const CBLAS_INT incX,
+                                 const void *Y, const CBLAS_INT incY, void *dotu);
+void CBLAS_FUNC(cblas_cdotc_sub)(const CBLAS_INT N, const void *X, const CBLAS_INT incX,
+                                 const void *Y, const CBLAS_INT incY, void *dotc);
+void CBLAS_FUNC(cblas_zdotu_sub)(const CBLAS_INT N, const void *X, const CBLAS_INT incX,
+                                 const void *Y, const CBLAS_INT incY, void *dotu);
+void CBLAS_FUNC(cblas_zdotc_sub)(const CBLAS_INT N, const void *X, const CBLAS_INT incX,
+                                 const void *Y, const CBLAS_INT incY, void *dotc);
+
 float_complex F_FUNC(wcdotc,WCDOTC)(CBLAS_INT *n, float_complex *cx, \
         CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
     float_complex ret;
-    /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_cdotc_sub)(*n, cx, *incx, cy, *incy,&ret);
     return ret;
 }
@@ -56,7 +65,6 @@ float_complex F_FUNC(wcdotc,WCDOTC)(CBLAS_INT *n, float_complex *cx, \
 double_complex F_FUNC(wzdotc,WZDOTC)(CBLAS_INT *n, double_complex *zx, \
         CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy){
     double_complex ret;
-    /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_zdotc_sub)(*n, zx, *incx, zy, *incy,&ret);
     return ret;
 }
@@ -64,7 +72,6 @@ double_complex F_FUNC(wzdotc,WZDOTC)(CBLAS_INT *n, double_complex *zx, \
 float_complex F_FUNC(wcdotu,WCDOTU)(CBLAS_INT *n, float_complex *cx, \
         CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
     float_complex ret;
-    /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_cdotu_sub)(*n, cx, *incx, cy, *incy,&ret);
     return ret;
 }
@@ -72,7 +79,6 @@ float_complex F_FUNC(wcdotu,WCDOTU)(CBLAS_INT *n, float_complex *cx, \
 double_complex F_FUNC(wzdotu,WZDOTU)(CBLAS_INT *n, double_complex *zx, \
         CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy){
     double_complex ret;
-    /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_zdotu_sub)(*n, zx, *incx, zy, *incy,&ret);
     return ret;
 }

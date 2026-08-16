@@ -29,7 +29,7 @@ at the top-level directory.
 
 
 /*! \brief Complex Division c = a/b */
-void c_div(singlecomplex *c, singlecomplex *a, singlecomplex *b)
+void c_div(singlecomplex *c, const singlecomplex *a, const singlecomplex *b)
 {
     float ratio, den;
     float abr, abi, cr, ci;

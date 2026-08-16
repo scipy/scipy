@@ -5,12 +5,12 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
+from scipy._external import array_api_extra as xpx
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_default_dtype,
-                                   xp_size, array_namespace, _xp_copy_to_numpy,
+from scipy._lib._array_api import (is_numpy, make_xp_test_case,
+                                   xp_size, array_namespace, xp_copy_to_numpy,
                                    is_lazy_array, eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-from scipy._external import array_api_extra as xpx
 from scipy import stats, special
 from scipy.fft.tests.test_fftlog import skip_xp_backends
 from scipy.optimize import root
@@ -620,7 +620,7 @@ class TestBootstrap:
         shape = 10, 20, 30
         rng = np.random.default_rng(5903363153)
         x = rng.random(shape)
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         p = _resampling._percentile_of_score(xp.asarray(x, dtype=dtype),
                                              xp.asarray(score, dtype=dtype),
                                              axis=-1, xp=xp)
@@ -1130,7 +1130,7 @@ class TestMonteCarloHypothesisTest:
 @make_xp_test_case(power)
 class TestPower:
     def xp_normal(self, rng, *, xp, dtype=None):
-        dtype = xp_default_dtype(xp) if dtype is None else dtype
+        dtype = xpx.default_dtype(xp) if dtype is None else dtype
         return lambda size: xp.asarray(rng.normal(size=size), dtype=dtype)
 
     def test_input_validation(self, xp):
@@ -1247,8 +1247,8 @@ class TestPower:
         popmeans = xp.asarray([0, 0.2])
         def test(x, alternative, axis=-1):
             # ensure that popmeans axis is zeroth and orthogonal to the rest
-            popmeans_expanded = xpx.expand_dims(popmeans,
-                                                axis=tuple(range(1, x.ndim + 1)))
+            popmeans_expanded = xp.expand_dims(popmeans,
+                                               axis=tuple(range(1, x.ndim + 1)))
             alternative = alternatives[int(alternative)]
             return stats.ttest_1samp(x, popmeans_expanded, alternative=alternative,
                                      axis=axis)
@@ -1552,7 +1552,7 @@ class TestPermutationTest:
 
         def statistic(x, y, axis):
             # todo: use `xp` as backend when `ks_2samp` supports more backends
-            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            x, y = xp_copy_to_numpy(x), xp_copy_to_numpy(y)
             res = stats.ks_2samp(x, y, axis=axis, mode='asymp', alternative=alternative)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1581,7 +1581,7 @@ class TestPermutationTest:
 
         def statistic(x, y, axis):
             # todo: use `xp` as backend when `ansari` is translated to array API
-            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            x, y = xp_copy_to_numpy(x), xp_copy_to_numpy(y)
             res = stats.ansari(x, y, axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1634,7 +1634,6 @@ class TestPermutationTest:
         xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
         xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
-    @skip_xp_backends('cupy', reason='needs kruskal')
     @skip_xp_backends(eager_only=True)  # kruskal does input validation
     @pytest.mark.parametrize('axis', (-1, 2))
     def test_vectorized_nsamp_ptype_both(self, axis, xp):
@@ -1687,14 +1686,14 @@ class TestPermutationTest:
         def statistic_1samp_1d(z, axis):
             # todo: use `xp` as backend when `wilcoxon` is translated to array API
             # 'less' ensures we get the same of two statistics every time
-            z = _xp_copy_to_numpy(z)
+            z = xp_copy_to_numpy(z)
             res = stats.wilcoxon(z, alternative='less', axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
 
         def statistic_2samp_1d(x, y, axis):
             # todo: use `xp` as backend when `wilcoxon` is translated to array API
-            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            x, y = xp_copy_to_numpy(x), xp_copy_to_numpy(y)
             res = stats.wilcoxon(x, y, alternative='less', axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1747,7 +1746,7 @@ class TestPermutationTest:
 
         def statistic(x, axis):
             # todo: use `xp` as backend when `kendalltau` is translated to array API
-            x = _xp_copy_to_numpy(x)
+            x = xp_copy_to_numpy(x)
             res = stats.kendalltau(x, y, method='asymptotic', axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1881,12 +1880,12 @@ class TestPermutationTest:
 
         def statistic(x, y, axis):
             # todo: use `xp` as backend when `ansari` is translated to array API
-            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            x, y = xp_copy_to_numpy(x), xp_copy_to_numpy(y)
             res = stats.ansari(x, y, axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
 
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1939,12 +1938,12 @@ class TestPermutationTest:
                         2.6514917, 2.01160156, 0.47699563])
         expected_statistic = 0.7714285714285715
 
-        y = xp.asarray(stats.rankdata(_xp_copy_to_numpy(y)))
+        y = xp.asarray(stats.rankdata(xp_copy_to_numpy(y)))
         def statistic(x, axis):
             # `spearmanr` is not array api compatible, but `pearsonr` is. So for now
-            # use _xp_copy_to_numpy just for ranking so we can run this test w/ CuPy.
+            # use xp_copy_to_numpy just for ranking so we can run this test w/ CuPy.
             # TODO: use `xp` as backend when cupy works with `rankdata`
-            x = xp.asarray(stats.rankdata(_xp_copy_to_numpy(x), axis=axis))
+            x = xp.asarray(stats.rankdata(xp_copy_to_numpy(x), axis=axis))
             return stats.pearsonr(x, y, axis=axis).statistic
 
         res = permutation_test((x,), statistic, permutation_type='pairings',
@@ -1999,7 +1998,7 @@ class TestPermutationTest:
         # (Whether a single NaN in the permutation distribution should make the p-value
         #  NaN is debatable. Users can choose for themselves.)
         rng = np.random.default_rng(8951482112)
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         x = xp.asarray(rng.random(5), dtype=dtype)
         x_nan = xp.asarray([0, 0, 0, xp.nan, 0])
         y = xp.asarray(rng.random(6), dtype=dtype)
@@ -2022,7 +2021,7 @@ class TestPermutationTest:
 
 
 def test_all_partitions_concatenated():
-    # make sure that _all_paritions_concatenated produces the correct number
+    # make sure that _all_partitions_concatenated produces the correct number
     # of partitions of the data into samples of the given sizes and that
     # all are unique
     n = np.array([3, 2, 4], dtype=int)

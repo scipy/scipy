@@ -8,7 +8,7 @@ from pytest import raises as assert_raises
 from scipy.interpolate import (griddata, NearestNDInterpolator,
                                LinearNDInterpolator,
                                CloughTocher2DInterpolator)
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 
 parametrize_interpolators = pytest.mark.parametrize(
@@ -246,6 +246,7 @@ class TestNearestNDInterpolator:
         with assert_raises(TypeError):
             NI([0.5, 0.5], query_options="not a dictionary")
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         npts, nd = 50, 3
         x = np.arange(npts * nd).reshape((npts, nd))

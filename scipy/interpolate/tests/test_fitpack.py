@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
 )
 from pytest import raises as assert_raises
 import pytest
-from scipy._lib._testutils import check_free_memory
+from scipy._lib._testutils import check_free_memory, IS_WASM
 
 from scipy.interpolate import RectBivariateSpline
 from scipy.interpolate import make_splrep
@@ -15,6 +15,7 @@ from scipy.interpolate import make_splrep
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
 from scipy.interpolate._fitpack2 import _regrid_smth as regrid_smth
+from scipy.interpolate._regrid import _regrid
 
 dfitpack_int = np.int32
 
@@ -96,9 +97,11 @@ class TestSmokeTests:
                         xp_assert_close(spl.t, tck[0], atol=1e-15)
                         xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
                 else:
-                    with assert_raises(ValueError):
-                        spl = make_splrep(x, v, k=k, s=s,
-                                          xb=xb, xe=xe, bc_type='periodic')
+                    # Periodic BC with s > 0 doesn't require v[0] == v[-1];
+                    # see gh-24693
+                    spl = make_splrep(x, v, k=k, s=s,
+                                        xb=xb, xe=xe, bc_type='periodic')
+                    xp_assert_close(spl(xb), spl(xe), atol=1e-5)
 
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi
@@ -303,6 +306,7 @@ class TestSplder:
     def test_order0_diff(self):
         assert_raises(ValueError, splder, self.spl, 4)
 
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_kink(self):
         # Should refuse to differentiate splines with kinks
 
@@ -405,20 +409,33 @@ class TestBisplrep:
         xp_assert_close(bisplev(0.5, 0.5, tck), 0.0)
 
 
-def test_dblint():
+@pytest.mark.parametrize("k", [3, 4])
+def test_dblint(k):
     # Basic test to see it runs and gives the correct result on a trivial
     # problem. Note that `dblint` is not exposed in the interpolate namespace.
     x = np.linspace(0, 1)
     y = np.linspace(0, 1)
     xx, yy = np.meshgrid(x, y)
-    rect = RectBivariateSpline(x, y, 4 * xx * yy)
+    rect = RectBivariateSpline(x, y, 4 * xx * yy,
+                               kx=k, ky=k)
+    rect_custom = _regrid(x, y, 4 * xx * yy,
+                                              kx=k, ky=k)
     tck = list(rect.tck)
     tck.extend(rect.degrees)
+    tck_custom = list(rect_custom.t + (rect_custom.c.flatten(),))
+    tck_custom.extend(rect.degrees)
 
     assert abs(dblint(0, 1, 0, 1, tck) - 1) < 1e-10
+    assert abs(dblint(0, 1, 0, 1, tck_custom) - 1) < 1e-10
+
     assert abs(dblint(0, 0.5, 0, 1, tck) - 0.25) < 1e-10
+    assert abs(dblint(0, 0.5, 0, 1, tck_custom) - 0.25) < 1e-10
+
     assert abs(dblint(0.5, 1, 0, 1, tck) - 0.75) < 1e-10
+    assert abs(dblint(0.5, 1, 0, 1, tck_custom) - 0.75) < 1e-10
+
     assert abs(dblint(-100, 100, -100, 100, tck) - 1) < 1e-10
+    assert abs(dblint(-100, 100, -100, 100, tck_custom) - 1) < 1e-10
 
 
 def test_splev_der_k():

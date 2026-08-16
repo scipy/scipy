@@ -189,7 +189,7 @@ typedef struct {
 
 
 /* Data structure for storing 3D matrix on layer 0 of the 2D process grid
-   Only grid-0 has meanful values of these data structures.   */
+   Only grid-0 has meaningful values of these data structures.   */
 typedef struct NRformat_loc3d
 {
     NRformat_loc *A_nfmt; // Gathered A matrix on 2D grid-0 

@@ -6,7 +6,7 @@ from types import GenericAlias
 class _ProbabilityDistribution(ABC):
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     @abstractmethod
     def support(self):
@@ -131,19 +131,22 @@ class _ProbabilityDistribution(ABC):
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a `NotImplementedError``
             will be raised.
-        rng : `numpy.random.Generator` or `scipy.stats.QMCEngine`, optional
+        rng : `numpy.random.Generator` or `scipy.stats.qmc.QMCEngine`, optional
             Pseudo- or quasi-random number generator state. When `rng` is None,
             a new `numpy.random.Generator` is created using entropy from the
             operating system. Types other than `numpy.random.Generator` and
-            `scipy.stats.QMCEngine` are passed to `numpy.random.default_rng`
+            `scipy.stats.qmc.QMCEngine` are passed to `numpy.random.default_rng`
             to instantiate a ``Generator``.
 
-            If `rng` is an instance of `scipy.stats.QMCEngine` configured to use
+            If `rng` is an instance of `scipy.stats.qmc.QMCEngine` configured to use
             scrambling and `shape` is not empty, then each slice along the zeroth
             axis of the result is a "quasi-independent", low-discrepancy sequence;
             that is, they are distinct sequences that can be treated as statistically
             independent for most practical purposes. Separate calls to `sample`
-            produce new quasi-independent, low-discrepancy sequences.
+            produce new quasi-independent, low-discrepancy sequences. The dimensionality
+            (``d``) of the provided ``QMCEngine`` is ignored; new instances of the same
+            class and configuration options (``scramble``, ``optimization``, and
+            ``bits``, where applicable) will be created with ``d=1``.
 
         References
         ----------
@@ -338,7 +341,7 @@ class _ProbabilityDistribution(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def lmoment(self, order, kind, *, method):
+    def lmoment(self, order, *, standardize, method):
         r"""L-moment or L-moment ratio of positive integer order.
 
         The L-moment of order :math:`n` of a continuous random variable :math:`X` is:
@@ -1247,7 +1250,7 @@ class _ProbabilityDistribution(ABC):
         >>> X.cdf(-0.25, 0.25) == X.cdf(0.25) - X.cdf(-0.25)
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1455,7 +1458,7 @@ class _ProbabilityDistribution(ABC):
         >>> X.ccdf(-0.25, 0.25) == X.cdf(-0.25) + X.ccdf(0.25)
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1629,7 +1632,7 @@ class _ProbabilityDistribution(ABC):
         Similarly, the term "logarithmic difference" of :math:`w` and :math:`z`
         is used here to mean :math:`\log(\exp(w)-\exp(z))`.
 
-        If ``y < x``, the CDF is negative, and therefore the log-CCDF
+        If ``y < x``, the CDF is negative, and therefore the log-CDF
         is complex with imaginary part :math:`\pi`. For
         consistency, the result of this function always has complex dtype
         when `y` is provided, regardless of the value of the imaginary part.
@@ -1654,7 +1657,7 @@ class _ProbabilityDistribution(ABC):
         >>> np.allclose(X.logcdf(0.), np.log(X.cdf(0.)))
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1754,16 +1757,16 @@ class _ProbabilityDistribution(ABC):
 
             G(x) = 1 - F(x) = P(X > x)
 
-         A two-argument variant of this function is:
+        A two-argument variant of this function is:
 
         .. math::
 
             G(x, y) = 1 - F(x, y) = P(X < x \quad \text{or} \quad X > y)
 
         `logccdf` computes the logarithm of the complementary cumulative
-        distribution function ("log-CCDF"), :math:`\log(G(x))`/:math:`\log(G(x, y))`,
-        but it may be numerically favorable compared to the naive implementation
-        (computing the CDF and taking the logarithm).
+        distribution function ("log-CCDF"), :math:`\log(G(x))` and
+        :math:`\log(G(x, y))`, but it may be numerically favorable compared to the
+        naive implementation (computing the CCDF and taking the logarithm).
 
         `logccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
 
@@ -1848,7 +1851,7 @@ class _ProbabilityDistribution(ABC):
         >>> np.allclose(X.logccdf(0.), np.log(X.ccdf(0.)))
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod

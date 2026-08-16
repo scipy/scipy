@@ -8,12 +8,14 @@ __all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
 from bisect import bisect_left
 
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                       check_shape, check_reshape_kwargs)
+                       check_shape)
 from . import _csparsetools
 
 
@@ -133,6 +135,11 @@ class _lil_base(_spbase, IndexMixin):
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
 
+        Parameters
+        ----------
+        i : int
+            Row to return view of.
+
         Returns
         -------
         lil_array or lil_matrix
@@ -145,6 +152,11 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
+
+        Parameters
+        ----------
+        i : int
+            Row to return a copy of.
 
         Returns
         -------
@@ -323,9 +335,8 @@ class _lil_base(_spbase, IndexMixin):
 
     copy.__doc__ = _spbase.copy.__doc__
 
-    def reshape(self, *args, **kwargs):
-        shape = check_shape(args, self.shape)
-        order, copy = check_reshape_kwargs(kwargs)
+    def reshape(self, *shape, order="C", copy=False):
+        shape = check_shape(shape, self.shape)
 
         # Return early if reshape is not required
         if shape == self.shape:
@@ -481,6 +492,15 @@ def _prepare_index_for_memoryview(i, j, x=None):
 def isspmatrix_lil(x):
     """Is `x` of lil_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -494,13 +514,24 @@ def isspmatrix_lil(x):
     Examples
     --------
     >>> from scipy.sparse import lil_array, lil_matrix, coo_matrix, isspmatrix_lil
-    >>> isspmatrix_lil(lil_matrix([[5]]))
+    >>> isspmatrix_lil(lil_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_lil(lil_array([[5]]))
+    >>> isspmatrix_lil(lil_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_lil(coo_matrix([[5]]))
+    >>> isspmatrix_lil(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_lil` is being replaced by `self.format == "lil" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_lil function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, lil_matrix)
 
 
@@ -527,19 +558,26 @@ class lil_array(_lil_base, sparray):
 
     Attributes
     ----------
+    data : ndarray
+        LIL format data array of the array
+    rows : ndarray
+        LIL format row index array of the array
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        LIL format data array of the array
-    rows
-        LIL format row index array of the array
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'lil'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : lil_array
+        The transpose of the array
+    mT : lil_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -567,7 +605,7 @@ class lil_array(_lil_base, sparray):
         - The corresponding nonzero values are stored in similar
           fashion in ``self.data``.
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class lil_matrix(spmatrix, _lil_base):
@@ -578,6 +616,15 @@ class lil_matrix(spmatrix, _lil_base):
     Note that inserting a single item can take linear time in the worst case;
     to construct the matrix efficiently, make sure the items are pre-sorted by
     index, per row.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         lil_matrix(D)
@@ -592,19 +639,26 @@ class lil_matrix(spmatrix, _lil_base):
 
     Attributes
     ----------
+    data : ndarray
+        LIL format data array of the matrix
+    rows : ndarray
+        LIL format row index array of the matrix
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        LIL format data array of the matrix
-    rows
-        LIL format row index array of the matrix
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'lil'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : lil_matrix
+        The transpose of the matrix
+    mT : lil_array
+        The transpose of the matrix
 
     Notes
     -----

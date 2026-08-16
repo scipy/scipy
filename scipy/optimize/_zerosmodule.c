@@ -12,17 +12,8 @@
  * Caller entry point functions
  */
 
-#ifdef PYPY_VERSION
-    /*
-     * As described in http://doc.pypy.org/en/latest/cpython_differences.html#c-api-differences,
-     * "assignment to a PyTupleObject is not supported after the tuple is used internally,
-     * even by another C-API function call."
-     */
-    #define PyArgs(Operation) PyList_##Operation
-#else
-    /* Using a list in CPython raises "TypeError: argument list must be a tuple" */
-    #define PyArgs(Operation) PyTuple_##Operation
-#endif
+/* Using a list in CPython raises "TypeError: argument list must be a tuple" */
+#define PyArgs(Operation) PyTuple_##Operation
 
 typedef struct {
     PyObject *function;

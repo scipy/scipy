@@ -74,8 +74,8 @@ ilu_heap_relax_snode (
     for (i = 0; i < n; ++i) et[i] = iwork[i];
 
     /* Compute the number of descendants of each node in the etree */
-    ifill (relax_end, n, EMPTY);
-    ifill (relax_fsupc, n, EMPTY);
+    ifill (relax_end, n, SLU_EMPTY);
+    ifill (relax_fsupc, n, SLU_EMPTY);
     for (j = 0; j < n; j++) descendants[j] = 0;
     for (j = 0; j < n; j++) {
 	parent = et[j];
@@ -120,7 +120,8 @@ ilu_heap_relax_snode (
 	}
 	j++;
 	/* Search for a new leaf */
-	while ( descendants[j] != 0 && j < n ) j++;
+	while (j < n && descendants[j] != 0)
+	    j++;
     }
 
 #if ( PRNTlevel>=1 )

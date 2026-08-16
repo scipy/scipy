@@ -47,3 +47,5 @@ py3.install_sources([
 )
 
 subdir('data')
+subdir('test_generation')
+

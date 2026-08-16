@@ -1,5 +1,7 @@
 import numpy as np
 
+from scipy._lib._array_api import xp_capabilities
+
 __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 
 
@@ -17,6 +19,7 @@ def _adjust_bounds(ax, points):
     ax.set_ylim(xy_min[1], xy_max[1])
 
 
+@xp_capabilities(out_of_scope=True)
 def delaunay_plot_2d(tri, ax=None):
     """
     Plot the given Delaunay triangulation in 2-D.
@@ -75,6 +78,7 @@ def delaunay_plot_2d(tri, ax=None):
     return ax.figure
 
 
+@xp_capabilities(out_of_scope=True)
 def convex_hull_plot_2d(hull, ax=None):
     """
     Plot the given convex hull diagram in 2-D.
@@ -135,6 +139,7 @@ def convex_hull_plot_2d(hull, ax=None):
     return ax.figure
 
 
+@xp_capabilities(out_of_scope=True)
 def voronoi_plot_2d(vor, ax=None, **kw):
     """
     Plot the given Voronoi diagram in 2-D.
@@ -145,18 +150,21 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Diagram to plot
     ax : matplotlib.axes.Axes instance, optional
         Axes to plot on
-    show_points : bool, optional
-        Add the Voronoi points to the plot.
-    show_vertices : bool, optional
-        Add the Voronoi vertices to the plot.
-    line_colors : str, optional
-        Specifies the line color for polygon boundaries
-    line_width : float, optional
-        Specifies the line width for polygon boundaries
-    line_alpha : float, optional
-        Specifies the line alpha for polygon boundaries
-    point_size : float, optional
-        Specifies the size of points
+    **kw
+        The following options may be passed as keyword arguments:
+
+        show_points : bool, optional
+            Add the Voronoi points to the plot.
+        show_vertices : bool, optional
+            Add the Voronoi vertices to the plot.
+        line_colors : str, optional
+            Specifies the line color for polygon boundaries
+        line_width : float, optional
+            Specifies the line width for polygon boundaries
+        line_alpha : float, optional
+            Specifies the line alpha for polygon boundaries
+        point_size : float, optional
+            Specifies the size of points
 
     Returns
     -------

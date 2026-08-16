@@ -70,15 +70,14 @@ at the top-level directory.
  *         Stype = SLU_NCP; Dtype = A->Dtype; Mtype = SLU_GE.
  * </pre>
  */
-void
-sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c, 
-	    int *etree, SuperMatrix *AC)
+void sp_preorder(const superlu_options_t *options,  SuperMatrix *A, int *perm_c,
+                 int *etree, SuperMatrix *AC)
 {
     NCformat  *Astore;
     NCPformat *ACstore;
     int       *iwork, *post;
     register  int n, i;
-    extern void check_perm(char *what, int n, int *perm);
+    extern void check_perm(const char *what, int n, const int *perm);
 	
     n = A->ncol;
     

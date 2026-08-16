@@ -25,7 +25,7 @@ from numpy import zeros, concatenate, ravel, diff, array
 import numpy as np
 
 from . import _fitpack_impl
-from . import _fitpack
+from . import _fitpack  # type:ignore[attr-defined]
 from scipy._lib._array_api import xp_capabilities
 
 
@@ -132,16 +132,18 @@ def _surfit_smth(x, y, z, w, xb, xe, yb, ye, kx, ky, s, eps):
     Wrapper for surfit with iopt=0 (smoothing spline).
     Returns: nx, tx, ny, ty, c, fp, ier
     """
-    x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    z = np.asarray(z, dtype=np.float64)
+    # The C binding (_fitpack.surfit_smth) reads these buffers assuming
+    # C-contiguity; coerce strided views.
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    y = np.ascontiguousarray(y, dtype=np.float64)
+    z = np.ascontiguousarray(z, dtype=np.float64)
     m = len(x)
 
     # Handle None w value (default equal weights)
     if w is None:
         w = np.ones(m, dtype=np.float64)
     else:
-        w = np.asarray(w, dtype=np.float64)
+        w = np.asarray(w, dtype=np.float64, copy=True)
 
     # Handle None bbox values (matching f2py behavior: xb=dmin(x,m), etc.)
     if xb is None:
@@ -176,9 +178,11 @@ def _surfit_lsq(x, y, z, nx, tx, ny, ty, w, xb, xe, yb, ye, kx, ky, eps):
     Wrapper for surfit with iopt=-1 (least squares fit with fixed knots).
     Returns: tx, ty, c, fp, ier
     """
-    x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    z = np.asarray(z, dtype=np.float64)
+    # The C binding (_fitpack.surfit_lsq) reads these buffers assuming
+    # C-contiguity; coerce strided views.
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    y = np.ascontiguousarray(y, dtype=np.float64)
+    z = np.ascontiguousarray(z, dtype=np.float64)
     m = len(x)
 
     if w is None:
@@ -1413,6 +1417,8 @@ class _BivariateSplineBase:
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
         if grid:
+            x = x.ravel()
+            y = y.ravel()
             if x.size == 0 or y.size == 0:
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
 

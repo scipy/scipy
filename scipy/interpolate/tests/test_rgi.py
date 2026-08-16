@@ -7,8 +7,9 @@ from numpy.exceptions import ComplexWarning
 
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_array_almost_equal,
-    make_xp_test_case
+    make_xp_test_case,
 )
+
 from scipy.conftest import skip_xp_invalid_arg
 
 from pytest import raises as assert_raises
@@ -16,9 +17,11 @@ from pytest import raises as assert_raises
 from scipy.interpolate import (RegularGridInterpolator, interpn,
                                RectBivariateSpline,
                                NearestNDInterpolator, LinearNDInterpolator)
+from scipy.interpolate._regrid import (_regrid,
+                                              _ndbspline_call_like_bivariate)
 
 from scipy.sparse._sputils import matrix
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
@@ -368,7 +371,7 @@ class TestRegularGridInterpolator:
         # but using np.arange for convenience.
         x0 = np.arange(ndim, dtype=dtype)
 
-        # Unpack 'x0'; loosly speaking this is the inverse of np.mgrid.
+        # Unpack 'x0'; loosely speaking this is the inverse of np.mgrid.
         # By construction 'points' defines a grid of length one along all axes.
         points = tuple(np.asarray([xi]) for xi in x0)
 
@@ -446,7 +449,7 @@ class TestRegularGridInterpolator:
         # check exrapolation w/ fill_value
         xp_assert_close(interp(np.array([1.1, 2.4])),
                         interp.fill_value,
-                        check_dtype=False, check_shape=False, check_0d=False,
+                        check_dtype=False, check_shape=False, check_0d=True,
                         atol=1e-14)
 
         # check extrapolation: linear along the `y` axis, const along `x`
@@ -537,7 +540,7 @@ class TestRegularGridInterpolator:
 
         with np.errstate(invalid='ignore'):
             res = interp([[1.5, np.nan], [1, 1]])
-        xp_assert_close(res[1], 2.0, atol=1e-14)
+        assert np.isclose(res[1], 2.0, atol=1e-14)
         assert np.isnan(res[0])
 
         # test arbitrary nan pattern
@@ -782,6 +785,7 @@ class TestRegularGridInterpolator:
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         points, values = self._get_sample_4d(np)
         sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
@@ -841,11 +845,16 @@ class TestInterpN:
     def test_spline_2d(self):
         x, y, z = self._sample_2d_data()
         lut = RectBivariateSpline(x, y, z)
+        lut_custom = _regrid(x, y, z)
 
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
         assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
                                   lut.ev(xi[:, 0], xi[:, 1]))
+        xp_assert_close(interpn((x, y), z, xi, method="splinef2d"),
+                                  _ndbspline_call_like_bivariate(
+                                      lut_custom, xi[:, 0], xi[:, 1],
+                                      grid=False))
 
     @parametrize_rgi_interp_methods
     def test_list_input(self, method):
@@ -864,6 +873,7 @@ class TestInterpN:
         z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
         lut = RectBivariateSpline(x, y, z)
+        lut_custom = _regrid(x, y, z)
 
         xi = np.array([[1, 2.3, 6.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, -4.0, 5.0, 1.0, 3]]).T
@@ -872,6 +882,14 @@ class TestInterpN:
         expected = lut.ev(xi[:, 0], xi[:, 1])
         expected[2:4] = 999.99
         assert_array_almost_equal(actual, expected)
+
+        expected_custom = _ndbspline_call_like_bivariate(
+            lut_custom, xi[:, 0], xi[:, 1], grid=False)
+        expected_custom[2:4] = 999.99
+        xp_assert_close(actual, expected_custom)
+
+        expected_custom[2:4] = 999.99
+        xp_assert_close(actual, expected_custom)
 
         # no extrapolation for splinef2d
         assert_raises(ValueError, interpn, (x, y), z, xi, method="splinef2d",

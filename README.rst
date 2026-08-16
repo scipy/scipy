@@ -2,7 +2,7 @@
   :target: https://scipy.org
   :width: 110
   :height: 110
-  :align: left 
+  :align: left
 
 .. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
   :target: https://numfocus.org
@@ -36,7 +36,8 @@ ODE solvers, and more.
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues
 - **Code of Conduct:** https://docs.scipy.org/doc/scipy/dev/conduct/code_of_conduct.html
-- **Report a security vulnerability:** https://tidelift.com/docs/security
+- **Report a security vulnerability:** via Tidelift, as explained in
+  `our docs on Security <https://scipy.github.io/devdocs/tutorial/security.html>`__
 - **Citing in your work:** https://www.scipy.org/citing-scipy/
 
 SciPy is built to work with
@@ -57,7 +58,8 @@ Call for Contributions
 
 We appreciate and welcome contributions. Small improvements or fixes are always appreciated; issues labeled as "good
 first issue" may be a good starting point. Have a look at `our contributing
-guide <https://scipy.github.io/devdocs/dev/index.html>`__.
+guide <https://scipy.github.io/devdocs/dev/index.html>`__ and familiarize yourself
+with `our AI policy <https://scipy.github.io/devdocs/dev/conduct/ai_policy.html>`__.
 
 Writing code isn’t the only way to contribute to SciPy. You can also:
 
