@@ -1120,7 +1120,7 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     # ENH: parse more efficiently with regex.
     # Preserve functions (e.g. max, min) and `eval` below.
     inputs, outputs = signature.split("->")
-    inputs, outputs = inputs[1:-1].split("),("), outputs[1:-1].split("),(")
+    inputs = inputs.lstrip("(").rstrip(")").split("),(")
     input_dim_to_letter = {}
     for i, input in enumerate(inputs):
         for j, l in enumerate(input.split(",")):
@@ -1136,7 +1136,13 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
                 letter_to_length[l] = length
 
     results = []
+    outputs = outputs.replace("bool(", "(bool")
+    outputs = outputs.lstrip("(").rstrip(")").split("),(")
     for output in outputs:
+        if "bool" in output:
+            dtype = xp.bool
+            output = output.strip('bool')
+
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
         results.append(xp.empty(batch_shape + out_core_shape,

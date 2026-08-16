@@ -101,8 +101,7 @@ class TestBatch:
     def test_issymmetric(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
-        res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3),
-                              test_zero_size=False)
+        res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3))
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to issymmetric
 
@@ -110,8 +109,7 @@ class TestBatch:
     def test_ishermitian(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
-        res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3),
-                              test_zero_size=False)
+        res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3))
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to ishermitian
 
