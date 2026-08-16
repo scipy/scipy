@@ -224,7 +224,7 @@ elif use_system_libraries.contains('auto')
   auto_system_libraries = true
 endif
 
-boost_version = '1.91.0'
+boost_version = '1.92.0'
 if all_system_libraries or use_system_libraries.contains('boost.math')
   boost_math_dep = dependency('boost', version : boost_version)
 elif auto_system_libraries
