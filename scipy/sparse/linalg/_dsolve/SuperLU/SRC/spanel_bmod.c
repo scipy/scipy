@@ -79,17 +79,18 @@ spanel_bmod (
          ftcs2 = _cptofcd("N", strlen("N")),
          ftcs3 = _cptofcd("U", strlen("U"));
 #endif
-    int          incx = 1, incy = 1;
+    slu_blasint  incx = 1, incy = 1;
     float       alpha, beta;
 #endif
 
     register int k, ksub;
-    int          fsupc, nsupc, nsupr, nrow;
+    int          fsupc, nsupc;
+    slu_blasint  nsupr, nrow;
     int          krep, krep_ind;
     float       ukj, ukj1, ukj2;
     int_t        luptr, luptr1, luptr2;
-    int          segsze;
-    int          block_nrow;  /* no of rows in a block row */
+    slu_blasint  segsze;
+    slu_blasint  block_nrow;  /* no of rows in a block row */
     int_t        lptr;	      /* Points to the row subscripts of a supernode */
     int          kfnz, irow, no_zeros; 
     register int isub, isub1, i;

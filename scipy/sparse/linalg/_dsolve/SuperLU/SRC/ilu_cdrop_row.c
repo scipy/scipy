@@ -23,14 +23,14 @@ at the top-level directory.
 #include <stdlib.h>
 #include "slu_cdefs.h"
 
-extern void cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
-extern void caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
-extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
-extern void scopy_(int *, float [], int *, float [], int *);
-extern float scasum_(int *, singlecomplex *, int *);
-extern float scnrm2_(int *, singlecomplex *, int *);
-extern double dnrm2_(int *, double [], int *);
-extern int icamax_(int *, singlecomplex [], int *);
+extern void cswap_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
+extern void caxpy_(slu_blasint *, singlecomplex *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
+extern void ccopy_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
+extern void scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
+extern float scasum_(slu_blasint *, singlecomplex *, slu_blasint *);
+extern float scnrm2_(slu_blasint *, singlecomplex *, slu_blasint *);
+extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
+extern slu_blasint icamax_(slu_blasint *, singlecomplex [], slu_blasint *);
 
 #if 0
 static float *A;  /* used in _compare_ only */
@@ -74,7 +74,7 @@ int ilu_cdrop_row(
     register int i, k, m1;
     register int nzlc; /* number of nonzeros in column last+1 */
     int_t xlusup_first, xlsub_first;
-    int m, n; /* m x n is the size of the supernode */
+    slu_blasint m, n; /* m x n is the size of the supernode */
     int r = 0; /* number of dropped rows */
     register float *temp;
     register singlecomplex *lusup = (singlecomplex *) Glu->lusup;
@@ -87,8 +87,8 @@ int ilu_cdrop_row(
     norm_t nrm = options->ILU_Norm;
     singlecomplex one = {1.0, 0.0};
     singlecomplex none = {-1.0, 0.0};
-    int i_1 = 1;
-    int inc_diag; /* inc_diag = m + 1 */
+    slu_blasint i_1 = 1;
+    slu_blasint inc_diag; /* inc_diag = m + 1 */
     int nzp = 0;  /* number of zero pivots */
     float alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
 
@@ -194,7 +194,7 @@ int ilu_cdrop_row(
 	    }
 	    else /* by quick select */
 	    {
-		int len = m1 - n + 1;
+		slu_blasint len = m1 - n + 1;
 		scopy_(&len, swork, &i_1, swork2, &i_1);
 		tol = sqselect(len, swork2, quota - n);
 #if 0

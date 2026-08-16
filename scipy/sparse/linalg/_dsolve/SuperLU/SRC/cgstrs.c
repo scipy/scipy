@@ -108,9 +108,9 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     SCformat *Lstore;
     NCformat *Ustore;
     singlecomplex   *Lval, *Uval;
-    int      fsupc, nrow, nsupr, nsupc, irow;
+    int      fsupc, irow, jcol;
+    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
     int_t    i, j, k, luptr, istart, iptr;
-    int      jcol, n, ldb, nrhs;
     singlecomplex   *work, *rhs_work, *soln;
     flops_t  solve_ops;
     void cprint_soln(int n, int nrhs, const singlecomplex *soln);

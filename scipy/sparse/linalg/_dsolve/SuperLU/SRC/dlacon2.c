@@ -89,7 +89,7 @@ int
 dlacon2_(int *n, double *v, double *x, int *isgn, double *est, int *kase, int isave[3])
 {
     /* Table of constant values */
-    int c__1 = 1;
+    slu_blasint c__1 = 1;
     double      zero = 0.0;
     double      one = 1.0;
     
@@ -103,13 +103,15 @@ dlacon2_(int *n, double *v, double *x, int *isgn, double *est, int *kase, int is
     extern double SASUM(int *, double *, int *);
     extern int SCOPY(int *, double *, int *, double *, int *);
 #else
-    extern int idamax_(int *, double *, int *);
-    extern double dasum_(int *, double *, int *);
-    extern void dcopy_(int *, double *, int *, double *, int *);
+    extern int idamax_(slu_blasint *, double *, slu_blasint *);
+    extern double dasum_(slu_blasint *, double *, slu_blasint *);
+    extern void dcopy_(slu_blasint *, double *, slu_blasint *, double *, slu_blasint *);
 #endif
 #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
 #define i_dnnt(a) \
 	( a>=0 ? floor(a+.5) : -floor(.5-a) ) /* Round to nearest integer */
+
+    slu_blasint n_blas = *n;
 
     if ( *kase == 0 ) {
 	for (i = 0; i < *n; ++i) {
@@ -140,7 +142,7 @@ dlacon2_(int *n, double *v, double *x, int *isgn, double *est, int *kase, int is
 #ifdef _CRAY
     *est = SASUM(n, x, &c__1);
 #else
-    *est = dasum_(n, x, &c__1);
+    *est = dasum_(&n_blas, x, &c__1);
 #endif
 
     for (i = 0; i < *n; ++i) {
@@ -157,7 +159,7 @@ L40:
 #ifdef _CRAY
     isave[1] = ISAMAX(n, &x[0], &c__1);  /* j */
 #else
-    isave[1] = idamax_(n, &x[0], &c__1);  /* j */
+    isave[1] = idamax_(&n_blas, &x[0], &c__1);  /* j */
 #endif
     --isave[1];  /* --j; */
     isave[2] = 2; /* iter = 2; */
@@ -176,13 +178,13 @@ L70:
 #ifdef _CRAY
     SCOPY(n, x, &c__1, v, &c__1);
 #else
-    dcopy_(n, x, &c__1, v, &c__1);
+    dcopy_(&n_blas, x, &c__1, v, &c__1);
 #endif
     estold = *est;
 #ifdef _CRAY
     *est = SASUM(n, v, &c__1);
 #else
-    *est = dasum_(n, v, &c__1);
+    *est = dasum_(&n_blas, v, &c__1);
 #endif
 
     for (i = 0; i < *n; ++i)
@@ -211,7 +213,7 @@ L110:
 #ifdef _CRAY
     isave[1] = ISAMAX(n, &x[0], &c__1);/* j */
 #else
-    isave[1] = idamax_(n, &x[0], &c__1);  /* j */
+    isave[1] = idamax_(&n_blas, &x[0], &c__1);  /* j */
 #endif
     isave[1] = isave[1] - 1;  /* --j; */
     if (x[jlast] != fabs(x[isave[1]]) && isave[2] < 5) {
@@ -236,13 +238,13 @@ L140:
 #ifdef _CRAY
     temp = SASUM(n, x, &c__1) / (double)(*n * 3) * 2.;
 #else
-    temp = dasum_(n, x, &c__1) / (double)(*n * 3) * 2.;
+    temp = dasum_(&n_blas, x, &c__1) / (double)(*n * 3) * 2.;
 #endif
     if (temp > *est) {
 #ifdef _CRAY
 	SCOPY(n, &x[0], &c__1, &v[0], &c__1);
 #else
-	dcopy_(n, &x[0], &c__1, &v[0], &c__1);
+	dcopy_(&n_blas, &x[0], &c__1, &v[0], &c__1);
 #endif
 	*est = temp;
     }

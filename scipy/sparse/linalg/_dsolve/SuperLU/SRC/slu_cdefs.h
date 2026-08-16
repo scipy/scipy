@@ -264,17 +264,17 @@ extern void    ccheck_tempv(int, singlecomplex *);
 
 /*! \brief BLAS */
 
-extern void ccopy_(int *, singlecomplex *, int *, singlecomplex *, int *);
-extern void caxpy_(int *, singlecomplex *, singlecomplex *, int *, singlecomplex *, int *);
-extern void cgemm_(const char*, const char*, const int*, const int*, const int*,
-                  const singlecomplex*, const singlecomplex*, const int*, const singlecomplex*,
-		  const int*, const singlecomplex*, singlecomplex*, const int*);
-extern void ctrsv_(char*, char*, char*, int*, singlecomplex*, int*,
-                  singlecomplex*, int*);
-extern void ctrsm_(char*, char*, char*, char*, int*, int*,
-                  singlecomplex*, singlecomplex*, int*, singlecomplex*, int*);
-extern void cgemv_(char *, int *, int *, singlecomplex *, singlecomplex *a, int *,
-                  singlecomplex *, int *, singlecomplex *, singlecomplex *, int *);
+extern void ccopy_(slu_blasint *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
+extern void caxpy_(slu_blasint *, singlecomplex *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
+extern void cgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
+                  const singlecomplex*, const singlecomplex*, const slu_blasint*, const singlecomplex*,
+		  const slu_blasint*, const singlecomplex*, singlecomplex*, const slu_blasint*);
+extern void ctrsv_(char*, char*, char*, slu_blasint*, singlecomplex*, slu_blasint*,
+                  singlecomplex*, slu_blasint*);
+extern void ctrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
+                  singlecomplex*, singlecomplex*, slu_blasint*, singlecomplex*, slu_blasint*);
+extern void cgemv_(char *, slu_blasint *, slu_blasint *, singlecomplex *, singlecomplex *a, slu_blasint *,
+                  singlecomplex *, slu_blasint *, singlecomplex *, singlecomplex *, slu_blasint *);
 
 extern void cusolve(int, int, singlecomplex*, singlecomplex*);
 extern void clsolve(int, int, singlecomplex*, singlecomplex*);
