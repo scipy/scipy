@@ -239,7 +239,7 @@ cdef class coo_entries:
                                        shape=(m, n))
 
     def dok_matrix(coo_entries self, m, n):
-        return self.coo_matrix(m,n).todok()
+        return scipy.sparse.dok_matrix(self.coo_array(m,n).todok())
 
 
 # ordered_pair wrapper
@@ -1595,7 +1595,7 @@ cdef class cKDTree:
              """
             prefixes = (os.path.dirname(__file__),)
             warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
-            output_type = 'dok_matrix'
+            return res.dok_matrix(self.n, other.n)
 
         if output_type == 'dict':
             return res.dict()
