@@ -28,7 +28,7 @@ void bsr_diagonal(const I k,
                   const T Ax[],
                         T Yx[])
 {
-    const npy_intp RC = R * C;
+    const npy_intp RC = (npy_intp)R * C;
     const npy_intp D = diagonal_size(k, (npy_intp)n_brow * R,
                                         (npy_intp)n_bcol * C);
     const npy_intp first_row = (k >= 0) ? 0 : -k;
@@ -716,7 +716,7 @@ void bsr_minimum_bsr(const I n_row, const I n_col, const I R, const I C,
  *
  * Note:
  *   Input:  column indices *are not* assumed to be in sorted order or unique
- *   Output: the block column (unsorted) orders, duplicates, 
+ *   Output: the block column (unsorted) orders, duplicates,
  *           and explicit zeros are preserved
  *
  */

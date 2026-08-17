@@ -1,8 +1,8 @@
 
 .. _continuous-lognorm:
 
-Log Normal (Cobb-Douglass) Distribution
-=======================================
+Log Normal (Cobb-Douglas) Distribution
+======================================
 
 Has one shape parameter :math:`\sigma` >0. (Notice that the "Regress" :math:`A=\log S` where :math:`S` is the scale parameter and :math:`A` is the mean of the underlying normal distribution).
 The support is :math:`x\geq0`.

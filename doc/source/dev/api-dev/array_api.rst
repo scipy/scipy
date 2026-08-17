@@ -1181,7 +1181,7 @@ support for each function, it's usually vital to have tests which isolate use
 of the alternative backend only to the function being tested.
 
 To help facilitate such backend isolation, there is a function
-``_xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
+``xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
 ``xp`` array to a NumPy array, bypassing any device transfer guards, while
 preserving dtypes. It is essential that this function is only used in
 tests. Attempts to copy a device array to NumPy outside of tests should fail,
@@ -1189,7 +1189,7 @@ because otherwise it is opaque as to whether a function is working on GPU or
 not. Creation of input arrays and reference output arrays, and computations that
 verify that the output of the function being tested satisfies an invariant (such
 as round trip tests that a function composed with its inverse gives the identity
-function), should all be done with NumPy (using the ``_xp_copy_to_numpy``
+function), should all be done with NumPy (using the ``xp_copy_to_numpy``
 function if necessary).
 
 Such backend isolation should not be applied blindly. Consider for example a
