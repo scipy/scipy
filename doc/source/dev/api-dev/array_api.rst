@@ -1291,7 +1291,7 @@ Testing device propagation with a torch meta default device
 Under the array API standard, arrays created without an explicit ``device``
 land on the backend's *default* device. If SciPy code creates an array
 internally without propagating the input's device (``device=xp_device(x)``),
-the result only breaks when the input lives on a *non-default* device — a
+the result only breaks when the input lives on a *non-default* device -- a
 situation regular CPU test runs never exercise.
 
 The ``test-torch-meta`` job closes that gap without hardware. Running::
@@ -1308,23 +1308,32 @@ test lane doubles as a device-propagation leak detector, equivalent in
 structure to a GPU CI run with cpu inputs. This includes ``cpu_only``
 functions: their NumPy round-trip must return results on the *input's*
 device (not the default device), so they run and are value-checked in this
-mode — more coverage than a cuda run, where their inputs cannot be converted
+mode -- more coverage than a cuda run, where their inputs cannot be converted
 to NumPy at all.
 
 When triaging a failure in this mode:
 
-* ``... same device ... meta and cpu`` inside SciPy code → a real leak; fix it
-  by propagating the input device at the creation site.
+* An ``Expected all tensors to be on the same device`` error (``meta`` and
+  ``cpu``) inside SciPy code is a real leak; fix it by propagating the input
+  device at the creation site.
 * ``Tensor.item() cannot be called on meta tensors`` / ``Cannot copy out of
-  meta tensor`` → usually a legitimate device-to-host transfer of an
-  internally created scalar, which works on real devices but is impossible on
-  the data-free ``meta`` device. Mark the test with
+  meta tensor``: check where the offending tensor was created. Most often it
+  is also a real leak, one step removed: an internal conversion omitted
+  ``device=`` (e.g. a host parameter converted with a bare ``xp.asarray(p)``
+  and then validated with ``xp.any(p <= 0)``), and the fix is again to pin
+  the creation site. Only when the device-to-host transfer is inherent to
+  the implementation -- a computed value genuinely needed on the host, which
+  is a legal synchronization on real devices but impossible on the data-free
+  ``meta`` device -- mark the test with
   ``@pytest.mark.skip_xp_meta(reason=...)``.
-* A value assertion comparing a ``meta`` result against a ``cpu`` reference →
-  the function constructs its output on the default device by design (it takes
-  no array input, e.g. window functions called without ``device=``). Such
-  values cannot be checked on ``meta``; mark the test with
-  ``@pytest.mark.skip_xp_meta(reason=...)``.
+* A value assertion comparing a ``meta`` result against a ``cpu`` reference
+  means the function constructs its output on the default device because it
+  takes no array input (e.g. the window functions). If the function has a
+  ``device`` keyword, do not skip: pass the device of test-created arrays
+  explicitly (see the ``device`` fixture in ``test_windows.py``), which both
+  fixes the test and actively verifies the keyword is threaded through every
+  internal creation. Only functions without a ``device`` keyword need the
+  ``skip_xp_meta`` mark.
 
 Adding tests for class methods
 ``````````````````````````````
