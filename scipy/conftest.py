@@ -19,7 +19,7 @@ except ImportError:
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
-    is_cupy, is_dask, is_jax, is_torch, )
+    is_cupy, is_dask, is_jax, is_torch, xp_result_device)
 from scipy._lib._testutils import IS_WASM, FPUModeChangeWarning
 from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
 from scipy._external.packaging_version import version
@@ -285,7 +285,7 @@ if SCIPY_ARRAY_API:
             # In the meta leak-check mode (SCIPY_DEVICE=meta; see the `xp`
             # fixture) test inputs are real cpu tensors and `cpu_only` functions
             # preserve the input device across their NumPy round-trip, so they
-            # run and are value-checked -- unlike on an actual non-default
+            # run and are value-checked - unlike on an actual non-default
             # device such as cuda, where their inputs cannot be converted to
             # NumPy.
             if SCIPY_DEVICE not in ("cpu", "meta"):
@@ -398,18 +398,18 @@ if SCIPY_ARRAY_API:
 class _CpuPinningNamespace:
     """Test-facing namespace wrapper for the torch meta leak-check mode.
 
-    With ``SCIPY_DEVICE=meta``, the *default* torch device is the data-free
+    With ``SCIPY_DEVICE=meta``, the default torch device is the data-free
     ``meta`` device, while tests must create real input arrays. This wrapper
     delegates everything to the wrapped (compat) namespace, but pins array
     creation to ``device='cpu'`` unless the caller passes an explicit device.
 
     SciPy-internal code resolves the real namespace from its input arrays via
     ``array_namespace`` (or normalizes an ``xp=`` argument through a probe
-    array) and is therefore *not* pinned: any internal creation that omits
-    ``device=`` lands on ``meta`` -- with no data -- and raises loudly at the
-    first combination with input data. This turns the whole torch test lane
-    into a device-propagation leak detector on ordinary CPU runners, mirroring
-    a GPU CI run with cpu-device inputs. See gh-22680.
+    array) and is therefore not pinned: any internal creation that omits
+    ``device=`` lands on ``meta`` - with no data - and raises loudly at the
+    first combination with input data. This is an effective device-propagation
+    leak detector on CPU, mirroring testing on a machine with a GPU with
+    cpu-device inputs. See gh-22680.
     """
 
     # pure creation: no array argument to infer a device from -> always pin.
@@ -435,16 +435,15 @@ class _CpuPinningNamespace:
             return _pin_cpu
         if name == "asarray":
             def _asarray_pin_cpu(obj, *args, device=None, **kwargs):
-                # arrays keep their own device; device-less input (python
-                # scalars/sequences, NumPy host data) is created on cpu
-                from scipy._lib._array_api import xp_result_device
+                # Arrays keep their own device; device-less input (Python
+                # scalars/sequences, NumPy arrays) is created on CPU.
                 if device is None and xp_result_device(obj) is None:
                     device = "cpu"
                 return attr(obj, *args, device=device, **kwargs)
             return _asarray_pin_cpu
         if name == "fft" and self._creation is self._CREATION:
-            # wrap the fft extension namespace (but only at the top level:
-            # inside the fft wrapper, `fft` would be the fft *function*)
+            # Wrap the fft extension namespace (but only at the top level:
+            # inside the fft wrapper, `fft` would be the fft function)
             return _CpuPinningNamespace(
                 attr, creation=frozenset({"fftfreq", "rfftfreq"}))
         return attr
