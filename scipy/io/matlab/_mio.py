@@ -105,6 +105,10 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
             on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
+        .. deprecated:: 2.0.0
+            The value `True` for `spmatrix` will no longer be supported in v2.2.
+            The spmatrix classes are deprecated and will be removed then.
+
     **kwargs
         The following additional keyword arguments can be passed:
 
@@ -263,6 +267,17 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
                 prefixes = (os.path.dirname(__file__),)
                 warnings.warn(warn_msg, DeprecationWarning, skip_file_prefixes=prefixes)
                 spmatrix = True
+            elif spmatrix is True:
+                msg = """The value `spmatrix=True` will no longer be supported in v2.2.
+                 The spmatrix classes are deprecated and will be removed then.
+                 The return value will always be a sparse array.
+                 Unless you use * instead of @, ** for matrix power, or you depend
+                 on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+                 See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+                 """
+                prefixes = (os.path.dirname(__file__),)
+                warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+
             if spmatrix:
                 fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix
             else:
