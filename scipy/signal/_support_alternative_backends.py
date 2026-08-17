@@ -53,6 +53,13 @@ def delegate_xp(delegator, module_name):
                     # CuPy < 14 exposes this under the old SciPy name.
                     cupyx_func = cupyx_module.sosfreqz
                 kwds.pop('xp', None)
+                # cupyx functions have no `device` kwarg; they create on the
+                # current cuda device, so honor a device request via the
+                # cupy.cuda.Device context manager
+                device = kwds.pop('device', None)
+                if device is not None:
+                    with device:
+                        return cupyx_func(*args, **kwds)
                 return cupyx_func(*args, **kwds)
             elif is_jax(xp) and func.__name__ in JAX_SIGNAL_FUNCS:
                 spx = scipy_namespace_for(xp)
