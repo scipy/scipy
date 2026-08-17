@@ -78,9 +78,9 @@ The survival function is just
 
 .. math::
 
-    S\left(x\right)=1-F\left(x\right)=P\left[X>k\right]
+    S\left(x\right)=1-F\left(x\right)=P\left[X>x\right]
 
-the probability that the random variable is strictly larger than :math:`k` .
+the probability that the random variable is strictly larger than :math:`x` .
 
 .. _discrete-ppf:
 
