@@ -1136,13 +1136,8 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
                 letter_to_length[l] = length
 
     results = []
-    outputs = outputs.replace("bool(", "(bool")
     outputs = outputs.lstrip("(").rstrip(")").split("),(")
     for output in outputs:
-        if "bool" in output:
-            dtype = xp.bool
-            output = output.strip('bool')
-
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
         results.append(xp.empty(batch_shape + out_core_shape,
