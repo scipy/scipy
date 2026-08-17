@@ -274,8 +274,6 @@ class TestZpk2Tf:
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
 
-    @skip_xp_backends("jax.numpy",
-                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
     @skip_xp_backends("cupy",
                       reason="multi-dim arrays not supported yet on cupy")
     def test_zpk2tf_with_multi_dimensional_array(self, xp):
@@ -305,8 +303,6 @@ class TestZpk2Tf:
         xp_assert_close(b, b_ref, atol=1e-14)
         xp_assert_close(a, a_ref, atol=1e-14)
 
-    @skip_xp_backends("jax.numpy",
-                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
     @skip_xp_backends("cupy",
                       reason="multi-dim arrays not supported yet on cupy")
     def test_zpk2tf_complex_k_multi_dim_z(self, xp):
