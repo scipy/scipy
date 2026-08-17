@@ -480,7 +480,7 @@ def test_cpu_pinning_namespace():
         assert xp.arange(4).device == cpu
         assert xp.logspace(0.0, 1.0, 4).device == cpu
         assert xp.fft.fftfreq(4).device == cpu
-        # fft *functions* delegate unwrapped (gh regression: the nested
+        # fft functions delegate unwrapped (gh regression: the nested
         # attribute `fft.fft` must stay callable)
         assert xp.fft.fft(xp.asarray([1.0, 2.0])).device == cpu
         # an explicit device is honored

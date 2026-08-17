@@ -1291,7 +1291,7 @@ Testing device propagation with a torch meta default device
 Under the array API standard, arrays created without an explicit ``device``
 land on the backend's *default* device. If SciPy code creates an array
 internally without propagating the input's device (``device=xp_device(x)``),
-the result only breaks when the input lives on a *non-default* device -- a
+the result only breaks when the input lives on a *non-default* device - a
 situation regular CPU test runs never exercise.
 
 The ``test-torch-meta`` job closes that gap without hardware. Running::
@@ -1308,7 +1308,7 @@ test lane doubles as a device-propagation leak detector, equivalent in
 structure to a GPU CI run with cpu inputs. This includes ``cpu_only``
 functions: their NumPy round-trip must return results on the *input's*
 device (not the default device), so they run and are value-checked in this
-mode -- more coverage than a cuda run, where their inputs cannot be converted
+mode - more coverage than a cuda run, where their inputs cannot be converted
 to NumPy at all.
 
 When triaging a failure in this mode:
@@ -1322,9 +1322,9 @@ When triaging a failure in this mode:
   ``device=`` (e.g. a host parameter converted with a bare ``xp.asarray(p)``
   and then validated with ``xp.any(p <= 0)``), and the fix is again to pin
   the creation site. Only when the device-to-host transfer is inherent to
-  the implementation -- a computed value genuinely needed on the host, which
+  the implementation - a computed value genuinely needed on the host, which
   is a legal synchronization on real devices but impossible on the data-free
-  ``meta`` device -- mark the test with
+  ``meta`` device - mark the test with
   ``@pytest.mark.skip_xp_meta(reason=...)``.
 * A value assertion comparing a ``meta`` result against a ``cpu`` reference
   means the function constructs its output on the default device because it
