@@ -6,7 +6,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
-                   pi, exp, ravel, count_nonzero)
+                   pi, exp, ravel)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
@@ -4163,7 +4163,7 @@ MedianTestResult = _make_tuple_bunch(
 )
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "untested")])
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
@@ -4317,74 +4317,83 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         raise ValueError(f"invalid 'ties' option '{ties}'; 'ties' must be one "
                          f"of: {str(ties_options)[1:-1]}")
 
-    data = _broadcast_arrays(samples, axis=-1, xp=np)
-    data = xp_promote(*data, force_floating=True, xp=np)
-    batch_shape, dtype = data[0].shape[:-1], data[0].dtype
+    xp = array_namespace(*samples)
+    data = _broadcast_arrays(samples, axis=-1, xp=xp)
+    data = xp_promote(*data, force_floating=True, xp=xp)
+    batch_shape, dtype, device = data[0].shape[:-1], data[0].dtype, xp_device(data[0])
 
-    cdata = np.concat(data, axis=-1)
+    cdata = xp.concat(data, axis=-1)
     contains_nan = _contains_nan(cdata, nan_policy)
 
     if cdata.shape[-1] == 0:
         # If all samples are empty, there's nothing we can calculate. Return now.
         warnings.warn(too_small_nd_not_omit, SmallSampleWarning, stacklevel=2)
-        nan = np.full(batch_shape, np.nan, dtype=dtype)
-        zeros = np.zeros(batch_shape + (2, n_samples), dtype=dtype)
+        nan = xp.full(batch_shape, xp.nan, dtype=dtype, device=device)
+        zeros = xp.zeros(batch_shape + (2, n_samples), dtype=dtype, device=device)
+        nan = nan[()] if nan.ndim == 0 else nan
+        zeros = zeros[()] if zeros.ndim == 0 else zeros
         return MedianTestResult(nan, nan, nan, zeros)
 
     if nan_policy == 'omit' and contains_nan:
-        grand_median = np.nanmedian(cdata, axis=-1, keepdims=True)
+        grand_median = stats.quantile(cdata, 0.5, axis=-1, keepdims=True,
+                                      nan_policy='omit')
     else:
-        grand_median = np.median(cdata, axis=-1, keepdims=True)
+        grand_median = stats.quantile(cdata, 0.5, axis=-1, keepdims=True)
 
     # Create the contingency table.
-    table = np.zeros(batch_shape + (2, n_samples), dtype=np.int64)
+    table = xp.zeros(batch_shape + (2, n_samples), dtype=xp.int64, device=device)
     for k, sample in enumerate(data):
-        nnan = count_nonzero(np.isnan(sample), axis=-1)
-        nabove = count_nonzero(sample > grand_median, axis=-1)
-        nbelow = count_nonzero(sample < grand_median, axis=-1)
+        nnan = xp.count_nonzero(xp.isnan(sample), axis=-1)
+        nabove = xp.count_nonzero(sample > grand_median, axis=-1)
+        nbelow = xp.count_nonzero(sample < grand_median, axis=-1)
         nequal = (sample.shape[-1] - (nabove + nbelow + nnan) if nan_policy=='omit'
-                  else count_nonzero(sample == grand_median, axis=-1))
-        table[..., 0, k] += nabove
-        table[..., 1, k] += nbelow
+                  else xp.count_nonzero(sample == grand_median, axis=-1))
+        table = xpx.at(table)[..., 0, k].add(nabove)
+        table = xpx.at(table)[..., 1, k].add(nbelow)
         if ties == "below":
-            table[..., 1, k] += nequal
+            table = xpx.at(table)[..., 1, k].add(nequal)
         elif ties == "above":
-            table[..., 0, k] += nequal
+            table = xpx.at(table)[..., 0, k].add(nequal)
 
-    grand_median = np.squeeze(grand_median, axis=-1)
+    grand_median = xp.squeeze(grand_median, axis=-1)
 
     # Check that no row or column of the table is all zero.
     # Such a table will result in NaN statistic and p-value.
-    rowsums = table.sum(axis=-1)
-    if batch_shape == () and not np.isnan(grand_median) and rowsums[0] == 0:
-        raise ValueError(f"All values are below the grand median ({grand_median}).")
-    if batch_shape == () and not np.isnan(grand_median) and rowsums[1] == 0:
-        raise ValueError(f"All values are above the grand median ({grand_median}).")
+    rowsums = xp.sum(table, axis=-1)
+    if not is_lazy_array(grand_median):
+        if batch_shape == () and not xp.isnan(grand_median) and rowsums[0] == 0:
+            raise ValueError(f"All values are below the grand median ({grand_median}).")
+        if batch_shape == () and not xp.isnan(grand_median) and rowsums[1] == 0:
+            raise ValueError(f"All values are above the grand median ({grand_median}).")
 
-    if batch_shape == () and (ties == "ignore" or nan_policy == 'omit'):
-        # We already checked that each sample has at least one value, but it
-        # is possible that all those values equal the grand median.  If `ties`
-        # is "ignore", that would result in a column of zeros in `table`.
-        # Similarly, observations in a sample could be omitted NaNs.
-        # We check for these cases here.
-        zero_cols = np.nonzero((table == 0).all(axis=0))[0]
-        if len(zero_cols) > 0:
-            raise ValueError(
-                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
-                f"median ({grand_median!r}), so they are ignored, resulting in an "
-                f"empty sample."
-            )
+        if batch_shape == () and (ties == "ignore" or nan_policy == 'omit'):
+            # We already checked that each sample has at least one value, but it
+            # is possible that all those values equal the grand median.  If `ties`
+            # is "ignore", that would result in a column of zeros in `table`.
+            # Similarly, observations in a sample could be omitted NaNs.
+            # We check for these cases here.
+            zero_cols = xp.nonzero(xp.all((table == 0), axis=0))[0]
+            if xp_size(zero_cols):
+                raise ValueError(
+                    f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+                    f"median ({grand_median!r}), so they are ignored, resulting in an "
+                    f"empty sample."
+                )
 
     if any(array.shape[-1] == 0 for array in data):
         # if only some samples are empty, we have the grand_median and `table`,
         # but `_chi2_contingency_2d` would make noise, so return now.
         warnings.warn(too_small_nd_not_omit, SmallSampleWarning, stacklevel=2)
-        nan = np.full(batch_shape, np.nan, dtype=dtype)
-        return MedianTestResult(nan, nan, grand_median[()], table[()])
+        nan = xp.full(batch_shape, xp.nan, dtype=dtype, device=device)
+        nan = nan[()] if nan.ndim == 0 else nan
+        grand_median = grand_median[()] if grand_median.ndim == 0 else grand_median
+        return MedianTestResult(nan, nan, grand_median, table)
 
     stat, p = stats.contingency._chi2_contingency_2d(
         table, lambda_=lambda_, correction=correction)
-    return MedianTestResult(stat[()], p[()], grand_median[()], table[()])
+    if stat.ndim == 0:
+        stat, p, grand_median = stat[()], p[()], grand_median[()]
+    return MedianTestResult(stat, p, grand_median, table)
 
 
 def _circfuncs_common(samples, period, xp=None):
