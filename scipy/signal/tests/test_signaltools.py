@@ -2335,7 +2335,8 @@ class TestLinearFilterComplexExtended(_TestLinearFilter):
     dtype = np.dtype('G')
 
 
-def test_lfilter_bad_object():  # array-like is np-only
+@make_xp_test_case(lfilter)
+def test_lfilter_bad_object(xp):
     # lfilter: object arrays with non-numeric objects raise TypeError.
     # Regression test for ticket #1452.
     if hasattr(sys, 'abiflags') and 'd' in sys.abiflags:
@@ -2345,22 +2346,22 @@ def test_lfilter_bad_object():  # array-like is np-only
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
-def test_lfilter_notimplemented_input():  # array-like input is np-only
+@make_xp_test_case(lfilter)
+def test_lfilter_notimplemented_input(xp):
     # Should not crash, gh-7991
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
-@make_xp_test_case(lfilter)
-def test_lfilter_empty_input(xp):
+def test_lfilter_empty_input():
     """Verify that unchanged `zi` is returned for an empty input `x`
 
     This test ensures correct special handling for empty inputs,
     to prevent leaking internal state as reported in gh-22571.
     """
-    b = xp.asarray([1.0, 0.5])
-    a = xp.asarray([1.0, -0.5])
-    x = xp.asarray([])
-    zi = xp.asarray([0.25])
+    b = np.array([1.0, 0.5])
+    a = np.array([1.0, -0.5])
+    x = np.array([])
+    zi = np.array([0.25])
 
     y, zf = lfilter(b, a, x, zi=zi)
     assert y.shape == (0,)
