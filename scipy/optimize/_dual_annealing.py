@@ -660,6 +660,11 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     # Checking that bounds are the same length
     if not len(lower) == len(upper):
         raise ValueError('Bounds do not have the same dimensions')
+    # Checking that maxiter allows at least one iteration. With maxiter < 1 the
+    # search loop would spin forever, since its stopping condition is only ever
+    # set from inside the per-iteration loop.
+    if maxiter < 1:
+        raise ValueError('maxiter must be a positive integer')
 
     # Wrapper for the objective function
     func_wrapper = ObjectiveFunWrapper(func, maxfun, *args)
