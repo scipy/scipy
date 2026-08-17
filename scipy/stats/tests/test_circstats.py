@@ -1,13 +1,12 @@
 import math
 from math import pi
-import re
 import pytest
 import numpy as np
 from numpy.testing import assert_, assert_allclose
-from scipy._lib._array_api import make_xp_test_case, eager_warns
-from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_1d_not_omit,
-                                          too_small_1d_omit, too_small_nd_omit)
+from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_1d_omit,
+                                          too_small_nd_omit)
 from scipy import stats
 
 lazy_xp_modules = [stats]
