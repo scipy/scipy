@@ -3,7 +3,8 @@
 import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
-from scipy._lib._array_api import xp_result_device, array_namespace
+import scipy._external.array_api_extra as xpx
+from scipy._lib._array_api import xp_promote, xp_result_device, array_namespace
 from . import _signaltools
 from ._short_time_fft import ShortTimeFFT
 from .windows import get_window
@@ -1399,19 +1400,24 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
-        win = np.asarray(window)
+        xp = array_namespace(window)
+        win = xp.asarray(window)
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
             raise ValueError('window must have length of nperseg')
 
+    xp = array_namespace(win)
     step = nperseg - noverlap
-    binsums = sum(win[ii*step:(ii+1)*step]**2 for ii in range(nperseg//step))
+    binsums = win[:step]**2
+    for ii in range(1, nperseg//step):
+        binsums = binsums + win[ii*step:(ii+1)*step]**2
 
     if nperseg % step != 0:
-        binsums[:nperseg % step] += win[-(nperseg % step):]**2
+        binsums = xpx.at(binsums)[:nperseg % step].add(win[-(nperseg % step):]**2)
 
-    return np.min(binsums) > tol
+    binsum_min, tol = xp_promote(xp.min(binsums), tol, force_floating=True, xp=xp)
+    return binsum_min > tol
 
 
 def stft(x, fs=1.0, window='hann_periodic', nperseg=256, noverlap=None, nfft=None,
