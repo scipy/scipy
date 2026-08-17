@@ -1294,22 +1294,24 @@ internally without propagating the input's device (``device=xp_device(x)``),
 the result only breaks when the input lives on a *non-default* device - a
 situation regular CPU test runs never exercise.
 
-The ``test-torch-meta`` job closes that gap without hardware. Running::
+Using the PyTorch ``'meta''` device (through ``SCIPY_DEVICE=meta``) closes that
+gap without hardware. E.g., running::
 
   pixi run test-torch-meta
 
-sets ``SCIPY_DEVICE=meta``, which makes torch's data-free ``meta`` device the
-default while the ``xp`` fixture hands tests a wrapper namespace that creates
-input arrays on ``cpu``. SciPy-internal code resolves the real namespace from
-its input arrays, so any internal creation that omits ``device=`` lands on
-``meta`` and fails loudly (``Expected all tensors to be on the same device``)
-at the first combination with input data. In other words: the entire torch
-test lane doubles as a device-propagation leak detector, equivalent in
-structure to a GPU CI run with cpu inputs. This includes ``cpu_only``
-functions: their NumPy round-trip must return results on the *input's*
-device (not the default device), so they run and are value-checked in this
-mode - more coverage than a cuda run, where their inputs cannot be converted
-to NumPy at all.
+makes torch's data-free ``meta`` device the default while the ``xp`` fixture
+hands tests a wrapper namespace that creates input arrays on CPU.
+SciPy-internal code resolves the real namespace from its input arrays, so any
+internal creation that omits ``device=`` lands on ``meta`` and fails loudly
+(``Expected all tensors to be on the same device``) at the first combination
+with input data.
+
+In other words: testing with the PyTorch meta device provides a
+device-propagation leak detector, equivalent in structure to a GPU CI run with
+CPU inputs. This includes ``cpu_only`` functions: their NumPy round-trip must
+return results on the *input's* device (not the default device), so they run
+and are value-checked in this mode - more coverage than a CUDA run, where their
+inputs cannot be converted to NumPy at all.
 
 When triaging a failure in this mode:
 
