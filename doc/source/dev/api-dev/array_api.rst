@@ -1294,7 +1294,7 @@ internally without propagating the input's device (``device=xp_device(x)``),
 the result only breaks when the input lives on a *non-default* device - a
 situation regular CPU test runs never exercise.
 
-Using the PyTorch ``'meta''` device (through ``SCIPY_DEVICE=meta``) closes that
+Using the PyTorch ``'meta'`` device (through ``SCIPY_DEVICE=meta``) closes that
 gap without hardware. E.g., running::
 
   pixi run test-torch-meta
