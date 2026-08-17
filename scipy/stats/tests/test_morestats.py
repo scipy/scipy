@@ -3626,7 +3626,7 @@ class TestMedianTest:
         # The median is floating point, but this equality test should be safe.
         xp_assert_equal(med, xp.asarray(2.0))
 
-        xp_assert_equal(tbl, xp.asarray([[1, 1], [2, 2]]))
+        xp_assert_equal(tbl, xp.asarray([[1, 1], [2, 2]], dtype=xp.int64))
 
         # The expected values of the contingency table equal the contingency
         # table, so the statistic should be 0 and the p-value should be 1.
@@ -3643,15 +3643,15 @@ class TestMedianTest:
         # Default 'ties' option is "below".
         stat, p, m, tbl = stats.median_test(x, y, z)
         xp_assert_equal(m, xp.asarray(5.))
-        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 1, 0]]))
+        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 1, 0]], dtype=xp.int64))
 
         stat, p, m, tbl = stats.median_test(x, y, z, ties="ignore")
         xp_assert_equal(m, xp.asarray(5.))
-        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 0, 0]]))
+        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 0, 0]], dtype=xp.int64))
 
         stat, p, m, tbl = stats.median_test(x, y, z, ties="above")
         xp_assert_equal(m, xp.asarray(5.))
-        xp_assert_equal(tbl, xp.asarray([[0, 2, 3], [4, 0, 0]]))
+        xp_assert_equal(tbl, xp.asarray([[0, 2, 3], [4, 0, 0]], dtype=xp.int64))
 
     def test_nan_policy_options(self, xp):
         x = xp.asarray([1., 2., np.nan])
@@ -3662,7 +3662,7 @@ class TestMedianTest:
         xp_assert_equal(s, nan)
         xp_assert_equal(p, nan)
         xp_assert_equal(m, nan)
-        xp_assert_equal(t, xp.asarray([[0, 0], [0, 0]]))
+        xp_assert_equal(t, xp.asarray([[0, 0], [0, 0]], dtype=xp.int64))
 
         if is_lazy_array(x):
             message = "nan_policy='omit' is not supported for lazy arrays."
@@ -3679,7 +3679,7 @@ class TestMedianTest:
         xp_assert_close(s, xp.asarray(0.31250000000000006))
         xp_assert_close(p, xp.asarray(0.57615012203057869))
         xp_assert_equal(m, xp.asarray(4.0))
-        xp_assert_equal(t, xp.asarray([[0, 2], [2, 1]]))
+        xp_assert_equal(t, xp.asarray([[0, 2], [2, 1]], dtype=xp.int64))
 
         message = "The input contains nan values"
         with pytest.raises(ValueError, match=message):
@@ -3696,7 +3696,7 @@ class TestMedianTest:
         stat, p, m, tbl = stats.median_test(x, y, **kwargs)
         exp_stat, exp_p = _chi2_contingency_2d(tbl, **kwargs)
         xp_assert_equal(m, xp.asarray(4.))
-        xp_assert_equal(tbl, xp.asarray([[1, 2], [4, 2]]))
+        xp_assert_equal(tbl, xp.asarray([[1, 2], [4, 2]], dtype=xp.int64))
         xp_assert_close(stat, exp_stat)
         xp_assert_close(p, exp_p)
 
