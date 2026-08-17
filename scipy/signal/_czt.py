@@ -87,7 +87,7 @@ def czt_points(m, w=None, a=1+0j, *, xp=None, device=None):
 
     a = xp.asarray(a, device=device)
     w = xp.asarray(w, device=device) if w is not None else None
-    dtype = xp_result_type(a, w, xp.float64, force_floating=True, xp=xp)
+    dtype = xp_result_type(a, w, force_floating=True, xp=xp)
     a = xp.astype(a, dtype)
     w = xp.astype(w, dtype) if w is not None else None
     k = xp.arange(m, device=device, dtype=xp.float64)
