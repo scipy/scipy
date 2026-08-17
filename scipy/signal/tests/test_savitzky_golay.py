@@ -3,7 +3,7 @@ import numpy as np
 
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, xp_swapaxes, is_torch, make_xp_test_case,
-    xp_copy_to_numpy
+    xp_copy_to_numpy, xp_device
 )
 
 from scipy.ndimage import convolve1d
@@ -12,13 +12,19 @@ from scipy.signal import savgol_coeffs, savgol_filter
 from scipy.signal._savitzky_golay import _polyder
 
 skip_xp_backends = pytest.mark.skip_xp_backends
-skip_xp_meta_newoutput = pytest.mark.skip_xp_meta(
-    reason='savgol_coeffs output is constructed on the default device (host int args)')
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 pytestmark = pytest.mark.skip_xp_backends(
     "dask.array", reason="linalg.lstsq is missing rcond"
 )
+
+
+@pytest.fixture
+def device(xp):
+    # Device of test-created arrays, passed to `savgol_coeffs` explicitly. This
+    # actively covers its `device` kwarg and, on the meta leak-check lane (where
+    # test arrays are cpu-pinned), fails if any internal creation drops `device=`.
+    return xp_device(xp.asarray(0.))
 
 
 def check_polyder(p, m, expected, xp):
@@ -74,31 +80,31 @@ def alt_sg_coeffs(window_length, polyorder, pos, xp):
 
 
 @make_xp_test_case(savgol_coeffs)
-@skip_xp_meta_newoutput
-def test_sg_coeffs_trivial(xp):
+def test_sg_coeffs_trivial(xp, device):
     # Test a trivial case of savgol_coeffs: polyorder = window_length - 1
-    h = savgol_coeffs(1, 0, xp=xp)
+    h = savgol_coeffs(1, 0, xp=xp, device=device)
     xp_assert_close(h, xp.asarray([1.0], dtype=xp.float64))
 
-    h = savgol_coeffs(3, 2, xp=xp)
+    h = savgol_coeffs(3, 2, xp=xp, device=device)
     xp_assert_close(h, xp.asarray([0.0, 1, 0], dtype=xp.float64), atol=1e-10)
 
-    h = savgol_coeffs(5, 4, xp=xp)
+    h = savgol_coeffs(5, 4, xp=xp, device=device)
     xp_assert_close(h, xp.asarray([0.0, 0, 1, 0, 0], dtype=xp.float64), atol=1e-10)
 
-    h = savgol_coeffs(5, 4, pos=1, xp=xp)
+    h = savgol_coeffs(5, 4, pos=1, xp=xp, device=device)
     xp_assert_close(h, xp.asarray([0.0, 0, 0, 1, 0], dtype=xp.float64), atol=1e-10)
 
-    h = savgol_coeffs(5, 4, pos=1, use='dot', xp=xp)
+    h = savgol_coeffs(5, 4, pos=1, use='dot', xp=xp, device=device)
     xp_assert_close(h, xp.asarray([0.0, 1, 0, 0, 0], dtype=xp.float64), atol=1e-10)
 
 
-def compare_coeffs_to_alt(window_length, order, xp):
+def compare_coeffs_to_alt(window_length, order, xp, device):
     # For the given window_length and order, compare the results
     # of savgol_coeffs and alt_sg_coeffs for pos from 0 to window_length - 1.
     # Also include pos=None.
     for pos in [None] + list(range(window_length)):
-        h1 = savgol_coeffs(window_length, order, pos=pos, use='dot', xp=xp)
+        h1 = savgol_coeffs(window_length, order, pos=pos, use='dot',
+                           xp=xp, device=device)
         h2 = alt_sg_coeffs(window_length, order, pos=pos, xp=xp)
         xp_assert_close(
             h1, h2, atol=2e-10,
@@ -107,17 +113,15 @@ def compare_coeffs_to_alt(window_length, order, xp):
 
 
 @make_xp_test_case(savgol_coeffs)
-@skip_xp_meta_newoutput
-def test_sg_coeffs_compare(xp):
+def test_sg_coeffs_compare(xp, device):
     # Compare savgol_coeffs() to alt_sg_coeffs().
     for window_length in range(1, 8, 2):
         for order in range(window_length):
-            compare_coeffs_to_alt(window_length, order, xp=xp)
+            compare_coeffs_to_alt(window_length, order, xp=xp, device=device)
 
 
 @make_xp_test_case(savgol_coeffs)
-@skip_xp_meta_newoutput
-def test_sg_coeffs_exact(xp):
+def test_sg_coeffs_exact(xp, device):
     polyorder = 4
     window_length = 9
     halflen = window_length // 2
@@ -129,26 +133,27 @@ def test_sg_coeffs_exact(xp):
     # SG filter, so the filtered values should equal the input data
     # (except within half window_length of the edges).
     y = 0.5 * x ** 3 - x
-    h = savgol_coeffs(window_length, polyorder, xp=xp)
+    h = savgol_coeffs(window_length, polyorder, xp=xp, device=device)
     y0 = xp.asarray(convolve1d(xp_copy_to_numpy(y), xp_copy_to_numpy(h)))
     xp_assert_close(y0[halflen:-halflen], y[halflen:-halflen])
 
     # Check the same input, but use deriv=1.  dy is the exact result.
     dy = 1.5 * x ** 2 - 1
-    h = savgol_coeffs(window_length, polyorder, deriv=1, delta=delta, xp=xp)
+    h = savgol_coeffs(window_length, polyorder, deriv=1, delta=delta,
+                      xp=xp, device=device)
     y1 = xp.asarray(convolve1d(xp_copy_to_numpy(y), xp_copy_to_numpy(h)))
     xp_assert_close(y1[halflen:-halflen], dy[halflen:-halflen])
 
     # Check the same input, but use deriv=2. d2y is the exact result.
     d2y = 3.0 * x
-    h = savgol_coeffs(window_length, polyorder, deriv=2, delta=delta, xp=xp)
+    h = savgol_coeffs(window_length, polyorder, deriv=2, delta=delta,
+                      xp=xp, device=device)
     y2 = xp.asarray(convolve1d(xp_copy_to_numpy(y), xp_copy_to_numpy(h)))
     xp_assert_close(y2[halflen:-halflen], d2y[halflen:-halflen])
 
 
 @make_xp_test_case(savgol_coeffs)
-@skip_xp_meta_newoutput
-def test_sg_coeffs_deriv(xp):
+def test_sg_coeffs_deriv(xp, device):
     # The data in `x` is a sampled parabola, so using savgol_coeffs with an
     # order 2 or higher polynomial should give exact results.
     i = xp.asarray([-2.0, 0.0, 2.0, 4.0, 6.0], dtype=xp.float64)
@@ -156,26 +161,28 @@ def test_sg_coeffs_deriv(xp):
     dx = i / 2
     d2x = xp.full_like(i, 0.5)
     for pos in range(x.shape[0]):
-        coeffs0 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', xp=xp)
+        coeffs0 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot',
+                                xp=xp, device=device)
         xp_assert_close(coeffs0 @ x, x[pos], atol=1e-10)
-        coeffs1 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', deriv=1, xp=xp)
+        coeffs1 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', deriv=1,
+                                xp=xp, device=device)
         xp_assert_close(coeffs1 @ x, dx[pos], atol=1e-10)
-        coeffs2 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', deriv=2, xp=xp)
+        coeffs2 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', deriv=2,
+                                xp=xp, device=device)
         xp_assert_close(coeffs2 @ x , d2x[pos], atol=1e-10)
 
 
 @make_xp_test_case(savgol_coeffs)
-@skip_xp_meta_newoutput
-def test_sg_coeffs_deriv_gt_polyorder(xp):
+def test_sg_coeffs_deriv_gt_polyorder(xp, device):
     """
     If deriv > polyorder, the coefficients should be all 0.
     This is a regression test for a bug where, e.g.,
         savgol_coeffs(5, polyorder=1, deriv=2)
     raised an error.
     """
-    coeffs = savgol_coeffs(5, polyorder=1, deriv=2, xp=xp)
+    coeffs = savgol_coeffs(5, polyorder=1, deriv=2, xp=xp, device=device)
     xp_assert_equal(coeffs, xp.zeros(5, dtype=xp.float64))
-    coeffs = savgol_coeffs(7, polyorder=4, deriv=6, xp=xp)
+    coeffs = savgol_coeffs(7, polyorder=4, deriv=6, xp=xp, device=device)
     xp_assert_equal(coeffs, xp.zeros(7, dtype=xp.float64))
 
 
@@ -202,12 +209,11 @@ def test_sg_coeffs_large(xp):
 # --------------------------------------------------------------------
 
 @make_xp_test_case(savgol_coeffs)
-@skip_xp_meta_newoutput
-def test_sg_coeffs_even_window_length(xp):
+def test_sg_coeffs_even_window_length(xp, device):
     # Simple case - deriv=0, polyorder=0, 1
     window_lengths = [4, 6, 8, 10, 12, 14, 16]
     for length in window_lengths:
-        h_p_d = savgol_coeffs(length, 0, 0, xp=xp)
+        h_p_d = savgol_coeffs(length, 0, 0, xp=xp, device=device)
         xp_assert_close(h_p_d, xp.ones_like(h_p_d) / length)
 
     # Verify with closed forms
@@ -226,17 +232,17 @@ def test_sg_coeffs_even_window_length(xp):
         expected_output = [h_p_d_closed_form_1(k, m)
                            for k in range(-m + 1, m + 1)][::-1]
         expected_output = xp.asarray(expected_output, dtype=xp.float64)
-        actual_output = savgol_coeffs(length, 1, 1, xp=xp)
+        actual_output = savgol_coeffs(length, 1, 1, xp=xp, device=device)
         xp_assert_close(actual_output, expected_output)
-        actual_output = savgol_coeffs(length, 2, 1, xp=xp)
+        actual_output = savgol_coeffs(length, 2, 1, xp=xp, device=device)
         xp_assert_close(actual_output, expected_output)
 
         expected_output = [h_p_d_closed_form_2(k, m)
                            for k in range(-m + 1, m + 1)][::-1]
         expected_output = xp.asarray(expected_output, dtype=xp.float64)
-        actual_output = savgol_coeffs(length, 2, 2, xp=xp)
+        actual_output = savgol_coeffs(length, 2, 2, xp=xp, device=device)
         xp_assert_close(actual_output, expected_output)
-        actual_output = savgol_coeffs(length, 3, 2, xp=xp)
+        actual_output = savgol_coeffs(length, 3, 2, xp=xp, device=device)
         xp_assert_close(actual_output, expected_output)
 
 #--------------------------------------------------------------------

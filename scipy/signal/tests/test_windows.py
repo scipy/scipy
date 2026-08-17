@@ -12,15 +12,22 @@ from scipy.signal.windows._windows import _WIN_FUNC_DATA, _WIN_FUNCS
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, SCIPY_DEVICE, is_numpy, make_xp_test_case,
-    make_xp_pytest_param, xp_copy_to_numpy
+    make_xp_pytest_param, xp_copy_to_numpy, xp_device
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-skip_xp_meta_newoutput = pytest.mark.skip_xp_meta(
-    reason='output is constructed on the default device (host int `M`)')
 
 lazy_xp_modules = [windows]
+
+
+@pytest.fixture
+def device(xp):
+    # Device of test-created arrays, passed to the window functions explicitly.
+    # This actively covers their `device` kwarg and, on the meta leak-check lane
+    # (where test arrays are cpu-pinned), fails if any internal creation drops
+    # `device=`.
+    return xp_device(xp.asarray(0.))
 
 
 window_funcs = [
@@ -52,17 +59,16 @@ window_funcs = [
 @make_xp_test_case(windows.barthann)
 class TestBartHann:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.barthann(6, sym=True, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.barthann(6, sym=True, xp=xp, device=device),
                         xp.asarray([0, 0.35857354213752, 0.8794264578624801,
                          0.8794264578624801, 0.3585735421375199, 0], dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
-        xp_assert_close(windows.barthann(7, xp=xp),
+        xp_assert_close(windows.barthann(7, xp=xp, device=device),
                         xp.asarray([0, 0.27, 0.73, 1.0, 0.73, 0.27, 0],
                                    dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
-        xp_assert_close(windows.barthann(6, False, xp=xp),
+        xp_assert_close(windows.barthann(6, False, xp=xp, device=device),
                         xp.asarray([0, 0.27, 0.73, 1.0, 0.73, 0.27], dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
 
@@ -70,36 +76,34 @@ class TestBartHann:
 @make_xp_test_case(windows.bartlett)
 class TestBartlett:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.bartlett(6, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.bartlett(6, xp=xp, device=device),
                         xp.asarray([0, 0.4, 0.8, 0.8, 0.4, 0], dtype=xp.float64))
-        xp_assert_close(windows.bartlett(7, xp=xp),
+        xp_assert_close(windows.bartlett(7, xp=xp, device=device),
                         xp.asarray([0, 1/3, 2/3, 1.0, 2/3, 1/3, 0], dtype=xp.float64))
-        xp_assert_close(windows.bartlett(6, False, xp=xp),
+        xp_assert_close(windows.bartlett(6, False, xp=xp, device=device),
                         xp.asarray([0, 1/3, 2/3, 1.0, 2/3, 1/3], dtype=xp.float64))
 
 
 @make_xp_test_case(windows.blackman)
 class TestBlackman:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.blackman(6, sym=False, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.blackman(6, sym=False, xp=xp, device=device),
                         xp.asarray([0, 0.13, 0.63, 1.0, 0.63, 0.13], dtype=xp.float64),
                         atol=1e-14)
-        xp_assert_close(windows.blackman(7, sym=False, xp=xp),
+        xp_assert_close(windows.blackman(7, sym=False, xp=xp, device=device),
                         xp.asarray([0, 0.09045342435412804, 0.4591829575459636,
                                     0.9203636180999081, 0.9203636180999081,
                                     0.4591829575459636, 0.09045342435412804],
                                     dtype=xp.float64),
                         atol=1e-8)
-        xp_assert_close(windows.blackman(6, xp=xp),
+        xp_assert_close(windows.blackman(6, xp=xp, device=device),
                         xp.asarray([0, 0.2007701432625305, 0.8492298567374694,
                                     0.8492298567374694, 0.2007701432625305, 0],
                                     dtype=xp.float64),
                         atol=1e-14)
-        xp_assert_close(windows.blackman(7, True, xp=xp),
+        xp_assert_close(windows.blackman(7, True, xp=xp, device=device),
                         xp.asarray([0, 0.13, 0.63, 1.0, 0.63, 0.13, 0],
                         dtype=xp.float64), atol=1e-14)
 
@@ -107,68 +111,66 @@ class TestBlackman:
 @make_xp_test_case(windows.blackmanharris)
 class TestBlackmanHarris:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.blackmanharris(6, False, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.blackmanharris(6, False, xp=xp, device=device),
                         xp.asarray([6.0e-05, 0.055645, 0.520575,
                                     1.0, 0.520575, 0.055645], dtype=xp.float64))
-        xp_assert_close(windows.blackmanharris(7, sym=False, xp=xp),
+        xp_assert_close(windows.blackmanharris(7, sym=False, xp=xp, device=device),
                         xp.asarray([6.0e-05, 0.03339172347815117, 0.332833504298565,
                                     0.8893697722232837, 0.8893697722232838,
                                     0.3328335042985652, 0.03339172347815122],
                                     dtype=xp.float64))
-        xp_assert_close(windows.blackmanharris(6, xp=xp),
+        xp_assert_close(windows.blackmanharris(6, xp=xp, device=device),
                         xp.asarray([6.0e-05, 0.1030114893456638, 0.7938335106543362,
                                     0.7938335106543364, 0.1030114893456638, 6.0e-05],
                                     dtype=xp.float64))
-        xp_assert_close(windows.blackmanharris(7, sym=True, xp=xp),
+        xp_assert_close(windows.blackmanharris(7, sym=True, xp=xp, device=device),
                         xp.asarray([6.0e-05, 0.055645, 0.520575, 1.0, 0.520575,
                                     0.055645, 6.0e-05], dtype=xp.float64))
 
 
 @make_xp_test_case(windows.taylor)
-@skip_xp_meta_newoutput
 class TestTaylor:
 
-    def test_normalized(self, xp):
+    def test_normalized(self, xp, device):
         """Tests windows of small length that are normalized to 1. See the
         documentation for the Taylor window for more information on
         normalization.
         """
-        xp_assert_close(windows.taylor(1, 2, 15, xp=xp),
+        xp_assert_close(windows.taylor(1, 2, 15, xp=xp, device=device),
                         xp.asarray([1.0], dtype=xp.float64))
         xp_assert_close(
-            windows.taylor(5, 2, 15, xp=xp),
+            windows.taylor(5, 2, 15, xp=xp, device=device),
             xp.asarray([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341],
                        dtype=xp.float64)
         )
         xp_assert_close(
-            windows.taylor(6, 2, 15, xp=xp),
+            windows.taylor(6, 2, 15, xp=xp, device=device),
             xp.asarray([
                 0.7504082, 0.86624416, 0.98208011, 0.98208011, 0.86624416,
                 0.7504082
             ], dtype=xp.float64)
         )
 
-    def test_non_normalized(self, xp):
+    def test_non_normalized(self, xp, device):
         """Test windows of small length that are not normalized to 1. See
         the documentation for the Taylor window for more information on
         normalization.
         """
         xp_assert_close(
-            windows.taylor(5, 2, 15, norm=False, xp=xp),
+            windows.taylor(5, 2, 15, norm=False, xp=xp, device=device),
             xp.asarray([
                 0.87508054, 1.04771499, 1.15440894, 1.04771499, 0.87508054
             ], dtype=xp.float64)
         )
         xp_assert_close(
-            windows.taylor(6, 2, 15, norm=False, xp=xp),
+            windows.taylor(6, 2, 15, norm=False, xp=xp, device=device),
             xp.asarray([
                 0.86627793, 1.0, 1.13372207, 1.13372207, 1.0, 0.86627793
             ], dtype=xp.float64)
         )
 
-    def test_correctness(self, xp):
+    def test_correctness(self, xp, device):
         """This test ensures the correctness of the implemented Taylor
         Windowing function. A Taylor Window of 1024 points is created, its FFT
         is taken, and the Peak Sidelobe Level (PSLL) and 3dB and 18dB bandwidth
@@ -188,7 +190,8 @@ class TestTaylor:
         # Set norm=False for correctness as the values obtained from the
         # scientific publication do not normalize the values. Normalizing
         # changes the sidelobe level from the desired value.
-        w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False, xp=xp)
+        w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False,
+                           xp=xp, device=device)
         f_np = fft(xp_copy_to_numpy(w), N_fft)
 
         spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
@@ -208,17 +211,16 @@ class TestTaylor:
 @make_xp_test_case(windows.bohman)
 class TestBohman:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.bohman(6, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.bohman(6, xp=xp, device=device),
                         xp.asarray([0, 0.1791238937062839, 0.8343114522576858,
                                     0.8343114522576858, 0.1791238937062838, 0],
                                     dtype=xp.float64))
-        xp_assert_close(windows.bohman(7, sym=True, xp=xp),
+        xp_assert_close(windows.bohman(7, sym=True, xp=xp, device=device),
                         xp.asarray([0, 0.1089977810442293, 0.6089977810442293, 1.0,
                                     0.6089977810442295, 0.1089977810442293, 0],
                                     dtype=xp.float64))
-        xp_assert_close(windows.bohman(6, False, xp=xp),
+        xp_assert_close(windows.bohman(6, False, xp=xp, device=device),
                         xp.asarray([0, 0.1089977810442293, 0.6089977810442293, 1.0,
                                     0.6089977810442295, 0.1089977810442293],
                                     dtype=xp.float64))
@@ -227,13 +229,12 @@ class TestBohman:
 @make_xp_test_case(windows.boxcar)
 class TestBoxcar:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.boxcar(6, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.boxcar(6, xp=xp, device=device),
                         xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
-        xp_assert_close(windows.boxcar(7, xp=xp),
+        xp_assert_close(windows.boxcar(7, xp=xp, device=device),
                         xp.asarray([1.0, 1, 1, 1, 1, 1, 1], dtype=xp.float64))
-        xp_assert_close(windows.boxcar(6, False, xp=xp),
+        xp_assert_close(windows.boxcar(6, False, xp=xp, device=device),
                         xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
 
 
@@ -273,70 +274,69 @@ cheb_even_true = [0.203894, 0.107279, 0.133904,
 
 
 @make_xp_test_case(windows.chebwin)
-@skip_xp_meta_newoutput
 class TestChebWin:
 
-    def test_basic(self, xp):
+    def test_basic(self, xp, device):
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "This window is not suitable", UserWarning)
-            xp_assert_close(windows.chebwin(6, 100, xp=xp),
+            xp_assert_close(windows.chebwin(6, 100, xp=xp, device=device),
                             xp.asarray([0.1046401879356917, 0.5075781475823447,
                                         1.0, 1.0,
                                         0.5075781475823447, 0.1046401879356917],
                                         dtype=xp.float64),
                             atol=1e-8
             )
-            xp_assert_close(windows.chebwin(7, 100, xp=xp),
+            xp_assert_close(windows.chebwin(7, 100, xp=xp, device=device),
                             xp.asarray([0.05650405062850233, 0.316608530648474,
                                         0.7601208123539079, 1.0, 0.7601208123539079,
                                         0.316608530648474, 0.05650405062850233],
                                         dtype=xp.float64))
-            xp_assert_close(windows.chebwin(6, 10, xp=xp),
+            xp_assert_close(windows.chebwin(6, 10, xp=xp, device=device),
                             xp.asarray([1.0, 0.6071201674458373, 0.6808391469897297,
                                         0.6808391469897297, 0.6071201674458373, 1.0],
                                         dtype=xp.float64))
-            xp_assert_close(windows.chebwin(7, 10, xp=xp),
+            xp_assert_close(windows.chebwin(7, 10, xp=xp, device=device),
                             xp.asarray([1.0, 0.5190521247588651, 0.5864059018130382,
                                         0.6101519801307441, 0.5864059018130382,
                                         0.5190521247588651, 1.0], dtype=xp.float64))
-            xp_assert_close(windows.chebwin(6, 10, False, xp=xp),
+            xp_assert_close(windows.chebwin(6, 10, False, xp=xp, device=device),
                             xp.asarray([1.0, 0.5190521247588651, 0.5864059018130382,
                                         0.6101519801307441, 0.5864059018130382,
                                         0.5190521247588651], dtype=xp.float64))
 
-    def test_cheb_odd_high_attenuation(self, xp):
+    def test_cheb_odd_high_attenuation(self, xp, device):
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "This window is not suitable", UserWarning)
-            cheb_odd = windows.chebwin(53, at=-40, xp=xp)
+            cheb_odd = windows.chebwin(53, at=-40, xp=xp, device=device)
         assert_array_almost_equal(cheb_odd, xp.asarray(cheb_odd_true), decimal=4)
 
-    def test_cheb_even_high_attenuation(self, xp):
+    def test_cheb_even_high_attenuation(self, xp, device):
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "This window is not suitable", UserWarning)
-            cheb_even = windows.chebwin(54, at=40, xp=xp)
+            cheb_even = windows.chebwin(54, at=40, xp=xp, device=device)
         assert_array_almost_equal(cheb_even, xp.asarray(cheb_even_true), decimal=4)
 
-    def test_cheb_odd_low_attenuation(self, xp):
+    def test_cheb_odd_low_attenuation(self, xp, device):
         cheb_odd_low_at_true = xp.asarray([1.000000, 0.519052, 0.586405,
                                            0.610151, 0.586405, 0.519052,
                                            1.000000], dtype=xp.float64)
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "This window is not suitable", UserWarning)
-            cheb_odd = windows.chebwin(7, at=10, xp=xp)
+            cheb_odd = windows.chebwin(7, at=10, xp=xp, device=device)
         assert_array_almost_equal(cheb_odd, cheb_odd_low_at_true, decimal=4)
 
-    def test_cheb_even_low_attenuation(self, xp):
+    def test_cheb_even_low_attenuation(self, xp, device):
         cheb_even_low_at_true = xp.asarray([1.000000, 0.451924, 0.51027,
                                             0.541338, 0.541338, 0.51027,
                                             0.451924, 1.000000], dtype=xp.float64)
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "This window is not suitable", UserWarning)
-            cheb_even = windows.chebwin(8, at=-10, xp=xp)
+            cheb_even = windows.chebwin(8, at=-10, xp=xp, device=device)
         assert_array_almost_equal(cheb_even, cheb_even_low_at_true, decimal=4)
 
 
@@ -370,35 +370,33 @@ exponential_data = {
 
 
 @make_xp_test_case(windows.exponential)
-@skip_xp_meta_newoutput
-def test_exponential(xp):
+def test_exponential(xp, device):
     for k, v in exponential_data.items():
         if v is None:
-            assert_raises(ValueError, windows.exponential, *k, xp=xp)
+            assert_raises(ValueError, windows.exponential, *k, xp=xp, device=device)
         else:
-            win = windows.exponential(*k, xp=xp)
+            win = windows.exponential(*k, xp=xp, device=device)
             xp_assert_close(win, xp.asarray(v), rtol=1e-14)
 
 
 @make_xp_test_case(windows.flattop)
 class TestFlatTop:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.flattop(6, sym=False, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.flattop(6, sym=False, xp=xp, device=device),
                         xp.asarray([-0.000421051, -0.051263156, 0.19821053, 1.0,
                                      0.19821053, -0.051263156], dtype=xp.float64))
-        xp_assert_close(windows.flattop(7, sym=False, xp=xp),
+        xp_assert_close(windows.flattop(7, sym=False, xp=xp, device=device),
                         xp.asarray([-0.000421051, -0.03684078115492348,
                                      0.01070371671615342, 0.7808739149387698,
                                      0.7808739149387698, 0.01070371671615342,
                                     -0.03684078115492348], dtype=xp.float64))
-        xp_assert_close(windows.flattop(6, xp=xp),
+        xp_assert_close(windows.flattop(6, xp=xp, device=device),
                         xp.asarray([-0.000421051, -0.0677142520762119,
                                      0.6068721525762117, 0.6068721525762117,
                                     -0.0677142520762119, -0.000421051],
                                     dtype=xp.float64))
-        xp_assert_close(windows.flattop(7, True, xp=xp),
+        xp_assert_close(windows.flattop(7, True, xp=xp, device=device),
                         xp.asarray([-0.000421051, -0.051263156, 0.19821053, 1.0,
                                      0.19821053, -0.051263156, -0.000421051],
                                      dtype=xp.float64))
@@ -407,24 +405,23 @@ class TestFlatTop:
 @make_xp_test_case(windows.gaussian)
 class TestGaussian:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.gaussian(6, 1.0, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.gaussian(6, 1.0, xp=xp, device=device),
                         xp.asarray([0.04393693362340742, 0.3246524673583497,
                                     0.8824969025845955, 0.8824969025845955,
                                     0.3246524673583497, 0.04393693362340742],
                                     dtype=xp.float64))
-        xp_assert_close(windows.gaussian(7, 1.2, xp=xp),
+        xp_assert_close(windows.gaussian(7, 1.2, xp=xp, device=device),
                         xp.asarray([0.04393693362340742, 0.2493522087772962,
                                     0.7066482778577162, 1.0, 0.7066482778577162,
                                     0.2493522087772962, 0.04393693362340742],
                                     dtype=xp.float64))
-        xp_assert_close(windows.gaussian(7, 3, xp=xp),
+        xp_assert_close(windows.gaussian(7, 3, xp=xp, device=device),
                         xp.asarray([0.6065306597126334, 0.8007374029168081,
                                     0.9459594689067654, 1.0, 0.9459594689067654,
                                     0.8007374029168081, 0.6065306597126334],
                                     dtype=xp.float64))
-        xp_assert_close(windows.gaussian(6, 3, False, xp=xp),
+        xp_assert_close(windows.gaussian(6, 3, False, xp=xp, device=device),
                         xp.asarray([0.6065306597126334, 0.8007374029168081,
                                     0.9459594689067654, 1.0, 0.9459594689067654,
                                     0.8007374029168081], dtype=xp.float64))
@@ -446,14 +443,15 @@ class TestGeneralCosine:
 @make_xp_test_case(windows.general_hamming)
 class TestGeneralHamming:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.general_hamming(5, 0.7, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.general_hamming(5, 0.7, xp=xp, device=device),
                         xp.asarray([0.4, 0.7, 1.0, 0.7, 0.4], dtype=xp.float64))
-        xp_assert_close(windows.general_hamming(5, 0.75, sym=False, xp=xp),
+        xp_assert_close(windows.general_hamming(5, 0.75, sym=False,
+                                                xp=xp, device=device),
                         xp.asarray([0.5, 0.6727457514, 0.9522542486,
                                     0.9522542486, 0.6727457514], dtype=xp.float64))
-        xp_assert_close(windows.general_hamming(6, 0.75, sym=True, xp=xp),
+        xp_assert_close(windows.general_hamming(6, 0.75, sym=True,
+                                                xp=xp, device=device),
                         xp.asarray([0.5, 0.6727457514, 0.9522542486,
                                     0.9522542486, 0.6727457514, 0.5], dtype=xp.float64))
 
@@ -461,21 +459,20 @@ class TestGeneralHamming:
 @make_xp_test_case(windows.hamming)
 class TestHamming:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.hamming(6, False, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.hamming(6, False, xp=xp, device=device),
                         xp.asarray([0.08, 0.31, 0.77, 1.0, 0.77, 0.31],
                                    dtype=xp.float64))
-        xp_assert_close(windows.hamming(7, sym=False, xp=xp),
+        xp_assert_close(windows.hamming(7, sym=False, xp=xp, device=device),
                         xp.asarray([0.08, 0.2531946911449826, 0.6423596296199047,
                                     0.9544456792351128, 0.9544456792351128,
                                     0.6423596296199047, 0.2531946911449826],
                                     dtype=xp.float64))
-        xp_assert_close(windows.hamming(6, xp=xp),
+        xp_assert_close(windows.hamming(6, xp=xp, device=device),
                         xp.asarray([0.08, 0.3978521825875242, 0.9121478174124757,
                                     0.9121478174124757, 0.3978521825875242, 0.08],
                                     dtype=xp.float64))
-        xp_assert_close(windows.hamming(7, sym=True, xp=xp),
+        xp_assert_close(windows.hamming(7, sym=True, xp=xp, device=device),
                         xp.asarray([0.08, 0.31, 0.77, 1.0, 0.77, 0.31, 0.08],
                                    dtype=xp.float64))
 
@@ -483,23 +480,22 @@ class TestHamming:
 @make_xp_test_case(windows.hann)
 class TestHann:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.hann(6, sym=False, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.hann(6, sym=False, xp=xp, device=device),
                         xp.asarray([0, 0.25, 0.75, 1.0, 0.75, 0.25], dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
-        xp_assert_close(windows.hann(7, sym=False, xp=xp),
+        xp_assert_close(windows.hann(7, sym=False, xp=xp, device=device),
                         xp.asarray([0, 0.1882550990706332, 0.6112604669781572,
                                     0.9504844339512095, 0.9504844339512095,
                                     0.6112604669781572, 0.1882550990706332],
                                     dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
-        xp_assert_close(windows.hann(6, True, xp=xp),
+        xp_assert_close(windows.hann(6, True, xp=xp, device=device),
                         xp.asarray([0, 0.3454915028125263, 0.9045084971874737,
                                     0.9045084971874737, 0.3454915028125263, 0],
                                     dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
-        xp_assert_close(windows.hann(7, xp=xp),
+        xp_assert_close(windows.hann(7, xp=xp, device=device),
                         xp.asarray([0, 0.25, 0.75, 1.0, 0.75, 0.25, 0],
                         dtype=xp.float64),
                         rtol=1e-15, atol=1e-15)
@@ -508,29 +504,28 @@ class TestHann:
 @make_xp_test_case(windows.kaiser)
 class TestKaiser:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.kaiser(6, 0.5, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.kaiser(6, 0.5, xp=xp, device=device),
                         xp.asarray([0.9403061933191572, 0.9782962393705389,
                                     0.9975765035372042, 0.9975765035372042,
                                     0.9782962393705389, 0.9403061933191572],
                                     dtype=xp.float64))
-        xp_assert_close(windows.kaiser(7, 0.5, xp=xp),
+        xp_assert_close(windows.kaiser(7, 0.5, xp=xp, device=device),
                         xp.asarray([0.9403061933191572, 0.9732402256999829,
                                     0.9932754654413773, 1.0, 0.9932754654413773,
                                     0.9732402256999829, 0.9403061933191572],
                                     dtype=xp.float64))
-        xp_assert_close(windows.kaiser(6, 2.7, xp=xp),
+        xp_assert_close(windows.kaiser(6, 2.7, xp=xp, device=device),
                         xp.asarray([0.2603047507678832, 0.6648106293528054,
                                     0.9582099802511439, 0.9582099802511439,
                                     0.6648106293528054, 0.2603047507678832],
                                     dtype=xp.float64))
-        xp_assert_close(windows.kaiser(7, 2.7, xp=xp),
+        xp_assert_close(windows.kaiser(7, 2.7, xp=xp, device=device),
                         xp.asarray([0.2603047507678832, 0.5985765418119844,
                                     0.8868495172060835, 1.0, 0.8868495172060835,
                                     0.5985765418119844, 0.2603047507678832],
                                     dtype=xp.float64))
-        xp_assert_close(windows.kaiser(6, 2.7, False, xp=xp),
+        xp_assert_close(windows.kaiser(6, 2.7, False, xp=xp, device=device),
                         xp.asarray([0.2603047507678832, 0.5985765418119844,
                                     0.8868495172060835, 1.0, 0.8868495172060835,
                                     0.5985765418119844], dtype=xp.float64))
@@ -539,16 +534,15 @@ class TestKaiser:
 @make_xp_test_case(windows.kaiser_bessel_derived)
 class TestKaiserBesselDerived:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
+    def test_basic(self, xp, device):
         # cover case `M < 1`
-        w = windows.kaiser_bessel_derived(0.5, beta=4.0, xp=xp)
+        w = windows.kaiser_bessel_derived(0.5, beta=4.0, xp=xp, device=device)
         xp_assert_equal(w, xp.asarray([]))
 
         M = 100
-        w = windows.kaiser_bessel_derived(M, beta=4.0, xp=xp)
+        w = windows.kaiser_bessel_derived(M, beta=4.0, xp=xp, device=device)
         w2 = windows.get_window(('kaiser bessel derived', 4.0),
-                                M, fftbins=False, xp=xp)
+                                M, fftbins=False, xp=xp, device=device)
         xp_assert_close(w, w2)
 
         # Test for Princen-Bradley condition
@@ -560,14 +554,17 @@ class TestKaiserBesselDerived:
         # M = 4:  0.518562710536, 0.855039598640
         # M = 6:  0.436168993154, 0.707106781187, 0.899864772847
         # Ref:https://github.com/scipy/scipy/pull/4747#issuecomment-172849418
-        actual = windows.kaiser_bessel_derived(2, beta=np.pi / 2, xp=xp)[:1]
+        actual = windows.kaiser_bessel_derived(2, beta=np.pi / 2,
+                                               xp=xp, device=device)[:1]
         desired = xp.ones_like(actual) * math.sqrt(2) / 2.0
         xp_assert_close(actual, desired)
 
-        xp_assert_close(windows.kaiser_bessel_derived(4, beta=np.pi / 2, xp=xp)[:2],
+        xp_assert_close(windows.kaiser_bessel_derived(4, beta=np.pi / 2,
+                                                      xp=xp, device=device)[:2],
                         xp.asarray([0.518562710536, 0.855039598640], dtype=xp.float64))
 
-        xp_assert_close(windows.kaiser_bessel_derived(6, beta=np.pi / 2, xp=xp)[:3],
+        xp_assert_close(windows.kaiser_bessel_derived(6, beta=np.pi / 2,
+                                                      xp=xp, device=device)[:3],
                         xp.asarray([0.436168993154, 0.707106781187, 0.899864772847],
                                    dtype=xp.float64))
 
@@ -589,22 +586,21 @@ class TestKaiserBesselDerived:
 @make_xp_test_case(windows.nuttall)
 class TestNuttall:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.nuttall(6, sym=False, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.nuttall(6, sym=False, xp=xp, device=device),
                         xp.asarray([0.0003628, 0.0613345, 0.5292298, 1.0, 0.5292298,
                                     0.0613345], dtype=xp.float64))
-        xp_assert_close(windows.nuttall(7, sym=False, xp=xp),
+        xp_assert_close(windows.nuttall(7, sym=False, xp=xp, device=device),
                         xp.asarray([0.0003628, 0.03777576895352025,
                                     0.3427276199688195,
                                     0.8918518610776603, 0.8918518610776603,
                                     0.3427276199688196, 0.0377757689535203],
                                     dtype=xp.float64))
-        xp_assert_close(windows.nuttall(6, xp=xp),
+        xp_assert_close(windows.nuttall(6, xp=xp, device=device),
                         xp.asarray([0.0003628, 0.1105152530498718,
                                     0.7982580969501282, 0.7982580969501283,
                                     0.1105152530498719, 0.0003628], dtype=xp.float64))
-        xp_assert_close(windows.nuttall(7, True, xp=xp),
+        xp_assert_close(windows.nuttall(7, True, xp=xp, device=device),
                         xp.asarray([0.0003628, 0.0613345, 0.5292298, 1.0,
                                     0.5292298, 0.0613345, 0.0003628], dtype=xp.float64))
 
@@ -612,18 +608,17 @@ class TestNuttall:
 @make_xp_test_case(windows.parzen)
 class TestParzen:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
-        xp_assert_close(windows.parzen(6, xp=xp),
+    def test_basic(self, xp, device):
+        xp_assert_close(windows.parzen(6, xp=xp, device=device),
                         xp.asarray([0.009259259259259254, 0.25, 0.8611111111111112,
                                     0.8611111111111112, 0.25, 0.009259259259259254],
                                     dtype=xp.float64))
-        xp_assert_close(windows.parzen(7, sym=True, xp=xp),
+        xp_assert_close(windows.parzen(7, sym=True, xp=xp, device=device),
                         xp.asarray([0.00583090379008747, 0.1574344023323616,
                                     0.6501457725947521, 1.0, 0.6501457725947521,
                                     0.1574344023323616, 0.00583090379008747],
                                     dtype=xp.float64))
-        xp_assert_close(windows.parzen(6, False, xp=xp),
+        xp_assert_close(windows.parzen(6, False, xp=xp, device=device),
                         xp.asarray([0.00583090379008747, 0.1574344023323616,
                                     0.6501457725947521, 1.0, 0.6501457725947521,
                                     0.1574344023323616], dtype=xp.float64))
@@ -632,14 +627,13 @@ class TestParzen:
 @make_xp_test_case(windows.triang)
 class TestTriang:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
+    def test_basic(self, xp, device):
 
-        xp_assert_close(windows.triang(6, True, xp=xp),
+        xp_assert_close(windows.triang(6, True, xp=xp, device=device),
                         xp.asarray([1/6, 1/2, 5/6, 5/6, 1/2, 1/6], dtype=xp.float64))
-        xp_assert_close(windows.triang(7, xp=xp),
+        xp_assert_close(windows.triang(7, xp=xp, device=device),
                         xp.asarray([1/4, 1/2, 3/4, 1, 3/4, 1/2, 1/4], dtype=xp.float64))
-        xp_assert_close(windows.triang(6, sym=False, xp=xp),
+        xp_assert_close(windows.triang(6, sym=False, xp=xp, device=device),
                         xp.asarray([1/4, 1/2, 3/4, 1, 3/4, 1/2], dtype=xp.float64))
 
 
@@ -675,19 +669,18 @@ tukey_data = {
 @make_xp_test_case(windows.tukey)
 class TestTukey:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
+    def test_basic(self, xp, device):
         # Test against hardcoded data
         for k, v in tukey_data.items():
             if v is None:
-                assert_raises(ValueError, windows.tukey, *k, xp=xp)
+                assert_raises(ValueError, windows.tukey, *k, xp=xp, device=device)
             else:
                 if is_torch(xp) and k in [(6,), (6, .75), (7, .75), (6,1)]:
                      atol_rtol = {'rtol': 3e-8, 'atol': 1e-8}
                 else:
                      atol_rtol = {'rtol': 1e-15, 'atol': 1e-15 }
 
-                win = windows.tukey(*k, xp=xp)
+                win = windows.tukey(*k, xp=xp, device=device)
                 xp_assert_close(win, xp.asarray(v),
                                 check_dtype=False, **atol_rtol)
 
@@ -785,8 +778,7 @@ class TestDPSS:
 @make_xp_test_case(windows.lanczos)
 class TestLanczos:
 
-    @skip_xp_meta_newoutput
-    def test_basic(self, xp):
+    def test_basic(self, xp, device):
         # Analytical results:
         # sinc(x) = sinc(-x)
         # sinc(pi) = 0, sinc(0) = 1
@@ -795,17 +787,17 @@ class TestLanczos:
         # sinc(pi / 3) = 0.826993343
         # sinc(3 pi / 5) = 0.504551152
         # sinc(pi / 5) = 0.935489284
-        xp_assert_close(windows.lanczos(6, sym=False, xp=xp),
+        xp_assert_close(windows.lanczos(6, sym=False, xp=xp, device=device),
                         xp.asarray([0., 0.413496672,
                                     0.826993343, 1., 0.826993343,
                                     0.413496672], dtype=xp.float64),
                         atol=1e-9)
-        xp_assert_close(windows.lanczos(6, xp=xp),
+        xp_assert_close(windows.lanczos(6, xp=xp, device=device),
                         xp.asarray([0., 0.504551152,
                                     0.935489284, 0.935489284,
                                     0.504551152, 0.], dtype=xp.float64),
                         atol=1e-9)
-        xp_assert_close(windows.lanczos(7, sym=True, xp=xp),
+        xp_assert_close(windows.lanczos(7, sym=True, xp=xp, device=device),
                         xp.asarray([0., 0.413496672,
                                     0.826993343, 1., 0.826993343,
                                     0.413496672, 0.], dtype=xp.float64),
@@ -851,23 +843,23 @@ class TestGetWindow:
         xp_assert_equal(w, xp.ones_like(w))
 
     @make_xp_test_case(windows.chebwin)
-    @skip_xp_meta_newoutput
-    def test_cheb_odd(self, xp):
+    def test_cheb_odd(self, xp, device):
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "This window is not suitable", UserWarning)
-            w = windows.get_window(('chebwin', -40), 53, fftbins=False, xp=xp)
+            w = windows.get_window(('chebwin', -40), 53, fftbins=False,
+                                   xp=xp, device=device)
         assert_array_almost_equal(
             w, xp.asarray(cheb_odd_true, dtype=xp.float64), decimal=4
         )
 
     @make_xp_test_case(windows.chebwin)
-    @skip_xp_meta_newoutput
-    def test_cheb_even(self, xp):
+    def test_cheb_even(self, xp, device):
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "This window is not suitable", UserWarning)
-            w = windows.get_window(('chebwin', 40), 54, fftbins=False, xp=xp)
+            w = windows.get_window(('chebwin', 40), 54, fftbins=False,
+                                   xp=xp, device=device)
         assert_array_almost_equal(w, xp.asarray(cheb_even_true), decimal=4)
 
     @make_xp_test_case(windows.dpss)
@@ -954,25 +946,24 @@ class TestGetWindow:
             get_window(('general_cosine', [0.5, 0.3, 0.2]), 4, xp=xp)
 
     @make_xp_test_case(windows.general_hamming)
-    @skip_xp_meta_newoutput
-    def test_general_hamming(self, xp):
-        xp_assert_close(get_window(('general_hamming', 0.7), 5, xp=xp),
+    def test_general_hamming(self, xp, device):
+        xp_assert_close(get_window(('general_hamming', 0.7), 5, xp=xp, device=device),
                         xp.asarray([0.4, 0.6072949, 0.9427051, 0.9427051, 0.6072949],
                                    dtype=xp.float64))
-        xp_assert_close(get_window(('general_hamming', 0.7), 5, fftbins=False, xp=xp),
+        xp_assert_close(get_window(('general_hamming', 0.7), 5, fftbins=False,
+                                   xp=xp, device=device),
                         xp.asarray([0.4, 0.7, 1.0, 0.7, 0.4], dtype=xp.float64))
 
     @make_xp_test_case(windows.lanczos)
-    @skip_xp_meta_newoutput
-    def test_lanczos(self, xp):
-        xp_assert_close(get_window('lanczos', 6, xp=xp),
+    def test_lanczos(self, xp, device):
+        xp_assert_close(get_window('lanczos', 6, xp=xp, device=device),
                         xp.asarray([0., 0.413496672, 0.826993343, 1., 0.826993343,
                                     0.413496672], dtype=xp.float64), atol=1e-9)
-        xp_assert_close(get_window('lanczos', 6, fftbins=False, xp=xp),
+        xp_assert_close(get_window('lanczos', 6, fftbins=False, xp=xp, device=device),
                         xp.asarray([0., 0.504551152, 0.935489284, 0.935489284,
                                     0.504551152, 0.], dtype=xp.float64), atol=1e-9)
-        xp_assert_close(get_window('lanczos', 6, xp=xp),
-                        get_window('sinc', 6, xp=xp))
+        xp_assert_close(get_window('lanczos', 6, xp=xp, device=device),
+                        get_window('sinc', 6, xp=xp, device=device))
 
     def test_xp_default(self, xp):
         # no explicit xp= argument, default to numpy
@@ -991,8 +982,7 @@ class TestGeneralGaussian:
     @pytest.mark.parametrize('p', (1, 1.5))
     @pytest.mark.parametrize('sig', (1., 2.))
     @pytest.mark.parametrize('sym', (True, False))
-    @skip_xp_meta_newoutput
-    def test_basic(self, M, p, sig, sym, xp):
+    def test_basic(self, M, p, sig, sym, xp, device):
         """Verify basic parametrizations. """
         if sym:
             t = xp.arange(M, dtype=xp.float64) - (M-1) / 2
@@ -1000,7 +990,7 @@ class TestGeneralGaussian:
             t = xp.arange(M+1, dtype=xp.float64) - M / 2
             t = t[:-1]
         x_ref = xp.exp(-0.5 * abs(t / sig) ** (2*p))
-        x = windows.general_gaussian(M, p, sig, sym, xp=xp)
+        x = windows.general_gaussian(M, p, sig, sym, xp=xp, device=device)
         xp_assert_close(x, x_ref, atol=1e-12)
 
     def test_default_func_parameter(self, xp):
@@ -1016,36 +1006,33 @@ class TestGeneralGaussian:
         w2 = windows.gaussian(7, std=2.0, xp=xp)
         xp_assert_close(w1, w2)
 
-    @skip_xp_meta_newoutput
-    def test_peak_value(self, xp):
+    def test_peak_value(self, xp, device):
         """ Testing that if M is odd, the peak is at 1. """
-        w = windows.general_gaussian(7, p=3, sig=2.0, xp=xp)
+        w = windows.general_gaussian(7, p=3, sig=2.0, xp=xp, device=device)
         assert float(xp.max(w)) == 1.0
 
         # Testing that if M is even, the peak is less than 1.0
-        w = windows.general_gaussian(6, p=1.5, sig=2.0, xp=xp)
+        w = windows.general_gaussian(6, p=1.5, sig=2.0, xp=xp, device=device)
         assert float(xp.max(w)) < 1.0
 
-    @skip_xp_meta_newoutput
-    def test_len_edge_cases(self, xp):
+    def test_len_edge_cases(self, xp, device):
         """Test the length edge cases are handled correctly. """
         # length = 0 should return an empty array:
-        assert windows.general_gaussian(0, 1, 1, xp=xp).shape[0] == 0
+        assert windows.general_gaussian(0, 1, 1, xp=xp, device=device).shape[0] == 0
 
         # length = 1 should return an array of length 1 containing 1.0:
-        xp_assert_close(windows.general_gaussian(1, 1, 1, xp=xp),
+        xp_assert_close(windows.general_gaussian(1, 1, 1, xp=xp, device=device),
                         xp.asarray([1.0], dtype=xp.float64))
 
         with pytest.raises(ValueError):  # Negative values should raise an error:
-            windows.general_gaussian(-1, 1, 1, xp=xp)
+            windows.general_gaussian(-1, 1, 1, xp=xp, device=device)
 
 
 @make_xp_test_case(windows.cosine)
 class TestCosine:
     @pytest.mark.parametrize('M', (3, 4))
     @pytest.mark.parametrize('sym', (True, False))
-    @skip_xp_meta_newoutput
-    def test_basic(self, M, sym, xp):
+    def test_basic(self, M, sym, xp, device):
         """Verify basic parametrizations. """
         if sym:
             t = (xp.arange(M, dtype=xp.float64) + 0.5) / M
@@ -1053,7 +1040,7 @@ class TestCosine:
             t = (xp.arange(M+1, dtype=xp.float64) + 0.5) / (M+1)
             t = t[:-1]
         x_ref = xp.sin(xp.pi * t)
-        x = windows.cosine(M, sym=sym, xp=xp)
+        x = windows.cosine(M, sym=sym, xp=xp, device=device)
         xp_assert_close(x, x_ref, atol=1e-12)
 
     def test_default_func_parameter(self, xp):
@@ -1062,18 +1049,18 @@ class TestCosine:
         x_ref = windows.cosine(6, sym=True, xp=xp)
         xp_assert_equal(x, x_ref)
 
-    @skip_xp_meta_newoutput
-    def test_len_edge_cases(self, xp):
+    def test_len_edge_cases(self, xp, device):
         """Testing that the length edge cases are handled correctly."""
         # length = 0 should return an empty array:
-        assert windows.cosine(0, xp=xp).shape[0] == 0
+        assert windows.cosine(0, xp=xp, device=device).shape[0] == 0
 
         # length = 1 should return an array of length 1 containing 1.0:
-        xp_assert_close(windows.cosine(1, xp=xp),
+        xp_assert_close(windows.cosine(1, xp=xp, device=device),
                         xp.asarray([1.0], dtype=xp.float64))
 
         with pytest.raises(ValueError):
-            windows.cosine(-1, xp=xp) # negative values should return an error
+            # negative values should return an error
+            windows.cosine(-1, xp=xp, device=device)
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")
@@ -1084,8 +1071,7 @@ class TestCosine:
         for window_name, params in window_funcs
     ]
 )
-@skip_xp_meta_newoutput
-def test_windowfunc_basics(window, window_name, params, xp):
+def test_windowfunc_basics(window, window_name, params, xp, device):
     window = getattr(windows, window_name)
     if window_name in ['dpss']:
         if is_cupy(xp):
@@ -1097,54 +1083,54 @@ def test_windowfunc_basics(window, window_name, params, xp):
         warnings.filterwarnings(
             "ignore", "This window is not suitable", UserWarning)
         # Check symmetry for odd and even lengths
-        w1 = window(8, *params, sym=True, xp=xp)
-        w2 = window(7, *params, sym=False, xp=xp)
+        w1 = window(8, *params, sym=True, xp=xp, device=device)
+        w2 = window(7, *params, sym=False, xp=xp, device=device)
         xp_assert_close(w1[:-1], w2)
 
-        w1 = window(9, *params, sym=True, xp=xp)
-        w2 = window(8, *params, sym=False, xp=xp)
+        w1 = window(9, *params, sym=True, xp=xp, device=device)
+        w2 = window(8, *params, sym=False, xp=xp, device=device)
         xp_assert_close(w1[:-1], w2)
 
         # Check that functions run and output lengths are correct
-        assert window(6, *params, sym=True, xp=xp).shape[0] == 6
-        assert window(6, *params, sym=False, xp=xp).shape[0] == 6
-        assert window(7, *params, sym=True, xp=xp).shape[0] == 7
-        assert window(7, *params, sym=False, xp=xp).shape[0] == 7
+        assert window(6, *params, sym=True, xp=xp, device=device).shape[0] == 6
+        assert window(6, *params, sym=False, xp=xp, device=device).shape[0] == 6
+        assert window(7, *params, sym=True, xp=xp, device=device).shape[0] == 7
+        assert window(7, *params, sym=False, xp=xp, device=device).shape[0] == 7
 
         # Check invalid lengths
-        assert_raises(ValueError, window, 5.5, *params, xp=xp)
-        assert_raises(ValueError, window, -7, *params, xp=xp)
+        assert_raises(ValueError, window, 5.5, *params, xp=xp, device=device)
+        assert_raises(ValueError, window, -7, *params, xp=xp, device=device)
 
         # Check degenerate cases
-        xp_assert_equal(window(0, *params, sym=True, xp=xp),
+        xp_assert_equal(window(0, *params, sym=True, xp=xp, device=device),
                         xp.asarray([], dtype=xp.float64))
-        xp_assert_equal(window(0, *params, sym=False, xp=xp),
+        xp_assert_equal(window(0, *params, sym=False, xp=xp, device=device),
                         xp.asarray([], dtype=xp.float64))
-        xp_assert_equal(window(1, *params, sym=True, xp=xp),
+        xp_assert_equal(window(1, *params, sym=True, xp=xp, device=device),
                         xp.asarray([1.], dtype=xp.float64))
-        xp_assert_equal(window(1, *params, sym=False, xp=xp),
+        xp_assert_equal(window(1, *params, sym=False, xp=xp, device=device),
                         xp.asarray([1.], dtype=xp.float64))
 
         # Check dtype
-        assert window(0, *params, sym=True, xp=xp).dtype == xp.float64
-        assert window(0, *params, sym=False, xp=xp).dtype == xp.float64
-        assert window(1, *params, sym=True, xp=xp).dtype == xp.float64
-        assert window(1, *params, sym=False, xp=xp).dtype == xp.float64
-        assert window(6, *params, sym=True, xp=xp).dtype == xp.float64
-        assert window(6, *params, sym=False, xp=xp).dtype == xp.float64
+        assert window(0, *params, sym=True, xp=xp, device=device).dtype == xp.float64
+        assert window(0, *params, sym=False, xp=xp, device=device).dtype == xp.float64
+        assert window(1, *params, sym=True, xp=xp, device=device).dtype == xp.float64
+        assert window(1, *params, sym=False, xp=xp, device=device).dtype == xp.float64
+        assert window(6, *params, sym=True, xp=xp, device=device).dtype == xp.float64
+        assert window(6, *params, sym=False, xp=xp, device=device).dtype == xp.float64
 
         # Check normalization
-        assert xp.all(window(10, *params, sym=True, xp=xp) < 1.01)
-        assert xp.all(window(10, *params, sym=False, xp=xp) < 1.01)
-        assert xp.all(window(9, *params, sym=True, xp=xp) < 1.01)
-        assert xp.all(window(9, *params, sym=False, xp=xp) < 1.01)
+        assert xp.all(window(10, *params, sym=True, xp=xp, device=device) < 1.01)
+        assert xp.all(window(10, *params, sym=False, xp=xp, device=device) < 1.01)
+        assert xp.all(window(9, *params, sym=True, xp=xp, device=device) < 1.01)
+        assert xp.all(window(9, *params, sym=False, xp=xp, device=device) < 1.01)
 
         # Check that DFT-even spectrum is purely real for odd and even
-        res = fft(window(10, *params, sym=False, xp=xp))
+        res = fft(window(10, *params, sym=False, xp=xp, device=device))
         res = xp.imag(res)
         xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
-        res = fft(window(11, *params, sym=False, xp=xp))
+        res = fft(window(11, *params, sym=False, xp=xp, device=device))
         res = xp.imag(res)
         xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
@@ -1197,17 +1183,16 @@ def test_not_needs_params(xp, window, winstr):
 
 
 @make_xp_test_case(windows.lanczos)
-@skip_xp_meta_newoutput
-def test_symmetric(xp):
+def test_symmetric(xp, device):
 
     for win in [windows.lanczos]:
         # Even sampling points
-        w = win(4096, xp=xp)
+        w = win(4096, xp=xp, device=device)
         flip = array_namespace(w).flip
         error = xp.max(xp.abs(w - flip(w)))
         xp_assert_equal(error, xp.asarray(0.0), check_dtype=False, check_0d=False)
 
         # Odd sampling points
-        w = win(4097, xp=xp)
+        w = win(4097, xp=xp, device=device)
         error = xp.max(xp.abs(w - flip(w)))
         xp_assert_equal(error, xp.asarray(0.0), check_dtype=False, check_0d=False)
