@@ -1402,7 +1402,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     else:
         xp = array_namespace(window)
         win = xp.asarray(window)
-        if len(win.shape) != 1:
+        if win.ndim != 1:
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
             raise ValueError('window must have length of nperseg')
@@ -1411,7 +1411,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     step = nperseg - noverlap
     binsums = win[:step]**2
     for ii in range(1, nperseg//step):
-        binsums = binsums + win[ii*step:(ii+1)*step]**2
+        binsums += win[ii*step:(ii+1)*step]**2
 
     if nperseg % step != 0:
         binsums = xpx.at(binsums)[:nperseg % step].add(win[-(nperseg % step):]**2)
