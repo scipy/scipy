@@ -631,6 +631,11 @@ class arcsine_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Arcsine distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Arcsine_distribution
+
     %(example)s
 
     """
@@ -1107,6 +1112,11 @@ class bradford_gen(rv_continuous):
     `bradford` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Bradford Distribution / Bradford Law of Scattering", Statistics How To,
+           https://www.statisticshowto.com/bradford-distribution/
 
     %(example)s
 
@@ -1735,6 +1745,11 @@ class cosine_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Cosine Distribution", Statistics How To,
+           https://www.statisticshowto.com/cosine-distribution/
+
     %(example)s
 
     """
@@ -2012,6 +2027,12 @@ class dweibull_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] N. L. Johnson, S. Kotz, and N. Balakrishnan,
+           "Continuous Univariate Distributions, Volume 1",
+           2nd ed., Wiley, 1994, p. 688.
+
     %(example)s
 
     """
@@ -2091,6 +2112,11 @@ class expon_gen(rv_continuous):
 
     The exponential distribution is a special case of the gamma
     distributions, with gamma shape parameter ``a = 1``.
+
+    References
+    ----------
+    .. [1] "Exponential distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Exponential_distribution
 
     %(example)s
 
@@ -2337,7 +2363,8 @@ class exponweib_gen(rv_continuous):
 
     References
     ----------
-    https://en.wikipedia.org/wiki/Exponentiated_Weibull_distribution
+    .. [1] "Exponentiated Weibull distribution", Wikipedia
+           https://en.wikipedia.org/wiki/Exponentiated_Weibull_distribution
 
     %(example)s
 
