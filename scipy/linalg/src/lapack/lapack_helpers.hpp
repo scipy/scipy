@@ -13,7 +13,9 @@
  */
 #pragma once
 
-#include "wrapper_helpers.hpp"
+#include "wrapper_helpers.hpp"   /* must precede the standard headers: it includes <Python.h> */
+
+#include <algorithm>     /* max: the `MAX(1, shape(a, 0))` floor on a leading dimension */
 
 /**
  * The name these wrappers raise their errors under.  It is deliberately *not* the extension's

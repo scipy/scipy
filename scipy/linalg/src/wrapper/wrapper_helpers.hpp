@@ -276,6 +276,35 @@ namespace wrapper {
     enum class conv { ok, fail, fail_msg };
 
     /**
+     * @brief RAII `Py_EnterRecursiveCall`, for the converters' descent into element 0.
+     *
+     * The scalar converters below reproduce f2py's permissive coercion: an object that is not a
+     * number but is a sequence contributes its element 0, tried again by calling the converter
+     * recursively.  Nesting is normally two or three deep, but a self-referential container --
+     * `a = []; a.append(a)` -- makes element 0 the sequence itself and the descent unbounded.
+     * That recursion is pure C and pushes no Python frame, so `sys.setrecursionlimit` never sees
+     * it and the C stack simply overflows.  (f2py segfaults on this input as well; raising is a
+     * deliberate improvement on it, not a restoration of parity.)
+     *
+     * `Py_EnterRecursiveCall` opts the descent into the interpreter's own depth accounting, so
+     * the limit applies and `RecursionError` is raised instead.  Pairing it with
+     * `Py_LeaveRecursiveCall` by hand is error-prone here because the converters return from
+     * several places, hence the destructor.  Guard only the recursive step: the common,
+     * non-recursive conversion stays free of the counter.
+     */
+    class recursion_guard {
+        bool entered_;
+    public:
+        explicit recursion_guard(const char *where) noexcept
+            : entered_(Py_EnterRecursiveCall(where) == 0) {}
+        ~recursion_guard() { if (entered_) { Py_LeaveRecursiveCall(); } }
+        recursion_guard(const recursion_guard &) = delete;
+        recursion_guard &operator=(const recursion_guard &) = delete;
+        /** @brief True when the descent may proceed; false with `RecursionError` set. */
+        explicit operator bool() const noexcept { return entered_; }
+    };
+
+    /**
      * @brief Port of f2py's `int_from_pyobj`, with the C-int target widened to CBLAS_INT.
      *
      * Accepts anything PyNumber_Long accepts (so 3.7 becomes 3), complex via its `.real`
@@ -317,6 +346,8 @@ namespace wrapper {
             tmp = PySequence_GetItem(obj, 0);
         }
         if (tmp) {
+            recursion_guard descent(" while converting an argument");
+            if (!descent) { Py_DECREF(tmp); return conv::fail; }   /* RecursionError is set */
             if (from_pyobj(v, tmp) == conv::ok) { Py_DECREF(tmp); return conv::ok; }
             Py_DECREF(tmp);
         }
@@ -352,6 +383,8 @@ namespace wrapper {
             tmp = PySequence_GetItem(obj, 0);
         }
         if (tmp) {
+            recursion_guard descent(" while converting an argument");
+            if (!descent) { Py_DECREF(tmp); return conv::fail; }   /* RecursionError is set */
             if (from_pyobj(v, tmp) == conv::ok) { Py_DECREF(tmp); return conv::ok; }
             Py_DECREF(tmp);
         }
@@ -425,6 +458,8 @@ namespace wrapper {
         if (PySequence_Check(obj) && !(PyBytes_Check(obj) || PyUnicode_Check(obj))) {
             PyObject *tmp = PySequence_GetItem(obj, 0);
             if (tmp) {
+                recursion_guard descent(" while converting an argument");
+                if (!descent) { Py_DECREF(tmp); return conv::fail; }   /* RecursionError is set */
                 if (from_pyobj(v, tmp) == conv::ok) { Py_DECREF(tmp); return conv::ok; }
                 Py_DECREF(tmp);
             }
@@ -492,6 +527,8 @@ namespace wrapper {
         if (PySequence_Check(obj)) {
             PyObject *tmp = PySequence_GetItem(obj, 0);
             if (tmp) {
+                recursion_guard descent(" while converting an argument");
+                if (!descent) { Py_DECREF(tmp); return conv::fail; }   /* RecursionError is set */
                 conv r = from_pyobj(v, tmp);
                 Py_DECREF(tmp);
                 if (r == conv::ok) { return r; }
@@ -629,6 +666,36 @@ namespace wrapper {
     /** A returned LAPACK option letter, as f2py's `Py_BuildValue("c")` gave it: one-byte bytes. */
     inline PyObject *result_item(char v)      { return PyBytes_FromStringAndSize(&v, 1); }
 
+    /**
+     * @brief Pack @p n already-owned references into a tuple, stealing them; null on failure.
+     *
+     * Deliberately **not** a template: nothing here depends on the wrappers' types, so keeping it
+     * out of `make_result` emits it once for the module instead of once per distinct signature.
+     *
+     * A null in @p items means a `result_item` above failed -- only the scalar constructors can,
+     * and only out of memory, since `py_ref::release()` is a pointer handoff and the array macros
+     * have already rejected a null `py_ref`.  Brace-init runs every `result_item` before this is
+     * reached, so the surviving ones are owned references that have to be released either way:
+     * both failure paths drop all @p n before returning.  `PyTuple_SET_ITEM` cannot do this
+     * checking itself -- it is a macro that stores without inspecting.
+     *
+     * @param items  @p n owned references, some possibly null; all are consumed either way.
+     */
+    inline PyObject *tuple_steal(PyObject **items, Py_ssize_t n) noexcept
+    {
+        bool complete = true;
+        for (Py_ssize_t i = 0; i < n; i++) {
+            if (items[i] == nullptr) { complete = false; }   /* a converter ran out of memory */
+        }
+        PyObject *t = complete ? PyTuple_New(n) : nullptr;
+        if (t == nullptr) {
+            for (Py_ssize_t i = 0; i < n; i++) { Py_XDECREF(items[i]); }
+            return nullptr;
+        }
+        for (Py_ssize_t i = 0; i < n; i++) { PyTuple_SET_ITEM(t, i, items[i]); }
+        return t;
+    }
+
     template <class... A>
     inline PyObject *make_result(A &&...a) noexcept
     {
@@ -636,14 +703,7 @@ namespace wrapper {
             return result_item(a...);                       /* single value: no tuple */
         } else {
             PyObject *items[] = { result_item(a)... };      /* brace-init: left-to-right order */
-            constexpr Py_ssize_t n = sizeof...(A);
-            PyObject *t = PyTuple_New(n);
-            if (t == nullptr) {
-                for (Py_ssize_t i = 0; i < n; i++) { Py_XDECREF(items[i]); }
-                return nullptr;
-            }
-            for (Py_ssize_t i = 0; i < n; i++) { PyTuple_SET_ITEM(t, i, items[i]); }
-            return t;
+            return tuple_steal(items, sizeof...(A));
         }
     }
 
@@ -714,12 +774,15 @@ namespace wrapper {
             int i = 0;
             while (kwlist_[i] && strcmp(kwlist_[i], kw) != 0) { i++; }
             /**
-             * A miss means the kwlist and an argument name spelled in a macro are out of sync
-             * Fail loudly instead of letting the end sentinel silently classify the argument
-             * as an optional keyword.
-             * */
+             * A miss means the kwlist and an argument name spelled in a macro are out of sync.
+             * The assert says so during development, but `meson.build` sets `b_ndebug=if-release`
+             * so it is compiled out of exactly the build that ships -- where returning the end
+             * sentinel would leave `at()` reading the argument as omitted, silently applying an
+             * optional's default.  Returning -1 instead lets `raw()` raise; the branch costs
+             * nothing next to the scan above.
+             */
             assert(kwlist_[i] != nullptr && "argument name missing from kwlist");
-            return i;
+            return kwlist_[i] ? i : -1;
         }
 
         /** @brief Like index() but returns -1 for an unknown name (used to flag unexpected kwargs). */
@@ -936,6 +999,83 @@ namespace wrapper {
 
 
     /**
+     * @brief CPython-order structural validation of a call's `args`/`kwds`.
+     *
+     * Deliberately **not** a member of the `Ctx`-templated cursor below.  Nothing it does depends
+     * on the wrapper's scalar type -- it reads only the routine's name, its kwlist and its
+     * required-argument count -- so as a member it was instantiated once per flavor, four
+     * identical 803-byte copies per module.  As a free function it is emitted once.
+     *
+     * @param fn    module-qualified routine name for the messages ("_flapack.dgesvx").
+     * @param kw    null-terminated kwlist, in signature order.
+     * @param nreq  count of required (before-'|') arguments.
+     * @return      false with a TypeError set on failure.
+     */
+    inline bool parse_args(PyObject *args, PyObject *kwds, const char *fn,
+                           const char *const *kw, int nreq) noexcept
+    {
+        Py_ssize_t npos = args ? PyTuple_GET_SIZE(args) : 0;
+        Py_ssize_t nkw = kwds ? PyDict_Size(kwds) : 0;
+        int nnames = 0;
+        while (kw[nnames]) { nnames++; }
+
+        /* CPython's PyArg validates in *separate passes*, not one interleaved loop -- so a
+         * clash at an earlier index does not pre-empt a missing-required at a later one
+         * (`ddot(x, x=x)` reports missing 'y', not the 'x' clash).  The order is:
+         *   1. too many arguments;  2. missing required;
+         *   3. argument given by name and position;  4. unexpected keyword. */
+
+        /* 1. too many arguments: the count is positional + keyword *total*, so an extra,
+         * duplicate, or unexpected keyword tips a fully-positional call over (e.g. rotg's
+         * `OO|` reports "takes at most 2 (3 given)" for `drotg(a, b, foo=1)`, not an
+         * unexpected-keyword error).  Keyword functions always word this "at most". */
+        if (npos + nkw > nnames) {
+            PyErr_Format(PyExc_TypeError, "%s() takes at most %d argument%s (%zd given)",
+                         fn, nnames, nnames == 1 ? "" : "s", npos + nkw);
+            return false;
+        }
+
+        /* 2. missing required arguments (signature order) */
+        for (int i = 0; i < nreq; i++) {
+            bool given = (i < npos) || (kwds && PyDict_GetItemString(kwds, kw[i]) != nullptr);
+            if (!given) {
+                PyErr_Format(PyExc_TypeError,
+                             "%s() missing required argument '%s' (pos %d)", fn, kw[i], i + 1);
+                return false;
+            }
+        }
+
+        /* 3. arguments given by both name and position (signature order) */
+        for (int i = 0; i < nnames && i < npos; i++) {
+            if (kwds && PyDict_GetItemString(kwds, kw[i]) != nullptr) {
+                PyErr_Format(PyExc_TypeError,
+                             "argument for %s() given by name ('%s') and position (%d)",
+                             fn, kw[i], i + 1);
+                return false;
+            }
+        }
+
+        /* 4. unexpected keyword arguments.  The kwlist scan is `Ctx::index_opt` spelled out,
+         * so this stays free of the Ctx template. */
+        if (kwds) {
+            PyObject *key, *val;
+            Py_ssize_t pos = 0;
+            while (PyDict_Next(kwds, &pos, &key, &val)) {
+                const char *k = PyUnicode_AsUTF8(key);
+                if (k == nullptr) { return false; }
+                int i = 0;
+                while (kw[i] && strcmp(kw[i], k) != 0) { i++; }
+                if (kw[i] == nullptr) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "%s() got an unexpected keyword argument '%s'", fn, k);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
      * @brief Supplies each argument's raw Python object to the wrapper by name, so an argument is
      *        named exactly once (in the kwlist).  `raw("y")` returns the object passed for `y`
      *        positionally or by keyword, or nullptr when it was omitted.
@@ -958,65 +1098,7 @@ namespace wrapper {
         /** @brief CPython-order structural validation; false with an exception set on failure. */
         bool parse() const noexcept
         {
-            const char *const *kw = ctx_.kws();
-            const char *fn = ctx_.qualname();
-            Py_ssize_t npos = args_ ? PyTuple_GET_SIZE(args_) : 0;
-            Py_ssize_t nkw = kwds_ ? PyDict_Size(kwds_) : 0;
-            int nreq = ctx_.nreq();
-            int nnames = 0;
-            while (kw[nnames]) { nnames++; }
-
-            /* CPython's PyArg validates in *separate passes*, not one interleaved loop -- so a
-             * clash at an earlier index does not pre-empt a missing-required at a later one
-             * (`ddot(x, x=x)` reports missing 'y', not the 'x' clash).  The order is:
-             *   1. too many arguments;  2. missing required;
-             *   3. argument given by name and position;  4. unexpected keyword. */
-
-            /* 1. too many arguments: the count is positional + keyword *total*, so an extra,
-             * duplicate, or unexpected keyword tips a fully-positional call over (e.g. rotg's
-             * `OO|` reports "takes at most 2 (3 given)" for `drotg(a, b, foo=1)`, not an
-             * unexpected-keyword error).  Keyword functions always word this "at most". */
-            if (npos + nkw > nnames) {
-                PyErr_Format(PyExc_TypeError, "%s() takes at most %d argument%s (%zd given)",
-                             fn, nnames, nnames == 1 ? "" : "s", npos + nkw);
-                return false;
-            }
-
-            /* 2. missing required arguments (signature order) */
-            for (int i = 0; i < nreq; i++) {
-                bool given = (i < npos) || (kwds_ && PyDict_GetItemString(kwds_, kw[i]) != nullptr);
-                if (!given) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "%s() missing required argument '%s' (pos %d)", fn, kw[i], i + 1);
-                    return false;
-                }
-            }
-
-            /* 3. arguments given by both name and position (signature order) */
-            for (int i = 0; i < nnames && i < npos; i++) {
-                if (kwds_ && PyDict_GetItemString(kwds_, kw[i]) != nullptr) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "argument for %s() given by name ('%s') and position (%d)",
-                                 fn, kw[i], i + 1);
-                    return false;
-                }
-            }
-
-            /* 4. unexpected keyword arguments */
-            if (kwds_) {
-                PyObject *key, *val;
-                Py_ssize_t pos = 0;
-                while (PyDict_Next(kwds_, &pos, &key, &val)) {
-                    const char *k = PyUnicode_AsUTF8(key);
-                    if (k == nullptr) { return false; }
-                    if (ctx_.index_opt(k) < 0) {
-                        PyErr_Format(PyExc_TypeError,
-                                     "%s() got an unexpected keyword argument '%s'", fn, k);
-                        return false;
-                    }
-                }
-            }
-            return true;
+            return parse_args(args_, kwds_, ctx_.qualname(), ctx_.kws(), ctx_.nreq());
         }
 
         /**
@@ -1024,10 +1106,20 @@ namespace wrapper {
          *        else nullptr when the argument was omitted (an optional's default applies).
          *
          * Safe to call only after parse() succeeded (no position/keyword clash remains).
+         *
+         * A @p name absent from the kwlist is a macro/kwlist authoring bug, not caller input, so
+         * it raises SystemError -- CPython's "an internal invariant broke" exception -- in every
+         * build.  See `Ctx::index` for why the assert alone was not enough.
          */
         PyObject *raw(const char *name) const noexcept
         {
-            return at(ctx_.index(name), name);
+            int idx = ctx_.index(name);
+            if (idx < 0) {
+                PyErr_Format(PyExc_SystemError, "%s(): argument '%s' is missing from the kwlist",
+                             ctx_.qualname(), name);
+                return nullptr;
+            }
+            return at(idx, name);
         }
 
         /**
@@ -1129,6 +1221,11 @@ namespace wrapper {
  *
  * Contrast ARRAY_HIDDEN, which is for buffers that never leave the wrapper.
  *
+ * @param type       the element type, leading as in ARRAY_IN/ARRAY_INOUT/ARRAY_HIDDEN.  Both
+ *                   branches need it: @p def allocates with it, and a *supplied* array is
+ *                   converted to it.  It is not always the wrapper's flavor -- `gesvx` takes
+ *                   back its own `ipiv` (`CBLAS_INT`) and scalings `r`, `c` (the real
+ *                   counterpart) alongside flavor-typed `af`.
  * @param name       output array name; a `py_ref name` is declared holding the acquired-or-
  *                   allocated array -- the value the wrapper hands to RETURN.
  * @param ndim       required rank when the caller supplies the array.
@@ -1140,8 +1237,9 @@ namespace wrapper {
  *                   the routine can accumulate into it (gemv's `beta*y`, syr's
  *                   `a += alpha*x*x'` etc.), it is zero initialized.
  */
-#define ARRAY_OUT(name, ndim, overwrite, def) \
-    py_ref name = (P.raw_opt(#name) == nullptr) ? (def) : ctx.inout(P.raw_opt(#name), ndim, overwrite, #name); \
+#define ARRAY_OUT(type, name, ndim, overwrite, def) \
+    py_ref name = (P.raw_opt(#name) == nullptr) ? (def) \
+                                                : ctx.template inout<type>(P.raw_opt(#name), ndim, overwrite, #name); \
     if (!name) { return nullptr; }
 
 /**
