@@ -2349,6 +2349,7 @@ def test_lfilter_notimplemented_input():  # array-like input is np-only
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
+@skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/10199")
 @make_xp_test_case(lfilter)
 def test_lfilter_empty_input(xp):
     """Verify that unchanged `zi` is returned for an empty input `x`
