@@ -41,7 +41,7 @@ namespace blas{
             CHECKARRAY(trans_b ? shape(b, 1) == k : shape(b, 0) == k, b);
             CBLAS_INT n = trans_b ? shape(b, 0) : shape(b, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(m, n));
             CHECKARRAY(shape(c, 0) == m && shape(c, 1) == n, c);
 
             blas::gemm(trans_a ? (trans_a == 2 ? 'C' : 'T') : 'N', trans_b ? (trans_b == 2 ? 'C' : 'T') : 'N',
@@ -76,7 +76,7 @@ namespace blas{
             CHECKARRAY(side ? shape(b, 1) == shape(a, 0) : shape(a, 1) == shape(b, 0), b);
             CBLAS_INT n = side ? shape(a, 1) : shape(b, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(m, n));
             CHECKARRAY(shape(c, 0) == m && shape(c, 1) == n, c);
 
             blas::symm(side ? 'R' : 'L', lower ? 'L' : 'U', m, n, alpha,
@@ -106,7 +106,7 @@ namespace blas{
             CHECKARRAY(side ? shape(b, 1) == shape(a, 0) : shape(a, 1) == shape(b, 0), b);
             CBLAS_INT n = side ? shape(a, 1) : shape(b, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(m, n));
             CHECKARRAY(shape(c, 0) == m && shape(c, 1) == n, c);
 
             blas::hemm(side ? 'R' : 'L', lower ? 'L' : 'U', m, n, alpha,
@@ -133,7 +133,7 @@ namespace blas{
             CBLAS_INT n = trans ? shape(a, 1) : shape(a, 0);
             CBLAS_INT k = trans ? shape(a, 0) : shape(a, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(c, 0) == n && shape(c, 1) == n, c);
 
             blas::syrk(lower ? 'L' : 'U', trans ? (trans == 2 ? 'C' : 'T') : 'N',
@@ -164,7 +164,7 @@ namespace blas{
             CBLAS_INT n = trans ? shape(a, 1) : shape(a, 0);
             CBLAS_INT k = trans ? shape(a, 0) : shape(a, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(c, 0) == n && shape(c, 1) == n, c);
 
             blas::herk(lower ? 'L' : 'U', trans ? (trans == 2 ? 'C' : 'T') : 'N',
@@ -195,7 +195,7 @@ namespace blas{
             CHECKARRAY(trans ? shape(a, 0) == shape(b, 0) : shape(a, 1) == shape(b, 1), b);
             CBLAS_INT k = trans ? shape(a, 0) : shape(a, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(c, 0) == n && shape(c, 1) == n, c);
 
             blas::syr2k(lower ? 'L' : 'U', trans ? (trans == 2 ? 'C' : 'T') : 'N',
@@ -230,7 +230,7 @@ namespace blas{
             CHECKARRAY(trans ? shape(a, 0) == shape(b, 0) : shape(a, 1) == shape(b, 1), b);
             CBLAS_INT k = trans ? shape(a, 0) : shape(a, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(c, 0) == n && shape(c, 1) == n, c);
 
             blas::her2k(lower ? 'L' : 'U', trans ? (trans == 2 ? 'C' : 'T') : 'N',

@@ -43,7 +43,7 @@ namespace blas{
             CHECKARRAY(len(x) > offx + (cols - 1) * abs(incx), x);
             CHECKARRAY(offx >= 0 && offx < len(x), x);
 
-            ARRAY_OUT(y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (rows - 1) * abs(incy)));
+            ARRAY_OUT(T, y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (rows - 1) * abs(incy)));
             CHECKARRAY(len(y) > offy + (rows - 1) * abs(incy), y);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
@@ -77,7 +77,7 @@ namespace blas{
             CBLAS_INT lda = shape(a, 0) > 1 ? shape(a, 0) : 1;
 
             /* the y/x lengths swap roles under transposition */
-            ARRAY_OUT(y, 1, overwrite_y != 0, ctx.zeros(1 + offy + ((trans == 0 ? m : n) - 1) * abs(incy)));
+            ARRAY_OUT(T, y, 1, overwrite_y != 0, ctx.zeros(1 + offy + ((trans == 0 ? m : n) - 1) * abs(incy)));
             CHECKARRAY(len(y) > offy + ((trans == 0 ? m : n) - 1) * abs(incy), y);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
@@ -117,7 +117,7 @@ namespace blas{
             CBLAS_INT lda = shape(a, 0) > 1 ? shape(a, 0) : 1;
             SCALAR_REQ(CBLAS_INT, k);  CHECK(k >= 0 && k <= lda - 1, k);
 
-            ARRAY_OUT(y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
+            ARRAY_OUT(T, y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
             CHECKARRAY(len(y) > offy + (n - 1) * abs(incy), y);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
@@ -153,7 +153,7 @@ namespace blas{
             CBLAS_INT lda = shape(a, 0) > 1 ? shape(a, 0) : 1;
             SCALAR_REQ(CBLAS_INT, k);  CHECK(k >= 0 && k <= lda - 1, k);
 
-            ARRAY_OUT(y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
+            ARRAY_OUT(T, y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
             CHECKARRAY(len(y) > offy + (n - 1) * abs(incy), y);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
@@ -192,7 +192,7 @@ namespace blas{
             CHECKARRAY(len(x) > offx + (n - 1) * abs(incx), x);
             CHECKARRAY(offx >= 0 && offx < len(x), x);
 
-            ARRAY_OUT(y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
+            ARRAY_OUT(T, y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
             CHECKARRAY(len(y) > offy + (n - 1) * abs(incy), y);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
@@ -226,7 +226,7 @@ namespace blas{
             CHECKARRAY(len(x) > offx + (n - 1) * abs(incx), x);
             CHECKARRAY(offx >= 0 && offx < len(x), x);
 
-            ARRAY_OUT(y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
+            ARRAY_OUT(T, y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
             CHECKARRAY(len(y) > offy + (n - 1) * abs(incy), y);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
@@ -262,7 +262,7 @@ namespace blas{
             ARRAY_IN(T, ap, 1);
             CHECKARRAY(len(ap) >= (npy_intp)n * (n + 1) / 2, ap);
 
-            ARRAY_OUT(y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
+            ARRAY_OUT(T, y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
             CHECKARRAY(len(y) > offy + (n - 1) * abs(incy), y);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
@@ -296,7 +296,7 @@ namespace blas{
             ARRAY_IN(T, ap, 1);
             CHECKARRAY(len(ap) >= (npy_intp)n * (n + 1) / 2, ap);
 
-            ARRAY_OUT(y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
+            ARRAY_OUT(T, y, 1, overwrite_y != 0, ctx.zeros(1 + offy + (n - 1) * abs(incy)));
             CHECKARRAY(len(y) > offy + (n - 1) * abs(incy), y);
             CHECKARRAY(offy >= 0 && offy < len(y), y);
 
@@ -450,7 +450,7 @@ namespace blas{
             CHECK(n <= (len(x) - 1 - offx) / abs(incx) + 1, n);
             CHECK(n >= 0, n);
 
-            ARRAY_OUT(a, 2, overwrite_a != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, a, 2, overwrite_a != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(a, 0) == n && shape(a, 1) == n, a);
 
             blas::syr(lower ? 'L' : 'U', n, alpha, x.data<T>() + offx, incx, a.data<T>(), n);
@@ -484,7 +484,7 @@ namespace blas{
             CHECK(n <= (len(x) - 1 - offx) / abs(incx) + 1, n);
             CHECK(n >= 0, n);
 
-            ARRAY_OUT(a, 2, overwrite_a != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, a, 2, overwrite_a != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(a, 0) == n && shape(a, 1) == n, a);
 
             blas::her(lower ? 'L' : 'U', n, alpha.real(), x.data<T>() + offx, incx, a.data<T>(), n);
@@ -516,7 +516,7 @@ namespace blas{
             CHECK(n <= (len(x) - 1 - offx) / abs(incx) + 1, n);
             CHECK(n >= 0, n);
 
-            ARRAY_OUT(a, 2, overwrite_a != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, a, 2, overwrite_a != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(a, 0) == n && shape(a, 1) == n, a);
 
             blas::syr2(lower ? 'L' : 'U', n, alpha, x.data<T>() + offx, incx, y.data<T>() + offy, incy, a.data<T>(), n);
@@ -548,7 +548,7 @@ namespace blas{
             CHECK(n <= (len(x) - 1 - offx) / abs(incx) + 1, n);
             CHECK(n >= 0, n);
 
-            ARRAY_OUT(a, 2, overwrite_a != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, a, 2, overwrite_a != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(a, 0) == n && shape(a, 1) == n, a);
 
             blas::her2(lower ? 'L' : 'U', n, alpha, x.data<T>() + offx, incx, y.data<T>() + offy, incy, a.data<T>(), n);
@@ -574,7 +574,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy == 1 || incy == -1, incy);
 
             CBLAS_INT m = len(x), n = len(y);
-            ARRAY_OUT(a, 2, overwrite_a != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, a, 2, overwrite_a != 0, ctx.zeros(m, n));
             /* f2py fixed a's shape at creation ("0-th dimension must be fixed to ..."); same ValueError, check-style message */
             CHECKARRAY(shape(a, 0) == m && shape(a, 1) == n, a);
 
@@ -601,7 +601,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy == 1 || incy == -1, incy);
 
             CBLAS_INT m = len(x), n = len(y);
-            ARRAY_OUT(a, 2, overwrite_a != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, a, 2, overwrite_a != 0, ctx.zeros(m, n));
             CHECKARRAY(shape(a, 0) == m && shape(a, 1) == n, a);
 
             blas::geru(m, n, alpha, x.data<T>(), incx, y.data<T>(), incy, a.data<T>(), m);
@@ -627,7 +627,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, incy, 1);  CHECK(incy == 1 || incy == -1, incy);
 
             CBLAS_INT m = len(x), n = len(y);
-            ARRAY_OUT(a, 2, overwrite_a != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, a, 2, overwrite_a != 0, ctx.zeros(m, n));
             CHECKARRAY(shape(a, 0) == m && shape(a, 1) == n, a);
 
             blas::gerc(m, n, alpha, x.data<T>(), incx, y.data<T>(), incy, a.data<T>(), m);
