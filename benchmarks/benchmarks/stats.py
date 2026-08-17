@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from .common import Benchmark, safe_import, is_xslow
+from .common import Benchmark, require_memory, safe_import, is_xslow
 
 with safe_import():
     import scipy.stats as stats
@@ -714,6 +714,9 @@ class BenchPoissonDisk(Benchmark):
     ]
 
     def setup(self, d, radius, ncandidates, n):
+        # PoissonDisk fills a float32 grid of ceil(sqrt(d)/radius)**d cells: 3.7 GB
+        # at d=5, radius=0.05, and negligible everywhere else
+        require_memory(int(np.ceil(np.sqrt(d) / radius)) ** d * d * 4)
         self.rng = np.random.default_rng(168525179735951991038384544)
 
     def time_poisson_disk(self, d, radius, ncandidates, n):
