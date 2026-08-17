@@ -11302,3 +11302,17 @@ class _SimpleF:
 
     def sf(self, x):
         return special.fdtrc(self.dfn, self.dfd, x)
+
+
+@xp_capabilities()
+def _debug_gh24876(x):
+    xp = array_namespace(x)
+    y = xp.asarray(x)
+    return xp, y
+
+
+@xp_capabilities()
+def _debug_gh24876c(x):
+    xp = array_namespace(x)
+    y = xp.log(x)
+    return y
