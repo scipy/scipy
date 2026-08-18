@@ -12,7 +12,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 __all__ = ['ldl']
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i),(i,i),(i)")
 def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     """ Computes the LDLt or Bunch-Kaufman factorization of a symmetric/
     hermitian matrix.

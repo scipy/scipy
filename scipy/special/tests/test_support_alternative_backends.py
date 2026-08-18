@@ -4,7 +4,7 @@ import pickle
 import pytest
 from hypothesis import given, strategies
 import hypothesis.extra.numpy as npst
-from packaging import version
+from scipy._external.packaging_version import version
 
 from scipy import special
 from scipy.special._support_alternative_backends import _special_funcs
@@ -24,7 +24,7 @@ lazy_xp_modules = [special]
 
 
 def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
-    """Skip tests for specific intersections of scipy.special functions 
+    """Skip tests for specific intersections of scipy.special functions
     vs. backends vs. dtypes vs. devices.
     Also suggest bespoke tweaks.
 
@@ -338,7 +338,7 @@ def test_repr(func):
     reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
 @pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
 def test_doc(func):
-    """xp_capabilities updates the docstring in place. 
+    """xp_capabilities updates the docstring in place.
     Make sure it does so exactly once, including when SCIPY_ARRAY_API is not set.
     """
     match = "has experimental support for Python Array API"
@@ -384,6 +384,7 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
     assert y.dtype == np.float32
 
 
+@pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")
 @make_xp_test_case(special.chdtr)
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311

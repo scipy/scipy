@@ -132,7 +132,7 @@ def test_polynomial_fit(calc_logdet, lamb):
 
     if not calc_logdet:
         assert logdet == 0
-    
+
     poly2, logdet2 = _polynomial_fit(
         y, lamb, weights=1.23 * np.ones(n), calc_logdet=calc_logdet
     )
@@ -201,7 +201,7 @@ def test_whittaker_small_data():
         ]) / (1 + 6 * la)) @ y
     assert_allclose(wh.x, res, atol=1e-15)
     assert wh.lamb == la
-    
+
     y = np.arange(4)
     wh = whittaker_henderson(y, order=2, lamb=la)
     la2 = la ** 2

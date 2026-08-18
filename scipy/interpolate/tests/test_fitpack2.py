@@ -93,7 +93,7 @@ class TestUnivariateSpline:
         x = [1, 3, 5, 7, 9]
         y = [0, 4, 9, 12, 21]
         spl = UnivariateSpline(x, y, k=3)
-        assert_almost_equal(spl.roots()[0], 1.050290639101332)
+        assert np.isclose(spl.roots()[0], 1.050290639101332)
 
     def test_roots_length(self): # for gh18335
         x = np.linspace(0, 50 * np.pi, 1000)
@@ -199,7 +199,7 @@ class TestUnivariateSpline:
         xp_assert_close(spl(0.3), spl2(0.3))
 
         spl2 = spl.antiderivative(1)
-        xp_assert_close(spl2(0.6) - spl2(0.2),
+        xp_assert_close(np.asarray(spl2(0.6) - spl2(0.2)),
                         spl.integral(0.2, 0.6))
 
     def test_derivative_extrapolation(self):
@@ -1481,6 +1481,54 @@ class TestRectBivariateSpline:
         nonGridPosLons[2] = 0.001
         with assert_raises(ValueError) as exc_info:
             Interpolator(GridPosLats, nonGridPosLons)
+        assert "y must be strictly increasing" in str(exc_info.value)
+
+    def test_grid_sparse_meshgrid(self):
+        # gh-25730
+        x = np.arange(-10.0, 10.0)
+        y = np.arange(-20.0, 20.0)
+        lut = RectBivariateSpline(x, y, np.hypot(x[:, None], y[None, :]), s=0)
+
+        xi = np.linspace(-10.0, 10.0, 25)
+        yi = np.linspace(-20.0, 20.0, 30)
+        xs, ys = np.meshgrid(xi, yi, sparse=True, indexing="ij")
+        assert xs.ndim == 2 and ys.ndim == 2
+
+        xp_assert_close(lut(xs, ys), lut(xi, yi), atol=1e-14)
+
+    def test_grid_sparse_meshgrid_values(self):
+        # gh-25730
+        # The snippet from the issue, without its denominator so that no nans
+        # enter the fit. Reference values obtained by running it on scipy 1.16.1.
+        x = np.arange(-10, 10)
+        y = np.arange(-20, 20)
+        x_mesh, y_mesh = np.meshgrid(x, y)
+        z = np.sin(np.sqrt(x_mesh**2 + y_mesh**2))
+
+        xi = np.linspace(-10, 10, endpoint=True, num=3)
+        yi = np.linspace(-20, 20, endpoint=True, num=3)
+        xs, ys = np.meshgrid(xi, yi, sparse=True)
+
+        expected = np.array([
+            [-3.61178317e-01, 9.12945251e-01, 5.94013869e-02],
+            [-5.44021111e-01, -2.15105711e-16, 4.12118485e-01],
+            [4.97086683e-01, 1.49877210e-01, 8.23386213e-01],
+        ])
+        xp_assert_close(RectBivariateSpline(y, x, z, s=0)(ys, xs), expected, atol=1e-14)
+
+    def test_not_increasing_input_2d(self):
+        # gh-25730
+        x = np.arange(5.0)
+        y = np.arange(6.0)
+        lut = RectBivariateSpline(x, y, np.hypot(x[:, None], y[None, :]), s=0)
+
+        decreasing = np.array([3.0, 1.0, 4.0])
+        with assert_raises(ValueError) as exc_info:
+            lut(decreasing[:, None], y[None, :])
+        assert "x must be strictly increasing" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            lut(x[:, None], decreasing[None, :])
         assert "y must be strictly increasing" in str(exc_info.value)
 
     def _sample_large_2d_data(self, nx, ny):

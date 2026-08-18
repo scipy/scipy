@@ -16,8 +16,6 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   CCACHE_MAXSIZE: "250M"
-  # Needed because Pixi doesn't set mtime for compilers
-  CCACHE_COMPILERCHECK: "content"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -571,6 +569,8 @@ jobs:
         with:
           workflow_name: ${{ github.workflow }}
           job_name: ${{ github.job }}
+          # the two matrix variants build the same thing, avoid saving twice
+          save: ${{ matrix.parallel == '0' }}
 
       - name: Run tests (full)
         if: ${{ matrix.parallel == '0'}}

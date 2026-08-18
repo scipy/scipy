@@ -6,7 +6,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
-                   pi, exp, ravel, count_nonzero)
+                   pi, exp, ravel)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
@@ -34,12 +34,13 @@ from scipy._lib._array_api import (
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
+from ._stats_py import (_get_pvalue, SignificanceResult,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
-from .contingency import chi2_contingency
+from .contingency import chi2_contingency  # noqa:F401
 from . import distributions
 from ._distn_infrastructure import rv_generic
-from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
+from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
+                               too_small_nd_not_omit, SmallSampleWarning)
 
 
 __all__ = ['mvsdist',
@@ -404,7 +405,7 @@ def kstatvar(data, n=2, *, axis=None):
     n=10000   : kvar=0.0001
     n=100000  : kvar=9.94e-06
     n=1000000 : kvar=9.99e-07
-    """  # noqa: E501
+    """
     xp = array_namespace(data)
     data = xp.asarray(data)
     if axis is None:
@@ -2205,7 +2206,7 @@ def _swilk(y, *, xp):
     if n == 3:
         # [2] Table 5 gives the first four digits
         c = math.sqrt(2) / 2
-        a = xp.asarray([-c, 0, c])
+        a = xp.asarray([-c, 0, c], device=xp_device(y))
         # [2] Corollary 4; discussed in https://github.com/scipy/scipy/issues/18322
         W = xp.clip(_swilk_w(y, a, xp=xp), 0.75, 1.)
         pvalue = xp.clip(1. - 6/np.pi * xp.acos(xp.sqrt(W)), 0., 1.)
@@ -2213,7 +2214,7 @@ def _swilk(y, *, xp):
 
     # Follows [4] section 2.2
     # could calculate half the coefficients and get the rest by antisymmetry
-    i = xp.arange(1, n + 1, dtype=y.dtype)
+    i = xp.arange(1, n + 1, dtype=y.dtype, device=xp_device(y))
     m = special.ndtri((i - 3 / 8) / (n + 1 / 4))
     u = n**(-0.5)
     mTm = xp.vecdot(m, m)
@@ -2360,7 +2361,7 @@ _anderson_warning_message = (
 tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
 p-value via Monte Carlo simulation. When `method` is specified, the result object will
 include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
-or `fit_result`. Beginning in 1.19.0, these other attributes will no longer be
+or `fit_result`. Beginning in 2.0.0, these other attributes will no longer be
 available, and a p-value will always be computed according to one of the available
 `method` options.""".replace('\n', ' '))
 
@@ -2397,7 +2398,7 @@ def anderson(x, dist='norm', *, method=None):
             specifying that the user must opt into a p-value calculation method.
             When `method` is specified, the object returned will include a ``pvalue``
             attribute, but no ``critical_value``, ``significance_level``, or
-            ``fit_result`` attributes. Beginning in 1.19.0, these other attributes will
+            ``fit_result`` attributes. Beginning in 2.0.0, these other attributes will
             no longer be available, and a p-value will always be computed according to
             one of the available `method` options.
 
@@ -2430,7 +2431,7 @@ def anderson(x, dist='norm', *, method=None):
         .. deprecated:: 1.17.0
             The tuple-unpacking behavior of the return object and attributes
             ``critical_values``, ``significance_level``, and ``fit_result`` are
-            deprecated. Beginning in SciPy 1.19.0, these features will no longer be
+            deprecated. Beginning in SciPy 2.0.0, these features will no longer be
             available, and the object returned will have attributes ``statistic`` and
             ``pvalue``.
 
@@ -2899,7 +2900,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
 
     if variant == _NoValue or midrank != _NoValue:
         message = ("Parameter `variant` has been introduced to replace `midrank`; "
-                   "`midrank` will be removed in SciPy 1.19.0. Specify `variant` to "
+                   "`midrank` will be removed in SciPy 2.0.0. Specify `variant` to "
                    "silence this warning. Note that the returned object will no longer "
                    "be unpackable as a tuple, and `critical_values` will be omitted.")
         warnings.warn(message, category=UserWarning, stacklevel=2)
@@ -3251,7 +3252,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
             varAB = n * m * (N + 1.0) * (3 + N ** 2) / (48.0 * N ** 2)
         else:
             varAB = m * n * (N + 2) * (N - 2.0) / 48 / (N - 1.0)
-        varAB = xp.asarray(varAB, dtype=dtype)
+        varAB = xp.asarray(varAB, dtype=dtype, device=xp_device(AB))
 
     # Small values of AB indicate larger dispersion for the x sample.
     # Large values of AB indicate larger dispersion for the y sample.
@@ -3524,7 +3525,9 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     W = numer / denom
     W = xp.squeeze(W, axis=-1)
     dfd = xp.squeeze(dfd, axis=-1) if is_marray(xp) else dfd
-    dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
+    device = xp_device(W)
+    dfn, dfd = (xp.asarray(dfn, dtype=W.dtype, device=device),
+                xp.asarray(dfd, dtype=W.dtype, device=device))
     pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
     W = W[()] if W.ndim == 0 else W
     pval = pval[()] if pval.ndim == 0 else pval
@@ -3684,7 +3687,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     V2 = xp.var(a_Ni, axis=-1, correction=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
 
-    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype, device=xp_device(statistic)))
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FlignerResult(statistic, pval)
 
@@ -3738,7 +3741,7 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     i = xp.argsort(xy, stable=True, axis=-1)
     _, _, a = _stats_py._rankdata(x, method='average', return_ties=True)
 
-    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
+    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype, device=xp_device(a))
     a = xp.concat((a, zeros), axis=-1)
     a = xp.take_along_axis(a, i, axis=-1)
 
@@ -4160,7 +4163,7 @@ MedianTestResult = _make_tuple_bunch(
 )
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "untested")])
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
@@ -4178,8 +4181,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     ----------
     *samples : array_like
         The set of samples.  There must be at least two samples.
-        Each sample must be a one-dimensional sequence containing at least
-        one value.  The samples are not required to have the same length.
+        The samples are not required to have the same length.
+        Arrays may be multidimensional, in which case each slice along
+        the last axis is treated independently.
     ties : str, optional
         Determines how values equal to the grand median are classified in
         the contingency table.  The string must be one of::
@@ -4303,7 +4307,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     choice of `ties`.
 
     """
-    if len(samples) < 2:
+    n_samples = len(samples)
+
+    if n_samples < 2:
         raise ValueError('median_test requires two or more samples.')
 
     ties_options = ['below', 'above', 'ignore']
@@ -4311,62 +4317,82 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         raise ValueError(f"invalid 'ties' option '{ties}'; 'ties' must be one "
                          f"of: {str(ties_options)[1:-1]}")
 
-    data = [np.asarray(sample) for sample in samples]
+    xp = array_namespace(*samples)
+    data = _broadcast_arrays(samples, axis=-1, xp=xp)
+    data = xp_promote(*data, force_floating=True, xp=xp)
+    batch_shape, dtype, device = data[0].shape[:-1], data[0].dtype, xp_device(data[0])
 
-    # Validate the sizes and shapes of the arguments.
-    for k, d in enumerate(data):
-        if d.size == 0:
-            raise ValueError(f"Sample {k + 1} is empty. All samples must "
-                             f"contain at least one value.")
-        if d.ndim != 1:
-            raise ValueError(f"Sample {k + 1} has {d.ndim} dimensions. "
-                             f"All samples must be one-dimensional sequences.")
-
-    cdata = np.concatenate(data)
+    cdata = xp.concat(data, axis=-1)
     contains_nan = _contains_nan(cdata, nan_policy)
-    if nan_policy == 'propagate' and contains_nan:
-        return MedianTestResult(np.nan, np.nan, np.nan, None)
 
-    grand_median = np.nanmedian(cdata)
+    if cdata.shape[-1] == 0:
+        # If all samples are empty, there's nothing we can calculate. Return now.
+        warnings.warn(too_small_nd_not_omit, SmallSampleWarning, stacklevel=2)
+        nan = xp.full(batch_shape, xp.nan, dtype=dtype, device=device)
+        zeros = xp.zeros(batch_shape + (2, n_samples), dtype=dtype, device=device)
+        nan = nan[()] if nan.ndim == 0 else nan
+        zeros = zeros[()] if zeros.ndim == 0 else zeros
+        return MedianTestResult(nan, nan, nan, zeros)
+
+    if nan_policy == 'omit' and contains_nan:
+        grand_median = stats.quantile(cdata, 0.5, axis=-1, keepdims=True,
+                                      nan_policy='omit')
+    else:
+        grand_median = stats.quantile(cdata, 0.5, axis=-1, keepdims=True)
 
     # Create the contingency table.
-    table = np.zeros((2, len(data)), dtype=np.int64)
+    table = xp.zeros(batch_shape + (2, n_samples), dtype=xp.int64, device=device)
     for k, sample in enumerate(data):
-        sample = sample[~np.isnan(sample)]
-
-        nabove = count_nonzero(sample > grand_median)
-        nbelow = count_nonzero(sample < grand_median)
-        nequal = sample.size - (nabove + nbelow)
-        table[0, k] += nabove
-        table[1, k] += nbelow
+        nnan = xp.count_nonzero(xp.isnan(sample), axis=-1)
+        nabove = xp.count_nonzero(sample > grand_median, axis=-1)
+        nbelow = xp.count_nonzero(sample < grand_median, axis=-1)
+        nequal = (sample.shape[-1] - (nabove + nbelow + nnan) if nan_policy=='omit'
+                  else xp.count_nonzero(sample == grand_median, axis=-1))
+        table = xpx.at(table)[..., 0, k].add(nabove)
+        table = xpx.at(table)[..., 1, k].add(nbelow)
         if ties == "below":
-            table[1, k] += nequal
+            table = xpx.at(table)[..., 1, k].add(nequal)
         elif ties == "above":
-            table[0, k] += nequal
+            table = xpx.at(table)[..., 0, k].add(nequal)
+
+    grand_median = xp.squeeze(grand_median, axis=-1)
 
     # Check that no row or column of the table is all zero.
-    # Such a table can not be given to chi2_contingency, because it would have
-    # a zero in the table of expected frequencies.
-    rowsums = table.sum(axis=1)
-    if rowsums[0] == 0:
-        raise ValueError(f"All values are below the grand median ({grand_median}).")
-    if rowsums[1] == 0:
-        raise ValueError(f"All values are above the grand median ({grand_median}).")
-    if ties == "ignore":
-        # We already checked that each sample has at least one value, but it
-        # is possible that all those values equal the grand median.  If `ties`
-        # is "ignore", that would result in a column of zeros in `table`.  We
-        # check for that case here.
-        zero_cols = np.nonzero((table == 0).all(axis=0))[0]
-        if len(zero_cols) > 0:
-            raise ValueError(
-                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
-                f"median ({grand_median!r}), so they are ignored, resulting in an "
-                f"empty sample."
-            )
+    # Such a table will result in NaN statistic and p-value.
+    rowsums = xp.sum(table, axis=-1)
+    if not is_lazy_array(grand_median):
+        if batch_shape == () and not xp.isnan(grand_median) and rowsums[0] == 0:
+            raise ValueError(f"All values are below the grand median ({grand_median}).")
+        if batch_shape == () and not xp.isnan(grand_median) and rowsums[1] == 0:
+            raise ValueError(f"All values are above the grand median ({grand_median}).")
 
-    stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
-                                              correction=correction)
+        if batch_shape == () and (ties == "ignore" or nan_policy == 'omit'):
+            # We already checked that each sample has at least one value, but it
+            # is possible that all those values equal the grand median.  If `ties`
+            # is "ignore", that would result in a column of zeros in `table`.
+            # Similarly, observations in a sample could be omitted NaNs.
+            # We check for these cases here.
+            zero_cols = xp.nonzero(xp.all((table == 0), axis=0))[0]
+            if xp_size(zero_cols):
+                raise ValueError(
+                    f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+                    f"median ({grand_median!r}), so they are ignored, resulting in an "
+                    f"empty sample."
+                )
+
+    if any(array.shape[-1] == 0 for array in data):
+        # if only some samples are empty, we have the grand_median and `table`,
+        # but `_chi2_contingency_2d` would make noise, so return now.
+        warnings.warn(too_small_nd_not_omit, SmallSampleWarning, stacklevel=2)
+        nan = xp.full(batch_shape, xp.nan, dtype=dtype, device=device)
+        nan = nan[()] if nan.ndim == 0 else nan
+        grand_median = grand_median[()] if grand_median.ndim == 0 else grand_median
+        return MedianTestResult(nan, nan, grand_median, table)
+
+    stat, p = stats.contingency._chi2_contingency_2d(
+        table, lambda_=lambda_, correction=correction)
+    if stat.ndim == 0:
+        stat, p, grand_median = stat[()], p[()], grand_median[()]
     return MedianTestResult(stat, p, grand_median, table)
 
 
@@ -4858,7 +4884,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
     Parameters
     ----------
-    ps : 1D array_like
+    ps : array_like
         The p-values to adjust. Elements must be real numbers between 0 and 1.
     axis : int
         The axis along which to perform the adjustment. The adjustment is

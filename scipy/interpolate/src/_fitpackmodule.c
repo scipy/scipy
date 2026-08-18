@@ -1100,7 +1100,7 @@ fail:
   * There are three wrappers for surfit below, for different callsites in SciPy as legacy code.
   * Two are from the Fortran interface (_surfit_lsq and _surfit_smth in fitpack2.py) that is
   * used in LSQBivariateSpline and SmoothBivariateSpline.
-  * The remaining is a a C wrapper for use in the legacy function "scipy.interpolate.bisplrep".
+  * The remaining is a C wrapper for use in the legacy function "scipy.interpolate.bisplrep".
   * None of them call surfit as is but assume different parameters as optional or fixed values.
   * Worse is that bisplrep is stateful and keeps previous results in a global dict. Thus there
   * is some care needed to handle all that back and forth correctly.
@@ -1784,7 +1784,9 @@ fitpack_sphere(PyObject* Py_UNUSED(dummy), PyObject *args)
         // tt and tp are input arrays that will be modified in-place
         // Acquire pointers to the input arrays without copy
         ap_tt = tt;
+        Py_INCREF(ap_tt);
         ap_tp = tp;
+        Py_INCREF(ap_tp);
 
     } else if (iopt == 0) {
         // SMOOTH
@@ -1845,11 +1847,6 @@ fitpack_sphere(PyObject* Py_UNUSED(dummy), PyObject *args)
     Py_DECREF(ap_r);
     Py_DECREF(ap_w);
 
-    if (iopt == -1) {
-        // LSQ: tt and tp were borrowed, INCREF before returning.
-        Py_INCREF(ap_tt);
-        Py_INCREF(ap_tp);
-    }
     return Py_BuildValue(("iNiNNdi"),
                          nt, PyArray_Return(ap_tt), np, PyArray_Return(ap_tp),
                          PyArray_Return(ap_c), fp, ier);

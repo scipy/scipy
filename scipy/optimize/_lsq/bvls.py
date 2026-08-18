@@ -119,13 +119,13 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose, rcond=None):
 
         move_to_free = np.argmax(g * on_bound)
         on_bound[move_to_free] = 0
-        
+
         while True:   # BVLS Loop B
 
             free_set = on_bound == 0
             active_set = ~free_set
             free_set, = np.nonzero(free_set)
-    
+
             x_free = x[free_set]
             x_free_old = x_free.copy()
             lb_free = lb[free_set]

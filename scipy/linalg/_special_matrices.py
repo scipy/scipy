@@ -3,7 +3,9 @@ import math
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from scipy._lib._util import _apply_over_batch
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size, xp_promote
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_size, xp_promote, xp_device
+)
 import scipy._external.array_api_extra as xpx
 
 
@@ -80,7 +82,7 @@ def toeplitz(c, r=None):
     return _toeplitz(c, r)
 
 
-@_apply_over_batch(("c", 1), ("r", 1))
+@_apply_over_batch(("c", 1), ("r", 1), signature="(i),(j)->(i,j)")
 def _toeplitz(c, r):
     # Form a 1-D array containing a reversed c followed by r[1:] that could be
     # strided to give us toeplitz matrix.
@@ -157,7 +159,7 @@ def circulant(c):
 
 
 @xp_capabilities(np_only=True)
-@_apply_over_batch(("c", 1), ("r", 1))
+@_apply_over_batch(("c", 1), ("r", 1), signature="(i),(j)->(i,j)")
 def hankel(c, r=None):
     r"""
     Construct a Hankel matrix.
@@ -275,7 +277,7 @@ def hadamard(n, dtype=int):
 
 
 @xp_capabilities()
-@_apply_over_batch(("f", 1), ("s", 1))
+@_apply_over_batch(("f", 1), ("s", 1), signature="(i),(j)->(i,i)")
 def leslie(f, s):
     """
     Create a Leslie matrix.
@@ -283,11 +285,6 @@ def leslie(f, s):
     Given the length ``n`` array of fecundity coefficients `f` and the length
     ``n - 1`` array of survival coefficients `s`, return the associated Leslie
     matrix.
-
-    The documentation is written assuming array arguments are of specified
-    "core" shapes. However, array argument(s) of this function may have additional
-    "batch" dimensions prepended to the core shape. In this case, the array is treated
-    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -344,7 +341,7 @@ def leslie(f, s):
         raise ValueError("The length of s must be at least 1.")
 
     n = f.shape[-1]
-    a = xp.zeros((n, n), dtype=f.dtype)
+    a = xp.zeros((n, n), dtype=f.dtype, device=xp_device(f))
     a = xpx.at(a)[0, :].set(f)
     a += xpx.create_diagonal(s, offset=-1, xp=xp)
     return a
@@ -433,7 +430,7 @@ def block_diag(*arrs):
     block_shapes = [a.shape[-2:] for a in arrs]
     out = xp.zeros(batch_shape +
                    tuple(map(int, xp.sum(xp.asarray(block_shapes), axis=0))),
-                   dtype=out_dtype)
+                   dtype=out_dtype, device=xp_device(arrs[0]))
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(block_shapes):
@@ -1017,14 +1014,16 @@ def fiedler(a):
     a = xpx.atleast_nd(xp.asarray(a), ndim=1)
 
     if xp_size(a) == 0:
-        return xp.empty((0, 0), dtype=xp.float64)
+        batch_shape, n = a.shape[:-1], a.shape[-1]
+        return xp.empty(batch_shape + (n, n), dtype=a.dtype, device=xp_device(a))
     elif xp_size(a) == 1:
-        return xp.asarray([[0.]])
+        return xp.asarray([[0.]], device=xp_device(a))
     else:
         return xp.abs(a[..., :, xp.newaxis] - a[..., xp.newaxis, :])
 
 
 @xp_capabilities(np_only=True)
+@_apply_over_batch(("a", 1), signature="(i)->(i-1,i-1)")
 def fiedler_companion(a):
     """Returns a Fiedler companion matrix.
 
@@ -1087,9 +1086,6 @@ def fiedler_companion(a):
     """
     a = np.atleast_1d(a)
 
-    if a.ndim > 1:
-        return np.apply_along_axis(fiedler_companion, -1, a)
-
     if a.size <= 2:
         if a.size == 2:
             return np.array([[-(a/a[0])[-1]]])
@@ -1114,7 +1110,19 @@ def fiedler_companion(a):
     return c
 
 
+def _convolution_matrix_signature(a, n, mode='full'):
+    if mode == 'full':
+        return f"(m)->(m+{n}-1,{n})"
+    elif mode == 'same':  # avoid commas in max(m, n), etc..., due to signature parsing
+        return f"(m)->(m if m > {n} else {n},{n})"
+    elif mode == 'valid':
+        return f"(m)->(m-{n}+1 if m > {n} else {n}-m+1,{n})"
+    else:
+        raise ValueError("'mode' argument must be one of ('full', 'valid', 'same')")
+
+
 @xp_capabilities(np_only=True)
+@_apply_over_batch(("a", 1), signature=_convolution_matrix_signature)
 def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.
@@ -1283,9 +1291,6 @@ def convolution_matrix(a, n, mode='full'):
     if mode not in ('full', 'valid', 'same'):
         raise ValueError(
             "'mode' argument must be one of ('full', 'valid', 'same')")
-
-    if a.ndim > 1:
-        return np.apply_along_axis(lambda a: convolution_matrix(a, n, mode), -1, a)
 
     # create zero padded versions of the array
     az = np.pad(a, (0, n-1), 'constant')

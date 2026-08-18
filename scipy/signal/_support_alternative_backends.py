@@ -77,7 +77,6 @@ untested = {
     "band_stop_obj",
     "bode",
     "check_NOLA",
-    "chirp",
     "coherence",
     "csd",
     "czt",
@@ -89,7 +88,6 @@ untested = {
     "find_peaks",
     "find_peaks_cwt",
     "freqresp",
-    "gausspulse",
     "iirdesign", # There's no reason this shouldn't work. It just needs tests.
     "istft",
     "lombscargle",
@@ -162,6 +160,12 @@ abcd_normalize_extra_note = \
 
     """
 
+chirp_extra_note = \
+    """CuPy delegates to ``cupyx.scipy.signal.chirp``, which does not support
+    ``complex=True``.
+
+    """
+
 welch_extra_note = \
     """Support for CuPy and JAX is provided by delegation to
     ``cupyx.scipy.signal.welch`` and ``jax.scipy.signal.welch``.
@@ -196,6 +200,7 @@ capabilities_overrides = {
 
     "cheby2": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
+    "chirp": xp_capabilities(extra_note=chirp_extra_note),
     "cont2discrete": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "convolve": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
                                 allow_dask_compute=True,
@@ -253,7 +258,6 @@ capabilities_overrides = {
                                    jax_jit=False, allow_dask_compute=True),
     "invres": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "invresz": xp_capabilities(np_only=True, exceptions=["cupy"]),
-    "iircomb": xp_capabilities(xfail_backends=[("jax.numpy", "inaccurate")]),
     "iirfilter": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
     "kaiser_atten": xp_capabilities(
@@ -318,8 +322,6 @@ capabilities_overrides = {
     "savgol_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                      jax_jit=False,
                                      reason="convolve1d is cpu-only"),
-    "sawtooth": xp_capabilities(jax_jit=False,
-                                skip_backends=[("dask.array", "dask tests fail")]),
     "sos2zpk": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
     "sos2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
@@ -336,7 +338,6 @@ capabilities_overrides = {
                 "sosfiltfilt directly sets shape attributes on arrays"
                 " which dask doesn't like"
             ),
-            ("torch", "negative strides"),
         ],
     ),
     "sosfreqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],

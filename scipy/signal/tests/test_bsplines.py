@@ -2,9 +2,10 @@
 import math
 import numpy as np
 
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     assert_almost_equal, xp_assert_close, xp_assert_equal, make_xp_test_case,
-    xp_default_dtype, array_namespace, _xp_copy_to_numpy
+    array_namespace, xp_copy_to_numpy
 )
 import pytest
 from pytest import raises
@@ -183,7 +184,7 @@ class TestBSplines:
                 12.5]
         y = xp.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                         1.396, 4.094])
-        cj = xp.asarray(signal.cspline1d(_xp_copy_to_numpy(y)))
+        cj = xp.asarray(signal.cspline1d(xp_copy_to_numpy(y)))
         newy = xp.asarray([6.203, 4.41570658, 3.514, 5.16924703, 6.864, 6.04643068,
                            4.21600281, 6.04643068, 6.864, 5.16924703, 3.514,
                            4.41570658, 6.203, 6.80717667, 6.759, 6.98971173, 7.433,
@@ -378,7 +379,7 @@ class TestSepfir2d:
 def test_cspline2d(xp):
     rng = np.random.RandomState(181819142)
     image = rng.rand(71, 73)
-    image = xp.asarray(image, dtype=xp_default_dtype(xp))
+    image = xp.asarray(image, dtype=xpx.default_dtype(xp))
     result = signal.cspline2d(image, 8.0)
     assert array_namespace(result) == xp
 
@@ -387,6 +388,6 @@ def test_cspline2d(xp):
 def test_qspline2d(xp):
     rng = np.random.RandomState(181819143)
     image = rng.rand(71, 73)
-    image = xp.asarray(image, dtype=xp_default_dtype(xp))
+    image = xp.asarray(image, dtype=xpx.default_dtype(xp))
     result = signal.qspline2d(image)
     assert array_namespace(result) == xp

@@ -370,7 +370,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if (*s != 0)
     {
         two_pow_s = powf(2.0, -(*s));
-        for (i = 0; i < n*n; i++) { absA[i] *= two_pow_s; }
+        for (i = 0; i < (long)n*n; i++) { absA[i] *= two_pow_s; }
 
         // work_arr has spun 19 times already
         two_pow_s = powf(2.0, -19.0*(*s));
@@ -401,10 +401,10 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
         {
             for (j = 0; j < n; j++)
             {
-                Am[        n*i + j] *= s0;
-                Am[  n*n + n*i + j] *= s1;
-                Am[2*n*n + n*i + j] *= s2;
-                Am[3*n*n + n*i + j] *= s3;
+                Am[            (long)n*i + j] *= s0;
+                Am[(long)n*n + (long)n*i + j] *= s1;
+                Am[2L*n*n    + (long)n*i + j] *= s2;
+                Am[3L*n*n    + (long)n*i + j] *= s3;
             }
         }
     }
@@ -587,7 +587,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if (*s != 0)
     {
         two_pow_s = pow(2.0, -(*s));
-        for (i = 0; i < n*n; i++) { absA[i] *= two_pow_s; }
+        for (i = 0; i < (long)n*n; i++) { absA[i] *= two_pow_s; }
 
         // work_arr has spun 19 times already
         two_pow_s = pow(2.0, -19.0*(*s));
@@ -618,10 +618,10 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
         {
             for (j = 0; j < n; j++)
             {
-                Am[        n*i + j] *= s0;
-                Am[  n*n + n*i + j] *= s1;
-                Am[2*n*n + n*i + j] *= s2;
-                Am[3*n*n + n*i + j] *= s3;
+                Am[            (long)n*i + j] *= s0;
+                Am[(long)n*n + (long)n*i + j] *= s1;
+                Am[2L*n*n    + (long)n*i + j] *= s2;
+                Am[3L*n*n    + (long)n*i + j] *= s3;
             }
         }
     }
@@ -807,7 +807,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if (*s != 0)
     {
         two_pow_s = powf(2.0, -(*s));
-        for (i = 0; i < n*n; i++) { absA[i] *= two_pow_s; }
+        for (i = 0; i < (long)n*n; i++) { absA[i] *= two_pow_s; }
 
         // work_arr has spun 19 times already
         two_pow_s = powf(2.0, -19.0*(*s));
@@ -839,15 +839,15 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                Am[        n*i + j] = _FCmulcr(Am[        n*i + j], s0);
-                Am[  n*n + n*i + j] = _FCmulcr(Am[  n*n + n*i + j], s1);
-                Am[2*n*n + n*i + j] = _FCmulcr(Am[2*n*n + n*i + j], s2);
-                Am[3*n*n + n*i + j] = _FCmulcr(Am[3*n*n + n*i + j], s3);
+                Am[            (long)n*i + j] = _FCmulcr(Am[            (long)n*i + j], s0);
+                Am[(long)n*n + (long)n*i + j] = _FCmulcr(Am[(long)n*n + (long)n*i + j], s1);
+                Am[2L*n*n +    (long)n*i + j] = _FCmulcr(Am[2L*n*n    + (long)n*i + j], s2);
+                Am[3L*n*n +    (long)n*i + j] = _FCmulcr(Am[3L*n*n    + (long)n*i + j], s3);
 #else
-                Am[        n*i + j] *= s0;
-                Am[  n*n + n*i + j] *= s1;
-                Am[2*n*n + n*i + j] *= s2;
-                Am[3*n*n + n*i + j] *= s3;
+                Am[            (long)n*i + j] *= s0;
+                Am[(long)n*n + (long)n*i + j] *= s1;
+                Am[2L*n*n    + (long)n*i + j] *= s2;
+                Am[3L*n*n    + (long)n*i + j] *= s3;
 #endif
             }
         }
@@ -1068,15 +1068,15 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                Am[        n*i + j] = _Cmulcr(Am[        n*i + j], s0);
-                Am[  n*n + n*i + j] = _Cmulcr(Am[  n*n + n*i + j], s1);
-                Am[2*n*n + n*i + j] = _Cmulcr(Am[2*n*n + n*i + j], s2);
-                Am[3*n*n + n*i + j] = _Cmulcr(Am[3*n*n + n*i + j], s3);
+                Am[            (long)n*i + j] = _Cmulcr(Am[            (long)n*i + j], s0);
+                Am[(long)n*n + (long)n*i + j] = _Cmulcr(Am[(long)n*n + (long)n*i + j], s1);
+                Am[2L*n*n    + (long)n*i + j] = _Cmulcr(Am[2L*n*n    + (long)n*i + j], s2);
+                Am[3L*n*n    + (long)n*i + j] = _Cmulcr(Am[3L*n*n    + (long)n*i + j], s3);
 #else
-                Am[        n*i + j] *= s0;
-                Am[  n*n + n*i + j] *= s1;
-                Am[2*n*n + n*i + j] *= s2;
-                Am[3*n*n + n*i + j] *= s3;
+                Am[            (long)n*i + j] *= s0;
+                Am[(long)n*n + (long)n*i + j] *= s1;
+                Am[2L*n*n    + (long)n*i + j] *= s2;
+                Am[3L*n*n    + (long)n*i + j] *= s3;
 #endif
             }
         }

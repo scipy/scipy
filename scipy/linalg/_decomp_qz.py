@@ -1,8 +1,11 @@
+import os
 import warnings
 
 import numpy as np
 from numpy import asarray_chkfinite
 from scipy._lib._util import _apply_over_batch
+from scipy._lib.deprecation import _NoValue
+
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
@@ -68,7 +71,7 @@ def _ouc(x, y):
     return out
 
 
-def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
+def _qz(A, B, output='real', lwork=_NoValue, sort=None, overwrite_a=False,
         overwrite_b=False, check_finite=True):
     if sort is not None:
         # Disabled due to segfaults on win32, see ticket 1717.
@@ -77,6 +80,16 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     if output not in ['real', 'complex', 'r', 'c']:
         raise ValueError("argument must be 'real', or 'complex'")
+
+    if lwork is not _NoValue:
+        warnings.warn(
+            "scipy.linalg.qz: the `lwork` keyword is deprecated and no longer in use"
+            " as of SciPy 2.0.0 and will be removed in SciPy 2.2.0",
+            DeprecationWarning,
+            skip_file_prefixes=(os.path.dirname(__file__),)
+        )
+
+    lwork = None
 
     if check_finite:
         a1 = asarray_chkfinite(A)
@@ -144,7 +157,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
 
 @_apply_over_batch(('A', 2), ('B', 2))
-def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
+def qz(A, B, output='real', lwork=_NoValue, sort=None, overwrite_a=False,
        overwrite_b=False, check_finite=True):
     """
     QZ decomposition for generalized eigenvalues of a pair of matrices.
@@ -180,6 +193,11 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         Default is 'real'.
     lwork : int, optional
         Work array size. If None or -1, it is automatically computed.
+
+        .. deprecated:: 2.0.0
+            This keyword is deprecated and no longer in use and will be
+            removed in 2.2.0.
+
     sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
         NOTE: THIS INPUT IS DISABLED FOR NOW. Use ordqz instead.
 
