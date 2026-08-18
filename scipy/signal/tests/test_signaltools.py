@@ -1348,7 +1348,6 @@ class TestMedFilt:
 @make_xp_test_case(signal.wiener)
 class TestWiener:
 
-    @skip_xp_backends("cupy", reason="XXX: can_cast in cupy <= 13.2")
     def test_basic(self, xp):
         g = xp.asarray([[5, 6, 4, 3],
                         [3, 5, 6, 2],
