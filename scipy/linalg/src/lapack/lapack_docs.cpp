@@ -83,6 +83,54 @@ namespace lapack {
             "overwrite_rhs : int, optional\n"
             "    If nonzero, `rhs` may be overwritten in place. Default is 0.\n";
 
+        /* The tridiagonal families.  A tridiagonal matrix arrives as its three diagonals, and
+         * `gttrf` hands its factorization on to `gttrs`, `gtcon` and `gtsvx` as five arrays. */
+        static constexpr const char *P_DL     = "dl : ndarray\n    Subdiagonal elements, length ``n - 1``.\n";
+        static constexpr const char *P_D_TRI  = "d : ndarray\n    Diagonal elements, length ``n``.\n";
+        static constexpr const char *P_DU     = "du : ndarray\n    Superdiagonal elements, length ``n - 1``.\n";
+        static constexpr const char *P_GT_FACTORS =
+            "dl : ndarray\n    Multipliers defining ``L``, as returned by ``gttrf``.\n"
+            "d : ndarray\n    Diagonal of ``U``, as returned by ``gttrf``.\n"
+            "du : ndarray\n    First superdiagonal of ``U``, as returned by ``gttrf``.\n"
+            "du2 : ndarray\n    Second superdiagonal of ``U``, as returned by ``gttrf``.\n"
+            "ipiv : ndarray\n    Pivot indices from ``gttrf``, 1-based.\n";
+        static constexpr const char *P_TRANS_STR =
+            "trans : str, optional\n"
+            "    ``'N'``, ``'T'`` or ``'C'`` for the system, its transpose, or its conjugate\n"
+            "    transpose. Default is ``'N'``.\n";
+
+        /* The symmetric tridiagonal eigensolvers. */
+        static constexpr const char *P_D_SYM =
+            "d : ndarray\n    Diagonal elements of the symmetric tridiagonal matrix, length ``n``.\n";
+        static constexpr const char *P_E_SYM = "e : ndarray\n    Off-diagonal elements, length ``n - 1``.\n";
+        static constexpr const char *P_COMPUTE_V =
+            "compute_v : int, optional\n    If nonzero, eigenvectors are computed. Default is 1.\n";
+        static constexpr const char *P_RANGE_SELECT =
+            "range : int\n"
+            "    Which eigenvalues to compute: 0 for all, 1 for those in ``(vl, vu]``, 2 for\n"
+            "    those with indices `il` through `iu`.\n"
+            "vl : float\n    Lower bound of the half-open interval; used only when `range` is 1.\n"
+            "vu : float\n    Upper bound of the half-open interval; used only when `range` is 1.\n"
+            "il : int\n"
+            "    Index of the smallest eigenvalue to return, 1-based; used only when\n"
+            "    `range` is 2.\n"
+            "iu : int\n"
+            "    Index of the largest eigenvalue to return, 1-based; used only when\n"
+            "    `range` is 2.\n";
+
+        static constexpr const char *P_OVERWRITE_DL =
+            "overwrite_dl : int, optional\n"
+            "    If nonzero, `dl` may be overwritten in place. Default is 0.\n";
+        static constexpr const char *P_OVERWRITE_D  =
+            "overwrite_d : int, optional\n"
+            "    If nonzero, `d` may be overwritten in place. Default is 0.\n";
+        static constexpr const char *P_OVERWRITE_DU =
+            "overwrite_du : int, optional\n"
+            "    If nonzero, `du` may be overwritten in place. Default is 0.\n";
+        static constexpr const char *P_OVERWRITE_E  =
+            "overwrite_e : int, optional\n"
+            "    If nonzero, `e` may be overwritten in place. Default is 0.\n";
+
         static constexpr const char *P_JPTV    =
             "jptv : ndarray\n"
             "    Column pivots: a nonzero entry pins that column of `a` to the front.\n"
@@ -913,6 +961,341 @@ namespace lapack {
             return s;
         }
 
+        /* ============================ flapack_gen_tri.pyf.src ====================== */
+
+        static std::string
+        doc_gtsv(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(dl, d, du, b, overwrite_dl=0, overwrite_d=0, overwrite_du=0,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_b=0)\n\n";
+            s += "Solve ``a @ x = b`` for a tridiagonal ``a`` by Gaussian elimination with partial\n"
+                 "pivoting (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_DL;
+            s += P_D_TRI;
+            s += P_DU;
+            s += P_B_RHS;
+            s += P_OVERWRITE_DL;
+            s += P_OVERWRITE_D;
+            s += P_OVERWRITE_DU;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "du2 : ndarray\n"
+                 "    Second superdiagonal of ``U`` in the leading ``n - 2`` entries, written over\n"
+                 "    `dl`; the final entry is not part of the factorization.\n";
+            s += "d : ndarray\n    Diagonal of ``U``.\n";
+            s += "du : ndarray\n    First superdiagonal of ``U``.\n";
+            s += R_X_OUT;
+            s += R_INFO_LU;
+            return s;
+        }
+
+        static std::string
+        doc_gttrf(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(dl, d, du, overwrite_dl=0, overwrite_d=0, overwrite_du=0)\n\n";
+            s += "Compute the LU factorization of a tridiagonal matrix with partial pivoting\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_DL;
+            s += P_D_TRI;
+            s += P_DU;
+            s += P_OVERWRITE_DL;
+            s += P_OVERWRITE_D;
+            s += P_OVERWRITE_DU;
+
+            s += "\nReturns\n-------\n";
+            s += "dl : ndarray\n    Multipliers defining ``L``.\n";
+            s += "d : ndarray\n    Diagonal of ``U``.\n";
+            s += "du : ndarray\n    First superdiagonal of ``U``.\n";
+            s += "du2 : ndarray\n    Second superdiagonal of ``U``, length ``n - 2``.\n";
+            s += "ipiv : ndarray\n"
+                 "    Pivot indices, 1-based -- unlike ``getrf``, which returns them 0-based.\n"
+                 "    ``gttrs``, ``gtcon`` and ``gtsvx`` take them exactly as returned.\n";
+            s += R_INFO_LU;
+            return s;
+        }
+
+        static std::string
+        doc_gttrs(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(dl, d, du, du2, ipiv, b, trans='N', overwrite_b=0)\n\n";
+            s += "Solve a tridiagonal system using the factorization from ``gttrf``\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_GT_FACTORS;
+            s += P_B_RHS;
+            s += P_TRANS_STR;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += R_X_OUT;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_gtcon(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(dl, d, du, du2, ipiv, anorm, norm='1')\n\n";
+            s += "Estimate the reciprocal condition number of a tridiagonal matrix from its\n"
+                 "``gttrf`` factorization (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_GT_FACTORS;
+            s += "anorm : float\n    Norm of the original matrix, in the norm selected by `norm`.\n";
+            s += "norm : str, optional\n    ``'1'`` or ``'O'`` for the 1-norm, ``'I'`` for the infinity norm.\n    Default is ``'1'``.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_gtsvx(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(dl, d, du, b, fact='N', trans='N', dlf=None, df=None, duf=None,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "du2=None, ipiv=None)\n\n";
+            s += "Solve a tridiagonal system with condition estimation and error bounds\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_DL;
+            s += P_D_TRI;
+            s += P_DU;
+            s += P_B_RHS;
+            s += "fact : str, optional\n"
+                 "    ``'N'`` to factorize the matrix, ``'F'`` to reuse the `dlf`, `df`, `duf`,\n"
+                 "    `du2` and `ipiv` supplied. Default is ``'N'``.\n";
+            s += P_TRANS_STR;
+            s += "dlf : ndarray, optional\n    Multipliers of ``L`` to reuse when ``fact='F'``; otherwise computed.\n";
+            s += "df : ndarray, optional\n    Diagonal of ``U`` to reuse when ``fact='F'``; otherwise computed.\n";
+            s += "duf : ndarray, optional\n    First superdiagonal of ``U`` to reuse when ``fact='F'``; otherwise computed.\n";
+            s += "du2 : ndarray, optional\n    Second superdiagonal of ``U`` to reuse when ``fact='F'``; otherwise computed.\n";
+            s += "ipiv : ndarray, optional\n"
+                 "    Pivot indices to reuse when ``fact='F'``, 1-based as ``gttrf`` returns them;\n"
+                 "    otherwise computed.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "dlf : ndarray\n    Multipliers defining ``L``.\n";
+            s += "df : ndarray\n    Diagonal of ``U``.\n";
+            s += "duf : ndarray\n    First superdiagonal of ``U``.\n";
+            s += "du2 : ndarray\n    Second superdiagonal of ``U``.\n";
+            s += "ipiv : ndarray\n    Pivot indices, 1-based.\n";
+            s += R_X_OUT;
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += "ferr : ndarray\n    Estimated forward error bound for each solution vector.\n";
+            s += "berr : ndarray\n    Componentwise relative backward error of each solution vector.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if ``0 < info <= n``, ``u[info-1, info-1]`` is exactly zero; if ``info = n+1``,\n"
+                 "    the matrix is singular to working precision and `x` may be inaccurate.\n";
+            return s;
+        }
+
+        static std::string
+        doc_stev(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, compute_v=1, overwrite_d=0, overwrite_e=0)\n\n";
+            s += "Compute the eigenvalues and optionally the eigenvectors of a symmetric\n"
+                 "tridiagonal matrix (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_SYM;
+            s += "e : ndarray\n    Off-diagonal elements, length ``max(n - 1, 1)``.\n";
+            s += P_COMPUTE_V;
+            s += P_OVERWRITE_D;
+            s += P_OVERWRITE_E;
+
+            s += "\nReturns\n-------\n";
+            s += "vals : ndarray\n    Eigenvalues in ascending order, written over `d`.\n";
+            s += "z : ndarray\n"
+                 "    Orthonormal eigenvectors as columns, shape ``(n, n)``, or a ``(1, 1)``\n"
+                 "    placeholder when `compute_v` is 0.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        static std::string
+        doc_stevd(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, compute_v=1, lwork=1+4*n+n*n, liwork=3+5*n, overwrite_d=0,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_e=0)\n\n";
+            s += "Compute the eigenvalues and optionally the eigenvectors of a symmetric\n"
+                 "tridiagonal matrix by divide-and-conquer (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_SYM;
+            s += "e : ndarray\n    Off-diagonal elements, length ``max(n - 1, 1)``.\n";
+            s += P_COMPUTE_V;
+            s += "lwork : int, optional\n"
+                 "    Size of the workspace. Default is ``1 + 4 * n + n ** 2`` when `compute_v` is\n"
+                 "    nonzero and ``1`` otherwise, which are the exact requirements.\n";
+            s += "liwork : int, optional\n"
+                 "    Size of the integer workspace. Default is ``3 + 5 * n`` when `compute_v` is\n"
+                 "    nonzero and ``1`` otherwise.\n";
+            s += P_OVERWRITE_D;
+            s += P_OVERWRITE_E;
+
+            s += "\nReturns\n-------\n";
+            s += "vals : ndarray\n    Eigenvalues in ascending order, written over `d`.\n";
+            s += "z : ndarray\n"
+                 "    Orthonormal eigenvectors as columns, shape ``(n, n)``, or a ``(1, 1)``\n"
+                 "    placeholder when `compute_v` is 0.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        static std::string
+        doc_sterf(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, overwrite_d=0, overwrite_e=0)\n\n";
+            s += "Compute all eigenvalues of a symmetric tridiagonal matrix by the Pal-Walker-\n"
+                 "Kahan QL/QR variant, without eigenvectors (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_SYM;
+            s += P_E_SYM;
+            s += P_OVERWRITE_D;
+            s += P_OVERWRITE_E;
+
+            s += "\nReturns\n-------\n";
+            s += "vals : ndarray\n    Eigenvalues in ascending order, written over `d`.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        static std::string
+        doc_stebz(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, range, vl, vu, il, iu, tol, order)\n\n";
+            s += "Compute selected eigenvalues of a symmetric tridiagonal matrix by bisection\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_SYM;
+            s += P_E_SYM;
+            s += P_RANGE_SELECT;
+            s += "tol : float\n"
+                 "    Absolute tolerance for the eigenvalues. If not positive, machine precision\n"
+                 "    times the matrix norm is used.\n";
+            s += "order : str\n"
+                 "    ``'B'`` to order eigenvalues within each block, ``'E'`` to order the whole\n"
+                 "    set in ascending order.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "m : int\n    Number of eigenvalues found; only ``w[:m]`` is meaningful.\n";
+            s += "w : ndarray\n    The computed eigenvalues, in the order selected by `order`.\n";
+            s += "iblock : ndarray\n"
+                 "    Block index of each eigenvalue: ``w[i]`` belongs to submatrix ``iblock[i]``,\n"
+                 "    1-based. A nonpositive entry marks an eigenvalue that failed to converge.\n";
+            s += "isplit : ndarray\n"
+                 "    Splitting points: submatrix ``i`` spans rows ``isplit[i-1]`` through\n"
+                 "    ``isplit[i] - 1``, 1-based.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, some eigenvalues failed to converge or were not counted\n"
+                 "    reliably.\n";
+            return s;
+        }
+
+        static std::string
+        doc_stein(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, w, iblock, isplit)\n\n";
+            s += "Compute eigenvectors of a symmetric tridiagonal matrix by inverse iteration,\n"
+                 "for eigenvalues supplied by ``stebz`` (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_SYM;
+            s += P_E_SYM;
+            s += "w : ndarray\n    The ``m`` eigenvalues to compute vectors for, as returned by ``stebz``.\n";
+            s += "iblock : ndarray\n    Block indices from ``stebz``.\n";
+            s += "isplit : ndarray\n    Splitting points from ``stebz``.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "z : ndarray\n    Orthonormal eigenvectors as columns, shape ``(n, m)``.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, that many eigenvectors failed to converge.\n";
+            return s;
+        }
+
+        static std::string
+        doc_stemr(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, range, vl, vu, il, iu, compute_v=1, lwork=18*n,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "liwork=10*n, overwrite_d=0, overwrite_e=0)\n\n";
+            s += "Compute selected eigenvalues and optionally eigenvectors of a symmetric\n"
+                 "tridiagonal matrix by the MRRR algorithm (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_SYM;
+            s += "e : ndarray\n"
+                 "    Off-diagonal elements in the leading ``n - 1`` entries, length ``n``. The\n"
+                 "    final entry need not be set; LAPACK uses it as workspace.\n";
+            s += P_RANGE_SELECT;
+            s += P_COMPUTE_V;
+            /* Written out rather than via p_lwork: the default depends on `compute_v`, so it
+             * wraps, and it reads better beside the `liwork` entry that mirrors it. */
+            s += "lwork : int, optional\n"
+                 "    Size of the workspace. Default is ``18 * n`` when `compute_v` is nonzero\n"
+                 "    and ``12 * n`` otherwise. Use ``stemr_lwork`` for the optimal value.\n";
+            s += "liwork : int, optional\n"
+                 "    Size of the integer workspace. Default is ``10 * n`` when `compute_v` is\n"
+                 "    nonzero and ``8 * n`` otherwise. Use ``stemr_lwork`` for the optimal value.\n";
+            s += P_OVERWRITE_D;
+            s += P_OVERWRITE_E;
+
+            s += "\nReturns\n-------\n";
+            s += "m : int\n    Number of eigenvalues found; only ``w[:m]`` and ``z[:, :m]`` are meaningful.\n";
+            s += "w : ndarray\n    The computed eigenvalues in ascending order, length ``n``.\n";
+            s += "z : ndarray\n"
+                 "    Orthonormal eigenvectors as columns, shape ``(n, n)``. Not referenced when\n"
+                 "    `compute_v` is 0.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        static std::string
+        doc_stemr_lwork(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, range, vl, vu, il, iu, compute_v=1, overwrite_d=0,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_e=0)\n\n";
+            s += "Query the optimal `lwork` and `liwork` for ``" + std::string(1, name[0]) + "stemr``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_SYM;
+            s += "e : ndarray\n    Off-diagonal elements in the leading ``n - 1`` entries, length ``n``.\n";
+            s += P_RANGE_SELECT;
+            s += P_COMPUTE_V;
+            s += P_OVERWRITE_D;
+            s += P_OVERWRITE_E;
+
+            s += "\nReturns\n-------\n";
+            s += "work : " + std::string(t.scalar) + "\n    Optimal size of the `work` array, as a scalar of the routine's dtype.\n";
+            s += "iwork : int\n    Optimal size of the integer workspace, to pass as `liwork`.\n";
+            s += R_INFO;
+            return s;
+        }
+
         /* ================================ registration ============================= */
 
         typedef std::string (*DocFn)(const char *, const Dtype &);
@@ -970,6 +1353,29 @@ namespace lapack {
             DOC_FAMILY(geev_lwork),
             DOC_FAMILY(ggev),
             DOC_FAMILY(gesvx),
+
+            /* Same order as `gen_tri_methods` in `lapack_gen_tri.cpp`.  The `ste*` eigensolvers
+             * are real-only, so they are spelled out as `s`/`d` pairs the way that table spells
+             * them out with ROW. */
+            DOC_FAMILY(gtsv),
+            DOC_FAMILY(gttrf),
+            DOC_FAMILY(gttrs),
+            DOC_FAMILY(gtcon),
+            DOC_FAMILY(gtsvx),
+            {"sstev", doc_stev, S},
+            {"dstev", doc_stev, D},
+            {"sstebz", doc_stebz, S},
+            {"dstebz", doc_stebz, D},
+            {"ssterf", doc_sterf, S},
+            {"dsterf", doc_sterf, D},
+            {"sstein", doc_stein, S},
+            {"dstein", doc_stein, D},
+            {"sstemr", doc_stemr, S},
+            {"dstemr", doc_stemr, D},
+            {"sstemr_lwork", doc_stemr_lwork, S},
+            {"dstemr_lwork", doc_stemr_lwork, D},
+            {"sstevd", doc_stevd, S},
+            {"dstevd", doc_stevd, D},
         };
 
         /** @brief The docstring for @p name, or nullptr when none is registered. */
