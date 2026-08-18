@@ -3503,7 +3503,7 @@ def roots_sh_legendre(n, mu=False):
     shifted Legendre polynomial :math:`P^*_n(x)`. These sample points
     and weights correctly integrate polynomials of degree :math:`2n -
     1` or less over the interval :math:`[0, 1]` with weight function
-    :math:`w(x) = 1.0`. See 2.2.11 in [AS]_ for details.
+    :math:`w(x) = 1.0`. See 22.2.11 in [AS]_ for details.
 
     Parameters
     ----------
