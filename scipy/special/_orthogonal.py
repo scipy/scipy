@@ -457,7 +457,8 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     degree :math:`2n - 1` or less over the interval :math:`[0, 1]` with
     weight function :math:`w(x) = (1 - x)^{p-q} x^{q-1}`. See 22.2.2
     in [AS]_ for details. Note that here, in contrast to `roots_sh_legendre`,
-    `roots_sh_chebyt`, and `roots_sh_chebyu`, not only the argument is shifted.
+    `roots_sh_chebyt`, and `roots_sh_chebyu`, more than just the argument is
+    shifted.
 
     Parameters
     ----------
@@ -590,7 +591,7 @@ def sh_jacobi(n, p, q, monic=False):
 
     where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
     Note that here, in contrast to `sh_legendre`, `sh_chebyt`, and
-    `sh_chebyu`, not only the argument is shifted. See 22.2.2
+    `sh_chebyu`, more than just the argument is shifted. See 22.2.2
     in [AS]_ for details.
 
     Parameters
