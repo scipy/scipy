@@ -88,6 +88,8 @@ pip-wheel-metadata
 installdir/
 .mesonpy/
 .wraplock
+subprojects/nanobind-*
+subprojects/robin-map-*
 
 # doit
 ######
