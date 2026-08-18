@@ -3,10 +3,10 @@ import pytest
 from scipy import stats
 
 from scipy._external.packaging_version import version
-from scipy._lib._array_api import xp_assert_close, _count_nonmasked
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _count_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
 from scipy._lib._array_api import SCIPY_ARRAY_API, is_torch
-from scipy.stats._stats_py import _xp_mean, _xp_var, _debug_gh24876, _debug_gh24876c
+from scipy.stats._stats_py import _xp_mean, _xp_var
 
 
 marray = pytest.importorskip('marray')
@@ -720,34 +720,3 @@ def test_obrientransform(dtype, n_arrays, masked_slice, xp):
     ref = stats.obrientransform(*narrays, nan_policy='omit')
     for res_i, ref_i in zip(res, ref):
         assert_close(res_i, ref_i)
-
-
-@pytest.mark.parametrize('fun', [make_xp_pytest_param(_debug_gh24876)])
-def test_debug_24876_a(fun, xp):
-    assert SCIPY_ARRAY_API
-
-
-@pytest.mark.parametrize('fun', [make_xp_pytest_param(_debug_gh24876)])
-def test_debug_24876_b(fun, xp):
-    mxp, marrays, narrays = get_arrays(1, xp=xp)
-
-    mxp2, y = fun(marrays[0])
-    assert mxp2 == mxp
-    str_mxp = str(mxp)
-    str_mxp2 = str(mxp2)
-    # assert str_mxp == str_mxp2
-    str_y = str(y)
-    str_type_y = str(type(y))
-    assert "marray" in str_type_y.lower()
-    xp_assert_close(getattr(y, 'data'), marrays[0].data)
-    xp_assert_close(getattr(y, 'mask'), marrays[0].mask)
-    assert False
-
-
-@skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
-@pytest.mark.parametrize('fun', [make_xp_pytest_param(_debug_gh24876c)])
-def test_debug_24876_c(fun, xp):
-    mxp, marrays, narrays = get_arrays(1, xp=xp)
-    res = fun(marrays[0])
-    ref = np.ma.log(narrays[0])
-    assert_close(res, ref)
