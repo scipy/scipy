@@ -3,7 +3,7 @@ import pytest
 from scipy import stats
 
 from scipy._external.packaging_version import version
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _count_nonmasked
+from scipy._lib._array_api import xp_assert_close, _count_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
 from scipy._lib._array_api import SCIPY_ARRAY_API, is_torch
 from scipy.stats._stats_py import _xp_mean, _xp_var
@@ -18,6 +18,7 @@ pytestmark = [
             " is hidden behind SCIPY_ARRAY_API flag."
         ),
     ),
+    pytest.mark.filterwarnings("ignore::RuntimeWarning")
 ]
 
 skip_backend = pytest.mark.skip_xp_backends
@@ -53,9 +54,6 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), all_unique=Tru
         nan_arrays.append(nan_array)
 
     return mxp, marrays, nan_arrays
-
-
-pytestmark = pytest.mark.filterwarnings("ignore::RuntimeWarning")
 
 
 def assert_close(res, ref, *args, **kwargs):
