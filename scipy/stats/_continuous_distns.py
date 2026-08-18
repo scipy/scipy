@@ -411,6 +411,11 @@ class norm_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Normal_distribution
+
     %(example)s
 
     """
@@ -1549,6 +1554,11 @@ class chi_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Chi distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Chi_distribution
+
     %(example)s
 
     """
@@ -1641,6 +1651,11 @@ class chi2_gen(rv_continuous):
     ``scale = 2``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Chi-squared distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Chi-squared_distribution
 
     %(example)s
 

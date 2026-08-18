@@ -16,7 +16,7 @@ from typing import Literal
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
                                    is_marray, xp_size, xp_result_device, xp_result_type,
-                                   xp_capabilities, xp_isscalar)
+                                   xp_capabilities, xp_isscalar, xp_device)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -1109,11 +1109,42 @@ The documentation is written assuming array arguments are of specified
 "core" shapes. However, array argument(s) of this function may have additional
 "batch" dimensions prepended to the core shape. In this case, the array is treated
 as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-Note that calls with zero-size batches are unsupported and will raise a ``ValueError``.
 """
 
 
-def _apply_over_batch(*argdefs):
+def output_from_signature(arrays, batch_shape, core_shapes, signature):
+    xp = array_namespace(*arrays)
+    dtype = xp.result_type(*arrays)
+    device = xp_device(arrays[0]) if len(arrays) else None
+
+    # parse more efficiently with regex?
+    inputs, outputs = signature.split("->")
+    inputs, outputs = inputs[1:-1].split("),("), outputs[1:-1].split("),(")
+    input_dim_to_letter = {}
+    for i, input in enumerate(inputs):
+        for j, l in enumerate(input.split(",")):
+            input_dim_to_letter[(i, j)] = l
+
+    letter_to_length = {'': ()}
+    for i, core_shape in enumerate(core_shapes):
+        for j, length in enumerate(core_shape):
+            l = input_dim_to_letter[(i, j)]
+            if hasattr(letter_to_length, l):
+                assert letter_to_length[l] == length
+            else:
+                letter_to_length[l] = length
+
+    # `eval` output shape specifications?
+    results = []
+    for output in outputs:
+        out_core_shape = tuple([eval(l, letter_to_length)
+                                for l in output.split(',') if l])
+        results.append(xp.empty(batch_shape + out_core_shape,
+                                dtype=dtype, device=device))
+    return results[0] if len(results) == 1 else tuple(results)
+
+
+def _apply_over_batch(*argdefs, signature=None):
     """
     Factory for decorator that applies a function over batched arguments.
 
@@ -1185,11 +1216,13 @@ def _apply_over_batch(*argdefs):
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
-            # We can't support zero-size batches right now because without data with
-            # which to call the function, the decorator doesn't even know the *number*
-            # of outputs, let alone their core shapes or dtypes.
+            # Handle zero-size batches
             if math.prod(batch_shape) == 0:
-                message = f'`{f.__name__}` does not support zero-size batches.'
+                sig = signature(*args, **kwargs) if callable(signature) else signature
+                if signature is not None:
+                    return output_from_signature(arrays, batch_shape, core_shapes, sig)
+                f_name = f.__name__.lstrip('_')
+                message = f'`{f_name}` does not support zero-size batches.'
                 raise ValueError(message)
 
             # Broadcast arrays to appropriate shape
@@ -1219,10 +1252,16 @@ def _apply_over_batch(*argdefs):
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
             # contributor to pass an `pack_result` callable to the decorator factory.
-            return results[0] if len(results) == 1 else results
+            return results[0] if len(results) == 1 else tuple(results)
 
         doc = FunctionDoc(wrapper)
-        doc['Extended Summary'].append(_batch_note.rstrip())
+        batch_note = _batch_note.rstrip()
+        if signature is None:
+            batch_note += ("\nNote that calls with zero-size batches are unsupported "
+                           "and will raise a ``ValueError``.")
+        elif isinstance(signature, str):
+            batch_note += f"\nThe NEP 5 signature of this function is {signature}."
+        doc['Extended Summary'].append(batch_note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
         return wrapper

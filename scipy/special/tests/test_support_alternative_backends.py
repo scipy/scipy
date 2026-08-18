@@ -4,7 +4,7 @@ import pickle
 import pytest
 from hypothesis import given, strategies
 import hypothesis.extra.numpy as npst
-from packaging import version
+from scipy._external.packaging_version import version
 
 from scipy import special
 from scipy.special._support_alternative_backends import _special_funcs
@@ -384,6 +384,7 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
     assert y.dtype == np.float32
 
 
+@pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")
 @make_xp_test_case(special.chdtr)
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311

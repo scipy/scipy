@@ -353,7 +353,7 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
     return np.vstack(cols).T
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->()")
 def expm_cond(A, check_finite=True):
     """
     Relative condition number of the matrix exponential in the Frobenius norm.

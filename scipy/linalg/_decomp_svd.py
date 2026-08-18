@@ -165,18 +165,19 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     # accommodate empty matrix
     if a1.size == 0:
+        k = min(m, n)
         u0, s0, v0 = svd(np.eye(2, dtype=a1.dtype))
 
         batch_shape = a1.shape[:-2]
-        s = np.empty_like(a1, shape=batch_shape + (0,), dtype=s0.dtype)
+        s = np.empty_like(a1, shape=batch_shape + (k,), dtype=s0.dtype)
         if full_matrices:
             u = np.empty_like(a1, shape=batch_shape + (m, m), dtype=u0.dtype)
             u[...] = np.identity(m)
             v = np.empty_like(a1, shape=batch_shape + (n, n), dtype=v0.dtype)
             v[...] = np.identity(n)
         else:
-            u = np.empty_like(a1, shape=batch_shape + (m, 0), dtype=u0.dtype)
-            v = np.empty_like(a1, shape=batch_shape + (0, n), dtype=v0.dtype)
+            u = np.empty_like(a1, shape=batch_shape + (m, k), dtype=u0.dtype)
+            v = np.empty_like(a1, shape=batch_shape + (k, n), dtype=v0.dtype)
         if compute_uv:
             return u, s, v
         else:
@@ -301,7 +302,11 @@ def svdvals(a, overwrite_a=False, check_finite=True):
                check_finite=check_finite)
 
 
-@_apply_over_batch(('s', 1))
+def _diagsvd_signature(s, M, N):
+    return f"(i)->({M}, {N})"
+
+
+@_apply_over_batch(('s', 1), signature=_diagsvd_signature)
 def diagsvd(s, M, N):
     """
     Construct the sigma matrix in SVD from singular values and size M, N.
@@ -354,7 +359,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,j)->(i,j)")
 def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD.
@@ -403,7 +408,7 @@ def orth(A, rcond=None):
     return Q
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(m,n)->(n,n)")
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """

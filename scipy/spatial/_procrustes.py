@@ -5,13 +5,18 @@ This code was originally written by Justin Kucynski and ported over from
 scikit-bio by Yoshiki Vazquez-Baeza.
 """
 
-import numpy as np
+
 from scipy.linalg import orthogonal_procrustes
+from scipy._lib._array_api import array_namespace, xp_capabilities
 
 
 __all__ = ['procrustes']
 
 
+@xp_capabilities(
+    jax_jit=False,
+    skip_backends=[("dask.array", "full_matrices=True is not supported by dask")]
+)
 def procrustes(data1, data2):
     r"""Procrustes analysis, a similarity test for two data sets.
 
@@ -97,8 +102,9 @@ def procrustes(data1, data2):
     0
 
     """
-    mtx1 = np.array(data1, dtype=np.float64, copy=True)
-    mtx2 = np.array(data2, dtype=np.float64, copy=True)
+    xp = array_namespace(data1, data2)
+    mtx1 = xp.asarray(data1, dtype=xp.float64, copy=True)
+    mtx2 = xp.asarray(data2, dtype=xp.float64, copy=True)
 
     if mtx1.ndim != 2 or mtx2.ndim != 2:
         raise ValueError("Input matrices must be two-dimensional")
@@ -108,11 +114,11 @@ def procrustes(data1, data2):
         raise ValueError("Input matrices must be >0 rows and >0 cols")
 
     # translate all the data to the origin
-    mtx1 -= np.mean(mtx1, 0)
-    mtx2 -= np.mean(mtx2, 0)
+    mtx1 -= xp.mean(mtx1, axis=0)
+    mtx2 -= xp.mean(mtx2, axis=0)
 
-    norm1 = np.linalg.norm(mtx1)
-    norm2 = np.linalg.norm(mtx2)
+    norm1 = xp.linalg.matrix_norm(mtx1)
+    norm2 = xp.linalg.matrix_norm(mtx2)
 
     if norm1 == 0 or norm2 == 0:
         raise ValueError("Input matrices must contain >1 unique points")
@@ -123,10 +129,10 @@ def procrustes(data1, data2):
 
     # transform mtx2 to minimize disparity
     R, s = orthogonal_procrustes(mtx1, mtx2)
-    mtx2 = np.dot(mtx2, R.T) * s
+    mtx2 = (mtx2 @ R.T) * s
 
     # measure the dissimilarity between the two datasets
-    disparity = np.sum(np.square(mtx1 - mtx2))
+    disparity = xp.sum(xp.square(mtx1 - mtx2))
 
     return mtx1, mtx2, disparity
 

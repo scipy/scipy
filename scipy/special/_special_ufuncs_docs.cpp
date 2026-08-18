@@ -1,3 +1,101 @@
+const char *_beta_pdf_doc = R"(
+    _beta_pdf(x, a, b)
+
+    Probability density function of beta distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    a, b : array_like
+           Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_beta_ppf_doc = R"(
+    _beta_ppf(x, a, b)
+
+    Percent point function of beta distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    a, b : array_like
+           Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_binom_cdf_doc = R"(
+    _binom_cdf(x, n, p)
+
+    Cumulative density function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_binom_isf_doc = R"(
+    _binom_isf(x, n, p)
+
+    Inverse survival function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_binom_pmf_doc = R"(
+    _binom_pmf(x, n, p)
+
+    Probability mass function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_binom_ppf_doc = R"(
     _binom_ppf(x, n, p)
 
@@ -18,12 +116,72 @@ const char *_binom_ppf_doc = R"(
 
 )";
 
+const char *_binom_sf_doc = R"(
+    _binom_sf(x, n, p)
+
+    Survival function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
 const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
 const char *_bivariate_normal_sf_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_cauchy_isf_doc = R"(
+    _cauchy_isf(p, loc, scale)
+
+    Inverse survival function of the Cauchy distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probabilities
+    loc : array_like
+        Location parameter of the distribution.
+    scale : array_like
+        Scale parameter of the distribution.
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_cauchy_ppf_doc = R"(
+    _cauchy_ppf(p, loc, scale)
+
+    Percent point function (i.e. quantile) of the Cauchy distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probabilities
+    loc : array_like
+        Location parameter of the distribution.
+    scale : array_like
+        Scale parameter of the distribution.
+
+    Returns
+    -------
+    scalar or ndarray
+
     )";
 
 const char *_cosine_cdf_doc = R"(
@@ -70,8 +228,145 @@ const char *_cosine_invcdf_doc = R"(
         The inverse of the cosine distribution CDF evaluated at `p`.
     )";
 
+const char *_hypergeom_pmf_doc = R"(
+    _hypergeom_pmf(x, r, N, M)
+
+    Probability mass function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_hypergeom_cdf_doc = R"(
+    _hypergeom_cdf(x, r, N, M)
+
+    Cumulative density function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_hypergeom_sf_doc = R"(
+    _hypergeom_sf(x, r, N, M)
+
+    Survival function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_hypergeom_mean_doc = R"(
+    _hypergeom_mean(r, N, M)
+
+    Mean of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_hypergeom_variance_doc = R"(
+    _hypergeom_variance(r, N, M)
+
+    Variance of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_hypergeom_skewness_doc = R"(
+    _hypergeom_skewness(r, N, M)
+
+    Skewness of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
 const char *_igam_fac_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_invgauss_isf_doc = R"(
+    _invgauss_isf(x, mu, s)
+
+    Inverse survival function of inverse gaussian distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    mu : array_like
+        Positive, real-valued parameters
+    s : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_invgauss_ppf_doc = R"(
+    _invgauss_ppf(x, mu)
+
+    Percent point function of inverse gaussian distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    mu : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
     )";
 
 const char *_kolmogc_doc = R"(
@@ -84,6 +379,577 @@ const char *_kolmogci_doc = R"(
 
 const char *_kolmogp_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_landau_pdf_doc = R"(
+    _landau_pdf(x, loc, scale)
+
+    Probability density function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_cdf_doc = R"(
+    _landau_cdf(x, loc, scale)
+
+    Cumulative distribution function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_sf_doc = R"(
+    _landau_sf(x, loc, scale)
+
+    Survival function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_ppf_doc = R"(
+    _landau_ppf(p, loc, scale)
+
+    Percent point function of the Landau distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Real-valued argument between 0 and 1
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_landau_isf_doc = R"(
+    _landau_isf(p, loc, scale)
+
+    Inverse survival function of the Landau distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Real-valued argument between 0 and 1
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    )";
+
+const char *_nbinom_cdf_doc = R"(
+    _nbinom_cdf(x, r, p)
+
+    Cumulative density function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_isf_doc = R"(
+    _nbinom_isf(x, r, p)
+
+    Inverse survival function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_kurtosis_excess_doc = R"(
+    _nbinom_kurtosis_excess(r, p)
+
+    Kurtosis excess of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_mean_doc = R"(
+    _nbinom_mean(r, p)
+
+    Mean of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_pmf_doc = R"(
+    _nbinom_pmf(x, r, p)
+
+    Probability mass function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_ppf_doc = R"(
+    _nbinom_ppf(x, r, p)
+
+    Percent point function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_sf_doc = R"(
+    _nbinom_sf(x, r, p)
+
+    Survival function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_skewness_doc = R"(
+    _nbinom_skewness(r, p)
+
+    Skewness of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nbinom_variance_doc = R"(
+    _nbinom_variance(r, p)
+
+    Variance of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_isf_doc = R"(
+    _ncf_isf(x, v1, v2, l)
+
+    Inverse survival function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_kurtosis_excess_doc = R"(
+    _ncf_kurtosis_excess(v1, v2, l)
+
+    Kurtosis excess of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_mean_doc = R"(
+    _ncf_mean(v1, v2, l)
+
+    Mean of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_pdf_doc = R"(
+    _ncf_pdf(x, v1, v2, l)
+
+    Probability density function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_sf_doc = R"(
+    _ncf_sf(x, v1, v2, l)
+
+    Survival function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_skewness_doc = R"(
+    _ncf_skewness(v1, v2, l)
+
+    Skewness of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncf_variance_doc = R"(
+    _ncf_variance(v1, v2, l)
+
+    Variance of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_isf_doc = R"(
+    _nct_isf(x, v, l)
+
+    Inverse survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_kurtosis_excess_doc = R"(
+    _nct_kurtosis_excess(v, l)
+
+    Kurtosis excess of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_mean_doc = R"(
+    _nct_mean(v, l)
+
+    Mean of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_pdf_doc = R"(
+    _nct_pdf(x, v, l)
+
+    Probability density function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_sf_doc = R"(
+    _nct_sf(x, v, l)
+
+    Survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_skewness_doc = R"(
+    _nct_skewness(v, l)
+
+    Skewness of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_nct_variance_doc = R"(
+    _nct_variance(v, l)
+
+    Variance of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncx2_isf_doc = R"(
+    _ncx2_isf(x, k, l)
+
+    Inverse survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncx2_pdf_doc = R"(
+    _ncx2_pdf(x, k, l)
+
+    Probability density function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_ncx2_sf_doc = R"(
+    _ncx2_sf(x, k, l)
+
+    Survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
     )";
 
 const char *_lgam1p_doc = R"(
@@ -157,6 +1023,85 @@ const char *hyp0f1_doc = R"(
     array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
     >>> (0.5 * x)**n / sc.factorial(n) * sc.hyp0f1(n + 1, -0.25 * x**2)
     array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
+
+    )";
+
+const char *hyp1f1_doc = R"(
+    hyp1f1(a, b, x, out=None)
+
+    Confluent hypergeometric function 1F1.
+
+    The confluent hypergeometric function is defined by the series
+
+    .. math::
+
+       {}_1F_1(a; b; x) = \sum_{k = 0}^\infty \frac{(a)_k}{(b)_k k!} x^k.
+
+    See [DLMF]_ for more details. Here :math:`(\cdot)_k` is the
+    Pochhammer symbol; see `poch`.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real parameters
+    x : array_like
+        Real or complex argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the confluent hypergeometric function
+
+    See Also
+    --------
+    hyperu : another confluent hypergeometric function
+    hyp0f1 : confluent hypergeometric limit function
+    hyp2f1 : Gaussian hypergeometric function
+
+    Notes
+    -----
+    For real values, this function uses the ``hyp1f1`` routine from the C++ Boost
+    library [2]_, for complex values a C translation of the specfun
+    Fortran library [3]_.
+
+    References
+    ----------
+    .. [DLMF] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/13.2#E2
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [3] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is one when `x` is zero:
+
+    >>> sc.hyp1f1(0.5, 0.5, 0)
+    1.0
+
+    It is singular when `b` is a nonpositive integer.
+
+    >>> sc.hyp1f1(0.5, -1, 0)
+    inf
+
+    It is a polynomial when `a` is a nonpositive integer.
+
+    >>> a, b, x = -1, 0.5, np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.hyp1f1(a, b, x)
+    array([-1., -3., -5., -7.])
+    >>> 1 + (a / b) * x
+    array([-1., -3., -5., -7.])
+
+    It reduces to the exponential function when ``a = b``.
+
+    >>> sc.hyp1f1(2, 2, [1, 2, 3, 4])
+    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
+    >>> np.exp([1, 2, 3, 4])
+    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
 
     )";
 
@@ -3108,6 +4053,72 @@ const char *cosm1_doc = R"(
 
 const char *_sinpi_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *_skewnorm_cdf_doc = R"(
+    _skewnorm_cdf(x, l, sc, sh)
+
+    Cumulative density function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_skewnorm_isf_doc = R"(
+    _skewnorm_isf(x, l, sc, sh)
+
+    Inverse survival function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    )";
+
+const char *_skewnorm_ppf_doc = R"(
+    _skewnorm_ppf(x, l, sc, sh)
+
+    Percent point function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
     )";
 
 const char *sindg_doc = R"(
@@ -9247,6 +10258,11 @@ const char *mathieu_a_doc = R"(
     --------
     mathieu_b, mathieu_cem, mathieu_sem
 
+    References
+    ----------
+    .. [1] Stuart Brorson, A New Implementation of the Mathieu Functions for SciPy.
+           https://github.com/brorson/ScipyMathieuPaper
+
     )";
 
 const char *mathieu_b_doc = R"(
@@ -9273,75 +10289,15 @@ const char *mathieu_b_doc = R"(
     --------
     mathieu_a, mathieu_cem, mathieu_sem
 
-    )";
-
-const char *mathieu_cem_doc = R"(
-    mathieu_cem(m, q, x, out=None)
-
-    Even Mathieu function and its derivative.
-
-    Returns the even Mathieu function, ``ce_m(x, q)``, of order `m` and
-    parameter `q` evaluated at `x` (given in degrees).  Also returns the
-    derivative with respect to `x` of ce_m(x, q)
-
-    Parameters
-    ----------
-    m : array_like
-        Order of the function
-    q : array_like
-        Parameter of the function
-    x : array_like
-        Argument of the function, *given in degrees, not radians*
-    out : tuple of ndarray, optional
-        Optional output arrays for the function results
-
-    Returns
-    -------
-    y : scalar or ndarray
-        Value of the function
-    yp : scalar or ndarray
-        Value of the derivative vs x
-
-    See Also
-    --------
-    mathieu_a, mathieu_b, mathieu_sem
-
-    Notes
-    -----
-    The even Mathieu functions are the solutions to Mathieu's differential equation
-
-    .. math::
-
-        \frac{d^2y}{dx^2} + (a_m - 2q \cos(2x))y = 0
-
-    for which the characteristic number :math:`a_m` (calculated with `mathieu_a`)
-    results in an odd, periodic solution :math:`y(x)` with period 180 degrees
-    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
-
     References
     ----------
-    .. [1] 'Mathieu function'. *Wikipedia*.
-           https://en.wikipedia.org/wiki/Mathieu_function
+    .. [1] Stuart Brorson, A New Implementation of the Mathieu Functions for SciPy.
+           https://github.com/brorson/ScipyMathieuPaper
 
-    Examples
-    --------
-    Plot even Mathieu functions of orders ``2`` and ``4``.
+    )";
 
-    >>> import numpy as np
-    >>> from scipy import special
-    >>> import matplotlib.pyplot as plt
-    >>> m = np.asarray([2, 4])
-    >>> q = 50
-    >>> x = np.linspace(-180, 180, 300)[:, np.newaxis]
-    >>> y, _ = special.mathieu_cem(m, q, x)
-    >>> plt.plot(x, y)
-    >>> plt.xlabel('x (degrees)')
-    >>> plt.ylabel('y')
-    >>> plt.legend(('m = 2', 'm = 4'))
-
-    Because the orders ``2`` and
-    ``4`` are even, the period of each function is 180 degrees.
-
+const char *_mathieu_cem_doc = R"(
+    Internal function. Use `mathieu_cem`.
     )";
 
 const char *mathieu_modcem1_doc = R"(
@@ -9476,73 +10432,8 @@ const char *mathieu_modsem2_doc = R"(
 
     )";
 
-const char *mathieu_sem_doc = R"(
-    mathieu_sem(m, q, x, out=None)
-
-    Odd Mathieu function and its derivative.
-
-    Returns the odd Mathieu function, se_m(x, q), of order `m` and
-    parameter `q` evaluated at `x` (given in degrees).  Also returns the
-    derivative with respect to `x` of se_m(x, q).
-
-    Parameters
-    ----------
-    m : array_like
-        Order of the function
-    q : array_like
-        Parameter of the function
-    x : array_like
-        Argument of the function, *given in degrees, not radians*.
-    out : tuple of ndarray, optional
-        Optional output arrays for the function results
-
-    Returns
-    -------
-    y : scalar or ndarray
-        Value of the function
-    yp : scalar or ndarray
-        Value of the derivative vs x
-
-    See Also
-    --------
-    mathieu_a, mathieu_b, mathieu_cem
-
-    Notes
-    -----
-    Odd Mathieu functions are the solutions to Mathieu's differential equation
-
-    .. math::
-
-        \frac{d^2y}{dx^2} + (b_m - 2q \cos(2x))y = 0
-
-    for which the characteristic number :math:`b_m` (calculated with `mathieu_b`)
-    results in an odd, periodic solution :math:`y(x)` with period 180 degrees
-    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
-
-    References
-    ----------
-    .. [1] 'Mathieu function'. *Wikipedia*.
-           https://en.wikipedia.org/wiki/Mathieu_function
-
-    Examples
-    --------
-    Plot odd Mathieu functions of orders ``2`` and ``4``.
-
-    >>> import numpy as np
-    >>> from scipy import special
-    >>> import matplotlib.pyplot as plt
-    >>> m = np.asarray([2, 4])
-    >>> q = 50
-    >>> x = np.linspace(-180, 180, 300)[:, np.newaxis]
-    >>> y, _ = special.mathieu_sem(m, q, x)
-    >>> plt.plot(x, y)
-    >>> plt.xlabel('x (degrees)')
-    >>> plt.ylabel('y')
-    >>> plt.legend(('m = 2', 'm = 4'))
-
-    Because the orders ``2`` and
-    ``4`` are even, the period of each function is 180 degrees.
-
+const char *_mathieu_sem_doc = R"(
+    Internal function. Use `mathieu_sem`.
     )";
 
 const char *modfresnelm_doc = R"(
