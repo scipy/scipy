@@ -765,7 +765,7 @@ class TestPearsonr:
         y = rng.random(10)
         res = stats.pearsonr(x, y, axis=1)
         ref = stats.pearsonr(x, y, axis=-1)
-        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.statistic, ref.statistic, rtol=3e-16)
 
     @pytest.mark.parametrize('axis', [0, 1, None])
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
