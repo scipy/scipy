@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType
 
 import numpy as np
 
@@ -81,7 +81,6 @@ rotation_extra_note = """The methods ``as_davenport``, ``apply``, and ``align_ve
         "apply": dict(
             skip_backends=[
                 ("dask.array", "missing linalg.cross/det functions and .mT attribute"),
-                ("cupy", "missing .mT attribute in cupy<14.*"),
             ],
         ),
         "__getitem__": dict(
@@ -835,8 +834,8 @@ class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
-            - ``axis1 == axis3`` (symmetric sequence)
+        - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
+        - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [2]_, and only
         the consecutive orthogonal axes requirement is maintained.
@@ -1266,9 +1265,8 @@ class Rotation:
             - Third angle belongs to [-180, 180] degrees (both inclusive)
             - Second angle belongs to:
 
-                - [-90, 90] degrees if all axes are different (like xyz)
-                - [0, 180] degrees if first and third axes are the same
-                  (like zxz)
+              - [-90, 90] degrees if all axes are different (like xyz)
+              - [0, 180] degrees if first and third axes are the same (like zxz)
 
         References
         ----------
@@ -1339,8 +1337,8 @@ class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
-            - ``axis1 == axis3`` (symmetric sequence)
+        - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
+        - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [1]_, and only
         the consecutive orthogonal axes requirement is maintained.
@@ -1578,11 +1576,11 @@ class Rotation:
         If the original frame rotates to the final frame by this rotation, then
         its application to a vector can be seen in two ways:
 
-            - As a projection of vector components expressed in the final frame
-              to the original frame.
-            - As the physical rotation of a vector being glued to the original
-              frame as it rotates. In this case the vector components are
-              expressed in the original frame before and after the rotation.
+        - As a projection of vector components expressed in the final frame
+          to the original frame.
+        - As the physical rotation of a vector being glued to the original
+          frame as it rotates. In this case the vector components are
+          expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
         ``(self.as_matrix() @ vectors[..., np.newaxis])[..., 0]``.
@@ -1712,7 +1710,7 @@ class Rotation:
             return result[0, ...]
         return result
 
-    def __mul__(self, other: Rotation) -> Rotation | NotImplementedType:
+    def __mul__(self, other: Rotation) -> Rotation:
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
@@ -1777,6 +1775,7 @@ class Rotation:
                [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
 
         Broadcasting rules apply:
+
         >>> p = R.from_quat(np.tile(np.array([0, 0, 1, 1]), (5, 1, 1)))
         >>> q = R.from_quat(np.tile(np.array([1, 0, 0, 1]), (1, 6, 1)))
         >>> p.shape, q.shape
@@ -2117,11 +2116,11 @@ class Rotation:
             The name of the group. Must be one of 'I', 'O', 'T', 'Dn', 'Cn',
             where `n` is a positive integer. The groups are:
 
-                * I: Icosahedral group
-                * O: Octahedral group
-                * T: Tetrahedral group
-                * D: Dicyclic group
-                * C: Cyclic group
+            * I: Icosahedral group
+            * O: Octahedral group
+            * T: Tetrahedral group
+            * D: Dicyclic group
+            * C: Cyclic group
 
         axis : int
             The cyclic rotation axis. Must be one of ['X', 'Y', 'Z'] (or

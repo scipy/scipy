@@ -8,7 +8,7 @@ import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray, is_jax_array,
     is_jax, xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name,
-    is_array_api_obj
+    is_array_api_obj, xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
 from . import _basic
@@ -216,13 +216,16 @@ class _FuncInfo:
                 )
         else:
             def f(*args, _f=_f, xp=xp, **kwargs):
+                # The NumPy round-trip must return results on the device of the
+                # input arrays, not on the backend's default device (see gh-22680)
+                device = xp_result_device(*args)
                 # Check with `is_array_api_obj` to keep Python scalars untouched so that
                 # NEP50 can be followed.
                 args = [
                     np.asarray(arg) if is_array_api_obj(arg) else arg for arg in args
                 ]
                 out = _f(*args, **kwargs)
-                return xp.asarray(out)
+                return xp.asarray(out, device=device)
 
         return f
 

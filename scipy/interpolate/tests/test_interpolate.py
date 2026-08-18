@@ -2,7 +2,7 @@ import pickle
 
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_almost_equal, assert_array_almost_equal,
-    make_xp_test_case, is_cupy, _xp_copy_to_numpy
+    make_xp_test_case, is_cupy, xp_copy_to_numpy
 )
 from scipy._external import array_api_extra as xpx
 from pytest import raises as assert_raises
@@ -242,8 +242,8 @@ class TestInterp1D:
         xp_assert_close(yp, y, atol=1e-15)
 
     def test_linear_numerical_stability(self):
-        # regression test for gh-24281: Using de Boor's algorithm, there 
-        # should be no floating point error for query points contained 
+        # regression test for gh-24281: Using de Boor's algorithm, there
+        # should be no floating point error for query points contained
         # exactly in the x input array
         x = np.array([0.0007499999999999, 0.002])
         y = np.array([[0.0, 0.0], [0.0004164930555555557, 0.0]])
@@ -1445,7 +1445,7 @@ class TestPPoly:
         rng = np.random.RandomState(1234)
         x = np.sort(np.r_[0, rng.rand(11), 1])
         y = rng.rand(len(x))
-        t, c, k = splrep(x, y, s=0)     
+        t, c, k = splrep(x, y, s=0)
         spl = BSpline(xp.asarray(t), xp.asarray(c), k)
         pp = PPoly.from_spline(spl)
 
@@ -1695,7 +1695,7 @@ class TestPPoly:
         )
         # ditto for p.solve(const) with sections identically equal const
         const = 2.
-        c1 = _xp_copy_to_numpy(c)
+        c1 = xp_copy_to_numpy(c)
         c1[1, :] += const
         c1 = xp.asarray(c1)
         pp1 = PPoly(c1, x)

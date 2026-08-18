@@ -21,6 +21,7 @@ from scipy.stats._morestats import (_abw_state, _get_As_weibull, _Avals_weibull,
                                     _yeojohnson_transform)
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
+from scipy.stats.contingency import _chi2_contingency_2d
 from scipy.stats._ansari_swilk_statistics import swilk
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
@@ -29,7 +30,7 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
-                                   is_numpy, xp_default_dtype, is_array_api_strict,
+                                   is_numpy, is_array_api_strict,
                                    is_jax, is_lazy_array)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
@@ -875,7 +876,7 @@ class TestAnsari:
     def test_dtypes(self, dtype, n, ties, xp):
         if is_jax(xp) and dtype != 'float64':
             pytest.xfail("p-value calculation works natively with 'float64 only")
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(78587342806484)
         x, y = rng.integers(6, size=(2, n)) if ties else rng.random(size=(2, n))
         method = {'method': 'exact' if ((n <= 55) and not ties) else 'asymptotic'}
@@ -1545,7 +1546,7 @@ class TestFligner:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_data(self, dtype, xp):
         # numbers from R: fligner.test in package stats
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x1 = xp.arange(5, dtype=dtype)
         res = stats.fligner(x1, x1**2)
         ref = (xp.asarray(3.2282229927203536, dtype=dtype),
@@ -1682,7 +1683,7 @@ class TestMood:
                                            .1538788064889380))])
     def test_against_SAS_2(self, dtype, alternative, expected, xp):
         # Code to run in SAS in above function
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
              101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
         y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
@@ -1800,7 +1801,7 @@ class TestMood:
 
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     def test_mood_alternative(self, dtype, xp):
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
 
         rng = np.random.RandomState(0)
         x = stats.norm.rvs(scale=0.75, size=100, random_state=rng)
@@ -2217,7 +2218,7 @@ class TestWilcoxon:
         x = rng.random(size=size).tolist()
         res = stats.wilcoxon(xp.asarray(x), method=stats.PermutationMethod())
         ref = stats.wilcoxon(x, method='exact')  # all backends test against NumPy
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         xp_assert_equal(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
         xp_assert_equal(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
 
@@ -3564,134 +3565,167 @@ class TestCircFuncsNanPolicy:
         assert_raises(ValueError, test_func, x, high=360, nan_policy='foobar')
 
 
+@make_xp_test_case(stats.median_test)
 class TestMedianTest:
 
-    def test_bad_n_samples(self):
-        # median_test requires at least two samples.
-        assert_raises(ValueError, stats.median_test, [1, 2, 3])
+    def test_bad_n_samples(self, xp):
+        message = "median_test requires two or more samples."
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(xp.asarray([1, 2, 3]))
 
-    def test_empty_sample(self):
+    def test_empty_sample(self, xp):
         # Each sample must contain at least one value.
-        assert_raises(ValueError, stats.median_test, [], [1, 2, 3])
+        message = "All axis-slices of one or more sample arguments..."
+        x = xp.asarray([])
+        y = xp.asarray([1, 2, 3])
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.median_test(x, y)
+        nan = xp.asarray(xp.nan, dtype=x.dtype)
+        xp_assert_equal(res.statistic, nan)
+        xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
-    def test_empty_when_ties_ignored(self):
+    @skip_xp_backends("jax.numpy", reason="JAX can't branch based on array values")
+    def test_empty_when_ties_ignored(self, xp):
         # The grand median is 1, and all values in the first argument are
         # equal to the grand median.  With ties="ignore", those values are
         # ignored, which results in the first sample being (in effect) empty.
         # This should raise a ValueError.
-        assert_raises(ValueError, stats.median_test,
-                      [1, 1, 1, 1], [2, 0, 1], [2, 0], ties="ignore")
+        x = xp.asarray([1, 1, 1, 1])
+        y = xp.asarray([2, 0, 1])
+        z = xp.asarray([2, 0])
+        with pytest.raises(ValueError, match="All values in sample..."):
+            stats.median_test(x, y, z, ties="ignore")
 
-    def test_empty_contingency_row(self):
+    @skip_xp_backends("jax.numpy", reason="JAX can't branch based on array values")
+    @pytest.mark.parametrize("ties", ['below', 'above'])
+    def test_empty_contingency_row(self, ties, xp):
         # The grand median is 1, and with the default ties="below", all the
         # values in the samples are counted as being below the grand median.
         # This would result a row of zeros in the contingency table, which is
         # an error.
-        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1])
+        x = xp.ones(3)
+        with pytest.raises(match=f"All values are {ties} the grand median"):
+            stats.median_test(x, x, ties=ties)
 
-        # With ties="above", all the values are counted as above the
-        # grand median.
-        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1],
-                      ties="above")
+    def test_bad_ties_nan_policy(self, xp):
+        x, y = xp.asarray([1, 2, 3]), xp.asarray([4, 5])
+        message = "invalid 'ties' option 'foo'..."
 
-    def test_bad_ties(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
-                      ties="foo")
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(x, y, ties="foo")
 
-    def test_bad_nan_policy(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
-                      nan_policy='foobar')
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(x, y, nan_policy="foobar")
 
-    def test_bad_keyword(self):
-        assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5],
-                      foo="foo")
-
-    def test_simple(self):
-        x = [1, 2, 3]
-        y = [1, 2, 3]
+    def test_simple(self, xp):
+        x = xp.asarray([1., 2., 3.])
+        y = xp.asarray([1., 2., 3.])
         stat, p, med, tbl = stats.median_test(x, y)
 
         # The median is floating point, but this equality test should be safe.
-        assert_equal(med, 2.0)
+        xp_assert_equal(med, xp.asarray(2.0))
 
-        assert_array_equal(tbl, [[1, 1], [2, 2]])
+        xp_assert_equal(tbl, xp.asarray([[1, 1], [2, 2]], dtype=xp.int64))
 
         # The expected values of the contingency table equal the contingency
         # table, so the statistic should be 0 and the p-value should be 1.
-        assert_equal(stat, 0)
-        assert_equal(p, 1)
+        xp_assert_equal(stat, xp.asarray(0.))
+        xp_assert_equal(p, xp.asarray(1.))
 
-    def test_ties_options(self):
+    def test_ties_options(self, xp):
         # Test the contingency table calculation.
-        x = [1, 2, 3, 4]
-        y = [5, 6]
-        z = [7, 8, 9]
+        x = xp.asarray([1., 2., 3., 4.])
+        y = xp.asarray([5., 6.])
+        z = xp.asarray([7., 8., 9.])
         # grand median is 5.
 
         # Default 'ties' option is "below".
         stat, p, m, tbl = stats.median_test(x, y, z)
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 1, 3], [4, 1, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 1, 0]], dtype=xp.int64))
 
         stat, p, m, tbl = stats.median_test(x, y, z, ties="ignore")
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 1, 3], [4, 0, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 0, 0]], dtype=xp.int64))
 
         stat, p, m, tbl = stats.median_test(x, y, z, ties="above")
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 2, 3], [4, 0, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 2, 3], [4, 0, 0]], dtype=xp.int64))
 
-    def test_nan_policy_options(self):
-        x = [1, 2, np.nan]
-        y = [4, 5, 6]
-        mt1 = stats.median_test(x, y, nan_policy='propagate')
+    def test_nan_policy_options(self, xp):
+        x = xp.asarray([1., 2., np.nan])
+        y = xp.asarray([4., 5., 6.])
+
+        s, p, m, t = stats.median_test(x, y, nan_policy='propagate')
+        nan = xp.asarray(xp.nan)
+        xp_assert_equal(s, nan)
+        xp_assert_equal(p, nan)
+        xp_assert_equal(m, nan)
+        xp_assert_equal(t, xp.asarray([[0, 0], [0, 0]], dtype=xp.int64))
+
+        if is_lazy_array(x):
+            message = "nan_policy='omit' is not supported for lazy arrays."
+            with pytest.raises(TypeError, match=message):
+                stats.median_test(x, y, nan_policy='omit')
+
+            message = "nan_policy='raise' is not supported for lazy arrays."
+            with pytest.raises(TypeError, match=message):
+                stats.median_test(x, y, nan_policy='raise')
+
+            return
+
         s, p, m, t = stats.median_test(x, y, nan_policy='omit')
+        xp_assert_close(s, xp.asarray(0.31250000000000006))
+        xp_assert_close(p, xp.asarray(0.57615012203057869))
+        xp_assert_equal(m, xp.asarray(4.0))
+        xp_assert_equal(t, xp.asarray([[0, 2], [2, 1]], dtype=xp.int64))
 
-        assert_equal(mt1, (np.nan, np.nan, np.nan, None))
-        assert_allclose(s, 0.31250000000000006)
-        assert_allclose(p, 0.57615012203057869)
-        assert_equal(m, 4.0)
-        assert_equal(t, np.array([[0, 2], [2, 1]]))
-        assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(x, y, nan_policy='raise')
 
-    def test_basic(self):
+    @pytest.mark.parametrize('kwargs', [{}, {'lambda_': 0}, {'correction': False}])
+    def test_basic(self, kwargs, xp):
         # median_test calls chi2_contingency to compute the test statistic
         # and p-value.  Make sure it hasn't screwed up the call...
 
-        x = [1, 2, 3, 4, 5]
-        y = [2, 4, 6, 8]
+        x = xp.asarray([1., 2., 3., 4., 5.])
+        y = xp.asarray([2., 4., 6., 8.])
 
-        stat, p, m, tbl = stats.median_test(x, y)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
-
-        stat, p, m, tbl = stats.median_test(x, y, lambda_=0)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, lambda_=0)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
-
-        stat, p, m, tbl = stats.median_test(x, y, correction=False)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
+        stat, p, m, tbl = stats.median_test(x, y, **kwargs)
+        exp_stat, exp_p = _chi2_contingency_2d(tbl, **kwargs)
+        xp_assert_equal(m, xp.asarray(4.))
+        xp_assert_equal(tbl, xp.asarray([[1, 2], [4, 2]], dtype=xp.int64))
+        xp_assert_close(stat, exp_stat)
+        xp_assert_close(p, exp_p)
 
     @pytest.mark.parametrize("correction", [False, True])
-    def test_result(self, correction):
-        x = [1, 2, 3]
-        y = [1, 2, 3]
+    def test_result(self, correction, xp):
+        x = xp.asarray([1, 2, 3])
+        res = stats.median_test(x, x, correction=correction)
+        assert res.statistic is res[0]
+        assert res.pvalue is res[1]
+        assert res.median is res[2]
+        assert res.table is res[3]
 
-        res = stats.median_test(x, y, correction=correction)
-        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_multidimensional(self, dtype, xp):
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(723482348929883)
+        x = rng.random((3, 15))
+        y = rng.random(16)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+
+        res = stats.median_test(x, y)
+        for i in range(3):
+            xi = x[i, ...]
+            ref = stats.median_test(xi, y)
+            xp_assert_close(res.statistic[i], ref.statistic)
+            xp_assert_close(res.pvalue[i], ref.pvalue)
+            xp_assert_close(res.median[i], ref.median)
+            xp_assert_equal(res.table[i, ...], ref.table)
 
 
 @make_xp_test_case(stats.directional_stats)

@@ -32,21 +32,6 @@ python_sources = [
   '_matrix.py',
   '_spfuncs.py',
   '_sputils.py',
-  'base.py',
-  'bsr.py',
-  'compressed.py',
-  'construct.py',
-  'coo.py',
-  'csc.py',
-  'csr.py',
-  'data.py',
-  'dia.py',
-  'dok.py',
-  'extract.py',
-  'lil.py',
-  'sparsetools.py',
-  'spfuncs.py',
-  'sputils.py'
 ]
 
 

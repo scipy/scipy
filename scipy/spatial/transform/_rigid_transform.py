@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType
 from collections.abc import Callable
 
 import numpy as np
@@ -1450,9 +1450,7 @@ class RigidTransform:
 
         self._matrix = self._backend.setitem(self._matrix, indexer, value.as_matrix())
 
-    def __mul__(
-        self, other: RigidTransform | Rotation
-    ) -> RigidTransform | NotImplementedType:
+    def __mul__(self, other: RigidTransform | Rotation) -> RigidTransform:
         """Compose this transform with the other.
 
         If ``p`` and ``q`` are two transforms, then the composition of '``q``
@@ -1553,7 +1551,7 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=True, copy=False)
 
-    def __rmul__(self, other: Rotation) -> RigidTransform | NotImplementedType:
+    def __rmul__(self, other: Rotation) -> RigidTransform:
         """Compose a rotation with this transform (rotation applied second).
 
         See `__mul__` for more details.
@@ -1746,12 +1744,12 @@ class RigidTransform:
         If the original frame transforms to the final frame by this transform,
         then its application to a vector can be seen in two ways:
 
-            - As a projection of vector components expressed in the final frame
-              to the original frame.
-            - As the physical transformation of a vector being glued to the
-              original frame as it transforms. In this case the vector
-              components are expressed in the original frame before and after
-              the transformation.
+        - As a projection of vector components expressed in the final frame
+          to the original frame.
+        - As the physical transformation of a vector being glued to the
+          original frame as it transforms. In this case the vector
+          components are expressed in the original frame before and after
+          the transformation.
 
         In terms of the rotation matrix and translation,
         this application is the same as
