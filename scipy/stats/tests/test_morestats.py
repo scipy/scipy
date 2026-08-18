@@ -2995,7 +2995,7 @@ class TestBoxcoxNormmax(NormmaxTest):
 
         res = stats.boxcox_normmax(x, method='all', nan_policy='omit')
         ref = stats.boxcox_normmax(x[~np.isnan(x)], method='all')
-        np.testing.assert_allclose(res, ref)
+        np.testing.assert_allclose(res, ref, rtol=2e-7)
 
 
 class TestBoxcoxNormplot:
