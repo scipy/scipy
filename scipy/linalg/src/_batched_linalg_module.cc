@@ -927,14 +927,18 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (jobz != 'N') {
-        // XXX: account for `overwrite_x`
-        shape_1[ndim - 2] = N;
-        shape_1[ndim - 1] = M;
+        if (overwrite_a) {
+            Py_INCREF(ap_Am);
+            ap_Z = ap_Am;
+        } else {
+            shape_1[ndim - 2] = N;
+            shape_1[ndim - 1] = M;
 
-        ap_Z = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-        if (ap_Z == NULL) {
-            PyErr_NoMemory();
-            goto fail;
+            ap_Z = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
+            if (ap_Z == NULL) {
+                PyErr_NoMemory();
+                goto fail;
+            }
         }
     }
 
@@ -1148,8 +1152,8 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!ap_perm) { PyErr_NoMemory(); goto fail; }
 
     // Allocate scratch buffers (reused across slices)
-    scratch = PyMem_Malloc(m * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc(minmn * sizeof(CBLAS_INT));
+    scratch = PyMem_Malloc((size_t)m * n * elem_size);
+    ipiv = (CBLAS_INT*)PyMem_Malloc((size_t)minmn * sizeof(CBLAS_INT));
     slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
     if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
 
@@ -1318,8 +1322,8 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!ap_det) { PyErr_NoMemory(); goto fail; }
 
     // Allocate scratch buffers
-    scratch = PyMem_Malloc(n * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc(n * sizeof(CBLAS_INT));
+    scratch = PyMem_Malloc((size_t)n * n * elem_size);
+    ipiv = (CBLAS_INT*)PyMem_Malloc((size_t)n * sizeof(CBLAS_INT));
     slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
     if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
 

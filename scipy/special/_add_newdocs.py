@@ -1380,7 +1380,7 @@ add_newdoc("eval_sh_legendre",
 
         P_n^*(x) = P_n(2x - 1)
 
-    where :math:`P_n` is a Legendre polynomial. See 2.2.11 in [AS]_
+    where :math:`P_n` is a Legendre polynomial. See 22.2.11 in [AS]_
     or [DLMF]_ for details.
 
     Parameters

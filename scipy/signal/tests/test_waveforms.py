@@ -5,9 +5,10 @@ from pytest import raises as assert_raises
 
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
-    xp_assert_less, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
+    xp_assert_less, xp_assert_equal, xp_copy_to_numpy,
     make_xp_test_case
 )
+from scipy._lib._array_api_no_0d import xp_assert_close
 
 import scipy.signal._waveforms as waveforms
 from scipy.signal import chirp, gausspulse, square, sawtooth  # type:ignore[attr-defined]
@@ -490,7 +491,7 @@ class TestSquareWaveform:
         t = xp.linspace(0, 2*np.pi, 1000)
         y = square(t)
         assert y.shape == t.shape
-        unique = np.unique(_xp_copy_to_numpy(y))
+        unique = np.unique(xp_copy_to_numpy(y))
         assert set(unique).issubset({-1.0, 1.0})
 
     @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9541")

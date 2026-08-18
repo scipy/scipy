@@ -609,7 +609,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                                 cc = 0;
                             } else {
                                 int sz2 = 2 * len - 2;
-                                cc = sz2 * (int)(-cc / sz2) + cc;
+                                cc = (npy_intp)sz2 * (int)(-cc / sz2) + cc;
                                 cc = cc <= 1 - len ? cc + sz2 : -cc;
                             }
                         } else if (cc >= len) {
@@ -617,7 +617,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                                 cc = 0;
                             } else {
                                 int sz2 = 2 * len - 2;
-                                cc -= sz2 * (int)(cc / sz2);
+                                cc -= (npy_intp)sz2 * (int)(cc / sz2);
                                 if (cc >= len)
                                     cc = sz2 - cc;
                             }
@@ -630,14 +630,14 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                             } else {
                                 int sz2 = 2 * len;
                                 if (cc < -sz2)
-                                    cc = sz2 * (int)(-cc / sz2) + cc;
+                                    cc = (npy_intp)sz2 * (int)(-cc / sz2) + cc;
                                 cc = cc < -len ? cc + sz2 : -cc - 1;
                             }
                         } else if (cc >= len) {
                             if (len <= 1) {cc = 0;
                             } else {
                                 int sz2 = 2 * len;
-                                cc -= sz2 * (int)(cc / sz2);
+                                cc -= (npy_intp)sz2 * (int)(cc / sz2);
                                 if (cc >= len)
                                     cc = sz2 - cc - 1;
                             }
@@ -650,7 +650,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                                 cc = 0;
                             } else {
                                 int sz = len;
-                                cc += sz * (int)(-cc / sz);
+                                cc += (npy_intp)sz * (int)(-cc / sz);
                                 if (cc < 0)
                                     cc += sz;
                             }
@@ -659,7 +659,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                                 cc = 0;
                             } else {
                                 int sz = len;
-                                cc -= sz * (int)(cc / sz);
+                                cc -= (npy_intp)sz * (int)(cc / sz);
                             }
                         }
                         break;
@@ -781,7 +781,7 @@ NI_CoordinateBlock* NI_CoordinateListAddBlock(NI_CoordinateList *list)
     if (!block) {
         return NULL;
     }
-    block->coordinates = malloc(list->block_size * list->rank
+    block->coordinates = malloc((size_t)list->block_size * list->rank
                                 * sizeof(npy_intp));
     if (!block->coordinates) {
         free(block);
