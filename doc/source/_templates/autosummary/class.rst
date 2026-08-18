@@ -22,7 +22,8 @@
          {{ name }}.{{ item }}
          {%- endif -%}
       {%- endfor %}
-      {% for item in inherited_members %}
+      {# sphinx hands this over as a set, so sort it or the stub churns every build #}
+      {% for item in inherited_members|sort %}
          {%- if item in ['__call__', '__mul__', '__getitem__', '__len__', '__pow__', '__matmul__', '__truediv__', '__add__', '__rmul__', '__rmatmul__'] %}
          {{ name }}.{{ item }}
          {%- endif -%}
