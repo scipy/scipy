@@ -418,6 +418,7 @@ cdef void init_pytree(void *void_tree):
 # Main cKDTree class
 # ==================
 
+@xp_capabilities(out_of_scope=True)
 cdef class cKDTree:
     """cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False, balanced_tree=True, boxsize=None)\n--
 
