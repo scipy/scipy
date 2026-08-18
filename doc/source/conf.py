@@ -166,6 +166,19 @@ for key in (
         ):
     warnings.filterwarnings(
         'once', message='.*' + key)
+# sphinx>=9.1 deprecations, attributed to the extension that called the old API
+# rather than to sphinx, so they escape the module='sphinx' filter above.
+# Keep these targeted so scipy's own doc extensions are not silenced too.
+# The APIs still work until Sphinx 11; drop each as its package is fixed.
+for key, category in (
+        # jupyterlite_sphinx (0.22.1)
+        ("'sphinx.environment.BuildEnvironment.app' is deprecated",
+         PendingDeprecationWarning),
+        # myst_parser (5.1.0)
+        ("'myst_parser.sphinx_ext.myst_refs.MystReferenceResolver.app' is deprecated",
+         PendingDeprecationWarning),
+        ):
+    warnings.filterwarnings('ignore', message=re.escape(key), category=category)
 # docutils warnings when using notebooks (see gh-17322)
 # these will hopefully be removed in the near future
 for key in (
