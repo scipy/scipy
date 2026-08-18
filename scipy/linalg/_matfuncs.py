@@ -846,7 +846,7 @@ def signm(A):
     return S0
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
+@_apply_over_batch(('a', 2), ('b', 2), signature="(i,k),(j,k)->(i*j,k)")
 def khatri_rao(a, b):
     r"""
     Khatri-Rao product of two matrices.
