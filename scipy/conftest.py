@@ -37,6 +37,9 @@ try:
 except Exception:
     PARALLEL_RUN_AVAILABLE = False
 
+# These Cython examples are built and tested separately in CI.
+collect_ignore = ["linalg/tests/_cython_examples"]
+
 
 def pytest_configure(config):
     """
