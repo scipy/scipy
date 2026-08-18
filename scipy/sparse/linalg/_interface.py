@@ -768,6 +768,11 @@ class LinearOperator:
                 return mT(self.T.matmat(mT(x)))
 
     def __pow__(self, p):
+        """Raise this linear operator to a non-negative integer power.
+
+        The operator must be square. The returned `LinearOperator` lazily
+        represents ``p`` repeated applications of this operator.
+        """
         self._check_matching_namespace(p)
         if xp_isscalar(p):
             return _PowerLinearOperator(self, p, xp=self._xp)
