@@ -2,8 +2,8 @@
 # AUTO-GENERATED - do not edit by hand.
 # Re-generate with:  python tools/generate_cython_abi_tests.py linalg
 #
-# Generated against SciPy 1.17.1 on 2026-03-29
-# Python 3.12.13
+# Generated against SciPy 2.0.0.dev0+git20260818.e897261 on 2026-08-18
+# Python 3.14.6
 # ---------------------------------------------------------------------------
 
 """
