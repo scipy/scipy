@@ -56,7 +56,7 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), all_unique=Tru
     return mxp, marrays, nan_arrays
 
 
-def assert_close(res, ref, *args, **kwargs):
+def mxp_assert_close(res, ref, *args, **kwargs):
     xp = res._xp
     ref_mask = xp.asarray(getattr(ref, 'mask', False))  # ref can be NumPy MaskedArray
     ref = xp.asarray(ref)
@@ -86,7 +86,7 @@ def test_one_sample_weighted_reducing(fun, kwargs, weighted, axis, masked_slice,
     nweights = narrays[1] if weighted else None
     res = fun(marrays[0], weights=mweights, axis=axis, **kwargs)
     ref = fun(narrays[0], weights=nweights, nan_policy='omit', axis=axis, **kwargs)
-    assert_close(res, ref)
+    mxp_assert_close(res, ref)
 
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
@@ -138,7 +138,7 @@ def test_one_sample_reducing(fun, kwargs, axis, masked_slice, xp):
     kwargs = dict(axis=axis) | kwargs
     res = fun(marrays[0], **kwargs)
     ref = fun(narrays[0], nan_policy='omit', **kwargs)
-    assert_close(res, ref)
+    mxp_assert_close(res, ref)
 
 
 @make_xp_test_case(stats.mode)
@@ -158,8 +158,8 @@ def test_mode(dtype, shape, axis, masked_slice, xp):
                                        masked_slice_axis=maxis, xp=xp)
     res = stats.mode(mxp.astype(marrays[0], getattr(mxp, dtype)), axis=axis)
     ref = stats.mode(*narrays, nan_policy='omit', axis=axis)
-    assert_close(res.mode, ref.mode.astype(dtype))
-    assert_close(res.count, ref.count)
+    mxp_assert_close(res.mode, ref.mode.astype(dtype))
+    mxp_assert_close(res.count, ref.count)
 
 
 @make_xp_test_case(stats.describe)
@@ -174,13 +174,13 @@ def test_describe(axis, kwargs, masked_slice, xp):
     kwargs = dict(axis=axis) | kwargs
     res = stats.describe(marrays[0], **kwargs)
     ref = stats.describe(narrays[0], nan_policy='omit', **kwargs)
-    assert_close(res.nobs, ref.nobs)
-    assert_close(res.minmax[0], ref.minmax[0])
-    assert_close(res.minmax[1], ref.minmax[1])
-    assert_close(res.mean, ref.mean)
-    assert_close(res.variance, ref.variance)
-    assert_close(res.skewness, ref.skewness)
-    assert_close(res.kurtosis, ref.kurtosis)
+    mxp_assert_close(res.nobs, ref.nobs)
+    mxp_assert_close(res.minmax[0], ref.minmax[0])
+    mxp_assert_close(res.minmax[1], ref.minmax[1])
+    mxp_assert_close(res.mean, ref.mean)
+    mxp_assert_close(res.variance, ref.variance)
+    mxp_assert_close(res.skewness, ref.skewness)
+    mxp_assert_close(res.kurtosis, ref.kurtosis)
 
 
 @skip_backend('dask.array', reason='shape (nan,) in _xp_var when ddof=1')
@@ -197,7 +197,7 @@ def test_one_sample_non_reducing(fun, ddof, axis, masked_slice, xp):
     mxp, marrays, narrays = get_arrays(n_arrays, masked_slice_axis=maxis, xp=xp)
     res = fun(*marrays, ddof=ddof, axis=axis)
     ref = xp.asarray(fun(*narrays, ddof=ddof, nan_policy='omit', axis=axis))
-    assert_close(res, ref)
+    mxp_assert_close(res, ref)
 
 
 # TODO: fix trimmed t_test with MArray (w/ and w/out all-masked slice)
@@ -228,12 +228,12 @@ def test_ttests(f, kwargs, alternative, axis, masked_slice, xp):
         narrays[1] = np.nanmean(*narrays2, axis=axis, keepdims=axis is not None)
     res = f(*marrays, **kwargs, alternative=alternative, axis=axis)
     ref = f(*narrays, **kwargs, alternative=alternative, nan_policy='omit', axis=axis)
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
     res_ci = res.confidence_interval()
     ref_ci = ref.confidence_interval()
-    assert_close(res_ci.low, ref_ci.low)
-    assert_close(res_ci.high, ref_ci.high)
+    mxp_assert_close(res_ci.low, ref_ci.low)
+    mxp_assert_close(res_ci.high, ref_ci.high)
 
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
@@ -264,8 +264,8 @@ def test_goodness_of_fit(f, args, alternative, axis, masked_slice, xp):
     res = f(*marrays, *args, **kwds, axis=axis)
     ref = f(*narrays, *args, **kwds, nan_policy='omit', axis=axis)
 
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue, atol=1e-15)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue, atol=1e-15)
 
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
@@ -295,8 +295,8 @@ def test_power_divergence_chisquare(f, lambda_, ddof, axis, masked_slice, xp):
     ref = stats.power_divergence(narrays[0], nan_policy='omit', **lambda_, **kwargs)
 
     ref_statistic = xp.where(xp.asarray(ref[0] == 0), xp.nan, xp.asarray(ref[0]))
-    assert_close(res.statistic, ref_statistic)
-    assert_close(res.pvalue, ref[1])
+    mxp_assert_close(res.statistic, ref_statistic)
+    mxp_assert_close(res.pvalue, ref[1])
 
     # # test 2-arg
     common_mask = np.isnan(narrays[0]) | np.isnan(narrays[1])
@@ -309,8 +309,8 @@ def test_power_divergence_chisquare(f, lambda_, ddof, axis, masked_slice, xp):
     ref = stats.power_divergence(*narrays, nan_policy='omit', **lambda_, **kwargs)
 
     ref_statistic = xp.where(xp.asarray(ref[0] == 0), xp.nan, xp.asarray(ref[0]))
-    assert_close(res.statistic, ref_statistic)
-    assert_close(res.pvalue, ref[1])
+    mxp_assert_close(res.statistic, ref_statistic)
+    mxp_assert_close(res.pvalue, ref[1])
 
 
 @make_xp_test_case(stats.combine_pvalues)
@@ -329,8 +329,8 @@ def test_combine_pvalues(method, axis, masked_slice, xp):
     res = stats.combine_pvalues(marrays[0], **kwargs)
     ref = stats.combine_pvalues(narrays[0], nan_policy='omit', **kwargs)
 
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
 
     if method != 'stouffer':
         return
@@ -340,8 +340,8 @@ def test_combine_pvalues(method, axis, masked_slice, xp):
     ref = stats.combine_pvalues(narrays[0], weights=narrays[1],
                                 nan_policy='omit', **kwargs)
 
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
 
 
 @make_xp_test_case(stats.ttest_ind_from_stats)
@@ -431,8 +431,8 @@ def test_wilcoxon(n_samples, zero_method, correction,
                   alternative=alternative, method=method)
     res = stats.wilcoxon(*marrays, axis=axis, **kwargs)
     ref = stats.wilcoxon(*narrays, nan_policy='omit', axis=axis, **kwargs)
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
 
 
 # TODO: should _count_nonmasked mask the return value when the count is zero?
@@ -449,8 +449,8 @@ def test_mannwhitneyu(use_continuity, alternative, method, axis, masked_slice, x
     kwargs = dict(use_continuity=use_continuity, alternative=alternative, method=method)
     res = stats.mannwhitneyu(*marrays, axis=axis, **kwargs)
     ref = stats.mannwhitneyu(*narrays, nan_policy='omit', axis=axis, **kwargs)
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
 
 
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
@@ -466,10 +466,10 @@ def test_ks_1samp(fun, method, alternative, axis, masked_slice, xp):
     kwargs = dict(method=method, alternative=alternative, axis=axis)
     res = fun(*marrays, stats.norm.cdf, **kwargs)
     ref = stats.ks_1samp(*narrays, stats.norm.cdf, nan_policy='omit', **kwargs)
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
-    assert_close(res.statistic_location, ref.statistic_location)
-    assert_close(res.statistic_sign, ref.statistic_sign, check_dtype=False)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic_location, ref.statistic_location)
+    mxp_assert_close(res.statistic_sign, ref.statistic_sign, check_dtype=False)
     assert res.statistic_sign.dtype == mxp.int8
 
 
@@ -489,8 +489,8 @@ def test_two_sample_tests(fun, kwargs, axis, masked_slice, xp):
     mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp)
     res = fun(*marrays, axis=axis, **kwargs)
     ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue, atol=1e-30)  # brunnermunzel w/ torch
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue, atol=1e-30)  # brunnermunzel w/ torch
 
 
 @make_xp_test_case(stats.ks_2samp)
@@ -507,15 +507,15 @@ def test_ks_2samp(fun, method, alternative, axis, masked_slice, xp):
     kwargs = dict(method=method, alternative=alternative, axis=axis)
     res = fun(*marrays, **kwargs)
     ref = stats.ks_2samp(*narrays, nan_policy='omit', **kwargs)
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
     # with this random data, there often multiple locations where the statistic assumes
     # the most extreme value, so we can't expect these to always match
     # xp_assert_equal(res.statistic_location.data, xp.asarray(ref.statistic_location))
     # I think this is related to the ties, too, but it deserves further
     # investigation.
     if alternative != 'two-sided':
-        assert_close(res.statistic_sign, ref.statistic_sign, check_dtype=False)
+        mxp_assert_close(res.statistic_sign, ref.statistic_sign, check_dtype=False)
     assert res.statistic_sign.dtype == mxp.int8
 
 
@@ -535,8 +535,8 @@ class TestKendallTau:
         kwargs = dict(method=method, variant=variant, alternative=alternative)
         res = stats.kendalltau(*marrays, **kwargs, axis=axis)
         ref = stats.kendalltau(*narrays, **kwargs, nan_policy='omit', axis=axis)
-        assert_close(res.statistic, ref.statistic)
-        assert_close(res.pvalue, ref.pvalue)
+        mxp_assert_close(res.statistic, ref.statistic)
+        mxp_assert_close(res.pvalue, ref.pvalue)
 
     @pytest.mark.parametrize('nan_policy, message', [
         ('propagate', "`nan_policy='propagate'` is incompatible with MArray input."),
@@ -571,8 +571,8 @@ def test_k_sample_tests(fun, kwargs, axis, masked_slice, xp):
     mxp, marrays, narrays = get_arrays(3, masked_slice_axis=maxis, xp=xp, )
     res = fun(*marrays, axis=axis, **kwargs)
     ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
 
 
 @skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
@@ -586,8 +586,8 @@ def test_k_sample_paired_tests(fun, kwargs, axis, masked_slice, xp):
     mxp, marrays, narrays = get_arrays(3, shape=(8, 9), masked_slice_axis=maxis, xp=xp)
     res = fun(*marrays, axis=axis, **kwargs)
     ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
-    assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    mxp_assert_close(res.statistic, ref.statistic)
+    mxp_assert_close(res.pvalue, ref.pvalue)
 
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
@@ -633,13 +633,13 @@ def test_correlation(f, alternative, axis, masked_slice, xp):
         ref = f(xi[~mask], yi[~mask], **kwargs)
 
         atol = 1e-7 if (is_torch(xp) and f == stats.spearmanrho) else 0.
-        assert_close(res.statistic[i], ref.statistic[()], atol=atol)
-        assert_close(res.pvalue[i], ref.pvalue[()], atol=atol)
+        mxp_assert_close(res.statistic[i], ref.statistic[()], atol=atol)
+        mxp_assert_close(res.pvalue[i], ref.pvalue[()], atol=atol)
 
         if f == stats.pearsonr:
             ref_ci_low, ref_ci_high = ref.confidence_interval()
-            assert_close(res_ci_low[i], ref_ci_low[()])
-            assert_close(res_ci_high[i], ref_ci_high[()])
+            mxp_assert_close(res_ci_low[i], ref_ci_low[()])
+            mxp_assert_close(res_ci_high[i], ref_ci_high[()])
 
 
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
@@ -662,17 +662,17 @@ def test_slopes_intercepts(f, method, axis, masked_slice, xp):
     res = f(*marrays, axis=axis, **method)
     ref = f(*narrays, nan_policy='omit', axis=axis, **method)
 
-    assert_close(res.slope, ref.slope)
-    assert_close(res.intercept, ref.intercept)
+    mxp_assert_close(res.slope, ref.slope)
+    mxp_assert_close(res.intercept, ref.intercept)
 
     if f == stats.theilslopes:
-        assert_close(res.low_slope, ref.low_slope)
-        assert_close(res.high_slope, ref.high_slope)
+        mxp_assert_close(res.low_slope, ref.low_slope)
+        mxp_assert_close(res.high_slope, ref.high_slope)
     elif f == stats.linregress:
-        assert_close(res.rvalue, ref.rvalue)
-        assert_close(res.pvalue, ref.pvalue)
-        assert_close(res.stderr, ref.stderr)
-        assert_close(res.intercept_stderr, ref.intercept_stderr)
+        mxp_assert_close(res.rvalue, ref.rvalue)
+        mxp_assert_close(res.pvalue, ref.pvalue)
+        mxp_assert_close(res.stderr, ref.stderr)
+        mxp_assert_close(res.intercept_stderr, ref.intercept_stderr)
 
 
 @make_xp_test_case(stats.entropy)
@@ -687,7 +687,7 @@ def test_entropy(qk, base, axis, masked_slice, xp):
     mxp, marrays, narrays = get_arrays(2 if qk else 1, masked_slice_axis=maxis, xp=xp)
     res = stats.entropy(*marrays, base=base, axis=axis)
     ref = stats.entropy(*narrays, base=base, nan_policy='omit', axis=axis)
-    assert_close(res, ref)
+    mxp_assert_close(res, ref)
 
 
 @make_xp_test_case(stats.rankdata)
@@ -700,7 +700,7 @@ def test_rankdata(method, axis, masked_slice, xp):
     mxp, marrays, narrays = get_arrays(1, masked_slice_axis=maxis, xp=xp)
     res = stats.rankdata(*marrays, method=method, axis=axis)
     ref = stats.rankdata(*narrays, method=method, nan_policy='omit', axis=axis)
-    assert_close(res, ref)
+    mxp_assert_close(res, ref)
 
 
 @make_xp_test_case(stats.obrientransform)
@@ -717,4 +717,4 @@ def test_obrientransform(dtype, n_arrays, masked_slice, xp):
     res = stats.obrientransform(*marrays)
     ref = stats.obrientransform(*narrays, nan_policy='omit')
     for res_i, ref_i in zip(res, ref):
-        assert_close(res_i, ref_i)
+        mxp_assert_close(res_i, ref_i)
