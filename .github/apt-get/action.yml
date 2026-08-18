@@ -1,0 +1,40 @@
+name: Install apt packages
+description: >
+  `apt-get update && install` with retries and timeouts, so a stalled mirror
+  or a dpkg lock held by unattended-upgrades fails fast instead of hanging CI
+  for hours.
+inputs:
+  packages:
+    description: Packages to install, whitespace-separated
+    required: true
+  repository:
+    description: "Optional PPA to add before installing, e.g. ppa:deadsnakes/ppa"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+        REPOSITORY: ${{ inputs.repository }}
+      run: |
+        opts=(
+          -o Acquire::Retries=3
+          -o Acquire::http::Timeout=30
+          -o Acquire::https::Timeout=30
+          -o DPkg::Lock::Timeout=120  # wait out unattended-upgrades rather than erroring
+          -o Dpkg::Options::=--force-unsafe-io  # no fsync; the runner is ephemeral
+        )
+        install() {
+          sudo DEBIAN_FRONTEND=noninteractive timeout 10m apt-get install -y "${opts[@]}" "$@"
+        }
+        sudo timeout 5m apt-get update "${opts[@]}"
+        if [[ -n "$REPOSITORY" ]]; then
+          install software-properties-common
+          sudo add-apt-repository -y "$REPOSITORY"
+          sudo timeout 5m apt-get update "${opts[@]}"
+        fi
+        read -ra packages <<< "$PACKAGES"
+        install "${packages[@]}"

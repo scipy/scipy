@@ -57,10 +57,12 @@ jobs:
           allow-prereleases: true
 
       - name: Install Ubuntu dependencies
-        run: |
-          # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
-          sudo apt-get update
-          sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+        # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
+        uses: ./.github/apt-get
+        with:
+          packages: >-
+            libopenblas-dev libatlas-base-dev liblapack-dev libgmp-dev
+            libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
       - name: Install Python packages
         if: matrix.python-version == '3.12'
@@ -142,13 +144,12 @@ jobs:
           persist-credentials: false
 
       - name: Install Ubuntu dependencies
-        run: |
-          # We're not running the full test suite here, only testing the install
-          # into a venv is working, so leave out optional dependencies. That's
-          # also why we can get away with an old version of OpenBLAS from Ubuntu
-          sudo apt-get update
-          sudo apt-get install -y python3-dev libopenblas-dev pkg-config \
-            ccache
+        # We're not running the full test suite here, only testing the install
+        # into a venv is working, so leave out optional dependencies. That's
+        # also why we can get away with an old version of OpenBLAS from Ubuntu
+        uses: ./.github/apt-get
+        with:
+          packages: python3-dev libopenblas-dev pkg-config ccache
 
       - name: Set up ccache
         uses: ./.github/ccache
@@ -221,11 +222,11 @@ jobs:
           python-version: "3.12"
 
       - name: Install Ubuntu dependencies
-        run: |
-          # apt OpenBLAS rather than the scipy-openblas wheel, because
-          # `--with-scipy-openblas` is a `spin build` flag with no `spin install` equivalent
-          sudo apt-get update
-          sudo apt-get install -y libopenblas-dev pkg-config ccache
+        # apt OpenBLAS rather than the scipy-openblas wheel, because
+        # `--with-scipy-openblas` is a `spin build` flag with no `spin install` equivalent
+        uses: ./.github/apt-get
+        with:
+          packages: libopenblas-dev pkg-config ccache
 
       - name: Install Python packages
         run: |
@@ -281,10 +282,14 @@ jobs:
           persist-credentials: false
 
       - name: Configuring Test Environment
-        run: |
-          sudo apt-get update
-          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev \
+        uses: ./.github/apt-get
+        with:
+          packages: >-
+            python3-dbg python3-dev libatlas-base-dev liblapack-dev
             libgmp-dev libmpfr-dev libmpc-dev
+
+      - name: Check python3-dbg
+        run: |
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
 
@@ -323,11 +328,11 @@ jobs:
           python-version: "3.12"
 
       - name: Setup system dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt install -y g++-10 gcc-10
-          sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
-            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev ccache
+        uses: ./.github/apt-get
+        with:
+          packages: >-
+            g++-10 gcc-10 libatlas-base-dev liblapack-dev libgmp-dev
+            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev ccache
 
       - name: Setup Python build deps
         run: pip install --group build
@@ -393,10 +398,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Ubuntu dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache \
-            lcov ccache
+        uses: ./.github/apt-get
+        with:
+          packages: libgmp-dev libmpfr-dev libmpc-dev ccache lcov
 
       - name: Install Python packages
         run: |
@@ -489,12 +493,11 @@ jobs:
           persist-credentials: false
 
       - name: Setup system dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt install software-properties-common
-          sudo add-apt-repository ppa:deadsnakes/ppa
-          sudo apt update -y
-          sudo apt install -y python3.12-dev ninja-build pkg-config libatlas-base-dev \
+        uses: ./.github/apt-get
+        with:
+          repository: ppa:deadsnakes/ppa
+          packages: >-
+            python3.12-dev ninja-build pkg-config libatlas-base-dev
             liblapack-dev ccache
 
       - name: Set up ccache
@@ -553,10 +556,9 @@ jobs:
           persist-credentials: false
 
       - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libopenblas-dev liblapack-dev \
-            ccache
+        uses: ./.github/apt-get
+        with:
+          packages: pkg-config libopenblas-dev liblapack-dev ccache
 
       - name: Set up ccache
         uses: ./.github/ccache
