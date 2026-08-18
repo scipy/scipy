@@ -201,6 +201,71 @@ jobs:
           ccache -s
 
   #################################################################################
+  test_editable_install:
+    # Editable installs hit corner cases that regular installs don't, e.g., gh-25892
+    name: Editable install, fast, py3.12/npAny, spin
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install Ubuntu dependencies
+        run: |
+          # apt OpenBLAS rather than the scipy-openblas wheel, because
+          # `--with-scipy-openblas` is a `spin build` flag with no `spin install` equivalent
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev pkg-config ccache
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --group build --group dev-cli --group test-core --group optional-runtime-deps
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Editable install
+        # `spin install` defaults to `pip install -e . --no-build-isolation`
+        run: |
+          spin install
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+      - name: Check import
+        # Run from outside the source tree, then check that `scipy` still
+        # resolves back to it - that's the point of an editable install.
+        run: |
+          python -c "
+          import pathlib, scipy, scipy.linalg
+          expected = pathlib.Path(r'$EXPECTED_SCIPY_DIR')
+          assert pathlib.Path(scipy.__file__).parent == expected, \
+              f'{scipy.__file__=} not from {expected}'"
+        working-directory: ${{ runner.temp }}
+        env:
+          EXPECTED_SCIPY_DIR: ${{ github.workspace }}/scipy
+
+      - name: Test SciPy
+        run: |
+          spin test -j3 -- --durations 10 --timeout=60
+
+  #################################################################################
   python_debug:
     # also uses the vcs->sdist->wheel route.
     name: Python-debug & ATLAS & sdist+wheel, fast, py3.12/npMin, pip+pytest
@@ -634,5 +699,4 @@ jobs:
 
       - name: Test SciPy
         run: |
-          export OMP_NUM_THREAD=2
           pixi run test-fail-slow
