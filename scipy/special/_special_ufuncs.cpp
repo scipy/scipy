@@ -775,7 +775,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "eval_jacobi", eval_jacobi);
 
     PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dddd_d>(xsf::eval_sh_jacobi), static_cast<xsf::numpy::dddD_D>(xsf::eval_sh_jacobi)
+        {static_cast<xsf::numpy::dddd_d>(xsf::eval_sh_jacobi), static_cast<xsf::numpy::dddD_D>(xsf::eval_sh_jacobi),
         static_cast<xsf::numpy::pddd_d>(xsf::eval_sh_jacobi)},
         "eval_sh_jacobi", eval_sh_jacobi_doc);
     PyModule_AddObjectRef(module, "eval_sh_jacobi", eval_sh_jacobi);
