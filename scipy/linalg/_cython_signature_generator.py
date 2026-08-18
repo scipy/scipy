@@ -80,6 +80,15 @@ def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
 # The other manual signatures are used because the signature generating
 # functions don't work when function pointer arguments are used.
 
+blas_manual_wrappers = '''void crotg(c *a, c *b, s *c, c *s)
+d dnrm2(int *n, d *x, int *incx)
+void drotg(d *a, d *b, d *c, d *s)
+d dznrm2(int *n, z *x, int *incx)
+s scnrm2(int *n, c *x, int *incx)
+void srotg(s *a, s *b, s *c, s *s)
+void zdrot(int *n, z *zx, int *incx, z *zy, int *incy, d *c, d *s)
+void zrotg(z *a, z *b, d *c, z *s)
+'''
 
 lapack_manual_wrappers = '''void cgees(char *jobvs, char *sort, cselect1 *select, int *n, c *a, int *lda, int *sdim, c *w, c *vs, int *ldvs, c *work, int *lwork, s *rwork, bint *bwork, int *info)
 void cgeesx(char *jobvs, char *sort, cselect1 *select, char *sense, int *n, c *a, int *lda, int *sdim, c *w, c *vs, int *ldvs, s *rconde, s *rcondv, c *work, int *lwork, s *rwork, bint *bwork, int *info)
@@ -196,7 +205,8 @@ if __name__ == '__main__':
     from sys import argv
     libname, src_dir, outfile = argv[1:]
     if libname.lower() == 'blas':
-        sigs_from_dir(src_dir, outfile, exclusions=blas_exclusions)
+        sigs_from_dir(src_dir, outfile, manual_wrappers=blas_manual_wrappers,
+                      exclusions=blas_exclusions)
     elif libname.lower() == 'lapack':
         sigs_from_dir(src_dir, outfile, manual_wrappers=lapack_manual_wrappers,
                       exclusions=lapack_exclusions)
