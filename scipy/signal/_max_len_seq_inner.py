@@ -20,6 +20,6 @@ def _max_len_seq_inner(taps, state, nbits, length, seq):
         state[idx] = feedback
         idx = (idx + 1) % nbits
     # state must be rolled s.t. next run, when idx==0, it's in the right place
-    # Avoid np.roll as pythran's generated code for it triggers a spurious
-    # GCC 13 -Werror=array-bounds warning on this fixed-size int8 array
+    # Avoid np.roll, pythran's generated code triggers a spurious warning:
+    # https://github.com/serge-sans-paille/pythran/issues/2472
     return np.concatenate((state[idx:], state[:idx]))
