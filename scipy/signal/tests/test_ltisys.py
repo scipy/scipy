@@ -903,6 +903,32 @@ class TestTransferFunction:
         xp_assert_equal(s.poles, [1.])
         xp_assert_equal(s.zeros, [0.])
 
+    def test_inputs_outputs_siso(self):
+        # SISO: 1-D numerator, must report 1 input and 1 output (gh-16161).
+        s = TransferFunction([1, 2, 3], [1, 4, 5])
+        assert s.inputs == 1
+        assert s.outputs == 1
+
+    def test_inputs_outputs_simo(self):
+        # SIMO: 2-D ``num`` from ``ss2tf`` with multiple outputs.  Rows of
+        # ``num`` are numerator polynomials of each output; columns are the
+        # polynomial coefficients, *not* a number of inputs (gh-16161).
+        A = np.array([[-1.0, 1.0, 0.0, 0.0],
+                      [-2.0, 0.0, 1.0, 0.0],
+                      [-3.0, 0.0, 0.0, 1.0],
+                      [-4.0, 0.0, 0.0, 0.0]])
+        B = np.array([[1.0], [5.0], [7.0], [0.0]])
+        C = np.array([[0.0, 1.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 1.0],
+                      [8.0, 8.0, 0.0, 0.0]])
+        D = np.array([[0.0], [0.0], [1.0]])
+        num, den = ss2tf(A, B, C, D)
+        s = TransferFunction(num, den)
+        # ``num`` is 2-D with shape (n_outputs, n_poly_coefficients).
+        assert s.num.ndim == 2
+        assert s.outputs == 3
+        assert s.inputs == 1
+
 
 class TestZerosPolesGain:
     def test_initialization(self):
@@ -921,6 +947,23 @@ class TestZerosPolesGain:
         # Make sure copies work
         assert ZerosPolesGain(s) is not s
         assert s.to_zpk() is not s
+
+    def test_inputs_outputs_siso(self):
+        # SISO ZPK has one input and one output (gh-16161).
+        s = ZerosPolesGain([1, 2], [3, 4], 5)
+        assert s.inputs == 1
+        assert s.outputs == 1
+
+    def test_inputs_outputs_simo(self):
+        # ``zeros`` may be a 2-D array whose rows hold the zeros of each
+        # output (SIMO).  The number of columns is the (per-output) zero
+        # count, *not* a number of inputs (gh-16161).
+        zeros = np.zeros((3, 4))
+        poles = np.array([1.0, 2.0])
+        s = ZerosPolesGain(zeros, poles, 1.0)
+        assert s.zeros.ndim == 2
+        assert s.outputs == 3
+        assert s.inputs == 1
 
 
 @make_xp_test_case(abcd_normalize)
