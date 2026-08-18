@@ -1028,7 +1028,7 @@ add_newdoc("eval_chebyt",
     >>> sc.eval_chebyt(np.arange(5), 0.5)
     array([ 1. ,  0.5, -0.5, -1. , -0.5])
 
-    Trig identity check — T_4(cos(π/4)) should equal cos(π):
+    Trig identity check: :math:`T_4(\cos(\pi / 4)) = \cos(\pi)`:
 
     >>> sc.eval_chebyt(4, np.cos(np.pi / 4))
     -1.0

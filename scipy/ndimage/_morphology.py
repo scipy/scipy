@@ -1749,7 +1749,6 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
     else:
         return (tmp - grey_erosion(input, size, footprint, structure,
                                    None, mode, cval, origin, axes=axes))
-
 def morphological_laplace(input, size=None, footprint=None, structure=None,
                           output=None, mode="reflect", cval=0.0, origin=0, *,
                           axes=None):
@@ -1804,10 +1803,12 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
     >>> morphological_laplace(a, size=(3,))
     array([ 0,  0,  0,  5, -5,  5,  0,  0,  0])
 
-    The peak at index 4 comes out negative because dilation can't push it
-    any higher (it's already the local max), while erosion pulls it down
-    toward the surrounding zeros. The neighbors at indices 3 and 5 go
-    positive because dilation "sees" the spike and raises them up.
+    At the peak, dilation cannot raise the value further since it is
+    already the local maximum, while erosion lowers it toward the
+    surrounding zeros. This produces a negative result at the peak.
+
+    At the two points next to the peak, dilation raises the value to
+    match the height of the spike, producing a positive result instead.
 
     You can also compute this directly from the definition —
     dilation plus erosion minus twice the input:
@@ -1841,7 +1842,7 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
         np.subtract(tmp2, input, tmp2)
         np.subtract(tmp2, input, tmp2)
         return tmp2
-
+        
 def white_tophat(input, size=None, footprint=None, structure=None,
                  output=None, mode="reflect", cval=0.0, origin=0, *,
                  axes=None):
