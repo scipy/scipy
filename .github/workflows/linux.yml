@@ -258,10 +258,25 @@ jobs:
 
       - name: Check rebuild on import
         # meson-python reruns ninja on every import of an editable install. Touch a
-        # .pyx so that hook has actual work to do; nothing else in CI exercises it.
+        # source file (Pythran-compiled here, rather than Cython, but the rebuild
+        # hook works the same way) so that hook has actual work to do, then check
+        # the compiled extension's mtime to prove a rebuild actually happened -
+        # not just that the (possibly stale) module still imports without error.
         run: |
-          touch "$GITHUB_WORKSPACE/scipy/linalg/_cythonized_array_utils.pyx"
-          python -c "import numpy as np, scipy.linalg; print(scipy.linalg.bandwidth(np.eye(3)))"
+          before=$(python -c "
+          import scipy.signal._max_len_seq_inner as m, os
+          print(os.stat(m.__file__).st_mtime_ns)")
+          sleep 1  # ensure a rebuilt file's mtime is unambiguously newer
+          touch "$GITHUB_WORKSPACE/scipy/signal/_max_len_seq_inner.py"
+          after=$(python -c "
+          import scipy.signal, scipy.signal._max_len_seq_inner as m, os
+          assert len(scipy.signal.max_len_seq(4)[0]) == 15
+          print(os.stat(m.__file__).st_mtime_ns)")
+          echo "extension mtime (ns): before=$before after=$after"
+          if [[ "$after" -le "$before" ]]; then
+            echo "::error::extension was not rebuilt on import (mtime unchanged)"
+            exit 1
+          fi
         working-directory: ${{ runner.temp }}
 
       - name: Ccache performance
