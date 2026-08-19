@@ -21,7 +21,7 @@ else
     fft_deps += [thread_dep]
   endif
 endif
-duccfft_args = duccfft_threads
+
 # Silence GCC -Wpsabi notes about the GCC 10.1 ABI change for passing
 # SIMD-backed structs by value (triggered heavily by ducc0/fft/fft1d_impl.h).
 # The note is informational; SciPy is built against a single compiler ABI.
