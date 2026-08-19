@@ -22,3 +22,20 @@ def test_pbwa_nan():
     pts = [(-6, -6), (-6, 6), (6, -6), (6, 6)]
     for p in pts:
         assert_equal(sc.pbwa(*p), (np.nan, np.nan))
+
+
+def test_pbdv_near_integer_negative_argument():
+    # Values generated with mpmath 1.3.0 at 80 digits.
+    v = np.nextafter(50.0, 0.0)
+    x = [-np.sqrt(500.0), -v]
+    expected = [
+        [3.1429284557854132e37, -2.7008764338749622e38],
+        [5.6977287669133012e235, -1.3650529001419031e237],
+    ]
+    assert_allclose([sc.pbdv(v, xi) for xi in x], expected, rtol=5e-13)
+
+
+def test_pbdv_large_positive_argument_no_premature_underflow():
+    # Values generated with mpmath 1.3.0 at 80 digits.
+    expected = [7.3587705514938545e-274, -1.8411632169283370e-272]
+    assert_allclose(sc.pbdv(-1.0, 50.0), expected, rtol=5e-13, atol=0)
