@@ -81,6 +81,17 @@ def _get_fitpack_packed_column(A_packed, offset, k, j, m):
     col[rows] = A_packed[rows, p[rows]]
     return col
 
+def _validate_bc_type(bc_type):
+    if bc_type is None:
+        return "not-a-knot"
+
+    if bc_type not in ("not-a-knot", "periodic"):
+        raise ValueError("Only 'not-a-knot' and 'periodic' "
+                         "boundary conditions are recognised, "
+                         f"found {bc_type}")
+
+    return bc_type
+
 def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, ci, cf):
     """
     Drop boundary rows and the first/last dense columns from a FITPACK
@@ -306,6 +317,11 @@ def _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf):
 
     return ab_reduced, rhs
 
+def _validate_periodic_knot_vector(t, k, xp):
+    """Check that the knot vector is periodic."""
+    T = t[-k-1] - t[k]
+    if not xp.allclose(t[:2*k+1] + T, t[-2*k-1:]):
+        raise ValueError("The knot vector t is not periodic.")
 
 class _BSpline:
     """NumPy Backend for BSpline.
@@ -2186,7 +2202,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr",
-clamp_values=None):
+clamp_values=None, bc_type=None):
     r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion.
 
     The result is a linear combination
@@ -2237,6 +2253,15 @@ clamp_values=None):
         ``k + 1`` located exactly at the clamped endpoint(s) and be equal to
         ``x[0]`` and ``x[-1]``.
         Default is None.
+    bc_type : str, optional
+        Boundary conditions.
+        Default is `"not-a-knot"`.
+        The following boundary conditions are recognized:
+
+        * ``"not-a-knot"`` (default): The first and second segments are the
+          same polynomial. This is equivalent to having ``bc_type=None``.
+        * ``"periodic"``: The values and the first ``k-1`` derivatives at the
+          ends are equivalent. Currently not supported for method="norm-eq".
 
     Returns
     -------
@@ -2265,6 +2290,9 @@ clamp_values=None):
     holds for the standard clamped knot vector construction as well as
     other constructions with the same boundary multiplicity, such as
     not-a-knot boundary conditions.
+
+    When ``bc_type="periodic"`` is supplied, the knot vector has to be
+    periodic. This means a period ``T`` exists such that ``t[-k + j] - t[j]
 
     Examples
     --------
@@ -2359,7 +2387,17 @@ clamp_values=None):
         )
     else:
         ci, cf = None, None
+    bc_type = _validate_bc_type(bc_type)
+    if bc_type == "periodic":
+        if clamp_values is not None:
+            raise ValueError("Periodic splines cannot have clamp values.")
 
+        _validate_periodic_knot_vector(t, k, xp)
+
+        if not np.allclose(y[0], y[-1], atol=1e-15):
+            raise ValueError("First and last points does not match which is required "
+                             "for `bc_type='periodic'`.")
+ 
     # number of coefficients
     n = t.size - k - 1
 
@@ -2374,6 +2412,10 @@ clamp_values=None):
     yy = yy.reshape(-1, extradim)
 
     if method == "norm-eq":
+
+        if bc_type == "periodic":
+            raise NotImplementedError("Periodic boundary conditions are not implemented for method 'norm-eq'.")
+
         # construct A.T @ A and rhs with A the colocation matrix, and
         # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
         lower = True
@@ -2403,8 +2445,11 @@ clamp_values=None):
             c = _lsq_clamp_postprocess(c, ci, cf, nc_full)
 
     elif method == "qr":
+
+        periodic = (bc_type == 'periodic')
+
         _, _, c, _, _ = _lsq_solve_qr(
-            x, yy, t, k, w, ci=ci, cf=cf,
+            x, yy, t, k, w, periodic=periodic, ci=ci, cf=cf,
         )
 
         if was_complex:
@@ -2417,8 +2462,10 @@ clamp_values=None):
     # restore the shape of `c` for both single and multiple r.h.s.
     c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
+
     t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
-    return BSpline.construct_fast(t, c, k, axis=axis)
+    extrap = "periodic" if bc_type=="periodic" else True
+    return BSpline.construct_fast(t, c, k, extrapolate=extrap, axis=axis)
 
 
 ######################
