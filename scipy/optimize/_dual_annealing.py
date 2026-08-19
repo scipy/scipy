@@ -594,6 +594,9 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
     Where :math:`q_{v}` is the visiting parameter.
 
+    The default values and accepted ranges for the parameters are based on
+    the recommendations from [1]_.
+
     .. versionadded:: 1.2.0
 
     References

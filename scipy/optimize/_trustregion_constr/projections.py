@@ -299,7 +299,7 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
     ----------
     A : sparse array (or ndarray), shape (m, n)
         Matrix ``A`` used in the projection.
-    method : string, optional
+    method : str, optional
         Method used for compute the given linear
         operators. Should be one of:
 

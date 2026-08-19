@@ -11,10 +11,10 @@ Spline smoothing in 1D
 
 For the interpolation problem, the task is to construct a curve which passes
 through a given set of data points. This may be not appropriate if the data is
-noisy: we then want to construct a smooth curve, :math:`g(x)`, which *approximates*
-input data without passing through each point exactly.
+noisy: we may instead want to construct a smooth curve, :math:`g(x)`, 
+which *approximates* the input data without passing through each point exactly.
 
-To this end, `scipy.interpolate` allows constructing *smoothing splines* which
+To this end, `scipy.interpolate` allows constructing *smoothing splines* that
 balance how close the resulting curve, :math:`g(x)`, is to the data, and 
 the smoothness of :math:`g(x)`. Mathematically, the task is to solve
 a penalized least-squares problem, where the penalty controls the smoothness of
@@ -296,7 +296,7 @@ where :math:`\sigma` is an estimate for the standard deviation of the data.
 
 .. note::
 
-    The number of knots a very strongly dependent on ``s``. It is possible that
+    The number of knots is very strongly dependent on ``s``. It is possible that
     small variations of ``s`` lead to drastic changes in the knot number.
 
 .. note::
@@ -350,7 +350,7 @@ The main user-visible difference of the parametric case is the user interface:
 - the return value is pair: a `BSpline` instance and the array of parameter
   values, ``u``, which corresponds to the input data arrays.
 
-By default, `make_splprep` constructs and returns the cord length parametrization
+By default, `make_splprep` constructs and returns the chord length parametrization
 of input data (see the :ref:`Parametric spline curves <tutorial-interpolate_parametric>`
 section for details). Alternatively, you can provide your own array of
 parameter values, ``u``.
@@ -434,7 +434,7 @@ Fortran library authored by P. Dierckx.
     alternatives, `make_smoothing_spline`, `make_splrep` or `make_splprep`, instead.
 
 For historical reasons, `scipy.interpolate` provides two equivalent interfaces
-for FITPACK, a interface and an object-oriented interface. While equivalent, these interfaces
+for FITPACK, an interface and an object-oriented interface. While equivalent, these interfaces
 have different defaults. Below we discuss them in turn, starting from the
 functional interface.
 
@@ -828,7 +828,7 @@ on the data while determining the appropriate spline. The recommended values
 for :math:`s` depend on the weights :math:`w_i`. If these are taken as :math:`1/d_i`,
 with :math:`d_i` an estimate of the standard deviation of :math:`z_i`, a
 good value of :math:`s` should be found in the range :math:`m- \sqrt{2m}, m + 
-\sqrt{2m}`, where where :math:`m` is the number of data points in the ``x``,
+\sqrt{2m}`, where :math:`m` is the number of data points in the ``x``,
 ``y``, and ``z`` vectors.
 
 The default value is :math:`s=m-\sqrt{2m}`.  As a result, **if no smoothing is

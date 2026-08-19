@@ -87,6 +87,7 @@
     if (force_stop && *force_stop)  /* skip eval after forced stop */
          f[(pos << 1) + 1] = *fmax;
     else {
+        Py_XDECREF(ret);  /* DECREF previous iteration's return value */
         ret = direct_dirinfcn_(fcn, &x[1], x_seq, &l[1], &u[1], n, &f[(pos << 1) + 1],
                                           &kret, args);
         if (!ret) {

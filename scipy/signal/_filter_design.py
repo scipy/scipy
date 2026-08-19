@@ -17,11 +17,12 @@ from scipy._lib._util import float_factorial
 from scipy.signal._arraytools import _validate_fs
 from scipy.signal import _polyutils as _pu
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
+    array_namespace, xp_promote, xp_size, is_jax, xp_float_to_complex,
+    xp_result_type, xp_device, xp_result_device, _xp_result_devices,
 )
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -37,7 +38,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
 
 
 class BadCoefficients(UserWarning):
-    """Warning about badly conditioned filter coefficients"""
+    """Warning about badly conditioned filter coefficients."""
     pass
 
 
@@ -73,7 +74,8 @@ def _real_dtype_for_complex(dtyp, *, xp):
 
 
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/_core/function_base.py#L195-L302
-def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
+def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp,
+              device=None):
     if not isinstance(base, float | int) and xp.asarray(base).ndim > 0:
         # If base is non-scalar, broadcast it with the others, since it
         # may influence how axis is interpreted.
@@ -88,8 +90,9 @@ def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
         result_dt = xp.result_type(start, stop, base)
     except ValueError:
         # all of start, stop and base are python scalars
-        result_dt = xp_default_dtype(xp)
-    y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt)
+        result_dt = xpx.default_dtype(xp)
+    y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt,
+                    device=device)
 
     yp = xp.pow(base, y)
     if dtype is None:
@@ -148,7 +151,7 @@ def findfreqs(num, den, N, kind='ba'):
     tz = xp_float_to_complex(tz, xp=xp)
 
     if ep.shape[0] == 0:
-        ep = xp.asarray([-1000], dtype=ep.dtype)
+        ep = xp.asarray([-1000], dtype=ep.dtype, device=xp_device(ep))
 
     ez = xp.concat((
         ep[xp.imag(ep) >= 0],
@@ -167,7 +170,7 @@ def findfreqs(num, den, N, kind='ba'):
         xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge
     )
 
-    w = _logspace(lfreq, hfreq, N, xp=xp)
+    w = _logspace(lfreq, hfreq, N, xp=xp, device=xp_device(ez))
     return w
 
 
@@ -315,7 +318,7 @@ def freqs_zpk(z, p, k, worN=200):
 
     # NB: k is documented to be a scalar; for backwards compat we keep allowing it
     # to be a size-1 array, but it does not influence the namespace calculation.
-    k = xp.asarray(k, dtype=xp_default_dtype(xp))
+    k = xp.asarray(k, dtype=xpx.default_dtype(xp), device=xp_device(z))
     if xp_size(k) > 1:
         raise ValueError('k must be a single scalar gain')
 
@@ -496,9 +499,15 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     """
     xp = array_namespace(b, a)
 
-    b, a = map(xp.asarray, (b, a))
+    # `_xp_result_devices` (rather than a single `xp_result_device` anchor)
+    # because each of `b`, `a` may independently be a scalar (e.g. the
+    # default ``a=1``) or an array: scalars are created on the array
+    # partner's device, while arrays keep their own -- a shared anchor
+    # would silently transfer the second of two mismatched arrays.
+    _, devices = _xp_result_devices(b, a)
+    b, a = (xp.asarray(arg, device=d) for arg, d in zip((b, a), devices))
     if xp.isdtype(a.dtype, 'integral'):
-        a = xp.astype(a, xp_default_dtype(xp))
+        a = xp.astype(a, xpx.default_dtype(xp))
     res_dtype = xp.result_type(b, a)
     real_dtype = _real_dtype_for_complex(res_dtype, xp=xp)
 
@@ -522,7 +531,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         # if include_nyquist is true and whole is false, w should
         # include end point
         w = xp.linspace(0, lastpoint, N,
-                        endpoint=include_nyquist and not whole, dtype=real_dtype)
+                        endpoint=include_nyquist and not whole, dtype=real_dtype,
+                        device=xp_device(b))
         n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
         if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
@@ -537,7 +547,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
 
             h = fft_func(b, n=n_fft, axis=0)
             h = h[:min(N, h.shape[0]), ...]
-            h /= a
+            h /= xp.astype(a, h.dtype)
 
             if fft_func is sp_fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
@@ -556,7 +566,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
             worN = worN.real
         w = xpx.atleast_nd(xp.asarray(worN, dtype=res_dtype), ndim=1, xp=xp)
         if xp.isdtype(w.dtype, 'integral'):
-            w = xp.astype(w, xp_default_dtype(xp))
+            w = xp.astype(w, xpx.default_dtype(xp))
         del worN
         w = 2 * pi * w / fs
 
@@ -673,19 +683,22 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     if worN is None:
         # For backwards compatibility
-        w = xp.linspace(0, lastpoint, 512, endpoint=False, dtype=res_dtype)
+        w = xp.linspace(0, lastpoint, 512, endpoint=False, dtype=res_dtype,
+                        device=xp_device(z))
     elif _is_int_type(worN):
-        w = xp.linspace(0, lastpoint, worN, endpoint=False, dtype=res_dtype)
+        w = xp.linspace(0, lastpoint, worN, endpoint=False, dtype=res_dtype,
+                        device=xp_device(z))
     else:
         w = xp.asarray(worN)
         if xp.isdtype(w.dtype, 'integral'):
-            w = xp.astype(w, xp_default_dtype(xp))
+            w = xp.astype(w, xpx.default_dtype(xp))
         w = xpx.atleast_nd(w, ndim=1, xp=xp)
         w = 2 * pi * w / fs
 
     zm1 = xp.exp(1j * w)
     func = _pu.npp_polyvalfromroots
-    h = xp.asarray(k, dtype=res_dtype) * func(zm1, z, xp=xp) / func(zm1, p, xp=xp)
+    h = (xp.asarray(k, dtype=res_dtype, device=xp_device(z))
+         * func(zm1, z, xp=xp) / func(zm1, p, xp=xp))
 
     w = w*(fs/(2*pi))
 
@@ -773,6 +786,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     """
     xp = array_namespace(*system, w)
+    device = xp_result_device(*system, w)
     b, a = map(np.atleast_1d, system)
 
     if w is None:
@@ -817,7 +831,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     w = w * (fs / (2 * xp.pi))
 
-    return xp.asarray(w), xp.asarray(gd)
+    return xp.asarray(w, device=device), xp.asarray(gd, device=device)
 
 
 def _validate_sos(sos, xp=None):
@@ -976,7 +990,7 @@ def sosfreqz(*args, **kwargs):
         New code should use the function :func:`scipy.signal.freqz_sos`.
         This function became obsolete from version 1.15.0.
 
-    """
+    """  # numpydoc ignore=RT01
     return freqz_sos(*args, **kwargs)
 
 
@@ -1160,10 +1174,10 @@ def tf2zpk(b, a):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
 
     Returns
     -------
@@ -1243,7 +1257,7 @@ def tf2zpk(b, a):
 
 def zpk2tf(z, p, k):
     r"""
-    Return polynomial transfer function representation from zeros and poles
+    Return polynomial transfer function representation from zeros and poles.
 
     Parameters
     ----------
@@ -1280,23 +1294,33 @@ def zpk2tf(z, p, k):
     (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
     xp = array_namespace(z, p)
-    z, p, k = map(xp.asarray, (z, p, k))
+    device = xp_result_device(z, p, k)
+    z, p = map(xp.asarray, (z, p))
+    k = xp.asarray(k, dtype=xp.result_type(xp.real(z), xp.real(p), k),
+                   device=device)
+    if xp.isdtype(k.dtype, "integral"):
+        k = xp.astype(k, xp.float64)
 
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     k = xpx.atleast_nd(k, ndim=1, xp=xp)
-    if xp.isdtype(k.dtype, 'integral'):
-        k = xp.astype(k, xp_default_dtype(xp))
 
     if z.ndim > 1:
         temp = _pu.poly(z[0, ...], xp=xp)
-        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=temp.dtype)
+        result_dtype = xp_result_type(temp, k, force_floating=True, xp=xp)
+        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=result_dtype,
+                     device=xp_device(z))
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            k_i = xp.asarray(k[i], dtype=xp.int64)
-            b[i, ...] = k_i * _pu.poly(z[i, ...], xp=xp)
+            k_i = xp.asarray(k[i], dtype=result_dtype)
+            poly_i = xp.asarray(_pu.poly(z[i, ...], xp=xp), dtype=result_dtype)
+            b_i = k_i * poly_i
+            b = xpx.at(b)[i, ...].set(b_i)
     else:
-        b = k * _pu.poly(z, xp=xp)
+        # Use xp.multiply to work around torch type promotion
+        # non-compliance for operations between 0d and higher
+        # dimensional arrays.
+        b = xp.multiply(k, _pu.poly(z, xp=xp))
 
     a = _pu.poly(p, xp=xp)
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
@@ -1306,14 +1330,14 @@ def zpk2tf(z, p, k):
 
 def tf2sos(b, a, pairing=None, *, analog=False):
     r"""
-    Return second-order sections from transfer function representation
+    Return second-order sections from transfer function representation.
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     pairing : {None, 'nearest', 'keep_odd', 'minimal'}, optional
         The method to use to combine pairs of poles and zeros into sections.
         See `zpk2sos` for information and restrictions on `pairing` and
@@ -1363,7 +1387,7 @@ def tf2sos(b, a, pairing=None, *, analog=False):
 
 def sos2tf(sos):
     r"""
-    Return a single transfer function from a series of second-order sections
+    Return a single transfer function from a series of second-order sections.
 
     Parameters
     ----------
@@ -1400,10 +1424,10 @@ def sos2tf(sos):
 
     result_type = sos.dtype
     if xp.isdtype(result_type, 'integral'):
-        result_type = xp_default_dtype(xp)
+        result_type = xpx.default_dtype(xp)
 
-    b = xp.asarray([1], dtype=result_type)
-    a = xp.asarray([1], dtype=result_type)
+    b = xp.asarray([1], dtype=result_type, device=xp_device(sos))
+    a = xp.asarray([1], dtype=result_type, device=xp_device(sos))
 
     n_sections = sos.shape[0]
     for section in range(n_sections):
@@ -1414,7 +1438,7 @@ def sos2tf(sos):
 
 def sos2zpk(sos):
     """
-    Return zeros, poles, and gain of a series of second-order sections
+    Return zeros, poles, and gain of a series of second-order sections.
 
     Parameters
     ----------
@@ -1443,8 +1467,8 @@ def sos2zpk(sos):
     sos = xp.asarray(sos)
 
     n_sections = sos.shape[0]
-    z = xp.zeros(n_sections*2, dtype=xp.complex128)
-    p = xp.zeros(n_sections*2, dtype=xp.complex128)
+    z = xp.zeros(n_sections*2, dtype=xp.complex128, device=xp_device(sos))
+    p = xp.zeros(n_sections*2, dtype=xp.complex128, device=xp_device(sos))
     k = 1.
     for section in range(n_sections):
         zpk = tf2zpk(sos[section, :3], sos[section, 3:])
@@ -1477,7 +1501,7 @@ def _single_zpksos(z, p, k):
 
 
 def zpk2sos(z, p, k, pairing=None, *, analog=False):
-    """Return second-order sections from zeros, poles, and gain of a system
+    """Return second-order sections from zeros, poles, and gain of a system.
 
     Parameters
     ----------
@@ -1544,39 +1568,30 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     1. Take the (next remaining) pole (complex or real) closest to the
        unit circle (or imaginary axis, for ``analog=True``) to
        begin a new filter section.
-
     2. If the pole is real and there are no other remaining real poles [#]_,
        add the closest real zero to the section and leave it as a first
        order section. Note that after this step we are guaranteed to be
        left with an even number of real poles, complex poles, real zeros,
        and complex zeros for subsequent pairing iterations.
-
     3. Else:
 
-        1. If the pole is complex and the zero is the only remaining real
-           zero*, then pair the pole with the *next* closest zero
-           (guaranteed to be complex). This is necessary to ensure that
-           there will be a real zero remaining to eventually create a
-           first-order section (thus keeping the odd order).
+       1. If the pole is complex and the zero is the only remaining real
+          zero*, then pair the pole with the *next* closest zero
+          (guaranteed to be complex). This is necessary to ensure that
+          there will be a real zero remaining to eventually create a
+          first-order section (thus keeping the odd order).
+       2. Else pair the pole with the closest remaining zero (complex or real).
+       3. Proceed to complete the second-order section by adding another
+          pole and zero to the current pole and zero in the section:
 
-        2. Else pair the pole with the closest remaining zero (complex or
-           real).
-
-        3. Proceed to complete the second-order section by adding another
-           pole and zero to the current pole and zero in the section:
-
-            1. If the current pole and zero are both complex, add their
-               conjugates.
-
-            2. Else if the pole is complex and the zero is real, add the
-               conjugate pole and the next closest real zero.
-
-            3. Else if the pole is real and the zero is complex, add the
-               conjugate zero and the real pole closest to those zeros.
-
-            4. Else (we must have a real pole and real zero) add the next
-               real pole closest to the unit circle, and then add the real
-               zero closest to that pole.
+          1. If the current pole and zero are both complex, add their conjugates.
+          2. Else if the pole is complex and the zero is real, add the
+             conjugate pole and the next closest real zero.
+          3. Else if the pole is real and the zero is complex, add the
+             conjugate zero and the real pole closest to those zeros.
+          4. Else (we must have a real pole and real zero) add the next
+             real pole closest to the unit circle, and then add the real
+             zero closest to that pole.
 
     .. [#] This conditional can only be met for specific odd-order inputs
            with the ``pairing = 'keep_odd'`` or ``'minimal'`` methods.
@@ -1665,6 +1680,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     # See the wiki for other potential issues.
 
     xp = array_namespace(z, p)
+    device = xp_result_device(z, p, k)
 
     # convert to numpy, convert back on exit   XXX
     z, p = map(np.asarray, (z, p))
@@ -1683,9 +1699,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     if len(z) == len(p) == 0:
         if not analog:
-            return xp.asarray(np.asarray([[k, 0., 0., 1., 0., 0.]]))
+            return xp.asarray(np.asarray([[k, 0., 0., 1., 0., 0.]]), device=device)
         else:
-            return xp.asarray(np.asarray([[0., 0., k, 0., 0., 1.]]))
+            return xp.asarray(np.asarray([[0., 0., k, 0., 0., 1.]]), device=device)
 
     if pairing != 'minimal':
         # ensure we have the same number of poles and zeros, and make copies
@@ -1796,7 +1812,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     # put gain in first sos
     sos[0][:3] *= k
-    return xp.asarray(sos)
+    return xp.asarray(sos, device=device)
 
 
 def _align_nums(nums, xp):
@@ -1836,7 +1852,7 @@ def _align_nums(nums, xp):
         max_width = max(xp_size(num) for num in nums)
 
         # pre-allocate
-        aligned_nums = xp.zeros((len(nums), max_width))
+        aligned_nums = xp.zeros((len(nums), max_width), device=xp_device(nums[0]))
 
         # Create numerators with padded zeros
         for index, num in enumerate(nums):
@@ -1853,18 +1869,18 @@ def normalize(b, a):
 
     Parameters
     ----------
-    b: array_like
+    b : array_like
         Numerator of the transfer function. Can be a 2-D array to normalize
         multiple transfer functions.
-    a: array_like
+    a : array_like
         Denominator of the transfer function. At most 1-D.
 
     Returns
     -------
-    num: array
+    num : array
         The numerator of the normalized transfer function. At least a 1-D
         array. A 2-D array if the input `num` is a 2-D array.
-    den: 1-D array
+    den : 1-D array
         The denominator of the normalized transfer function.
 
     Notes
@@ -1889,7 +1905,7 @@ def normalize(b, a):
     `b` is 0.  In the following example, the result is as expected:
 
     >>> import warnings
-    >>> with warnings.catch_warnings(record=True) as w:
+    >>> with warnings.catch_warnings(record=True, action='always') as w:
     ...     num, den = normalize([0, 3, 6], [2, -5, 4])
 
     >>> num
@@ -1919,7 +1935,7 @@ def normalize(b, a):
         raise ValueError("Numerator polynomial must be rank-1 or"
                          " rank-2 array.")
     if xp.all(den == 0):
-        raise ValueError("Denominator must have at least on nonzero element.")
+        raise ValueError("Denominator must have at least one nonzero element.")
 
     # Trim leading zeros in denominator, leave at least one.
     den = _pu._trim_zeros(den, 'f')
@@ -1963,10 +1979,10 @@ def lp2lp(b, a, wo=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired cutoff, as angular frequency (e.g. rad/s).
         Defaults to no change.
@@ -2022,7 +2038,7 @@ def lp2lp(b, a, wo=1.0):
     d = a.shape[0]
     n = b.shape[0]
     M = max((d, n))
-    pwo = wo ** xp.arange(M - 1, -1, -1, dtype=xp.float64)
+    pwo = wo ** xp.arange(M - 1, -1, -1, dtype=xp.float64, device=xp_device(b))
     start1 = max((n - d, 0))
     start2 = max((d - n, 0))
     b = b * pwo[start1] / pwo[start2:]
@@ -2062,10 +2078,10 @@ def lp2hp(b, a, wo=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired cutoff, as angular frequency (e.g., rad/s).
         Defaults to no change.
@@ -2124,19 +2140,19 @@ def lp2hp(b, a, wo=1.0):
     d = a.shape[0]
     n = b.shape[0]
     if wo != 1:
-        pwo = wo ** xp.arange(max((d, n)), dtype=b.dtype)
+        pwo = wo ** xp.arange(max((d, n)), dtype=b.dtype, device=xp_device(b))
     else:
-        pwo = xp.ones(max((d, n)), dtype=b.dtype)
+        pwo = xp.ones(max((d, n)), dtype=b.dtype, device=xp_device(b))
     if d >= n:
         outa = xp.flip(a) * pwo
         outb = _resize(b, (d,), xp=xp)
-        outb[n:] = 0.0
-        outb[:n] = xp.flip(b) * pwo[:n]
+        outb = xpx.at(outb)[n:].set(0.0)
+        outb = xpx.at(outb)[:n].set(xp.flip(b) * pwo[:n])
     else:
         outb = xp.flip(b) * pwo
         outa = _resize(a, (n,), xp=xp)
-        outa[d:] = 0.0
-        outa[:d] = xp.flip(a) * pwo[:d]
+        outa = xpx.at(outa)[d:].set(0.0)
+        outa = xpx.at(outa)[:d].set(xp.flip(a) * pwo[:d])
 
     return normalize(outb, outa)
 
@@ -2151,10 +2167,10 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired passband center, as angular frequency (e.g., rad/s).
         Defaults to no change.
@@ -2213,23 +2229,23 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     ma = max([N, D])
     Np = N + ma
     Dp = D + ma
-    bprime = xp.empty(Np + 1, dtype=b.dtype)
-    aprime = xp.empty(Dp + 1, dtype=a.dtype)
+    bprime = xp.empty(Np + 1, dtype=b.dtype, device=xp_device(b))
+    aprime = xp.empty(Dp + 1, dtype=a.dtype, device=xp_device(a))
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
         for i in range(0, N + 1):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
-                    val += comb(i, k) * b[N - i] * (wosq) ** (i - k) / bw ** i
-        bprime[Np - j] = val
+                    val += float(comb(i, k)) * b[N - i] * (wosq) ** (i - k) / bw ** i
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
             for k in range(0, i + 1):
                 if ma - i + 2 * k == j:
-                    val += comb(i, k) * a[D - i] * (wosq) ** (i - k) / bw ** i
-        aprime[Dp - j] = val
+                    val += float(comb(i, k)) * a[D - i] * (wosq) ** (i - k) / bw ** i
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2244,10 +2260,10 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
 
     Parameters
     ----------
-    b : array_like
-        Numerator polynomial coefficients.
-    a : array_like
-        Denominator polynomial coefficients.
+    b : array_like, shape (M,)
+        Numerator polynomial coefficients. Must be 1-D.
+    a : array_like, shape (N,)
+        Denominator polynomial coefficients. Must be 1-D.
     wo : float
         Desired stopband center, as angular frequency (e.g., rad/s).
         Defaults to no change.
@@ -2305,25 +2321,25 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     M = max([N, D])
     Np = M + M
     Dp = M + M
-    bprime = xp.empty(Np + 1, dtype=b.dtype)
-    aprime = xp.empty(Dp + 1, dtype=a.dtype)
+    bprime = xp.empty(Np + 1, dtype=b.dtype, device=xp_device(b))
+    aprime = xp.empty(Dp + 1, dtype=a.dtype, device=xp_device(a))
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
         for i in range(0, N + 1):
             for k in range(0, M - i + 1):
                 if i + 2 * k == j:
-                    val += (comb(M - i, k) * b[N - i] *
+                    val += (float(comb(M - i, k)) * b[N - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        bprime[Np - j] = val
+        bprime = xpx.at(bprime, Np - j).set(val, xp=xp)
     for j in range(Dp + 1):
         val = 0.0
         for i in range(0, D + 1):
             for k in range(0, M - i + 1):
                 if i + 2 * k == j:
-                    val += (comb(M - i, k) * a[D - i] *
+                    val += (float(comb(M - i, k)) * a[D - i] *
                             (wosq) ** (M - i - k) * bw ** i)
-        aprime[Dp - j] = val
+        aprime = xpx.at(aprime, Dp - j).set(val, xp=xp)
 
     return normalize(bprime, aprime)
 
@@ -2414,7 +2430,7 @@ def bilinear(b, a, fs=1.0):
     Examples
     --------
     The following example shows the frequency response of an analog bandpass filter and
-    the corresponding digital filter derived by utilitzing the bilinear transform:
+    the corresponding digital filter derived by utilizing the bilinear transform:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2425,7 +2441,7 @@ def bilinear(b, a, fs=1.0):
     >>> bb_s, aa_s = signal.butter(4, om_c, btype='bandpass', analog=True, output='ba')
     >>> bb_z, aa_z = signal.bilinear(bb_s, aa_s, fs)
     ...
-    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digitial filter
+    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digital filter
     >>> w_s, H_s = signal.freqs(bb_s, aa_s, worN=w_z*fs)  # analog filter response
     ...
     >>> f_z, f_s = w_z * fs / (2*np.pi), w_s / (2*np.pi)
@@ -2446,6 +2462,7 @@ def bilinear(b, a, fs=1.0):
     reduce those deviations.
     """
     xp = array_namespace(b, a)
+    device = xp_result_device(b, a)
 
     b, a = map(np.asarray, (b, a))
     b, a = np.atleast_1d(b), np.atleast_1d(a)  # convert scalars, if needed
@@ -2468,8 +2485,8 @@ def bilinear(b, a, fs=1.0):
     denominator = sum(a_ * zp1**(N-p) * zm1**p for p, a_ in enumerate(a[::-1]))
 
     return normalize(
-        xp.asarray(numerator.coef[::-1].copy()),
-        xp.asarray(denominator.coef[::-1].copy())
+        xp.asarray(numerator.coef[::-1].copy(), device=device),
+        xp.asarray(denominator.coef[::-1].copy(), device=device)
     )
 
 
@@ -2502,16 +2519,16 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
         where 1 is the Nyquist frequency. For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
         Note, that for bandpass and bandstop filters passband must lie strictly
         inside stopband or vice versa. Also note that the cutoff at the band edges
         for IIR filters is defined as half-power, so -3dB, not half-amplitude (-6dB)
-        like for `scipy.signal.fiwin`.
+        like for `scipy.signal.firwin`.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -2522,17 +2539,17 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     ftype : str, optional
         The type of IIR filter to design:
 
-            - Butterworth   : 'butter'
-            - Chebyshev I   : 'cheby1'
-            - Chebyshev II  : 'cheby2'
-            - Cauer/elliptic: 'ellip'
+        - Butterworth   : 'butter'
+        - Chebyshev I   : 'cheby1'
+        - Chebyshev II  : 'cheby2'
+        - Cauer/elliptic: 'ellip'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
 
-            - second-order sections (recommended): 'sos'
-            - numerator/denominator (default)    : 'ba'
-            - pole-zero                          : 'zpk'
+        - second-order sections (recommended): 'sos'
+        - numerator/denominator (default)    : 'ba'
+        - pole-zero                          : 'zpk'
 
         In general the second-order sections ('sos') form  is
         recommended because inferring the coefficients for the
@@ -2662,7 +2679,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                      ftype=ftype, output=output, fs=fs)
 
 
-def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
+def iirfilter(N, Wn, rp=None, rs=None, btype='bandpass', analog=False,
               ftype='butter', output='ba', fs=None):
     """
     IIR digital and analog filter design given order and critical points.
@@ -2693,24 +2710,31 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         in the stop band. (dB)
     btype : {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         The type of filter.  Default is 'bandpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
     ftype : str, optional
         The type of IIR filter to design:
 
-            - Butterworth   : 'butter'
-            - Chebyshev I   : 'cheby1'
-            - Chebyshev II  : 'cheby2'
-            - Cauer/elliptic: 'ellip'
-            - Bessel/Thomson: 'bessel'
+        - Butterworth   : 'butter'
+        - Chebyshev I   : 'cheby1'
+        - Chebyshev II  : 'cheby2'
+        - Cauer/elliptic: 'ellip'
+        - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
 
-            - second-order sections (recommended): 'sos'
-            - numerator/denominator (default)    : 'ba'
-            - pole-zero                          : 'zpk'
+        - second-order sections (recommended): 'sos'
+        - numerator/denominator (default)    : 'ba'
+        - pole-zero                          : 'zpk'
 
         In general the second-order sections ('sos') form  is
         recommended because inferring the coefficients for the
@@ -2754,6 +2778,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     -----
     The ``'sos'`` output parameter was added in 0.16.0.
 
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
+
     Examples
     --------
     Generate a 17th-order Chebyshev II analog bandpass filter from 50 Hz to
@@ -2764,7 +2792,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> import matplotlib.pyplot as plt
 
     >>> b, a = signal.iirfilter(17, [2*np.pi*50, 2*np.pi*200], rs=60,
-    ...                         btype='band', analog=True, ftype='cheby2')
+    ...                         btype='bandpass', analog=True, ftype='cheby2')
     >>> w, h = signal.freqs(b, a, 1000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(1, 1, 1)
@@ -2781,7 +2809,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     sections implementation is required to ensure stability of a filter of
     this order):
 
-    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
+    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='bandpass',
     ...                        analog=False, ftype='cheby2', fs=2000,
     ...                        output='sos')
     >>> w, h = signal.freqz_sos(sos, 2000, fs=2000)
@@ -2797,7 +2825,11 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     """
     xp = array_namespace(Wn)
-    Wn = xp_promote(Wn, force_floating=True, xp=xp)
+    device = xp_result_device(Wn)
+    # For now, outputs will have float64 base dtype regardless of
+    # the dtype of Wn, so cast to float64 here to ensure 64 bit
+    # precision for all calculations.
+    Wn = xp.asarray(Wn, dtype=xp.float64, device=device)
 
     fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
@@ -2833,24 +2865,24 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     # Get analog lowpass prototype
     if typefunc == buttap:
-        z, p, k = typefunc(N, xp=xp)
+        z, p, k = typefunc(N, xp=xp, device=device)
     elif typefunc == besselap:
-        z, p, k = typefunc(N, norm=bessel_norms[ftype], xp=xp)
+        z, p, k = typefunc(N, norm=bessel_norms[ftype], xp=xp, device=device)
     elif typefunc == cheb1ap:
         if rp is None:
             raise ValueError("passband ripple (rp) must be provided to "
                              "design a Chebyshev I filter.")
-        z, p, k = typefunc(N, rp, xp=xp)
+        z, p, k = typefunc(N, rp, xp=xp, device=device)
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
-                             "design an Chebyshev II filter.")
-        z, p, k = typefunc(N, rs, xp=xp)
+                             "design a Chebyshev II filter.")
+        z, p, k = typefunc(N, rs, xp=xp, device=device)
     elif typefunc == ellipap:
         if rs is None or rp is None:
             raise ValueError("Both rp and rs must be provided to design an "
                              "elliptic filter.")
-        z, p, k = typefunc(N, rp, rs, xp=xp)
+        z, p, k = typefunc(N, rp, rs, xp=xp, device=device)
     else:
         raise NotImplementedError(f"'{ftype}' not implemented in iirfilter.")
 
@@ -2996,7 +3028,7 @@ def bilinear_zpk(z, p, k, fs):
     p_z = (fs2 + p) / (fs2 - p)
 
     # Any zeros that were at infinity get moved to the Nyquist frequency
-    z_z = xp.concat((z_z, -xp.ones(degree)))
+    z_z = xp.concat((z_z, -xp.ones(degree, device=xp_device(z))))
 
     # Compensate for gain change
     k_z = k * xp.real(xp.prod(fs2 - z) / xp.prod(fs2 - p))
@@ -3157,7 +3189,7 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     p_hp = wo / p
 
     # If lowpass had zeros at infinity, inverting moves them to origin.
-    z_hp = xp.concat((z_hp, xp.zeros(degree)))
+    z_hp = xp.concat((z_hp, xp.zeros(degree, device=xp_device(z))))
 
     # Cancel out gain change caused by inversion
     k_hp = k * xp.real(xp.prod(-z) / xp.prod(-p))
@@ -3258,7 +3290,7 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
                       p_lp - xp.sqrt(p_lp**2 - wo**2)))
 
     # Move degree zeros to origin, leaving degree zeros at infinity for BPF
-    z_bp = xp.concat((z_bp, xp.zeros(degree)))
+    z_bp = xp.concat((z_bp, xp.zeros(degree, device=xp_device(z))))
 
     # Cancel out gain change from frequency scaling
     k_bp = k * bw**degree
@@ -3358,8 +3390,8 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
                       p_hp - xp.sqrt(p_hp**2 - wo**2)))
 
     # Move any zeros that were at infinity to the center of the stopband
-    z_bs = xp.concat((z_bs, xp.full(degree, +1j*wo)))
-    z_bs = xp.concat((z_bs, xp.full(degree, -1j*wo)))
+    z_bs = xp.concat((z_bs, xp.full(degree, +1j*wo, device=xp_device(z))))
+    z_bs = xp.concat((z_bs, xp.full(degree, -1j*wo, device=xp_device(z))))
 
     # Cancel out gain change caused by inversion
     k_bs = k * xp.real(xp.prod(-z) / xp.prod(-p))
@@ -3367,7 +3399,7 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     return z_bs, p_bs, k_bs
 
 
-def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
+def butter(N, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Butterworth digital and analog filter design.
 
@@ -3397,6 +3429,13 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3417,6 +3456,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+
     sos : ndarray
         Second-order sections representation of the IIR filter.
         Only returned if ``output='sos'``.
@@ -3444,6 +3484,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         numerical precision issues. Consider inspecting output filter
         characteristics `freqz` or designing the filters with second-order
         sections via ``output='sos'``.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3492,7 +3536,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='butter', fs=fs)
 
 
-def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
+def cheby1(N, rp, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Chebyshev type I digital and analog filter design.
 
@@ -3519,6 +3563,13 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3561,6 +3612,10 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     unity for odd-order filters, or -rp dB for even-order filters.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3610,7 +3665,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby1', fs=fs)
 
 
-def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
+def cheby2(N, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Chebyshev type II digital and analog filter design.
 
@@ -3637,6 +3692,13 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3674,6 +3736,10 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     Type II filters do not roll off as fast as Type I (`cheby1`).
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3722,7 +3788,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby2', fs=fs)
 
 
-def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
+def ellip(N, rp, rs, Wn, btype='lowpass', analog=False, output='ba', fs=None):
     """
     Elliptic (Cauer) digital and analog filter design.
 
@@ -3752,6 +3818,13 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter. Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -3797,6 +3870,10 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     unity for odd-order filters, or -rp dB for even-order filters.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3847,7 +3924,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='elliptic', fs=fs)
 
 
-def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
+def bessel(N, Wn, btype='lowpass', analog=False, output='ba', norm='phase',
            fs=None):
     """
     Bessel/Thomson digital and analog filter design.
@@ -3870,6 +3947,13 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
         half-cycles / sample.)
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
+        Note that the following legacy aliases should be avoided in new implementations:
+
+        - 'band', 'pass', 'bp' for 'bandpass'
+        - 'l', 'low', 'lp' for 'lowpass'
+        - 'h', 'high', 'hp' for 'highpass'
+        - 'bs', 'bands', 'stop' for 'bandstop'
+
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned. (See Notes.)
@@ -3933,6 +4017,10 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     See `besselap` for implementation details and references.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     References
     ----------
@@ -4034,10 +4122,10 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         Two element sequence of fixed passband edges.
     stopb : ndarray
         Two element sequence of fixed stopband edges.
-    gstop : float
-        Amount of attenuation in stopband in dB.
     gpass : float
         Amount of ripple in the passband in dB.
+    gstop : float
+        Amount of attenuation in stopband in dB.
     type : {'butter', 'cheby', 'ellip'}
         Type of filter.
 
@@ -4112,6 +4200,9 @@ def _pre_warp(wp, ws, analog, *, xp):
 
 
 def _validate_wp_ws(wp, ws, fs, analog, *, xp):
+    # `_xp_result_devices` for the same reason as in `freqz`
+    _, devices = _xp_result_devices(wp, ws)
+    wp, ws = (xp.asarray(arg, device=d) for arg, d in zip((wp, ws), devices))
     wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
     ws = xpx.atleast_nd(ws, ndim=1, xp=xp)
     wp, ws = xp_promote(wp, ws, force_floating=True, xp=xp)
@@ -4135,7 +4226,7 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind, *, xp):
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:          # stop
-
+        device = xp_result_device(passb, stopb)
         passb, stopb = np.asarray(passb), np.asarray(stopb)    # XXX fminbound array API
         wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
                                  args=(0, passb, stopb, gpass, gstop,
@@ -4146,7 +4237,8 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind, *, xp):
                                        filter_kind),
                                  disp=0)
         passb = [float(wp0), float(wp1)]
-        passb, stopb = xp.asarray(passb), xp.asarray(stopb)
+        passb = xp.asarray(passb, device=device)
+        stopb = xp.asarray(stopb, device=device)
         nat = ((stopb * (passb[0] - passb[1])) /
                (stopb ** 2 - passb[0] * passb[1]))
     elif filter_type == 4:          # pass
@@ -4185,10 +4277,10 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.) For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4247,8 +4339,6 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    wp, ws = map(xp.asarray, (wp, ws))
-
     _validate_gpass_gstop(gpass, gstop)
     fs = _validate_fs(fs, allow_none=True)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
@@ -4284,11 +4374,11 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
                      4 * W0 ** 2 * passb[0] * passb[1])
         WN0 = ((passb[1] - passb[0]) + discr) / (2 * W0)
         WN1 = ((passb[1] - passb[0]) - discr) / (2 * W0)
-        WN = xp.asarray([float(WN0), float(WN1)])
+        WN = xp.asarray([float(WN0), float(WN1)], device=xp_device(passb))
         WN = xp.sort(xp.abs(WN))
 
     elif filter_type == 4:  # pass
-        W0 = xp.asarray([-W0, W0], dtype=xp.float64)
+        W0 = xp.asarray([-W0, W0], dtype=xp.float64, device=xp_device(passb))
         WN = (-W0 * (passb[1] - passb[0]) / 2.0 +
               xp.sqrt(W0 ** 2 / 4.0 * (passb[1] - passb[0]) ** 2 +
                    passb[0] * passb[1]))
@@ -4318,10 +4408,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4378,8 +4468,6 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    wp, ws = map(xp.asarray, (wp, ws))
-
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
@@ -4414,10 +4502,10 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4476,8 +4564,6 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    wp, ws = map(xp.asarray, (wp, ws))
-
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
@@ -4504,13 +4590,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
                   math.sqrt(new_freq ** 2 * (passb[1] - passb[0]) ** 2 / 4.0 +
                        passb[1] * passb[0]))
         nat1 = passb[1] * passb[0] / nat0
-        nat = xp.asarray([float(nat0), float(nat1)])
+        nat = xp.asarray([float(nat0), float(nat1)], device=xp_device(passb))
     elif filter_type == 4:
         nat0 = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
                   math.sqrt((passb[1] - passb[0]) ** 2 / (4.0 * new_freq ** 2) +
                        passb[1] * passb[0]))
         nat1 = passb[0] * passb[1] / nat0
-        nat = xp.asarray([float(nat0), float(nat1)])
+        nat = xp.asarray([float(nat0), float(nat1)], device=xp_device(passb))
 
     wn = _postprocess_wn(nat, analog, fs, xp=xp)
 
@@ -4542,10 +4628,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.) For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4602,8 +4688,6 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     xp = array_namespace(wp, ws)
-    wp, ws = map(xp.asarray, (wp, ws))
-
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
@@ -4635,8 +4719,12 @@ def buttap(N, *, xp=None, device=None):
 
     Returns
     -------
-    z, p, k
-        Poles, zeros and gain for the filter prototype
+    z : ndarray[float64]
+        Zeros of the transfer function. Is always an empty array.
+    p : ndarray[complex128]
+        Poles of the transfer function.
+    k : float
+        Gain of the transfer function.
 
     See Also
     --------
@@ -4647,11 +4735,11 @@ def buttap(N, *, xp=None, device=None):
         xp = np_compat
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
-    z = xp.asarray([], device=device)
-    m = xp.arange(-N+1, N, 2, device=device, dtype=xp_default_dtype(xp))
+    z = xp.asarray([], device=device, dtype=xp.float64)
+    m = xp.arange(-N+1, N, 2, device=device, dtype=xp.float64)
     # Middle value is 0 to ensure an exactly real pole
     p = -xp.exp(1j * xp.pi * m / (2 * N))
-    k = 1
+    k = 1.0
     return z, p, k
 
 
@@ -4668,14 +4756,18 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     ----------
     N : int
         The order of the filter
-    rp: float
+    rp : float
         The ripple intensity
     %(xp_device_snippet)s
 
     Returns
     -------
-    z, p, k
-        Poles, zeros and gain for the filter prototype
+    z : ndarray[float64]
+        Zeros of the transfer function. Is always an empty array.
+    p : ndarray[complex128]
+        Poles of the transfer function.
+    k : float
+        Gain of the transfer function.
 
     See Also
     --------
@@ -4690,16 +4782,17 @@ def cheb1ap(N, rp, *, xp=None, device=None):
         # Avoid divide-by-zero error
         # Even order filters have DC gain of -rp dB
         return (
-            xp.asarray([], device=device), xp.asarray([], device=device), 10**(-rp/20)
+            xp.asarray([], device=device, dtype=xp.float64),
+            xp.asarray([], device=device, dtype=xp.complex128), 10**(-rp/20)
         )
-    z = xp.asarray([], device=device)
+    z = xp.asarray([], device=device, dtype=xp.float64)
 
     # Ripple factor (epsilon)
     eps = math.sqrt(10 ** (0.1 * rp) - 1.0)
     mu = 1.0 / N * math.asinh(1 / eps)
 
     # Arrange poles in an ellipse on the left half of the S-plane
-    m = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
+    m = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
     theta = xp.pi * m / (2*N)
     p = -xp.sinh(mu + 1j*theta)
 
@@ -4730,8 +4823,12 @@ def cheb2ap(N, rs, *, xp=None, device=None):
 
     Returns
     -------
-    z, p, k
-        Poles, zeros and gain for the filter prototype
+    z : ndarray[complex128]
+        Zeros of the transfer function.
+    p : ndarray[complex128]
+        Poles of the transfer function.
+    k : float
+        Gain of the transfer function.
 
     See Also
     --------
@@ -4740,12 +4837,15 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     """
     if xp is None:
         xp = np_compat
-
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero warning
-        return xp.asarray([], device=device), xp.asarray([], device=device), 1
+        return (
+            xp.asarray([], device=device, dtype=xp.complex128),
+            xp.asarray([], device=device, dtype=xp.complex128),
+            1.0
+        )
 
     # Ripple factor (epsilon)
     de = 1.0 / math.sqrt(10 ** (0.1 * rs) - 1)
@@ -4753,17 +4853,17 @@ def cheb2ap(N, rs, *, xp=None, device=None):
 
     if N % 2:
         m = xp.concat(
-            (xp.arange(-N + 1, 0, 2, dtype=xp_default_dtype(xp), device=device),
-             xp.arange(2, N, 2, dtype=xp_default_dtype(xp), device=device)
+            (xp.arange(-N + 1, 0, 2, dtype=xp.float64, device=device),
+             xp.arange(2, N, 2, dtype=xp.float64, device=device)
             )
         )
     else:
-        m = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
+        m = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
 
     z = 1j / xp.sin(m * xp.pi / (2 * N))
 
     # Poles around the unit circle like Butterworth
-    m1 = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
+    m1 = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
     theta1 = xp.pi * m1 / (2 * N)
     p = -1 / xp.sinh(mu + 1j*theta1)
 
@@ -4920,9 +5020,12 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
 
     Returns
     -------
-    z, p, k
-        Poles, zeros and gain for the filter prototype
-
+    z : ndarray[complex128]
+        Zeros of the transfer function.
+    p : ndarray[complex128]
+        Poles of the transfer function.
+    k : float
+        Gain of the transfer function.
 
     See Also
     --------
@@ -4946,15 +5049,18 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
         # Avoid divide-by-zero warning
         # Even order filters have DC gain of -rp dB
         return (
-            xp.asarray([], device=device),
-            xp.asarray([], device=device),
+            xp.asarray([], device=device, dtype=xp.complex128),
+            xp.asarray([], device=device, dtype=xp.complex128),
             10**(-rp/20)
         )
     elif N == 1:
         p = -math.sqrt(1.0 / _pow10m1(0.1 * rp))
         k = -p
         z = []
-        return xp.asarray(z, device=device), xp.asarray(p, device=device), k
+        return (
+            xp.asarray(z, device=device, dtype=xp.complex128),
+            xp.asarray(p, device=device, dtype=xp.complex128), k
+        )
 
     eps_sq = _pow10m1(0.1 * rp)
 
@@ -5000,10 +5106,13 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
     if N % 2 == 0:
         k = k / np.sqrt(1 + eps_sq)
 
-    return xp.asarray(z, device=device), xp.asarray(p, device=device), float(k)
+    return (
+        xp.asarray(z, device=device, dtype=xp.complex128),
+        xp.asarray(p, device=device, dtype=xp.complex128), float(k)
+    )
 
 
-# TODO: Make this a real public function scipy.misc.ff
+# TODO: Make this a real public function?
 def _falling_factorial(x, n):
     r"""
     Return the factorial of `x` to the `n` falling.
@@ -5048,12 +5157,14 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498, and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
-    >>> from scipy.signal._filter_design import _bessel_poly
-    >>> i = 0
-    >>> for n in range(51):
-    ...     for x in _bessel_poly(n, reverse=True):
-    ...         print(i, x)
-    ...         i += 1
+    .. code_block:: python
+
+        from scipy.signal._filter_design import _bessel_poly
+        i = 0
+        for n in range(51):
+            for x in _bessel_poly(n, reverse=True):
+                print(i, x)
+                i += 1
 
     """
     if abs(int(n)) != n:
@@ -5242,11 +5353,11 @@ def besselap(N, norm='phase', *, xp=None, device=None):
 
     Returns
     -------
-    z : ndarray
+    z : ndarray[float64]
         Zeros of the transfer function. Is always an empty array.
-    p : ndarray
+    p : ndarray[complex128]
         Poles of the transfer function.
-    k : scalar
+    k : float
         Gain of the transfer function. For phase-normalized, this is always 1.
 
     See Also
@@ -5275,7 +5386,7 @@ def besselap(N, norm='phase', *, xp=None, device=None):
            April 1973
     .. [5] Ehrlich, "A modified Newton method for polynomials", Communications
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
-           :DOI:`10.1145/363067.363115`
+           :doi:`10.1145/363067.363115`.
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html
@@ -5314,10 +5425,12 @@ def besselap(N, norm='phase', *, xp=None, device=None):
         else:
             raise ValueError('normalization not understood')
 
-    z = xp.asarray([], device=device)
-    cdtype = xp.complex128 if z.dtype == xp.float64 else xp.complex64
-    return (xp.asarray([], device=device), xp.asarray(p, dtype=cdtype, device=device),
-            float(k))
+    z = xp.asarray([], device=device, dtype=xp.float64)
+    return (
+        z,
+        xp.asarray(p, device=device, dtype=xp.complex128),
+        float(k)
+    )
 
 
 def iirnotch(w0, Q, fs=2.0, *, xp=None, device=None):
@@ -5758,15 +5871,15 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=No
     # b - cz^-N or b + cz^-N
     b = xp.zeros(N + 1, device=device)
     sgn = -1. if negative_coef else 1
-    xpx.at(b, 0).set(bx)
-    xpx.at(b, -1).set(sgn * cx)
+    b = xpx.at(b, 0).set(bx)
+    b = xpx.at(b, -1).set(sgn * cx)
 
     # Compute denominator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # 1 - az^-N or 1 + az^-N
     a = xp.zeros(N + 1, device=device)
-    xpx.at(a, 0).set(1.)
-    xpx.at(a, -1).set(sgn * ax)
+    a = xpx.at(a, 0).set(1.)
+    a = xpx.at(a, -1).set(sgn * ax)
 
     return b, a
 
@@ -5901,7 +6014,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device
             raise ValueError("Invalid order: order must be > 0 and <= 24.")
 
         # Gammatone impulse response settings
-        t = xp.arange(numtaps, device=device, dtype=xp_default_dtype(xp)) / fs
+        t = xp.arange(numtaps, device=device, dtype=xpx.default_dtype(xp)) / fs
         bw = 1.019 * _hz_to_erb(freq)
 
         # Calculate the FIR gammatone filter
@@ -6026,7 +6139,7 @@ xp : array_namespace, optional
     Optional array namespace.
     Should be compatible with the array API standard, or supported by array-api-compat.
     Default: ``numpy``
-device: any
+device : any
     optional device specification for output. Should match one of the
     supported device specification in ``xp``.
 """

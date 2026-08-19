@@ -63,7 +63,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
         :math:`i` and treatment :math:`j`. By default, the columns are
         assumed to be arranged in order of increasing predicted mean.
 
-    ranked : boolean, optional
+    ranked : bool, optional
         By default, `data` is assumed to be observations rather than ranks;
         it will be ranked with `scipy.stats.rankdata` along ``axis=1``. If
         `data` is provided in the form of ranks, pass argument ``True``.
@@ -165,7 +165,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     The *p*-values are not adjusted for the possibility of ties. When
     ties are present, the reported  ``'exact'`` *p*-values may be somewhat
     larger (i.e. more conservative) than the true *p*-value [2]_. The
-    ``'asymptotic'``` *p*-values, however, tend to be smaller (i.e. less
+    ``'asymptotic'`` *p*-values, however, tend to be smaller (i.e. less
     conservative) than the ``'exact'`` *p*-values.
 
     References

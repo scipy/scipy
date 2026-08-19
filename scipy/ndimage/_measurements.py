@@ -82,7 +82,7 @@ def label(input, structure=None, output=None):
         If `output` is None, this function returns a tuple of
         (`labeled_array`, `num_features`).
 
-        If `output` is a ndarray, then it will be updated with values in
+        If `output` is an ndarray, then it will be updated with values in
         `labeled_array` and only `num_features` will be returned by this
         function.
 
@@ -450,7 +450,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default,
     out_dtype : dtype
         Dtype to use for `result`.
     default : int, float or None
-        Default return value when a element of `index` does not exist
+        Default return value when an element of `index` does not exist
         in `labels`.
     pass_positions : bool, optional
         If True, pass linear indices to `func` as a second argument.
@@ -708,7 +708,7 @@ def sum(input, labels=None, index=None):
     reasons, for new code please prefer `sum_labels`.  See the `sum_labels`
     docstring for more details.
 
-    """
+    """  # numpydoc ignore=RT01
     return sum_labels(input, labels, index)
 
 

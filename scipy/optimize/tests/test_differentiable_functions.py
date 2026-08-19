@@ -1,6 +1,7 @@
 import pytest
-import platform
 import numpy as np
+
+from scipy._lib._testutils import IS_WASM
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
@@ -136,7 +137,7 @@ class TestScalarFunction(TestCase):
         x0 = np.array([2.0, 0.3])
         ex = ExScalarFunction()
         ex2 = ExScalarFunction()
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             approx = ScalarFunction(ex.fun, x0, (), '2-point',
                                     ex.hess, None, (-np.inf, np.inf),
                                     workers=mapper)
@@ -440,6 +441,20 @@ class TestScalarFunction(TestCase):
         res = sf.fun(x0)
         assert res.dtype == np.float32
 
+        # checks that ScalarFunction.fun returns a value with the same float
+        # precision as the unwrapped function would call.
+        def fun(x):
+            return x**4 - x
+
+        x0 = np.array([1.2], dtype=np.float32)
+        sf = ScalarFunction(fun, x0, (), '2-point', lambda x: None,
+                            None, (-np.inf, np.inf))
+        fx = sf.fun(x0)
+        assert fun(x0).dtype == np.float32
+        assert fx.dtype == np.float32
+        # check that the round trip cast works as intended
+        assert_equal(fx, fun(x0))
+
 
 class ExVectorialFunction:
 
@@ -588,7 +603,7 @@ class TestVectorialFunction(TestCase):
         ex2 = ExVectorialFunction()
         v = np.array([1.0, 2.0])
 
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             approx = VectorFunction(ex.fun, x0, '2-point',
                                     ex.hess, None, None, (-np.inf, np.inf),
                                     False, workers=mapper)
@@ -981,10 +996,6 @@ def test_IdentityVectorFunction():
     assert_array_equal(f1.hess(x, v).toarray(), np.zeros((3, 3)))
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_ScalarFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     ex = ExScalarFunction()
@@ -994,10 +1005,6 @@ def test_ScalarFunctionNoReferenceCycle():
         pass
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_VectorFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     ex = ExVectorialFunction()
@@ -1007,10 +1014,6 @@ def test_VectorFunctionNoReferenceCycle():
         pass
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_LinearVectorFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     A_dense = np.array([

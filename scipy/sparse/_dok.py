@@ -6,6 +6,8 @@ __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 
 import itertools
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
@@ -14,9 +16,12 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
 
 
+_NoValue = object()
+
+
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
-    _allow_nd = (1, 2)
+    _allow_nd: tuple[int, ...] = (1, 2)
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _spbase.__init__(self, arg1, maxprint=maxprint)
@@ -48,7 +53,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
             if arg1.ndim == 1:
                 if dtype is not None:
-                    arg1 = arg1.astype(dtype)
+                    arg1 = arg1.astype(dtype, copy=False)
                 self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
                 self.dtype = getdtype(arg1.dtype)
             else:
@@ -57,11 +62,18 @@ class _dok_base(_spbase, IndexMixin, dict):
                 self.dtype = getdtype(d.dtype)
             self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
-    def update(self, val):
-        """Update values from a dict, sparse dok or iterable of 2-tuples like .items()
+    def update(self, val):  # pyrefly:ignore[bad-override]
+        """Update values from a dict, sparse dok or iterable of 2-tuples like
+        ``.items()``.
 
-        Keys of the input must be sequences of nonnegative integers less than the shape
-        for each axis.
+        Parameters
+        ----------
+        val : dict, dok_array, iterable of 2-tuples
+            The values to update in the dok_array. If a dict or dok_array is
+            provided, the keys and values will be taken from it. If an iterable
+            of 2-tuples is provided, each tuple should contain a key and a value.
+            Keys of the input must be sequences of nonnegative integers less than
+            the shape for each axis.
         """
         if isinstance(val, dict):
             inputs = val.items()
@@ -76,7 +88,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 isintlike(idx) and 0 <= idx < max_idx
                 for idx, max_idx in zip(index, self.shape)
             ):
-                # Error handling. Re-search to find which error occured
+                # Error handling. Re-search to find which error occurred
                 for idx, max_idx in zip(index, self.shape):
                     if not isintlike(idx):
                         raise IndexError(f'integer keys required for update. Got {key}')
@@ -96,9 +108,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     def count_nonzero(self, axis=None):
         if axis is not None:
-            raise NotImplementedError(
-                "count_nonzero over an axis is not implemented for DOK format."
-            )
+            return self.tocoo().count_nonzero(axis=axis)
         return sum(x != 0 for x in self.values())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
@@ -111,16 +121,54 @@ class _dok_base(_spbase, IndexMixin, dict):
         return key in self._dict
 
     def setdefault(self, key, default=None, /):
+        """Insert key with a value of default if key is not in the dictionary.
+
+        Parameters
+        ----------
+        key : int or tuple of int
+            The key to look for in the dok_array.
+        default : optional
+            The value to insert if `key` is not found. Default is None.
+
+        Returns
+        -------
+        scalar
+            The value for `key` if `key` is in the dictionary, else `default`.
+        """
         return self._dict.setdefault(key, default)
 
     def __delitem__(self, key, /):
         del self._dict[key]
 
     def clear(self):
-        return self._dict.clear()
+        """Remove all items from the dok_array."""
+        self._dict.clear()
 
-    def pop(self, /, *args):
-        return self._dict.pop(*args)
+    def pop(self, key, default=_NoValue, /):
+        """Remove specified key and return the corresponding value.
+
+        Parameters
+        ----------
+        key : tuple
+            The key to remove from the dok_array.
+        default : optional
+            The value to return if `key` is not found. If not provided and
+            `key` is not found, a KeyError is raised.
+
+        Returns
+        -------
+        scalar
+            The value associated with the removed key.
+
+        Raises
+        ------
+        KeyError
+            If the key is not found and default is not provided.
+        """
+        if default is _NoValue:
+            return self._dict.pop(key)
+        else:
+            return self._dict.pop(key, default)
 
     def __reversed__(self):
         raise TypeError("reversed is not defined for dok_array type")
@@ -138,19 +186,72 @@ class _dok_base(_spbase, IndexMixin, dict):
         raise TypeError(f"unsupported operand type for |: {type_names}")
 
     def popitem(self):
+        """
+        Remove and return a (key, value) pair as a 2-tuple, returned in LIFO (last-in,
+        first-out) order.
+
+        Returns
+        -------
+        key : tuple
+            The key of the removed item.
+        value : scalar
+            The value of the removed item.
+
+        Raises
+        ------
+        KeyError
+            If the dict is empty.
+        """
         return self._dict.popitem()
 
     def items(self):
+        """
+        Return a set-like object providing a view on the array's items.
+
+        Returns
+        -------
+        dict_items
+            A view object displaying a list of a array's key-value tuple pairs.
+        """
         return self._dict.items()
 
     def keys(self):
+        """
+        Return a set-like object providing a view on the dict's keys.
+
+        Returns
+        -------
+        dict_keys
+            A view object displaying a list of all the keys in the dictionary.
+        """
         return self._dict.keys()
 
     def values(self):
+        """
+        Return an object providing a view on the dict's values.
+
+        Returns
+        -------
+        dict_values
+            A view object displaying a list of all the values in the dictionary.
+        """
         return self._dict.values()
 
     def get(self, key, default=0.0):
-        """This provides dict.get method functionality with type checking"""
+        """This provides dict.get method functionality with type checking.
+
+        Parameters
+        ----------
+        key : int or tuple of int
+            The key to look for in the dok_array.
+        default : optional
+            The value to return if `key` is not found. Default is 0.0.
+
+        Returns
+        -------
+        value
+            The value associated with `key` if it exists, otherwise `default`.
+        """
         if key in self._dict:
             return self._dict[key]
         if isintlike(key) and self.ndim == 1:
@@ -428,6 +529,8 @@ class _dok_base(_spbase, IndexMixin, dict):
             return super().diagonal(k)
         raise ValueError("diagonal requires two dimensions")
 
+    diagonal.__doc__ = _spbase.diagonal.__doc__
+
     def transpose(self, axes=None, copy=False):
         if self.ndim == 1:
             return self.copy()
@@ -531,9 +634,20 @@ class _dok_base(_spbase, IndexMixin, dict):
             return self.copy()
         return self
 
+    astype.__doc__ = _spbase.astype.__doc__
+
 
 def isspmatrix_dok(x):
     """Is `x` of dok_array type?
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Parameters
     ----------
@@ -548,13 +662,24 @@ def isspmatrix_dok(x):
     Examples
     --------
     >>> from scipy.sparse import dok_array, dok_matrix, coo_matrix, isspmatrix_dok
-    >>> isspmatrix_dok(dok_matrix([[5]]))
+    >>> isspmatrix_dok(dok_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_dok(dok_array([[5]]))
+    >>> isspmatrix_dok(dok_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_dok(coo_matrix([[5]]))
+    >>> isspmatrix_dok(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_dok` is being replaced by `self.format == "dok" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_dok function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, dok_matrix)
 
 
@@ -585,10 +710,16 @@ class dok_array(_dok_base, sparray):
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-        Number of nonzero elements
-    size
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'dok'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : dok_array
+        The transpose of the array
+    mT : dok_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -609,7 +740,7 @@ class dok_array(_dok_base, sparray):
     ...     for j in range(5):
     ...         S[i, j] = i + j    # Update element
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class dok_matrix(spmatrix, _dok_base):
@@ -618,6 +749,15 @@ class dok_matrix(spmatrix, _dok_base):
 
     This is an efficient structure for constructing sparse
     matrices incrementally.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         dok_matrix(D)
@@ -638,10 +778,16 @@ class dok_matrix(spmatrix, _dok_base):
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-        Number of nonzero elements
-    size
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'dok'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : dok_matrix
+        The transpose of the matrix
+    mT : dok_matrix
+        The matrix transpose
 
     Notes
     -----

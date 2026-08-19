@@ -12,7 +12,7 @@ from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
-from scipy.sparse import coo_matrix, csc_matrix
+from scipy.sparse import csc_array, coo_array, csc_matrix
 
 
 def fun_zero(t, y):
@@ -51,7 +51,7 @@ def jac_rational(t, y):
 
 
 def jac_rational_sparse(t, y):
-    return csc_matrix([
+    return csc_array([
         [0, 1 / t],
         [-2 * y[1] ** 2 / (t * (y[0] - 1) ** 2),
          (y[0] + 4 * y[1] - 1) / (t * (y[0] - 1))]
@@ -118,7 +118,7 @@ def medazko_sparsity(n):
     cols = np.hstack(cols)
     rows = np.hstack(rows)
 
-    return coo_matrix((np.ones_like(cols), (cols, rows)))
+    return coo_array((np.ones_like(cols), (cols, rows)))
 
 
 def fun_complex(t, y):
@@ -130,7 +130,7 @@ def jac_complex(t, y):
 
 
 def jac_complex_sparse(t, y):
-    return csc_matrix(jac_complex(t, y))
+    return csc_array(jac_complex(t, y))
 
 
 def sol_complex(t):
@@ -175,7 +175,7 @@ def test_duplicate_timestamps():
     assert_equal(sol.status, 1)
 
 
-@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
@@ -242,6 +242,7 @@ def test_integration():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration_complex():
     rtol = 1e-3
     atol = 1e-6
@@ -288,6 +289,24 @@ def test_integration_complex():
         assert np.all(e < 5)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
+def test_integration_complex_sparse():
+    # Regression test for gh-24671: solve_ivp with a complex ODE and
+    # jac_sparsity should not emit ComplexWarning.
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [0.5 + 1j]
+    t_span = [0, 1]
+    sparsity = csc_array(np.ones((1, 1)))
+    res = solve_ivp(fun_complex, t_span, y0, method='BDF',
+                    rtol=rtol, atol=atol, jac_sparsity=sparsity)
+    assert res.success
+    y_true = sol_complex(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert np.all(e < 5)
+
+
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.fail_slow(5)
 def test_integration_sparse_difference():
     n = 200
@@ -316,13 +335,14 @@ def test_integration_sparse_difference():
         assert_allclose(res.y[239, -1], 0.9999997, rtol=1e-2)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration_const_jac():
     rtol = 1e-3
     atol = 1e-6
     y0 = [0, 2]
     t_span = [0, 2]
     J = jac_linear()
-    J_sparse = csc_matrix(J)
+    J_sparse = csc_array(J)
 
     for method, jac in product(['Radau', 'BDF'], [J, J_sparse]):
         res = solve_ivp(fun_linear, t_span, y0, rtol=rtol, atol=atol,
@@ -771,7 +791,6 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
-@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
 def test_t_eval_early_event():
     def early_event(t, y):
         return t - 7
@@ -1010,7 +1029,9 @@ def test_num_jac():
     assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
 
 
-def test_num_jac_sparse():
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
+@pytest.mark.parametrize("structure_type", [csc_array, csc_matrix, np.array])
+def test_num_jac_sparse(structure_type):
     def fun(t, y):
         e = y[1:]**3 - y[:-1]**2
         z = np.zeros(y.shape[1])
@@ -1025,7 +1046,7 @@ def test_num_jac_sparse():
         A[-1, -1] = 1
         A[-1, -2] = 1
 
-        return A
+        return structure_type(A)
 
     np.random.seed(0)
     n = 20
@@ -1267,8 +1288,8 @@ def test_tbound_respected_oscillator(method):
     assert result.success
 
 
-def test_inital_maxstep():
-    """Verify that select_inital_step respects max_step"""
+def test_initial_maxstep():
+    """Verify that select_initial_step respects max_step"""
     rtol = 1e-3
     atol = 1e-6
     y0 = np.array([1/3, 2/9])

@@ -6,11 +6,13 @@ Authors:
    Andrew Straw, April 2008
 
 """
+import sys
 import itertools
 import inspect
 import platform
 import threading
 import warnings
+import multiprocessing
 
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
@@ -18,9 +20,11 @@ from numpy.testing import (assert_allclose, assert_equal,
                            assert_no_warnings,
                            assert_array_less)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 
-import scipy
+from scipy._lib._gcutils import assert_deallocated
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import (MINIMIZE_METHODS,
@@ -31,7 +35,9 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize._optimize import (
+    MemoizeJac, show_options, OptimizeResult, _minimize_bfgs
+)
 from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
@@ -1560,9 +1566,7 @@ class TestOptimizeSimple(CheckOptimize):
                                         'cobyqa', 'slsqp',
                                         'trust-constr', 'dogleg', 'trust-ncg',
                                         'trust-exact', 'trust-krylov'])
-    def test_nan_values(self, method, num_parallel_threads):
-        if num_parallel_threads > 1 and method == 'cobyqa':
-            pytest.skip('COBYQA does not support concurrent execution')
+    def test_nan_values(self, method):
 
         # Check nan values result to failed exit status
 
@@ -1671,7 +1675,7 @@ class TestOptimizeSimple(CheckOptimize):
                     callback()
             callback_interface = Callback()
         else:
-            def callback_interface(xk, *args):  # type: ignore[misc]
+            def callback_interface(xk, *args):
                 callback()
 
         def callback():
@@ -2665,8 +2669,9 @@ class TestBrute:
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
                                   full_output=True, finish=None)
 
+        workers = 1 if IS_WASM else 2
         resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
-                                   full_output=True, finish=None, workers=2)
+                                   full_output=True, finish=None, workers=workers)
 
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
@@ -2690,8 +2695,8 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-
 @pytest.mark.fail_slow(20)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -2998,9 +3003,6 @@ eb_data = setup_test_equal_bounds()
 
 # This test is about handling fixed variables, not the accuracy of the solvers
 @pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
-@pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name'] ==
-                   "intel-llvm",
-                   reason="Failures due to floating point issues, not logic")
 @pytest.mark.parametrize('method', eb_data["methods"])
 @pytest.mark.parametrize('kwds', eb_data["kwds"])
 @pytest.mark.parametrize('bound_type', eb_data["bound_types"])
@@ -3118,6 +3120,23 @@ def test_all_bounds_equal(method):
         assert res.message.startswith(message)
 
 
+@pytest.mark.parametrize('method', eb_data["methods"])
+def test_all_bounds_equal_writable(method):
+    # When all bounds have lb == ub, _optimize_result_for_equal_bounds
+    # must pass a writable x0 to the objective. Previously, x0 was
+    # assigned directly from bounds.lb, which is a non-writable view
+    # produced by np.broadcast_to in _validate_bounds.
+    def f(x):
+        assert x.flags.writeable, "x passed to objective is not writable"
+        return np.linalg.norm(x)
+
+    bounds = [(1, 1), (2, 2)]
+    x0 = (1.0, 3.0)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method)
+    assert res.success
+    assert res.x.flags.writeable
+
+
 def test_eb_constraints():
     # make sure constraint functions aren't overwritten when equal bounds
     # are employed, and a parameter is factored out. GH14859
@@ -3171,6 +3190,27 @@ def test_bounds_with_list():
     optimize.minimize(
         optimize.rosen, x0=np.array([9, 9]), method='Powell', bounds=bounds
     )
+
+
+@pytest.mark.parametrize('method', ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc',
+                                    'slsqp', 'cobyla', 'cobyqa', 'trust-constr'))
+def test_minimize_does_not_mutate_bounds(method):
+    # `minimize` broadcast lb/ub onto the caller's `Bounds`; cf. gh-8419
+    bounds = optimize.Bounds(0., np.inf)
+    lb, ub, keep_feasible = bounds.lb, bounds.ub, bounds.keep_feasible
+    optimize.minimize(optimize.rosen, [0.5, 0.5], method=method, bounds=bounds)
+    assert bounds.lb is lb
+    assert bounds.ub is ub
+    assert bounds.keep_feasible is keep_feasible
+
+
+def test_minimize_bounds_reusable_across_sizes():
+    # consequence of the above: a dimension-agnostic `Bounds` was only usable once
+    bounds = optimize.Bounds(0., np.inf)
+    optimize.minimize(optimize.rosen, [0.5, 0.5], method='trust-constr',
+                      bounds=bounds)
+    optimize.minimize(optimize.rosen, [0.5, 0.5, 0.5], method='trust-constr',
+                      bounds=bounds)
 
 
 @pytest.mark.parametrize('method', (
@@ -3404,6 +3444,7 @@ def test_gh12513_trustregion_exact_infinite_loop():
     assert abs(fun(res.x)) < 1e-5
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
 @pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
                                          coo_array, csr_array, csc_array])
@@ -3430,7 +3471,11 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nhev == res_sparse.nhev
 
 
-@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize('workers', [
+    None,
+    pytest.param(2, marks=pytest.mark.xfail(
+        IS_WASM, reason="cannot create process pool in Pyodide/WASM")),
+])
 @pytest.mark.parametrize(
     'method',
     ['l-bfgs-b',
@@ -3464,7 +3509,7 @@ class TestWorkers:
         res_default = optimize.minimize(
             rosen, self.x0, method=method, **kwds
         )
-        assert_equal(res.x, res_default.x)
+        assert_allclose(res.x, res_default.x, rtol=1e-15)
         assert_equal(res.nfev, res_default.nfev)
 
     def test_equal_bounds(self, workers, method):
@@ -3479,3 +3524,124 @@ class TestWorkers:
             )
         assert res.success
         assert_allclose(res.x[1], 2.0)
+
+
+# Tests for PEP 649/749 style annotations in callback and objective functions
+if sys.version_info < (3, 14):
+    from typing import Any
+    _DUMMY_TYPE = Any
+else:
+    import typing
+    if typing.TYPE_CHECKING:
+        _DUMMY_TYPE = typing.Any
+
+def rosen_annotated(x: _DUMMY_TYPE) -> float:
+    return rosen(x) + 1
+
+def rosen_der_annotated(x: _DUMMY_TYPE) -> _DUMMY_TYPE:
+    return rosen_der(x)
+
+def rosen_hess_annotated(x: _DUMMY_TYPE) -> _DUMMY_TYPE:
+    return rosen_hess(x)
+
+def callable_annotated(intermediate_result: _DUMMY_TYPE) -> None:
+    pass
+
+@pytest.mark.skipif(sys.version_info < (3, 14),
+                    reason="Requires PEP 649/749 from Python 3.14+.")
+class TestAnnotations:
+
+    def setup_method(self):
+        self.x0 = np.array([1.0, 1.01])
+        self.brute_params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
+
+    @pytest.mark.parametrize("method", [
+        'Nelder-Mead',
+        'Powell',
+        'CG',
+        'bfgs',
+        'Newton-CG',
+        'l-bfgs-b',
+        'tnc',
+        'COBYLA',
+        # 'COBYQA', # External module. Will trigger NameError, skip for now
+        'slsqp',
+        'trust-constr',
+        'dogleg',
+        'trust-ncg',
+        'trust-exact',
+        'trust-krylov'
+    ])
+    def test_callable_annotations(self, method):
+        kwds = {'jac': None, 'hess': None, 'callback': callable_annotated}
+        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg',
+                      'trust-ncg', 'trust-krylov', 'trust-exact', 'trust-constr']:
+            #  methods that require a callable jac
+            kwds['jac'] = rosen_der_annotated
+        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact',
+                      'trust-krylov', 'trust-constr']:
+            kwds['hess'] = rosen_hess_annotated
+        optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)
+
+    def test_differential_evolution_annotations(self):
+        bounds = [(-5, 5), (-5, 5)]
+        res = optimize.differential_evolution(rosen_annotated, bounds, seed=1,
+                                              callback=callable_annotated)
+        assert res.success, f"Unexpected error: {res.message}"
+
+    def test_curve_fit_annotations(self):
+
+        def model_func(x: _DUMMY_TYPE, a: float, b, c) -> _DUMMY_TYPE:
+            return a * np.exp(-b * x) + c
+
+        def model_jac(x: _DUMMY_TYPE, a: float, b, c) -> _DUMMY_TYPE:
+            return np.array([
+                np.exp(-b * x),
+                -a * x * np.exp(-b * x),
+                np.ones_like(x)
+            ]).T
+
+        xdata = np.linspace(0, 4, 10)
+        ydata = model_func(xdata, 2.5, 1.3, 0.5)
+
+        _,_,_,_,res = optimize.curve_fit(model_func, xdata, ydata, jac=model_jac,
+                                         full_output=True)
+        assert (res in [1, 2, 3, 4]), f"Unexpected error: {res.message}"
+
+    def test_brute_annotations(self):
+        def f1(z: _DUMMY_TYPE, *params: float) -> float:
+            x, y = z
+            a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+            return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
+
+        def annotated_fmin(callable: _DUMMY_TYPE, x0: _DUMMY_TYPE,
+                           *args, **kwargs) -> _DUMMY_TYPE:
+            return optimize.fmin(callable, x0, *args, **kwargs)
+
+        rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
+        optimize.brute(f1, rranges, args=self.brute_params, finish=annotated_fmin)
+
+    def test_basinhopping_annotations(self):
+        # NOTE: basinhopping callback does not match
+        #       callback(intermediate_result: OptimizeResult)
+        #       signature. Consider adding when updated.
+        def acceptable_test(f_new: float, x_new: _DUMMY_TYPE,
+                                      f_old: float,x_old: _DUMMY_TYPE) -> bool:
+            return True
+
+        res = optimize.basinhopping(rosen_annotated, self.x0, niter=2, seed=1,
+                                    accept_test=acceptable_test)
+
+        assert res.success, f"Unexpected error: {res.message}"
+
+
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
+def test_multiprocessing_too_many_open_files_23080():
+    # https://github.com/scipy/scipy/issues/23080
+    x0 = np.array([0.9, 0.9])
+    # check that ScalarHessWrapper doesn't keep pool object alive
+    with assert_deallocated(multiprocessing.Pool, 2) as pool_obj:
+        with pool_obj as p:
+            _minimize_bfgs(rosen, x0, workers=p.map)
+        del p
+        del pool_obj

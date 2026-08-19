@@ -28,13 +28,13 @@ near :math:`I` to find
 (this is the default). For larger guide tables this number becomes smaller
 (but is always larger than 1), for smaller tables it becomes larger.
 
-On the other hand the setup time for guide table is :math:`O(N)`, where
+On the other hand, the setup time for the guide table is :math:`O(N)`, where
 :math:`N` denotes
 the length of the probability vector (for size 1 no preprocessing is
 required). Moreover, for very large guide tables memory effects might even
-reduce the speed of the algorithm. So we do not recommend to use guide
+reduce the speed of the algorithm. So we do not recommend using guide
 tables that are more than three times larger than the given probability
-vector. If only a few random numbers have to be generated, (much) smaller
+vector. If only a few random numbers need to be generated, (much) smaller
 table sizes are better. The size of the guide table relative to the length
 of the given probability vector can be set by the `guide_factor` parameter:
 
@@ -92,7 +92,7 @@ method in the distribution object:
           >>> pv = dist.pmf(x)
           >>> rng = DiscreteGuideTable(pv, domain=domain)
 
-          Domain is required here to relocate the distribution
+          Domain is required here to relocate the distribution.
 
 The size of the guide table relative to the probability vector may be set using
 the ``guide_factor`` parameter. Larger guide tables result in faster generation
@@ -105,10 +105,10 @@ time but require a more expensive setup.
 
 Unfortunately, the PPF is rarely available in closed form or too slow when
 available. The user only has to provide the probability vector and the 
-PPF (inverse CDF) can be evaluated using ``ppf`` method. This 
+PPF (inverse CDF) can be evaluated using the ``ppf`` method. This 
 method calculates the (exact) PPF of the given distribution.
 
-For example to calculate the PPF of a binomial distribution with :math:`n=4` and
+For example, to calculate the PPF of a binomial distribution with :math:`n=4` and
 :math:`p=0.1`: we can set up a guide table as follows:
 
     >>> import scipy.stats as stats

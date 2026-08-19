@@ -50,10 +50,6 @@ from ._mio5_params import MatlabObject, MatlabOpaque, mat_struct
 from ._miobase import (matfile_version, MatReadError, MatReadWarning,
                       MatWriteError, MatWriteWarning)
 
-# Deprecated namespaces, to be removed in v2.0.0
-from .import (mio, mio5, mio5_params, mio4, byteordercodes,
-            miobase, mio_utils, streams, mio5_utils)
-
 __all__ = [
     'loadmat', 'savemat', 'whosmat', 'MatlabObject',
     'matfile_version', 'MatReadError', 'MatReadWarning',

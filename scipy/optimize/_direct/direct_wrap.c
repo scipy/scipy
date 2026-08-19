@@ -22,7 +22,7 @@
 
    magic_eps, magic_eps_abs: Jones' "magic" epsilon parameter, and
                              also an absolute version of the same
-                 (not multipled by minf).  Jones suggests
+                 (not multiplied by minf).  Jones suggests
                  setting this to 1e-4, but 0 also works...
 
    max_feval, max_iter: maximum number of function evaluations & DIRECT iters
@@ -69,10 +69,19 @@ PyObject* direct_optimize(
      if (fglobal == DIRECT_UNKNOWN_FGLOBAL)
       fglobal_reltol = DIRECT_UNKNOWN_FGLOBAL_RELTOL;
 
-     if (dimension < 1) *ret_code = DIRECT_INVALID_ARGS;
+     /* Quit early on zero-dimension input. See gh-25086. */
+     if (dimension < 1) {
+      PyErr_Format(PyExc_ValueError,
+              "DIRECT requires at least one dimension, got %d", dimension);
+      *ret_code = DIRECT_INVALID_ARGS;
+      return NULL;
+     }
 
      l = (doublereal *) malloc(sizeof(doublereal) * dimension * 2);
-     if (!l) *ret_code = DIRECT_OUT_OF_MEMORY;
+     if (!l) {
+      PyErr_NoMemory();
+      return NULL;
+     }
      u = l + dimension;
      for (i = 0; i < dimension; ++i) {
       l[i] = lower_bounds[i];

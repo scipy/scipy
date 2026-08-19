@@ -5,7 +5,7 @@ from typing import (  # noqa: UP035
 import numpy as np
 from scipy.optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
-from ._direct import direct as _direct  # type: ignore
+from ._direct import direct as _direct  # pyrefly: ignore[missing-module-attribute]
 
 __all__ = ['direct']
 
@@ -63,7 +63,7 @@ def direct(
     func : callable
         The objective function to be minimized.
         ``func(x, *args) -> float``
-        where ``x`` is an 1-D array with shape (n,) and ``args`` is a tuple of
+        where ``x`` is a 1-D array with shape (n,) and ``args`` is a tuple of
         the fixed parameters needed to completely specify the function.
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:

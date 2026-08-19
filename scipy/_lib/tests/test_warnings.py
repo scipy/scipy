@@ -134,4 +134,3 @@ def test_warning_calls_filters(warning_calls):
             "Warning ignore filters should not be used outside of tests.\n"
             "Found in:\n    {}".format(
                 "\n    ".join(bad_filters)))
-

@@ -886,7 +886,7 @@ class MikotaPair:
     .. [2] Peter C. Muller and Metin Gurgoze,
        "Natural frequencies of a multi-degree-of-freedom vibration system",
        Proc. Appl. Math. Mech. 6, 319-320 (2006).
-       http://dx.doi.org/10.1002/pamm.200610141.
+       :doi:`10.1002/pamm.200610141`.
 
     Examples
     --------

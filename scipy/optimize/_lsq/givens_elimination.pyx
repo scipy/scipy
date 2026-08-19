@@ -1,6 +1,6 @@
 cimport cython
 from scipy.linalg.cython_lapack cimport dlartg
-from scipy.linalg.cython_blas cimport drot
+from scipy.linalg.cython_blas cimport blas_int, drot
 
 import numpy as np
 
@@ -32,13 +32,13 @@ def givens_elimination(double[:, ::1] S, double[:] v, const double[:] diag):
     mentioned vector after rotations were applied.
     """
     cdef int n = diag.shape[0]
-    cdef int k
+    cdef blas_int k
 
     cdef int i, j
 
     cdef double f, g, r
     cdef double cs, sn
-    cdef int one = 1
+    cdef blas_int one = 1
 
     cdef double [:] diag_row = np.empty(n)
     cdef double u  # For `v` rotations.

@@ -4,8 +4,8 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import (is_array_api_strict, make_xp_test_case,
-                                   xp_default_dtype, xp_device)
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import is_array_api_strict, make_xp_test_case, xp_device
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -17,6 +17,7 @@ dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 def test_wrap_radians(xp):
     x = xp.asarray([-math.pi-1, -math.pi, -1, -1e-300,
                     0, 1e-300, 1, math.pi, math.pi+1])
@@ -203,7 +204,7 @@ class TestLogSumExp:
         else:
             desired_dtype = xp.result_type(xp_dtype_a, xp_dtype_b)
             if xp.isdtype(desired_dtype, 'integral'):
-               desired_dtype = xp_default_dtype(xp)
+               desired_dtype = xpx.default_dtype(xp)
         desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=desired_dtype)
         xp_assert_close(logsumexp(a, b=b), desired)
 
@@ -254,7 +255,7 @@ class TestLogSumExp:
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
 
-    @pytest.mark.parametrize('x,y', it.product(
+    @pytest.mark.parametrize('x,y', list(it.product(
         [
             -np.inf,
             np.inf,
@@ -276,7 +277,7 @@ class TestLogSumExp:
             complex(np.inf, 3.9270),
             complex(np.inf, 5.4978),
         ], repeat=2)
-    )
+    ))
     def test_gh22601_infinite_elements(self, x, y, xp):
         # Test that `logsumexp` does reasonable things in the presence of
         # real and complex infinities.

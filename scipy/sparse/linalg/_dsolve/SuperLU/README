@@ -1,4 +1,4 @@
-		SuperLU (Version 6.0.1)
+		SuperLU (Version 7.0.1)
 		=======================
 
 SuperLU contains a set of subroutines to solve a sparse linear system 
@@ -35,9 +35,9 @@ SuperLU contains the following directory structure:
                       (You may need to edit it to be suitable for your system
                        before compiling the whole package.)
 
-There are two ways to install the package. One uses CMake build system,
-the other requires users to edit makefile manually.  The procedures
-are described below.
+There are three ways to install the package: using the CMake build system generator,
+using a manually edited Makefile, or using the Fortran Package Manager (fpm).
+The procedures are described below.
 
 1. Using CMake build system. 
    You will need to create a build tree from which to invoke CMake.
@@ -162,6 +162,13 @@ are described below.
        TESTING/ctest.out   # single precision, complex
        TESTING/ztest.out   # double precision, complex
 
+3. Using fpm.
+  cmake -B build # create "build/" subdirectory and SRC/superlu_config.h
+  fpm install    # install libSuperLU.a to ~/.local/lib
+
+See the fpm documentation at https://fpm.fortran-lang.org/install/index.html
+for other fpm commands and options, for example, to specify the compiler
+(default: gcc); to build without installing; or to set compiler or linker flags.
 
 --------------------
 | RELEASE VERSIONS |
@@ -182,3 +189,5 @@ are described below.
     October 17,  2020  Version 5.2.2
     April 5,     2023  Version 6.0.0
     August 5,    2023  Version 6.0.1
+    August 17,   2024  Version 7.0.0
+    May 7,       2025  Version 7.0.1

@@ -1,7 +1,7 @@
 from .common import XPBenchmark, safe_import
 
 with safe_import():
-    from scipy._lib.array_api_compat import array_namespace as compat_namespace
+    from scipy._external.array_api_compat import array_namespace as compat_namespace
     from scipy._lib._array_api import array_namespace
 
 
@@ -10,7 +10,7 @@ class ArrayNamespace(XPBenchmark):
         def f(x):
             _ = array_namespace(x)
             return x
-    
+
         super().setup(backend, f)
         self.x = self.synchronize(self.xp.empty(0))
         # Populate @lru_cache and jax.jit. Note that this benefits all backends.

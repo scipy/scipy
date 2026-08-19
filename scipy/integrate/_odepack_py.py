@@ -7,12 +7,7 @@ from . import _odepack
 from copy import copy
 import warnings
 
-from threading import Lock
-
 from scipy._lib._array_api import xp_capabilities
-
-
-ODE_LOCK = Lock()
 
 
 class ODEintWarning(Warning):
@@ -67,6 +62,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Computes the derivative of y at t.
         If the signature is ``callable(t, y, ...)``, then the argument
         `tfirst` must be set ``True``.
+        When `func` is called, `y` will be a one-dimensional array, even if the
+        value `y0` provided to ``odeint`` is a scalar.
         `func` must not modify the data in `y`, as it is a
         view of the data used internally by the ODE solver.
     y0 : array
@@ -82,6 +79,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Gradient (Jacobian) of `func`.
         If the signature is ``callable(t, y, ...)``, then the argument
         `tfirst` must be set ``True``.
+        When `Dfun` is called, `y` will be a one-dimensional array, even if the
+        value `y0` provided to ``odeint`` is a scalar.
         `Dfun` must not modify the data in `y`, as it is a
         view of the data used internally by the ODE solver.
     col_deriv : bool, optional
@@ -253,11 +252,11 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     t = copy(t)
     y0 = copy(y0)
 
-    with ODE_LOCK:
-        output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
-                                full_output, rtol, atol, tcrit, h0, hmax, hmin,
-                                ixpr, mxstep, mxhnil, mxordn, mxords,
-                                int(bool(tfirst)))
+
+    output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
+                            full_output, rtol, atol, tcrit, h0, hmax, hmin,
+                            ixpr, mxstep, mxhnil, mxordn, mxords,
+                            int(bool(tfirst)))
     if output[-1] < 0:
         warning_msg = (f"{_msgs[output[-1]]} Run with full_output = 1 to "
                        f"get quantitative information.")

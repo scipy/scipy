@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.csgraph as spgraph
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 from numpy.testing import assert_equal
 
@@ -27,7 +27,7 @@ def check_sparse_version(min_ver):
     if sparse is None:
         return pytest.mark.skip(reason="sparse is not installed")
     return pytest.mark.skipif(
-        _pep440.parse(sparse.__version__) < _pep440.Version(min_ver),
+        version.parse(sparse.__version__) < version.Version(min_ver),
         reason=f"sparse version >= {min_ver} required"
     )
 

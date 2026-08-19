@@ -1,8 +1,18 @@
 # cython: language_level=3, boundscheck=False
+# This Cython module is a replacement for the original C extension
+# `moduleTNC.c`, which was converted to Cython in gh-14882.
+#
+# The old C source file (`moduleTNC.c.old`) was kept temporarily during
+# development but has since been removed (see gh-24572).
+#
+# The current implementation preserves the structure and behavior of the
+# original C module while providing improved maintainability.
+
 
 from libc.string cimport memcpy
 import numpy as np
 cimport numpy as np
+from scipy._lib._util import _item_for_scalar_function
 
 
 np.import_array()
@@ -71,14 +81,13 @@ cdef int function(double x[], double *f, double g[], void *state) except 1:
 
     fx, gx = (<object>py_state.py_function)(xcopy)
 
-    if not np.isscalar(fx):
-        try:
-            fx = np.asarray(fx).item()
-        except (TypeError, ValueError) as e:
-            raise ValueError(
-                "The user-provided objective function "
-                "must return a scalar value."
-            ) from e
+    try:
+        fx = _item_for_scalar_function(fx)
+    except (TypeError, ValueError) as e:
+        raise ValueError(
+            "The user-provided objective function "
+            "must return a scalar value."
+        ) from e
 
     f[0] = <double> fx
 

@@ -563,6 +563,7 @@ def reconstruct_matrix_from_id(B, idx, proj):
     :class:`numpy.ndarray`
         Reconstructed matrix.
     """
+    B = np.atleast_2d(_C_contiguous_copy(B))
     if _is_real(B):
         return _backend.idd_reconid(B, idx, proj)
     else:
@@ -824,6 +825,24 @@ def svd(A, eps_or_k, rand=True, rng=None):
         1D array of singular values.
     V : :class:`numpy.ndarray`
         2D array right singular vectors.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg.interpolative import svd
+    >>> rng = np.random.default_rng()
+    >>> # Create a rank-5 matrix
+    >>> A = rng.standard_normal((20, 5)) @ rng.standard_normal((5, 10))
+    >>> U, S, V = svd(A, 5)
+    >>> U.shape
+    (20, 5)
+    >>> S.shape
+    (5,)
+    >>> V.shape
+    (10, 5)
+    >>> np.allclose(A, U @ np.diag(S) @ V.T)
+    True
+
     """
     from scipy.sparse.linalg import LinearOperator
     rng = np.random.default_rng(rng)

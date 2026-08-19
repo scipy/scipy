@@ -5,6 +5,7 @@ import numpy as np
 from numpy.linalg import norm as npnorm
 from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
+import pytest
 
 import scipy.sparse
 from scipy.sparse.linalg import norm as spnorm
@@ -12,7 +13,8 @@ from scipy.sparse.linalg import norm as spnorm
 
 # https://github.com/scipy/scipy/issues/16031
 # https://github.com/scipy/scipy/issues/21690
-def test_sparray_norm():
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
+def test_sparse_norm():
     row = np.array([0, 0, 1, 1])
     col = np.array([0, 1, 2, 3])
     data = np.array([4, 5, 7, 9])
@@ -108,6 +110,7 @@ class TestVsNumpyNorm:
             [
                 [1, 0, 3],
                 [-1, 1, 4j]],
+            np.array([[-128, 127], [127, -128]], dtype=np.int8),
             )
 
     def test_sparse_matrix_norms(self):
@@ -144,6 +147,6 @@ class TestVsNumpyNorm:
                 S = sparse_type(M)
                 for axis in (0, 1, -1, -2, (0, ), (1, ), (-1, ), (-2, )):
                     assert_allclose(spnorm(S, axis=axis), npnorm(M, axis=axis))
-                    for ord in None, 2, np.inf, -np.inf, 1, 0.5, 0.42:
+                    for ord in None, 2, np.inf, -np.inf, 1, 0.5, 0.42, 0:
                         assert_allclose(spnorm(S, ord, axis=axis),
                                         npnorm(M, ord, axis=axis))

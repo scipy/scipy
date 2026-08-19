@@ -6,10 +6,13 @@ import numpy as np
 from math import prod
 from types import GenericAlias
 
-from . import _dierckx  # type: ignore[attr-defined]
+from . import _dierckx
 
 import scipy.sparse.linalg as ssl
-from scipy.sparse import csr_array
+from scipy.sparse import csr_array, diags_array
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_result_device
+)
 
 from ._bsplines import _not_a_knot, BSpline
 
@@ -24,6 +27,13 @@ def _get_dtype(dtype):
         return np.float64
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class NdBSpline:
     """Tensor product spline object.
 
@@ -78,19 +88,24 @@ class NdBSpline:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, t, c, k, *, extrapolate=None):
         self._k, self._indices_k1d, (self._t, self._len_t) = _preprocess_inputs(k, t)
+
+        # the NumPy round-trip must return results on the inputs' device
+        device = xp_result_device(c, *t)
+        self._asarray = functools.partial(
+            array_namespace(c, *t).asarray, device=device)
 
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = bool(extrapolate)
 
-        self.c = np.asarray(c)
+        self._c = np.asarray(c)
 
         ndim = self._t.shape[0]   # == len(self.t)
-        if self.c.ndim < ndim:
+        if self._c.ndim < ndim:
             raise ValueError(f"Coefficients must be at least {ndim}-dimensional.")
 
         for d in range(ndim):
@@ -98,15 +113,15 @@ class NdBSpline:
             kd = self.k[d]
             n = td.shape[0] - kd - 1
 
-            if self.c.shape[d] != n:
+            if self._c.shape[d] != n:
                 raise ValueError(f"Knots, coefficients and degree in dimension"
                                  f" {d} are inconsistent:"
-                                 f" got {self.c.shape[d]} coefficients for"
+                                 f" got {self._c.shape[d]} coefficients for"
                                  f" {len(td)} knots, need at least {n} for"
                                  f" k={k}.")
 
-        dt = _get_dtype(self.c.dtype)
-        self.c = np.ascontiguousarray(self.c, dtype=dt)
+        dt = _get_dtype(self._c.dtype)
+        self._c = np.ascontiguousarray(self._c, dtype=dt)
 
     @property
     def k(self):
@@ -115,7 +130,13 @@ class NdBSpline:
     @property
     def t(self):
         # repack the knots into a tuple
-        return tuple(self._t[d, :self._len_t[d]] for d in range(self._t.shape[0]))
+        return tuple(
+            self._asarray(self._t[d, :self._len_t[d]]) for d in range(self._t.shape[0])
+        )
+
+    @property
+    def c(self):
+        return self._asarray(self._c)
 
     def __call__(self, xi, *, nu=None, extrapolate=None):
         """Evaluate the tensor product b-spline at ``xi``.
@@ -126,7 +147,7 @@ class NdBSpline:
             The coordinates to evaluate the interpolator at.
             This can be a list or tuple of ndim-dimensional points
             or an array with the shape (num_points, ndim).
-        nu : array_like, optional, shape (ndim,)
+        nu : sequence of length ``ndim``, optional
             Orders of derivatives to evaluate. Each must be non-negative.
             Defaults to the zeroth derivivative.
         extrapolate : bool, optional
@@ -153,7 +174,7 @@ class NdBSpline:
                     f"invalid number of derivative orders {nu = } for "
                     f"ndim = {len(self.t)}.")
             if any(nu < 0):
-                raise ValueError(f"derivatives must be positive, got {nu = }")
+                raise ValueError(f"derivatives must be non-negative, got {nu = }")
 
         # prepare xi : shape (..., m1, ..., md) -> (1, m1, ..., md)
         xi = np.asarray(xi, dtype=float)
@@ -165,12 +186,12 @@ class NdBSpline:
             raise ValueError(f"Shapes: xi.shape={xi_shape} and ndim={ndim}")
 
         # complex -> double
-        was_complex = self.c.dtype.kind == 'c'
-        cc = self.c
-        if was_complex and self.c.ndim == ndim:
+        was_complex = self._c.dtype.kind == 'c'
+        cc = self._c
+        if was_complex and self._c.ndim == ndim:
             # make sure that core dimensions are intact, and complex->float
             # size doubling only adds a trailing dimension
-            cc = self.c[..., None]
+            cc = self._c[..., None]
         cc = cc.view(float)
 
         # prepare the coefficients: flatten the trailing dimensions
@@ -193,8 +214,9 @@ class NdBSpline:
                                  _strides_c1,
                                  self._indices_k1d,
         )
-        out = out.view(self.c.dtype)
-        return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
+        out = out.view(self._c.dtype)
+        out = out.reshape(xi_shape[:-1] + self._c.shape[ndim:])
+        return self._asarray(out)
 
     @classmethod
     def design_matrix(cls, xvals, t, k, extrapolate=True):
@@ -301,11 +323,12 @@ class NdBSpline:
                 f"ndim = {len(self.t)}.")
 
         if any(nu_arr < 0):
-            raise ValueError(f"derivative orders must be positive, got {nu = }")
+            raise ValueError(f"derivative orders must be non-negative, got {nu = }")
 
-        t_new = list(self.t)
+        # extract t and c as numpy arrays
+        t_new = [self._t[d, :self._len_t[d]] for d in range(self._t.shape[0])]
         k_new = list(self.k)
-        c_new = self.c.copy()
+        c_new = self._c.copy()
 
         for axis, n in enumerate(nu_arr):
             if n == 0:
@@ -316,8 +339,11 @@ class NdBSpline:
             )
             k_new[axis] = max(k_new[axis] - n, 0)
 
-        return NdBSpline(tuple(t_new), c_new,
-                         tuple(k_new), extrapolate=self.extrapolate)
+        return NdBSpline(tuple(self._asarray(t) for t in t_new),
+                         self._asarray(c_new),
+                         tuple(k_new),
+                         extrapolate=self.extrapolate
+        )
 
 def _preprocess_inputs(k, t_tpl):
     """Helpers: validate and preprocess NdBSpline inputs.
@@ -384,6 +410,7 @@ def _preprocess_inputs(k, t_tpl):
     #    array([[1, 2, 3, 4],
     #           [5, 6, nan, nan],
     #           [7, 8, 9, nan]])
+    t_tpl = [np.asarray(t) for t in t_tpl]
     ndim = len(t_tpl)
     len_t = [len(ti) for ti in t_tpl]
     _t = np.empty((ndim, max(len_t)), dtype=float)
@@ -417,6 +444,210 @@ def _iter_solve(a, b, solver=ssl.gcrotmk, **solver_args):
         if info != 0:
             raise ValueError(f"{solver = } returns {info = }.")
         return res
+
+
+def _make_lsq_ndbspl(
+    x, y, t, k=3, *, w=None, solver=ssl.lsqr, **solver_args
+):
+    """Construct a least-squares ``NdBSpline`` from scattered data.
+
+    Parameters
+    ----------
+    x : array_like, shape (npts, ndim)
+        Data point coordinates. Each row gives one point in ``ndim``
+        dimensions.
+    y : array_like, shape (npts, ...)
+        Data values at `x`. Any trailing dimensions are treated as batch
+        dimensions and fitted with the same design matrix.
+    t : tuple of array_like, shape (ndim,)
+        Full knot vectors for each dimension. Boundary knots must already be
+        included.
+    k : int or array_like, shape (ndim,), optional
+        Spline degree for each dimension. A scalar value is applied to all
+        dimensions. Default is cubic, ``k=3``.
+    w : array_like, shape (npts,), optional
+        Non-negative weights for weighted least squares.
+    solver : callable, optional
+        Sparse least-squares solver. Default is `scipy.sparse.linalg.lsqr`.
+        The solver is called as ``solver(A, b, **solver_args)``, where
+        ``A`` is the sparse design matrix with shape ``(npts, ncoeffs)`` and
+        ``b`` is a 1D right-hand side with shape ``(npts,)``. It must return
+        the same result format as `scipy.sparse.linalg.lsqr` and
+        `scipy.sparse.linalg.lsmr`: the fitted coefficients are read from
+        ``result[0]`` and the convergence status from ``result[1]``.
+        Status values ``0``, ``1``, and ``2`` are treated as successful
+        termination, following the conventions of `~scipy.sparse.linalg.lsqr`
+        and `~scipy.sparse.linalg.lsmr`.
+    **solver_args
+        Additional keyword arguments passed to `solver`.
+
+    Returns
+    -------
+    spl : NdBSpline
+        Tensor-product spline with coefficients fitted by least squares.
+
+    Notes
+    -----
+    This solves the sparse least-squares problem
+
+    ``min_c || W @ (A @ c - y) ||_2``,
+
+    where ``A`` is the sparse tensor-product B-spline design matrix built by
+    `NdBSpline.design_matrix` and ``W`` is a diagonal matrix of weights.
+
+    The default solver is `scipy.sparse.linalg.lsqr`. The related
+    `scipy.sparse.linalg.lsmr` solver has the same basic interface and can be
+    useful as a comparison when convergence depends on the conditioning of the
+    least-squares problem or on the selected tolerances. Solver tolerances are
+    not modified by this helper; pass them explicitly through `solver_args` if
+    the solver defaults are not appropriate.
+
+    Other least-squares estimators can be used through a small wrapper, as
+    long as the wrapper accepts a sparse matrix ``A`` and a one-dimensional
+    right-hand side ``b`` and returns coefficients in ``result[0]`` and a
+    status in ``result[1]``. Status values other than ``0``, ``1``, or ``2``
+    are treated as solver failures.
+    """
+    x = np.asarray(x, dtype=float)
+    if x.ndim != 2:
+        raise ValueError("`x` must be a 2D array with shape (npts, ndim).")
+    if not np.isfinite(x).all():
+        raise ValueError("`x` must contain only finite values.")
+
+    npts, ndim = x.shape
+    if npts == 0:
+        raise ValueError("`x` must contain at least one data point.")
+    if not callable(solver):
+        raise ValueError("`solver` must be callable.")
+
+    if not isinstance(t, tuple):
+        raise ValueError(
+            f"Expect `t` to be a tuple of array-likes. Got {t} instead."
+        )
+    if len(t) != ndim:
+        raise ValueError(
+            f"Data and knots are inconsistent: len(t) = {len(t)} for "
+            f"ndim = {ndim}."
+        )
+
+    y = np.asarray(y)
+    if y.ndim == 0 or y.shape[0] != npts:
+        raise ValueError("`y` must have shape (npts, ...) matching `x`.")
+    if 0 in y.shape[1:]:
+        raise ValueError("`y` must not have empty trailing dimensions.")
+    if not np.isfinite(y).all():
+        raise ValueError("`y` must contain only finite values.")
+
+    k, _, (_t, len_t) = _preprocess_inputs(k, t)
+    t = tuple(np.asarray(t[d], dtype=float) for d in range(ndim))
+    coeff_shape = tuple(len_t[d] - k[d] - 1 for d in range(ndim))
+    ncoeff = prod(coeff_shape)
+    if npts < ncoeff:
+        raise ValueError(
+            "There are fewer data points than spline coefficients; the "
+            "least-squares problem is underdetermined."
+        )
+
+    matr = NdBSpline.design_matrix(x, t, tuple(k), extrapolate=False)
+    matr.eliminate_zeros()
+
+    y_shape = y.shape
+    y_trailing_shape = y_shape[1:]
+    rhs = y.reshape((npts, prod(y_trailing_shape)))
+    if w is not None:
+        w = _validate_lsq_weights(w, npts)
+        matr = diags_array(w, format="csr") @ matr
+        matr.eliminate_zeros()
+        rhs = rhs * w[:, np.newaxis]
+
+    _check_lsq_design_matrix(matr, ncoeff)
+
+    coef = []
+    for j in range(rhs.shape[1]):
+        result = solver(matr, rhs[:, j], **solver_args)
+        coef_j, istop = result[0], result[1]
+        if istop not in {0, 1, 2}:
+            raise ValueError(f"{solver = } returns {istop = }.")
+        coef.append(coef_j)
+
+    coef = np.column_stack(coef)
+    coef = coef.reshape(coeff_shape + y_trailing_shape)
+
+    return NdBSpline(t, coef, tuple(k))
+
+
+def _make_lsq_ndbspl_from_grid(
+    points, values, t, k=3, *, w=None, solver=ssl.lsqr, **solver_args
+):
+    """Construct a least-squares ``NdBSpline`` from gridded data."""
+    if not isinstance(points, tuple):
+        raise ValueError("`points` must be a tuple of 1D arrays.")
+    if len(points) == 0:
+        raise ValueError("`points` must contain at least one dimension.")
+
+    points = tuple(np.asarray(point, dtype=float) for point in points)
+    for d, point in enumerate(points):
+        if point.ndim != 1:
+            raise ValueError(f"`points[{d}]` must be 1D.")
+        if point.size == 0:
+            raise ValueError(f"`points[{d}]` must not be empty.")
+        if not np.isfinite(point).all():
+            raise ValueError(f"`points[{d}]` must contain only finite values.")
+
+    grid_shape = tuple(point.size for point in points)
+    values = np.asarray(values)
+    ndim = len(points)
+    if values.ndim < ndim or values.shape[:ndim] != grid_shape:
+        raise ValueError(
+            "`values` must have shape points[0].shape + ... + "
+            "points[-1].shape + trailing dimensions."
+        )
+
+    grids = np.meshgrid(*points, indexing="ij")
+    x = np.column_stack([grid.ravel() for grid in grids])
+    y = values.reshape((prod(grid_shape),) + values.shape[ndim:])
+
+    if w is not None:
+        w = np.asarray(w, dtype=float)
+        if w.shape != grid_shape:
+            raise ValueError("`w` must have shape matching the grid.")
+        w = w.ravel()
+
+    return _make_lsq_ndbspl(
+        x, y, t, k=k, w=w, solver=solver, **solver_args
+    )
+
+
+def _validate_lsq_weights(w, npts):
+    """Validate least-squares weights."""
+    w = np.asarray(w, dtype=float)
+    if w.ndim != 1 or w.shape[0] != npts:
+        raise ValueError("`w` must be a 1D array with shape (npts,).")
+    if np.any(w < 0):
+        raise ValueError("`w` must contain only non-negative values.")
+    if not np.isfinite(w).all():
+        raise ValueError("`w` must contain only finite values.")
+    if not np.any(w > 0):
+        raise ValueError("At least one weight must be positive.")
+    return w
+
+
+def _check_lsq_design_matrix(matr, ncoeff):
+    """Check that every basis function is supported by the data."""
+    msg = (
+        "Data points do not support every tensor-product basis function. "
+        "At least one basis function is zero at all data points. Add data "
+        "points in the unsupported knot intervals, remove or move knots, "
+        "reduce the spline degree, or shrink the fitting domain."
+    )
+    ncoeff = operator.index(ncoeff)
+    if matr.shape[1] != ncoeff:
+        raise ValueError(msg)
+
+    indices = np.asarray(matr.indices, dtype=np.intp)
+    supported = np.bincount(indices, minlength=ncoeff) > 0
+    if not supported.all():
+        raise ValueError(msg)
 
 
 def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
@@ -480,7 +711,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
 
     # Solve for the coefficients given `values`.
     # Trailing dimensions: first ndim dimensions are data, the rest are batch
-    # dimensions, so stack `values` into a 2D array for `spsolve` to undestand.
+    # dimensions, so stack `values` into a 2D array for `spsolve` to understand.
     v_shape = values.shape
     vals_shape = (prod(v_shape[:ndim]), prod(v_shape[ndim:]))
     vals = values.reshape(vals_shape)
