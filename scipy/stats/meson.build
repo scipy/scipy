@@ -148,6 +148,7 @@ py3.install_sources([
     '_resampling.py',
     '_result_classes.py',
     '_sampling.py',
+    '_scoring.py',
     '_sensitivity_analysis.py',
     '_stats_mstats_common.py',
     '_stats_py.py',
