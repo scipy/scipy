@@ -31,6 +31,12 @@ runs:
         install() {
           sudo DEBIAN_FRONTEND=noninteractive timeout 10m apt-get install -y "${opts[@]}" "$@"
         }
+        # GitHub-hosted Ubuntu runners default to an Azure geo-mirror that is
+        # frequently unreachable; go straight to the canonical mirror instead of
+        # burning the update timeout on retries against a dead host.
+        for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources; do
+          [[ -f "$f" ]] && sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' "$f"
+        done
         sudo timeout 5m apt-get update "${opts[@]}"
         if [[ -n "$REPOSITORY" ]]; then
           install software-properties-common
