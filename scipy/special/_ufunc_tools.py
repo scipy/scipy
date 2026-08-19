@@ -161,7 +161,7 @@ def _with_cache_optimization(
     # keep track of this here for later.
     is_elementwise = sum(core_ndims) == 0
 
-    def _wrapper(
+    def wrapper(
             *args,
             out=None,
             where=True,
@@ -308,17 +308,153 @@ def _with_cache_optimization(
 
         return outputs[0] if ufunc.nout == 1 else outputs
 
-    # Do some metaprogramming with exec so that the arg names and func
-    # name are as expected.
-    arg_str = ", ".join(arg_names)
+    wrapper._ufunc = ufunc
+    return wrapper
 
-    # Handle kwargs for function definition and call to wrapper.
+
+def _reconstruct_wrapper(name):
+    """Helper to allow pickling of dynamically generated ufunc wrappers."""
+    import scipy.special
+    return getattr(scipy.special, name)
+
+
+class _UFuncLikeWrapper:
+    """Base class for ufunc wrappers to provide IDE-friendly properties."""
+
+    def __init__(self, attributes):
+        self._attributes = attributes
+
+    @property
+    def nin(self):
+        """The number of inputs."""
+        return self._attributes["nin"]
+
+    @property
+    def nout(self):
+        """The number of outputs."""
+        return self._attributes["nout"]
+
+    @property
+    def nargs(self):
+        """The number of arguments."""
+        return self._attributes["nargs"]
+
+    @property
+    def ntypes(self):
+        """The number of types."""
+        return self._attributes["ntypes"]
+
+    @property
+    def types(self):
+        """A list with types grouped input->output."""
+        return self._attributes["types"]
+
+    @property
+    def signature(self):
+        """Definition of the core elements a generalized ufunc operates on."""
+        return self._attributes["signature"]
+
+    def resolve_dtypes(self, dtypes, *, signature=None, casting=None, reduction=False):
+        # The underlying wrapper/ufunc logic handles the actual type resolution
+        return self._attributes["resolve_dtypes"](
+            dtypes,
+            signature=signature,
+            casting=casting,
+            reduction=reduction
+        )
+
+    def __reduce__(self):
+        # Tells pickle exactly how to reconstruct this specific instance
+        return (_reconstruct_wrapper, (self.__name__,))
+
+
+_UFuncLikeWrapper.resolve_dtypes.__doc__ = np.ufunc.resolve_dtypes.__doc__
+
+
+def _make_ufunc_like_wrapper(
+        func,
+        name,
+        arg_names,
+        docstring,
+        nin=None,
+        nout=None,
+        nargs=None,
+        ntypes=None,
+        types=None,
+        signature=None,
+        resolve_dtypes=None,
+        module="scipy.special",
+):
+    """Wrapper for a ufunc that preserves ufunc-like behavior.
+
+    Parameters
+    ----------
+    func : callable
+        The internal function to wrap. Must either have a ``_numpy_ufunc``
+        attribute to infer metadata from, or all metadata arguments must be
+        explicitly supplied.
+    name : str
+        Name of the function.
+    arg_names : list[str]
+        Names of the arguments. May include positional default values
+        (e.g., ``["z", "k=0"]``).
+    docstring : str
+        The docstring for the wrapper.
+    nin : int, optional
+        The number of inputs.
+    nout : int, optional
+        The number of outputs.
+    nargs : int, optional
+        The number of arguments.
+    ntypes : int, optional
+        The number of types.
+    types: list[str], optional
+        A list with types grouped input->output.
+    signature: str or None, optional
+        Definition of the core elements a generalized ufunc operates on.
+        If ``None``, the function is treated as an elementwise ufunc.
+    resolve_dtypes: callable, optional
+        A function determining the output dtypes based on input dtypes.
+    module : str, optional
+       Value to use for the ``__module__`` attribute of the wrapper.
+
+    Returns
+    -------
+    callable
+        A wrapper for func that maintains ufunc kwargs and attributes.
+    """
+    metadata_source = getattr(func, "_ufunc", None)
+    attributes = {}
+
+    supplied_attributes = {
+        "nin": nin,
+        "nout": nout,
+        "nargs": nargs,
+        "ntypes": ntypes,
+        "types": types,
+        "signature": signature,
+        "resolve_dtypes": resolve_dtypes
+    }
+    for attr, supplied_val in supplied_attributes.items():
+        attributes[attr] = getattr(metadata_source, attr, supplied_val)
+    if any(
+            attributes[x] is None
+            for x in ["nin", "nout", "nargs", "ntypes", "types", "resolve_dtypes"]
+    ):
+        raise ValueError("func has no metadata and metadata was not supplied.")
+
+    elementwise = attributes["signature"] is None
+
+    arg_str = ", ".join(arg_names)
+    clean_args = [arg.split("=")[0].strip() for arg in arg_names]
+    call_args = ", ".join(clean_args)
+
     kwarg_defs = [
-         "casting='same_kind'",
-         "order='K'",
-         "dtype=None",
-         "subok=True",
-         "signature=None",
+        "casting='same_kind'",
+        "order='K'",
+        "dtype=None",
+        "subok=True",
+        "signature=None",
     ]
     kwarg_calls = [
         "out=out",
@@ -328,24 +464,34 @@ def _with_cache_optimization(
         "subok=subok",
         "signature=signature",
     ]
-    if is_elementwise:
-        # where is only available for elementwise ufuncs, not gufuncs.
+
+    if elementwise:
         kwarg_defs.insert(1, "where=True")
         kwarg_calls.insert(1, "where=where")
+
     signature_kwargs = ", ".join(kwarg_defs)
     call_kwargs = ", ".join(kwarg_calls)
+    class_name = f"{name}_wrapper"
+
     code = (
-        f"""def {name}({arg_str}, /, out=None, *, {signature_kwargs}):
-            return _wrapper({arg_str}, {call_kwargs})
+        f"""class {class_name}(_UfuncLikeWrapper):
+            def __call__(self, {arg_str}, /, out=None, *, {signature_kwargs}):
+                return func({call_args}, {call_kwargs})
         """
-        )
-    namespace = {"_wrapper": _wrapper}
+    )
+
+    namespace = {"_UFuncLikeWrapper": _UFuncLikeWrapper, "func": func}
+
     exec(code, namespace)
-    wrapper = namespace[name]
+    WrapperClass = namespace[class_name]
+    WrapperClass.__module__ = module
+    WrapperClass.__qualname__ = class_name
+
+    wrapper = WrapperClass(attributes)
+
     wrapper.__doc__ = docstring
-    # The exec namespace has no __name__, so __module__ would otherwise be None,
-    # which confuses Sphinx, inspect, and pickling by reference.
     wrapper.__module__ = module
+    wrapper.__name__ = name
     wrapper.__qualname__ = name
-    wrapper.ufunc = ufunc
+
     return wrapper
