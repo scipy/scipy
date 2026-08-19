@@ -1,77 +1,73 @@
 #include "_common_array_utils.h"
 
-static float snorm1(float*, float*, const Py_ssize_t);
-static double dnorm1(double*, double*, const Py_ssize_t);
-static float cnorm1(SCIPY_C*, float*, const Py_ssize_t);
-static double znorm1(SCIPY_Z*, double*, const Py_ssize_t);
-static float snorm1est(float*, CBLAS_INT);
-static double dnorm1est(double*, CBLAS_INT);
-static float cnorm1est(SCIPY_C*, CBLAS_INT);
-static double znorm1est(SCIPY_Z*, CBLAS_INT);
+static float snorm1(float*, const Py_ssize_t);
+static double dnorm1(double*, const Py_ssize_t);
+static float cnorm1(SCIPY_C*, const Py_ssize_t);
+static double znorm1(SCIPY_Z*, const Py_ssize_t);
+static float snorm1est(float*, CBLAS_INT, CBLAS_INT);
+static double dnorm1est(double*, CBLAS_INT, CBLAS_INT);
+static float cnorm1est(SCIPY_C*, CBLAS_INT, CBLAS_INT);
+static double znorm1est(SCIPY_Z*, CBLAS_INT, CBLAS_INT);
 
 
-/*******************************************************************************
- *******************************************************************************
- *******************************************************************************/
+/***********************************************************************
+ ********1-Norm functions for Column-major arrays **********************
+ ***********************************************************************/
 
- static float
-snorm1(float* A, float* work, const Py_ssize_t n)
+static float
+snorm1(float* A, const Py_ssize_t n)
 {
-    Py_ssize_t i, j;
-    float temp = 0.0;
-    // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { work[i] = fabsf(A[i]); }
-    // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[j] += fabsf(A[i*n + j]); } }
-    temp = 0.0;
-    for (i = 0; i < n; i++) { if (work[i] > temp) { temp = work[i]; } }
-    return temp;
+    float norm = 0.0;
+    for (Py_ssize_t i = 0; i < n; i++)
+    {
+        float abscolsum = 0.0;
+        for (Py_ssize_t j = 0; j < n; j++) { abscolsum += fabsf(A[i*n + j]); }
+        if (abscolsum > norm) { norm = abscolsum; }
+    }
+    return norm;
 }
 
 static double
-dnorm1(double* A, double* work, const Py_ssize_t n)
+dnorm1(double* A, const Py_ssize_t n)
 {
-    Py_ssize_t i, j;
-    double temp = 0.0;
-    // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { work[i] = fabs(A[i]); }
-    // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[j] += fabs(A[i*n + j]); } }
-    temp = 0.0;
-    for (i = 0; i < n; i++) { if (work[i] > temp) { temp = work[i]; } }
-    return temp;
+    double norm = 0.0;
+    for (Py_ssize_t i = 0; i < n; i++)
+    {
+        double abscolsum = 0.0;
+        for (Py_ssize_t j = 0; j < n; j++) { abscolsum += fabs(A[i*n + j]); }
+        if (abscolsum > norm) { norm = abscolsum; }
+    }
+    return norm;
 }
 
 static float
-cnorm1(SCIPY_C* A, float* work, const Py_ssize_t n)
+cnorm1(SCIPY_C* A, const Py_ssize_t n)
 {
-    Py_ssize_t i, j;
-    float temp = 0.0;
-    // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { work[i] = cabsf(A[i]); }
-    // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[j] += cabsf(A[i*n + j]); } }
-    temp = 0.0;
-    for (i = 0; i < n; i++) { if (work[i] > temp) { temp = work[i]; } }
-    return temp;
+    float norm = 0.0;
+    for (Py_ssize_t i = 0; i < n; i++)
+    {
+        float abscolsum = 0.0;
+        for (Py_ssize_t j = 0; j < n; j++) { abscolsum += cabsf(A[i*n + j]); }
+        if (abscolsum > norm) { norm = abscolsum; }
+    }
+    return norm;
 }
 
 static double
-znorm1(SCIPY_Z* A, double* work, const Py_ssize_t n)
+znorm1(SCIPY_Z* A, const Py_ssize_t n)
 {
-    Py_ssize_t i, j;
-    double temp = 0.0;
-    // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { work[i] = cabs(A[i]); }
-    // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { work[j] += cabs(A[i*n + j]); } }
-    temp = 0.0;
-    for (i = 0; i < n; i++) { if (work[i] > temp) { temp = work[i]; } }
-    return temp;
+    double norm = 0.0;
+    for (Py_ssize_t i = 0; i < n; i++)
+    {
+        double abscolsum = 0.0;
+        for (Py_ssize_t j = 0; j < n; j++) { abscolsum += cabs(A[i*n + j]); }
+        if (abscolsum > norm) { norm = abscolsum; }
+    }
+    return norm;
 }
 
 static float
-snorm1est(float* A, CBLAS_INT n)
+snorm1est(float* A, CBLAS_INT n, CBLAS_INT p)
 {
     CBLAS_INT from = 2*n, to = n, kase = 0, tempint, int1 = 1;
     CBLAS_INT isave[3];
@@ -81,17 +77,21 @@ snorm1est(float* A, CBLAS_INT n)
     if (!work_arr) { return -100; }
     CBLAS_INT* iwork_arr = PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     if (!iwork_arr) { PyMem_RawFree(work_arr);return -101; }
-    // 1-norm estimator by reverse communication
+    // 1-norm estimator of A**p by reverse communication
     // dlacon( n, v, x, isgn, est, kase )
     BLAS_FUNC(slacn2)(&n, work_arr, &work_arr[n], iwork_arr, &est, &kase, isave);
 
     while (kase)
     {
-        opA = (kase == 1 ? "T" : "N");
-        tempint = from;
-        from = to;
-        to = tempint;
-        BLAS_FUNC(sgemv)(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
+        // lacn2 asks for A @ x when kase is 1 and A.T @ x otherwise
+        opA = (kase == 1 ? "N" : "T");
+        for (CBLAS_INT k = 0; k < p; k++)
+        {
+            tempint = from;
+            from = to;
+            to = tempint;
+            BLAS_FUNC(sgemv)(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
+        }
         BLAS_FUNC(slacn2)(&n, work_arr, &work_arr[to], iwork_arr, &est, &kase, isave);
     }
 
@@ -103,7 +103,7 @@ snorm1est(float* A, CBLAS_INT n)
 
 
 static double
-dnorm1est(double* A, CBLAS_INT n)
+dnorm1est(double* A, CBLAS_INT n, CBLAS_INT p)
 {
     CBLAS_INT from = 2*n, to = n, kase = 0, tempint, int1 = 1;
     CBLAS_INT isave[3];
@@ -113,17 +113,21 @@ dnorm1est(double* A, CBLAS_INT n)
     if (!work_arr) { return -100; }
     CBLAS_INT* iwork_arr = PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     if (!iwork_arr) { PyMem_RawFree(work_arr);return -101; }
-    // 1-norm estimator by reverse communication
+    // 1-norm estimator of A**p by reverse communication
     // dlacon( n, v, x, isgn, est, kase )
     BLAS_FUNC(dlacn2)(&n, work_arr, &work_arr[n], iwork_arr, &est, &kase, isave);
 
     while (kase)
     {
-        opA = (kase == 1 ? "T" : "N");
-        tempint = from;
-        from = to;
-        to = tempint;
-        BLAS_FUNC(dgemv)(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
+        // dlacn2 asks for A @ x when kase is 1 and A.T @ x otherwise
+        opA = (kase == 1 ? "N" : "T");
+        for (CBLAS_INT k = 0; k < p; k++)
+        {
+            tempint = from;
+            from = to;
+            to = tempint;
+            BLAS_FUNC(dgemv)(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
+        }
         BLAS_FUNC(dlacn2)(&n, work_arr, &work_arr[to], iwork_arr, &est, &kase, isave);
     }
 
@@ -135,7 +139,7 @@ dnorm1est(double* A, CBLAS_INT n)
 
 
 static float
-cnorm1est(SCIPY_C* A, CBLAS_INT n)
+cnorm1est(SCIPY_C* A, CBLAS_INT n, CBLAS_INT p)
 {
     CBLAS_INT from = 2*n, to = n, kase = 0, tempint, int1 = 1;
     CBLAS_INT isave[3];
@@ -149,11 +153,15 @@ cnorm1est(SCIPY_C* A, CBLAS_INT n)
 
     while (kase)
     {
-        opA = (kase == 1 ? "C" : "N");
-        tempint = from;
-        from = to;
-        to = tempint;
-        BLAS_FUNC(cgemv)(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
+        // lacn2 asks for A @ x when kase is 1 and A.conj().T @ x otherwise
+        opA = (kase == 1 ? "N" : "C");
+        for (CBLAS_INT k = 0; k < p; k++)
+        {
+            tempint = from;
+            from = to;
+            to = tempint;
+            BLAS_FUNC(cgemv)(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
+        }
         BLAS_FUNC(clacn2)(&n, work_arr, &work_arr[to], &est, &kase, isave);
     }
 
@@ -164,7 +172,7 @@ cnorm1est(SCIPY_C* A, CBLAS_INT n)
 
 
 static double
-znorm1est(SCIPY_Z* A, CBLAS_INT n)
+znorm1est(SCIPY_Z* A, CBLAS_INT n, CBLAS_INT p)
 {
     CBLAS_INT from = 2*n, to = n, kase = 0, tempint, int1 = 1;
     CBLAS_INT isave[3];
@@ -178,11 +186,15 @@ znorm1est(SCIPY_Z* A, CBLAS_INT n)
 
     while (kase)
     {
-        opA = (kase == 1 ? "C" : "N");
-        tempint = from;
-        from = to;
-        to = tempint;
-        BLAS_FUNC(zgemv)(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
+        // lacn2 asks for A @ x when kase is 1 and A.conj().T @ x otherwise
+        opA = (kase == 1 ? "N" : "C");
+        for (CBLAS_INT k = 0; k < p; k++)
+        {
+            tempint = from;
+            from = to;
+            to = tempint;
+            BLAS_FUNC(zgemv)(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
+        }
         BLAS_FUNC(zlacn2)(&n, work_arr, &work_arr[to], &est, &kase, isave);
     }
 
@@ -200,19 +212,18 @@ static void
 pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    Py_ssize_t dims[2];
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     float normA, dbl1 = 1.0, dbl0 = 0.0;
     float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
-    // work_arr is two (n,) cols that will be used multiplying absA, alternating.
+    // work_arr is two (n,) cols that will be used multiplying absA.T, alternating.
     float* restrict work_arr = &Am[6*n*n];
     float* restrict absA = &Am[5*n*n];
 
-    dims[0] = n;
-    dims[1] = n;
+    *m = 0;
+    *s = 0;
     theta[0] = 1.495585217958292e-002;
     theta[1] = 2.539398330063230e-001;
     theta[2] = 9.504178996162932e-001;
@@ -237,7 +248,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     }
 
     // First spin = normest(|A|, m=1)
-    BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, work_arr, &int1, &dbl0, &work_arr[n], &int1);
+    BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, work_arr, &int1, &dbl0, &work_arr[n], &int1);
     normA = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > normA) { normA = work_arr[n+i]; } }
 
@@ -245,8 +256,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &dbl0, &Am[1*n*n], &n);
     BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[2*n*n], &n);
     BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[3*n*n], &n);
-    d4 = powf(snorm1(&Am[2*n*n], work_arr, n), 0.25);
-    d6 = powf(snorm1(&Am[3*n*n], work_arr, n), 1.0/6.0);
+    d4 = powf(snorm1(&Am[2*n*n], n), 0.25);
+    d6 = powf(snorm1(&Am[3*n*n], n), 1.0/6.0);
     eta0 = fmaxf(d4, d6);
     eta1 = eta0;
 
@@ -254,12 +265,12 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     // -------
     // 1-norm of A**7
     // Alternating matvecs
-    // absA * work_arr[n:] = work_arr[:n]
-    // absA * work_arr[:n] = work_arr[n:]
+    // absA.T * work_arr[n:] = work_arr[:n]
+    // absA.T * work_arr[:n] = work_arr[n:]
     for (i = 0; i < 3; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -277,8 +288,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**11
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -297,9 +308,9 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d8 = powf(snorm1(&Am[4*n*n], work_arr, n), 0.125);
+        d8 = powf(snorm1(&Am[4*n*n], n), 0.125);
     } else {
-        test = snorm1est(&Am[0], 8);
+        test = snorm1est(&Am[0], n, 8);
         // If memory error in s1normest
         if (test <= -100.0) { *m = -3; return; }
         d8 = powf(test, 0.125);
@@ -310,8 +321,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**15
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -330,8 +341,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**19
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -354,9 +365,9 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d10 = powf(snorm1(&Am[4*n*n], work_arr, n), 0.1);
+        d10 = powf(snorm1(&Am[4*n*n], n), 0.1);
     } else {
-        test = snorm1est(&Am[0], 10);
+        test = snorm1est(&Am[0], n, 10);
         // If memory error in s1normest
         if (test <= -100.0) { *m = -4; return; }
         d10 = powf(test, 0.1);
@@ -381,8 +392,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**27
     for (i = 0; i < 4; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -417,19 +428,18 @@ static void
 pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    Py_ssize_t dims[2];
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     double normA, dbl1 = 1.0, dbl0 = 0.0;
     double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
-    // work_arr is two (n,) cols that will be used multiplying absA, alternating.
+    // work_arr is two (n,) cols that will be used multiplying absA.T, alternating.
     double* restrict work_arr = &Am[6*n*n];
     double* restrict absA = &Am[5*n*n];
 
-    dims[0] = n;
-    dims[1] = n;
+    *m = 0;
+    *s = 0;
     theta[0] = 1.495585217958292e-002;
     theta[1] = 2.539398330063230e-001;
     theta[2] = 9.504178996162932e-001;
@@ -454,7 +464,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     }
 
     // First spin = normest(|A|, m=1)
-    BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, work_arr, &int1, &dbl0, &work_arr[n], &int1);
+    BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, work_arr, &int1, &dbl0, &work_arr[n], &int1);
     normA = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > normA) { normA = work_arr[n+i]; } }
 
@@ -462,8 +472,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &dbl0, &Am[1*n*n], &n);
     BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[2*n*n], &n);
     BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[3*n*n], &n);
-    d4 = pow(dnorm1(&Am[2*n*n], work_arr, n), 0.25);
-    d6 = pow(dnorm1(&Am[3*n*n], work_arr, n), 1.0/6.0);
+    d4 = pow(dnorm1(&Am[2*n*n], n), 0.25);
+    d6 = pow(dnorm1(&Am[3*n*n], n), 1.0/6.0);
     eta0 = fmax(d4, d6);
     eta1 = eta0;
 
@@ -471,12 +481,12 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     // -------
     // 1-norm of A**7
     // Alternating matvecs
-    // absA * work_arr[n:] = work_arr[:n]
-    // absA * work_arr[:n] = work_arr[n:]
+    // absA.T * work_arr[n:] = work_arr[:n]
+    // absA.T * work_arr[:n] = work_arr[n:]
     for (i = 0; i < 3; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -494,8 +504,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**11
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -514,9 +524,9 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d8 = pow(dnorm1(&Am[4*n*n], work_arr, n), 0.125);
+        d8 = pow(dnorm1(&Am[4*n*n], n), 0.125);
     } else {
-        test = dnorm1est(&Am[0], 8);
+        test = dnorm1est(&Am[0], n, 8);
         // If memory error in d1normest
         if (test <= -100.0) { *m = -3; return; }
         d8 = pow(test, 0.125);
@@ -527,8 +537,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**15
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -547,8 +557,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**19
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -571,9 +581,9 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d10 = pow(dnorm1(&Am[4*n*n], work_arr, n), 0.1);
+        d10 = pow(dnorm1(&Am[4*n*n], n), 0.1);
     } else {
-        test = dnorm1est(&Am[0], 10);
+        test = dnorm1est(&Am[0], n, 10);
         // If memory error in d1normest
         if (test <= -100.0) { *m = -4; return; }
         d10 = pow(test, 0.1);
@@ -598,8 +608,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**27
     for (i = 0; i < 4; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -634,7 +644,6 @@ static void
 pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    Py_ssize_t dims[2];
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     float normA;
@@ -643,13 +652,13 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
-    // work_arr is two (n,) cols that will be used multiplying absA, alternating.
+    // work_arr is two (n,) cols that will be used multiplying absA.T, alternating.
     // Am is complex, but work_arr and absA are real.
     float* restrict work_arr = (float*)&Am[6*n*n];
     float* restrict absA = (float*)&Am[5*n*n];
 
-    dims[0] = n;
-    dims[1] = n;
+    *m = 0;
+    *s = 0;
     theta[0] = 1.495585217958292e-002;
     theta[1] = 2.539398330063230e-001;
     theta[2] = 9.504178996162932e-001;
@@ -674,7 +683,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     }
 
     // First spin = normest(|A|, m=1)
-    BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, work_arr, &int1, &dbl0, &work_arr[n], &int1);
+    BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, work_arr, &int1, &dbl0, &work_arr[n], &int1);
     normA = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > normA) { normA = work_arr[n+i]; } }
 
@@ -682,8 +691,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &cdbl0, &Am[1*n*n], &n);
     BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[2*n*n], &n);
     BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[3*n*n], &n);
-    d4 = powf(cnorm1(&Am[2*n*n], work_arr, n), 0.25);
-    d6 = powf(cnorm1(&Am[3*n*n], work_arr, n), 1.0/6.0);
+    d4 = powf(cnorm1(&Am[2*n*n], n), 0.25);
+    d6 = powf(cnorm1(&Am[3*n*n], n), 1.0/6.0);
     eta0 = fmaxf(d4, d6);
     eta1 = eta0;
 
@@ -691,12 +700,12 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     // -------
     // 1-norm of A**7
     // Alternating matvecs
-    // absA * work_arr[n:] = work_arr[:n]
-    // absA * work_arr[:n] = work_arr[n:]
+    // absA.T * work_arr[n:] = work_arr[:n]
+    // absA.T * work_arr[:n] = work_arr[n:]
     for (i = 0; i < 3; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -714,8 +723,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**11
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -734,9 +743,9 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d8 = powf(cnorm1(&Am[4*n*n], work_arr, n), 0.125);
+        d8 = powf(cnorm1(&Am[4*n*n], n), 0.125);
     } else {
-        test = cnorm1est(&Am[0], 8);
+        test = cnorm1est(&Am[0], n, 8);
         // If memory error in c1normest
         if (test <= -100.0) { *m = -3; return; }
         d8 = powf(test, 0.125);
@@ -747,8 +756,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**15
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -767,8 +776,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**19
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -791,9 +800,9 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d10 = powf(cnorm1(&Am[4*n*n], work_arr, n), 0.1);
+        d10 = powf(cnorm1(&Am[4*n*n], n), 0.1);
     } else {
-        test = cnorm1est(&Am[0], 10);
+        test = cnorm1est(&Am[0], n, 10);
         // If memory error in c1normest
         if (test <= -100.0) { *m = -4; return; }
         d10 = powf(test, 0.1);
@@ -818,8 +827,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**27
     for (i = 0; i < 4; i++)
     {
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(sgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(sgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -861,7 +870,6 @@ static void
 pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    Py_ssize_t dims[2];
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     double normA;
@@ -870,13 +878,13 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
-    // work_arr is two (n,) cols that will be used multiplying absA, alternating.
+    // work_arr is two (n,) cols that will be used multiplying absA.T, alternating.
     // Am is complex, but work_arr and absA are double.
     double* restrict work_arr = (double*)&Am[6*n*n];
     double* restrict absA = (double*)&Am[5*n*n];
 
-    dims[0] = n;
-    dims[1] = n;
+    *m = 0;
+    *s = 0;
     theta[0] = 1.495585217958292e-002;
     theta[1] = 2.539398330063230e-001;
     theta[2] = 9.504178996162932e-001;
@@ -901,7 +909,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     }
 
     // First spin = normest(|A|, m=1)
-    BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, work_arr, &int1, &dbl0, &work_arr[n], &int1);
+    BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, work_arr, &int1, &dbl0, &work_arr[n], &int1);
     normA = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > normA) { normA = work_arr[n+i]; } }
 
@@ -909,8 +917,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &cdbl0, &Am[1*n*n], &n);
     BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[2*n*n], &n);
     BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[3*n*n], &n);
-    d4 = pow(znorm1(&Am[2*n*n], work_arr, n), 0.25);
-    d6 = pow(znorm1(&Am[3*n*n], work_arr, n), 1.0/6.0);
+    d4 = pow(znorm1(&Am[2*n*n], n), 0.25);
+    d6 = pow(znorm1(&Am[3*n*n], n), 1.0/6.0);
     eta0 = fmax(d4, d6);
     eta1 = eta0;
 
@@ -918,12 +926,12 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     // -------
     // 1-norm of A**7
     // Alternating matvecs
-    // absA * work_arr[n:] = work_arr[:n]
-    // absA * work_arr[:n] = work_arr[n:]
+    // absA.T * work_arr[n:] = work_arr[:n]
+    // absA.T * work_arr[:n] = work_arr[n:]
     for (i = 0; i < 3; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -941,8 +949,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**11
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -961,9 +969,9 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d8 = pow(znorm1(&Am[4*n*n], work_arr, n), 0.125);
+        d8 = pow(znorm1(&Am[4*n*n], n), 0.125);
     } else {
-        test = znorm1est(&Am[0], 8);
+        test = znorm1est(&Am[0], n, 8);
         // If memory error in z1normest
         if (test <= -100.0) { *m = -3; return; }
         d8 = pow(test, 0.125);
@@ -974,8 +982,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**15
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -994,8 +1002,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**19
     for (i = 0; i < 2; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -1020,9 +1028,9 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     if (n < 400)
     {
         BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d10 = pow(znorm1(&Am[4*n*n], work_arr, n), 0.1);
+        d10 = pow(znorm1(&Am[4*n*n], n), 0.1);
     } else {
-        test = znorm1est(&Am[0], 10);
+        test = znorm1est(&Am[0], n, 10);
         // If memory error in z1normest
         if (test <= -100.0) { *m = -4; return; }
         d10 = pow(test, 0.1);
@@ -1047,8 +1055,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     // 1-norm of A**27
     for (i = 0; i < 4; i++)
     {
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
-        BLAS_FUNC(dgemv)("N", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[n], &int1, &dbl0, &work_arr[0], &int1);
+        BLAS_FUNC(dgemv)("T", &n, &n, &dbl1, absA, &n, &work_arr[0], &int1, &dbl0, &work_arr[n], &int1);
     }
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
@@ -2191,8 +2199,6 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
 void
 matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
 {
-    int m = 0, s = 0, is_lower = 0;
-    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2208,10 +2214,10 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 2*n workspace.
+    // expm requires 6*n*n + 4*n workspace.
     // 5*n*n is for holding the powers of A
     // n*n for holding the absolute values of A
-    // 2*n is both for 1-norm calculations
+    // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
     float* restrict Am = malloc(sizeof(float)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
@@ -2226,6 +2232,8 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
     |                    MAIN nxn SLICE LOOP                             |
     ====================================================================*/
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        int m = 0, s = 0, is_lower = 0;
+        int64_t lband = 0, uband = 0;
         // See sqrtm for explanation of the loop and offset calculations
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
@@ -2348,8 +2356,6 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
 void
 matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
 {
-    int m = 0, s = 0, is_lower = 0;
-    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2365,10 +2371,10 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 2*n workspace.
+    // expm requires 6*n*n + 4*n workspace.
     // 5*n*n is for holding the powers of A
     // n*n for holding the absolute values of A
-    // 2*n is both for 1-norm calculations
+    // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
     double* restrict Am = malloc(sizeof(double)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
@@ -2383,6 +2389,8 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
     |                    MAIN nxn SLICE LOOP                             |
     ====================================================================*/
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        int m = 0, s = 0, is_lower = 0;
+        int64_t lband = 0, uband = 0;
         // See sqrtm for explanation of the loop and offset calculations
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
@@ -2505,8 +2513,6 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
 void
 matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info)
 {
-    int m = 0, s = 0, is_lower = 0;
-    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2522,10 +2528,10 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 2*n workspace.
+    // expm requires 6*n*n + 4*n workspace.
     // 5*n*n is for holding the powers of A
     // n*n for holding the absolute values of A
-    // 2*n is both for 1-norm calculations
+    // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
     SCIPY_C* restrict Am = malloc(sizeof(SCIPY_C)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
@@ -2540,6 +2546,8 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
     |                    MAIN nxn SLICE LOOP                             |
     ====================================================================*/
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        int m = 0, s = 0, is_lower = 0;
+        int64_t lband = 0, uband = 0;
         // See sqrtm for explanation of the loop and offset calculations
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
@@ -2710,8 +2718,6 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
 void
 matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info)
 {
-    int m = 0, s = 0, is_lower = 0;
-    int64_t lband = 0, uband = 0;
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -2726,10 +2732,10 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
     {
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
-    // expm requires 6*n*n + 2*n workspace.
+    // expm requires 6*n*n + 4*n workspace.
     // 5*n*n is for holding the powers of A
     // n*n for holding the absolute values of A
-    // 2*n is both for 1-norm calculations
+    // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
     SCIPY_Z* restrict Am = malloc(sizeof(SCIPY_Z)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
@@ -2744,6 +2750,8 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
     |                    MAIN nxn SLICE LOOP                             |
     ====================================================================*/
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        int m = 0, s = 0, is_lower = 0;
+        int64_t lband = 0, uband = 0;
         // See sqrtm for explanation of the loop and offset calculations
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
