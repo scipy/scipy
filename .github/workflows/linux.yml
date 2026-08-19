@@ -243,28 +243,40 @@ jobs:
         run: |
           spin install
 
-      - name: Ccache performance
-        shell: bash -l {0}
-        run: |
-          ccache --evict-older-than 1d
-          ccache -s
-
       - name: Check import
         # Run from outside the source tree, then check that `scipy` still
         # resolves back to it - that's the point of an editable install.
         run: |
           python -c "
-          import pathlib, scipy, scipy.linalg
-          expected = pathlib.Path(r'$EXPECTED_SCIPY_DIR')
+          import os, pathlib, scipy, scipy.linalg
+          expected = pathlib.Path(os.environ['EXPECTED_SCIPY_DIR'])
           assert pathlib.Path(scipy.__file__).parent == expected, \
               f'{scipy.__file__=} not from {expected}'"
         working-directory: ${{ runner.temp }}
         env:
           EXPECTED_SCIPY_DIR: ${{ github.workspace }}/scipy
 
-      - name: Test SciPy
+      - name: Check rebuild on import
+        # meson-python reruns ninja on every import of an editable install. Touch a
+        # .pyx so that hook has actual work to do; nothing else in CI exercises it.
         run: |
-          spin test -j3 -- --durations 10 --timeout=60
+          touch "$GITHUB_WORKSPACE/scipy/linalg/_cythonized_array_utils.pyx"
+          python -c "import numpy as np, scipy.linalg; print(scipy.linalg.bandwidth(np.eye(3)))"
+        working-directory: ${{ runner.temp }}
+
+      - name: Ccache performance
+        # After the imports above, since those can trigger a rebuild
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+      - name: Test SciPy
+        # `-t scipy` is required: with extra args after `--`, spin does not add a
+        # collection target of its own, and for an editable install it also leaves
+        # pytest's cwd at the repo root - so pytest would collect the whole checkout.
+        run: |
+          spin test -j3 -t scipy -- --durations 10 --timeout=60
 
   #################################################################################
   python_debug:
