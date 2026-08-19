@@ -62,8 +62,13 @@ class TestBatch:
             for j in range(batch_shape[1]):
                 arrays_ij = (array[i, j] for array in arrays)
                 ref = fun(*arrays_ij, **kwargs)
-                ref = ((np.asarray(ref),) if n_out == 1 else
-                       tuple(np.asarray(refk) for refk in ref))
+                # see gh-25508:
+                if (np.dtype(np.int_).itemsize == 4 and
+                     n_out > 1 and isinstance(ref[0], int)):
+                     ref = tuple(np.asarray(refk, dtype=np.int64) for refk in ref)
+                else:
+                     ref = ((np.asarray(ref),) if n_out == 1 else
+                            tuple(np.asarray(refk) for refk in ref))
                 for k in range(n_out):
                     assert_allclose(res[k][i, j], ref[k])
                     assert np.shape(res[k][i, j]) == ref[k].shape
