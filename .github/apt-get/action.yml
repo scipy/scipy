@@ -33,8 +33,10 @@ runs:
         }
         # GitHub-hosted Ubuntu runners default to an Azure geo-mirror that is
         # frequently unreachable; go straight to the canonical mirror instead of
-        # burning the update timeout on retries against a dead host.
-        for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources; do
+        # burning the update timeout on retries against a dead host. The actual
+        # mirror lives in apt-mirrors.txt - ubuntu.sources just points at it via
+        # a `mirror+file:` URI, so patching only the .sources files is a no-op.
+        for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/apt-mirrors.txt; do
           [[ -f "$f" ]] && sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' "$f"
         done
         sudo timeout 5m apt-get update "${opts[@]}"
