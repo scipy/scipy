@@ -432,9 +432,8 @@ jobs:
       - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
-          python -m pip install --group build --group dev-cli
+          python -m pip install --group build --group dev-cli --group openblas32
           python -m pip install --pre --upgrade --group coverage
-          python -m pip install -r requirements/openblas.txt
           python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
       - name: Set up ccache
@@ -491,11 +490,10 @@ jobs:
             python3.12 -m venv test
             source test/bin/activate
             python -m pip install --upgrade pip
-            python -m pip install --group build --group dev-cli --group test-core
+            python -m pip install --group build --group dev-cli --group test-core --group openblas32
             # we want `mpmath` but cannot install `gmpy2` on 32-bit,
             # so cannot use `--group test-mp`
             python -m pip install mpmath
-            python -m pip install -r requirements/openblas.txt
             python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir
             python -c "import numpy as np; np.show_config()"
             spin build --with-scipy-openblas=32
@@ -604,8 +602,7 @@ jobs:
 
       - name: Setup Python build/test deps
         run: |
-          python -m pip install --group build --group test-core
-          python -m pip install -r requirements/openblas.txt
+          python -m pip install --group build --group test-core --group openblas32
           python -m pip install build
           # Remove `meson` from environment
           python -m pip uninstall meson --yes
