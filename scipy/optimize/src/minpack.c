@@ -1510,7 +1510,7 @@ void LMDIF(int(*fcn)(int* m, int* n, double* x, double* fvec, int* iflag),
             }
             // 260
 
-            // Test for succesful iteration.
+            // Test for successful iteration.
             if (ratio >= 0.0001)
             {
                 // Successful iteration. Update x, fvec, and their norms.
@@ -1974,7 +1974,7 @@ void LMDER(int(*fcn)(int* m, int* n,double* x, double* fvec, double* fjac,
             }
             // 260
 
-            // Test for succesful iteration.
+            // Test for successful iteration.
             if (ratio >= 0.0001)
             {
                 for (j = 0; j < n; j++)
@@ -2454,7 +2454,7 @@ void LMSTR(int(*fcn)(int* m, int* n, double* x, double* fvec, double* wa3, int* 
             }
             // 300
 
-            // Test for succesful iteration.
+            // Test for successful iteration.
             if (ratio >= 0.0001)
             {
                 for (j = 0; j < n; j++)

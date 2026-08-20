@@ -18,6 +18,7 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 import numpy as np
 from ._slsqplib import slsqp
 from scipy.linalg import norm as lanorm
+from scipy.linalg.lapack import HAS_ILP64
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x, _wrap_callback)
@@ -477,8 +478,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if iprint >= 2:
         print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} {'GNORM':>16}")
 
+    # XXX: check problem size too large for LP64?
+
     # Internal buffer and int array
-    indices = np.zeros([max(m + 2*n + 2, 1)], dtype=np.int32)
+    indices = np.zeros(
+        [max(m + 2*n + 2, 1)], dtype=np.int64 if HAS_ILP64 else np.int32
+    )
 
     # The worst case workspace requirements for the buffer are:
 

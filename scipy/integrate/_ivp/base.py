@@ -62,7 +62,7 @@ class OdeSolver:
     9. By convention, the function evaluations used to compute a finite
        difference approximation of the Jacobian should not be counted in
        `nfev`, thus use ``fun_single(self, t, y)`` or
-       ```fun_vectorized(self, t, y)`` when computing a finite difference
+       ``fun_vectorized(self, t, y)`` when computing a finite difference
        approximation of the Jacobian.
 
     Parameters
@@ -130,7 +130,7 @@ class OdeSolver:
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, fun, t0, y0, t_bound, vectorized,
                  support_complex=False):
@@ -241,6 +241,13 @@ class DenseOutput:
     Evaluation outside this interval is not forbidden, but the accuracy is not
     guaranteed.
 
+    Parameters
+    ----------
+    t_old : float
+        Previous time.
+    t : float
+        Current time.
+
     Attributes
     ----------
     t_min, t_max : float
@@ -248,7 +255,7 @@ class DenseOutput:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, t_old, t):
         self.t_old = t_old

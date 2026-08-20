@@ -15,18 +15,14 @@ import numpy as np
 from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
                    triu_indices)
 
-from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
-                          solve, ldl, norm, block_diag, qr, eigh, qz)
+from scipy.linalg import (
+    lapack, inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, qz
+)
 from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
+from scipy.sparse import diags_array
 
-import scipy.sparse as sps
-
-try:
-    from scipy.linalg import _clapack as clapack
-except ImportError:
-    clapack = None
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
@@ -55,12 +51,12 @@ def test_lapack_documented():
     names = set(lapack.__doc__.split())
     ignore_list = {
         "absolute_import",
-        "clapack",
         "division",
         "find_best_lapack_type",
         "flapack",
         "print_function",
         "HAS_ILP64",
+        "HAS_LP64",
         "np",
     }
     missing = list()
@@ -71,10 +67,14 @@ def test_lapack_documented():
     assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
 
 
-def test_ilp64_blas_lapack_both_or_none():
+def test_lp64_ilp64_blas_lapack_both_or_none():
     from scipy.linalg.blas import HAS_ILP64 as blas_has_ilp64
     from scipy.linalg.lapack import HAS_ILP64 as lapack_has_ilp64
     assert blas_has_ilp64 == lapack_has_ilp64
+
+    from scipy.linalg.blas import HAS_LP64 as blas_has_lp64
+    from scipy.linalg.lapack import HAS_LP64 as lapack_has_lp64
+    assert blas_has_lp64 == lapack_has_lp64
 
 
 class TestFlapackSimple:
@@ -85,8 +85,8 @@ class TestFlapackSimple:
               [4, 0, 0, 2e-3],
               [7, 1, 0, 0],
               [0, 1, 0, 0]]
-        for p in 'sdzc':
-            f = getattr(flapack, p+'gebal', None)
+        for dtype in DTYPES:
+            f = get_lapack_funcs('gebal', dtype=dtype)
             if f is None:
                 continue
             ba, lo, hi, pivscale, info = f(a)
@@ -104,8 +104,8 @@ class TestFlapackSimple:
         a = [[-149, -50, -154],
              [537, 180, 546],
              [-27, -9, -25]]
-        for p in 'd':
-            f = getattr(flapack, p+'gehrd', None)
+        for dtype in [np.float64]:
+            f = get_lapack_funcs('gehrd', dtype=dtype)
             if f is None:
                 continue
             ht, tau, info = f(a)
@@ -171,19 +171,6 @@ class TestFlapackSimple:
                         ref = np.max(np.sum(np.abs(a1), axis=1))
 
                     assert_equal(value, ref)
-
-
-class TestLapack:
-
-    def test_flapack(self):
-        if hasattr(flapack, 'empty_module'):
-            # flapack module is empty
-            pass
-
-    def test_clapack(self):
-        if hasattr(clapack, 'empty_module'):
-            # clapack module is empty
-            pass
 
 
 class TestLeastSquaresSolvers:
@@ -591,7 +578,7 @@ class TestTbtrs:
             bands[ku] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
-        a = sps.diags(bands, band_offsets, format='dia')
+        a = diags_array(bands, offsets=band_offsets, format='dia')
 
         # Convert A into banded storage form
         ab = np.zeros((kd + 1, n), dtype)
@@ -908,7 +895,7 @@ class TestHetrd:
         assert_raises(ValueError, hetrd, A)
 
     @pytest.mark.parametrize('real_dtype,complex_dtype',
-                             zip(REAL_DTYPES, COMPLEX_DTYPES))
+                             list(zip(REAL_DTYPES, COMPLEX_DTYPES)))
     @pytest.mark.parametrize('n', (1, 3))
     def test_hetrd(self, n, real_dtype, complex_dtype):
         A = np.zeros((n, n), dtype=complex_dtype)
@@ -1850,9 +1837,9 @@ def test_getc2_gesc2():
 
 @pytest.mark.parametrize('size', [(6, 5), (5, 5)])
 @pytest.mark.parametrize('dtype', REAL_DTYPES)
-@pytest.mark.parametrize('joba', range(6))  # 'C', 'E', 'F', 'G', 'A', 'R'
-@pytest.mark.parametrize('jobu', range(4))  # 'U', 'F', 'W', 'N'
-@pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
+@pytest.mark.parametrize('joba', list(range(6)))  # 'C', 'E', 'F', 'G', 'A', 'R'
+@pytest.mark.parametrize('jobu', list(range(4)))  # 'U', 'F', 'W', 'N'
+@pytest.mark.parametrize('jobv', list(range(4)))  # 'V', 'J', 'W', 'N'
 @pytest.mark.parametrize('jobr', [0, 1])
 @pytest.mark.parametrize('jobp', [0, 1])
 def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobp, jobt=0):
@@ -2234,7 +2221,7 @@ def test_geqrfp_lwork(dtype, shape):
 
 
 @pytest.mark.parametrize("ddtype,dtype",
-                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+                         list(zip(REAL_DTYPES + REAL_DTYPES, DTYPES)))
 def test_pttrf_pttrs(ddtype, dtype):
     rng = np.random.RandomState(42)
     # set test tolerance appropriate for dtype
@@ -2283,7 +2270,7 @@ def test_pttrf_pttrs(ddtype, dtype):
 
 
 @pytest.mark.parametrize("ddtype,dtype",
-                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+                         list(zip(REAL_DTYPES + REAL_DTYPES, DTYPES)))
 def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
     n = 10
     rng = np.random.RandomState(1234)
@@ -2296,7 +2283,7 @@ def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
 
 
 @pytest.mark.parametrize("ddtype,dtype",
-                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+                        list(zip(REAL_DTYPES + REAL_DTYPES, DTYPES)))
 def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
     n = 10
     rng = np.random.RandomState(42)
@@ -2391,8 +2378,8 @@ def pteqr_get_d_e_A_z(dtype, realtype, n, compute_z):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", range(3))
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+@pytest.mark.parametrize("compute_z", list(range(3)))
 def test_pteqr(dtype, realtype, compute_z):
     '''
     Tests the ?pteqr lapack routine for all dtypes and compute_z parameters.
@@ -2423,8 +2410,8 @@ def test_pteqr(dtype, realtype, compute_z):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", range(3))
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+@pytest.mark.parametrize("compute_z", list(range(3)))
 def test_pteqr_error_non_spd(dtype, realtype, compute_z):
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
@@ -2437,8 +2424,8 @@ def test_pteqr_error_non_spd(dtype, realtype, compute_z):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", range(3))
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+@pytest.mark.parametrize("compute_z", list(range(3)))
 def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
     n = 10
@@ -2451,8 +2438,8 @@ def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", range(3))
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+@pytest.mark.parametrize("compute_z", list(range(3)))
 def test_pteqr_error_singular(dtype, realtype, compute_z):
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
     n = 10
@@ -2846,8 +2833,8 @@ def test_gtsvx_NAG(du, d, dl, b, x):
     assert_array_almost_equal(x, x_soln)
 
 
-@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
-                                               + REAL_DTYPES))
+@pytest.mark.parametrize("dtype,realtype", list(zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES)))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
                            lambda d, e: get_lapack_funcs('pttrf',
@@ -2905,8 +2892,8 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
                                  "({x_soln.shape[1]},)"))
 
 
-@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
-                                               + REAL_DTYPES))
+@pytest.mark.parametrize("dtype,realtype", list(zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES)))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
                            lambda d, e: get_lapack_funcs('pttrf',
@@ -2932,8 +2919,8 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
     assert_raises(Exception, ptsvx, d, e, b[:-1], fact=fact, df=df, ef=ef)
 
 
-@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
-                                               + REAL_DTYPES))
+@pytest.mark.parametrize("dtype,realtype", list(zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES)))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
                            lambda d, e: get_lapack_funcs('pttrf',

@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from scipy._lib._array_api import (
     is_cupy, is_numpy,
@@ -2714,6 +2715,7 @@ class TestNdimageMorphology:
 
     @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
     @skip_xp_backends("dask.array", reason="output=array requires buffer view")
+    @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9756")
     @make_xp_test_case(ndimage.white_tophat)
     def test_white_tophat04(self, xp):
         array = np.eye(5, dtype=bool)
@@ -2785,6 +2787,7 @@ class TestNdimageMorphology:
 
     @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
     @skip_xp_backends("dask.array", reason="output=array requires buffer view")
+    @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9756")
     @make_xp_test_case(ndimage.black_tophat)
     def test_black_tophat04(self, xp):
         array = xp.asarray(np.eye(5, dtype=bool))
@@ -2959,7 +2962,7 @@ class TestDilateFix:
         else:
             self.dilated3x3 = xp.astype(dilated3x3, xp.uint8)
 
-
+    @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9756")
     def test_dilation_square_structure(self, xp):
         self._setup(xp)
         result = ndimage.grey_dilation(self.array, structure=self.sq3x3)
@@ -3103,3 +3106,36 @@ def test_distance_transform_cdt_invalid_metric(xp):
     with pytest.raises(ValueError, match=msg):
         ndimage.distance_transform_cdt(xp.ones((5, 5)),
                                        metric="garbage")
+
+
+# NumPy-only because byte order is numpy-specific
+def _swapped_int32(shape):
+    return np.zeros(shape, dtype=np.dtype(np.int32).newbyteorder())
+
+
+@pytest.mark.parametrize('call', [
+    pytest.param(
+        lambda a: ndimage.distance_transform_cdt(
+            a, distances=_swapped_int32((5, 5))),
+        id='distance_transform_cdt'),
+    pytest.param(
+        lambda a: ndimage.distance_transform_edt(
+            a, return_indices=True, indices=_swapped_int32((2, 5, 5))),
+        id='distance_transform_edt'),
+    pytest.param(
+        lambda a: ndimage.binary_erosion(
+            a, output=_swapped_int32((5, 5)), iterations=2),
+        id='binary_erosion'),
+])
+def test_byte_order_output_writeback(call):
+    """Regression test for gh-25641: an output array that NumPy has to copy
+    (here, because of non-native byte order) must be written back by the
+    C code rather than left for NumPy to clean up during deallocation.
+    """
+    data = np.zeros((5, 5), dtype=np.uint8)
+    with warnings.catch_warnings(record=True) as rec:
+        warnings.simplefilter("always")
+        call(data)
+    leaked = [str(w.message) for w in rec
+              if issubclass(w.category, RuntimeWarning)]
+    assert leaked == []

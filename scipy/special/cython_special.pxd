@@ -34,7 +34,7 @@ cpdef double bdtr(double x0, dlp_number_t x1, double x2) noexcept nogil
 cpdef double bdtrc(double x0, dlp_number_t x1, double x2) noexcept nogil
 cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil
-cpdef df_number_t bdtrin(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil
 cpdef double bei(double x0) noexcept nogil
 cpdef double beip(double x0) noexcept nogil
 cpdef double ber(double x0) noexcept nogil
@@ -64,6 +64,7 @@ cpdef double cosdg(double x0) noexcept nogil
 cpdef double cosm1(double x0) noexcept nogil
 cpdef double cotdg(double x0) noexcept nogil
 cpdef Dd_number_t dawsn(Dd_number_t x0) noexcept nogil
+cpdef df_number_t digammainv(df_number_t x0) noexcept nogil
 cpdef double ellipe(double x0) noexcept nogil
 cpdef double ellipeinc(double x0, double x1) noexcept nogil
 cdef void ellipj(double x0, double x1, double *y0, double *y1, double *y2, double *y3) noexcept nogil
@@ -169,6 +170,8 @@ cpdef Dd_number_t kve(double x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t log1p(Dd_number_t x0) noexcept nogil
 cpdef dfg_number_t log_expit(dfg_number_t x0) noexcept nogil
 cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil
+cpdef df_number_t log_gammainc(df_number_t x0, df_number_t x1) noexcept nogil
+cpdef df_number_t log_gammaincc(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil
 cpdef dfg_number_t logit(dfg_number_t x0) noexcept nogil
 cpdef double lpmv(double x0, double x1, double x2) noexcept nogil

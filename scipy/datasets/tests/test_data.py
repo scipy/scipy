@@ -7,15 +7,10 @@ import os
 from threading import get_ident
 import pytest
 
-try:
-    import pooch
-except ImportError:
-    raise ImportError("Missing optional dependency 'pooch' required "
-                      "for scipy.datasets module. Please use pip or "
-                      "conda to install 'pooch'.")
+pooch = pytest.importorskip("pooch")
 
 
-data_dir = data_fetcher.path  # type: ignore
+data_dir = data_fetcher.path
 
 
 def _has_hash(path, expected_hash):

@@ -14,9 +14,8 @@ from .lsq_problems import extract_lsq_problems
 
 with safe_import():
     import scipy.optimize
-    from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
-    from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                dual_annealing, shgo, direct)
+    from scipy.optimize import (rosen, rosen_der, rosen_hess, leastsq, basinhopping,
+                                differential_evolution, dual_annealing, shgo, direct)
     from scipy.optimize._minimize import MINIMIZE_METHODS
     from .cutest.calfun import calfun
     from .cutest.dfoxs import dfoxs

@@ -56,8 +56,8 @@ in :mod:`scipy.stats`, the following functionality can be used:
    FastGeneratorInversion
 
 """
-from ._sampling import FastGeneratorInversion, RatioUniforms  # noqa: F401
-from ._unuran.unuran_wrapper import (  # noqa: F401
+from ._sampling import FastGeneratorInversion, RatioUniforms
+from ._unuran.unuran_wrapper import (
    TransformedDensityRejection,
    DiscreteAliasUrn,
    DiscreteGuideTable,

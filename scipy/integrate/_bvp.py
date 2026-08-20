@@ -4,7 +4,7 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import pinv
 
-from scipy.sparse import coo_matrix, csc_matrix
+from scipy.sparse import csc_array
 from scipy.sparse.linalg import splu
 from scipy.optimize import OptimizeResult
 from scipy._lib._array_api import xp_capabilities
@@ -229,7 +229,7 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
 
     Returns
     -------
-    J : csc_matrix, shape (n * m + k, n * m + k)
+    J : csc_array, shape (n * m + k, n * m + k)
         Jacobian of the collocation system in a sparse form.
 
     References
@@ -270,8 +270,7 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
         dPhi_dp = -h/6 * (df_dp[:-1] + df_dp[1:] + 4 * df_dp_middle)
         values = np.hstack((values, dPhi_dp.ravel(), dbc_dp.ravel()))
 
-    J = coo_matrix((values, (i_jac, j_jac)))
-    return csc_matrix(J)
+    return csc_array((values, (i_jac, j_jac)))
 
 
 def collocation_fun(fun, y, p, x, h):
@@ -376,8 +375,8 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
         Function computing boundary condition residuals.
     jac : callable
         Function computing the Jacobian of the whole system (including
-        collocation and boundary condition residuals). It is supposed to
-        return csc_matrix.
+        collocation and boundary condition residuals). It must return
+        scipy.sparse in CSC format ready for use with `scipy.sparse.linalg.splu`.
     y : ndarray, shape (n, m)
         Initial guess for the function values at the mesh nodes.
     p : ndarray, shape (k,)
@@ -879,7 +878,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
            Control and the Maltab PSE", ACM Trans. Math. Softw., Vol. 27,
            Number 3, pp. 299-316, 2001.
     .. [2] L.F. Shampine, P. H. Muir and H. Xu, "A User-Friendly Fortran BVP
-           Solver", J. Numer. Anal., Ind. Appl. Math. (JNAIAM), Vol. 1, 
+           Solver", J. Numer. Anal., Ind. Appl. Math. (JNAIAM), Vol. 1,
            Number 2, pp. 201-217, 2006.
     .. [3] U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
            Boundary Value Problems for Ordinary Differential Equations",

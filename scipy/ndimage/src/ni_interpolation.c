@@ -295,8 +295,13 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
     /* offsets used at the borders: */
     edge_offsets = malloc(irank * sizeof(npy_intp*));
+    if (NPY_UNLIKELY(!edge_offsets)) {
+        NPY_END_THREADS;
+        PyErr_NoMemory();
+        goto exit;
+    }
     data_offsets = malloc(irank * sizeof(npy_intp*));
-    if (NPY_UNLIKELY(!edge_offsets || !data_offsets)) {
+    if (NPY_UNLIKELY(!data_offsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
@@ -432,7 +437,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 icoor[hh] = tmp;
             }
         } else if (coordinates) {
-            /* mapping is from an coordinates array: */
+            /* mapping is from a coordinates array: */
             char *p = pc;
             switch (PyArray_TYPE(coordinates)) {
                 CASE_MAP_COORDINATES(NPY_BOOL, npy_bool,

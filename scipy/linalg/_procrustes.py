@@ -15,7 +15,7 @@ __all__ = ['orthogonal_procrustes']
     jax_jit=False,
     skip_backends=[("dask.array", "full_matrices=True is not supported by dask")],
 )
-@_apply_over_batch(('A', 2), ('B', 2))
+@_apply_over_batch(('A', 2), ('B', 2), signature="(i,j),(i,j)->(j,j),()")
 def orthogonal_procrustes(A, B, check_finite=True):
     """
     Compute the matrix solution of the orthogonal (or unitary) Procrustes problem.

@@ -12,7 +12,8 @@ from scipy._lib._array_api import xp_ravel
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_size, xp_copy,
-                                   xp_promote, is_dask, is_jax)
+                                   xp_promote, is_dask, is_jax, xp_capabilities,
+                                   xp_device)
 import scipy._external.array_api_extra as xpx
 
 import inspect
@@ -161,6 +162,7 @@ def _broadcast_shapes_remove_axis(shapes, axis=None):
     return tuple(shape)
 
 
+@xp_capabilities()
 def _broadcast_concatenate(arrays, axis, paired=False, xp=None):
     """Concatenate arrays along an axis with broadcasting."""
     xp = array_namespace(*arrays) if xp is None else xp
@@ -271,7 +273,7 @@ def _check_empty_inputs(samples, axis, xp=None):
     # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
     NaN = _get_nan(*samples)
-    output = xp.full(output_shape, xp.nan, dtype=NaN.dtype)
+    output = xp.full(output_shape, xp.nan, dtype=NaN.dtype, device=xp_device(NaN))
     return output
 
 
@@ -280,7 +282,7 @@ def _add_reduced_axes(res, reduced_axes, keepdims, xp=np):
     Add reduced axes back to all the arrays in the result object
     if keepdims = True.
     """
-    return ([xpx.expand_dims(output, axis=reduced_axes)
+    return ([xp.expand_dims(output, axis=reduced_axes)
              if not isinstance(output, int) else output for output in res]
             if keepdims else res)
 
@@ -374,15 +376,15 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         Function that unpacks the results of the function being wrapped into
         a tuple. This is essentially the inverse of `tuple_to_result`. Default
         is `None`, which is appropriate for statistical tests that return a
-        statistic, pvalue tuple (rather than, e.g., a non-iterable datalass).
+        statistic, pvalue tuple (rather than, e.g., a non-iterable dataclass).
     too_small : int or callable, default: 0
-        The largest unnacceptably small sample for the function being wrapped.
+        The largest unacceptably small sample for the function being wrapped.
         For example, some functions require samples of size two or more or they
         raise an error. This argument prevents the error from being raised when
         input is not 1D and instead places a NaN in the corresponding element
         of the result. If callable, it must accept a list of samples, axis,
         and a dictionary of keyword arguments passed to the wrapper function as
-        arguments and return a bool indicating weather the samples passed are
+        arguments and return a bool indicating whether the samples passed are
         too small.
     n_outputs : int or callable, default: 2
         The number of outputs produced by the function given 1d sample(s). For
@@ -577,8 +579,9 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "propagate"
                 if any_contains_nan and (nan_policy == 'propagate'
                                          and override['nan_propagation']):
-                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
-                    res = _add_reduced_axes(res, reduced_axes, keepdims)
+                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype,
+                                  device=xp_device(NaN))
+                    res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                     return tuple_to_result(*res)
 
                 # Addresses nan_policy == "omit"
@@ -593,13 +596,14 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_msg, SmallSampleWarning, stacklevel=2)
-                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
-                    res = _add_reduced_axes(res, reduced_axes, keepdims)
+                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype,
+                                  device=xp_device(NaN))
+                    res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                     return tuple_to_result(*res)
 
                 res = hypotest_fun_out(*samples, **kwds)
                 res = result_to_tuple(res, n_out)
-                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
 
             # check for empty input
@@ -613,7 +617,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     warnings.warn(too_small_nd_not_omit, SmallSampleWarning,
                                   stacklevel=2)
                 res = [xp_copy(empty_output) for i in range(n_out)]
-                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
 
             if not is_numpy(xp) and 'nan_policy' in kwds:
@@ -642,7 +646,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)
                 res = result_to_tuple(res, n_out)
-                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
 
             # Addresses nan_policy == "omit"

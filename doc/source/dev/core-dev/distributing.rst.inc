@@ -17,7 +17,7 @@ optional.  SciPy tries to keep its dependencies to a minimum; the current requir
 and optional build time dependencies can be seen in `SciPy's configuration file`_, 
 ``pyproject.toml``. The only non-optional runtime dependency is NumPy_.
 
-Furthermore, of course one needs C, C++ and Fortran compilers to build SciPy,
+Furthermore, of course one needs C and C++ compilers to build SciPy,
 but we don't consider those to be dependencies, and therefore they are not discussed
 here.  For details, see :ref:`building-from-source`.
 
@@ -128,7 +128,7 @@ and distributing them on PyPI or elsewhere.
   project and `this thread
   <https://mail.python.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
   details.
-- The other way to produce 64-bit Windows installers is with ``icc``, ``ifort``
+- The other way to produce 64-bit Windows installers is with ``icc``,
   plus ``MKL`` (or ``MSVC`` instead of ``icc``).  For Intel toolchain
   instructions see
   `this article <https://software.intel.com/en-us/articles/numpyscipy-with-intel-mkl>`_
@@ -139,9 +139,7 @@ and distributing them on PyPI or elsewhere.
   https://github.com/numpy/numpy-vendor.  That build setup is known to not work
   well anymore and is no longer supported.  It used g77 instead of gfortran,
   due to complex DLL distribution issues (see `gh-2829
-  <https://github.com/scipy/scipy/issues/2829>`_).  Because the toolchain is no
-  longer supported, g77 support isn't needed anymore and SciPy can now include
-  Fortran 90/95 code.
+  <https://github.com/scipy/scipy/issues/2829>`_).
 
 **Linux**
 

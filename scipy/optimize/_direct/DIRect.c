@@ -180,23 +180,24 @@
 /* |    maxf -- The maximum number of function evaluations.                | */
 /* |    maxT -- The maximum number of iterations.                          | */
 /* |            Direct stops when either the maximum number of iterations  | */
-/* |            is reached or more than maxf function-evalutions were made.| */
+/* |            is reached or more than maxf function-evaluations were     | */
+/* |            made.                                                      | */
 /* |       l -- The lower bounds of the hyperbox.                          | */
 /* |       u -- The upper bounds of the hyperbox.                          | */
 /* |algmethod-- Choose the method, that is either use the original method  | */
 /* |            as described by Jones et.al. (0) or use our modification(1)| */
 /* | logfile -- File-Handle for the logfile. DIRECT expects this file to be| */
 /* |            opened and closed by the user outside of DIRECT. We moved  | */
-/* |            this to the outside so the user can add extra informations | */
+/* |            this to the outside so the user can add extra information  | */
 /* |            to this file before and after the call to DIRECT.          | */
 /* | fglobal -- Function value of the global optimum. If this value is not | */
 /* |            known (that is, we solve a real problem, not a testproblem)| */
 /* |            set this value to -1.D100 and fglper (see below) to 0.D0.  | */
-/* |  fglper -- Terminate the optimization when the relative error          | */
-/* |                (f_min - fglobal)/max(1,abs(fglobal)) < fglper.     | */
+/* |  fglper -- Terminate the optimization when the relative error         | */
+/* |                (f_min - fglobal)/max(1,abs(fglobal)) < fglper.        | */
 /* |  volper -- Terminate the optimization when the volume of the          | */
 /* |            hyperrectangle S with f(c(S)) = minf is less then volper   | */
-/* |            of the volume of the original hyperrectangle.      | */
+/* |            of the volume of the original hyperrectangle.              | */
 /* |sigmaper -- Terminate the optimization when the measure of the         | */
 /* |            hyperrectangle S with f(c(S)) = minf is less then sigmaper.| */
 /* |                                                                       | */
@@ -230,12 +231,12 @@
 /* |              2   Number of iterations is equal to maxT.               | */
 /* |              3   The best function value found is within fglper of    | */
 /* |                  the (known) global optimum, that is                  | */
-/* |                   (minf - fglobal/max(1,|fglobal|))  < fglper.     | */
+/* |                   (minf - fglobal/max(1,|fglobal|))  < fglper.        | */
 /* |                  Note that this termination signal only occurs when   | */
 /* |                  the global optimal value is known, that is, a test   | */
 /* |                  function is optimized.                               | */
 /* |              4   The volume of the hyperrectangle with minf at its    | */
-/* |                  center is less than volper of the volume of  | */
+/* |                  center is less than volper of the volume of          | */
 /* |                  the original hyperrectangle.                         | */
 /* |              5   The measure of the hyperrectangle with minf at its   | */
 /* |                  center is less than sigmaper.                        | */
@@ -285,17 +286,17 @@
 /* |            NaN - values.                                              | */
 /* |       S -- List of potentially optimal points.                        | */
 /* |   point -- lists                                                      | */
-/* |    ifree -- first free position                                        | */
+/* |    ifree -- first free position                                       | */
 /* |       c -- midpoints of arrays                                        | */
 /* |  thirds -- Precalculated values of 1/3^i.                             | */
 /* |  levels -- Length of intervals.                                       | */
-/* |  length -- Length of intervall (index)                                | */
+/* |  length -- Length of interval (index)                                 | */
 /* |       t -- actual iteration                                           | */
 /* |       j -- loop-variable                                              | */
 /* | actdeep -- the actual minimal interval-length index                   | */
 /* |  Minpos -- position of the actual minimum                             | */
 /* |    file -- The filehandle for a datafile.                             | */
-/* |  maxpos -- The number of intervalls, which are truncated.             | */
+/* |  maxpos -- The number of intervals, which are truncated.              | */
 /* |    help -- A help variable.                                           | */
 /* | numfunc -- The actual number of function evaluations.                 | */
 /* |   file2 -- The filehandle for another datafile.                       | */
@@ -305,7 +306,7 @@
 /* |            initialisation.                                            | */
 /* |   cheat -- Obsolete. If equal 1, we don't allow Ktilde > kmax.        | */
 /* |  writed -- If writed=1, store final division to plot with Matlab.     | */
-/* |   List2 -- List of indicies of intervalls, which are to be truncated. | */
+/* |   List2 -- List of indices of intervals, which are to be truncated.   | */
 /* |       i -- Another loop-variable.                                     | */
 /* |actmaxdeep-- The actual maximum (minimum) of possible Interval length. | */
 /* |  oldpos -- The old index of the minimum. Used to print only, if there | */
@@ -313,7 +314,7 @@
 /* |  tstart -- The start of the outer loop.                               | */
 /* |   start -- The position of the starting point in the inner loop.      | */
 /* | Newtosample -- The total number of points to sample in the inner loop.| */
-/* |       w -- Array used to divide the intervalls                        | */
+/* |       w -- Array used to divide the intervals                         | */
 /* |    kmax -- Obsolete. If cheat = 1, Ktilde was not allowed to be larger| */
 /* |            than kmax. If Ktilde > kmax, we set ktilde = kmax.         | */
 /* |   delta -- The distance to new points from center of old hyperrec.    | */
@@ -322,7 +323,7 @@
 /* | oldmaxf -- Store the original function budget.                        | */
 /* |increase -- Flag used to keep track if function budget was increased   | */
 /* |            because no feasible point was found.                       | */
-/* | ifreeold -- Keep track which index was free before. Used with          | */
+/* | ifreeold -- Keep track which index was free before. Used with         | */
 /* |            SUBROUTINE DIRReplaceInf.                                  | */
 /* |actdeep_div-- Keep track of the current depths for divisions.          | */
 /* |    oldl -- Array used to store the original bounds of the domain.     | */
@@ -425,7 +426,7 @@
     oldmaxf = *maxf;
     increase = 0;
 /* +-----------------------------------------------------------------------+ */
-/* | Initialiase the lists.                                                | */
+/* | Initialise the lists.                                                 | */
 /* +-----------------------------------------------------------------------+ */
     direct_dirinitlist_(anchor, &ifree, point, f, &MAXFUNC, &MAXDEEP);
 /* +-----------------------------------------------------------------------+ */
@@ -571,7 +572,7 @@
             actdeep = (integer) f[(help << 1) - 2];
         }
 /* +-----------------------------------------------------------------------+ */
-/* | Get the Directions in which to decrease the intervall-length.         | */
+/* | Get the Directions in which to decrease the interval-length.          | */
 /* +-----------------------------------------------------------------------+ */
         direct_dirget_i__(length, &help, arrayi, &maxi, n, &MAXFUNC);
 /* +-----------------------------------------------------------------------+ */
@@ -617,12 +618,12 @@
             goto cleanup;
         }
 /* +-----------------------------------------------------------------------+ */
-/* | Divide the intervalls.                                                | */
+/* | Divide the intervals.                                                 | */
 /* +-----------------------------------------------------------------------+ */
         direct_dirdivide_(&start, &actdeep_div__, length, point, arrayi, &
             help, list2, w, &maxi, f, &MAXFUNC, &MAXDEEP, n);
 /* +-----------------------------------------------------------------------+ */
-/* | Insert the new intervalls into the list (sorted).                     | */
+/* | Insert the new intervals into the list (sorted).                      | */
 /* +-----------------------------------------------------------------------+ */
         direct_dirinsertlist_(&start, anchor, point, f, &maxi, length, &
             MAXFUNC, &MAXDEEP, n, &help, jones);
@@ -664,9 +665,9 @@
 /* |             minf is assumed. We then calculate the volume of this     | */
 /* |             hyperrectangle and store it in delta. This delta can be   | */
 /* |             used to stop DIRECT once the volume is below a certain    | */
-/* |             ratio of the original volume. Since the original     | */
+/* |             ratio of the original volume. Since the original          | */
 /* |             is 1 (scaled), we can stop once delta is below a certain  | */
-/* |             threshold, given by volper.                              | */
+/* |             threshold, given by volper.                               | */
 /* +-----------------------------------------------------------------------+ */
     *ierror = jones;
     jones = 0;

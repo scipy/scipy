@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from io import StringIO
 import warnings
 import numpy as np
@@ -9,6 +10,8 @@ from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
 import scipy.sparse
 from scipy.io import mmread
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 
 directed_G = np.array([[0, 3, 3, 0, 0],
                        [0, 0, 0, 2, 4],
@@ -229,7 +232,7 @@ def test_star_graph(n, method, directed):
     star_arr = np.zeros((n, n), dtype=float)
     star_center_idx = 0
     star_arr[star_center_idx, :] = star_arr[:, star_center_idx] = range(n)
-    G = scipy.sparse.csr_matrix(star_arr, shape=(n, n))
+    G = scipy.sparse.csr_array(star_arr, shape=(n, n))
     # Build the distances matrix
     SP_solution = np.zeros((n, n), dtype=float)
     SP_solution[:] = star_arr[star_center_idx]
@@ -281,7 +284,13 @@ def test_gh_17782_segfault():
                 43 33 4.000000000000000e+00
                 44 43 6.028000259399414e+01
     """
-    data = mmread(StringIO(text), spmatrix=False)
+    if IS_WASM:
+        from threadpoolctl import threadpool_limits
+        read_ctx = threadpool_limits(limits=1)
+    else:
+        read_ctx = nullcontext()
+    with read_ctx:
+        data = mmread(StringIO(text), spmatrix=False)
     dijkstra(data, directed=True, return_predecessors=True)
 
 

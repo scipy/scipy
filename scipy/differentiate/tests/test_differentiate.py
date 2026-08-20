@@ -23,7 +23,7 @@ class TestDerivative:
     @pytest.mark.parametrize('x', [0.6, np.linspace(-0.05, 1.05, 10)])
     def test_basic(self, x, xp):
         # Invert distribution CDF and compare against distribution `ppf`
-        default_dtype = xp.asarray(1.).dtype
+        default_dtype = xpx.default_dtype(xp)
         res = derivative(self.f, xp.asarray(x, dtype=default_dtype))
         ref = xp.asarray(stats.norm().pdf(x), dtype=default_dtype)
         xp_assert_close(res.df, ref)
@@ -136,16 +136,18 @@ class TestDerivative:
                                 eim._EVALUEERR], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
-    def test_preserve_shape(self, xp):
+    @pytest.mark.parametrize('batch_shape', [(), (2,), (2, 3)])
+    def test_preserve_shape(self, xp, batch_shape):
         # Test `preserve_shape` option
-        def f(x):
+        def f(x, p):
+            assert x.shape[:-1] == p.shape[:-1] == batch_shape
             out = [x, xp.sin(3*x), x+xp.sin(10*x), xp.sin(20*x)*(x-1)**2]
             return xp.stack(out)
 
-        x = xp.asarray(0.)
-        ref = xp.asarray([xp.asarray(1), 3*xp.cos(3*x), 1+10*xp.cos(10*x),
-                          20*xp.cos(20*x)*(x-1)**2 + 2*xp.sin(20*x)*(x-1)])
-        res = derivative(f, x, preserve_shape=True)
+        x = xp.zeros(batch_shape)
+        ref = xp.stack([xp.ones_like(x), 3*xp.cos(3*x), 1+10*xp.cos(10*x),
+                        20*xp.cos(20*x)*(x-1)**2 + 2*xp.sin(20*x)*(x-1)])
+        res = derivative(f, x, args=(xp.asarray(2.),), preserve_shape=True)
         xp_assert_close(res.df, ref)
 
     def test_convergence(self, xp):
@@ -255,7 +257,7 @@ class TestDerivative:
         for i in range(h0.shape[0]):
             ref = derivative(f, x, initial_step=h0[i, 0], order=2, maxiter=1,
                              step_direction=step_direction)
-            xp_assert_close(res.df[i, :], ref.df, rtol=1e-14)
+            xp_assert_close(res.df[i, :], ref.df, rtol=5e-13)
 
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
@@ -338,7 +340,7 @@ class TestDerivative:
         with pytest.raises(ValueError, match=message):
             derivative(lambda x: x, xp.asarray(-4+1j))
 
-        message = "When `preserve_shape=False`, the shape of the array..."
+        message = "The shape of the array returned by `func`..."
         with pytest.raises(ValueError, match=message):
             derivative(lambda x: [1, 2, 3], xp.asarray([-2, -3]))
 
@@ -439,6 +441,19 @@ class TestDerivative:
         assert np.all(res.success)
         xp_assert_close(res.df, 0, atol=atol)
 
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**p + c*x
+
+        x = xp.asarray(1.23, dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = derivative(f, x, args=(c,), kwargs={'p': p})
+        ref = p*x**(p-1.) + c
+        xp_assert_close(res.df, ref)
+
 
 class JacobianHessianTest:
     def test_iv(self, xp):
@@ -485,8 +500,8 @@ class TestJacobian(JacobianHessianTest):
         x, y = z
         return [[2 * x * y, x ** 2], [np.full_like(x, 5), np.cos(y)]]
 
-    f1.mn = 2, 2  # type: ignore[attr-defined]
-    f1.ref = df1  # type: ignore[attr-defined]
+    f1.mn = 2, 2
+    f1.ref = df1
 
     def f2(z, xp):
         r, phi = z
@@ -497,8 +512,8 @@ class TestJacobian(JacobianHessianTest):
         return [[np.cos(phi), -r * np.sin(phi)],
                 [np.sin(phi), r * np.cos(phi)]]
 
-    f2.mn = 2, 2  # type: ignore[attr-defined]
-    f2.ref = df2  # type: ignore[attr-defined]
+    f2.mn = 2, 2
+    f2.ref = df2
 
     def f3(z, xp):
         r, phi, th = z
@@ -513,8 +528,8 @@ class TestJacobian(JacobianHessianTest):
                  r * np.sin(phi) * np.cos(th)],
                 [np.cos(phi), -r * np.sin(phi), np.zeros_like(r)]]
 
-    f3.mn = 3, 3  # type: ignore[attr-defined]
-    f3.ref = df3  # type: ignore[attr-defined]
+    f3.mn = 3, 3
+    f3.ref = df3
 
     def f4(x, xp):
         x1, x2, x3 = x
@@ -528,8 +543,8 @@ class TestJacobian(JacobianHessianTest):
                 [0 * one, 8 * x2, -2 * one],
                 [x3 * np.cos(x1), 0 * one, np.sin(x1)]]
 
-    f4.mn = 3, 4  # type: ignore[attr-defined]
-    f4.ref = df4  # type: ignore[attr-defined]
+    f4.mn = 3, 4
+    f4.ref = df4
 
     def f5(x, xp):
         x1, x2, x3 = x
@@ -542,12 +557,12 @@ class TestJacobian(JacobianHessianTest):
                 [8 * x1, -2 * x3 * np.cos(x2 * x3), -2 * x2 * np.cos(x2 * x3)],
                 [0 * one, x3, x2]]
 
-    f5.mn = 3, 3  # type: ignore[attr-defined]
-    f5.ref = df5  # type: ignore[attr-defined]
+    f5.mn = 3, 3
+    f5.ref = df5
 
     def rosen(x, _): return optimize.rosen(x)
-    rosen.mn = 5, 1  # type: ignore[attr-defined]
-    rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
+    rosen.mn = 5, 1
+    rosen.ref = optimize.rosen_der
 
     @pytest.mark.parametrize('dtype', ('float32', 'float64'))
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])

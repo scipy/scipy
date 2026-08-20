@@ -5,6 +5,8 @@ from numpy.testing import assert_allclose
 import multiprocessing
 import os
 
+from scipy._lib._testutils import IS_WASM
+
 
 @pytest.fixture(scope='module')
 def x():
@@ -29,6 +31,7 @@ def _mt_fft(x):
     return fft.fft(x, workers=2)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 @pytest.mark.slow
 def test_mixed_threads_processes(x):
     # Test that the fft threadpool is safe to use before & after fork

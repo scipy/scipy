@@ -19,10 +19,9 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
             raise ValueError('expected ndarrays representing matrices')
         if A.shape[1] != B.shape[0]:
             raise ValueError('incompatible shapes')
+        super().__init__(dtype=None, shape=(A.shape[0], B.shape[1]))
         self.A = A
         self.B = B
-        self.ndim = 2
-        self.shape = (A.shape[0], B.shape[1])
 
     def _matvec(self, x):
         return np.dot(self.A, np.dot(self.B, x))
@@ -218,7 +217,7 @@ class TestOnenormest:
 
     def test_returns(self):
         np.random.seed(1234)
-        A = scipy.sparse.rand(50, 50, 0.1)
+        A = scipy.sparse.random_array((50, 50), density=0.1)
 
         s0 = scipy.linalg.norm(A.toarray(), 1)
         s1, v = scipy.sparse.linalg.onenormest(A, compute_v=True)

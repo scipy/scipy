@@ -1201,6 +1201,8 @@ static PyObject *Py_DistanceTransformOnePass(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_DistanceTransformOnePass(strct, distances, features);
+    PyArray_ResolveWritebackIfCopy(distances);
+    PyArray_ResolveWritebackIfCopy(features);
 
 exit:
     Py_XDECREF(strct);
@@ -1221,6 +1223,7 @@ static PyObject *Py_EuclideanFeatureTransform(PyObject *obj,
         goto exit;
 
     NI_EuclideanFeatureTransform(input, sampling, features);
+    PyArray_ResolveWritebackIfCopy(features);
 
 exit:
     Py_XDECREF(input);
@@ -1314,6 +1317,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     else {
         PyErr_SetString(PyExc_RuntimeError, "cannot convert CObject");
     }
+    PyArray_ResolveWritebackIfCopy(array);
 exit:
     Py_XDECREF(array);
     Py_XDECREF(strct);

@@ -1,7 +1,7 @@
 from itertools import groupby
 from warnings import warn
 import numpy as np
-from scipy.sparse import find, coo_matrix
+from scipy.sparse import find, csc_array, isspmatrix, csc_matrix
 
 
 EPS = np.finfo(float).eps
@@ -299,11 +299,11 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         Factor to use for computing the step size. Pass None for the very
         evaluation, then use the value returned from this function.
     sparsity : tuple (structure, groups) or None
-        Sparsity structure of the Jacobian, `structure` must be csc_matrix.
+        Sparsity structure of the Jacobian. To get dense Jacobian use `None`.
 
     Returns
     -------
-    J : ndarray or csc_matrix, shape (n, n)
+    J : ndarray or csc_array or csc_matrix, shape (n, n)
         Jacobian matrix.
     factor : ndarray, shape (n,)
         Suggested `factor` for the next evaluation.
@@ -385,7 +385,7 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
 def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     n = y.shape[0]
     n_groups = np.max(groups) + 1
-    h_vecs = np.empty((n_groups, n))
+    h_vecs = np.empty((n_groups, n), dtype=h.dtype)
     for group in range(n_groups):
         e = np.equal(group, groups)
         h_vecs[group] = h * e
@@ -395,7 +395,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     df = f_new - f[:, None]
 
     i, j, _ = find(structure)
-    diff = coo_matrix((df[i, groups[j]], (i, j)), shape=(n, n)).tocsc()
+    diff = csc_array((df[i, groups[j]], (i, j)), shape=(n, n))
     max_ind = np.array(abs(diff).argmax(axis=0)).ravel()
     r = np.arange(n)
     max_diff = np.asarray(np.abs(diff[max_ind, r])).ravel()
@@ -407,12 +407,12 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
         ind, = np.nonzero(diff_too_small)
         new_factor = NUM_JAC_FACTOR_INCREASE * factor[ind]
         h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
-        h_new_all = np.zeros(n)
+        h_new_all = np.zeros(n, dtype=h.dtype)
         h_new_all[ind] = h_new
 
         groups_unique = np.unique(groups[ind])
         groups_map = np.empty(n_groups, dtype=int)
-        h_vecs = np.empty((groups_unique.shape[0], n))
+        h_vecs = np.empty((groups_unique.shape[0], n), dtype=h.dtype)
         for k, group in enumerate(groups_unique):
             e = np.equal(group, groups)
             h_vecs[k] = h_new_all * e
@@ -422,8 +422,8 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
         f_new = fun(t, y[:, None] + h_vecs)
         df = f_new - f[:, None]
         i, j, _ = find(structure[:, ind])
-        diff_new = coo_matrix((df[i, groups_map[groups[ind[j]]]],
-                               (i, j)), shape=(n, ind.shape[0])).tocsc()
+        diff_new = csc_array((df[i, groups_map[groups[ind[j]]]], (i, j)),
+                             shape=(n, ind.shape[0]))
 
         max_ind_new = np.array(abs(diff_new).argmax(axis=0)).ravel()
         r = np.arange(ind.shape[0])
@@ -448,4 +448,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     factor[max_diff > NUM_JAC_DIFF_BIG * scale] *= NUM_JAC_FACTOR_DECREASE
     factor = np.maximum(factor, NUM_JAC_MIN_FACTOR)
 
+    # return spmatrix if structure is spmatrix
+    if isspmatrix(structure):
+        diff = csc_matrix(diff)
     return diff, factor
