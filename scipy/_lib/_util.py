@@ -1150,7 +1150,8 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
             if signature_dtype in output:
                 output_dtypes = {'bool': xp.bool,
                                  'int': xp.result_type(1),
-                                 'float': xp.real(xp.asarray(1, dtype=dtype)).dtype,
+                                 'float': xp.real(xp.asarray(1, dtype=dtype,
+                                                  device=xp_device(x))).dtype,
                                  'complex': xp.result_type(complex(1), dtype)}
                 output_dtype = output_dtypes[signature_dtype]
                 output = output.replace(signature_dtype, "")
