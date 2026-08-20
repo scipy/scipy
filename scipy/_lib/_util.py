@@ -1140,7 +1140,7 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     # (i, i)->(i, i),bool(i) becomes (i, i)->(i, i),(booli).
     # But then we can still separate the two outputs by splitting at ),(.
     # TODO: use regular expression for more efficient, elegant parsing.
-    signature_dtypes = ['int32', 'bool', 'int', 'float', 'complex']
+    signature_dtypes = ['bool', 'int', 'float', 'complex']
     for signature_dtype in signature_dtypes:
         outputs = outputs.replace(f"{signature_dtype}(", f"({signature_dtype}")
     outputs = outputs.lstrip("(").rstrip(")").split("),(")
@@ -1148,9 +1148,8 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
         output_dtype = dtype
         for signature_dtype in signature_dtypes:
             if signature_dtype in output:
-                output_dtypes = {'int32': xp.int32,
-                                 'bool': xp.bool,
-                                 'int': xp.result_type(int(1)),
+                output_dtypes = {'bool': xp.bool,
+                                 'int': xp.result_type(1),
                                  'float': xp.real(xp.asarray(1, dtype=dtype)).dtype,
                                  'complex': xp.result_type(complex(1), dtype)}
                 output_dtype = output_dtypes[signature_dtype]

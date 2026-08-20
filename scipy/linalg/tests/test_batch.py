@@ -343,7 +343,8 @@ class TestBatch:
     def test_schur_lu(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(fun, A, n_out=2)
+        test_zero_size_dtype = fun != linalg.lu_factor
+        self.batch_test(fun, A, n_out=2, test_zero_size_dtype=test_zero_size_dtype)
 
     @pytest.mark.parametrize('calc_q', [False, True])
     @pytest.mark.parametrize('dtype', floating)
@@ -441,7 +442,7 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         B = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
-        test_zero_size_dtype = False if fun == linalg.solve_discrete_lyapunov else True
+        test_zero_size_dtype = fun != linalg.solve_discrete_lyapunov
         self.batch_test(fun, (A, B), n_out=n_out,
                         test_zero_size_dtype=test_zero_size_dtype)
 

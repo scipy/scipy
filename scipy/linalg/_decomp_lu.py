@@ -19,7 +19,7 @@ __all__ = ['lu', 'lu_solve', 'lu_factor']
 def _luf_signature(a, *args, **kwargs):
     m, n = a.shape[-2:]
     k = min(m, n)
-    return f"(i,j)->(i,j),int32({k})"
+    return f"(i,j)->(i,j),int({k})"
 
 
 @_apply_over_batch(('a', 2), signature=_luf_signature)
