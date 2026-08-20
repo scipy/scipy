@@ -794,6 +794,46 @@ class TestLanczos:
             assert windows.lanczos(n, sym=True, xp=xp).shape[0] == n
 
 
+@make_xp_test_case(windows.boxcar)
+class TestSidelobeLevel:
+    """Correctness tests of the peak sidelobe level (PSLL) for the standard
+    analytic windows.
+
+    The PSLL of a 1024-point window is computed from its heavily zero-padded
+    FFT and checked against the reference values from [1]_ (Table 1,
+    "Highest sidelobe level" column). A similar approach is used in
+    :class:`TestTaylor`.
+
+    References
+    ----------
+    .. [1] Fredric J. Harris, "On the use of windows for harmonic analysis
+           with the discrete Fourier transform," Proceedings of the IEEE,
+           vol. 66, no. 1, pp. 51-83, Jan. 1978.
+           :doi:`10.1109/PROC.1978.10837`
+    """
+
+    @pytest.mark.parametrize('window, expected_psll', [
+        ('boxcar', -13.2),
+        ('bartlett', -26.4),
+        ('hann', -31.5),
+        ('hamming', -42.7),
+        ('blackman', -58.1),
+        ('blackmanharris', -92.0),
+    ])
+    def test_correctness(self, window, expected_psll, xp):
+        M_win = 1024
+        N_fft = 131072
+        w = getattr(windows, window)(M_win, sym=False, xp=xp)
+        f_np = fft(xp_copy_to_numpy(w), N_fft)
+
+        with np.errstate(divide="ignore"):
+            spec = 20 * np.log10(np.abs(f_np) / np.max(np.abs(f_np)))
+
+        first_zero = np.argmax(np.diff(spec) > 0)
+        psll = np.max(spec[first_zero:N_fft // 2])
+
+        assert math.isclose(psll, expected_psll, abs_tol=0.5)
+
 @make_xp_test_case(windows.get_window)
 class TestGetWindow:
     """Unit test for `scipy.signal.get_windows`. """
