@@ -20,7 +20,7 @@ Authors
 * Dietrich Brunn (1)
 * Evgeni Burovski (1)
 * Aadya Chinubhai (1)
-* Lucas Colley (2)
+* Lucas Colley (3)
 * Tekin Ertekin (1) +
 * Fuyugithub (2) +
 * Ralf Gommers (11)
@@ -28,7 +28,7 @@ Authors
 * Ijtihed Kilani (1) +
 * Andrew Nelson (2)
 * Ilhan Polat (1)
-* Tyler Reddy (34)
+* Tyler Reddy (39)
 * romao05 (1) +
 * Michael Simacek (1) +
 * Jacob Vanderplas (2)
@@ -58,7 +58,6 @@ Issues closed for 1.18.1
 * `#25864 <https://github.com/scipy/scipy/issues/25864>`__: BUG: linalg.expm matrix L1-norm implemented as infinity norm
 * `#25924 <https://github.com/scipy/scipy/issues/25924>`__: BUG: Batched ``linalg.expm`` Accuracy Regression
 
-
 Pull requests for 1.18.1
 ------------------------
 
@@ -84,5 +83,6 @@ Pull requests for 1.18.1
 * `#25690 <https://github.com/scipy/scipy/pull/25690>`__: BUG: special.eval_gegenbauer: fix UBSAN crash for NaN
 * `#25726 <https://github.com/scipy/scipy/pull/25726>`__: dfitpack.c: avoid potentially undefined float->int cast
 * `#25764 <https://github.com/scipy/scipy/pull/25764>`__: BUG: interpolate: flatten the grid coordinates before evaluating...
+* `#25913 <https://github.com/scipy/scipy/pull/25913>`__: BLD: package: pin meson on win-64 to avoid clang-cl bug
 * `#25934 <https://github.com/scipy/scipy/pull/25934>`__: MAINT/BUG:linalg.expm: fix the norms and recover batch handling
 * `#25958 <https://github.com/scipy/scipy/pull/25958>`__: TST: stats - bump some tolerances
