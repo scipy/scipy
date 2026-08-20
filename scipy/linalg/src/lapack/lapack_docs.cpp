@@ -1296,6 +1296,148 @@ namespace lapack {
             return s;
         }
 
+        /* =========================== flapack_gen_banded.pyf.src ==================== */
+
+        static constexpr const char *P_KL = "kl : int\n    Number of subdiagonals.\n";
+        static constexpr const char *P_KU = "ku : int\n    Number of superdiagonals.\n";
+
+        static std::string
+        p_ab(const char *rows) noexcept
+        {
+            return "ab : ndarray\n    Band storage of shape ``(" + std::string(rows) + ", n)``:"
+                   " ``a[i, j]`` is held at\n    ``ab[ku + i - j, j]``.\n";
+        }
+
+        static std::string
+        doc_gbsv(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(kl, ku, ab, b, overwrite_ab=0, overwrite_b=0)\n\n";
+            s += "Solve ``a @ x = b`` for a banded ``a`` by LU factorization with partial\n"
+                 "pivoting (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_KL;
+            s += P_KU;
+            s += p_ab("2 * kl + ku + 1");
+            s += P_B_RHS;
+            s += "overwrite_ab : int, optional\n    If nonzero, `ab` may be overwritten in place. Default is 0.\n";
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "lub : ndarray\n    Combined ``L`` and ``U`` factors in band storage.\n";
+            s += R_PIV_OUT;
+            s += R_X_OUT;
+            s += R_INFO_LU;
+            return s;
+        }
+
+        static std::string
+        doc_gbtrf(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, kl, ku, m=shape(ab, 1), n=shape(ab, 1),\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "ldab=shape(ab, 0), overwrite_ab=0)\n\n";
+            s += "Compute the LU factorization of a banded matrix with partial pivoting\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += p_ab("2 * kl + ku + 1");
+            s += P_KL;
+            s += P_KU;
+            s += "m : int, optional\n"
+                 "    Number of rows to factor. Default is ``shape(ab, 1)``, a square matrix;\n"
+                 "    a smaller value factors the leading `m` rows.\n";
+            s += "n : int, optional\n    Number of columns; must equal ``shape(ab, 1)``.\n";
+            s += "ldab : int, optional\n    Leading dimension; must equal ``shape(ab, 0)``.\n";
+            s += "overwrite_ab : int, optional\n    If nonzero, `ab` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "lu : ndarray\n    Combined ``L`` and ``U`` factors in band storage.\n";
+            s += "ipiv : ndarray\n    Pivot indices, 0-based, length ``min(m, n)``.\n";
+            s += R_INFO_LU;
+            return s;
+        }
+
+        static std::string
+        doc_gbtrs(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, kl, ku, b, ipiv, trans=0, n=shape(ab, 1),\n";
+            s += std::string(std::strlen(name) + 1, ' ')
+               + "ldab=shape(ab, 0), ldb=shape(b, 0), overwrite_b=0)\n\n";
+            s += "Solve a banded system using the factorization from ``gbtrf``\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += p_ab("2 * kl + ku + 1");
+            s += P_KL;
+            s += P_KU;
+            s += P_B_RHS;
+            s += "ipiv : ndarray\n    Pivot indices from ``gbtrf``, 0-based.\n";
+            s += P_TRANS_INT;
+            s += "n : int, optional\n    Order of the system; must equal ``shape(ab, 1)``.\n";
+            s += "ldab : int, optional\n    Leading dimension of `ab`; must equal ``shape(ab, 0)``.\n";
+            s += "ldb : int, optional\n    Leading dimension of `b`; must equal ``shape(b, 0)``.\n";
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += R_X_OUT;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_gbcon(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(kl, ku, ab, ipiv, anorm, norm='1', ldab=2*kl+ku+1)\n\n";
+            s += "Estimate the reciprocal condition number of a banded matrix from its ``gbtrf``\n"
+                 "factorization (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_KL;
+            s += P_KU;
+            s += p_ab("2 * kl + ku + 1");
+            s += "ipiv : ndarray\n    Pivot indices from ``gbtrf``, 0-based.\n";
+            s += "anorm : float\n    Norm of the original matrix, in the norm selected by `norm`.\n";
+            s += "norm : str, optional\n    ``'1'`` or ``'O'`` for the 1-norm, ``'I'`` for the infinity norm.\n    Default is ``'1'``.\n";
+            s += "ldab : int, optional\n"
+                 "    Leading dimension of `ab`, at least ``2 * kl + ku + 1``, which is also the\n"
+                 "    default.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_langb(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(norm, kl, ku, ab, ldab=kl+ku+1)\n\n";
+            s += "Compute a norm of a banded matrix (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "norm : str\n"
+                 "    ``'M'`` for the largest absolute value, ``'1'`` or ``'O'`` for the 1-norm,\n"
+                 "    ``'I'`` for the infinity norm, ``'F'`` or ``'E'`` for the Frobenius norm.\n"
+                 "    Lower case is accepted. Note that ``'M'`` is not a consistent matrix norm.\n";
+            s += P_KL;
+            s += P_KU;
+            /* Read-only, so no fill-in rows: this is the one `ab` in the group without them. */
+            s += p_ab("kl + ku + 1");
+            s += "ldab : int, optional\n"
+                 "    Leading dimension of `ab`, at least ``kl + ku + 1``, which is also the\n"
+                 "    default.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "n2 : " + std::string(t.is_complex ? "float" : t.scalar)
+               + "\n    The requested norm, always real.\n";
+            return s;
+        }
+
         /* ================================ registration ============================= */
 
         typedef std::string (*DocFn)(const char *, const Dtype &);
@@ -1353,15 +1495,17 @@ namespace lapack {
             DOC_FAMILY(geev_lwork),
             DOC_FAMILY(ggev),
             DOC_FAMILY(gesvx),
-
-            /* Same order as `gen_tri_methods` in `lapack_gen_tri.cpp`.  The `ste*` eigensolvers
-             * are real-only, so they are spelled out as `s`/`d` pairs the way that table spells
-             * them out with ROW. */
             DOC_FAMILY(gtsv),
             DOC_FAMILY(gttrf),
             DOC_FAMILY(gttrs),
             DOC_FAMILY(gtcon),
             DOC_FAMILY(gtsvx),
+            DOC_FAMILY(gbsv),
+            DOC_FAMILY(gbtrf),
+            DOC_FAMILY(gbtrs),
+            DOC_FAMILY(gbcon),
+            DOC_FAMILY(langb),
+            // Irregular names that don't fit the DOC_FAMILY pattern.
             {"sstev", doc_stev, S},
             {"dstev", doc_stev, D},
             {"sstebz", doc_stebz, S},
