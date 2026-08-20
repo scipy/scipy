@@ -155,10 +155,10 @@ coverage = [
     "pytest-cov",
 ]
 openblas32 = [
-    scipy-openblas32==0.3.34.0.0
+    "scipy-openblas32==0.3.34.0.0"
 ]
 openblas64 = [
-    scipy-openblas64==0.3.34.0.0
+    "scipy-openblas64==0.3.34.0.0"
 ]
 bench = [
     # 0.6.6 regressed per-benchmark overhead ~7x, which pushes the CircleCI
