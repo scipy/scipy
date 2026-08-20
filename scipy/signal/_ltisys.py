@@ -3100,8 +3100,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> np.set_printoptions(formatter=dict(complexfloat=lambda v: f"{v.real:g}{v.imag:+g}j"))
-
+    ...
     >>> A = np.array([[ 1.380,  -0.2077,  6.715, -5.676  ],
     ...               [-0.5814, -4.290,   0,      0.6750 ],
     ...               [ 1.067,   4.273,  -6.654,  5.893  ],
@@ -3124,7 +3123,6 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     >>> fsf2 = signal.place_poles(A, B, P)  # uses YT method
     >>> fsf2.computed_poles
     array([-8.6659, -5.0566, -0.5   , -0.2   ])
-
 
     >>> fsf3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
     >>> fsf3.X
