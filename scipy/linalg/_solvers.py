@@ -28,7 +28,7 @@ __all__ = ['solve_sylvester',
            'solve_continuous_are', 'solve_discrete_are']
 
 
-@_apply_over_batch(('a', 2), ('b', 2), ('q', 2))
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), signature='(i,i),(j,j),(i,j)->(i,j)')
 def solve_sylvester(a, b, q):
     """
     Computes a solution (X) to the Sylvester equation :math:`AX + XB = Q`.
@@ -113,7 +113,7 @@ def solve_sylvester(a, b, q):
     return np.dot(np.dot(u, y), v.conj().transpose())
 
 
-@_apply_over_batch(('a', 2), ('q', 2))
+@_apply_over_batch(('a', 2), ('q', 2), signature="(i,i),(i,i)->(i,i)")
 def solve_continuous_lyapunov(a, q):
     """
     Solves the continuous Lyapunov equation :math:`AX + XA^H = Q`.
@@ -247,7 +247,7 @@ def _solve_discrete_lyapunov_bilinear(a, q):
     return solve_lyapunov(b.conj().transpose(), -c)
 
 
-@_apply_over_batch(('a', 2), ('q', 2))
+@_apply_over_batch(('a', 2), ('q', 2), signature="(i,i),(i,i)->(i,i)")
 def solve_discrete_lyapunov(a, q, method=None):
     """
     Solves the discrete Lyapunov equation :math:`AXA^H - X + Q = 0`.
@@ -351,11 +351,11 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     The limitations for a solution to exist are :
 
-        * All eigenvalues of :math:`A` on the right half plane, should be
-          controllable.
+    * All eigenvalues of :math:`A` on the right half plane, should be
+      controllable.
 
-        * The associated hamiltonian pencil (See Notes), should have
-          eigenvalues sufficiently away from the imaginary axis.
+    * The associated hamiltonian pencil (See Notes), should have
+      eigenvalues sufficiently away from the imaginary axis.
 
     Moreover, if ``e`` or ``s`` is not precisely ``None``, then the
     generalized version of CARE
@@ -466,7 +466,8 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     return _solve_continuous_are(a, b, q, r, e, s, balanced)
 
 
-@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2),
+                   signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
 def _solve_continuous_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
@@ -525,7 +526,7 @@ def _solve_continuous_are(a, b, q, r, e, s, balanced):
     u00 = u[:m, :m]
     u10 = u[m:, :m]
 
-    # Solve via back-substituion after checking the condition of u00
+    # Solve via back-substitution after checking the condition of u00
     up, ul, uu = lu(u00)
     if 1/cond(uu) < np.spacing(1.):
         raise LinAlgError('Failed to find a finite solution.')
@@ -566,11 +567,11 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     The limitations for a solution to exist are :
 
-        * All eigenvalues of :math:`A` outside the unit disc, should be
-          controllable.
+    * All eigenvalues of :math:`A` outside the unit disc, should be
+      controllable.
 
-        * The associated symplectic pencil (See Notes), should have
-          eigenvalues sufficiently away from the unit circle.
+    * The associated symplectic pencil (See Notes), should have
+      eigenvalues sufficiently away from the unit circle.
 
     Moreover, if ``e`` and ``s`` are not both precisely ``None``, then the
     generalized version of DARE
@@ -683,7 +684,8 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     return _solve_discrete_are(a, b, q, r, e, s, balanced)
 
 
-@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2),
+                   signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
 def _solve_discrete_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
@@ -743,7 +745,7 @@ def _solve_discrete_are(a, b, q, r, e, s, balanced):
     u00 = u[:m, :m]
     u10 = u[m:, :m]
 
-    # Solve via back-substituion after checking the condition of u00
+    # Solve via back-substitution after checking the condition of u00
     up, ul, uu = lu(u00)
 
     if 1/cond(uu) < np.spacing(1.):

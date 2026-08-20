@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from scipy import stats
 from scipy.optimize import differential_evolution
 
@@ -77,7 +79,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
 
 # not sure if these fail, but they caused my patience to fail
 mm_XXslow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                  'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
+                  'genhalflogistic', 'gompertz', 'johnsonsb',
                   'kappa4', 'kstwobign', 'recipinvgauss',
                   'truncexpon', 'vonmises', 'vonmises_line']
 
@@ -106,7 +108,7 @@ def cases_test_cont_fit():
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
+@pytest.mark.parametrize('distname,arg', list(cases_test_cont_fit()))
 @pytest.mark.parametrize('method', ["MLE", "MM"])
 def test_cont_fit(distname, arg, method):
     run_xfail = int(os.getenv('SCIPY_XFAIL', default=False))
@@ -203,6 +205,7 @@ def test_expon_fit():
     assert_allclose(phat, [0, 1.0], atol=1e-3)
 
 
+@pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
 def test_fit_error():
     data = np.concatenate([np.zeros(29), np.ones(21)])
     message = "Optimization converged to parameters that are..."
@@ -212,8 +215,8 @@ def test_fit_error():
 
 
 @pytest.mark.parametrize("dist, params",
-                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined]
-                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined]
+                         [(stats.norm, (0.5, 2.5)),
+                          (stats.binom, (10, 0.3, 2))])
 def test_nnlf_and_related_methods(dist, params):
     rng = np.random.default_rng(983459824)
 
@@ -243,7 +246,7 @@ def cases_test_fit_mle():
                       'chi', 'crystalball', 'dweibull', 'erlang', 'exponnorm',
                       'exponpow', 'f', 'fatiguelife', 'fisk', 'foldcauchy', 'gamma',
                       'genexpon', 'genextreme', 'gennorm', 'genpareto',
-                      'gompertz', 'halfgennorm', 'invgamma', 'invgauss', 'invweibull',
+                      'gompertz', 'invgamma', 'invgauss', 'invweibull',
                       'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
                       'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
                       'nbinom', 'norminvgauss',
@@ -313,7 +316,7 @@ def cases_test_fit_mse():
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
                        'dgamma', 'dpareto_lognorm', 'f', 'gengamma', 'gennorm',
-                       'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t',
+                       'invgamma', 'invgauss', 'jf_skew_t',
                        'johnsonsb', 'kappa4', 'loguniform', 'mielke',
                        'nakagami', 'ncf', 'nchypergeom_fisher',
                        'nchypergeom_wallenius', 'nct', 'ncx2',
@@ -349,7 +352,7 @@ def cases_test_fitstart():
         yield distname, shapes
 
 
-@pytest.mark.parametrize('distname, shapes', cases_test_fitstart())
+@pytest.mark.parametrize('distname, shapes', list(cases_test_fitstart()))
 def test_fitstart(distname, shapes):
     dist = getattr(stats, distname)
     rng = np.random.default_rng(216342614)
@@ -371,10 +374,10 @@ def assert_nlff_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0,
 
 
 class TestFit:
-    dist = stats.binom  # type: ignore[attr-defined]
+    dist = stats.binom
     seed = 654634816187
     rng = np.random.default_rng(seed)
-    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # type: ignore[attr-defined]  # noqa: E501
+    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)
     shape_bounds_a = [(1, 10), (0, 1)]
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
     atol = 5e-2
@@ -534,11 +537,11 @@ class TestFit:
         assert_nlff_less_or_close(dist, data, res.params, ref, **self.tols,
                                   nlff_name=nlff_name)
 
-    @pytest.mark.parametrize("dist_name", cases_test_fit_mle())
+    @pytest.mark.parametrize("dist_name", list(cases_test_fit_mle()))
     def test_basic_fit_mle(self, dist_name):
         self.basic_fit_test(dist_name, "mle", rng=5)
 
-    @pytest.mark.parametrize("dist_name", cases_test_fit_mse())
+    @pytest.mark.parametrize("dist_name", list(cases_test_fit_mse()))
     def test_basic_fit_mse(self, dist_name):
         self.basic_fit_test(dist_name, "mse", rng=2)
 
@@ -916,11 +919,10 @@ class TestGoodnessOfFit:
         # c that produced critical value of statistic found w/ root_scalar
         x = stats.genextreme(0.051896837188595134, loc=0.5,
                              scale=1.5).rvs(size=1000, random_state=rng)
-        res = goodness_of_fit(stats.gumbel_r, x, statistic='ad',
-                              rng=rng)
-        ref = stats.anderson(x, dist='gumbel_r')
-        assert_allclose(res.statistic, ref.critical_values[0])
-        assert_allclose(res.pvalue, ref.significance_level[0]/100, atol=5e-3)
+        res = goodness_of_fit(stats.gumbel_r, x, statistic='ad', rng=rng)
+        ref = stats.anderson(x, dist='gumbel_r', method='interpolate')
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)
 
     def test_against_filliben_norm(self):
         # Test against `stats.fit` ref. [7] Section 8 "Example"

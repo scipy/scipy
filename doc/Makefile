@@ -76,8 +76,10 @@ dist:
 	install -d build
 	rm -rf build/env
 	$(PYTHON) -mvenv --system-site-packages build/env
-	$(CURDIR)/build/env/bin/python -mpip install -r ../requirements/doc.txt
-	$(CURDIR)/build/env/bin/python -mpip install ..
+	pushd ..
+	$(CURDIR)/build/env/bin/python -mpip install --group doc
+	$(CURDIR)/build/env/bin/python -mpip install .
+	popd
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
 doc-dist: html

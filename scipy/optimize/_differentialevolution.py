@@ -213,7 +213,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
         being covered. Use of an array to specify a population could be used,
-        for example, to create a tight bunch of initial guesses in an location
+        for example, to create a tight bunch of initial guesses in a location
         where the solution is known to exist, thereby reducing time for
         convergence.
     atol : float, optional
@@ -694,7 +694,7 @@ class DifferentialEvolutionSolver:
         user's responsibility to ensure that the polishing function obeys
         bounds, any constraints (including integrality constraints), and that
         appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
-        ```x``, ``nfev``, ``jac``.
+        ``x``, ``nfev``, ``jac``.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -723,7 +723,7 @@ class DifferentialEvolutionSolver:
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
         being covered. Use of an array to specify a population could be used,
-        for example, to create a tight bunch of initial guesses in an location
+        for example, to create a tight bunch of initial guesses in a location
         where the solution is known to exist, thereby reducing time for
         convergence.
     atol : float, optional
@@ -995,7 +995,7 @@ class DifferentialEvolutionSolver:
             x0_scaled = self._unscale_parameters(np.asarray(x0))
             if ((x0_scaled > 1.0) | (x0_scaled < 0.0)).any():
                 raise ValueError(
-                    "Some entries in x0 lay outside the specified bounds"
+                    "Some entries in x0 lie outside the specified bounds"
                 )
             self.population[0] = x0_scaled
 

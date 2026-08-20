@@ -195,6 +195,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     """
 
     A = aslinearoperator(A)
+    if A.ndim > 2:
+        raise ValueError(f"{A.ndim}-dimensional `A` is unsupported, expected 2-D.")
     b = atleast_1d(b)
     if b.ndim > 1:
         b = b.squeeze()
@@ -286,6 +288,12 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     normA = sqrt(normA2)
     condA = 1
     normx = 0
+
+    # Initialize print strings
+    str1 = ''
+    str2 = ''
+    str3 = ''
+    str4 = ''
 
     # Items for use in stopping rules, normb set earlier
     istop = 0

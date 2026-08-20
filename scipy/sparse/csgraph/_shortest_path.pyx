@@ -40,6 +40,14 @@ DEF DTYPE_EPS = 1E-15
 
 
 class NegativeCycleError(Exception):
+    """
+    Negative cycle in graph.
+
+    Parameters
+    ----------
+    message : str
+        Error message.
+    """
     def __init__(self, message=''):
         Exception.__init__(self, message)
 
@@ -63,35 +71,31 @@ def shortest_path(csgraph, method='auto',
     ----------
     csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
-    method : string ['auto'|'FW'|'D'], optional
+    method : str ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
 
-           'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
-                     based on the input data.
-
-           'FW'   -- Floyd-Warshall algorithm.
-                     Computational cost is approximately ``O[N^3]``.
-                     The input csgraph will be converted to a dense representation.
-
-           'D'    -- Dijkstra's algorithm with priority queue.
-                     Computational cost is approximately ``O[I * (E + N) * log(N)]``,
-                     where ``E`` is the number of edges in the graph,
-                     and ``I = len(indices)`` if ``indices`` is passed. Otherwise,
-                     ``I = N``.
-                     The input csgraph will be converted to a csr representation.
-
-           'BF'   -- Bellman-Ford algorithm.
-                     This algorithm can be used when weights are negative.
-                     If a negative cycle is encountered, an error will be raised.
-                     Computational cost is approximately ``O[N(N^2 k)]``, where
-                     ``k`` is the average number of connected edges per node.
-                     The input csgraph will be converted to a csr representation.
-
-           'J'    -- Johnson's algorithm.
-                     Like the Bellman-Ford algorithm, Johnson's algorithm is
-                     designed for use when the weights are negative. It combines
-                     the Bellman-Ford algorithm with Dijkstra's algorithm for
-                     faster computation.
+        'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
+                  based on the input data.
+        'FW'   -- Floyd-Warshall algorithm.
+                  Computational cost is approximately ``O[N^3]``.
+                  The input csgraph will be converted to a dense representation.
+        'D'    -- Dijkstra's algorithm with priority queue.
+                  Computational cost is approximately ``O[I * (E + N) * log(N)]``,
+                  where ``E`` is the number of edges in the graph,
+                  and ``I = len(indices)`` if ``indices`` is passed. Otherwise,
+                  ``I = N``.
+                  The input csgraph will be converted to a csr representation.
+        'BF'   -- Bellman-Ford algorithm.
+                  This algorithm can be used when weights are negative.
+                  If a negative cycle is encountered, an error will be raised.
+                  Computational cost is approximately ``O[N(N^2 k)]``, where
+                  ``k`` is the average number of connected edges per node.
+                  The input csgraph will be converted to a csr representation.
+        'J'    -- Johnson's algorithm.
+                  Like the Bellman-Ford algorithm, Johnson's algorithm is
+                  designed for use when the weights are negative. It combines
+                  the Bellman-Ford algorithm with Dijkstra's algorithm for
+                  faster computation.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -136,7 +140,7 @@ def shortest_path(csgraph, method='auto',
 
     See Also
     --------
-    :ref:`word-ladders-example` : An illustratation of the ``shortest_path`` API with a meaninful example.
+    :ref:`word-ladders-example` : An illustratation of the ``shortest_path`` API with a meaningful example.
                                   It also reconstructs the shortest path by using predecessors matrix returned
                                   by this function.
 
@@ -164,14 +168,14 @@ def shortest_path(csgraph, method='auto',
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 6 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 2)	7
-    	(1, 2)	8
-    	(1, 3)	5
-    	(2, 0)	7
-    	(2, 1)	8
-    	(3, 1)	5
+        with 6 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 2)	7
+        (1, 2)	8
+        (1, 3)	5
+        (2, 0)	7
+        (2, 1)	8
+        (3, 1)	5
 
     >>> sources = [0, 2]
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=sources, return_predecessors=True)
@@ -295,7 +299,7 @@ def floyd_warshall(csgraph, directed=True,
     floyd_warshall(csgraph, directed=True, return_predecessors=False,
                    unweighted=False, overwrite=False)
 
-    Compute the shortest path lengths using the Floyd-Warshall algorithm
+    Compute the shortest path lengths using the Floyd-Warshall algorithm.
 
     .. versionadded:: 0.11.0
 
@@ -358,13 +362,13 @@ def floyd_warshall(csgraph, directed=True,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
     >>> dist_matrix
@@ -488,7 +492,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
              unweighted=False, limit=np.inf, min_only=False)
 
-    Dijkstra algorithm using priority queue
+    Dijkstra algorithm using priority queue.
 
     .. versionadded:: 0.11.0
 
@@ -589,12 +593,12 @@ def dijkstra(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 4 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 3)	3
+        with 4 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -744,7 +748,7 @@ cdef void _dijkstra_scan_heap(dijkstra_queue_t &heap,
         unsigned int j_current
         DTYPE_t next_val
 
-    # v is a dist_index_pair_t poped from the queue
+    # v is a dist_index_pair_t popped from the queue
     # v.first: the distance of the vertex
     # v.second: index of the vertex
     for j in range(csr_indptr[v.second], csr_indptr[v.second + 1]):
@@ -754,7 +758,7 @@ cdef void _dijkstra_scan_heap(dijkstra_queue_t &heap,
             if dist_matrix[j_current] > next_val:
                 dist_matrix[j_current] = next_val
                 # The same vertex may be pushed multiple times to the queue, but
-                # anything with suboptimal distance is ignored when poped
+                # anything with suboptimal distance is ignored when popped
                 heap.push(dist_index_pair_t(-next_val, j_current))
                 if return_pred:
                     pred[j_current] = v.second
@@ -947,13 +951,13 @@ def bellman_ford(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1190,13 +1194,13 @@ def johnson(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1461,7 +1465,7 @@ def yen(
     by Jin Y. Yen in 1971 and employs any shortest path algorithm to find the best path,
     then proceeds to find ``K - 1`` deviations of the best path.
 
-    The algorithm is based on Dijsktra's algorithm for finding each shortest path.
+    The algorithm is based on Dijkstra's algorithm for finding each shortest path.
     In case there are negative edges in the graph, Johnson's algorithm is applied.
 
     If multiple valid solutions are possible, output may vary with SciPy and
@@ -1486,13 +1490,13 @@ def yen(
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_array, predecessors = yen(csgraph=graph, source=0, sink=3, K=2,
     ...                                directed=False, return_predecessors=True)
@@ -1549,10 +1553,12 @@ def yen(
                                      csgraphT.indptr, johnson_dist_array)
             csrT_data = csgraphT.data
 
+    indices, indptr = safely_cast_index_arrays(csgraph, ITYPE, "csgraph")
+    indicesT, indptrT = safely_cast_index_arrays(csgraphT, ITYPE, "csgraph")
     _yen(
         source, sink,
-        csr_data, csgraph.indices, csgraph.indptr,
-        csrT_data, csgraphT.indices, csgraphT.indptr,
+        csr_data, indices, indptr,
+        csrT_data, indicesT, indptrT,
         dist_array, predecessor_matrix,
     )
     if has_negative_weights:

@@ -44,7 +44,7 @@ at the top-level directory.
 void
 relax_snode (
 	     const     int n,
-	     int       *et,           /* column elimination tree */
+                  const int *et,           /* column elimination tree */
 	     const int relax_columns, /* max no of columns allowed in a
 					 relaxed snode */
 	     int       *descendants,  /* no of descendants of each node
@@ -56,7 +56,7 @@ relax_snode (
     register int j, parent;
     register int snode_start;	/* beginning of a snode */
     
-    ifill (relax_end, n, EMPTY);
+    ifill (relax_end, n, SLU_EMPTY);
     for (j = 0; j < n; j++) descendants[j] = 0;
 
     /* Compute the number of descendants of each node in the etree */
@@ -78,7 +78,8 @@ relax_snode (
 	relax_end[snode_start] = j;		/* Last column is recorded */
 	j++;
 	/* Search for a new leaf */
-	while ( descendants[j] != 0 && j < n ) j++;
+	while (j < n && descendants[j] != 0)
+	    j++;
     }
 
     /*printf("No of relaxed snodes: %d; relaxed columns: %d\n", 

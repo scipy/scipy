@@ -17,13 +17,12 @@ from scipy.sparse import dia_array, eye_array, csr_array
 from scipy.sparse.linalg import eigsh, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
-from scipy._lib._util import np_long, np_ulong
 from scipy.sparse.linalg._special_sparse_arrays import (Sakurai,
                                                         MikotaPair)
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
-INT_DTYPES = (np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong)
+INT_DTYPES = (np.intc, np.long, np.longlong, np.uintc, np.ulong, np.ulonglong)
 # np.half is unsupported on many test systems so excluded
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -75,6 +74,7 @@ def test_ElasticRod(n):
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.filterwarnings("ignore:Casting complex values to real")
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.filterwarnings("ignore:An ill-conditioned matrix")
 @pytest.mark.parametrize("Vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("Bdtype", ALLDTYPES)
@@ -348,8 +348,6 @@ def test_failure_to_run_iterations_nonsymmetric():
     assert np.max(eigenvalues) > 0
 
 
-@pytest.mark.skipif(_IS_32BIT and np.lib.NumpyVersion(np.__version__) < "2.0.0",
-                  reason="Was failing in CI, see gh-23077")
 @pytest.mark.filterwarnings("ignore:The problem size")
 def test_hermitian():
     """Check complex-value Hermitian cases.
@@ -445,6 +443,7 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.parametrize("vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("mdtype", ALLDTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,

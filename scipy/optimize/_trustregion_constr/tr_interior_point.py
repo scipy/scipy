@@ -92,8 +92,16 @@ class BarrierSubproblem:
             c_eq = np.full(self.n_eq, 0.)
             c_ineq = np.full(self.n_ineq, 0.)
         else:
-            f = self.fun(x)
             c_eq, c_ineq = self.constr(x)
+
+            if np.any(c_ineq[self.enforce_feasibility] >= 0):
+                # Set f = inf explicitly so that the actual objective function is not
+                # called with infeasible values.
+                #
+                # The iteration will fail and the trust region will be reduced.
+                f = np.inf
+            else:
+                f = self.fun(x)
 
         # Return objective function and constraints
         return (self._compute_function(f, c_ineq, s),

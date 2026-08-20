@@ -61,7 +61,6 @@ def _skip_if_poly1d(arg):
 def abcd_normalize_signature(A=None, B=None, C=None, D=None):
     return array_namespace(A, B, C, D)
 
-
 def argrelextrema_signature(data, *args, **kwds):
     return array_namespace(data)
 
@@ -416,8 +415,7 @@ def lfiltic_signature(b, a, y, x=None):
 
 
 def lombscargle_signature(
-    x, y, freqs, precenter=False, normalize=False, *,
-    weights=None, floating_mean=False
+    x, y, freqs, *, normalize=False, weights=None, floating_mean=False
 ):
     return array_namespace(x, y, freqs, weights)
 
@@ -488,7 +486,7 @@ def savgol_filter_signature(x, *args, **kwds):
 
 
 def sawtooth_signature(t, width=1):
-    return array_namespace(t)
+    return array_namespace(t, width)
 
 
 def sepfir2d_signature(input, hrow, hcol):
@@ -515,7 +513,7 @@ def spline_filter_signature(Iin, lmbda=5.0):
 
 
 def square_signature(t, duty=0.5):
-    return array_namespace(t)
+    return array_namespace(t, duty)
 
 
 def ss2tf_signature(A, B, C, D, input=0):

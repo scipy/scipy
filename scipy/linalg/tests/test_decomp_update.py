@@ -1,4 +1,5 @@
 import itertools
+import pytest
 
 import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
@@ -355,7 +356,7 @@ class BaseQRdelete(BaseQRdeltas):
     # require a contiguous q.
 
     def base_non_simple_strides(self, adjust_strides, ks, p, which,
-                                overwriteable):
+                                overwritable):
         if which == 'row':
             qind = (slice(p,None), slice(p,None))
             rind = (slice(p,None), slice(None))
@@ -385,7 +386,7 @@ class BaseQRdelete(BaseQRdeltas):
             check_qr(q1, r1, a1, self.rtol, self.atol)
             q1o, r1o = qr_delete(qs, r, k, p, which, True)
             check_qr(q1o, r1o, a1, self.rtol, self.atol)
-            if overwriteable:
+            if overwritable:
                 assert_allclose(q1o, qs[qind], rtol=self.rtol, atol=self.atol)
                 assert_allclose(r1o, r[rind], rtol=self.rtol, atol=self.atol)
 
@@ -395,7 +396,7 @@ class BaseQRdelete(BaseQRdeltas):
             check_qr(q2, r2, a1, self.rtol, self.atol)
             q2o, r2o = qr_delete(q, rs, k, p, which, True)
             check_qr(q2o, r2o, a1, self.rtol, self.atol)
-            if overwriteable:
+            if overwritable:
                 assert_allclose(q2o, q[qind], rtol=self.rtol, atol=self.atol)
                 assert_allclose(r2o, rs[rind], rtol=self.rtol, atol=self.atol)
 
@@ -407,7 +408,7 @@ class BaseQRdelete(BaseQRdeltas):
             check_qr(q3, r3, a1, self.rtol, self.atol)
             q3o, r3o = qr_delete(qs, rs, k, p, which, True)
             check_qr(q3o, r3o, a1, self.rtol, self.atol)
-            if overwriteable:
+            if overwritable:
                 assert_allclose(q2o, qs[qind], rtol=self.rtol, atol=self.atol)
                 assert_allclose(r3o, rs[rind], rtol=self.rtol, atol=self.atol)
 
@@ -573,6 +574,7 @@ class BaseQRdelete(BaseQRdeltas):
         r = r[1:]
         assert_raises(ValueError, qr_delete, q, r, 0, 1)
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
@@ -1118,6 +1120,7 @@ class BaseQRinsert(BaseQRdeltas):
         assert_raises(ValueError, qr_insert, q[:-2], r, u, 0, 'col')
         assert_raises(ValueError, qr_insert, q, r, u[1:], 0, 'col')
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
@@ -1331,7 +1334,7 @@ class BaseQRupdate(BaseQRdeltas):
         assert_raises(ValueError, qr_update, q, r, u[0], v)
         assert_raises(ValueError, qr_update, q, r, u, v[0])
 
-    def base_non_simple_strides(self, adjust_strides, mode, p, overwriteable):
+    def base_non_simple_strides(self, adjust_strides, mode, p, overwritable):
         assert_sqr = False if mode == 'economic' else True
         for type in ['sqr', 'tall', 'fat']:
             a, q0, r0, u0, v0 = self.generate(type, mode, p)
@@ -1354,7 +1357,7 @@ class BaseQRupdate(BaseQRdeltas):
             check_qr(q1, r1, aup, self.rtol, self.atol, assert_sqr)
             q1o, r1o = qr_update(qs, r, u, v, True)
             check_qr(q1o, r1o, aup, self.rtol, self.atol, assert_sqr)
-            if overwriteable:
+            if overwritable:
                 assert_allclose(r1o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
 
@@ -1366,7 +1369,7 @@ class BaseQRupdate(BaseQRdeltas):
             check_qr(q2, r2, aup, self.rtol, self.atol, assert_sqr)
             q2o, r2o = qr_update(q, rs, u, v, True)
             check_qr(q2o, r2o, aup, self.rtol, self.atol, assert_sqr)
-            if overwriteable:
+            if overwritable:
                 assert_allclose(r2o, rs, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
 
@@ -1378,7 +1381,7 @@ class BaseQRupdate(BaseQRdeltas):
             check_qr(q3, r3, aup, self.rtol, self.atol, assert_sqr)
             q3o, r3o = qr_update(q, r, us, v, True)
             check_qr(q3o, r3o, aup, self.rtol, self.atol, assert_sqr)
-            if overwriteable:
+            if overwritable:
                 assert_allclose(r3o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
 
@@ -1390,7 +1393,7 @@ class BaseQRupdate(BaseQRdeltas):
             check_qr(q4, r4, aup, self.rtol, self.atol, assert_sqr)
             q4o, r4o = qr_update(q, r, u, vs, True)
             check_qr(q4o, r4o, aup, self.rtol, self.atol, assert_sqr)
-            if overwriteable:
+            if overwritable:
                 assert_allclose(r4o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(vs, v0.conj(), rtol=self.rtol, atol=self.atol)
 
@@ -1404,7 +1407,7 @@ class BaseQRupdate(BaseQRdeltas):
             check_qr(q5, r5, aup, self.rtol, self.atol, assert_sqr)
             q5o, r5o = qr_update(qs, rs, us, vs, True)
             check_qr(q5o, r5o, aup, self.rtol, self.atol, assert_sqr)
-            if overwriteable:
+            if overwritable:
                 assert_allclose(r5o, rs, rtol=self.rtol, atol=self.atol)
                 assert_allclose(vs, v0.conj(), rtol=self.rtol, atol=self.atol)
 
@@ -1552,6 +1555,7 @@ class BaseQRupdate(BaseQRdeltas):
         assert_raises(ValueError, qr_update, q, r, u[1:], v)
         assert_raises(ValueError, qr_update, q, r, u, v[1:])
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',

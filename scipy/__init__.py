@@ -1,42 +1,23 @@
 """
-SciPy: A scientific computing package for Python
-================================================
+.. The heading is listed in the parent file `doc/reference/index.rst` to keep the
+   section levels consistent.
 
-Documentation is available in the docstrings and
-online at https://docs.scipy.org/doc/scipy/
+The main ``scipy`` namespace has very few objects in it by design. Only some
+generical functionality related to testing, build info, and versioning, and one
+class (`LowLevelCallable`), which didn't fit into one of the submodules, is present:
 
-Subpackages
------------
-::
+.. autosummary::
+   :toctree: generated/
 
- cluster                      --- Vector Quantization / Kmeans
- constants                    --- Physical and mathematical constants and units
- datasets                     --- Dataset methods
- differentiate                --- Finite difference differentiation tools
- fft                          --- Discrete Fourier transforms
- fftpack                      --- Legacy discrete Fourier transforms
- integrate                    --- Integration routines
- interpolate                  --- Interpolation Tools
- io                           --- Data input and output
- linalg                       --- Linear algebra routines
- ndimage                      --- N-D image package
- odr                          --- Orthogonal Distance Regression
- optimize                     --- Optimization Tools
- signal                       --- Signal Processing Tools
- sparse                       --- Sparse Matrices
- spatial                      --- Spatial data structures and algorithms
- special                      --- Special functions
- stats                        --- Statistical Functions
+   scipy.LowLevelCallable
+   scipy.show_config
+   scipy.test
 
-Public API in the main SciPy namespace
---------------------------------------
-::
+The sole public attribute is:
 
- __version__       --- SciPy version string
- LowLevelCallable  --- Low-level callback function
- show_config       --- Show scipy build configuration
- test              --- Run scipy unittests
-
+================== ===============================================
+``__version__``    SciPy version string
+================== ===============================================
 """
 
 import importlib as _importlib
@@ -61,18 +42,18 @@ from . import _distributor_init
 del _distributor_init
 
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version.version import Version, parse
 # In maintenance branch, change to np_maxversion N+3 if numpy is at N
-np_minversion = '1.26.4'
+np_minversion = '2.0.0'
 np_maxversion = '9.9.99'
-if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
-        _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
+if (parse(__numpy_version__) < Version(np_minversion) or
+        parse(__numpy_version__) >= Version(np_maxversion)):
     import warnings
     warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
                   f" is required for this version of SciPy (detected "
                   f"version {__numpy_version__})",
                   UserWarning, stacklevel=2)
-del _pep440
+del Version, parse
 
 
 # This is the first import of an extension module within SciPy. If there's
@@ -105,7 +86,6 @@ submodules = [
     'io',
     'linalg',
     'ndimage',
-    'odr',
     'optimize',
     'signal',
     'sparse',
@@ -129,6 +109,11 @@ def __dir__():
 def __getattr__(name):
     if name in submodules:
         return _importlib.import_module(f'scipy.{name}')
+    elif name == "odr":
+        raise AttributeError(
+            "`scipy.odr` was deprecated in SciPy 1.17 and removed in SciPy 2.0. "
+            "Please use https://pypi.org/project/odrpack/ instead."
+        )
     else:
         try:
             return globals()[name]

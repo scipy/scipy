@@ -6,7 +6,7 @@ from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
 from scipy._lib._array_api import array_namespace, xp_copy
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _ScalarFunctionWrapper
 
 

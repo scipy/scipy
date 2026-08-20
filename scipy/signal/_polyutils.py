@@ -6,16 +6,12 @@ namespace, and "new-style", np.polynomial.polynomial, routines.
 To distinguish the two sets, the "new-style" routine names start with `npp_`
 """
 import warnings
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    xp_promote, xp_default_dtype, xp_size, xp_device, is_numpy
+    xp_promote, xp_size, xp_device, is_numpy
 )
 
-try:
-    from numpy.exceptions import RankWarning
-except ImportError:
-    # numpy 1.x
-    from numpy import RankWarning
+from numpy.exceptions import RankWarning
 
 
 def _sort_cmplx(arr, xp):
@@ -35,7 +31,7 @@ def polyroots(coef, *, xp):
     """numpy.roots, best-effor replacement
     """
     if coef.shape[0] < 2:
-        return xp.asarray([], dtype=coef.dtype)
+        return xp.asarray([], dtype=coef.dtype, device=xp_device(coef))
 
     root_func = getattr(xp, 'roots', None)
     if root_func:
@@ -45,7 +41,7 @@ def polyroots(coef, *, xp):
 
     # companion matrix
     n = coef.shape[0]
-    a = xp.eye(n - 1, n - 1, k=-1, dtype=coef.dtype)
+    a = xp.eye(n - 1, n - 1, k=-1, dtype=coef.dtype, device=xp_device(coef))
     a[:, -1] = -xp.flip(coef[1:]) / coef[0]
 
     # non-symmetric eigenvalue problem is not in the spec but is available on e.g. torch
@@ -84,7 +80,7 @@ def _lstsq(a, b, xp=None, rcond=None):
     a, b = xp_promote(a, b, force_floating=True, xp=xp)
 
     if rcond is None:
-        rcond = xp.finfo(a.dtype).eps * max(a.shape[-1], a.shape[-2])
+        rcond = xp.finfo(a.dtype).eps
 
     if is_numpy(xp):
         from scipy.linalg import lstsq as s_lstsq
@@ -99,13 +95,13 @@ def _lstsq(a, b, xp=None, rcond=None):
         sing_val_mask = s > rcond
         s = xpx.apply_where(sing_val_mask, (s,), lambda x: 1. / x, fill_value=0.)
 
-        sigma = xp.eye(s.shape[0]) * s    # == np.diag(s)
+        sigma = xp.eye(s.shape[0], device=xp_device(a)) * s    # == np.diag(s)
         x = vt.T @ sigma @ u.T @ b
 
         rank = xp.count_nonzero(sing_val_mask)
 
         # XXX actually compute residuals, when there's a use case
-        residuals = xp.asarray([])
+        residuals = xp.asarray([], device=xp_device(a))
         return x, residuals, rank, s
 
 
@@ -121,7 +117,7 @@ def _poly1d(c_or_r, *, xp):
         raise ValueError("Polynomial must be 1d only.")
     c_or_r = _trim_zeros(c_or_r, trim='f')
     if c_or_r.shape[0] == 0:
-        c_or_r = xp.asarray([0], dtype=c_or_r.dtype)
+        c_or_r = xp.asarray([0], dtype=c_or_r.dtype, device=xp_device(c_or_r))
     return c_or_r
 
 
@@ -147,7 +143,8 @@ def poly(seq_of_zeros, *, xp):
     seq_of_zeros = xpx.atleast_nd(seq_of_zeros, ndim=1, xp=xp)
 
     if seq_of_zeros.shape[0] == 0:
-        return xp.asarray(1.0, dtype=xp.real(seq_of_zeros).dtype)
+        return xp.asarray(1.0, dtype=xp.real(seq_of_zeros).dtype,
+                          device=xp_device(seq_of_zeros))
 
     # prefer np.convolve etc, if available
     convolve_func = getattr(xp, 'convolve', None)
@@ -155,7 +152,7 @@ def poly(seq_of_zeros, *, xp):
         from scipy.signal import convolve as convolve_func
 
     dt = seq_of_zeros.dtype
-    a = xp.ones((1,), dtype=dt)
+    a = xp.ones((1,), dtype=dt, device=xp_device(seq_of_zeros))
     one = xp.ones_like(seq_of_zeros[0])
     for zero in seq_of_zeros:
         a = convolve_func(a, xp.stack((one, -zero)), mode='full')
@@ -231,7 +228,7 @@ def polyfit(x, y, deg, *, xp, rcond=None):
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/polynomial/polynomial.py#L663
 def npp_polyval(x, c, *, xp, tensor=True):
     if xp.isdtype(c.dtype, 'integral'):
-        c = xp.astype(c, xp_default_dtype(xp))
+        c = xp.astype(c, xpx.default_dtype(xp))
 
     c = xpx.atleast_nd(c, ndim=1, xp=xp)
     if isinstance(x, tuple | list):

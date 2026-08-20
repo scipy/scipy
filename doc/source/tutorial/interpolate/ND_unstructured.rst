@@ -115,7 +115,7 @@ classes from the `scipy.interpolate` module.
     >>> ius = InterpolatedUnivariateSpline(x, y)
     >>> yi = ius(xi)
 
-    >>> fix, (ax1, ax2) = plt.subplots(2, 1)
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1)
     >>> ax1.plot(x, y, 'bo')
     >>> ax1.plot(xi, yi, 'g')
     >>> ax1.plot(xi, np.sin(xi), 'r')
@@ -176,3 +176,77 @@ This example shows how to interpolate scattered 2-D data:
     ...     ylim=(-2, 2),
     ... )
     >>> fig.colorbar(mapping)
+
+
+.. _rbfinterpolate_custom_kernels:
+
+Using Custom Kernels
+--------------------
+
+It  is possible to extend `RBFInterpolator` with user supplied kernels which
+are passed using function pointers and `scipy.LowLevelCallable` to wrap a
+compiled kernel with signature ``double (double)``, where the argument is the
+scalar distance *r*.  Both `epsilon` and `degree` must be supplied explicitly;
+neither has a default.
+
+.. note::
+    Only NumPy arrays currently supported with a `scipy.LowLevelCallable` kernel.
+
+This can be done usig pythran to compile python to C++ or by directly writing
+and compile a C/C++ function.
+
+**Pythran**
+
+Use [pythran]_ and expose it as a capsule::
+
+    # custom_kernel.py
+    import numpy as np
+
+    def my_kernel(r):
+        return np.exp(-r ** 2) * r
+
+    # pythran export capsule my_kernel(float64)
+
+Compile with pythran::
+
+    pythran custom_kernel.py
+
+Then in wrap the function in a ``LowLevelCallable``::
+
+    from custom_kernel import my_kernel  # capsule object
+    from scipy import LowLevelCallable
+
+    llc = LowLevelCallable(my_kernel, signature="double (double)")
+
+    interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
+
+**C/C++**::
+
+    // custom_kernel.c
+    #include <math.h>
+    double my_kernel(double r) {
+        return exp(-r * r) / r;
+    }
+
+Compile::
+
+    clang -shared -fPIC -O3 -o custom_kernel.dylib custom_kernel.c
+
+Then wrap the function in a ``LowLevelCallable``::
+
+    import ctypes
+    from scipy import LowLevelCallable
+    from scipy.interpolate import RBFInterpolator
+
+    lib = ctypes.CDLL('./custom_kernel.dylib')
+    lib.my_kernel.restype  = ctypes.c_double
+    lib.my_kernel.argtypes = [ctypes.c_double]
+
+    llc = LowLevelCallable(lib.my_kernel)
+    interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
+
+
+References
+~~~~~~~~~~
+
+.. [pythran] https://pythran.readthedocs.io/en/latest/examples/Third%20Party%20Libraries.html#With-Pythran

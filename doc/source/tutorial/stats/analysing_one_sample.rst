@@ -26,7 +26,7 @@ Descriptive statistics
     5.26327732981  # random
     >>> print(x.mean())  # equivalent to np.mean(x)
     0.0140610663985  # random
-    >>> print(x.var())   # equivalent to np.var(x))
+    >>> print(x.var())   # equivalent to np.var(x)
     1.28899386208  # random
 
 How do the sample properties compare to their theoretical counterparts?
@@ -44,7 +44,7 @@ Note: `stats.describe` uses the unbiased estimator for the variance, while
 np.var is the biased estimator.
 
 
-For our sample the sample statistics differ a by a small amount from
+For our sample, the sample statistics differ by a small amount from
 their theoretical counterparts.
 
 
@@ -91,7 +91,7 @@ normal distribution given that, in this example, the p-value is almost 40%.
 However, the standard normal distribution has a variance of 1, while our
 sample has a variance of 1.29. If we standardize our sample and test it
 against the normal distribution, then the p-value is again large enough
-that we cannot reject the hypothesis that the sample came form the
+that we cannot reject the hypothesis that the sample came from the
 normal distribution.
 
     >>> d, pval = stats.kstest((x-x.mean())/x.std(), 'norm')
@@ -207,7 +207,7 @@ These two tests are combined in the normality test
     normaltest teststat = 30.379 pvalue = 0.0000  # random
 
 In all three tests, the p-values are very low and we can reject the hypothesis
-that the our sample has skew and kurtosis of the normal distribution.
+that our sample has skew and kurtosis of the normal distribution.
 
 Since skew and kurtosis of our sample are based on central moments, we get
 exactly the same results if we test the standardized sample:
@@ -230,5 +230,5 @@ When testing for normality of a small sample of t-distributed observations
 and a large sample of normal-distributed observations, then in neither case
 can we reject the null hypothesis that the sample comes from a normal
 distribution. In the first case, this is because the test is not powerful
-enough to distinguish a t and a normally distributed random variable in a
+enough to distinguish a t-distributed and a normally distributed random variable in a
 small sample.

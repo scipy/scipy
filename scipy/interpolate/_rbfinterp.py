@@ -9,13 +9,14 @@ from . import _rbfinterp_np
 from . import _rbfinterp_xp
 
 from scipy._lib._array_api import (
-    _asarray, array_namespace, xp_size, is_numpy, xp_capabilities
+    _asarray, array_namespace, xp_size, is_numpy, xp_capabilities, xp_device
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ["RBFInterpolator"]
 
+from .. import LowLevelCallable
 
 # These RBFs are implemented.
 _AVAILABLE = {
@@ -26,7 +27,10 @@ _AVAILABLE = {
     "multiquadric",
     "inverse_multiquadric",
     "inverse_quadratic",
-    "gaussian"
+    "gaussian",
+    "matern1_2",
+    "matern3_2",
+    "matern5_2"
     }
 
 
@@ -85,19 +89,27 @@ class RBFInterpolator:
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.
-    kernel : str, optional
-        Type of RBF. This should be one of
+    kernel : str or LowLevelCallable optional
+        Type of RBF. This should be one of,  default is ``'thin_plate_spline'``,
 
-            - 'linear'               : ``-r``
-            - 'thin_plate_spline'    : ``r**2 * log(r)``
-            - 'cubic'                : ``r**3``
-            - 'quintic'              : ``-r**5``
-            - 'multiquadric'         : ``-sqrt(1 + r**2)``
-            - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
-            - 'inverse_quadratic'    : ``1/(1 + r**2)``
-            - 'gaussian'             : ``exp(-r**2)``
+        - 'linear'               : ``-r``
+        - 'thin_plate_spline'    : ``r**2 * log(r)``
+        - 'cubic'                : ``r**3``
+        - 'quintic'              : ``-r**5``
+        - 'multiquadric'         : ``-sqrt(1 + r**2)``
+        - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
+        - 'inverse_quadratic'    : ``1/(1 + r**2)``
+        - 'gaussian'             : ``exp(-r**2)``
+        - 'matern1_2'            : ``exp(-r)``
+        - 'matern3_2' .          : ``(1+-3**0.5*r)*exp(-3**0.5*r)``
+        - 'matern5_2'            : ``(1+5**0.5*r + 5/3 *r**2)*exp(-5**0.5*r)``
 
-        Default is 'thin_plate_spline'.
+
+        Alternatively, a :class:`~scipy.LowLevelCallable` wrapping a compiled kernel
+        with signature ``double (double)``, where the argument is the scalar distance
+        *r* see :ref:`rbfinterpolate_custom_kernels` for more details. Both `epsilon`
+        and `degree` must be supplied explicitly; neither has a default. Only NumPy
+        arrays are supported with a ``LowLevelCallable`` kernel.
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. If `kernel` is
         'linear', 'thin_plate_spline', 'cubic', or 'quintic', this defaults to
@@ -108,11 +120,11 @@ class RBFInterpolator:
         be well-posed if the polynomial degree is too small. Those RBFs and
         their corresponding minimum degrees are
 
-            - 'multiquadric'      : 0
-            - 'linear'            : 0
-            - 'thin_plate_spline' : 1
-            - 'cubic'             : 1
-            - 'quintic'           : 2
+        - 'multiquadric'      : 0
+        - 'linear'            : 0
+        - 'thin_plate_spline' : 1
+        - 'cubic'             : 1
+        - 'quintic'           : 2
 
         The default value is the minimum degree for `kernel` or 0 if there is
         no minimum degree. Set this to -1 for no added polynomial.
@@ -152,14 +164,14 @@ class RBFInterpolator:
     The above system is uniquely solvable if the following requirements are
     met:
 
-        - :math:`P(y)` must have full column rank. :math:`P(y)` always has full
-          column rank when `degree` is -1 or 0. When `degree` is 1,
-          :math:`P(y)` has full column rank if the data point locations are not
-          all collinear (N=2), coplanar (N=3), etc.
-        - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
-          'cubic', or 'quintic', then `degree` must not be lower than the
-          minimum value listed above.
-        - If `smoothing` is 0, then each data point location must be distinct.
+    - :math:`P(y)` must have full column rank. :math:`P(y)` always has full
+      column rank when `degree` is -1 or 0. When `degree` is 1,
+      :math:`P(y)` has full column rank if the data point locations are not
+      all collinear (N=2), coplanar (N=3), etc.
+    - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
+      'cubic', or 'quintic', then `degree` must not be lower than the
+      minimum value listed above.
+    - If `smoothing` is 0, then each data point location must be distinct.
 
     When using an RBF that is not scale invariant ('multiquadric',
     'inverse_multiquadric', 'inverse_quadratic', or 'gaussian'), an appropriate
@@ -221,7 +233,7 @@ class RBFInterpolator:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, y, d,
                  neighbors=None,
@@ -231,6 +243,17 @@ class RBFInterpolator:
                  degree=None):
         xp = array_namespace(y, d, smoothing)
         _backend = _get_backend(xp)
+
+        if isinstance(kernel, str):
+            kernel = kernel.lower()
+            if kernel not in _AVAILABLE:
+                raise ValueError(f"String `kernel` must be one of {_AVAILABLE}")
+        elif isinstance(kernel, LowLevelCallable):
+            if not is_numpy(xp):
+                raise ValueError("LowLevelCallable kernels are only "
+                                 "supported with the NumPy backend.")
+        else:
+            raise ValueError("The kernel must be a string or a LowLevelCallable.")
 
         if neighbors is not None:
             if not is_numpy(xp):
@@ -264,7 +287,8 @@ class RBFInterpolator:
         d = d.view(float)     # NB not Array API compliant (and jax copies)
 
         if isinstance(smoothing, int | float) or smoothing.shape == ():
-            smoothing = xp.full(ny, smoothing, dtype=xp.float64)
+            smoothing = xp.full(ny, smoothing, dtype=xp.float64,
+                                device=xp_device(y))
         else:
             smoothing = _asarray(smoothing, dtype=float, order="C", xp=xp)
             if smoothing.shape != (ny,):
@@ -273,37 +297,47 @@ class RBFInterpolator:
                     f"({ny},)."
                     )
 
-        kernel = kernel.lower()
-        if kernel not in _AVAILABLE:
-            raise ValueError(f"`kernel` must be one of {_AVAILABLE}.")
-
+        # Validate and resolve epsilon
         if epsilon is None:
-            if kernel in _SCALE_INVARIANT:
+            # LowLevelCallable is unhashable so guard with isinstance before membership
+            # test against _SCALE_INVARIANT.
+            if isinstance(kernel, str) and kernel in _SCALE_INVARIANT:
                 epsilon = 1.0
             else:
                 raise ValueError(
                     "`epsilon` must be specified if `kernel` is not one of "
-                    f"{_SCALE_INVARIANT}."
-                    )
+                    f"{_SCALE_INVARIANT} or a LowLevelCallable."
+                )
         else:
             epsilon = float(epsilon)
 
-        min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
-        if degree is None:
-            degree = max(min_degree, 0)
+
+        # Validate and resolve degree
+        if isinstance(kernel, str):
+            min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
+            if degree is None:
+                degree = max(min_degree, 0)
+            else:
+                degree = int(degree)
+                if degree < -1:
+                    raise ValueError("`degree` must be at least -1.")
+                elif -1 < degree < min_degree:
+                    warnings.warn(
+                        f"`degree` should not be below {min_degree} except -1 when"
+                        f"`kernel` is '{kernel}'. The interpolant may not be uniquely "
+                        f"solvable, and the smoothing parameter may have an unintuitive"
+                        f" effect.",
+                        UserWarning, stacklevel=2
+                    )
         else:
+            # For LLC kernel degree has no default, user must provide it.
+            if degree is None:
+                raise ValueError(
+                    "`degree` must be specified when `kernel` is a LowLevelCallable."
+                )
             degree = int(degree)
             if degree < -1:
                 raise ValueError("`degree` must be at least -1.")
-            elif -1 < degree < min_degree:
-                warnings.warn(
-                    f"`degree` should not be below {min_degree} except -1 "
-                    f"when `kernel` is '{kernel}'."
-                    f"The interpolant may not be uniquely "
-                    f"solvable, and the smoothing parameter may have an "
-                    f"unintuitive effect.",
-                    UserWarning, stacklevel=2
-                )
 
         if neighbors is None:
             nobs = ny
@@ -313,7 +347,8 @@ class RBFInterpolator:
             neighbors = int(min(neighbors, ny))
             nobs = neighbors
 
-        powers = _backend._monomial_powers(ndim, degree, xp)
+        powers = _backend._monomial_powers(ndim, degree, xp,
+                                           device=xp_device(y))
         # The polynomial matrix must have full column rank in order for the
         # interpolant to be well-posed, which is not possible if there are
         # fewer observations than monomials.
@@ -418,7 +453,8 @@ class RBFInterpolator:
         # in each chunk we consume the same space we already occupy
         chunksize = memory_budget // (self.powers.shape[0] + nnei) + 1
         if chunksize <= nx:
-            out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64)
+            out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64,
+                                 device=xp_device(self.d))
             for i in range(0, nx, chunksize):
                 chunk = _backend.compute_interpolation(
                     x[i:i + chunksize, :],

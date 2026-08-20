@@ -1,14 +1,11 @@
 import numpy as np
 from ._slsqplib import nnls as _nnls
-from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 
 
 __all__ = ['nnls']
 
 
-@_deprecate_positional_args(version='1.18.0',
-                            deprecated_args={'atol'})
-def nnls(A, b, *, maxiter=None, atol=_NoValue):
+def nnls(A, b, *, maxiter=None):
     """
     Solve ``argmin_x || Ax - b ||_2^2`` for ``x>=0``.
 
@@ -23,12 +20,8 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
         Coefficient array
     b : (m,) ndarray, float
         Right-hand side vector.
-    maxiter: int, optional
+    maxiter : int, optional
         Maximum number of iterations, optional. Default value is ``3 * n``.
-    atol : float, optional
-        .. deprecated:: 1.18.0
-            This parameter is deprecated and will be removed in SciPy 1.18.0.
-            It is not used in the implementation.
 
     Returns
     -------
@@ -86,6 +79,9 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
         raise ValueError(
                 "Incompatible dimensions. The first dimension of " +
                 f"A is {m}, while the shape of b is {(b.shape[0], )}")
+
+    if n == 0:
+        return (np.empty(0), np.linalg.norm(b))
 
     if not maxiter:
         maxiter = 3*n

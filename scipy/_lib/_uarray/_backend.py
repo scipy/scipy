@@ -8,7 +8,7 @@ import pickle
 import contextlib
 import threading
 
-from ._uarray import (  # type: ignore
+from ._uarray import (
     BackendNotImplementedError,
     _Function,
     _SkipBackendContext,

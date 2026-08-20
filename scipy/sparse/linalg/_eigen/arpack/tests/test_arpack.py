@@ -8,6 +8,8 @@ from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import pytest
 
+from scipy._lib._testutils import IS_WASM
+
 from numpy import dot, conj
 from scipy.linalg import eig, eigh
 from scipy.sparse import csc_array, csr_array, diags_array, random_array
@@ -16,11 +18,15 @@ from scipy.sparse.linalg._eigen.arpack import (eigs, eigsh, arpack,
                                               ArpackNoConvergence)
 
 
-from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._gcutils import assert_deallocated
 
 
 # precision for tests
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
+
+
+def _is_32bit():
+    return np.intp(0).itemsize < 8
 
 
 def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
@@ -77,6 +83,11 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
             # missing more cases, from PR 14798
             rtol *= 10
             atol *= 10
+
+    if _is_32bit():
+        # Small tolerance bumps needed on i686 linux after moving
+        # from GCC 10.2 to 14.2
+        rtol *= 2
 
     return tol, rtol, atol
 
@@ -522,7 +533,6 @@ def test_ticket_1459_arpack_crash():
         evals, evecs = eigs(A, k, v0=v0)
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_linearoperator_deallocation():
     # Check that the linear operators used by the Arpack wrappers are
     # deallocatable by reference counting -- they are big objects, so
@@ -545,6 +555,7 @@ def test_linearoperator_deallocation():
         pass
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_parallel_threads(num_parallel_threads):
     results = []
     rng = np.random.default_rng(1234)
@@ -688,3 +699,31 @@ def test_real_eigs_real_k_subset():
             assert_allclose(dist, 0, atol=np.sqrt(eps))
 
             prev_w = w
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_gh24358(dtype):
+    # gh-24358: eigs with which="SR" returned zeros due to nev variable was modified
+    #  after naupd calls in the C ARPACK implementation. This was due to hitting a
+    # complex valued eig but requesting only one of them.
+
+    # Test the specific issue in gh-24358
+    A = csr_array(np.array([[-1.3, 2.7, 0.2],
+                            [0.8, 4.1, 2.2],
+                            [2.1, 4.4, -1.9]], dtype=dtype))
+    w, z = eigs(A, 1, which="SR")
+    atol = 1e-4 if dtype in [np.float32, np.complex64] else 1e-6
+    assert_allclose(w.real, -2.495689365014214, atol=atol, rtol=0.0)
+    # ARPACK can sometimes pick up the conjugate
+    assert_allclose(np.abs(w.imag), 0.5173365219668336, atol=atol, rtol=0.0)
+    assert_allclose(A @ z, w * z, atol=atol, rtol=0.0)
+
+
+@pytest.mark.parametrize("func", [eigs, eigsh])
+def test_nD(func):
+    """Check that >2-D operators are rejected cleanly."""
+    def id(x):
+        return x
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
+    with pytest.raises(ValueError, match="expected 2-D"):
+        func(A)

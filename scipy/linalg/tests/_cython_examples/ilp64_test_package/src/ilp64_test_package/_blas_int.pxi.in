@@ -1,0 +1,4 @@
+# This will be a plain `int` if scipy.linalg.cython_blas doesn't have
+# `blas_int`, and `blas_int` (cimported from scipy) if it does.
+# See the top-level `meson.build` for the compile-time check.
+@BLAS_INT_DEF@

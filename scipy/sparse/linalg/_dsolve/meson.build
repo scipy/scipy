@@ -1,3 +1,10 @@
+superlu_config = configure_file(
+  input: 'SuperLU/SRC/superlu_config.h.in',
+  output: 'superlu_config.h',
+  format: 'cmake@',
+  configuration: configuration_data(),
+)
+
 _superlu_lib_c_args = ['-DUSE_VENDOR_BLAS=1']
 if is_windows
   _superlu_lib_c_args += ['-DNO_TIMER=1']
@@ -193,9 +200,11 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/zsnode_dfs.c',
     'SuperLU/SRC/zsp_blas2.c',
     'SuperLU/SRC/zsp_blas3.c',
-    'SuperLU/SRC/zutil.c'
+    'SuperLU/SRC/zutil.c',
+    superlu_config,
   ],
   c_args: _superlu_lib_c_args,
+  dependencies: [blas_dep],
   include_directories: ['SuperLU/SRC'],
   gnu_symbol_visibility: 'hidden',
 )
@@ -205,7 +214,7 @@ py3.extension_module('_superlu',
   link_with: [superlu_lib],
   include_directories: ['SuperLU/SRC'],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [blas_dep, np_dep],
   install: true,
   subdir: 'scipy/sparse/linalg/_dsolve'
 )

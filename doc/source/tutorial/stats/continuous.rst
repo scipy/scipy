@@ -7,28 +7,29 @@ Continuous Statistical Distributions
 Overview
 ========
 
-All distributions will have location (L) and Scale (S) parameters
+All distributions will have location (L) and scale (S) parameters
 along with any shape parameters needed, the names for the shape
 parameters will vary. Standard form for the distributions will be
-given where :math:`L=0.0` and :math:`S=1.0.` The nonstandard forms can be obtained for the various functions using
-(note :math:`U` is a standard uniform random variate).
+given where :math:`L=0.0` and :math:`S=1.0.` Nonstandard forms use the
+transformations in the table below. For the Random Variates transformation, :math:`U` is a
+standard uniform random variate.
 
 
 ======================================  =============================================================================  =========================================================================================================================================
 Function Name                           Standard Function                                                              Transformation
 ======================================  =============================================================================  =========================================================================================================================================
-Cumulative Distribution Function (CDF)  :math:`F\left(x\right)`                                                        :math:`F\left(x;L,S\right)=F\left(\frac{\left(x-L\right)}{S}\right)`
-Probability Density Function (PDF)      :math:`f\left(x\right)=F^{\prime}\left(x\right)`                               :math:`f\left(x;L,S\right)=\frac{1}{S}f\left(\frac{\left(x-L\right)}{S}\right)`
+Cumulative Distribution Function (CDF)  :math:`F\left(x\right)`                                                        :math:`F\left(x;L,S\right)=F\left(\frac{x-L}{S}\right)`
+Probability Density Function (PDF)      :math:`f\left(x\right)=F^{\prime}\left(x\right)`                               :math:`f\left(x;L,S\right)=\frac{1}{S}f\left(\frac{x-L}{S}\right)`
 Percent Point Function (PPF)            :math:`G\left(q\right)=F^{-1}\left(q\right)`                                   :math:`G\left(q;L,S\right)=L+SG\left(q\right)`
 Probability Sparsity Function (PSF)     :math:`g\left(q\right)=G^{\prime}\left(q\right)`                               :math:`g\left(q;L,S\right)=Sg\left(q\right)`
-Hazard Function (HF)                    :math:`h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}`          :math:`h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{\left(x-L\right)}{S}\right)`
-Cumulative Hazard Function (CHF)        :math:`H_{a}\left(x\right)=` :math:`\log\frac{1}{1-F\left(x\right)}`           :math:`H_{a}\left(x;L,S\right)=H_{a}\left(\frac{\left(x-L\right)}{S}\right)`
-Survival Function (SF)                  :math:`S\left(x\right)=1-F\left(x\right)`                                      :math:`S\left(x;L,S\right)=S\left(\frac{\left(x-L\right)}{S}\right)`
+Hazard Function (HF)                    :math:`h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}`          :math:`h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{x-L}{S}\right)`
+Cumulative Hazard Function (CHF)        :math:`H_{a}\left(x\right)=` :math:`\log\frac{1}{1-F\left(x\right)}`           :math:`H_{a}\left(x;L,S\right)=H_{a}\left(\frac{x-L}{S}\right)`
+Survival Function (SF)                  :math:`S\left(x\right)=1-F\left(x\right)`                                      :math:`S\left(x;L,S\right)=S\left(\frac{x-L}{S}\right)`
 Inverse Survival Function (ISF)         :math:`Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)`  :math:`Z\left(\alpha;L,S\right)=L+SZ\left(\alpha\right)`
 Moment Generating Function (MGF)        :math:`M_{Y}\left(t\right)=E\left[e^{Yt}\right]`                               :math:`M_{X}\left(t\right)=e^{Lt}M_{Y}\left(St\right)`
 Random Variates                         :math:`Y=G\left(U\right)`                                                      :math:`X=L+SY`
 (Differential) Entropy                  :math:`h\left[Y\right]=-\int f\left(y\right)\log f\left(y\right)dy`            :math:`h\left[X\right]=h\left[Y\right]+\log S`
-(Non-central) Moments                   :math:`\mu_{n}^{\prime}=E\left[Y^{n}\right]`                                   :math:`E\left[X^{n}\right]=L^{n}\sum_{k=0}^{N}\left(\begin{array}{c} n\\ k\end{array}\right)\left(\frac{S}{L}\right)^{k}\mu_{k}^{\prime}`
+(Non-central) Moments                   :math:`\mu_{n}^{\prime}=E\left[Y^{n}\right]`                                   :math:`E\left[X^{n}\right]=\sum_{k=0}^{n}\left(\begin{array}{c} n\\ k\end{array}\right)L^{n-k}S^{k}\mu_{k}^{\prime}`
 Central Moments                         :math:`\mu_{n}=E\left[\left(Y-\mu\right)^{n}\right]`                           :math:`E\left[\left(X-\mu_{X}\right)^{n}\right]=S^{n}\mu_{n}`
 mean (mode, median), var                :math:`\mu,\,\mu_{2}`                                                          :math:`L+S\mu,\, S^{2}\mu_{2}`
 skewness                                :math:`\gamma_{1}=\frac{\mu_{3}}{\left(\mu_{2}\right)^{3/2}}`                  :math:`\gamma_{1}`
@@ -90,8 +91,8 @@ and half on the other. In other words, :math:`F\left(m_{n}\right)=\frac{1}{2}` s
 
      m_{n}=G\left(\frac{1}{2}\right).
 
-In addition, the mode, :math:`m_{d}` , is defined as the value for which the probability density function
-reaches it's peak
+In addition, the mode, :math:`m_{d}`, is defined as the value for which the probability density function
+reaches its peak
 
 .. math::
 
@@ -106,21 +107,21 @@ common. Alternatively, some distributions have well-known minimum
 variance unbiased estimators. These will be chosen by default, but the
 likelihood function will always be available for minimizing.
 
-If :math:`f\left(x;\boldsymbol{\theta}\right)` is the PDF of a random-variable where :math:`\boldsymbol{\theta}` is a vector of parameters ( *e.g.* :math:`L` and :math:`S` ), then for a collection of :math:`N` independent samples from this distribution, the joint distribution the
+If :math:`f\left(x;\boldsymbol{\theta}\right)` is the PDF of a random-variable where :math:`\boldsymbol{\theta}` is a vector of parameters ( *e.g.* :math:`L` and :math:`S` ), then for a collection of :math:`N` independent samples from this distribution, the joint distribution of the
 random vector :math:`\mathbf{x}` is
 
 .. math::
 
      f\left(\mathbf{x};\boldsymbol{\theta}\right)=\prod_{i=1}^{N}f\left(x_{i};\boldsymbol{\theta}\right).
 
-The maximum likelihood estimate of the parameters :math:`\boldsymbol{\theta}` are the parameters which maximize this function with :math:`\mathbf{x}` fixed and given by the data:
+The maximum likelihood estimate of the parameter :math:`\boldsymbol{\theta}` is the (vector) value that maximizes this function with :math:`\mathbf{x}` fixed and given by the data:
 
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} \boldsymbol{\theta}_{es} & = & \arg\max_{\boldsymbol{\theta}}f\left(\mathbf{x};\boldsymbol{\theta}\right)\\  & = & \arg\min_{\boldsymbol{\theta}}l_{\mathbf{x}}\left(\boldsymbol{\theta}\right).\end{eqnarray*}
+    \begin{eqnarray*} \hat{\boldsymbol{\theta}} & = & \arg\max_{\boldsymbol{\theta}}f\left(\mathbf{x};\boldsymbol{\theta}\right)\\  & = & \arg\min_{\boldsymbol{\theta}}l_{\mathbf{x}}\left(\boldsymbol{\theta}\right).\end{eqnarray*}
 
-Where
+The negative log-likelihood is
 
 .. math::
    :nowrap:
@@ -133,10 +134,10 @@ be fit by replacing :math:`x_{i}` with :math:`\left(x_{i}-L\right)/S` in the log
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} l_{\mathbf{x}}\left(L,S;\boldsymbol{\theta}\right) & = & N\log S-\sum_{i=1}^{N}\log f\left(\frac{x_{i}-L}{S};\boldsymbol{\theta}\right)\\  & = & N\log S+l_{\frac{\mathbf{x}-S}{L}}\left(\boldsymbol{\theta}\right)\end{eqnarray*}
+    \begin{eqnarray*} l_{\mathbf{x}}\left(L,S;\boldsymbol{\theta}\right) & = & N\log S-\sum_{i=1}^{N}\log f\left(\frac{x_{i}-L}{S};\boldsymbol{\theta}\right)\\  & = & N\log S+l_{\frac{\mathbf{x}-L}{S}}\left(\boldsymbol{\theta}\right)\end{eqnarray*}
 
-If desired, sample estimates for :math:`L` and :math:`S` (not necessarily maximum likelihood estimates) can be obtained from
-samples estimates of the mean and variance using
+If desired, estimates for :math:`L` and :math:`S` (not necessarily maximum likelihood estimates) can be obtained from
+sample estimates of the mean and variance using
 
 .. math::
    :nowrap:
@@ -170,8 +171,9 @@ References
 -  Eric Weisstein's world of mathematics http://mathworld.wolfram.com/,
    http://mathworld.wolfram.com/topics/StatisticalDistributions.html
 
--  Documentation to Regress+ by Michael McLaughlin item Engineering and
-   Statistics Handbook (NIST),
+-  Documentation for Regress+ by Michael McLaughlin
+
+-  Engineering and Statistics Handbook (NIST),
    https://www.itl.nist.gov/div898/handbook/
 
 -  Documentation for DATAPLOT from NIST,
@@ -196,7 +198,7 @@ Symbol                                                           Description    
 :math:`\psi\left(z\right)`                                       digamma function                                                                        :math:`\frac{d}{dz} \log\left(\Gamma\left(z\right)\right)`
 :math:`\psi_{n}\left(z\right)`                                   polygamma function                                                                      :math:`\frac{d^{n+1}}{dz^{n+1}}\log\left(\Gamma\left(z\right)\right)`
 :math:`I_{\nu}\left(y\right)`                                    modified Bessel function of the first kind
-:math:`\mathrm{Ei}(\mathrm{z})`                                  exponential integral                                                                    :math:`-\int_{-x}^\infty \frac{e^{-t}}{t} dt`
+:math:`\mathrm{Ei}(z)`                                           exponential integral                                                                    :math:`-\int_{-z}^\infty \frac{e^{-t}}{t} dt`
 :math:`\zeta\left(n\right)`                                      Riemann zeta function                                                                   :math:`\sum_{k=1}^{\infty} \frac{1}{k^{n}}`
 :math:`\zeta\left(n,z\right)`                                    Hurwitz zeta function                                                                   :math:`\sum_{k=0}^{\infty} \frac{1}{\left(k+z\right)^{n}}`
 :math:`\,{}_{p}F_{q}(a_{1},\ldots,a_{p};b_{1},\ldots,b_{q};z)`   Hypergeometric function                                                                 :math:`\sum_{n=0}^{\infty} {\frac{(a_{1})_{n}\cdots(a_{p})_{n}}{(b_{1})_{n}\cdots(b_{q})_{n}}} \,{\frac{z^{n}}{n!}}`
