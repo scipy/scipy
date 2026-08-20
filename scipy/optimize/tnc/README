@@ -37,7 +37,7 @@ And many other small changes.
 This software has been tested on a large number of platforms and should run
 on any POSIX platform with an ANSI C compiler.
 
-The last version (and other software) is avalaible at the URL :
+The last version (and other software) is available at the URL :
 http://www.jeannot.org/~js/code/index.en.html
 
 A Python interface module is also provided.

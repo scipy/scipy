@@ -80,6 +80,9 @@ def nnls(A, b, *, maxiter=None):
                 "Incompatible dimensions. The first dimension of " +
                 f"A is {m}, while the shape of b is {(b.shape[0], )}")
 
+    if n == 0:
+        return (np.empty(0), np.linalg.norm(b))
+
     if not maxiter:
         maxiter = 3*n
     x, rnorm, info = _nnls(A, b, maxiter)

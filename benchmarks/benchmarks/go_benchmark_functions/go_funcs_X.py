@@ -13,7 +13,7 @@ class XinSheYang01(Benchmark):
 
     .. math::
 
-        f_{\text{XinSheYang01}}(x) = \sum_{i=1}^{n} \epsilon_i \lvert x_i 
+        f_{\text{XinSheYang01}}(x) = \sum_{i=1}^{n} \epsilon_i \lvert x_i
                                      \rvert^i
 
 

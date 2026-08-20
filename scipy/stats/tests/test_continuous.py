@@ -20,7 +20,7 @@ from scipy.stats._distr_params import distcont, distdiscrete
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support, Mixture)
+    _generate_domain_support, Mixture, _logexpxmexpy)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
 from scipy.stats._new_distributions import DiscreteDistribution
 from scipy.stats import Normal, Logistic, Uniform, Binomial
@@ -118,11 +118,11 @@ class Test_RealInterval:
     @pytest.mark.slow
     @given(a=strategies.one_of(
         strategies.decimals(allow_nan=False),
-        strategies.characters(whitelist_categories="L"),  # type: ignore[arg-type]
+        strategies.characters(whitelist_categories="L"),
         strategies.sampled_from(list(_Domain.symbols))),
            b=strategies.one_of(
         strategies.decimals(allow_nan=False),
-        strategies.characters(whitelist_categories="L"),  # type: ignore[arg-type]
+        strategies.characters(whitelist_categories="L"),
         strategies.sampled_from(list(_Domain.symbols))),
            inclusive_a=strategies.booleans(),
            inclusive_b=strategies.booleans(),
@@ -290,7 +290,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_complement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -304,7 +304,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_icomplement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -1038,6 +1038,12 @@ class TestAttributes:
         cached_mean = dist.mean(method='cache')
         assert_equal(cached_mean, mean)
 
+        # cache is not cleared when used in a TransformedDistribution
+        dist2 = stats.exp(dist)
+        assert_equal(dist.mean(method='cache'), cached_mean)
+        dist2.reset_cache()
+        assert_equal(dist.mean(method='cache'), cached_mean)
+
         # cache is overridden by latest evaluation
         quadrature_mean = dist.mean(method='quadrature')
         cached_mean = dist.mean(method='cache')
@@ -1142,15 +1148,14 @@ class TestAttributes:
 
 
 class TestMakeDistribution:
-    @pytest.mark.parametrize('i, distdata', enumerate(distcont + distdiscrete))
+    @pytest.mark.parametrize('i, distdata', list(enumerate(distcont + distdiscrete)))
     def test_rv_generic(self, i, distdata):
         distname = distdata[0]
 
-        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
+        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz',
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
-                'vonmises_line', # continuous
-                'betanbinom', 'logser', 'skellam', 'zipf'}  # discrete
+                'vonmises_line'}  # continuous
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
@@ -1171,7 +1176,8 @@ class TestMakeDistribution:
         skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance
                          'johnsonsb', 'ksone', 'kstwo',  # tolerance
                          'nchypergeom_wallenius'}  # tolerance
-        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang',  # tolerance
+                        'dlaplace'}  # slight tolerance issue, but only for array shape
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
@@ -1181,6 +1187,7 @@ class TestMakeDistribution:
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
         rng = np.random.default_rng(7548723590230982)
         CustomDistribution = stats.make_distribution(dist)
+        params = {key: np.asarray([val, val]) for key, val in params.items()}
         X = CustomDistribution(**params)
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
@@ -1220,10 +1227,11 @@ class TestMakeDistribution:
             # old infrastructure convention for ppf(p=0) and isf(p=1) is different than
             # new infrastructure. Adjust reference values accordingly.
             a, _ = Y.support()
+            a, p = np.broadcast_arrays(a, p)
             ref_ppf = Y.ppf(p)
-            ref_ppf[p == 0] = a
+            ref_ppf[p == 0] = a[p == 0]
             ref_isf = Y.isf(p)
-            ref_isf[p == 1] = a
+            ref_isf[p == 1] = a[p == 1]
 
             assert_allclose(X.icdf(p), ref_ppf, rtol=rtol)
             assert_allclose(X.iccdf(p), ref_isf, rtol=rtol)
@@ -1241,7 +1249,7 @@ class TestMakeDistribution:
                 # of the support, and the new infrastructure is slow there (for now).
                 seed = 845298245687345
                 assert_allclose(X.sample(shape=10, rng=seed),
-                                Y.rvs(size=10,
+                                Y.rvs(size=p.shape,
                                       random_state=np.random.default_rng(seed)),
                                 rtol=rtol)
 
@@ -1318,7 +1326,7 @@ class TestMakeDistribution:
                 assert_allclose(X.lmoment(order, standardize=standardize),
                                 Y.lmoment(order, standardize=standardize))
 
-        # Confirm that the `sample` and `moment` methods are overriden as expected
+        # Confirm that the `sample` and `moment` methods are overridden as expected
         sample_formula = X.sample(shape=10, rng=0, method='formula')
         sample_inverse = X.sample(shape=10, rng=0, method='inverse_transform')
         assert_allclose(sample_formula, sample_inverse)
@@ -1477,6 +1485,54 @@ class TestMakeDistribution:
         assert_allclose(Y.icdf(p), Z.icdf(p))
         assert_allclose(Y.iccdf(p), Z.iccdf(p))
 
+    @pytest.mark.parametrize("n", [10, np.asarray([10., 11., 12.])])
+    @pytest.mark.parametrize("p", [0.4, np.asarray([0.4, 0.5, 0.6])])
+    def test_custom_discrete(self, n, p):
+        rng = np.random.default_rng(5875373614)
+
+        class MyBinomial:
+            @property
+            def __make_distribution_version__(self):
+                return "1.16.0"
+
+            @property
+            def parameters(self):
+                return {'n': {'domain_type': 'discrete',
+                              'endpoints': (0., np.inf),
+                              'inclusive': (True, False)},
+                        'p': {'domain_type': 'continuous',
+                              'endpoints': (0., 1.),
+                              'inclusive': (True, True)}}
+
+            @property
+            def support(self):
+                return {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+
+            def pmf(self, x, n, p):
+                return special.binom(n, x) * p**x * (1 - p)**(n - x)
+
+        Binomial = stats.make_distribution(MyBinomial())
+
+        X = Binomial(n=n, p=p)
+        Y = stats.Binomial(n=n, p=p)
+
+        x = Y.sample(shape=10, rng=rng)
+        p = rng.random(x.shape)
+
+        assert_allclose(X.support(), Y.support())
+        assert_allclose(X.entropy(), Y.entropy())
+        assert_allclose(X.median(), Y.median())
+        assert_allclose(X.logpdf(x), Y.logpdf(x))
+        assert_allclose(X.pdf(x), Y.pdf(x))
+        assert_allclose(X.logpmf(x), Y.logpmf(x))
+        assert_allclose(X.pmf(x), Y.pmf(x))
+        assert_allclose(X.logcdf(x), Y.logcdf(x))
+        assert_allclose(X.cdf(x), Y.cdf(x))
+        assert_allclose(X.logccdf(x), Y.logccdf(x))
+        assert_allclose(X.ccdf(x), Y.ccdf(x))
+        assert_allclose(X.icdf(p), Y.icdf(p))
+        assert_allclose(X.iccdf(p), Y.iccdf(p))
+
     def test_input_validation(self):
         message = '`levy_stable` is not supported.'
         with pytest.raises(NotImplementedError, match=message):
@@ -1489,6 +1545,24 @@ class TestMakeDistribution:
         message = "The argument must be an instance of..."
         with pytest.raises(ValueError, match=message):
             stats.make_distribution(object())
+
+        message = "If specified, the `domain_type` value..."
+        class MyTestDistribution:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'n': {'domain_type': 'other', 'endpoints': (0, np.inf)}}
+            support = {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+            def pmf(self, x, n):
+                return np.full_like(x, 1/n)
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(MyTestDistribution())(n=10)
+
+        message = "The argument of `make_distribution` must implement either..."
+        class MyTestDistribution:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'n': {'endpoints': (0, np.inf)}}
+            support = {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(MyTestDistribution())(n=10)
 
     def test_repr_str_docs(self):
         from scipy.stats._distribution_infrastructure import _distribution_names
@@ -1504,6 +1578,54 @@ class TestMakeDistribution:
         assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
         assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
+
+    @pytest.mark.slow  # just in case
+    @settings(max_examples=20)  # no need for more
+    @given(data=strategies.data())
+    def test_draw_distribution(self, data):
+        # `draw_distribution_from_family` is a private function right now, but we will
+        # want that functionality to be public someday. It was broken for custom
+        # distributions because the `typical` parameter of the support was ignored.
+        # Check that this is resolved.
+        rng = np.random.default_rng(8465652168548465121)
+        u_typical = tuple(np.sort(rng.standard_normal(2)))
+        s_typical = tuple(np.sort(rng.random(2)*2))
+        x_typical = tuple(np.sort(rng.standard_normal(2)))
+
+        class MyNormal:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': u_typical},
+                          's': {'endpoints': (0, np.inf), 'typical': s_typical}}
+            support = {'endpoints': (-np.inf, np.inf), 'typical': x_typical}
+
+            def pdf(self, x, u, s):
+                return 1 / np.sqrt(2*np.pi) / s * np.exp(-((x-u)/s)**2/2)
+
+        family = stats.make_distribution(MyNormal())
+        proportions = (1.0, 0., 0., 0.)
+        tmp = draw_distribution_from_family(family, data, rng, proportions, min_side=1)
+        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
+        assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
+        assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
+        assert x_typical[0] < np.min(x) and np.max(x) < x_typical[1]
+
+    @pytest.mark.parametrize('p', [None, ()])
+    def test_no_parameters(self, p):
+        # To create a distribution without parameters, it is natural to try an empty
+        # dictionary (since a dictionary with entries is valid if there is only
+        # one parameterization), but that didn't work; only an empty tuple (no
+        # parameterizations) worked originally. Check that this is resolved.
+        class MyStandardNormal:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {} if p is None else p
+            support = {'endpoints': (-np.inf, np.inf)}
+
+            def pdf(self, x):
+                return 1 / np.sqrt(2*np.pi) * np.exp(-x**2/2)
+
+        StandardNormal = stats.make_distribution(MyStandardNormal())
+        X = StandardNormal()
+        assert X.support() == (-np.inf, np.inf)
 
 
 class TestTransforms:
@@ -1565,6 +1687,7 @@ class TestTransforms:
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
         loc = dist.loc
+        # negative scale tested in test_abs_finite_support, test_reciprocal, etc.
         scale = dist.scale
         dist0 = StandardNormal()
         dist_ref = stats.norm(loc=loc, scale=scale)
@@ -2315,3 +2438,30 @@ def test_zipfian_distribution_wrapper():
     zdist = Zipfian(a=0.75, n=15)
     # This should not generate any warnings.
     assert_equal(zdist.cdf(15), 1.0)
+
+
+class Test_logexpxmexpy:
+    # Regression tests for some cases that the simplest version of `_logexpmexpy`
+    # did not originally handle correctly.
+
+    def test_x_equals_y(self):
+        # Test x - x == 0 in log-space
+        x = np.asarray(2.)
+        assert_equal(_logexpxmexpy(x, x), -np.inf)
+
+    def test_y_neg_inf(self):
+        # Test x - 0 == x in log-space
+        x, y = np.asarray(2.), np.asarray(-inf)
+        assert_equal(_logexpxmexpy(x, y), x)
+
+    def test_nan(self):
+        # operations involving NaNs should not produce warnings
+        x = np.asarray(np.nan)
+        assert_equal(_logexpxmexpy(x, x), x)
+
+
+def test_gh_25180():
+    lu = _LogUniform(log_a=np.float64(-0.28915434544814245),
+                     log_b=np.float64(0.3085224670197856))
+    actual = lu.mode(method='optimization')
+    assert np.isfinite(actual)

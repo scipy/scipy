@@ -432,7 +432,7 @@ void cinf_norm_error(int nrhs, SuperMatrix *X, singlecomplex *xtrue)
 void
 cPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
            float rpg, float rcond, float *ferr,
-           float *berr, char *equed, SuperLUStat_t *stat)
+           const float *berr, const char *equed, SuperLUStat_t *stat)
 {
     SCformat *Lstore;
     NCformat *Ustore;
@@ -474,7 +474,7 @@ cPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
 
 
 int
-print_singlecomplex_vec(char *what, int n, singlecomplex *vec)
+print_singlecomplex_vec(const char *what, int n, const singlecomplex *vec)
 {
     int i;
     printf("%s: n %d\n", what, n);

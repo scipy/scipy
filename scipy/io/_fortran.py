@@ -167,14 +167,16 @@ class FortranFile:
             item.tofile(self._fp)
         nb.tofile(self._fp)
 
-    def read_record(self, *dtypes, **kwargs):
+    def read_record(self, *dtypes, dtype=None):
         """
         Reads a record of a given type from the file.
 
         Parameters
         ----------
-        *dtypes : dtypes, optional
+        *dtypes : dtype, optional
             Data type(s) specifying the size and endianness of the data.
+        dtype : dtype, optional
+            Data type specifying the size and endianness of the data
 
         Returns
         -------
@@ -241,10 +243,6 @@ class FortranFile:
             record = f.read_record('<f4', '(3,3)<i4')
 
         """
-        dtype = kwargs.pop('dtype', None)
-        if kwargs:
-            raise ValueError(f"Unknown keyword arguments {tuple(kwargs.keys())}")
-
         if dtype is not None:
             dtypes = dtypes + (dtype,)
         elif not dtypes:

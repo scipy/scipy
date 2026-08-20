@@ -342,7 +342,7 @@ class Schwefel02(Benchmark):
 
     .. math::
 
-        f_{\text{Schwefel02}}(x) = \sum_{i=1}^n \left(\sum_{j=1}^i 
+        f_{\text{Schwefel02}}(x) = \sum_{i=1}^n \left(\sum_{j=1}^i
         x_i \right)^2
 
 
@@ -665,11 +665,11 @@ class Shekel05(Benchmark):
 
     .. math::
 
-        a = 
+        a =
         \begin{bmatrix}
         4.0 & 4.0 & 4.0 & 4.0 \\ 1.0 & 1.0 & 1.0 & 1.0 \\
         8.0 & 8.0 & 8.0 & 8.0 \\ 6.0 & 6.0 & 6.0 & 6.0 \\
-        3.0 & 7.0 & 3.0 & 7.0 
+        3.0 & 7.0 & 3.0 & 7.0
         \end{bmatrix}
     .. math::
 
@@ -744,7 +744,7 @@ class Shekel07(Benchmark):
 
         c =
         \begin{bmatrix}
-        0.1 \\ 0.2 \\ 0.2 \\ 0.4 \\ 0.4 \\ 0.6 \\ 0.3 
+        0.1 \\ 0.2 \\ 0.2 \\ 0.4 \\ 0.4 \\ 0.6 \\ 0.3
         \end{bmatrix}
 
 
@@ -798,7 +798,7 @@ class Shekel10(Benchmark):
 
     .. math::
 
-       f_{\text{Shekel10}}(x) = \sum_{i=1}^{m} \frac{1}{c_{i} 
+       f_{\text{Shekel10}}(x) = \sum_{i=1}^{m} \frac{1}{c_{i}
                                 + \sum_{j=1}^{n} (x_{j} - a_{ij})^2 }`
 
     Where, in this exercise:
@@ -915,7 +915,7 @@ class Shubert03(Benchmark):
 
     .. math::
 
-        f_{\text{Shubert03}}(x) = \sum_{i=1}^n \sum_{j=1}^5 -j 
+        f_{\text{Shubert03}}(x) = \sum_{i=1}^n \sum_{j=1}^5 -j
                                   \sin((j+1)x_i + j)
 
     Here, :math:`n` represents the number of dimensions and
@@ -1052,7 +1052,7 @@ class SixHumpCamel(Benchmark):
     with :math:`x_i \in [-5, 5]` for :math:`i = 1, 2`.
 
     *Global optimum*: :math:`f(x) = -1.031628453489877` for
-    :math:`x = [0.08984201368301331 , -0.7126564032704135]` or 
+    :math:`x = [0.08984201368301331 , -0.7126564032704135]` or
     :math:`x = [-0.08984201368301331, 0.7126564032704135]`
 
     .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
@@ -1240,7 +1240,7 @@ class Stochastic(Benchmark):
 
     .. math::
 
-        f_{\text{Stochastic}}(x) = \sum_{i=1}^{n} \epsilon_i 
+        f_{\text{Stochastic}}(x) = \sum_{i=1}^{n} \epsilon_i
                                     \left | {x_i - \frac{1}{i}} \right |
 
     The variable :math:`\epsilon_i, (i=1,...,n)` is a random variable uniformly

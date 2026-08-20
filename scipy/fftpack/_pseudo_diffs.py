@@ -13,7 +13,7 @@ import threading
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
 from . import convolve
 
-from scipy.fft._pocketfft.helper import _datacopied
+from scipy.fft._duccfft.helper import _datacopied
 
 
 _cache = threading.local()

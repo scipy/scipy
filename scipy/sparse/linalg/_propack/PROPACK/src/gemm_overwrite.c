@@ -1,12 +1,12 @@
 #include "gemm_overwrite.h"
 
 
-void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
-                float* restrict A, int lda, float beta,
-                float* restrict B, int ldb,
-                float* restrict work, int blocksize)
+void sgemm_ovwr(const int transa, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, float alpha,
+                float* restrict A, CBLAS_INT lda, float beta,
+                float* restrict B, CBLAS_INT ldb,
+                float* restrict work, CBLAS_INT blocksize)
 {
-    int i, j, l;
+    CBLAS_INT i, j, l;
     char transchara = (transa ? 'T' : 'N');
     float zero = 0.0f;
 
@@ -14,16 +14,16 @@ void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
 
     // Pre-calculate block structure
-    int num_full_blocks = n / blocksize;
-    int remainder_cols = n % blocksize;
+    CBLAS_INT num_full_blocks = n / blocksize;
+    CBLAS_INT remainder_cols = n % blocksize;
 
     // Process full blocks
     for (i = 0; i < num_full_blocks; i++)
     {
-        int block_start = i * blocksize;
+        CBLAS_INT block_start = i * blocksize;
 
         // Compute work = alpha * op(A) * B(:, block_start:block_start+blocksize-1)
-        sgemm_(&transchara, "N", &m, &blocksize, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
+        BLAS_FUNC(sgemm)(&transchara, "N", &m, &blocksize, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
 
         // Copy result back to B
         float* B_col = &B[block_start * ldb];
@@ -49,9 +49,9 @@ void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
 
     // Handle remainders
     if (remainder_cols > 0) {
-        int block_start = num_full_blocks * blocksize;
+        CBLAS_INT block_start = num_full_blocks * blocksize;
 
-        sgemm_(&transchara, "N", &m, &remainder_cols, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
+        BLAS_FUNC(sgemm)(&transchara, "N", &m, &remainder_cols, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
 
         // Copy remainder results back
         float* B_col = &B[block_start * ldb];
@@ -77,27 +77,27 @@ void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
 }
 
 
-void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
-                     float* restrict A, int lda, float* restrict B, int ldb,
-                     float* restrict work, int blocksize)
+void sgemm_ovwr_left(const CBLAS_INT transb, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, float alpha,
+                     float* restrict A, CBLAS_INT lda, float* restrict B, CBLAS_INT ldb,
+                     float* restrict work, CBLAS_INT blocksize)
 {
-    int i, j, l;
+    CBLAS_INT i, j, l;
     char transcharb = (transb ? 'T' : 'N');
     float zero = 0.0f;
 
     if (m <= 0 || n <= 0 || k <= 0) { return; }
 
     // Pre-calculate block structure
-    int num_full_blocks = m / blocksize;
-    int remainder_rows = m % blocksize;
+    CBLAS_INT num_full_blocks = m / blocksize;
+    CBLAS_INT remainder_rows = m % blocksize;
 
     // Process full blocks of rows
     for (i = 0; i < num_full_blocks; i++)
     {
-        int block_start = i * blocksize;
+        CBLAS_INT block_start = i * blocksize;
 
         // Compute work = alpha * A(block_start:block_start+blocksize-1, :) * op(B)
-        sgemm_("N", &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
+        BLAS_FUNC(sgemm)("N", &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
 
         // Copy result back to A
         float* work_ptr = work;
@@ -114,9 +114,9 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
 
     // Handle remainder rows
     if (remainder_rows > 0) {
-        int block_start = num_full_blocks * blocksize;
+        CBLAS_INT block_start = num_full_blocks * blocksize;
 
-        sgemm_("N", &transcharb, &remainder_rows, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &remainder_rows);
+        BLAS_FUNC(sgemm)("N", &transcharb, &remainder_rows, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &remainder_rows);
 
         // Copy remainder results back
         float* work_ptr = work;
@@ -134,10 +134,10 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
 
 
 void dgemm_ovwr(
-    const int transa, int m, int n, int k, double alpha, double* restrict A, int lda, double beta,
-    double* restrict B, int ldb, double* restrict work, int blocksize)
+    const int transa, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, double alpha, double* restrict A, CBLAS_INT lda, double beta,
+    double* restrict B, CBLAS_INT ldb, double* restrict work, CBLAS_INT blocksize)
 {
-    int i, j, l;
+    CBLAS_INT i, j, l;
     char transchara = (transa ? 'T' : 'N');
     double zero = 0.0;
 
@@ -145,16 +145,16 @@ void dgemm_ovwr(
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
 
     // Pre-calculate block structure
-    int num_full_blocks = n / blocksize;
-    int remainder_cols = n % blocksize;
+    CBLAS_INT num_full_blocks = n / blocksize;
+    CBLAS_INT remainder_cols = n % blocksize;
 
     // Process full blocks - beta = 0 case
     for (i = 0; i < num_full_blocks; i++)
     {
-        int block_start = i * blocksize;
+        CBLAS_INT block_start = i * blocksize;
 
         // Compute work = alpha * op(A) * B(:, block_start:block_start+blocksize-1)
-        dgemm_(&transchara, "N", &m, &blocksize, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
+        BLAS_FUNC(dgemm)(&transchara, "N", &m, &blocksize, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
 
         // Copy result back to B
         double* B_col = &B[block_start * ldb];
@@ -180,9 +180,9 @@ void dgemm_ovwr(
 
     // Handle remainder - beta = 0 case
     if (remainder_cols > 0) {
-        int block_start = num_full_blocks * blocksize;
+        CBLAS_INT block_start = num_full_blocks * blocksize;
 
-        dgemm_(&transchara, "N", &m, &remainder_cols, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
+        BLAS_FUNC(dgemm)(&transchara, "N", &m, &remainder_cols, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
 
         // Copy remainder results back
         double* B_col = &B[block_start * ldb];
@@ -208,11 +208,11 @@ void dgemm_ovwr(
 }
 
 
-void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
-                     double* restrict A, int lda, double* restrict B, int ldb,
-                     double* restrict work, int blocksize)
+void dgemm_ovwr_left(const CBLAS_INT transb, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, double alpha,
+                     double* restrict A, CBLAS_INT lda, double* restrict B, CBLAS_INT ldb,
+                     double* restrict work, CBLAS_INT blocksize)
 {
-    int i, j, l;
+    CBLAS_INT i, j, l;
     char transcharb = (transb ? 'T' : 'N');
     double zero = 0.0;
 
@@ -220,15 +220,15 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
     if (m <= 0 || n <= 0 || k <= 0) return;
 
     // Pre-calculate block structure
-    int num_full_blocks = m / blocksize;
-    int remainder_rows = m % blocksize;
+    CBLAS_INT num_full_blocks = m / blocksize;
+    CBLAS_INT remainder_rows = m % blocksize;
 
     // Process full blocks of rows
     for (i = 0; i < num_full_blocks; i++) {
-        int block_start = i * blocksize;
+        CBLAS_INT block_start = i * blocksize;
 
         // Compute work = alpha * A(block_start:block_start+blocksize-1, :) * op(B)
-        dgemm_("N", &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
+        BLAS_FUNC(dgemm)("N", &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
 
         // Copy result back to A
         double* work_ptr = work;
@@ -244,9 +244,9 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
 
     // Handle remainder rows
     if (remainder_rows > 0) {
-        int block_start = num_full_blocks * blocksize;
+        CBLAS_INT block_start = num_full_blocks * blocksize;
 
-        dgemm_("N", &transcharb, &remainder_rows, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &remainder_rows);
+        BLAS_FUNC(dgemm)("N", &transcharb, &remainder_rows, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &remainder_rows);
 
         // Copy remainder results back
         double* work_ptr = work;
@@ -281,25 +281,25 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
  *
  */
 static void csgemm_kernel(
-    const int transb, int m, int n, int k, const PROPACK_CPLXF_TYPE* restrict A, int lda,
-    const float* restrict B, int ldb, PROPACK_CPLXF_TYPE* restrict C, int ldc)
+    const CBLAS_INT transb, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, const PROPACK_CPLXF_TYPE* restrict A, CBLAS_INT lda,
+    const float* restrict B, CBLAS_INT ldb, PROPACK_CPLXF_TYPE* restrict C, CBLAS_INT ldc)
 {
     (void)transb;  // Unused parameter
     // Initialize C to zero
-    for (int j = 0; j < n; j++)
+    for (CBLAS_INT j = 0; j < n; j++)
     {
-        for (int i = 0; i < m; i++)
+        for (CBLAS_INT i = 0; i < m; i++)
         {
             C[i + j * ldc] = PROPACK_cplxf(0.0f, 0.0f );
         }
     }
     // Always compute C = A * B^T
-    for (int l = 0; l < k; l++)
+    for (CBLAS_INT l = 0; l < k; l++)
     {
-        for (int j = 0; j < n; j++)
+        for (CBLAS_INT j = 0; j < n; j++)
         {
             float b_val = B[j + l * ldb];
-            for (int i = 0; i < m; i++)
+            for (CBLAS_INT i = 0; i < m; i++)
             {
 #ifdef _MSC_VER
                 PROPACK_CPLXF_TYPE tmp1 = _FCmulcr(A[i + l * lda], b_val);
@@ -316,25 +316,25 @@ static void csgemm_kernel(
 
 // GEMM operation for mixed dtype, float complex x float
 void csgemm_ovwr_left(
-    const int transb, int m, int n, int k, PROPACK_CPLXF_TYPE* restrict A, int lda,
-    const float* restrict B, int ldb, PROPACK_CPLXF_TYPE* restrict work, int blocksize)
+    const CBLAS_INT transb, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, PROPACK_CPLXF_TYPE* restrict A, CBLAS_INT lda,
+    const float* restrict B, CBLAS_INT ldb, PROPACK_CPLXF_TYPE* restrict work, CBLAS_INT blocksize)
 {
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
 
-    int num_full_blocks = m / blocksize;
-    int remainder_rows = m % blocksize;
+    CBLAS_INT num_full_blocks = m / blocksize;
+    CBLAS_INT remainder_rows = m % blocksize;
 
     // Process full blocks
-    for (int i = 0; i < num_full_blocks; i++)
+    for (CBLAS_INT i = 0; i < num_full_blocks; i++)
     {
-        int block_start = i * blocksize;
+        CBLAS_INT block_start = i * blocksize;
         // Compute: work = A[block_start:block_start+blocksize-1, :] * op(B)
         csgemm_kernel(transb, blocksize, n, k, &A[block_start], lda, B, ldb, work, blocksize);
 
         // Copy result back to A
-        for (int j = 0; j < n; j++)
+        for (CBLAS_INT j = 0; j < n; j++)
         {
-            for (int l = 0; l < blocksize; l++)
+            for (CBLAS_INT l = 0; l < blocksize; l++)
             {
                 A[block_start + l + j * lda] = work[l + j * blocksize];
             }
@@ -344,11 +344,11 @@ void csgemm_ovwr_left(
     // Handle remainder rows
     if (remainder_rows > 0)
     {
-        int block_start = num_full_blocks * blocksize;
+        CBLAS_INT block_start = num_full_blocks * blocksize;
         csgemm_kernel(transb, remainder_rows, n, k, &A[block_start], lda, B, ldb, work, remainder_rows);
-        for (int j = 0; j < n; j++)
+        for (CBLAS_INT j = 0; j < n; j++)
         {
-            for (int l = 0; l < remainder_rows; l++)
+            for (CBLAS_INT l = 0; l < remainder_rows; l++)
             {
                 A[block_start + l + j * lda] = work[l + j * remainder_rows];
             }
@@ -376,25 +376,25 @@ void csgemm_ovwr_left(
  *
  */
 static void zdgemm_kernel(
-    const int transb, int m, int n, int k, const PROPACK_CPLX_TYPE* restrict A, int lda,
-    const double* restrict B, int ldb, PROPACK_CPLX_TYPE* restrict C, int ldc)
+    const CBLAS_INT transb, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, const PROPACK_CPLX_TYPE* restrict A, CBLAS_INT lda,
+    const double* restrict B, CBLAS_INT ldb, PROPACK_CPLX_TYPE* restrict C, CBLAS_INT ldc)
 {
     (void)transb;  // Unused parameter
     // Initialize C to zero
-    for (int j = 0; j < n; j++)
+    for (CBLAS_INT j = 0; j < n; j++)
     {
-        for (int i = 0; i < m; i++)
+        for (CBLAS_INT i = 0; i < m; i++)
         {
             C[i + j * ldc] = PROPACK_cplx(0.0, 0.0);
         }
     }
     // Always compute C = A * B^T
-    for (int l = 0; l < k; l++)
+    for (CBLAS_INT l = 0; l < k; l++)
     {
-        for (int j = 0; j < n; j++)
+        for (CBLAS_INT j = 0; j < n; j++)
         {
             double b_val = B[j + l * ldb];
-            for (int i = 0; i < m; i++)
+            for (CBLAS_INT i = 0; i < m; i++)
             {
 #ifdef _MSC_VER
                 PROPACK_CPLX_TYPE tmp1 = _Cmulcr(A[i + l * lda], b_val);
@@ -411,25 +411,25 @@ static void zdgemm_kernel(
 
 // GEMM operation for mixed dtype, complex double x double
 void zdgemm_ovwr_left(
-    const int transb, int m, int n, int k, PROPACK_CPLX_TYPE* restrict A, int lda,
-    const double* restrict B, int ldb, PROPACK_CPLX_TYPE* restrict work, int blocksize)
+    const CBLAS_INT transb, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, PROPACK_CPLX_TYPE* restrict A, CBLAS_INT lda,
+    const double* restrict B, CBLAS_INT ldb, PROPACK_CPLX_TYPE* restrict work, CBLAS_INT blocksize)
 {
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
 
-    int num_full_blocks = m / blocksize;
-    int remainder_rows = m % blocksize;
+    CBLAS_INT num_full_blocks = m / blocksize;
+    CBLAS_INT remainder_rows = m % blocksize;
 
     // Process full blocks
-    for (int i = 0; i < num_full_blocks; i++)
+    for (CBLAS_INT i = 0; i < num_full_blocks; i++)
     {
-        int block_start = i * blocksize;
+        CBLAS_INT block_start = i * blocksize;
         // Compute: work = A[block_start:block_start+blocksize-1, :] * op(B)
         zdgemm_kernel(transb, blocksize, n, k, &A[block_start], lda, B, ldb, work, blocksize);
 
         // Copy result back to A
-        for (int j = 0; j < n; j++)
+        for (CBLAS_INT j = 0; j < n; j++)
         {
-            for (int l = 0; l < blocksize; l++)
+            for (CBLAS_INT l = 0; l < blocksize; l++)
             {
                 A[block_start + l + j * lda] = work[l + j * blocksize];
             }
@@ -439,11 +439,11 @@ void zdgemm_ovwr_left(
     // Handle remainder rows
     if (remainder_rows > 0)
     {
-        int block_start = num_full_blocks * blocksize;
+        CBLAS_INT block_start = num_full_blocks * blocksize;
         zdgemm_kernel(transb, remainder_rows, n, k, &A[block_start], lda, B, ldb, work, remainder_rows);
-        for (int j = 0; j < n; j++)
+        for (CBLAS_INT j = 0; j < n; j++)
         {
-            for (int l = 0; l < remainder_rows; l++)
+            for (CBLAS_INT l = 0; l < remainder_rows; l++)
             {
                 A[block_start + l + j * lda] = work[l + j * remainder_rows];
             }

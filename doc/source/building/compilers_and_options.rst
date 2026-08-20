@@ -96,9 +96,9 @@ the ``build`` directory, and install to the ``build-install`` directory.
 
 2. Build with Clang::
 
-    CC=clang CXX=clang++ FC=gfortran spin --build-dir=build-clang build
+    CC=clang CXX=clang++ spin --build-dir=build-clang build
 
-Using the above commands, Meson will build with the Clang, Clang++ and Gfortran
+Using the above commands, Meson will build with the Clang and Clang++
 compilers in the ``build-clang`` directory, and then install SciPy into
 ``build-clang-install``.
 

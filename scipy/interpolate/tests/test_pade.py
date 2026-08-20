@@ -1,19 +1,24 @@
 import numpy as np
+import pytest
+
 from scipy.interpolate import pade
 from scipy._lib._array_api import (
     xp_assert_equal, assert_array_almost_equal
 )
 
 def test_pade_trivial():
-    nump, denomp = pade([1.0], 0)
+    with pytest.warns(DeprecationWarning, match="`pade` is deprecated"):
+        nump, denomp = pade([1.0], 0)
     xp_assert_equal(nump.c, np.asarray([1.0]))
     xp_assert_equal(denomp.c, np.asarray([1.0]))
 
-    nump, denomp = pade([1.0], 0, 0)
+    with pytest.warns(DeprecationWarning, match="`pade` is deprecated"):
+        nump, denomp = pade([1.0], 0, 0)
     xp_assert_equal(nump.c, np.asarray([1.0]))
     xp_assert_equal(denomp.c, np.asarray([1.0]))
 
 
+@pytest.mark.filterwarnings("ignore: `pade` is deprecated")
 def test_pade_4term_exp():
     # First four Taylor coefficients of exp(x).
     # Unlike poly1d, the first array element is the zero-order term.
@@ -66,6 +71,7 @@ def test_pade_4term_exp():
     assert_array_almost_equal(denomp.c, [1.0/2, -1.0, 1.0])
 
 
+@pytest.mark.filterwarnings("ignore: `pade` is deprecated")
 def test_pade_ints():
     # Simple test sequences (one of ints, one of floats).
     an_int = [1, 2, 3, 4]
@@ -84,6 +90,7 @@ def test_pade_ints():
             xp_assert_equal(denomp_int.c, denomp_flt.c)
 
 
+@pytest.mark.filterwarnings("ignore: `pade` is deprecated")
 def test_pade_complex():
     # Test sequence with known solutions - see page 6 of 10.1109/PESGM.2012.6344759.
     # Variable x is parameter - these tests will work with any complex number.

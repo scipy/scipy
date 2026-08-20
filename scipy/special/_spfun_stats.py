@@ -33,7 +33,10 @@
 analysis."""
 
 import numpy as np
+
+import scipy.special._gufuncs as _gufuncs
 from scipy.special import gammaln as loggam
+from scipy.special._ufunc_tools import _with_cache_optimization
 
 
 __all__ = ['multigammaln']
@@ -106,3 +109,70 @@ def multigammaln(a, d):
     res = (d * (d-1) * 0.25) * np.log(np.pi)
     res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res
+
+
+_poisson_binom_pmf_doc = (
+    """Returns pmf of Poisson Binomial distribution.
+
+    Parameters
+    ----------
+    k : array
+        Number of successes at which to evaluate pmf.
+
+    p : array
+        Success probabilities of independent Bernoulli trials.
+
+    Notes
+    -----
+    This is equivalent to a gufunc with signature ``()(i)->()``.
+    The last dimension of `p` contains success probabilities and
+    the preceding dimensions are batch dimensions. The batch
+    dimensions are broadcast against ``k``.
+
+    The output will be C contiguous regardless of the contiguity of
+    `k` and `p`.
+
+    """
+)
+
+
+_poisson_binom_pmf = _with_cache_optimization(
+    name="_poisson_binom_pmf",
+    arg_names=["k", "p"],
+    docstring=_poisson_binom_pmf_doc,
+    ufunc=_gufuncs._poisson_binom_pmf,
+    cache_arg_indices=[1],
+)
+
+
+_poisson_binom_cdf_doc = (
+    """Returns cdf of Poisson Binomial distribution.
+
+    Parameters
+    ----------
+    k : array
+        Number of successes at which to evaluate cdf.
+
+    p : array
+        Success probabilities of independent Bernoulli trials.
+
+    Notes
+    -----
+    This is equivalent to a gufunc with signature ``()(i)->()``.
+    The last dimension of `p` contains success probabilities and
+    the preceding dimensions are batch dimensions. The batch
+    dimensions are broadcast against ``k``.
+
+    The output will be C contiguous regardless of the contiguity of
+    `k` and `p`.
+
+    """
+)
+
+_poisson_binom_cdf = _with_cache_optimization(
+    name="_poisson_binom_cdf",
+    arg_names=["k", "p"],
+    docstring=_poisson_binom_cdf_doc,
+    ufunc=_gufuncs._poisson_binom_cdf,
+    cache_arg_indices=[1],
+)

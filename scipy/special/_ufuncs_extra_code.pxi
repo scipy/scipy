@@ -84,38 +84,41 @@ def seterr(**kwargs):
 
     Parameters
     ----------
-    all : {'ignore', 'warn' 'raise'}, optional
-        Set treatment for all type of special-function errors at
-        once. The options are:
+    **kwargs
+        The following may be passed as keyword arguments:
 
-        - 'ignore' Take no action when the error occurs
-        - 'warn' Print a `SpecialFunctionWarning` when the error
-          occurs (via the Python `warnings` module)
-        - 'raise' Raise a `SpecialFunctionError` when the error
-          occurs.
+        all : {'ignore', 'warn' 'raise'}, optional
+            Set treatment for all type of special-function errors at
+            once. The options are:
 
-        The default is to not change the current behavior. If
-        behaviors for additional categories of special-function errors
-        are specified, then ``all`` is applied first, followed by the
-        additional categories.
-    singular : {'ignore', 'warn', 'raise'}, optional
-        Treatment for singularities.
-    underflow : {'ignore', 'warn', 'raise'}, optional
-        Treatment for underflow.
-    overflow : {'ignore', 'warn', 'raise'}, optional
-        Treatment for overflow.
-    slow : {'ignore', 'warn', 'raise'}, optional
-        Treatment for slow convergence.
-    loss : {'ignore', 'warn', 'raise'}, optional
-        Treatment for loss of accuracy.
-    no_result : {'ignore', 'warn', 'raise'}, optional
-        Treatment for failing to find a result.
-    domain : {'ignore', 'warn', 'raise'}, optional
-        Treatment for an invalid argument to a function.
-    arg : {'ignore', 'warn', 'raise'}, optional
-        Treatment for an invalid parameter to a function.
-    other : {'ignore', 'warn', 'raise'}, optional
-        Treatment for an unknown error.
+            - 'ignore' Take no action when the error occurs
+            - 'warn' Print a `SpecialFunctionWarning` when the error
+              occurs (via the Python `warnings` module)
+            - 'raise' Raise a `SpecialFunctionError` when the error
+              occurs.
+
+            The default is to not change the current behavior. If
+            behaviors for additional categories of special-function errors
+            are specified, then ``all`` is applied first, followed by the
+            additional categories.
+        singular : {'ignore', 'warn', 'raise'}, optional
+            Treatment for singularities.
+        underflow : {'ignore', 'warn', 'raise'}, optional
+            Treatment for underflow.
+        overflow : {'ignore', 'warn', 'raise'}, optional
+            Treatment for overflow.
+        slow : {'ignore', 'warn', 'raise'}, optional
+            Treatment for slow convergence.
+        loss : {'ignore', 'warn', 'raise'}, optional
+            Treatment for loss of accuracy.
+        no_result : {'ignore', 'warn', 'raise'}, optional
+            Treatment for failing to find a result.
+        domain : {'ignore', 'warn', 'raise'}, optional
+            Treatment for an invalid argument to a function.
+        arg : {'ignore', 'warn', 'raise'}, optional
+            Treatment for an invalid parameter to a function.
+        other : {'ignore', 'warn', 'raise'}, optional
+            Treatment for an unknown error.
 
     Returns
     -------
@@ -185,7 +188,7 @@ class errstate:
 
     Parameters
     ----------
-    kwargs : {all, singular, underflow, overflow, slow, loss, no_result, domain, arg, other}
+    **kwargs : {all, singular, underflow, overflow, slow, loss, no_result, domain, arg, other}
         Keyword arguments. The valid keywords are possible
         special-function errors. Each keyword should have a string
         value that defines the treatment for the particular type of

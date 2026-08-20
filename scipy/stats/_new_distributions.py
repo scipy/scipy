@@ -105,7 +105,7 @@ class Normal(ContinuousDistribution):
             return mu
         else:
             return None
-    _moment_raw_formula.orders = [0, 1]  # type: ignore[attr-defined]
+    _moment_raw_formula.orders = [0, 1]  # pyrefly: ignore[missing-attribute]
 
     def _moment_central_formula(self, order, *, mu, sigma, **kwargs):
         if order == 0:
@@ -223,7 +223,7 @@ class Logistic(ContinuousDistribution):
     """
     _x_support = _RealInterval(endpoints=(-inf, inf))
     _variable = _x_param = _RealParameter('x', domain=_x_support, typical=(-9, 9))
-    _parameterizations = ()
+    _parameterizations = ()   # type:ignore[assignment]
 
     _scale = np.pi / np.sqrt(3)
 
@@ -335,14 +335,8 @@ class _LogUniform(ContinuousDistribution):
         kwargs.update(dict(a=a, b=b, log_a=log_a, log_b=log_b))
         return kwargs
 
-    # def _logpdf_formula(self, x, *, log_a, log_b, **kwargs):
-    #     return -np.log(x) - np.log(log_b - log_a)
-
     def _pdf_formula(self, x, *, log_a, log_b, **kwargs):
         return ((log_b - log_a)*x)**-1
-
-    # def _cdf_formula(self, x, *, log_a, log_b, **kwargs):
-    #     return (np.log(x) - log_a)/(log_b - log_a)
 
     def _moment_raw_formula(self, order, log_a, log_b, **kwargs):
         if order == 0:
@@ -428,7 +422,7 @@ class Uniform(ContinuousDistribution):
     def _moment_central_formula(self, order, ab, **kwargs):
         return ab**2/12 if order == 2 else None
 
-    _moment_central_formula.orders = [2]  # type: ignore[attr-defined]
+    _moment_central_formula.orders = [2]  # pyrefly: ignore[missing-attribute]
 
     def _lmoment_formula(self, order, *, a, b, ab, **kwargs):
         lmoments = {1: 0.5*(a + b), 2: ab / 6}
@@ -533,7 +527,7 @@ class Binomial(DiscreteDistribution):
         if order == 2:
             return n*p*(1 - p + n*p)
         return None
-    _moment_raw_formula.orders = [1, 2]  # type: ignore[attr-defined]
+    _moment_raw_formula.orders = [1, 2]  # pyrefly: ignore[missing-attribute]
 
     def _moment_central_formula(self, order, *, n, p, **kwargs):
         # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
@@ -546,7 +540,7 @@ class Binomial(DiscreteDistribution):
         if order == 4:
             return n*p*(1 - p)*(1 + (3*n - 6)*p*(1 - p))
         return None
-    _moment_central_formula.orders = [1, 2, 3, 4]  # type: ignore[attr-defined]
+    _moment_central_formula.orders = [1, 2, 3, 4]  # pyrefly: ignore[missing-attribute]
 
 
 # Distribution classes need only define the summary and beginning of the extended

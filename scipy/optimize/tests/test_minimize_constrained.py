@@ -15,6 +15,12 @@ from scipy.optimize import (NonlinearConstraint,
                             rosen)
 
 
+def _constr_hess(constr_hess):
+    # HessianUpdateStrategy is stateful, so build a fresh one per `constr` access
+    # rather than sharing one across parametrizations (and threads).
+    return constr_hess() if isinstance(constr_hess, type) else constr_hess
+
+
 class Maratos:
     """Problem 15.4 from Nocedal and Wright
 
@@ -55,7 +61,7 @@ class Maratos:
             def hess(x, v):
                 return 2*v[0]*np.eye(2)
         else:
-            hess = self.constr_hess
+            hess = _constr_hess(self.constr_hess)
 
         return NonlinearConstraint(fun, 1, 1, jac, hess)
 
@@ -109,7 +115,7 @@ class MaratosTestArgs:
             def hess(x, v):
                 return 2*v[0]*np.eye(2)
         else:
-            hess = self.constr_hess
+            hess = _constr_hess(self.constr_hess)
 
         return NonlinearConstraint(fun, 1, 1, jac, hess)
 
@@ -156,7 +162,7 @@ class MaratosGradInFunc:
             def hess(x, v):
                 return 2*v[0]*np.eye(2)
         else:
-            hess = self.constr_hess
+            hess = _constr_hess(self.constr_hess)
 
         return NonlinearConstraint(fun, 1, 1, jac, hess)
 
@@ -202,7 +208,7 @@ class HyperbolicIneq:
                 return 2*v[0]*np.array([[1/(x[0] + 1)**3, 0],
                                         [0, 0]])
         else:
-            hess = self.constr_hess
+            hess = _constr_hess(self.constr_hess)
 
         return NonlinearConstraint(fun, 0.25, np.inf, jac, hess)
 
@@ -348,14 +354,14 @@ class Elec:
         self.constr_hess = constr_hess
         self.bounds = None
 
-    def _get_cordinates(self, x):
+    def _get_coordinates(self, x):
         x_coord = x[:self.n_electrons]
         y_coord = x[self.n_electrons:2 * self.n_electrons]
         z_coord = x[2 * self.n_electrons:]
         return x_coord, y_coord, z_coord
 
     def _compute_coordinate_deltas(self, x):
-        x_coord, y_coord, z_coord = self._get_cordinates(x)
+        x_coord, y_coord, z_coord = self._get_coordinates(x)
         dx = x_coord[:, None] - x_coord
         dy = y_coord[:, None] - y_coord
         dz = z_coord[:, None] - z_coord
@@ -422,12 +428,12 @@ class Elec:
     @property
     def constr(self):
         def fun(x):
-            x_coord, y_coord, z_coord = self._get_cordinates(x)
+            x_coord, y_coord, z_coord = self._get_coordinates(x)
             return x_coord**2 + y_coord**2 + z_coord**2 - 1
 
         if self.constr_jac is None:
             def jac(x):
-                x_coord, y_coord, z_coord = self._get_cordinates(x)
+                x_coord, y_coord, z_coord = self._get_coordinates(x)
                 Jx = 2 * np.diag(x_coord)
                 Jy = 2 * np.diag(y_coord)
                 Jz = 2 * np.diag(z_coord)
@@ -440,7 +446,7 @@ class Elec:
                 D = 2 * np.diag(v)
                 return block_diag(D, D, D)
         else:
-            hess = self.constr_hess
+            hess = _constr_hess(self.constr_hess)
 
         return NonlinearConstraint(fun, -np.inf, 0, jac, hess)
 
@@ -448,23 +454,23 @@ class Elec:
 class TestTrustRegionConstr:
     list_of_problems = [Maratos(),
                         Maratos(constr_hess='2-point'),
-                        Maratos(constr_hess=SR1()),
-                        Maratos(constr_jac='2-point', constr_hess=SR1()),
+                        Maratos(constr_hess=SR1),
+                        Maratos(constr_jac='2-point', constr_hess=SR1),
                         MaratosGradInFunc(),
                         HyperbolicIneq(),
                         HyperbolicIneq(constr_hess='3-point'),
-                        HyperbolicIneq(constr_hess=BFGS()),
+                        HyperbolicIneq(constr_hess=BFGS),
                         HyperbolicIneq(constr_jac='3-point',
-                                       constr_hess=BFGS()),
+                                       constr_hess=BFGS),
                         Rosenbrock(),
                         IneqRosenbrock(),
                         EqIneqRosenbrock(),
                         BoundedRosenbrock(),
                         Elec(n_electrons=2),
                         Elec(n_electrons=2, constr_hess='2-point'),
-                        Elec(n_electrons=2, constr_hess=SR1()),
+                        Elec(n_electrons=2, constr_hess=SR1),
                         Elec(n_electrons=2, constr_jac='3-point',
-                             constr_hess=SR1())]
+                             constr_hess=SR1)]
 
     @pytest.mark.parametrize('prob', list_of_problems)
     @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))

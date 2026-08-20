@@ -7,7 +7,7 @@ cimport cython
 
 from scipy.sparse import csr_array, csr_matrix, spmatrix
 from scipy.sparse.csgraph._validation import validate_graph
-from scipy.sparse._sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix, safely_cast_index_arrays
 
 np.import_array()
 
@@ -100,8 +100,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     cdef int N = csgraph.shape[0]
 
     data = csgraph.data
-    indices = csgraph.indices
-    indptr = csgraph.indptr
+    indices, indptr = safely_cast_index_arrays(csgraph, np.intc, "csgraph")
 
     rank = np.zeros(N, dtype=ITYPE)
     predecessors = np.arange(N, dtype=ITYPE)

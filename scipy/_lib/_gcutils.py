@@ -13,12 +13,8 @@ import weakref
 import gc
 
 from contextlib import contextmanager
-from platform import python_implementation
 
 __all__ = ['set_gc_state', 'gc_state', 'assert_deallocated']
-
-
-IS_PYPY = python_implementation() == 'PyPy'
 
 
 class ReferenceError(AssertionError):
@@ -65,8 +61,6 @@ def assert_deallocated(func, *args, **kwargs):
     reference counting, without requiring gc to break reference cycles.
     GC is disabled inside the context manager.
 
-    This check is not available on PyPy.
-
     Parameters
     ----------
     func : callable
@@ -93,9 +87,6 @@ def assert_deallocated(func, *args, **kwargs):
         ...
     ReferenceError: Remaining reference(s) to object
     """
-    if IS_PYPY:
-        raise RuntimeError("assert_deallocated is unavailable on PyPy")
-
     with gc_state(False):
         obj = func(*args, **kwargs)
         ref = weakref.ref(obj)
@@ -103,23 +94,3 @@ def assert_deallocated(func, *args, **kwargs):
         del obj
         if ref() is not None:
             raise ReferenceError("Remaining reference(s) to object")
-
-def break_cycles():
-    """
-    Break reference cycles by calling gc.collect
-    Objects can call other objects' methods (for instance, another object's
-     __del__) inside their own __del__. On PyPy, the interpreter only runs
-    between calls to gc.collect, so multiple calls are needed to completely
-    release all cycles.
-    """
-
-    gc.collect()
-    if IS_PYPY:
-        # a few more, just to make sure all the finalizers are called
-        gc.collect()
-        gc.collect()
-        gc.collect()
-        gc.collect()
-
-
-

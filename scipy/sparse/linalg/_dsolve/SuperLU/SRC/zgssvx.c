@@ -13,10 +13,11 @@ at the top-level directory.
  * \brief Solves the system of linear equations A*X=B or A'*X=B
  *
  * <pre>
- * -- SuperLU routine (version 3.0) --
+ * -- SuperLU routine (version 7.0.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
+ * August 2024
  * </pre>
  */
 #include "slu_zdefs.h"
@@ -324,7 +325,7 @@ at the top-level directory.
  * mem_usage (output) mem_usage_t*
  *         Record the memory usage statistics, consisting of following fields:
  *         - for_lu (float)
- *           The amount of space used in bytes for L\U data structures.
+ *           The amount of space used in bytes for L\\U data structures.
  *         - total_needed (float)
  *           The amount of space needed in bytes to perform factorization.
  *         - expansions (int)
@@ -548,8 +549,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	}
     }
 
-    if ( *info > 0 ) {
-        if ( *info <= A->ncol ) {
+    if ( *info > 0 ) { 
+        if ( *info <= A->ncol ) { /* singular */
 	    /* Compute the reciprocal pivot growth factor of the leading
 	       rank-deficient (*info) columns of A. */
 	    *recip_pivot_growth = zPivotGrowth(*info, AA, perm_c, L, U);

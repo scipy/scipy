@@ -13,10 +13,20 @@ the organization section.
    :caption: Contributing Information
 
    conduct/code_of_conduct
+   conduct/ai_policy
    hacking
    dev_quickstart
    contributor/development_workflow
    contributor/contributor_toc
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Design & Architecture
+
+   api-dev/array_api
+   api-dev/nan_policy
+   api-dev/special_ufuncs
+   api-dev/design_conventions_modules
 
 .. toctree::
    :maxdepth: 1
@@ -31,14 +41,13 @@ the organization section.
    :caption: SciPy Organization
 
    core-dev/index
-   api-dev/api-dev-toc
    governance
+
 
 .. This toctree defines previous/next for contributor guide documents
 .. toctree::
    :hidden:
 
-   contributor/development_workflow
    contributor/pep8
    contributor/rendering_documentation
    contributor/devpy_test
