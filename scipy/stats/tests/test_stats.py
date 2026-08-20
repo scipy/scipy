@@ -8533,7 +8533,7 @@ class CDFDistancesTest:
         x, y, wx, wy = self.get_arrays(wx, wy)
         ref = distance(x, y, wx, wy, axis=-1)
 
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x, y = xp.astype(x, dtype), xp.astype(y, dtype)
         wx = wx if wx is None else xp.astype(wx, dtype)
         wy = wy if wy is None else xp.astype(wy, dtype)

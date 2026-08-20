@@ -10293,7 +10293,7 @@ def _cdf_distance(p, x, y, wx=None, wy=None, axis=0):
     nx = x.shape[-1]
     ny = y.shape[-1]
     n = xy.shape[-1]
-    ranks = _rankdata(xy, method='min')
+    ranks = xp.astype(_rankdata(xy, method='min')[0], xp.int64)
     rank_counts_x = xp.diff(ranks[..., :nx], prepend=1, append=n + 1, axis=-1)
     rank_counts_y = xp.diff(ranks[..., -ny:], prepend=1, append=n + 1, axis=-1)
 
