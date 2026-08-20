@@ -45,6 +45,7 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
     double stry, dpre, dblk;
     int i;
     solver_stats->error_num = INPROGRESS;
+    solver_stats->iterations = 0;
 
     fpre = (*f)(xpre,func_data_param);
     fcur = (*f)(xcur,func_data_param);
@@ -61,7 +62,6 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
         solver_stats->error_num = SIGNERR;
         return 0.;
     }
-    solver_stats->iterations = 0;
     for (i = 0; i < iter; i++) {
         solver_stats->iterations++;
         if (fpre != 0 && fcur != 0 &&
