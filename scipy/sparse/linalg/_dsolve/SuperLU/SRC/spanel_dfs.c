@@ -10,7 +10,7 @@ at the top-level directory.
 */
 
 /*! @file spanel_dfs.c
- * \brief Peforms a symbolic factorization on a panel of symbols
+ * \brief Performs a symbolic factorization on a panel of symbols
  *
  * <pre>
  * -- SuperLU routine (version 2.0) --
@@ -138,7 +138,7 @@ spanel_dfs (
 	    marker[krow] = jj;
 	    kperm = perm_r[krow];
 	    
-	    if ( kperm == EMPTY ) {
+	    if ( kperm == SLU_EMPTY ) {
 		panel_lsub[nextl_col++] = krow; /* krow is indexed into A */
 	    }
 	    /* 
@@ -153,13 +153,13 @@ spanel_dfs (
 #ifdef CHK_DFS
 		printf("krep %d, myfnz %d, perm_r[%d] %d\n", krep, myfnz, krow, kperm);
 #endif
-		if ( myfnz != EMPTY ) {	/* Representative visited before */
+		if ( myfnz != SLU_EMPTY ) {	/* Representative visited before */
 		    if ( myfnz > kperm ) repfnz_col[krep] = kperm;
 		    /* continue; */
 		}
 		else {
 		    /* Otherwise, perform dfs starting at krep */
-		    oldrep = EMPTY;
+		    oldrep = SLU_EMPTY;
 		    parent[krep] = oldrep;
 		    repfnz_col[krep] = kperm;
 		    xdfs = xlsub[krep];
@@ -185,7 +185,7 @@ spanel_dfs (
 				chperm = perm_r[kchild];
 			      
 				/* Case kchild is in L: place it in L[*,j] */
-				if ( chperm == EMPTY ) {
+				if ( chperm == SLU_EMPTY ) {
 				    panel_lsub[nextl_col++] = kchild;
 				} 
 				/* Case kchild is in U: 
@@ -199,7 +199,7 @@ spanel_dfs (
 #ifdef CHK_DFS
 				    printf("chrep %d,myfnz %d,perm_r[%d] %d\n",chrep,myfnz,kchild,chperm);
 #endif
-				    if ( myfnz != EMPTY ) { /* Visited before */
+				    if ( myfnz != SLU_EMPTY ) { /* Visited before */
 					if ( myfnz > chperm )
 					    repfnz_col[chrep] = chperm;
 				    }
@@ -238,7 +238,7 @@ spanel_dfs (
 			}
 			
 			kpar = parent[krep]; /* Pop stack, mimic recursion */
-			if ( kpar == EMPTY ) break; /* dfs done */
+			if ( kpar == SLU_EMPTY ) break; /* dfs done */
 			krep = kpar;
 			xdfs = xplore[krep];
 			maxdfs = xprune[krep];
@@ -248,7 +248,7 @@ spanel_dfs (
 			for (i = xdfs; i < maxdfs; i++) printf(" %d", lsub[i]);
 			printf("\n");
 #endif
-		    } while ( kpar != EMPTY ); /* do-while - until empty stack */
+		    } while ( kpar != SLU_EMPTY ); /* do-while - until empty stack */
 		    
 		} /* else */
 		

@@ -9,7 +9,7 @@ This page contains three sets of demonstrations:
 
 ## 1. How to transition away from using  `interp2d`
 
-`interp2d` silently switches between interpolation on a 2D regular grid and interpolating 2D scattered data. The switch is based on the lengths of the (raveled) `x`, `y`, and `z` arrays. In short, for regular grid use {class}`scipy.interpolate.RectBivariateSpline`; for scattered interpolation, use the `bisprep/bisplev` combo. Below we give examples of the literal point-for-point transition, which should preserve the `interp2d` results exactly.
+`interp2d` silently switches between interpolation on a 2D regular grid and interpolating 2D scattered data. The switch is based on the lengths of the (raveled) `x`, `y`, and `z` arrays. In short, for regular grid use {class}`scipy.interpolate.RectBivariateSpline`; for scattered interpolation, use the `bisplrep/bisplev` combo. Below we give examples of the literal point-for-point transition, which should preserve the `interp2d` results exactly.
 
 ### 1.1 `interp2d` on a regular grid
 
@@ -208,7 +208,7 @@ interpolation function.](plots/output_28_1.png)
 
 ## 3. Scattered 2D linear interpolation: prefer `LinearNDInterpolator` to `SmoothBivariateSpline`  or `bisplrep`
 
-For 2D scattered linear interpolation, both `SmoothBivariateSpline` and `biplrep` may either emit warnings, or fail to interpolate the data, or produce splines which with knots away from the data points. Instead, prefer `LinearNDInterpolator`, which is based on triangulating the data via `QHull`.
+For 2D scattered linear interpolation, both `SmoothBivariateSpline` and `bisplrep` may either emit warnings, or fail to interpolate the data, or produce splines with knots away from the data points. Instead, prefer `LinearNDInterpolator`, which is based on triangulating the data via `QHull`.
 
 ```
 # TestSmoothBivariateSpline::test_integral

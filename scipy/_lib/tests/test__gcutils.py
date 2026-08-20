@@ -4,7 +4,7 @@ import gc
 from threading import Lock
 
 from scipy._lib._gcutils import (set_gc_state, gc_state, assert_deallocated,
-                                 ReferenceError, IS_PYPY)
+                                 ReferenceError)
 
 from numpy.testing import assert_equal
 
@@ -55,7 +55,6 @@ def test_gc_state(gc_lock):
                 gc.enable()
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated(gc_lock):
     # Ordinary use
     class C:
@@ -74,7 +73,6 @@ def test_assert_deallocated(gc_lock):
                 assert_equal(gc.isenabled(), gc_current)
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_nodel():
     class C:
         pass
@@ -88,7 +86,6 @@ def test_assert_deallocated_nodel():
             pass
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_circular():
     class C:
         def __init__(self):
@@ -99,7 +96,6 @@ def test_assert_deallocated_circular():
             del c
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_circular2():
     class C:
         def __init__(self):

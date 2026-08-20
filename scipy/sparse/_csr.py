@@ -5,6 +5,8 @@ __docformat__ = "restructuredtext en"
 __all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
@@ -17,7 +19,7 @@ from ._compressed import _cs_matrix
 
 class _csr_base(_cs_matrix):
     _format = 'csr'
-    _allow_nd = (1, 2)
+    _allow_nd: tuple[int, ...] = (1, 2)
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
@@ -63,7 +65,7 @@ class _csr_base(_cs_matrix):
     def tocoo(self, copy=False):
         A = super().tocoo(copy=copy)
         # CSR-to-COO conversion always preserves [non-]canonicity
-        # (indices sorting, presense of duplicate elements).
+        # (indices sorting, presence of duplicate elements).
         # Handled here instead of _cs_matrix because CSC-to-COO generally does not.
         A.has_canonical_format = self.has_canonical_format
         return A
@@ -281,10 +283,7 @@ class _csr_base(_cs_matrix):
         return res
 
     def _get_arrayXslice(self, row, col):
-        if col.step not in (1, None):
-            col = np.arange(*col.indices(self.shape[1]))
-            return self._get_arrayXarray(row, col)
-        return self._major_index_fancy(row)._get_submatrix(minor=col)
+        return self._major_index_fancy(row)._minor_slice(col)
 
     def _set_int(self, idx, x):
         self._set_many(0, idx, x)
@@ -296,6 +295,15 @@ class _csr_base(_cs_matrix):
 
 def isspmatrix_csr(x):
     """Is `x` of csr_matrix type?
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Parameters
     ----------
@@ -310,13 +318,24 @@ def isspmatrix_csr(x):
     Examples
     --------
     >>> from scipy.sparse import csr_array, csr_matrix, coo_matrix, isspmatrix_csr
-    >>> isspmatrix_csr(csr_matrix([[5]]))
+    >>> isspmatrix_csr(csr_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_csr(csr_array([[5]]))
+    >>> isspmatrix_csr(csr_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_csr(coo_matrix([[5]]))
+    >>> isspmatrix_csr(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_csr` is being replaced by `self.format == "csr" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_csr function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, csr_matrix)
 
 
@@ -349,23 +368,32 @@ class csr_array(_csr_base, sparray):
 
     Attributes
     ----------
+    data : ndarray
+        CSR format data array of the array
+    indices : ndarray
+        CSR format index array of the array
+    indptr : ndarray
+        CSR format index pointer array of the array
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        CSR format data array of the array
-    indices
-        CSR format index array of the array
-    indptr
-        CSR format index pointer array of the array
-    has_sorted_indices
-    has_canonical_format
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'csr'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : csr_array
+        The transpose of the array
+    mT : csr_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -441,12 +469,21 @@ class csr_array(_csr_base, sparray):
     array([[2, 1, 0, 0],
            [0, 1, 1, 1]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class csr_matrix(spmatrix, _csr_base):
     """
     Compressed Sparse Row matrix.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         csr_matrix(D)
@@ -472,23 +509,32 @@ class csr_matrix(spmatrix, _csr_base):
 
     Attributes
     ----------
+    data : ndarray
+        CSR format data array of the matrix
+    indices : ndarray
+        CSR format index array of the matrix
+    indptr : ndarray
+        CSR format index pointer array of the matrix
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        CSR format data array of the matrix
-    indices
-        CSR format index array of the matrix
-    indptr
-        CSR format index pointer array of the matrix
-    has_sorted_indices
-    has_canonical_format
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'csr'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : csr_matrix
+        The transpose of the matrix
+    mT : csr_matrix
+        The matrix transpose
 
     Notes
     -----

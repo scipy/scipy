@@ -28,7 +28,7 @@ static SCIPY_TLS propack_callback_t* current_propack_callback = NULL;
 
 
 static void
-propack_callback_s_thunk(int transa, int m, int n, float* x, float* y, float* dparm, int* iparm)
+propack_callback_s_thunk(int transa, CBLAS_INT m, CBLAS_INT n, float* x, float* y, float* dparm, CBLAS_INT* iparm)
 {
     // Silence unused parameter warnings for dparm/iparm
     (void)dparm; (void)iparm;
@@ -65,9 +65,9 @@ propack_callback_s_thunk(int transa, int m, int n, float* x, float* y, float* dp
         return;
     }
 
-    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromLong(transa));
-    PyTuple_SetItem(current_propack_callback->args_tuple, 1, PyLong_FromLong(m));
-    PyTuple_SetItem(current_propack_callback->args_tuple, 2, PyLong_FromLong(n));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromSsize_t((Py_ssize_t)transa));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 1, PyLong_FromSsize_t((Py_ssize_t)m));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 2, PyLong_FromSsize_t((Py_ssize_t)n));
     PyTuple_SetItem(current_propack_callback->args_tuple, 3, py_x);
     PyTuple_SetItem(current_propack_callback->args_tuple, 4, py_y);
 
@@ -82,7 +82,7 @@ propack_callback_s_thunk(int transa, int m, int n, float* x, float* y, float* dp
 
 
 static void
-propack_callback_d_thunk(int transa, int m, int n, double* x, double* y, double* dparm, int* iparm)
+propack_callback_d_thunk(int transa, CBLAS_INT m, CBLAS_INT n, double* x, double* y, double* dparm, CBLAS_INT* iparm)
 {
     // Silence unused parameter warnings for dparm/iparm
     (void)dparm; (void)iparm;
@@ -120,9 +120,9 @@ propack_callback_d_thunk(int transa, int m, int n, double* x, double* y, double*
         return;
     }
 
-    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromLong(transa));
-    PyTuple_SetItem(current_propack_callback->args_tuple, 1, PyLong_FromLong(m));
-    PyTuple_SetItem(current_propack_callback->args_tuple, 2, PyLong_FromLong(n));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromSsize_t((Py_ssize_t)transa));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 1, PyLong_FromSsize_t((Py_ssize_t)m));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 2, PyLong_FromSsize_t((Py_ssize_t)n));
     PyTuple_SetItem(current_propack_callback->args_tuple, 3, py_x);
     PyTuple_SetItem(current_propack_callback->args_tuple, 4, py_y);
 
@@ -137,7 +137,7 @@ propack_callback_d_thunk(int transa, int m, int n, double* x, double* y, double*
 
 
 static void
-propack_callback_c_thunk(int transa, int m, int n, PROPACK_CPLXF_TYPE* x, PROPACK_CPLXF_TYPE* y, PROPACK_CPLXF_TYPE* dparm, int* iparm)
+propack_callback_c_thunk(int transa, CBLAS_INT m, CBLAS_INT n, PROPACK_CPLXF_TYPE* x, PROPACK_CPLXF_TYPE* y, PROPACK_CPLXF_TYPE* dparm, CBLAS_INT* iparm)
 {
     // Silence unused parameter warnings for dparm/iparm
     (void)dparm; (void)iparm;
@@ -175,9 +175,9 @@ propack_callback_c_thunk(int transa, int m, int n, PROPACK_CPLXF_TYPE* x, PROPAC
         return;
     }
 
-    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromLong(transa));
-    PyTuple_SetItem(current_propack_callback->args_tuple, 1, PyLong_FromLong(m));
-    PyTuple_SetItem(current_propack_callback->args_tuple, 2, PyLong_FromLong(n));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromSsize_t((Py_ssize_t)transa));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 1, PyLong_FromSsize_t((Py_ssize_t)m));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 2, PyLong_FromSsize_t((Py_ssize_t)n));
     PyTuple_SetItem(current_propack_callback->args_tuple, 3, py_x);
     PyTuple_SetItem(current_propack_callback->args_tuple, 4, py_y);
 
@@ -192,7 +192,7 @@ propack_callback_c_thunk(int transa, int m, int n, PROPACK_CPLXF_TYPE* x, PROPAC
 
 
 static void
-propack_callback_z_thunk(int transa, int m, int n, PROPACK_CPLX_TYPE* x, PROPACK_CPLX_TYPE* y, PROPACK_CPLX_TYPE* dparm, int* iparm)
+propack_callback_z_thunk(int transa, CBLAS_INT m, CBLAS_INT n, PROPACK_CPLX_TYPE* x, PROPACK_CPLX_TYPE* y, PROPACK_CPLX_TYPE* dparm, CBLAS_INT* iparm)
 {
     // Silence unused parameter warnings for dparm/iparm
     (void)dparm; (void)iparm;
@@ -230,9 +230,9 @@ propack_callback_z_thunk(int transa, int m, int n, PROPACK_CPLX_TYPE* x, PROPACK
         return;
     }
 
-    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromLong(transa));
-    PyTuple_SetItem(current_propack_callback->args_tuple, 1, PyLong_FromLong(m));
-    PyTuple_SetItem(current_propack_callback->args_tuple, 2, PyLong_FromLong(n));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromSsize_t((Py_ssize_t)transa));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 1, PyLong_FromSsize_t((Py_ssize_t)m));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 2, PyLong_FromSsize_t((Py_ssize_t)n));
     PyTuple_SetItem(current_propack_callback->args_tuple, 3, py_x);
     PyTuple_SetItem(current_propack_callback->args_tuple, 4, py_y);
 
@@ -255,12 +255,13 @@ static PyObject*
 propack_slansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
 
-    int jobu, jobv, k, kmax, m, n, propack_info;
+    Py_ssize_t jobu, jobv, k, kmax, m, n;
+    CBLAS_INT propack_info;
     float tol;
     PyObject* py_aprod;
     PyArrayObject *U, *V, *sigma, *bnd, *work, *iwork, *doption, *ioption, *dparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiifOO!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "nnnnnnfOO!O!O!O!O!O!O!O!O!O!O!",
                           &jobu, &jobv, &m, &n, &k, &kmax,                       // iiiiii
                           &tol,                                                  // f
                           &py_aprod,                                             // O
@@ -297,28 +298,28 @@ propack_slansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     // Call PROPACK slansvd_irl function
     slansvd(
-        jobu, jobv,                                       // whether to compute U, V
-        m, n, k, kmax,                                    // matrix and algorithm dimensions
-        (PROPACK_aprod_s)propack_callback_s_thunk,        // Py callback function
-        (float*)PyArray_DATA(U), PyArray_DIM(U, 0),       // U matrix and leading dimension
+        (int)jobu, (int)jobv,                 // whether to compute U, V
+        (CBLAS_INT)m, (CBLAS_INT)n, (CBLAS_INT)k, (CBLAS_INT)kmax,  // matrix and algorithm dimensions
+        propack_callback_s_thunk,        // Py callback function
+        (float*)PyArray_DATA(U), (CBLAS_INT)PyArray_DIM(U, 0),       // U matrix and leading dimension
         (float*)PyArray_DATA(sigma),                      // singular values output
         (float*)PyArray_DATA(bnd),                        // error bounds output
-        (float*)PyArray_DATA(V), PyArray_DIM(V, 0),       // V matrix and leading dimension
+        (float*)PyArray_DATA(V), (CBLAS_INT)PyArray_DIM(V, 0),       // V matrix and leading dimension
         tol,                                              // tolerance
-        (float*)PyArray_DATA(work), PyArray_SIZE(work),   // main workspace
-        (int*)PyArray_DATA(iwork),                        // integer workspace
+        (float*)PyArray_DATA(work), (CBLAS_INT)PyArray_SIZE(work),   // main workspace
+        (CBLAS_INT*)PyArray_DATA(iwork),                        // integer workspace
         (float*)PyArray_DATA(doption),                    // float options array
-        (int*)PyArray_DATA(ioption),                      // integer options array
+        (CBLAS_INT*)PyArray_DATA(ioption),                      // integer options array
         &propack_info,                                    // return code
         (float*)PyArray_DATA(dparm),                      // float parameter array (unused)
-        (int*)PyArray_DATA(iparm),                        // integer parameter array (unused)
+        (CBLAS_INT*)PyArray_DATA(iparm),                        // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)             // random number state
     );
 
     current_propack_callback = NULL;
     Py_XDECREF(py_aprod);
     Py_XDECREF(args_tuple);
-    return Py_BuildValue("i", propack_info);
+    return Py_BuildValue("n", (Py_ssize_t)propack_info);
 
 }
 
@@ -327,12 +328,13 @@ static PyObject*
 propack_dlansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
 
-    int jobu, jobv, k, kmax, m, n, propack_info;
+    Py_ssize_t jobu, jobv, k, kmax, m, n;
+    CBLAS_INT propack_info;
     double tol;
     PyObject* py_aprod;
     PyArrayObject *U, *V, *sigma, *bnd, *work, *iwork, *doption, *ioption, *dparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiidOO!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "nnnnnndOO!O!O!O!O!O!O!O!O!O!O!",
                           &jobu, &jobv, &m, &n, &k, &kmax,                       // iiiiii
                           &tol,                                                  // d
                           &py_aprod,                                             // O
@@ -367,28 +369,28 @@ propack_dlansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
     current_propack_callback = &aprod_callback;
 
     dlansvd(
-        jobu, jobv,                                       // whether to compute U, V
-        m, n, k, kmax,                                    // matrix and algorithm dimensions
-        (PROPACK_aprod_d)propack_callback_d_thunk,        // Py callback function
-        (double*)PyArray_DATA(U), PyArray_DIM(U, 0),      // U matrix and leading dimension
+        (int)jobu, (int)jobv,                 // whether to compute U, V
+        (CBLAS_INT)m, (CBLAS_INT)n, (CBLAS_INT)k, (CBLAS_INT)kmax,  // matrix and algorithm dimensions
+        propack_callback_d_thunk,        // Py callback function
+        (double*)PyArray_DATA(U), (CBLAS_INT)PyArray_DIM(U, 0),      // U matrix and leading dimension
         (double*)PyArray_DATA(sigma),                     // singular values output
         (double*)PyArray_DATA(bnd),                       // error bounds output
-        (double*)PyArray_DATA(V), PyArray_DIM(V, 0),      // V matrix and leading dimension
+        (double*)PyArray_DATA(V), (CBLAS_INT)PyArray_DIM(V, 0),      // V matrix and leading dimension
         tol,                                              // tolerance
-        (double*)PyArray_DATA(work), PyArray_SIZE(work),  // main workspace
-        (int*)PyArray_DATA(iwork),                        // integer workspace
+        (double*)PyArray_DATA(work), (CBLAS_INT)PyArray_SIZE(work),  // main workspace
+        (CBLAS_INT*)PyArray_DATA(iwork),                        // integer workspace
         (double*)PyArray_DATA(doption),                   // double options array
-        (int*)PyArray_DATA(ioption),                      // integer options array
+        (CBLAS_INT*)PyArray_DATA(ioption),                      // integer options array
         &propack_info,                                    // return code
         (double*)PyArray_DATA(dparm),                     // double parameter array (unused)
-        (int*)PyArray_DATA(iparm),                        // integer parameter array (unused)
+        (CBLAS_INT*)PyArray_DATA(iparm),                        // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)             // random number state
     );
 
     current_propack_callback = NULL;
     Py_XDECREF(py_aprod);
     Py_XDECREF(args_tuple);
-    return Py_BuildValue("i", propack_info);
+    return Py_BuildValue("n", (Py_ssize_t)propack_info);
 
 }
 
@@ -397,12 +399,13 @@ static PyObject*
 propack_clansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
 
-    int jobu, jobv, k, kmax, m, n, propack_info;
+    Py_ssize_t jobu, jobv, k, kmax, m, n;
+    CBLAS_INT propack_info;
     float tol;
     PyObject* py_aprod;
     PyArrayObject *U, *V, *sigma, *bnd, *work, *cwork, *iwork, *doption, *ioption, *dparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiifOO!O!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "nnnnnnfOO!O!O!O!O!O!O!O!O!O!O!O!",
                           &jobu, &jobv, &m, &n, &k, &kmax,                       // iiiiii
                           &tol,                                                  // f
                           &py_aprod,                                             // O
@@ -438,29 +441,29 @@ propack_clansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
     current_propack_callback = &aprod_callback;
 
     clansvd(
-        jobu, jobv,                                                    // whether to compute U, V
-        m, n, k, kmax,                                                 // matrix and algorithm dimensions
-        (PROPACK_aprod_c)propack_callback_c_thunk,                     // Py callback function
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(U), PyArray_DIM(U, 0),       // U matrix and leading dimension
+        (int)jobu, (int)jobv,                              // whether to compute U, V
+        (CBLAS_INT)m, (CBLAS_INT)n, (CBLAS_INT)k, (CBLAS_INT)kmax, // matrix and algorithm dimensions
+        propack_callback_c_thunk,                     // Py callback function
+        (PROPACK_CPLXF_TYPE*)PyArray_DATA(U), (CBLAS_INT)PyArray_DIM(U, 0),       // U matrix and leading dimension
         (float*)PyArray_DATA(sigma),                                   // singular values output
         (float*)PyArray_DATA(bnd),                                     // error bounds output
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(V), PyArray_DIM(V, 0),       // V matrix and leading dimension
+        (PROPACK_CPLXF_TYPE*)PyArray_DATA(V), (CBLAS_INT)PyArray_DIM(V, 0),       // V matrix and leading dimension
         tol,                                                           // tolerance
-        (float*)PyArray_DATA(work), PyArray_SIZE(work),                // main workspace
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(cwork), PyArray_SIZE(cwork), // main workspace
-        (int*)PyArray_DATA(iwork),                                     // integer workspace
+        (float*)PyArray_DATA(work), (CBLAS_INT)PyArray_SIZE(work),                // main workspace
+        (PROPACK_CPLXF_TYPE*)PyArray_DATA(cwork), (CBLAS_INT)PyArray_SIZE(cwork), // main workspace
+        (CBLAS_INT*)PyArray_DATA(iwork),                                     // integer workspace
         (float*)PyArray_DATA(doption),                                 // float options array
-        (int*)PyArray_DATA(ioption),                                   // integer options array
+        (CBLAS_INT*)PyArray_DATA(ioption),                                   // integer options array
         &propack_info,                                                 // return code
         (PROPACK_CPLXF_TYPE*)PyArray_DATA(dparm),                      // double parameter array (unused)
-        (int*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
+        (CBLAS_INT*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)                          // random number state
     );
 
     current_propack_callback = NULL;
     Py_XDECREF(py_aprod);
     Py_XDECREF(args_tuple);
-    return Py_BuildValue("i", propack_info);
+    return Py_BuildValue("n", (Py_ssize_t)propack_info);
 
 }
 
@@ -469,12 +472,13 @@ static PyObject*
 propack_zlansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
 
-    int jobu, jobv, k, kmax, m, n, propack_info;
+    Py_ssize_t jobu, jobv, k, kmax, m, n;
+    CBLAS_INT propack_info;
     double tol;
     PyObject* py_aprod;
     PyArrayObject *U, *V, *sigma, *bnd, *work, *cwork, *iwork, *doption, *ioption, *dparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiidOO!O!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "nnnnnndOO!O!O!O!O!O!O!O!O!O!O!O!",
                           &jobu, &jobv, &m, &n, &k, &kmax,                       // iiiiii
                           &tol,                                                  // d
                           &py_aprod,                                             // O
@@ -510,29 +514,29 @@ propack_zlansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
     current_propack_callback = &aprod_callback;
 
     zlansvd(
-        jobu, jobv,                                                    // whether to compute U, V
-        m, n, k, kmax,                                                 // matrix and algorithm dimensions
-        (PROPACK_aprod_z)propack_callback_z_thunk,                     // Py callback function
-        (PROPACK_CPLX_TYPE*)PyArray_DATA(U), PyArray_DIM(U, 0),        // U matrix and leading dimension
+        (int)jobu, (int)jobv,                              // whether to compute U, V
+        (CBLAS_INT)m, (CBLAS_INT)n, (CBLAS_INT)k, (CBLAS_INT)kmax, // matrix and algorithm dimensions
+        propack_callback_z_thunk,                     // Py callback function
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(U), (CBLAS_INT)PyArray_DIM(U, 0),        // U matrix and leading dimension
         (double*)PyArray_DATA(sigma),                                  // singular values output
         (double*)PyArray_DATA(bnd),                                    // error bounds output
-        (PROPACK_CPLX_TYPE*)PyArray_DATA(V), PyArray_DIM(V, 0),        // V matrix and leading dimension
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(V), (CBLAS_INT)PyArray_DIM(V, 0),        // V matrix and leading dimension
         tol,                                                           // tolerance
-        (double*)PyArray_DATA(work), PyArray_SIZE(work),               // main workspace
-        (PROPACK_CPLX_TYPE*)PyArray_DATA(cwork), PyArray_SIZE(cwork),  // main workspace
-        (int*)PyArray_DATA(iwork),                                     // integer workspace
+        (double*)PyArray_DATA(work), (CBLAS_INT)PyArray_SIZE(work),               // main workspace
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(cwork), (CBLAS_INT)PyArray_SIZE(cwork),  // main workspace
+        (CBLAS_INT*)PyArray_DATA(iwork),                                     // integer workspace
         (double*)PyArray_DATA(doption),                                // double options array
-        (int*)PyArray_DATA(ioption),                                   // integer options array
+        (CBLAS_INT*)PyArray_DATA(ioption),                                   // integer options array
         &propack_info,                                                 // return code
         (PROPACK_CPLX_TYPE*)PyArray_DATA(dparm),                       // double parameter array (unused)
-        (int*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
+        (CBLAS_INT*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)                          // random number state
     );
 
     current_propack_callback = NULL;
     Py_XDECREF(py_aprod);
     Py_XDECREF(args_tuple);
-    return Py_BuildValue("i", propack_info);
+    return Py_BuildValue("n", (Py_ssize_t)propack_info);
 
 }
 
@@ -542,12 +546,13 @@ static PyObject*
 propack_slansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
 
-    int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
+    Py_ssize_t which, jobu, jobv, m, n, shifts, neig, maxiter;
+    CBLAS_INT propack_info, dim, neig_propack;
     float tol;
     PyObject* py_aprod;
     PyArrayObject *U, *sigma, *bnd, *V, *work, *iwork, *doption, *ioption, *sparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiifOO!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "nnnnnnnnfOO!O!O!O!O!O!O!O!O!O!O!",
                          &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
                          &py_aprod,
                          &PyArray_Type, &U,
@@ -565,7 +570,8 @@ propack_slansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
     }
 
     if (!PyCallable_Check(py_aprod)) {PyErr_SetString(PyExc_TypeError, "scipy.sparse.linalg: Callback argument must be a callable."); return NULL; }
-    int dim = shifts + neig;
+    dim = (CBLAS_INT)(shifts + neig);
+    neig_propack = (CBLAS_INT)neig;
 
     propack_callback_t aprod_callback;
     aprod_callback.py_func = py_aprod;
@@ -581,31 +587,31 @@ propack_slansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
     current_propack_callback = &aprod_callback;
 
     slansvd_irl(
-        which,                                            // which singular values to compute
-        jobu, jobv,                                       // whether to compute U, V
-        m, n, dim, shifts,                                // matrix and algorithm dimensions
-        &neig,                                            // number of converged values (input/output)
-        maxiter,                                          // maximum iterations
-        (PROPACK_aprod_s)propack_callback_s_thunk,        // Py callback function
-        (float*)PyArray_DATA(U), PyArray_DIM(U, 0),       // U matrix and leading dimension
+        (int)which,                            // which singular values to compute
+        (int)jobu, (int)jobv,                 // whether to compute U, V
+        (CBLAS_INT)m, (CBLAS_INT)n, dim, (CBLAS_INT)shifts, // matrix and algorithm dimensions
+        &neig_propack,                                    // number of converged values (input/output)
+        (CBLAS_INT)maxiter,                            // maximum iterations
+        propack_callback_s_thunk,        // Py callback function
+        (float*)PyArray_DATA(U), (CBLAS_INT)PyArray_DIM(U, 0),       // U matrix and leading dimension
         (float*)PyArray_DATA(sigma),                      // singular values output
         (float*)PyArray_DATA(bnd),                        // error bounds output
-        (float*)PyArray_DATA(V), PyArray_DIM(V, 0),       // V matrix and leading dimension
+        (float*)PyArray_DATA(V), (CBLAS_INT)PyArray_DIM(V, 0),       // V matrix and leading dimension
         tol,                                              // tolerance
-        (float*)PyArray_DATA(work), PyArray_SIZE(work),   // main workspace
-        (int*)PyArray_DATA(iwork),                        // integer workspace
+        (float*)PyArray_DATA(work), (CBLAS_INT)PyArray_SIZE(work),   // main workspace
+        (CBLAS_INT*)PyArray_DATA(iwork),                        // integer workspace
         (float*)PyArray_DATA(doption),                    // float options array
-        (int*)PyArray_DATA(ioption),                      // integer options array
+        (CBLAS_INT*)PyArray_DATA(ioption),                      // integer options array
         &propack_info,                                    // return code
         (float*)PyArray_DATA(sparm),                      // float parameter array (unused)
-        (int*)PyArray_DATA(iparm),                        // integer parameter array (unused)
+        (CBLAS_INT*)PyArray_DATA(iparm),                        // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)             // random number state
     );
 
     current_propack_callback = NULL;
     Py_XDECREF(py_aprod);
     Py_XDECREF(args_tuple);
-    return Py_BuildValue("i", propack_info);
+    return Py_BuildValue("n", (Py_ssize_t)propack_info);
 
 }
 
@@ -614,12 +620,13 @@ static PyObject*
 propack_dlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
 
-    int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
+    Py_ssize_t which, jobu, jobv, m, n, shifts, neig, maxiter;
+    CBLAS_INT propack_info, dim, neig_propack;
     double tol;
     PyObject* py_aprod;
     PyArrayObject *U, *sigma, *bnd, *V, *work, *iwork, *doption, *ioption, *sparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiidOO!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "nnnnnnnndOO!O!O!O!O!O!O!O!O!O!O!",
                          &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
                          &py_aprod,
                          &PyArray_Type, &U,
@@ -637,7 +644,8 @@ propack_dlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
     }
 
     if (!PyCallable_Check(py_aprod)) {PyErr_SetString(PyExc_TypeError, "scipy.sparse.linalg: Callback argument must be a callable."); return NULL; }
-    int dim = shifts + neig;
+    dim = (CBLAS_INT)(shifts + neig);
+    neig_propack = (CBLAS_INT)neig;
     propack_callback_t aprod_callback;
     aprod_callback.py_func = py_aprod;
     Py_XINCREF(py_aprod);
@@ -652,31 +660,31 @@ propack_dlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
     current_propack_callback = &aprod_callback;
 
     dlansvd_irl(
-        which,                                             // which singular values to compute
-        jobu, jobv,                                        // whether to compute U, V
-        m, n, dim, shifts,                                 // matrix and algorithm dimensions
-        &neig,                                             // number of converged values (input/output)
-        maxiter,                                           // maximum iterations
-        (PROPACK_aprod_d)propack_callback_d_thunk,         // Py callback function
-        (double*)PyArray_DATA(U), PyArray_DIM(U, 0),       // U matrix and leading dimension
+        (int)which,                              // which singular values to compute
+        (int)jobu, (int)jobv,                  // whether to compute U, V
+        (CBLAS_INT)m, (CBLAS_INT)n, dim, (CBLAS_INT)shifts, // matrix and algorithm dimensions
+        &neig_propack,                                    // number of converged values (input/output)
+        (CBLAS_INT)maxiter,                             // maximum iterations
+        propack_callback_d_thunk,         // Py callback function
+        (double*)PyArray_DATA(U), (CBLAS_INT)PyArray_DIM(U, 0),       // U matrix and leading dimension
         (double*)PyArray_DATA(sigma),                      // singular values output
         (double*)PyArray_DATA(bnd),                        // error bounds output
-        (double*)PyArray_DATA(V), PyArray_DIM(V, 0),       // V matrix and leading dimension
+        (double*)PyArray_DATA(V), (CBLAS_INT)PyArray_DIM(V, 0),       // V matrix and leading dimension
         tol,                                               // tolerance
-        (double*)PyArray_DATA(work), PyArray_SIZE(work),   // main workspace
-        (int*)PyArray_DATA(iwork),                         // integer workspace
+        (double*)PyArray_DATA(work), (CBLAS_INT)PyArray_SIZE(work),   // main workspace
+        (CBLAS_INT*)PyArray_DATA(iwork),                         // integer workspace
         (double*)PyArray_DATA(doption),                    // double options array
-        (int*)PyArray_DATA(ioption),                       // integer options array
+        (CBLAS_INT*)PyArray_DATA(ioption),                       // integer options array
         &propack_info,                                     // return code
         (double*)PyArray_DATA(sparm),                      // double parameter array (unused)
-        (int*)PyArray_DATA(iparm),                         // integer parameter array (unused)
+        (CBLAS_INT*)PyArray_DATA(iparm),                         // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)              // random number state
     );
 
     current_propack_callback = NULL;
     Py_XDECREF(py_aprod);
     Py_XDECREF(args_tuple);
-    return Py_BuildValue("i", propack_info);
+    return Py_BuildValue("n", (Py_ssize_t)propack_info);
 
 }
 
@@ -685,12 +693,13 @@ propack_dlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
 static PyObject*
 propack_clansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
-    int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
+    Py_ssize_t which, jobu, jobv, m, n, shifts, neig, maxiter;
+    CBLAS_INT propack_info, dim, neig_propack;
     float tol;
     PyObject* py_aprod;
     PyArrayObject *U, *sigma, *bnd, *V, *work, *cwork, *iwork, *doption, *ioption, *cparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiifOO!O!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "nnnnnnnnfOO!O!O!O!O!O!O!O!O!O!O!O!",
                          &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
                          &py_aprod,
                          &PyArray_Type, &U,
@@ -709,7 +718,8 @@ propack_clansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (!PyCallable_Check(py_aprod)) {PyErr_SetString(PyExc_TypeError, "scipy.sparse.linalg: Callback argument must be a callable."); return NULL; }
-    int dim = shifts + neig;
+    dim = (CBLAS_INT)(shifts + neig);
+    neig_propack = (CBLAS_INT)neig;
     propack_callback_t aprod_callback;
     aprod_callback.py_func = py_aprod;
     Py_XINCREF(py_aprod);
@@ -725,32 +735,32 @@ propack_clansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Call PROPACK clansvd_irl function
     clansvd_irl(
-        which,                                                         // which singular values to compute
-        jobu, jobv,                                                    // whether to compute U, V
-        m, n, dim, shifts,                                             // matrix and algorithm dimensions
-        &neig,                                                         // number of converged values (input/output)
-        maxiter,                                                       // maximum iterations
-        (PROPACK_aprod_c)propack_callback_c_thunk,                     // Py callback function
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(U), PyArray_DIM(U, 0),       // U matrix and leading dimension
+        (int)which,                                           // which singular values to compute
+        (int)jobu, (int)jobv,                              // whether to compute U, V
+        (CBLAS_INT)m, (CBLAS_INT)n, dim, (CBLAS_INT)shifts,           // matrix and algorithm dimensions
+        &neig_propack,                                                 // number of converged values (input/output)
+        (CBLAS_INT)maxiter,                                         // maximum iterations
+        propack_callback_c_thunk,                     // Py callback function
+        (PROPACK_CPLXF_TYPE*)PyArray_DATA(U), (CBLAS_INT)PyArray_DIM(U, 0),       // U matrix and leading dimension
         (float*)PyArray_DATA(sigma),                                   // singular values output
         (float*)PyArray_DATA(bnd),                                     // error bounds output
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(V), PyArray_DIM(V, 0),       // V matrix and leading dimension
+        (PROPACK_CPLXF_TYPE*)PyArray_DATA(V), (CBLAS_INT)PyArray_DIM(V, 0),       // V matrix and leading dimension
         tol,                                                           // tolerance
-        (float*)PyArray_DATA(work), PyArray_SIZE(work),                // float workspace
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(cwork), PyArray_SIZE(cwork), // float complex workspace
-        (int*)PyArray_DATA(iwork),                                     // integer workspace
+        (float*)PyArray_DATA(work), (CBLAS_INT)PyArray_SIZE(work),                // float workspace
+        (PROPACK_CPLXF_TYPE*)PyArray_DATA(cwork), (CBLAS_INT)PyArray_SIZE(cwork), // float complex workspace
+        (CBLAS_INT*)PyArray_DATA(iwork),                                     // integer workspace
         (float*)PyArray_DATA(doption),                                 // float options array
-        (int*)PyArray_DATA(ioption),                                   // integer options array
+        (CBLAS_INT*)PyArray_DATA(ioption),                                   // integer options array
         &propack_info,                                                 // return code
         (PROPACK_CPLXF_TYPE*)PyArray_DATA(cparm),                      // float parameter array (unused)
-        (int*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
+        (CBLAS_INT*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)                          // random number state
     );
 
     current_propack_callback = NULL;
     Py_XDECREF(py_aprod);
     Py_XDECREF(args_tuple);
-    return Py_BuildValue("i", propack_info);
+    return Py_BuildValue("n", (Py_ssize_t)propack_info);
 }
 
 
@@ -758,12 +768,13 @@ propack_clansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
 static PyObject*
 propack_zlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
-    int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
+    Py_ssize_t which, jobu, jobv, m, n, shifts, neig, maxiter;
+    CBLAS_INT propack_info, dim, neig_propack;
     double tol;
     PyObject* py_aprod;
     PyArrayObject *U, *sigma, *bnd, *V, *work, *cwork, *iwork, *doption, *ioption, *zparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiidOO!O!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "nnnnnnnndOO!O!O!O!O!O!O!O!O!O!O!O!",
                          &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
                          &py_aprod,
                          &PyArray_Type, &U,
@@ -782,7 +793,8 @@ propack_zlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (!PyCallable_Check(py_aprod)) {PyErr_SetString(PyExc_TypeError, "scipy.sparse.linalg: Callback argument must be a callable."); return NULL; }
-    int dim = shifts + neig;
+    dim = (CBLAS_INT)(shifts + neig);
+    neig_propack = (CBLAS_INT)neig;
     propack_callback_t aprod_callback;
     aprod_callback.py_func = py_aprod;
     Py_XINCREF(py_aprod);
@@ -798,32 +810,32 @@ propack_zlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Call PROPACK zlansvd_irl function
     zlansvd_irl(
-        which,                                                         // which singular values to compute
-        jobu, jobv,                                                    // whether to compute U, V
-        m, n, dim, shifts,                                             // matrix and algorithm dimensions
-        &neig,                                                         // number of converged values (input/output)
-        maxiter,                                                       // maximum iterations
-        (PROPACK_aprod_z)propack_callback_z_thunk,                     // our callback function
-        (PROPACK_CPLX_TYPE*)PyArray_DATA(U), PyArray_DIM(U, 0),        // U matrix and leading dimension
+        (int)which,                                           // which singular values to compute
+        (int)jobu, (int)jobv,                              // whether to compute U, V
+        (CBLAS_INT)m, (CBLAS_INT)n, dim, (CBLAS_INT)shifts,           // matrix and algorithm dimensions
+        &neig_propack,                                                 // number of converged values (input/output)
+        (CBLAS_INT)maxiter,                                         // maximum iterations
+        propack_callback_z_thunk,                     // our callback function
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(U), (CBLAS_INT)PyArray_DIM(U, 0),        // U matrix and leading dimension
         (double*)PyArray_DATA(sigma),                                  // singular values output
         (double*)PyArray_DATA(bnd),                                    // error bounds output
-        (PROPACK_CPLX_TYPE*)PyArray_DATA(V), PyArray_DIM(V, 0),        // V matrix and leading dimension
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(V), (CBLAS_INT)PyArray_DIM(V, 0),        // V matrix and leading dimension
         tol,                                                           // tolerance
-        (double*)PyArray_DATA(work), PyArray_SIZE(work),               // double workspace
-        (PROPACK_CPLX_TYPE*)PyArray_DATA(cwork), PyArray_SIZE(cwork),  // double complex workspace
-        (int*)PyArray_DATA(iwork),                                     // integer workspace
+        (double*)PyArray_DATA(work), (CBLAS_INT)PyArray_SIZE(work),               // double workspace
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(cwork), (CBLAS_INT)PyArray_SIZE(cwork),  // double complex workspace
+        (CBLAS_INT*)PyArray_DATA(iwork),                                     // integer workspace
         (double*)PyArray_DATA(doption),                                // double options array
-        (int*)PyArray_DATA(ioption),                                   // integer options array
+        (CBLAS_INT*)PyArray_DATA(ioption),                                   // integer options array
         &propack_info,                                                 // return code
         (PROPACK_CPLX_TYPE*)PyArray_DATA(zparm),                       // double parameter array (unused)
-        (int*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
+        (CBLAS_INT*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)                          // random number state
     );
 
     current_propack_callback = NULL;
     Py_XDECREF(py_aprod);
     Py_XDECREF(args_tuple);
-    return Py_BuildValue("i", propack_info);
+    return Py_BuildValue("n", (Py_ssize_t)propack_info);
 }
 
 

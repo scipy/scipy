@@ -64,14 +64,13 @@ py3.extension_module('_zeros',
 )
 
 
-# TODO: link to ILP64 LAPACK
 py3.extension_module('_lbfgsb',
   [
     '_lbfgsbmodule.c',
     'src/lbfgsb.c',
   ],
-  include_directories: 'src/',
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [lapack_dep, np_dep],
+  include_directories: ['src/'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -145,7 +144,7 @@ py3.extension_module('_slsqplib',
     'src/slsqp.c',
     'src/nnls.c'
   ],
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [lapack_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -208,19 +207,8 @@ py3.install_sources([
   '_trustregion_ncg.py',
   '_tstutils.py',
   '_zeros_py.py',
-  'cobyla.py',
   'cython_optimize.pxd',
   'elementwise.py',
-  'lbfgsb.py',
-  'linesearch.py',
-  'minpack.py',
-  'minpack2.py',
-  'moduleTNC.py',
-  'nonlin.py',
-  'optimize.py',
-  'slsqp.py',
-  'tnc.py',
-  'zeros.py'
 ],
   subdir: 'scipy/optimize'
 )

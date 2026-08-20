@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
-from ..sparse import issparse, isspmatrix, find, csc_array, csr_array, csr_matrix
+from ..sparse import issparse, spmatrix, find, csc_array, csr_array, csr_matrix
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import array_namespace, xp_result_type
 from scipy._lib._util import MapWrapper
@@ -880,7 +880,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     col_indices = np.hstack(col_indices)
     fractions = np.hstack(fractions)
 
-    if isspmatrix(structure):
+    if isinstance(structure, spmatrix):
         return csr_matrix(
             (fractions, (row_indices, col_indices)),
             shape=(m, n),

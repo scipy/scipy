@@ -40,7 +40,7 @@ extern int genmmd_(int *neqns, int_t *xadj, int_t *adjncy,
  * \param[out] perm_c Column permutation vector.
  */
 void get_colamd(const int m, const int n, const int_t nnz,
-                int_t *colptr, int_t *rowind, int *perm_c)
+                const int_t *colptr, const int_t *rowind, int *perm_c)
 {
     size_t Alen;
     int_t *A, i, *p;
@@ -151,7 +151,7 @@ void get_metis(int n, int_t bnz, int_t *b_colptr,
  * \param[out] ata_colptr column pointer of size n+1 for matrix A'*A.
  * \param[out] ata_rowind row indices of size atanz for matrix A'*A.
  */
-void getata(const int m, const int n, const int_t nz, int_t *colptr, int_t *rowind,
+void getata(const int m, const int n, const int_t nz, const int_t *colptr, const int_t *rowind,
             int_t *atanz, int_t **ata_colptr, int_t **ata_rowind)
 {
     register int_t i, j, k, col, num_nz, ti, trow;
@@ -280,7 +280,7 @@ void getata(const int m, const int n, const int_t nz, int_t *colptr, int_t *rowi
  * \param[out] b_colptr column pointer of size n+1 for matrix A'+A.
  * \param[out] b_rowind row indices of size bnz for matrix A'+A.
  */
-void at_plus_a(const int n, const int_t nz, int_t *colptr, int_t *rowind,
+void at_plus_a(const int n, const int_t nz, const int_t *colptr, const int_t *rowind,
                int_t *bnz, int_t **b_colptr, int_t **b_rowind)
 {
     register int_t i, j, k, col, num_nz;

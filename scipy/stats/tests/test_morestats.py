@@ -21,6 +21,7 @@ from scipy.stats._morestats import (_abw_state, _get_As_weibull, _Avals_weibull,
                                     _yeojohnson_transform)
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
+from scipy.stats.contingency import _chi2_contingency_2d
 from scipy.stats._ansari_swilk_statistics import swilk
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
@@ -29,8 +30,8 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
-                                   is_numpy, xp_default_dtype, is_array_api_strict,
-                                   is_jax)
+                                   is_numpy, is_array_api_strict,
+                                   is_jax, is_lazy_array)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -40,7 +41,7 @@ from scipy._lib._array_api_no_0d import (
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-distcont = dict(distcont)  # type: ignore
+distcont = dict(distcont)
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -749,7 +750,7 @@ class TestAnsari:
     def test_small(self, xp):
         x = xp.asarray([1, 2, 3, 3, 4])
         y = xp.asarray([3, 2, 6, 1, 6, 1, 4, 1])
-        W, pval = stats.ansari(x, y)
+        W, pval = stats.ansari(x, y, method='asymptotic')
         xp_assert_close(W, xp.asarray(23.5))
         xp_assert_close(pval, xp.asarray(0.13499256881897437))
 
@@ -760,13 +761,13 @@ class TestAnsari:
                              100, 96, 108, 103, 104, 114, 114, 113, 108,
                              106, 99])
 
-        W, pval = stats.ansari(ramsay, parekh)
+        W, pval = stats.ansari(ramsay, parekh, method='asymptotic')
         xp_assert_close(W, xp.asarray(185.5))
         xp_assert_close(pval, xp.asarray(0.18145819972867083))
 
     def test_exact(self, xp):
         x, y = xp.asarray([1, 2, 3, 4]), xp.asarray([15, 5, 20, 8, 10, 12])
-        W, pval = stats.ansari(x, y)
+        W, pval = stats.ansari(x, y, method='exact')
         xp_assert_close(W, xp.asarray(10.0))
         xp_assert_close(pval, xp.asarray(0.533333333333333333))
 
@@ -792,9 +793,9 @@ class TestAnsari:
         # ratio of scales is greater than 1. So, the
         # p-value must be high when `alternative='less'`
         # and low when `alternative='greater'`.
-        statistic, pval = stats.ansari(x1, x2)
-        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
-        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        statistic, pval = stats.ansari(x1, x2, method='exact')
+        pval_l = stats.ansari(x1, x2, alternative='less', method='exact').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater', method='exact').pvalue
         assert pval_l > 0.95
         assert pval_g < 0.05  # level of significance.
         # also check if the p-values sum up to 1 plus the probability
@@ -809,8 +810,10 @@ class TestAnsari:
         xp_assert_close(pval_l, 1+prob-pval/2, atol=1e-12)
         # sanity check. The result should flip if
         # we exchange x and y.
-        pval_l_reverse = stats.ansari(x2, x1, alternative='less').pvalue
-        pval_g_reverse = stats.ansari(x2, x1, alternative='greater').pvalue
+        pval_l_reverse = stats.ansari(x2, x1, alternative='less',
+                                      method='exact').pvalue
+        pval_g_reverse = stats.ansari(x2, x1, alternative='greater',
+                                      method='exact').pvalue
         assert pval_l_reverse < 0.05
         assert pval_g_reverse > 0.95
 
@@ -843,7 +846,7 @@ class TestAnsari:
         #
         # ```
         x, y = xp.asarray(x), xp.asarray(y)
-        pval = stats.ansari(x, y, alternative=alternative).pvalue
+        pval = stats.ansari(x, y, alternative=alternative, method='exact').pvalue
         xp_assert_close(pval, xp.asarray(expected), atol=1e-12)
 
     def test_alternative_approx(self, xp):
@@ -852,8 +855,8 @@ class TestAnsari:
         x2 = xp.asarray(stats.norm.rvs(0, 2, size=100, random_state=123))
         # for m > 55 or n > 55, the test should automatically
         # switch to approximation.
-        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
-        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        pval_l = stats.ansari(x1, x2, alternative='less', method='asymptotic').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater', method='asymptotic').pvalue
         xp_assert_close(pval_l, xp.asarray(1.0, dtype=xp.float64), atol=1e-12)
         xp_assert_close(pval_g, xp.asarray(0.0, dtype=xp.float64), atol=1e-12)
         # also check if one of the one-sided p-value equals half the
@@ -861,9 +864,9 @@ class TestAnsari:
         # compliment.
         x1 = xp.asarray(stats.norm.rvs(0, 2, size=60, random_state=123))
         x2 = xp.asarray(stats.norm.rvs(0, 1.5, size=60, random_state=123))
-        pval = stats.ansari(x1, x2).pvalue
-        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
-        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        pval = stats.ansari(x1, x2, method='asymptotic').pvalue
+        pval_l = stats.ansari(x1, x2, alternative='less', method='asymptotic').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater', method='asymptotic').pvalue
         xp_assert_close(pval_g, pval/2, atol=1e-12)
         xp_assert_close(pval_l, 1-pval/2, atol=1e-12)
 
@@ -871,13 +874,74 @@ class TestAnsari:
     @pytest.mark.parametrize('n', [10, 100])  # affects code path
     @pytest.mark.parametrize('ties', [False, True])  # affects code path
     def test_dtypes(self, dtype, n, ties, xp):
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        if is_jax(xp) and dtype != 'float64':
+            pytest.xfail("p-value calculation works natively with 'float64 only")
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(78587342806484)
         x, y = rng.integers(6, size=(2, n)) if ties else rng.random(size=(2, n))
-        ref = stats.ansari(x, y)
-        res = stats.ansari(xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype))
+        method = {'method': 'exact' if ((n <= 55) and not ties) else 'asymptotic'}
+        ref = stats.ansari(x, y, **method)
+        res = stats.ansari(xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype),
+                           **method)
         xp_assert_close(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
+
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_permutation_method(self, alternative, xp):
+        # test that permutation test can reproduce results of method='exact',
+        # but can also be configured to perform randomized test
+        rng = np.random.default_rng(6123643029)
+        x = xp.asarray(rng.random(7).tolist())
+        y = xp.asarray(rng.random(6).tolist())
+        res = stats.ansari(x, y, alternative=alternative,
+                           method=stats.PermutationMethod(rng=rng))
+        ref = stats.ansari(x, y, alternative=alternative, method='exact')
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue))
+
+        if not is_lazy_array(x):  # randomized permutation test has side-effects
+            res = stats.ansari(x, y, alternative=alternative,
+                               method=stats.PermutationMethod(rng=rng, n_resamples=99))
+            xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+            assert res.pvalue != ref.pvalue
+            assert res.pvalue == xp.round(res.pvalue*100)/100  # 99+1 in denominator
+
+    def test_method(self, xp):
+        # test that `method` selection works and 'auto' behaves as expected
+        # expected p-values computed with `ansari.test` (R)
+        # e.g. `ansari.test(x, y, exact=False)`
+        rng = np.random.default_rng(6123643029)
+
+        if is_jax(xp):
+            message = "`method` must be 'exact', 'asymptotic', or an instance..."
+            with pytest.raises(ValueError, match=message):
+                stats.ansari(xp.zeros(4), xp.ones(5))
+            return
+
+        # default is exact, but asymptotic can be selected
+        x = xp.asarray(rng.random(54).tolist())
+        y = xp.asarray(rng.random(54).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='exact')
+        res3 = stats.ansari(x, y, method='asymptotic')
+        xp_assert_close(res1.pvalue, res2.pvalue)
+        xp_assert_close(res3.pvalue, xp.asarray(0.01259674075933))
+
+        # default is asymptotic, but exact can be selected
+        x = xp.asarray(rng.random(55).tolist())
+        y = xp.asarray(rng.random(55).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='asymptotic')
+        res3 = stats.ansari(x, y, method='exact')
+        xp_assert_close(res1.pvalue, res2.pvalue)
+        xp_assert_close(res3.pvalue, xp.asarray(0.7613489076855))
+
+        # default is asymptotic because of ties
+        x = xp.asarray(rng.integers(10, size=20).tolist())
+        y = xp.asarray(rng.integers(10, size=20).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='asymptotic')
+        xp_assert_close(res1.pvalue, res2.pvalue)
 
 
 @make_xp_test_case(stats.bartlett)
@@ -1087,7 +1151,7 @@ class TestBinomTest:
                               alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-12)
         xp_assert_equal(res.statistic, xp.asarray(0.2, dtype=dtype))
-        ci = res.proportion_ci(confidence_level=0.95)
+        ci = res.proportion_ci(confidence_level=xp.asarray(0.95, dtype=dtype))
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-12)
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-12)
 
@@ -1107,7 +1171,7 @@ class TestBinomTest:
                               alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
         xp_assert_equal(res.statistic, xp.asarray(0.06, dtype=dtype))
-        ci = res.proportion_ci(confidence_level=0.99)
+        ci = res.proportion_ci(confidence_level=xp.asarray(0.99, dtype=dtype))
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
 
@@ -1124,7 +1188,7 @@ class TestBinomTest:
         res = stats.binomtest(0, n=10, p=xp.asarray(0.25, dtype=dtype),
                               alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
-        ci = res.proportion_ci(confidence_level=0.95)
+        ci = res.proportion_ci(confidence_level=xp.asarray(0.95, dtype=dtype))
         xp_assert_equal(ci.low, xp.asarray(0.0, dtype=dtype))
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
 
@@ -1141,7 +1205,7 @@ class TestBinomTest:
         res = stats.binomtest(10, n=10, p=xp.asarray(0.25, dtype=dtype),
                               alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
-        ci = res.proportion_ci(confidence_level=0.95)
+        ci = res.proportion_ci(confidence_level=xp.asarray(0.95, dtype=dtype))
         xp_assert_equal(ci.high, xp.asarray(1.0, dtype=dtype))
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
 
@@ -1185,6 +1249,7 @@ class TestBinomTest:
             method = 'wilsoncc'
         else:
             method = 'wilson'
+        conf = xp.asarray(conf, dtype=dtype)
         ci = res.proportion_ci(confidence_level=conf, method=method)
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
@@ -1252,6 +1317,10 @@ class TestBinomTest:
         xp_assert_equal(res.low, ref.low)
         xp_assert_equal(res.high, ref.high)
 
+    @pytest.mark.xfail_xp_backends(
+        "array_api_strict",
+        reason="https://github.com/data-apis/array-api-strict/pull/223",
+    )
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("method", ['exact', 'wilson', 'wilsoncc'])
@@ -1262,7 +1331,7 @@ class TestBinomTest:
         n = xp.asarray(11, dtype=dtype)
         p = xp.asarray(0.4, dtype=dtype)
         if is_jax(xp) and alternative=='two-sided':
-            message = "`alternative='two-sided' is incompatible with JAX arrays."
+            message = "`alternative='two-sided'` is incompatible with JAX arrays."
             with pytest.raises(ValueError, match=message):
                 stats.binomtest(k, n, p)
             return
@@ -1272,15 +1341,24 @@ class TestBinomTest:
 
         xp_assert_close(res.statistic, xp.asarray(float(ref.statistic), dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(float(ref.pvalue), dtype=dtype))
-        xp_assert_close(res.n, xp.asarray(float(ref.n), dtype=dtype))
-        xp_assert_close(res.k, xp.asarray(float(ref.k), dtype=dtype))
+
+        if res.statistic.ndim == 0:
+            if not is_lazy_array(res.n):
+                assert isinstance(res.n, int)
+                assert isinstance(res.k, int)
+            assert res.n == ref.n
+            assert res.k == ref.k
+        else:
+            xp_assert_close(res.n, xp.asarray(int(ref.n)))
+            xp_assert_close(res.k, xp.asarray(int(ref.k)))
 
         if (is_array_api_strict(xp) or is_jax(xp)) and method == 'exact':
             # array API strict and JAX don't support exact CI right now
             return
 
-        res = res.proportion_ci(method=method)
-        ref = ref.proportion_ci(method=method)
+        confidence_level = xp.asarray(0.95, dtype=dtype)
+        res = res.proportion_ci(method=method, confidence_level=confidence_level)
+        ref = ref.proportion_ci(method=method, confidence_level=0.95)
 
         xp_assert_close(res.low, xp.asarray(float(ref.low), dtype=dtype))
         xp_assert_close(res.high, xp.asarray(float(ref.high), dtype=dtype))
@@ -1295,7 +1373,7 @@ class TestBinomTest:
         p = rng.uniform(-0.1, 1.1, size=shape)
 
         if is_jax(xp) and alternative=='two-sided':
-            pytest.skip("`alternative='two-sided' is incompatible with JAX arrays.")
+            pytest.skip("`alternative='two-sided'` is incompatible with JAX arrays.")
 
         res = stats.binomtest(xp.asarray(k), xp.asarray(n), xp.asarray(p),
                               alternative=alternative)
@@ -1321,6 +1399,151 @@ class TestBinomTest:
         xp_assert_close(ci.low, xp.asarray(ci_low))
         xp_assert_close(ci.high, xp.asarray(ci_high))
 
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest(self, xp):
+        # precision tests compared to R for ticket:986
+        pp = xp.concat((xp.linspace(0.1, 0.2, 5),
+                        xp.linspace(0.45, 0.65, 5),
+                        xp.linspace(0.85, 0.95, 5)))
+        n = 501
+        x = 450
+        results = [0.0, 0.0, 1.0159969301994141e-304,
+                   2.9752418572150531e-275, 7.7668382922535275e-250,
+                   2.3381250925167094e-099, 7.8284591587323951e-081,
+                   9.9155947819961383e-065, 2.8729390725176308e-050,
+                   1.7175066298388421e-037, 0.0021070691951093692,
+                   0.12044570587262322, 0.88154763174802508, 0.027120993063129286,
+                   2.6102587134694721e-006]
+
+        xp_assert_close(stats.binomtest(x, n, pp).pvalue, xp.asarray(results))
+
+        xp_assert_close(stats.binomtest(50, 100, xp.asarray(0.1)).pvalue,
+                        xp.asarray(5.8320387857343647e-024))
+
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest2(self, xp):
+        # test added for issue #2384
+        res2 = [
+            [1.0, 1.0],
+            [0.5, 1.0, 0.5],
+            [0.25, 1.00, 1.00, 0.25],
+            [0.125, 0.625, 1.000, 0.625, 0.125],
+            [0.0625, 0.3750, 1.0000, 1.0000, 0.3750, 0.0625],
+            [0.03125, 0.21875, 0.68750, 1.00000, 0.68750, 0.21875, 0.03125],
+            [0.015625, 0.125000, 0.453125, 1.000000, 1.000000, 0.453125, 0.125000,
+             0.015625],
+            [0.0078125, 0.0703125, 0.2890625, 0.7265625, 1.0000000, 0.7265625,
+             0.2890625, 0.0703125, 0.0078125],
+            [0.00390625, 0.03906250, 0.17968750, 0.50781250, 1.00000000,
+             1.00000000, 0.50781250, 0.17968750, 0.03906250, 0.00390625],
+            [0.001953125, 0.021484375, 0.109375000, 0.343750000, 0.753906250,
+             1.000000000, 0.753906250, 0.343750000, 0.109375000, 0.021484375,
+             0.001953125]
+        ]
+        for k in range(1, 11):
+            v = xp.arange(k+1, dtype=xp.float64)
+            res1 = stats.binomtest(v, k, 0.5).pvalue
+            xp_assert_close(res1, xp.asarray(res2[k-1], dtype=xp.float64))
+
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest3(self, xp):
+        # test added for issue #2384
+        # test when x == n*p and neighbors
+        v = xp.arange(1., 11.)[:, xp.newaxis]
+        k = xp.arange(2., 11.)
+        shape = (v.shape[0], k.shape[0])
+
+        res3 = stats.binomtest(v, v*k, 1./k).pvalue
+        xp_assert_close(res3, xp.ones(shape))
+
+        # > bt=c()
+        # > for(i in as.single(1:10)) {
+        # +     for(k in as.single(2:10)) {
+        # +         bt = c(bt, binom.test(i-1, k*i,(1/k))$p.value);
+        # +         print(c(i+1, k*i,(1/k)))
+        # +     }
+        # + }
+        binom_testm1 = xp.asarray([
+             0.5, 0.5555555555555556, 0.578125, 0.5904000000000003,
+             0.5981224279835393, 0.603430543396034, 0.607304096221924,
+             0.610255656871054, 0.612579511000001, 0.625, 0.670781893004115,
+             0.68853759765625, 0.6980101120000006, 0.703906431368616,
+             0.70793209416498, 0.7108561134173507, 0.713076544331419,
+             0.714820192935702, 0.6875, 0.7268709038256367, 0.7418963909149174,
+             0.74986110468096, 0.7548015520398076, 0.7581671424768577,
+             0.760607984787832, 0.762459425024199, 0.7639120677676575, 0.7265625,
+             0.761553963657302, 0.774800934828818, 0.7818005980538996,
+             0.78613491480358, 0.789084353140195, 0.7912217659828884,
+             0.79284214559524, 0.794112956558801, 0.75390625, 0.7856929451142176,
+             0.7976688481430754, 0.8039848974727624, 0.807891868948366,
+             0.8105487660137676, 0.812473307174702, 0.8139318233591120,
+             0.815075399104785, 0.7744140625, 0.8037322594985427,
+             0.814742863657656, 0.8205425178645808, 0.8241275984172285,
+             0.8265645374416, 0.8283292196088257, 0.829666291102775,
+             0.8307144686362666, 0.7905273437499996, 0.8178712053954738,
+             0.828116983756619, 0.833508948940494, 0.8368403871552892,
+             0.839104213210105, 0.840743186196171, 0.84198481438049,
+             0.8429580531563676, 0.803619384765625, 0.829338573944648,
+             0.8389591907548646, 0.84401876783902, 0.84714369697889,
+             0.8492667010581667, 0.850803474598719, 0.851967542858308,
+             0.8528799045949524, 0.8145294189453126, 0.838881732845347,
+             0.847979024541911, 0.852760894015685, 0.8557134656773457,
+             0.8577190131799202, 0.85917058278431, 0.860270010472127,
+             0.861131648404582, 0.823802947998047, 0.846984756807511,
+             0.855635653643743, 0.860180994825685, 0.86298688573253,
+             0.864892525675245, 0.866271647085603, 0.867316125625004,
+             0.8681346531755114
+            ])
+
+        # > bt=c()
+        # > for(i in as.single(1:10)) {
+        # +     for(k in as.single(2:10)) {
+        # +         bt = c(bt, binom.test(i+1, k*i,(1/k))$p.value);
+        # +         print(c(i+1, k*i,(1/k)))
+        # +     }
+        # + }
+
+        binom_testp1 = xp.asarray([
+             0.5, 0.259259259259259, 0.26171875, 0.26272, 0.2632244513031551,
+             0.2635138663069203, 0.2636951804161073, 0.2638162407564354,
+             0.2639010709000002, 0.625, 0.4074074074074074, 0.42156982421875,
+             0.4295746560000003, 0.43473045988554, 0.4383309503172684,
+             0.4409884859402103, 0.4430309389962837, 0.444649849401104, 0.6875,
+             0.4927602499618962, 0.5096031427383425, 0.5189636628480,
+             0.5249280070771274, 0.5290623300865124, 0.5320974248125793,
+             0.5344204730474308, 0.536255847400756, 0.7265625, 0.5496019313526808,
+             0.5669248746708034, 0.576436455045805, 0.5824538812831795,
+             0.5866053321547824, 0.589642781414643, 0.5919618019300193,
+             0.593790427805202, 0.75390625, 0.590868349763505, 0.607983393277209,
+             0.617303847446822, 0.623172512167948, 0.627208862156123,
+             0.6301556891501057, 0.632401894928977, 0.6341708982290303,
+             0.7744140625, 0.622562037497196, 0.639236102912278, 0.648263335014579,
+             0.65392850011132, 0.657816519817211, 0.660650782947676,
+             0.662808780346311, 0.6645068560246006, 0.7905273437499996,
+             0.6478843304312477, 0.6640468318879372, 0.6727589686071775,
+             0.6782129857784873, 0.681950188903695, 0.684671508668418,
+             0.686741824999918, 0.688369886732168, 0.803619384765625,
+             0.668716055304315, 0.684360013879534, 0.6927642396829181,
+             0.6980155964704895, 0.701609591890657, 0.7042244320992127,
+             0.7062125081341817, 0.707775152962577, 0.8145294189453126,
+             0.686243374488305, 0.7013873696358975, 0.709501223328243,
+             0.714563595144314, 0.718024953392931, 0.7205416252126137,
+             0.722454130389843, 0.723956813292035, 0.823802947998047,
+             0.701255953767043, 0.715928221686075, 0.723772209289768,
+             0.7286603031173616, 0.7319999279787631, 0.7344267920995765,
+             0.736270323773157, 0.737718376096348
+            ])
+
+        k, v = xp.asarray(k, dtype=xp.float64), xp.asarray(v, dtype=xp.float64)
+        binom_testp1 = xp.reshape(xp.asarray(binom_testp1, dtype=xp.float64), shape)
+        binom_testm1 = xp.reshape(xp.asarray(binom_testm1, dtype=xp.float64), shape)
+
+        res4_p1 = stats.binomtest(v+1, v*k, 1./k).pvalue
+        res4_m1 = stats.binomtest(v-1, v*k, 1./k).pvalue
+
+        xp_assert_close(res4_p1, binom_testp1)
+        xp_assert_close(res4_m1, binom_testm1)
+
 
 @make_xp_test_case(stats.fligner)
 class TestFligner:
@@ -1333,7 +1556,7 @@ class TestFligner:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_data(self, dtype, xp):
         # numbers from R: fligner.test in package stats
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x1 = xp.arange(5, dtype=dtype)
         res = stats.fligner(x1, x1**2)
         ref = (xp.asarray(3.2282229927203536, dtype=dtype),
@@ -1356,8 +1579,7 @@ class TestFligner:
         xp_assert_close(Xsq1, Xsq2)
         xp_assert_close(pval1, pval2)
 
-    @pytest.mark.skip_xp_backends(np_only=True,
-                                  reason="inconsistent tie-breaking across backends")
+    @skip_xp_backends(np_only=True, reason="inconsistent tie-breaking across backends")
     def test_trimmed_nonregression(self, xp):
         # This is a non-regression test
         # Expected results are *not* from an external gold standard,
@@ -1427,7 +1649,7 @@ def mood_cases_with_ties():
 @make_xp_test_case(stats.mood)
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
-                             mood_cases_with_ties())
+                             list(mood_cases_with_ties()))
     def test_against_SAS(self, x, y, alternative, stat_expect, p_expect, xp):
         """
         Example code used to generate SAS output:
@@ -1471,7 +1693,7 @@ class TestMood:
                                            .1538788064889380))])
     def test_against_SAS_2(self, dtype, alternative, expected, xp):
         # Code to run in SAS in above function
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
              101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
         y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
@@ -1589,7 +1811,7 @@ class TestMood:
 
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     def test_mood_alternative(self, dtype, xp):
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
 
         rng = np.random.RandomState(0)
         x = stats.norm.rvs(scale=0.75, size=100, random_state=rng)
@@ -1982,7 +2204,7 @@ class TestWilcoxon:
         xp_assert_equal(stats.wilcoxon(d, method="asymptotic").pvalue, xp.asarray(p))
 
     @pytest.mark.xslow
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @skip_xp_backends("jax.numpy", reason="lazy -> limited `method` choices")
     def test_auto_permutation_edge_case(self, xp):
         # Check that `PermutationMethod()` is used and results are deterministic when
         # `method='auto'`, there are zeros or ties in `d = x-y`, and `len(d) <= 13`.
@@ -2006,7 +2228,7 @@ class TestWilcoxon:
         x = rng.random(size=size).tolist()
         res = stats.wilcoxon(xp.asarray(x), method=stats.PermutationMethod())
         ref = stats.wilcoxon(x, method='exact')  # all backends test against NumPy
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         xp_assert_equal(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
         xp_assert_equal(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
 
@@ -2783,7 +3005,7 @@ class TestBoxcoxNormmax(NormmaxTest):
 
         res = stats.boxcox_normmax(x, method='all', nan_policy='omit')
         ref = stats.boxcox_normmax(x[~np.isnan(x)], method='all')
-        np.testing.assert_allclose(res, ref)
+        np.testing.assert_allclose(res, ref, rtol=2e-7)
 
 
 class TestBoxcoxNormplot:
@@ -3150,7 +3372,7 @@ class TestCircFuncs:
     @pytest.mark.parametrize('circfunc', [stats.circmean,
                                           stats.circvar,
                                           stats.circstd])
-    def test_circmean_axis(self, xp, circfunc):
+    def test_circmean_axis(self, circfunc, xp):
         x = xp.asarray([[355, 5, 2, 359, 10, 350],
                         [351, 7, 4, 352, 9, 349],
                         [357, 9, 8, 358, 4, 356.]])
@@ -3353,134 +3575,167 @@ class TestCircFuncsNanPolicy:
         assert_raises(ValueError, test_func, x, high=360, nan_policy='foobar')
 
 
+@make_xp_test_case(stats.median_test)
 class TestMedianTest:
 
-    def test_bad_n_samples(self):
-        # median_test requires at least two samples.
-        assert_raises(ValueError, stats.median_test, [1, 2, 3])
+    def test_bad_n_samples(self, xp):
+        message = "median_test requires two or more samples."
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(xp.asarray([1, 2, 3]))
 
-    def test_empty_sample(self):
+    def test_empty_sample(self, xp):
         # Each sample must contain at least one value.
-        assert_raises(ValueError, stats.median_test, [], [1, 2, 3])
+        message = "All axis-slices of one or more sample arguments..."
+        x = xp.asarray([])
+        y = xp.asarray([1, 2, 3])
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.median_test(x, y)
+        nan = xp.asarray(xp.nan, dtype=x.dtype)
+        xp_assert_equal(res.statistic, nan)
+        xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
-    def test_empty_when_ties_ignored(self):
+    @skip_xp_backends("jax.numpy", reason="JAX can't branch based on array values")
+    def test_empty_when_ties_ignored(self, xp):
         # The grand median is 1, and all values in the first argument are
         # equal to the grand median.  With ties="ignore", those values are
         # ignored, which results in the first sample being (in effect) empty.
         # This should raise a ValueError.
-        assert_raises(ValueError, stats.median_test,
-                      [1, 1, 1, 1], [2, 0, 1], [2, 0], ties="ignore")
+        x = xp.asarray([1, 1, 1, 1])
+        y = xp.asarray([2, 0, 1])
+        z = xp.asarray([2, 0])
+        with pytest.raises(ValueError, match="All values in sample..."):
+            stats.median_test(x, y, z, ties="ignore")
 
-    def test_empty_contingency_row(self):
+    @skip_xp_backends("jax.numpy", reason="JAX can't branch based on array values")
+    @pytest.mark.parametrize("ties", ['below', 'above'])
+    def test_empty_contingency_row(self, ties, xp):
         # The grand median is 1, and with the default ties="below", all the
         # values in the samples are counted as being below the grand median.
         # This would result a row of zeros in the contingency table, which is
         # an error.
-        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1])
+        x = xp.ones(3)
+        with pytest.raises(match=f"All values are {ties} the grand median"):
+            stats.median_test(x, x, ties=ties)
 
-        # With ties="above", all the values are counted as above the
-        # grand median.
-        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1],
-                      ties="above")
+    def test_bad_ties_nan_policy(self, xp):
+        x, y = xp.asarray([1, 2, 3]), xp.asarray([4, 5])
+        message = "invalid 'ties' option 'foo'..."
 
-    def test_bad_ties(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
-                      ties="foo")
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(x, y, ties="foo")
 
-    def test_bad_nan_policy(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
-                      nan_policy='foobar')
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(x, y, nan_policy="foobar")
 
-    def test_bad_keyword(self):
-        assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5],
-                      foo="foo")
-
-    def test_simple(self):
-        x = [1, 2, 3]
-        y = [1, 2, 3]
+    def test_simple(self, xp):
+        x = xp.asarray([1., 2., 3.])
+        y = xp.asarray([1., 2., 3.])
         stat, p, med, tbl = stats.median_test(x, y)
 
         # The median is floating point, but this equality test should be safe.
-        assert_equal(med, 2.0)
+        xp_assert_equal(med, xp.asarray(2.0))
 
-        assert_array_equal(tbl, [[1, 1], [2, 2]])
+        xp_assert_equal(tbl, xp.asarray([[1, 1], [2, 2]], dtype=xp.int64))
 
         # The expected values of the contingency table equal the contingency
         # table, so the statistic should be 0 and the p-value should be 1.
-        assert_equal(stat, 0)
-        assert_equal(p, 1)
+        xp_assert_equal(stat, xp.asarray(0.))
+        xp_assert_equal(p, xp.asarray(1.))
 
-    def test_ties_options(self):
+    def test_ties_options(self, xp):
         # Test the contingency table calculation.
-        x = [1, 2, 3, 4]
-        y = [5, 6]
-        z = [7, 8, 9]
+        x = xp.asarray([1., 2., 3., 4.])
+        y = xp.asarray([5., 6.])
+        z = xp.asarray([7., 8., 9.])
         # grand median is 5.
 
         # Default 'ties' option is "below".
         stat, p, m, tbl = stats.median_test(x, y, z)
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 1, 3], [4, 1, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 1, 0]], dtype=xp.int64))
 
         stat, p, m, tbl = stats.median_test(x, y, z, ties="ignore")
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 1, 3], [4, 0, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 1, 3], [4, 0, 0]], dtype=xp.int64))
 
         stat, p, m, tbl = stats.median_test(x, y, z, ties="above")
-        assert_equal(m, 5)
-        assert_equal(tbl, [[0, 2, 3], [4, 0, 0]])
+        xp_assert_equal(m, xp.asarray(5.))
+        xp_assert_equal(tbl, xp.asarray([[0, 2, 3], [4, 0, 0]], dtype=xp.int64))
 
-    def test_nan_policy_options(self):
-        x = [1, 2, np.nan]
-        y = [4, 5, 6]
-        mt1 = stats.median_test(x, y, nan_policy='propagate')
+    def test_nan_policy_options(self, xp):
+        x = xp.asarray([1., 2., np.nan])
+        y = xp.asarray([4., 5., 6.])
+
+        s, p, m, t = stats.median_test(x, y, nan_policy='propagate')
+        nan = xp.asarray(xp.nan)
+        xp_assert_equal(s, nan)
+        xp_assert_equal(p, nan)
+        xp_assert_equal(m, nan)
+        xp_assert_equal(t, xp.asarray([[0, 0], [0, 0]], dtype=xp.int64))
+
+        if is_lazy_array(x):
+            message = "nan_policy='omit' is not supported for lazy arrays."
+            with pytest.raises(TypeError, match=message):
+                stats.median_test(x, y, nan_policy='omit')
+
+            message = "nan_policy='raise' is not supported for lazy arrays."
+            with pytest.raises(TypeError, match=message):
+                stats.median_test(x, y, nan_policy='raise')
+
+            return
+
         s, p, m, t = stats.median_test(x, y, nan_policy='omit')
+        xp_assert_close(s, xp.asarray(0.31250000000000006))
+        xp_assert_close(p, xp.asarray(0.57615012203057869))
+        xp_assert_equal(m, xp.asarray(4.0))
+        xp_assert_equal(t, xp.asarray([[0, 2], [2, 1]], dtype=xp.int64))
 
-        assert_equal(mt1, (np.nan, np.nan, np.nan, None))
-        assert_allclose(s, 0.31250000000000006)
-        assert_allclose(p, 0.57615012203057869)
-        assert_equal(m, 4.0)
-        assert_equal(t, np.array([[0, 2], [2, 1]]))
-        assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(x, y, nan_policy='raise')
 
-    def test_basic(self):
+    @pytest.mark.parametrize('kwargs', [{}, {'lambda_': 0}, {'correction': False}])
+    def test_basic(self, kwargs, xp):
         # median_test calls chi2_contingency to compute the test statistic
         # and p-value.  Make sure it hasn't screwed up the call...
 
-        x = [1, 2, 3, 4, 5]
-        y = [2, 4, 6, 8]
+        x = xp.asarray([1., 2., 3., 4., 5.])
+        y = xp.asarray([2., 4., 6., 8.])
 
-        stat, p, m, tbl = stats.median_test(x, y)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
-
-        stat, p, m, tbl = stats.median_test(x, y, lambda_=0)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, lambda_=0)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
-
-        stat, p, m, tbl = stats.median_test(x, y, correction=False)
-        assert_equal(m, 4)
-        assert_equal(tbl, [[1, 2], [4, 2]])
-
-        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
-        assert_allclose(stat, exp_stat)
-        assert_allclose(p, exp_p)
+        stat, p, m, tbl = stats.median_test(x, y, **kwargs)
+        exp_stat, exp_p = _chi2_contingency_2d(tbl, **kwargs)
+        xp_assert_equal(m, xp.asarray(4.))
+        xp_assert_equal(tbl, xp.asarray([[1, 2], [4, 2]], dtype=xp.int64))
+        xp_assert_close(stat, exp_stat)
+        xp_assert_close(p, exp_p)
 
     @pytest.mark.parametrize("correction", [False, True])
-    def test_result(self, correction):
-        x = [1, 2, 3]
-        y = [1, 2, 3]
+    def test_result(self, correction, xp):
+        x = xp.asarray([1, 2, 3])
+        res = stats.median_test(x, x, correction=correction)
+        assert res.statistic is res[0]
+        assert res.pvalue is res[1]
+        assert res.median is res[2]
+        assert res.table is res[3]
 
-        res = stats.median_test(x, y, correction=correction)
-        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_multidimensional(self, dtype, xp):
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(723482348929883)
+        x = rng.random((3, 15))
+        y = rng.random(16)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+
+        res = stats.median_test(x, y)
+        for i in range(3):
+            xi = x[i, ...]
+            ref = stats.median_test(xi, y)
+            xp_assert_close(res.statistic[i], ref.statistic)
+            xp_assert_close(res.pvalue[i], ref.pvalue)
+            xp_assert_close(res.median[i], ref.median)
+            xp_assert_equal(res.table[i, ...], ref.table)
 
 
 @make_xp_test_case(stats.directional_stats)

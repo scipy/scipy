@@ -424,7 +424,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Define stop criteria
     if method == 'equality_constrained_sqp':
-        def stop_criteria(state, x, last_iteration_failed,
+        def stop_criteria_sqp(state, x, last_iteration_failed,
                           optimality, constr_violation,
                           tr_radius, constr_penalty, cg_info):
             state = update_state_sqp(state, x, last_iteration_failed,
@@ -468,7 +468,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
-        def stop_criteria(state, x, last_iteration_failed, tr_radius,
+        def stop_criteria_tr(state, x, last_iteration_failed, tr_radius,
                           constr_penalty, cg_info, barrier_parameter,
                           barrier_tolerance):
             state = update_state_ip(state, x, last_iteration_failed,
@@ -538,7 +538,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             fun_and_constr, grad_and_jac, lagrangian_hess,
             x0, objective.f, objective.g,
             c_eq0, J_eq0,
-            stop_criteria, state,
+            stop_criteria_sqp, state,
             initial_constr_penalty, initial_tr_radius,
             factorization_method)
 
@@ -549,7 +549,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             canonical.fun, canonical.jac,
             x0, objective.f, objective.g,
             c_ineq0, J_ineq0, c_eq0, J_eq0,
-            stop_criteria,
+            stop_criteria_tr,
             canonical.keep_feasible,
             xtol, state, initial_barrier_parameter,
             initial_barrier_tolerance,

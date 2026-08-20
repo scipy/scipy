@@ -1,0 +1,90 @@
+==========================
+SciPy 1.17.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.17.1 is a bug-fix release with no new features
+compared to 1.17.0.
+
+
+
+Authors
+=======
+* Name (commits)
+* Evgeni Burovski (5)
+* Lucas Colley (1)
+* Christoph Gohlke (1)
+* Ralf Gommers (6)
+* Matt Haberland (5)
+* Matthias Koeppe (1)
+* Nick ODell (1)
+* Ilhan Polat (10)
+* Tyler Reddy (44)
+* Martin Schuck (3)
+* Dan Schult (3)
+* stratakis (1) +
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (1)
+
+    A total of 13 people contributed to this release.
+    People with a "+" by their names contributed a patch for the first time.
+    This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.17.1
+------------------------
+
+* `#22819 <https://github.com/scipy/scipy/issues/22819>`__: BUG: ``stats.qmc.PoissonDisk``\ : overlapping sampling for negative...
+* `#23215 <https://github.com/scipy/scipy/issues/23215>`__: BUG: optimize.direct: memory leak while returning from user function
+* `#23612 <https://github.com/scipy/scipy/issues/23612>`__: BUG: optimize: crash in win-arm64 CI job in ``optimize.root(method='lm')``
+* `#24141 <https://github.com/scipy/scipy/issues/24141>`__: BUG: ``milp`` solver claims optimality but returns an infeasible...
+* `#24208 <https://github.com/scipy/scipy/issues/24208>`__: BUG: ndimage: uninitialized variable "icoor" in NI_GeometricTransform
+* `#24339 <https://github.com/scipy/scipy/issues/24339>`__: BUG: sparse: Sparse array slicing (CSC Matrix) seemingly initializes...
+* `#24345 <https://github.com/scipy/scipy/issues/24345>`__: BUG: linalg.solve: ``overwrite_b=True`` ignored in 1.17.0
+* `#24354 <https://github.com/scipy/scipy/issues/24354>`__: BUG: spatial: ``Rotation.from_quat``\ : fails with read-only...
+* `#24355 <https://github.com/scipy/scipy/issues/24355>`__: BUG: linalg solve behavior change breaking downstream tests
+* `#24358 <https://github.com/scipy/scipy/issues/24358>`__: BUG: ``sparse.linalg.eigs`` results differ in``1.17.0``
+* `#24359 <https://github.com/scipy/scipy/issues/24359>`__: BUG: calculation of inverse is wrong in scipy 1.17.0
+* `#24366 <https://github.com/scipy/scipy/issues/24366>`__: BUG: ``sparse.linalg.expm`` incorrect for some inputs since 1.17.0
+* `#24378 <https://github.com/scipy/scipy/issues/24378>`__: BUG: RigidTransform.from_matrix doesn't allow read-only arrays
+* `#24382 <https://github.com/scipy/scipy/issues/24382>`__: BUG: ``scipy.signal.zpk2tf`` yield incorrect results with complex/non-integer...
+* `#24403 <https://github.com/scipy/scipy/issues/24403>`__: BUG: integrate.dop: C dop implementation not calculating max...
+* `#24406 <https://github.com/scipy/scipy/issues/24406>`__: BUG: Regression in 1.17.0: generate_f2py mod is called by the...
+* `#24436 <https://github.com/scipy/scipy/issues/24436>`__: BUG: _quat become a MemoryView of 'ndarray' object after applying...
+* `#24508 <https://github.com/scipy/scipy/issues/24508>`__: BUG: ``linalg.sqrtm`` does not issue warning on sigularity at...
+* `#24555 <https://github.com/scipy/scipy/issues/24555>`__: BUG: spatial.transform.Rotation.from_mrp: leaked Cython memoryview
+* `#24574 <https://github.com/scipy/scipy/issues/24574>`__: BUG: scipy.stats.gengamma.logpdf ValueError when c < 0 and 0...
+* `#24629 <https://github.com/scipy/scipy/issues/24629>`__: MAINT: CI failures with new ``pydata/sparse`` release
+
+Pull requests for 1.17.1
+------------------------
+
+* `#24253 <https://github.com/scipy/scipy/pull/24253>`__: MAINT: update HiGHS subproject to v1.12.0
+* `#24275 <https://github.com/scipy/scipy/pull/24275>`__: MAINT: Fix heap-buffer-overflow in ``scipy.interpolate._dierckx.qr_reduce_period``...
+* `#24323 <https://github.com/scipy/scipy/pull/24323>`__: MAINT:optimize: Fix an off-by-one error in MINPACK and re-enable...
+* `#24332 <https://github.com/scipy/scipy/pull/24332>`__: DOC: set ``SCIPY_ARRAY_API`` in notebook, not globally
+* `#24338 <https://github.com/scipy/scipy/pull/24338>`__: REL, MAINT: prepare for SciPy 1.17.1
+* `#24352 <https://github.com/scipy/scipy/pull/24352>`__: BLD: Fix building on win32
+* `#24367 <https://github.com/scipy/scipy/pull/24367>`__: BUG: linalg: fix ``inv``\ , ``solve`` for complex symmetric inputs
+* `#24370 <https://github.com/scipy/scipy/pull/24370>`__: BUG: spatial.transform.Rotation.from_quat: handle ``const`` ``np``...
+* `#24371 <https://github.com/scipy/scipy/pull/24371>`__: MAINT:sparse.linalg: Fix a persistent state propagation issue...
+* `#24380 <https://github.com/scipy/scipy/pull/24380>`__: BUG: spatial.transform.RigidTransform.from_matrix: handle ``const``...
+* `#24384 <https://github.com/scipy/scipy/pull/24384>`__: MAINT: optimize: Fix memory leaks in DIRECT solver and extension...
+* `#24385 <https://github.com/scipy/scipy/pull/24385>`__: BUG: signal: fix zpk2tf with non-integer gain
+* `#24386 <https://github.com/scipy/scipy/pull/24386>`__: BUG: linalg/solve: raise errors for "singular" matrices of one...
+* `#24399 <https://github.com/scipy/scipy/pull/24399>`__: MAINT: stats.PoissonDisk: fix "overlapping" sampling when using...
+* `#24404 <https://github.com/scipy/scipy/pull/24404>`__: BUG:integrate:Fix a pointer dereference problem in DOPRI5
+* `#24407 <https://github.com/scipy/scipy/pull/24407>`__: BLD: tools/generate_f2pymod.py: Do not try to invoke f2py via...
+* `#24440 <https://github.com/scipy/scipy/pull/24440>`__: BUG: spatial.transform: Fix leaking MemoryViews from cy backend
+* `#24442 <https://github.com/scipy/scipy/pull/24442>`__: ENH: linalg/inv: re-enable overwrite_a for 2D inputs
+* `#24453 <https://github.com/scipy/scipy/pull/24453>`__: BUG: ndimage: Initialize icoor array in ``NI_GeometricTransform``
+* `#24499 <https://github.com/scipy/scipy/pull/24499>`__: BUG: sparse: Fix CSR/C index broadcasting
+* `#24507 <https://github.com/scipy/scipy/pull/24507>`__: BUG: linalg: restore backwards compatibility with dtypes in inv,...
+* `#24511 <https://github.com/scipy/scipy/pull/24511>`__: BUG: sparse: Fix CSR/C index broadcasting part 2
+* `#24537 <https://github.com/scipy/scipy/pull/24537>`__: TST: decrease resource usage (file handles, memory) of import...
+* `#24558 <https://github.com/scipy/scipy/pull/24558>`__: BUG:linalg: Improve linalg.sqrtm singularity catching logic
+* `#24564 <https://github.com/scipy/scipy/pull/24564>`__: BUG: spatial.transform.Rotation.from_mrp: fix leaking Cython...
+* `#24573 <https://github.com/scipy/scipy/pull/24573>`__: ENH: stats.DiscreteDistribution.icdf/iccdf: improve performance...
+* `#24576 <https://github.com/scipy/scipy/pull/24576>`__: MAINT: stats.gengamma.logpdf: fix broadcasting bug
+* `#24607 <https://github.com/scipy/scipy/pull/24607>`__: ENH: stats.DiscreteDistribution: entropy speedup
+* `#24646 <https://github.com/scipy/scipy/pull/24646>`__: BUG: sparse: csgraph and superLU index dtype need 32bit

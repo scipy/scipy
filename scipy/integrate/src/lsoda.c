@@ -283,10 +283,11 @@ cfode(const int meth, double* elco, double* tesco)
 static void
 prja(
     int* neq, double* y, double* yh, int nyh, double* ewt, double* ftem, double* savf,
-    double* wm, int* iwm, lsoda_func_t f, lsoda_jac_t jac, lsoda_common_struct_t* S)
+    double* wm, CBLAS_INT* iwm, lsoda_func_t f, lsoda_jac_t jac, lsoda_common_struct_t* S)
 {
     (void)nyh;
-    int ier = 0, lenp, mba, mband, meband, ml, ml2, mu;
+    CBLAS_INT ier = 0;
+    int lenp, mba, mband, meband, ml, ml2, mu;
     S->nje += 1;
     S->ierpj = 0;
     S->jcur = 1;
@@ -358,7 +359,7 @@ prja(
         // 250
 
         // LU decomposition of P
-        dgetrf_(&S->n, &S->n, &wm[2], &S->n, &iwm[20], &ier);
+        BLAS_FUNC(dgetrf)(&(CBLAS_INT){S->n}, &(CBLAS_INT){S->n}, &wm[2], &(CBLAS_INT){S->n}, &iwm[20], &ier);
         if (ier != 0) { S->ierpj = 1; }
         return;
     }
@@ -446,7 +447,7 @@ prja(
     }
     // 580
     // LU decomposition of P
-    dgbtrf_(&S->n, &S->n, &ml, &mu, &wm[2], &meband, &iwm[20], &ier);
+    BLAS_FUNC(dgbtrf)(&(CBLAS_INT){S->n}, &(CBLAS_INT){S->n}, &(CBLAS_INT){ml}, &(CBLAS_INT){mu}, &wm[2], &(CBLAS_INT){meband}, &iwm[20], &ier);
     if (ier != 0) { S->ierpj = 1; }
     return;
 
@@ -479,15 +480,15 @@ prja(
  * This routine also uses the common variables el0, h, miter, and n.
  */
 static void
-solsy(double* wm, int* iwm, double* x, double* tem, lsoda_common_struct_t* S)
+solsy(double* wm, CBLAS_INT* iwm, double* x, double* tem, lsoda_common_struct_t* S)
 {
     (void)tem;  // tem is not used in this version
-    int int1 = 1, ierr = 0;
+    CBLAS_INT int1 = 1, ierr = 0;
     S->iersl = 0;
 
     if ((S->miter == 1) || (S->miter == 2))
     {
-        dgetrs_("N", &S->n, &int1, &wm[2], &S->n, &iwm[20], x, &S->n, &ierr);
+        BLAS_FUNC(dgetrs)("N", &(CBLAS_INT){S->n}, &int1, &wm[2], &(CBLAS_INT){S->n}, &iwm[20], x, &(CBLAS_INT){S->n}, &ierr);
         return;
     } else if (S->miter == 3) {
         double phl0 = wm[1];
@@ -514,10 +515,10 @@ solsy(double* wm, int* iwm, double* x, double* tem, lsoda_common_struct_t* S)
         }
         // 340
     } else if ((S->miter == 4) || (S->miter == 5)) {
-        int ml = iwm[0];
-        int mu = iwm[1];
+        int ml = (int)iwm[0];
+        int mu = (int)iwm[1];
         int meband = 2*ml + mu + 1;
-        dgbtrs_("N", &S->n, &ml, &mu, &int1, &wm[2], &meband, &iwm[20], x, &S->n, &ierr);
+        BLAS_FUNC(dgbtrs)("N", &(CBLAS_INT){S->n}, &(CBLAS_INT){ml}, &(CBLAS_INT){mu}, &int1, &wm[2], &(CBLAS_INT){meband}, &iwm[20], x, &(CBLAS_INT){S->n}, &ierr);
     }
 
     return;
@@ -661,7 +662,7 @@ typedef enum lsoda_corrector_status {
 static lsoda_corrector_status_t
 stoda_corrector_loop(
     int* neq, double* y, double* yh, int nyh, double* ewt,
-    double* savf, double* acor, double* wm, int* iwm, lsoda_func_t f,
+    double* savf, double* acor, double* wm, CBLAS_INT* iwm, lsoda_func_t f,
     lsoda_jac_t jac, double pnorm, int* m_out, double* del_out, lsoda_common_struct_t* S)
 {
     // Up to maxcor corrector iterations are taken. A convergence test is
@@ -926,7 +927,7 @@ stoda_get_predicted_values(lsoda_common_struct_t* S, double* yh1)
 static void
 stoda(
     int* neq, double* y, double* yh, int nyh, double* ewt,
-    double* savf, double* acor, double* wm, int* iwm, lsoda_func_t f,
+    double* savf, double* acor, double* wm, CBLAS_INT* iwm, lsoda_func_t f,
     lsoda_jac_t jac, lsoda_common_struct_t* S)
 {
     const double sm1[12] = {0.5, 0.575, 0.55, 0.45, 0.35, 0.25, 0.20, 0.15, 0.10, 0.075, 0.050, 0.025};
@@ -1606,7 +1607,7 @@ void lsoda_mark_error(int* istate, int* illin)
  */
 void lsoda(
     lsoda_func_t f, int neq, double* restrict y, double* t, double* tout, int itol, double* rtol, double* atol,
-    int* itask, int* istate, int* iopt, double* restrict rwork, int lrw, int* restrict iwork, int liw, lsoda_jac_t jac,
+    int* itask, int* istate, int* iopt, double* restrict rwork, int lrw, CBLAS_INT* restrict iwork, int liw, lsoda_jac_t jac,
     const int jt, lsoda_common_struct_t* S)
 {
 

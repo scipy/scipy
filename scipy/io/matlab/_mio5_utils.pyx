@@ -16,6 +16,7 @@ from copy import copy as pycopy
 
 cimport cython
 
+from libc.stdint cimport SIZE_MAX
 from libc.stdlib cimport calloc, free
 from libc.string cimport strcmp
 
@@ -596,7 +597,7 @@ cdef class VarReader5:
         # all miMATRIX types except the mxOPAQUE_CLASS have dims and a
         # name.
         if mc == mxOPAQUE_CLASS:
-            header.name = None
+            header.name = self.read_int8_string()
             header.dims = None
             return header
         header.n_dims = self.read_into_int32s(header.dims_ptr, sizeof(header.dims_ptr))
@@ -608,7 +609,7 @@ cdef class VarReader5:
         header.name = self.read_int8_string()
         return header
 
-    cdef inline size_t size_from_header(self, VarHeader5 header) noexcept:
+    cdef inline size_t size_from_header(self, VarHeader5 header) except *:
         ''' Supporting routine for calculating array sizes from header
 
         Probably unnecessary optimization that uses integers stored in
@@ -624,11 +625,24 @@ cdef class VarReader5:
         size : size_t
            size of array referenced by header (product of dims)
         '''
-        # calculate number of items in array from dims product
-        cdef size_t size = 1
-        cdef int i
+        # calculate number of items in array from dims product, with
+        # overflow / negative-dim guards against malformed input.
+        cdef:
+            size_t size = 1
+            size_t dim
+            cnp.int32_t d
+            int i
         for i in range(header.n_dims):
-            size *= header.dims_ptr[i]
+            d = header.dims_ptr[i]
+            if d < 0:
+                raise ValueError(
+                    'Negative dimension in array header '
+                    '(malformed input file?)')
+            dim = <size_t>d
+            if dim != 0 and size > SIZE_MAX // dim:
+                raise ValueError(
+                    'Array size overflow in header (malformed input file?)')
+            size *= dim
         return size
 
     cdef read_mi_matrix(self, int process=1):
@@ -986,8 +1000,7 @@ cdef class VarReader5:
         # Cython (0.23.4).
         res = np.empty((1,), dtype=OPAQUE_DTYPE)
         res0 = res[0]
-        res0['s0'] = self.read_int8_string()
-        res0['s1'] = self.read_int8_string()
-        res0['s2'] = self.read_int8_string()
-        res0['arr'] = self.read_mi_matrix()
+        res0['_TypeSystem'] = PyUnicode_FromString(self.read_int8_string())
+        res0['_Class'] = PyUnicode_FromString(self.read_int8_string())
+        res0['_ObjectMetadata'] = self.read_mi_matrix()
         return res

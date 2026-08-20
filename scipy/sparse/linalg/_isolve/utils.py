@@ -60,6 +60,8 @@ def make_system(A, M, x0, b):
     """
     A_ = A
     A = aslinearoperator(A)
+    if A.ndim > 2:
+        raise ValueError(f"{A.ndim}-dimensional `A` is unsupported, expected 2-D.")
 
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix, but got shape={(A.shape,)}')

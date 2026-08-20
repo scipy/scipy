@@ -104,7 +104,7 @@ class _data_matrix(_spbase):
         ----------
         n : scalar
             n is a non-zero scalar (nonzero avoids dense ones creation)
-            If zero power is desired, special case it to use `np.ones`
+            If zero power is desired, special case it to use `numpy.ones`
 
         dtype : dtype, optional
             If dtype is not specified, the current dtype will be preserved.

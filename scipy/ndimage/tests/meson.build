@@ -1,6 +1,7 @@
 python_sources = [
   '__init__.py',
   'dots.png',
+  'test_array_likes.py',
   'test_c_api.py',
   'test_datatypes.py',
   'test_filters.py',
@@ -9,7 +10,7 @@ python_sources = [
   'test_measurements.py',
   'test_morphology.py',
   'test_ni_support.py',
-  'test_splines.py'
+  'test_splines.py',
 ]
 
 py3.install_sources(

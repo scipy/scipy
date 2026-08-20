@@ -38,7 +38,7 @@ at the top-level directory.
  *
  * \param[in] mgs Message that is printed to error stream.
  */
-void superlu_abort_and_exit(char* msg)
+void superlu_abort_and_exit(const char* msg)
 {
     fprintf(stderr, "%s", msg);
     exit (-1);
@@ -86,7 +86,7 @@ void ilu_set_default_options(superlu_options_t *options)
  *
  * \param[in] options Options struct that is printed.
  */
-void print_options(superlu_options_t *options)
+void print_options(const superlu_options_t *options)
 {
     printf(".. options:\n");
     printf("\tFact\t %8d\n", options->Fact);
@@ -105,7 +105,7 @@ void print_options(superlu_options_t *options)
  *
  * \param[in] options Options struct that is printed.
  */
-void print_ilu_options(superlu_options_t *options)
+void print_ilu_options(const superlu_options_t *options)
 {
     printf(".. ILU options:\n");
     printf("\tDiagPivotThresh\t%6.2e\n", options->DiagPivotThresh);
@@ -215,7 +215,7 @@ resetrep_col (const int nseg, const int *segrep, int *repfnz)
     
     for (i = 0; i < nseg; i++) {
 	irep = segrep[i];
-	repfnz[irep] = EMPTY;
+	repfnz[irep] = SLU_EMPTY;
     }
 }
 
@@ -339,8 +339,8 @@ fixupL(const int n, const int *perm_r, GlobalLU_t *Glu)
 
 /*! \brief Diagnostic print of segment info after panel_dfs().
  */
-void print_panel_seg(int n, int w, int jcol, int nseg, 
-		     int *segrep, int *repfnz)
+void print_panel_seg(int n, int w, int jcol, int nseg,
+                     const int *segrep, const int *repfnz)
 {
     int j, k;
     
@@ -476,7 +476,7 @@ void ifill(int *a, int alen, int ival)
  */
 #define NBUCKS 10
 
-void super_stats(int nsuper, int *xsup)
+void super_stats(int nsuper, const int *xsup)
 {
     register int nsup1 = 0;
     int    i, isize, whichb, bl, bh;
@@ -522,15 +522,15 @@ float DenseSize(int n, float sum_nw)
     return (sum_nw*8 + n*8)/1024.;
 }
 
-/*! \brief Check whether repfnz[] == EMPTY after reset.
+/*! \brief Check whether repfnz[] == SLU_EMPTY after reset.
  */
-void check_repfnz(int n, int w, int jcol, int *repfnz)
+void check_repfnz(int n, int w, int jcol, const int *repfnz)
 {
     int jj, k;
 
     for (jj = jcol; jj < jcol+w; jj++) 
 	for (k = 0; k < n; k++)
-	    if ( repfnz[(jj-jcol)*n + k] != EMPTY ) {
+	    if ( repfnz[(jj-jcol)*n + k] != SLU_EMPTY ) {
 		fprintf(stderr, "col %d, repfnz_col[%d] = %d\n", jj,
 			k, repfnz[(jj-jcol)*n + k]);
 		ABORT("check_repfnz");
@@ -545,7 +545,7 @@ void check_repfnz(int n, int w, int jcol, int *repfnz)
  * \param[in] nerrs Number of error messages recorded.
  */
 void
-PrintSumm(char *type, int nfail, int nrun, int nerrs)
+PrintSumm(const char *type, int nfail, int nrun, int nerrs)
 {
     if ( nfail > 0 )
 	printf("%3s driver: %d out of %d tests failed to pass the threshold\n",
@@ -563,7 +563,7 @@ PrintSumm(char *type, int nfail, int nrun, int nerrs)
  * \param[in] n Number of elements in array.
  * \param[in] vec Array of ints to be printed
  */
-void print_int_vec(char *what, int n, int *vec)
+void print_int_vec(const char *what, int n, const int *vec)
 {
     int i;
     printf("%s\n", what);
@@ -579,7 +579,7 @@ void print_int_vec(char *what, int n, int *vec)
  * \param[in] len Number of elements in array.
  * \param[in] x Array of ints to be printed.
  */
-void slu_PrintInt10(char *name, int len, int *x)
+void slu_PrintInt10(const char *name, int len, const int *x)
 {
     register int i;
     
@@ -598,7 +598,7 @@ void slu_PrintInt10(char *name, int len, int *x)
  * \param[in] n Number of elements in permutation \a perm.
  * \param[in] perm Array describing the permutation.
  */
-void check_perm(char *what, int n, int *perm)
+void check_perm(const char *what, int n, const int *perm)
 {
     register int i;
     int          *marker;

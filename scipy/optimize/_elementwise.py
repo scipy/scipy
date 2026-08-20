@@ -8,7 +8,8 @@ from scipy._lib._array_api import xp_capabilities
     skip_backends=[('dask.array', 'boolean indexing assignment'),
                    ('array_api_strict', 'Currently uses fancy indexing assignment.'),
                    ('jax.numpy', 'JAX arrays do not support item assignment.')])
-def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=None):
+def find_root(f, init, /, *, args=(), kwargs=None,
+              tolerances=None, maxiter=None, callback=None, preserve_shape=False):
     """Find the root of a monotonic, real-valued function of a real variable.
 
     For each element of the output of `f`, `find_root` seeks the scalar
@@ -29,17 +30,17 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     f : callable
         The function whose root is desired. The signature must be::
 
-            f(x: array, *args) -> array
+            f(xi: array, *argsi) -> array
 
-        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        where each element of ``xi`` is a finite real and ``argsi`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with ``x``.
+        with ``xi``.
 
-        `f` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
-        array ``x`` or the arrays in ``args``.
+        `f` must be an elementwise function: each scalar element ``f(xi)[j]``
+        must equal ``f(xi[j])`` for valid indices ``j``. It must not mutate the array
+        ``xi`` or the arrays in ``argsi``.
 
-        `find_root` seeks an array ``x`` such that ``f(x)`` is an array of zeros.
+        `find_root` seeks an array ``xi`` such that ``f(xi)`` is an array of zeros.
     init : 2-tuple of float array_like
         The lower and upper endpoints of a bracket surrounding the desired root.
         A bracket is valid if arrays ``xl, xr = init`` satisfy ``xl < xr`` and
@@ -51,6 +52,8 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     tolerances : dictionary of floats, optional
         Absolute and relative tolerances on the root and function value.
         Valid keys of the dictionary are:
@@ -74,6 +77,23 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
         ``StopIteration``, the algorithm will terminate immediately and
         `find_root` will return a result. `callback` must not mutate
         `res` or its attributes.
+    preserve_shape : bool, default: False
+        In the following, "arguments of `f`" refers to the array ``xi`` and
+        any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
+        of all elements of `init` and `args` (which is conceptually
+        distinct from ``xi` and ``argsi`` passed into `f`).
+
+        - When ``preserve_shape=False`` (default), `f` must accept arguments
+          of *any* broadcastable shapes.
+
+        - When ``preserve_shape=True``, `f` must accept arguments of shape
+          ``shape + (n,)``, where ``n`` is the number of abscissae at which the
+          function is being evaluated.
+
+        In either case, for each scalar element ``xi[j]`` within ``xi``, the array
+        returned by `f` must include the scalar ``f(xi[j])`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``xi``.
 
     Returns
     -------
@@ -231,8 +251,9 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     else:
         _callback = callback
 
-    res = _chandrupatla(f, xl, xr, args=args, **tolerances,
-                        maxiter=maxiter, callback=_callback)
+    res = _chandrupatla(f, xl, xr, args=args, kwargs=kwargs, **tolerances,
+                        maxiter=maxiter, callback=_callback,
+                        preserve_shape=preserve_shape)
     return reformat_result(res)
 
 
@@ -240,7 +261,8 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     skip_backends=[('dask.array', 'boolean indexing assignment'),
                    ('array_api_strict', 'Currently uses fancy indexing assignment.'),
                    ('jax.numpy', 'JAX arrays do not support item assignment.')])
-def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None):
+def find_minimum(f, init, /, *, args=(), kwargs=None,
+                 tolerances=None, maxiter=100, callback=None, preserve_shape=False):
     """Find the minimum of a unimodal, real-valued function of a real variable.
 
     For each element of the output of `f`, `find_minimum` seeks the scalar minimizer
@@ -261,17 +283,17 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     f : callable
         The function whose minimizer is desired. The signature must be::
 
-            f(x: array, *args) -> array
+            f(xi: array, *argsi) -> array
 
-        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        where each element of ``xi`` is a finite real and ``argsi`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with ``x``.
+        with ``xi``.
 
-        `f` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
-        array ``x`` or the arrays in ``args``.
+        `f` must be an elementwise function: each element ``f(xi)[j]``
+        must equal ``f(xi[j])`` for all indices ``j``. It must not mutate the
+        array ``xi`` or the arrays in ``argsi``.
 
-        `find_minimum` seeks an array ``x`` such that ``f(x)`` is an array of
+        `find_minimum` seeks an array ``x`` such that ``f(xi)`` is an array of
         local minima.
     init : 3-tuple of float array_like
         The abscissae of a standard scalar minimization bracket. A bracket is
@@ -285,6 +307,8 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     tolerances : dictionary of floats, optional
         Absolute and relative tolerances on the root and function value.
         Valid keys of the dictionary are:
@@ -306,6 +330,23 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
         ``StopIteration``, the algorithm will terminate immediately and
         `find_root` will return a result. `callback` must not mutate
         `res` or its attributes.
+    preserve_shape : bool, default: False
+        In the following, "arguments of `f`" refers to the array ``xi`` and
+        any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
+        of all elements of `init` and `args` (which is conceptually
+        distinct from ``xi` and ``argsi`` passed into `f`).
+
+        - When ``preserve_shape=False`` (default), `f` must accept arguments
+          of *any* broadcastable shapes.
+
+        - When ``preserve_shape=True``, `f` must accept arguments of shape
+          ``shape + (n,)``, where ``n`` is the number of abscissae at which the
+          function is being evaluated.
+
+        In either case, for each scalar element ``xi[j]`` within ``xi``, the array
+        returned by `f` must include the scalar ``f(xi[j])`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``xi``.
 
     Returns
     -------
@@ -379,7 +420,7 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     ...     return (x - c)**2 + 2
 
     First, we must find a valid bracket. The function is unimodal,
-    so `bracket_minium` will easily find a bracket.
+    so `bracket_minimum` will easily find a bracket.
 
     >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
@@ -460,8 +501,9 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     else:
         _callback = callback
 
-    res = _chandrupatla_minimize(f, xl, xm, xr, args=args, **tolerances,
-                                 maxiter=maxiter, callback=_callback)
+    res = _chandrupatla_minimize(f, xl, xm, xr, args=args, kwargs=kwargs, **tolerances,
+                                 maxiter=maxiter, callback=_callback,
+                                 preserve_shape=preserve_shape)
     return reformat_result(res)
 
 
@@ -469,8 +511,8 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     skip_backends=[('dask.array', 'boolean indexing assignment'),
                    ('array_api_strict', 'Currently uses fancy indexing assignment.'),
                    ('jax.numpy', 'JAX arrays do not support item assignment.')])
-def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=(),
-                 maxiter=1000):
+def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
+                 args=(), kwargs=None, maxiter=1000, preserve_shape=False):
     """Bracket the root of a monotonic, real-valued function of a real variable.
 
     For each element of the output of `f`, `bracket_root` seeks the scalar
@@ -488,15 +530,15 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     f : callable
         The function for which the root is to be bracketed. The signature must be::
 
-            f(x: array, *args) -> array
+            f(xi: array, *argsi) -> array
 
-        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        where each element of ``xi`` is a finite real and ``argsi`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with ``x``.
+        with ``xi``.
 
-        `f` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
-        array ``x`` or the arrays in ``args``.
+        `f` must be an elementwise function: each element ``f(xi)[j]``
+        must equal ``f(xi[j])`` for all indices ``j``. It must not mutate the
+        array ``xi`` or the arrays in ``argsi``.
     xl0, xr0 : float array_like
         Starting guess of bracket, which need not contain a root. If `xr0` is
         not provided, ``xr0 = xl0 + 1``. Must be broadcastable with all other
@@ -511,8 +553,27 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     maxiter : int, default: 1000
         The maximum number of iterations of the algorithm to perform.
+    preserve_shape : bool, default: False
+        In the following, "arguments of `f`" refers to the array ``xi`` and
+        any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
+        of all elements of `init` and `args` (which is conceptually
+        distinct from ``xi` and ``argsi`` passed into `f`).
+
+        - When ``preserve_shape=False`` (default), `f` must accept arguments
+          of *any* broadcastable shapes.
+
+        - When ``preserve_shape=True``, `f` must accept arguments of shape
+          ``shape + (n,)``, where ``n`` is the number of abscissae at which the
+          function is being evaluated.
+
+        In either case, for each scalar element ``xi[j]`` within ``xi``, the array
+        returned by `f` must include the scalar ``f(xi[j])`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``xi``.
 
     Returns
     -------
@@ -621,10 +682,11 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     >>> res_root.x
     array([1.8932892 , 2.        , 2.09455148])
 
-    """  # noqa: E501
+    """
 
     res = _bracket_root(f, xl0, xr0=xr0, xmin=xmin, xmax=xmax, factor=factor,
-                        args=args, maxiter=maxiter)
+                        args=args, kwargs=kwargs, maxiter=maxiter,
+                        preserve_shape=preserve_shape)
     res.bracket = res.xl, res.xr
     res.f_bracket = res.fl, res.fr
     del res.xl
@@ -640,7 +702,8 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
                    ('jax.numpy', 'JAX arrays do not support item assignment.'),
                    ('torch', 'data-apis/array-api-compat#271')])
 def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
-                     factor=None, args=(), maxiter=1000):
+                    factor=None, args=(), kwargs=None, maxiter=1000,
+                    preserve_shape=False):
     """Bracket the minimum of a unimodal, real-valued function of a real variable.
 
     For each element of the output of `f`, `bracket_minimum` seeks the scalar
@@ -658,15 +721,15 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     f : callable
         The function for which the root is to be bracketed. The signature must be::
 
-            f(x: array, *args) -> array
+            f(xi: array, *argsi) -> array
 
-        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        where each element of ``xi`` is a finite real and ``argsi`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with ``x``.
+        with ``xi``.
 
-        `f` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
-        array ``x`` or the arrays in ``args``.
+        `f` must be an elementwise function: each element ``f(xi)[j]``
+        must equal ``f(xi[j])`` for all indices ``j``. It must not mutate the
+        array ``xi`` or the arrays in ``argsi``.
     xm0 : float array_like
         Starting guess for middle point of bracket.
     xl0, xr0 : float array_like, optional
@@ -682,8 +745,27 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     maxiter : int, default: 1000
         The maximum number of iterations of the algorithm to perform.
+    preserve_shape : bool, default: False
+        In the following, "arguments of `f`" refers to the array ``xi`` and
+        any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
+        of all elements of `init` and `args` (which is conceptually
+        distinct from ``xi` and ``argsi`` passed into `f`).
+
+        - When ``preserve_shape=False`` (default), `f` must accept arguments
+          of *any* broadcastable shapes.
+
+        - When ``preserve_shape=True``, `f` must accept arguments of shape
+          ``shape + (n,)``, where ``n`` is the number of abscissae at which the
+          function is being evaluated.
+
+        In either case, for each scalar element ``xi[j]`` within ``xi``, the array
+        returned by `f` must include the scalar ``f(xi[j])`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``xi``.
 
     Returns
     -------
@@ -761,7 +843,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     ...     return (x - c)**2 + 2
 
     First, we must find a valid bracket. The function is unimodal,
-    so `bracket_minium` will easily find a bracket.
+    so `bracket_minimum` will easily find a bracket.
 
     >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
@@ -801,10 +883,11 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     >>> res_minimum.f_x
     array([2., 2., 2.])
 
-    """  # noqa: E501
+    """
 
     res = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
-                           factor=factor, args=args, maxiter=maxiter)
+                           factor=factor, args=args, kwargs=kwargs, maxiter=maxiter,
+                           preserve_shape=preserve_shape)
     res.bracket = res.xl, res.xm, res.xr
     res.f_bracket = res.fl, res.fm, res.fr
     del res.xl

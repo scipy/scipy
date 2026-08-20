@@ -12,9 +12,12 @@ for information about the Matrix Market format.
 import io
 import os
 
+from warnings import warn
+
 import numpy as np
 from scipy.sparse import coo_array, issparse, coo_matrix
 from scipy.io import _mmio
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['mminfo', 'mmread', 'mmwrite']
 
@@ -65,7 +68,7 @@ try:
             PARALLELISM = num_threads
 
         def get_version(self):
-            return _fmm_version
+            return _fmm_version()
 
         def set_additional_attributes(self):
             pass
@@ -295,7 +298,7 @@ def _validate_symmetry(symmetry):
     return symmetry
 
 
-def mmread(source, *, spmatrix=True):
+def mmread(source, *, spmatrix=_NoValue):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -306,6 +309,17 @@ def mmread(source, *, spmatrix=True):
         or open file-like object.
     spmatrix : bool, optional (default: True)
         If ``True``, return sparse matrix. Otherwise return sparse array.
+
+        .. deprecated:: 1.18.0
+            The default value for `spmatrix` is changing to False in v2.1.
+            That means the default return value will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
+        .. deprecated:: 2.0.0
+            The value `True` for `spmatrix` will no longer be supported in v2.2.
+            The spmatrix classes are deprecated and will be removed then.
 
     Returns
     -------
@@ -368,6 +382,29 @@ def mmread(source, *, spmatrix=True):
         triplet, shape = _read_body_coo(cursor, generalize_symmetry=True)
         if stream_to_close:
             stream_to_close.close()
+
+        if spmatrix is _NoValue:
+            msg = """The default value for `spmatrix` is changing to `False` in v2.1.
+             That means the default return type will be a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            spmatrix = True
+        elif spmatrix is True:
+            msg = """The value `spmatrix=True` will no longer be supported in v2.2.
+             The spmatrix classes are deprecated and will be removed then.
+             The return value will always be a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+
         if spmatrix:
             return coo_matrix(triplet, shape=shape)
         return coo_array(triplet, shape=shape)

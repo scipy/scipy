@@ -4,7 +4,7 @@ Real spectrum transforms (DCT, DST, MDCT)
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
-from scipy.fft import _pocketfft
+from scipy.fft import _duccfft
 from ._helper import _good_shape
 
 _inverse_typemap = {1: 1, 2: 3, 3: 2, 4: 4}
@@ -62,7 +62,7 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
     """
     shape = _good_shape(x, shape, axes)
-    return _pocketfft.dctn(x, type, shape, axes, norm, overwrite_x)
+    return _duccfft.dctn(x, type, shape, axes, norm, overwrite_x)
 
 
 def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -118,7 +118,7 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     type = _inverse_typemap[type]
     shape = _good_shape(x, shape, axes)
-    return _pocketfft.dctn(x, type, shape, axes, norm, overwrite_x)
+    return _duccfft.dctn(x, type, shape, axes, norm, overwrite_x)
 
 
 def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -173,7 +173,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
     """
     shape = _good_shape(x, shape, axes)
-    return _pocketfft.dstn(x, type, shape, axes, norm, overwrite_x)
+    return _duccfft.dstn(x, type, shape, axes, norm, overwrite_x)
 
 
 def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -229,7 +229,7 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     type = _inverse_typemap[type]
     shape = _good_shape(x, shape, axes)
-    return _pocketfft.dstn(x, type, shape, axes, norm, overwrite_x)
+    return _duccfft.dstn(x, type, shape, axes, norm, overwrite_x)
 
 
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -377,7 +377,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     array([ 30.,  -8.,   6.,  -2.])
 
     """
-    return _pocketfft.dct(x, type, n, axis, norm, overwrite_x)
+    return _duccfft.dct(x, type, n, axis, norm, overwrite_x)
 
 
 def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -437,7 +437,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     """
     type = _inverse_typemap[type]
-    return _pocketfft.dct(x, type, n, axis, norm, overwrite_x)
+    return _duccfft.dct(x, type, n, axis, norm, overwrite_x)
 
 
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -549,7 +549,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
            https://en.wikipedia.org/wiki/Discrete_sine_transform
 
     """
-    return _pocketfft.dst(x, type, n, axis, norm, overwrite_x)
+    return _duccfft.dst(x, type, n, axis, norm, overwrite_x)
 
 
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -595,4 +595,4 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     """
     type = _inverse_typemap[type]
-    return _pocketfft.dst(x, type, n, axis, norm, overwrite_x)
+    return _duccfft.dst(x, type, n, axis, norm, overwrite_x)

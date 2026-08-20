@@ -1,11 +1,12 @@
 __all__ = ['_svdp']
 
 import numpy as np
+from scipy.linalg.lapack import HAS_ILP64
 
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
-from . import _propack  # type: ignore[attr-defined]
+from . import _propack
 
 
 _lansvd_dict = {
@@ -234,7 +235,8 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     else:
         doption = np.array((delta, eta, anorm), dtype=typ.lower())
 
-    ioption = np.array((int(bool(cgs)), int(bool(elr))), dtype='i')
+    int_dtype = np.int64 if HAS_ILP64 else np.int32
+    ioption = np.array((int(bool(cgs)), int(bool(elr))), dtype=int_dtype)
 
     # PROPACK uses a few LAPACK functions that require sufficiently large
     # work arrays to utilize BLAS level 3 operations. In almost all relevant
@@ -252,11 +254,11 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         lwork = m + n + 9*kmax + 2*kmax**2 + 4 + max(m + n, 4*kmax + 4)
         liwork = 2*kmax + 2
     work = np.empty(lwork, dtype=typ.lower())
-    iwork = np.empty(liwork, dtype=np.int32)
+    iwork = np.empty(liwork, dtype=int_dtype)
 
     # dummy arguments: these are passed to aprod, and not used in this wrapper
     dparm = np.empty(1, dtype=typ.lower())
-    iparm = np.empty(1, dtype=np.int32)
+    iparm = np.empty(1, dtype=int_dtype)
 
     if typ.isupper():
         zwork = np.empty(m + n + kmax, dtype=typ)
@@ -265,8 +267,19 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         works = work, iwork
 
     # Generate the seed for the PROPACK random float generator.
-    rng_state = rng.integers(low=0, high=np.iinfo(np.int64).max,
-                             size=4, dtype=np.uint64)
+    # TODO: once `svds` drops legacy positional `random_state` support,
+    # or once `_lib._util.check_random_state` is adjusted to always
+    # coerce `RandomState` input to a `Generator` instance
+    # (possible from NumPy >=2.2),
+    # the legacy branch can be removed here.
+    if hasattr(rng, "integers"):
+        rng_state = rng.integers(
+            low=0, high=np.iinfo(np.int64).max, size=4, dtype=np.uint64
+        )
+    else:  # legacy np.random.RandomState
+        rng_state = rng.randint(
+            low=0, high=np.iinfo(np.int64).max, size=4, dtype=np.uint64
+        )
 
     if irl_mode:
         info = lansvd_irl(_which_converter[which], jobu,
