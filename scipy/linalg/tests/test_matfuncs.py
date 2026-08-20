@@ -88,6 +88,17 @@ class TestSignM:
         signm(a)
         #XXX: what would be the correct result?
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_signm_dtype_preservation(self, dtype):
+        # gh-25657: signm upcast float32/complex64 for defective matrices
+        # (the iterative fall-through branch) while the non-defective branch
+        # preserved dtype. Output dtype must depend on input dtype, not values.
+        non_defective = np.array([[2, 1], [0, 3]], dtype=dtype)  # distinct eigs
+        defective = np.array([[2, 1], [0, 2]], dtype=dtype)      # repeated eig
+        assert signm(non_defective).dtype == dtype
+        assert signm(defective).dtype == dtype
+
 
 class TestLogM:
     @pytest.mark.filterwarnings("ignore:.*inaccurate.*:RuntimeWarning")
@@ -839,6 +850,26 @@ class TestExpM:
         for i in range(5):
             next_res = expm(A)
             np.testing.assert_array_almost_equal(first_res, next_res)
+
+    @pytest.mark.parametrize('dt', [np.float32, np.float64,
+                                    np.complex64, np.complex128])
+    def test_gh25924(self, dt):
+        # The scaling exponent of a slice that needed scaling and squaring
+        # leaked into the following slices that did not, squaring their
+        # unscaled results and returning expm(2**s * A) instead of expm(A).
+        rng = np.random.default_rng(1234)
+        n, batch = 6, 4
+        A = rng.standard_normal((batch, n, n))
+        if np.issubdtype(dt, np.complexfloating):
+            A = A + 1j*rng.standard_normal((batch, n, n))
+        A = A.astype(dt)
+        # First slice needs scaling and squaring, the remaining ones do not.
+        A[0] *= 8
+        A[1:] /= np.abs(A[1:]).sum(axis=1).max(axis=-1)[:, None, None]
+
+        one_at_a_time = np.stack([expm(x) for x in A])
+        assert_allclose(expm(A), one_at_a_time,
+                        rtol=10*np.finfo(dt).eps, atol=0)
 
 
 class TestExpmFrechet:

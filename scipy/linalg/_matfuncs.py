@@ -827,7 +827,7 @@ def signm(A):
     # min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
     # c = 0.5/min_nonzero_sv
     c = 0.5/max_sv
-    S0 = A + c*np.identity(A.shape[0])
+    S0 = A + c*np.identity(A.shape[0], dtype=A.dtype)
     prev_errest = errest
     for i in range(100):
         iS0 = inv(S0)
