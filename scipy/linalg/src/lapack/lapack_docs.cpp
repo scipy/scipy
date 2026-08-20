@@ -131,6 +131,20 @@ namespace lapack {
             "overwrite_e : int, optional\n"
             "    If nonzero, `e` may be overwritten in place. Default is 0.\n";
 
+        /* The Cholesky family selects its triangle with an integer flag, not a letter --
+         * `pocon` alone takes `uplo`, and says so in its own text. */
+        static constexpr const char *P_LOWER =
+            "lower : int, optional\n"
+            "    If nonzero, the lower triangle of `a` is referenced and the factor is lower\n"
+            "    triangular; otherwise the upper. Default is 0.\n";
+
+        /* The positive definite tridiagonal group: `d` is real for every flavor, being the
+         * diagonal of D in the L*D*L**H factorization of a Hermitian matrix. */
+        static constexpr const char *P_D_PT =
+            "d : ndarray\n    Diagonal of the matrix, length ``n``. Real for every flavor.\n";
+        static constexpr const char *P_E_PT =
+            "e : ndarray\n    Off-diagonal, length ``max(0, n - 1)``.\n";
+
         static constexpr const char *P_JPTV    =
             "jptv : ndarray\n"
             "    Column pivots: a nonzero entry pins that column of `a` to the front.\n"
@@ -1438,6 +1452,364 @@ namespace lapack {
             return s;
         }
 
+        /* ============================= flapack_pos_def.pyf.src ===================== */
+
+        /** @brief `pstrf` and `pstf2` are the blocked and unblocked pivoted Cholesky; one
+         *         interface, one docstring, differing only in how they are described. */
+        static std::string
+        doc_pstrf_family(const char *name, const char *how) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, tol=-1.0, lower=0, overwrite_a=0)\n\n";
+            s += "Compute the pivoted Cholesky factorization of a positive semidefinite matrix,\n"
+                 + std::string(how) + " (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Symmetric or Hermitian positive semidefinite matrix of shape ``(n, n)``.\n";
+            s += "tol : float, optional\n"
+                 "    Pivots at or below this value stop the factorization. Default is -1.0,\n"
+                 "    which uses ``n * eps * max(diag(a))``.\n";
+            s += P_LOWER;
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n"
+                 "    The factor, in the selected triangle, of ``p.T @ a @ p``. The opposite\n"
+                 "    triangle is left as it was in `a`.\n";
+            s += "piv : ndarray\n"
+                 "    Pivot indices, **1-based**: column ``i`` of ``p`` is column ``piv[i] - 1``\n"
+                 "    of the identity. Unlike ``getrf``, this family does not shift them down.\n";
+            s += "rank_c : int\n    Computed rank of `a`, as determined by `tol`.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if 1, `a` is not positive definite but the rank-deficient factorization\n"
+                 "    completed.\n";
+            return s;
+        }
+
+        static std::string doc_pstrf(const char *name, const Dtype &) noexcept
+            { return doc_pstrf_family(name, "blocked"); }
+        static std::string doc_pstf2(const char *name, const Dtype &) noexcept
+            { return doc_pstrf_family(name, "unblocked"); }
+
+        static std::string
+        doc_posv(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, lower=0, overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Solve ``a @ x = b`` for a positive definite ``a`` by Cholesky factorization\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Symmetric or Hermitian positive definite matrix of shape ``(n, n)``.\n";
+            s += P_B_RHS;
+            s += P_LOWER;
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n    Cholesky factor of `a`, in the selected triangle.\n";
+            s += R_X_OUT;
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, the leading minor of order `info` is not positive definite.\n";
+            return s;
+        }
+
+        static std::string
+        doc_posvx(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, fact='E', af=None, equed='Y', s=None, lower=0,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Solve ``a @ x = b`` for a positive definite ``a`` with equilibration, condition\n"
+                 "estimation and error bounds (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Symmetric or Hermitian positive definite matrix of shape ``(n, n)``.\n";
+            s += P_B_RHS;
+            s += "fact : str, optional\n"
+                 "    ``'E'`` to equilibrate then factorize, ``'N'`` to factorize as given,\n"
+                 "    ``'F'`` to reuse the `af`, `equed` and `s` supplied. Default is ``'E'``.\n";
+            s += "af : ndarray, optional\n    Cholesky factor to reuse when ``fact='F'``; otherwise it is computed.\n";
+            s += "equed : str, optional\n"
+                 "    Equilibration already applied when ``fact='F'``: ``'N'`` or ``'Y'``.\n"
+                 "    Otherwise it is an output. Default is ``'Y'``.\n";
+            s += "s : ndarray, optional\n    Scale factors, used when ``fact='F'`` and `equed` is ``'Y'``.\n";
+            s += P_LOWER;
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "a_s : ndarray\n    `a`, equilibrated if `equed` is ``b'Y'``.\n";
+            s += "lu : ndarray\n    Cholesky factor of the equilibrated matrix.\n";
+            s += "equed : bytes\n    Equilibration actually applied: ``b'N'`` or ``b'Y'``.\n";
+            s += "s : ndarray\n    Scale factors.\n";
+            s += "b_s : ndarray\n    `b`, scaled to match the equilibrated system.\n";
+            s += R_X_OUT;
+            s += "rcond : float\n    Estimate of the reciprocal condition number of the equilibrated matrix.\n";
+            s += "ferr : ndarray\n    Estimated forward error bound for each solution vector.\n";
+            s += "berr : ndarray\n    Componentwise relative backward error of each solution vector.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if ``0 < info <= n``, the leading minor of order `info` is not positive\n"
+                 "    definite; if ``info = n+1``, the matrix is singular to working precision\n"
+                 "    and `x` may be inaccurate.\n";
+            return s;
+        }
+
+        static std::string
+        doc_pocon(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, anorm, uplo='U')\n\n";
+            s += "Estimate the reciprocal condition number of a positive definite matrix from its\n"
+                 "Cholesky factorization (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Cholesky factorization of a positive definite matrix, as returned by ``potrf``.\n";
+            s += "anorm : float\n    1-norm of the original matrix, which equals its infinity norm here.\n";
+            /* The one routine in this group naming its triangle with a letter, not `lower`. */
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if `a` holds the upper triangular factor, ``'L'`` if lower.\n"
+                 "    Default is ``'U'``. The rest of this group uses `lower` instead.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_potrf(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, lower=0, clean=1, overwrite_a=0)\n\n";
+            s += "Compute the Cholesky factorization of a positive definite matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Symmetric or Hermitian positive definite matrix of shape ``(n, n)``.\n";
+            s += P_LOWER;
+            s += "clean : int, optional\n"
+                 "    If nonzero, the triangle LAPACK does not write is zeroed, so `c` is\n"
+                 "    genuinely triangular. If 0, that triangle still holds whatever `a` had\n"
+                 "    there. Default is 1.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n"
+                 "    Cholesky factor: ``c.conj().T @ c == a`` for the upper triangle,\n"
+                 "    ``c @ c.conj().T == a`` for the lower.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, the leading minor of order `info` is not positive definite.\n";
+            return s;
+        }
+
+        static std::string
+        doc_potrs(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(c, b, lower=0, overwrite_b=0)\n\n";
+            s += "Solve a positive definite system using the factorization from ``potrf``\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "c : ndarray\n    Cholesky factor, as returned by ``potrf``.\n";
+            s += P_B_RHS;
+            s += "lower : int, optional\n"
+                 "    If nonzero, `c` is the lower triangular factor; otherwise the upper. Must\n"
+                 "    match what was passed to ``potrf``. Default is 0.\n";
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += R_X_OUT;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_potri(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(c, lower=0, overwrite_c=0)\n\n";
+            s += "Invert a positive definite matrix from the factorization computed by ``potrf``\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "c : ndarray\n    Cholesky factor, as returned by ``potrf``.\n";
+            s += "lower : int, optional\n"
+                 "    If nonzero, `c` is the lower triangular factor; otherwise the upper. Must\n"
+                 "    match what was passed to ``potrf``. Default is 0.\n";
+            s += "overwrite_c : int, optional\n    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "inv_a : ndarray\n"
+                 "    The inverse, stored in the selected triangle only; the opposite triangle\n"
+                 "    is left as it was in `c`.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, ``c[info-1, info-1]`` is zero and the inverse does not exist.\n";
+            return s;
+        }
+
+        /* =========================== flapack_pos_def_tri.pyf.src =================== */
+
+        static std::string
+        doc_ptsv(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, b, overwrite_d=0, overwrite_e=0, overwrite_b=0)\n\n";
+            s += "Solve ``a @ x = b`` for a positive definite tridiagonal ``a`` by its\n"
+                 "``L @ D @ L.conj().T`` factorization (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_PT;
+            s += P_E_PT;
+            s += P_B_RHS;
+            s += "overwrite_d : int, optional\n    If nonzero, `d` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_e : int, optional\n    If nonzero, `e` may be overwritten in place. Default is 0.\n";
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "d : ndarray\n    Diagonal of ``D`` from the factorization.\n";
+            s += "du : ndarray\n    Off-diagonal of ``L``, written over `e`.\n";
+            s += R_X_OUT;
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, the leading minor of order `info` is not positive definite.\n";
+            return s;
+        }
+
+        static std::string
+        doc_pttrf(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, overwrite_d=0, overwrite_e=0)\n\n";
+            s += "Compute the ``L @ D @ L.conj().T`` factorization of a positive definite\n"
+                 "tridiagonal matrix (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_PT;
+            s += P_E_PT;
+            s += "overwrite_d : int, optional\n    If nonzero, `d` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_e : int, optional\n    If nonzero, `e` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "d : ndarray\n    Diagonal of ``D``.\n";
+            s += "e : ndarray\n    Off-diagonal of the unit bidiagonal ``L``.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, the leading minor of order `info` is not positive definite.\n";
+            return s;
+        }
+
+        /** @brief The complex flavors take a `lower` the real ones do not have, so the
+         *         signature and one parameter entry differ between them. */
+        static std::string
+        doc_pttrs(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + (t.is_complex ? "(d, e, b, lower=0, overwrite_b=0)\n\n"
+                                                   : "(d, e, b, overwrite_b=0)\n\n");
+            s += "Solve a positive definite tridiagonal system using the factorization from\n"
+                 "``pttrf`` (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "d : ndarray\n    Diagonal of ``D`` from ``pttrf``. Real for every flavor.\n";
+            s += "e : ndarray\n    Off-diagonal of ``L`` from ``pttrf``.\n";
+            s += P_B_RHS;
+            if (t.is_complex) {
+                s += "lower : int, optional\n"
+                     "    If nonzero, `e` is read as the subdiagonal of ``L``; otherwise as the\n"
+                     "    superdiagonal of ``U``, which is its conjugate. Default is 0. Note\n"
+                     "    ``pttrf`` writes the ``L`` form, so reusing its output here needs\n"
+                     "    ``lower=1``; the default silently solves a different system. The real\n"
+                     "    flavors have no such argument, drawing no distinction between the two.\n";
+            }
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += R_X_OUT;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_pteqr(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, z, compute_z=0, overwrite_d=0, overwrite_e=0,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_z=0)\n\n";
+            s += "Compute the eigenvalues and optionally the eigenvectors of a positive definite\n"
+                 "tridiagonal matrix, to high relative accuracy (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_PT;
+            s += "e : ndarray\n    Off-diagonal, length ``max(0, n - 1)``. Real for every flavor.\n";
+            s += std::string("z : ndarray\n") +
+                 "    Required even when unused. With ``compute_z=1`` it is the matrix whose\n"
+                 "    eigenvectors are wanted, of shape ``(max(1, n), n)``" +
+                 (t.is_complex ? " and complex;\n" : ";\n") +
+                 "    with ``compute_z=2`` its contents are ignored and the eigenvectors of the\n"
+                 "    tridiagonal matrix itself are returned; with ``compute_z=0`` it is not\n"
+                 "    referenced at all and any shape is accepted.\n";
+            s += "compute_z : int, optional\n"
+                 "    0 for eigenvalues only, 1 to compute eigenvectors of the original matrix\n"
+                 "    from the `z` supplied, 2 for eigenvectors of the tridiagonal matrix.\n"
+                 "    Default is 0.\n";
+            s += "overwrite_d : int, optional\n    If nonzero, `d` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_e : int, optional\n    If nonzero, `e` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_z : int, optional\n    If nonzero, `z` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "d : ndarray\n    Eigenvalues in descending order.\n";
+            s += "e : ndarray\n    Destroyed by the computation; the contents are not meaningful.\n";
+            s += "z : ndarray\n    Orthonormal eigenvectors as columns, or `z` unchanged when `compute_z` is 0.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if ``0 < info <= n``, the leading minor of order `info` is not positive\n"
+                 "    definite; if ``info > n``, that many off-diagonal elements failed to\n"
+                 "    converge to zero.\n";
+            return s;
+        }
+
+        static std::string
+        doc_ptsvx(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(d, e, b, fact='N', df=None, ef=None)\n\n";
+            s += "Solve a positive definite tridiagonal system with condition estimation and\n"
+                 "error bounds (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_D_PT;
+            s += P_E_PT;
+            s += P_B_RHS;
+            s += "fact : str, optional\n"
+                 "    ``'N'`` to factorize the matrix, ``'F'`` to reuse the `df` and `ef`\n"
+                 "    supplied. Default is ``'N'``.\n";
+            s += "df : ndarray, optional\n"
+                 "    Diagonal of ``D`` to reuse when ``fact='F'``; otherwise computed. Real for\n"
+                 "    every flavor.\n";
+            s += "ef : ndarray, optional\n    Off-diagonal of ``L`` to reuse when ``fact='F'``; otherwise computed.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "df : ndarray\n    Diagonal of ``D``.\n";
+            s += "ef : ndarray\n    Off-diagonal of ``L``.\n";
+            s += R_X_OUT;
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += "ferr : ndarray\n    Estimated forward error bound for each solution vector.\n";
+            s += "berr : ndarray\n    Componentwise relative backward error of each solution vector.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if ``0 < info <= n``, the leading minor of order `info` is not positive\n"
+                 "    definite; if ``info = n+1``, the matrix is singular to working precision\n"
+                 "    and `x` may be inaccurate.\n";
+            return s;
+        }
+
         /* ================================ registration ============================= */
 
         typedef std::string (*DocFn)(const char *, const Dtype &);
@@ -1505,6 +1877,24 @@ namespace lapack {
             DOC_FAMILY(gbtrs),
             DOC_FAMILY(gbcon),
             DOC_FAMILY(langb),
+
+            /* Same order as `pos_def_methods` in `lapack_pos_def.cpp`. */
+            DOC_FAMILY(pstrf),
+            DOC_FAMILY(pstf2),
+            DOC_FAMILY(posv),
+            DOC_FAMILY(posvx),
+            DOC_FAMILY(pocon),
+            DOC_FAMILY(potrf),
+            DOC_FAMILY(potrs),
+            DOC_FAMILY(potri),
+
+            /* Same order as `pos_def_tri_methods` in `lapack_pos_def_tri.cpp`. */
+            DOC_FAMILY(ptsv),
+            DOC_FAMILY(pttrf),
+            DOC_FAMILY(pttrs),
+            DOC_FAMILY(pteqr),
+            DOC_FAMILY(ptsvx),
+
             // Irregular names that don't fit the DOC_FAMILY pattern.
             {"sstev", doc_stev, S},
             {"dstev", doc_stev, D},

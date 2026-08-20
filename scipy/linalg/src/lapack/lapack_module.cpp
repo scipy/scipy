@@ -24,6 +24,8 @@ namespace capi {
     extern PyMethodDef gen_methods[];
     extern PyMethodDef gen_tri_methods[];
     extern PyMethodDef gen_banded_methods[];
+    extern PyMethodDef pos_def_methods[];
+    extern PyMethodDef pos_def_tri_methods[];
     PyObject *build_doc(const char *name) noexcept;
 }
 }
@@ -199,6 +201,8 @@ static int lapack_module_exec(PyObject *module)
     int rc = add_wrapped_table(module, tp, lapack::capi::gen_methods);
     if (rc == 0) { rc = add_wrapped_table(module, tp, lapack::capi::gen_tri_methods); }
     if (rc == 0) { rc = add_wrapped_table(module, tp, lapack::capi::gen_banded_methods); }
+    if (rc == 0) { rc = add_wrapped_table(module, tp, lapack::capi::pos_def_methods); }
+    if (rc == 0) { rc = add_wrapped_table(module, tp, lapack::capi::pos_def_tri_methods); }
     Py_DECREF(tp_obj);
     return rc;
 }

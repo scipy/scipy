@@ -1327,8 +1327,10 @@ namespace lapack {
             /* Shifted both ways, as `getrs` and `getri` do.  The `.pyf` only decrements after the
              * call, which leaves a supplied `ipiv` one too low for LAPACK -- a `fact='F'` re-solve
              * then returns a wrong answer with `info == 0` -- and decrements the caller's own
-             * array on every call.  `gesvx` is the only `intent(in,out)` pivot in the `.pyf`
-             * corpus missing the incoming shift; seven other call sites have it. */
+             * array on every call.  What is wrong is the asymmetry, not a missing shift:
+             * `gtsvx` and `hesvx` are `intent(in,out)` pivots that shift at neither end and
+             * are self-consistently 1-based, while the seven call sites that shift on the way
+             * out all shift on the way in too.  `gesvx` alone does one without the other. */
             for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] += 1; }
             if constexpr (is_complex_v<T>) {
                 CBLAS_INT rwork_len;
