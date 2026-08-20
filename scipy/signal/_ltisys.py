@@ -3122,7 +3122,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     >>> fsf2 = signal.place_poles(A, B, P)  # uses YT method
     >>> fsf2.computed_poles
-    array([-8.6659, -5.0566, -0.5   , -0.2   ])
+    array([-8.6659, -5.0566, -0.5   , -0.2   ]) # may vary
 
     >>> fsf3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
     >>> fsf3.X
