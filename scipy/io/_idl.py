@@ -643,12 +643,12 @@ class AttrDict(dict):
         >>> d('VARIABLE')
         123
         >>> d['missing']
-        Traceback (most recent error last):
-        ...
+        Traceback (most recent call last):
+          ...
         KeyError: 'missing'
         >>> d.missing
-        Traceback (most recent error last):
-        ...
+        Traceback (most recent call last):
+          ...
         AttributeError: 'AttrDict' object has no attribute 'missing'
     '''
 
