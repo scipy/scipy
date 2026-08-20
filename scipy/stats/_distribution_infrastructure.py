@@ -894,7 +894,6 @@ def _set_invalid_nan(f):
 
         method_name = f.__name__
         x = np.asarray(x)
-        nan_x = np.isnan(x)
         dtype = self._dtype
         shape = self._shape
         discrete = isinstance(self, DiscreteDistribution)
@@ -1014,10 +1013,6 @@ def _set_invalid_nan(f):
             res = res.real  # exp(res) > 0
             res = np.clip(res, None, 0.)  # exp(res) < 1
 
-        # Ensure invalid shape parameters and NaN arguments produce NaN result
-        if self._any_invalid or np.any(nan_x):
-            res = np.where(nan_x | self._invalid, np.nan, res)
-
         return res[()]
 
     return filtered
@@ -1130,7 +1125,6 @@ def _cdf2_input_validation(f):
         func_name = f.__name__
 
         low, high = self.support()
-        nan_x, nan_y = np.isnan(x), np.isnan(y)
         x, y, low, high = np.broadcast_arrays(x, y, low, high)
         dtype = np.result_type(x.dtype, y.dtype, self._dtype)
         # yes, copy to avoid modifying input arrays
@@ -1172,11 +1166,6 @@ def _cdf2_input_validation(f):
             # res[i_swap] is always positive and less than 1, so it's
             # safe to ensure that the result is real
             res[i_swap] = _logexpxmexpy(np.log(2), res[i_swap]).real
-
-        # Ensure invalid shape parameters and NaN arguments produce NaN result
-        if self._any_invalid or np.any(nan_x) or np.any(nan_y):
-            res = np.where(nan_x | nan_y | self._invalid, np.nan, res)
-
         return res[()]
 
     return wrapped
@@ -3574,10 +3563,20 @@ class DiscreteDistribution(UnivariateDistribution):
         return super()._overrides(method_name)
 
     def _logpdf_formula(self, x, **params):
-        return np.full_like(x, np.inf)
+        if params:
+            p = next(iter(params.values()))
+            nan_result = np.isnan(x) | np.isnan(p)
+        else:
+            nan_result = np.isnan(x)
+        return np.where(nan_result, np.nan, np.inf)
 
     def _pdf_formula(self, x, **params):
-        return np.full_like(x, np.inf)
+        if params:
+            p = next(iter(params.values()))
+            nan_result = np.isnan(x) | np.isnan(p)
+        else:
+            nan_result = np.isnan(x)
+        return np.where(nan_result, np.nan, np.inf)
 
     def _pxf_dispatch(self, x, *, method=None, **params):
         return self._pmf_dispatch(x, method=method, **params)
