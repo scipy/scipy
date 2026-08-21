@@ -2595,6 +2595,1851 @@ namespace lapack {
             return s;
         }
 
+        /* ------------------------- triangular storage conversions ------------------------- */
+
+        /* The three layouts a triangle can live in, written once because all six conversions
+         * document the same operands from opposite ends. */
+        static constexpr const char *P_AP_IN  =
+            "ap : ndarray\n"
+            "    The triangle in packed storage (TP), length ``n * (n + 1) / 2``.\n";
+        static constexpr const char *P_ARF_IN =
+            "arf : ndarray\n"
+            "    The triangle in rectangular full packed storage (RFP), length\n"
+            "    ``n * (n + 1) / 2``.\n";
+        static constexpr const char *P_A_TRI_IN =
+            "a : ndarray\n"
+            "    Square matrix of shape ``(n, n)``; only the triangle named by `uplo` is read.\n";
+        static constexpr const char *R_AP_OUT  = "ap : ndarray\n    The triangle in packed storage (TP).\n";
+        static constexpr const char *R_ARF_OUT = "arf : ndarray\n    The triangle in rectangular full packed storage (RFP).\n";
+        static constexpr const char *R_A_TRI_OUT =
+            "a : ndarray\n"
+            "    The triangle in full storage, shape ``(n, n)``; the other triangle is zero.\n";
+        static constexpr const char *P_UPLO_TRI =
+            "uplo : str, optional\n"
+            "    ``'U'`` if the matrix is upper triangular, ``'L'`` if lower. Default is ``'U'``.\n";
+
+        /** @brief `transr` selects the RFP layout, and the transposed one is spelled with the
+         *         flavor's own transpose letter -- ``'T'`` for real, ``'C'`` for complex. */
+        static std::string p_transr(const Dtype &t) noexcept
+        {
+            return std::string("transr : str, optional\n"
+                   "    ``'N'`` for the normal RFP layout, ``'") + (t.is_complex ? "C" : "T") +
+                   "'`` for the transposed one.\n    Default is ``'N'``.\n";
+        }
+
+        /** @brief The four conversions that take `n` and one packed operand and hand back the
+         *         same triangle in another layout. */
+        static std::string
+        doc_convert_from_packed(const char *name, const Dtype &t, const char *summary,
+                                const char *operand, const char *in, const char *out,
+                                bool has_transr) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, " + std::string(operand) + ", "
+                 + (has_transr ? "transr='N', " : "") + "uplo='U')\n\n";
+            /* The layout names make these summaries long, so the LAPACK reference goes on
+             * its own line rather than running past the docstring's width. */
+            s += std::string(summary) + "\n(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += in;
+            if (has_transr) { s += p_transr(t); }
+            s += P_UPLO_TRI;
+
+            s += "\nReturns\n-------\n";
+            s += out;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_tpttf(const char *name, const Dtype &t) noexcept
+        {
+            return doc_convert_from_packed(name, t,
+                "Convert a triangle from packed (TP) to rectangular full packed (RFP) storage",
+                "ap", P_AP_IN, R_ARF_OUT, true);
+        }
+
+        static std::string doc_tpttr(const char *name, const Dtype &t) noexcept
+        {
+            return doc_convert_from_packed(name, t,
+                "Convert a triangle from packed (TP) to full (TR) storage",
+                "ap", P_AP_IN, R_A_TRI_OUT, false);
+        }
+
+        static std::string doc_tfttp(const char *name, const Dtype &t) noexcept
+        {
+            return doc_convert_from_packed(name, t,
+                "Convert a triangle from rectangular full packed (RFP) to packed (TP) storage",
+                "arf", P_ARF_IN, R_AP_OUT, true);
+        }
+
+        static std::string doc_tfttr(const char *name, const Dtype &t) noexcept
+        {
+            return doc_convert_from_packed(name, t,
+                "Convert a triangle from rectangular full packed (RFP) to full (TR) storage",
+                "arf", P_ARF_IN, R_A_TRI_OUT, true);
+        }
+
+        /** @brief The two conversions out of full storage; they take `a` and derive `n` from it,
+         *         so they share no signature line with the packed-input four. */
+        static std::string
+        doc_convert_from_full(const char *name, const Dtype &t, const char *summary,
+                              const char *out, bool has_transr) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, " + (has_transr ? "transr='N', " : "") + "uplo='U')\n\n";
+            s += std::string(summary) + "\n(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_A_TRI_IN;
+            if (has_transr) { s += p_transr(t); }
+            s += P_UPLO_TRI;
+
+            s += "\nReturns\n-------\n";
+            s += out;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_trttf(const char *name, const Dtype &t) noexcept
+        {
+            return doc_convert_from_full(name, t,
+                "Convert a triangle from full (TR) to rectangular full packed (RFP) storage",
+                R_ARF_OUT, true);
+        }
+
+        static std::string doc_trttp(const char *name, const Dtype &t) noexcept
+        {
+            return doc_convert_from_full(name, t,
+                "Convert a triangle from full (TR) to packed (TP) storage",
+                R_AP_OUT, false);
+        }
+
+        static std::string doc_tfsm(const char *name, const Dtype &t) noexcept
+        {
+            const char *letter = t.is_complex ? "C" : "T";
+            std::string s;
+            s += std::string(name) +
+                 "(alpha, a, b, transr='N', side='L', uplo='U', trans='N', diag='N',\n"
+                 "      overwrite_b=0)\n\n";
+            s += "Solve a triangular system whose matrix is in rectangular full packed (RFP)\n"
+                 "storage (LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Solves ``op(A) @ x = alpha * b`` when `side` is ``'L'``, or\n"
+                 "``x @ op(A) = alpha * b`` when it is ``'R'``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += std::string("alpha : ") + t.scalar + "\n    Scalar the right-hand side is multiplied by.\n";
+            s += "a : ndarray\n"
+                 "    The triangle of ``A`` in RFP storage. Its order is the number of rows of\n"
+                 "    `b` when `side` is ``'L'``, its number of columns when ``'R'``, and its\n"
+                 "    length is ``order * (order + 1) / 2``.\n";
+            s += "b : ndarray\n    Right-hand side of shape ``(m, n)``.\n";
+            s += p_transr(t);
+            s += "side : str, optional\n"
+                 "    ``'L'`` for ``op(A) @ x``, ``'R'`` for ``x @ op(A)``. Default is ``'L'``.\n";
+            s += P_UPLO_TRI;
+            s += std::string("trans : str, optional\n    ``'N'`` for ``op(A) = A``, ``'") + letter +
+                 "'`` for its " + (t.is_complex ? "conjugate transpose" : "transpose") + ".\n    Default is ``'N'``.\n";
+            s += "diag : str, optional\n"
+                 "    ``'U'`` if ``A`` has a unit diagonal, ``'N'`` otherwise. Default is ``'N'``.\n";
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    The solution, overwriting `b`.\n";
+            return s;
+        }
+
+        /* ---------------------- packed positive definite, RFP rank-k ---------------------- */
+
+        /* The packed group takes `n` as its own argument instead of deriving it, so every
+         * routine documents the same pair of leading parameters. */
+        static constexpr const char *P_AP_PACKED =
+            "ap : ndarray\n"
+            "    The triangle named by `lower`, in packed storage: the ``n * (n + 1) / 2``\n"
+            "    elements of one triangle, column by column. A longer array is accepted and\n"
+            "    its tail ignored.\n";
+        static constexpr const char *P_AP_FACTOR =
+            "ap : ndarray\n"
+            "    Cholesky factorization in packed storage, as returned by ``pptrf``.\n";
+
+        static std::string
+        doc_ppcon(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, ap, anorm, lower=0)\n\n";
+            s += "Estimate the reciprocal condition number of a positive definite matrix in packed\n"
+                 "storage, from its Cholesky factorization (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_AP_FACTOR;
+            s += "anorm : float\n    1-norm of the original matrix, which equals its infinity norm here.\n";
+            s += P_LOWER;
+
+            s += "\nReturns\n-------\n";
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_ppsv(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, ap, b, lower=0, overwrite_b=0)\n\n";
+            s += "Solve a positive definite system whose matrix is in packed storage, by Cholesky\n"
+                 "factorization (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_AP_PACKED;
+            s += "    Note that LAPACK factorizes in place, so `ap` is overwritten with the\n"
+                 "    Cholesky factor even though it is declared an input.\n";
+            s += P_B_RHS;
+            s += P_LOWER;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    Solution of the system, overwriting `b`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        /** @brief `pptrf` and `pptri` share a signature; only the summary and the result differ. */
+        static std::string
+        doc_pp_in_place(const char *name, const char *summary, const char *in, const char *out) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, ap, lower=0, overwrite_ap=0)\n\n";
+            s += std::string(summary) + " (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += in;
+            s += P_LOWER;
+            s += "overwrite_ap : int, optional\n"
+                 "    If nonzero, `ap` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += out;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_pptrf(const char *name, const Dtype &) noexcept
+        {
+            return doc_pp_in_place(name,
+                "Compute the Cholesky factorization of a positive definite matrix in packed\nstorage",
+                P_AP_PACKED,
+                "ul : ndarray\n    The Cholesky factor in packed storage, overwriting `ap`.\n");
+        }
+
+        static std::string doc_pptri(const char *name, const Dtype &) noexcept
+        {
+            return doc_pp_in_place(name,
+                "Invert a positive definite matrix in packed storage from its Cholesky\nfactorization",
+                P_AP_FACTOR,
+                "uli : ndarray\n    The inverse in packed storage, overwriting `ap`.\n");
+        }
+
+        static std::string
+        doc_pptrs(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, ap, b, lower=0, overwrite_b=0)\n\n";
+            s += "Solve a positive definite system in packed storage using a Cholesky factorization\n"
+                 "already computed by ``pptrf`` (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_AP_FACTOR;
+            s += P_B_RHS;
+            s += P_LOWER;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    Solution of the system, overwriting `b`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_sfrk(const char *name, const Dtype &t) noexcept
+        {
+            const char *letter = t.is_complex ? "C" : "T";
+            const char *adj = t.is_complex ? "conjugate transpose" : "transpose";
+            std::string s;
+            s += std::string(name) + "(n, k, alpha, a, beta, c, transr='N', uplo='U', trans='N',\n"
+                 "      overwrite_c=0)\n\n";
+            s += std::string(t.is_complex ? "Hermitian" : "Symmetric") +
+                 " rank-k update of a matrix held in rectangular full packed (RFP)\n"
+                 "storage (LAPACK ``" + std::string(name) + "``).\n\n";
+            s += std::string("Computes ``c := alpha * a @ a.") + (t.is_complex ? "conj().T" : "T") +
+                 " + beta * c`` when `trans` is ``'N'``,\nor ``c := alpha * a." +
+                 (t.is_complex ? "conj().T" : "T") + " @ a + beta * c`` when it is ``'" + letter + "'``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += "k : int\n    Inner dimension of the update.\n";
+            s += "alpha : float\n"
+                 "    Scalar the rank-k term is multiplied by. Real for every flavor.\n";
+            s += "a : ndarray\n"
+                 "    Shape ``(max(n, 1), k)`` when `trans` is ``'N'``, ``(max(k, 1), n)``\n"
+                 "    otherwise. The leading dimension follows `n` and `k` rather than `a`, so\n"
+                 "    the row count must match exactly.\n";
+            s += "beta : float\n"
+                 "    Scalar `c` is scaled by before the update. Real for every flavor.\n";
+            s += "c : ndarray\n"
+                 "    The matrix to update, in RFP storage, length ``n * (n + 1) / 2``.\n";
+            s += p_transr(t);
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if `c` holds the upper triangle, ``'L'`` if lower. Default is ``'U'``.\n";
+            s += std::string("trans : str, optional\n    ``'N'`` for ``a @ a.") +
+                 (t.is_complex ? "conj().T" : "T") + "``, ``'" + letter + "'`` for the " + adj +
+                 " product.\n    Default is ``'N'``.\n";
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "cout : ndarray\n    The updated matrix in RFP storage, overwriting `c`.\n";
+            return s;
+        }
+
+        /* ------------------- rectangular full packed and banded Cholesky ------------------- */
+
+        static constexpr const char *P_AB_BAND =
+            "ab : ndarray\n"
+            "    The band of the matrix, shape ``(kd + 1, n)``: the order `n` and the bandwidth\n"
+            "    `kd` are both read off `ab` itself.\n";
+        static constexpr const char *P_AB_FACTOR =
+            "ab : ndarray\n"
+            "    Banded Cholesky factor, as returned by ``pbtrf``.\n";
+        static constexpr const char *P_LDAB =
+            "ldab : int, optional\n"
+            "    Leading dimension of `ab`. It must equal ``ab.shape[0]``; the argument exists\n"
+            "    only because the ``.pyf`` exposed it. Default is ``ab.shape[0]``.\n";
+
+        /** @brief `pftrf` and `pftri` share a signature; only the summary and the result differ. */
+        static std::string
+        doc_pf_in_place(const char *name, const Dtype &t, const char *summary,
+                        const char *in, const char *out) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, a, transr='N', uplo='U', overwrite_a=0)\n\n";
+            s += std::string(summary) + "\n(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += in;
+            s += p_transr(t);
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if `a` holds the upper triangle, ``'L'`` if lower. Default is ``'U'``.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += out;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_pftrf(const char *name, const Dtype &t) noexcept
+        {
+            return doc_pf_in_place(name, t,
+                "Compute the Cholesky factorization of a positive definite matrix in\n"
+                "rectangular full packed (RFP) storage",
+                "a : ndarray\n"
+                "    The triangle named by `uplo`, in RFP storage, length ``n * (n + 1) / 2``.\n",
+                "achol : ndarray\n    The Cholesky factor in RFP storage, overwriting `a`.\n");
+        }
+
+        static std::string doc_pftri(const char *name, const Dtype &t) noexcept
+        {
+            return doc_pf_in_place(name, t,
+                "Invert a positive definite matrix in rectangular full packed (RFP) storage\n"
+                "from its Cholesky factorization",
+                "a : ndarray\n    Cholesky factorization in RFP storage, as returned by ``pftrf``.\n",
+                "ainv : ndarray\n    The inverse in RFP storage, overwriting `a`.\n");
+        }
+
+        static std::string
+        doc_pftrs(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, a, b, transr='N', uplo='U', overwrite_b=0)\n\n";
+            s += "Solve a positive definite system in rectangular full packed (RFP) storage using\n"
+                 "a Cholesky factorization already computed by ``pftrf``\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += "a : ndarray\n    Cholesky factorization in RFP storage, as returned by ``pftrf``.\n";
+            s += "b : ndarray\n"
+                 "    Right-hand side(s). It may have more than `n` rows; only the leading `n`\n"
+                 "    are read.\n";
+            s += p_transr(t);
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if `a` holds the upper triangle, ``'L'`` if lower. Default is ``'U'``.\n";
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    Solution of the system, overwriting `b`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_pbtrf(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, lower=0, ldab=ab.shape[0], overwrite_ab=0)\n\n";
+            s += "Compute the Cholesky factorization of a positive definite band matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_AB_BAND;
+            s += P_LOWER;
+            s += P_LDAB;
+            s += "overwrite_ab : int, optional\n"
+                 "    If nonzero, `ab` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n    The banded Cholesky factor, overwriting `ab`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_pbtrs(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, b, lower=0, ldab=ab.shape[0], overwrite_b=0)\n\n";
+            s += "Solve a positive definite band system using a Cholesky factorization already\n"
+                 "computed by ``pbtrf`` (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_AB_FACTOR;
+            s += P_B_RHS;
+            s += P_LOWER;
+            s += P_LDAB;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    Solution of the system, overwriting `b`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_pbsv(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, b, lower=0, ldab=ab.shape[0], overwrite_ab=0,\n"
+                 "      overwrite_b=0)\n\n";
+            s += "Solve a positive definite band system by Cholesky factorization\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_AB_BAND;
+            s += P_B_RHS;
+            s += P_LOWER;
+            s += P_LDAB;
+            s += "overwrite_ab : int, optional\n"
+                 "    If nonzero, `ab` may be overwritten in place. Default is 0.\n";
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n    The banded Cholesky factor, overwriting `ab`.\n";
+            s += "x : ndarray\n    Solution of the system, overwriting `b`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        /* --------------- triangular solves, inverse, condition, LU auxiliaries -------------- */
+
+        static constexpr const char *P_UNITDIAG =
+            "unitdiag : int, optional\n"
+            "    If nonzero, the matrix is treated as having a unit diagonal and the stored\n"
+            "    diagonal is not referenced. Default is 0.\n";
+        static constexpr const char *P_DIAG_LETTER =
+            "diag : str, optional\n"
+            "    ``'U'`` if the matrix has a unit diagonal, ``'N'`` otherwise. Default is\n"
+            "    ``'N'``.\n";
+
+        static std::string
+        doc_trtrs(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, lower=0, trans=0, unitdiag=0, lda=a.shape[0],\n"
+                 "      overwrite_b=0)\n\n";
+            s += "Solve a triangular system (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Triangular matrix; only the triangle named by `lower` is read.\n";
+            s += P_B_RHS;
+            s += "lower : int, optional\n"
+                 "    If nonzero, `a` is lower triangular; otherwise upper. Default is 0.\n";
+            s += P_TRANS_INT;
+            s += P_UNITDIAG;
+            s += "lda : int, optional\n"
+                 "    Leading dimension of `a`. It must equal ``a.shape[0]``; the argument exists\n"
+                 "    only because the ``.pyf`` exposed it. Default is ``a.shape[0]``.\n";
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    Solution of the system, overwriting `b`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_trcon(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, norm='1', uplo='U', diag='N')\n\n";
+            s += "Estimate the reciprocal condition number of a triangular matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n"
+                 "    Square triangular matrix; only the triangle named by `uplo` is read.\n";
+            s += "norm : str, optional\n"
+                 "    ``'1'`` or ``'O'`` for the 1-norm, ``'I'`` for the infinity norm.\n"
+                 "    Default is ``'1'``.\n";
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if `a` is upper triangular, ``'L'`` if lower. Default is ``'U'``.\n";
+            s += P_DIAG_LETTER;
+
+            s += "\nReturns\n-------\n";
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_tbtrs(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, b, uplo='U', trans='N', diag='N', overwrite_b=0)\n\n";
+            s += "Solve a triangular band system (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "ab : ndarray\n"
+                 "    The band of the triangular matrix, shape ``(kd + 1, n)``: the order `n` and\n"
+                 "    the bandwidth `kd` are both read off `ab` itself.\n";
+            s += P_B_RHS;
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if the matrix is upper triangular, ``'L'`` if lower. Default is\n"
+                 "    ``'U'``.\n";
+            s += P_TRANS_STR;
+            s += P_DIAG_LETTER;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    Solution of the system, overwriting `b`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_trtri(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(c, lower=0, unitdiag=0, overwrite_c=0)\n\n";
+            s += "Invert a triangular matrix (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "c : ndarray\n"
+                 "    Square triangular matrix; only the triangle named by `lower` is read.\n";
+            s += "lower : int, optional\n"
+                 "    If nonzero, `c` is lower triangular; otherwise upper. Default is 0.\n";
+            s += P_UNITDIAG;
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "inv_c : ndarray\n    The inverse, overwriting `c`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_lauum(const char *name, const Dtype &t) noexcept
+        {
+            const char *adjoint = t.is_complex ? "conj().T" : "T";
+            std::string s;
+            s += std::string(name) + "(c, lower=0, overwrite_c=0)\n\n";
+            s += "Multiply a triangular matrix by its own adjoint\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            /* The `.pyf`'s own comment has these the wrong way round; LAPACK's is authoritative. */
+            s += std::string("Computes ``u @ u.") + adjoint + "`` for an upper triangular `c`, or "
+                 "``l." + adjoint + " @ l``\nfor a lower triangular one, writing the result into "
+                 "the same triangle.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "c : ndarray\n"
+                 "    Square triangular matrix; only the triangle named by `lower` is read.\n";
+            if (t.is_complex) {
+                /* The complex routines take `REAL(A(I,I))`: this exists to square a Cholesky
+                 * factor, whose diagonal is real, and a complex diagonal is silently ignored. */
+                s += "    The routine assumes a Cholesky factor and reads only the real part of\n"
+                     "    the diagonal; any imaginary part is ignored rather than rejected.\n";
+            }
+            s += "lower : int, optional\n"
+                 "    If nonzero, `c` is lower triangular; otherwise upper. Default is 0.\n";
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "a : ndarray\n    The product, in the same triangle of `c`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_laswp(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, piv, k1=0, k2=len(piv)-1, off=0, inc=1,\n"
+                 "      overwrite_a=0)\n\n";
+            s += "Apply a sequence of row interchanges to a matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Row ``i`` is swapped with row ``piv[i]`` for each ``i`` from `k1` to `k2`.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Matrix whose rows are interchanged.\n";
+            s += "piv : ndarray\n"
+                 "    Pivot indices, 0-based, at most ``a.shape[0]`` of them. LAPACK numbers\n"
+                 "    these from 1; the shift happens inside the wrapper and the array passed in\n"
+                 "    is not modified.\n";
+            s += "k1 : int, optional\n    First index of `piv` to apply, 0-based. Default is 0.\n";
+            s += "k2 : int, optional\n"
+                 "    Last index of `piv` to apply, 0-based. Default is ``len(piv) - 1``.\n";
+            s += "off : int, optional\n"
+                 "    Number of leading entries of `piv` to skip. Default is 0.\n";
+            s += "inc : int, optional\n"
+                 "    Stride through `piv`; negative applies the interchanges in reverse order.\n"
+                 "    ``piv`` must hold ``k1 + 1 + (k2 - k1) * abs(inc) + off`` entries, which\n"
+                 "    for ``abs(inc) > 1`` is more than `k2` alone requires. Default is 1.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "a : ndarray\n    The matrix with its rows interchanged.\n";
+            return s;
+        }
+
+        /* --------------------- Schur exchange and the Sylvester equations ------------------- */
+
+        static constexpr const char *P_IFST_ILST =
+            "ifst : int\n"
+            "    Current position of the diagonal block to move, 1-based.\n"
+            "ilst : int\n"
+            "    Position to move it to, 1-based. LAPACK adjusts both when a block turns out to\n"
+            "    be 2x2; the adjusted values are not returned.\n";
+
+        static std::string
+        doc_trexc(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, q, ifst, ilst, wantq=1, overwrite_a=0, overwrite_q=0)\n\n";
+            s += "Reorder a Schur decomposition by moving one diagonal block\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Upper (quasi-)triangular Schur form of shape ``(n, n)``.\n";
+            s += "q : ndarray\n    Matrix of Schur vectors; updated when `wantq` is nonzero.\n";
+            s += P_IFST_ILST;
+            s += "wantq : int, optional\n"
+                 "    If nonzero, the transformation is accumulated into `q`. Default is 1.\n";
+            s += P_OVERWRITE_A;
+            s += "overwrite_q : int, optional\n"
+                 "    If nonzero, `q` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "a : ndarray\n    The reordered Schur form.\n";
+            s += "q : ndarray\n    The updated Schur vectors.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_tgexc(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, q, z, ifst, ilst, wantq=1, wantz=1, ";
+            /* Only the real flavors carry a workspace, so only they take `lwork`. */
+            s += t.is_complex ? "overwrite_a=0,\n      " : "lwork=4*n+16,\n      ";
+            s += "overwrite_b=0, overwrite_q=0, overwrite_z=0)\n\n";
+            s += "Reorder a generalized Schur decomposition by moving one diagonal block\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Upper (quasi-)triangular factor of the pencil, shape ``(n, n)``.\n";
+            s += "b : ndarray\n    Upper triangular factor of the pencil, shape ``(n, n)``.\n";
+            s += "q : ndarray\n    Left Schur vectors; updated when `wantq` is nonzero.\n";
+            s += "z : ndarray\n    Right Schur vectors; updated when `wantz` is nonzero.\n";
+            s += P_IFST_ILST;
+            s += "wantq : int, optional\n"
+                 "    If nonzero, the left transformation is accumulated into `q`. Default is 1.\n";
+            s += "wantz : int, optional\n"
+                 "    If nonzero, the right transformation is accumulated into `z`. Default is 1.\n";
+            if (!t.is_complex) {
+                s += "lwork : int, optional\n"
+                     "    Workspace size, at least ``4 * n + 16``; -1 requests the query.\n"
+                     "    Default is ``4 * n + 16``. The complex flavors need no workspace and\n"
+                     "    take no `lwork`.\n";
+            }
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+            s += "overwrite_q : int, optional\n"
+                 "    If nonzero, `q` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_z : int, optional\n"
+                 "    If nonzero, `z` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "a : ndarray\n    The reordered first factor.\n";
+            s += "b : ndarray\n    The reordered second factor.\n";
+            s += "q : ndarray\n    The updated left Schur vectors.\n";
+            s += "z : ndarray\n    The updated right Schur vectors.\n";
+            if (!t.is_complex) {
+                s += "work : ndarray\n"
+                     "    Workspace; ``work[0]`` holds the optimal `lwork`. The complex flavors\n"
+                     "    do not return it.\n";
+            }
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_trsyl(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, c, trana='N', tranb='N', isgn=1, overwrite_c=0)\n\n";
+            s += "Solve the Sylvester equation ``op(a) @ x + isgn * x @ op(b) = scale * c``\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n"
+                 "    Upper (quasi-)triangular matrix of shape ``(m, m)``, in Schur canonical\n"
+                 "    form.\n";
+            s += "b : ndarray\n"
+                 "    Upper (quasi-)triangular matrix of shape ``(n, n)``, in Schur canonical\n"
+                 "    form.\n";
+            s += "c : ndarray\n    Right-hand side of shape ``(m, n)``.\n";
+            s += "trana : str, optional\n"
+                 "    ``'N'``, ``'T'`` or ``'C'`` for ``op(a)``. Default is ``'N'``.\n";
+            s += "tranb : str, optional\n"
+                 "    ``'N'``, ``'T'`` or ``'C'`` for ``op(b)``. Default is ``'N'``.\n";
+            s += "isgn : int, optional\n"
+                 "    Sign of the ``x @ op(b)`` term: 1 or -1. Default is 1.\n";
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    The solution, overwriting `c`.\n";
+            s += "scale : float\n"
+                 "    Scale factor, at most 1, chosen to avoid overflow in the solution.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    1 if `a` and `b` have common or very close eigenvalues, in which case\n"
+                 "    perturbed values were used.\n";
+            return s;
+        }
+
+        /* ---------------------------- Schur cluster reordering ----------------------------- */
+
+        static constexpr const char *P_SELECT_ARRAY =
+            "select : ndarray\n"
+            "    Boolean mask of length ``n``: the eigenvalues it marks are gathered into the\n"
+            "    leading block. A bool array works; LAPACK reads it as a Fortran LOGICAL.\n";
+        static constexpr const char *P_JOB_SEN =
+            "job : str, optional\n"
+            "    What to compute besides the reordering: ``'N'`` nothing, ``'E'`` the cluster\n"
+            "    condition number `s`, ``'V'`` the separation `sep`, ``'B'`` both.\n"
+            "    Default is ``'B'``.\n";
+        static constexpr const char *P_IJOB_SEN =
+            "ijob : int, optional\n"
+            "    What to compute besides the reordering, 0 through 5; 0 reorders only.\n"
+            "    Default is 4.\n";
+        static constexpr const char *R_M_CLUSTER =
+            "m : int\n    Size of the selected cluster.\n";
+        /* The whole point of the `_lwork` siblings: the workspace these routines need depends on
+         * `m`, which is not known until `select` has been scanned. */
+        static constexpr const char *P_LWORK_SEN_NOTE =
+            "    The default is a bare minimum for the cheapest `job` only -- what is actually\n"
+            "    needed depends on the cluster size, so query the matching ``_lwork`` routine.\n";
+
+        static std::string
+        doc_trsen(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(select, t, q, job='B', wantq=1, lwork=max(1,n), ";
+            s += t.is_complex ? "\n      " : "liwork=1,\n      ";
+            s += "overwrite_t=0, overwrite_q=0)\n\n";
+            s += "Reorder a Schur decomposition to gather selected eigenvalues into a leading\n"
+                 "cluster (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_SELECT_ARRAY;
+            s += "t : ndarray\n    Upper (quasi-)triangular Schur form of shape ``(n, n)``.\n";
+            s += "q : ndarray\n    Matrix of Schur vectors; updated when `wantq` is nonzero.\n";
+            s += P_JOB_SEN;
+            s += "wantq : int, optional\n"
+                 "    If nonzero, the transformation is accumulated into `q`. Default is 1.\n";
+            s += "lwork : int, optional\n"
+                 "    Workspace size; -1 requests the query. Default is ``max(1, n)``.\n";
+            s += P_LWORK_SEN_NOTE;
+            if (!t.is_complex) {
+                s += "liwork : int, optional\n"
+                     "    Integer workspace size; -1 requests the query. Default is 1. The\n"
+                     "    complex flavors have no integer workspace and take no `liwork`.\n";
+            }
+            s += "overwrite_t : int, optional\n"
+                 "    If nonzero, `t` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_q : int, optional\n"
+                 "    If nonzero, `q` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "ts : ndarray\n    The reordered Schur form.\n";
+            s += "qs : ndarray\n    The updated Schur vectors.\n";
+            if (t.is_complex) {
+                s += "w : ndarray\n    Reordered eigenvalues, length ``n``.\n";
+            }
+            else {
+                s += "wr : ndarray\n    Real parts of the reordered eigenvalues, length ``n``.\n";
+                s += "wi : ndarray\n    Imaginary parts of the reordered eigenvalues, length ``n``.\n";
+            }
+            s += R_M_CLUSTER;
+            s += "s : float\n    Condition number of the selected cluster; 0 unless `job` asked for it.\n";
+            s += "sep : float\n    Separation of the cluster; 0 unless `job` asked for it.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_trsen_lwork(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(select, t, job='B')\n\n";
+            s += "Query the workspace ``trsen`` needs for this `select` and `job`\n"
+                 "(LAPACK ``" + std::string(name).substr(0, std::strlen(name) - 6) + "`` with "
+                 "``lwork = -1``).\n\n";
+            s += "`select` and `t` are read for real: LAPACK has to scan them to work out the\n"
+                 "cluster size before it can size the workspace.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_SELECT_ARRAY;
+            s += "t : ndarray\n    Upper (quasi-)triangular Schur form of shape ``(n, n)``.\n";
+            s += P_JOB_SEN;
+
+            s += "\nReturns\n-------\n";
+            s += std::string("work : ") + t.scalar + "\n    Optimal `lwork` for the matching ``trsen`` call.\n";
+            if (!t.is_complex) {
+                s += "iwork : int\n"
+                     "    Optimal `liwork`. The complex flavors have no integer workspace and do\n"
+                     "    not return it.\n";
+            }
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_tgsen(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(select, a, b, q, z, ijob=4, wantq=1, wantz=1,\n"
+                 "      lwork=..., liwork=..., overwrite_a=0, overwrite_b=0, overwrite_q=0,\n"
+                 "      overwrite_z=0)\n\n";
+            s += "Reorder a generalized Schur decomposition to gather selected eigenvalues into a\n"
+                 "leading cluster (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_SELECT_ARRAY;
+            s += "a : ndarray\n    Upper (quasi-)triangular factor of the pencil, shape ``(n, n)``.\n";
+            s += "b : ndarray\n    Upper triangular factor of the pencil, shape ``(n, n)``.\n";
+            s += "q : ndarray\n    Left Schur vectors; updated when `wantq` is nonzero.\n";
+            s += "z : ndarray\n    Right Schur vectors; updated when `wantz` is nonzero.\n";
+            s += P_IJOB_SEN;
+            s += "wantq : int, optional\n"
+                 "    If nonzero, the left transformation is accumulated into `q`. Default is 1.\n";
+            s += "wantz : int, optional\n"
+                 "    If nonzero, the right transformation is accumulated into `z`. Default is 1.\n";
+            s += "lwork : int, optional\n    Workspace size; -1 requests the query.\n";
+            s += t.is_complex ? "    Default is ``1`` when `ijob` is 0 and ``n + 2`` otherwise.\n"
+                              : "    Default is ``4 * n + 16``.\n";
+            s += P_LWORK_SEN_NOTE;
+            s += "liwork : int, optional\n    Integer workspace size; -1 requests the query.\n";
+            s += t.is_complex ? "    Default is ``1`` when `ijob` is 0 and ``n + 2`` otherwise.\n"
+                              : "    Default is ``n + 6``.\n";
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+            s += "overwrite_q : int, optional\n"
+                 "    If nonzero, `q` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_z : int, optional\n"
+                 "    If nonzero, `z` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "as : ndarray\n    The reordered first factor.\n";
+            s += "bs : ndarray\n    The reordered second factor.\n";
+            if (t.is_complex) {
+                s += "alpha : ndarray\n    Numerators of the reordered eigenvalues, length ``n``.\n";
+            }
+            else {
+                s += "alphar : ndarray\n    Real parts of the eigenvalue numerators, length ``n``.\n";
+                s += "alphai : ndarray\n    Imaginary parts of the eigenvalue numerators, length ``n``.\n";
+            }
+            s += "beta : ndarray\n    Denominators of the reordered eigenvalues, length ``n``.\n";
+            s += "qs : ndarray\n    The updated left Schur vectors.\n";
+            s += "zs : ndarray\n    The updated right Schur vectors.\n";
+            s += R_M_CLUSTER;
+            s += "pl : float\n    Lower bound on the reciprocal condition number of the left cluster.\n";
+            s += "pr : float\n    Lower bound on the reciprocal condition number of the right cluster.\n";
+            s += "dif : ndarray\n    Two estimates of the Difu and Difl separations.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_tgsen_lwork(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + (t.is_complex ? "(select, a, b, ijob=4)\n\n"
+                                                   : "(select, a, ijob=4)\n\n");
+            s += "Query the workspace ``tgsen`` needs for this `select` and `ijob`\n"
+                 "(LAPACK ``" + std::string(name).substr(0, std::strlen(name) - 6) + "`` with "
+                 "``lwork = -1``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_SELECT_ARRAY;
+            s += "a : ndarray\n    Upper (quasi-)triangular factor of the pencil, shape ``(n, n)``.\n";
+            if (t.is_complex) {
+                s += "b : ndarray\n"
+                     "    Upper triangular factor of the pencil. The complex query reads both\n"
+                     "    factors where the real one needs only `a`.\n";
+            }
+            s += P_IJOB_SEN;
+
+            s += "\nReturns\n-------\n";
+            s += std::string("work : ") + t.scalar + "\n    Optimal `lwork` for the matching ``tgsen`` call.\n";
+            s += "iwork : int\n    Optimal `liwork`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        /* --------------- generating and applying the orthogonal/unitary factor -------------- */
+
+        static constexpr const char *P_TAU_IN =
+            "tau : ndarray\n    Reflector scalars from the matching factorization.\n";
+
+        /** @brief The transpose letter these routines take: real flavors ``'T'``, complex
+         *         ``'C'``, and no flavor takes the other's. */
+        static std::string p_trans_qr(const Dtype &t, bool optional) noexcept
+        {
+            std::string s = "trans : str";
+            s += optional ? ", optional\n" : "\n";
+            s += std::string("    ``'N'`` to apply ``Q``, ``'") + (t.is_complex ? "C" : "T") +
+                 "'`` to apply its " + (t.is_complex ? "conjugate transpose" : "transpose") + ".\n";
+            if (optional) { s += "    Default is ``'N'``.\n"; }
+            return s;
+        }
+
+        static std::string
+        doc_orghr(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, tau, lo=0, hi=n-1, lwork=max(hi-lo,1), overwrite_a=0)\n\n";
+            s += "Generate the orthogonal/unitary matrix of a Hessenberg reduction\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    The reduced matrix ``gehrd`` returned, shape ``(n, n)``.\n";
+            s += "tau : ndarray\n"
+                 "    Reflector scalars from ``gehrd``, length ``n - 1`` -- empty when ``n`` is 1,\n"
+                 "    which is what ``gehrd`` returns there.\n";
+            s += P_LO;
+            s += P_HI;
+            s += "lwork : int, optional\n"
+                 "    Workspace size, at least ``hi - lo``. Default is ``max(hi - lo, 1)``.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "ht : ndarray\n    The orthogonal/unitary factor ``Q``.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_orghr_lwork(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, lo=0, hi=n-1)\n\n";
+            s += "Query the optimal workspace for ``" + std::string(name).substr(0, 5) + "``\n"
+                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_LO;
+            s += P_HI;
+
+            s += "\nReturns\n-------\n";
+            s += std::string("work : ") + t.scalar + "\n    Optimal `lwork`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        /** @brief `orgqr` and `orgrq` differ only in which side the reflectors act from, which
+         *         shows up as the dimension that floors `lwork`. */
+        static std::string
+        doc_org_factor(const char *name, const char *which, const char *producer,
+                       const char *bound) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, tau, lwork=3*" + std::string(bound) + ", overwrite_a=0)\n\n";
+            s += "Generate the orthogonal/unitary factor ``Q`` of a " + std::string(which) +
+                 " factorization\n(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    The factorization the matching ``" + std::string(producer) +
+                 "`` returned.\n";
+            s += P_TAU_IN;
+            s += "lwork : int, optional\n    Workspace size, at least ``" + std::string(bound) +
+                 "``; -1 requests the query.\n    Default is ``max(3 * " + std::string(bound) + ", 1)``.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "q : ndarray\n    The factor ``Q``, overwriting `a`.\n";
+            s += R_WORK_OUT;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_orgqr(const char *name, const Dtype &) noexcept
+        { return doc_org_factor(name, "QR", "geqrf", "n"); }
+
+        static std::string doc_orgrq(const char *name, const Dtype &) noexcept
+        { return doc_org_factor(name, "RQ", "gerqf", "m"); }
+
+        static std::string
+        doc_ormqr(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(side, trans, a, tau, c, lwork, overwrite_c=0)\n\n";
+            s += "Multiply a matrix by the ``Q`` of a QR factorization\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Computes ``Q @ c`` or ``c @ Q`` according to `side`, with `trans` selecting\n"
+                 "``Q`` or its adjoint.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "side : str\n    ``'L'`` for ``Q @ c``, ``'R'`` for ``c @ Q``.\n";
+            s += p_trans_qr(t, false);
+            s += "a : ndarray\n"
+                 "    The factorization ``geqrf`` returned. Its column count is taken as the\n"
+                 "    reflector count, so `a` must be tall and `tau` must match that count.\n";
+            s += P_TAU_IN;
+            s += "c : ndarray\n    Matrix to multiply.\n";
+            s += "lwork : int\n    Workspace size; -1 requests the query. Required, with no default.\n";
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "cq : ndarray\n    The product, overwriting `c`.\n";
+            s += R_WORK_OUT;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_ormrz(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, tau, c, side='L', trans='N', lwork=..., overwrite_c=0)\n\n";
+            s += "Multiply a matrix by the ``Q`` of an RZ factorization\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "``Q`` is the factor ``tzrzf`` produced when reducing a trapezoidal matrix to\n"
+                 "triangular form.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n"
+                 "    The factorization ``tzrzf`` returned, shape ``(k, nt)`` with ``nt >= k``.\n"
+                 "    Its trailing ``nt - k`` columns carry the ``Z`` part.\n";
+            s += "tau : ndarray\n    Reflector scalars from ``tzrzf``, length ``k``.\n";
+            s += "c : ndarray\n    Matrix to multiply, shape ``(m, n)``.\n";
+            s += "side : str, optional\n"
+                 "    ``'L'`` for ``Q @ c``, ``'R'`` for ``c @ Q``. Default is ``'L'``.\n";
+            s += p_trans_qr(t, true);
+            s += "lwork : int, optional\n"
+                 "    Workspace size, at least `n` when `side` is ``'L'`` and `m` when ``'R'``;\n"
+                 "    -1 requests the query. Default is that minimum.\n";
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "cq : ndarray\n    The product, overwriting `c`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_ormrz_lwork(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(m, n, side='L', trans='N')\n\n";
+            s += "Query the optimal workspace for ``" + std::string(name).substr(0, 5) + "``\n"
+                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_M;
+            s += P_N;
+            s += "side : str, optional\n"
+                 "    ``'L'`` for ``Q @ c``, ``'R'`` for ``c @ Q``. Default is ``'L'``.\n";
+            s += p_trans_qr(t, true);
+
+            s += "\nReturns\n-------\n";
+            s += std::string("work : ") + t.scalar + "\n    Optimal `lwork`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        /* --------------------------- compact-WY and blocked QR ----------------------------- */
+
+        static constexpr const char *P_NB_BLOCK =
+            "nb : int\n"
+            "    Block size, at least 1 and no larger than the factorization allows.\n";
+        static constexpr const char *P_T_REFLECTORS =
+            "t : ndarray\n"
+            "    Upper triangular block reflectors, shape ``(nb, k)``. Its row count is taken as\n"
+            "    the block size and its column count as the reflector count.\n";
+        static constexpr const char *R_T_REFLECTORS =
+            "t : ndarray\n    The upper triangular block reflectors.\n";
+
+        static std::string
+        doc_geqrt(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(nb, a, overwrite_a=0)\n\n";
+            s += "Blocked QR factorization in the compact WY representation\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "``Q`` is described by the reflectors left in `a` together with the block\n"
+                 "reflectors `t`, and applied with ``gemqrt``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_NB_BLOCK;
+            s += P_A_GENERAL;
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "a : ndarray\n    ``R`` in the upper triangle; below it, the reflectors.\n";
+            s += R_T_REFLECTORS;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_gemqrt(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(v, t, c, side='L', trans='N', overwrite_c=0)\n\n";
+            s += "Multiply a matrix by the ``Q`` of a compact-WY QR factorization\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "v : ndarray\n    The reflectors ``geqrt`` left in its `a`.\n";
+            s += P_T_REFLECTORS;
+            s += "c : ndarray\n    Matrix to multiply, shape ``(m, n)``.\n";
+            s += "side : str, optional\n"
+                 "    ``'L'`` for ``Q @ c``, ``'R'`` for ``c @ Q``. Default is ``'L'``.\n";
+            s += p_trans_qr(t, true);
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n    The product, overwriting `c`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_tpqrt(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(l, nb, a, b, overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Blocked QR factorization of a triangular-pentagonal matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "The operand is the square upper triangular `a` stacked on the pentagonal `b`.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "l : int\n"
+                 "    Order of the trapezoidal part of `b`; 0 makes `b` rectangular.\n";
+            s += P_NB_BLOCK;
+            s += "a : ndarray\n    Square upper triangular block, shape ``(n, n)``.\n";
+            s += "b : ndarray\n    Pentagonal block, shape ``(m, n)``.\n";
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "a : ndarray\n    The triangular block of the factorization.\n";
+            s += "b : ndarray\n    The reflectors, overwriting `b`.\n";
+            s += R_T_REFLECTORS;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_tpmqrt(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(l, v, t, a, b, side='L', trans='N', overwrite_a=0,\n"
+                 "      overwrite_b=0)\n\n";
+            s += "Multiply a matrix by the ``Q`` of a triangular-pentagonal QR factorization\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "The matrix multiplied is the pair ``(a, b)``, the same split ``tpqrt`` uses.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "l : int\n    Order of the trapezoidal part of `v`; 0 makes it rectangular.\n";
+            s += "v : ndarray\n    The reflectors ``tpqrt`` left in its `b`.\n";
+            s += P_T_REFLECTORS;
+            s += "a : ndarray\n"
+                 "    Leading block; shape ``(k, n)`` when `side` is ``'L'`` and ``(m, k)``\n"
+                 "    when ``'R'``.\n";
+            s += "b : ndarray\n    Trailing block, shape ``(m, n)``.\n";
+            s += "side : str, optional\n"
+                 "    ``'L'`` for ``Q @ c``, ``'R'`` for ``c @ Q``. Default is ``'L'``.\n";
+            s += p_trans_qr(t, true);
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "a : ndarray\n    The leading block of the product.\n";
+            s += "b : ndarray\n    The trailing block of the product.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_tzrzf(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, lwork=max(m,1), overwrite_a=0)\n\n";
+            s += "Reduce an upper trapezoidal matrix to upper triangular form\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Factors ``a`` as ``(R 0) @ Z`` with ``Z`` orthogonal/unitary; ``ormrz`` applies\n"
+                 "the ``Z`` this produces.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n"
+                 "    Upper trapezoidal matrix of shape ``(m, n)`` with ``n >= m``.\n";
+            s += "lwork : int, optional\n"
+                 "    Workspace size, at least `m`. Default is ``max(m, 1)``.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "rz : ndarray\n    ``R`` in the leading triangle; the rest describes ``Z``.\n";
+            s += "tau : ndarray\n    Reflector scalars, length ``m``.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_tzrzf_lwork(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(m, n)\n\n";
+            s += "Query the optimal workspace for ``" + std::string(name).substr(0, 5) + "``\n"
+                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_M;
+            s += P_N;
+
+            s += "\nReturns\n-------\n";
+            s += std::string("work : ") + t.scalar + "\n    Optimal `lwork`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        /* -------------------- CS decomposition and the one-off solvers --------------------- */
+
+        static std::string
+        doc_orcsd(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(x11, x12, x21, x22, compute_u1=1, compute_u2=1,\n"
+                 "      compute_v1t=1, compute_v2t=1, trans=0, signs=0, lwork=...,";
+            s += t.is_complex ? " lrwork=...,\n      " : "\n      ";
+            s += "overwrite_x11=0, overwrite_x12=0, overwrite_x21=0, overwrite_x22=0)\n\n";
+            s += std::string("CS decomposition of a partitioned ") +
+                 (t.is_complex ? "unitary" : "orthogonal") + " matrix\n(LAPACK ``" +
+                 std::string(name) + "``).\n\n";
+            s += "The matrix arrives as its four blocks and comes back transformed, alongside\n"
+                 "the angles `theta` and the four factors.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "x11 : ndarray\n    Leading block, shape ``(p, q)``; it sets `p` and `q`.\n";
+            s += "x12 : ndarray\n    Upper right block, shape ``(p, m - q)``.\n";
+            s += "x21 : ndarray\n    Lower left block, shape ``(m - p, q)``.\n";
+            s += "x22 : ndarray\n    Trailing block, shape ``(m - p, m - q)``; with `x11` it sets `m`.\n";
+            s += "compute_u1 : int, optional\n    If nonzero, `u1` is computed. Default is 1.\n";
+            s += "compute_u2 : int, optional\n    If nonzero, `u2` is computed. Default is 1.\n";
+            s += "compute_v1t : int, optional\n    If nonzero, `v1t` is computed. Default is 1.\n";
+            s += "compute_v2t : int, optional\n    If nonzero, `v2t` is computed. Default is 1.\n";
+            s += "trans : int, optional\n"
+                 "    If nonzero, the blocks are read row-major rather than column-major.\n"
+                 "    Default is 0.\n";
+            s += "signs : int, optional\n"
+                 "    If nonzero, the alternate sign convention is used. Default is 0.\n";
+            s += "lwork : int, optional\n"
+                 "    Workspace size; -1 requests the query. Query it with ``" +
+                 std::string(name) + "_lwork``.\n";
+            if (t.is_complex) {
+                s += "lrwork : int, optional\n"
+                     "    Real workspace size; -1 requests the query. The real flavors have no\n"
+                     "    second workspace and take no `lrwork`.\n";
+            }
+            s += "overwrite_x11, overwrite_x12, overwrite_x21, overwrite_x22 : int, optional\n"
+                 "    If nonzero, the matching block may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "cs11, cs12, cs21, cs22 : ndarray\n    The transformed blocks.\n";
+            s += "theta : ndarray\n"
+                 "    The CS angles, length ``min(p, m - p, q, m - q)``. Real for every flavor.\n";
+            s += "u1, u2, v1t, v2t : ndarray\n"
+                 "    The factors, each empty unless its ``compute_*`` flag was set.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_orcsd_lwork(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(m, p, q)\n\n";
+            s += "Query the workspace ``" + std::string(name).substr(0, 6) + "`` needs\n"
+                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+            s += "The query runs with every factor requested, no transpose and the default sign\n"
+                 "convention, which is what the ``.pyf`` hard-codes.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "m : int\n    Order of the partitioned matrix.\n";
+            s += "p : int\n    Row count of the leading block.\n";
+            s += "q : int\n    Column count of the leading block.\n";
+
+            s += "\nReturns\n-------\n";
+            s += std::string("work : ") + t.scalar + "\n    Optimal `lwork`.\n";
+            if (t.is_complex) {
+                s += "rwork : float\n"
+                     "    Optimal `lrwork`. The real flavors have no second workspace and do not\n"
+                     "    return it.\n";
+            }
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_gejsv(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, joba=4, jobu=0, jobv=0, jobr=1, jobt=0, jobp=1,\n"
+                 "      lwork=..., overwrite_a=0)\n\n";
+            s += "Singular value decomposition by the Jacobi method, for high relative accuracy\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "LAPACK ships no complex counterpart, so only the real flavors exist.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Matrix of shape ``(m, n)`` with ``m >= n``.\n";
+            s += "joba : int, optional\n"
+                 "    Accuracy level, an index into ``'CEFGAR'``: 0 through 5. Default is 4.\n";
+            s += "jobu : int, optional\n"
+                 "    Left singular vectors, an index into ``'UFWN'``: 0 through 3. Default is 0.\n";
+            s += "jobv : int, optional\n"
+                 "    Right singular vectors, an index into ``'VJWN'``: 0 through 3. `jobv` of 1\n"
+                 "    requires `jobu` below 2. Default is 0.\n";
+            s += "jobr : int, optional\n"
+                 "    If nonzero, extreme columns are pruned. Default is 1.\n";
+            s += "jobt : int, optional\n"
+                 "    If nonzero, the transpose may be factored instead. Default is 0.\n";
+            s += "jobp : int, optional\n"
+                 "    If nonzero, denormal values are flushed. Default is 1.\n";
+            s += "lwork : int, optional\n"
+                 "    Workspace size, at least 7. Default is the largest of the several bounds\n"
+                 "    the routine documents.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "sva : ndarray\n    Singular values, length ``n``.\n";
+            s += "u : ndarray\n    Left singular vectors; empty when `jobu` and `jobt` ask for none.\n";
+            s += "v : ndarray\n    Right singular vectors; empty when `jobv` and `jobt` ask for none.\n";
+            s += "workout : ndarray\n"
+                 "    The first seven workspace entries, which carry the scaling diagnostics.\n";
+            s += "iworkout : ndarray\n"
+                 "    The first three integer workspace entries: numerical rank, nullity and the\n"
+                 "    count of accurate singular values.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_gglse(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, c, d, lwork=m+n+p, overwrite_a=0, overwrite_b=0,\n"
+                 "      overwrite_c=0, overwrite_d=0)\n\n";
+            s += "Solve an equality-constrained least squares problem\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Minimizes ``norm(c - a @ x)`` subject to ``b @ x == d``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Least squares matrix, shape ``(m, n)``.\n";
+            s += "b : ndarray\n    Constraint matrix, shape ``(p, n)`` with ``n - m <= p <= n``.\n";
+            s += "c : ndarray\n    Least squares right-hand side, length ``m``.\n";
+            s += "d : ndarray\n"
+                 "    Constraint right-hand side, length ``p``; empty when there are no\n"
+                 "    constraints.\n";
+            s += "lwork : int, optional\n"
+                 "    Workspace size; -1 requests the query. Default is ``max(m + n + p, 1)``.\n";
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_d : int, optional\n"
+                 "    If nonzero, `d` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "t : ndarray\n    The generalized RQ factorization left in `a`.\n";
+            s += "r : ndarray\n    The triangular factor left in `b`.\n";
+            s += "res : ndarray\n    The residual information left in `c`.\n";
+            s += "x : ndarray\n    The solution, length ``n``.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_gglse_lwork(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(m, n, p)\n\n";
+            s += "Query the optimal workspace for ``" + std::string(name).substr(0, 6) + "``\n"
+                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_M;
+            s += P_N;
+            s += "p : int\n    Row count of the constraint matrix.\n";
+
+            s += "\nReturns\n-------\n";
+            s += std::string("work : ") + t.scalar + "\n    Optimal `lwork`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_lasd4(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(i, d, z, rho=1.0)\n\n";
+            s += "Compute one root of the secular equation of a rank-one modified diagonal\n"
+                 "matrix (LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Used by the divide-and-conquer SVD update. LAPACK ships no complex\n"
+                 "counterpart, so only the real flavors exist.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "i : int\n    Which root to compute, 0-based.\n";
+            s += "d : ndarray\n    The diagonal, in increasing order.\n";
+            s += "z : ndarray\n    The rank-one update vector, the same length as `d`.\n";
+            s += std::string("rho : ") + t.scalar + ", optional\n    Scalar the update is scaled by. Default is 1.0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "delta : ndarray\n    The differences ``d[j] - sigma``.\n";
+            s += std::string("sigma : ") + t.scalar + "\n    The computed root.\n";
+            s += "work : ndarray\n    The sums ``d[j] + sigma``.\n";
+            s += "info : int\n    0 on success; 1 if the iteration failed to converge.\n";
+            return s;
+        }
+
+        /* ------------------ symmetric and Hermitian banded eigensolvers -------------------- */
+
+        static constexpr const char *P_AB_HERM_BAND =
+            "ab : ndarray\n"
+            "    The band of the symmetric/Hermitian matrix, shape ``(kd + 1, n)``: the order\n"
+            "    `n` and the bandwidth `kd` are both read off `ab` itself. It is consumed rather\n"
+            "    than returned.\n";
+        static constexpr const char *P_COMPUTE_V_BAND =
+            "compute_v : int, optional\n"
+            "    If nonzero, eigenvectors are computed and `z` is sized for them; otherwise `z`\n"
+            "    comes back as a 1x1 placeholder. Default is 1.\n";
+        static constexpr const char *P_LOWER_BAND =
+            "lower : int, optional\n"
+            "    If nonzero, `ab` holds the lower band; otherwise the upper. Default is 0.\n";
+        static constexpr const char *R_W_BAND =
+            "w : ndarray\n    Eigenvalues in ascending order, length ``n``. Real for every flavor.\n";
+
+        static std::string
+        doc_sbev(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, compute_v=1, lower=0, ldab=ab.shape[0],\n"
+                 "      overwrite_ab=0)\n\n";
+            s += "Eigenvalues and eigenvectors of a symmetric band matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "``sbevd`` is the divide-and-conquer version and is generally preferred.\n"
+                 "LAPACK ships no Hermitian counterpart under this name, so only the real\n"
+                 "flavors exist.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_AB_HERM_BAND;
+            s += P_COMPUTE_V_BAND;
+            s += P_LOWER_BAND;
+            s += P_LDAB;
+            /* These three alone default the flag to 1: the `.pyf` declares `ab`
+             * `intent(in, overwrite)`, so reuse is the norm and copying is opt-in. */
+            s += "overwrite_ab : int, optional\n"
+                 "    If nonzero, `ab` may be overwritten in place -- and it is consumed either\n"
+                 "    way, never returned. Unlike the rest of this module, the default is 1;\n"
+                 "    pass 0 to keep your array intact.\n";
+
+            s += "\nReturns\n-------\n";
+            s += R_W_BAND;
+            s += "z : ndarray\n    Eigenvectors as columns, when `compute_v` asked for them.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_sbevd(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, compute_v=1, lower=0, ldab=ab.shape[0], ";
+            s += t.is_complex ? "lrwork=...,\n      liwork=..., " : "liwork=...,\n      ";
+            s += "overwrite_ab=0)\n\n";
+            s += std::string("Eigenvalues and eigenvectors of a ") +
+                 (t.is_complex ? "Hermitian" : "symmetric") + " band matrix, by divide and\n"
+                 "conquer (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_AB_HERM_BAND;
+            if (t.is_complex) {
+                s += "    The order must be at least 1: the workspace formulas this routine uses\n"
+                     "    do not cover an empty matrix, and the ``.pyf`` rejects it outright.\n";
+            }
+            s += P_COMPUTE_V_BAND;
+            s += P_LOWER_BAND;
+            s += P_LDAB;
+            if (t.is_complex) {
+                s += "lrwork : int, optional\n"
+                     "    Real workspace size, at least ``1 + 5n + 2n**2`` with eigenvectors and\n"
+                     "    ``n`` without. The real flavors have no second workspace and take no\n"
+                     "    `lrwork`.\n";
+            }
+            s += "liwork : int, optional\n"
+                 "    Integer workspace size, at least ``3 + 5n`` with eigenvectors and 1\n"
+                 "    without.\n";
+            /* These three alone default the flag to 1: the `.pyf` declares `ab`
+             * `intent(in, overwrite)`, so reuse is the norm and copying is opt-in. */
+            s += "overwrite_ab : int, optional\n"
+                 "    If nonzero, `ab` may be overwritten in place -- and it is consumed either\n"
+                 "    way, never returned. Unlike the rest of this module, the default is 1;\n"
+                 "    pass 0 to keep your array intact.\n";
+
+            s += "\nReturns\n-------\n";
+            s += R_W_BAND;
+            s += "z : ndarray\n    Eigenvectors as columns, when `compute_v` asked for them.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_sbevx(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(ab, vl, vu, il, iu, ldab=ab.shape[0], compute_v=1,\n"
+                 "      range=0, lower=0, abstol=0.0, mmax=..., overwrite_ab=0)\n\n";
+            s += std::string("Selected eigenvalues and eigenvectors of a ") +
+                 (t.is_complex ? "Hermitian" : "symmetric") + " band matrix\n(LAPACK ``" +
+                 std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_AB_HERM_BAND;
+            s += "vl : float\n    Lower bound of the half-open interval; used only when `range` is 1.\n";
+            s += "vu : float\n    Upper bound of the half-open interval; used only when `range` is 1.\n";
+            s += "il : int\n"
+                 "    Index of the smallest eigenvalue to return, 1-based; used only when\n"
+                 "    `range` is 2. This group keeps Fortran indexing, deliberately.\n";
+            s += "iu : int\n"
+                 "    Index of the largest eigenvalue to return, 1-based; used only when `range`\n"
+                 "    is 2.\n";
+            s += P_LDAB;
+            s += P_COMPUTE_V_BAND;
+            s += "range : int, optional\n"
+                 "    Which eigenvalues to compute: 0 for all, 1 for those in ``(vl, vu]``, 2 for\n"
+                 "    those with indices `il` through `iu`. Default is 0.\n";
+            s += P_LOWER_BAND;
+            s += "abstol : float, optional\n"
+                 "    Absolute error tolerance. Accuracy is best at twice the underflow\n"
+                 "    threshold, ``2 * lamch('S')``, rather than at 0. Default is 0.0.\n";
+            s += "mmax : int, optional\n"
+                 "    How many eigenvectors `z` has room for. With ``range == 1`` the count is\n"
+                 "    not known until the call returns, so the default is the whole spectrum;\n"
+                 "    pass a tighter bound to avoid allocating for eigenvectors you will not get.\n";
+            /* These three alone default the flag to 1: the `.pyf` declares `ab`
+             * `intent(in, overwrite)`, so reuse is the norm and copying is opt-in. */
+            s += "overwrite_ab : int, optional\n"
+                 "    If nonzero, `ab` may be overwritten in place -- and it is consumed either\n"
+                 "    way, never returned. Unlike the rest of this module, the default is 1;\n"
+                 "    pass 0 to keep your array intact.\n";
+
+            s += "\nReturns\n-------\n";
+            s += R_W_BAND;
+            s += "z : ndarray\n    Eigenvectors as columns, ``(n, mmax)`` when `compute_v` is set.\n";
+            s += "m : int\n    Number of eigenvalues actually found.\n";
+            s += "ifail : ndarray\n"
+                 "    Indices of the eigenvectors that failed to converge; meaningful only when\n"
+                 "    `info` is positive.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        /* ------------------- auxiliaries, norms and machine parameters --------------------- */
+
+        static constexpr const char *P_NORM_LETTER =
+            "norm : str\n"
+            "    Which norm: ``'M'`` for the largest absolute entry, ``'1'`` or ``'O'`` for the\n"
+            "    1-norm, ``'I'`` for the infinity norm, ``'F'`` or ``'E'`` for the Frobenius\n"
+            "    norm. Lowercase is accepted.\n";
+
+        static std::string
+        doc_lamch(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(cmach)\n\n";
+            s += "Machine parameters for this precision (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "cmach : str\n"
+                 "    Which parameter: ``'E'`` relative machine epsilon, ``'S'`` safe minimum,\n"
+                 "    ``'B'`` base, ``'P'`` ``eps * base``, ``'N'`` mantissa digits, ``'R'``\n"
+                 "    rounding, ``'M'`` minimum exponent, ``'U'`` underflow threshold, ``'L'``\n"
+                 "    maximum exponent, ``'O'`` overflow threshold. Lowercase is accepted, and\n"
+                 "    anything else returns 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += std::string("x : ") + t.scalar + "\n    The requested parameter.\n";
+            return s;
+        }
+
+        static std::string
+        doc_lange(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(norm, a)\n\n";
+            s += "Norm of a general matrix (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_NORM_LETTER;
+            s += P_A_GENERAL;
+
+            s += "\nReturns\n-------\n";
+            s += "n2 : float\n    The norm. Real for every flavor.\n";
+            return s;
+        }
+
+        static std::string
+        doc_lantr(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(norm, a, uplo='U', diag='N')\n\n";
+            s += "Norm of a triangular or trapezoidal matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_NORM_LETTER;
+            s += "a : ndarray\n"
+                 "    Matrix of shape ``(m, n)``; only the triangle named by `uplo` is read.\n";
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if `a` is upper triangular, ``'L'`` if lower. Default is ``'U'``.\n";
+            s += P_DIAG_LETTER;
+
+            s += "\nReturns\n-------\n";
+            s += "n2 : float\n    The norm. Real for every flavor.\n";
+            return s;
+        }
+
+        static std::string
+        doc_larfg(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, alpha, x, incx=1, overwrite_x=0)\n\n";
+            s += "Generate an elementary reflector (LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Produces the ``H`` with ``H @ [alpha, x] == [beta, 0]``, described by the\n"
+                 "returned `alpha` (which becomes ``beta``), `x` and `tau`.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "n : int\n    Order of the reflector, at least 1.\n";
+            s += std::string("alpha : ") + t.scalar + "\n    The leading entry of the vector to reflect.\n";
+            s += "x : ndarray\n"
+                 "    The remaining entries, ``1 + (n - 2) * abs(incx)`` of them.\n";
+            s += "incx : int, optional\n    Stride through `x`. Default is 1.\n";
+            s += "overwrite_x : int, optional\n"
+                 "    If nonzero, `x` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += std::string("alpha : ") + t.scalar + "\n    The resulting ``beta``.\n";
+            s += "x : ndarray\n    The reflector vector.\n";
+            s += std::string("tau : ") + t.scalar + "\n    The reflector scalar.\n";
+            return s;
+        }
+
+        static std::string
+        doc_larf(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(v, tau, c, work, side='L', incv=1, overwrite_c=0)\n\n";
+            s += "Apply an elementary reflector to a matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Computes ``H @ c`` or ``c @ H`` for the reflector ``H`` described by `v` and\n"
+                 "`tau`.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "v : ndarray\n"
+                 "    The reflector vector, ``1 + (order - 1) * abs(incv)`` entries, where the\n"
+                 "    order is the row count of `c` when `side` is ``'L'`` and its column count\n"
+                 "    when ``'R'``.\n";
+            s += std::string("tau : ") + t.scalar + "\n    The reflector scalar.\n";
+            s += "c : ndarray\n    Matrix to apply the reflector to.\n";
+            /* The `.pyf` calls this out as a mistake it kept; the wrapper keeps it too. */
+            s += "work : ndarray\n"
+                 "    Workspace, length `n` when `side` is ``'L'`` and `m` when ``'R'``. This is\n"
+                 "    a required argument only for backwards compatibility -- the ``.pyf`` says\n"
+                 "    so itself -- and would otherwise be allocated internally.\n";
+            s += "side : str, optional\n"
+                 "    ``'L'`` for ``H @ c``, ``'R'`` for ``c @ H``. Default is ``'L'``.\n";
+            s += "incv : int, optional\n    Stride through `v`. Default is 1.\n";
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n    The result, overwriting `c`.\n";
+            return s;
+        }
+
+        static std::string
+        doc_lartg(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(f, g)\n\n";
+            s += "Generate a Givens rotation (LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Produces ``cs`` and ``sn`` with ``[[cs, sn], [-conj(sn), cs]] @ [f, g] ==\n"
+                 "[r, 0]``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += std::string("f : ") + t.scalar + "\n    First component.\n";
+            s += std::string("g : ") + t.scalar + "\n    Second component, the one rotated to zero.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "cs : float\n    The cosine. Real for every flavor.\n";
+            s += std::string("sn : ") + t.scalar + "\n    The sine.\n";
+            s += std::string("r : ") + t.scalar + "\n    The resulting first component.\n";
+            return s;
+        }
+
+        static std::string
+        doc_rot(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(x, y, c, s, n=..., offx=0, incx=1, offy=0, incy=1,\n"
+                 "      overwrite_x=0, overwrite_y=0)\n\n";
+            s += "Apply a plane rotation to a pair of complex vectors\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Only the complex flavors exist here; for real vectors this is BLAS ``rot``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "x : ndarray\n    First vector.\n";
+            s += "y : ndarray\n    Second vector.\n";
+            s += "c : float\n    The cosine. Real even though the vectors are complex.\n";
+            s += std::string("s : ") + t.scalar + "\n    The sine.\n";
+            s += "n : int, optional\n"
+                 "    How many elements to rotate. Default is as many as `x` allows from `offx`\n"
+                 "    at stride `incx`.\n";
+            s += "offx : int, optional\n    Index in `x` to start from. Default is 0.\n";
+            s += "incx : int, optional\n    Stride through `x`. Default is 1.\n";
+            s += "offy : int, optional\n    Index in `y` to start from. Default is 0.\n";
+            s += "incy : int, optional\n    Stride through `y`. Default is 1.\n";
+            s += "overwrite_x : int, optional\n"
+                 "    If nonzero, `x` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_y : int, optional\n"
+                 "    If nonzero, `y` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "x : ndarray\n    The rotated first vector.\n";
+            s += "y : ndarray\n    The rotated second vector.\n";
+            return s;
+        }
+
+        static std::string
+        doc_ilaver(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "()\n\n";
+            s += "Version of the LAPACK library this module is linked against\n"
+                 "(LAPACK ``ilaver``).\n\n";
+            s += "The one routine here with no flavor at all, so it takes no arguments and has\n"
+                 "no ``s``/``d``/``c``/``z`` prefix.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "None\n\n";
+
+            s += "Returns\n-------\n";
+            s += "major : int\n    Major version number.\n";
+            s += "minor : int\n    Minor version number.\n";
+            s += "patch : int\n    Patch level.\n";
+            return s;
+        }
+
+        static std::string
+        doc_tgsyl(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, c, d, e, f, trans='N', ijob=0, lwork=2*m*n,\n"
+                 "      overwrite_c=0, overwrite_f=0)\n\n";
+            s += "Solve the generalized Sylvester equations\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "Solves ``a @ r - l @ b == scale * c`` together with\n"
+                 "``d @ r - l @ e == scale * f`` for the pair ``(r, l)``, which overwrites\n"
+                 "``(c, f)``. The ``.pyf`` declares only the real flavors.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Upper quasi-triangular matrix of shape ``(m, m)``.\n";
+            s += "b : ndarray\n    Upper quasi-triangular matrix of shape ``(n, n)``.\n";
+            s += "c : ndarray\n    Right-hand side of the first equation, shape ``(m, n)``.\n";
+            s += "d : ndarray\n    Upper triangular matrix of shape ``(m, m)``.\n";
+            s += "e : ndarray\n    Upper triangular matrix of shape ``(n, n)``.\n";
+            s += "f : ndarray\n    Right-hand side of the second equation, shape ``(m, n)``.\n";
+            s += "trans : str, optional\n"
+                 "    ``'N'`` for the equations above, ``'T'`` for the transposed pair.\n"
+                 "    Default is ``'N'``.\n";
+            s += "ijob : int, optional\n"
+                 "    0 solves only; 1 through 4 also estimate `dif`, by different methods.\n"
+                 "    Default is 0.\n";
+            s += "lwork : int, optional\n"
+                 "    Workspace size. Only ``ijob`` of 1 or 2 with ``trans == 'N'`` needs the\n"
+                 "    full ``2 * m * n``; the rest get by with `n`. Default is ``2 * m * n``.\n";
+            s += "overwrite_c : int, optional\n"
+                 "    If nonzero, `c` may be overwritten in place. Default is 0.\n";
+            s += "overwrite_f : int, optional\n"
+                 "    If nonzero, `f` may be overwritten in place. Default is 0.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "r : ndarray\n    First component of the solution, overwriting `c`.\n";
+            s += "l : ndarray\n    Second component of the solution, overwriting `f`.\n";
+            s += "scale : float\n"
+                 "    Scale factor, at most 1, chosen to avoid overflow in the solution.\n";
+            s += "dif : float\n"
+                 "    Estimate of the separation of the two pencils; 0 unless `ijob` asked\n"
+                 "    for it.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    1 if the pencils have common or very close eigenvalues.\n";
+            return s;
+        }
+
         /* ================================ registration ============================= */
 
         typedef std::string (*DocFn)(const char *, const Dtype &);
@@ -2744,6 +4589,105 @@ namespace lapack {
             {"zhesv_lwork", doc_hesv_lwork, Z},
             {"chesvx_lwork", doc_hesvx_lwork, C},
             {"zhesvx_lwork", doc_hesvx_lwork, Z},
+
+            /* flapack_other: triangular storage conversions */
+            DOC_FAMILY(tpttf),
+            DOC_FAMILY(tpttr),
+            DOC_FAMILY(tfttp),
+            DOC_FAMILY(tfttr),
+            DOC_FAMILY(trttf),
+            DOC_FAMILY(trttp),
+            DOC_FAMILY(tfsm),
+
+            /* flapack_other: packed positive definite and the RFP rank-k update */
+            DOC_FAMILY(ppcon),
+            DOC_FAMILY(ppsv),
+            DOC_FAMILY(pptrf),
+            DOC_FAMILY(pptri),
+            DOC_FAMILY(pptrs),
+            {"ssfrk", doc_sfrk, S},
+            {"dsfrk", doc_sfrk, D},
+            {"chfrk", doc_sfrk, C},
+            {"zhfrk", doc_sfrk, Z},
+
+            /* flapack_other: RFP and banded Cholesky */
+            DOC_FAMILY(pftrf),
+            DOC_FAMILY(pftri),
+            DOC_FAMILY(pftrs),
+            DOC_FAMILY(pbtrf),
+            DOC_FAMILY(pbtrs),
+            DOC_FAMILY(pbsv),
+
+            /* flapack_other: triangular solves and the LU auxiliaries */
+            DOC_FAMILY(trtrs),
+            DOC_FAMILY(trcon),
+            DOC_FAMILY(tbtrs),
+            DOC_FAMILY(trtri),
+            DOC_FAMILY(lauum),
+            DOC_FAMILY(laswp),
+
+            /* flapack_other: Schur exchange and Sylvester */
+            DOC_FAMILY(trexc),
+            DOC_FAMILY(tgexc),
+            DOC_FAMILY(trsyl),
+            {"stgsyl", doc_tgsyl, S},  {"dtgsyl", doc_tgsyl, D},
+
+            /* flapack_other: Schur cluster reordering */
+            DOC_FAMILY(trsen),
+            DOC_FAMILY(trsen_lwork),
+            DOC_FAMILY(tgsen),
+            DOC_FAMILY(tgsen_lwork),
+
+            /* flapack_other: the `or`/`un` spelling pairs */
+            {"sorghr", doc_orghr, S},   {"dorghr", doc_orghr, D},
+            {"cunghr", doc_orghr, C},   {"zunghr", doc_orghr, Z},
+            {"sorghr_lwork", doc_orghr_lwork, S}, {"dorghr_lwork", doc_orghr_lwork, D},
+            {"cunghr_lwork", doc_orghr_lwork, C}, {"zunghr_lwork", doc_orghr_lwork, Z},
+            {"sorgqr", doc_orgqr, S},   {"dorgqr", doc_orgqr, D},
+            {"cungqr", doc_orgqr, C},   {"zungqr", doc_orgqr, Z},
+            {"sorgrq", doc_orgrq, S},   {"dorgrq", doc_orgrq, D},
+            {"cungrq", doc_orgrq, C},   {"zungrq", doc_orgrq, Z},
+            {"sormqr", doc_ormqr, S},   {"dormqr", doc_ormqr, D},
+            {"cunmqr", doc_ormqr, C},   {"zunmqr", doc_ormqr, Z},
+            {"sormrz", doc_ormrz, S},   {"dormrz", doc_ormrz, D},
+            {"cunmrz", doc_ormrz, C},   {"zunmrz", doc_ormrz, Z},
+            {"sormrz_lwork", doc_ormrz_lwork, S}, {"dormrz_lwork", doc_ormrz_lwork, D},
+            {"cunmrz_lwork", doc_ormrz_lwork, C}, {"zunmrz_lwork", doc_ormrz_lwork, Z},
+
+            /* flapack_other: compact-WY and blocked QR */
+            DOC_FAMILY(geqrt),
+            DOC_FAMILY(gemqrt),
+            DOC_FAMILY(tpqrt),
+            DOC_FAMILY(tpmqrt),
+            DOC_FAMILY(tzrzf),
+            DOC_FAMILY(tzrzf_lwork),
+
+            /* flapack_other: CS decomposition and the one-off solvers */
+            {"sorcsd", doc_orcsd, S},   {"dorcsd", doc_orcsd, D},
+            {"cuncsd", doc_orcsd, C},   {"zuncsd", doc_orcsd, Z},
+            {"sorcsd_lwork", doc_orcsd_lwork, S}, {"dorcsd_lwork", doc_orcsd_lwork, D},
+            {"cuncsd_lwork", doc_orcsd_lwork, C}, {"zuncsd_lwork", doc_orcsd_lwork, Z},
+            {"sgejsv", doc_gejsv, S},   {"dgejsv", doc_gejsv, D},
+            {"slasd4", doc_lasd4, S},   {"dlasd4", doc_lasd4, D},
+            DOC_FAMILY(gglse),
+            DOC_FAMILY(gglse_lwork),
+
+            /* flapack_other: symmetric and Hermitian banded eigensolvers */
+            {"ssbev", doc_sbev, S},    {"dsbev", doc_sbev, D},
+            {"ssbevd", doc_sbevd, S},  {"dsbevd", doc_sbevd, D},
+            {"chbevd", doc_sbevd, C},  {"zhbevd", doc_sbevd, Z},
+            {"ssbevx", doc_sbevx, S},  {"dsbevx", doc_sbevx, D},
+            {"chbevx", doc_sbevx, C},  {"zhbevx", doc_sbevx, Z},
+
+            /* flapack_other: auxiliaries, norms and machine parameters */
+            {"slamch", doc_lamch, S},  {"dlamch", doc_lamch, D},
+            DOC_FAMILY(lange),
+            DOC_FAMILY(lantr),
+            DOC_FAMILY(larfg),
+            DOC_FAMILY(larf),
+            DOC_FAMILY(lartg),
+            {"crot", doc_rot, C},      {"zrot", doc_rot, Z},
+            {"ilaver", doc_ilaver, D},
         };
 
         /** @brief The docstring for @p name, or nullptr when none is registered. */

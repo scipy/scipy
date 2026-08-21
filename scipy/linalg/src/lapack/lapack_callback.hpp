@@ -41,7 +41,9 @@ namespace lapack {
     struct CallbackFrame {
         PyObject *callable;             /**< Borrowed; owned by the wrapper's arguments. */
         PyObject *extra_args;           /**< Borrowed tuple, appended after the LAPACK scalars. */
-        std::jmp_buf jmpbuf;            /**< Set by setjmp in the wrapper; target of the abort jump. */
+        /* Zeroed here so CALLABLE_SELECT can brace-initialize the frame from the two members
+         * it actually knows; `setjmp` fills this in immediately afterwards. */
+        std::jmp_buf jmpbuf{};          /**< Set by setjmp in the wrapper; target of the abort jump. */
     };
 
     namespace detail { inline thread_local CallbackFrame *active_frame = nullptr; }
