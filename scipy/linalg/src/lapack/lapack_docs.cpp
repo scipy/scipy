@@ -145,6 +145,53 @@ namespace lapack {
         static constexpr const char *P_E_PT =
             "e : ndarray\n    Off-diagonal, length ``max(0, n - 1)``.\n";
 
+        /* The symmetric/Hermitian indefinite group.  `lower` selects the stored triangle
+         * everywhere in it, and the pivots stay 1-based from end to end. */
+        static constexpr const char *P_LOWER_SH =
+            "lower : int, optional\n"
+            "    If nonzero, the lower triangle of `a` is referenced; otherwise the upper.\n"
+            "    Default is 0.\n";
+        static constexpr const char *P_IPIV_SH =
+            "ipiv : ndarray\n"
+            "    Pivot indices from the Bunch-Kaufman factorization, 1-based exactly as\n"
+            "    ``sytrf``/``hetrf`` returned them -- this group shifts at neither end.\n";
+        static constexpr const char *R_IPIV_SH =
+            "ipiv : ndarray\n"
+            "    Pivot indices describing the interchanges and the 1x1 / 2x2 block structure,\n"
+            "    1-based. Pass them on to ``sytrs``/``sytri``/``sycon`` unchanged.\n";
+
+        /* The symmetric/Hermitian eigensolvers.  Two flag conventions run through them and
+         * neither can be normalised away: `syev`/`syevd`/`syevr`/`syevx` take integer
+         * `compute_v`/`lower`, while the `sygv*` family takes `jobz`/`uplo` letters. */
+        static constexpr const char *P_COMPUTE_V_SH =
+            "compute_v : int, optional\n"
+            "    If nonzero, eigenvectors are computed as well as eigenvalues. Default is 1.\n";
+        static constexpr const char *P_JOBZ =
+            "jobz : str, optional\n"
+            "    ``'V'`` to compute eigenvectors, ``'N'`` for eigenvalues only. Default is\n"
+            "    ``'V'``. This family spells it as a letter where `syev` uses `compute_v`.\n";
+        static constexpr const char *P_UPLO_SH =
+            "uplo : str, optional\n"
+            "    ``'U'`` or ``'L'`` for the triangle of `a` to reference. Default is ``'L'``\n"
+            "    -- note that is the *opposite* of the `lower=0` default elsewhere in this\n"
+            "    group, so the same matrix can give different answers between families.\n";
+        static constexpr const char *P_RANGE_SH =
+            "range : str, optional\n"
+            "    ``'A'`` for all eigenvalues, ``'V'`` for those in ``(vl, vu]``, ``'I'`` for\n"
+            "    those indexed `il` through `iu`. Default is ``'A'``.\n";
+        static constexpr const char *P_SELECT_BOUNDS =
+            "vl : float, optional\n    Lower bound of the interval; used only when `range` is ``'V'``. Default is 0.0.\n"
+            "vu : float, optional\n    Upper bound of the interval; used only when `range` is ``'V'``. Default is 1.0.\n"
+            "il : int, optional\n    Index of the smallest eigenvalue to return, 1-based; used only when `range`\n    is ``'I'``. Default is 1.\n"
+            "iu : int, optional\n    Index of the largest eigenvalue to return, 1-based; used only when `range`\n    is ``'I'``. Default is ``n``.\n"
+            "abstol : float, optional\n    Absolute error tolerance for the eigenvalues. Default is 0.0.\n";
+        static constexpr const char *P_ITYPE =
+            "itype : int, optional\n"
+            "    Which generalized problem to solve: 1 for ``a @ x = w * b @ x``, 2 for\n"
+            "    ``a @ b @ x = w * x``, 3 for ``b @ a @ x = w * x``. Default is 1.\n";
+        static constexpr const char *R_W_EIG =
+            "w : ndarray\n    Eigenvalues in ascending order, length ``n``. Real for every flavor.\n";
+
         static constexpr const char *P_JPTV    =
             "jptv : ndarray\n"
             "    Column pivots: a nonzero entry pins that column of `a` to the front.\n"
@@ -1810,6 +1857,744 @@ namespace lapack {
             return s;
         }
 
+        /* ============================ flapack_sym_herm.pyf.src ===================== */
+
+        /** @brief `sytrf`/`hetrf` and `sytf2` -- blocked and unblocked Bunch-Kaufman. @p what
+         *         names the symmetry, @p lwork_line is empty for the unblocked `sytf2`. */
+        static std::string
+        doc_trf_family(const char *name, const char *what, bool blocked) noexcept
+        {
+            std::string s;
+            s += std::string(name) + (blocked ? "(a, lower=0, lwork=max(n, 1), overwrite_a=0)\n\n"
+                                              : "(a, lower=0, overwrite_a=0)\n\n");
+            s += "Compute the " + std::string(blocked ? "blocked" : "unblocked")
+               + " Bunch-Kaufman factorization of a " + std::string(what) + "\nmatrix (LAPACK ``"
+               + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(what) + " matrix of shape ``(n, n)``.\n";
+            s += P_LOWER_SH;
+            if (blocked) {
+                s += p_lwork("``max(n, 1)``", std::string(std::string(1, name[0])
+                             + (std::strncmp(name + 1, "he", 2) == 0 ? "hetrf_lwork" : "sytrf_lwork")).c_str());
+            }
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "ldu : ndarray\n"
+                 "    The block diagonal ``D`` and the multipliers of ``U`` or ``L``, packed\n"
+                 "    into the selected triangle.\n";
+            s += R_IPIV_SH;
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, ``d[info-1, info-1]`` is exactly zero and the factor is\n"
+                 "    singular.\n";
+            return s;
+        }
+
+        static std::string doc_sytrf(const char *name, const Dtype &) noexcept
+            { return doc_trf_family(name, "symmetric", true); }
+        static std::string doc_hetrf(const char *name, const Dtype &) noexcept
+            { return doc_trf_family(name, "Hermitian", true); }
+        static std::string doc_sytf2(const char *name, const Dtype &) noexcept
+            { return doc_trf_family(name, "symmetric", false); }
+
+        /** @brief The `(n, lower)` workspace queries; @p parent is the routine queried. */
+        static std::string
+        doc_sh_lwork(const char *name, const Dtype &t, const char *parent) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, lower=0)\n\n";
+            s += "Query the optimal `lwork` for ``" + std::string(1, name[0]) + std::string(parent)
+               + "``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_LOWER_SH;
+
+            s += "\nReturns\n-------\n";
+            s += "work : " + std::string(t.scalar) + "\n    Optimal size of the `work` array, as a scalar of the routine's dtype.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_sytrf_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_lwork(name, t, "sytrf"); }
+        static std::string doc_hetrf_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_lwork(name, t, "hetrf"); }
+        static std::string doc_sysv_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_lwork(name, t, "sysv"); }
+        static std::string doc_hesv_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_lwork(name, t, "hesv"); }
+        static std::string doc_sysvx_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_lwork(name, t, "sysvx"); }
+        static std::string doc_hesvx_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_lwork(name, t, "hesvx"); }
+
+        /** @brief `sytrs`/`hetrs` -- solve using the factorization. */
+        static std::string
+        doc_trs_family(const char *name, const char *what) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, ipiv, b, lower=0, overwrite_b=0)\n\n";
+            s += "Solve a " + std::string(what) + " indefinite system using the factorization\n"
+                 "from ``" + std::string(std::strncmp(name + 1, "he", 2) == 0 ? "hetrf" : "sytrf")
+               + "`` (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n"
+                 "    The factorization, of shape ``(lda, n)``. A taller-than-wide buffer is\n"
+                 "    accepted as long as ``lda >= n``.\n";
+            s += P_IPIV_SH;
+            s += P_B_RHS;
+            s += P_LOWER_SH;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += R_X_OUT;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_sytrs(const char *name, const Dtype &) noexcept
+            { return doc_trs_family(name, "symmetric"); }
+        static std::string doc_hetrs(const char *name, const Dtype &) noexcept
+            { return doc_trs_family(name, "Hermitian"); }
+
+        /** @brief `sytri`/`hetri` -- invert from the factorization. */
+        static std::string
+        doc_tri_family(const char *name, const char *what) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, ipiv, lower=0, overwrite_a=0)\n\n";
+            s += "Invert a " + std::string(what) + " indefinite matrix from the factorization\n"
+                 "computed by ``" + std::string(std::strncmp(name + 1, "he", 2) == 0 ? "hetrf" : "sytrf")
+               + "`` (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    The factorization, as returned by the corresponding ``*trf``.\n";
+            s += P_IPIV_SH;
+            s += P_LOWER_SH;
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "inv_a : ndarray\n"
+                 "    The inverse, stored in the selected triangle only; the opposite triangle\n"
+                 "    is left as it was.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, ``d[info-1, info-1]`` is zero and the inverse does not exist.\n";
+            return s;
+        }
+
+        static std::string doc_sytri(const char *name, const Dtype &) noexcept
+            { return doc_tri_family(name, "symmetric"); }
+        static std::string doc_hetri(const char *name, const Dtype &) noexcept
+            { return doc_tri_family(name, "Hermitian"); }
+
+        static std::string
+        doc_syconv(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, ipiv, lower=0, way=0, overwrite_a=0)\n\n";
+            s += "Convert the Bunch-Kaufman factorization between its packed and its expanded\n"
+                 "storage (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    The factorization, as returned by ``sytrf``.\n";
+            s += P_IPIV_SH;
+            s += P_LOWER_SH;
+            s += "way : int, optional\n"
+                 "    0 to convert the packed form into `a` plus `e`, 1 to revert. An integer\n"
+                 "    here rather than the ``'C'``/``'R'`` letter LAPACK takes. Default is 0.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "a : ndarray\n    The converted factorization.\n";
+            s += "e : ndarray\n    Off-diagonal entries of the 2x2 blocks of ``D``, length ``n``.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        /** @brief `syequb`/`heequb` -- scale factors that equilibrate the matrix. */
+        static std::string
+        doc_equb_family(const char *name, const char *what) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, lower=0)\n\n";
+            s += "Compute scale factors that equilibrate a " + std::string(what) + " matrix\n"
+                 "(LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(what) + " matrix of shape ``(n, n)``.\n";
+            s += P_LOWER_SH;
+
+            s += "\nReturns\n-------\n";
+            s += "s : ndarray\n    Scale factors, length ``n``. Real for every flavor.\n";
+            s += "scond : float\n    Ratio of the smallest to the largest scale factor.\n";
+            s += "amax : float\n    Largest element of `a` in absolute value.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, the `info`-th diagonal entry is nonpositive.\n";
+            return s;
+        }
+
+        static std::string doc_syequb(const char *name, const Dtype &) noexcept
+            { return doc_equb_family(name, "symmetric"); }
+        static std::string doc_heequb(const char *name, const Dtype &) noexcept
+            { return doc_equb_family(name, "Hermitian"); }
+
+        /** @brief `sycon`/`hecon` -- condition estimate from the factorization. */
+        static std::string
+        doc_con_family(const char *name, const char *what) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, ipiv, anorm, lower=0)\n\n";
+            s += "Estimate the reciprocal condition number of a " + std::string(what)
+               + " indefinite\nmatrix from its Bunch-Kaufman factorization (LAPACK ``"
+               + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    The factorization, as returned by the corresponding ``*trf``.\n";
+            s += P_IPIV_SH;
+            s += "anorm : float\n    1-norm of the original matrix.\n";
+            s += P_LOWER_SH;
+
+            s += "\nReturns\n-------\n";
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_sycon(const char *name, const Dtype &) noexcept
+            { return doc_con_family(name, "symmetric"); }
+        static std::string doc_hecon(const char *name, const Dtype &) noexcept
+            { return doc_con_family(name, "Hermitian"); }
+
+        /** @brief `sysv`/`hesv` -- the simple indefinite driver. */
+        static std::string
+        doc_sv_family(const char *name, const char *what, const char *out) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, lwork=max(n, 1), lower=0, overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Solve ``a @ x = b`` for a " + std::string(what)
+               + " indefinite ``a`` by Bunch-Kaufman\nfactorization (LAPACK ``"
+               + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(what) + " matrix of shape ``(n, n)``.\n";
+            s += P_B_RHS;
+            s += p_lwork("``max(n, 1)``", std::string(std::string(1, name[0])
+                         + (std::strncmp(name + 1, "he", 2) == 0 ? "hesv_lwork" : "sysv_lwork")).c_str());
+            s += P_LOWER_SH;
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += std::string(out) + " : ndarray\n    The block diagonal ``D`` and the multipliers, packed into the triangle.\n";
+            s += R_IPIV_SH;
+            s += R_X_OUT;
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, ``d[info-1, info-1]`` is exactly zero and the solve failed.\n";
+            return s;
+        }
+
+        static std::string doc_sysv(const char *name, const Dtype &) noexcept
+            { return doc_sv_family(name, "symmetric", "udut"); }
+        static std::string doc_hesv(const char *name, const Dtype &) noexcept
+            { return doc_sv_family(name, "Hermitian", "uduh"); }
+
+        static std::string
+        doc_sysvx(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, af=None, ipiv=None, lwork=max(3*n, 1), factored=0,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "lower=0, overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Solve a symmetric indefinite system with condition estimation and error\n"
+                 "bounds (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Symmetric matrix of shape ``(n, n)``.\n";
+            s += P_B_RHS;
+            s += "af : ndarray, optional\n    Factorization to reuse when ``factored=1``; otherwise it is computed.\n";
+            s += "ipiv : ndarray, optional\n    Pivot indices to reuse when ``factored=1``, 1-based; otherwise computed.\n";
+            s += "lwork : int, optional\n"
+                 "    Size of the workspace. Default is ``max(3 * n, 1)``; the minimum is\n"
+                 "    ``3 * n`` for the real flavors and ``2 * n`` for the complex ones. Use\n"
+                 "    ``sysvx_lwork`` for the optimal value.\n";
+            s += "factored : int, optional\n"
+                 "    If nonzero, `af` and `ipiv` already hold the factorization and are reused.\n"
+                 "    An integer here rather than the ``'F'``/``'N'`` letter ``gesvx`` takes.\n"
+                 "    Default is 0.\n";
+            s += P_LOWER_SH;
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += "a_s : ndarray\n    `a`, unchanged; returned so the caller can chain calls.\n";
+            s += "udut : ndarray\n    The block diagonal ``D`` and the multipliers.\n";
+            s += R_IPIV_SH;
+            s += "b_s : ndarray\n    `b`, unchanged.\n";
+            s += R_X_OUT;
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += "ferr : ndarray\n    Estimated forward error bound for each solution vector.\n";
+            s += "berr : ndarray\n    Componentwise relative backward error of each solution vector.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if ``0 < info <= n``, ``d[info-1, info-1]`` is exactly zero; if\n"
+                 "    ``info = n+1``, the matrix is singular to working precision.\n";
+            return s;
+        }
+
+        static std::string
+        doc_hesvx(const char *name, const Dtype &) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, af=None, ipiv=None, lwork=max(2*n, 1), factored=0,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "lower=0, overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Solve a Hermitian indefinite system with condition estimation and error\n"
+                 "bounds (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    Hermitian matrix of shape ``(n, n)``.\n";
+            s += P_B_RHS;
+            s += "af : ndarray, optional\n    Factorization to reuse when ``factored=1``; otherwise it is computed.\n";
+            s += "ipiv : ndarray, optional\n    Pivot indices to reuse when ``factored=1``, 1-based; otherwise computed.\n";
+            s += p_lwork("``max(2 * n, 1)``", std::string(std::string(1, name[0]) + "hesvx_lwork").c_str());
+            s += "factored : int, optional\n"
+                 "    If nonzero, `af` and `ipiv` already hold the factorization and are reused.\n"
+                 "    Default is 0.\n";
+            s += P_LOWER_SH;
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            /* Seven outputs, not the nine `sysvx` returns: the Hermitian driver keeps `a` and
+             * `b` to itself. */
+            s += "uduh : ndarray\n    The block diagonal ``D`` and the multipliers.\n";
+            s += R_IPIV_SH;
+            s += R_X_OUT;
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += "ferr : ndarray\n    Estimated forward error bound for each solution vector.\n";
+            s += "berr : ndarray\n    Componentwise relative backward error of each solution vector.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if ``0 < info <= n``, ``d[info-1, info-1]`` is exactly zero; if\n"
+                 "    ``info = n+1``, the matrix is singular to working precision.\n";
+            return s;
+        }
+
+        /* ======================= flapack_sym_herm.pyf.src, eigen ==================== */
+
+        /** @brief The `sy`/`he` name of a merged pair, from the wrapper's own first letter. */
+        static std::string
+        sh_name(const char *name, const char *stem) noexcept
+        {
+            return std::string(1, name[0]) + (name[1] == 'h' ? "he" : "sy") + std::string(stem);
+        }
+
+        /** @brief `syev`/`heev` -- the simple QR-iteration driver. */
+        static std::string
+        doc_ev(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, compute_v=1, lower=0, lwork=..., overwrite_a=0)\n\n";
+            s += "Compute the eigenvalues and optionally the eigenvectors of a "
+               + std::string(t.is_complex ? "Hermitian" : "real symmetric") + "\nmatrix (LAPACK ``"
+               + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(t.is_complex ? "Hermitian" : "Symmetric")
+               + " matrix of shape ``(n, n)``.\n";
+            s += P_COMPUTE_V_SH;
+            s += P_LOWER_SH;
+            s += p_lwork(t.is_complex ? "``max(2 * n - 1, 1)``" : "``max(3 * n - 1, 1)``",
+                         sh_name(name, "ev_lwork").c_str());
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += R_W_EIG;
+            s += "v : ndarray\n"
+                 "    Orthonormal eigenvectors as columns when `compute_v` is nonzero;\n"
+                 "    otherwise the contents are not meaningful.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        /** @brief The `(n, lower)` eigen workspace queries. */
+        static std::string
+        doc_sh_ev_lwork(const char *name, const Dtype &t, const char *stem) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, lower=0)\n\n";
+            s += "Query the optimal `lwork` for ``" + sh_name(name, stem) + "``.\n\n";
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_LOWER_SH;
+            s += "\nReturns\n-------\n";
+            s += "work : " + std::string(t.scalar) + "\n    Optimal size of the `work` array, as a scalar of the routine's dtype.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_ev_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_ev_lwork(name, t, "ev"); }
+        static std::string doc_evx_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_ev_lwork(name, t, "evx"); }
+
+        /** @brief `syevd`/`heevd` -- divide-and-conquer.  Split because the complex half takes
+         *         an extra `lrwork`; @p extra adds its entry. */
+        static std::string
+        doc_evd_family(const char *name, const char *what, bool complex_side) noexcept
+        {
+            std::string s;
+            s += std::string(name) + (complex_side
+                     ? "(a, compute_v=1, lower=0, lwork=..., liwork=..., lrwork=...,\n"
+                     : "(a, compute_v=1, lower=0, lwork=..., liwork=...,\n");
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_a=0)\n\n";
+            s += "Compute the eigenvalues and optionally the eigenvectors of a "
+               + std::string(what) + "\nmatrix by divide-and-conquer (LAPACK ``"
+               + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(what) + " matrix of shape ``(n, n)``.\n";
+            s += P_COMPUTE_V_SH;
+            s += P_LOWER_SH;
+            if (complex_side) {
+                s += "lwork : int, optional\n    Default is ``2 * n + n ** 2`` with eigenvectors, ``n + 1`` without.\n";
+                s += "liwork : int, optional\n    Default is ``3 + 5 * n`` with eigenvectors, ``1`` without.\n";
+                s += "lrwork : int, optional\n"
+                     "    Size of the real workspace, which the real flavors do not have. Default\n"
+                     "    is ``1 + 5 * n + 2 * n ** 2`` with eigenvectors, ``n`` without.\n";
+            }
+            else {
+                s += "lwork : int, optional\n"
+                     "    Default is ``1 + 6 * n + 2 * n ** 2`` with eigenvectors, ``2 * n + 1``\n"
+                     "    without.\n";
+                s += "liwork : int, optional\n    Default is ``3 + 5 * n`` with eigenvectors, ``1`` without.\n";
+            }
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += R_W_EIG;
+            s += "v : ndarray\n    Orthonormal eigenvectors as columns when `compute_v` is nonzero.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        static std::string doc_evd(const char *name, const Dtype &t) noexcept
+            { return doc_evd_family(name, t.is_complex ? "Hermitian" : "real symmetric", t.is_complex); }
+
+        static std::string
+        doc_evd_lwork_family(const char *name, const Dtype &t, bool complex_side) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, compute_v=1, lower=0)\n\n";
+            s += "Query the optimal workspace sizes for ``" + sh_name(name, "evd") + "``.\n\n";
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_COMPUTE_V_SH;
+            s += P_LOWER_SH;
+            s += "\nReturns\n-------\n";
+            s += "work : " + std::string(t.scalar) + "\n    Optimal size of the `work` array, as a scalar of the routine's dtype.\n";
+            s += "iwork : int\n    Optimal size of the integer workspace, to pass as `liwork`.\n";
+            if (complex_side) {
+                s += "rwork : float\n"
+                     "    Optimal size of the real workspace, to pass as `lrwork`. The real\n"
+                     "    flavors have no such output, so they return one value fewer.\n";
+            }
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_evd_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_evd_lwork_family(name, t, t.is_complex); }
+
+        /** @brief `syevr`/`heevr` -- the MRRR driver. */
+        static std::string
+        doc_evr_family(const char *name, const char *what, bool complex_side) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, compute_v=1, range='A', lower=0, vl=0.0, vu=1.0, il=1,\n";
+            s += std::string(std::strlen(name) + 1, ' ')
+               + (complex_side ? "iu=n, abstol=0.0, lwork=..., lrwork=..., liwork=...,\n"
+                               : "iu=n, abstol=0.0, lwork=..., liwork=...,\n");
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_a=0)\n\n";
+            s += "Compute selected eigenvalues and optionally eigenvectors of a "
+               + std::string(what) + "\nmatrix by the MRRR algorithm (LAPACK ``"
+               + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(what) + " matrix of shape ``(n, n)``.\n";
+            s += P_COMPUTE_V_SH;
+            s += P_RANGE_SH;
+            s += P_LOWER_SH;
+            s += P_SELECT_BOUNDS;
+            s += "lwork : int, optional\n"
+                 "    Default is ``max(26 * n, 1)`` for the real flavors, ``max(2 * n, 1)``\n"
+                 "    for the complex.\n";
+            if (complex_side) {
+                s += "lrwork : int, optional\n    Size of the real workspace. Default is ``max(24 * n, 1)``.\n";
+            }
+            s += "liwork : int, optional\n    Size of the integer workspace. Default is ``max(10 * n, 1)``.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += R_W_EIG;
+            s += "z : ndarray\n    The `m` computed eigenvectors as columns, or empty when `compute_v` is 0.\n";
+            s += "m : int\n    Number of eigenvalues found.\n";
+            s += "isuppz : ndarray\n"
+                 "    Support of each eigenvector: rows ``isuppz[2*i]`` through ``isuppz[2*i+1]``\n"
+                 "    are nonzero, 1-based.\n";
+            s += "    Length ``2 * n`` when `range` is ``'A'``, when `range` is ``'I'`` spanning\n"
+                 "    the whole index range, or when ``n == 1``; empty otherwise, those being the\n"
+                 "    only cases LAPACK writes it.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        static std::string doc_evr(const char *name, const Dtype &t) noexcept
+            { return doc_evr_family(name, t.is_complex ? "Hermitian" : "real symmetric", t.is_complex); }
+
+        static std::string
+        doc_evr_lwork_family(const char *name, const Dtype &t, bool complex_side) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, lower=0)\n\n";
+            s += "Query the optimal workspace sizes for ``" + sh_name(name, "evr") + "``.\n\n";
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_LOWER_SH;
+            s += "\nReturns\n-------\n";
+            s += "work : " + std::string(t.scalar) + "\n    Optimal size of the `work` array, as a scalar of the routine's dtype.\n";
+            if (complex_side) {
+                /* `rwork` sits before `iwork` here, the other way round from `heevd_lwork`. */
+                s += "rwork : float\n    Optimal size of the real workspace, to pass as `lrwork`.\n";
+            }
+            s += "iwork : int\n    Optimal size of the integer workspace, to pass as `liwork`.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_evr_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_evr_lwork_family(name, t, t.is_complex); }
+
+        /** @brief `syevx`/`heevx` -- bisection plus inverse iteration. */
+        static std::string
+        doc_evx(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, compute_v=1, range='A', lower=0, vl=0.0, vu=1.0, il=1,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "iu=n, abstol=0.0, lwork=..., overwrite_a=0)\n\n";
+            s += "Compute selected eigenvalues and optionally eigenvectors of a "
+               + std::string(t.is_complex ? "Hermitian" : "real symmetric")
+               + "\nmatrix (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(t.is_complex ? "Hermitian" : "Symmetric")
+               + " matrix of shape ``(n, n)``.\n";
+            s += P_COMPUTE_V_SH;
+            s += P_RANGE_SH;
+            s += P_LOWER_SH;
+            s += P_SELECT_BOUNDS;
+            s += p_lwork(t.is_complex ? "``max(2 * n, 1)``" : "``max(8 * n, 1)``",
+                         sh_name(name, "evx_lwork").c_str());
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += R_W_EIG;
+            s += "z : ndarray\n    The `m` computed eigenvectors as columns, or empty when `compute_v` is 0.\n";
+            s += "m : int\n    Number of eigenvalues found.\n";
+            s += "ifail : ndarray\n    Indices of eigenvectors that failed to converge, 1-based.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        /** @brief `sygv`/`hegv` -- the generalized definite problem. */
+        static std::string
+        doc_gv(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, itype=1, jobz='V', uplo='L', lwork=...,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Solve the generalized "
+               + std::string(t.is_complex ? "Hermitian" : "symmetric")
+               + "-definite eigenproblem (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(t.is_complex ? "Hermitian" : "Symmetric")
+               + " matrix of shape ``(n, n)``.\n";
+            s += "b : ndarray\n    Positive definite matrix of shape ``(n, n)``.\n";
+            s += P_ITYPE;
+            s += P_JOBZ;
+            s += P_UPLO_SH;
+            s += p_lwork(t.is_complex ? "``max(2 * n - 1, 1)``" : "``max(3 * n - 1, 1)``",
+                         sh_name(name, "gv_lwork").c_str());
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += R_W_EIG;
+            s += "v : ndarray\n    Eigenvectors as columns when `jobz` is ``'V'``, normalized per `itype`.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        /** @brief The `(n, uplo)` generalized workspace queries -- `uplo`, not `lower`. */
+        static std::string
+        doc_sh_gv_lwork(const char *name, const Dtype &t, const char *stem) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(n, uplo='L')\n\n";
+            s += "Query the optimal `lwork` for ``" + sh_name(name, stem) + "``.\n\n";
+            s += "Parameters\n----------\n";
+            s += P_N_ORDER;
+            s += P_UPLO_SH;
+            s += "\nReturns\n-------\n";
+            s += "work : " + std::string(t.scalar) + "\n    Optimal size of the `work` array, as a scalar of the routine's dtype.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_gv_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_gv_lwork(name, t, "gv"); }
+        static std::string doc_gvx_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_gv_lwork(name, t, "gvx"); }
+
+        /** @brief `sygvd`/`hegvd` -- generalized divide-and-conquer, split for `lrwork`. */
+        static std::string
+        doc_gvd_family(const char *name, const char *what, bool complex_side) noexcept
+        {
+            std::string s;
+            s += std::string(name) + (complex_side
+                     ? "(a, b, itype=1, jobz='V', uplo='L', lwork=..., lrwork=...,\n"
+                     : "(a, b, itype=1, jobz='V', uplo='L', lwork=...,\n");
+            s += std::string(std::strlen(name) + 1, ' ') + "liwork=..., overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Solve the generalized " + std::string(what)
+               + "-definite eigenproblem by\ndivide-and-conquer (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(complex_side ? "Hermitian" : "Symmetric")
+               + " matrix of shape ``(n, n)``.\n";
+            s += "b : ndarray\n    Positive definite matrix of shape ``(n, n)``.\n";
+            s += P_ITYPE;
+            s += P_JOBZ;
+            s += P_UPLO_SH;
+            if (complex_side) {
+                s += "lwork : int, optional\n    Default is ``n * (n + 2)`` when `jobz` is ``'V'``, ``n + 1`` otherwise.\n";
+                s += "lrwork : int, optional\n"
+                     "    Size of the real workspace, which the real flavors do not have. Default\n"
+                     "    is ``2 * n ** 2 + 5 * n + 1`` when `jobz` is ``'V'``, ``n`` otherwise.\n";
+            }
+            else {
+                s += "lwork : int, optional\n"
+                     "    Default is ``1 + 6 * n + 2 * n ** 2`` when `jobz` is ``'V'``,\n"
+                     "    ``2 * n + 1`` otherwise.\n";
+            }
+            s += "liwork : int, optional\n    Default is ``5 * n + 3`` when `jobz` is ``'V'``, ``1`` otherwise.\n";
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += R_W_EIG;
+            s += "v : ndarray\n    Eigenvectors as columns when `jobz` is ``'V'``.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        static std::string doc_gvd(const char *name, const Dtype &t) noexcept
+            { return doc_gvd_family(name, t.is_complex ? "Hermitian" : "symmetric", t.is_complex); }
+
+        /** @brief `sygvx`/`hegvx` -- selected generalized eigenvalues. */
+        static std::string
+        doc_gvx(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, itype=1, jobz='V', range='A', uplo='L', vl=0.0,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "vu=1.0, il=1, iu=n, abstol=0.0, lwork=...,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "overwrite_a=0, overwrite_b=0)\n\n";
+            s += "Compute selected eigenvalues of the generalized "
+               + std::string(t.is_complex ? "Hermitian" : "symmetric")
+               + "-definite\nproblem (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(t.is_complex ? "Hermitian" : "Symmetric")
+               + " matrix of shape ``(n, n)``.\n";
+            s += "b : ndarray\n    Positive definite matrix of shape ``(n, n)``.\n";
+            s += P_ITYPE;
+            s += P_JOBZ;
+            s += P_RANGE_SH;
+            s += P_UPLO_SH;
+            s += P_SELECT_BOUNDS;
+            s += p_lwork(t.is_complex ? "``max(2 * n, 1)``" : "``max(8 * n, 1)``",
+                         sh_name(name, "gvx_lwork").c_str());
+            s += P_OVERWRITE_A;
+            s += P_OVERWRITE_B;
+
+            s += "\nReturns\n-------\n";
+            s += R_W_EIG;
+            s += "z : ndarray\n    The `m` computed eigenvectors as columns, or empty when `jobz` is ``'N'``.\n";
+            s += "m : int\n    Number of eigenvalues found.\n";
+            s += "ifail : ndarray\n    Indices of eigenvectors that failed to converge, 1-based.\n";
+            s += R_INFO_CV;
+            return s;
+        }
+
+        /** @brief `sytrd`/`hetrd` -- reduction to tridiagonal form. */
+        static std::string
+        doc_trd(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, lower=0, lwork=max(n, 1), overwrite_a=0)\n\n";
+            s += "Reduce a " + std::string(t.is_complex ? "Hermitian" : "real symmetric")
+               + " matrix to real symmetric tridiagonal form\nby an orthogonal similarity "
+                 "transformation (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(t.is_complex ? "Hermitian" : "Symmetric")
+               + " matrix of shape ``(n, n)``.\n";
+            s += P_LOWER_SH;
+            s += p_lwork("``max(n, 1)``", sh_name(name, "trd_lwork").c_str());
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n"
+                 "    The tridiagonal form together with the elementary reflectors that produced\n"
+                 "    it, packed into `a`.\n";
+            s += "d : ndarray\n    Diagonal of the tridiagonal form, length ``n``. Real for every flavor.\n";
+            s += "e : ndarray\n    Off-diagonal, length ``n - 1``. Real for every flavor.\n";
+            s += R_TAU;
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string doc_trd_lwork(const char *name, const Dtype &t) noexcept
+            { return doc_sh_ev_lwork(name, t, "trd"); }
+
+        /** @brief `sygst`/`hegst` -- reduce the generalized problem to standard form. */
+        static std::string
+        doc_gst(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(a, b, itype=1, lower=0, overwrite_a=0)\n\n";
+            s += "Reduce a generalized " + std::string(t.is_complex ? "Hermitian" : "symmetric")
+               + "-definite problem to standard\nform (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "a : ndarray\n    " + std::string(t.is_complex ? "Hermitian" : "Symmetric")
+               + " matrix of shape ``(n, n)``.\n";
+            s += "b : ndarray\n    The Cholesky factor of the positive definite `b`, as returned by ``potrf``.\n";
+            s += P_ITYPE;
+            s += P_LOWER_SH;
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "c : ndarray\n    The reduced matrix, overwriting `a`.\n";
+            s += R_INFO;
+            return s;
+        }
+
         /* ================================ registration ============================= */
 
         typedef std::string (*DocFn)(const char *, const Dtype &);
@@ -1827,8 +2612,13 @@ namespace lapack {
             {"c" #fam, doc_##fam, C}, \
             {"z" #fam, doc_##fam, Z}
 
-        /* Same order as `gen_methods` in `lapack_gen.cpp`: each `_lwork` query sits
-         * directly after the routine it queries. */
+        /** @brief A symmetric/Hermitian family: `s/dsy<fam>`, `c/zhe<fam>` */
+        #define DOC_FAMILY_SYHE(fam)     \
+            {"ssy" #fam, doc_##fam, S},  \
+            {"dsy" #fam, doc_##fam, D},  \
+            {"che" #fam, doc_##fam, C},  \
+            {"zhe" #fam, doc_##fam, Z}
+
         static const DocEntry doc_table[] = {
             DOC_FAMILY(gees),
             DOC_FAMILY(gges),
@@ -1877,8 +2667,6 @@ namespace lapack {
             DOC_FAMILY(gbtrs),
             DOC_FAMILY(gbcon),
             DOC_FAMILY(langb),
-
-            /* Same order as `pos_def_methods` in `lapack_pos_def.cpp`. */
             DOC_FAMILY(pstrf),
             DOC_FAMILY(pstf2),
             DOC_FAMILY(posv),
@@ -1887,15 +2675,57 @@ namespace lapack {
             DOC_FAMILY(potrf),
             DOC_FAMILY(potrs),
             DOC_FAMILY(potri),
-
-            /* Same order as `pos_def_tri_methods` in `lapack_pos_def_tri.cpp`. */
             DOC_FAMILY(ptsv),
             DOC_FAMILY(pttrf),
             DOC_FAMILY(pttrs),
             DOC_FAMILY(pteqr),
             DOC_FAMILY(ptsvx),
+            DOC_FAMILY(sytrf),
+            DOC_FAMILY(sytrf_lwork),
+            DOC_FAMILY(sytf2),
+            DOC_FAMILY(sytrs),
+            DOC_FAMILY(sytri),
+            DOC_FAMILY(syconv),
+            DOC_FAMILY(syequb),
+            DOC_FAMILY(sycon),
+            DOC_FAMILY(sysv),
+            DOC_FAMILY(sysv_lwork),
+            DOC_FAMILY(sysvx),
+            DOC_FAMILY(sysvx_lwork),
+            DOC_FAMILY_SYHE(ev),
+            DOC_FAMILY_SYHE(evx),
+            DOC_FAMILY_SYHE(evd),
+            DOC_FAMILY_SYHE(evr),
+            DOC_FAMILY_SYHE(gvd),
+            DOC_FAMILY_SYHE(gv),
+            DOC_FAMILY_SYHE(gvx),
+            DOC_FAMILY_SYHE(trd),
+            DOC_FAMILY_SYHE(gst),
+            DOC_FAMILY_SYHE(ev_lwork),
+            DOC_FAMILY_SYHE(evx_lwork),
+            DOC_FAMILY_SYHE(gv_lwork),
+            DOC_FAMILY_SYHE(gvx_lwork),
+            DOC_FAMILY_SYHE(trd_lwork),
+            DOC_FAMILY_SYHE(evd_lwork),
+            DOC_FAMILY_SYHE(evr_lwork),
 
             // Irregular names that don't fit the DOC_FAMILY pattern.
+            {"chetrf", doc_hetrf, C},
+            {"chetrf_lwork", doc_hetrf_lwork, C},
+            {"zhetrf", doc_hetrf, Z},
+            {"zhetrf_lwork", doc_hetrf_lwork, Z},
+            {"chetrs", doc_hetrs, C},
+            {"zhetrs", doc_hetrs, Z},
+            {"chetri", doc_hetri, C},
+            {"zhetri", doc_hetri, Z},
+            {"cheequb", doc_heequb, C},
+            {"zheequb", doc_heequb, Z},
+            {"checon", doc_hecon, C},
+            {"zhecon", doc_hecon, Z},
+            {"chesv", doc_hesv, C},
+            {"zhesv", doc_hesv, Z},
+            {"chesvx", doc_hesvx, C},
+            {"zhesvx", doc_hesvx, Z},
             {"sstev", doc_stev, S},
             {"dstev", doc_stev, D},
             {"sstebz", doc_stebz, S},
@@ -1905,11 +2735,15 @@ namespace lapack {
             {"sstein", doc_stein, S},
             {"dstein", doc_stein, D},
             {"sstemr", doc_stemr, S},
-            {"dstemr", doc_stemr, D},
             {"sstemr_lwork", doc_stemr_lwork, S},
+            {"dstemr", doc_stemr, D},
             {"dstemr_lwork", doc_stemr_lwork, D},
             {"sstevd", doc_stevd, S},
             {"dstevd", doc_stevd, D},
+            {"chesv_lwork", doc_hesv_lwork, C},
+            {"zhesv_lwork", doc_hesv_lwork, Z},
+            {"chesvx_lwork", doc_hesvx_lwork, C},
+            {"zhesvx_lwork", doc_hesvx_lwork, Z},
         };
 
         /** @brief The docstring for @p name, or nullptr when none is registered. */

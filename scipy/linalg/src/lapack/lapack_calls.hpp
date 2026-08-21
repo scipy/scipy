@@ -310,6 +310,125 @@ namespace lapack {
         void BLAS_FUNC(dptsvx)(char *, CBLAS_INT *, CBLAS_INT *, f64 *, f64 *, f64 *, f64 *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, f64 *, f64 *, CBLAS_INT *);
         void BLAS_FUNC(cptsvx)(char *, CBLAS_INT *, CBLAS_INT *, f32 *, c64 *, f32 *, c64 *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, f32 *, c64 *, f32 *, CBLAS_INT *);
         void BLAS_FUNC(zptsvx)(char *, CBLAS_INT *, CBLAS_INT *, f64 *, c128 *, f64 *, c128 *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, f64 *, c128 *, f64 *, CBLAS_INT *);
+
+        /* The symmetric/Hermitian indefinite group.  `?sy*` exists for all four flavors -- a
+         * complex *symmetric* matrix (A**T = A) is a real LAPACK subject, distinct from the
+         * Hermitian `?he*` (A**H = A), which exists only in c/z.  So `csysv` and `chesv` are
+         * two different routines, not two spellings of one. */
+        void BLAS_FUNC(ssytrf)(char *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsytrf)(char *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(csytrf)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zsytrf)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(chetrf)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zhetrf)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssytf2)(char *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsytf2)(char *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(csytf2)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zsytf2)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssytrs)(char *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsytrs)(char *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(csytrs)(char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zsytrs)(char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(chetrs)(char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zhetrs)(char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *);
+
+        /* `csytri` wants 2n of workspace where the others want n -- see the wrapper. */
+        void BLAS_FUNC(ssytri)(char *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *);
+        void BLAS_FUNC(dsytri)(char *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *);
+        void BLAS_FUNC(csytri)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *);
+        void BLAS_FUNC(zsytri)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *);
+        void BLAS_FUNC(chetri)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *);
+        void BLAS_FUNC(zhetri)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssyconv)(char *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *);
+        void BLAS_FUNC(dsyconv)(char *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *);
+        void BLAS_FUNC(csyconv)(char *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *);
+        void BLAS_FUNC(zsyconv)(char *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *);
+
+        /* `s`, `scond` and `amax` are magnitudes, so real; `work` follows the flavor. */
+        void BLAS_FUNC(ssyequb)(char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, f32 *, f32 *, CBLAS_INT *);
+        void BLAS_FUNC(dsyequb)(char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, f64 *, f64 *, CBLAS_INT *);
+        void BLAS_FUNC(csyequb)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, f32 *, c64 *, CBLAS_INT *);
+        void BLAS_FUNC(zsyequb)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, f64 *, c128 *, CBLAS_INT *);
+        void BLAS_FUNC(cheequb)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, f32 *, c64 *, CBLAS_INT *);
+        void BLAS_FUNC(zheequb)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, f64 *, c128 *, CBLAS_INT *);
+
+        /* Real `?sycon` takes IWORK; the complex `?sycon`/`?hecon` do not -- the `?gtcon` split. */
+        void BLAS_FUNC(ssycon)(char *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsycon)(char *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(csycon)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, f32 *, f32 *, c64 *, CBLAS_INT *);
+        void BLAS_FUNC(zsycon)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, f64 *, f64 *, c128 *, CBLAS_INT *);
+        void BLAS_FUNC(checon)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, f32 *, f32 *, c64 *, CBLAS_INT *);
+        void BLAS_FUNC(zhecon)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, f64 *, f64 *, c128 *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssysv)(char *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsysv)(char *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(csysv)(char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zsysv)(char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(chesv)(char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zhesv)(char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *);
+
+        /* `?sysvx`'s last workspace is IWORK for the real flavors and RWORK for the complex --
+         * same slot, same length `n`, different element type (the `?gecon` shape).  `?hesvx`
+         * is complex only, so its RWORK needs no such alias. */
+        void BLAS_FUNC(ssysvx)(char *, char *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsysvx)(char *, char *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(csysvx)(char *, char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, f32 *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *);
+        void BLAS_FUNC(zsysvx)(char *, char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, f64 *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *);
+        void BLAS_FUNC(chesvx)(char *, char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, f32 *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *);
+        void BLAS_FUNC(zhesvx)(char *, char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, f64 *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *);
+
+        /* The symmetric/Hermitian eigensolvers.  `w` is real in every flavor, and the complex
+         * routines add an RWORK the real ones do not have -- sometimes hidden, sometimes with
+         * its own `lrwork` in the Python signature (see `heevd`, `heevr`, `hegvd`). */
+        void BLAS_FUNC(ssyev)(char *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsyev)(char *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(cheev)(char *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *);
+        void BLAS_FUNC(zheev)(char *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssyevd)(char *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsyevd)(char *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(cheevd)(char *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zheevd)(char *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssyevr)(char *, char *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsyevr)(char *, char *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(cheevr)(char *, char *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zheevr)(char *, char *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssyevx)(char *, char *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsyevx)(char *, char *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(cheevx)(char *, char *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zheevx)(char *, char *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssygv)(CBLAS_INT *, char *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsygv)(CBLAS_INT *, char *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(chegv)(CBLAS_INT *, char *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *);
+        void BLAS_FUNC(zhegv)(CBLAS_INT *, char *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssygvd)(CBLAS_INT *, char *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsygvd)(CBLAS_INT *, char *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(chegvd)(CBLAS_INT *, char *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zhegvd)(CBLAS_INT *, char *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssygvx)(CBLAS_INT *, char *, char *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsygvx)(CBLAS_INT *, char *, char *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(chegvx)(CBLAS_INT *, char *, char *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zhegvx)(CBLAS_INT *, char *, char *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+
+        /* `d` and `e` are real even beside a complex `a`: they are the diagonal and
+         * off-diagonal of a real symmetric tridiagonal form.  `tau` follows the flavor. */
+        void BLAS_FUNC(ssytrd)(char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsytrd)(char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(chetrd)(char *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, c64 *, c64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zhetrd)(char *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, c128 *, c128 *, CBLAS_INT *, CBLAS_INT *);
+
+        void BLAS_FUNC(ssygst)(CBLAS_INT *, char *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dsygst)(CBLAS_INT *, char *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(chegst)(CBLAS_INT *, char *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zhegst)(CBLAS_INT *, char *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *);
     }
 
     inline void gees(char jobvs, char sort, CBLAS_INT (*select)(f32 *, f32 *), CBLAS_INT n, f32 *a, CBLAS_INT lda, CBLAS_INT *sdim, f32 *wr, f32 *wi, f32 *vs, CBLAS_INT ldvs, f32 *work, CBLAS_INT lwork, CBLAS_INT *bwork, CBLAS_INT *info)
@@ -772,5 +891,195 @@ namespace lapack {
         { BLAS_FUNC(cptsvx)(&fact, &n, &nrhs, d, e, df, ef, b, &ldb, x, &ldx, rcond, ferr, berr, work, rwork, info); }
     inline void ptsvx(char fact, CBLAS_INT n, CBLAS_INT nrhs, f64 *d, c128 *e, f64 *df, c128 *ef, c128 *b, CBLAS_INT ldb, c128 *x, CBLAS_INT ldx, f64 *rcond, f64 *ferr, f64 *berr, c128 *work, f64 *rwork, CBLAS_INT *info)
         { BLAS_FUNC(zptsvx)(&fact, &n, &nrhs, d, e, df, ef, b, &ldb, x, &ldx, rcond, ferr, berr, work, rwork, info); }
+
+    inline void sytrf(char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f32 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssytrf)(&uplo, &n, a, &lda, ipiv, work, &lwork, info); }
+    inline void sytrf(char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsytrf)(&uplo, &n, a, &lda, ipiv, work, &lwork, info); }
+    inline void sytrf(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(csytrf)(&uplo, &n, a, &lda, ipiv, work, &lwork, info); }
+    inline void sytrf(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(zsytrf)(&uplo, &n, a, &lda, ipiv, work, &lwork, info); }
+    inline void hetrf(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(chetrf)(&uplo, &n, a, &lda, ipiv, work, &lwork, info); }
+    inline void hetrf(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(zhetrf)(&uplo, &n, a, &lda, ipiv, work, &lwork, info); }
+
+    inline void sytf2(char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, CBLAS_INT *ipiv, CBLAS_INT *info)
+        { BLAS_FUNC(ssytf2)(&uplo, &n, a, &lda, ipiv, info); }
+    inline void sytf2(char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, CBLAS_INT *info)
+        { BLAS_FUNC(dsytf2)(&uplo, &n, a, &lda, ipiv, info); }
+    inline void sytf2(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, CBLAS_INT *info)
+        { BLAS_FUNC(csytf2)(&uplo, &n, a, &lda, ipiv, info); }
+    inline void sytf2(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, CBLAS_INT *info)
+        { BLAS_FUNC(zsytf2)(&uplo, &n, a, &lda, ipiv, info); }
+
+    inline void sytrs(char uplo, CBLAS_INT n, CBLAS_INT nrhs, f32 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f32 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(ssytrs)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, info); }
+    inline void sytrs(char uplo, CBLAS_INT n, CBLAS_INT nrhs, f64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f64 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(dsytrs)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, info); }
+    inline void sytrs(char uplo, CBLAS_INT n, CBLAS_INT nrhs, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(csytrs)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, info); }
+    inline void sytrs(char uplo, CBLAS_INT n, CBLAS_INT nrhs, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(zsytrs)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, info); }
+    inline void hetrs(char uplo, CBLAS_INT n, CBLAS_INT nrhs, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(chetrs)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, info); }
+    inline void hetrs(char uplo, CBLAS_INT n, CBLAS_INT nrhs, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(zhetrs)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, info); }
+
+    inline void sytri(char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f32 *work, CBLAS_INT *info)
+        { BLAS_FUNC(ssytri)(&uplo, &n, a, &lda, ipiv, work, info); }
+    inline void sytri(char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f64 *work, CBLAS_INT *info)
+        { BLAS_FUNC(dsytri)(&uplo, &n, a, &lda, ipiv, work, info); }
+    inline void sytri(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *work, CBLAS_INT *info)
+        { BLAS_FUNC(csytri)(&uplo, &n, a, &lda, ipiv, work, info); }
+    inline void sytri(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *work, CBLAS_INT *info)
+        { BLAS_FUNC(zsytri)(&uplo, &n, a, &lda, ipiv, work, info); }
+    inline void hetri(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *work, CBLAS_INT *info)
+        { BLAS_FUNC(chetri)(&uplo, &n, a, &lda, ipiv, work, info); }
+    inline void hetri(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *work, CBLAS_INT *info)
+        { BLAS_FUNC(zhetri)(&uplo, &n, a, &lda, ipiv, work, info); }
+
+    inline void syconv(char uplo, char way, CBLAS_INT n, f32 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f32 *e, CBLAS_INT *info)
+        { BLAS_FUNC(ssyconv)(&uplo, &way, &n, a, &lda, ipiv, e, info); }
+    inline void syconv(char uplo, char way, CBLAS_INT n, f64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f64 *e, CBLAS_INT *info)
+        { BLAS_FUNC(dsyconv)(&uplo, &way, &n, a, &lda, ipiv, e, info); }
+    inline void syconv(char uplo, char way, CBLAS_INT n, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *e, CBLAS_INT *info)
+        { BLAS_FUNC(csyconv)(&uplo, &way, &n, a, &lda, ipiv, e, info); }
+    inline void syconv(char uplo, char way, CBLAS_INT n, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *e, CBLAS_INT *info)
+        { BLAS_FUNC(zsyconv)(&uplo, &way, &n, a, &lda, ipiv, e, info); }
+
+    inline void syequb(char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 *s, f32 *scond, f32 *amax, f32 *work, CBLAS_INT *info)
+        { BLAS_FUNC(ssyequb)(&uplo, &n, a, &lda, s, scond, amax, work, info); }
+    inline void syequb(char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 *s, f64 *scond, f64 *amax, f64 *work, CBLAS_INT *info)
+        { BLAS_FUNC(dsyequb)(&uplo, &n, a, &lda, s, scond, amax, work, info); }
+    inline void syequb(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, f32 *s, f32 *scond, f32 *amax, c64 *work, CBLAS_INT *info)
+        { BLAS_FUNC(csyequb)(&uplo, &n, a, &lda, s, scond, amax, work, info); }
+    inline void syequb(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 *s, f64 *scond, f64 *amax, c128 *work, CBLAS_INT *info)
+        { BLAS_FUNC(zsyequb)(&uplo, &n, a, &lda, s, scond, amax, work, info); }
+    inline void heequb(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, f32 *s, f32 *scond, f32 *amax, c64 *work, CBLAS_INT *info)
+        { BLAS_FUNC(cheequb)(&uplo, &n, a, &lda, s, scond, amax, work, info); }
+    inline void heequb(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 *s, f64 *scond, f64 *amax, c128 *work, CBLAS_INT *info)
+        { BLAS_FUNC(zheequb)(&uplo, &n, a, &lda, s, scond, amax, work, info); }
+
+    inline void sycon(char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f32 anorm, f32 *rcond, f32 *work, CBLAS_INT *iwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssycon)(&uplo, &n, a, &lda, ipiv, &anorm, rcond, work, iwork, info); }
+    inline void sycon(char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f64 anorm, f64 *rcond, f64 *work, CBLAS_INT *iwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsycon)(&uplo, &n, a, &lda, ipiv, &anorm, rcond, work, iwork, info); }
+    inline void sycon(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f32 anorm, f32 *rcond, c64 *work, CBLAS_INT *info)
+        { BLAS_FUNC(csycon)(&uplo, &n, a, &lda, ipiv, &anorm, rcond, work, info); }
+    inline void sycon(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f64 anorm, f64 *rcond, c128 *work, CBLAS_INT *info)
+        { BLAS_FUNC(zsycon)(&uplo, &n, a, &lda, ipiv, &anorm, rcond, work, info); }
+    inline void hecon(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f32 anorm, f32 *rcond, c64 *work, CBLAS_INT *info)
+        { BLAS_FUNC(checon)(&uplo, &n, a, &lda, ipiv, &anorm, rcond, work, info); }
+    inline void hecon(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f64 anorm, f64 *rcond, c128 *work, CBLAS_INT *info)
+        { BLAS_FUNC(zhecon)(&uplo, &n, a, &lda, ipiv, &anorm, rcond, work, info); }
+
+    inline void sysv(char uplo, CBLAS_INT n, CBLAS_INT nrhs, f32 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f32 *b, CBLAS_INT ldb, f32 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssysv)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, info); }
+    inline void sysv(char uplo, CBLAS_INT n, CBLAS_INT nrhs, f64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, f64 *b, CBLAS_INT ldb, f64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsysv)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, info); }
+    inline void sysv(char uplo, CBLAS_INT n, CBLAS_INT nrhs, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *b, CBLAS_INT ldb, c64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(csysv)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, info); }
+    inline void sysv(char uplo, CBLAS_INT n, CBLAS_INT nrhs, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *b, CBLAS_INT ldb, c128 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(zsysv)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, info); }
+    inline void hesv(char uplo, CBLAS_INT n, CBLAS_INT nrhs, c64 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c64 *b, CBLAS_INT ldb, c64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(chesv)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, info); }
+    inline void hesv(char uplo, CBLAS_INT n, CBLAS_INT nrhs, c128 *a, CBLAS_INT lda, CBLAS_INT *ipiv, c128 *b, CBLAS_INT ldb, c128 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(zhesv)(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, info); }
+
+    inline void sysvx(char fact, char uplo, CBLAS_INT n, CBLAS_INT nrhs, f32 *a, CBLAS_INT lda, f32 *af, CBLAS_INT ldaf, CBLAS_INT *ipiv, f32 *b, CBLAS_INT ldb, f32 *x, CBLAS_INT ldx, f32 *rcond, f32 *ferr, f32 *berr, f32 *work, CBLAS_INT lwork, CBLAS_INT *irwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssysvx)(&fact, &uplo, &n, &nrhs, a, &lda, af, &ldaf, ipiv, b, &ldb, x, &ldx, rcond, ferr, berr, work, &lwork, irwork, info); }
+    inline void sysvx(char fact, char uplo, CBLAS_INT n, CBLAS_INT nrhs, f64 *a, CBLAS_INT lda, f64 *af, CBLAS_INT ldaf, CBLAS_INT *ipiv, f64 *b, CBLAS_INT ldb, f64 *x, CBLAS_INT ldx, f64 *rcond, f64 *ferr, f64 *berr, f64 *work, CBLAS_INT lwork, CBLAS_INT *irwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsysvx)(&fact, &uplo, &n, &nrhs, a, &lda, af, &ldaf, ipiv, b, &ldb, x, &ldx, rcond, ferr, berr, work, &lwork, irwork, info); }
+    inline void sysvx(char fact, char uplo, CBLAS_INT n, CBLAS_INT nrhs, c64 *a, CBLAS_INT lda, c64 *af, CBLAS_INT ldaf, CBLAS_INT *ipiv, c64 *b, CBLAS_INT ldb, c64 *x, CBLAS_INT ldx, f32 *rcond, f32 *ferr, f32 *berr, c64 *work, CBLAS_INT lwork, f32 *irwork, CBLAS_INT *info)
+        { BLAS_FUNC(csysvx)(&fact, &uplo, &n, &nrhs, a, &lda, af, &ldaf, ipiv, b, &ldb, x, &ldx, rcond, ferr, berr, work, &lwork, irwork, info); }
+    inline void sysvx(char fact, char uplo, CBLAS_INT n, CBLAS_INT nrhs, c128 *a, CBLAS_INT lda, c128 *af, CBLAS_INT ldaf, CBLAS_INT *ipiv, c128 *b, CBLAS_INT ldb, c128 *x, CBLAS_INT ldx, f64 *rcond, f64 *ferr, f64 *berr, c128 *work, CBLAS_INT lwork, f64 *irwork, CBLAS_INT *info)
+        { BLAS_FUNC(zsysvx)(&fact, &uplo, &n, &nrhs, a, &lda, af, &ldaf, ipiv, b, &ldb, x, &ldx, rcond, ferr, berr, work, &lwork, irwork, info); }
+    inline void hesvx(char fact, char uplo, CBLAS_INT n, CBLAS_INT nrhs, c64 *a, CBLAS_INT lda, c64 *af, CBLAS_INT ldaf, CBLAS_INT *ipiv, c64 *b, CBLAS_INT ldb, c64 *x, CBLAS_INT ldx, f32 *rcond, f32 *ferr, f32 *berr, c64 *work, CBLAS_INT lwork, f32 *irwork, CBLAS_INT *info)
+        { BLAS_FUNC(chesvx)(&fact, &uplo, &n, &nrhs, a, &lda, af, &ldaf, ipiv, b, &ldb, x, &ldx, rcond, ferr, berr, work, &lwork, irwork, info); }
+    inline void hesvx(char fact, char uplo, CBLAS_INT n, CBLAS_INT nrhs, c128 *a, CBLAS_INT lda, c128 *af, CBLAS_INT ldaf, CBLAS_INT *ipiv, c128 *b, CBLAS_INT ldb, c128 *x, CBLAS_INT ldx, f64 *rcond, f64 *ferr, f64 *berr, c128 *work, CBLAS_INT lwork, f64 *irwork, CBLAS_INT *info)
+        { BLAS_FUNC(zhesvx)(&fact, &uplo, &n, &nrhs, a, &lda, af, &ldaf, ipiv, b, &ldb, x, &ldx, rcond, ferr, berr, work, &lwork, irwork, info); }
+
+    inline void syev(char jobz, char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 *w, f32 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssyev)(&jobz, &uplo, &n, a, &lda, w, work, &lwork, info); }
+    inline void syev(char jobz, char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 *w, f64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsyev)(&jobz, &uplo, &n, a, &lda, w, work, &lwork, info); }
+    inline void syev(char jobz, char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, f32 *w, c64 *work, CBLAS_INT lwork, f32 *rwork, CBLAS_INT *info)
+        { BLAS_FUNC(cheev)(&jobz, &uplo, &n, a, &lda, w, work, &lwork, rwork, info); }
+    inline void syev(char jobz, char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 *w, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT *info)
+        { BLAS_FUNC(zheev)(&jobz, &uplo, &n, a, &lda, w, work, &lwork, rwork, info); }
+
+    inline void syevd(char jobz, char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 *w, f32 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssyevd)(&jobz, &uplo, &n, a, &lda, w, work, &lwork, iwork, &liwork, info); }
+    inline void syevd(char jobz, char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 *w, f64 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsyevd)(&jobz, &uplo, &n, a, &lda, w, work, &lwork, iwork, &liwork, info); }
+    inline void heevd(char jobz, char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, f32 *w, c64 *work, CBLAS_INT lwork, f32 *rwork, CBLAS_INT lrwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(cheevd)(&jobz, &uplo, &n, a, &lda, w, work, &lwork, rwork, &lrwork, iwork, &liwork, info); }
+    inline void heevd(char jobz, char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 *w, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT lrwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(zheevd)(&jobz, &uplo, &n, a, &lda, w, work, &lwork, rwork, &lrwork, iwork, &liwork, info); }
+
+    inline void syevr(char jobz, char range, char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 vl, f32 vu, CBLAS_INT il, CBLAS_INT iu, f32 abstol, CBLAS_INT *m, f32 *w, f32 *z, CBLAS_INT ldz, CBLAS_INT *isuppz, f32 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssyevr)(&jobz, &range, &uplo, &n, a, &lda, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, isuppz, work, &lwork, iwork, &liwork, info); }
+    inline void syevr(char jobz, char range, char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 vl, f64 vu, CBLAS_INT il, CBLAS_INT iu, f64 abstol, CBLAS_INT *m, f64 *w, f64 *z, CBLAS_INT ldz, CBLAS_INT *isuppz, f64 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsyevr)(&jobz, &range, &uplo, &n, a, &lda, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, isuppz, work, &lwork, iwork, &liwork, info); }
+    inline void heevr(char jobz, char range, char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, f32 vl, f32 vu, CBLAS_INT il, CBLAS_INT iu, f32 abstol, CBLAS_INT *m, f32 *w, c64 *z, CBLAS_INT ldz, CBLAS_INT *isuppz, c64 *work, CBLAS_INT lwork, f32 *rwork, CBLAS_INT lrwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(cheevr)(&jobz, &range, &uplo, &n, a, &lda, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, isuppz, work, &lwork, rwork, &lrwork, iwork, &liwork, info); }
+    inline void heevr(char jobz, char range, char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 vl, f64 vu, CBLAS_INT il, CBLAS_INT iu, f64 abstol, CBLAS_INT *m, f64 *w, c128 *z, CBLAS_INT ldz, CBLAS_INT *isuppz, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT lrwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(zheevr)(&jobz, &range, &uplo, &n, a, &lda, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, isuppz, work, &lwork, rwork, &lrwork, iwork, &liwork, info); }
+
+    inline void syevx(char jobz, char range, char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 vl, f32 vu, CBLAS_INT il, CBLAS_INT iu, f32 abstol, CBLAS_INT *m, f32 *w, f32 *z, CBLAS_INT ldz, f32 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info)
+        { BLAS_FUNC(ssyevx)(&jobz, &range, &uplo, &n, a, &lda, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, work, &lwork, iwork, ifail, info); }
+    inline void syevx(char jobz, char range, char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 vl, f64 vu, CBLAS_INT il, CBLAS_INT iu, f64 abstol, CBLAS_INT *m, f64 *w, f64 *z, CBLAS_INT ldz, f64 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info)
+        { BLAS_FUNC(dsyevx)(&jobz, &range, &uplo, &n, a, &lda, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, work, &lwork, iwork, ifail, info); }
+    inline void syevx(char jobz, char range, char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, f32 vl, f32 vu, CBLAS_INT il, CBLAS_INT iu, f32 abstol, CBLAS_INT *m, f32 *w, c64 *z, CBLAS_INT ldz, c64 *work, CBLAS_INT lwork, f32 *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info)
+        { BLAS_FUNC(cheevx)(&jobz, &range, &uplo, &n, a, &lda, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, work, &lwork, rwork, iwork, ifail, info); }
+    inline void syevx(char jobz, char range, char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 vl, f64 vu, CBLAS_INT il, CBLAS_INT iu, f64 abstol, CBLAS_INT *m, f64 *w, c128 *z, CBLAS_INT ldz, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info)
+        { BLAS_FUNC(zheevx)(&jobz, &range, &uplo, &n, a, &lda, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, work, &lwork, rwork, iwork, ifail, info); }
+
+    inline void sygv(CBLAS_INT itype, char jobz, char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 *b, CBLAS_INT ldb, f32 *w, f32 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssygv)(&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, info); }
+    inline void sygv(CBLAS_INT itype, char jobz, char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 *b, CBLAS_INT ldb, f64 *w, f64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsygv)(&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, info); }
+    inline void sygv(CBLAS_INT itype, char jobz, char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, c64 *b, CBLAS_INT ldb, f32 *w, c64 *work, CBLAS_INT lwork, f32 *rwork, CBLAS_INT *info)
+        { BLAS_FUNC(chegv)(&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, rwork, info); }
+    inline void sygv(CBLAS_INT itype, char jobz, char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, c128 *b, CBLAS_INT ldb, f64 *w, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT *info)
+        { BLAS_FUNC(zhegv)(&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, rwork, info); }
+
+    inline void sygvd(CBLAS_INT itype, char jobz, char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 *b, CBLAS_INT ldb, f32 *w, f32 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssygvd)(&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, iwork, &liwork, info); }
+    inline void sygvd(CBLAS_INT itype, char jobz, char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 *b, CBLAS_INT ldb, f64 *w, f64 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsygvd)(&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, iwork, &liwork, info); }
+    inline void hegvd(CBLAS_INT itype, char jobz, char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, c64 *b, CBLAS_INT ldb, f32 *w, c64 *work, CBLAS_INT lwork, f32 *rwork, CBLAS_INT lrwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(chegvd)(&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, rwork, &lrwork, iwork, &liwork, info); }
+    inline void hegvd(CBLAS_INT itype, char jobz, char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, c128 *b, CBLAS_INT ldb, f64 *w, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT lrwork, CBLAS_INT *iwork, CBLAS_INT liwork, CBLAS_INT *info)
+        { BLAS_FUNC(zhegvd)(&itype, &jobz, &uplo, &n, a, &lda, b, &ldb, w, work, &lwork, rwork, &lrwork, iwork, &liwork, info); }
+
+    inline void sygvx(CBLAS_INT itype, char jobz, char range, char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 *b, CBLAS_INT ldb, f32 vl, f32 vu, CBLAS_INT il, CBLAS_INT iu, f32 abstol, CBLAS_INT *m, f32 *w, f32 *z, CBLAS_INT ldz, f32 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info)
+        { BLAS_FUNC(ssygvx)(&itype, &jobz, &range, &uplo, &n, a, &lda, b, &ldb, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, work, &lwork, iwork, ifail, info); }
+    inline void sygvx(CBLAS_INT itype, char jobz, char range, char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 *b, CBLAS_INT ldb, f64 vl, f64 vu, CBLAS_INT il, CBLAS_INT iu, f64 abstol, CBLAS_INT *m, f64 *w, f64 *z, CBLAS_INT ldz, f64 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info)
+        { BLAS_FUNC(dsygvx)(&itype, &jobz, &range, &uplo, &n, a, &lda, b, &ldb, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, work, &lwork, iwork, ifail, info); }
+    inline void sygvx(CBLAS_INT itype, char jobz, char range, char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, c64 *b, CBLAS_INT ldb, f32 vl, f32 vu, CBLAS_INT il, CBLAS_INT iu, f32 abstol, CBLAS_INT *m, f32 *w, c64 *z, CBLAS_INT ldz, c64 *work, CBLAS_INT lwork, f32 *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info)
+        { BLAS_FUNC(chegvx)(&itype, &jobz, &range, &uplo, &n, a, &lda, b, &ldb, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, work, &lwork, rwork, iwork, ifail, info); }
+    inline void sygvx(CBLAS_INT itype, char jobz, char range, char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, c128 *b, CBLAS_INT ldb, f64 vl, f64 vu, CBLAS_INT il, CBLAS_INT iu, f64 abstol, CBLAS_INT *m, f64 *w, c128 *z, CBLAS_INT ldz, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info)
+        { BLAS_FUNC(zhegvx)(&itype, &jobz, &range, &uplo, &n, a, &lda, b, &ldb, &vl, &vu, &il, &iu, &abstol, m, w, z, &ldz, work, &lwork, rwork, iwork, ifail, info); }
+
+    inline void sytrd(char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 *d, f32 *e, f32 *tau, f32 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(ssytrd)(&uplo, &n, a, &lda, d, e, tau, work, &lwork, info); }
+    inline void sytrd(char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 *d, f64 *e, f64 *tau, f64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(dsytrd)(&uplo, &n, a, &lda, d, e, tau, work, &lwork, info); }
+    inline void sytrd(char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, f32 *d, f32 *e, c64 *tau, c64 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(chetrd)(&uplo, &n, a, &lda, d, e, tau, work, &lwork, info); }
+    inline void sytrd(char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 *d, f64 *e, c128 *tau, c128 *work, CBLAS_INT lwork, CBLAS_INT *info)
+        { BLAS_FUNC(zhetrd)(&uplo, &n, a, &lda, d, e, tau, work, &lwork, info); }
+
+    inline void sygst(CBLAS_INT itype, char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(ssygst)(&itype, &uplo, &n, a, &lda, b, &ldb, info); }
+    inline void sygst(CBLAS_INT itype, char uplo, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(dsygst)(&itype, &uplo, &n, a, &lda, b, &ldb, info); }
+    inline void sygst(CBLAS_INT itype, char uplo, CBLAS_INT n, c64 *a, CBLAS_INT lda, c64 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(chegst)(&itype, &uplo, &n, a, &lda, b, &ldb, info); }
+    inline void sygst(CBLAS_INT itype, char uplo, CBLAS_INT n, c128 *a, CBLAS_INT lda, c128 *b, CBLAS_INT ldb, CBLAS_INT *info)
+        { BLAS_FUNC(zhegst)(&itype, &uplo, &n, a, &lda, b, &ldb, info); }
 
 }  // namespace lapack
