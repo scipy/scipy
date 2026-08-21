@@ -2002,11 +2002,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _differentiation(self, f, x, args=None, params=None):
         args = [] if args is None else args
         params = {} if params is None else params
-        f, args = _kwargs2args(f, args=args, kwargs=params)
         args = np.broadcast_arrays(*args)
         rtol = None if _isnull(self.tol) else self.tol
         # todo: do one-sided differentiation at support endpoint
-        res = derivative(f, x, args=args, tolerances={'rtol': rtol})
+        res = derivative(f, x, args=args, kwargs=params, tolerances={'rtol': rtol})
         return res.df
 
     def _quadrature(self, integrand, limits=None, args=(), params=None, log=False):
@@ -2030,6 +2029,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
         # Finds the argument of a function that produces the desired output.
         xmin, xmax = self._support(**params) if bounds is None else bounds
+        xmin = np.asarray(xmin, dtype=self._dtype)
+        xmax = np.asarray(xmax, dtype=self._dtype)
 
         def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
             return f(x, **kwargs) - _p
@@ -2369,6 +2370,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if self._overrides('_pdf_formula'):
             method = self._pdf_formula
         elif (not self._overrides('_logpdf_formula')
+              and not self._overrides('_logpdf_dispatch')
               and isinstance(self, ContinuousDistribution)):
             if self._overrides('_icdf_formula'):
                 method = self._pdf_differentiation_cdf
@@ -4352,6 +4354,9 @@ def _make_distribution_custom(dist):
     elif hasattr(dist, 'pmf') and not hasattr(dist, 'pdf'):
         pxf = 'PMF'
         distribution_subclass = DiscreteDistribution
+    elif hasattr(dist, 'icdf') or hasattr(dist, 'iccdf'):
+        pxf = 'PDF'
+        distribution_subclass = ContinuousDistribution
     else:
         message = ("The argument of `make_distribution` must implement "
                    "either `pdf` OR `pmf` (not both).")
@@ -4582,7 +4587,7 @@ class TruncatedDistribution(TransformedDistribution):
         return np.maximum(a, lb), np.minimum(b, ub)
 
     def _overrides(self, method_name):
-        return False
+        return method_name == '_logpdf_dispatch'
 
     def _logpdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
         logpdf = self._dist._logpdf_dispatch(x, *args, **params)
