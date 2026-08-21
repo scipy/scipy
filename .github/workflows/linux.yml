@@ -204,11 +204,11 @@ jobs:
   #################################################################################
   test_editable_install:
     # Editable installs hit corner cases that regular installs don't, e.g., gh-25892
-    name: Editable install, fast, py3.12/npAny, spin
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+    name: Editable install, fast, spin
+    # needs: get_commit_message
+    # if: >
+    #   needs.get_commit_message.outputs.message == 1
+    #   && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -216,21 +216,11 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.12"
-
-      - name: Install Ubuntu dependencies
-        # apt OpenBLAS rather than the scipy-openblas wheel, because
-        # `--with-scipy-openblas` is a `spin build` flag with no `spin install` equivalent
-        uses: ./.github/apt-get
-        with:
-          packages: libopenblas-dev pkg-config ccache
-
-      - name: Install Python packages
-        run: |
-          python -m pip install --group build --group dev-cli --group test-core --group optional-runtime-deps
+          pixi-version: v0.77.0
+          environments: editable
+          cache: false
 
       - name: Set up ccache
         uses: ./.github/ccache
@@ -238,37 +228,35 @@ jobs:
           workflow_name: ${{ github.workflow }}
           job_name: ${{ github.job }}
 
-      - name: Editable install
-        # `spin install` defaults to `pip install -e . --no-build-isolation`
-        run: |
-          spin install
-
       - name: Check import
+        shell: pixi run --environment=editable bash -e {0}
         # Run from outside the source tree, then check that `scipy` still
         # resolves back to it - that's the point of an editable install.
         run: |
+          cd ${{ runner.temp }}
           python -c "
           import os, pathlib, scipy, scipy.linalg
           expected = pathlib.Path(os.environ['EXPECTED_SCIPY_DIR'])
           assert pathlib.Path(scipy.__file__).parent == expected, \
               f'{scipy.__file__=} not from {expected}'"
-        working-directory: ${{ runner.temp }}
         env:
           EXPECTED_SCIPY_DIR: ${{ github.workspace }}/scipy
 
       - name: Check rebuild on import
+        env:
+          PIXI_PROJECT_MANIFEST: ${{ github.workspace }}/pixi.toml
         # meson-python reruns ninja on every import of an editable install. Touch a
         # source file (Pythran-compiled here, rather than Cython, but the rebuild
         # hook works the same way) so that hook has actual work to do, then check
         # the compiled extension's mtime to prove a rebuild actually happened -
         # not just that the (possibly stale) module still imports without error.
         run: |
-          before=$(python -c "
+          before=$(pixi run --environment=editable python -c "
           import scipy.signal._max_len_seq_inner as m, os
           print(os.stat(m.__file__).st_mtime_ns)")
           sleep 1  # ensure a rebuilt file's mtime is unambiguously newer
           touch "$GITHUB_WORKSPACE/scipy/signal/_max_len_seq_inner.py"
-          after=$(python -c "
+          after=$(pixi run --environment=editable python -c "
           import scipy.signal, scipy.signal._max_len_seq_inner as m, os
           assert len(scipy.signal.max_len_seq(4)[0]) == 15
           print(os.stat(m.__file__).st_mtime_ns)")
@@ -283,15 +271,11 @@ jobs:
         # After the imports above, since those can trigger a rebuild
         shell: bash -l {0}
         run: |
-          ccache --evict-older-than 1d
-          ccache -s
+          pixi exec ccache --evict-older-than 1d
+          pixi exec ccache -s
 
       - name: Test SciPy
-        # `-t scipy` is required: with extra args after `--`, spin does not add a
-        # collection target of its own, and for an editable install it also leaves
-        # pytest's cwd at the repo root - so pytest would collect the whole checkout.
-        run: |
-          spin test -j3 -t scipy -- --durations 10 --timeout=60
+        run: pixi run test-editable -j3 -- --durations 10 --timeout=60
 
   #################################################################################
   python_debug:
