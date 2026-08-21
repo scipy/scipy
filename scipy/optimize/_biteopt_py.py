@@ -45,8 +45,9 @@ def biteopt(
         ``bounds``.
     depth : int, optional
         Algorithm depth. ``1`` selects the plain BiteOpt algorithm, while
-        values ``> 1`` select the deeper BiteOptDeep variant. Expected range is
-        ``[1, 36]``. Default is 1.
+        values ``> 1`` select the deeper BiteOptDeep variant. Increasing
+        `depth` may increase the success rate but requires more function
+        evaluations. Expected range is ``[1, 36]``. Default is 1.
     f_min : float, optional
         Target objective value. The optimization stops early once the best
         objective value found is less than or equal to `f_min`. By default
@@ -75,7 +76,7 @@ def biteopt(
     global optimizer that maintains a portfolio of candidate-generation strategies
     and dynamically tracks their efficiency, favouring whichever works best for
     the current objective function. This contrasts with classical
-    Differential Evolution, which uses a single fixed strategy throughout.
+    Differential Evolution, which uses a single fixed strategy throughout [1]_.
 
     BiteOpt targets low- to medium-dimensional continuous problems with finite box
     bounds and requires no gradient information. Because the search is
