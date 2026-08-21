@@ -140,6 +140,15 @@ class TestSolver:
         with pytest.raises(exc_type, match="Error"):
             biteopt(objective, self.default_bounds, rng=0)
 
+    @pytest.mark.parametrize("bounds", [
+        Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0]),
+        [(-5.0, 5.0), (-5.0, 5.0)],
+        np.array([[-5.0, 5.0], [-5.0, 5.0]]),
+    ])
+    def test_accepted_bounds_types(self, bounds):
+        res = biteopt(rosen, bounds, rng=0)
+        assert res.success is True
+
 
 class TestCallback:
     def setup_method(self):
@@ -219,7 +228,7 @@ class TestInputValidation:
             biteopt(rosen, [(-np.inf, 5.0), (-5.0, 5.0)])
 
     def test_bounds_empty(self):
-        with pytest.raises(ValueError, match="at least one"):
+        with pytest.raises(ValueError, match="bounds must be a sequence"):
             biteopt(rosen, [])
 
     @pytest.mark.parametrize("maxfun, exc_type, msg", [

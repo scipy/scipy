@@ -126,17 +126,14 @@ def biteopt(
         raise TypeError("callback must be callable")
 
     if not isinstance(bounds, Bounds):
-        if isinstance(bounds, (list, tuple)):
-            if len(bounds) == 0:
-                raise ValueError(
-                    "bounds must contain at least one finite (min, max) pair"
-                )
+        try:
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
-        else:
+        except (TypeError, ValueError) as e:
             raise ValueError(
-                "bounds must be a sequence or instance of Bounds class"
-            )
+                "bounds must be a sequence of (min, max) pairs or "
+                "instance of Bounds class"
+            ) from e
 
     lb = np.ascontiguousarray(bounds.lb, dtype=np.float64)
     ub = np.ascontiguousarray(bounds.ub, dtype=np.float64)
