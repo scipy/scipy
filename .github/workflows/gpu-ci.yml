@@ -57,6 +57,7 @@ jobs:
 
   pytorch_gpu:
     name: PyTorch, JAX, CuPy GPU
+    needs: get_commit_message
     runs-on: "cirun-scipy-onprem-gpu--${{ github.run_id }}"
     steps:
       - name: Checkout scipy repo
