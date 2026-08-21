@@ -521,6 +521,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
         a1, b1 = _ensure_dtype_cdsz(a1, b1) # Let `b1` and `a1` upcast each other
+        a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
         b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
 
         # Deal with the case where `b` could still upcast `a`, hence recompute the flag
@@ -641,7 +642,13 @@ def _check_select(select, select_range, max_ev, max_len):
     return select, vl, vu, il, iu, max_ev
 
 
-@_apply_over_batch(('a_band', 2))
+def _eig_banded_signature(a_band, lower=False, eigvals_only=False,
+                          overwrite_a_band=False, select='a', select_range=None,
+                          max_ev=0, check_finite=True):
+    return "(i,j)->(j,)" if eigvals_only else "(i,j)->(j,),(j,j)"
+
+
+@_apply_over_batch(('a_band', 2), signature=_eig_banded_signature)
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
                select='a', select_range=None, max_ev=0, check_finite=True):
     """
@@ -822,8 +829,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
-            homogeneous_eigvals=False):
+def eigvals(a, b=None, overwrite_a=False, overwrite_b=False,
+            check_finite=True, homogeneous_eigvals=False):
     r"""
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
@@ -1044,7 +1051,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
                 driver=driver)
 
 
-@_apply_over_batch(('a_band', 2))
+@_apply_over_batch(('a_band', 2), signature='(i,j)->(j,)')
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None, check_finite=True):
     """
@@ -1139,7 +1146,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                       select_range=select_range, check_finite=check_finite)
 
 
-@_apply_over_batch(('d', 1), ('e', 1))
+@_apply_over_batch(('d', 1), ('e', 1), signature='(i),(j)->(i)')
 def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
                          check_finite=True, tol=0., lapack_driver='auto'):
     """
@@ -1221,7 +1228,13 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
         check_finite=check_finite, tol=tol, lapack_driver=lapack_driver)
 
 
-@_apply_over_batch(('d', 1), ('e', 1))
+def eigh_tridiagonal_signature(d, e, eigvals_only=False, select='a',
+                               select_range=None, check_finite=True, tol=0.,
+                               lapack_driver='auto'):
+    return "(i,),(j,)->(i,)" if eigvals_only else "(i,),(j,)->(i,),(i,i)"
+
+
+@_apply_over_batch(('d', 1), ('e', 1), signature=eigh_tridiagonal_signature)
 def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
                      check_finite=True, tol=0., lapack_driver='auto'):
     """
@@ -1414,7 +1427,11 @@ def _check_info(info, driver, positive='did not converge (LAPACK info=%d)'):
         raise LinAlgError(("%s " + positive) % (driver, info,))
 
 
-@_apply_over_batch(('a', 2))
+def _hessenberg_signature(a, calc_q=False, overwrite_a=False, check_finite=True):
+    return "(i,i)->(i,i),(i,i)" if calc_q else "(i,i)->(i,i)"
+
+
+@_apply_over_batch(('a', 2), signature=_hessenberg_signature)
 def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     """
     Compute Hessenberg form of a matrix.

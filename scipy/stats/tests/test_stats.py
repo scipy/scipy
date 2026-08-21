@@ -765,7 +765,7 @@ class TestPearsonr:
         y = rng.random(10)
         res = stats.pearsonr(x, y, axis=1)
         ref = stats.pearsonr(x, y, axis=-1)
-        assert_equal(res.statistic, ref.statistic)
+        assert_allclose(res.statistic, ref.statistic, rtol=3e-16)
 
     @pytest.mark.parametrize('axis', [0, 1, None])
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
@@ -4406,6 +4406,7 @@ class TestPowerDivergence:
                f_obs_reshape, None, 0, None,
                "pearson", case0.chi2, xp=xp)
 
+    @pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")
     def test_ddof_broadcasting(self, xp):
         # Test that ddof broadcasts correctly.
         # ddof does not affect the test statistic.  It is broadcast

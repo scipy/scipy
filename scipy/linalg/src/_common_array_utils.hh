@@ -1375,27 +1375,6 @@ void copy_triangle_to_C(T *dst, const T *src, const npy_intp m, const npy_intp n
 
 
 /*
- * Copy the eigenvectors computed by `evr` into a C-ordered return buffer
- * taking into account `isuppz`.
- *
- * Shapes: both eigenvector buffers `n1 x n2`, with `m` returned by LAPACK `n`.
- * `isuppz` is `2m`. This function internally accounts for the minimal value for
- * an entry in `isuppz` is `1`.
- */
-template<typename T>
-void copy_eigenvectors_isuppz(T *dst, const T *src, const CBLAS_INT *isuppz, const npy_intp n1, const npy_intp n2, const npy_intp m) {
-    for (int i = 0; i < m; i++) {
-        CBLAS_INT il = isuppz[2 * i] - 1; // NB. Fortran is 1-indexed
-        CBLAS_INT iu = isuppz[2 * i + 1];
-
-        for (int j = il; j < iu; j++) {
-            dst[i + j * n2] = src[i * n1 + j];
-        }
-    }
-}
-
-
-/*
  * 1-norm of a matrix
  */
 

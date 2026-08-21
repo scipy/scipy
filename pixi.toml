@@ -41,6 +41,7 @@ numpy = "*"
 blas-devel = "*"
 
 [package.host-dependencies."if(host_platform == 'win-64')"]
+meson = "<1.12.0"  # scipy/scipy#25904
 openblas = "*"
 
 

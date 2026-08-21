@@ -374,7 +374,7 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
     if ((current_odepack_callback->jac_type == 1) && !current_odepack_callback->jac_transpose) {
         // Full Jacobian (jt=1 user supplied), no transpose needed, use memcpy
         double *src_data = (double*)PyArray_DATA(result_array);
-        memcpy(pd, src_data, (*n) * (*nrowpd) * sizeof(double));
+        memcpy(pd, src_data, (size_t)(*n) * (*nrowpd) * sizeof(double));
     } else {
         // Need to copy with proper Fortran layout
         npy_intp m;

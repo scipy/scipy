@@ -1186,8 +1186,9 @@ def test_empty_sparse():
 
     res = loadmat(sio, spmatrix=False)
     assert isinstance(res['x'], sparray)
-    res = loadmat(sio, spmatrix=True)
-    assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
+    with pytest.deprecated_call(match="The value `spmatrix=True"):
+        res = loadmat(sio, spmatrix=True)
+        assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
     with pytest.deprecated_call(match="The default value for `spmatrix"):
         res = loadmat(sio)  # chk default
         assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)

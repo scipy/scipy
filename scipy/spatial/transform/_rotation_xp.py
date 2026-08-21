@@ -169,7 +169,7 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
         raise ValueError(
             f"Expected `rot_vec` to have shape (..., 3), got {rotvec.shape}"
         )
-    rotvec = _deg2rad(rotvec) if degrees else rotvec
+    rotvec = xpx.deg2rad(rotvec, xp=xp) if degrees else rotvec
 
     angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
     half_angle = angle / 2
@@ -212,7 +212,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
     if degrees:
-        angles = _deg2rad(angles)
+        angles = xpx.deg2rad(angles, xp=xp)
 
     angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
 
@@ -271,7 +271,7 @@ def from_davenport(
         axes = xp.where(axes_not_orthogonal[..., None, None], xp.nan, axes)
 
     if degrees:
-        angles = _deg2rad(angles)
+        angles = xpx.deg2rad(angles, xp=xp)
 
     if (
         not broadcastable(axes.shape[:-1], cast(tuple[int, ...], angles.shape))
@@ -346,7 +346,7 @@ def as_rotvec(quat: Array, degrees: bool = False) -> Array:
     div_norm = ax_norm + xp.astype(ax_norm == 0, ax_norm.dtype)
     scale = angle / div_norm
     if degrees:
-        scale = _rad2deg(scale)
+        scale = xpx.rad2deg(scale, xp=xp)
     rotvec = scale * quat[..., :3]
     return rotvec
 
@@ -395,7 +395,7 @@ def as_euler(
     angles = _get_angles(
         extrinsic, symmetric, sign, xp.pi / 2, a, b, c, d, suppress_warnings
     )
-    return _rad2deg(angles) if degrees else angles
+    return xpx.rad2deg(angles, xp=xp) if degrees else angles
 
 
 def as_davenport(
@@ -447,7 +447,7 @@ def as_davenport(
         suppress_warnings,
     )
     if degrees:
-        angles = _rad2deg(angles)
+        angles = xpx.rad2deg(angles, xp=xp)
     return angles
 
 
@@ -474,7 +474,7 @@ def approx_equal(
             )
         atol = 1e-8
     elif degrees:
-        atol = _deg2rad(atol)
+        atol *= np.pi / 180.0
 
     if not broadcastable(quat.shape, other.shape):
         raise ValueError(
@@ -1150,11 +1150,3 @@ def compose_quat(p: Array, q: Array) -> Array:
 def _split_rotation(q: Array, xp) -> tuple[Array, Array]:
     q = xpx.atleast_nd(q, ndim=2, xp=xp)
     return q[..., -1], q[..., :-1]
-
-
-def _deg2rad(angles: Array) -> Array:
-    return angles * (np.pi / 180.0)
-
-
-def _rad2deg(angles: Array) -> Array:
-    return angles * (180.0 / np.pi)

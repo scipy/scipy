@@ -12,7 +12,7 @@ from scipy.signal.windows._windows import _WIN_FUNC_DATA, _WIN_FUNCS
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, SCIPY_DEVICE, is_numpy, make_xp_test_case,
-    make_xp_pytest_param, _xp_copy_to_numpy
+    make_xp_pytest_param, xp_copy_to_numpy
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -182,7 +182,7 @@ class TestTaylor:
         # scientific publication do not normalize the values. Normalizing
         # changes the sidelobe level from the desired value.
         w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False, xp=xp)
-        f_np = fft(_xp_copy_to_numpy(w), N_fft)
+        f_np = fft(xp_copy_to_numpy(w), N_fft)
 
         spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
 
@@ -707,20 +707,17 @@ class TestDPSS:
             # corrected w/approximation (default)
             win = windows.dpss(M, M / 2.1, xp=xp)
             expected = M % 2  # one for odd, none for even
-            xp_assert_equal(np.isclose(win, 1.).sum(), expected,
-                         err_msg=f'{win}')
+            assert np.isclose(win, 1.).sum() == expected, f'{win}'
             # corrected w/subsample delay (slower)
             win_sub = windows.dpss(M, M / 2.1, norm='subsample', xp=xp)
             if M > 2:
                 # @M=2 the subsample doesn't do anything
-                xp_assert_equal(np.isclose(win_sub, 1.).sum(), expected,
-                             err_msg=f'{win_sub}')
+                assert np.isclose(win_sub, 1.).sum() == expected, f'{win_sub}'
                 xp_assert_close(win, win_sub, rtol=0.03)  # within 3%
             # not the same, l2-norm
             win_2 = windows.dpss(M, M / 2.1, norm=2, xp=xp)
             expected = 1 if M == 1 else 0
-            xp_assert_equal(np.isclose(win_2, 1.).sum(), expected,
-                         err_msg=f'{win_2}')
+            assert np.isclose(win_2, 1.).sum() == expected, f'{win_2}'
 
     def test_extremes(self, xp):
         # Test extremes of alpha
