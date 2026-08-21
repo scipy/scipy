@@ -376,13 +376,7 @@ def _make_ufunc_like_wrapper(
         name,
         arg_names,
         docstring,
-        nin=None,
-        nout=None,
-        nargs=None,
-        ntypes=None,
-        types=None,
-        signature=None,
-        resolve_dtypes=None,
+        ufunc_attributes=None,
         module="scipy.special",
 ):
     """Wrapper for a ufunc that preserves ufunc-like behavior.
@@ -390,7 +384,7 @@ def _make_ufunc_like_wrapper(
     Parameters
     ----------
     func : callable
-        The internal function to wrap. Must either have a ``_numpy_ufunc``
+        The internal function to wrap. Must either have a ``_ufunc``
         attribute to infer metadata from, or all metadata arguments must be
         explicitly supplied.
     name : str
@@ -400,21 +394,22 @@ def _make_ufunc_like_wrapper(
         (e.g., ``["z", "k=0"]``).
     docstring : str
         The docstring for the wrapper.
-    nin : int, optional
-        The number of inputs.
-    nout : int, optional
-        The number of outputs.
-    nargs : int, optional
-        The number of arguments.
-    ntypes : int, optional
-        The number of types.
-    types: list[str], optional
-        A list with types grouped input->output.
-    signature: str or None, optional
-        Definition of the core elements a generalized ufunc operates on.
-        If ``None``, the function is treated as an elementwise ufunc.
-    resolve_dtypes: callable, optional
-        A function determining the output dtypes based on input dtypes.
+    ufunc_attributes : dict, optional
+        nin : int
+            The number of inputs.
+        nout : int
+            The number of outputs.
+        nargs : int
+            The number of arguments.
+        ntypes : int
+            The number of types.
+        types: list[str]
+            A list with types grouped input->output.
+        signature: str or None
+            Definition of the core elements a generalized ufunc operates on.
+            If ``None``, the function is treated as an elementwise ufunc.
+        resolve_dtypes: callable
+            A function determining the output dtypes based on input dtypes.
     module : str, optional
        Value to use for the ``__module__`` attribute of the wrapper.
 
@@ -424,23 +419,20 @@ def _make_ufunc_like_wrapper(
         A wrapper for func that maintains ufunc kwargs and attributes.
     """
     metadata_source = getattr(func, "_ufunc", None)
-    attributes = {}
-
-    supplied_attributes = {
-        "nin": nin,
-        "nout": nout,
-        "nargs": nargs,
-        "ntypes": ntypes,
-        "types": types,
-        "signature": signature,
-        "resolve_dtypes": resolve_dtypes
-    }
-    for attr, supplied_val in supplied_attributes.items():
-        attributes[attr] = getattr(metadata_source, attr, supplied_val)
-    if any(
-            attributes[x] is None
-            for x in ["nin", "nout", "nargs", "ntypes", "types", "resolve_dtypes"]
-    ):
+    attributes = None
+    if metadata_source is not None:
+        attributes = {
+            "nin": metadata_source.nin,
+            "nout": metadata_source.nout,
+            "nargs": metadata_source.nargs,
+            "ntypes": metadata_source.ntypes,
+            "types": metadata_source.types,
+            "signature": metadata_source.signature,
+            "resolve_dtypes": metadata_source.resolve_dtypes
+        }
+    else:
+        attributes = ufunc_attributes
+    if attributes is None:
         raise ValueError("func has no metadata and metadata was not supplied.")
 
     elementwise = attributes["signature"] is None
@@ -449,34 +441,12 @@ def _make_ufunc_like_wrapper(
     clean_args = [arg.split("=")[0].strip() for arg in arg_names]
     call_args = ", ".join(clean_args)
 
-    kwarg_defs = [
-        "casting='same_kind'",
-        "order='K'",
-        "dtype=None",
-        "subok=True",
-        "signature=None",
-    ]
-    kwarg_calls = [
-        "out=out",
-        "casting=casting",
-        "order=order",
-        "dtype=dtype",
-        "subok=subok",
-        "signature=signature",
-    ]
-
-    if elementwise:
-        kwarg_defs.insert(1, "where=True")
-        kwarg_calls.insert(1, "where=where")
-
-    signature_kwargs = ", ".join(kwarg_defs)
-    call_kwargs = ", ".join(kwarg_calls)
     class_name = f"{name}_wrapper"
 
     code = (
-        f"""class {class_name}(_UfuncLikeWrapper):
-            def __call__(self, {arg_str}, /, out=None, *, {signature_kwargs}):
-                return func({call_args}, {call_kwargs})
+        f"""class {class_name}(_UFuncLikeWrapper):
+            def __call__(self, {arg_str}, /, out=None, **kwargs):
+                return func({call_args}, out=out, **kwargs)
         """
     )
 
