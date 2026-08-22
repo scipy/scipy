@@ -39,7 +39,8 @@ py3.install_sources([
     'test_stats.py',
     'test_survival.py',
     'test_tukeylambda_stats.py',
-    'test_variation.py'
+    'test_variation.py',
+    'test_rust.py',
   ],
   subdir: 'scipy/stats/tests',
   install_tag: 'tests'
