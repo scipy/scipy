@@ -1749,8 +1749,6 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
     else:
         return (tmp - grey_erosion(input, size, footprint, structure,
                                    None, mode, cval, origin, axes=axes))
-
-
 def morphological_laplace(input, size=None, footprint=None, structure=None,
                           output=None, mode="reflect", cval=0.0, origin=0, *,
                           axes=None):
@@ -1794,6 +1792,39 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
     morphological_laplace : ndarray
         Output
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.ndimage import morphological_laplace
+    >>> a = np.zeros((9,), dtype=int)
+    >>> a[4] = 5
+    >>> a
+    array([0, 0, 0, 0, 5, 0, 0, 0, 0])
+    >>> morphological_laplace(a, size=(3,))
+    array([ 0,  0,  0,  5, -5,  5,  0,  0,  0])
+
+    At the peak, dilation cannot raise the value further since it is
+    already the local maximum, while erosion lowers it toward the
+    surrounding zeros. This produces a negative result at the peak.
+
+    At the two points next to the peak, dilation raises the value to
+    match the height of the spike, producing a positive result instead.
+
+    You can also compute this directly from the definition —
+    dilation plus erosion minus twice the input:
+
+    >>> from scipy.ndimage import grey_dilation, grey_erosion
+    >>> dil = grey_dilation(a, size=(3,))
+    >>> ero = grey_erosion(a, size=(3,))
+    >>> dil + ero - 2*a
+    array([ 0,  0,  0,  5, -5,  5,  0,  0,  0])
+
+    A dip flips the signs around:
+
+    >>> b = np.ones((9,), dtype=int) * 10
+    >>> b[4] = 5
+    >>> morphological_laplace(b, size=(3,))
+    array([ 0,  0,  0, -5,  5, -5,  0,  0,  0])
     """
     input = np.asarray(input)
     tmp1 = grey_dilation(input, size, footprint, structure, None, mode,
@@ -1811,8 +1842,7 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
         np.subtract(tmp2, input, tmp2)
         np.subtract(tmp2, input, tmp2)
         return tmp2
-
-
+        
 def white_tophat(input, size=None, footprint=None, structure=None,
                  output=None, mode="reflect", cval=0.0, origin=0, *,
                  axes=None):
