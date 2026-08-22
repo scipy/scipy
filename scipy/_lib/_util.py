@@ -1063,7 +1063,9 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     `mplus` is additional left padding applied to keys
     """
     if isinstance(d, dict):
-        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
+        # width to print keys; `default=0` guards against an empty dict,
+        # whose keys() is empty and would otherwise make max() raise ValueError
+        m = max(map(len, list(d.keys())), default=0) + mplus
         s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
                        _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
                        for k, v in sorter(d)])  # +2 for ': '
