@@ -468,7 +468,7 @@ namespace wrapper {
         if (PyArray_Check(obj)) {
             PyArrayObject *arr = reinterpret_cast<PyArrayObject *>(obj);
             if (PyArray_NBYTES(arr) < 1) { return conv::fail_msg; }
-            int kind = PyDataType_TYPENUM(PyArray_DESCR(arr));
+            int kind = PyArray_TYPE(arr);
             if (kind == NPY_STRING || kind == NPY_UINT8) {
                 *v = PyArray_BYTES(arr)[0];
                 return conv::ok;
