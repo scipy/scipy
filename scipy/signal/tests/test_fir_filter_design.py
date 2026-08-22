@@ -796,6 +796,31 @@ class Testfirwin_2d:
                            match="window must be a 2-element tuple or list"):
             firwin_2d((51, 51), window="invalid_window", fc=0.5)
 
+        with pytest.raises(ValueError, match="`fc` must be provided"):
+            firwin_2d((11, 11), window=("hamming", "hamming"))
+
+    def test_pass_zero_and_scale_forwarded(self):
+        # Regression: these kwargs were documented as passed to firwin but ignored.
+        # https://github.com/scipy/scipy/issues/25986
+        kw = dict(hsize=(11, 11), window=("hamming", "hamming"), fc=0.3, fs=2)
+        base = firwin_2d(**kw)
+
+        hp = firwin_2d(**kw, pass_zero=False)
+        assert not np.allclose(hp, base)
+        expected_hp = np.outer(
+            firwin(11, cutoff=0.3, window="hamming", fs=2, pass_zero=False),
+            firwin(11, cutoff=0.3, window="hamming", fs=2, pass_zero=False),
+        )
+        xp_assert_close(hp, expected_hp)
+
+        unscaled = firwin_2d(**kw, scale=False)
+        assert not np.allclose(unscaled, base)
+        expected_unscaled = np.outer(
+            firwin(11, cutoff=0.3, window="hamming", fs=2, scale=False),
+            firwin(11, cutoff=0.3, window="hamming", fs=2, scale=False),
+        )
+        xp_assert_close(unscaled, expected_unscaled)
+
     def test_filter_design(self):
         hsize = (51, 51)
         window = (("kaiser", 8.0), ("kaiser", 8.0))

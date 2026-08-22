@@ -1476,7 +1476,7 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     ------
     ValueError
         - If `hsize` and `window` are not 2-element tuples or lists.
-        - If `cutoff` is None when `circular` is True.
+        - If `fc` is None.
         - If `cutoff` is outside the range [0, `fs`/2] and `circular` is ``False``.
         - If any of the elements in `window` are not recognized.
     RuntimeError
@@ -1543,7 +1543,8 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
 
         n_r = max(hsize[0], hsize[1]) * 8  # oversample 1d window by factor 8
 
-        win_r = firwin(n_r, cutoff=fc, window=window, fs=fs)
+        win_r = firwin(n_r, cutoff=fc, window=window, fs=fs,
+                       pass_zero=pass_zero, scale=scale)
 
         f1, f2 = np.meshgrid(np.linspace(-1, 1, hsize[0]), np.linspace(-1, 1, hsize[1]))
         r = np.sqrt(f1**2 + f2**2)
@@ -1551,10 +1552,16 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         win_2d = np.interp(r, np.linspace(0, 1, n_r), win_r)
         return win_2d
 
+    if fc is None:
+        raise ValueError("Cutoff frequency `fc` must be provided when "
+                         "`circular` is False")
+
     if len(window) != 2:
         raise ValueError("window must be a 2-element tuple or list")
 
-    row_filter = firwin(hsize[0], cutoff=fc, window=window[0], fs=fs)
-    col_filter = firwin(hsize[1], cutoff=fc, window=window[1], fs=fs)
+    row_filter = firwin(hsize[0], cutoff=fc, window=window[0], fs=fs,
+                        pass_zero=pass_zero, scale=scale)
+    col_filter = firwin(hsize[1], cutoff=fc, window=window[1], fs=fs,
+                        pass_zero=pass_zero, scale=scale)
 
     return np.outer(row_filter, col_filter)
