@@ -856,7 +856,7 @@ scikit-sparse = "*"
 
 [feature.system-libs.dependencies]
 # Pinned to match versions in `meson.build`
-libboost-headers = "==1.91.0"
+libboost-headers = "==1.92.0"
 qhull = "==2020.2"
 
 [feature.system-libs.activation.env]
