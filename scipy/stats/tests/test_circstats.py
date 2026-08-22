@@ -3,7 +3,8 @@ from math import pi
 import pytest
 import numpy as np
 from numpy.testing import assert_, assert_allclose
-from scipy._lib._array_api import make_xp_test_case
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import make_xp_test_case, eager_warns
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_1d_omit,
                                           too_small_nd_omit)
@@ -85,10 +86,48 @@ class TestCircMedian:
         res = stats.circmedian(xp.asarray(sample), high=360, convention='bisecting')
         xp_assert_close(res, xp.asarray(ref))
 
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
+        x = xp.asarray([1., 2., 3.])
+
         message = "`convention` must be either 'arc-distance' or 'bisecting'."
         with pytest.raises(ValueError, match=message):
-            stats.circmedian([1, 2, 3], convention='ekki-ekki')
+            stats.circmedian(x, convention='ekki-ekki')
+
+        message = "`low` and `high` must be scalars such that `low < high`."
+        with pytest.raises(ValueError, match=message):
+            stats.circmedian(x, low = xp.asarray([1., 2.]))
+        with pytest.raises(ValueError, match=message):
+            stats.circmedian(x, high = xp.asarray([1., 2.]))
+        with pytest.raises(ValueError, match=message):
+            stats.circmedian(x, low = 1.0, high=0.0)
+
+    @pytest.mark.parametrize('convention', ['arc-distance', 'bisecting'])
+    def test_edge_cases(self, convention, xp):
+        x = xp.empty((0,))
+        with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
+            res = stats.circmedian(x, convention=convention)
+        xp_assert_close(res, xp.asarray(xp.nan))
+
+        rng = np.random.default_rng(1664271345)
+        x = xp.asarray(rng.uniform(0, 2*np.pi, size=1))
+        res = stats.circmedian(x, convention=convention)
+        xp_assert_close(res, x[0])
+
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    @pytest.mark.parametrize('convention', ['arc-distance', 'bisecting'])
+    def test_circle_parameterization(self, dtype, convention, xp):
+        # test that result is independent of parametrization of unit circle
+        # also convenient to test here that dtypes are respected
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(3658787422)
+        x = xp.asarray(rng.uniform(0, 2*xp.pi, size=30), dtype=dtype)
+        offset = float(rng.standard_normal())
+        scale = float(rng.uniform(0, 10))
+        y = scale*x + offset
+        ref = stats.circmedian(x, convention=convention)
+        res = stats.circmedian(y, convention=convention,
+                               low=offset, high=scale*2*np.pi + offset)
+        xp_assert_close(res, xp.astype(ref*scale + offset, dtype))
 
 
 class TestCircFuncsNanPolicy:

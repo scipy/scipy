@@ -226,7 +226,12 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
 
     """
     xp = array_namespace(sample)
-    sample = xp_promote(sample, force_floating=True, xp=xp)
+    low_, high_ = low, high  # do value-based I.V. on floats rather than arrays
+    sample, low, high = xp_promote(sample, low, high, force_floating=True, xp=xp)
+
+    if low.shape or high.shape or low_ >= high_:
+        raise ValueError("`low` and `high` must be scalars such that `low < high`.")
+
     tol = 10*xp.finfo(sample).eps
     T = high - low
     two_pi = 2 * math.pi
@@ -236,7 +241,7 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
     if convention == 'arc-distance':
         mad = _circmeandev(sample, sample, high=high, low=low)
         min_mad = xp.min(mad, axis=-1, keepdims=True)
-        i = (mad - min_mad) < tol*min_mad
+        i = (mad - min_mad) <= tol*min_mad
     elif convention == 'bisecting':
         displacements = (sample[..., xp.newaxis, :] - sample[..., :, xp.newaxis]) % T
         displacements = xp.where(displacements > T/2, displacements-T, displacements)
