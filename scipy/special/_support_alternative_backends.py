@@ -210,7 +210,7 @@ class _FuncInfo:
                 mask = functools.reduce(operator.or_,
                                         (getattr(arg, 'mask', False) for arg in args))
                 if isinstance(res, tuple):
-                    return tuple(xp.asarray(x, mask=mask) for x in out)
+                    return tuple(xp.asarray(x, mask=mask) for x in res)
                 return xp.asarray(res, mask=mask)
 
             return f
