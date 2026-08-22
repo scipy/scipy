@@ -71,9 +71,11 @@ class TestWithCacheOptimization:
 
     @pytest.mark.parametrize("subok", [True, False])
     def test_subok(self, subok):
-        m = np.ma.masked_array([1, 2, 3])
-        q = np.ma.masked_array([2.1, 3.2, 4.3])
-        x = np.ma.masked_array([10, 20, 30])
+        class MockSubClass(np.ndarray):
+            pass
+        m = np.asarray([1, 2, 3]).view(MockSubClass)
+        q = np.asarray([2.1, 3.2, 4.3]).view(MockSubClass)
+        x = np.asarray([10, 20, 30]).view(MockSubClass)
         res0, res1 = mathieu_sem(m, q, x, subok=subok)
         expected0, expected1 = _mathieu_sem(m, q, x, subok=subok)
         assert type(res0) is type(expected0) and type(res1) is type(expected1)
