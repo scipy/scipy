@@ -147,7 +147,7 @@ prev_fast_len.__signature__ = _sig_prev_fast_len
 
 
 @xp_capabilities()
-def fftfreq(n, d=1.0, *, xp=None, device=None):
+def fftfreq(n, d=1.0, *, xp=None, device=None, dtype=None):
     """Return the Discrete Fourier Transform sample frequencies.
 
     The returned float array `f` contains the frequency bin centers in cycles
@@ -170,6 +170,10 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
     device : device, optional
         The device for the return array.
         Only valid when `xp.fft.fftfreq` implements the device parameter.
+    dtype : dtype, optional
+        The dtype of the return array. Must be an inexact type.
+        Only valid when `xp.fft.fftfreq` implements the dtype parameter or when
+        `xp` is NumPy.
 
     Returns
     -------
@@ -190,13 +194,19 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
 
     """
     xp = np if xp is None else xp
-    if hasattr(xp, 'fft'):
-        return xp.fft.fftfreq(n, d=d, device=device)
-    return np.fft.fftfreq(n, d=d, device=device)
+    # numpy does not yet support the `dtype` keyword
+    # `xp.__name__ != 'numpy'` and `.astype(dtype, copy=False)`
+    # should be removed when numpy is compatible
+    if hasattr(xp, 'fft') and xp.__name__ != 'numpy':
+        return xp.fft.fftfreq(n, d=d, device=device, dtype=dtype)
+    dtype = np.result_type(d, np.float64) if dtype is None else dtype
+    if not np.isdtype(dtype, ("real floating", "complex floating")):
+        raise ValueError(f"`dtype` must be an inexact type. Got {dtype=}")
+    return np.fft.fftfreq(n, d=d, device=device).astype(dtype, copy=False)
 
 
 @xp_capabilities()
-def rfftfreq(n, d=1.0, *, xp=None, device=None):
+def rfftfreq(n, d=1.0, *, xp=None, device=None, dtype=None):
     """Return the Discrete Fourier Transform sample frequencies
     (for usage with rfft, irfft).
 
@@ -223,6 +233,10 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
     device : device, optional
         The device for the return array.
         Only valid when `xp.fft.rfftfreq` implements the device parameter.
+    dtype : dtype, optional
+        The dtype of the return array. Must be an inexact type.
+        Only valid when `xp.fft.rfftfreq` implements the dtype parameter or when
+        `xp` is NumPy.
 
     Returns
     -------
@@ -246,9 +260,15 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
 
     """
     xp = np if xp is None else xp
-    if hasattr(xp, 'fft'):
-        return xp.fft.rfftfreq(n, d=d, device=device)
-    return np.fft.rfftfreq(n, d=d, device=device)
+    # numpy does not yet support the `dtype` keyword
+    # `xp.__name__ != 'numpy'` and `.astype(dtype, copy=False)`
+    # should be removed when numpy is compatible
+    if hasattr(xp, 'fft') and xp.__name__ != 'numpy':
+        return xp.fft.rfftfreq(n, d=d, device=device, dtype=dtype)
+    dtype = np.result_type(d, np.float64) if dtype is None else dtype
+    if not np.isdtype(dtype, ("real floating", "complex floating")):
+        raise ValueError(f"`dtype` must be an inexact type. Got {dtype=}")
+    return np.fft.rfftfreq(n, d=d, device=device).astype(dtype, copy=False)
 
 
 @xp_capabilities()
