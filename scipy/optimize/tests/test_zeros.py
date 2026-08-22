@@ -485,6 +485,19 @@ class TestNewton(TestScalarRootFinders):
                 != res_newton_default.iterations
                 == res_newton_default.function_calls/2)  # newton 2-point diff
 
+    def test_gh21165_no_redundant_newton_fun_calls(self):
+        # 2x calls per iteration, previously 3x: the finite difference now
+        # reuses `newton`'s value of `f(x)` instead of recomputing it.
+
+        calls = []
+
+        def f(x):
+            calls.append(x)
+            return f1(x)
+
+        res = root_scalar(f, method='newton', x0=3, xtol=1e-6)
+        assert len(calls) == 2 * res.iterations
+
     @pytest.mark.parametrize('kwargs', [dict(), {'method': 'newton'}])
     def test_args_gh19090(self, kwargs):
         def f(x, a, b):
