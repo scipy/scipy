@@ -14,7 +14,7 @@ from scipy.sparse import csr_array, eye_array, random_array
 from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse.linalg import splu
 from scipy.sparse.linalg._isolve import gcrotmk, gmres
-
+import pytest
 
 Am = csr_array(array([[-2,1,0,0,0,9],
                        [1,-2,1,0,5,0],
@@ -187,3 +187,9 @@ class TestGCROTMK:
 
         if info == 0:
             assert_allclose(A.dot(xp), b)
+    
+    def test_maxiter_zero(self):
+        A = eye_array(10)
+        b = np.ones(10)
+        with pytest.raises(ValueError, match='maxiter must be an integer not less than'):
+            gcrotmk(A, b, maxiter=0)
