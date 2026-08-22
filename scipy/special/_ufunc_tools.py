@@ -309,6 +309,7 @@ def _with_cache_optimization(
         return outputs[0] if ufunc.nout == 1 else outputs
 
     wrapper._ufunc = ufunc
+    wrapper.__qualname__ = name
     return _make_ufunc_like_wrapper(wrapper, name, arg_names, docstring, module=module)
 
 
