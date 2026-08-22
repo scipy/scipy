@@ -46,13 +46,6 @@ _mathieu_cem_doc = (
     results in an even, periodic solution :math:`y(x)` with period 180 degrees
     (for even :math:`m`) or 360 degrees (for odd :math:`m`).
 
-    Computing ``mathieu_cem(m, q, x)`` involves generating fourier coefficients based
-    on `m` and `q`, and then evaluating a fourier series in ``x``. SciPy employs
-    performance optimizations to avoid repeated recalculation of the expensive fourier
-    coefficients during the iterations of a single ufunc call. Enabling these
-    optimizations requires replacing `mathieu_cem` with a wrapper function. To
-    access the underlying non-wrapped `ufunc` use ``mathieu_cem.ufunc``.
-
     References
     ----------
     .. [1] 'Mathieu function'. *Wikipedia*.
@@ -135,13 +128,6 @@ _mathieu_sem_doc = (
     for which the characteristic number :math:`b_m` (calculated with `mathieu_b`)
     results in an odd, periodic solution :math:`y(x)` with period 180 degrees
     (for even :math:`m`) or 360 degrees (for odd :math:`m`).
-
-    Computing ``mathieu_sem(m, q, x)`` involves generating fourier coefficients based
-    on `m` and `q`, and then evaluating a fourier series in ``x``. SciPy employs
-    performance optimizations to avoid repeated recalculation of the expensive fourier
-    coefficients during the iterations of a single ufunc call. Enabling these
-    optimizations requires replacing `mathieu_sem` with a wrapper function. To
-    access the underlying non-wrapped `ufunc` use ``mathieu_sem.ufunc``.
 
     References
     ----------
