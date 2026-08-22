@@ -3103,6 +3103,56 @@ class TestPoisson:
         assert_allclose(stats.poisson.logsf(k, mu), logsf_reference,
                         rtol=1e-15, atol=1e-300)
 
+    def test_logpmf_large_mu(self):
+        # This test checks output of the parameters used in gh-25625
+        # and compares to expected output.
+        # reference values were computed with mpmath with 1000 digits of precision:
+        # mp.dps = 1000
+        # k, mu = mp.mpf(k), mp.mpf(mu)
+        # if k == 0:
+        #     return float(-mu)
+        # return float(k*mp.log(mu) - mu - mp.loggamma(k + 1))
+        k = 5e15
+        mu = 5e15
+        expected = -18.993045686877064
+        assert_allclose(stats.poisson.logpmf(k, mu), expected)
+
+    @pytest.mark.parametrize("k, mu, expected",
+        [(14, 14, -2.244418568125061),
+        (18, 20, -2.472264284061216),
+        (1300000, 1000000, -41081.501683746894),
+        (8e7, 1e8, -2148525.91257035),
+        (105e9, 1e10, -151894402015.7727),
+        (8e14, 1e15, -21485158948650.273), # |v| > 0.1 boundary
+        (12e14, 1e15, -18785868152763.832),  # |v| < 0.1 boundary
+        (1e16, 1e16, -19.339619277157038)]) # old formula returns 0.0 here
+    def test_logpmf_accuracy_vs_reference(self, k, mu, expected):
+        # reference values computed with mpmath at 1000 digits of precision
+        # (same procedure as test_logpmf_large_mu)
+        assert_allclose(stats.poisson.logpmf(k, mu), expected, rtol=1e-14)
+
+    def test_logpmf_no_reg_moderate_mu(self):
+        # Checks that the saddle-point approach doesn't deviate significantly
+        # from the original formula used
+        mu = np.array([10, 50, 100, 500, 1e3, 1e4, 1e5, 1e6])
+        k = mu
+        old = special.xlogy(k, mu) - special.gammaln(k + 1) - mu
+        new = stats.poisson.logpmf(k, mu)
+        assert_allclose(old, new, rtol=1e-11, atol=1e-9)
+
+    @pytest.mark.parametrize("k, mu, expected",
+        [(0, 0, 0.0),
+        (3, 0, -np.inf),
+        (0, 5, -5.0)])
+    def test_logpmf_special_cases(self, k, mu, expected):
+        assert_allclose(stats.poisson.logpmf(k, mu), expected)
+
+    def test_logpmf_broadcasting(self):
+        k = np.array([1e15, 1e16, 1e14])
+        mu = 1e15  # scalar mu against array k
+        result = stats.poisson.logpmf(k, mu)
+        expected = np.array([stats.poisson.logpmf(k_i, mu) for k_i in k])
+        assert_allclose(result, expected, strict=True)
 
 class TestKSTwo:
 
