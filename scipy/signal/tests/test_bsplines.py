@@ -324,22 +324,32 @@ class TestSepfir2d:
         assert result_strided.dtype == result_contig.dtype
 
     @skip_xp_backends(np_only=True, reason="TODO: convert this test")
-    @pytest.mark.xfail(reason="XXX: filt.size > image.shape: flaky")
-    def test_sepfir2d_strided_2(self, xp):
-        # XXX: this test is flaky: fails on some reruns, with
-        # result[0, 1] and result[1, 1] being ~1e+224.
-        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0, 3.0, 2.0])
-        image = np.random.rand(4, 4)
-
-        expected = np.asarray([[36.018162, 30.239061, 38.71187 , 43.878183],
-                                [38.180999, 35.824583, 43.525247, 43.874945],
-                                [43.269533, 40.834018, 46.757772, 44.276423],
-                                [49.120928, 39.681844, 43.596067, 45.085854]])
-        xp_assert_close(signal.sepfir2d(image, filt, filt[::3]), expected)
+    @pytest.mark.parametrize('shape, nrow, ncol', [
+        ((4, 4), 7, 3),    # hrow longer than axis 1 allows
+        ((5, 5), 7, 3),    # one sample short of the limit
+        ((5, 5), 3, 7),    # hcol longer than axis 0 allows
+        ((1, 8), 3, 3),    # axis 0 too short even for a 3-tap filter
+        ((2, 2), 7, 7),    # short enough that the output pointer also ran out
+    ])
+    def test_sepfir2d_filter_too_long(self, shape, nrow, ncol, xp):
+        # gh-24681: the boundary sections reflect an out-of-range index only
+        # once, so an axis shorter than 2*(len(filt)//2) used to read, and for
+        # the last case above also write, outside the arrays instead of raising.
+        image = np.ones(shape)
+        with pytest.raises(ValueError, match="must not be longer"):
+            signal.sepfir2d(image, np.ones(nrow), np.ones(ncol))
 
     @skip_xp_backends(np_only=True, reason="TODO: convert this test")
-    @pytest.mark.xfail(reason="XXX: flaky. pointers OOB on some platforms")
-    @pytest.mark.fail_asan
+    @pytest.mark.parametrize('n', [2, 4, 6, 8])
+    def test_sepfir2d_longest_valid_filter(self, n, xp):
+        # len(filt) == n + 1 is the longest filter the boundary handling
+        # supports; mirroring a constant image is constant, so every output
+        # sample must equal sum(hrow)*sum(hcol).
+        filt = np.arange(1.0, n + 2.0)
+        result = signal.sepfir2d(np.ones((n, n)), filt, filt)
+        xp_assert_close(result, np.full((n, n), filt.sum()**2), atol=1e-13)
+
+    @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
     )
@@ -354,25 +364,15 @@ class TestSepfir2d:
                             [2, 3, 0, 1, 3],
                             [3, 3, 2, 1, 2]], dtype=dtyp)
 
-        expected = [[123., 101.,  91., 136., 127.],
-                    [133., 125., 126., 152., 160.],
-                    [136., 137., 150., 162., 177.],
-                    [133., 124., 132., 148., 147.],
-                    [173., 158., 152., 164., 141.]]
-        expected = np.asarray(expected)
-        result = signal.sepfir2d(image, filt, filt[::3])
-        xp_assert_close(result, expected, atol=1e-15)
-        assert result.dtype == sepfir_dtype_map[dtyp]
-
-        expected = [[22., 35., 41., 31., 47.],
-                    [27., 39., 48., 47., 55.],
-                    [33., 42., 49., 53., 59.],
-                    [39., 44., 41., 36., 48.],
-                    [67., 62., 47., 34., 46.]]
-        expected = np.asarray(expected)
+        dt = sepfir_dtype_map[dtyp]
+        expected = np.asarray([[22., 35., 41., 31., 47.],
+                               [27., 39., 48., 47., 55.],
+                               [33., 42., 49., 53., 59.],
+                               [39., 44., 41., 36., 48.],
+                               [67., 62., 47., 34., 46.]], dtype=dt)
         result = signal.sepfir2d(image, filt[::3], filt[::3])
         xp_assert_close(result, expected, atol=1e-15)
-        assert result.dtype == sepfir_dtype_map[dtyp]
+        assert result.dtype == dt
 
 
 @make_xp_test_case(signal.cspline2d)  # type:ignore[attr-defined]
