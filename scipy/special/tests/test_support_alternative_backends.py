@@ -57,7 +57,7 @@ def _tuple_aware_xp_assert_close(actual, desired, *, rtol=None, atol=0,
     for actual_i, desired_i in zip(actual, desired):
         xp_assert_close(actual_i, desired_i, rtol=rtol, atol=atol,
                         check_dtype=check_dtype, check_shape=check_shape,
-                        check_0d=check_0d, err_msg='', xp=xp)
+                        check_0d=check_0d, err_msg=err_msg, xp=xp)
 
 
 def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
