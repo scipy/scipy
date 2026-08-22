@@ -208,6 +208,10 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
     PyArrayObject *rowind, *colptr, *nzvals;
     SuperMatrix A = { 0 };
     PyObject *result;
+    SuperLUGlobalObject *g;
+    PyObject *fresh_tracker = NULL;
+    PyObject *saved_tracker = NULL;
+    PyObject *factor_tracker = NULL;
     PyObject *py_csc_construct_func = NULL;
     PyObject *option_dict = NULL;
     int type;
@@ -244,6 +248,23 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 	return NULL;
     }
 
+    /* Give this factorization an allocation tracker of its own, so that the
+     * resulting factor owns its memory instead of the thread that happened to
+     * create it.  Otherwise the thread's tracker frees the factor's memory when
+     * the thread exits, even though the factor is still alive --- see gh-25404
+     * and the comment on superlu_free_tracked_allocations.
+     */
+    g = get_tls_global();
+    if (g == NULL) {
+        return NULL;
+    }
+    fresh_tracker = PyDict_New();
+    if (fresh_tracker == NULL) {
+        return NULL;
+    }
+    /* the swap steals our reference to fresh_tracker */
+    saved_tracker = superlu_swap_memory_tracker(g, fresh_tracker);
+
     if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, rowind, colptr,
 			       type)) {
 	goto fail;
@@ -254,13 +275,29 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 	goto fail;
     }
 
-    /* arrays of input matrix will not be freed */
+    /* arrays of input matrix will not be freed.  This has to happen before the
+     * tracker is swapped back, so that A's Store is charged to the factorization
+     * tracker it was allocated from rather than being left in the factor's.
+     */
     Destroy_SuperMatrix_Store(&A);
+    factor_tracker = superlu_swap_memory_tracker(g, saved_tracker);
+    /* `result` was built while `factor_tracker` was installed, so it now owns
+     * every allocation left in it, and frees them in SuperLU_dealloc.
+     */
+    ((SuperLUObject *)result)->memory_tracker = factor_tracker;
     return result;
 
   fail:
     /* arrays of input matrix will not be freed */
     XDestroy_SuperMatrix_Store(&A);
+    /* Nothing survives a failed factorization: newSuperLUObject's own failure
+     * path drops the half-built object without freeing L, U, perm_r or perm_c,
+     * because it has no tracker attached yet.  Reclaiming the whole tracker
+     * here covers those as well as any partial allocations gstrf left behind.
+     */
+    factor_tracker = superlu_swap_memory_tracker(g, saved_tracker);
+    superlu_free_tracked_allocations(factor_tracker);
+    Py_DECREF(factor_tracker);
     return NULL;
 }
 
