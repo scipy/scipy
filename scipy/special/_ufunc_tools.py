@@ -1,6 +1,7 @@
 """Helpers for producing efficient wrappers of ufuncs.
 """
 
+import importlib
 import re
 import numpy as np
 import warnings
@@ -313,10 +314,9 @@ def _with_cache_optimization(
     return _make_ufunc_like_wrapper(wrapper, name, arg_names, docstring, module=module)
 
 
-def _reconstruct_wrapper(name):
+def _reconstruct_wrapper(module, name):
     """Helper to allow pickling of dynamically generated ufunc wrappers."""
-    import scipy.special
-    return getattr(scipy.special, name)
+    return getattr(importlib.import_module(module), name)
 
 
 class _UFuncLikeWrapper:
@@ -368,7 +368,7 @@ class _UFuncLikeWrapper:
 
     def __reduce__(self):
         # Tells pickle exactly how to reconstruct this specific instance
-        return (_reconstruct_wrapper, (self.__name__,))
+        return (_reconstruct_wrapper, (self.__module__, self.__name__,))
 
 
 _UFuncLikeWrapper.resolve_dtypes.__doc__ = np.ufunc.resolve_dtypes.__doc__

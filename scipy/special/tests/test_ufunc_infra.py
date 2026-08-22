@@ -1,11 +1,14 @@
 import numpy as np
+import pickle
 import pytest
 
 from numpy.testing import assert_equal
 from numpy._core._exceptions import UFuncTypeError
 from scipy._external.packaging_version import version
-# ufunc using special._ufuncs_tools._with_cache_optimization
+# ufunc wrapper with array api dispatch
 from scipy.special import mathieu_sem
+# ufunc using special._ufuncs_tools._with_cache_optimization
+from scipy.special._mathieu import mathieu_sem as mathieu_sem_wrapper
 # raw ufunc without cache optimization
 from scipy.special._ufuncs import _mathieu_sem
 
@@ -218,3 +221,7 @@ class TestWithCacheOptimization:
         assert mathieu_sem.__qualname__ == "mathieu_sem"
         for attr in ["nin", "nout", "nargs", "ntypes", "types", "signature"]:
             assert getattr(mathieu_sem, attr) == getattr(_mathieu_sem, attr)
+
+    @pytest.mark.parametrize("func", [mathieu_sem, mathieu_sem_wrapper])
+    def test_pickle(self, func):
+        assert pickle.loads(pickle.dumps(func)) is func
