@@ -713,11 +713,19 @@ namespace lapack {
         template <class T>
         static PyObject *syevd(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
-            static const char *kwlist[] = {"a", "compute_v", "lower", "lwork", "liwork",
-                                           "overwrite_a", nullptr};
-            static constexpr Ctx<T> ctx("syevd", "O|OOOOO", kwlist);
+            /* The complex routine sizes a third workspace the real one has no equivalent of, so
+             * the Hermitian half takes one extra keyword.  Two kwlists, one wrapper, as `gelsd`
+             * does it. */
+            static const char *kwlist_real[] = {"a", "compute_v", "lower", "lwork", "liwork",
+                                                "overwrite_a", nullptr};
+            static const char *kwlist_complex[] = {"a", "compute_v", "lower", "lwork", "liwork",
+                                                   "lrwork", "overwrite_a", nullptr};
+            static constexpr Ctx<T> ctx(is_complex_v<T> ? "heevd" : "syevd",
+                                        is_complex_v<T> ? "O|OOOOOO" : "O|OOOOO",
+                                        is_complex_v<T> ? kwlist_complex : kwlist_real);
             PARSE_ARGS();
 
+            using R = real_of_t<T>;
             SCALAR_FLAG(overwrite_a);
             SCALAR_OPT(CBLAS_INT, compute_v, 1);  CHECK(compute_v == 0 || compute_v == 1, compute_v);
             SCALAR_OPT(CBLAS_INT, lower, 0);      CHECK(lower == 0 || lower == 1, lower);
@@ -727,7 +735,10 @@ namespace lapack {
             CBLAS_INT n = shape(a, 0), lda = std::max<CBLAS_INT>(1, shape(a, 0)), info = 0;
 
             CBLAS_INT minimum_lwork, minimum_liwork;
-            if (!work_size(compute_v ? 1LL + 6LL * n + 2LL * n * n : 2LL * n + 1, &minimum_lwork) ||
+            const long long lwork_bound = is_complex_v<T>
+                ? (compute_v ? 2LL * n + 1LL * n * n : 1LL * n + 1)
+                : (compute_v ? 1LL + 6LL * n + 2LL * n * n : 2LL * n + 1);
+            if (!work_size(lwork_bound, &minimum_lwork) ||
                 !work_size(compute_v ? 3LL + 5LL * n : 1LL, &minimum_liwork)) {
                 return nullptr;
             }
@@ -736,55 +747,27 @@ namespace lapack {
             SCALAR_OPT(CBLAS_INT, liwork, minimum_liwork);
             CHECK(liwork >= minimum_liwork || (n == 1 && liwork >= 1), liwork);
 
-            ARRAY_OUT(T, w, 1, true, ctx.zeros(n));
-            ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(1, lwork));
-            ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(1, liwork));
-
-            lapack::syevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, a.data<T>(), lda,
-                          w.data<T>(), work.data<T>(), lwork, iwork.data<CBLAS_INT>(), liwork,
-                          &info);
-            return make_result(w, a, static_cast<long long>(info));
-        }
-
-
-        template <class T>
-        static PyObject *heevd(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
-        {
-            static const char *kwlist[] = {"a", "compute_v", "lower", "lwork", "liwork", "lrwork",
-                                           "overwrite_a", nullptr};
-            static constexpr Ctx<T> ctx("heevd", "O|OOOOOO", kwlist);
-            PARSE_ARGS();
-
-            using R = real_of_t<T>;
-            SCALAR_FLAG(overwrite_a);
-            SCALAR_OPT(CBLAS_INT, compute_v, 1);  CHECK(compute_v == 0 || compute_v == 1, compute_v);
-            SCALAR_OPT(CBLAS_INT, lower, 0);      CHECK(lower == 0 || lower == 1, lower);
-
-            ARRAY_INOUT(T, a, 2, overwrite_a != 0);
-            CHECKARRAY(shape(a, 0) == shape(a, 1), a);
-            CBLAS_INT n = shape(a, 0), lda = std::max<CBLAS_INT>(1, shape(a, 0)), info = 0;
-
-            CBLAS_INT minimum_lwork, minimum_liwork, minimum_lrwork;
-            if (!work_size(compute_v ? 2LL * n + 1LL * n * n : 1LL * n + 1, &minimum_lwork) ||
-                !work_size(compute_v ? 3LL + 5LL * n : 1LL, &minimum_liwork) ||
-                !work_size(compute_v ? 1LL + 5LL * n + 2LL * n * n : 1LL * n, &minimum_lrwork)) {
-                return nullptr;
-            }
-            SCALAR_OPT(CBLAS_INT, lwork, minimum_lwork);
-            CHECK(lwork >= minimum_lwork || (n == 1 && lwork >= 1), lwork);
-            SCALAR_OPT(CBLAS_INT, liwork, minimum_liwork);
-            CHECK(liwork >= minimum_liwork || (n == 1 && liwork >= 1), liwork);
-            SCALAR_OPT(CBLAS_INT, lrwork, minimum_lrwork);
-            CHECK(lrwork >= minimum_lrwork || (n == 1 && lrwork >= 1), lrwork);
-
             ARRAY_OUT(R, w, 1, true, ctx.template zeros_as<R>(n));
             ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(1, lwork));
-            ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
             ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(1, liwork));
 
-            lapack::heevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, a.data<T>(), lda,
-                          w.data<R>(), work.data<T>(), lwork, rwork.data<R>(), lrwork,
-                          iwork.data<CBLAS_INT>(), liwork, &info);
+            if constexpr (is_complex_v<T>) {
+                CBLAS_INT minimum_lrwork;
+                if (!work_size(compute_v ? 1LL + 5LL * n + 2LL * n * n : 1LL * n, &minimum_lrwork)) {
+                    return nullptr;
+                }
+                SCALAR_OPT(CBLAS_INT, lrwork, minimum_lrwork);
+                CHECK(lrwork >= minimum_lrwork || (n == 1 && lrwork >= 1), lrwork);
+                ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
+                lapack::syevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, a.data<T>(), lda,
+                              w.data<R>(), work.data<T>(), lwork, rwork.data<R>(), lrwork,
+                              iwork.data<CBLAS_INT>(), liwork, &info);
+            }
+            else {
+                lapack::syevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, a.data<T>(), lda,
+                              w.data<R>(), work.data<T>(), lwork, iwork.data<CBLAS_INT>(),
+                              liwork, &info);
+            }
             return make_result(w, a, static_cast<long long>(info));
         }
 
@@ -793,26 +776,8 @@ namespace lapack {
         static PyObject *syevd_lwork(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "compute_v", "lower", nullptr};
-            static constexpr Ctx<T> ctx("syevd_lwork", "O|OO", kwlist);
-            PARSE_ARGS();
-
-            SCALAR_REQ(CBLAS_INT, n);
-            SCALAR_OPT(CBLAS_INT, compute_v, 1);  CHECK(compute_v == 0 || compute_v == 1, compute_v);
-            SCALAR_OPT(CBLAS_INT, lower, 0);      CHECK(lower == 0 || lower == 1, lower);
-
-            T work = 0;
-            CBLAS_INT iwork = 0, info = 0;
-            lapack::syevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, nullptr,
-                          std::max<CBLAS_INT>(1, n), nullptr, &work, -1, &iwork, -1, &info);
-            return make_result(work, static_cast<long long>(iwork), static_cast<long long>(info));
-        }
-
-
-        template <class T>
-        static PyObject *heevd_lwork(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
-        {
-            static const char *kwlist[] = {"n", "compute_v", "lower", nullptr};
-            static constexpr Ctx<T> ctx("heevd_lwork", "O|OO", kwlist);
+            static constexpr Ctx<T> ctx(is_complex_v<T> ? "heevd_lwork" : "syevd_lwork",
+                                        "O|OO", kwlist);
             PARSE_ARGS();
 
             using R = real_of_t<T>;
@@ -820,16 +785,26 @@ namespace lapack {
             SCALAR_OPT(CBLAS_INT, compute_v, 1);  CHECK(compute_v == 0 || compute_v == 1, compute_v);
             SCALAR_OPT(CBLAS_INT, lower, 0);      CHECK(lower == 0 || lower == 1, lower);
 
-            /* Four values back where the real query hands back three: the complex routine has a
-             * third workspace to size. */
             T work = 0;
-            R rwork = 0;
             CBLAS_INT iwork = 0, info = 0;
-            lapack::heevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, nullptr,
-                          std::max<CBLAS_INT>(1, n), nullptr, &work, -1, &rwork, -1, &iwork, -1,
-                          &info);
-            return make_result(work, static_cast<long long>(iwork), rwork,
-                               static_cast<long long>(info));
+
+            /* Four values back where the real query hands back three: the complex routine has a
+             * third workspace to size.  The `.pyf` reports it as `work, iwork, rwork` -- note
+             * `heevr_lwork` orders its three the other way round. */
+            if constexpr (is_complex_v<T>) {
+                R rwork = 0;
+                lapack::syevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, nullptr,
+                              std::max<CBLAS_INT>(1, n), nullptr, &work, -1, &rwork, -1, &iwork,
+                              -1, &info);
+                return make_result(work, static_cast<long long>(iwork), rwork,
+                                   static_cast<long long>(info));
+            }
+            else {
+                lapack::syevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, nullptr,
+                              std::max<CBLAS_INT>(1, n), nullptr, &work, -1, &iwork, -1, &info);
+                return make_result(work, static_cast<long long>(iwork),
+                                   static_cast<long long>(info));
+            }
         }
 
 
@@ -840,67 +815,17 @@ namespace lapack {
         template <class T>
         static PyObject *syevr(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
-            static const char *kwlist[] = {"a", "compute_v", "range", "lower", "vl", "vu", "il",
-                                           "iu", "abstol", "lwork", "liwork", "overwrite_a", nullptr};
-            static constexpr Ctx<T> ctx("syevr", "O|OOOOOOOOOOO", kwlist);
-            PARSE_ARGS();
-
-            SCALAR_FLAG(overwrite_a);
-            SCALAR_OPT(CBLAS_INT, compute_v, 1);  CHECK(compute_v == 0 || compute_v == 1, compute_v);
-            SCALAR_OPT(char, range, 'A');         CHECK(range == 'A' || range == 'V' || range == 'I', range);
-            SCALAR_OPT(CBLAS_INT, lower, 0);      CHECK(lower == 0 || lower == 1, lower);
-
-            ARRAY_INOUT(T, a, 2, overwrite_a != 0);
-            CHECKARRAY(shape(a, 0) == shape(a, 1), a);
-            CBLAS_INT n = shape(a, 0), lda = std::max<CBLAS_INT>(1, n), m = 0, info = 0;
-
-            SCALAR_OPT(CBLAS_INT, il, 1);   CHECK(il >= 1 && il <= n, il);
-            SCALAR_OPT(CBLAS_INT, iu, n);   CHECK(n >= iu && iu >= il, iu);
-            SCALAR_OPT(T, vl, 0.0);
-            SCALAR_OPT(T, vu, 1.0);         CHECK(vu >= vl, vu);
-            SCALAR_OPT(T, abstol, 0.0);
-
-            CBLAS_INT minimum_lwork, minimum_liwork;
-            if (!work_size(n <= 1 ? 1LL : 26LL * n, &minimum_lwork) ||
-                !work_size(n <= 1 ? 1LL : 10LL * n, &minimum_liwork)) { return nullptr; }
-            SCALAR_OPT(CBLAS_INT, lwork, std::max<CBLAS_INT>(1, 26 * n));
-            CHECK(lwork >= minimum_lwork || lwork == -1, lwork);
-            SCALAR_OPT(CBLAS_INT, liwork, std::max<CBLAS_INT>(1, 10 * n));
-            CHECK(liwork >= minimum_liwork || liwork == -1, liwork);
-
-            CBLAS_INT z_rows = compute_v ? std::max<CBLAS_INT>(0, n) : 0;
-            CBLAS_INT z_cols = compute_v ? (range == 'I' ? iu - il + 1 : std::max<CBLAS_INT>(1, n)) : 0;
-            /* LAPACK writes `isuppz` on the MRRR path -- `range` 'A', or 'I' spanning the
-             * whole index range -- and also from the `n == 1` early return, which is guarded
-             * by `jobz` alone.  The `.pyf` omits that last case, so `range='V'` at `n == 1`
-             * handed LAPACK a zero-length buffer and it wrote two integers past the end. */
-            CBLAS_INT isuppz_len =
-                compute_v && (range == 'A' || (range == 'I' && iu - il + 1 == n) || n == 1)
-                    ? 2 * n : 0;
-
-            ARRAY_OUT(T, w, 1, true, ctx.zeros(n));
-            ARRAY_OUT(T, z, 2, true, ctx.zeros(z_rows, z_cols));
-            ARRAY_OUT(CBLAS_INT, isuppz, 1, true, ctx.template zeros_as<CBLAS_INT>(isuppz_len));
-            ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(1, lwork));
-            ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(1, liwork));
-            CBLAS_INT ldz = std::max<CBLAS_INT>(1, shape(z, 0));
-
-            lapack::syevr(compute_v ? 'V' : 'N', range, lower ? 'L' : 'U', n, a.data<T>(), lda,
-                          vl, vu, il, iu, abstol, &m, w.data<T>(), z.data<T>(), ldz,
-                          isuppz.data<CBLAS_INT>(), work.data<T>(), lwork,
-                          iwork.data<CBLAS_INT>(), liwork, &info);
-            return make_result(w, z, static_cast<long long>(m), isuppz,
-                               static_cast<long long>(info));
-        }
-
-
-        template <class T>
-        static PyObject *heevr(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
-        {
-            static const char *kwlist[] = {"a", "compute_v", "range", "lower", "vl", "vu", "il",
-                                           "iu", "abstol", "lwork", "lrwork", "liwork",
-                                           "overwrite_a", nullptr};
-            static constexpr Ctx<T> ctx("heevr", "O|OOOOOOOOOOOO", kwlist);
+            /* The Hermitian half adds `lrwork`, between `lwork` and `liwork` in the `.pyf`'s
+             * order, so the two kwlists differ in that one slot. */
+            static const char *kwlist_real[] = {"a", "compute_v", "range", "lower", "vl", "vu",
+                                                "il", "iu", "abstol", "lwork", "liwork",
+                                                "overwrite_a", nullptr};
+            static const char *kwlist_complex[] = {"a", "compute_v", "range", "lower", "vl", "vu",
+                                                   "il", "iu", "abstol", "lwork", "lrwork",
+                                                   "liwork", "overwrite_a", nullptr};
+            static constexpr Ctx<T> ctx(is_complex_v<T> ? "heevr" : "syevr",
+                                        is_complex_v<T> ? "O|OOOOOOOOOOOO" : "O|OOOOOOOOOOO",
+                                        is_complex_v<T> ? kwlist_complex : kwlist_real);
             PARSE_ARGS();
 
             using R = real_of_t<T>;
@@ -919,40 +844,60 @@ namespace lapack {
             SCALAR_OPT(R, vu, 1.0);         CHECK(vu >= vl, vu);
             SCALAR_OPT(R, abstol, 0.0);
 
-            CBLAS_INT minimum_lwork, minimum_lrwork, minimum_liwork;
-            if (!work_size(n <= 1 ? 1LL : 2LL * n, &minimum_lwork) ||
-                !work_size(n <= 1 ? 1LL : 24LL * n, &minimum_lrwork) ||
+            /* `work` is complex here and real there, so the complex half needs far fewer of
+             * them; `rwork` carries what the real half kept in `work`. */
+            CBLAS_INT minimum_lwork, minimum_liwork;
+            const long long lwork_bound = is_complex_v<T> ? (n <= 1 ? 1LL : 2LL * n)
+                                                          : (n <= 1 ? 1LL : 26LL * n);
+            if (!work_size(lwork_bound, &minimum_lwork) ||
                 !work_size(n <= 1 ? 1LL : 10LL * n, &minimum_liwork)) { return nullptr; }
-            SCALAR_OPT(CBLAS_INT, lwork, std::max<CBLAS_INT>(1, 2 * n));
+            SCALAR_OPT(CBLAS_INT, lwork, std::max<CBLAS_INT>(1, (is_complex_v<T> ? 2 : 26) * n));
             CHECK(lwork >= minimum_lwork || lwork == -1, lwork);
-            SCALAR_OPT(CBLAS_INT, lrwork, std::max<CBLAS_INT>(1, 24 * n));
-            CHECK(lrwork >= minimum_lrwork || lrwork == -1, lrwork);
+
             SCALAR_OPT(CBLAS_INT, liwork, std::max<CBLAS_INT>(1, 10 * n));
             CHECK(liwork >= minimum_liwork || liwork == -1, liwork);
 
             CBLAS_INT z_rows = compute_v ? std::max<CBLAS_INT>(0, n) : 0;
             CBLAS_INT z_cols = compute_v ? (range == 'I' ? iu - il + 1 : std::max<CBLAS_INT>(1, n)) : 0;
-
-            ARRAY_OUT(R, w, 1, true, ctx.template zeros_as<R>(n));
-            ARRAY_OUT(T, z, 2, true, ctx.zeros(z_rows, z_cols));
-            /* Same rule as `syevr`.  The `.pyf` allocated `2 * max(1, n)` unconditionally on
-             * this half to work around an MKL bug that wrote `isuppz` where the reference did
-             * not; its own comment expected a fix in MKL 2020 update 2, and MKL 2024.2.2 was
-             * measured writing exactly the reference's entries, so the work-around is retired
-             * and the two halves agree again. */
+            /* LAPACK writes `isuppz` on the MRRR path -- `range` 'A', or 'I' spanning the
+             * whole index range -- and also from the `n == 1` early return, which is guarded
+             * by `jobz` alone.  The `.pyf` omits that last case, so `range='V'` at `n == 1`
+             * handed LAPACK a zero-length buffer and it wrote two integers past the end.
+             *
+             * The `.pyf` also allocated `2 * max(1, n)` unconditionally on the Hermitian half,
+             * working around an MKL bug that wrote `isuppz` where the reference did not; its own
+             * comment expected a fix in MKL 2020 update 2, and MKL 2024.2.2 was measured writing
+             * exactly the reference's entries, so the work-around is retired and both halves
+             * follow the one rule below. */
             CBLAS_INT isuppz_len =
                 compute_v && (range == 'A' || (range == 'I' && iu - il + 1 == n) || n == 1)
                     ? 2 * n : 0;
+
+            ARRAY_OUT(R, w, 1, true, ctx.template zeros_as<R>(n));
+            ARRAY_OUT(T, z, 2, true, ctx.zeros(z_rows, z_cols));
             ARRAY_OUT(CBLAS_INT, isuppz, 1, true, ctx.template zeros_as<CBLAS_INT>(isuppz_len));
             ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(1, lwork));
-            ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
             ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(1, liwork));
             CBLAS_INT ldz = std::max<CBLAS_INT>(1, shape(z, 0));
 
-            lapack::heevr(compute_v ? 'V' : 'N', range, lower ? 'L' : 'U', n, a.data<T>(), lda,
-                          vl, vu, il, iu, abstol, &m, w.data<R>(), z.data<T>(), ldz,
-                          isuppz.data<CBLAS_INT>(), work.data<T>(), lwork, rwork.data<R>(),
-                          lrwork, iwork.data<CBLAS_INT>(), liwork, &info);
+            /* As in `sygvd`: `lrwork` belongs beside the buffer it sizes. */
+            if constexpr (is_complex_v<T>) {
+                CBLAS_INT minimum_lrwork;
+                if (!work_size(n <= 1 ? 1LL : 24LL * n, &minimum_lrwork)) { return nullptr; }
+                SCALAR_OPT(CBLAS_INT, lrwork, std::max<CBLAS_INT>(1, 24 * n));
+                CHECK(lrwork >= minimum_lrwork || lrwork == -1, lrwork);
+                ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
+                lapack::syevr(compute_v ? 'V' : 'N', range, lower ? 'L' : 'U', n, a.data<T>(), lda,
+                              vl, vu, il, iu, abstol, &m, w.data<R>(), z.data<T>(), ldz,
+                              isuppz.data<CBLAS_INT>(), work.data<T>(), lwork, rwork.data<R>(),
+                              lrwork, iwork.data<CBLAS_INT>(), liwork, &info);
+            }
+            else {
+                lapack::syevr(compute_v ? 'V' : 'N', range, lower ? 'L' : 'U', n, a.data<T>(), lda,
+                              vl, vu, il, iu, abstol, &m, w.data<R>(), z.data<T>(), ldz,
+                              isuppz.data<CBLAS_INT>(), work.data<T>(), lwork,
+                              iwork.data<CBLAS_INT>(), liwork, &info);
+            }
             return make_result(w, z, static_cast<long long>(m), isuppz,
                                static_cast<long long>(info));
         }
@@ -962,26 +907,8 @@ namespace lapack {
         static PyObject *syevr_lwork(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"n", "lower", nullptr};
-            static constexpr Ctx<T> ctx("syevr_lwork", "O|O", kwlist);
-            PARSE_ARGS();
-
-            SCALAR_REQ(CBLAS_INT, n);
-            SCALAR_OPT(CBLAS_INT, lower, 0);
-            CHECK(lower == 0 || lower == 1, lower);
-
-            T work = 0;
-            CBLAS_INT iwork = 0, m = 0, info = 0, ld = std::max<CBLAS_INT>(1, n);
-            lapack::syevr('N', 'A', lower ? 'L' : 'U', n, nullptr, ld, 0, 1, 1, 0, 0, &m, nullptr,
-                          nullptr, ld, nullptr, &work, -1, &iwork, -1, &info);
-            return make_result(work, static_cast<long long>(iwork), static_cast<long long>(info));
-        }
-
-
-        template <class T>
-        static PyObject *heevr_lwork(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
-        {
-            static const char *kwlist[] = {"n", "lower", nullptr};
-            static constexpr Ctx<T> ctx("heevr_lwork", "O|O", kwlist);
+            static constexpr Ctx<T> ctx(is_complex_v<T> ? "heevr_lwork" : "syevr_lwork",
+                                        "O|O", kwlist);
             PARSE_ARGS();
 
             using R = real_of_t<T>;
@@ -989,15 +916,25 @@ namespace lapack {
             SCALAR_OPT(CBLAS_INT, lower, 0);
             CHECK(lower == 0 || lower == 1, lower);
 
-            /* `work, rwork, iwork` -- note the order differs from `heevd_lwork`, which reports
-             * `work, iwork, rwork`.  Both follow their own `.pyf` argument list. */
             T work = 0;
-            R rwork = 0;
             CBLAS_INT iwork = 0, m = 0, info = 0, ld = std::max<CBLAS_INT>(1, n);
-            lapack::heevr('N', 'A', lower ? 'L' : 'U', n, nullptr, ld, 0, 1, 1, 0, 0, &m, nullptr,
-                          nullptr, ld, nullptr, &work, -1, &rwork, -1, &iwork, -1, &info);
-            return make_result(work, rwork, static_cast<long long>(iwork),
-                               static_cast<long long>(info));
+
+            /* `work, rwork, iwork` -- note the order differs from `syevd_lwork`, which reports
+             * `work, iwork, rwork`.  Both follow their own `.pyf` argument list. */
+            if constexpr (is_complex_v<T>) {
+                R rwork = 0;
+                lapack::syevr('N', 'A', lower ? 'L' : 'U', n, nullptr, ld, 0, 1, 1, 0, 0, &m,
+                              nullptr, nullptr, ld, nullptr, &work, -1, &rwork, -1, &iwork, -1,
+                              &info);
+                return make_result(work, rwork, static_cast<long long>(iwork),
+                                   static_cast<long long>(info));
+            }
+            else {
+                lapack::syevr('N', 'A', lower ? 'L' : 'U', n, nullptr, ld, 0, 1, 1, 0, 0, &m,
+                              nullptr, nullptr, ld, nullptr, &work, -1, &iwork, -1, &info);
+                return make_result(work, static_cast<long long>(iwork),
+                                   static_cast<long long>(info));
+            }
         }
 
 
@@ -1168,49 +1105,15 @@ namespace lapack {
         template <class T>
         static PyObject *sygvd(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
-            static const char *kwlist[] = {"a", "b", "itype", "jobz", "uplo", "lwork", "liwork",
-                                           "overwrite_a", "overwrite_b", nullptr};
-            static constexpr Ctx<T> ctx("sygvd", "OO|OOOOOOO", kwlist);
-            PARSE_ARGS();
-
-            SCALAR_FLAG(overwrite_a);
-            SCALAR_FLAG(overwrite_b);
-            SCALAR_OPT(CBLAS_INT, itype, 1);  CHECK(itype == 1 || itype == 2 || itype == 3, itype);
-            SCALAR_OPT(char, jobz, 'V');      CHECK(jobz == 'N' || jobz == 'V', jobz);
-            SCALAR_OPT(char, uplo, 'L');      CHECK(uplo == 'U' || uplo == 'L', uplo);
-
-            ARRAY_INOUT(T, a, 2, overwrite_a != 0);
-            CHECKARRAY(shape(a, 0) == shape(a, 1), a);
-            CBLAS_INT n = shape(a, 0), lda = std::max<CBLAS_INT>(1, n), info = 0;
-
-            ARRAY_INOUT(T, b, 2, overwrite_b != 0);
-            CHECKARRAY(shape(b, 0) == shape(b, 1) && shape(b, 0) == n, b);
-            CBLAS_INT ldb = std::max<CBLAS_INT>(1, shape(b, 0));
-
-            CBLAS_INT default_lwork, default_liwork;
-            if (!work_size(jobz == 'N' ? 2LL * n + 1 : 1LL + 6LL * n + 2LL * n * n, &default_lwork) ||
-                !work_size(jobz == 'N' ? 1LL : 5LL * n + 3, &default_liwork)) { return nullptr; }
-            SCALAR_OPT(CBLAS_INT, lwork, default_lwork);
-            CHECK(lwork > 0 || lwork == -1, lwork);
-            SCALAR_OPT(CBLAS_INT, liwork, default_liwork);
-            CHECK(liwork > 0 || liwork == -1, liwork);
-
-            ARRAY_OUT(T, w, 1, true, ctx.zeros(n));
-            ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(1, lwork));
-            ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(1, liwork));
-
-            lapack::sygvd(itype, jobz, uplo, n, a.data<T>(), lda, b.data<T>(), ldb, w.data<T>(),
-                          work.data<T>(), lwork, iwork.data<CBLAS_INT>(), liwork, &info);
-            return make_result(w, a, static_cast<long long>(info));
-        }
-
-
-        template <class T>
-        static PyObject *hegvd(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
-        {
-            static const char *kwlist[] = {"a", "b", "itype", "jobz", "uplo", "lwork", "lrwork",
-                                           "liwork", "overwrite_a", "overwrite_b", nullptr};
-            static constexpr Ctx<T> ctx("hegvd", "OO|OOOOOOOO", kwlist);
+            /* The Hermitian half adds `lrwork` between `lwork` and `liwork`. */
+            static const char *kwlist_real[] = {"a", "b", "itype", "jobz", "uplo", "lwork",
+                                                "liwork", "overwrite_a", "overwrite_b", nullptr};
+            static const char *kwlist_complex[] = {"a", "b", "itype", "jobz", "uplo", "lwork",
+                                                   "lrwork", "liwork", "overwrite_a",
+                                                   "overwrite_b", nullptr};
+            static constexpr Ctx<T> ctx(is_complex_v<T> ? "hegvd" : "sygvd",
+                                        is_complex_v<T> ? "OO|OOOOOOOO" : "OO|OOOOOOO",
+                                        is_complex_v<T> ? kwlist_complex : kwlist_real);
             PARSE_ARGS();
 
             using R = real_of_t<T>;
@@ -1228,25 +1131,42 @@ namespace lapack {
             CHECKARRAY(shape(b, 0) == shape(b, 1) && shape(b, 0) == n, b);
             CBLAS_INT ldb = std::max<CBLAS_INT>(1, shape(b, 0));
 
-            CBLAS_INT default_lwork, default_lrwork, default_liwork;
-            if (!work_size(jobz == 'N' ? 1LL * n + 1 : 1LL * n * (n + 2), &default_lwork) ||
-                !work_size(jobz == 'N' ? 1LL * n : 2LL * n * n + 5LL * n + 1, &default_lrwork) ||
+            CBLAS_INT default_lwork, default_liwork;
+            const long long lwork_bound = is_complex_v<T>
+                ? (jobz == 'N' ? 1LL * n + 1 : 1LL * n * (n + 2))
+                : (jobz == 'N' ? 2LL * n + 1 : 1LL + 6LL * n + 2LL * n * n);
+            if (!work_size(lwork_bound, &default_lwork) ||
                 !work_size(jobz == 'N' ? 1LL : 5LL * n + 3, &default_liwork)) { return nullptr; }
             SCALAR_OPT(CBLAS_INT, lwork, default_lwork);
             CHECK(lwork > 0 || lwork == -1, lwork);
-            SCALAR_OPT(CBLAS_INT, lrwork, default_lrwork);
-            CHECK(lrwork > 0 || lrwork == -1, lrwork);
+
             SCALAR_OPT(CBLAS_INT, liwork, default_liwork);
             CHECK(liwork > 0 || liwork == -1, liwork);
 
             ARRAY_OUT(R, w, 1, true, ctx.template zeros_as<R>(n));
             ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(1, lwork));
-            ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
             ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(1, liwork));
 
-            lapack::hegvd(itype, jobz, uplo, n, a.data<T>(), lda, b.data<T>(), ldb, w.data<R>(),
-                          work.data<T>(), lwork, rwork.data<R>(), lrwork,
-                          iwork.data<CBLAS_INT>(), liwork, &info);
+            /* `lrwork` is parsed here rather than beside `lwork` so it stays next to the buffer
+             * it sizes and the call that uses it -- `gelsd` places its `size_rwork` the same
+             * way, and SCALAR_OPT can only declare the name it looks up. */
+            if constexpr (is_complex_v<T>) {
+                CBLAS_INT default_lrwork;
+                if (!work_size(jobz == 'N' ? 1LL * n : 2LL * n * n + 5LL * n + 1, &default_lrwork)) {
+                    return nullptr;
+                }
+                SCALAR_OPT(CBLAS_INT, lrwork, default_lrwork);
+                CHECK(lrwork > 0 || lrwork == -1, lrwork);
+                ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
+                lapack::sygvd(itype, jobz, uplo, n, a.data<T>(), lda, b.data<T>(), ldb,
+                              w.data<R>(), work.data<T>(), lwork, rwork.data<R>(), lrwork,
+                              iwork.data<CBLAS_INT>(), liwork, &info);
+            }
+            else {
+                lapack::sygvd(itype, jobz, uplo, n, a.data<T>(), lda, b.data<T>(), ldb,
+                              w.data<R>(), work.data<T>(), lwork, iwork.data<CBLAS_INT>(),
+                              liwork, &info);
+            }
             return make_result(w, a, static_cast<long long>(info));
         }
 
@@ -1421,6 +1341,20 @@ namespace lapack {
         }
 
 
+        /** @brief The two registration shapes this table needs.
+         *
+         * `FAMILY_SYHE` is the four-row case: `s/dsy<fam>` and `c/zhe<fam>`.
+         *
+         * `PAIR_HE` is Hermitian-only rows sitting beside a full `FAMILY(sy<fam>)` -- two rows,
+         * not four, because the complex *symmetric* routines exist too and are not these.
+         */
+        #define FAMILY_SYHE(fam)                                            \
+            ROW(ssy##fam, sy##fam, f32),  ROW(dsy##fam, sy##fam, f64),      \
+            ROW(che##fam, sy##fam, c64),  ROW(zhe##fam, sy##fam, c128)
+
+        #define PAIR_HE(fam)                                                \
+            ROW(che##fam, he##fam, c64),  ROW(zhe##fam, he##fam, c128)
+
         PyMethodDef sym_herm_methods[] = {
             FAMILY(sytrf),
             FAMILY(sytrf_lwork),
@@ -1434,63 +1368,39 @@ namespace lapack {
             FAMILY(sysv_lwork),
             FAMILY(sysvx),
             FAMILY(sysvx_lwork),
-            ROW(chetrf, hetrf, c64),
-            ROW(zhetrf, hetrf, c128),
-            ROW(chetrf_lwork, hetrf_lwork, c64),
-            ROW(zhetrf_lwork, hetrf_lwork, c128),
-            ROW(chetrs, hetrs, c64),
-            ROW(zhetrs, hetrs, c128),
-            ROW(chetri, hetri, c64),
-            ROW(zhetri, hetri, c128),
-            ROW(cheequb, heequb, c64),
-            ROW(zheequb, heequb, c128),
-            ROW(checon, hecon, c64),
-            ROW(zhecon, hecon, c128),
-            ROW(chesv, hesv, c64),
-            ROW(zhesv, hesv, c128),
-            ROW(chesv_lwork, hesv_lwork, c64),
-            ROW(zhesv_lwork, hesv_lwork, c128),
-            ROW(chesvx, hesvx, c64),
-            ROW(zhesvx, hesvx, c128),
-            ROW(chesvx_lwork, hesvx_lwork, c64),
-            ROW(zhesvx_lwork, hesvx_lwork, c128),
+            PAIR_HE(trf),
+            PAIR_HE(trf_lwork),
+            PAIR_HE(trs),
+            PAIR_HE(tri),
+            PAIR_HE(equb),
+            PAIR_HE(con),
+            PAIR_HE(sv),
+            PAIR_HE(sv_lwork),
+            PAIR_HE(svx),
+            PAIR_HE(svx_lwork),
 
-            /* The eigen half.  A merged `sy`/`he` pair registers all four flavors against the
-             * one template; the five split pairs register two apiece. */
-            ROW(ssyev, syev, f32),               ROW(dsyev, syev, f64),
-            ROW(cheev, syev, c64),               ROW(zheev, syev, c128),
-            ROW(ssyev_lwork, syev_lwork, f32),   ROW(dsyev_lwork, syev_lwork, f64),
-            ROW(cheev_lwork, syev_lwork, c64),   ROW(zheev_lwork, syev_lwork, c128),
-            ROW(ssyevd, syevd, f32),             ROW(dsyevd, syevd, f64),
-            ROW(cheevd, heevd, c64),             ROW(zheevd, heevd, c128),
-            ROW(ssyevd_lwork, syevd_lwork, f32), ROW(dsyevd_lwork, syevd_lwork, f64),
-            ROW(cheevd_lwork, heevd_lwork, c64), ROW(zheevd_lwork, heevd_lwork, c128),
-            ROW(ssyevr, syevr, f32),             ROW(dsyevr, syevr, f64),
-            ROW(cheevr, heevr, c64),             ROW(zheevr, heevr, c128),
-            ROW(ssyevr_lwork, syevr_lwork, f32), ROW(dsyevr_lwork, syevr_lwork, f64),
-            ROW(cheevr_lwork, heevr_lwork, c64), ROW(zheevr_lwork, heevr_lwork, c128),
-            ROW(ssyevx, syevx, f32),             ROW(dsyevx, syevx, f64),
-            ROW(cheevx, syevx, c64),             ROW(zheevx, syevx, c128),
-            ROW(ssyevx_lwork, syevx_lwork, f32), ROW(dsyevx_lwork, syevx_lwork, f64),
-            ROW(cheevx_lwork, syevx_lwork, c64), ROW(zheevx_lwork, syevx_lwork, c128),
-            ROW(ssygv, sygv, f32),               ROW(dsygv, sygv, f64),
-            ROW(chegv, sygv, c64),               ROW(zhegv, sygv, c128),
-            ROW(ssygv_lwork, sygv_lwork, f32),   ROW(dsygv_lwork, sygv_lwork, f64),
-            ROW(chegv_lwork, sygv_lwork, c64),   ROW(zhegv_lwork, sygv_lwork, c128),
-            ROW(ssygvd, sygvd, f32),             ROW(dsygvd, sygvd, f64),
-            ROW(chegvd, hegvd, c64),             ROW(zhegvd, hegvd, c128),
-            ROW(ssygvx, sygvx, f32),             ROW(dsygvx, sygvx, f64),
-            ROW(chegvx, sygvx, c64),             ROW(zhegvx, sygvx, c128),
-            ROW(ssygvx_lwork, sygvx_lwork, f32), ROW(dsygvx_lwork, sygvx_lwork, f64),
-            ROW(chegvx_lwork, sygvx_lwork, c64), ROW(zhegvx_lwork, sygvx_lwork, c128),
-            ROW(ssytrd, sytrd, f32),             ROW(dsytrd, sytrd, f64),
-            ROW(chetrd, sytrd, c64),             ROW(zhetrd, sytrd, c128),
-            ROW(ssytrd_lwork, sytrd_lwork, f32), ROW(dsytrd_lwork, sytrd_lwork, f64),
-            ROW(chetrd_lwork, sytrd_lwork, c64), ROW(zhetrd_lwork, sytrd_lwork, c128),
-            ROW(ssygst, sygst, f32),             ROW(dsygst, sygst, f64),
-            ROW(chegst, sygst, c64),             ROW(zhegst, sygst, c128),
+            /* The eigen half: every family is one wrapper across all four spellings. */
+            FAMILY_SYHE(ev),
+            FAMILY_SYHE(ev_lwork),
+            FAMILY_SYHE(evd),
+            FAMILY_SYHE(evd_lwork),
+            FAMILY_SYHE(evr),
+            FAMILY_SYHE(evr_lwork),
+            FAMILY_SYHE(evx),
+            FAMILY_SYHE(evx_lwork),
+            FAMILY_SYHE(gv),
+            FAMILY_SYHE(gv_lwork),
+            FAMILY_SYHE(gvd),
+            FAMILY_SYHE(gvx),
+            FAMILY_SYHE(gvx_lwork),
+            FAMILY_SYHE(trd),
+            FAMILY_SYHE(trd_lwork),
+            FAMILY_SYHE(gst),
             {nullptr, nullptr, 0, nullptr},
         };
+
+        #undef FAMILY_SYHE
+        #undef PAIR_HE
 
     }  // namespace capi
 }  // namespace lapack

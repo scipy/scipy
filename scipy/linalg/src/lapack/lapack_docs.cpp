@@ -4464,6 +4464,17 @@ namespace lapack {
             {"che" #fam, doc_##fam, C},  \
             {"zhe" #fam, doc_##fam, Z}
 
+        /** @brief An orthogonal/unitary family: `s/dor<fam>`, `c/zun<fam>`.
+         *
+         * The builder keeps the real spelling (`doc_orghr`, not `doc_ghr`) because that is a
+         * routine name someone can grep for, where the bare stem is not.  That is the one way
+         * this differs from DOC_FAMILY_SYHE above. */
+        #define DOC_FAMILY_ORUN(fam)        \
+            {"sor" #fam, doc_or##fam, S},   \
+            {"dor" #fam, doc_or##fam, D},   \
+            {"cun" #fam, doc_or##fam, C},   \
+            {"zun" #fam, doc_or##fam, Z}
+
         static const DocEntry doc_table[] = {
             DOC_FAMILY(gees),
             DOC_FAMILY(gges),
@@ -4639,20 +4650,13 @@ namespace lapack {
             DOC_FAMILY(tgsen_lwork),
 
             /* flapack_other: the `or`/`un` spelling pairs */
-            {"sorghr", doc_orghr, S},   {"dorghr", doc_orghr, D},
-            {"cunghr", doc_orghr, C},   {"zunghr", doc_orghr, Z},
-            {"sorghr_lwork", doc_orghr_lwork, S}, {"dorghr_lwork", doc_orghr_lwork, D},
-            {"cunghr_lwork", doc_orghr_lwork, C}, {"zunghr_lwork", doc_orghr_lwork, Z},
-            {"sorgqr", doc_orgqr, S},   {"dorgqr", doc_orgqr, D},
-            {"cungqr", doc_orgqr, C},   {"zungqr", doc_orgqr, Z},
-            {"sorgrq", doc_orgrq, S},   {"dorgrq", doc_orgrq, D},
-            {"cungrq", doc_orgrq, C},   {"zungrq", doc_orgrq, Z},
-            {"sormqr", doc_ormqr, S},   {"dormqr", doc_ormqr, D},
-            {"cunmqr", doc_ormqr, C},   {"zunmqr", doc_ormqr, Z},
-            {"sormrz", doc_ormrz, S},   {"dormrz", doc_ormrz, D},
-            {"cunmrz", doc_ormrz, C},   {"zunmrz", doc_ormrz, Z},
-            {"sormrz_lwork", doc_ormrz_lwork, S}, {"dormrz_lwork", doc_ormrz_lwork, D},
-            {"cunmrz_lwork", doc_ormrz_lwork, C}, {"zunmrz_lwork", doc_ormrz_lwork, Z},
+            DOC_FAMILY_ORUN(ghr),
+            DOC_FAMILY_ORUN(ghr_lwork),
+            DOC_FAMILY_ORUN(gqr),
+            DOC_FAMILY_ORUN(grq),
+            DOC_FAMILY_ORUN(mqr),
+            DOC_FAMILY_ORUN(mrz),
+            DOC_FAMILY_ORUN(mrz_lwork),
 
             /* flapack_other: compact-WY and blocked QR */
             DOC_FAMILY(geqrt),
@@ -4663,10 +4667,8 @@ namespace lapack {
             DOC_FAMILY(tzrzf_lwork),
 
             /* flapack_other: CS decomposition and the one-off solvers */
-            {"sorcsd", doc_orcsd, S},   {"dorcsd", doc_orcsd, D},
-            {"cuncsd", doc_orcsd, C},   {"zuncsd", doc_orcsd, Z},
-            {"sorcsd_lwork", doc_orcsd_lwork, S}, {"dorcsd_lwork", doc_orcsd_lwork, D},
-            {"cuncsd_lwork", doc_orcsd_lwork, C}, {"zuncsd_lwork", doc_orcsd_lwork, Z},
+            DOC_FAMILY_ORUN(csd),
+            DOC_FAMILY_ORUN(csd_lwork),
             {"sgejsv", doc_gejsv, S},   {"dgejsv", doc_gejsv, D},
             {"slasd4", doc_lasd4, S},   {"dlasd4", doc_lasd4, D},
             DOC_FAMILY(gglse),

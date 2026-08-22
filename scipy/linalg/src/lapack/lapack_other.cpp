@@ -2006,6 +2006,19 @@ namespace lapack {
         }
 
 
+        /** @brief Emit the four method-table rows of one orthogonal/unitary family:
+         *         `s/dor<fam>` and `c/zun<fam>`, all bound to the one `or<fam>` template.
+         *
+         * The nine families below are the only place in the port where the real and complex
+         * spellings differ by a fixed prefix while sharing a single wrapper, so this stays here
+         * beside the table rather than joining FAMILY/ROW in `wrapper_helpers.hpp`.  It is not a
+         * shape `lapack_sym_herm.cpp` could reuse: its `sy`/`he` pairs look similar but split
+         * across two templates, so no four-row macro fits them.
+         */
+        #define FAMILY_ORUN(fam)                                                                  \
+            ROW(sor##fam, or##fam, f32),  ROW(dor##fam, or##fam, f64),                            \
+            ROW(cun##fam, or##fam, c64),  ROW(zun##fam, or##fam, c128)
+
         PyMethodDef other_methods[] = {
             FAMILY(tpttf),
             FAMILY(tpttr),
@@ -2057,42 +2070,15 @@ namespace lapack {
             ROW(zhfrk, sfrk, c128),
             ROW(stgsyl, tgsyl, f32),
             ROW(dtgsyl, tgsyl, f64),
-            ROW(sorghr, orghr, f32),
-            ROW(dorghr, orghr, f64),
-            ROW(cunghr, orghr, c64),
-            ROW(zunghr, orghr, c128),
-            ROW(sorghr_lwork, orghr_lwork, f32),
-            ROW(dorghr_lwork, orghr_lwork, f64),
-            ROW(cunghr_lwork, orghr_lwork, c64),
-            ROW(zunghr_lwork, orghr_lwork, c128),
-            ROW(sorgqr, orgqr, f32),
-            ROW(dorgqr, orgqr, f64),
-            ROW(cungqr, orgqr, c64),
-            ROW(zungqr, orgqr, c128),
-            ROW(sorgrq, orgrq, f32),
-            ROW(dorgrq, orgrq, f64),
-            ROW(cungrq, orgrq, c64),
-            ROW(zungrq, orgrq, c128),
-            ROW(sormqr, ormqr, f32),
-            ROW(dormqr, ormqr, f64),
-            ROW(cunmqr, ormqr, c64),
-            ROW(zunmqr, ormqr, c128),
-            ROW(sormrz, ormrz, f32),
-            ROW(dormrz, ormrz, f64),
-            ROW(cunmrz, ormrz, c64),
-            ROW(zunmrz, ormrz, c128),
-            ROW(sormrz_lwork, ormrz_lwork, f32),
-            ROW(dormrz_lwork, ormrz_lwork, f64),
-            ROW(cunmrz_lwork, ormrz_lwork, c64),
-            ROW(zunmrz_lwork, ormrz_lwork, c128),
-            ROW(sorcsd, orcsd, f32),
-            ROW(dorcsd, orcsd, f64),
-            ROW(cuncsd, orcsd, c64),
-            ROW(zuncsd, orcsd, c128),
-            ROW(sorcsd_lwork, orcsd_lwork, f32),
-            ROW(dorcsd_lwork, orcsd_lwork, f64),
-            ROW(cuncsd_lwork, orcsd_lwork, c64),
-            ROW(zuncsd_lwork, orcsd_lwork, c128),
+            FAMILY_ORUN(ghr),
+            FAMILY_ORUN(ghr_lwork),
+            FAMILY_ORUN(gqr),
+            FAMILY_ORUN(grq),
+            FAMILY_ORUN(mqr),
+            FAMILY_ORUN(mrz),
+            FAMILY_ORUN(mrz_lwork),
+            FAMILY_ORUN(csd),
+            FAMILY_ORUN(csd_lwork),
             ROW(sgejsv, gejsv, f32),
             ROW(dgejsv, gejsv, f64),
             ROW(slasd4, lasd4, f32),
@@ -2114,6 +2100,8 @@ namespace lapack {
             {"ilaver", (PyCFunction)ilaver, METH_NOARGS, nullptr},
             {nullptr, nullptr, 0, nullptr},
         };
+
+        #undef FAMILY_ORUN
 
     }  // namespace capi
 }  // namespace lapack
