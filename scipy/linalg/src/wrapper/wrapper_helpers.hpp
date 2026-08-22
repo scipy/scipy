@@ -725,20 +725,14 @@ namespace wrapper {
         const char *qualname() const noexcept { return qual_; }
 
         /**
-         * @brief Position of @p kw in the kwlist (linear scan; the lists are < 12 entries).
+         * @brief Position of @p kw in the kwlist (linear scan; the lists are < 12 entries), or
+         *        -1 when @p kw is not an argument at all.
          *
          * Called only on cold paths to format the "Nth keyword" ordinal of an error message.
+         * A derived quantity has no ordinal -- `tbtrs` bounds `b` by the hidden `ldb` -- and
+         * reports under its bare name; see poskind().
          */
         int index(const char *kw) const noexcept
-        {
-            int i = 0;
-            while (kwlist_[i] && strcmp(kwlist_[i], kw) != 0) { i++; }
-            assert(kwlist_[i] != nullptr && "argument name missing from kwlist");
-            return kwlist_[i] ? i : -1;
-        }
-
-        /** @brief Like index() but returns -1 for an unknown name (used to flag unexpected kwargs). */
-        int index_opt(const char *kw) const noexcept
         {
             int i = 0;
             while (kwlist_[i] && strcmp(kwlist_[i], kw) != 0) { i++; }
@@ -765,7 +759,7 @@ namespace wrapper {
                 PyObject *err = PyErr_Occurred();
                 char pk[32], msg[128];
                 poskind(pk, sizeof pk, index(kw));
-                int n = snprintf(msg, sizeof msg, "%s() %s (%s) can't be converted to %s", qualname(), pk, kw, conv_name<V>());
+                int n = snprintf(msg, sizeof msg, "%s() %s(%s) can't be converted to %s", qualname(), pk, kw, conv_name<V>());
                 assert(n > 0 && static_cast<size_t>(n) < sizeof msg && "msg buffer too small");
                 (void)n;
                 PyErr_SetString(err ? err : PyExc_TypeError, msg);
@@ -791,10 +785,10 @@ namespace wrapper {
             char pk[32];
             poskind(pk, sizeof pk, index(kw));
             if constexpr (std::is_same_v<V, char>) {
-                PyErr_Format(PyExc_ValueError, "(%s) failed for %s %s: %s:%s='%c'", tcheck, pk, kw, rout_, kw, val);
+                PyErr_Format(PyExc_ValueError, "(%s) failed for %s%s: %s:%s='%c'", tcheck, pk, kw, rout_, kw, val);
             }
             else {
-                PyErr_Format(PyExc_ValueError, "(%s) failed for %s %s: %s:%s=%lld", tcheck, pk, kw, rout_, kw, static_cast<long long>(val));
+                PyErr_Format(PyExc_ValueError, "(%s) failed for %s%s: %s:%s=%lld", tcheck, pk, kw, rout_, kw, static_cast<long long>(val));
             }
             return false;
         }
@@ -809,7 +803,7 @@ namespace wrapper {
             if (ok) { return true; }
             char pk[32];
             poskind(pk, sizeof pk, index(name));
-            PyErr_Format(PyExc_ValueError, "(%s) failed for %s %s", tcheck, pk, name);
+            PyErr_Format(PyExc_ValueError, "(%s) failed for %s%s", tcheck, pk, name);
             return false;
         }
 
@@ -864,14 +858,16 @@ namespace wrapper {
 
     private:
         /**
-         * @brief Format the f2py position string, `"2nd argument"` / `"4th keyword"`.
+         * @brief Format the f2py position string, `"2nd argument "` / `"4th keyword "`, with the
+         *        trailing space its callers splice in; empty for a name with no position (-1).
          */
         void poskind(char *buf, size_t size, int i) const noexcept
         {
+            if (i < 0) { buf[0] = '\0'; return; }
             bool req = i < nreq_;
             int num = req ? i + 1 : i - nreq_ + 1;
             const char *suf = num == 1 ? "st" : num == 2 ? "nd" : num == 3 ? "rd" : "th";
-            snprintf(buf, size, "%d%s %s", num, suf, req ? "argument" : "keyword");
+            snprintf(buf, size, "%d%s %s ", num, suf, req ? "argument" : "keyword");
         }
 
         /**
@@ -896,7 +892,7 @@ namespace wrapper {
                 if (!PyErr_Occurred()) {
                     char pk[32];
                     poskind(pk, sizeof pk, index(name));
-                    PyErr_Format(PyExc_TypeError, "%s.%s: failed to create array from the %s `%s`",
+                    PyErr_Format(PyExc_TypeError, "%s.%s: failed to create array from the %s`%s`",
                                 Mod::pyname, qualname(), pk, name);
                 }
                 return py_ref(nullptr);
@@ -906,7 +902,7 @@ namespace wrapper {
                     char pk[32];
                     poskind(pk, sizeof pk, index(name));
                     PyErr_Format(PyExc_OverflowError,
-                                "%s() %s (%s): dimension %d with size %lld exceeds"
+                                "%s() %s(%s): dimension %d with size %lld exceeds"
                                 " the %s integer limit (%lld)",
                                 qualname(), pk, name, i,
                                 static_cast<long long>(PyArray_DIM(a, i)),
@@ -1006,7 +1002,7 @@ namespace wrapper {
             }
         }
 
-        /** 4. unexpected keyword arguments.  The kwlist scan is `Ctx::index_opt` spelled out,
+        /** 4. unexpected keyword arguments.  The kwlist scan is `Ctx::index` spelled out,
          * so this stays free of the Ctx template. */
         if (kwds) {
             PyObject *key, *val;
@@ -1087,7 +1083,7 @@ namespace wrapper {
          */
         PyObject *raw_opt(const char *name) const noexcept
         {
-            int idx = ctx_.index_opt(name);
+            int idx = ctx_.index(name);
             if (idx < 0) { return nullptr; }
             PyObject *o = at(idx, name);
             /* An explicit `None` means "not supplied", as it did for f2py: callers pass it to
@@ -1306,7 +1302,9 @@ namespace wrapper {
  *
  * @param expr  C expression that must hold.
  * @param name  Argument the failure is reported against, and whose value is printed.  It need
- *              not appear in @p expr -- bound checks on a dimension report `n`.
+ *              not appear in @p expr -- bound checks on a dimension report `n` -- and it need
+ *              not be an argument at all: a hidden dimension such as `tbtrs`'s `ldb` has no
+ *              position to name, so it reports as `(ldb >= n) failed for ldb: dtbtrs:ldb=3`.
  */
 #define CHECK(expr, name) \
     do { if (!ctx.check_scalar((expr), #expr, #name, name)) { return nullptr; } } while (0)
