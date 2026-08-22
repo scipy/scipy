@@ -66,65 +66,6 @@ cdef inline number_t hyp1f1(double a, double b, number_t z) noexcept nogil:
 
 
 #-----------------------------------------------------------------------------
-# Jacobi
-#-----------------------------------------------------------------------------
-
-cdef inline number_t eval_jacobi(double n, double alpha, double beta, number_t x) noexcept nogil:
-    cdef double a, b, c, d
-    cdef number_t g
-
-    if alpha == -1 and abs(beta) == 1:
-        if n == 0:
-            return 1.0
-        elif n == 1:
-            return 0.5 * (1.0 + beta) * (x - 1.0)
-        elif n > 1:
-            return ((n + beta) / (2.0 * n)) * (x - 1) * eval_jacobi(n - 1, 1, beta, x)
-
-    d = xsf_binom(n+alpha, n)
-    a = -n
-    b = n + alpha + beta + 1
-    c = alpha + 1
-    g = 0.5*(1-x)
-    return d * hyp2f1(a, b, c, g)
-
-@cython.cdivision(True)
-cdef inline double eval_jacobi_l(Py_ssize_t n, double alpha, double beta, double x) noexcept nogil:
-    cdef Py_ssize_t kk
-    cdef double p, d
-    cdef double k, t
-
-    if n < 0:
-        return eval_jacobi(n, alpha, beta, x)
-    elif n == 0:
-        return 1.0
-    elif n == 1:
-        return 0.5*(2*(alpha+1)+(alpha+beta+2)*(x-1))
-    elif alpha == -1 and abs(beta) == 1:
-        return ((n + beta) / (2.0 * n)) * (x - 1) * eval_jacobi(n - 1, 1, beta, x)
-    else:
-        d = (alpha+beta+2)*(x - 1) / (2*(alpha+1))
-        p = d + 1
-        for kk in range(n-1):
-            k = kk+1.0
-            t = 2*k+alpha+beta
-            d = ((t*(t+1)*(t+2))*(x-1)*p + 2*k*(k+beta)*(t+2)*d) / (2*(k+alpha+1)*(k+alpha+beta+1)*t)
-            p = d + p
-        return xsf_binom(n+alpha, n)*p
-
-#-----------------------------------------------------------------------------
-# Shifted Jacobi
-#-----------------------------------------------------------------------------
-
-@cython.cdivision(True)
-cdef inline number_t eval_sh_jacobi(double n, double p, double q, number_t x) noexcept nogil:
-    return eval_jacobi(n, p-q, q-1, 2*x-1) / xsf_binom(2*n + p - 1, n)
-
-@cython.cdivision(True)
-cdef inline double eval_sh_jacobi_l(Py_ssize_t n, double p, double q, double x) noexcept nogil:
-    return eval_jacobi_l(n, p-q, q-1, 2*x-1) / xsf_binom(2*n + p - 1, n)
-
-#-----------------------------------------------------------------------------
 # Gegenbauer (Ultraspherical)
 #-----------------------------------------------------------------------------
 
