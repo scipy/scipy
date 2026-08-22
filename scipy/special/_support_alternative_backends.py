@@ -134,11 +134,11 @@ class _FuncInfo:
                     self.func.__doc__,
                 )
             else:
-                def wrapped(*args, **kwargs):
+                @functools.wraps(self.func)
+                def func(*args, **kwargs):
                     xp = array_namespace(*args)
                     return self._wrapper_for(xp)(*args, **kwargs)
 
-                func = functools.wraps(self.func)(wrapped)
                 # needed to allow pickling
                 func.__module__ = "scipy.special"
                 func.__qualname__ = self.name
@@ -269,16 +269,15 @@ class _FuncInfo:
                     **kwargs
                 )
         else:
-            def f(*args, _f=_f, xp=xp, **kwargs):
-                user_out = kwargs.pop('out', None)
-                out_args = (
-                    user_out if isinstance(user_out, tuple)
-                    else (user_out,) if user_out is not None
-                    else ()
-                )
+            def f(*args, out=None, _f=_f, xp=xp, **kwargs):
+                if out is not None:
+                    raise NotImplementedError(
+                        f"`out` parameter is not supported for {self.name}"
+                        f" with backend {xp.__name__}."
+                    )
                 # The NumPy round-trip must return results on the device of the
                 # input arrays, not on the backend's default device (see gh-22680)
-                device = xp_result_device(*args, *out_args)
+                device = xp_result_device(*args)
 
                 # Check with `is_array_api_obj` to keep Python scalars untouched so that
                 # NEP50 can be followed.
@@ -287,13 +286,6 @@ class _FuncInfo:
                 ]
                 out = _f(*args, **kwargs)
 
-                if user_out is not None:
-                    if isinstance(user_out, tuple):
-                        for u, r in zip(user_out, out):
-                            u[...] = xp.asarray(r, device=device)
-                    else:
-                        user_out[...] = xp.asarray(out, device=device)
-                    return user_out
                 if isinstance(out, tuple):
                     return tuple(xp.asarray(out_i, device=device) for out_i in out)
                 return xp.asarray(out, device=device)
