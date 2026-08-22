@@ -562,7 +562,7 @@ class TestRFFTFreq:
             y = fft.rfftfreq(9, xp=xp, device=d)
             x = xp.empty(0, device=d)
             assert xp_device(y) == xp_device(x)
-    
+
     def test_dtype(self, xp):
         for dtype in (xp.float32, xp.float64):
             assert fft.rfftfreq(9, xp=xp, dtype=dtype).dtype == dtype
