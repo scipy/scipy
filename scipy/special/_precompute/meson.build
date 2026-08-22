@@ -4,13 +4,8 @@ python_sources = [
   'gammainc_asy.py',
   'gammainc_data.py',
   'hyp2f1_data.py',
-  'lambertw.py',
-  'loggamma.py',
   'utils.py',
-  'wright_bessel.py',
   'wright_bessel_data.py',
-  'wrightomega.py',
-  'zetac.py'
 ]
 
 
