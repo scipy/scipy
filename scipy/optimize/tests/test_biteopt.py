@@ -149,6 +149,17 @@ class TestSolver:
         res = biteopt(rosen, bounds, rng=0)
         assert res.success is True
 
+    def test_f_mutates_input_does_not_crash(self):
+        # The objective function is allowed to mutate its input array, but the
+        # optimizer must not crash or misbehave if it does so.
+        # Users should not rely on this behavior, but it must be tolerated.
+        def mutating_objective(x):
+            x[0] = 42.0
+            return rosen(x)
+
+        res = biteopt(mutating_objective, self.default_bounds, rng=0)
+        assert isinstance(res, OptimizeResult)
+
 
 class TestCallback:
     def setup_method(self):
@@ -199,6 +210,16 @@ class TestCallback:
 
         with pytest.raises(ValueError, match="callback error"):
             biteopt(rosen, self.default_bounds, rng=0, callback=callback)
+
+    def test_callback_mutates_input_does_not_crash(self):
+        # The callback is allowed to mutate its input array, but the optimizer
+        # must not crash or misbehave if it does so. Users should not rely on
+        # this behavior, but it must be tolerated.
+        def mutating_callback(x):
+            x[0] = 42.0
+        res = biteopt(rosen, self.default_bounds, rng=0,
+                      callback=mutating_callback)
+        assert isinstance(res, OptimizeResult)
 
 
 class TestInputValidation:
