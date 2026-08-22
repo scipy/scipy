@@ -734,15 +734,12 @@ namespace lapack {
 
             using R = real_of_t<T>;
             SCALAR_FLAG(overwrite_c);
-            /* The `.pyf` admits all three letters for every flavor, but complex `?TRSYL`
-             * defines only `'N'` and `'C'`: a `'T'` was forwarded and came back `info == -1`
-             * from LAPACK rather than being named here.  Checked per flavor instead. */
             SCALAR_OPT(char, trana, 'N');
             if constexpr (is_complex_v<T>) { CHECK(trana == 'N' || trana == 'C', trana); }
-            else                           { CHECK(trana == 'N' || trana == 'T', trana); }
+            else { CHECK(trana == 'N' || trana == 'T' || trana == 'C', trana); }
             SCALAR_OPT(char, tranb, 'N');
             if constexpr (is_complex_v<T>) { CHECK(tranb == 'N' || tranb == 'C', tranb); }
-            else                           { CHECK(tranb == 'N' || tranb == 'T', tranb); }
+            else { CHECK(tranb == 'N' || tranb == 'T' || tranb == 'C', tranb); }
             SCALAR_OPT(CBLAS_INT, isgn, 1);  CHECK(isgn == 1 || isgn == -1, isgn);
 
             ARRAY_IN(T, a, 2);

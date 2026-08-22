@@ -1088,7 +1088,13 @@ namespace wrapper {
         PyObject *raw_opt(const char *name) const noexcept
         {
             int idx = ctx_.index_opt(name);
-            return idx < 0 ? nullptr : at(idx, name);
+            if (idx < 0) { return nullptr; }
+            PyObject *o = at(idx, name);
+            /* An explicit `None` means "not supplied", as it did for f2py: callers pass it to
+             * select the omitted branch positionally, e.g. `gtsvx(..., dlf=None)` when `fact`
+             * is 'N'.  Only the optional lookup does this; a required argument given as None
+             * is a conversion error, not an omission. */
+            return o == Py_None ? nullptr : o;
         }
 
     private:
@@ -1213,8 +1219,9 @@ namespace wrapper {
  *                   accumulate into the buffer rather than overwrite it (gemv's `beta * y`).
  */
 #define ARRAY_OUT(type, name, ndim, overwrite, def) \
-    py_ref name = (P.raw_opt(#name) == nullptr) ? (def) \
-                                                : ctx.template inout<type>(P.raw_opt(#name), ndim, overwrite, #name); \
+    PyObject *name##_raw = P.raw_opt(#name); \
+    py_ref name = (name##_raw == nullptr) ? (def) \
+                                          : ctx.template inout<type>(name##_raw, ndim, overwrite, #name); \
     if (!name) { return nullptr; }
 
 /**

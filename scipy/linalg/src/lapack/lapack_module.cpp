@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Module definition for the C++ LAPACK wrappers (`_flapack_cpp` / `_flapack_cpp_64`).
+ * @brief Module definition for the LAPACK wrappers (`_flapack` / `_flapack_64`).
  *
  * This is the only file here that calls `_import_array()`; every other .cpp defines
  * `NO_IMPORT_ARRAY` so the extension shares one numpy C-API table.
@@ -10,11 +10,11 @@
 
 /* The ILP64 build differs from the LP64 one only in the module's name. */
 #ifdef HAVE_BLAS_ILP64
-#define FLAPACK_CPP_MODULE_STRING "_flapack_cpp_64"
-#define FLAPACK_CPP_PYINIT        PyInit__flapack_cpp_64
+#define FLAPACK_MODULE_STRING "_flapack_64"
+#define FLAPACK_PYINIT        PyInit__flapack_64
 #else
-#define FLAPACK_CPP_MODULE_STRING "_flapack_cpp"
-#define FLAPACK_CPP_PYINIT        PyInit__flapack_cpp
+#define FLAPACK_MODULE_STRING "_flapack"
+#define FLAPACK_PYINIT        PyInit__flapack
 #endif
 
 /* One table per `.pyf.src` group, each contributed by the matching wrapper .cpp.  Adding a
@@ -157,7 +157,7 @@ static PyType_Slot lapackfunc_slots[] = {
 };
 
 static PyType_Spec lapackfunc_spec = {
-    "scipy.linalg." FLAPACK_CPP_MODULE_STRING ".lapack_function", /* name      */
+    "scipy.linalg." FLAPACK_MODULE_STRING ".lapack_function", /* name      */
     sizeof(LapackFunc),                                           /* basicsize */
     0,                                                            /* itemsize  */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,                      /* flags     */
@@ -223,7 +223,7 @@ static PyModuleDef_Slot lapack_module_slots[] = {
 
 static PyModuleDef lapack_moduledef = {
     PyModuleDef_HEAD_INIT,
-    FLAPACK_CPP_MODULE_STRING,  /* m_name    */
+    FLAPACK_MODULE_STRING,  /* m_name    */
     nullptr,                    /* m_doc     */
     0,                          /* m_size    */
     nullptr,                    /* m_methods, added in the exec slot */
@@ -233,7 +233,7 @@ static PyModuleDef lapack_moduledef = {
     nullptr,                    /* m_free    */
 };
 
-PyMODINIT_FUNC FLAPACK_CPP_PYINIT(void)
+PyMODINIT_FUNC FLAPACK_PYINIT(void)
 {
     return PyModuleDef_Init(&lapack_moduledef);
 }

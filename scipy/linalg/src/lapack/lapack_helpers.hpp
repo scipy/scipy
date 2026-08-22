@@ -18,11 +18,7 @@
 #include <algorithm>     /* max: the `MAX(1, shape(a, 0))` floor on a leading dimension */
 
 /**
- * The name these wrappers raise their errors under.  It is deliberately *not* the extension's
- * own name: the module is built as `_flapack_cpp` only while it is being compared routine by
- * routine against the f2py-generated `_flapack` (see `lapack_module.cpp`), and every message
- * has to match what f2py emitted from `python module _flapack` in `flapack.pyf.src`.  When the
- * C++ module takes over the `_flapack` name, this stops being a distinction.
+ * @brief The module name every error message is raised under, matching the built module.
  */
 #ifdef HAVE_BLAS_ILP64
 #define FLAPACK_ERRNAME "_flapack_64"

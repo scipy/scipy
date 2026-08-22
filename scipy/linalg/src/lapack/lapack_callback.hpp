@@ -41,12 +41,81 @@ namespace lapack {
     struct CallbackFrame {
         PyObject *callable;             /**< Borrowed; owned by the wrapper's arguments. */
         PyObject *extra_args;           /**< Borrowed tuple, appended after the LAPACK scalars. */
+        Py_ssize_t argcount;            /**< Positional parameters the callable declares, or -1
+                                             when it cannot be introspected (a builtin). */
+        Py_ssize_t ndefaults;           /**< How many of those have defaults. */
         /* Zeroed here so CALLABLE_SELECT can brace-initialize the frame from the two members
          * it actually knows; `setjmp` fills this in immediately afterwards. */
         std::jmp_buf jmpbuf{};          /**< Set by setjmp in the wrapper; target of the abort jump. */
     };
 
     namespace detail { inline thread_local CallbackFrame *active_frame = nullptr; }
+
+    /**
+     * @brief Read how many positional arguments @p fn declares, and how many of them are optional.
+     *
+     * LAPACK offers a fixed number of scalars -- two for real `gees`, one for complex, three for
+     * real `gges` -- but a caller may supply a callable that takes fewer, and f2py passed only as
+     * many as it accepted.  `scipy.linalg.schur(sort=lambda x: x >= 0)` relies on that.
+     *
+     * @param fn         The callable.
+     * @param argcount   Receives its positional count, or -1 when it declares none observably
+     *                   (a builtin), meaning "pass whatever LAPACK offers".
+     * @param ndefaults  Receives how many trailing parameters have defaults.
+     */
+    inline void callable_arity(PyObject *fn, Py_ssize_t *argcount, Py_ssize_t *ndefaults) noexcept
+    {
+        *argcount = -1;
+        *ndefaults = 0;
+
+        /* A bound method's `__code__` counts `self`, which the caller never supplies. */
+        Py_ssize_t self_arg = PyFunction_Check(fn) ? 0 : 1;
+
+        PyObject *code = PyObject_GetAttrString(fn, "__code__");
+        if (code != nullptr) {
+            PyObject *n = PyObject_GetAttrString(code, "co_argcount");
+            Py_DECREF(code);
+            if (n != nullptr) {
+                Py_ssize_t v = PyLong_AsSsize_t(n);
+                Py_DECREF(n);
+                if (!(v == -1 && PyErr_Occurred())) { *argcount = v - self_arg; }
+            }
+        }
+        PyObject *defaults = PyObject_GetAttrString(fn, "__defaults__");
+        if (defaults != nullptr) {
+            if (PyTuple_Check(defaults)) { *ndefaults = PyTuple_GET_SIZE(defaults); }
+            Py_DECREF(defaults);
+        }
+        PyErr_Clear();   /* a missing attribute is not an error, it just means "unknown" */
+    }
+
+    /**
+     * @brief Reject a callback that cannot be satisfied by @p maxnofargs scalars, before the
+     *        Fortran call starts.
+     *
+     * f2py validated at call setup, so an unusable callback was refused even when the routine
+     * would never have invoked it -- `sort_t=0` for `gees`.  Checking here rather than in the
+     * trampoline keeps that, and keeps the failure on the calling thread with a plain `return`
+     * instead of inside a callback that would have to `longjmp` out of Fortran.
+     *
+     * @return false with a TypeError set when the callable requires more positional arguments
+     *         than are on offer.
+     */
+    inline bool check_callable_arity(Py_ssize_t argcount, Py_ssize_t ndefaults,
+                                     Py_ssize_t maxnofargs, Py_ssize_t nextra,
+                                     const char *kwname) noexcept
+    {
+        if (argcount < 0) { return true; }        /* not introspectable; f2py passed them all */
+        Py_ssize_t offered = maxnofargs + nextra;
+        Py_ssize_t required = argcount - ndefaults;
+        if (required > offered) {
+            PyErr_Format(PyExc_TypeError,
+                         "%s requires %zd positional argument%s but at most %zd can be supplied",
+                         kwname, required, required == 1 ? "" : "s", offered);
+            return false;
+        }
+        return true;
+    }
 
     /**
      * @brief RAII guard installing @p frame as this thread's active frame, restoring the previous
@@ -109,6 +178,16 @@ namespace lapack {
             PyErr_NoMemory();
             discard_and_abort(f, argv, argc);
         }
+
+        /* Pass only as many LAPACK scalars as the callable declares, f2py's rule: it offers
+         * `argc + nextra` and the callable takes `argcount`, so the call gets the smaller of the
+         * two.  A callable needing more than that was already refused by CALLABLE_SELECT. */
+        Py_ssize_t declared = f->argcount < 0 ? argc + nextra : f->argcount;
+        Py_ssize_t supplied = (argc + nextra) < declared ? (argc + nextra) : declared;
+        Py_ssize_t nfixed = supplied - nextra < 0 ? 0 : supplied - nextra;
+        /* The scalars beyond what is passed are still owned here and released with the rest. */
+        for (Py_ssize_t i = nfixed; i < argc; i++) { Py_DECREF(argv[i]); }
+        argc = nfixed;
         PyObject **call_argv = const_cast<PyObject **>(argv);
         PyObject **combined_argv = nullptr;
         if (nextra != 0) {
@@ -188,8 +267,9 @@ namespace lapack {
     LAPACK_SELECT_TRAMPOLINE_2(scipy_lapack_zgges_select, c128)
 
     /**
-     * @brief Per-flavor lookup for a routine's callback argument: its keyword names and the
-     *        trampoline with the matching Fortran signature.
+     * @brief Per-flavor lookup for a routine's callback argument: its keyword names, the
+     *        trampoline with the matching Fortran signature, and how many scalars that
+     *        trampoline passes.
      *
      * The keyword names stay flavor-specific (`sselect`, `dselect`, ...) for compatibility with the
      * f2py-generated module; CALLABLE_SELECT reads them from here so no wrapper spells a flavor.
@@ -199,21 +279,25 @@ namespace lapack {
         static constexpr const char *kwname = "sselect";
         static constexpr const char *extra_kwname = "sselect_extra_args";
         inline static constexpr auto fn = scipy_lapack_sgees_select;
+        static constexpr Py_ssize_t maxnofargs = 2;
     };
     template <> struct gees_select_traits<f64> {
         static constexpr const char *kwname = "dselect";
         static constexpr const char *extra_kwname = "dselect_extra_args";
         inline static constexpr auto fn = scipy_lapack_dgees_select;
+        static constexpr Py_ssize_t maxnofargs = 2;
     };
     template <> struct gees_select_traits<c64> {
         static constexpr const char *kwname = "cselect";
         static constexpr const char *extra_kwname = "cselect_extra_args";
         inline static constexpr auto fn = scipy_lapack_cgees_select;
+        static constexpr Py_ssize_t maxnofargs = 1;
     };
     template <> struct gees_select_traits<c128> {
         static constexpr const char *kwname = "zselect";
         static constexpr const char *extra_kwname = "zselect_extra_args";
         inline static constexpr auto fn = scipy_lapack_zgees_select;
+        static constexpr Py_ssize_t maxnofargs = 1;
     };
 
     template <class T> struct gges_select_traits;
@@ -221,21 +305,25 @@ namespace lapack {
         static constexpr const char *kwname = "sselect";
         static constexpr const char *extra_kwname = "sselect_extra_args";
         inline static constexpr auto fn = scipy_lapack_sgges_select;
+        static constexpr Py_ssize_t maxnofargs = 3;
     };
     template <> struct gges_select_traits<f64> {
         static constexpr const char *kwname = "dselect";
         static constexpr const char *extra_kwname = "dselect_extra_args";
         inline static constexpr auto fn = scipy_lapack_dgges_select;
+        static constexpr Py_ssize_t maxnofargs = 3;
     };
     template <> struct gges_select_traits<c64> {
         static constexpr const char *kwname = "cselect";
         static constexpr const char *extra_kwname = "cselect_extra_args";
         inline static constexpr auto fn = scipy_lapack_cgges_select;
+        static constexpr Py_ssize_t maxnofargs = 2;
     };
     template <> struct gges_select_traits<c128> {
         static constexpr const char *kwname = "zselect";
         static constexpr const char *extra_kwname = "zselect_extra_args";
         inline static constexpr auto fn = scipy_lapack_zgges_select;
+        static constexpr Py_ssize_t maxnofargs = 2;
     };
 
 }  // namespace lapack
@@ -264,7 +352,15 @@ namespace lapack {
         PyErr_Format(PyExc_TypeError, "%s must be a tuple", lapack::routine##_select_traits<T>::extra_kwname); \
         return nullptr; \
     } \
-    lapack::CallbackFrame name##_frame{ name##_obj, name##_extra_args }; \
+    Py_ssize_t name##_argcount, name##_ndefaults; \
+    lapack::callable_arity(name##_obj, &name##_argcount, &name##_ndefaults); \
+    if (!lapack::check_callable_arity(name##_argcount, name##_ndefaults, \
+                                      lapack::routine##_select_traits<T>::maxnofargs, \
+                                      name##_extra_args == nullptr ? 0 : PyTuple_GET_SIZE(name##_extra_args), \
+                                      lapack::routine##_select_traits<T>::kwname)) { \
+        return nullptr; \
+    } \
+    lapack::CallbackFrame name##_frame{ name##_obj, name##_extra_args, name##_argcount, name##_ndefaults }; \
     auto name = lapack::routine##_select_traits<T>::fn
 
 /**

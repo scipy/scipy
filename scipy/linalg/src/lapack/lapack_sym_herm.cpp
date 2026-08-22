@@ -1280,6 +1280,10 @@ namespace lapack {
 
             ARRAY_INOUT(T, a, 2, overwrite_a != 0);
             CHECKARRAY(shape(a, 0) == shape(a, 1), a);
+            /* The `.pyf` sized `e` and `tau` as `n - 1`, so a 0x0 matrix asked f2py for a
+             * negative-length array and it raised.  Kept: an empty matrix has no tridiagonal
+             * form to report, and `test_sytrd_with_zero_dim_array` pins the rejection. */
+            CHECKARRAY(shape(a, 1) >= 1, a);
             CBLAS_INT n = shape(a, 1), lda = std::max<CBLAS_INT>(shape(a, 0), 1), info = 0;
 
             SCALAR_OPT(CBLAS_INT, lwork, std::max<CBLAS_INT>(n, 1));
@@ -1287,7 +1291,7 @@ namespace lapack {
 
             /* `d` and `e` are real for every flavor -- the tridiagonal form of a Hermitian
              * matrix is real symmetric -- while `tau` follows the flavor. */
-            CBLAS_INT nm1 = n > 0 ? n - 1 : 0;
+            CBLAS_INT nm1 = n - 1;
             ARRAY_OUT(R, d, 1, true, ctx.template zeros_as<R>(n));
             ARRAY_OUT(R, e, 1, true, ctx.template zeros_as<R>(nm1));
             ARRAY_OUT(T, tau, 1, true, ctx.zeros(nm1));
