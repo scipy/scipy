@@ -1202,6 +1202,29 @@ def test_newaxis_set():
     assert_equal(A.toarray(), D)
 
 
+def test_setitem_sparse_rhs_broadcast_prepend_dim():
+    # gh-25965: assigning a lower-dimensional *sparse* array into a
+    # higher-dimensional target must broadcast by prepending leading axes.
+    # This path previously raised AttributeError ('np.zeroslike' typo) and,
+    # once that was fixed, TypeError from item-assigning a tuple.
+    for target_shape, src in [
+        ((2, 3), [1.0, 0.0, 2.0]),      # (3,) -> (2, 3), prepend one axis
+        ((2, 2, 3), [5.0, 0.0, 7.0]),   # (3,) -> (2, 2, 3), prepend two axes
+        ((3, 4, 5), np.arange(5.0)),    # (5,) -> (3, 4, 5), prepend two axes
+    ]:
+        src = np.asarray(src, dtype=float)
+        A = coo_array(target_shape, dtype=float)
+        A[...] = coo_array(src)
+        assert_equal(A.toarray(), np.broadcast_to(src, target_shape))
+
+    # partial slice with a sparse RHS broadcast over a prepended axis
+    A = coo_array((3, 3), dtype=float)
+    D = np.zeros((3, 3))
+    A[1:3, :] = coo_array(np.array([9.0, 0.0, 8.0]))
+    D[1:3, :] = np.array([9.0, 0.0, 8.0])
+    assert_equal(A.toarray(), D)
+
+
 def test_1d_coo_set():
     D = np.arange(9)
     A = coo_array(D)
