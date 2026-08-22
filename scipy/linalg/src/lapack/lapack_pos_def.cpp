@@ -1,17 +1,7 @@
 /**
  * @file
- * @brief Python wrappers for the LAPACK routines declared in `flapack_pos_def.pyf.src`.
+ * @brief Python wrappers for the positive definite LAPACK routines.
  *
- * The Cholesky family.  Two conventions run through it and neither is negotiable per routine:
- * the triangle is selected by an integer `lower` flag everywhere except `pocon`, which takes an
- * `uplo` letter instead; and the mixed real/complex routines put their real arguments (`tol`,
- * `s`, `anorm`, `rcond`, `ferr`, `berr`) in the flavor's real counterpart while `a` stays
- * complex.
- *
- * `posvx` and `pocon` share a workspace shape that changes element type rather than length:
- * the last buffer is `n` integers for the real flavors and `n` reals for the complex ones.
- * That is one `std::conditional_t` alias and one call, as `gecon` already does it -- not an
- * `if constexpr` pair, because the argument lists are otherwise identical.
  */
 #define PY_ARRAY_UNIQUE_SYMBOL scipy_lapack_ARRAY_API
 #define NO_IMPORT_ARRAY

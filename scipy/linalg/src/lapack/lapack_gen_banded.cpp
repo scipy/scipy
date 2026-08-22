@@ -1,16 +1,7 @@
 /**
  * @file
- * @brief Python wrappers for the LAPACK routines declared in `flapack_gen_banded.pyf.src`.
+ * @brief Python wrappers for the general banded LAPACK routines.
  *
- * A general banded matrix arrives in LAPACK band storage: an `(ldab, n)` array whose rows hold
- * the diagonals.  The factoring routines need `2*kl + ku + 1` rows -- `kl` extra above the
- * `kl + ku + 1` the matrix itself occupies, as fill-in room for the pivoting -- while `langb`,
- * which only reads the matrix, needs `kl + ku + 1`.  Both bounds are spelled out where they are
- * checked rather than hidden in a helper, because which of the two applies is the thing to get
- * right.
- *
- * Pivots are 0-based on this side of the wall, as the `getrf` family has them: `gbsv` and
- * `gbtrf` shift down on the way out, `gbtrs` and `gbcon` shift up and back down around the call.
  */
 #define PY_ARRAY_UNIQUE_SYMBOL scipy_lapack_ARRAY_API
 #define NO_IMPORT_ARRAY

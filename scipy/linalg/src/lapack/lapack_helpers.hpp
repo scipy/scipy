@@ -2,14 +2,6 @@
  * @file
  * @brief What `namespace lapack` adds to the shared wrapper machinery.
  *
- * The Python/numpy <-> C++ translation layer itself lives in `wrapper_helpers.hpp` and knows
- * nothing about LAPACK.  This header binds it to this extension -- the module identity its
- * error messages are raised under -- and adds what is LAPACK's alone: workspace sizing and the
- * `intent(hide)` work-buffer declaration.
- *
- * Everything the machinery provides is re-exported into `namespace lapack` below, so a wrapper
- * in `lapack::capi` writes `Ctx<T>`, `py_ref`, `shape(a, 1)` unqualified and never spells
- * `wrapper::`.
  */
 #pragma once
 

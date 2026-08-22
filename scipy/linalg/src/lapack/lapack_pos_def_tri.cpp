@@ -1,15 +1,7 @@
 /**
  * @file
- * @brief Python wrappers for the LAPACK routines declared in `flapack_pos_def_tri.pyf.src`.
+ * @brief Python wrappers for the positive definite tridiagonal LAPACK routines.
  *
- * The L*D*L**T factorization of a positive definite tridiagonal matrix, which the whole group
- * shares.  `d` -- the diagonal of D -- is real in every routine here even beside a complex `e`,
- * because it is real for a Hermitian positive definite matrix; `e` follows the flavor.  The
- * off-diagonal length is `MAX(0, n - 1)`, spelled `nm1`, and the `.pyf` already clamps it.
- *
- * `pttrs` and `ptsvx` are declared twice in the `.pyf`, once per prefix set.  Only `pttrs` has a
- * real interface difference -- the complex flavors take a `lower` keyword the real ones do not
- * -- which is a second kwlist selected by `is_complex_v<T>`, as `gelsd` already does it.
  */
 #define PY_ARRAY_UNIQUE_SYMBOL scipy_lapack_ARRAY_API
 #define NO_IMPORT_ARRAY

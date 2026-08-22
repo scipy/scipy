@@ -1,15 +1,7 @@
 /**
  * @file
- * @brief Python wrappers for the LAPACK routines declared in `flapack_gen_tri.pyf.src`.
+ * @brief Python wrappers for the general tridiagonal LAPACK routines.
  *
- * Two groups: the general tridiagonal solvers (`gt*`), which come in all four flavors, and the
- * symmetric tridiagonal eigensolvers (`ste*`), which LAPACK ships in real flavors only -- a
- * Hermitian tridiagonal matrix is unitarily similar to a real symmetric one -- and which
- * therefore take an `s`/`d` pair of ROW entries rather than a FAMILY.
- *
- * A tridiagonal matrix arrives as its three diagonals, so the recurring bound here is the length
- * of an off-diagonal: `MAX(0, n - 1)`, and `MAX(0, n - 2)` for the second superdiagonal `du2`
- * that the LU factorization fills in.  Those are spelled `nm1` and `nm2` throughout.
  */
 #define PY_ARRAY_UNIQUE_SYMBOL scipy_lapack_ARRAY_API
 #define NO_IMPORT_ARRAY

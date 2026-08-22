@@ -5,15 +5,8 @@
  * Each wrapper's docstring is assembled at runtime from a template parameterised by the element
  * type.  `lapack::capi::build_doc(name)` is called lazily by the `LapackFunc.__doc__` getter (see
  * `lapack_module.cpp`) the first time a routine's docstring is requested, and the result is
- * cached on the callable.  Nothing is built at import time, and only the shared templates -- not
- * a fully expanded string per routine -- live in the compiled module.
+ * cached on the callable.
  *
- * This mirrors `blas_docs.cpp` deliberately, down to the `P_*` fragment constants and the
- * `doc_<family>` / `doc_table` / `DOC_FAMILY` shape, so the two files are one idiom.
- *
- * Adding a routine: give its family a `doc_<family>(name, Dtype)` builder and list its typed
- * names in `doc_table` with `DOC_FAMILY(fam)`.  Reuse the `P_*` / `R_*` constants wherever the
- * prose is genuinely the same; write it out where it is not.
  */
 #include <Python.h>
 #include <cstring>
