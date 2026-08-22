@@ -1202,6 +1202,15 @@ def test_newaxis_set():
     assert_equal(A.toarray(), D)
 
 
+def test_nd_coo_set_sparse_broadcast():
+    A = coo_array((2, 3, 3), dtype=int)
+    x = coo_array([1, 0, 2])
+
+    A[...] = x
+
+    assert_equal(A.toarray(), np.broadcast_to(x.toarray(), A.shape))
+
+
 def test_1d_coo_set():
     D = np.arange(9)
     A = coo_array(D)
