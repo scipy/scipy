@@ -89,6 +89,7 @@ mathieu_cem = _with_cache_optimization(
     docstring=_mathieu_cem_doc,
     ufunc=_mathieu_cem,
     cache_arg_indices=[0, 1],
+    module="scipy.special._mathieu",
 )
 
 
@@ -177,4 +178,5 @@ mathieu_sem = _with_cache_optimization(
     docstring=_mathieu_sem_doc,
     ufunc=_mathieu_sem,
     cache_arg_indices=[0, 1],
+    module="scipy.special._mathieu",
 )

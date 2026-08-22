@@ -815,7 +815,6 @@ from ._spherical_bessel import (
     spherical_in,
     spherical_kn
 )
-from ._mathieu import mathieu_cem, mathieu_sem
 
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,

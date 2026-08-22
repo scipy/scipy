@@ -309,7 +309,7 @@ def _with_cache_optimization(
         return outputs[0] if ufunc.nout == 1 else outputs
 
     wrapper._ufunc = ufunc
-    return wrapper
+    return _make_ufunc_like_wrapper(wrapper, name, arg_names, docstring, module=module)
 
 
 def _reconstruct_wrapper(name):
@@ -356,12 +356,14 @@ class _UFuncLikeWrapper:
 
     def resolve_dtypes(self, dtypes, *, signature=None, casting=None, reduction=False):
         # The underlying wrapper/ufunc logic handles the actual type resolution
-        return self._attributes["resolve_dtypes"](
-            dtypes,
-            signature=signature,
-            casting=casting,
-            reduction=reduction
-        )
+        kwargs = {"reduction": reduction}
+        # although the defaults for signature and casting are ``None``,
+        # one cannot actually pass these kwargs with ``None`` values.
+        if casting is not None:
+            kwargs["casting"] = casting
+        if signature is not None:
+            kwargs["signature"] = signature
+        return self._attributes["resolve_dtypes"](dtypes, **kwargs)
 
     def __reduce__(self):
         # Tells pickle exactly how to reconstruct this specific instance
@@ -441,21 +443,20 @@ def _make_ufunc_like_wrapper(
     clean_args = [arg.split("=")[0].strip() for arg in arg_names]
     call_args = ", ".join(clean_args)
 
-    class_name = f"{name}_wrapper"
-
     code = (
-        f"""class {class_name}(_UFuncLikeWrapper):
+        f"""class {name}(_UFuncLikeWrapper):
             def __call__(self, {arg_str}, /, out=None, **kwargs):
                 return func({call_args}, out=out, **kwargs)
+
         """
     )
 
     namespace = {"_UFuncLikeWrapper": _UFuncLikeWrapper, "func": func}
 
     exec(code, namespace)
-    WrapperClass = namespace[class_name]
+    WrapperClass = namespace[name]
     WrapperClass.__module__ = module
-    WrapperClass.__qualname__ = class_name
+    WrapperClass.__qualname__ = name
 
     wrapper = WrapperClass(attributes)
 
