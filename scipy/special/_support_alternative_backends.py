@@ -1,8 +1,7 @@
 import functools
 import operator
-import threading
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from types import ModuleType
 
 import numpy as np
@@ -210,9 +209,9 @@ class _FuncInfo:
                 res = _f(*data_args, **kwargs)
                 mask = functools.reduce(operator.or_,
                                         (getattr(arg, 'mask', False) for arg in args))
-                if isinstance(out, tuple):
+                if isinstance(res, tuple):
                     return tuple(xp.asarray(x, mask=mask) for x in out)
-                return xp.asarray(out, mask=mask)
+                return xp.asarray(res, mask=mask)
 
             return f
 

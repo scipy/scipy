@@ -438,8 +438,6 @@ def _make_ufunc_like_wrapper(
     if attributes is None:
         raise ValueError("func has no metadata and metadata was not supplied.")
 
-    elementwise = attributes["signature"] is None
-
     arg_str = ", ".join(arg_names)
     clean_args = [arg.split("=")[0].strip() for arg in arg_names]
     call_args = ", ".join(clean_args)
