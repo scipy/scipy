@@ -70,9 +70,14 @@ double trampoline(int N, const double* x, void* data) {
         // here -- no acquire needed. (Re-acquire it here if a gil_scoped_release
         // is ever added around biteopt_minimize.)
         //
-        // Hand the objective a fresh copy of the parameter vector so it cannot
-        // corrupt biteopt's internal buffers. The cost is passed straight
-        // through; biteopt sanitizes any NaN itself.
+        // Hand the objective an owned copy of the parameter vector. Passing a
+        // pointer but no `base` owner makes pybind11 allocate a new array and
+        // copy into it (PyArray_NewCopy), so `arr` owns its data rather than
+        // viewing biteopt's internal NewValues buffer. That buffer is reused
+        // every evaluation and freed when biteopt_minimize() returns, so an
+        // owned copy is what lets the user safely retain the point
+        // (e.g. history.append(x)). The cost is passed straight through;
+        // biteopt sanitizes any NaN itself.
         py::array_t<double> arr(static_cast<size_t>(N), x);
         const double fx = ctx->func(arr).cast<double>();
 
@@ -88,8 +93,13 @@ double trampoline(int N, const double* x, void* data) {
         // through to the outer catch and is re-raised verbatim, exactly like an
         // exception raised by the objective itself.
         if (!ctx->callback.is_none()) {
+            // Give the callback its own owned copy, taken directly from
+            // biteopt's x rather than from `arr`, so it always sees the exact
+            // evaluated coordinates even if the objective mutated its argument
+            // in place. Only allocated when a callback is actually present.
+            py::array_t<double> cb_arr(static_cast<size_t>(N), x);
             try {
-                ctx->callback(arr);
+                ctx->callback(cb_arr);
             } catch (py::error_already_set& e) {
                 if (e.matches(PyExc_StopIteration)) {
                     // Graceful stop: remember it and set the early-stop
