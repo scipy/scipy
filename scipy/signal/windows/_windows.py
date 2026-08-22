@@ -196,8 +196,8 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     decrease on the order of :math:`O(|l|^{-1})`.
 
     For many applications, like calculating a magnitude spectrum in the example below,
-    a normalized window is needed. Consult the :ref:`tutorial_SpectralAnalysis` section
-    of the :ref:`user_guide` for details.
+    a normalized window is needed. Consult the :ref:`tutorial_signal-SpectralAnalysis`
+    section of the :ref:`user_guide` for details.
 
     References
     ----------
@@ -959,8 +959,8 @@ def hann(M, sym=True, *, xp=None, device=None):
     The height of the sidelobes decreases on the order of :math:`O(|l|^{-3})`.
 
     For many applications, like calculating a magnitude spectrum in the example below,
-    a normalized window is needed. Consult the :ref:`tutorial_SpectralAnalysis` section
-    of the :ref:`user_guide` for details.
+    a normalized window is needed. Consult the :ref:`tutorial_signal-SpectralAnalysis`
+    section of the :ref:`user_guide` for details.
 
     References
     ----------

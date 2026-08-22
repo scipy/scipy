@@ -4470,7 +4470,7 @@ def lfilter_zi(b, a):
     Notes
     -----
     The parameters `b` and `a` represent a transfer function :math:`H(z) = Y(z)/X(z)`
-    which is defined in the :ref:`tutorial_signal_TransferFunctionRepresentation`
+    which is defined in the :ref:`tutorial_signal-TransferFunctionRepresentation`
     section of the :ref:`user_guide`. As discussed in [1]_, the final value of
     filtering a step response :math:`X(z) = z / (z-1)`, i.e., steady state, is given by
 
