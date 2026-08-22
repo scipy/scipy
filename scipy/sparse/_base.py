@@ -10,8 +10,6 @@ from ._sputils import (asmatrix, check_shape,
                        matrix, validateaxis, getdtype, is_pydata_spmatrix)
 from scipy._lib._sparse import SparseABC, issparse
 
-from ._matrix import spmatrix
-
 __all__ = ['isspmatrix', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
@@ -1717,7 +1715,7 @@ class _spbase(SparseABC):
                                (check_contents and not isinstance(self, sparray)))
 
 
-class sparray:
+class sparray(_spbase):  # numpydoc ignore=PR01
     """A namespace class to separate sparray from spmatrix.
 
     This class serves as the namespace for SciPy sparse array types.
@@ -1789,4 +1787,6 @@ def isspmatrix(x):
     >>> isspmatrix(5)
     False
     """
+    from ._matrix import spmatrix
+
     return isinstance(x, spmatrix)

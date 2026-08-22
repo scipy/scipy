@@ -1,8 +1,10 @@
 import os
 from warnings import warn
 
+from ._base import _spbase
 
-class spmatrix:
+
+class spmatrix(_spbase):
     """This class provides a base class for all sparse matrix classes.
 
     .. warning::
