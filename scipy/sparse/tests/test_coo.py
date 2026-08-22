@@ -1202,6 +1202,16 @@ def test_newaxis_set():
     assert_equal(A.toarray(), D)
 
 
+def test_nd_setitem_broadcast_sparse_rhs():
+    # Regression: np.zeroslike typo in _get_sparse_data_and_coords when
+    # broadcasting a lower-ndim sparse RHS. https://github.com/scipy/scipy/issues/25965
+    A = coo_array((2, 3, 4), dtype=float)
+    x = coo_array(np.arange(12, dtype=float).reshape(3, 4))
+    A[:] = x
+    expected = np.broadcast_to(x.toarray(), (2, 3, 4))
+    assert_equal(A.toarray(), expected)
+
+
 def test_1d_coo_set():
     D = np.arange(9)
     A = coo_array(D)
