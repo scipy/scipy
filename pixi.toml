@@ -23,6 +23,7 @@ version = "*"
 
 [package.build.config]
 compilers = ["c", "cxx"]
+extra-input-globs = ["**/meson.build", "**/meson.options", "!build/**", "!build-install/**"]
 
 [workspace.target.win.build-variants]
 c_compiler = ["clang-cl"] 
@@ -47,6 +48,10 @@ openblas = "*"
 
 ### Environments ###
 # We include one build task (and a corresponding environment) per solve group
+
+[environments.editable]
+# tasks: test-editable
+features = ["editable-scipy", "test-deps", "ipython-dep", "ipython-task"]
 
 [environments.build]
 # tasks: build
@@ -265,6 +270,20 @@ platforms = ["osx-arm64"]
 spin = "*"
 # TODO: revert to `python`, pending https://github.com/google/brotli/issues/1241#issuecomment-4359720657
 python-gil = ">=3.12"
+
+
+### Editable SciPy setup ###
+
+[feature.editable-scipy]
+dependencies.scipy.path = "."
+dev.scipy.path = "." # pulls in SciPy's host dependencies
+tasks.test-editable = {
+  # `-t scipy` is required: with extra args after `--`, spin does not add a
+  # collection target of its own, and for an editable install it also leaves
+  # pytest's cwd at the repo root - so pytest would collect the whole checkout.
+  cmd = "spin test --no-build -t scipy",
+  description = "Test SciPy (editable installation)",
+}
 
 
 ### Default run dependencies (for environments which run SciPy itself) ###
