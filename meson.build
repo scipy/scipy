@@ -151,7 +151,6 @@ if cc.get_id() != 'clang-cl'
   endif
 endif
 
-generate_f2pymod = find_program('tools/building/generate_f2pymod.py')
 tempita = find_program('tools/building/tempita.py')
 
 use_pythran = get_option('use-pythran')
