@@ -3108,34 +3108,64 @@ def test_distance_transform_cdt_invalid_metric(xp):
                                        metric="garbage")
 
 
-# NumPy-only because byte order is numpy-specific
-def _swapped_int32(shape):
-    return np.zeros(shape, dtype=np.dtype(np.int32).newbyteorder())
+def _byteswapped_output(shape, dtype):
+    """Output array with non-native byte order, so NumPy has to copy it."""
+    return np.zeros(shape, dtype=np.dtype(dtype).newbyteorder())
 
 
-@pytest.mark.parametrize('call', [
+def _misaligned_output(shape, dtype):
+    """Output array that is not aligned, so NumPy has to copy it."""
+    dtype = np.dtype(dtype)
+    nbytes = np.prod(shape, dtype=np.intp) * dtype.itemsize
+    buf = np.zeros(nbytes + 1, dtype=np.uint8)
+    out = np.ndarray(shape, dtype=dtype, buffer=buf.data, offset=1)
+    assert not out.flags.aligned
+    return out
+
+
+# Multi-byte output dtypes on purpose: a 1-byte dtype (the bool that
+# `binary_erosion` normally produces) is always aligned and has no byte order,
+# so it never triggers the copy these cases are about. Shapes match `data` below.
+_WRITEBACK_CASES = [
     pytest.param(
-        lambda a: ndimage.distance_transform_cdt(
-            a, distances=_swapped_int32((5, 5))),
-        id='distance_transform_cdt'),
+        lambda data, out: ndimage.distance_transform_bf(data, distances=out),
+        (7, 7), np.float64, id='distance_transform_bf'),
     pytest.param(
-        lambda a: ndimage.distance_transform_edt(
-            a, return_indices=True, indices=_swapped_int32((2, 5, 5))),
-        id='distance_transform_edt'),
+        lambda data, out: ndimage.distance_transform_cdt(data, distances=out),
+        (7, 7), np.int32, id='distance_transform_cdt'),
     pytest.param(
-        lambda a: ndimage.binary_erosion(
-            a, output=_swapped_int32((5, 5)), iterations=2),
-        id='binary_erosion'),
-])
-def test_byte_order_output_writeback(call):
-    """Regression test for gh-25641: an output array that NumPy has to copy
-    (here, because of non-native byte order) must be written back by the
-    C code rather than left for NumPy to clean up during deallocation.
-    """
-    data = np.zeros((5, 5), dtype=np.uint8)
+        lambda data, out: ndimage.distance_transform_edt(
+            data, return_indices=True, indices=out),
+        (2, 7, 7), np.int32, id='distance_transform_edt'),
+    pytest.param(
+        lambda data, out: ndimage.binary_erosion(data, output=out, iterations=2),
+        (7, 7), np.int32, id='binary_erosion'),
+]
+
+
+# NumPy only: byte order, alignment and NPY_ARRAY_WRITEBACKIFCOPY have no
+# equivalent in the array API standard.
+@pytest.mark.parametrize('make_output',
+                         [_byteswapped_output, _misaligned_output],
+                         ids=['byteswapped', 'misaligned'])
+@pytest.mark.parametrize('call, shape, dtype', _WRITEBACK_CASES)
+def test_output_writeback(call, shape, dtype, make_output):
+    # gh-25641: an output array that NumPy has to copy must be written back by
+    # the C code itself, rather than left to NumPy's deallocation fallback.
+    data = np.zeros((7, 7), dtype=np.uint8)
+    data[1:6, 1:6] = 1
+
+    reference = np.zeros(shape, dtype=dtype)
+    call(data, reference)
+
+    out = make_output(shape, dtype)
     with warnings.catch_warnings(record=True) as rec:
         warnings.simplefilter("always")
-        call(data)
-    leaked = [str(w.message) for w in rec
-              if issubclass(w.category, RuntimeWarning)]
-    assert leaked == []
+        call(data, out)
+    unresolved = [str(w.message) for w in rec
+                  if issubclass(w.category, RuntimeWarning)
+                  and 'WRITEBACKIFCOPY' in str(w.message)]
+    assert unresolved == []
+
+    # the results must actually have made it back into the caller's array
+    xp_assert_equal(np.asarray(out, dtype=dtype), reference)
