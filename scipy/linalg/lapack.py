@@ -994,7 +994,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     use the ``dtype=`` argument:
 
     >>> LA.get_lapack_funcs('lange', dtype=np.float32)
-    <fortran function slange>
+    <flapack function slange>
 
     The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
     and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):
