@@ -9,13 +9,14 @@ build may be done in order to install SciPy for local usage, develop SciPy
 itself, or build redistributable binary packages.
 
 If you are building SciPy in order to contribute to SciPy,
-please see `the contributor building guide <contributor.html>`__.
+please see :doc:`the contributor building guide <contributor>`.
 
 .. toctree::
    :hidden:
    :maxdepth: 1
 
    contributor
+   contributor-advanced
 
 Otherwise, read on for guidance on builds for local usage,
 redistribution, and advanced customisation of builds.
