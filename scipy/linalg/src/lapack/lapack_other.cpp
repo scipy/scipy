@@ -625,7 +625,7 @@ namespace lapack {
             SCALAR_OPT(CBLAS_INT, off, 0);        CHECK(off >= 0 && off < npiv, off);
             SCALAR_OPT(CBLAS_INT, k2, npiv - 1);  CHECK(k1 <= k2 && k2 < npiv - off, k2);
 
-            CBLAS_INT step = inc < 0 ? -inc : inc;
+            npy_intp step = abs(inc);
             CHECK(1LL * k1 + 1 + 1LL * (k2 - k1) * step <= npiv - off, inc);
             ARRAY_HIDDEN(CBLAS_INT, pivots, npiv);
             const CBLAS_INT *supplied = piv.data<CBLAS_INT>();
@@ -1848,7 +1848,7 @@ namespace lapack {
 
             /* The reflector is built from `alpha` and the `n - 1` further entries `incx` steps
              * apart, so `x` holds `1 + (n - 2) * |incx|` of them. */
-            CBLAS_INT step = incx < 0 ? -incx : incx;
+            npy_intp step = abs(incx);
             CHECKARRAY(len(x) == 1 + (n - 2) * step, x);
 
             T tau = 0;
@@ -1878,7 +1878,7 @@ namespace lapack {
 
             CBLAS_INT m = shape(c, 0), n = shape(c, 1);
             CBLAS_INT ldc = std::max<CBLAS_INT>(1, shape(c, 0));
-            CBLAS_INT step = incv < 0 ? -incv : incv;
+            npy_intp step = abs(incv);
             CHECKARRAY(len(v) == 1 + ((side == 'L' ? m : n) - 1) * step, v);
             CHECKARRAY(len(work) == (side == 'L' ? n : m), work);
 
@@ -1928,7 +1928,7 @@ namespace lapack {
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < lx, offx);
             SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < ly, offy);
 
-            CBLAS_INT stepx = incx < 0 ? -incx : incx, stepy = incy < 0 ? -incy : incy;
+            npy_intp stepx = abs(incx), stepy = abs(incy);
             SCALAR_OPT(CBLAS_INT, n, (lx - 1 - offx) / stepx + 1);
             CHECK(lx - offx > (n - 1) * stepx, n);
             CHECK(ly - offy > (n - 1) * stepy, n);
