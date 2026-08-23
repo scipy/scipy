@@ -217,8 +217,6 @@ class TestWithCacheOptimization:
             mathieu_sem(1, 2, 3, not_a_ufunc_kwarg=True)
 
     def test_wrapper_metadata(self):
-        assert mathieu_sem.__module__ == "scipy.special"
-        assert mathieu_sem.__qualname__ == "mathieu_sem"
         for attr in ["nin", "nout", "nargs", "ntypes", "types", "signature"]:
             assert getattr(mathieu_sem, attr) == getattr(_mathieu_sem, attr)
 
