@@ -119,8 +119,6 @@ def _with_cache_optimization(
         A wrapper for ufunc which transposes the axes of the inputs to ensure
         iteration precedes in such a way to allow the cache within the ufunc
         kernel to eliminate redundant computation.
-        The underlying ufunc can be accessed through the ``ufunc`` attribute
-        of the returned callable.
 
     Notes
     -----
