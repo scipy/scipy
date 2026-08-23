@@ -15,7 +15,27 @@ from scipy.signal import (ss2tf, tf2ss, lti,
                           TransferFunction, StateSpace, ZerosPolesGain)
 
 from scipy.signal._filter_design import BadCoefficients
+from scipy.signal._ltisys import _order_complex_poles
 import scipy.linalg as linalg
+
+class Test_OrderComplexPoles:
+    """Test for `_order_complex_poles` function. """
+
+    @pytest.mark.parametrize('p_in, p_ref', [
+        ([3, 2, 1], [1, 2, 3]), ([], []),
+        ([1j, 2j, -2j, -1j], [-2j, 2j, -1j, 1j]),
+        ([1j, -1j, 1+1j, 2, 1-1j], [2, -1j, 1j, 1-1j, 1+1j])])
+    def test_basic(self, p_in, p_ref):
+        p_in = np.asarray(p_in)
+        p_ref = np.asarray(p_ref, dtype=np.result_type(p_in.dtype, np.complex64))
+
+        p = _order_complex_poles(p_in)
+        np.testing.assert_allclose(p, p_ref)
+
+    def test_exception(self):
+        p = np.asarray([1, 2-1j])
+        with pytest.raises(ValueError):
+            _order_complex_poles(p)
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
