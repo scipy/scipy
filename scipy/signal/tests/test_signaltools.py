@@ -290,6 +290,39 @@ class TestConvolve:
         assert_raises(ValueError, convolve, [3], 2)
 
 
+class TestConvolveMethodOA:
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    def test_convolve_method_oa_matches_fft(self, mode, dtype):
+        rng = np.random.default_rng(0)
+        a = rng.standard_normal(5000).astype(dtype)
+        b = rng.standard_normal(65).astype(dtype)
+        got = convolve(a, b, mode=mode, method='oa')
+        ref = convolve(a, b, mode=mode, method='fft')
+        np.testing.assert_allclose(got, ref, rtol=1e-9, atol=1e-9)
+
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    def test_correlate_method_oa_matches_fft(self, mode):
+        rng = np.random.default_rng(1)
+        a = rng.standard_normal(5000)
+        b = rng.standard_normal(65)
+        got = correlate(a, b, mode=mode, method='oa')
+        ref = correlate(a, b, mode=mode, method='fft')
+        np.testing.assert_allclose(got, ref, rtol=1e-9, atol=1e-9)
+
+    def test_convolve_invalid_method_mentions_oa(self):
+        a = np.arange(5.0)
+        b = np.arange(3.0)
+        with pytest.raises(ValueError, match="oa"):
+            convolve(a, b, method='nonsense')
+
+    def test_correlate_invalid_method_mentions_oa(self):
+        a = np.arange(5.0)
+        b = np.arange(3.0)
+        with pytest.raises(ValueError, match="oa"):
+            correlate(a, b, method='nonsense')
+
+
 @make_xp_test_case(convolve2d)
 class TestConvolve2d:
 
@@ -934,7 +967,7 @@ class TestFFTConvolve:
             sig_nan[100] = val
             coeffs = xp.asarray(signal.firwin(200, 0.2))
 
-            msg = "Use of fft convolution.*|invalid value encountered.*"
+            msg = "Use of FFT convolution.*|invalid value encountered.*"
             with pytest.warns(RuntimeWarning, match=msg):
                 signal.convolve(sig_nan, coeffs, mode='same', method='fft')
 
@@ -3062,9 +3095,9 @@ def test_choose_conv_method(xp):
             assert method == true_method
 
             method_try, times = choose_conv_method(x, h, mode=mode, measure=True)
-            assert method_try in {'fft', 'direct'}
+            assert method_try in {'fft', 'direct', 'oa'}
             assert isinstance(times, dict)
-            assert 'fft' in times.keys() and 'direct' in times.keys()
+            assert {'fft', 'direct', 'oa'} <= times.keys()
 
         n = 10
         for not_fft_conv_supp in ["complex256", "complex192"]:
@@ -3087,6 +3120,44 @@ def test_choose_conv_method_2(xp):
                 x = np.ones(n, dtype=not_fft_conv_supp)
                 h = x.copy()
                 assert choose_conv_method(x, h, mode=mode) == 'direct'
+
+
+class TestChooseConvMethodOA:
+    def test_1d_equal_size_not_oa(self):
+        a = np.random.default_rng(0).standard_normal(2000)
+        b = np.random.default_rng(1).standard_normal(2000)
+        assert choose_conv_method(a, b, mode='full') != 'oa'
+
+    def test_2d_never_oa(self):
+        a = np.random.default_rng(0).standard_normal((300, 300))
+        b = np.random.default_rng(1).standard_normal((8, 8))
+        assert choose_conv_method(a, b, mode='full') != 'oa'
+
+    def test_integer_input_direct_not_oa(self):
+        a = np.arange(100000, dtype=np.int64) % 7
+        b = np.arange(65, dtype=np.int64) % 3
+        assert choose_conv_method(a, b, mode='full') == 'direct'
+
+    def test_measure_includes_oa(self):
+        a = np.random.default_rng(0).standard_normal(100000)
+        b = np.random.default_rng(1).standard_normal(65)
+        method, times = choose_conv_method(a, b, mode='full', measure=True)
+        assert 'oa' in times
+        assert method in ('oa', 'fft', 'direct')
+        assert method == min(times, key=times.get)
+
+    def test_measure_selects_min_including_oa(self, monkeypatch):
+        # Deterministically verify the measure path times fft/direct/oa and
+        # returns the fastest, without depending on real hardware timing.
+        from scipy.signal import _signaltools
+        # choose_conv_method times methods in the order ['fft', 'direct', 'oa'].
+        fake = iter([0.3, 0.2, 0.1])
+        monkeypatch.setattr(_signaltools, '_timeit_fast', lambda f: next(fake))
+        a = np.random.default_rng(0).standard_normal(1000)
+        b = np.random.default_rng(1).standard_normal(65)
+        method, times = choose_conv_method(a, b, mode='full', measure=True)
+        assert times == {'fft': 0.3, 'direct': 0.2, 'oa': 0.1}
+        assert method == 'oa'
 
 
 @pytest.mark.fail_slow(10)
