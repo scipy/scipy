@@ -41,6 +41,7 @@ See the guides below for key steps to follow:
 
    User building guide <user>
    Developer building guide <developer>
+   Advanced developer building guide <developer-advanced>
 
 
 Customizing builds
