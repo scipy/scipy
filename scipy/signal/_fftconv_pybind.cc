@@ -105,7 +105,7 @@ static py::tuple calc_oa_lens(size_t s1, size_t s2) {
     return py::make_tuple(r.block_size, overlap, r.in1_step, r.in2_step);
 }
 
-PYBIND11_MODULE(_fftconv, m) {
+PYBIND11_MODULE(_fftconv, m, py::mod_gil_not_used()) {
     m.doc() = "C++ overlap-add convolution (duccfft backend)";
     m.def("oaconvolve", &oaconvolve,
           py::arg("in1"), py::arg("in2"), py::arg("mode"), py::arg("axes"));

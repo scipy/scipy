@@ -17,7 +17,9 @@ constexpr double euler_e = 2.718281828459045235360287471352662498;
 inline double lambertw_wm1(double x) {
     // W_{-1}(-1/e) = -1 exactly; both real branches meet here. Guard the
     // boundary where the Halley denominator degenerates to 0/0 (w -> -1).
-    if (x <= -1.0 / euler_e) return -1.0;
+    // Widened by one ulp: on i386/x87 the caller's -1/e can round to one ulp
+    // inside the domain, where the iteration below would still hit 0/0.
+    if (x <= std::nextafter(-1.0 / euler_e, 0.0)) return -1.0;
     // Initial guess from the asymptotic expansion near 0^- (Corless et al.).
     const double L1 = std::log(-x);
     const double L2 = std::log(-L1);
@@ -28,6 +30,9 @@ inline double lambertw_wm1(double x) {
         // Halley step
         const double denom = ew * (w + 1.0) - (w + 2.0) * f / (2.0 * w + 2.0);
         const double dw = f / denom;
+        // Near the branch point denom can still underflow to 0 (dw = 0/0);
+        // w is already at the fixed point there, so stop rather than poison it.
+        if (!std::isfinite(dw)) break;
         w -= dw;
         if (std::fabs(dw) <= 1e-16 * (1.0 + std::fabs(w))) break;
     }
