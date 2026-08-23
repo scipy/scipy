@@ -22,6 +22,7 @@ from scipy.stats import _mstats_basic, _stats_py
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
+
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
         # Regression test for Trac ticket #867

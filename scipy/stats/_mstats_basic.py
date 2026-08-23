@@ -47,8 +47,12 @@ import scipy.special as special
 import scipy.stats._stats_py
 import scipy.stats._stats_py as _stats_py
 from scipy.stats._stats_pythran import siegelslopes as siegelslopes_pythran
-from ._stats_mstats_common import _find_repeats, TheilslopesResult, SiegelslopesResult
+from ._stats_mstats_common import (_find_repeats, TheilslopesResult, SiegelslopesResult, 
+                                   _deprecate_mstats)
 
+
+_trim_transition_guide = ("See the Trimming and winsorization transition guide "
+                          "for alternatives.")
 
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
@@ -105,6 +109,7 @@ def _ttest_finish(df, t, alternative):
     return t, pval
 
 
+@_deprecate_mstats()
 def argstoarray(*args):
     """
     Constructs a 2D array from a group of sequences.
@@ -168,6 +173,7 @@ def argstoarray(*args):
     return output
 
 
+@_deprecate_mstats()
 def find_repeats(arr):
     """Find repeats in arr and return a tuple (repeats, repeat_count).
 
@@ -208,6 +214,7 @@ def find_repeats(arr):
     return _find_repeats(compr)
 
 
+@_deprecate_mstats()
 def count_tied_groups(x, use_missing=False):
     """
     Counts the number of tied values.
@@ -260,6 +267,7 @@ def count_tied_groups(x, use_missing=False):
     return nties
 
 
+@_deprecate_mstats()
 def rankdata(data, axis=None, use_missing=False):
     """Returns the rank (also known as order statistics) of each data point
     along the given axis.
@@ -311,6 +319,7 @@ def rankdata(data, axis=None, use_missing=False):
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
+@_deprecate_mstats()
 def mode(a, axis=0):
     """
     Returns an array of the modal (most common) value in the passed array.
@@ -386,11 +395,13 @@ def _betai(a, b, x):
     return special.betainc(a, b, x)
 
 
+@_deprecate_mstats()
 def msign(x):
     """Returns the sign of x, or 0 if x is masked."""  # numpydoc ignore=RT01
     return ma.filled(np.sign(x), 0)
 
 
+@_deprecate_mstats()
 def pearsonr(x, y):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -563,6 +574,7 @@ def pearsonr(x, y):
                 ma.masked_array(y, mask=m).compressed())
 
 
+@_deprecate_mstats()
 def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
               alternative='two-sided'):
     """
@@ -785,6 +797,7 @@ def _kendall_p_exact(n, c, alternative='two-sided'):
     return prob
 
 
+@_deprecate_mstats()
 def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
                alternative='two-sided'):
     """
@@ -912,6 +925,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
     return res
 
 
+@_deprecate_mstats()
 def kendalltau_seasonal(x):
     """
     Computes a multivariate Kendall's rank correlation tau, for seasonal data.
@@ -980,6 +994,7 @@ PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
                                                            'pvalue'))
 
 
+@_deprecate_mstats()
 def pointbiserialr(x, y):
     """Calculates a point biserial correlation coefficient and its p-value.
 
@@ -1031,6 +1046,7 @@ def pointbiserialr(x, y):
     return PointbiserialrResult(rpb, prob)
 
 
+@_deprecate_mstats()
 def linregress(x, y=None):
     r"""
     Calculate a linear least-squares regression for two sets of measurements.
@@ -1338,6 +1354,7 @@ def _theilslopes(y, x=None, alpha=0.95, method='separate'):
                              low_slope=delta[0], high_slope=delta[1])
 
 
+@_deprecate_mstats()
 def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
@@ -1428,6 +1445,7 @@ def _siegelslopes(y, x=None, method="hierarchical"):
     return SiegelslopesResult(slope=medslope, intercept=medinter)
 
 
+@_deprecate_mstats()
 def siegelslopes(y, x=None, method="hierarchical"):
     r"""
     Computes the Siegel estimator for a set of points (x, y).
@@ -1489,6 +1507,7 @@ SenSeasonalSlopesResult = _make_tuple_bunch('SenSeasonalSlopesResult',
                                             ['intra_slope', 'inter_slope'])
 
 
+@_deprecate_mstats()
 def sen_seasonal_slopes(x):
     r"""
     Computes seasonal Theil-Sen and Kendall slope estimators.
@@ -1608,6 +1627,7 @@ def sen_seasonal_slopes(x):
 Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
     """
     Calculates the T-test for the mean of ONE group of scores.
@@ -1670,6 +1690,7 @@ ttest_onesamp = ttest_1samp
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
@@ -1751,6 +1772,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def ttest_rel(a, b, axis=0, alternative='two-sided'):
     """
     Calculates the T-test on TWO RELATED samples of scores, a and b.
@@ -1813,6 +1835,7 @@ MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
                                                        'pvalue'))
 
 
+@_deprecate_mstats()
 def mannwhitneyu(x,y, use_continuity=True):
     """
     Computes the Mann-Whitney statistic
@@ -1863,6 +1886,7 @@ def mannwhitneyu(x,y, use_continuity=True):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def kruskal(*samples):
     """
     Compute the Kruskal-Wallis H-test for independent samples
@@ -1927,6 +1951,7 @@ def kruskal(*samples):
 kruskalwallis = kruskal
 
 
+@_deprecate_mstats()
 @_rename_parameter("mode", "method")
 def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
     """
@@ -1967,6 +1992,7 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
         x, cdf, args=args, alternative=alternative, method=method)
 
 
+@_deprecate_mstats()
 @_rename_parameter("mode", "method")
 def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
     """
@@ -2011,6 +2037,7 @@ def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
 ks_twosamp = ks_2samp
 
 
+@_deprecate_mstats()
 @_rename_parameter("mode", "method")
 def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     """
@@ -2034,6 +2061,7 @@ def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
                                         alternative=alternative, method=method)
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trima(a, limits=None, inclusive=(True,True)):
     """
     Trims an array by masking the data outside some given limits.
@@ -2093,6 +2121,7 @@ def trima(a, limits=None, inclusive=(True,True)):
     return a
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trimr(a, limits=None, inclusive=(True, True), axis=None):
     """
     Trims an array by masking some proportion of the data on each end.
@@ -2193,6 +2222,7 @@ trimdoc = _dedent_for_py313("""
         Axis along which to trim.""")
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
     """
     Trims an array by masking the data outside some given limits.
@@ -2221,6 +2251,7 @@ if trim.__doc__:
     trim.__doc__ = trim.__doc__ % trimdoc
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):
     """
     Trims the smallest and largest data values.
@@ -2250,6 +2281,7 @@ def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):
                  inclusive=inclusive, axis=axis)
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
              axis=None):
     """
@@ -2295,6 +2327,7 @@ def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
 trim1 = trimtail
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                  axis=None):
     """Returns the trimmed mean of the data along the given axis.
@@ -2314,6 +2347,7 @@ if trimmed_mean.__doc__:
     trimmed_mean.__doc__ = trimmed_mean.__doc__ % trimdoc
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                 axis=None, ddof=0):
     """Returns the trimmed variance of the data along the given axis.
@@ -2339,6 +2373,7 @@ if trimmed_var.__doc__:
     trimmed_var.__doc__ = trimmed_var.__doc__ % trimdoc
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                 axis=None, ddof=0):
     """Returns the trimmed standard deviation of the data along the given axis.
@@ -2363,6 +2398,7 @@ if trimmed_std.__doc__:
     trimmed_std.__doc__ = trimmed_std.__doc__ % trimdoc
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     """
     Returns the standard error of the trimmed mean along the given axis.
@@ -2486,6 +2522,7 @@ def _mask_to_limits(a, limits, inclusive):
     return am
 
 
+@_deprecate_mstats()
 def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     Compute the trimmed mean.
@@ -2537,6 +2574,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     return trima(a, limits=limits, inclusive=inclusive).mean(axis=axis)
 
 
+@_deprecate_mstats()
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed variance
@@ -2582,6 +2620,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return np.ma.var(am, axis=axis, ddof=ddof)
 
 
+@_deprecate_mstats()
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     """
     Compute the trimmed minimum
@@ -2630,6 +2669,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     return ma.minimum.reduce(am, axis)
 
 
+@_deprecate_mstats()
 def tmax(a, upperlimit=None, axis=0, inclusive=True):
     """
     Compute the trimmed maximum
@@ -2682,6 +2722,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     return ma.maximum.reduce(am, axis)
 
 
+@_deprecate_mstats()
 def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed standard error of the mean.
@@ -2727,6 +2768,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return sd / np.sqrt(am.count())
 
 
+@_deprecate_mstats(notes=_trim_transition_guide)
 def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
               axis=None, nan_policy='propagate'):
     """Returns a Winsorized version of the input array.
@@ -2843,6 +2885,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                                    upinc, contains_nan, nan_policy)
 
 
+@_deprecate_mstats()
 def moment(a, moment=1, axis=0):
     """
     Calculates the nth moment about the mean for a sample.
@@ -2935,6 +2978,7 @@ def _moment(a, moment, axis, *, mean=None):
         return s.mean(axis)
 
 
+@_deprecate_mstats()
 def variation(a, axis=0, ddof=0):
     """
     Compute the coefficient of variation.
@@ -2988,6 +3032,7 @@ def variation(a, axis=0, ddof=0):
     return a.std(axis, ddof=ddof)/a.mean(axis)
 
 
+@_deprecate_mstats()
 def skew(a, axis=0, bias=True):
     """
     Computes the skewness of a data set.
@@ -3033,6 +3078,7 @@ def skew(a, axis=0, bias=True):
     return vals
 
 
+@_deprecate_mstats()
 def kurtosis(a, axis=0, fisher=True, bias=True):
     """
     Computes the kurtosis (Fisher or Pearson) of a dataset.
@@ -3098,6 +3144,7 @@ DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
                                                'kurtosis'))
 
 
+@_deprecate_mstats()
 def describe(a, axis=0, ddof=0, bias=True):
     """
     Computes several descriptive statistics of the passed array.
@@ -3163,6 +3210,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     return DescribeResult(n, mm, m, v, sk, kurt)
 
 
+@_deprecate_mstats()
 def stde_median(data, axis=None):
     """Returns the McKean-Schrader estimate of the standard error of the sample
     median along the given axis. masked values are discarded.
@@ -3196,6 +3244,7 @@ def stde_median(data, axis=None):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def skewtest(a, axis=0, alternative='two-sided'):
     """
     Tests whether the skew is different from the normal distribution.
@@ -3257,6 +3306,7 @@ def skewtest(a, axis=0, alternative='two-sided'):
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def kurtosistest(a, axis=0, alternative='two-sided'):
     """
     Tests whether a dataset has normal kurtosis
@@ -3328,6 +3378,7 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def normaltest(a, axis=0):
     """
     Tests whether a sample differs from a normal distribution.
@@ -3361,6 +3412,7 @@ def normaltest(a, axis=0):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
+@_deprecate_mstats(replacement='quantile')
 def mquantiles(a, prob=(.25, .5, .75), alphap=.4, betap=.4, axis=None,
                limit=()):
     """
@@ -3491,6 +3543,7 @@ def mquantiles(a, prob=(.25, .5, .75), alphap=.4, betap=.4, axis=None,
     return ma.apply_along_axis(_quantiles1D, axis, data, m, p)
 
 
+@_deprecate_mstats(replacement='quantile')
 def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
     """Calculate the score at the given 'per' percentile of the
     sequence a.  For example, the score at per=50 is the median.
@@ -3505,6 +3558,7 @@ def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
                       limit=limit, axis=0).squeeze()
 
 
+@_deprecate_mstats(replacement='estimated_cdf')
 def plotting_positions(data, alpha=0.4, beta=0.4):
     """
     Returns plotting positions (or empirical percentile points) for the data.
@@ -3561,6 +3615,7 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
 meppf = plotting_positions
 
 
+@_deprecate_mstats()
 def obrientransform(*args):
     """
     Computes a transform on input data (any number of columns).  Used to
@@ -3587,6 +3642,7 @@ def obrientransform(*args):
     return data
 
 
+@_deprecate_mstats()
 def sem(a, axis=0, ddof=1):
     """
     Calculates the standard error of the mean of the input array.
@@ -3643,6 +3699,7 @@ def sem(a, axis=0, ddof=1):
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def f_oneway(*args):
     """
     Performs a 1-way ANOVA, returning an F-value and probability given
@@ -3680,6 +3737,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def friedmanchisquare(*args):
     """Friedman Chi-Square is a non-parametric, one-way within-subjects ANOVA.
     This function calculates the Friedman Chi-square test for repeated measures
@@ -3731,6 +3789,7 @@ def friedmanchisquare(*args):
 BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
 
 
+@_deprecate_mstats()
 def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     """
     Compute the Brunner-Munzel test on samples x and y.
