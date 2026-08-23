@@ -802,7 +802,7 @@ _special_funcs = (
         ),
         int_only=(True, False, False),
         test_large_ints=False,
-        positive_only=True,
+        positive_only=(True, False, False),
     ),
     _FuncInfo(
         _mathieu.mathieu_sem, ["m", "q", "x"],
@@ -812,7 +812,7 @@ _special_funcs = (
         ),
         int_only=(True, False, False),
         test_large_ints=False,
-        positive_only=True,
+        positive_only=(True, False, False),
     ),
     _FuncInfo(
         _spfun_stats.multigammaln, ["a", "d"],
