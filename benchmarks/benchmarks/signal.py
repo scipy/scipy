@@ -84,11 +84,27 @@ class Convolve2D(Benchmark):
 
 
 class FFTConvolve(Benchmark):
+    # Square-ish cross product of small/medium sizes (a >= b), plus a
+    # large-signal / small-kernel (FIR) sweep: fixed small/medium kernels
+    # against signal lengths from a few thousand up to 100k. The FIR regime is
+    # where overlap-add (oaconvolve) is expected to beat both direct convolve
+    # and a single big FFT (fftconvolve); the small/medium grid is where the
+    # pure-Python overlap-add overhead currently dominates (see gh-24834).
+    _sizes = (8, 36, 65, 151, 500, 2000, 4000)
+    _grid = [(a, b) for a, b in product(_sizes, repeat=2) if a >= b]
+    # Build the FIR sweep with an explicit loop (not a comprehension) so we can
+    # dedup against _grid: class-body comprehensions can't see class variables
+    # in their body, only in the outermost iterable.
+    _all_sizes = list(_grid)
+    for _n in (2000, 4000, 8000, 20000, 100000):
+        for _m in (65, 512, 2000):
+            if _n > _m and (_n, _m) not in _all_sizes:
+                _all_sizes.append((_n, _m))
+    del _n, _m
     param_names = ["mode", "size"]
     params = [
         ["full", "valid", "same"],
-        [(a,b) for a,b in product((8, 36, 65, 151, 500, 2000, 4000), repeat=2)
-         if a >= b]
+        _all_sizes,
     ]
 
     def setup(self, mode, size):
@@ -101,6 +117,49 @@ class FFTConvolve(Benchmark):
 
     def time_oaconvolve_1d(self, mode, size):
         signal.oaconvolve(self.a, self.b, mode=mode)
+
+
+class OAConvolveND(Benchmark):
+    # Convolve one axis of an N-D array, batching over the rest.
+    param_names = ["mode", "shape_axis"]
+    params = [
+        ["full", "valid", "same"],
+        [((64, 20000), 1), ((20000, 64), 0), ((16, 100000), 1)],
+    ]
+
+    def setup(self, mode, shape_axis):
+        shape, axis = shape_axis
+        rng = np.random.default_rng(1234)
+        self.a = rng.standard_normal(shape)
+        kshape = list(shape)
+        kshape[axis] = 65
+        self.b = rng.standard_normal(tuple(kshape))
+        self.axis = axis
+
+    def time_oaconvolve_nd(self, mode, shape_axis):
+        signal.oaconvolve(self.a, self.b, mode=mode, axes=[self.axis])
+
+    def time_fftconvolve_nd(self, mode, shape_axis):
+        signal.fftconvolve(self.a, self.b, mode=mode, axes=[self.axis])
+
+
+class ConvolveMethod(Benchmark):
+    # convolve() dispatch per method across the 1-D FIR grid. 'oa' is the
+    # explicit overlap-add path (gh-24834); 'auto' is the predicted default
+    # (which selects direct/fft only — it does not auto-select 'oa').
+    param_names = ["method", "size"]
+    params = [
+        ["auto", "direct", "fft", "oa"],
+        [(n, 65) for n in (2000, 8000, 20000, 100000)],
+    ]
+
+    def setup(self, method, size):
+        rng = np.random.default_rng(1234)
+        self.a = rng.standard_normal(size[0])
+        self.b = rng.standard_normal(size[1])
+
+    def time_convolve_method(self, method, size):
+        signal.convolve(self.a, self.b, method=method)
 
 
 class Convolve(Benchmark):
