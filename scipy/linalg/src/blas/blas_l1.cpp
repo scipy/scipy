@@ -35,7 +35,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
             SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(y) - offy > (n - 1) * abs(incy), n);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
@@ -57,7 +57,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx > 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             real_of_t<T> n2 = blas::nrm2(n, x.data<T>() + offx, incx);
@@ -77,7 +77,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             real_of_t<T> s = blas::asum(n, x.data<T>() + offx, incx);
@@ -97,7 +97,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             /**
@@ -124,7 +124,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
             SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(y) - offy > (n - 1) * abs(incy), n);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
@@ -148,7 +148,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
             SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(y) - offy > (n - 1) * abs(incy), n);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
@@ -171,7 +171,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::scal(n, a, x.data<T>() + offx, incx);
@@ -203,7 +203,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, incx, 1);  CHECK(incx != 0, incx);
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
             blas::scal(n, a, x.data<T>() + offx, incx);
@@ -226,7 +226,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
             SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(y) - offy > (n - 1) * abs(incy), n);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
@@ -250,7 +250,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
             SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(y) - offy > (n - 1) * abs(incy), n);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
@@ -274,7 +274,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
             SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(y) - offy > (n - 1) * abs(incy), n);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
@@ -381,7 +381,7 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, offx, 0);  CHECK(offx >= 0 && offx < len(x), offx);
             SCALAR_OPT(CBLAS_INT, offy, 0);  CHECK(offy >= 0 && offy < len(y), offy);
 
-            SCALAR_OPT(CBLAS_INT, n, (len(x) - offx) / abs(incx));
+            SCALAR_OPT(CBLAS_INT, n, (len(x) - 1 - offx) / abs(incx) + 1);
             CHECK(len(y) - offy > (n - 1) * abs(incy), n);
             CHECK(len(x) - offx > (n - 1) * abs(incx), n);
 
