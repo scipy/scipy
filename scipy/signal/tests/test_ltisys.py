@@ -26,8 +26,7 @@ class Test_OrderComplexPoles:
         ([1j, 2j, -2j, -1j], [-2j, 2j, -1j, 1j]),
         ([1j, -1j, 1+1j, 2, 1-1j], [2, -1j, 1j, 1-1j, 1+1j])])
     def test_basic(self, p_in, p_ref):
-        p_in = np.asarray(p_in)
-        p_ref = np.asarray(p_ref, dtype=np.result_type(p_in.dtype, np.complex64))
+        p_in, p_ref = np.asarray(p_in), np.asarray(p_ref)
 
         p = _order_complex_poles(p_in)
         np.testing.assert_allclose(p, p_ref)

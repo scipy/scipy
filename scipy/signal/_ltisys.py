@@ -2662,7 +2662,6 @@ def _order_complex_poles(poles):
     The lexicographic sort on the complex poles is added to help the user to
     compare sets of poles.
 
-    The return dtype is always of type complex floating.
     Currently, this helper is only used by `_valid_inputs` and `place_poles`.
     """
     ordered_poles = np.sort(poles[np.isreal(poles)])
@@ -2675,9 +2674,6 @@ def _order_complex_poles(poles):
 
     if poles.shape[0] != len(ordered_poles):
         raise ValueError("Complex poles must come with their conjugates")
-    if not np.isdtype(ordered_poles.dtype, 'complex floating'):
-        out_dtype = np.result_type(ordered_poles, 0.+1j)
-        ordered_poles = ordered_poles.astype(out_dtype)
     return ordered_poles
 
 
@@ -3337,6 +3333,12 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     full_state_feedback.computed_poles = _order_complex_poles(
         np.linalg.eig(A - np.dot(B, gain_matrix))[0]
         )
+    # Before NumPy 2.5, `np.linalg.eig` would return eithera a real-valued or a
+    # complex-valued array. Hence, ensure that computed_poles is always complex-valued:
+    if not np.isdtype(full_state_feedback.computed_poles.dtype, 'complex floating'):
+        dtyp = np.result_type(full_state_feedback.computed_poles, np.complex64)
+        full_state_feedback.computed_poles = \
+            full_state_feedback.computed_poles.astype(dtyp)
     full_state_feedback.requested_poles = poles
     full_state_feedback.X = transfer_matrix
     full_state_feedback.rtol = cur_rtol
