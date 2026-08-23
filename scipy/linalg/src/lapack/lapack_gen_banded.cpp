@@ -102,12 +102,13 @@ namespace lapack {
             CHECKARRAY(len(ipiv) == n, ipiv);
 
             CBLAS_INT nrhs = shape(b, 1), info = 0;
-            CBLAS_INT *pivots = ipiv.data<CBLAS_INT>();
+            ARRAY_HIDDEN(CBLAS_INT, pivots, n);
+            const CBLAS_INT *supplied = ipiv.data<CBLAS_INT>();
+            CBLAS_INT *shifted = pivots.data<CBLAS_INT>();
+            for (CBLAS_INT i = 0; i < n; ++i) { shifted[i] = supplied[i] + 1; }
 
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] += 1; }
             lapack::gbtrs(trans ? (trans == 1 ? 'T' : 'C') : 'N', n, kl, ku, nrhs, ab.data<T>(),
-                          ldab, pivots, b.data<T>(), ldb, &info);
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] -= 1; }
+                          ldab, shifted, b.data<T>(), ldb, &info);
             return make_result(b, static_cast<long long>(info));
         }
 
@@ -147,20 +148,21 @@ namespace lapack {
 
             R rcond = 0;
             CBLAS_INT info = 0;
-            CBLAS_INT *pivots = ipiv.data<CBLAS_INT>();
+            ARRAY_HIDDEN(CBLAS_INT, pivots, n);
+            const CBLAS_INT *supplied = ipiv.data<CBLAS_INT>();
+            CBLAS_INT *shifted = pivots.data<CBLAS_INT>();
+            for (CBLAS_INT i = 0; i < n; ++i) { shifted[i] = supplied[i] + 1; }
 
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] += 1; }
             if constexpr (is_complex_v<T>) {
                 ARRAY_HIDDEN(R, rwork, n);
-                lapack::gbcon(norm, n, kl, ku, ab.data<T>(), ldab, pivots, anorm, &rcond,
+                lapack::gbcon(norm, n, kl, ku, ab.data<T>(), ldab, shifted, anorm, &rcond,
                               work.data<T>(), rwork.data<R>(), &info);
             }
             else {
                 ARRAY_HIDDEN(CBLAS_INT, iwork, n);
-                lapack::gbcon(norm, n, kl, ku, ab.data<T>(), ldab, pivots, anorm, &rcond,
+                lapack::gbcon(norm, n, kl, ku, ab.data<T>(), ldab, shifted, anorm, &rcond,
                               work.data<T>(), iwork.data<CBLAS_INT>(), &info);
             }
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] -= 1; }
             return make_result(rcond, static_cast<long long>(info));
         }
 

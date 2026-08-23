@@ -320,11 +320,12 @@ namespace lapack {
             ARRAY_INOUT(T, b, 2, overwrite_b != 0);
             CHECKARRAY(shape(b, 0) == n, b);
             CBLAS_INT nrhs = shape(b, 1), ldb = std::max<CBLAS_INT>(1, shape(b, 0)), info = 0;
-            CBLAS_INT *pivots = piv.data<CBLAS_INT>();
+            ARRAY_HIDDEN(CBLAS_INT, pivots, n);
+            const CBLAS_INT *supplied = piv.data<CBLAS_INT>();
+            CBLAS_INT *shifted = pivots.data<CBLAS_INT>();
+            for (CBLAS_INT i = 0; i < n; ++i) { shifted[i] = supplied[i] + 1; }
 
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] += 1; }
-            lapack::getrs(trans ? (trans == 2 ? 'C' : 'T') : 'N', n, nrhs, lu.data<T>(), ldlu, pivots, b.data<T>(), ldb, &info);
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] -= 1; }
+            lapack::getrs(trans ? (trans == 2 ? 'C' : 'T') : 'N', n, nrhs, lu.data<T>(), ldlu, shifted, b.data<T>(), ldb, &info);
             return make_result(b, static_cast<long long>(info));
         }
 
@@ -371,12 +372,14 @@ namespace lapack {
             ARRAY_IN(CBLAS_INT, jpiv, 1);
             CHECKARRAY(len(jpiv) == n, jpiv);
 
-            CBLAS_INT *row_pivots = ipiv.data<CBLAS_INT>(), *col_pivots = jpiv.data<CBLAS_INT>();
+            ARRAY_HIDDEN(CBLAS_INT, rows, n);
+            ARRAY_HIDDEN(CBLAS_INT, cols, n);
+            const CBLAS_INT *supplied_row = ipiv.data<CBLAS_INT>(), *supplied_col = jpiv.data<CBLAS_INT>();
+            CBLAS_INT *row_pivots = rows.data<CBLAS_INT>(), *col_pivots = cols.data<CBLAS_INT>();
+            for (CBLAS_INT i = 0; i < n; ++i) { row_pivots[i] = supplied_row[i] + 1; col_pivots[i] = supplied_col[i] + 1; }
             real_of_t<T> scale = 0;
 
-            for (CBLAS_INT i = 0; i < n; ++i) { row_pivots[i] += 1; col_pivots[i] += 1; }
             lapack::gesc2(n, lu.data<T>(), lda, rhs.data<T>(), row_pivots, col_pivots, &scale);
-            for (CBLAS_INT i = 0; i < n; ++i) { row_pivots[i] -= 1; col_pivots[i] -= 1; }
             return make_result(rhs, scale);
         }
 
@@ -402,11 +405,12 @@ namespace lapack {
             CHECK(lwork >= n, lwork);
             ARRAY_HIDDEN(T, work, lwork);
 
-            CBLAS_INT *pivots = piv.data<CBLAS_INT>();
+            ARRAY_HIDDEN(CBLAS_INT, pivots, n);
+            const CBLAS_INT *supplied = piv.data<CBLAS_INT>();
+            CBLAS_INT *shifted = pivots.data<CBLAS_INT>();
+            for (CBLAS_INT i = 0; i < n; ++i) { shifted[i] = supplied[i] + 1; }
 
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] += 1; }
-            lapack::getri(n, lu.data<T>(), lda, pivots, work.data<T>(), lwork, &info);
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] -= 1; }
+            lapack::getri(n, lu.data<T>(), lda, shifted, work.data<T>(), lwork, &info);
             return make_result(lu, static_cast<long long>(info));
         }
 
@@ -1320,7 +1324,9 @@ namespace lapack {
             ARRAY_HIDDEN(T, work, work_len);
 
             CBLAS_INT ldx = std::max<CBLAS_INT>(1, n);
-            CBLAS_INT *pivots = ipiv.data<CBLAS_INT>();
+            ARRAY_HIDDEN(CBLAS_INT, pivots, n);
+            CBLAS_INT *shifted = pivots.data<CBLAS_INT>();
+            CBLAS_INT *supplied = ipiv.data<CBLAS_INT>();
             R rcond = 0;
             CBLAS_INT info = 0;
 
@@ -1331,24 +1337,24 @@ namespace lapack {
              * `gtsvx` and `hesvx` are `intent(in,out)` pivots that shift at neither end and
              * are self-consistently 1-based, while the seven call sites that shift on the way
              * out all shift on the way in too.  `gesvx` alone does one without the other. */
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] += 1; }
+            for (CBLAS_INT i = 0; i < n; ++i) { shifted[i] = supplied[i] + 1; }
             if constexpr (is_complex_v<T>) {
                 CBLAS_INT rwork_len;
                 if (!work_size(2LL * n, &rwork_len)) { return nullptr; }
                 ARRAY_HIDDEN(R, rwork, rwork_len);
-                lapack::gesvx(fact, trans, n, nrhs, a.data<T>(), lda, af.data<T>(), ldaf, pivots,
+                lapack::gesvx(fact, trans, n, nrhs, a.data<T>(), lda, af.data<T>(), ldaf, shifted,
                               &equed, r.data<R>(), c.data<R>(), b.data<T>(), ldb, x.data<T>(), ldx,
                               &rcond, ferr.data<R>(), berr.data<R>(), work.data<T>(),
                               rwork.data<R>(), &info);
             }
             else {
                 ARRAY_HIDDEN(CBLAS_INT, iwork, n);
-                lapack::gesvx(fact, trans, n, nrhs, a.data<T>(), lda, af.data<T>(), ldaf, pivots,
+                lapack::gesvx(fact, trans, n, nrhs, a.data<T>(), lda, af.data<T>(), ldaf, shifted,
                               &equed, r.data<R>(), c.data<R>(), b.data<T>(), ldb, x.data<T>(), ldx,
                               &rcond, ferr.data<R>(), berr.data<R>(), work.data<T>(),
                               iwork.data<CBLAS_INT>(), &info);
             }
-            for (CBLAS_INT i = 0; i < n; ++i) { pivots[i] -= 1; }
+            for (CBLAS_INT i = 0; i < n; ++i) { supplied[i] = shifted[i] - 1; }
 
             return make_result(a, af, ipiv, equed, r, c, b, x, rcond, ferr, berr,
                                static_cast<long long>(info));
