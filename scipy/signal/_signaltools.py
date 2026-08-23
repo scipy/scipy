@@ -11,7 +11,7 @@ from typing import Literal
 from numpy._typing import ArrayLike
 
 from scipy.spatial import cKDTree
-from . import _sigtools
+from . import _sigtools, _fftconv
 from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
@@ -961,6 +961,20 @@ def oaconvolve(in1, in2, mode="full", axes=None):
 
     s1 = in1.shape
     s2 = in2.shape
+
+    # Fast path: whole overlap-add in C++ for numpy inputs convolved along a
+    # single axis (1-D, or N-D with len(axes)==1), matching real/complex dtype,
+    # and equal non-convolution dimensions. Everything else falls through.
+    if (is_numpy(xp)
+            and len(axes) == 1
+            and xp.isdtype(in1.dtype, ('real floating', 'complex floating'))
+            and in1.dtype == in2.dtype
+            and all(in1.shape[a] == in2.shape[a]
+                    for a in range(in1.ndim) if a != axes[0])):
+        res = _fftconv.oaconvolve(in1, in2, mode, axes[0])
+        if res is not None:
+            return res
+    # else: fall through to the existing Python overlap-add (unchanged).
 
     if not axes:
         ret = in1 * in2

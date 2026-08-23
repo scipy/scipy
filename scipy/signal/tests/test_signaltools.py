@@ -1001,6 +1001,98 @@ def gen_oa_shapes_eq(sizes):
 
 @make_xp_test_case(oaconvolve)
 class TestOAConvolve:
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    @pytest.mark.parametrize("dtype", [np.float64, np.float32])
+    @pytest.mark.parametrize("shapes", [(5000, 65), (100000, 512), (2000, 500)])
+    def test_cpp_path_matches_python_fallback(self, mode, dtype, shapes, xp):
+        # numpy-only fast path vs the reference fftconvolve
+        n, m = shapes
+        rng = np.random.default_rng(1)
+        a = xp.asarray(rng.standard_normal(n).astype(dtype))
+        b = xp.asarray(rng.standard_normal(m).astype(dtype))
+        got = oaconvolve(a, b, mode=mode)
+        ref = fftconvolve(a, b, mode=mode)
+        rtol = 1e-4 if dtype == np.float32 else 1e-9
+        xp_assert_close(got, ref, rtol=rtol, atol=rtol)
+
+    def test_cpp_path_noncontiguous_input(self, xp):
+        # Non-contiguous 1-D real input exercises the C++ copy path
+        # through the public API.
+        rng = np.random.default_rng(2)
+        a = xp.asarray(rng.standard_normal(10000)[::2])
+        b = xp.asarray(rng.standard_normal(37))
+        got = oaconvolve(a, b, mode="full")
+        ref = fftconvolve(a, b, mode="full")
+        xp_assert_close(got, ref, rtol=1e-9, atol=1e-9)
+
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    @pytest.mark.parametrize("dtype", [np.complex128, np.complex64])
+    @pytest.mark.parametrize("shapes", [(5000, 65), (100000, 512), (2000, 500)])
+    def test_cpp_path_complex_matches_fftconvolve(self, mode, dtype, shapes, xp):
+        n, m = shapes
+        rng = np.random.default_rng(2)
+        a = xp.asarray(
+            (rng.standard_normal(n) + 1j*rng.standard_normal(n)).astype(dtype))
+        b = xp.asarray(
+            (rng.standard_normal(m) + 1j*rng.standard_normal(m)).astype(dtype))
+        got = oaconvolve(a, b, mode=mode)
+        ref = fftconvolve(a, b, mode=mode)
+        rtol = 1e-4 if dtype == np.complex64 else 1e-9
+        xp_assert_close(got, ref, rtol=rtol, atol=rtol)
+
+    def test_cpp_path_complex_noncontiguous(self, xp):
+        rng = np.random.default_rng(3)
+        a = xp.asarray(rng.standard_normal(10000)
+                       + 1j*rng.standard_normal(10000))[::2]
+        b = xp.asarray(rng.standard_normal(65) + 1j*rng.standard_normal(65))
+        xp_assert_close(oaconvolve(a, b, mode="full"),
+                        fftconvolve(a, b, mode="full"), rtol=1e-9, atol=1e-9)
+
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    @pytest.mark.parametrize("dtype",
+                             [np.float64, np.complex128, np.float32, np.complex64])
+    @pytest.mark.parametrize("shape_axis",
+                             [((8, 2000), 1), ((2000, 8), 0), ((4, 2000, 3), 1)])
+    def test_cpp_path_nd_single_axis(self, mode, dtype, shape_axis, xp):
+        shape, axis = shape_axis
+        rng = np.random.default_rng(4)
+
+        def mk(shp):
+            r = rng.standard_normal(shp)
+            if np.issubdtype(dtype, np.complexfloating):
+                r = r + 1j*rng.standard_normal(shp)
+            return r.astype(dtype)
+
+        kshape = list(shape)
+        kshape[axis] = 65
+        a = xp.asarray(mk(shape))
+        b = xp.asarray(mk(tuple(kshape)))
+        got = oaconvolve(a, b, mode=mode, axes=[axis])
+        ref = fftconvolve(a, b, mode=mode, axes=[axis])
+        rtol = 1e-4 if dtype in (np.float32, np.complex64) else 1e-9
+        xp_assert_close(got, ref, rtol=rtol, atol=rtol)
+
+    def test_cpp_path_nd_noncontiguous(self, xp):
+        rng = np.random.default_rng(5)
+        a = xp.asarray(rng.standard_normal((8, 4000)))[:, ::2]   # non-contiguous
+        b = xp.asarray(rng.standard_normal((8, 65)))
+        xp_assert_close(oaconvolve(a, b, mode="full", axes=[1]),
+                        fftconvolve(a, b, mode="full", axes=[1]), rtol=1e-9, atol=1e-9)
+
+    def test_cpp_path_multiaxis_falls_back(self, xp):
+        # 2-D with both axes convolved (axes=None) must still be correct (Python path).
+        rng = np.random.default_rng(6)
+        a = xp.asarray(rng.standard_normal((200, 200)))
+        b = xp.asarray(rng.standard_normal((30, 30)))
+        xp_assert_close(oaconvolve(a, b, mode="full"),
+                        fftconvolve(a, b, mode="full"), rtol=1e-9, atol=1e-9)
+        if is_numpy(xp):
+            # Defense against future mis-routing: the C++ layer itself must
+            # decline multi-axis convolution directly (axes=None -> both axes).
+            from scipy.signal import _fftconv
+            res = _fftconv.oaconvolve(np.asarray(a), np.asarray(b), "full", None)
+            assert res is None
+
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
                              gen_oa_shapes_eq(list(range(1, 100, 1)) +
