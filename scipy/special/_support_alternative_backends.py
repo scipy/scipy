@@ -123,7 +123,10 @@ class _FuncInfo:
             if self.is_ufunc:
                 def wrapped(*args, out=None, **kwargs):
                     xp = array_namespace(*args)
-                    return self._wrapper_for(xp)(*args, out=out, **kwargs)
+                    if out is None:
+                        return self._wrapper_for(xp)(*args, **kwargs)
+                    else:
+                        return self._wrapper_for(xp)(*args, out=out, **kwargs)
 
                 wrapped._ufunc = self.ufunc
                 func = _make_ufunc_like_wrapper(
@@ -162,10 +165,6 @@ class _FuncInfo:
             xp, namespace, self.name, alt_names_map=self.alt_names_map
         )
         if f is not None:
-            if is_jax(xp):
-                def f_jax(*args, out=None, **kwargs):
-                    return f(*args, **kwargs)
-                return f_jax
             return f
 
         if in_xp:
@@ -182,19 +181,7 @@ class _FuncInfo:
         if self.generic_impl is not None:
             f_generic = self.generic_impl(xp, namespace)
             if f_generic is not None:
-                if is_jax(xp):
-                    def f(*args, out=None, **kwargs):
-                        return f_generic(*args, **kwargs)
-                else:
-                    def f(*args, out=None, **kwargs):
-                        if out is not None:
-                            raise NotImplementedError(
-                                f"`out` parameter is not supported for {self.name}"
-                                f" with backend {xp.__name__}."
-                            )
-                        return f_generic(*args, **kwargs)
-
-                return f
+                return f_generic
 
         if is_marray(xp):
             # Unwrap the array, apply the function on the wrapped namespace,
@@ -205,6 +192,10 @@ class _FuncInfo:
 
             _f = globals()[self.name]  # Allow nested wrapping
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
+                if out is not None:
+                    raise NotImplementedError(
+                        "`out` is not supported with marray."
+                    )
                 data_args = [getattr(arg, 'data', arg) for arg in args]
                 res = _f(*data_args, **kwargs)
                 mask = functools.reduce(operator.or_,
@@ -224,6 +215,10 @@ class _FuncInfo:
 
             _f = globals()[self.name]  # Allow nested wrapping
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
+                if out is not None:
+                    raise NotImplementedError(
+                        "The `out` parameter is not supported for dask.array."
+                    )
                 # Hide dtype kwarg from map_blocks
                 return xp.map_blocks(functools.partial(_f, **kwargs), *args)
 
@@ -242,11 +237,11 @@ class _FuncInfo:
             # promotion rules rather than getting promoted to the default currently
             # set in JAX. One cannot just use xp_promote for the input dtypes because
             # some ufuncs have integer only args.
-            def f(*args, _f=_f, xp=xp, out=None, **kwargs):
+            def f(*args, _f=_f, xp=xp, **kwargs):
                 nin, nout = self.ufunc.nin, self.ufunc.nout
                 dtypes = (arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
-                # result_dtypes needs an arg for the dtype of the optional out param.
-                # Use `None` since `out` is incompatible with JAX's immutability.
+                # result_dtypes needs an arg for the dtype of the optional out params.
+                # Uses None to request output dtype inference.
                 dtypes = (*dtypes, *(None,) * nout)
                 # JAX uses NumPy dtypes so we can just pass these directly to
                 # resolve_dtypes. TODO: generalize to other lazy backends.
