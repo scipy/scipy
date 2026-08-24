@@ -43,23 +43,18 @@ def _find_repeats(arr):
 
 # mstats deprecation
 def _deprecate_mstats(replacement=None, notes=""):
-    """Decorator to deprecate mstats function
-
-    """
+    """Decorator to deprecate mstats function"""
     def decorator(fun):
-
         # Can't produce the deprecation message until stats module is initialized,
         # so store the args in a table to be processed after initialization.
         _mstats_deprecation_table[fun] = {'replacement': replacement, 'notes': notes}
 
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
-            warnings.warn(_mstats_deprecation_table[fun]['message'], DeprecationWarning,
-                          stacklevel=2)
+            warnings.warn(_mstats_deprecation_table[fun]['message'],
+                          DeprecationWarning, stacklevel=2)
             return fun(*args, **kwargs)
-
         return wrapper
-
     return decorator
 
 
@@ -75,7 +70,7 @@ def _generate_deprecation_message(fun):
                "SciPy 2.0.0 and will be removed, along with the "
                "`scipy.stats.mstats` namespace, in SciPy 2.2.0. ")
     legacy_message = ("If needed, the legacy `scipy.stats.mstats` from SciPy "
-                      "1.18.0 can be installed as the package `scipy_mstats`.")
+                      "1.18.0 can be installed as the package `mstats`.")
 
     if not replaced:
         message += "SciPy offers no replacement for this function. "

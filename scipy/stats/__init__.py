@@ -638,8 +638,8 @@ from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
 
-# process the deprecration messages now that `stats` is initialized
+# process the deprecation messages now that `stats` is initialized
 for fun in _mstats_deprecation_table:
    _generate_deprecation_message(fun)
-del _mstats_deprecation_table  # cleanup
+del _mstats_deprecation_table
 del _generate_deprecation_message
