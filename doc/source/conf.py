@@ -143,12 +143,6 @@ warnings.filterwarnings('error')
 # allow these and show them
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
-for key in (
-        r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        r"distutils Version",  # distutils
-        ):
-    warnings.filterwarnings(  # deal with other modules having bad imports
-        'ignore', message=".*" + key, category=DeprecationWarning)
 warnings.filterwarnings(  # matplotlib<->pyparsing issue
     'ignore', message="Exception creating Regex for oneOf.*",
     category=SyntaxWarning)
