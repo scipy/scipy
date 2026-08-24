@@ -129,8 +129,8 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
     } while(more);
 exit:
     NPY_END_THREADS;
-    free(ibuffer);
-    free(obuffer);
+    PyMem_RawFree(ibuffer);
+    PyMem_RawFree(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -180,7 +180,7 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
     /* get the footprint: */
     fsize = PyArray_SIZE(weights);
     pw = (npy_double*)PyArray_DATA(weights);
-    pf = malloc(fsize * sizeof(npy_bool));
+    pf = PyMem_RawMalloc(fsize * sizeof(npy_bool));
     if (!pf) {
         PyErr_NoMemory();
         goto exit;
@@ -194,7 +194,7 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
         }
     }
     /* copy the weights to contiguous memory: */
-    ww = malloc(filter_size * sizeof(npy_double));
+    ww = PyMem_RawMalloc(filter_size * sizeof(npy_double));
     if (!ww) {
         PyErr_NoMemory();
         goto exit;
@@ -301,9 +301,9 @@ exit:
     if (err == 1) {
         PyErr_SetString(PyExc_RuntimeError, "array type not supported");
     }
-    free(offsets);
-    free(ww);
-    free(pf);
+    PyMem_RawFree(offsets);
+    PyMem_RawFree(ww);
+    PyMem_RawFree(pf);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -369,8 +369,8 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
 
  exit:
     NPY_END_THREADS;
-    free(ibuffer);
-    free(obuffer);
+    PyMem_RawFree(ibuffer);
+    PyMem_RawFree(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -424,7 +424,7 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
     length = PyArray_NDIM(input) > 0 ? PyArray_DIM(input, axis) : 1;
 
     /* ring is a dequeue of pairs implemented as a circular array */
-    ring = malloc(filter_size * sizeof(struct pairs));
+    ring = PyMem_RawMalloc(filter_size * sizeof(struct pairs));
     if (!ring) {
         goto exit;
     }
@@ -490,9 +490,9 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
 
  exit:
     NPY_END_THREADS;
-    free(ibuffer);
-    free(obuffer);
-    free(ring);
+    PyMem_RawFree(ibuffer);
+    PyMem_RawFree(obuffer);
+    PyMem_RawFree(ring);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -558,7 +558,7 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
     }
     /* get the structure: */
     if (structure) {
-        ss = malloc(filter_size * sizeof(double));
+        ss = PyMem_RawMalloc(filter_size * sizeof(double));
         if (!ss) {
             PyErr_NoMemory();
             goto exit;
@@ -667,8 +667,8 @@ exit:
     if (err == 1) {
         PyErr_SetString(PyExc_RuntimeError, "array type not supported");
     }
-    free(offsets);
-    free(ss);
+    PyMem_RawFree(offsets);
+    PyMem_RawFree(ss);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -750,7 +750,7 @@ int NI_RankFilter(PyArrayObject* input, int rank,
         }
     }
     /* buffer for rank calculation: */
-    buffer = malloc(filter_size * sizeof(double));
+    buffer = PyMem_RawMalloc(filter_size * sizeof(double));
     if (!buffer) {
         PyErr_NoMemory();
         goto exit;
@@ -853,8 +853,8 @@ exit:
     if (err == 1) {
         PyErr_SetString(PyExc_RuntimeError, "array type not supported");
     }
-    free(offsets);
-    free(buffer);
+    PyMem_RawFree(offsets);
+    PyMem_RawFree(buffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -910,8 +910,8 @@ int NI_GenericFilter1D(PyArrayObject *input,
         }
     } while(more);
 exit:
-    free(ibuffer);
-    free(obuffer);
+    PyMem_RawFree(ibuffer);
+    PyMem_RawFree(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -982,7 +982,7 @@ int NI_GenericFilter(PyArrayObject* input,
     po = (void *)PyArray_DATA(output);
     size = PyArray_SIZE(input);
     /* buffer for filter calculation: */
-    buffer = malloc(filter_size * sizeof(double));
+    buffer = PyMem_RawMalloc(filter_size * sizeof(double));
     if (!buffer) {
         PyErr_NoMemory();
         goto exit;
@@ -1058,7 +1058,7 @@ int NI_GenericFilter(PyArrayObject* input,
         NI_FILTER_NEXT2(fi, ii, io, oo, pi, po);
     }
 exit:
-    free(offsets);
-    free(buffer);
+    PyMem_RawFree(offsets);
+    PyMem_RawFree(buffer);
     return PyErr_Occurred() ? 0 : 1;
 }

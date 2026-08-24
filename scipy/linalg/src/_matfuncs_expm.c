@@ -2219,10 +2219,10 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
     // n*n for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    float* restrict Am = malloc(sizeof(float)*(6*n*n + 4*n));
+    float* restrict Am = PyMem_RawMalloc(sizeof(float)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
-    CBLAS_INT* ipiv = malloc(sizeof(CBLAS_INT)*n);
-    if (ipiv == NULL) { free(Am); *info = -101; return; }
+    CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
+    if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
     float* restrict Am1 = &Am[n*n];
     // These two arrays are only used for the triangular case for scaling/squaring
     float* restrict diag_aw = &Am[6*n*n + 2*n];
@@ -2279,15 +2279,15 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
 
         pick_pade_structure_s(Am, n, &m, &s);
         if (m < 0) {
-            free(ipiv);
-            free(Am);
+            PyMem_RawFree(ipiv);
+            PyMem_RawFree(Am);
             *info = -100 + *info;
             return;
         }
         pade_UV_calc_s(Am, ipiv, n, m, info);
         if (*info < 0) {
-            free(ipiv);
-            free(Am);
+            PyMem_RawFree(ipiv);
+            PyMem_RawFree(Am);
             *info = -100 + *info;
             return;
         }
@@ -2348,8 +2348,8 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
         swap_cf_s(temp1, &result[idx*n*n], n, n, n);
     }
 
-    free(ipiv);
-    free(Am);
+    PyMem_RawFree(ipiv);
+    PyMem_RawFree(Am);
 }
 
 
@@ -2376,10 +2376,10 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
     // n*n for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    double* restrict Am = malloc(sizeof(double)*(6*n*n + 4*n));
+    double* restrict Am = PyMem_RawMalloc(sizeof(double)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
-    CBLAS_INT* ipiv = malloc(sizeof(CBLAS_INT)*n);
-    if (ipiv == NULL) { free(Am); *info = -101; return; }
+    CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
+    if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
     double* restrict Am1 = &Am[n*n];
     // These two arrays are only used for the triangular case for scaling/squaring
     double* restrict diag_aw = &Am[6*n*n + 2*n];
@@ -2436,15 +2436,15 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
 
         pick_pade_structure_d(Am, n, &m, &s);
         if (m < 0) {
-            free(ipiv);
-            free(Am);
+            PyMem_RawFree(ipiv);
+            PyMem_RawFree(Am);
             *info = -100 + *info;
             return;
         }
         pade_UV_calc_d(Am, ipiv, n, m, info);
         if (*info < 0) {
-            free(ipiv);
-            free(Am);
+            PyMem_RawFree(ipiv);
+            PyMem_RawFree(Am);
             *info = -100 + *info;
             return;
         }
@@ -2505,8 +2505,8 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
         swap_cf_d(temp1, &result[idx*n*n], n, n, n);
     }
 
-    free(ipiv);
-    free(Am);
+    PyMem_RawFree(ipiv);
+    PyMem_RawFree(Am);
 }
 
 
@@ -2533,10 +2533,10 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
     // n*n for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    SCIPY_C* restrict Am = malloc(sizeof(SCIPY_C)*(6*n*n + 4*n));
+    SCIPY_C* restrict Am = PyMem_RawMalloc(sizeof(SCIPY_C)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
-    CBLAS_INT* ipiv = malloc(sizeof(CBLAS_INT)*n);
-    if (ipiv == NULL) { free(Am); *info = -101; return; }
+    CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
+    if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
     SCIPY_C* restrict Am1 = &Am[n*n];
     // These two arrays are only used for the triangular case for scaling/squaring
     SCIPY_C* restrict diag_aw = &Am[6*n*n + 2*n];
@@ -2593,15 +2593,15 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
 
         pick_pade_structure_c(Am, n, &m, &s);
         if (m < 0) {
-            free(ipiv);
-            free(Am);
+            PyMem_RawFree(ipiv);
+            PyMem_RawFree(Am);
             *info = -100 + *info;
             return;
         }
         pade_UV_calc_c(Am, ipiv, n, m, info);
         if (*info < 0) {
-            free(ipiv);
-            free(Am);
+            PyMem_RawFree(ipiv);
+            PyMem_RawFree(Am);
             *info = -100 + *info;
             return;
         }
@@ -2710,8 +2710,8 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
         swap_cf_c(temp1, &result[idx*n*n], n, n, n);
     }
 
-    free(ipiv);
-    free(Am);
+    PyMem_RawFree(ipiv);
+    PyMem_RawFree(Am);
 }
 
 
@@ -2737,10 +2737,10 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
     // n*n for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    SCIPY_Z* restrict Am = malloc(sizeof(SCIPY_Z)*(6*n*n + 4*n));
+    SCIPY_Z* restrict Am = PyMem_RawMalloc(sizeof(SCIPY_Z)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
-    CBLAS_INT* ipiv = malloc(sizeof(CBLAS_INT)*n);
-    if (ipiv == NULL) { free(Am); *info = -101; return; }
+    CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
+    if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
     SCIPY_Z* restrict Am1 = &Am[n*n];
     // These two arrays are only used for the triangular case for scaling/squaring
     SCIPY_Z* restrict diag_aw = &Am[6*n*n + 2*n];
@@ -2797,15 +2797,15 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
 
         pick_pade_structure_z(Am, n, &m, &s);
         if (m < 0) {
-            free(ipiv);
-            free(Am);
+            PyMem_RawFree(ipiv);
+            PyMem_RawFree(Am);
             *info = -100 + *info;
             return;
         }
         pade_UV_calc_z(Am, ipiv, n, m, info);
         if (*info < 0) {
-            free(ipiv);
-            free(Am);
+            PyMem_RawFree(ipiv);
+            PyMem_RawFree(Am);
             *info = -100 + *info;
             return;
         }
@@ -2914,6 +2914,6 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
         swap_cf_z(temp1, &result[idx*n*n], n, n, n);
     }
 
-    free(ipiv);
-    free(Am);
+    PyMem_RawFree(ipiv);
+    PyMem_RawFree(Am);
 }

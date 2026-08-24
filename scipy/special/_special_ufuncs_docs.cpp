@@ -39,7 +39,7 @@ const char *_beta_ppf_doc = R"(
 const char *_binom_cdf_doc = R"(
     _binom_cdf(x, n, p)
 
-    Cumulative density function of binomial distribution.
+    Cumulative distribution function of binomial distribution.
 
     Parameters
     ----------
@@ -249,7 +249,7 @@ const char *_hypergeom_pmf_doc = R"(
 const char *_hypergeom_cdf_doc = R"(
     _hypergeom_cdf(x, r, N, M)
 
-    Cumulative density function of hypergeometric distribution.
+    Cumulative distribution function of hypergeometric distribution.
 
     Parameters
     ----------
@@ -352,7 +352,7 @@ const char *_invgauss_isf_doc = R"(
     )";
 
 const char *_invgauss_ppf_doc = R"(
-    _invgauss_ppf(x, mu)
+    _invgauss_ppf(x, mu, s)
 
     Percent point function of inverse gaussian distribution.
 
@@ -361,6 +361,8 @@ const char *_invgauss_ppf_doc = R"(
     x : array_like
         Positive real-valued
     mu : array_like
+        Positive, real-valued parameters
+    s : array_like
         Positive, real-valued parameters
 
     Returns
@@ -479,7 +481,7 @@ const char *_landau_isf_doc = R"(
 const char *_nbinom_cdf_doc = R"(
     _nbinom_cdf(x, r, p)
 
-    Cumulative density function of negative binomial distribution.
+    Cumulative distribution function of negative binomial distribution.
 
     Parameters
     ----------
@@ -1788,7 +1790,7 @@ const char *kl_div_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Values of the Kullback-Liebler divergence.
+        Values of the Kullback-Leibler divergence.
 
     See Also
     --------
@@ -2748,7 +2750,7 @@ const char *gdtrix_doc = R"(
         Probability values.
     out : ndarray, optional
         If a fourth argument is given, it must be a numpy.ndarray whose size
-        matches the broadcast result of `a`, `b` and `x`. `out` is then the
+        matches the broadcast result of `a`, `b` and `p`. `out` is then the
         array returned by the function.
 
     Returns
@@ -3043,7 +3045,7 @@ const char *_gen_harmonic_doc = R"(
 
     Internal private function.
 
-    Compute sum_{i=1}^{n} i**-a for 1 <= m <= n.
+    Compute sum_{i=1}^{n} i**-a for n >= 1.
 
     This is the generalized harmonic number.
 
@@ -3065,7 +3067,7 @@ const char *_normalized_gen_harmonic_doc = R"(
     Compute (sum_{i=j}^{k} i**-a)/(sum_{i=1}^{n} i**-a) for 1 <= j <= k <= n.
 
     When j, k and n are type double, nan is returned if any are nan.
-    Otherwise when the type is double it is assumed that i, j and k have integer
+    Otherwise when the type is double it is assumed that j and k have integer
     values that are between 0 and 2**53.  This is not checked by the function.
     Failure to ensure this condition could result in invalid results and
     possibly an infinite loop in the underlying C++ code.
@@ -3313,7 +3315,7 @@ const char *betainc_doc = R"doc(
     >>> sc.betainc(a, b, x)
     0.8148904036225296
 
-    This functions satisfies the relationship
+    This function satisfies the relationship
     :math:`I_x(a, b) = 1 - I_{1-x}(b, a)`:
 
     >>> sc.betainc(2.2, 3.1, 0.4)
@@ -3425,7 +3427,7 @@ const char *betainccinv_doc = R"doc(
     Returns
     -------
     scalar or ndarray
-        Value of the inverse of the regularized incomplete beta function
+        Value of the inverse of the complemented regularized incomplete beta function
 
     See Also
     --------
@@ -3586,7 +3588,7 @@ const char *btdtria_doc = R"doc(
     )doc";
 
 const char *btdtrib_doc = R"doc(
-    btdtria(a, p, x, out=None)
+    btdtrib(a, p, x, out=None)
 
     Inverse of `betainc` with respect to `b`.
 
@@ -3890,7 +3892,7 @@ const char *chndtrinc_doc = R"(
     --------
     chndtr : Noncentral chi-squared distribution CDF
     chndtridf : Inverse of `chndtr` with respect to `df`
-    chndtrinc : Inverse of `chndtr` with respect to `nc`
+    chndtrix : Inverse of `chndtr` with respect to `x`
     scipy.stats.ncx2 : Non-central chi-squared distribution
 
     Notes
@@ -3943,8 +3945,8 @@ const char *chndtrix_doc = R"(
     -------
     x : scalar or ndarray
         Value so that the probability a non-central Chi square random variable
-        with `df` degrees of freedom and non-centrality, `nc`, is greater than
-        `x` equals `p`.
+        with `df` degrees of freedom and non-centrality, `nc`, is less than or
+        equal to `x` equals `p`.
 
     See Also
     --------
@@ -4058,7 +4060,7 @@ const char *_sinpi_doc = R"(
 const char *_skewnorm_cdf_doc = R"(
     _skewnorm_cdf(x, l, sc, sh)
 
-    Cumulative density function of skewnorm distribution.
+    Cumulative distribution function of skewnorm distribution.
 
     Parameters
     ----------
@@ -5525,7 +5527,7 @@ const char *xlogy_doc = R"(
     binary classification problems and is defined as:
 
     .. math::
-        L = \frac{1}{n} \sum_{i=0}^n -[y_i*\log({y_{pred}}_i) + (1-y_i)*\log(1-{y_{pred}}_i)]
+        L = \frac{1}{n} \sum_{i=1}^n -[y_i*\log({y_{pred}}_i) + (1-y_i)*\log(1-{y_{pred}}_i)]
 
     We can define the parameters `x` and `y` as y and y_pred respectively.
     y is the array of the actual labels which over here can be either 0 or 1.
@@ -6704,7 +6706,7 @@ const char *gamma_doc = R"(
     which, combined with the fact that :math:`\Gamma(1) = 1`, implies
     the above identity for :math:`z = n`.
 
-    The gamma function has poles at non-negative integers and the sign
+    The gamma function has poles at non-positive integers and the sign
     of infinity as z approaches each pole depends upon the direction in
     which the pole is approached. For this reason, the consistent thing
     is for gamma(z) to return NaN at negative integers, and to return
@@ -7146,7 +7148,7 @@ const char *gammasgn_doc = R"(
     >>> sc.gammasgn([1, 2, 3, 4])
     array([1., 1., 1., 1.])
 
-    It alternates between -1 and 1 for negative integers.
+    It alternates between -1 and 1 for negative half-integers.
 
     >>> sc.gammasgn([-0.5, -1.5, -2.5, -3.5])
     array([-1.,  1., -1.,  1.])
