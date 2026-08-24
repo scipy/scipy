@@ -1,3 +1,4 @@
+import inspect
 import numpy as np
 import pickle
 import pytest
@@ -289,6 +290,7 @@ class TestMakeUFuncLikeWrapper:
             [betainc, _betainc_wrapper],
             [mathieu_sem_wrapper, _mathieu_sem_wrapper_wrapper],
             [_poisson_binom_cdf, _poisson_binom_cdf_wrapper],
+            [np.vecdot, _vecdot_wrapper],
         ]
     )
     def test_attrs(self, func, func_wrapper):
@@ -498,3 +500,15 @@ class TestMakeUFuncLikeWrapper:
         actual = _vecdot_wrapper(x1, x2, axes=axes, keepdims=True)
 
         _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "func_wrapper, expected",
+        [
+            (_betainc_wrapper, "(a, b, x, /, out=None, **kwargs)"),
+            (_mathieu_sem_wrapper_wrapper, "(m, q, x, /, out=None, **kwargs)"),
+            (_poisson_binom_cdf_wrapper, "(k, p, /, out=None, **kwargs)"),
+            (_vecdot_wrapper, "(x1, x2, /, out=None, **kwargs)"),
+        ],
+    )
+    def test_call_signature(self, func_wrapper, expected):
+        assert str(inspect.signature(func_wrapper)) == expected
