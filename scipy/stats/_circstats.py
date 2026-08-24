@@ -81,7 +81,7 @@ def _circmeandev(sample, alpha, *, high=2*math.pi, low=0):
     return _xp_mean(xp.minimum(y, T - y), axis=-1)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=None,
                           result_to_tuple=lambda x, _: (x,))
 def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis=0):
@@ -240,7 +240,7 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
     if convention not in conventions:
         raise ValueError(f"`convention` must be one of {conventions}.")
     if is_jax(xp) and convention == 'geometric':
-        raise ValueError(f"`method='geometric'` is not compatible with JAX arrays.")
+        raise ValueError("`method='geometric'` is not compatible with JAX arrays.")
 
     tol = 10*xp.finfo(sample).eps
     T = high - low
