@@ -10,6 +10,7 @@ from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
@@ -1968,12 +1969,12 @@ def lqmn(m, n, z):
 
 
 def bernoulli(n):
-    """Bernoulli numbers B0..Bn (inclusive).
+    """Bernoulli numbers ``B_0`` through ``B_n`` (inclusive).
 
     Parameters
     ----------
     n : int
-        Indicated the number of terms in the Bernoulli series to generate.
+        Index of the last Bernoulli number to return.
 
     Returns
     -------
@@ -2002,7 +2003,7 @@ def bernoulli(n):
     >>> -n * zeta(1 - n)
     array([ 0.5       ,  0.16666667, -0.        , -0.03333333])
 
-    Note that, in the notation used in the wikipedia article,
+    Note that, in the notation used in the Wikipedia article,
     `bernoulli` computes ``B_n^-`` (i.e. it used the convention that
     ``B_1`` is -1/2).  The relation given above is for ``B_n^+``, so the
     sign of 0.5 does not match the output of ``bernoulli(4)``.
@@ -3569,8 +3570,9 @@ def zeta(x, q=None, out=None):
     q : array_like of float, optional
         Input data, must be real.  Defaults to Riemann zeta. When `q` is
         ``None``, complex inputs `x` are supported. If `q` is not ``None``,
-        then currently only real inputs `x` with ``x >= 1`` are supported,
-        even when ``q = 1.0`` (corresponding to the Riemann zeta function).
+        then currently only real inputs `x` (complex dtypes are
+        allowed but `x` must have zero imaginary part) with ``x >= 1`` are supported,
+        except when ``q = 1.0`` (corresponding to the Riemann zeta function).
 
     out : ndarray, optional
         Output array for the computed values.
@@ -3638,6 +3640,7 @@ def zeta(x, q=None, out=None):
         return _ufuncs._zeta(x, q, out)
 
 
+@xp_capabilities()
 def softplus(x, **kwargs):
     r"""
     Compute the softplus function element-wise.
@@ -3668,4 +3671,6 @@ def softplus(x, **kwargs):
     >>> special.softplus([-1, 0, 1])
     array([0.31326169, 0.69314718, 1.31326169])
     """
-    return np.logaddexp(0, x, **kwargs)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    return xp.logaddexp(xp.asarray(0., dtype=x.dtype, device=xp_device(x)), x, **kwargs)

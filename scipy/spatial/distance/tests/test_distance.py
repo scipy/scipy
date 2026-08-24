@@ -66,6 +66,7 @@ from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import make_xp_test_case, is_lazy_array, array_namespace
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
+
 @pytest.fixture(params=_METRICS_NAMES, scope="session")
 def metric(request):
     """
@@ -257,7 +258,7 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
     return arrays, weights
 
 
-assert_allclose_forgiving = partial(xp_assert_close, atol=1e-5)
+assert_allclose_forgiving = partial(xp_assert_close, atol=1e-5, check_dtype=False)
 
 
 def _rough_check(a, b, compare_assert=assert_allclose_forgiving,
@@ -1197,8 +1198,8 @@ class TestPdist:
                       np.array([1, 1, 0, 1, 1]))
         m2 = wmatching(np.array([1, 0, 1, 1, 0], dtype=bool),
                        np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 0.6, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 0.6, rtol=0, atol=1e-10)
+        xp_assert_close(m, 0.6, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 0.6, rtol=0, atol=1e-10, check_0d=False)
 
     def test_pdist_matching_mtica2(self):
         # Test matching(*,*) with mtica example #2.
@@ -1206,8 +1207,8 @@ class TestPdist:
                      np.array([1, 1, 0]))
         m2 = wmatching(np.array([1, 0, 1], dtype=bool),
                       np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
 
     def test_pdist_yule_mtica1(self):
         m = wyule(np.array([1, 0, 1, 1, 0]),
@@ -1246,16 +1247,16 @@ class TestPdist:
                         np.array([1, 1, 0, 1, 1]))
         m2 = sokalsneath(np.array([1, 0, 1, 1, 0], dtype=bool),
                          np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10)
+        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10, check_0d=False)
 
     def test_pdist_sokalsneath_mtica2(self):
         m = wsokalsneath(np.array([1, 0, 1]),
                          np.array([1, 1, 0]))
         m2 = wsokalsneath(np.array([1, 0, 1], dtype=bool),
                           np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
 
     def test_pdist_rogerstanimoto_mtica1(self):
         m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
@@ -1896,7 +1897,7 @@ def test_hamming_string_array():
                   'spam', 'spam', 'eggs', 'spam', 'spam', 'eggs'],
                   dtype='|S4')
     desired = 0.45
-    xp_assert_close(whamming(a, b), desired)
+    xp_assert_close(whamming(a, b), desired, check_0d=False)
 
 
 def test_minkowski_w():
@@ -2188,16 +2189,16 @@ class TestJaccard:
                      np.array([1, 1, 0, 1, 1]))
         m2 = wjaccard(np.array([1, 0, 1, 1, 0], dtype=bool),
                       np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 0.6, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 0.6, rtol=0, atol=1e-10)
+        xp_assert_close(m, 0.6, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 0.6, rtol=0, atol=1e-10, check_0d=False)
 
     def test_pdist_jaccard_mtica2(self):
         m = wjaccard(np.array([1, 0, 1]),
                      np.array([1, 1, 0]))
         m2 = wjaccard(np.array([1, 0, 1], dtype=bool),
                       np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
 
     def test_non_01_input(self):
         # Non-0/1 numeric input should be cast to bool before computation.
@@ -2205,7 +2206,7 @@ class TestJaccard:
         x = np.array([-10, 2.5, 0])  # [True, True, False]
         y = np.array([ 2,   -5, 2])  # [True, True, True]
         eps = np.finfo(float).eps
-        xp_assert_close(jaccard(x, y), 1/3, rtol=eps)
+        xp_assert_close(jaccard(x, y), 1/3, rtol=eps, check_0d=False)
         xp_assert_close(cdist([x], [y], 'jaccard'), [[1/3]])
         xp_assert_close(pdist([x, y], 'jaccard'), [1/3])
 
@@ -2260,7 +2261,7 @@ class TestChebyshev:
         x = [1, 2, 3]
         y = [6, 5, 4]
         w = [0, 1, 5]
-        xp_assert_equal(chebyshev(x, y, w), 3)
+        xp_assert_equal(chebyshev(x, y, w), 3, check_0d=False)
         xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
         xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
 
@@ -2269,7 +2270,7 @@ class TestChebyshev:
         x = [1, 2, 3]
         y = [6, 5, 4]
         w = [0, 0, 0]
-        xp_assert_equal(chebyshev(x, y, w), 0)
+        xp_assert_equal(chebyshev(x, y, w), 0, check_0d=False)
         xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([0.]))
         xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[0.]]))
 

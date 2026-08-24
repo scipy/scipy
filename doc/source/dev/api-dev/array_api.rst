@@ -1181,7 +1181,7 @@ support for each function, it's usually vital to have tests which isolate use
 of the alternative backend only to the function being tested.
 
 To help facilitate such backend isolation, there is a function
-``_xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
+``xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
 ``xp`` array to a NumPy array, bypassing any device transfer guards, while
 preserving dtypes. It is essential that this function is only used in
 tests. Attempts to copy a device array to NumPy outside of tests should fail,
@@ -1189,7 +1189,7 @@ because otherwise it is opaque as to whether a function is working on GPU or
 not. Creation of input arrays and reference output arrays, and computations that
 verify that the output of the function being tested satisfies an invariant (such
 as round trip tests that a function composed with its inverse gives the identity
-function), should all be done with NumPy (using the ``_xp_copy_to_numpy``
+function), should all be done with NumPy (using the ``xp_copy_to_numpy``
 function if necessary).
 
 Such backend isolation should not be applied blindly. Consider for example a
@@ -1365,7 +1365,6 @@ considered out-of-scope.
    array_api_modules_tables/fft
    array_api_modules_tables/integrate
    array_api_modules_tables/interpolate
-   array_api_modules_tables/io
    array_api_modules_tables/linalg
    array_api_modules_tables/linalg_interpolative
    array_api_modules_tables/ndimage
@@ -1396,7 +1395,6 @@ Support on CPU
    :fft: array_api_support_fft_cpu
    :integrate: array_api_support_integrate_cpu
    :interpolate: array_api_support_interpolate_cpu
-   :io: array_api_support_io_cpu
    :linalg: array_api_support_linalg_cpu
    :linalg.interpolative: array_api_support_linalg_interpolative_cpu
    :ndimage: array_api_support_ndimage_cpu
@@ -1427,7 +1425,6 @@ Support on GPU
    :fft: array_api_support_fft_gpu
    :integrate: array_api_support_integrate_gpu
    :interpolate: array_api_support_interpolate_gpu
-   :io: array_api_support_io_gpu
    :linalg: array_api_support_linalg_gpu
    :linalg.interpolative: array_api_support_linalg_interpolative_gpu
    :ndimage: array_api_support_ndimage_gpu
@@ -1458,7 +1455,6 @@ Support with JIT
    :fft: array_api_support_fft_jit
    :integrate: array_api_support_integrate_jit
    :interpolate: array_api_support_interpolate_jit
-   :io: array_api_support_io_jit
    :linalg: array_api_support_linalg_jit
    :linalg.interpolative: array_api_support_linalg_interpolative_jit
    :ndimage: array_api_support_ndimage_jit

@@ -67,7 +67,7 @@ fitpack_bispeu(PyObject* Py_UNUSED(dummy), PyObject *args)
 
     /* Allocate work array: lwrk = kx + ky + 2 */
     lwrk = kx + ky + 2;
-    wrk = (double *)malloc(lwrk * sizeof(double));
+    wrk = (double *)PyMem_RawMalloc(lwrk * sizeof(double));
     if (wrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -76,7 +76,7 @@ fitpack_bispeu(PyObject* Py_UNUSED(dummy), PyObject *args)
     /* Call the C function */
     bispeu(tx, nx, ty, ny, c, kx, ky, x, y, z, m, wrk, lwrk, &ier);
 
-    free(wrk);
+    PyMem_RawFree(wrk);
     Py_DECREF(ap_tx);
     Py_DECREF(ap_ty);
     Py_DECREF(ap_c);
@@ -153,20 +153,20 @@ fitpack_bispev(PyObject* Py_UNUSED(dummy), PyObject *args)
     /* Allocate work arrays */
     lwrk = mx * (kx + 1) + my * (ky + 1);
     kwrk = mx + my;
-    wrk = (double *)malloc(lwrk * sizeof(double));
-    iwrk = (int *)malloc(kwrk * sizeof(int));
+    wrk = (double *)PyMem_RawMalloc(lwrk * sizeof(double));
+    iwrk = (int *)PyMem_RawMalloc(kwrk * sizeof(int));
     if (wrk == NULL || iwrk == NULL) {
         PyErr_NoMemory();
-        free(wrk);
-        free(iwrk);
+        PyMem_RawFree(wrk);
+        PyMem_RawFree(iwrk);
         goto fail;
     }
 
     /* Call the C function */
     bispev(tx, nx, ty, ny, c, kx, ky, x, mx, y, my, z, wrk, lwrk, iwrk, kwrk, &ier);
 
-    free(wrk);
-    free(iwrk);
+    PyMem_RawFree(wrk);
+    PyMem_RawFree(iwrk);
     Py_DECREF(ap_tx);
     Py_DECREF(ap_ty);
     Py_DECREF(ap_c);
@@ -311,7 +311,7 @@ fitpack_splder(PyObject* Py_UNUSED(dummy), PyObject *args)
     }
     y = (double *)PyArray_DATA(ap_y);
 
-    wrk = (double *)malloc(n * sizeof(double));
+    wrk = (double *)PyMem_RawMalloc(n * sizeof(double));
     if (wrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -320,7 +320,7 @@ fitpack_splder(PyObject* Py_UNUSED(dummy), PyObject *args)
     /* Call the C function */
     splder(t, n, c, nc, k, nu, x, y, m, e, wrk, &ier);
 
-    free(wrk);
+    PyMem_RawFree(wrk);
     Py_DECREF(ap_t);
     Py_DECREF(ap_c);
     Py_DECREF(ap_x);
@@ -370,7 +370,7 @@ fitpack_splint(PyObject* Py_UNUSED(dummy), PyObject *args)
     }
 
     /* Allocate work array */
-    wrk = (double *)malloc(n * sizeof(double));
+    wrk = (double *)PyMem_RawMalloc(n * sizeof(double));
     if (wrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -379,7 +379,7 @@ fitpack_splint(PyObject* Py_UNUSED(dummy), PyObject *args)
     /* Call the C function */
     aint = splint(t, n, c, nc, k, a, b, wrk);
 
-    free(wrk);
+    PyMem_RawFree(wrk);
     Py_DECREF(ap_t);
     Py_DECREF(ap_c);
 
@@ -619,20 +619,20 @@ fitpack_parder(PyObject* Py_UNUSED(dummy), PyObject *args)
     /* Allocate work arrays */
     lwrk = (nx * ny) + (kx + 1) * mx + (ky + 1) * my;
     kwrk = mx + my;
-    wrk = (double *)malloc(lwrk * sizeof(double));
-    iwrk = (int *)malloc(kwrk * sizeof(int));
+    wrk = (double *)PyMem_RawMalloc(lwrk * sizeof(double));
+    iwrk = (int *)PyMem_RawMalloc(kwrk * sizeof(int));
     if (wrk == NULL || iwrk == NULL) {
         PyErr_NoMemory();
-        free(wrk);
-        free(iwrk);
+        PyMem_RawFree(wrk);
+        PyMem_RawFree(iwrk);
         goto fail;
     }
 
     /* Call the C function */
     parder(tx, nx, ty, ny, c, kx, ky, nux, nuy, x, mx, y, my, z, wrk, lwrk, iwrk, kwrk, &ier);
 
-    free(wrk);
-    free(iwrk);
+    PyMem_RawFree(wrk);
+    PyMem_RawFree(iwrk);
     Py_DECREF(ap_tx);
     Py_DECREF(ap_ty);
     Py_DECREF(ap_c);
@@ -785,8 +785,8 @@ fitpack_pardeu(PyObject* Py_UNUSED(dummy), PyObject *args)
     /* Allocate work arrays */
     lwrk = (nx * ny) + (kx + 1) * m + (ky + 1) * m;
     kwrk = m + m;
-    wrk = malloc(lwrk * sizeof(double));
-    iwrk = malloc(kwrk * sizeof(int));
+    wrk = PyMem_RawMalloc(lwrk * sizeof(double));
+    iwrk = PyMem_RawMalloc(kwrk * sizeof(int));
     if (wrk == NULL || iwrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -801,8 +801,8 @@ fitpack_pardeu(PyObject* Py_UNUSED(dummy), PyObject *args)
            (double *)PyArray_DATA(ap_z), m,
            wrk, lwrk, iwrk, kwrk, &ier);
 
-    free(wrk);
-    free(iwrk);
+    PyMem_RawFree(wrk);
+    PyMem_RawFree(iwrk);
     Py_DECREF(ap_tx);
     Py_DECREF(ap_ty);
     Py_DECREF(ap_c);
@@ -812,8 +812,8 @@ fitpack_pardeu(PyObject* Py_UNUSED(dummy), PyObject *args)
     return Py_BuildValue(("Ni"), PyArray_Return(ap_z), ier);
 
 fail:
-    free(wrk);
-    free(iwrk);
+    PyMem_RawFree(wrk);
+    PyMem_RawFree(iwrk);
     Py_XDECREF(ap_tx);
     Py_XDECREF(ap_ty);
     Py_XDECREF(ap_c);
@@ -857,7 +857,7 @@ fitpack_dblint(PyObject* Py_UNUSED(dummy), PyObject *args)
 
     /* Allocate work array */
     wrk_size = nx + ny - kx - ky - 2;
-    wrk = malloc(wrk_size * sizeof(double));
+    wrk = PyMem_RawMalloc(wrk_size * sizeof(double));
     if (wrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -869,7 +869,7 @@ fitpack_dblint(PyObject* Py_UNUSED(dummy), PyObject *args)
            (double *)PyArray_DATA(ap_c), kx, ky,
            xb, xe, yb, ye, wrk);
 
-    free(wrk);
+    PyMem_RawFree(wrk);
     Py_DECREF(ap_tx);
     Py_DECREF(ap_ty);
     Py_DECREF(ap_c);
@@ -877,7 +877,7 @@ fitpack_dblint(PyObject* Py_UNUSED(dummy), PyObject *args)
     return Py_BuildValue("d", result);
 
 fail:
-    free(wrk);
+    PyMem_RawFree(wrk);
     Py_XDECREF(ap_tx);
     Py_XDECREF(ap_ty);
     Py_XDECREF(ap_c);
@@ -1215,9 +1215,9 @@ fitpack_surfit_lsq(PyObject* Py_UNUSED(dummy), PyObject *args)
         }
     }
 
-    wrk1 = (double *)malloc((size_t)lwrk1 * sizeof(double));
-    wrk2 = (double *)malloc((size_t)lwrk2 * sizeof(double));
-    iwrk = (int *)malloc((size_t)kwrk * sizeof(int));
+    wrk1 = (double *)PyMem_RawMalloc((size_t)lwrk1 * sizeof(double));
+    wrk2 = (double *)PyMem_RawMalloc((size_t)lwrk2 * sizeof(double));
+    iwrk = (int *)PyMem_RawMalloc((size_t)kwrk * sizeof(int));
     if (wrk1 == NULL || wrk2 == NULL || iwrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1244,21 +1244,21 @@ fitpack_surfit_lsq(PyObject* Py_UNUSED(dummy), PyObject *args)
            wrk2, lwrk2,
            iwrk, kwrk, &ier);
 
-    free(wrk1);
-    free(wrk2);
-    free(iwrk);
+    PyMem_RawFree(wrk1);
+    PyMem_RawFree(wrk2);
+    PyMem_RawFree(iwrk);
 
     return Py_BuildValue("Ndi", PyArray_Return(ap_c), fp, ier);
 
 fail:
     if (wrk1 != NULL) {
-        free(wrk1);
+        PyMem_RawFree(wrk1);
     }
     if (wrk2 != NULL) {
-        free(wrk2);
+        PyMem_RawFree(wrk2);
     }
     if (iwrk != NULL) {
-        free(iwrk);
+        PyMem_RawFree(iwrk);
     }
     return NULL;
 }
@@ -1353,9 +1353,9 @@ fitpack_surfit_smth(PyObject* Py_UNUSED(dummy), PyObject *args)
         }
     }
 
-    wrk1 = (double *)malloc((size_t)lwrk1 * sizeof(double));
-    wrk2 = (double *)malloc((size_t)lwrk2 * sizeof(double));
-    iwrk = (int *)malloc((size_t)kwrk * sizeof(int));
+    wrk1 = (double *)PyMem_RawMalloc((size_t)lwrk1 * sizeof(double));
+    wrk2 = (double *)PyMem_RawMalloc((size_t)lwrk2 * sizeof(double));
+    iwrk = (int *)PyMem_RawMalloc((size_t)kwrk * sizeof(int));
     if (wrk1 == NULL || wrk2 == NULL || iwrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1395,21 +1395,21 @@ fitpack_surfit_smth(PyObject* Py_UNUSED(dummy), PyObject *args)
            wrk2, lwrk2,
            iwrk, kwrk, &ier);
 
-    free(wrk1);
-    free(wrk2);
-    free(iwrk);
+    PyMem_RawFree(wrk1);
+    PyMem_RawFree(wrk2);
+    PyMem_RawFree(iwrk);
 
     return Py_BuildValue("iNiNNdi", nx, PyArray_Return(ap_tx), ny, PyArray_Return(ap_ty), PyArray_Return(ap_c), fp, ier);
 
 fail:
     if (wrk1 != NULL) {
-        free(wrk1);
+        PyMem_RawFree(wrk1);
     }
     if (wrk2 != NULL) {
-        free(wrk2);
+        PyMem_RawFree(wrk2);
     }
     if (iwrk != NULL) {
-        free(iwrk);
+        PyMem_RawFree(iwrk);
     }
     Py_XDECREF(ap_tx);
     Py_XDECREF(ap_ty);
@@ -1511,9 +1511,9 @@ fitpack_surfit(PyObject* Py_UNUSED(dummy), PyObject *args)
         }
     }
 
-    wrk1 = (double *)malloc((size_t)lwrk1 * sizeof(double));
-    wrk2 = (double *)malloc((size_t)lwrk2 * sizeof(double));
-    iwrk = (int *)malloc((size_t)kwrk * sizeof(int));
+    wrk1 = (double *)PyMem_RawMalloc((size_t)lwrk1 * sizeof(double));
+    wrk2 = (double *)PyMem_RawMalloc((size_t)lwrk2 * sizeof(double));
+    iwrk = (int *)PyMem_RawMalloc((size_t)kwrk * sizeof(int));
     if (wrk1 == NULL || wrk2 == NULL || iwrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1575,11 +1575,11 @@ fitpack_surfit(PyObject* Py_UNUSED(dummy), PyObject *args)
     }
     memcpy(PyArray_DATA(ap_wrk_out), wrk1, (size_t)nc * sizeof(double));
 
-    free(wrk1);
+    PyMem_RawFree(wrk1);
     wrk1 = NULL;
-    free(wrk2);
+    PyMem_RawFree(wrk2);
     wrk2 = NULL;
-    free(iwrk);
+    PyMem_RawFree(iwrk);
     iwrk = NULL;
 
     /* Slice tx, ty to actual sizes nx, ny for return. */
@@ -1611,13 +1611,13 @@ fitpack_surfit(PyObject* Py_UNUSED(dummy), PyObject *args)
 
 fail:
     if (wrk1 != NULL) {
-        free(wrk1);
+        PyMem_RawFree(wrk1);
     }
     if (wrk2 != NULL) {
-        free(wrk2);
+        PyMem_RawFree(wrk2);
     }
     if (iwrk != NULL) {
-        free(iwrk);
+        PyMem_RawFree(iwrk);
     }
     Py_XDECREF(ap_tx);
     Py_XDECREF(ap_ty);
@@ -1918,8 +1918,8 @@ fitpack_spgrid(PyObject* Py_UNUSED(dummy), PyObject *args)
     kwrk = 5 + mu + mv + nuest + nvest;
 
     /* Allocate workspace arrays */
-    wrk = malloc(lwrk * sizeof(double));
-    iwrk = malloc(kwrk * sizeof(int));
+    wrk = PyMem_RawMalloc(lwrk * sizeof(double));
+    iwrk = PyMem_RawMalloc(kwrk * sizeof(int));
     if (wrk == NULL || iwrk == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1955,8 +1955,8 @@ fitpack_spgrid(PyObject* Py_UNUSED(dummy), PyObject *args)
             (double *)PyArray_DATA(ap_c_full), &fp,
            wrk, lwrk, iwrk, kwrk, &ier);
 
-    free(wrk);
-    free(iwrk);
+    PyMem_RawFree(wrk);
+    PyMem_RawFree(iwrk);
 
     /* Check for errors before creating sliced arrays */
     if (ier == 10) {
@@ -2015,8 +2015,8 @@ fitpack_spgrid(PyObject* Py_UNUSED(dummy), PyObject *args)
                          PyArray_Return(ap_c), fp, ier);
 
 fail:
-    free(wrk);
-    free(iwrk);
+    PyMem_RawFree(wrk);
+    PyMem_RawFree(iwrk);
     Py_XDECREF(ap_tu_full);
     Py_XDECREF(ap_tv_full);
     Py_XDECREF(ap_c);
@@ -2341,8 +2341,8 @@ fitpack_insert(PyObject* Py_UNUSED(dummy), PyObject *args)
         /* Allocate temporary buffer (needed for m > 1) */
         if (t2 == t_in) {
             if (t_buf == NULL) {
-                t_buf = calloc(nest, sizeof(double));
-                c_buf = calloc(nest, sizeof(double));
+                t_buf = PyMem_RawCalloc(nest, sizeof(double));
+                c_buf = PyMem_RawCalloc(nest, sizeof(double));
                 if (t_buf == NULL || c_buf == NULL) {
                     PyErr_NoMemory();
                     Py_DECREF(ap_t);
@@ -2351,8 +2351,8 @@ fitpack_insert(PyObject* Py_UNUSED(dummy), PyObject *args)
                     Py_DECREF(ap_c_pad);
                     Py_XDECREF(ap_tt);
                     Py_XDECREF(ap_cc);
-                    free(t_buf);
-                    free(c_buf);
+                    PyMem_RawFree(t_buf);
+                    PyMem_RawFree(c_buf);
                     return NULL;
                 }
             }
@@ -2374,8 +2374,8 @@ fitpack_insert(PyObject* Py_UNUSED(dummy), PyObject *args)
         memcpy(c_out, c2, nest * sizeof(double));
     }
 
-    free(t_buf);
-    free(c_buf);
+    PyMem_RawFree(t_buf);
+    PyMem_RawFree(c_buf);
     Py_DECREF(ap_t);
     Py_DECREF(ap_c);
     Py_DECREF(ap_t_pad);

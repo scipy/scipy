@@ -1935,7 +1935,7 @@ def normalize(b, a):
         raise ValueError("Numerator polynomial must be rank-1 or"
                          " rank-2 array.")
     if xp.all(den == 0):
-        raise ValueError("Denominator must have at least on nonzero element.")
+        raise ValueError("Denominator must have at least one nonzero element.")
 
     # Trim leading zeros in denominator, leave at least one.
     den = _pu._trim_zeros(den, 'f')
@@ -5871,15 +5871,15 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=No
     # b - cz^-N or b + cz^-N
     b = xp.zeros(N + 1, device=device)
     sgn = -1. if negative_coef else 1
-    xpx.at(b, 0).set(bx)
-    xpx.at(b, -1).set(sgn * cx)
+    b = xpx.at(b, 0).set(bx)
+    b = xpx.at(b, -1).set(sgn * cx)
 
     # Compute denominator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # 1 - az^-N or 1 + az^-N
     a = xp.zeros(N + 1, device=device)
-    xpx.at(a, 0).set(1.)
-    xpx.at(a, -1).set(sgn * ax)
+    a = xpx.at(a, 0).set(1.)
+    a = xpx.at(a, -1).set(sgn * ax)
 
     return b, a
 

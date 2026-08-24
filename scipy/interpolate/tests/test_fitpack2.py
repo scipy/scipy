@@ -93,7 +93,7 @@ class TestUnivariateSpline:
         x = [1, 3, 5, 7, 9]
         y = [0, 4, 9, 12, 21]
         spl = UnivariateSpline(x, y, k=3)
-        assert_almost_equal(spl.roots()[0], 1.050290639101332)
+        assert np.isclose(spl.roots()[0], 1.050290639101332)
 
     def test_roots_length(self): # for gh18335
         x = np.linspace(0, 50 * np.pi, 1000)
@@ -199,7 +199,7 @@ class TestUnivariateSpline:
         xp_assert_close(spl(0.3), spl2(0.3))
 
         spl2 = spl.antiderivative(1)
-        xp_assert_close(spl2(0.6) - spl2(0.2),
+        xp_assert_close(np.asarray(spl2(0.6) - spl2(0.2)),
                         spl.integral(0.2, 0.6))
 
     def test_derivative_extrapolation(self):
@@ -746,6 +746,18 @@ class TestSmoothBivariateSpline:
                                      bbox=bbox.tolist(), w=w.tolist(),
                                      kx=1, ky=1)
         xp_assert_close(spl1(0.1, 0.5), spl2(0.1, 0.5))
+
+    def test_0d(self):
+        # regression test for https://github.com/scipy/scipy/issues/25471
+        # result shapes checked with SciPy 1.16.3 (pre FITPACK C port)
+        rng = np.random.default_rng(0)
+        xs, ys = rng.random(30), rng.random(30)
+        zs = xs * ys
+        s = SmoothBivariateSpline(xs, ys, zs)(0.4, 0.5, grid=False)
+        assert s.ndim == 0
+
+        s = SmoothBivariateSpline(xs, ys, zs)([0.4], 0.5, grid=False)
+        assert s.ndim == 1
 
 
 def _contiguous(a):
@@ -1642,6 +1654,16 @@ class TestRectBivariateSpline:
         z_spl = spl_eval(spl, x, y)
         assert not np.isnan(z_spl).any()
         xp_assert_close(z_spl, z, atol=0.1, rtol=0.1)
+
+    def test_0d(self):
+        # regression test for https://github.com/scipy/scipy/issues/25471
+        # result shapes checked with SciPy 1.16.3 (pre FITPACK C port)
+        x = np.arange(6.0)
+        r = RectBivariateSpline(x, x, np.outer(x, x))(2.5, 3.5, grid=False)
+        assert r.ndim == 0
+
+        r = RectBivariateSpline(x, x, np.outer(x, x))([2.5], 3.5, grid=False)
+        assert r.ndim == 1
 
 
 class TestRectSphereBivariateSpline:

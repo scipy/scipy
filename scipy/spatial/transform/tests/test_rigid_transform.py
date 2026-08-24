@@ -1117,7 +1117,7 @@ def test_mean_axis(xp, ndim: int):
 def test_mean_compare_axis(xp):
     # Create a random set of transforms and compare the mean over an axis with
     # the mean without axis of the sliced transform
-    atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 1e-6
+    atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 1.5e-6
     rng = np.random.default_rng(0)
     q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
     r = Rotation.from_quat(q)

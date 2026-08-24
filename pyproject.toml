@@ -154,16 +154,22 @@ coverage = [
     { include-group = "test" },  # includes all optional test and runtime deps for maximum coverage
     "pytest-cov",
 ]
-
+openblas32 = [
+    "scipy-openblas32==0.3.34.0.0"
+]
+openblas64 = [
+    "scipy-openblas64==0.3.34.0.0"
+]
 bench = [
-    # https://github.com/airspeed-velocity/asv/issues/1537
-    "asv==0.6.4",
+    # 0.6.6 regressed per-benchmark overhead ~7x, which pushes the CircleCI
+    # benchmark job past its time limit; revisit when that is fixed upstream
+    "asv==0.6.5",
     "pyfftw",
     "cffi", 
 ]
 
 doc = [
-    "sphinx>=5.0.0,<8.2.0",
+    "sphinx>=8.2.0,<8.3.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
@@ -276,6 +282,7 @@ test-requires = ["pytest", "pytest-split", "hypothesis", "threadpoolctl", "pooch
 test-command = "bash {project}/tools/wheels/cibw_test_command_pyodide.sh"
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
+build-dir = "build/pyodide"
 
 [tool.cibuildwheel.pyodide.environment]
 PKG_CONFIG_PATH = "$(pwd)/.blis/lib/pkgconfig:$(pwd)/.blis/share/pkgconfig"

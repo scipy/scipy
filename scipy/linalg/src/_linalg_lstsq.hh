@@ -82,7 +82,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     npy_intp data_b_size = overwrite_b ? 0 : ldb * nrhs;
     npy_intp bufsize = data_a_size + data_b_size + lwork;
 
-    T* buffer = (T *)malloc((bufsize)*sizeof(T));
+    T* buffer = (T *)PyMem_RawMalloc((bufsize)*sizeof(T));
     if (NULL == buffer) { return -101; }
 
     // Chop the buffer into parts
@@ -105,10 +105,10 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
     real_type *rwork = NULL;
     if constexpr (detail::type_traits<T>::is_complex) {
-        rwork = (real_type *)malloc(5*min_mn*sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(5*min_mn*sizeof(real_type));
 
         if (rwork == NULL) {
-            free(buffer);
+            PyMem_RawFree(buffer);
             return -102;
         }
     }
@@ -153,8 +153,8 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     }
 
 done:
-    free(buffer);
-    free(rwork);
+    PyMem_RawFree(buffer);
+    PyMem_RawFree(rwork);
 
     return 1;
 }
@@ -238,7 +238,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     npy_intp data_b_size = overwrite_b ? 0 : ldb * nrhs;
     npy_intp bufsize = data_a_size + data_b_size + lwork;
 
-    T* buffer = (T *)malloc((bufsize)*sizeof(T));
+    T* buffer = (T *)PyMem_RawMalloc((bufsize)*sizeof(T));
     if (NULL == buffer) { return -101; }
 
     // Chop the buffer into parts
@@ -261,18 +261,18 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
     real_type *rwork = NULL;
     if constexpr (detail::type_traits<T>::is_complex) {
-        rwork = (real_type *)malloc(lrwork*sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(lrwork*sizeof(real_type));
 
         if (rwork == NULL) {
-            free(buffer);
+            PyMem_RawFree(buffer);
             return -102;
         }
     }
 
-    CBLAS_INT *iwork = (CBLAS_INT *)malloc(liwork*sizeof(CBLAS_INT));
+    CBLAS_INT *iwork = (CBLAS_INT *)PyMem_RawMalloc(liwork*sizeof(CBLAS_INT));
     if (iwork == NULL) {
-        free(buffer);
-        free(rwork);
+        PyMem_RawFree(buffer);
+        PyMem_RawFree(rwork);
         return -103;
     }
 
@@ -317,9 +317,9 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     }
 
 done:
-    free(buffer);
-    free(rwork);
-    free(iwork);
+    PyMem_RawFree(buffer);
+    PyMem_RawFree(rwork);
+    PyMem_RawFree(iwork);
     return 1;
 }
 
@@ -394,7 +394,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     npy_intp data_b_size = overwrite_b ? 0 : ldb * nrhs;
     npy_intp bufsize = data_a_size + data_b_size + lwork;
 
-    T* buffer = (T *)malloc((bufsize)*sizeof(T));
+    T* buffer = (T *)PyMem_RawMalloc((bufsize)*sizeof(T));
     if (NULL == buffer) { return -101; }
 
     T *work = &buffer[0];
@@ -416,18 +416,18 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
 
     real_type *rwork = NULL;
     if constexpr (detail::type_traits<T>::is_complex) {
-        rwork = (real_type *)malloc(2*n*sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(2*n*sizeof(real_type));
 
         if (rwork == NULL) {
-            free(buffer);
+            PyMem_RawFree(buffer);
             return -102;
         }
     }
 
-    CBLAS_INT *jpvt = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
+    CBLAS_INT *jpvt = (CBLAS_INT *)PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     if (jpvt == NULL) {
-        free(buffer);
-        free(rwork);
+        PyMem_RawFree(buffer);
+        PyMem_RawFree(rwork);
         return -103;
     }
     for(npy_intp i=0; i<n; i++) {jpvt[i] = 0;}
@@ -474,9 +474,9 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     }
 
 done:
-    free(buffer);
-    free(rwork);
-    free(jpvt);
+    PyMem_RawFree(buffer);
+    PyMem_RawFree(rwork);
+    PyMem_RawFree(jpvt);
     return 1;
 }
 

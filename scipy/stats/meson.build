@@ -113,6 +113,7 @@ py3.install_sources([
     '_binomtest.py',
     '_bws_test.py',
     '_censored_data.py',
+    '_circstats.py',
     '_common.py',
     '_constants.py',
     '_continued_fraction.py',
@@ -156,18 +157,11 @@ py3.install_sources([
     '_variation.py',
     '_warnings_errors.py',
     '_wilcoxon.py',
-    'biasedurn.py',
     'contingency.py',
     'distributions.py',
-    'kde.py',
-    'morestats.py',
     'mstats.py',
-    'mstats_basic.py',
-    'mstats_extras.py',
-    'mvn.py',
     'qmc.py',
     'sampling.py',
-    'stats.py'
   ],
   subdir: 'scipy/stats'
 )
