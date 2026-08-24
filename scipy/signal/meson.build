@@ -1,10 +1,10 @@
 py3.extension_module('_sigtools',
   [
-    '_firfilter.cc',
-    '_sigtoolsmodule.cc',
-    '_medianfilter.cc',
-    '_lfilter.cc',
-    '_correlate_nd.cc'
+    'src/_firfilter.cc',
+    'src/_sigtoolsmodule.cc',
+    'src/_medianfilter.cc',
+    'src/_lfilter.cc',
+    'src/_correlate_nd.cc'
   ],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -34,9 +34,9 @@ else
 endif
 
 pyx_files = [
-  ['_peak_finding_utils', '_peak_finding_utils.pyx'],
-  ['_sosfilt', '_sosfilt.pyx'],
-  ['_upfirdn_apply', '_upfirdn_apply.pyx']
+  ['_peak_finding_utils', 'src/_peak_finding_utils.pyx'],
+  ['_sosfilt', 'src/_sosfilt.pyx'],
+  ['_upfirdn_apply', 'src/_upfirdn_apply.pyx']
 ]
 
 foreach pyx_file: pyx_files
@@ -52,7 +52,7 @@ endforeach
 
 py3.extension_module('_spline',
   [
-    '_splinemodule.cc',
+    'src/_splinemodule.cc',
   ],
   dependencies: np_dep,
   link_args: version_link_args,

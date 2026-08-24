@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include <math.h>
-#include "src/lbfgsb.h"
+#include "lbfgsb.h"
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 

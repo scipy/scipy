@@ -83,18 +83,18 @@ if needs_lp64_fblas
 
   flapack_module = custom_target('flapack_module',
     output: ['_flapackmodule.c'],
-    input: 'flapack.pyf.src',
+    input: 'src/flapack.pyf.src',
     command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
     depend_files:
       [
-        'flapack_user.pyf.src',
-        'flapack_gen.pyf.src',
-        'flapack_gen_banded.pyf.src',
-        'flapack_gen_tri.pyf.src',
-        'flapack_sym_herm.pyf.src',
-        'flapack_pos_def.pyf.src',
-        'flapack_pos_def_tri.pyf.src',
-        'flapack_other.pyf.src',
+        'src/flapack_user.pyf.src',
+        'src/flapack_gen.pyf.src',
+        'src/flapack_gen_banded.pyf.src',
+        'src/flapack_gen_tri.pyf.src',
+        'src/flapack_sym_herm.pyf.src',
+        'src/flapack_pos_def.pyf.src',
+        'src/flapack_pos_def_tri.pyf.src',
+        'src/flapack_other.pyf.src',
       ]
   )
 
@@ -137,18 +137,18 @@ if use_ilp64
 
   flapack64_module = custom_target('flapack64_module',
     output: ['_flapack_64module.c'],
-    input: 'flapack_64.pyf.src',
+    input: 'src/flapack_64.pyf.src',
     command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
     depend_files:
       [
-        'flapack_user.pyf.src',
-        'flapack_gen.pyf.src',
-        'flapack_gen_banded.pyf.src',
-        'flapack_gen_tri.pyf.src',
-        'flapack_sym_herm.pyf.src',
-        'flapack_pos_def.pyf.src',
-        'flapack_pos_def_tri.pyf.src',
-        'flapack_other.pyf.src',
+        'src/flapack_user.pyf.src',
+        'src/flapack_gen.pyf.src',
+        'src/flapack_gen_banded.pyf.src',
+        'src/flapack_gen_tri.pyf.src',
+        'src/flapack_sym_herm.pyf.src',
+        'src/flapack_pos_def.pyf.src',
+        'src/flapack_pos_def_tri.pyf.src',
+        'src/flapack_other.pyf.src',
         int64_f2cmap,
       ]
   )
@@ -167,7 +167,7 @@ endif
 
 # _decomp_interpolative
 py3.extension_module('_decomp_interpolative',
-  linalg_cython_gen.process('_decomp_interpolative.pyx'),
+  linalg_cython_gen.process('src/_decomp_interpolative.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -194,7 +194,7 @@ py3.extension_module('_batched_linalg',
 
 # _solve_toeplitz
 py3.extension_module('_solve_toeplitz',
-  linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
+  linalg_init_cython_gen.process('src/_solve_toeplitz.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -204,7 +204,7 @@ py3.extension_module('_solve_toeplitz',
 
 # _matfuncs_sqrtm_triu:
 py3.extension_module('_matfuncs_sqrtm_triu',
-  linalg_init_cython_gen.process('_matfuncs_sqrtm_triu.pyx'),
+  linalg_init_cython_gen.process('src/_matfuncs_sqrtm_triu.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -239,7 +239,7 @@ cython_lapack = py3.extension_module('cython_lapack',
 
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
-  input: '_decomp_update.pyx.in',
+  input: 'src/_decomp_update.pyx.in',
   command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
@@ -254,7 +254,7 @@ py3.extension_module('_decomp_update',
 
 py3.extension_module('_internal_matfuncs',
   [
-    '_matfuncsmodule.c',
+    'src/_matfuncsmodule.c',
     'src/_matfuncs_expm.c',
     'src/_matfuncs_sqrtm.c',
   ],
@@ -266,7 +266,7 @@ py3.extension_module('_internal_matfuncs',
 
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
-  linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
+  linalg_init_utils_cython_gen.process('src/_cythonized_array_utils.pyx'),
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   dependencies: np_dep,
   link_args: version_link_args,

@@ -21,8 +21,8 @@
 #include <string.h>
 #include <complex.h>
 
-#include "src/vode.h"
-#include "src/zvode.h"
+#include "vode.h"
+#include "zvode.h"
 
 /* NPY type code matching CBLAS_INT (int or npy_int64 depending on ILP64) */
 #define CBLAS_INT_NPY (sizeof(CBLAS_INT) == 8 ? NPY_INT64 : NPY_INT)

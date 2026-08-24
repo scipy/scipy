@@ -32,7 +32,7 @@ py3.extension_module('_test_ccallback',
 )
 
 py3.extension_module('_fpumode',
-  '_fpumode.c',
+  'src/_fpumode.c',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
