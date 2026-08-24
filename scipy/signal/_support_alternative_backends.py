@@ -258,7 +258,6 @@ capabilities_overrides = {
                                    jax_jit=False, allow_dask_compute=True),
     "invres": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "invresz": xp_capabilities(np_only=True, exceptions=["cupy"]),
-    "iircomb": xp_capabilities(xfail_backends=[("jax.numpy", "inaccurate")]),
     "iirfilter": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
     "kaiser_atten": xp_capabilities(
@@ -339,7 +338,6 @@ capabilities_overrides = {
                 "sosfiltfilt directly sets shape attributes on arrays"
                 " which dask doesn't like"
             ),
-            ("torch", "negative strides"),
         ],
     ),
     "sosfreqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],

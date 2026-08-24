@@ -1,8 +1,8 @@
 
 .. _continuous-f:
 
-Fratio (or F) Distribution
-==========================
+F-ratio (or F) Distribution
+===========================
 
 The distribution of :math:`\left(X_{1}/X_{2}\right)\left(\nu_{2}/\nu_{1}\right)`
 if :math:`X_{1}` is chi-squared with :math:`v_{1}` degrees of freedom

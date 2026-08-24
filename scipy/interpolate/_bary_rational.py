@@ -110,7 +110,12 @@ class _BarycentricRational:
         with np.errstate(invalid="ignore", divide="ignore"):
             CC = 1 / np.subtract.outer(zv, self._support_points)
             # Vector of values
-            r = CC @ (weights * support_values) / (CC @ weights)
+            # NOTE: optimized matrix multiplications are avoided here
+            # to prevent the platform-specific deviations noted in
+            # gh-23707
+            num = np.einsum('ik,kj->ij', CC, weights * support_values)
+            denom = np.einsum('ik,kj->ij', CC, weights)
+            r = num / denom
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
         if np.any(np.isinf(zv)):

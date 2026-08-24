@@ -73,7 +73,7 @@ def _validate_bc_type(bc_type):
     return bc_type
 
 
-def add_knot(x, t, k, residuals):
+def add_knot(x, t, k, residuals, periodic=False):
     """Add a new knot.
 
     (Approximately) replicate FITPACK's logic:
@@ -90,7 +90,7 @@ def add_knot(x, t, k, residuals):
 
     and https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
     """
-    new_knot = _dierckx.fpknot(x, t, k, residuals)
+    new_knot = _dierckx.fpknot(x, t, k, residuals, periodic)
 
     idx_t = np.searchsorted(t, new_knot)
     t_new = np.r_[t[:idx_t], new_knot, t[idx_t:]]
@@ -107,6 +107,15 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
         x = x.copy()
     if not y.flags.c_contiguous:
         y = y.copy()
+
+    if x.ndim != 1 or (x[1:] < x[:-1]).any():
+        raise ValueError("Expect `x` to be an ordered 1D sequence.")
+
+    if x.shape[0] < k + 1:
+        raise ValueError(
+            f"Need at least k+1={k+1} data points for a degree-{k} spline, "
+            f"got {x.shape[0]}."
+        )
 
     if w is None:
         w = np.ones_like(x, dtype=float)
@@ -140,8 +149,6 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
 
     if x.shape[0] != y.shape[0]:
         raise ValueError(f"Data is incompatible: {x.shape = } and {y.shape = }.")
-    if x.ndim != 1 or (x[1:] < x[:-1]).any():
-        raise ValueError("Expect `x` to be an ordered 1D sequence.")
 
     k = operator.index(k)
 
@@ -155,10 +162,6 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
         xb = min(x)
     if xe is None:
         xe = max(x)
-
-    if periodic and not np.allclose(y[0], y[-1], atol=1e-15):
-        raise ValueError("First and last points does not match which is required "
-                         "for `bc_type='periodic'`.")
 
     return x, y, w, k, s, xb, xe
 
@@ -384,7 +387,7 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
 
         # actually add knots
         for j in range(nplus):
-            t = add_knot(x, t, k, residuals)
+            t = add_knot(x, t, k, residuals, periodic)
 
             # check if we have enough knots already
 

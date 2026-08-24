@@ -23,8 +23,6 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   CCACHE_MAXSIZE: "250M"
-  # Needed because Pixi doesn't set mtime for compilers
-  CCACHE_COMPILERCHECK: "content"
   JAX_COMPILATION_CACHE_DIR: "${{ github.workspace }}/.cache/scipy_jax_cache"
   JAX_PERSISTENT_CACHE_MIN_COMPILE_TIME_SECS: "0"
 

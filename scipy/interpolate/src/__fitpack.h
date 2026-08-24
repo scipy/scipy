@@ -274,7 +274,7 @@ fpbacp( /* inputs*/
 typedef std::tuple<std::vector<double>, std::vector<int64_t>> pair_t;
 
 pair_t
-_split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals);
+_split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals, bool periodic);
 
 
 /*
@@ -284,7 +284,8 @@ double
 fpknot(const double *x_ptr, int64_t m,
        const double *t_ptr, int64_t len_t,
        int k,
-       const double *residuals_ptr);
+       const double *residuals_ptr,
+       bool periodic);
 
 
 /*

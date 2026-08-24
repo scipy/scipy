@@ -1,5 +1,10 @@
 version: 2.1
 
+orbs:
+  # https://circleci.com/developer/orbs/orb/prefix-dev/pixi
+  # check content of the orb when updating the version
+  pixi: prefix-dev/pixi@0.1.0
+
 # Aliases to reuse
 _defaults: &defaults
   docker:
@@ -27,14 +32,6 @@ commands:
               circleci-agent step halt;
             fi
 
-  apt-install:
-    steps:
-      - run:
-          name: Install apt packages
-          command: |
-            sudo apt-get update
-            sudo apt-get install libopenblas-dev libgmp-dev libmpfr-dev ccache
-
   merge:
     steps:
       - run:
@@ -55,13 +52,14 @@ jobs:
     <<: *defaults
     environment:
       CCACHE_DIR: /home/circleci/.ccache
-      CCACHE_MAXSIZE: "250M"
+      CCACHE_MAXSIZE: "1G"
     steps:
       - checkout
       - check-skip
       - merge
 
-      - apt-install
+      - pixi/pixi_setup:
+          env: "build"
 
       - run:
           name: update submodules
@@ -69,67 +67,63 @@ jobs:
             git submodule init
             git submodule update
 
-      - restore_cache:
-          keys:
-              - pip-{{ .Branch }}
-              - pip
-
-      - restore_cache:
-          keys:
-              - ccache-{{ .Branch }}
-              - ccache
-
       - run:
-          name: setup Python venv
-          command: pip install pytest --group build --group dev-cli --group doc --group bench --group test-mp --group optional-runtime-deps --group test-array-types
+          name: ccache cache key (one new cache per day)
+          command: date +%F > .ccache-date
+
+      - restore_cache:
+          keys:
+              - ccache-{{ .Branch }}-{{ checksum ".ccache-date" }}
+              - ccache-{{ .Branch }}-
+              - ccache-main-
+              - ccache-
 
       - run:
           name: clear ccache stats
-          command: |
-            ccache --zero-stats
+          command: pixi exec ccache --zero-stats
 
       - run:
           name: build SciPy
-          command: |
-            spin build -j2
+          command: pixi run build
 
       - run:
           name: ccache performance
-          command: |
-            ccache --evict-older-than 1d
-            ccache -s
+          command: pixi exec ccache -s
 
       - save_cache:
-          key: pip-{{ .Branch }}
-          paths:
-            - ~/.cache/pip
-
-      - save_cache:
-          key: ccache-{{ .Branch }}
+          key: ccache-{{ .Branch }}-{{ checksum ".ccache-date" }}
           paths:
             - ~/.ccache
+
+      # every downstream job restores this from cache; shipping it in the
+      # workspace as well makes those restores collide file-by-file
+      - run:
+          name: drop the pixi env from the workspace
+          command: rm -rf ~/repo/.pixi
 
       - persist_to_workspace:
           root: ~/
           paths:
-            - .
+            # not "." -- that would also ship ~/.ccache, which is separately
+            # cached and unused downstream
+            - repo
 
-# Build docs
-  build_docs:
+# Build docs and distribution-ready tree
+  build_docs_dist:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/
 
       - check-skip
-      - apt-install
+      - pixi/pixi_setup:
+          env: "docs"
 
       - run:
           name: build docs
           no_output_timeout: 25m
-          command: |
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
-            spin docs -j2 2>&1 | tee sphinx_log.txt
+          # tee: the check below greps this file, and greps clean if it is absent
+          command: pixi run --skip-deps docs doc-dist 2>&1 | tee sphinx_log.txt
 
       - run:
           name: Check sphinx log for warnings (which are treated as errors)
@@ -150,6 +144,9 @@ jobs:
 
   run_benchmarks:
     <<: *defaults
+    # 8 GB rather than medium's 4 GB, so the memory-hungry sparse and stats
+    # benchmarks run instead of being skipped or OOM-killed
+    resource_class: large
     steps:
       - attach_workspace:
           at: ~/
@@ -171,20 +168,33 @@ jobs:
               circleci-agent step halt;
             fi
 
-      - apt-install
+      - pixi/pixi_setup:
+          env: "bench"
 
       - run:
-          name: run asv
+          name: register CI machine with asv
+          working_directory: benchmarks
+          command: pixi run -e bench asv machine --machine CircleCI
+
+      - run:
+          name: report available memory and address space limit
+          command: pixi run -e bench python -c "import psutil, resource; print(psutil.virtual_memory(), resource.getrlimit(resource.RLIMIT_AS))"
+
+      - run:
+          name: run asv benchmarks
           no_output_timeout: 30m
-          command: |
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
-            cd benchmarks
-            asv machine --machine CircleCI
-            export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
-            export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-            export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
-            asv --config asv.conf.json publish
+          # --no-mem-limit: spin caps RLIMIT_AS at 70% of RAM, but that is address
+          # space, which FFT/BLAS thread pools exhaust well before actual memory
+          # --no-dry-run: `asv publish` below needs the results on disk
+          # DistributionsAll is skipped for wall time, not because it is slow:
+          # 1754 parameter combinations for 13s of compute, so ~5 min of the
+          # job is asv spawning one process per combination
+          command: pixi run bench --quick --no-mem-limit --no-dry-run -t '^((?!BenchGlobal|QuadraticAssignment|DistributionsAll).)*$'
+
+      - run:
+          name: publish benchmark html
+          working_directory: benchmarks
+          command: pixi run -e bench asv publish
 
       - store_artifacts:
           path: benchmarks/html
@@ -198,28 +208,27 @@ jobs:
           at: ~/
 
       - check-skip
-      - apt-install
+      - pixi/pixi_setup:
+          # add "smoke-docs" when pixi_setup can accept multiple envs
+          env: "docs"
 
       - run:
           name: refguide_check
           no_output_timeout: 25m
-          command: |
-            sudo apt-get install -y wamerican-small
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
-            spin refguide-check
+          command: pixi run --skip-deps refguide-check
 
       - run:
           name: smoke-docs
           no_output_timeout: 35m
-          command: |
-            pip install --group test-docs
-            spin smoke-docs
+          command: pixi run --skip-deps smoke-docs
 
       - run:
           name: smoke-tutorials
           no_output_timeout: 10m
           command: |
-            spin smoke-tutorials
+            sudo apt-get update
+            sudo apt-get install -y wamerican-small
+            pixi run --skip-deps smoke-tutorials
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
@@ -262,7 +271,7 @@ workflows:
   default:
     jobs:
       - build_scipy
-      - build_docs:
+      - build_docs_dist:
           requires:
             - build_scipy
       - run_benchmarks:
@@ -273,7 +282,7 @@ workflows:
             - build_scipy
       - deploy:
           requires:
-            - build_docs
+            - build_docs_dist
           filters:
             branches:
               only: main
