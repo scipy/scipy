@@ -83,6 +83,14 @@ def _normalize_out(out, nout):
     return out_tuple
 
 
+class _NoValue:
+    def __repr__(self):
+        return "None"
+
+
+_NO_VALUE = _NoValue()
+
+
 def _with_cache_optimization(
         *,
         name,
@@ -155,32 +163,38 @@ def _with_cache_optimization(
         else (0,)*ufunc.nin
     )
 
-    # The kwarg ``where`` is only supported for elementwise ufuncs, while
-    # the kwarg ``axes` is only supported for non-elementwise gufuncs, so
-    # keep track of this here for later.
-    is_elementwise = sum(core_ndims) == 0
+    # ``where`` requires special handling for elementwise ufuncs because it
+    # participates in broadcasting and must undergo the same axis permutation.
+    is_elementwise = ufunc.signature is None
 
-    def wrapper(
-            *args,
-            out=None,
-            where=True,
-            casting="same_kind",
-            order="K",
-            dtype=None,
-            subok=True,
-            signature=None,
-    ):
+    def wrapper(*args, **kwargs):
+        out_given = "out" in kwargs
+        out = kwargs.pop("out", None)
+        casting = kwargs.pop("casting", "same_kind")
+        order = kwargs.pop("order", "K")
+        dtype = kwargs.pop("dtype", None)
+        subok = kwargs.pop("subok", True)
+        signature = kwargs.pop("signature", None)
+
+        # ``where`` requires special handling because the iteration axes are
+        # rearranged below. It is only supported by elementwise ufuncs. For a
+        # gufunc, leave it in kwargs so that NumPy raises its usual error.
+        where = kwargs.pop("where", True) if is_elementwise else True
+
+        # Add back kwargs that we always pass explicitly to the underlying ufunc.
+        kwargs["casting"] = casting
+        kwargs["subok"] = subok
+
         asarray = np.asanyarray if subok else np.asarray
         args = [asarray(arg) for arg in args]
-        kwargs = dict(casting=casting, subok=subok)
 
         # ``where`` is normalized once, up front, so that the fast path and the
         # transposed path below agree on its meaning. ``True`` is the "no mask"
         # sentinel and is not forwarded, matching a plain ufunc call.
-        if is_elementwise and where is not True:
+        if where is not True:
             where = asarray(where)
             kwargs["where"] = where
-        if out is not None:
+        if out_given:
             kwargs["out"] = out
         if signature is not None:
             kwargs["signature"] = signature
@@ -196,8 +210,7 @@ def _with_cache_optimization(
         out_tuple = _normalize_out(out, ufunc.nout)
 
         if (
-                out is None
-                and is_elementwise
+                not out_given
                 and where is not True
                 and version.parse(np.__version__) >= version.parse("2.4.0")
         ):
@@ -216,7 +229,7 @@ def _with_cache_optimization(
             arg.shape[:-core_ndims[i]] if core_ndims[i] > 0 else arg.shape
             for i, arg in enumerate(args)
         ]
-        if is_elementwise and where is not True:
+        if where is not True:
             batch_shapes.append(where.shape)
 
         batch_shapes.extend(
@@ -442,13 +455,19 @@ def _make_ufunc_like_wrapper(
 
     code = (
         f"""class {name}(_UFuncLikeWrapper):
-            def __call__(self, {arg_str}, /, out=None, **kwargs):
+            def __call__(self, {arg_str}, /, out=_NO_VALUE, **kwargs):
+                if out is _NO_VALUE:
+                    return func({call_args}, **kwargs)
                 return func({call_args}, out=out, **kwargs)
 
         """
     )
 
-    namespace = {"_UFuncLikeWrapper": _UFuncLikeWrapper, "func": func}
+    namespace = {
+        "_NO_VALUE": _NO_VALUE,
+        "_UFuncLikeWrapper": _UFuncLikeWrapper,
+        "func": func
+    }
 
     exec(code, namespace)
     WrapperClass = namespace[name]

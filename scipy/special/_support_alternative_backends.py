@@ -121,12 +121,9 @@ class _FuncInfo:
 
         if SCIPY_ARRAY_API:
             if self.is_ufunc:
-                def wrapped(*args, out=None, **kwargs):
+                def wrapped(*args, **kwargs):
                     xp = array_namespace(*args)
-                    if out is None:
-                        return self._wrapper_for(xp)(*args, **kwargs)
-                    else:
-                        return self._wrapper_for(xp)(*args, out=out, **kwargs)
+                    return self._wrapper_for(xp)(*args, **kwargs)
 
                 wrapped._ufunc = self.ufunc
                 func = _make_ufunc_like_wrapper(
