@@ -2973,6 +2973,10 @@ def _penalty_matrix_banded(t):
 
     return omega_banded
 
+def _make_smoothing_spline_user_knots_gcv(x, y, w, t, axis, *, xp, device=None):
+    """Generalized Cross Validation (GCV) computation path for unequal knot
+    vectors and data points."""
+    pass
 
 def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
     """`make_smoothing_spline` path for a user-provided knot vector ``t``.
@@ -2987,9 +2991,9 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     Assumes ``x``, ``y`` and ``w`` are already validated by the caller.
     """
     if lam is None:
-        raise NotImplementedError(
-            "automatic GCV selection of `lam` is not supported with user knots, "
-            "pass `lam` explicitly")
+        return _make_smoothing_spline_user_knots_gcv(
+            x, y, w, t, axis, xp, device=device
+        )
     if np.ndim(lam) != 0:
         raise NotImplementedError(
             "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
