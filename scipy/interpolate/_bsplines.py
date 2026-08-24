@@ -2992,18 +2992,24 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
         raise ValueError(
             "`t` must contain at least 8 knots (a cubic spline needs at "
             f"least one basis interval); got {len(t)}")
-    # interior knots may repeat (each repetition reduces continuity there),
-    # but multiplicity > 4 would make some basis functions identically zero
-    _, counts = np.unique(t, return_counts=True)
-    if np.any(counts > 4):
-        raise ValueError(
-            "knots in `t` must not have multiplicity greater than 4")
     if not (t[0] == t[3] and t[-4] == t[-1]):
         raise ValueError(
             "`t` must be clamped: the first 4 and last 4 knots must each "
             "be equal (boundary knots repeated to multiplicity 4). "
             "Without clamping, the penalty integrates over regions the "
             "data cannot constrain and straight lines are penalized.")
+    # Interior multiplicity 3 allows kinks in f', which have infinite
+    # penalty but are invisible to Omega, so they would come for free.
+    vals, counts = np.unique(t, return_counts=True)
+    if counts[0] != 4 or counts[-1] != 4:
+        raise ValueError(
+            "boundary knots in `t` must have multiplicity exactly 4")
+    if np.any(counts[1:-1] > 2):
+        raise ValueError(
+            "interior knots in `t` must not have multiplicity greater "
+            "than 2: the penalty, the integral of (f'')^2, is only defined "
+            "for functions with a continuous first derivative, which "
+            "requires interior multiplicity at most 2")
     if x[0] < t[3] or x[-1] > t[-4]:
         raise ValueError(
             "all `x` values must lie within the base interval "
@@ -3085,7 +3091,10 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     t : array_like, shape (nt,), optional
         Knot vector. Must be non-decreasing, with all ``x`` values inside
         the base interval ``[t[3], t[-4]]``; boundary knots must be
-        repeated 4 times (clamped). ``t`` can only be passed when ``lam``
+        repeated 4 times (clamped), and interior knots may repeat only to
+        multiplicity 2 (higher multiplicity would allow kinks or jumps,
+        for which the penalty :math:`\int (f'')^2` is not defined).
+        ``t`` can only be passed when ``lam``
         is given explicitly. Default is None, in which case a clamped knot
         vector at the data sites is used,
         ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.

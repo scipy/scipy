@@ -2463,7 +2463,8 @@ _t_good = np.r_[[-2.0]*4, [-1.0, 0.0, 1.0], [2.0]*4]
 _t_unsorted = np.r_[[-2.0]*4, [0.0, -1.0, 1.0], [2.0]*4]  # interior swapped
 _t_short = np.r_[[-2.0]*3, [2.0]*3]                       # only 6 knots
 _t_narrow = np.r_[[0.0]*4, [0.5], [1.0]*4]                # data outside [0, 1]
-_t_mult5 = np.r_[[-2.0]*4, [0.0]*5, [2.0]*4]              # multiplicity 5
+_t_mult3 = np.r_[[-2.0]*4, [0.0]*3, [2.0]*4]              # interior multiplicity 3
+_t_mult5b = np.r_[[-2.0]*5, [0.0], [2.0]*4]               # boundary multiplicity 5
 _t_unclamped = np.r_[[-4., -3.5, -3., -2.], [0.], [2., 3., 3.5, 4.]]  # not clamped
 
 def _dense_omega(ab, m):
@@ -2830,8 +2831,12 @@ class TestSmoothingSpline:
         pytest.param(_y_err, dict(t=np.r_[[-2.0]*4, [0.0, np.nan], [2.0]*4],
                                   lam=0.5),
                      ValueError, "infs or nans", id="nan-in-t"),
-        pytest.param(_y_err, dict(t=_t_mult5, lam=0.5),
-                     ValueError, "multiplicity", id="multiplicity-over-4"),
+        pytest.param(_y_err, dict(t=_t_mult3, lam=0.5),
+                     ValueError, "continuous first derivative",
+                     id="interior-multiplicity-over-2"),
+        pytest.param(_y_err, dict(t=_t_mult5b, lam=0.5),
+                     ValueError, "multiplicity exactly 4",
+                     id="boundary-multiplicity-over-4"),
         pytest.param(_y_err, dict(t=_t_unclamped, lam=0.5),
                      ValueError, "must be clamped", id="unclamped-t"),
     ])
@@ -2866,23 +2871,18 @@ class TestSmoothingSpline:
         spl = make_smoothing_spline(x, y, lam=1e-3, t=t)
         xp_assert_close(spl(x), y, atol=1e-10)
 
-    @pytest.mark.parametrize("lam", [0.0, 1.0])
-    def test_rank_deficient_system(self, lam):
-        # a quadruple interior knot splits the spline into two independent
-        # pieces, and starving one of them leaves its coefficients
-        # undetermined for any lam
-        t = np.r_[[0.0]*4, [0.5]*4, [1.0]*4]
-        x = np.r_[[0.1], np.linspace(0.5, 1.0, 11)]
+    def test_rank_deficient_system(self):
+        # knots in a region with no data: at lam = 0 the basis functions
+        # supported there are unconstrained and the system is singular
+        t = np.r_[[0.0]*4, [0.1, 0.2, 0.3, 0.4], [1.0]*4]
+        x = np.linspace(0.5, 1.0, 12)
         y = np.sin(3 * x)
         with assert_raises(ValueError, match="no `x` values nearby"):
-            make_smoothing_spline(x, y, lam=lam, t=t)
+            make_smoothing_spline(x, y, lam=0.0, t=t)
 
     def test_huge_lam_numerically_singular(self):
-        # the condition number of `X^T W X + lam * Omega` grows like lam
-        # (the two line directions keep O(1) pivots while all others grow),
-        # so a large enough lam makes Cholesky fail even though the matrix
-        # is mathematically positive definite. The error message must not
-        # only suggest increasing lam.
+        # cond grows like lam, so a large enough lam breaks Cholesky even
+        # though the matrix is mathematically positive definite
         x = np.linspace(0.0, 1.0, 60)
         y = x**2 + 0.1 * np.sin(20 * x)
         t = np.r_[[0.0]*4, [0.2, 0.4, 0.6, 0.8], [1.0]*4]
