@@ -1067,8 +1067,8 @@ class TestOAConvolve:
         kshape[axis] = 65
         a = xp.asarray(mk(shape))
         b = xp.asarray(mk(tuple(kshape)))
-        got = oaconvolve(a, b, mode=mode, axes=[axis])
-        ref = fftconvolve(a, b, mode=mode, axes=[axis])
+        got = oaconvolve(a, b, mode=mode, axes=(axis,))
+        ref = fftconvolve(a, b, mode=mode, axes=(axis,))
         rtol = 1e-4 if dtype in (np.float32, np.complex64) else 1e-9
         xp_assert_close(got, ref, rtol=rtol, atol=rtol)
 
@@ -1076,8 +1076,8 @@ class TestOAConvolve:
         rng = np.random.default_rng(5)
         a = xp.asarray(rng.standard_normal((8, 4000)))[:, ::2]   # non-contiguous
         b = xp.asarray(rng.standard_normal((8, 65)))
-        xp_assert_close(oaconvolve(a, b, mode="full", axes=[1]),
-                        fftconvolve(a, b, mode="full", axes=[1]), rtol=1e-9, atol=1e-9)
+        xp_assert_close(oaconvolve(a, b, mode="full", axes=(1,)),
+                        fftconvolve(a, b, mode="full", axes=(1,)), rtol=1e-9, atol=1e-9)
 
     def test_cpp_path_multiaxis_falls_back(self, xp):
         # 2-D with both axes convolved (axes=None) must still be correct (Python path).
