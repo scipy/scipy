@@ -19,7 +19,7 @@ def _geomspace(start, stop, num, xp):
 
 
 @xp_capabilities(skip_backends=[(b_, "Not tested successfully") for b_ in
-                                         ("dask.array", "jax.numpy")])
+                                ("dask.array", "jax.numpy", "torch")])
 def _calcSSTF_helper(T, B, C, s_values, rtol, atol, overwrite_b, xp, device):
     """Helper for calculating G = C (s I - T)^{-1} B assuming T is upper triangular.
 
