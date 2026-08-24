@@ -22,6 +22,7 @@ from ._signaltools import *         # noqa: F403
 from ._savitzky_golay import savgol_coeffs, savgol_filter  # noqa: F401
 from ._spectral_py import *         # noqa: F403
 from ._short_time_fft import *         # noqa: F403
+from ._state_space import *         # noqa: F403
 from ._peak_finding import *         # noqa: F403
 from ._czt import *         # noqa: F403
 from ._whittaker import whittaker_henderson  # noqa: F401

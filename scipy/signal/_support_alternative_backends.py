@@ -250,6 +250,8 @@ capabilities_overrides = {
                              jax_jit=False, allow_dask_compute=True),
     "freqs_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
+    "freqs_ss": xp_capabilities(skip_backends=[(b_, "Not tested successfully") for b_ in
+                                         ("dask.array", "jax.numpy", "torch")]),
     "freqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                              jax_jit=False, allow_dask_compute=True),
     "freqz_sos": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
