@@ -605,7 +605,6 @@ from ._multicomp import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
 from ._kde import gaussian_kde
-from . import mstats
 from . import qmc
 from ._multivariate import *
 from . import contingency
@@ -629,9 +628,18 @@ from ._new_distributions import Normal, Logistic, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
 from ._quantile import quantile, estimated_cdf
+from . import mstats
+from ._stats_mstats_common import (_mstats_deprecation_table,
+                                   _generate_deprecation_message)
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+# process the deprecration messages now that `stats` is initialized
+for fun in _mstats_deprecation_table:
+   _generate_deprecation_message(fun)
+del _mstats_deprecation_table  # cleanup
+del _generate_deprecation_message

@@ -47,7 +47,7 @@ import scipy.special as special
 import scipy.stats._stats_py
 import scipy.stats._stats_py as _stats_py
 from scipy.stats._stats_pythran import siegelslopes as siegelslopes_pythran
-from ._stats_mstats_common import (_find_repeats, TheilslopesResult, SiegelslopesResult, 
+from ._stats_mstats_common import (_find_repeats, TheilslopesResult, SiegelslopesResult,
                                    _deprecate_mstats)
 
 
@@ -3210,7 +3210,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     return DescribeResult(n, mm, m, v, sk, kurt)
 
 
-@_deprecate_mstats()
+# not public, actually
 def stde_median(data, axis=None):
     """Returns the McKean-Schrader estimate of the standard error of the sample
     median along the given axis. masked values are discarded.
