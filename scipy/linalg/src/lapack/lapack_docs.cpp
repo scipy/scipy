@@ -743,9 +743,12 @@ namespace lapack {
         }
 
         /** @brief `gelss_lwork`, `gelsy_lwork` and `gelsd_lwork` share their argument list;
-         *         only `gelsy` makes `cond` required. */
+         *         only `gelsy` makes `cond` required.  `gelsd` alone sizes the integer workspace
+         *         as well -- and the real one in the complex flavors -- so only it reports those
+         *         alongside `work`. */
         static std::string
-        doc_gelsx_lwork(const char *name, const Dtype &t, const char *base, const char *args) noexcept
+        doc_gelsx_lwork(const char *name, const Dtype &t, const char *base, const char *args,
+                        bool sizes_workspaces = false) noexcept
         {
             std::string s;
             s += std::string(name) + args + "\n\n";
@@ -760,6 +763,15 @@ namespace lapack {
 
             s += "\nReturns\n-------\n";
             s += "work : " + std::string(t.scalar) + "\n    Optimal size of the `work` array, as a scalar of the routine's dtype.\n";
+            if (sizes_workspaces) {
+                if (t.is_complex) {
+                    s += "rwork : float\n"
+                         "    Optimal size of the real workspace, to pass as `size_rwork`. The real\n"
+                         "    flavors have no such output, so they return one value fewer.\n";
+                }
+                s += "iwork : int\n"
+                     "    Optimal size of the integer workspace, to pass as `size_iwork`.\n";
+            }
             s += R_INFO;
             return s;
         }
@@ -769,7 +781,7 @@ namespace lapack {
         static std::string doc_gelsy_lwork(const char *name, const Dtype &t) noexcept
             { return doc_gelsx_lwork(name, t, "gelsy", "(m, n, nrhs, cond, lwork=-1)"); }
         static std::string doc_gelsd_lwork(const char *name, const Dtype &t) noexcept
-            { return doc_gelsx_lwork(name, t, "gelsd", "(m, n, nrhs, cond=-1.0, lwork=-1)"); }
+            { return doc_gelsx_lwork(name, t, "gelsd", "(m, n, nrhs, cond=-1.0, lwork=-1)", true); }
 
         static std::string
         doc_geqp3(const char *name, const Dtype &) noexcept
@@ -3261,7 +3273,8 @@ namespace lapack {
             std::string s;
             s += std::string(name) + "(a, b, q, z, ifst, ilst, wantq=1, wantz=1, ";
             /* Only the real flavors carry a workspace, so only they take `lwork`. */
-            s += t.is_complex ? "overwrite_a=0,\n      " : "lwork=4*n+16,\n      ";
+            s += t.is_complex ? "overwrite_a=0,\n      "
+                              : "lwork=4*n+16,\n      overwrite_a=0, ";
             s += "overwrite_b=0, overwrite_q=0, overwrite_z=0)\n\n";
             s += "Reorder a generalized Schur decomposition by moving one diagonal block\n"
                  "(LAPACK ``" + std::string(name) + "``).\n\n";
