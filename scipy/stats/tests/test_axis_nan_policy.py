@@ -217,6 +217,10 @@ axis_nan_policy_cases = [
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (stats.circmedian, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(convention='bisecting'),
+     1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(convention='geometric'),
+     1, 1, False, lambda x: (x,)),
     (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
