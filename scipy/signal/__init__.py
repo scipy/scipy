@@ -193,6 +193,7 @@ Continuous-time:
    step             -- Step response of continuous-time LTI system.
    freqresp         -- Frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
+   freqs_ss         -- Frequency response of a continuous-time state space system.
 
 
 Discrete-time:
