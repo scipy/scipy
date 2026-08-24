@@ -39,34 +39,12 @@ from functools import partial
 
 import numpy as np
 
-from scipy._lib._array_api import _asarray, array_namespace, xp_capabilities
+from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
+                                   is_numpy, xp_promote, xp_capabilities)
 from scipy._lib._util import _asarray_validated, _transition_to_rng
 from scipy._external import array_api_extra as xpx
 from scipy.special import rel_entr
-from . import _distance_xp
-from ._distance_xp import _validate_weights, _validate_vector
 from . import _hausdorff, _distance_pybind, _distance_wrap
-
-# Backends that take priority over the array API one, keyed by function name and array
-# namespace. Registering per function lets a namespace keep a specialized kernel for
-# some distances and the generic implementation for the rest.
-_backend_registry = {}
-
-
-def _select_backend(name, xp, generic=False):
-    """Select the backend implementing the distance function.
-
-    Args:
-        name: Public function name, such as "euclidean".
-        xp: Array namespace of the inputs.
-        generic: Skip the registry and take the array API backend.
-
-    Returns:
-        The module implementing `name`.
-    """
-    if generic:
-        return _distance_xp
-    return _backend_registry.get((name, xp), _distance_xp)
 
 
 def _copy_array_if_base_present(a):
@@ -74,6 +52,49 @@ def _copy_array_if_base_present(a):
     if a.base is not None:
         return a.copy()
     return a
+
+
+def _promote(x, xp):
+    """Promote array to float64 for numpy, else according to the Array API spec.
+
+    The return array dtype follows the following rules:
+    - If x is an ArrayLike or NumPy array, we always promote to float64
+    - If x is an Array from frameworks other than NumPy, we preserve the precision
+      of the input array dtype.
+    """
+    if is_numpy(xp):
+        return _asarray(x, order="C", xp=xp, dtype=xp.float64)
+    return xp_promote(x, force_floating=True, xp=xp)
+
+
+def _validate_vector(u, dtype=None):
+    try:
+        u = _asarray(u, dtype=dtype)
+    except TypeError:
+        # String/object arrays (e.g. hamming on byte strings) have no array-API
+        # namespace. Fall back to NumPy, which handles them.
+        u = np.asarray(u, dtype=dtype)
+    if u.ndim == 1:
+        return u
+    raise ValueError("Input vector should be 1-D.")
+
+
+def _validate_weights(w, xp=None):
+    """Reject negatives along the last axis.
+
+    Note:
+        If w is a numpy array, we also cast to float64. If w is lazy, we fill the
+        weights with NaN.
+    """
+    xp = array_namespace(w) if xp is None else xp
+    w = _promote(w, xp=xp)
+    invalid = w < 0
+    if is_lazy_array(w):
+        any_invalid = xp.any(invalid, axis=-1, keepdims=True)
+        return xp.where(any_invalid, xp.nan, w)
+    if xp.any(invalid):
+        raise ValueError("Input weights should be all non-negative")
+    return w
 
 
 def _correlation_cdist_wrap(XA, XB, dm, **kwargs):
@@ -420,8 +441,24 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    backend = _select_backend('minkowski', array_namespace(u, v))
-    return backend.minkowski(u, v, p, w)
+    xp = array_namespace(u, v)
+    u = _promote(u, xp=xp)
+    v = _promote(v, xp=xp)
+    if p <= 0:
+        raise ValueError("p must be greater than 0")
+    u_v = u - v
+    if w is not None:
+        w = _validate_weights(w, xp=xp)
+        if p == 1:
+            root_w = w
+        elif p == 2:
+            root_w = xp.sqrt(w)  # better precision and speed
+        elif p == np.inf:
+            root_w = xp.astype(w != 0, w.dtype)
+        else:
+            root_w = w ** (1 / p)
+        u_v = root_w * u_v
+    return xp.linalg.vector_norm(u_v, ord=p, axis=-1)
 
 
 def euclidean(u, v, w=None):

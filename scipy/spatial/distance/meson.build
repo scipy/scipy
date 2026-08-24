@@ -29,7 +29,6 @@ py3.install_sources([
     '__init__.py',
     '_distance.pyi',
     '_distance.py',
-    '_distance_xp.py'
   ],
   subdir: 'scipy/spatial/distance'
 )
