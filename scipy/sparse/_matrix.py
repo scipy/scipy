@@ -17,7 +17,8 @@ class spmatrix(_spbase):
        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This class also serves as the namespace for SciPy sparse matrix types.
-    It cannot be instantiated.  Most of the work is provided by subclasses.
+    It cannot be instantiated. Most of the work is provided by subclasses.
+    Use a subclass that overrides at least one of ``tocoo`` or ``tocsr``.
     """
     _allow_nd: tuple[int, ...] = (2,)
 
