@@ -228,11 +228,7 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
 
     """
     xp = array_namespace(sample)
-    low_, high_ = low, high  # do value-based I.V. on floats rather than arrays
-    sample, low, high = xp_promote(sample, low, high, force_floating=True, xp=xp)
-
-    if low.shape or high.shape or low_ >= high_:
-        raise ValueError("`low` and `high` must be scalars such that `low < high`.")
+    sample, high, low = _circfuncs_common_input_validation(sample, high, low, xp=xp)
 
     tol = 10*xp.finfo(sample).eps
     T = high - low
@@ -271,11 +267,15 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
     return median[()]
 
 
-def _circfuncs_common(samples, period, xp=None):
-    xp = array_namespace(samples) if xp is None else xp
+def _circfuncs_common_input_validation(sample, high, low, *, xp):
+    low_, high_ = low, high  # do value-based I.V. on floats rather than arrays
+    sample, low, high = xp_promote(sample, low, high, force_floating=True, xp=xp)
+    if low.shape or high.shape or low_ >= high_:
+        raise ValueError("`low` and `high` must be scalars such that `low < high`.")
+    return sample, high, low
 
-    samples = xp_promote(samples, force_floating=True, xp=xp)
 
+def _circfuncs_common_calc(samples, period, *, xp):
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
     scaled_samples = samples * ((2.0 * pi) / period)
@@ -365,12 +365,13 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     """
     xp = array_namespace(samples)
+    samples, high, low = _circfuncs_common_input_validation(samples, high, low, xp=xp)
     # Needed for non-NumPy arrays to get appropriate NaN result
     # Apparently atan2(0, 0) is 0, even though it is mathematically undefined
     if xp_size(samples) == 0:
         return xp.mean(samples, axis=axis)
     period = high - low
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
+    samples, sin_samp, cos_samp = _circfuncs_common_calc(samples, period, xp=xp)
     sin_sum = xp.sum(sin_samp, axis=axis)
     cos_sum = xp.sum(cos_samp, axis=axis)
     res = xp.atan2(sin_sum, cos_sum)
@@ -462,8 +463,9 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     """
     xp = array_namespace(samples)
+    samples, high, low = _circfuncs_common_input_validation(samples, high, low, xp=xp)
     period = high - low
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
+    samples, sin_samp, cos_samp = _circfuncs_common_calc(samples, period, xp=xp)
     sin_mean = xp.mean(sin_samp, axis=axis)
     cos_mean = xp.mean(cos_samp, axis=axis)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
@@ -584,8 +586,9 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     """
     xp = array_namespace(samples)
+    samples, high, low = _circfuncs_common_input_validation(samples, high, low, xp=xp)
     period = high - low
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
+    samples, sin_samp, cos_samp = _circfuncs_common_calc(samples, period, xp=xp)
     sin_mean = xp.mean(sin_samp, axis=axis)  # [1] (2.2.3)
     cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5

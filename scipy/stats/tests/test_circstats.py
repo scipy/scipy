@@ -90,19 +90,10 @@ class TestCircMedian:
         xp_assert_close(res, xp.asarray(ref))
 
     def test_input_validation(self, xp):
-        x = xp.asarray([1., 2., 3.])
-
+        # high/low input validation done in TestCircfuncs
         message = "`convention` must be either 'arc-distance' or 'bisecting'."
         with pytest.raises(ValueError, match=message):
-            stats.circmedian(x, convention='ekki-ekki')
-
-        message = "`low` and `high` must be scalars such that `low < high`."
-        with pytest.raises(ValueError, match=message):
-            stats.circmedian(x, low = xp.asarray([1., 2.]))
-        with pytest.raises(ValueError, match=message):
-            stats.circmedian(x, high = xp.asarray([1., 2.]))
-        with pytest.raises(ValueError, match=message):
-            stats.circmedian(x, low = 1.0, high=0.0)
+            stats.circmedian(xp.asarray([1., 2., 3.]), convention='ekki-ekki')
 
     @pytest.mark.parametrize('convention', ['arc-distance', 'bisecting'])
     def test_edge_cases(self, convention, xp):
@@ -168,6 +159,18 @@ class TestCircFuncs:
         S1 = xp.std(x, correction=0)
         S2 = stats.circstd(x, high=360)
         xp_assert_close(S2, S1, rtol=1e-4)
+
+    @pytest.mark.parametrize("circfun", [stats.circmedian, stats.circmean,
+                                         stats.circvar, stats.circstd])
+    def test_circfuncs_input_validation(self, circfun, xp):
+        x = xp.asarray([1., 2., 3.])
+        message = "`low` and `high` must be scalars such that `low < high`."
+        with pytest.raises(ValueError, match=message):
+            circfun(x, low = xp.asarray([1., 2.]))
+        with pytest.raises(ValueError, match=message):
+            circfun(x, high = xp.asarray([1., 2.]))
+        with pytest.raises(ValueError, match=message):
+            circfun(x, low = 1.0, high=0.0)
 
     @pytest.mark.parametrize("test_func, numpy_func",
                              [(stats.circmean, np.mean),
