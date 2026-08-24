@@ -62,8 +62,8 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._lib._util import _apply_over_batch
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._external import array_api_extra as xpx
-from scipy._lib._array_api import make_xp_test_case, is_lazy_array, array_namespace
+from scipy._lib._array_api import (make_xp_test_case, is_lazy_array, array_namespace,
+                                   make_xp_pytest_param)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 
@@ -1438,6 +1438,35 @@ class TestPdist:
         # test that output is numerically equivalent
         xp_assert_close(Y1, Y2, rtol=eps)
 
+
+@make_xp_test_case(minkowski)
+class TestMinkowski:
+    @pytest.mark.parametrize("p, expected", [(1, 3.0),
+                                             (1.5, (1.0 + 2.0**1.5)**(2. / 3)),
+                                             (2, 5.0 ** 0.5),
+                                             (0.25, (1.0 + 2.0 ** 0.25) ** 4)])
+    def test_minkowski(self, p, expected, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(minkowski(x, y, p), expected, atol=1.5e-7)
+
+    def test_gh_10262(self, xp):
+        # Check that casting input to minimum scalar type doesn't affect result
+        # (issue #10262). This could be extended to more test inputs with
+        # np.min_scalar_type(np.max(input_matrix)).
+        a = xp.asarray([352, 916])
+        b = xp.asarray([350, 660])
+        xp_assert_equal(minkowski(a, b),
+                        minkowski(xp.astype(a, xp.uint16), xp.astype(b, xp.uint16)))
+
+    @pytest.mark.parametrize("p", [-10.0, -0.5, 0.0])
+    def test_bad_p(self, xp, p):
+        # Raise ValueError if p <=0.
+        with pytest.raises(ValueError):
+            minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p)
+        with pytest.raises(ValueError):
+            minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p, xp.asarray([1, 1]))
+
+
 class TestSomeDistanceFunctions:
 
     def setup_method(self):
@@ -1446,29 +1475,6 @@ class TestSomeDistanceFunctions:
         y = np.array([1.0, 1.0, 5.0])
 
         self.cases = [(x, y)]
-
-    @make_xp_test_case(minkowski)
-    def test_minkowski(self, xp):
-        dtype = xpx.default_dtype(xp)
-        atol = 1.5e-7
-        for x, y in self.cases:
-            x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
-            dist1 = minkowski(x, y, p=1)
-            xp_assert_close(dist1, xp.asarray(3.0), atol=atol)
-            dist1p5 = minkowski(x, y, p=1.5)
-            xp_assert_close(dist1p5, xp.asarray((1.0 + 2.0**1.5)**(2. / 3)), atol=atol)
-            dist2 = minkowski(x, y, p=2)
-            xp_assert_close(dist2, xp.asarray(5.0 ** 0.5), atol=atol)
-            dist0p25 = minkowski(x, y, p=0.25)
-            xp_assert_close(dist0p25, xp.asarray((1.0 + 2.0 ** 0.25) ** 4), atol=atol)
-
-        # Check that casting input to minimum scalar type doesn't affect result
-        # (issue #10262). This could be extended to more test inputs with
-        # np.min_scalar_type(np.max(input_matrix)).
-        a = xp.asarray([352, 916])
-        b = xp.asarray([350, 660])
-        xp_assert_equal(minkowski(a, b),
-                        minkowski(xp.astype(a, xp.uint16), xp.astype(b, xp.uint16)))
 
     def test_euclidean(self):
         for x, y in self.cases:
@@ -1821,16 +1827,6 @@ class TestIsValidY:
     def correct_n_by_n(self, n):
         y = np.random.rand((n * (n - 1)) // 2)
         return y
-
-
-@make_xp_test_case(minkowski)
-@pytest.mark.parametrize("p", [-10.0, -0.5, 0.0])
-def test_bad_p(xp, p):
-    # Raise ValueError if p <=0.
-    with pytest.raises(ValueError):
-        minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p)
-    with pytest.raises(ValueError):
-        minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p, xp.asarray([1, 1]))
 
 
 def test_sokalsneath_all_false():
@@ -2278,10 +2274,10 @@ class TestChebyshev:
 @pytest.mark.parametrize(
     "func,p",
     [
-        (minkowski, 1),
-        (minkowski, 2),
-        (minkowski, 3.5),
-        (minkowski, np.inf),
+        make_xp_pytest_param(minkowski, 1),
+        make_xp_pytest_param(minkowski, 2),
+        make_xp_pytest_param(minkowski, 3.5),
+        make_xp_pytest_param(minkowski, np.inf),
         (euclidean, None),
         (sqeuclidean, None),
     ],
