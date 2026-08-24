@@ -2,6 +2,7 @@ import inspect
 import numpy as np
 import pickle
 import pytest
+import warnings
 
 from numpy.testing import assert_equal
 from numpy._core._exceptions import UFuncTypeError
@@ -173,6 +174,25 @@ class TestWithCacheOptimization:
                 res0, res1 = mathieu_sem(m, q, x, where=where)
         else:
             res0, res1 = mathieu_sem(m, q, x, where=where)
+
+        mask = np.broadcast_to(where, (3,))
+        expected0, expected1 = mathieu_sem(m, q, x)
+        assert_equal(res0[mask], expected0[mask])
+        assert_equal(res1[mask], expected1[mask])
+
+    @pytest.mark.parametrize("m", [2.0, [2.0, 2.0, 2.0]])
+    @pytest.mark.parametrize("where", [[True, False, True], False])
+    def test_where_with_explicit_out_none(self, m, where):
+        q = 3.0
+        x = [10.0, 20.0, 30.0]
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "error",
+                message="'where' used without 'out'",
+                category=UserWarning,
+            )
+            res0, res1 = mathieu_sem(m, q, x, where=where, out=(None, None))
 
         mask = np.broadcast_to(where, (3,))
         expected0, expected1 = mathieu_sem(m, q, x)
@@ -512,3 +532,26 @@ class TestMakeUFuncLikeWrapper:
     )
     def test_call_signature(self, func_wrapper, expected):
         assert str(inspect.signature(func_wrapper)) == expected
+
+    def test_out_none_vs_not_supplied(self):
+        def func(*args, **kwargs):
+            return kwargs
+
+        func._ufunc = betainc
+        wrapper = _make_ufunc_like_wrapper(
+            func,
+            "test_func",
+            ["a", "b", "x"],
+            "Test wrapper.",
+        )
+
+        kwargs = wrapper(1.0, 2.0, 0.5)
+        assert "out" not in kwargs
+
+        kwargs = wrapper(1.0, 2.0, 0.5, out=None)
+        assert "out" in kwargs
+        assert kwargs["out"] is None
+
+        kwargs = wrapper(1.0, 2.0, 0.5, None)
+        assert "out" in kwargs
+        assert kwargs["out"] is None

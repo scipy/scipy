@@ -64,7 +64,7 @@ def _normalize_out(out, nout):
     matching the behavior of a plain ufunc.
 
     """
-    if out is None:
+    if out is _NO_VALUE:
         return (None,)*nout
     if not isinstance(out, tuple):
         if nout > 1:
@@ -168,8 +168,7 @@ def _with_cache_optimization(
     is_elementwise = ufunc.signature is None
 
     def wrapper(*args, **kwargs):
-        out_given = "out" in kwargs
-        out = kwargs.pop("out", None)
+        out = kwargs.pop("out", _NO_VALUE)
         casting = kwargs.pop("casting", "same_kind")
         order = kwargs.pop("order", "K")
         dtype = kwargs.pop("dtype", None)
@@ -194,7 +193,7 @@ def _with_cache_optimization(
         if where is not True:
             where = asarray(where)
             kwargs["where"] = where
-        if out_given:
+        if out is not _NO_VALUE:
             kwargs["out"] = out
         if signature is not None:
             kwargs["signature"] = signature
@@ -210,7 +209,7 @@ def _with_cache_optimization(
         out_tuple = _normalize_out(out, ufunc.nout)
 
         if (
-                not out_given
+                out is _NO_VALUE
                 and where is not True
                 and version.parse(np.__version__) >= version.parse("2.4.0")
         ):
