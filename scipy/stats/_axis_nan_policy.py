@@ -640,14 +640,16 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if override['nan_propagation'] and (is_lazy_array(x) or contains_nan):
                     nan_out = xp.any(xp.isnan(x), axis=-1)
-                    # this could be
-                    # (xp.where(nan_out, xp.nan, res_i) for res_i in res)
+                    # We want to replace nan_out entries with NaNs *unless*
+                    # it is a masked array and the element is masked.
+                    res = ((xp.where(nan_out & ~getattr(res_i, 'mask', nan_out),
+                                     xp.nan, res_i)
+                            if hasattr(res_i, 'shape') else res_i) for res_i in res)
+                    # we could eliminate the dependence on `hasattr(res_i, 'shape')``
                     # but `ttest_ind` stores its `alternative`` as a scalar integer
                     # in the test result. That is sort of a hack and could be improved
                     # at some point, but in the meantime, leave "all" Python scalars -
                     # which is just the `alternative` of `ttest_ind` AFAICT - alone.
-                    res = ((xp.where(nan_out, xp.nan, res_i) if hasattr(res_i, 'shape')
-                            else res_i) for res_i in res)
 
                 res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
