@@ -128,13 +128,27 @@ Other
    rsh
 
 """
+import warnings
 from . import _mstats_basic
 from . import _mstats_extras
 from ._mstats_basic import *  # noqa: F403
 from ._mstats_extras import *  # noqa: F403
+from ._stats_mstats_common import (_mstats_deprecation_table,
+                                   _generate_deprecation_message)
 # Functions that support masked array input in stats but need to be kept in the
 # mstats namespace for backwards compatibility:
 from scipy.stats import gmean, hmean, zmap, zscore, chisquare
 
 __all__ = _mstats_basic.__all__ + _mstats_extras.__all__
 __all__ += ['gmean', 'hmean', 'zmap', 'zscore', 'chisquare']
+
+# process the deprecation messages now that `stats` is initialized
+for fun in _mstats_deprecation_table:
+   _generate_deprecation_message(fun, globals()[fun.__name__])
+del _mstats_deprecation_table
+del _generate_deprecation_message
+
+msg = ("`scipy.stats.mstats` is deprecated as of SciPy 2.0.0 and will be removed "
+       "in SciPy 2.4.0. See function documentation for alternatives.")
+warnings.warn(msg, DeprecationWarning, stacklevel=2)
+del warnings

@@ -630,9 +630,6 @@ from ._new_distributions import Normal, Logistic, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
 from ._quantile import quantile, estimated_cdf
-from . import mstats
-from ._stats_mstats_common import (_mstats_deprecation_table,
-                                   _generate_deprecation_message)
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
@@ -640,8 +637,15 @@ from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
 
-# process the deprecation messages now that `stats` is initialized
-for fun in _mstats_deprecation_table:
-   _generate_deprecation_message(fun)
-del _mstats_deprecation_table
-del _generate_deprecation_message
+def __getattr__(name):
+   # lazy import mstats to avoid DeprecationWarning when
+   # only `stats` is imported.
+   if name == 'mstats':
+      import importlib
+      return importlib.import_module("scipy.stats.mstats")
+   try:
+      return globals()[name]
+   except KeyError:
+      raise AttributeError(
+         f"module {__name__!r} has no attribute {name!r}"
+      ) from None

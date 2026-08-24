@@ -58,7 +58,7 @@ def _deprecate_mstats(replacement=None, notes=""):
     return decorator
 
 
-def _generate_deprecation_message(fun):
+def _generate_deprecation_message(fun, wrapper):
     notes = _mstats_deprecation_table[fun]['notes']
     replacement = _mstats_deprecation_table[fun]['replacement']
     replacement = fun.__name__ if replacement is None else replacement
@@ -68,7 +68,7 @@ def _generate_deprecation_message(fun):
 
     message = (f"`scipy.stats.mstats.{fun.__name__}` is deprecated as of "
                "SciPy 2.0.0 and will be removed, along with the "
-               "`scipy.stats.mstats` namespace, in SciPy 2.2.0. ")
+               "`scipy.stats.mstats` namespace, in SciPy 2.4.0. ")
     legacy_message = ("If needed, the legacy `scipy.stats.mstats` from SciPy "
                       "1.18.0 can be installed as the package `mstats`.")
 
@@ -88,7 +88,6 @@ def _generate_deprecation_message(fun):
 
     message += legacy_message
 
-    wrapper = getattr(stats.mstats, fun.__name__)
     doc = FunctionDoc(wrapper)
     doc['Extended Summary'].append("")
     doc['Extended Summary'].append(".. deprecated:: 2.0.0")
