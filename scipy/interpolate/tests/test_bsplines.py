@@ -2874,8 +2874,23 @@ class TestSmoothingSpline:
         t = np.r_[[0.0]*4, [0.5]*4, [1.0]*4]
         x = np.r_[[0.1], np.linspace(0.5, 1.0, 11)]
         y = np.sin(3 * x)
-        with assert_raises(ValueError, match="not positive definite"):
+        with assert_raises(ValueError, match="no `x` values nearby"):
             make_smoothing_spline(x, y, lam=lam, t=t)
+
+    def test_huge_lam_numerically_singular(self):
+        # the condition number of `X^T W X + lam * Omega` grows like lam
+        # (the two line directions keep O(1) pivots while all others grow),
+        # so a large enough lam makes Cholesky fail even though the matrix
+        # is mathematically positive definite. The error message must not
+        # only suggest increasing lam.
+        x = np.linspace(0.0, 1.0, 60)
+        y = x**2 + 0.1 * np.sin(20 * x)
+        t = np.r_[[0.0]*4, [0.2, 0.4, 0.6, 0.8], [1.0]*4]
+        # moderate-to-large lam is fine: the fit converges to its
+        # straight-line limit
+        make_smoothing_spline(x, y, lam=1e12, t=t)
+        with assert_raises(ValueError, match="smaller `lam`"):
+            make_smoothing_spline(x, y, lam=1e14, t=t)
 
     def test_duplicate_interior_knots(self):
         # interior knots may repeat: each repetition reduces continuity

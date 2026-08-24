@@ -3032,9 +3032,13 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     except LinAlgError as e:
         raise ValueError(
             "the system `X^T W X + lam * Omega` is not positive definite, so "
-            "the coefficients are not uniquely determined. This happens when "
-            "some knots of `t` have no `x` values nearby. Use fewer knots, or "
-            "pass a larger `lam`.") from e
+            "the coefficients are not uniquely determined. Two causes are "
+            "possible: some knots of `t` have no `x` values nearby (use "
+            "fewer knots, or pass a larger `lam`), or `lam` is so large that "
+            "the system is numerically singular, since its condition number "
+            "grows proportionally to `lam` (use a smaller `lam`; the fit at "
+            "such `lam` is already indistinguishable from its straight-line "
+            "limit).") from e
     c = np.ascontiguousarray(c)
     t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, 3, axis=axis)
