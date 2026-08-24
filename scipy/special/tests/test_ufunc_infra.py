@@ -12,6 +12,11 @@ from scipy.special._mathieu import mathieu_sem as mathieu_sem_wrapper
 # raw ufunc without cache optimization
 from scipy.special._ufuncs import _mathieu_sem
 
+from scipy.special._spfun_stats import _poisson_binom_cdf
+from scipy.special._ufuncs import betainc
+
+from scipy.special._ufunc_tools import _make_ufunc_like_wrapper
+
 
 # Tests that ufunc kwargs still work when _with_cache_optimization is applied
 class TestWithCacheOptimization:
@@ -74,11 +79,11 @@ class TestWithCacheOptimization:
 
     @pytest.mark.parametrize("subok", [True, False])
     def test_subok(self, subok):
-        class MockSubClass(np.ndarray):
+        class ArraySubClass(np.ndarray):
             pass
-        m = np.asarray([1, 2, 3]).view(MockSubClass)
-        q = np.asarray([2.1, 3.2, 4.3]).view(MockSubClass)
-        x = np.asarray([10, 20, 30]).view(MockSubClass)
+        m = np.asarray([1, 2, 3]).view(ArraySubClass)
+        q = np.asarray([2.1, 3.2, 4.3]).view(ArraySubClass)
+        x = np.asarray([10, 20, 30]).view(ArraySubClass)
         res0, res1 = mathieu_sem(m, q, x, subok=subok)
         expected0, expected1 = _mathieu_sem(m, q, x, subok=subok)
         assert type(res0) is type(expected0) and type(res1) is type(expected1)
@@ -223,3 +228,273 @@ class TestWithCacheOptimization:
     @pytest.mark.parametrize("func", [mathieu_sem, mathieu_sem_wrapper])
     def test_pickle(self, func):
         assert pickle.loads(pickle.dumps(func)) is func
+
+
+def _make_passthrough(ufunc):
+    def wrapper(*args, **kwargs):
+        return ufunc(*args, **kwargs)
+    wrapper._ufunc = ufunc
+    return wrapper
+
+_betainc_wrapper = _make_ufunc_like_wrapper(
+            _make_passthrough(betainc),
+            "betainc",
+            ["a", "b", "x"],
+            "Wrapper for betainc.",
+)
+
+_poisson_binom_cdf_wrapper = _make_ufunc_like_wrapper(
+            _make_passthrough(_poisson_binom_cdf),
+            "poisson_binom_cdf",
+            ["k", "p"],
+            "Wrapper for _poisson_binom_cdf.",
+)
+
+_mathieu_sem_wrapper_wrapper = _make_ufunc_like_wrapper(
+    _make_passthrough(mathieu_sem_wrapper),
+    "mathieu_sem",
+    ["m", "q", "x"],
+    "Wrapper for wrapper of mathieu_sem",
+)
+
+_vecdot_wrapper = _make_ufunc_like_wrapper(
+    _make_passthrough(np.vecdot),
+    "vecdot",
+    ["x1", "x2"],
+    "Wrapper for vecdot."
+)
+
+
+def _assert_same_result(actual, desired):
+    if isinstance(desired, tuple):
+        assert isinstance(actual, tuple)
+        assert len(actual) == len(desired)
+        for actual_i, desired_i in zip(actual, desired):
+            _assert_same_result(actual_i, desired_i)
+        return
+
+    np.testing.assert_equal(actual, desired)
+
+    if isinstance(desired, np.ndarray):
+        assert type(actual) is type(desired)
+        assert actual.dtype == desired.dtype
+        assert actual.shape == desired.shape
+        assert actual.strides == desired.strides
+
+
+class TestMakeUFuncLikeWrapper:
+    @pytest.mark.parametrize(
+        "func,func_wrapper",
+        [
+            [betainc, _betainc_wrapper],
+            [mathieu_sem_wrapper, _mathieu_sem_wrapper_wrapper],
+            [_poisson_binom_cdf, _poisson_binom_cdf_wrapper],
+        ]
+    )
+    def test_attrs(self, func, func_wrapper):
+        for attr in ["nin", "nout", "nargs", "ntypes", "types", "signature"]:
+            assert getattr(func_wrapper, attr) == getattr(func, attr)
+
+    def test_simple_elementwise_values(self):
+        a = np.linspace(1, 100, 9)
+        b = np.linspace(1, 100, 8)
+        x = np.linspace(0, 1, 10)
+        desired = betainc(a[:, None], b[None, :], x[:, None, None])
+        actual = _betainc_wrapper(a[:, None], b[None, :], x[:, None, None])
+        np.testing.assert_equal(actual, desired)
+
+    def test_simple_elementwise_values_out(self):
+        a = np.linspace(1, 100, 9)
+        b = np.linspace(1, 100, 8)
+        x = np.linspace(0, 1, 10)
+
+        out_desired = np.empty((10, 9, 8))
+        betainc(a[:, None], b[None, :], x[:, None, None], out=out_desired)
+        out_actual = np.empty((10, 9, 8))
+        actual = _betainc_wrapper(
+            a[:, None], b[None, :], x[:, None, None], out=out_actual
+        )
+        assert out_actual is actual
+        np.testing.assert_equal(out_actual, out_desired)
+
+    def test_multiple_outputs_elementwise_values(self):
+        m = np.asarray([1, 4])
+        q = np.linspace(1, 50, 10)
+        x = np.linspace(0, 360, 10)
+        desired0, desired1 = mathieu_sem_wrapper(
+            m[:, None], q[None, :], x[:, None, None]
+        )
+        actual0, actual1 = _mathieu_sem_wrapper_wrapper(
+            m[:, None], q[None, :], x[:, None, None]
+        )
+        np.testing.assert_equal(actual0, desired0)
+        np.testing.assert_equal(actual1, desired1)
+
+    def test_multiple_outputs_values_out(self):
+        m = np.asarray([1, 4])
+        q = np.linspace(1, 50, 10)
+        x = np.linspace(0, 360, 10)
+        out_desired0, out_desired1 = np.empty((10, 2, 10)), np.empty((10, 2, 10))
+        desired0, desired1 = mathieu_sem_wrapper(
+            m[:, None], q[None, :], x[:, None, None], out=(out_desired0, out_desired1)
+        )
+        out_actual0, out_actual1 = np.empty((10, 2, 10)), np.empty((10, 2, 10))
+        actual0, actual1 = _mathieu_sem_wrapper_wrapper(
+            m[:, None], q[None, :], x[:, None, None], out=(out_actual0, out_actual1)
+        )
+        assert out_actual0 is actual0
+        assert out_actual1 is actual1
+        np.testing.assert_equal(out_actual0, out_desired0)
+        np.testing.assert_equal(out_actual1, out_desired1)
+
+    def test_gufunc_values_out(self):
+        p = np.asarray([
+            [0.1, 0.2, 0.3],
+            [0.4, 0.5, 0.6],
+        ])
+        k = np.asarray([
+            [0, 1, 2],
+            [2, 0, 1],
+        ])
+
+        out_desired = np.empty((2, 3, 2))
+        _poisson_binom_cdf(k[:, :, None], p, out=out_desired)
+        out_actual = np.empty((2, 3, 2))
+        actual = _poisson_binom_cdf_wrapper(k[:, :, None], p, out=out_actual)
+        assert out_actual is actual
+        np.testing.assert_equal(out_actual, out_desired)
+
+    @pytest.mark.parametrize(
+        "a_dtype", [np.dtype("int32"), np.dtype("float32"), np.dtype("float64")]
+    )
+    @pytest.mark.parametrize(
+        "b_dtype", [np.dtype("int32"), np.dtype("float32"), np.dtype("float64")]
+    )
+    @pytest.mark.parametrize("x_dtype", [np.dtype("float32"), np.dtype("float64")])
+    @pytest.mark.parametrize(
+        "out_dtype", [None, np.dtype("float32"), np.dtype("float64")]
+    )
+    def test_resolve_dtypes(self, a_dtype, b_dtype, x_dtype, out_dtype):
+        desired = betainc.resolve_dtypes((a_dtype, b_dtype, x_dtype, out_dtype))
+        actual = _betainc_wrapper.resolve_dtypes((a_dtype, b_dtype, x_dtype, out_dtype))
+        assert actual == desired
+
+    def test_elementwise_where(self):
+        a = np.array([1., 2., 3.])
+        b = np.array([2., 3., 4.])
+        x = np.array([0.2, 0.4, 0.6])
+        where = np.array([True, False, True])
+
+        actual = np.full(3, -1.)
+        desired = actual.copy()
+
+        _betainc_wrapper(a, b, x, out=actual, where=where)
+        betainc(a, b, x, out=desired, where=where)
+
+        np.testing.assert_equal(actual, desired)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"casting": "same_kind"},
+            {"casting": "unsafe"},
+            {"order": "C"},
+            {"order": "F"},
+            {"order": "A"},
+            {"order": "K"},
+            {"dtype": np.float32},
+            {"dtype": np.float64},
+            {"signature": betainc.types[0]},
+            {"signature": betainc.types[-1]},
+        ],
+    )
+    def test_kwargs(self, kwargs):
+        a = np.linspace(1, 100, 9)[:, None, None]
+        b = np.linspace(1, 100, 8)[None, :, None]
+        x = np.linspace(0, 1, 10)[None, None, :]
+
+        desired = betainc(a, b, x, **kwargs)
+        actual = _betainc_wrapper(a, b, x, **kwargs)
+
+        _assert_same_result(actual, desired)
+
+
+    @pytest.mark.parametrize("subok", [True, False])
+    def test_subok(self, subok):
+        class ArraySubclass(np.ndarray):
+            pass
+
+        a = np.linspace(1, 100, 9).view(ArraySubclass)
+        b = np.linspace(1, 100, 9).view(ArraySubclass)
+        x = np.linspace(0, 1, 9).view(ArraySubclass)
+
+        desired = betainc(a, b, x, subok=subok)
+        actual = _betainc_wrapper(a, b, x, subok=subok)
+
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"dtype": np.float32, "casting": "no"},
+            {"signature": "fff->f", "casting": "no"},
+        ],
+    )
+    def test_kwargs_errors(self, kwargs):
+        a = np.array([1., 2., 3.], dtype=np.float64)
+        b = np.array([2., 3., 4.], dtype=np.float64)
+        x = np.array([0.2, 0.4, 0.6], dtype=np.float64)
+
+        with pytest.raises(TypeError):
+            betainc(a, b, x, **kwargs)
+
+        with pytest.raises(TypeError):
+            _betainc_wrapper(a, b, x, **kwargs)
+
+    @pytest.mark.parametrize("axis", [0, 1, 2, -1])
+    def test_gufunc_axis(self, axis):
+        x1 = np.arange(24.0).reshape(2, 3, 4)
+        x2 = np.arange(24.0).reshape(2, 3, 4)
+
+        desired = np.vecdot(x1, x2, axis=axis)
+        actual = _vecdot_wrapper(x1, x2, axis=axis)
+
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "axes",
+        [
+            [(0,), (0,), ()],
+            [(1,), (1,), ()],
+            [(2,), (2,), ()],
+        ],
+    )
+    def test_gufunc_axes(self, axes):
+        x1 = np.arange(24.0).reshape(2, 3, 4)
+        x2 = np.arange(24.0).reshape(2, 3, 4)
+
+        desired = np.vecdot(x1, x2, axes=axes)
+        actual = _vecdot_wrapper(x1, x2, axes=axes)
+
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize("keepdims", [True, False])
+    def test_gufunc_keepdims(self, keepdims):
+        x1 = np.arange(24.0).reshape(2, 3, 4)
+        x2 = np.arange(24.0).reshape(2, 3, 4)
+
+        desired = np.vecdot(x1, x2, keepdims=keepdims)
+        actual = _vecdot_wrapper(x1, x2, keepdims=keepdims)
+
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_axes_keepdims(self):
+        x1 = np.arange(24.0).reshape(2, 3, 4)
+        x2 = np.arange(24.0).reshape(2, 3, 4)
+
+        axes = [(1,), (1,), (1,)]
+
+        desired = np.vecdot(x1, x2, axes=axes, keepdims=True)
+        actual = _vecdot_wrapper(x1, x2, axes=axes, keepdims=True)
+
+        _assert_same_result(actual, desired)
