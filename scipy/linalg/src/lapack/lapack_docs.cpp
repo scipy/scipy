@@ -162,7 +162,7 @@ namespace lapack {
         static constexpr const char *P_JOBZ =
             "jobz : str, optional\n"
             "    ``'V'`` to compute eigenvectors, ``'N'`` for eigenvalues only. Default is\n"
-            "    ``'V'``. This family spells it as a letter where `syev` uses `compute_v`.\n";
+            "    ``'V'``. This family spells it as a letter where ``syev`` uses `compute_v`.\n";
         static constexpr const char *P_UPLO_SH =
             "uplo : str, optional\n"
             "    ``'U'`` or ``'L'`` for the triangle of `a` to reference. Default is ``'L'``\n"
@@ -274,7 +274,9 @@ namespace lapack {
             const std::string sel = std::string(1, name[0]) + "select";
             std::string s;
             s += std::string(name) + "(" + sel + ", a, b, jobvsl=1, jobvsr=1, sort_t=0, ldvsl=n, ldvsr=n,\n";
-            s += std::string(std::strlen(name) + 1, ' ') + "lwork=8*n+16, " + sel + "_extra_args=(), overwrite_a=0, overwrite_b=0)\n\n";
+            s += std::string(std::strlen(name) + 1, ' ')
+               + (t.is_complex ? "lwork=2*n, " : "lwork=8*n+16, ")
+               + sel + "_extra_args=(), overwrite_a=0, overwrite_b=0)\n\n";
             s += "Compute the generalized Schur factorization of a matrix pair (LAPACK ``" + std::string(name) + "``).\n\n";
 
             s += "Parameters\n----------\n";
@@ -2553,8 +2555,9 @@ namespace lapack {
             std::string s;
             s += std::string(name) + "(a, lower=0, lwork=max(n, 1), overwrite_a=0)\n\n";
             s += "Reduce a " + std::string(t.is_complex ? "Hermitian" : "real symmetric")
-               + " matrix to real symmetric tridiagonal form\nby an orthogonal similarity "
-                 "transformation (LAPACK ``" + std::string(name) + "``).\n\n";
+               + " matrix to real symmetric tridiagonal form\nby "
+               + (t.is_complex ? "a unitary" : "an orthogonal")
+               + " similarity transformation (LAPACK ``" + std::string(name) + "``).\n\n";
 
             s += "Parameters\n----------\n";
             s += "a : ndarray\n    " + std::string(t.is_complex ? "Hermitian" : "Symmetric")
@@ -3579,8 +3582,8 @@ namespace lapack {
         {
             std::string s;
             s += std::string(name) + "(n, lo=0, hi=n-1)\n\n";
-            s += "Query the optimal workspace for ``" + std::string(name).substr(0, 5) + "``\n"
-                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+            s += "Query the optimal workspace for ``" + std::string(name).substr(0, std::strlen(name) - 6) + "``\n"
+                 "(LAPACK ``" + std::string(name).substr(0, std::strlen(name) - 6) + "`` with ``lwork = -1``).\n\n";
 
             s += "Parameters\n----------\n";
             s += P_N_ORDER;
@@ -3609,7 +3612,7 @@ namespace lapack {
                  "`` returned.\n";
             s += P_TAU_IN;
             s += "lwork : int, optional\n    Workspace size, at least ``" + std::string(bound) +
-                 "``; -1 requests the query.\n    Default is ``max(3 * " + std::string(bound) + ", 1)``.\n";
+                 "``; -1 requests the query.\n    Default is ``3 * " + std::string(bound) + "``.\n";
             s += P_OVERWRITE_A;
 
             s += "\nReturns\n-------\n";
@@ -3690,8 +3693,8 @@ namespace lapack {
         {
             std::string s;
             s += std::string(name) + "(m, n, side='L', trans='N')\n\n";
-            s += "Query the optimal workspace for ``" + std::string(name).substr(0, 5) + "``\n"
-                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+            s += "Query the optimal workspace for ``" + std::string(name).substr(0, std::strlen(name) - 6) + "``\n"
+                 "(LAPACK ``" + std::string(name).substr(0, std::strlen(name) - 6) + "`` with ``lwork = -1``).\n\n";
 
             s += "Parameters\n----------\n";
             s += P_M;
@@ -3850,8 +3853,8 @@ namespace lapack {
         {
             std::string s;
             s += std::string(name) + "(m, n)\n\n";
-            s += "Query the optimal workspace for ``" + std::string(name).substr(0, 5) + "``\n"
-                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+            s += "Query the optimal workspace for ``" + std::string(name).substr(0, std::strlen(name) - 6) + "``\n"
+                 "(LAPACK ``" + std::string(name).substr(0, std::strlen(name) - 6) + "`` with ``lwork = -1``).\n\n";
 
             s += "Parameters\n----------\n";
             s += P_M;
@@ -3919,8 +3922,8 @@ namespace lapack {
         {
             std::string s;
             s += std::string(name) + "(m, p, q)\n\n";
-            s += "Query the workspace ``" + std::string(name).substr(0, 6) + "`` needs\n"
-                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+            s += "Query the workspace ``" + std::string(name).substr(0, std::strlen(name) - 6) + "`` needs\n"
+                 "(LAPACK ``" + std::string(name).substr(0, std::strlen(name) - 6) + "`` with ``lwork = -1``).\n\n";
             s += "The query runs with every factor requested, no transpose and the default sign\n"
                  "convention, which is what the ``.pyf`` hard-codes.\n\n";
 
@@ -4001,7 +4004,7 @@ namespace lapack {
                  "    Constraint right-hand side, length ``p``; empty when there are no\n"
                  "    constraints.\n";
             s += "lwork : int, optional\n"
-                 "    Workspace size; -1 requests the query. Default is ``max(m + n + p, 1)``.\n";
+                 "    Workspace size; -1 requests the query. Default is ``m + n + p``.\n";
             s += P_OVERWRITE_A;
             s += P_OVERWRITE_B;
             s += "overwrite_c : int, optional\n"
@@ -4023,8 +4026,8 @@ namespace lapack {
         {
             std::string s;
             s += std::string(name) + "(m, n, p)\n\n";
-            s += "Query the optimal workspace for ``" + std::string(name).substr(0, 6) + "``\n"
-                 "(LAPACK ``" + std::string(name).substr(0, 6) + "`` with ``lwork = -1``).\n\n";
+            s += "Query the optimal workspace for ``" + std::string(name).substr(0, std::strlen(name) - 6) + "``\n"
+                 "(LAPACK ``" + std::string(name).substr(0, std::strlen(name) - 6) + "`` with ``lwork = -1``).\n\n";
 
             s += "Parameters\n----------\n";
             s += P_M;
