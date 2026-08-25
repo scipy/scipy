@@ -45,9 +45,7 @@ def _tuple_aware_to_xp(x, xp):
     return xp.asarray(x)
 
 
-def _tuple_aware_xp_assert_close(actual, desired, *, rtol=None, atol=0,
-                                 check_dtype=True, check_shape=True, check_0d=True,
-                                 err_msg='', xp=None):
+def _tuple_aware_xp_assert_close(actual, desired, **kwargs):
     # like xp_assert_close, but can handle tuples of arrays
     if isinstance(desired, tuple):
         assert isinstance(actual, tuple)
@@ -55,9 +53,7 @@ def _tuple_aware_xp_assert_close(actual, desired, *, rtol=None, atol=0,
     else:
         actual, desired = (actual,), (desired,)
     for actual_i, desired_i in zip(actual, desired):
-        xp_assert_close(actual_i, desired_i, rtol=rtol, atol=atol,
-                        check_dtype=check_dtype, check_shape=check_shape,
-                        check_0d=check_0d, err_msg=err_msg, xp=xp)
+        xp_assert_close(actual_i, desired_i, **kwargs)
 
 
 def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):

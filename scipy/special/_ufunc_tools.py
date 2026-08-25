@@ -331,7 +331,14 @@ def _reconstruct_wrapper(module, name):
 
 
 class _UFuncWrapper:
-    """Base class for ufunc wrappers that preserve ufunc-like behavior."""
+    """Base class for ufunc wrappers that preserve relevant ufunc-like behavior.
+
+
+    The attributes ``nin``, `nout``, ``nargs``, ``ntypes``, ``types`` and
+    ``signature`` are preserved. ``identity`` is not preserved because it is
+    not meaningful for special functions. The method ``resolve_dtypes`` is
+    preserved but not other methods.
+    """
 
     def __init__(self, attributes):
         self.__attributes = attributes
@@ -403,8 +410,8 @@ def _make_ufunc_wrapper(
     ----------
     func : callable
         The function to wrap.
-    ufunc : numpy.ufunc
-        The underlying ufunc that ``func`` wraps.
+    ufunc : callable
+        The underlying ufunc or ufunc wrapper that ``func`` wraps.
     name : str
         Name of the function.
     arg_names : list[str]
@@ -418,7 +425,8 @@ def _make_ufunc_wrapper(
     Returns
     -------
     callable
-        A wrapper for func that maintains ufunc kwargs and attributes.
+        A wrapper for func that maintains relevant ufunc kwargs, attributes,
+        and methods.
     """
     attributes = {
         "nin": ufunc.nin,
