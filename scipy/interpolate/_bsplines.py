@@ -2973,16 +2973,19 @@ def _penalty_matrix_banded(t):
 
     return omega_banded
 
-def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega,
-                                          xtwx_dense):
+def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega):
     """Select `lam` by minimizing the GCV criterion V(lam) in log-space."""
     # Implementation decisions detailed in the following companion report:
     # https://github.com/aadya940/scipy-bspline-testing/blob/main/B_Splines_with_arbitary_knots-gcv.pdf
     # Eq. (32)
     n = y.shape[0]
     def _gcv(lam):
-        c, tr = _solve_smoothing_spline_coefficients(
-            xtwx_banded, lam, omega, xtwy, xtwx_dense=xtwx_dense)
+        try:
+            c, tr = _solve_smoothing_spline_coefficients(
+                xtwx_banded, lam, omega, xtwy, compute_trace=True)
+        except LinAlgError:
+            # numerically singular for this lam
+            return np.inf
         rss = np.sum(w * np.square(y - x @ c)) / n
         return rss / (1 - tr / n) ** 2
 
@@ -2994,16 +2997,24 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega,
     return lam_hat
 
 def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
-                                         xtwx_dense=None):
+                                         compute_trace=False):
     _lhs = XtWX_banded + lam * omega
-    if xtwx_dense is None:
-        return solveh_banded(_lhs, XtWy, lower=True), None
-    # factor once, then reuse it for the coefficients and for
-    # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]  (solve, don't invert)
-    cb = cholesky_banded(_lhs, lower=True)
-    c = cho_solve_banded((cb, True), XtWy)
-    tr = np.trace(cho_solve_banded((cb, True), xtwx_dense))
-    return c, tr
+    c = solveh_banded(_lhs, XtWy, lower=True)
+    if not compute_trace:
+        return c, None
+    # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]: both factors are
+    # 7-banded, so only the central bands of the inverse are needed
+    # (Hutchinson & de Hoog); convert lower- to upper-banded storage.
+    m = XtWX_banded.shape[1]
+    lhs_upper = np.zeros_like(_lhs)
+    xtwx_upper = np.zeros_like(XtWX_banded)
+    for d in range(4):
+        lhs_upper[3 - d, d:] = _lhs[d, :m - d]
+        xtwx_upper[3 - d, d:] = XtWX_banded[d, :m - d]
+    b_banded = _compute_b_inv(lhs_upper)
+    tr = b_banded * xtwx_upper
+    tr[:-1] *= 2
+    return c, tr.sum()
 
 def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
     """`make_smoothing_spline` path for a user-provided knot vector ``t``.
@@ -3088,7 +3099,7 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
         XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
     if lam is None:
         lam = _make_smoothing_spline_user_knots_gcv(
-            XtWX_banded, X, y, w, XtWy, omega, XtWX.toarray())
+            XtWX_banded, X, y, w, XtWy, omega)
     try:
         c, _ = _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy)
     except LinAlgError as e:
