@@ -116,10 +116,10 @@ def _with_cache_optimization(
     docstring : str
     ufunc : numpy.ufunc
     cache_arg_indices : list[int]
-       Arguments to ufunc which are used in the kernel to compute an output
-       which is being cached for reuse when iterating over other arguments.
+        Arguments to ufunc which are used in the kernel to compute an output
+        which is being cached for reuse when iterating over other arguments.
     module : str, optional
-       Value to use for the ``__module__`` attribute of the wrapper.
+        Value to use for the ``__module__`` attribute of the wrapper.
 
     Returns
     -------
@@ -366,7 +366,7 @@ class _UFuncWrapper:
     @property
     def types(self):
         """A list with types grouped input->output."""
-        # make a copy so that users cannot mutate the types list.
+        # make a copy so that users cannot mutate the internal types list.
         return self.__attributes["types"].copy()
 
     @property
@@ -374,14 +374,16 @@ class _UFuncWrapper:
         """Definition of the core elements a generalized ufunc operates on."""
         return self.__attributes["signature"]
 
-    def resolve_dtypes(self, dtypes, *, signature=None, casting=None, reduction=False):
+    def resolve_dtypes(
+            self, dtypes, *, signature=_NO_VALUE, casting=_NO_VALUE, reduction=False
+    ):
         # The underlying wrapper/ufunc logic handles the actual type resolution
         kwargs = {"reduction": reduction}
         # although the defaults for signature and casting are ``None``,
         # one cannot actually pass these kwargs with ``None`` values.
-        if casting is not None:
+        if casting is not _NO_VALUE:
             kwargs["casting"] = casting
-        if signature is not None:
+        if signature is not _NO_VALUE:
             kwargs["signature"] = signature
         return self.__attributes["resolve_dtypes"](dtypes, **kwargs)
 

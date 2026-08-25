@@ -66,7 +66,7 @@ def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=()):
 class _FuncInfo:
     # NumPy-only function. IT MUST BE ELEMENTWISE.
     func: Callable
-    # Required for all functions to generate IDE-friendly signatures
+    # List of argument names to generate useful call signature for ufuncs.
     arg_names: list[str]
     # @xp_capabilities decorator, for the purpose of
     # documentation and unit testing. Omit to indicate

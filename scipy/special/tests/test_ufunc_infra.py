@@ -320,6 +320,11 @@ class TestMakeUFuncWrapper:
         for attr in ["nin", "nout", "nargs", "ntypes", "types", "signature"]:
             assert getattr(func_wrapper, attr) == getattr(func, attr)
 
+        # check that types cannot be unintentially mutated by the user.
+        types = func_wrapper.types
+        types[0] = None
+        assert func_wrapper.types == func.types
+
     def test_simple_elementwise_values(self):
         a = np.linspace(1, 100, 9)
         b = np.linspace(1, 100, 8)
