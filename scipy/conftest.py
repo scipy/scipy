@@ -62,17 +62,12 @@ def pytest_configure(config):
          "(and not covered by the suppressions file)"))
     config.addinivalue_line("markers",
         ("skip_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
-         "eager_only=False, exceptions=None): mark the desired skip configuration " +
-         "for the `skip_xp_backends` fixture"))
+         "eager_only=False, skip_meta=False, exceptions=None): mark the desired " +
+         "skip configuration for the `skip_xp_backends` fixture"))
     config.addinivalue_line("markers",
         ("xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
-         "eager_only=False, exceptions=None): mark the desired xfail configuration " +
-         "for the `xfail_xp_backends` fixture"))
-    config.addinivalue_line("markers",
-        ("skip_xp_meta(reason): skip this test in the torch meta-device "
-         "leak-check mode (SCIPY_DEVICE=meta); use for functions whose internals "
-         "perform device-to-host transfers (e.g. `.item()`) that are legal on "
-         "real devices but impossible on data-free meta tensors"))
+         "eager_only=False, skip_meta=False, exceptions=None): mark the desired " +
+         "xfail configuration for the `xfail_xp_backends` fixture"))
     config.addinivalue_line("markers",
                             ("uses_xp_capabilities(status, funcs=None, " +
                              "reason=None): mark " +
@@ -252,6 +247,7 @@ xp_available_backends = [
 ]
 xp_skip_cpu_only_backends = set()
 xp_skip_eager_only_backends = set()
+xp_skip_meta_backends = set()
 
 if SCIPY_ARRAY_API:
     device_and_backend_compatible = True
@@ -293,6 +289,8 @@ if SCIPY_ARRAY_API:
             # NumPy.
             if SCIPY_DEVICE not in ("cpu", "meta"):
                 xp_skip_cpu_only_backends.add('torch')
+            if SCIPY_DEVICE == "meta":
+                xp_skip_meta_backends.add('torch')
 
             # default to float64 unless explicitly requested
             default = os.getenv('SCIPY_DEFAULT_DTYPE', default='float64')
@@ -499,13 +497,9 @@ def xp(request):
 
     if SCIPY_DEVICE == "meta" and is_torch(xp):
         # torch meta leak-check mode: the default device is the data-free
-        # `meta` device; skip tests that legitimately cannot run there, and
-        # hand the test a namespace that creates input arrays on cpu.
-        marker = request.node.get_closest_marker("skip_xp_meta")
-        if marker is not None:
-            reason = (marker.kwargs.get("reason")
-                      or (marker.args[0] if marker.args else "not meta-compatible"))
-            pytest.skip(reason=f"meta leak-check mode: {reason}")
+        # `meta` device; hand the test a namespace that creates input arrays
+        # on cpu. Tests that legitimately cannot run in this mode are skipped
+        # via `skip_xp_backends(skip_meta=True)` above.
         xp = _CpuPinningNamespace(xp)
 
     if SCIPY_ARRAY_API:
@@ -537,7 +531,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
     for marker in markers:
         invalid_kwargs = set(marker.kwargs) - {
-            "cpu_only", "np_only", "eager_only", "reason", "exceptions"}
+            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions"}
         if invalid_kwargs:
             raise TypeError(f"Invalid kwargs: {invalid_kwargs}")
 
@@ -566,6 +560,12 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             for backend in xp_skip_eager_only_backends - exceptions:
                 reasons[backend].append(reason)
 
+        elif marker.kwargs.get('skip_meta', False):
+            reason = marker.kwargs.get("reason") or (
+                "not compatible with the torch meta-device leak-check mode")
+            for backend in xp_skip_meta_backends - exceptions:
+                reasons[backend].append(reason)
+
         # add backends, if any
         if len(marker.args) == 1:
             backend = marker.args[0]
@@ -578,7 +578,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             # This is regardless of order of appearance of the markers.
             reasons[backend].insert(0, reason)
 
-            for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
+            for kwarg in ("cpu_only", "np_only", "eager_only", "skip_meta",
+                          "exceptions"):
                 if kwarg in marker.kwargs:
                     raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
 
@@ -598,7 +599,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                 # This is regardless of order of appearance of the markers.
                 reasons[backend].insert(0, reason)
 
-            for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
+            for kwarg in ("cpu_only", "np_only", "eager_only", "skip_meta",
+                          "exceptions"):
                 if kwarg in marker.kwargs:
                     raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
 

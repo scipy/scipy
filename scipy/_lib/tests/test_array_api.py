@@ -72,7 +72,8 @@ class TestArrayAPI:
         assert array_namespace(np.asarray([1, 2]), [3, 4]) is xp
         assert array_namespace(np.int64(1), [3, 4]) is xp
 
-    @pytest.mark.skip_xp_meta(
+    @pytest.mark.skip_xp_backends(
+        skip_meta=True,
         reason='meta-mode `xp` fixture is a cpu-pinning proxy (identity assertion)')
     def test_array_and_array_likes_mix(self, xp):
         """Test that if there is at least one Array API object among

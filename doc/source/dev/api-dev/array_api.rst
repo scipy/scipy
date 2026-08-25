@@ -1327,7 +1327,7 @@ When triaging a failure in this mode:
   the implementation - a computed value genuinely needed on the host, which
   is a legal synchronization on real devices but impossible on the data-free
   ``meta`` device - mark the test with
-  ``@pytest.mark.skip_xp_meta(reason=...)``.
+  ``@pytest.mark.skip_xp_backends(skip_meta=True, reason=...)``.
 * A value assertion comparing a ``meta`` result against a ``cpu`` reference
   means the function constructs its output on the default device because it
   takes no array input (e.g. the window functions). If the function has a
@@ -1335,7 +1335,7 @@ When triaging a failure in this mode:
   explicitly (see the ``device`` fixture in ``test_windows.py``), which both
   fixes the test and actively verifies the keyword is threaded through every
   internal creation. Only functions without a ``device`` keyword need the
-  ``skip_xp_meta`` mark.
+  ``skip_meta=True`` mark.
 
 Adding tests for class methods
 ``````````````````````````````
