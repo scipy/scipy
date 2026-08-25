@@ -463,7 +463,8 @@ def _make_ufunc_wrapper(
     exec(code, namespace)
     WrapperClass = namespace[name]
     WrapperClass.__module__ = module
-    WrapperClass.__qualname__ = name
+    WrapperClass.__name__ = "ufunc_wrapper"
+    WrapperClass.__qualname__ = "ufunc_wrapper"
 
     wrapper = WrapperClass(attributes)
 
