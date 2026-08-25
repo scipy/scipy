@@ -1417,7 +1417,6 @@ considered out-of-scope.
    array_api_modules_tables/fft
    array_api_modules_tables/integrate
    array_api_modules_tables/interpolate
-   array_api_modules_tables/io
    array_api_modules_tables/linalg
    array_api_modules_tables/linalg_interpolative
    array_api_modules_tables/ndimage
@@ -1448,7 +1447,6 @@ Support on CPU
    :fft: array_api_support_fft_cpu
    :integrate: array_api_support_integrate_cpu
    :interpolate: array_api_support_interpolate_cpu
-   :io: array_api_support_io_cpu
    :linalg: array_api_support_linalg_cpu
    :linalg.interpolative: array_api_support_linalg_interpolative_cpu
    :ndimage: array_api_support_ndimage_cpu
@@ -1479,7 +1477,6 @@ Support on GPU
    :fft: array_api_support_fft_gpu
    :integrate: array_api_support_integrate_gpu
    :interpolate: array_api_support_interpolate_gpu
-   :io: array_api_support_io_gpu
    :linalg: array_api_support_linalg_gpu
    :linalg.interpolative: array_api_support_linalg_interpolative_gpu
    :ndimage: array_api_support_ndimage_gpu
@@ -1510,7 +1507,6 @@ Support with JIT
    :fft: array_api_support_fft_jit
    :integrate: array_api_support_integrate_jit
    :interpolate: array_api_support_interpolate_jit
-   :io: array_api_support_io_jit
    :linalg: array_api_support_linalg_jit
    :linalg.interpolative: array_api_support_linalg_interpolative_jit
    :ndimage: array_api_support_ndimage_jit

@@ -1348,7 +1348,6 @@ class TestMedFilt:
 @make_xp_test_case(signal.wiener)
 class TestWiener:
 
-    @skip_xp_backends("cupy", reason="XXX: can_cast in cupy <= 13.2")
     def test_basic(self, xp):
         g = xp.asarray([[5, 6, 4, 3],
                         [3, 5, 6, 2],
@@ -2245,6 +2244,21 @@ class _TestLinearFilter:
         check_dtype_arg = {} if self.dtype == object else {'check_dtype': False}
         xp_assert_equal(zi, zi_2, **check_dtype_arg)
 
+    @make_xp_test_case(lfiltic)
+    def test_lfiltic_scalar_ic(self, xp):
+        # regression test for gh-14664: scalar initial conditions must be
+        # accepted and give the same result as the equivalent length-1 array,
+        # independently of the filter length (a short filter used to raise).
+        b = xp.asarray([1 - 0.2])
+        a = xp.asarray([1.0, -0.2])
+        xp_assert_close(lfiltic(b, a, 3.0), lfiltic(b, a, xp.asarray([3.0])))
+
+        # a scalar `x` (with M > 0) is likewise accepted
+        b2 = xp.asarray([1.0, 0.5, 0.25])
+        a2 = xp.asarray([1.0, -0.3])
+        xp_assert_close(lfiltic(b2, a2, 2.0, 1.0),
+                        lfiltic(b2, a2, xp.asarray([2.0]), xp.asarray([1.0])))
+
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_short_x_FIR(self, xp):
         # regression test for #5116
@@ -2335,8 +2349,7 @@ class TestLinearFilterComplexExtended(_TestLinearFilter):
     dtype = np.dtype('G')
 
 
-@make_xp_test_case(lfilter)
-def test_lfilter_bad_object(xp):
+def test_lfilter_bad_object():  # array-like is np-only
     # lfilter: object arrays with non-numeric objects raise TypeError.
     # Regression test for ticket #1452.
     if hasattr(sys, 'abiflags') and 'd' in sys.abiflags:
@@ -2346,22 +2359,23 @@ def test_lfilter_bad_object(xp):
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
-@make_xp_test_case(lfilter)
-def test_lfilter_notimplemented_input(xp):
+def test_lfilter_notimplemented_input():  # array-like input is np-only
     # Should not crash, gh-7991
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
-def test_lfilter_empty_input():
+@skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/10199")
+@make_xp_test_case(lfilter)
+def test_lfilter_empty_input(xp):
     """Verify that unchanged `zi` is returned for an empty input `x`
 
     This test ensures correct special handling for empty inputs,
     to prevent leaking internal state as reported in gh-22571.
     """
-    b = np.array([1.0, 0.5])
-    a = np.array([1.0, -0.5])
-    x = np.array([])
-    zi = np.array([0.25])
+    b = xp.asarray([1.0, 0.5])
+    a = xp.asarray([1.0, -0.5])
+    x = xp.asarray([])
+    zi = xp.asarray([0.25])
 
     y, zf = lfilter(b, a, x, zi=zi)
     assert y.shape == (0,)

@@ -465,6 +465,10 @@ def xp_result_type(*args, force_floating=False, xp):
 
     try:  # follow library's preferred promotion rules
         return xp.result_type(*args_not_none)
+    except ValueError:  # all scalars; need at least one array/dtype
+        if not force_floating:
+            raise
+        return xp.result_type(*(args_not_none + [xp.asarray(1.0)])) # skip device check
     except TypeError:  # mixed type promotion isn't defined
         if not force_floating:
             raise
@@ -818,10 +822,8 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     .. dropdown:: Array API Standard Support
         :color: primary
 
-        `{fun_name}` has experimental support for Python Array API Standard compatible
-        backends in addition to NumPy. Please consider testing these features
-        by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
-        CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
+        `{fun_name}` has support for Python Array API Standard compatible
+        backends in addition to NumPy. The following
         combinations of backend and device (or other capability) are supported.
 
         ====================  ====================  ====================

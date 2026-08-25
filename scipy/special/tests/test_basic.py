@@ -4300,6 +4300,11 @@ class TestBessel:
         with special.errstate(overflow="raise"):
             assert_allclose(special.j0(1e-200), 1.0, atol=0, rtol=0)
 
+    @pytest.mark.parametrize("func, expected", [(special.i0, 6.705128263670996e+307),
+                                                (special.i1, 6.700424559186402e+307)])
+    def test_gh_25823(self, func, expected):
+        assert_allclose(func(713.0), expected, rtol=5e-15, atol=0)
+
 
 class TestLaguerre:
     def test_laguerre(self):

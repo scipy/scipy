@@ -57,10 +57,12 @@ jobs:
           allow-prereleases: true
 
       - name: Install Ubuntu dependencies
-        run: |
-          # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
-          sudo apt-get update
-          sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+        # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
+        uses: ./.github/apt-get
+        with:
+          packages: >-
+            libopenblas-dev libatlas-base-dev liblapack-dev libgmp-dev
+            libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
       - name: Install Python packages
         if: matrix.python-version == '3.12'
@@ -142,13 +144,12 @@ jobs:
           persist-credentials: false
 
       - name: Install Ubuntu dependencies
-        run: |
-          # We're not running the full test suite here, only testing the install
-          # into a venv is working, so leave out optional dependencies. That's
-          # also why we can get away with an old version of OpenBLAS from Ubuntu
-          sudo apt-get update
-          sudo apt-get install -y python3-dev libopenblas-dev pkg-config \
-            ccache
+        # We're not running the full test suite here, only testing the install
+        # into a venv is working, so leave out optional dependencies. That's
+        # also why we can get away with an old version of OpenBLAS from Ubuntu
+        uses: ./.github/apt-get
+        with:
+          packages: python3-dev libopenblas-dev pkg-config ccache
 
       - name: Set up ccache
         uses: ./.github/ccache
@@ -201,6 +202,98 @@ jobs:
           ccache -s
 
   #################################################################################
+  test_editable_install:
+    # Editable installs hit corner cases that regular installs don't, e.g., gh-25892
+    name: Editable install, fast, py3.12/npAny, spin
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install Ubuntu dependencies
+        # apt OpenBLAS rather than the scipy-openblas wheel, because
+        # `--with-scipy-openblas` is a `spin build` flag with no `spin install` equivalent
+        uses: ./.github/apt-get
+        with:
+          packages: libopenblas-dev pkg-config ccache
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --group build --group dev-cli --group test-core --group optional-runtime-deps
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Editable install
+        # `spin install` defaults to `pip install -e . --no-build-isolation`
+        run: |
+          spin install
+
+      - name: Check import
+        # Run from outside the source tree, then check that `scipy` still
+        # resolves back to it - that's the point of an editable install.
+        run: |
+          python -c "
+          import os, pathlib, scipy, scipy.linalg
+          expected = pathlib.Path(os.environ['EXPECTED_SCIPY_DIR'])
+          assert pathlib.Path(scipy.__file__).parent == expected, \
+              f'{scipy.__file__=} not from {expected}'"
+        working-directory: ${{ runner.temp }}
+        env:
+          EXPECTED_SCIPY_DIR: ${{ github.workspace }}/scipy
+
+      - name: Check rebuild on import
+        # meson-python reruns ninja on every import of an editable install. Touch a
+        # source file (Pythran-compiled here, rather than Cython, but the rebuild
+        # hook works the same way) so that hook has actual work to do, then check
+        # the compiled extension's mtime to prove a rebuild actually happened -
+        # not just that the (possibly stale) module still imports without error.
+        run: |
+          before=$(python -c "
+          import scipy.signal._max_len_seq_inner as m, os
+          print(os.stat(m.__file__).st_mtime_ns)")
+          sleep 1  # ensure a rebuilt file's mtime is unambiguously newer
+          touch "$GITHUB_WORKSPACE/scipy/signal/_max_len_seq_inner.py"
+          after=$(python -c "
+          import scipy.signal, scipy.signal._max_len_seq_inner as m, os
+          assert len(scipy.signal.max_len_seq(4)[0]) == 15
+          print(os.stat(m.__file__).st_mtime_ns)")
+          echo "extension mtime (ns): before=$before after=$after"
+          if [[ "$after" -le "$before" ]]; then
+            echo "::error::extension was not rebuilt on import (mtime unchanged)"
+            exit 1
+          fi
+        working-directory: ${{ runner.temp }}
+
+      - name: Ccache performance
+        # After the imports above, since those can trigger a rebuild
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
+      - name: Test SciPy
+        # `-t scipy` is required: with extra args after `--`, spin does not add a
+        # collection target of its own, and for an editable install it also leaves
+        # pytest's cwd at the repo root - so pytest would collect the whole checkout.
+        run: |
+          spin test -j3 -t scipy -- --durations 10 --timeout=60
+
+  #################################################################################
   python_debug:
     # also uses the vcs->sdist->wheel route.
     name: Python-debug & ATLAS & sdist+wheel, fast, py3.12/npMin, pip+pytest
@@ -216,10 +309,14 @@ jobs:
           persist-credentials: false
 
       - name: Configuring Test Environment
-        run: |
-          sudo apt-get update
-          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev \
+        uses: ./.github/apt-get
+        with:
+          packages: >-
+            python3-dbg python3-dev libatlas-base-dev liblapack-dev
             libgmp-dev libmpfr-dev libmpc-dev
+
+      - name: Check python3-dbg
+        run: |
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
 
@@ -258,11 +355,11 @@ jobs:
           python-version: "3.12"
 
       - name: Setup system dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt install -y g++-10 gcc-10
-          sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
-            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev ccache
+        uses: ./.github/apt-get
+        with:
+          packages: >-
+            g++-10 gcc-10 libatlas-base-dev liblapack-dev libgmp-dev
+            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev ccache
 
       - name: Setup Python build deps
         run: pip install --group build
@@ -328,17 +425,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Ubuntu dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache \
-            lcov ccache
+        uses: ./.github/apt-get
+        with:
+          packages: libgmp-dev libmpfr-dev libmpc-dev ccache lcov
 
       - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
-          python -m pip install --group build --group dev-cli
+          python -m pip install --group build --group dev-cli --group openblas32
           python -m pip install --pre --upgrade --group coverage
-          python -m pip install -r requirements/openblas.txt
           python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
       - name: Set up ccache
@@ -395,11 +490,10 @@ jobs:
             python3.12 -m venv test
             source test/bin/activate
             python -m pip install --upgrade pip
-            python -m pip install --group build --group dev-cli --group test-core
+            python -m pip install --group build --group dev-cli --group test-core --group openblas32
             # we want `mpmath` but cannot install `gmpy2` on 32-bit,
             # so cannot use `--group test-mp`
             python -m pip install mpmath
-            python -m pip install -r requirements/openblas.txt
             python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir
             python -c "import numpy as np; np.show_config()"
             spin build --with-scipy-openblas=32
@@ -424,12 +518,11 @@ jobs:
           persist-credentials: false
 
       - name: Setup system dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt install software-properties-common
-          sudo add-apt-repository ppa:deadsnakes/ppa
-          sudo apt update -y
-          sudo apt install -y python3.12-dev ninja-build pkg-config libatlas-base-dev \
+        uses: ./.github/apt-get
+        with:
+          repository: ppa:deadsnakes/ppa
+          packages: >-
+            python3.12-dev ninja-build pkg-config libatlas-base-dev
             liblapack-dev ccache
 
       - name: Set up ccache
@@ -488,10 +581,9 @@ jobs:
           persist-credentials: false
 
       - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libopenblas-dev liblapack-dev \
-            ccache
+        uses: ./.github/apt-get
+        with:
+          packages: pkg-config libopenblas-dev liblapack-dev ccache
 
       - name: Set up ccache
         uses: ./.github/ccache
@@ -510,8 +602,7 @@ jobs:
 
       - name: Setup Python build/test deps
         run: |
-          python -m pip install --group build --group test-core
-          python -m pip install -r requirements/openblas.txt
+          python -m pip install --group build --group test-core --group openblas32
           python -m pip install build
           # Remove `meson` from environment
           python -m pip uninstall meson --yes
@@ -634,5 +725,4 @@ jobs:
 
       - name: Test SciPy
         run: |
-          export OMP_NUM_THREAD=2
           pixi run test-fail-slow
