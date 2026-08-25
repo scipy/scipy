@@ -541,7 +541,8 @@ def _cdf_cvm(x, n=None, *, xp=None):
     else:
         # support of the test statistic is [12/n, n/3], see 1.1 in [2]
         y = xp.zeros_like(x, dtype=x.dtype)
-        n = xp.broadcast_to(xp.asarray(n, dtype=y.dtype), y.shape)
+        n = xp.broadcast_to(xp.asarray(n, dtype=y.dtype, device=xp_device(y)),
+                            y.shape)
         sup = (1./(12*n) < x) & (x < n/3.)
         # note: _psi1_mod does not include the term _cdf_cvm_inf(x) / 12
         # therefore, we need to add it here

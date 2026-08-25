@@ -2236,9 +2236,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     if x.shape[axis] == 0:
         if zi is None:
-            return xp.asarray(x)
+            return xp.asarray(x, device=device)
         else:
-            return xp.asarray(x), xp.asarray(zi.copy())
+            return xp.asarray(x, device=device), xp.asarray(zi.copy(), device=device)
 
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
@@ -2352,9 +2352,10 @@ def lfiltic(b, a, y, x=None):
 
     """
     xp = array_namespace(a, b, y, x)
+    device = xp_result_device(a, b, y, x)
 
-    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
+    a = xpx.atleast_nd(xp.asarray(a, device=device), ndim=1, xp=xp)
+    b = xpx.atleast_nd(xp.asarray(b, device=device), ndim=1, xp=xp)
     if a.ndim > 1:
         raise ValueError('Filter coefficients `a` must be 1-D.')
     if b.ndim > 1:
@@ -2362,7 +2363,7 @@ def lfiltic(b, a, y, x=None):
     N = a.shape[0] - 1
     M = b.shape[0] - 1
     K = max(M, N)
-    y = xpx.atleast_nd(xp.asarray(y), ndim=1, xp=xp)
+    y = xpx.atleast_nd(xp.asarray(y, device=device), ndim=1, xp=xp)
 
     if N < 0:
         raise ValueError("There must be at least one `a` coefficient.")
@@ -2373,7 +2374,7 @@ def lfiltic(b, a, y, x=None):
             result_type = xp.float64
         x = xp.zeros(M, dtype=result_type, device=xp_device(b))
     else:
-        x = xpx.atleast_nd(xp.asarray(x), ndim=1, xp=xp)
+        x = xpx.atleast_nd(xp.asarray(x, device=device), ndim=1, xp=xp)
 
         result_type = xp.result_type(b, a, y, x)
         if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
