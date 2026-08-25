@@ -2973,14 +2973,16 @@ def _penalty_matrix_banded(t):
 
     return omega_banded
 
-def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega):
-    """Compute the appropriate smoothing parameter `lam` for cubic smoothing splines."""
+def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega,
+                                          xtwx_dense):
+    """Select `lam` by minimizing the GCV criterion V(lam) in log-space."""
     # Implementation decisions detailed in the following companion report:
     # https://github.com/aadya940/scipy-bspline-testing/blob/main/B_Splines_with_arbitary_knots-gcv.pdf
+    # Eq. (32)
     n = y.shape[0]
     def _gcv(lam):
         c, tr = _solve_smoothing_spline_coefficients(
-            xtwx_banded, lam, omega, xtwy, gcv=True)
+            xtwx_banded, lam, omega, xtwy, xtwx_dense=xtwx_dense)
         rss = np.sum(w * np.square(y - x @ c)) / n
         return rss / (1 - tr / n) ** 2
 
@@ -2991,13 +2993,17 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega):
     lam_hat = 10 ** res.x
     return lam_hat
 
-def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy, gcv=False):
+def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
+                                         xtwx_dense=None):
     _lhs = XtWX_banded + lam * omega
-    c = solveh_banded(_lhs, XtWy, lower=True)
-    if gcv:
-        tr = np.sum((_lhs @ XtWX_banded).diagonal(0))
-        return (c, tr)
-    return c, None
+    if xtwx_dense is None:
+        return solveh_banded(_lhs, XtWy, lower=True), None
+    # factor once, then reuse it for the coefficients and for
+    # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]  (solve, don't invert)
+    cb = cholesky_banded(_lhs, lower=True)
+    c = cho_solve_banded((cb, True), XtWy)
+    tr = np.trace(cho_solve_banded((cb, True), xtwx_dense))
+    return c, tr
 
 def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
     """`make_smoothing_spline` path for a user-provided knot vector ``t``.
@@ -3081,7 +3087,8 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
         # as accepted by solveh_banded.
         XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
     if lam is None:
-        lam = _make_smoothing_spline_user_knots_gcv(XtWX_banded, XtWy)
+        lam = _make_smoothing_spline_user_knots_gcv(
+            XtWX_banded, X, y, w, XtWy, omega, XtWX.toarray())
     try:
         c, _ = _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy)
     except LinAlgError as e:
