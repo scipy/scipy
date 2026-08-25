@@ -46,19 +46,18 @@ def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=()):
             backend_text = f"the {' and '.join(backends)} backends"
 
         extra = (
-            f" ``{name}``\n     does not currently support ``out`` for  {backend_text}."
+            f" ``{name}``\n    does not currently support ``out`` for  {backend_text}."
         )
 
     return (
-        f"""The set of supported keyword arguments is backend dependent. The supported
-    ``kwargs`` for the NumPy backend can be found in the
-    `NumPy UFunc documentation <https://numpy.org/doc/stable/reference/ufuncs.html#optional-keyword-arguments>`_.
-    CuPy and PyTorch typically support ``out``, but it may currently be unsupported in
-    SciPy for these backends for cases where SciPy relies on a generic Array API
-    implementation or, for PyTorch on CPU, is falling back to the NumPy backend.
-    ``out`` is never supported for JAX because JAX arrays are immutable.{extra}
-
-    """
+        "The set of supported keyword arguments is backend dependent. The supported\n"
+        "    ``kwargs`` for the NumPy backend can be found in the\n"
+        "    `NumPy UFunc documentation <https://numpy.org/doc/stable/reference/ufuncs.html"
+        "#optional-keyword-arguments>`_.\n"
+        "    CuPy and PyTorch typically support ``out``, but it may currently be unsupported in\n"
+        "    SciPy for these backends for cases where SciPy relies on a generic Array API\n"
+        "    implementation or, for PyTorch on CPU, is falling back to the NumPy backend.\n"
+        f"    ``out`` is never supported for JAX because JAX arrays are immutable.{extra}\n\n"
     )
 
 
