@@ -15,7 +15,7 @@ from . import _basic
 from . import _mathieu
 from . import _spfun_stats
 from . import _ufuncs
-from ._ufunc_tools import _make_ufunc_like_wrapper
+from ._ufunc_tools import _make_ufunc_wrapper
 
 
 def _special_namespace_for(xp):
@@ -46,18 +46,19 @@ def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=()):
             backend_text = f"the {' and '.join(backends)} backends"
 
         extra = (
-            f" ``{name}``\n    does not currently support ``out`` for  {backend_text}."
+            f"``{name}``\n    does not currently support ``out`` for  {backend_text}."
         )
 
     return (
-        "The set of supported keyword arguments is backend dependent. The supported\n"
-        "    ``kwargs`` for the NumPy backend can be found in the\n"
-        "    `NumPy UFunc documentation <https://numpy.org/doc/stable/reference/ufuncs.html"
-        "#optional-keyword-arguments>`_.\n"
-        "    CuPy and PyTorch typically support ``out``, but it may currently be unsupported in\n"
-        "    SciPy for these backends for cases where SciPy relies on a generic Array API\n"
-        "    implementation or, for PyTorch on CPU, is falling back to the NumPy backend.\n"
-        f"    ``out`` is never supported for JAX because JAX arrays are immutable.{extra}\n\n"
+        "For the NumPy backend, this function supports all\n"
+        "    `NumPy ufunc keyword arguments "
+        "<https://numpy.org/doc/stable/reference/ufuncs.html#optional-keyword-arguments>`_.\n"
+        "    Other backends may support ``out``, but none of the other ufunc\n"
+        "    kwargs. ``out`` is typically supported for CuPy and PyTorch, but not\n"
+        "    currently in cases where SciPy relies on a generic Array API\n"
+        "    implementation or, for PyTorch on CPU, falls back to the NumPy backend.\n"
+        "    ``out`` is never supported for JAX because JAX arrays are immutable.\n"
+        f"    {extra}\n\n"
     )
 
 
@@ -163,9 +164,9 @@ class _FuncInfo:
                     xp = array_namespace(*args)
                     return self._wrapper_for(xp)(*args, **kwargs)
 
-                wrapped._ufunc = self.ufunc
-                func = _make_ufunc_like_wrapper(
+                func = _make_ufunc_wrapper(
                     wrapped,
+                    self.ufunc,
                     self.name,
                     self.arg_names,
                     self.func.__doc__,

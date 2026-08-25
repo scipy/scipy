@@ -17,7 +17,7 @@ from scipy.special._ufuncs import _mathieu_sem
 from scipy.special._spfun_stats import _poisson_binom_cdf
 from scipy.special._ufuncs import betainc
 
-from scipy.special._ufunc_tools import _make_ufunc_like_wrapper
+from scipy.special._ufunc_tools import _make_ufunc_wrapper
 
 
 # Tests that ufunc kwargs still work when _with_cache_optimization is applied
@@ -254,32 +254,35 @@ class TestWithCacheOptimization:
 def _make_passthrough(ufunc):
     def wrapper(*args, **kwargs):
         return ufunc(*args, **kwargs)
-    wrapper._ufunc = ufunc
     return wrapper
 
-_betainc_wrapper = _make_ufunc_like_wrapper(
+_betainc_wrapper = _make_ufunc_wrapper(
             _make_passthrough(betainc),
+            betainc,
             "betainc",
             ["a", "b", "x"],
             "Wrapper for betainc.",
 )
 
-_poisson_binom_cdf_wrapper = _make_ufunc_like_wrapper(
+_poisson_binom_cdf_wrapper = _make_ufunc_wrapper(
             _make_passthrough(_poisson_binom_cdf),
+            _poisson_binom_cdf,
             "poisson_binom_cdf",
             ["k", "p"],
             "Wrapper for _poisson_binom_cdf.",
 )
 
-_mathieu_sem_wrapper_wrapper = _make_ufunc_like_wrapper(
+_mathieu_sem_wrapper_wrapper = _make_ufunc_wrapper(
     _make_passthrough(mathieu_sem_wrapper),
+    mathieu_sem_wrapper,
     "mathieu_sem",
     ["m", "q", "x"],
     "Wrapper for wrapper of mathieu_sem",
 )
 
-_vecdot_wrapper = _make_ufunc_like_wrapper(
+_vecdot_wrapper = _make_ufunc_wrapper(
     _make_passthrough(np.vecdot),
+    np.vecdot,
     "vecdot",
     ["x1", "x2"],
     "Wrapper for vecdot."
@@ -537,9 +540,9 @@ class TestMakeUFuncLikeWrapper:
         def func(*args, **kwargs):
             return kwargs
 
-        func._ufunc = betainc
-        wrapper = _make_ufunc_like_wrapper(
+        wrapper = _make_ufunc_wrapper(
             func,
+            betainc,
             "test_func",
             ["a", "b", "x"],
             "Test wrapper.",

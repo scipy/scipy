@@ -319,9 +319,10 @@ def _with_cache_optimization(
 
         return outputs[0] if ufunc.nout == 1 else outputs
 
-    wrapper._ufunc = ufunc
     wrapper.__qualname__ = name
-    return _make_ufunc_like_wrapper(wrapper, name, arg_names, docstring, module=module)
+    return _make_ufunc_wrapper(
+        wrapper, ufunc, name, arg_names, docstring, module=module
+    )
 
 
 def _reconstruct_wrapper(module, name):
@@ -329,8 +330,8 @@ def _reconstruct_wrapper(module, name):
     return getattr(importlib.import_module(module), name)
 
 
-class _UFuncLikeWrapper:
-    """Base class for ufunc wrappers to provide IDE-friendly properties."""
+class _UFuncWrapper:
+    """Base class for ufunc wrappers that preserve ufunc-like behavior."""
 
     def __init__(self, attributes):
         self._attributes = attributes
@@ -380,26 +381,29 @@ class _UFuncLikeWrapper:
         # Tells pickle exactly how to reconstruct this specific instance
         return (_reconstruct_wrapper, (self.__module__, self.__name__,))
 
+    def __repr__(self):
+        return f"<wrapped_ufunc '{self.__name__}'>"
 
-_UFuncLikeWrapper.resolve_dtypes.__doc__ = np.ufunc.resolve_dtypes.__doc__
+
+_UFuncWrapper.resolve_dtypes.__doc__ = np.ufunc.resolve_dtypes.__doc__
 
 
-def _make_ufunc_like_wrapper(
+def _make_ufunc_wrapper(
         func,
+        ufunc,
         name,
         arg_names,
         docstring,
-        ufunc_attributes=None,
         module="scipy.special",
 ):
-    """Wrapper for a ufunc that preserves ufunc-like behavior.
+    """Create new wrapper that gives ufunc-like behavior to ``func``.
 
     Parameters
     ----------
     func : callable
-        The internal function to wrap. Must either have a ``_ufunc``
-        attribute to infer metadata from, or all metadata arguments must be
-        explicitly supplied.
+        The function to wrap.
+    ufunc : numpy.ufunc
+        The underlying ufunc that ``func`` wraps.
     name : str
         Name of the function.
     arg_names : list[str]
@@ -407,22 +411,6 @@ def _make_ufunc_like_wrapper(
         (e.g., ``["z", "k=0"]``).
     docstring : str
         The docstring for the wrapper.
-    ufunc_attributes : dict, optional
-        nin : int
-            The number of inputs.
-        nout : int
-            The number of outputs.
-        nargs : int
-            The number of arguments.
-        ntypes : int
-            The number of types.
-        types: list[str]
-            A list with types grouped input->output.
-        signature: str or None
-            Definition of the core elements a generalized ufunc operates on.
-            If ``None``, the function is treated as an elementwise ufunc.
-        resolve_dtypes: callable
-            A function determining the output dtypes based on input dtypes.
     module : str, optional
        Value to use for the ``__module__`` attribute of the wrapper.
 
@@ -431,29 +419,22 @@ def _make_ufunc_like_wrapper(
     callable
         A wrapper for func that maintains ufunc kwargs and attributes.
     """
-    metadata_source = getattr(func, "_ufunc", None)
-    attributes = None
-    if metadata_source is not None:
-        attributes = {
-            "nin": metadata_source.nin,
-            "nout": metadata_source.nout,
-            "nargs": metadata_source.nargs,
-            "ntypes": metadata_source.ntypes,
-            "types": metadata_source.types,
-            "signature": metadata_source.signature,
-            "resolve_dtypes": metadata_source.resolve_dtypes
-        }
-    else:
-        attributes = ufunc_attributes
-    if attributes is None:
-        raise ValueError("func has no metadata and metadata was not supplied.")
+    attributes = {
+        "nin": ufunc.nin,
+        "nout": ufunc.nout,
+        "nargs": ufunc.nargs,
+        "ntypes": ufunc.ntypes,
+        "types": ufunc.types,
+        "signature": ufunc.signature,
+        "resolve_dtypes": ufunc.resolve_dtypes
+    }
 
     arg_str = ", ".join(arg_names)
     clean_args = [arg.split("=")[0].strip() for arg in arg_names]
     call_args = ", ".join(clean_args)
 
     code = (
-        f"""class {name}(_UFuncLikeWrapper):
+        f"""class {name}(_UFuncWrapper):
             def __call__(self, {arg_str}, /, out=_NO_VALUE, **kwargs):
                 if out is _NO_VALUE:
                     return func({call_args}, **kwargs)
@@ -464,7 +445,7 @@ def _make_ufunc_like_wrapper(
 
     namespace = {
         "_NO_VALUE": _NO_VALUE,
-        "_UFuncLikeWrapper": _UFuncLikeWrapper,
+        "_UFuncWrapper": _UFuncWrapper,
         "func": func
     }
 
