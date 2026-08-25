@@ -4036,7 +4036,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     The presence of "ties" (i.e. not all elements of ``d`` are unique) or
     "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
     of the test statistic, and ``method='exact'`` no longer calculates
-    the exact p-value. If ``method='asymptotic'``, the z-statistic is adjusted
+    the exact p-value. In this case, the returned p-value may lie slightly
+    outside the interval [0, 1] due to floating point error. If
+    ``method='asymptotic'``, the z-statistic is adjusted
     for more accurate comparison against the standard normal, but still,
     for finite sample sizes, the standard normal is only an approximation of
     the true null distribution of the z-statistic. For such situations, the
