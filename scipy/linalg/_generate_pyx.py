@@ -664,7 +664,7 @@ def _get_pxd_preamble(lib_name, ilp64=False):
 
 def generate_decl_pxd(name, return_type, argnames, argtypes):
     """Create Cython header declaration for BLAS/LAPACK function."""
-    args = ', '.join([' *'.join(arg) for arg in zip(argtypes, argnames)])
+    args = ', '.join([t + '*' for t in argtypes])
     return f"cdef {return_type} {name}({args}) noexcept nogil\n"
 
 
