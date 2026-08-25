@@ -190,24 +190,21 @@ def _get_deprecation_message(fun, _mstats_deprecation_table, stats):
     message = (f"`scipy.stats.mstats.{fun.__name__}` is deprecated as of "
                "SciPy 2.0.0 and will be removed, along with the "
                "`scipy.stats.mstats` namespace, in SciPy 2.4.0. ")
-    legacy_message = ("If needed, the legacy `scipy.stats.mstats` from SciPy "
-                      "1.18.0 can be installed as the package `mstats`.")
 
     if not replaced:
         message += "SciPy offers no replacement for this function. "
     else:
         message += "For similar functionality, "
         if marray:
-            message += ("use MArray(s) instead of NumPy masked array(s) with "
-                        f"`scipy.stats.{replacement}`. ")
+            message += (f"use `scipy.stats.{replacement}` with MArray(s) instead "
+                        "of NumPy masked array(s). ")
         else:
             message += (f"use `scipy.stats.{replacement}` with regular NumPy "
-                        "arrays, replacing masked values with NaNs and using "
+                        "array(s), replacing masked values with NaNs and using "
                         "the `nan_policy='omit'` option. ")
 
     message = message + f"{notes} " if notes else message
 
-    message += legacy_message
     return message
 
 

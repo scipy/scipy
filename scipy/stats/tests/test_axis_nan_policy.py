@@ -1142,7 +1142,9 @@ def test_masked_stat_1d():
     females3 = [20, 11, 17, 1000, 12]
     mask3 = [False, False, False, True, False]
     females3 = np.ma.masked_array(females3, mask=mask3)
-    res3 = stats.mannwhitneyu(males, females3)
+    message = "Support for NumPy masked arrays is deprecated..."
+    with pytest.warns(DeprecationWarning, match=message):
+        res3 = stats.mannwhitneyu(males, females3)
     np.testing.assert_array_equal(res3, res)
 
     # same result when extra nan is omitted and additional element is masked
