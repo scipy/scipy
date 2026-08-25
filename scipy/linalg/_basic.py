@@ -1769,10 +1769,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     LAPACK routines.
 
     The algorithm is based on the well-known technique of [1]_ and has
-    been modified to account for special cases. See [2]_ for details
-    which have been implemented since LAPACK v3.5.0. Before this version
-    there are corner cases where balancing can actually worsen the
-    conditioning. See [3]_ for such examples.
+    been modified to account for special cases. See [2]_ and [3]_
+    for details.
 
     The code is a wrapper around LAPACK's xGEBAL routine family for matrix
     balancing.
