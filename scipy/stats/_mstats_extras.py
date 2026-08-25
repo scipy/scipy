@@ -21,11 +21,10 @@ import numpy.ma as ma
 from numpy.ma import MaskedArray
 
 from . import _mstats_basic as mstats
-from ._stats_mstats_common import _deprecate_mstats
+
 from scipy.stats.distributions import norm, beta, t, binom
 
 
-@_deprecate_mstats(replacement='quantile')
 def hdquantiles(data, prob=(.25, .5, .75), axis=None, var=False,):
     """
     Computes quantile estimates with the Harrell-Davis method.
@@ -122,7 +121,6 @@ def hdquantiles(data, prob=(.25, .5, .75), axis=None, var=False,):
     return ma.fix_invalid(result, copy=False)
 
 
-@_deprecate_mstats(replacement='quantile')
 def hdmedian(data, axis=-1, var=False):
     """
     Returns the Harrell-Davis estimate of the median along the given axis.
@@ -149,7 +147,6 @@ def hdmedian(data, axis=-1, var=False):
     return result.squeeze()
 
 
-@_deprecate_mstats()
 def hdquantiles_sd(data, prob=(.25, .5, .75), axis=None):
     """
     The standard error of the Harrell-Davis quantile estimates by jackknife.
@@ -213,7 +210,6 @@ def hdquantiles_sd(data, prob=(.25, .5, .75), axis=None):
     return ma.fix_invalid(result, copy=False).ravel()
 
 
-@_deprecate_mstats()
 def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
                     alpha=0.05, axis=None):
     """
@@ -265,7 +261,6 @@ def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
     return np.array((tmean - tppf*tstde, tmean+tppf*tstde))
 
 
-@_deprecate_mstats()
 def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
     """
     Returns the Maritz-Jarrett estimators of the standard error of selected
@@ -311,7 +306,6 @@ def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
         return ma.apply_along_axis(_mjci_1D, axis, data, p)
 
 
-@_deprecate_mstats()
 def mquantiles_cimj(data, prob=(0.25, 0.50, 0.75), alpha=0.05, axis=None):
     """
     Computes the alpha confidence interval for the selected quantiles of the
@@ -346,7 +340,6 @@ def mquantiles_cimj(data, prob=(0.25, 0.50, 0.75), alpha=0.05, axis=None):
     return (xq - z * smj, xq + z * smj)
 
 
-@_deprecate_mstats()
 def median_cihs(data, alpha=0.05, axis=None):
     """
     Computes the alpha-level confidence interval for the median of the data.
@@ -398,7 +391,6 @@ def median_cihs(data, alpha=0.05, axis=None):
     return result
 
 
-@_deprecate_mstats()
 def compare_medians_ms(group_1, group_2, axis=None):
     """
     Compares the medians from two independent groups along the given axis.
@@ -455,7 +447,6 @@ def compare_medians_ms(group_1, group_2, axis=None):
     return 1 - norm.cdf(W)
 
 
-@_deprecate_mstats()
 def idealfourths(data, axis=None):
     """
     Returns an estimate of the lower and upper quartiles.
@@ -496,7 +487,6 @@ def idealfourths(data, axis=None):
         return ma.apply_along_axis(_idf, axis, data)
 
 
-@_deprecate_mstats()
 def rsh(data, points=None):
     """
     Evaluates Rosenblatt's shifted histogram estimators for each data point.
