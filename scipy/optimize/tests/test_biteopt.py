@@ -164,6 +164,12 @@ class TestSolver:
 class TestCallback:
     def setup_method(self):
         self.default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
+        self.eggholder_bounds = Bounds(lb=[-512.0, -512.0], ub=[512.0, 512.0])
+
+    def eggholder(self, pos):
+        x, y = pos
+        return (-(y + 47) * np.sin(np.sqrt(abs(x / 2 + (y + 47))))
+                - x * np.sin(np.sqrt(abs(x - (y + 47)))))
 
     def test_callback_called_once_per_evaluation(self):
         class CountingCallback:
@@ -180,35 +186,50 @@ class TestCallback:
 
         assert callback.n_calls == res.nfev
 
-    def test_callback_stopiteration_stops_early(self):
-        stop_after = 10
+    @pytest.mark.parametrize("depth", [1, 2, 4])
+    @pytest.mark.parametrize("stop_after", [10, 50, 200])
+    def test_callback_stopiteration_stops_early(self, depth, stop_after):
+        bounds = self.eggholder_bounds
 
         class StopAfter:
-            def __init__(self, stop_after):
+            def __init__(self, stop_after, eggholder_func):
                 self.stop_after = stop_after
                 self.n_calls = 0
+                self.best_x = None
+                self.best_fun = np.inf
+                self.eggholder_func = eggholder_func
 
             def __call__(self, x):
                 self.n_calls += 1
+                # Re-evaluate to track the best seen so far independently
+                # of biteopt's internal bookkeeping.
+                fx = self.eggholder_func(x)
+                if fx < self.best_fun:
+                    self.best_fun = fx
+                    self.best_x = x.copy()
                 if self.n_calls == self.stop_after:
                     raise StopIteration
 
-        callback = StopAfter(stop_after)
-        res_full = biteopt(rosen, self.default_bounds, maxfun=1000, rng=0)
-        res = biteopt(rosen, self.default_bounds, maxfun=1000, rng=0,
-                      callback=callback)
+        callback = StopAfter(stop_after, self.eggholder)
+        maxfun = callback.stop_after + 1000
+        res_full = biteopt(self.eggholder, bounds, maxfun=maxfun, rng=0, depth=depth)
+        res_callback = biteopt(self.eggholder, bounds, maxfun=maxfun, rng=0,
+                               callback=callback, depth=depth)
 
         assert callback.n_calls == stop_after
-        assert res.success is False
-        assert res.message.startswith("`callback` raised `StopIteration`")
-        assert res.nfev >= stop_after
-        assert res.nfev < res_full.nfev
+        assert res_callback.success is False
+        assert res_callback.message.startswith("`callback` raised `StopIteration`")
+        assert res_callback.nfev >= stop_after
+        assert res_callback.nfev < res_full.nfev
+        assert res_callback.fun == callback.best_fun
+        assert_array_equal(res_callback.x, callback.best_x)
 
-    def test_callback_exception_propagates(self):
+    @pytest.mark.parametrize("exc", [ValueError, KeyError, OverflowError])
+    def test_callback_exception_propagates(self, exc):
         def callback(x):
-            raise ValueError("callback error")
+            raise exc("callback error")
 
-        with pytest.raises(ValueError, match="callback error"):
+        with pytest.raises(exc, match="callback error"):
             biteopt(rosen, self.default_bounds, rng=0, callback=callback)
 
     def test_callback_mutates_input_does_not_crash(self):
@@ -220,6 +241,20 @@ class TestCallback:
         res = biteopt(rosen, self.default_bounds, rng=0,
                       callback=mutating_callback)
         assert isinstance(res, OptimizeResult)
+
+    def test_f_min_parameter_respected_with_callback(self):
+        # The f_min parameter must take priority over the callback
+        target_callback = -800.0
+        f_min = -750.0
+
+        def callback(x):
+            if self.eggholder(x) <= target_callback:
+                raise StopIteration
+
+        res = biteopt(self.eggholder, self.eggholder_bounds, rng=0,
+                      f_min=f_min, callback=callback)
+        assert res.fun <= f_min
+        assert res.success is True
 
 
 class TestInputValidation:
