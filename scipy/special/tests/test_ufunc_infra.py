@@ -306,7 +306,7 @@ def _assert_same_result(actual, desired):
         assert actual.strides == desired.strides
 
 
-class TestMakeUFuncLikeWrapper:
+class TestMakeUFuncWrapper:
     @pytest.mark.parametrize(
         "func,func_wrapper",
         [

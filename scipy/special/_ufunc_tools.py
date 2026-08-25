@@ -334,37 +334,38 @@ class _UFuncWrapper:
     """Base class for ufunc wrappers that preserve ufunc-like behavior."""
 
     def __init__(self, attributes):
-        self._attributes = attributes
+        self.__attributes = attributes
 
     @property
     def nin(self):
         """The number of inputs."""
-        return self._attributes["nin"]
+        return self.__attributes["nin"]
 
     @property
     def nout(self):
         """The number of outputs."""
-        return self._attributes["nout"]
+        return self.__attributes["nout"]
 
     @property
     def nargs(self):
         """The number of arguments."""
-        return self._attributes["nargs"]
+        return self.__attributes["nargs"]
 
     @property
     def ntypes(self):
         """The number of types."""
-        return self._attributes["ntypes"]
+        return self.__attributes["ntypes"]
 
     @property
     def types(self):
         """A list with types grouped input->output."""
-        return self._attributes["types"]
+        # make a copy so that users cannot mutate the types list.
+        return self.__attributes["types"].copy()
 
     @property
     def signature(self):
         """Definition of the core elements a generalized ufunc operates on."""
-        return self._attributes["signature"]
+        return self.__attributes["signature"]
 
     def resolve_dtypes(self, dtypes, *, signature=None, casting=None, reduction=False):
         # The underlying wrapper/ufunc logic handles the actual type resolution
@@ -375,7 +376,7 @@ class _UFuncWrapper:
             kwargs["casting"] = casting
         if signature is not None:
             kwargs["signature"] = signature
-        return self._attributes["resolve_dtypes"](dtypes, **kwargs)
+        return self.__attributes["resolve_dtypes"](dtypes, **kwargs)
 
     def __reduce__(self):
         # Tells pickle exactly how to reconstruct this specific instance

@@ -365,7 +365,7 @@ def test_doc(func):
 
 @pytest.mark.parametrize(
     'func,n_args,int_only,is_ufunc,ufunc',
-    [(nfo.wrapper, nfo.n_args, nfo.int_only, nfo.is_ufunc, nfo.ufunc)
+    [(nfo.wrapper, nfo.n_args, nfo.int_only, nfo.is_ufunc, nfo.func)
      for nfo in _special_funcs]
 )
 def test_ufunc_kwargs(func, n_args, int_only, is_ufunc, ufunc):
