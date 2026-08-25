@@ -46,7 +46,9 @@ def _tuple_aware_to_xp(x, xp):
 
 
 def _tuple_aware_xp_assert_close(actual, desired, **kwargs):
-    # like xp_assert_close, but can handle tuples of arrays
+    # like xp_assert_close, but can handle tuples of arrays. This inherits default
+    # ``kwarg`` values from `_array_api_no_0d.xp_assert_close` which is imported
+    # above in this test file.
     if isinstance(desired, tuple):
         assert isinstance(actual, tuple)
         assert len(actual) == len(desired)
