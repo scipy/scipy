@@ -18,6 +18,7 @@ from scipy._lib._util import _rng_html_rewrite
 # Workaround for sphinx-doc/sphinx#6573
 # ua._Function should not be treated as an attribute
 import scipy._lib.uarray as ua
+from scipy.special._ufunc_tools import _UFuncLikeWrapper
 from scipy.stats._distn_infrastructure import rv_generic
 from scipy.stats._multivariate import multi_rv_generic
 
@@ -473,6 +474,8 @@ def linkcode_resolve(domain, info):
     # class since it contains the implementation of all the methods.
     if isinstance(obj, rv_generic | multi_rv_generic):
         obj = obj.__class__
+    if isinstance(obj, _UFuncLikeWrapper):
+        return None
     try:
         fn = inspect.getsourcefile(obj)
     except Exception:
