@@ -9,7 +9,7 @@ from numpy._core._exceptions import UFuncTypeError
 from scipy._external.packaging_version import version
 # ufunc wrapper with array api dispatch
 from scipy.special import mathieu_sem
-# ufunc using special._ufuncs_tools._with_cache_optimization
+# ufunc using special._ufunc_tools._with_cache_optimization
 from scipy.special._mathieu import mathieu_sem as mathieu_sem_wrapper
 # raw ufunc without cache optimization
 from scipy.special._ufuncs import _mathieu_sem
@@ -320,7 +320,8 @@ class TestMakeUFuncWrapper:
         for attr in ["nin", "nout", "nargs", "ntypes", "types", "signature"]:
             assert getattr(func_wrapper, attr) == getattr(func, attr)
 
-        # check that types cannot be unintentially mutated by the user.
+        # check that mutating the returned types list does not mutate the
+        # wrapper state.
         types = func_wrapper.types
         types[0] = None
         assert func_wrapper.types == func.types
@@ -563,3 +564,14 @@ class TestMakeUFuncWrapper:
         kwargs = wrapper(1.0, 2.0, 0.5, None)
         assert "out" in kwargs
         assert kwargs["out"] is None
+
+    @pytest.mark.parametrize("kwarg", ["signature", "casting"])
+    def test_resolve_dtypes_explicit_none(self, kwarg):
+        dtypes = (
+            np.dtype("float64"),
+            np.dtype("float64"),
+            np.dtype("float64"),
+            None,
+        )
+        with pytest.raises(TypeError):
+            _betainc_wrapper.resolve_dtypes(dtypes, **{kwarg: None})

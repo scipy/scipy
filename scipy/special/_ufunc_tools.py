@@ -422,7 +422,7 @@ def _make_ufunc_wrapper(
     docstring : str
         The docstring for the wrapper.
     module : str, optional
-       Value to use for the ``__module__`` attribute of the wrapper.
+        Value to use for the ``__module__`` attribute of the wrapper.
 
     Returns
     -------
