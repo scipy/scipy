@@ -26,11 +26,6 @@ from scipy.sparse import diags_array
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
-from scipy.__config__ import CONFIG
-blas_provider = blas_version = None
-blas_provider = CONFIG['Build Dependencies']['blas']['name']
-blas_version = CONFIG['Build Dependencies']['blas']['version']
-
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
