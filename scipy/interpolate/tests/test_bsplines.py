@@ -2918,8 +2918,6 @@ class TestSmoothingSpline:
         xp_assert_close(spl(x), oc_vals, atol=1e-10)
 
     @pytest.mark.parametrize("y, kwargs, err, match", [
-        pytest.param(_y_err, dict(t=_t_good), NotImplementedError,
-                     "pass `lam` explicitly", id="no-lam"),
         pytest.param(_y_err, dict(t=_t_good, lam=np.ones(5)),
                      NotImplementedError, "must be a scalar", id="array-lam"),
         pytest.param(_y_err, dict(t=_t_good, lam=-1.0),
@@ -2955,6 +2953,77 @@ class TestSmoothingSpline:
         # invalid inputs on the user-knots path raise with a clear message
         with assert_raises(err, match=match):
             make_smoothing_spline(_x_err, y, **kwargs)
+
+    def test_gcv_user_knots_matches_grid_argmin(self):
+        """GCV-selected fit agrees with the fit at the argmin of a log-lam grid."""
+        rng = np.random.default_rng(42)
+        x = np.sort(rng.uniform(0, 4, 60))
+        y = np.sin(2 * x) + 0.3 * rng.normal(size=60)
+        tk = np.linspace(x[0], x[-1], 15)
+        tk[0], tk[-1] = x[0], x[-1]
+        t = np.r_[[tk[0]]*3, tk, [tk[-1]]*3]
+        n = len(x)
+        lams = np.logspace(-6, 3, 30)
+        eye = np.eye(n)
+        V = np.empty(len(lams))
+        for i, lam in enumerate(lams):
+            yhat = make_smoothing_spline(x, y, lam=lam, t=t)(x)
+            trA = sum(make_smoothing_spline(x, eye[:, k], lam=lam, t=t)(x)[k]
+                      for k in range(n))
+            V[i] = np.mean((y - yhat)**2) / (1 - trA / n)**2
+        lam_star = lams[np.argmin(V)]
+        f_auto = make_smoothing_spline(x, y, t=t)(x)
+        f_star = make_smoothing_spline(x, y, lam=lam_star, t=t)(x)
+        # the continuous search converges within one grid step of the grid
+        # argmin; on the flat GCV valley the fits are close, not bit identical.
+        xp_assert_close(f_auto, f_star, atol=5e-2)
+
+    def test_gcv_user_knots_master(self):
+        """At clamped t = x, GCV knot-path selection agrees with the t=None path."""
+        rng = np.random.default_rng(7)
+        x = np.sort(rng.uniform(0, 4, 50))
+        y = np.sin(2 * x) + 0.3 * rng.normal(size=50)
+        t = np.r_[[x[0]]*3, x, [x[-1]]*3]
+        f_old = make_smoothing_spline(x, y)(x)          # existing GCV path
+        f_new = make_smoothing_spline(x, y, t=t)(x)     # user-knots GCV path
+        xp_assert_close(f_new, f_old, atol=5e-2)
+
+    def test_gcv_user_knots_weights(self):
+        """Unit weights reproduce the unweighted GCV fit; nonuniform weights run."""
+        rng = np.random.default_rng(3)
+        x = np.sort(rng.uniform(0, 4, 50))
+        y = np.sin(2 * x) + 0.3 * rng.normal(size=50)
+        tk = np.linspace(x[0], x[-1], 12)
+        tk[0], tk[-1] = x[0], x[-1]
+        t = np.r_[[tk[0]]*3, tk, [tk[-1]]*3]
+        f_now = make_smoothing_spline(x, y, w=np.ones_like(x), t=t)(x)
+        f_no_w = make_smoothing_spline(x, y, t=t)(x)
+        xp_assert_close(f_now, f_no_w, atol=1e-12)
+        w = np.where(x < 2, 2.0, 0.5)
+        f_w = make_smoothing_spline(x, y, w=w, t=t)(x)
+        assert np.all(np.isfinite(f_w))
+
+    def test_gcv_user_knots_vs_R(self):
+        """GCV selection on fixed knots agrees with R's smooth.spline GCV."""
+        # Reproduction session (R 4.5.2):
+        #   x <- seq(0, 4, length.out = 25)
+        #   y <- sin(2 * x) + 0.25 * cos(11 * x)
+        #   fit <- smooth.spline(x, y, cv = FALSE,
+        #                        all.knots = c(0, c(0.8, 1.6, 2.4, 3.2)/4, 1))
+        #   predict(fit, x)$y    # fit$lambda = 2.463429220330e-04
+        x = np.linspace(0, 4, 25)
+        y = np.sin(2 * x) + 0.25 * np.cos(11 * x)
+        t = np.r_[[0.0]*4, [0.8, 1.6, 2.4, 3.2], [4.0]*4]
+        r_yhat = np.array([
+            0.186393846962, 0.398457768892, 0.615308455998, 0.802461275320,
+            0.925431593898, 0.949816825933, 0.858608383717, 0.673605986607,
+            0.421860372253, 0.130422278305, -0.173654841629, -0.463211951010,
+            -0.710952857343, -0.889572201770, -0.971764625430, -0.932419617350,
+            -0.779268094191, -0.545322368638, -0.264245078675, 0.030301137713,
+            0.307835131483, 0.561388945297, 0.794533303938, 1.010888642951,
+            1.214075397881])
+        f = make_smoothing_spline(x, y, t=t)(x)
+        xp_assert_close(f, r_yhat, atol=5e-4)
 
     def test_user_defined_knots_axis(self):
         # batched (n-D) `y` is not supported on the user-knots path yet,
