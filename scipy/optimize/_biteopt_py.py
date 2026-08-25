@@ -44,10 +44,13 @@ def biteopt(
         ``1000 * n``, where ``n`` is the number of variables inferred from
         ``bounds``.
     depth : int, optional
-        Algorithm depth. ``1`` selects the plain BiteOpt algorithm, while
-        values ``> 1`` select the deeper BiteOptDeep variant. Increasing
-        `depth` may increase the success rate but requires more function
-        evaluations. Expected range is ``[1, 36]``. Default is 1.
+        Number of BiteOpt instances run cooperatively.
+        Whenever one instance finds an improved solution, that solution is
+        injected into another randomly chosen instance for further refinement.
+        This cooperative multi-instance strategy improves the chance of escaping
+        local minima on complex, multi-modal functions but requires a
+        larger function evaluation budget. Valid range is ``[1, 36]``.
+        Default is 1.
     f_min : float, optional
         Target objective value. The optimization stops early once the best
         objective value found is less than or equal to `f_min`. By default
