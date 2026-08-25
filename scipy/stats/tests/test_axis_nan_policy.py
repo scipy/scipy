@@ -627,6 +627,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # - Any results returned by the three versions should be the same.
     with warnings.catch_warnings():  # treat warnings as errors
         warnings.simplefilter("error")
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
 
         ea_str, eb_str, ec_str = None, None, None
         try:

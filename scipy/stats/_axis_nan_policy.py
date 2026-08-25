@@ -214,6 +214,10 @@ def _masked_arrays_2_sentinel_arrays(samples):
     for sample in samples:
         mask = getattr(sample, 'mask', False)
         has_mask = has_mask or np.any(mask)
+        message = ("Support for NumPy masked arrays is deprecated as of SciPy 2.0.0 "
+                   "and will be removed in SciPy 2.4.0. See function documentation "
+                   "for alternatives.")
+        warnings.warn(message, DeprecationWarning, stacklevel=4)
     if not has_mask:
         return samples, None  # None means there is no sentinel value
 
@@ -348,7 +352,14 @@ code) are converted to ``np.ndarray`` before the calculation is performed. In
 this case, the output will be a scalar or ``np.ndarray`` of appropriate shape
 rather than a 2D ``np.matrix``. Similarly, while masked elements of masked
 arrays are ignored, the output will be a scalar or ``np.ndarray`` rather than a
-masked array with ``mask=False``.""").split('\n')
+masked array with ``mask=False``.
+
+.. deprecated:: 2.0.0
+
+   Support for NumPy masked arrays is deprecated and will be removed in SciPy 2.4.0.
+   See Array API Standard Support table below for whether MArrays are accepted;
+   otherwise, use regular NumPy arrays, replacing masked values with NaNs,
+   and pass argument `nan_poliy='omit'`.""").split('\n')
 
 
 def _axis_nan_policy_factory(tuple_to_result, default_axis=0,

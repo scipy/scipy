@@ -233,8 +233,7 @@ Discrete distributions
    zipfian                  -- Zipfian
 
 
-An overview of statistical functions is given below.  Many of these functions
-have a similar version in `scipy.stats.mstats` which work for masked arrays.
+An overview of statistical functions is given below.
 
 Summary statistics
 ==================
@@ -486,7 +485,6 @@ Other statistical functionality
 
    stats.qmc
    stats.contingency
-   stats.mstats
    stats.sampling
 
 Transformations
@@ -593,6 +591,14 @@ Result classes used in :mod:`scipy.stats`
    :maxdepth: 2
 
    stats._result_classes
+
+Deprecated Functionality
+------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   stats.mstats
 
 """  # noqa: E501
 

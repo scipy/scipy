@@ -5,6 +5,11 @@ Statistical functions for masked arrays (:mod:`scipy.stats.mstats`)
 
 .. currentmodule:: scipy.stats.mstats
 
+.. deprecated:: 2.0.0
+
+   This module is deprecated and will be removed in SciPy 2.4.0.
+   See function documentation for alternatives.
+
 This module contains a large number of statistical functions that can
 be used with masked arrays.
 
@@ -128,7 +133,6 @@ Other
    rsh
 
 """
-import functools
 import warnings
 from scipy import stats
 from scipy._lib._array_api import xp_capabilities_table
@@ -154,7 +158,7 @@ _mstats_deprecation_table = {
     'hdmedian': dict(replacement='quantile'),
     'mquantiles': dict(replacement='quantile'),
     'scoreatpercentile': dict(replacement='quantile'),
-    'plotting_positions': dict(replacement='estimated_cdf'),                       
+    'plotting_positions': dict(replacement='estimated_cdf'),
     'trima': dict(notes=_trim_transition_guide),
     'trimr': dict(notes=_trim_transition_guide),
     'trim': dict(notes=_trim_transition_guide),
@@ -169,7 +173,7 @@ _mstats_deprecation_table = {
 }
 
 
-def _get_deprecation_message(fun, _mstats_deprecation_table):
+def _get_deprecation_message(fun, _mstats_deprecation_table, stats):
     # generate a deprecation message based on whether there is a stats replacement,
     # and whether that has MArray or only nan_policy='omit' support
     # TODO: clean this up a bit
@@ -222,7 +226,7 @@ def _document_deprecation(wrapper, message):
 # admonition in documentation and warn when executed
 for fun_name in __all__:
    fun = globals()[fun_name]
-   message =_get_deprecation_message(fun, _mstats_deprecation_table)
+   message =_get_deprecation_message(fun, _mstats_deprecation_table, stats)
    wrapper = warnings.deprecated(message)(fun)
    _document_deprecation(wrapper, message)
    globals()[fun_name] = wrapper
