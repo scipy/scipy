@@ -1,5 +1,5 @@
 project('boost-math',
-  version : '1.91.0',
+  version : '1.92.0',
   meson_version: '>= 1.5.0',
 )
 
