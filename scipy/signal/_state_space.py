@@ -147,6 +147,8 @@ def _parse_om_spec(om_spec, f_scale, om0, om1, xp, device):
             return om
 
 
+@xp_capabilities(skip_backends=[(b_, "Not tested successfully") for b_ in
+                                ("cupy", "dask.array", "jax.numpy", "torch")])
 def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
     r"""Frequency response of a continuous-time state space system.
 
