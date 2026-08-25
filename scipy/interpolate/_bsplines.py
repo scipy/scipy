@@ -2973,10 +2973,31 @@ def _penalty_matrix_banded(t):
 
     return omega_banded
 
-def _make_smoothing_spline_user_knots_gcv(x, y, w, t, axis, *, xp, device=None):
-    """Generalized Cross Validation (GCV) computation path for unequal knot
-    vectors and data points."""
-    pass
+def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega):
+    """Compute the appropriate smoothing parameter `lam` for cubic smoothing splines."""
+    # Implementation decisions detailed in the following companion report:
+    # https://github.com/aadya940/scipy-bspline-testing/blob/main/B_Splines_with_arbitary_knots-gcv.pdf
+    n = y.shape[0]
+    def _gcv(lam):
+        c, tr = _solve_smoothing_spline_coefficients(
+            xtwx_banded, lam, omega, xtwy, gcv=True)
+        rss = np.sum(w * np.square(y - x @ c)) / n
+        return rss / (1 - tr / n) ** 2
+
+    def _gcv_log(s):
+        return _gcv(10 ** s)
+
+    res = minimize_scalar(_gcv_log, bounds=(-14, 9), method="bounded")
+    lam_hat = 10 ** res.x
+    return lam_hat
+
+def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy, gcv=False):
+    _lhs = XtWX_banded + lam * omega
+    c = solveh_banded(_lhs, XtWy, lower=True)
+    if gcv:
+        tr = np.sum((_lhs @ XtWX_banded).diagonal(0))
+        return (c, tr)
+    return c, None
 
 def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
     """`make_smoothing_spline` path for a user-provided knot vector ``t``.
@@ -2990,17 +3011,14 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     symmetric, so the system is solved with a banded Cholesky factorization.
     Assumes ``x``, ``y`` and ``w`` are already validated by the caller.
     """
-    if lam is None:
-        return _make_smoothing_spline_user_knots_gcv(
-            x, y, w, t, axis, xp, device=device
-        )
-    if np.ndim(lam) != 0:
-        raise NotImplementedError(
-            "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
-            f"got an array of shape {np.shape(lam)}."
-        )
-    if lam < 0.:
-        raise ValueError('Regularization parameter should be non-negative')
+    if lam is not None:
+        if np.ndim(lam) != 0:
+            raise NotImplementedError(
+                "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
+                f"got an array of shape {np.shape(lam)}."
+            )
+        if lam < 0.:
+            raise ValueError('Regularization parameter should be non-negative')
     if np.ndim(y) > 1:
         raise NotImplementedError(
             "batched `y` is not supported with user-provided knots yet; "
@@ -3062,8 +3080,10 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
         # Convert to LAPACK symmetric lower-banded storage,
         # as accepted by solveh_banded.
         XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
+    if lam is None:
+        lam = _make_smoothing_spline_user_knots_gcv(XtWX_banded, XtWy)
     try:
-        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+        c, _ = _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy)
     except LinAlgError as e:
         # why only the two extremes of lam can fail: companion report,
         # Sec. 15 FAQ 1 (link in make_smoothing_spline)
