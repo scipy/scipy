@@ -150,9 +150,9 @@ License: BSL-1.0
   For details, see subprojects/boost_math/math/LICENSE
 
 Name: Biasedurn
-Files: scipy/stats/biasedurn/*
+Files: scipy/stats/_biasedurn/src/*
 License: BSD-3-Clause
-  For details, see scipy/stats/biasedurn/license.txt
+  For details, see scipy/stats/_biasedurn/src/license.txt
 
 Name: UNU.RAN
 Files: subprojects/unuran/unuran/*
@@ -160,10 +160,10 @@ License: BSD-3-Clause
   For details, see subprojects/unuran/unuran/license.txt
 
 Name: NumPy
-Files: scipy/stats/libnpyrandom/[logfactorial.h,logfactorial.c]
+Files: scipy/stats/src/libnpyrandom/[logfactorial.h,logfactorial.c]
 License: BSD-3-Clause
-  For details, see header inside scipy/stats/libnpyrandom/logfactorial.h
-  and scipy/stats/libnpyrandom/logfactorial.c
+  For details, see header inside scipy/stats/src/libnpyrandom/logfactorial.h
+  and scipy/stats/src/libnpyrandom/logfactorial.c
 
 Name: array-api-compat
 Files: subprojects/array_api_compat/array_api_compat/*

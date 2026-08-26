@@ -1,6 +1,6 @@
 from libc.stdlib cimport free
 
-cdef extern from "./c_src/levyst.h":
+cdef extern from "./levyst.h":
     struct nolan_precanned:
         double (*g)(nolan_precanned *, double)
         double alpha

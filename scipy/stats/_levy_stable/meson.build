@@ -5,12 +5,13 @@ py3.install_sources([
 )
 
 _levyst = static_library('_levyst',
-  ['c_src/levyst.c', 'c_src/levyst.h'],
+  'src/levyst.c',
   gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('levyst',
-  cython_gen.process('levyst.pyx'),
+  cython_gen.process('src/levyst.pyx'),
+  include_directories: ['src'],
   dependencies: np_dep,
   link_args: version_link_args,
   link_with: _levyst,
