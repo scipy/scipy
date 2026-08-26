@@ -895,15 +895,21 @@ platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
 [feature.asan.dependencies]
 spin = "*"
 
-python.flags = ["asan"]
-python.git = "https://github.com/python/cpython"
-python.subdirectory = "Tools/pixi-packages"
-python.rev = "847d099efa4785658ba9bd3163e35cb4ae742f6d"
+python = {
+  flags = ["asan"],
+  # path = "/Users/lucascolley/ghq/github.com/python/cpython/Tools/pixi-packages",
+  git = "https://github.com/lucascolley/cpython",
+  subdirectory = "Tools/pixi-packages",
+  rev = "71da576c49714f67a03f93ac07a0497990c8bfee",
+}
 
-numpy.flags = ["asan"]
-numpy.git = "https://github.com/numpy/numpy"
-numpy.subdirectory = "pixi-packages/asan"
-numpy.rev = "0a545fc96ce7ca9866b7529acda8119151011ffa"
+numpy = {
+  flags = ["asan"],
+  # path = "/Users/lucascolley/ghq/github.com/rgommers/pixi-dev-scipystack/numpy/numpy/pixi-packages/asan",
+  git = "https://github.com/lucascolley/numpy",
+  subdirectory = "pixi-packages/asan",
+  rev = "8e58f4bbd4ad862f4218795c02dd9b4406af02be",
+}
 
 gmpy2 = {
   git = "https://github.com/gmpy2/gmpy2",
@@ -923,9 +929,10 @@ gmpy2 = {
       mpc = "*",
       python = {
         flags = ["asan"],
-        git = "https://github.com/python/cpython",
+        # path = "/Users/lucascolley/ghq/github.com/python/cpython/Tools/pixi-packages",
+        git = "https://github.com/lucascolley/cpython",
         subdirectory = "Tools/pixi-packages",
-        rev = "847d099efa4785658ba9bd3163e35cb4ae742f6d",
+        rev = "71da576c49714f67a03f93ac07a0497990c8bfee",
       },
     },
   },
@@ -951,6 +958,7 @@ blas-devel = { version = "*", build = "*openblas" }
 cmd = "spin build --asan --build-dir=build-asan --setup-args=-Duse-pythran=false --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 env = {
   ASAN_OPTIONS = "detect_leaks=0:strict_init_order=true:use_sigaltstack=0",
+  LDFLAGS = "-shared-libsan $LDFLAGS",
   CC = "clang",
   CXX = "clang++",
 }
