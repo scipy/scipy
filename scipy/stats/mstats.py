@@ -137,6 +137,7 @@ import warnings
 from scipy import stats
 from scipy._lib._array_api import xp_capabilities_table
 from scipy._lib._docscrape import FunctionDoc
+from scipy._lib.deprecation import _deprecated
 from . import _mstats_basic
 from . import _mstats_extras
 from ._mstats_basic import *  # noqa: F403
@@ -224,7 +225,7 @@ def _document_deprecation(wrapper, message):
 for fun_name in __all__:
    fun = globals()[fun_name]
    message =_get_deprecation_message(fun, _mstats_deprecation_table, stats)
-   wrapper = warnings.deprecated(message)(fun)
+   wrapper = _deprecated(message, stacklevel=3)(fun)
    _document_deprecation(wrapper, message)
    globals()[fun_name] = wrapper
 
@@ -241,3 +242,4 @@ del _trim_transition_guide
 del _mstats_deprecation_table
 del _document_deprecation
 del _get_deprecation_message
+del _deprecated

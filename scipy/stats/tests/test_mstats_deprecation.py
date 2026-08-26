@@ -5,7 +5,7 @@ import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("error")
     from scipy import stats
-    import scipy.stats
+    import scipy.stats  # noqa: F401
 
 
 class TestMstatsDeprecation:
@@ -23,11 +23,11 @@ class TestMstatsDeprecation:
 
         self.forget_mstats()
         with pytest.warns(DeprecationWarning, match=message):
-            import scipy.stats.mstats
+            import scipy.stats.mstats  # noqa: F401
 
         self.forget_mstats()
         with pytest.warns(DeprecationWarning, match=message):
-            from scipy.stats import mstats
+            from scipy.stats import mstats  # noqa: F401
 
     def test_function_warnings(self):
         # Spot check of the various branches of _get_deprecation_message
