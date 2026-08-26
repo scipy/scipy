@@ -208,6 +208,8 @@ special_ufuncs = [
     "erfcx",
     "erfi",
     "erfinv",
+    "eval_jacobi",
+    "eval_sh_jacobi",
     "exp1",
     "exp10",
     "exp2",
