@@ -214,13 +214,13 @@ def _masked_arrays_2_sentinel_arrays(samples):
     for sample in samples:
         mask = getattr(sample, 'mask', False)
         has_mask = has_mask or np.any(mask)
-        message = ("Support for NumPy masked arrays is deprecated as of SciPy 2.0.0 "
-                   "and will be removed in SciPy 2.4.0. See function documentation "
-                   "for alternatives.")
-        warnings.warn(message, DeprecationWarning, stacklevel=4)
     if not has_mask:
         return samples, None  # None means there is no sentinel value
 
+    message = ("Support for NumPy masked arrays is deprecated as of SciPy 2.0.0 "
+                "and will be removed in SciPy 2.4.0. See function documentation "
+                "for alternatives.")
+    warnings.warn(message, DeprecationWarning, stacklevel=4)
     # Choose a sentinel value. We can't use `np.nan`, because sentinel (masked)
     # values are always omitted, but there are different nan policies.
     dtype = np.result_type(*samples)

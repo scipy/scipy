@@ -171,7 +171,7 @@ depends_on = ["scipy.stats"]
 
 [[modules]]
 path = "scipy.stats.mstats"
-depends_on = ["scipy.stats"]
+depends_on = ["scipy._lib", "scipy.stats"]
 
 [[modules]]
 path = "scipy.stats.qmc"
