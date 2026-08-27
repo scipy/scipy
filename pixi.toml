@@ -239,9 +239,9 @@ features = ["build-deps", "run-deps", "test-deps", "scipy-openblas32", "default-
 # tasks: build-scipy-openblas64, test-scipy-openblas64
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas64", "default-platforms"]
 
-[environments.build-clang-22]
-# tasks: build-clang-22
-features = ["build-deps", "build-clang-22"]
+[environments.build-clang-23]
+# tasks: build-clang-23
+features = ["build-deps", "build-clang-23"]
 
 [environments.gha-update]
 # tasks: gha-update
@@ -910,17 +910,17 @@ description = "Test SciPy (with pytest-run-parallel and freethreaded Python)"
 
 ### Alternative compiler versions ###
 
-[feature.build-clang-22.dependencies]
+[feature.build-clang-23.dependencies]
 python-build = "*"
-clang-22 = "*"
+clang-23 = "*"
 
-[feature.build-clang-22.tasks.build-clang-22]
+[feature.build-clang-23.tasks.build-clang-23]
 cmd = "python -m build -wnx -Csetup-args=--werror"
 env = {
-  CC = "ccache clang-22",
-  CXX = "ccache clang++-22",
+  CC = "ccache clang-23",
+  CXX = "ccache clang++-23",
 }
-description = "Build SciPy with clang-22 and -werror"
+description = "Build SciPy with clang-23 and -werror"
 
 
 ### Maintenance tools ###
