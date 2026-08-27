@@ -664,7 +664,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     # search loop would spin forever, since its stopping condition is only ever
     # set from inside the per-iteration loop.
     if maxiter < 1:
-        raise ValueError('maxiter must be a positive integer greater or equal to one.')
+        raise ValueError('maxiter must be a positive integer greater than or equal to one.')
 
     # Wrapper for the objective function
     func_wrapper = ObjectiveFunWrapper(func, maxfun, *args)
