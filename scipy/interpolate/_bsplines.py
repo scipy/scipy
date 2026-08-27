@@ -2973,20 +2973,31 @@ def _penalty_matrix_banded(t):
 
     return omega_banded
 
-def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega):
+def _lower_to_upper_banded(ab):
+    """Reorder LAPACK lower-banded symmetric storage into upper-banded."""
+    m = ab.shape[1]
+    upper = np.zeros_like(ab)
+    for d in range(ab.shape[0]):
+        upper[-1 - d, d:] = ab[d, :m - d]
+    return upper
+
+
+def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     """Select `lam` by minimizing the GCV criterion V(lam) in log-space."""
     # Implementation decisions detailed in the following companion report:
     # https://github.com/aadya940/scipy-bspline-testing/blob/main/B_Splines_with_arbitary_knots-gcv.pdf
     # Eq. (32)
     n = y.shape[0]
+    xtwx_upper = _lower_to_upper_banded(xtwx_banded)
+
     def _gcv(lam):
         try:
             c, tr = _solve_smoothing_spline_coefficients(
-                xtwx_banded, lam, omega, xtwy, compute_trace=True)
+                xtwx_banded, lam, omega, xtwy, xtwx_upper=xtwx_upper)
         except LinAlgError:
             # numerically singular for this lam
             return np.inf
-        rss = np.sum(w * np.square(y - x @ c)) / n
+        rss = np.sum(w * np.square(y - X @ c)) / n
         return rss / (1 - tr / n) ** 2
 
     def _gcv_log(s):
@@ -2997,21 +3008,15 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, x, y, w, xtwy, omega):
     return lam_hat
 
 def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
-                                         compute_trace=False):
+                                         xtwx_upper=None):
     _lhs = XtWX_banded + lam * omega
     c = solveh_banded(_lhs, XtWy, lower=True)
-    if not compute_trace:
+    if xtwx_upper is None:
         return c, None
     # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]: both factors are
     # 7-banded, so only the central bands of the inverse are needed
-    # (Hutchinson & de Hoog); convert lower- to upper-banded storage.
-    m = XtWX_banded.shape[1]
-    lhs_upper = np.zeros_like(_lhs)
-    xtwx_upper = np.zeros_like(XtWX_banded)
-    for d in range(4):
-        lhs_upper[3 - d, d:] = _lhs[d, :m - d]
-        xtwx_upper[3 - d, d:] = XtWX_banded[d, :m - d]
-    b_banded = _compute_b_inv(lhs_upper)
+    # (Hutchinson & de Hoog, upper-banded storage).
+    b_banded = _compute_b_inv(_lower_to_upper_banded(_lhs))
     tr = b_banded * xtwx_upper
     tr[:-1] *= 2
     return c, tr.sum()
@@ -3165,9 +3170,9 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
         repeated 4 times (clamped), and interior knots may repeat only to
         multiplicity 2 (higher multiplicity would allow kinks or jumps,
         for which the penalty :math:`\int (f'')^2` is not defined).
-        ``t`` can only be passed when ``lam``
-        is given explicitly. Default is None, in which case a clamped knot
-        vector at the data sites is used,
+        If ``lam`` is not given, it is selected automatically by
+        generalized cross-validation. Default is None, in which case a
+        clamped knot vector at the data sites is used,
         ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
     axis : int, optional
         The data axis. Default is zero.
