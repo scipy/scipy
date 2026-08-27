@@ -66,7 +66,7 @@ class TestPlacePoles:
         and return the Bunch object for further specific tests
         """
         fsf = place_poles(A, B, P, **kwargs)
-        expected, _ = np.linalg.eig(A - np.dot(B, fsf.gain_matrix))
+        expected = linalg.eigvals(A - np.dot(B, fsf.gain_matrix))
         _assert_poles_close(expected, fsf.requested_poles)
         _assert_poles_close(expected, fsf.computed_poles)
         _assert_poles_close(P,fsf.requested_poles)
@@ -93,6 +93,20 @@ class TestPlacePoles:
         # value in divide (see gh-7590), so suppress it for now
         with np.errstate(invalid='ignore'):
             self._check(A, B, (2,2,3,3))
+
+    def test_computed_poles_dtype(self):
+        """Verify that the `computed_poles` are always complex-valued.
+
+        Before NumPy 2.5, `np.linalg.eig` would return either a real-valued or a
+        complex-valued array. PR #26004 enforces that the `computed_poles` are always
+        complex-valued by using SciPy's `eig` function.
+        """
+        A, B, P = np.eye(3), np.eye(3), np.array([-4., -3., -2.])
+        fsf = place_poles(A, B, P, method='YT')
+
+        xp_assert_equal(fsf.requested_poles, P)  # poles need to be in ascending order
+        complex_dtype =  np.result_type(P, np.complex64)  # complex64 or complex128
+        xp_assert_close(fsf.computed_poles, P.astype(complex_dtype))
 
     def test_complex(self):
         # Test complex pole placement on a linearized car model, taken from L.
