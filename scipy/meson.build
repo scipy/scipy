@@ -502,6 +502,7 @@ _cpp_Wno_unused_but_set_variable = cpp.get_supported_arguments('-Wno-unused-but-
 _cpp_Wno_unused_function = cpp.get_supported_arguments('-Wno-unused-function')
 _cpp_Wno_unused_local_typedefs = cpp.get_supported_arguments('-Wno-unused-local-typedefs')
 _cpp_Wno_unused_variable = cpp.get_supported_arguments('-Wno-unused-variable')
+_cpp_Wno_unused_template = cpp.get_supported_arguments('-Wno-unused-template')
 _cpp_Wno_int_in_bool_context = cpp.get_supported_arguments('-Wno-int-in-bool-context')
 _cpp_Wno_unneeded_internal_declaration = cpp.get_supported_arguments('-Wno-unneeded-internal-declaration')
 
@@ -564,7 +565,9 @@ if cc.get_id() != 'msvc'
 endif
 
 cython_c_args += [use_math_defines]
-cython_cpp_args = cython_c_args
+# this suppresses warnings fixed by
+# https://github.com/cython/cython/commit/8208a1658bb6a2c97fb30a9d53d8ac3addfb662a
+cython_cpp_args = cython_c_args + _cpp_Wno_unused_template
 
 compilers = {
   'C': cc,
