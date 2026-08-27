@@ -1254,10 +1254,10 @@ class SHGO:
 
     def sort_min_pool(self):
         # Sort to find minimum func value in min_pool
-        self.ind_f_min = np.argsort(self.minimizer_pool_F)
-        self.minimizer_pool = np.array(self.minimizer_pool)[self.ind_f_min]
-        self.minimizer_pool_F = np.array(self.minimizer_pool_F)[
-            self.ind_f_min]
+        self.ind_f_min = np.argsort(np.ravel(self.minimizer_pool_F))
+        self.minimizer_pool = [self.minimizer_pool[i] for i in self.ind_f_min]
+        self.minimizer_pool_F = [self.minimizer_pool_F[i] for i in self.ind_f_min]
+        self.X_min = self.X_min[self.ind_f_min]
         return
 
     def trim_min_pool(self, trim_ind):
@@ -1274,14 +1274,14 @@ class SHGO:
         negative entries.
 
         """
-        x_min = np.array([x_min])
+        x_min = np.reshape(x_min, (1, self.dim))
+        X_min = np.reshape(X_min, (-1, self.dim))
         self.Y = spatial.distance.cdist(x_min, X_min, 'euclidean')
         # Find sorted indexes of spatial distances:
         self.Z = np.argsort(self.Y, axis=-1)
 
-        self.Ss = X_min[self.Z][0]
-        self.minimizer_pool = self.minimizer_pool[self.Z]
-        self.minimizer_pool = self.minimizer_pool[0]
+        self.Ss = X_min[self.Z[0]]
+        self.minimizer_pool = self.minimizer_pool[self.Z[0]]
         return self.Ss
 
     # Local bound functions
@@ -1371,7 +1371,7 @@ class SHGO:
             logging.info(f'Starting minimization at {x_min}...')
 
         if self.sampling_method == 'simplicial':
-            x_min_t = tuple(x_min)
+            x_min_t = tuple(np.ravel(x_min))
             # Find the normalized tuple in the Vertex cache:
             x_min_t_norm = self.X_min_cache[tuple(x_min_t)]
             x_min_t_norm = tuple(x_min_t_norm)
@@ -1391,6 +1391,7 @@ class SHGO:
             logging.info(self.minimizer_kwargs['bounds'])
 
         # Local minimization using scipy.optimize.minimize:
+        x_min = np.ravel(x_min)
         lres = minimize(self.func, x_min, **self.minimizer_kwargs)
 
         if self.disp:
@@ -1566,7 +1567,7 @@ class LMapCache:
 
     def __getitem__(self, v):
         try:
-            v = np.ndarray.tolist(v)
+            v = tuple(np.ravel(v))
         except TypeError:
             pass
         v = tuple(v)
