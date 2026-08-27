@@ -102,10 +102,10 @@ jobs:
   fast_spin_arm64:
     name: fast, py3.12/npAny, spin (Win-ARM64), no pythran
     runs-on: windows-11-arm
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1 &&
-      (github.repository == 'scipy/scipy' || github.repository == '')
+    # needs: get_commit_message
+    # if: >
+    #   needs.get_commit_message.outputs.message == 1 &&
+    #   (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
