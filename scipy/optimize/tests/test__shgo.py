@@ -1226,3 +1226,15 @@ def test_gh16971():
 
     assert s.minimizer_kwargs['method'].lower() == 'cobyla'
     assert s.minimizer_kwargs['options']['catol'] == 0.05
+def test_sort_min_pool_x_min_ordering():
+    def f(x):
+        return x[0]**2
+
+    optimizer = SHGO(f, [(-2, 2)], n=10, iters=1)
+    optimizer.minimizer_pool_F = np.array([[3.0], [1.0], [2.0]])
+    optimizer.minimizer_pool = ['candidate_A', 'candidate_B', 'candidate_C']
+    optimizer.X_min = np.array([[3.0], [1.0], [2.0]])
+    optimizer.sort_min_pool()
+    assert_allclose(optimizer.minimizer_pool_F.ravel(), [1.0, 2.0, 3.0])
+    assert list(optimizer.minimizer_pool) == ['candidate_B', 'candidate_C', 'candidate_A']
+    assert_allclose(optimizer.X_min.ravel(), [1.0, 2.0, 3.0])
