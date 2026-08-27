@@ -72,7 +72,12 @@ inc_np = include_directories(incdir_numpy)
 numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
 np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
-pybind11_dep = dependency('pybind11', version: '>=2.13.2')
+pybind11_dep = declare_dependency(
+  dependencies: dependency('pybind11', version: '>=2.13.2'),
+  # https://github.com/pybind/pybind11/pull/6155
+  # https://github.com/pybind/pybind11/pull/6156
+  compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
+)
 
 # Pythran include directory and build flags
 if use_pythran
